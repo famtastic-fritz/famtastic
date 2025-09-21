@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-. "$(dirname "$0")/../../scripts/_cj_common.sh"
+. "$(dirname "$0")/../../scripts/lib/hub-common"
 
 
 tag="${1:-latest-convo}"

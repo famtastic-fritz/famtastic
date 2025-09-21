@@ -39,7 +39,7 @@ utc_now(){ date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 
 
 lock_acquire(){
-  local tag="$1"; local lock="$CJ_LOCK_DIR/$tag.lock"
+  local tag="$1"; lock="$CJ_LOCK_DIR/$tag.lock"
   local i=0; until mkdir "$lock" 2>/dev/null; do i=$((i+1)); [ $i -gt 50 ] && { echo "Lock timeout: $tag" >&2; exit 1; }; sleep 0.1; done
   trap 'rm -rf "$lock"' EXIT INT TERM
 }
