@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+
+# ——— XDG locations (preferred) ———
+: "${CJ_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/famtastic/agent-hub}"
+: "${CJ_DATA_DIR:=${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub}"
+: "${CJ_STATE_DIR:=${XDG_STATE_HOME:-$HOME/.local/state}/famtastic/agent-hub}"
+: "${CJ_SOURCES_DIR:=$CJ_DATA_DIR/sources}"
+: "${CJ_LOCK_DIR:=$CJ_STATE_DIR/locks}"
+
+
+# Project root (where canonical/manifests/summaries live when composing inside this repo)
+: "${CJ_DATA_ROOT:=$(pwd)}"
+
+
+# Legacy fallback (read-only); keep name for script compatibility
+: "${CJ_LOCAL_SOURCES_LEGACY:=$HOME/.codex/sources}"
+
+
+# Primary read path: prefer XDG; ALSO read legacy if present
+: "${CJ_LOCAL_SOURCES:=$CJ_SOURCES_DIR}"
+
+
+mkdir -p "$CJ_SOURCES_DIR" "$CJ_LOCK_DIR" "$CJ_DATA_ROOT/convos"/{canonical,manifests,summaries}
+
+
+need(){ command -v "$1" >/dev/null 2>&1; }
+
+
+json_hash(){
+  if need jq; then jq -cS . | shasum -a256 | awk '{print $1}';
+  else node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{let o=JSON.parse(s);let h=require("crypto").createHash("sha256").update(JSON.stringify(o)).digest("hex");console.log(h);});'
+  fi
+}
+
+
+utc_now(){ date -u +"%Y-%m-%dT%H:%M:%SZ"; }
+
+
+lock_acquire(){
+  local tag="$1"; local lock="$CJ_LOCK_DIR/$tag.lock"
+  local i=0; until mkdir "$lock" 2>/dev/null; do i=$((i+1)); [ $i -gt 50 ] && { echo "Lock timeout: $tag" >&2; exit 1; }; sleep 0.1; done
+  trap 'rm -rf "$lock"' EXIT INT TERM
+}
+
+
+# Helper: cat all available sources for an agent/tag (XDG first, then legacy)
+cat_sources(){
+  local agent="$1" tag="$2"
+  local xdg="$CJ_SOURCES_DIR/$agent/$tag.jsonl"
+  local leg="$CJ_LOCAL_SOURCES_LEGACY/$agent/$tag.jsonl"
+  [ -f "$xdg" ] && cat "$xdg"
+  [ -f "$leg" ] && cat "$leg"
+}

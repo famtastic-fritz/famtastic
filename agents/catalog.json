@@ -1,0 +1,9 @@
+{
+  "version": "v0.2",
+  "providers": ["openai"],
+  "agents": [
+    {"name": "claude", "requires": ["openai"]},
+    {"name": "gemini", "requires": []},
+    {"name": "codex", "requires": []}
+  ]
+}

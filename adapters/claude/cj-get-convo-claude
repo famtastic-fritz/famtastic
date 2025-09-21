@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/../../scripts/_cj_common.sh"
+
+
+tag="${1:-latest-convo}"
+demo="${2:-}"
+dir="$CJ_SOURCES_DIR/claude"; mkdir -p "$dir"
+out="$dir/$tag.jsonl"
+if [ "$demo" = "--demo" ]; then
+  echo '{"messages":[{"role":"user","content":"demo from claude"}]}' >> "$out"
+  echo "[get-claude] wrote demo line → $out"
+  exit 0
+fi
+echo "[get-claude] implement real fetch here (CLI/API) → append JSON lines to $out"

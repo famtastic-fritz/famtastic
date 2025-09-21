@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Famtastic Agent Hub Manifest",
+  "type": "object",
+  "required": ["tag","policy","agents","message_counts","hash","updated_at"],
+  "properties": {
+    "tag": {"type":"string"},
+    "policy": {"type":"string","enum":["latest"]},
+    "agents": {"type":"array","items":{"type":"string"}},
+    "source_hashes": {"type":"object","additionalProperties":{"type":"string"}},
+    "message_counts": {
+      "type":"object",
+      "properties":{"user":{"type":"integer"},"assistant":{"type":"integer"},"system":{"type":"integer"}},
+      "additionalProperties": false
+    },
+    "hash": {"type":"string"},
+    "updated_at": {"type":"string","format":"date-time"},
+    "reconciled_at": {"type":"string","format":"date-time"},
+    "notes": {"type":"string"}
+  }
+}

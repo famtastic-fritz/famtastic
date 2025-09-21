@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/_cj_common.sh"
+
+
+tag="${1:?usage: cj-compose-convo <tag>}"
+lock_acquire "$tag"
+
+
+canon="$CJ_DATA_ROOT/convos/canonical/$tag.json"
+[ -f "$canon" ] || { echo "Missing canonical for $tag" >&2; exit 1; }
+
+
+hash="$(cat "$canon" | json_hash)"
+now="$(utc_now)"
+manifest="$CJ_DATA_ROOT/convos/manifests/$tag.manifest.json"
+if need jq; then
+  counts="$(jq '[.messages[].role]|group_by(.)|map({(.[0]):length})|add' "$canon")"
+else
+  counts='{"user":0,"assistant":0,"system":0}'
+fi
+cat > "$manifest" <<JSON
+{
+  "tag":"$tag",
+  "policy":"latest",
+  "agents":["claude","gemini","codex"],
+  "source_hashes":{},
+  "message_counts": $counts,
+  "hash":"sha256:$hash",
+  "updated_at":"$now"
+}
+JSON
+
+
+ts="$(date -u +"%Y%m%d-%H%M")"
+summary="$CJ_DATA_ROOT/convos/summaries/${tag}__${ts}.md"
+cat > "$summary" <<MD
+# $tag — Summary
+Updated: $(date -u +"%Y-%m-%d %H:%MZ")
+Policy: latest
+Agents: claude, gemini, codex
+Counts: $(if need jq; then jq -r '"user=\(.user//0) assistant=\(.assistant//0) system=\(.system//0)"' "$manifest"; else echo "user=0 assistant=0 system=0"; fi)
+Hash: sha256:$hash
+
+
+## What changed since last compose
+- …
+
+
+## Highlights
+- …
+
+
+## TODO / Follow-ups
+- …
+
+
+## Provenance
+- Reconciled: $now
+MD
+
+
+echo "[compose] $tag → manifest+summary"

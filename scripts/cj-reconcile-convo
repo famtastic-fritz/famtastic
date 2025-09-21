@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/_cj_common.sh"
+
+tag="${1:?usage: cj-reconcile-convo <tag>}"
+lock_acquire "$tag"
+
+
+# Gather from all known agents (extendable via catalog later)
+tmp="$CJ_DATA_ROOT/.cj.reconcile.$tag.$$.jsonl"; : > "$tmp"
+for agent in claude gemini codex; do
+  cat_sources "$agent" "$tag" >> "$tmp" || true
+done
+
+
+canon="$CJ_DATA_ROOT/convos/canonical/$tag.json"
+if [ ! -s "$tmp" ]; then
+  [ -f "$canon" ] || printf '%s\n' '{"messages":[],"tag":"'

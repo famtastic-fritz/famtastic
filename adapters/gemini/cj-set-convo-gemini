@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/../../scripts/_cj_common.sh"
+
+
+tag="${1:-latest-convo}"
+echo "[set-gemini] implement publish back to Gemini if desired (reading $CJ_SOURCES_DIR/gemini/$tag.jsonl)"
