@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: secrets/.*\.enc\.(ya?ml|json)$
+    encrypted_regex: '^(OPENROUTER_|DYAD_|data|stringData)'
+    age: age16w22as5p5e0cgnk3vzahr7u02xv7lx39qxfva5ker8y65x8amqvq4zcken
