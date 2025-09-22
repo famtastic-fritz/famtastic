@@ -3,13 +3,13 @@ set -euo pipefail
 . "$(dirname "$0")/../../scripts/lib/hub-common"
 
 
-tag="${1:-latest-convo}"
-demo="${2:-}"
-dir="$CJ_SOURCES_DIR/codex"; mkdir -p "$dir"
-out="$dir/$tag.jsonl"
-if [ "$demo" = "--demo" ]; then
-  echo '{"messages":[{"role":"user","content":"demo from codex"}]}' >> "$out"
-  echo "[get-codex] wrote demo line → $out"
-  exit 0
-fi
-echo "[get-codex] implement real fetch here (CLI/API) → append JSON lines to $out"
+TAG="${1:-latest-convo}"
+OPENAI_API_KEY="$(secret_get OPENAI_API_KEY || true)"
+export OPENAI_API_KEY
+
+
+# existing demo append (keep)
+PROV="$(basename "$(dirname "$0")")"
+DIR="$CJ_SOURCES_DIR/$PROV"; mkdir -p "$DIR"
+echo '{"role":"user","content":"stub from '"$PROV"'","ts":"'"$(date -u +%FT%TZ)"'","agent":"'"$PROV"'"}' >> "$DIR/$TAG.jsonl"
+echo "[$PROV] wrote demo line → $DIR/$TAG.jsonl"

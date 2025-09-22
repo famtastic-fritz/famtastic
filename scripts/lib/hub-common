@@ -53,3 +53,109 @@ cat_sources(){
   [ -f "$xdg" ] && cat "$xdg"
   [ -f "$leg" ] && cat "$leg"
 }
+
+
+# --- LiteLLM config detection -------------------------------------------------
+_litellm_guess_paths(){
+  cat <<PATHS
+${CJ_LITELLM_CONFIG:-}
+$HOME/.config/litellm/config.yaml
+${XDG_CONFIG_HOME:-$HOME/.config}/litellm/config.yaml
+$HOME/.litellm/config.yaml
+./litellm.config.yaml
+PATHS
+}
+
+
+_litellm_config_path(){
+  local p
+  while read -r p; do
+    [ -n "$p" ] && [ -f "$p" ] && { printf '%s' "$p"; return 0; }
+  done <<< "$(_litellm_guess_paths)"
+  return 1
+}
+
+
+_litellm_key_lookup(){
+  local NAME="$1"
+  if command -v yq >/dev/null 2>&1; then
+    local config_path
+    config_path="$(_litellm_config_path 2>/dev/null || true)"
+    if [ -n "$config_path" ]; then
+      yq eval ".. | select(has(\"$NAME\")) | .$NAME" "$config_path" 2>/dev/null | head -1
+    fi
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - <<PY 2>/dev/null
+import sys, yaml, os
+name = "$NAME"
+candidates = [x for x in """$(_litellm_guess_paths)""".splitlines() if x]
+path = next((p for p in candidates if os.path.isfile(p)), None)
+if not path: sys.exit(1)
+with open(path, 'r') as f:
+    data = yaml.safe_load(f)
+from collections.abc import Mapping, Sequence
+found = None
+
+
+def walk(x):
+    global found
+    if found is not None: return
+    if isinstance(x, Mapping):
+        if name in x and isinstance(x[name], (str,int,float)):
+            found = x[name]; return
+        for v in x.values(): walk(v)
+    elif isinstance(x, Sequence) and not isinstance(x, (str,bytes,bytearray)):
+        for v in x: walk(v)
+
+
+walk(data)
+print(found if found is not None else "")
+PY
+  else
+    return 1
+  fi
+}
+
+
+# Master secret resolver: SOPS (repo) → ENV → Keychain → LiteLLM
+secret_get () {
+  local NAME="$1"
+
+  # 1) SOPS-encrypted repo file
+  local F="$(pwd)/secrets/agents.enc.yaml"
+  if command -v sops >/dev/null 2>&1 && [ -f "$F" ]; then
+    # Set age key file if it exists
+    export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-$HOME/.config/famtastic/agent-hub/keys/age.txt}"
+    if command -v yq >/dev/null 2>&1; then
+      v="$(sops -d "$F" 2>/dev/null | yq -r ".${NAME} // \"\"")"
+      [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+    elif command -v python3 >/dev/null 2>&1; then
+      python3 - <<PY 2>/dev/null || true
+import sys, yaml, subprocess, os
+f=os.path.join(os.getcwd(),"secrets","agents.enc.yaml")
+p=subprocess.Popen(["sops","-d",f], stdout=subprocess.PIPE)
+data=yaml.safe_load(p.stdout) or {}
+print(data.get("$NAME",""), end="")
+PY
+      read -r out && [ -n "${out:-}" ] && { printf '%s' "$out"; return 0; }
+    fi
+  fi
+
+  # 2) ENV
+  if [ -n "${!NAME:-}" ]; then printf '%s' "${!NAME}"; return 0; fi
+
+  # 3) macOS Keychain
+  if command -v security >/dev/null 2>&1; then
+    v="$(security find-generic-password -a "$USER" -s "agent-hub:$NAME" -w 2>/dev/null || true)"
+    [ -n "$v" ] && { printf '%s' "$v"; return 0; }
+  fi
+
+  # 4) LiteLLM config (fallback)
+  if command -v yq >/dev/null 2>&1; then
+    cfg="${CJ_LITELLM_CONFIG:-${LITELLM_CONFIG:-}}"
+    [ -z "$cfg" ] && cfg="$HOME/.config/litellm/cj-litellm.yaml"
+    [ -f "$cfg" ] && v="$(yq -r ".. | select(tag==\"!!str\") | select(test(\"os\\\\.environ/$NAME\")) | .")" && [ -n "$v" ] && { printf '%s' "${!NAME:-}"; return 0; }
+  fi
+
+  return 1
+}
