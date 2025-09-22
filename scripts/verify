@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail; . scripts/lib/hub-common
+for k in OPENROUTER_API_KEY OPENROUTER_KEY_R1_FREE OPENROUTER_KEY_GLOBAL; do
+  secret_get "$k" >/dev/null && echo "HUB ✅ $k" || echo "HUB ⚠︎ $k"
+done
