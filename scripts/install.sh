@@ -67,10 +67,10 @@ fi
 
 # Smokes
 say "Smokes…"
-./scripts/litellm-smoke || warn "LiteLLM smoke had issues (code-free lane)"
-./scripts/smoke-claude  || warn "Claude smoke skipped/failed (need ANTHROPIC_API_KEY)"
-./scripts/smoke-gemini  || warn "Gemini smoke skipped/failed (need GEMINI_API_KEY)"
-./scripts/smoke-codex   || warn "Codex smoke skipped/failed (uses code-free)"
+./scripts/install-codex-cli || echo "(warn) Could not auto-install codex CLI"
+./scripts/smoke-claude  || echo "(warn) Claude smoke skipped/failed (need ANTHROPIC_API_KEY)"
+./scripts/smoke-gemini  || echo "(warn) Gemini smoke skipped/failed (need GEMINI_API_KEY)"
+./scripts/smoke-codex   || echo "(warn) Codex smoke skipped/failed"
 
 # Optional Platform compose
 if [ -n "$PLATFORM_PATH" ]; then

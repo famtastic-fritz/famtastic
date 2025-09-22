@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
+# Native Codex wrapper — never touches routers
 set -euo pipefail
-HOST="${LITELLM_HOST:-127.0.0.1}"
-PORT="${LITELLM_PORT:-8089}"
-MODEL="${MODEL:-code-free}"   # ONLY the free lane
-if [ $# -gt 0 ]; then PROMPT="$*"; else PROMPT="$(cat)"; fi
-# ensure LiteLLM (repo-secrets) is up
-if ! curl -fsS "http://$HOST:$PORT/" >/dev/null 2>&1; then
-  ./scripts/litellm-serve >/tmp/litellm.out 2>&1 & echo $! >/tmp/litellm.pid
-  sleep 3
+has(){ command -v "$1" >/dev/null 2>&1; }
+has codex || { echo "ERR: codex CLI not installed. Run: ./scripts/install-codex-cli" >&2; exit 1; }
+
+PROMPT="${*:-}"
+if [ -z "$PROMPT" ]; then PROMPT="$(cat)"; fi
+
+# Try stable non-interactive shapes:
+# 1) codex exec "<prompt>"
+# 2) echo "<prompt>" | codex proto
+# 3) codex "<prompt>"  (interactive-forward fallback)
+if out="$(codex exec "$PROMPT" 2>/dev/null)"; then
+  printf "%s\n" "$out"
+elif out="$(printf "%s" "$PROMPT" | codex proto 2>/dev/null)"; then
+  printf "%s\n" "$out"
+else
+  codex "$PROMPT"
 fi
-curl -fsS -H "Content-Type: application/json" -X POST "http://$HOST:$PORT/v1/chat/completions" \
-  -d "$(printf '{"model":"%s","messages":[{"role":"user","content":%s}]}' "$MODEL" "$(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$PROMPT") )" \
-  | python3 - <<'PY'
-import sys, json
-j=json.load(sys.stdin)
-try:
-    print(j["choices"][0]["message"]["content"])
-except Exception:
-    print(json.dumps(j, indent=2))
-PY
-# stop if we started it
-if [ -f /tmp/litellm.pid ]; then kill "$(cat /tmp/litellm.pid)" >/dev/null 2>&1 || true; rm -f /tmp/litellm.pid; fi

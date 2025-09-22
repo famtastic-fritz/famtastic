@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-echo -n "Codex (code-free via LiteLLM) smoke… "
-out="$(MODEL=code-free ./scripts/codex-cli <<<"print a one-line python hello world" 2>/dev/null || true)"
-[ -n "$out" ] && echo "✅" || { echo "❌"; exit 1; }
+echo -n "Codex (native) smoke… "
+out="$(echo 'print a one-line python hello world' | ./scripts/codex-cli 2>/dev/null || true)"
+[ -n "$out" ] && echo "✅" || { echo "❌ (install/verify codex CLI)"; exit 1; }
