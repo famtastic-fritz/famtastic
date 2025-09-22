@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+HUB="${HUB:-$HOME/famtastic-agent-hub}"
+
+claim_litellm() {
+  local canon="$HUB/config/litellm/cj-litellm.yaml"
+  local rt_dir="${XDG_CONFIG_HOME:-$HOME/.config}/famtastic/agent-hub/litellm"
+  local rt="$rt_dir/cj-litellm.yaml"
+  mkdir -p "$(dirname "$canon")" "$rt_dir"
+  # known legacy locations
+  local cands=(
+    "${CJ_LITELLM_CONFIG:-}"
+    "${LITELLM_CONFIG:-}"
+    "$HOME/.config/litellm/cj-litellm.yaml"
+    "$HOME/.config/litellm/cj-litellm.yml"
+    "$HOME/.litellm/cj-litellm.yaml"
+    "$HOME/cj-router/cj-litellm.yaml"
+    "$HOME/cj-litellm.yaml"
+  )
+  local copied=0
+  for c in "${cands[@]}"; do
+    if [ -n "${c:-}" ] && [ -f "$c" ]; then
+      cp -f "$c" "$canon"; echo "[claim] migrated LiteLLM → $canon"; copied=1; break
+    fi
+  done
+  [ $copied -eq 1 ] || { [ -f "$canon" ] && echo "[claim] LiteLLM already canonical"; }
+  ln -snf "$canon" "$rt" 2>/dev/null || cp -f "$canon" "$rt"
+  grep -q 'CJ_LITELLM_CONFIG=' "$HOME/.zprofile" 2>/dev/null || printf '\nexport CJ_LITELLM_CONFIG="%s"\n' "$rt" >> "$HOME/.zprofile"
+  export CJ_LITELLM_CONFIG="$rt"
+  echo "[claim] runtime: $rt"
+}
+
+case "${1:-all}" in
+  litellm) claim_litellm ;;
+  all) claim_litellm ;;
+  *) echo "usage: scripts/config-claim [all|litellm]" >&2; exit 2 ;;
+esac

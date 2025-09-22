@@ -39,3 +39,6 @@ Examples (macOS Keychain):
 ## Catalog
 
 `agents/catalog.json` declares providers and agent adapters. Platform reads this via its pointers.
+
+## Config ownership (always in Hub)
+All configs for agents/tools/routers are **owned here** and versioned under `config/<component>/...`. Hub installs them to XDG runtime paths and manages env pointers. Secrets are repo‑encrypted with SOPS/age. See `docs/CONFIG_OWNERSHIP.md`.
