@@ -1,0 +1,19 @@
+model_list:
+  - model_name: code-free
+    litellm_params:
+      model: openrouter/deepseek/deepseek-r1-0528:free
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_KEY_R1_FREE
+  - model_name: code-default
+    litellm_params:
+      model: openrouter/anthropic/claude-3.5-sonnet
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_KEY_GLOBAL
+router_settings:
+  timeout: 60
+  num_retries: 2
+  fallback_strategy: simple-random
+general_settings:
+  master_key: cj-hub-secret
+logging:
+  level: INFO

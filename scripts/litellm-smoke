@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PORT="${LITELLM_PORT:-8089}"
+HOST="127.0.0.1"
+"$(dirname "$0")/litellm-serve" >/tmp/litellm.out 2>&1 & PID=$!
+sleep 4
+curl -fsS "http://$HOST:$PORT/" >/dev/null && echo "REST ✅ /" || { echo "REST ❌ /"; sed -n '1,200p' /tmp/litellm.out; kill $PID || true; exit 1; }
+curl -fsS "http://$HOST:$PORT/routes" >/dev/null 2>&1 && echo "REST ✅ /routes" || echo "REST ⚠︎ /routes skipped"
+curl -fsS -H "Content-Type: application/json" -X POST "http://$HOST:$PORT/v1/chat/completions" \
+  -d '{"model":"code-free","messages":[{"role":"user","content":"reply with: ok"}]}' \
+  >/dev/null && echo "CHAT ✅" || { echo "CHAT ❌"; sed -n '1,200p' /tmp/litellm.out; kill $PID || true; exit 1; }
+kill $PID >/dev/null 2>&1 || true
+echo "DONE ✅ LiteLLM smoke passed on :$PORT"

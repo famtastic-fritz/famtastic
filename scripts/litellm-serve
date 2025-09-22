@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+HOST="127.0.0.1"
+PORT="${LITELLM_PORT:-8089}"
+CFG="${CJ_LITELLM_CONFIG:-${LITELLM_CONFIG:-$HOME/.config/famtastic/agent-hub/litellm/cj-litellm.yaml}}"
+[ -f "$CFG" ] || { echo "missing config: $CFG" >&2; exit 2; }
+# export encrypted repo secrets -> env (Python only; avoids yq quoting)
+if command -v python3 >/dev/null 2>&1; then
+  eval "$(
+    python3 - <<'PY'
+import sys, yaml, subprocess, shlex, os
+p = subprocess.run(["sops","-d","secrets/agents.enc.yaml"], check=True, capture_output=True)
+data = yaml.safe_load(p.stdout) or {}
+for k,v in data.items():
+    v = "" if v is None else str(v)
+    print(f"export {k}={shlex.quote(v)}")
+PY
+  )"
+fi
+exec litellm --config "$CFG" --host "$HOST" --port "$PORT"
