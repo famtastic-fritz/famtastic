@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo -n "Claude (native) smoke… "
+out="$(MODEL=claude-3-5-sonnet-20240620 ./scripts/claude-cli <<<"say ok" 2>/dev/null || true)"
+[ -n "$out" ] && echo "✅" || { echo "❌"; exit 1; }

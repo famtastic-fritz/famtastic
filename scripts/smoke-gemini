@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo -n "Gemini (native) smoke… "
+out="$(MODEL=gemini-1.5-flash ./scripts/gemini-cli <<<"say ok" 2>/dev/null || true)"
+[ -n "$out" ] && echo "✅" || { echo "❌"; exit 1; }

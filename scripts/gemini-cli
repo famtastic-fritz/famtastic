@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. scripts/lib/hub-common 2>/dev/null || true
+GK="$(secret_get GEMINI_API_KEY || true)"
+[ -n "$GK" ] || { echo "ERR: GEMINI_API_KEY not set (repo SOPS preferred)"; exit 1; }
+export GEMINI_API_KEY="$GK"
+MODEL="${MODEL:-gemini-1.5-flash}"
+if [ $# > 0 ]; then PROMPT="$*"; else PROMPT="$(cat)"; fi
+python3 - "$MODEL" <<'PY'
+import sys, os, google.generativeai as genai
+model=sys.argv[1]
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+m=genai.GenerativeModel(model)
+r=m.generate_content(os.read(0,10_000_000).decode())
+print((getattr(r,"text",None) or "").strip())
+PY
