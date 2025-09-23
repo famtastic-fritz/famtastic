@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-. "$(dirname "$0")/../../scripts/lib/hub-common"
-
-
 TAG="${1:-latest-convo}"
-OPENROUTER_API_KEY="$(secret_get OPENROUTER_API_KEY || true)"
-export OPENROUTER_API_KEY
-
-
-# existing demo append (keep)
-PROV="$(basename "$(dirname "$0")")"
-DIR="$CJ_SOURCES_DIR/$PROV"; mkdir -p "$DIR"
-echo '{"role":"user","content":"stub from '"$PROV"'","ts":"'"$(date -u +%FT%TZ)"'","agent":"'"$PROV"'"}' >> "$DIR/$TAG.jsonl"
-echo "[$PROV] wrote demo line → $DIR/$TAG.jsonl"
+ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/claude"
+OUT="$ROOT/$TAG.jsonl"
+mkdir -p "$ROOT"
+# prompt comes from args or stdin
+if [ $# -gt 1 ]; then PROMPT="${*:2}"; else PROMPT="$(cat)"; fi
+[ -n "${PROMPT:-}" ] || PROMPT="say ok"
+# call native CLI
+RESP="$(printf "%s" "$PROMPT" | "$HOME/famtastic-agent-hub/scripts/claude-cli")"
+# append JSONL record
+TS="$(date -u +%FT%TZ)"
+printf '%s\n' "$(jq -c --null-input \
+  --arg t "$TS" --arg p "$PROMPT" --arg r "$RESP" --arg agent "claude" \
+  '{agent:$agent, at:$t, messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}] }')" >> "$OUT"
+echo "[claude:get] $TAG → $OUT (+1)"
