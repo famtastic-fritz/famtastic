@@ -1,0 +1,26 @@
+name: hub-ci
+on: [push, pull_request]
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq yamllint shellcheck
+          python3 -m pip install --user jsonschema
+      - name: ShellCheck
+        run: |
+          shellcheck -x scripts/**/*.sh scripts/* || true
+      - name: YAML lint
+        run: |
+          yamllint -s . || true
+      - name: Validate JSONL (if any)
+        run: |
+          find $HOME/.local/share/famtastic/agent-hub/sources -type f -name '*.jsonl' -print0 2>/dev/null | xargs -0 -r -n1 jq -c . >/dev/null || true
+      - name: SOPS guard
+        run: |
+          if git grep -nE '(sk-|AIza|AKIA|xoxb-|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY)' -- ':!secrets/agents.enc.yaml' ; then
+            echo 'Potential plaintext secrets detected' && exit 1
+          fi

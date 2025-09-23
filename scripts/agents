@@ -1,125 +1,81 @@
 #!/usr/bin/env bash
 set -euo pipefail
+ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 cmd="${1:-help}"; shift || true
 
 has(){ command -v "$1" >/dev/null 2>&1; }
-die(){ echo "ERROR: $*" >&2; exit 1; }
-
-_guess_cfg(){
-  [ -n "${CJ_LITELLM_CONFIG:-}" ] && [ -f "$CJ_LITELLM_CONFIG" ] && { echo "$CJ_LITELLM_CONFIG"; return; }
-  [ -n "${LITELLM_CONFIG:-}" ] && [ -f "$LITELLM_CONFIG" ] && { echo "$LITELLM_CONFIG"; return; }
-  for p in \
-    "$HOME/.config/litellm/cj-litellm.yaml" \
-    "$HOME/.config/litellm/cj-litellm.yml" \
-    "${XDG_CONFIG_HOME:-$HOME/.config}/litellm/cj-litellm.yaml" \
-    "${XDG_CONFIG_HOME:-$HOME/.config}/litellm/cj-litellm.yml" \
-    "$HOME/cj-litellm.yaml" \
-    "$PWD/cj-litellm.yaml"
-  do [ -f "$p" ] && { echo "$p"; return; }; done
-  find "$HOME" -maxdepth 6 -type f \( -name 'cj-litellm.yaml' -o -name 'cj-litellm.yml' \) 2>/dev/null | head -n1
+safe_yaml(){ python3 - <<PY
+import sys, yaml
+print(yaml.safe_dump(yaml.safe_load(sys.stdin.read()) or {}, sort_keys=False))
+PY
 }
 
-_extract_envvars(){
-  local cfg="$1"
-  # Use grep since it's most reliable
-  grep -Eo 'os\.environ/[A-Za-z0-9_]+' "$cfg" | awk -F/ '{print $2}' | sort -u
-}
+ensure_sops(){ [ -n "${SOPS_AGE_KEY_FILE:-}" ] || { echo "SOPS_AGE_KEY_FILE not set"; exit 1; }; }
 
-ensure_tools(){
-  for t in sops age-keygen; do has "$t" || die "Missing $t. Install: brew install age sops (or apt)."; done
-}
-
-ensure_age(){
-  mkdir -p "$HOME/.config/famtastic/agent-hub/keys"
-  local key="$HOME/.config/famtastic/agent-hub/keys/age.txt"
-  [ -f "$key" ] || age-keygen -o "$key" >/dev/null 2>&1
-  grep -q '^# public key:' "$key" || die "age key not valid at $key"
-  awk -F': ' '/^# public key:/{print $2}' "$key"
-}
-
-ensure_sops_yaml(){
-  local pub="$1"
-  if [ ! -f .sops.yaml ]; then
-    cat > .sops.yaml <<YAML
-creation_rules:
-  - path_regex: secrets/.*\.enc\.(ya?ml|json)$
-    encrypted_regex: '^(OPENROUTER_|DYAD_|data|stringData)'
-    age:
-      - $pub
-YAML
+action_repo_secrets(){
+  ensure_sops
+  tmp="$(mktemp)"
+  if [ -f secrets/agents.enc.yaml ]; then
+    sops -d secrets/agents.enc.yaml > "$tmp"
   else
-    # ensure recipient present
-    grep -q "$pub" .sops.yaml || awk -v key="$pub" '
-      {print}
-      /age:/ {print "      - " key; key=""}
-    ' .sops.yaml > .sops.yaml.tmp && mv .sops.yaml.tmp .sops.yaml
+    printf '---\n' > "$tmp"
   fi
+  # merge env keys if present
+  python3 - "$tmp" <<'PY'
+import os, sys, yaml
+p=sys.argv[1]
+with open(p,'r') as f:
+    data=yaml.safe_load(f) or {}
+for k in ("ANTHROPIC_API_KEY","GEMINI_API_KEY"):
+    v=os.environ.get(k)
+    if v:
+        data[k]=v
+with open(p,'w') as f:
+    yaml.safe_dump(data,f, sort_keys=False)
+PY
+  sops -e --input-type yaml --output-type yaml "$tmp" > secrets/agents.enc.yaml
+  rm -f "$tmp"
+  echo "[secrets] repo‑encrypted secrets updated (non‑interactive)"
 }
 
-upsert_secret(){
-  local file="secrets/agents.enc.yaml" key="$1" val="$2"
-  [ -f "$file" ] || printf "OPENROUTER_API_KEY: \"\"\n" > "$file"
-  # decrypt to temp, modify, re-encrypt
-  local tmp="$(mktemp)"; sops -d "$file" > "$tmp" 2>/dev/null || cp "$file" "$tmp"
-  if grep -q "^$key:" "$tmp"; then
-    # replace value using sed
-    sed -i.bak "s/^$key:.*/$key: \"$val\"/" "$tmp" && rm -f "$tmp.bak"
-  else
-    printf "%s: \"%s\"\n" "$key" "$val" >> "$tmp"
-  fi
-  sops -e -i "$tmp"
-  mv "$tmp" "$file"
+action_rotate(){
+  ensure_sops
+  key="${1:-}"; val="${2:-}"
+  [ -n "$key" ] && [ -n "$val" ] || { echo "usage: scripts/agents rotate <KEY> <VALUE>"; exit 2; }
+  tmp="$(mktemp)"; sops -d secrets/agents.enc.yaml > "$tmp" 2>/dev/null || printf '---\n' > "$tmp"
+  python3 - "$tmp" "$key" "$val" <<'PY'
+import sys, yaml
+p, k, v = sys.argv[1:4]
+with open(p) as f: data = yaml.safe_load(f) or {}
+data[k]=v
+with open(p,'w') as f: yaml.safe_dump(data,f, sort_keys=False)
+PY
+  sops -e --input-type yaml --output-type yaml "$tmp" > secrets/agents.enc.yaml
+  rm -f "$tmp"
+  echo "[secrets] rotated $key"
 }
 
-prompt_secret(){
-  local name="$1" current="${!name:-}"
-  if [ -z "$current" ] && command -v security >/dev/null 2>&1; then
-    current="$(security find-generic-password -a "$USER" -s "agent-hub:$name" -w 2>/dev/null || true)"
-  fi
-  if [ -z "$current" ]; then
-    read -rsp "Enter value for $name (won't echo): " current; echo
-    command -v security >/dev/null 2>&1 && security add-generic-password -a "$USER" -s "agent-hub:$name" -w "$current" -U >/dev/null 2>&1 || true
-  fi
-  echo "$current"
+action_run(){
+  agent="${1:-}"; tag="${2:-latest-convo}"; shift 2 || true
+  prompt="$*"; [ -n "$prompt" ] || prompt="$(cat)"
+  case "$agent" in
+    claude)  printf "%s" "$prompt" | "$ROOT/scripts/claude-cli" | "$ROOT/scripts/log-jsonl" "claude" "$tag" ;;
+    gemini)  printf "%s" "$prompt" | "$ROOT/scripts/gemini-cli" | "$ROOT/scripts/log-jsonl" "gemini" "$tag" ;;
+    codex)   printf "%s" "$prompt" | "$ROOT/scripts/codex-cli"  | "$ROOT/scripts/log-jsonl" "codex"  "$tag" ;;
+    *) echo "usage: scripts/agents run {claude|gemini|codex} <tag> \"prompt…\""; exit 2;;
+  esac
 }
 
 case "$cmd" in
-  repo-secrets)
-    set -x  # Enable debug mode
-    ensure_tools || die "Tool check failed"
-    cfg="$(_guess_cfg)"; [ -n "$cfg" ] || die "Could not find cj-litellm.yaml"
-    echo "[repo-secrets] Using LiteLLM config: $cfg"
-
-    vars="$(_extract_envvars "$cfg" | tr -s '\n' '\n')"
-    [ -n "$vars" ] || die "No os.environ/VAR entries found in $cfg"
-    echo "[repo-secrets] Found variables: $vars"
-
-    pub="$(ensure_age)" || die "Age key generation failed"
-    echo "[repo-secrets] age public key: $pub"
-    ensure_sops_yaml "$pub" || die "SOPS YAML creation failed"
-
-    mkdir -p secrets
-    for v in $vars; do
-      echo "[repo-secrets] Processing variable: $v"
-      val="$(prompt_secret "$v")" || die "Failed to get value for $v"
-      [ -z "$val" ] && die "Empty value for $v"
-      upsert_secret "$v" "$val" || die "Failed to upsert $v"
-      echo "[repo-secrets] wrote $v → secrets/agents.enc.yaml (encrypted)"
-    done
-
-    # verify decryption works
-    sops -d secrets/agents.enc.yaml >/dev/null || die "SOPS decrypt failed"
-    echo "[repo-secrets] SOPS decrypt OK"
-
-    # friendly git hints
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-      git add .sops.yaml secrets/agents.enc.yaml
-      echo "[repo-secrets] Staged .sops.yaml and secrets/agents.enc.yaml"
-      echo "Commit with: git commit -m 'chore(hub): repo-encrypted secrets from LiteLLM config'"
-    fi
-    ;;
-
-  help|*)
-    echo "Usage: scripts/agents repo-secrets     # create/update encrypted repo secrets from cj-litellm.yaml"
-    ;;
+  repo-secrets) action_repo_secrets ;;
+  rotate)       action_rotate "$@" ;;
+  run)          action_run "$@" ;;
+  *) cat <<USAGE
+Usage: scripts/agents {repo-secrets|rotate|run}
+  repo-secrets           Merge ANTHROPIC_API_KEY/GEMINI_API_KEY from env → encrypted secrets
+  rotate <KEY> <VALUE>   Set/rotate a single key into encrypted secrets
+  run <agent> <tag> "…"  Run native CLI and append JSONL in one go
+USAGE
+     ;;
 esac

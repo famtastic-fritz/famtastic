@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-. "$(dirname "$0")/../../scripts/lib/hub-common"
-
-
-tag="${1:-latest-convo}"
-echo "[set-gemini] implement publish back to Gemini if desired (reading $CJ_SOURCES_DIR/gemini/$tag.jsonl)"
+TAG="${1:-latest-convo}"; SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/gemini/$TAG.jsonl"
+[ -f "$SRC" ] || { echo "[gemini:set] no source for $TAG"; exit 0; }
+echo "[gemini:set] (stub) would publish back from $SRC"

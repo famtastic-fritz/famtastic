@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+AGENT="${1:?agent}"; TAG="${2:?tag}"; shift 2
+PROMPT="${PROMPT:-}"; [ -n "$PROMPT" ] || PROMPT="$(cat /dev/stdin)"
+ROOT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/$AGENT"
+mkdir -p "$ROOT_DIR"; OUT="$ROOT_DIR/$TAG.jsonl"
+TS="$(date -u +%FT%TZ)"; HOST="$(hostname -s 2>/dev/null || echo host)"
+# read defaults
+MODEL=$(yq -r ".${AGENT}.model" config/agents/defaults.yaml 2>/dev/null || echo "unknown")
+# simple id hash (prompt+ts)
+ID=$(printf '%s' "$PROMPT$TS$AGENT" | shasum -a 256 | awk '{print $1}')
+# build record; response content was piped into PROMPT var earlier by caller
+RESP="$PROMPT" # in this usage, PROMPT holds *response* (already piped)
+# write a single compact JSON line with provenance
+jq -c -n --arg id "$ID" --arg at "$TS" --arg a "$AGENT" --arg tag "$TAG" \
+      --arg host "$HOST" --arg model "$MODEL" \
+      --arg p "${ORIG_PROMPT:-unknown}" --arg r "$RESP" \
+  '{id:$id,at:$at,agent:$a,host:$host,tag:$tag,model:$model, messages:[{role:"user",content:$p},{role:"assistant",content:$r}]}' \
+  >> "$OUT"
+echo "[log] $AGENT → $OUT (+1)"

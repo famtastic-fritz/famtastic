@@ -1,20 +1,9 @@
 #!/usr/bin/env bash
-# Native Codex wrapper — never touches routers
 set -euo pipefail
 has(){ command -v "$1" >/dev/null 2>&1; }
 has codex || { echo "ERR: codex CLI not installed. Run: ./scripts/install-codex-cli" >&2; exit 1; }
-
-PROMPT="${*:-}"
-if [ -z "$PROMPT" ]; then PROMPT="$(cat)"; fi
-
-# Try stable non-interactive shapes:
-# 1) codex exec "<prompt>"
-# 2) echo "<prompt>" | codex proto
-# 3) codex "<prompt>"  (interactive-forward fallback)
-if out="$(codex exec "$PROMPT" 2>/dev/null)"; then
-  printf "%s\n" "$out"
-elif out="$(printf "%s" "$PROMPT" | codex proto 2>/dev/null)"; then
-  printf "%s\n" "$out"
-else
-  codex "$PROMPT"
-fi
+PROMPT="${*:-}"; [ -n "$PROMPT" ] || PROMPT="$(cat)"
+# Prefer non-interactive exec; fallback to proto; else pass-through
+if out="$(codex exec "$PROMPT" 2>/dev/null)"; then printf "%s\n" "$out"
+elif out="$(printf "%s" "$PROMPT" | codex proto 2>/dev/null)"; then printf "%s\n" "$out"
+else codex "$PROMPT"; fi

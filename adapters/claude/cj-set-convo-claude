@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-. "$(dirname "$0")/../../scripts/lib/hub-common"
-
-
-tag="${1:-latest-convo}"
-echo "[set-claude] implement publish back to Claude if desired (reading $CJ_SOURCES_DIR/claude/$tag.jsonl)"
+TAG="${1:-latest-convo}"; SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/claude/$TAG.jsonl"
+[ -f "$SRC" ] || { echo "[claude:set] no source for $TAG"; exit 0; }
+echo "[claude:set] (stub) would publish back from $SRC"

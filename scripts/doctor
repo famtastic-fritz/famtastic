@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+fail=0
+ok(){  printf "\033[32m✔ %s\033[0m\n" "$*"; }
+warn(){ printf "\033[33m! %s\033[0m\n" "$*"; }
+err(){ printf "\033[31m✖ %s\033[0m\n" "$*"; fail=1; }
+
+# 1) SOPS decrypt check
+sops -d secrets/agents.enc.yaml >/dev/null 2>&1 && ok "SOPS decrypt" || err "SOPS decrypt failed"
+
+# 2) JSONL sanity (no process substitution; use a temp list)
+SRCROOT="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources"
+[ -d "$SRCROOT" ] || SRCROOT=/dev/null
+LIST="$(mktemp)"; find "$SRCROOT" -type f -name '*.jsonl' -print0 2>/dev/null > "$LIST" || true
+while IFS= read -r -d '' f; do
+  jq -c . "$f" >/dev/null 2>&1 || err "Bad JSON: $f"
+done < "$LIST"
+rm -f "$LIST"
+
+[ $fail -eq 0 ] || exit 1

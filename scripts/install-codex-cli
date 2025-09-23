@@ -2,18 +2,8 @@
 set -euo pipefail
 has(){ command -v "$1" >/dev/null 2>&1; }
 ok(){ printf "\033[32m✔ %s\033[0m\n" "$*"; }
-warn(){ printf "\033[33m! %s\033[0m\n" "$*" >&2; }
 die(){ printf "\033[31m✖ %s\033[0m\n" "$*" >&2; exit 1; }
-
-if has codex; then
-  ver="$(codex --version 2>/dev/null | head -n1 || echo unknown)"
-  ok "codex present ($ver)"
-  exit 0
-fi
-
-if has brew; then
-  brew list codex >/dev/null 2>&1 || brew install codex
-  ok "installed codex via Homebrew"
-else
-  die "Homebrew not found; install codex CLI manually then re-run"
-fi
+if has codex; then ok "codex present: $(codex --version 2>/dev/null | head -n1)"; exit 0; fi
+has brew || die "Homebrew required to install codex"
+brew install codex
+ok "installed codex"

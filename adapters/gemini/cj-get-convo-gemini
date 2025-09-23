@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-. "$(dirname "$0")/../../scripts/lib/hub-common"
-
-
 TAG="${1:-latest-convo}"
-GEMINI_API_KEY="$(secret_get GEMINI_API_KEY || true)"
-export GEMINI_API_KEY
-
-
-# existing demo append (keep)
-PROV="$(basename "$(dirname "$0")")"
-DIR="$CJ_SOURCES_DIR/$PROV"; mkdir -p "$DIR"
-echo '{"role":"user","content":"stub from '"$PROV"'","ts":"'"$(date -u +%FT%TZ)"'","agent":"'"$PROV"'"}' >> "$DIR/$TAG.jsonl"
-echo "[$PROV] wrote demo line → $DIR/$TAG.jsonl"
+ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/gemini"
+OUT="$ROOT/$TAG.jsonl"; mkdir -p "$ROOT"
+if [ $# -gt 1 ]; then PROMPT="${*:2}"; else PROMPT="$(cat)"; fi
+[ -n "${PROMPT:-}" ] || PROMPT="say ok"
+RESP="$(printf "%s" "$PROMPT" | "$HOME/famtastic-agent-hub/scripts/gemini-cli")"
+TS="$(date -u +%FT%TZ)"
+printf '%s\n' "$(jq -c --null-input --arg t "$TS" --arg p "$PROMPT" --arg r "$RESP" --arg a "gemini" \
+  '{agent:$a, at:$t, messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}] }')" >> "$OUT"
+echo "[gemini:get] $TAG → $OUT (+1)"
