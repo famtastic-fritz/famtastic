@@ -19,3 +19,11 @@ ts=$(date -u +"%Y%m%d-%H%M")
 echo "$output" | awk -v i=0 '/---/{i++} i==2' | tail -n +2 > "$CJ_DATA_ROOT/convos/summaries/${tag}__${ts}.md"
 
 echo "[reconcile] $tag → convos/"
+
+# Auto-sync hook (v0.3)
+echo "[auto-sync] running chatgpt-local-sync for $tag"
+if "$(dirname "$0")/chatgpt-local-sync" "$tag"; then
+  echo "[auto-sync] $tag synced successfully"
+else
+  echo "[auto-sync] warning: sync failed for $tag (reconcile still valid)"
+fi

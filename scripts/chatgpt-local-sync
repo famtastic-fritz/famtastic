@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TAG="${1:-latest-convo}"
+
+SYNCROOT="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/sync/chatgpt/$TAG"
+mkdir -p "$SYNCROOT"
+rm -rf "$SYNCROOT"/* || true
+
+CANON="convos/canonical/$TAG.json"
+MANIFEST="convos/manifests/$TAG.manifest.json"
+SUMMARY=$(ls -t convos/summaries/${TAG}__*.md 2>/dev/null | head -n1 || true)
+
+if [ ! -f "$CANON" ] || [ ! -f "$MANIFEST" ] || [ -z "$SUMMARY" ]; then
+  echo "[error] missing artifacts for $TAG"; exit 4;
+fi
+
+cp "$CANON" "$SYNCROOT/"
+cp "$MANIFEST" "$SYNCROOT/"
+cp "$SUMMARY" "$SYNCROOT/"
+
+# Generate refresh-ready doc
+cat > "$SYNCROOT/refresh-ready.md" <<MD
+---
+Title: FAMtastic Sync Export — $TAG
+Generated: $(date -u +%FT%TZ)
+Source: Local-Sync v0.2
+---
+
+## Canonical Conversation
+\`\`\`json
+$(cat "$CANON")
+\`\`\`
+
+## Manifest
+\`\`\`json
+$(cat "$MANIFEST")
+\`\`\`
+
+## Summary
+$(cat "$SUMMARY")
+MD
+
+echo "[local-sync] $TAG synced to $SYNCROOT"

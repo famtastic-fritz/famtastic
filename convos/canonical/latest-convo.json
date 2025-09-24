@@ -1,0 +1,28 @@
+{
+  "id": "latest-convo-20250923",
+  "created": "2025-09-23T16:00:00Z",
+  "agents": ["claude", "gemini", "codex", "tts"],
+  "status": "active",
+  "interactions": [
+    {
+      "timestamp": "2025-09-23T16:00:00Z",
+      "agent": "claude",
+      "type": "summary_generation",
+      "input": "Generate hub status summary",
+      "output": "FAMtastic Agent Hub Summary generated"
+    },
+    {
+      "timestamp": "2025-09-23T16:15:00Z",
+      "agent": "tts",
+      "type": "voice_synthesis",
+      "input": "Hub summary text",
+      "output": "Audio file generated with French accent"
+    }
+  ],
+  "metrics": {
+    "total_interactions": 15,
+    "successful_operations": 14,
+    "failed_operations": 1,
+    "average_response_time": "2.3s"
+  }
+}

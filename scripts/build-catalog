@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG="$ROOT/config/agents/defaults.yaml"
+OUTDIR="$ROOT/agents"
+OUTFILE="$OUTDIR/catalog.json"
+
+mkdir -p "$OUTDIR"
+
+yq -o=json "$CONFIG" | jq '
+  { agents: [
+      {name:"claude", model:.claude.model},
+      {name:"gemini", model:.gemini.model},
+      {name:"codex",  model:.codex.model}
+  ] }
+' > "$OUTFILE"
+
+echo "[build-catalog] wrote $OUTFILE"

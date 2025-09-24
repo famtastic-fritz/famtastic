@@ -1,0 +1,8 @@
+{
+  "site_name": "POC Site",
+  "business_type": "demo",
+  "colors": ["blue", "white"],
+  "pages": ["home"],
+  "features": ["headline", "contact_form"],
+  "tone": "simple and clear"
+}

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+TAG="${1:-latest-convo}"
+FILE="convos/summaries/${TAG}__*.md"
+LATEST=$(ls -t $FILE 2>/dev/null | head -n1 || true)
+
+if [ -z "$LATEST" ]; then
+  echo "[error] no summary for $TAG"; exit 4;
+fi
+
+CONTENT=$(cat "$LATEST")
+
+# Check if OPENAI_API_KEY is set
+if [ -z "${OPENAI_API_KEY:-}" ]; then
+  echo "[error] OPENAI_API_KEY environment variable not set"; exit 3;
+fi
+
+# Push to ChatGPT API
+echo "[sync] sending $LATEST → ChatGPT"
+RESP=$(curl -s https://api.openai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d @- <<JSON
+{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {"role": "system", "content": "You are ChatGPT sync. Store this summary for context."},
+    {"role": "user", "content": $(echo "$CONTENT" | jq -Rs .)}
+  ]
+}
+JSON
+)
+
+if echo "$RESP" | grep -q '"id"'; then
+  echo "[sync] success: $TAG sent to ChatGPT"
+else
+  echo "[sync] failed: $RESP"; exit 5;
+fi

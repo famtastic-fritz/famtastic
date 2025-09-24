@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+TAG="${1:-latest-tts}"
+TEXT="${2:-Hello Fritz, the Hub is online and ready.}"
+ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/tts"
+mkdir -p "$ROOT"
+
+OUTDIR="$HOME/famtastic/outputs/audio"
+mkdir -p "$OUTDIR"
+OUTFILE="$OUTDIR/$TAG.wav"
+
+# Run Coqui TTS
+source "$HOME/famtastic/venvs/tts/bin/activate"
+tts --model_name tts_models/multilingual/multi-dataset/your_tts \
+    --text "$TEXT" \
+    --speaker_idx "female-en-5" \
+    --language_idx "en" \
+    --out_path "$OUTFILE"
+
+# Log JSONL
+TS="$(date -u +%FT%TZ)"
+ID=$(printf '%s' "$TEXT$TS" | shasum -a 256 | awk '{print $1}')
+jq -c -n --arg id "$ID" --arg at "$TS" --arg a "tts" --arg tag "$TAG" \
+  --arg text "$TEXT" --arg out "$OUTFILE" \
+  '{id:$id,at:$at,agent:$a,tag:$tag,messages:[{role:"user",content:$text}],outputs:{audio:$out}}' \
+  >> "$ROOT/$TAG.jsonl"
+
+echo "[tts] $OUTFILE generated + logged"

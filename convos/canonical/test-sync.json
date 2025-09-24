@@ -1,0 +1,23 @@
+{
+  "id": "test-convo-20250923",
+  "created": "2025-09-23T17:21:00Z",
+  "agents": [
+    "chatgpt",
+    "claude"
+  ],
+  "status": "active",
+  "interactions": [
+    {
+      "timestamp": "2025-09-23T17:21:00Z",
+      "agent": "chatgpt",
+      "type": "two_way_sync_test",
+      "input": "Testing JSON ingestion capability",
+      "output": "Successfully ingested canonical conversation data"
+    }
+  ],
+  "metrics": {
+    "total_interactions": 1,
+    "successful_operations": 1,
+    "failed_operations": 0
+  }
+}

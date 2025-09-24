@@ -1,0 +1,21 @@
+{
+  "manifest_version": "1.0",
+  "conversation_id": "site-fritz-fitness",
+  "generated_at": "2025-09-23T11:45:00Z",
+  "artifacts": {
+    "canonical": "convos/canonical/site-fritz-fitness.json",
+    "summary": "convos/summaries/site-fritz-fitness__20250923-1100.md",
+    "repository": "https://github.com/fritz/fitness-site",
+    "deployment": "https://fritz-fitness.com"
+  },
+  "dependencies": {
+    "scripts": ["claude-cli", "codex-cli"],
+    "models": ["claude-sonnet-4", "codex"],
+    "frameworks": ["react", "node.js", "mongodb"]
+  },
+  "metadata": {
+    "tags": ["fitness", "website", "react", "client-project"],
+    "priority": "medium",
+    "retention": "1-year"
+  }
+}

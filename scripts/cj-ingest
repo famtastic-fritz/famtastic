@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TAG="$1"
+TYPE="$2"
+
+if [ -z "$TAG" ] || [ -z "$TYPE" ]; then
+  echo "Usage: cj-ingest <tag> <type>  (type=md|json)"
+  exit 1
+fi
+
+case "$TYPE" in
+  md)
+    TARGET="docs/${TAG}.draft.md"
+    mkdir -p docs
+    echo "[cj-ingest] Paste your markdown, CTRL+D to finish"
+    cat > "$TARGET"
+    echo "[ingest] markdown → $TARGET"
+    ;;
+  json)
+    TARGET="convos/canonical/${TAG}.json"
+    mkdir -p convos/canonical
+    echo "[cj-ingest] Paste your JSON, CTRL+D to finish"
+    cat > "$TARGET"
+    echo "[ingest] json → $TARGET"
+    ;;
+  *)
+    echo "[error] unknown type: $TYPE" >&2
+    exit 2
+    ;;
+esac
+
+# Auto-promotion rules
+if [[ "$TAG" == resume-* || "$TAG" == job-* || "$TAG" == site-* || "$TAG" == project-* || "$TAG" == meeting-* || "$TAG" == notes-* ]]; then
+  if [ "$TYPE" == "md" ]; then
+    echo "[auto-promote] trusted pattern → promoting $TAG"
+    "$(dirname "$0")/cj-promote" "$TAG"
+  fi
+
+  # Auto-workflow triggers
+  case "$TAG" in
+    resume-*|job-*)
+      echo "[auto-workflow] orchestrator-resume running for $TAG"
+      "$(dirname "$0")/orchestrator-resume" "$TAG" || true
+      ;;
+    site-*|project-*)
+      echo "[auto-workflow] orchestrator-site running for $TAG"
+      "$(dirname "$0")/orchestrator-site" "$TAG" || true
+      ;;
+    meeting-*|notes-*)
+      echo "[auto-workflow] no workflow (notes only)"
+      ;;
+  esac
+else
+  echo "[safety] untrusted pattern, staying as draft"
+fi
+
+# Log ingest
+LOGROOT="$HOME/.local/share/famtastic/agent-hub/sources/chatgpt"
+mkdir -p "$LOGROOT"
+UUID=$(uuidgen)
+TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "{\"id\":\"$UUID\",\"at\":\"$TS\",\"agent\":\"chatgpt\",\"tag\":\"$TAG\",\"action\":\"ingest\",\"file\":\"$TARGET\"}" >> "$LOGROOT/$TAG.jsonl"
+
+exit 0

@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# fam-hub — Unified CLI for FAMtastic Agent Hub
+
+set -euo pipefail
+
+CMD="${1:-help}"
+SUBCMD="${2:-}"
+
+case "$CMD" in
+  convo)
+    case "$SUBCMD" in
+      reconcile) shift 2; scripts/cj-reconcile-convo "$@" ;;
+      *) echo "Usage: fam-hub convo {reconcile} <tag>" ;;
+    esac
+    ;;
+
+  ingest)
+    TAG="${2:-}"; TYPE="${3:-}"
+    if [[ -z "$TAG" || -z "$TYPE" ]]; then
+      echo "Usage: fam-hub ingest <tag> {md|json}"
+      exit 1
+    fi
+    shift 3
+    scripts/cj-ingest "$TAG" "$TYPE" "$@"
+    ;;
+
+  sync)
+    TAG="${2:-latest-convo}"
+    shift 2 || true
+    scripts/chatgpt-local-sync "$TAG" "$@"
+    ;;
+
+  agent)
+    AGENT="${2:-}"; TAG="${3:-}"
+    if [[ -z "$AGENT" || -z "$TAG" ]]; then
+      echo "Usage: fam-hub agent run <agent> <tag>"
+      exit 1
+    fi
+    shift 3
+    scripts/agents run "$AGENT" "$TAG" "$@"
+    ;;
+
+  orchestrator)
+    TYPE="${2:-}"; TAG="${3:-}"
+    if [[ -z "$TYPE" || -z "$TAG" ]]; then
+      echo "Usage: fam-hub orchestrator {resume|site|job} <tag>"
+      exit 1
+    fi
+    shift 3
+    case "$TYPE" in
+      resume) scripts/orchestrator-resume "$TAG" "$@" ;;
+      site) scripts/orchestrator-site "$TAG" "$@" ;;
+      job) scripts/orchestrator-job "$TAG" "$@" ;;
+      *) echo "Unknown orchestrator type: $TYPE" ;;
+    esac
+    ;;
+
+  tts)
+    TAG="${2:-latest-convo}"
+    shift 2 || true
+    scripts/tts-agent "$TAG" "$@"
+    ;;
+
+  promote)
+    TAG="${2:-}"
+    if [[ -z "$TAG" ]]; then
+      echo "Usage: fam-hub promote <tag>"
+      exit 1
+    fi
+    shift 2
+    scripts/cj-promote "$TAG" "$@"
+    ;;
+
+  *)
+    cat <<EOF
+fam-hub — Unified CLI for FAMtastic Agent Hub
+
+Usage:
+  fam-hub convo reconcile <tag>                # Reconcile conversation
+  fam-hub ingest <tag> {md|json}              # Ingest ChatGPT → Hub
+  fam-hub sync [tag]                          # Sync bundle (default latest-convo)
+  fam-hub agent run <agent> <tag>             # Run specific agent on a tag
+  fam-hub orchestrator {resume|site|job} <tag> # Run orchestrator
+  fam-hub tts [tag]                           # Generate speech from summary
+  fam-hub promote <tag>                       # Promote draft to final
+
+Examples:
+  fam-hub convo reconcile my-project          # Reconcile project conversation
+  fam-hub ingest resume-notes md              # Ingest markdown notes
+  fam-hub sync my-project                     # Create sync bundle
+  fam-hub orchestrator resume job-amazon      # Generate tailored resume
+  fam-hub tts job-amazon                      # Read summary aloud
+
+Commands:
+  convo        Conversation management
+  ingest       Content ingestion from ChatGPT
+  sync         Bundle creation for ChatGPT
+  agent        Direct agent execution
+  orchestrator Multi-agent workflows
+  tts          Text-to-speech generation
+  promote      File promotion utilities
+
+EOF
+    ;;
+esac

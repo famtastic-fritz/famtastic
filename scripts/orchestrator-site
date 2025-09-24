@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+TAG="$1"
+echo "[site-orchestrator] building site for $TAG... (stub)"
+
+# Future implementation:
+# - Parse site requirements from docs/$TAG.md
+# - Generate site structure
+# - Deploy to hosting platform
+# - Log to sources/site/$TAG.jsonl
+
+exit 0

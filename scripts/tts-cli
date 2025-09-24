@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# FAMtastic TTS Agent v0.1
+# Zero-dependencies text-to-speech with French/Creole accent support
+
+# Environment
+VENV_PATH="$HOME/famtastic/venvs/tts"
+OUTPUTS_DIR="$HOME/famtastic/outputs/audio"
+LOGS_DIR="$HOME/famtastic/logs"
+LOG_FILE="$LOGS_DIR/tts-$(date +%Y%m%d).jsonl"
+
+# Default parameters
+DEFAULT_MODEL="tts_models/multilingual/multi-dataset/your_tts"
+DEFAULT_SPEAKER="female-en-5"
+DEFAULT_LANGUAGE="fr-fr"
+
+# Initialize directories
+mkdir -p "$OUTPUTS_DIR" "$LOGS_DIR"
+
+# Log interaction start
+log_entry() {
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    local entry='{"timestamp":"'$timestamp'","agent":"tts","event":"'$1'","data":'$2'}'
+    echo "$entry" >> "$LOG_FILE"
+}
+
+# Show usage
+usage() {
+    cat << EOF
+Usage: $0 [OPTIONS] --text "your text here"
+
+Options:
+  --text TEXT        Text to synthesize (required)
+  --out PATH         Output file path (default: auto-generated)
+  --speaker SPEAKER  Speaker ID (default: $DEFAULT_SPEAKER)
+  --language LANG    Language code (default: $DEFAULT_LANGUAGE)
+  --model MODEL      TTS model (default: $DEFAULT_MODEL)
+  --help             Show this help
+
+Examples:
+  $0 --text "Bonjou Fritz, Hub la pare pou li."
+  $0 --text "Hello world" --speaker "male-en-2" --language "en"
+  $0 --text "Olá mundo" --language "pt-br" --out ~/custom.wav
+
+Available speakers: female-en-5, male-en-2, female-pt-4, male-pt-3
+Available languages: en, fr-fr, pt-br
+EOF
+}
+
+# Parse arguments
+TEXT=""
+OUT_PATH=""
+SPEAKER="$DEFAULT_SPEAKER"
+LANGUAGE="$DEFAULT_LANGUAGE"
+MODEL="$DEFAULT_MODEL"
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --text)
+            TEXT="$2"
+            shift 2
+            ;;
+        --out)
+            OUT_PATH="$2"
+            shift 2
+            ;;
+        --speaker)
+            SPEAKER="$2"
+            shift 2
+            ;;
+        --language)
+            LANGUAGE="$2"
+            shift 2
+            ;;
+        --model)
+            MODEL="$2"
+            shift 2
+            ;;
+        --help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+# Validate required parameters
+if [[ -z "$TEXT" ]]; then
+    echo "Error: --text is required"
+    usage
+    exit 1
+fi
+
+# Generate output path if not provided
+if [[ -z "$OUT_PATH" ]]; then
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    SAFE_TEXT=$(echo "$TEXT" | tr ' ' '_' | tr -cd '[:alnum:]_-' | cut -c1-20)
+    OUT_PATH="$OUTPUTS_DIR/tts-${TIMESTAMP}-${SAFE_TEXT}.wav"
+fi
+
+# Ensure output directory exists
+mkdir -p "$(dirname "$OUT_PATH")"
+
+# Log request
+log_entry "request" '{"text":"'"$TEXT"'","speaker":"'"$SPEAKER"'","language":"'"$LANGUAGE"'","model":"'"$MODEL"'","output":"'"$OUT_PATH"'"}'
+
+# Check if virtual environment exists
+if [[ ! -d "$VENV_PATH" ]]; then
+    echo "Error: TTS virtual environment not found at $VENV_PATH"
+    echo "Please run the TTS installation script first."
+    log_entry "error" '{"message":"Virtual environment not found","path":"'"$VENV_PATH"'"}'
+    exit 1
+fi
+
+# Activate virtual environment and run TTS
+echo "Generating speech..."
+echo "Text: $TEXT"
+echo "Speaker: $SPEAKER"
+echo "Language: $LANGUAGE"
+echo "Output: $OUT_PATH"
+
+START_TIME=$(date +%s)
+
+# Run TTS with error handling
+if source "$VENV_PATH/bin/activate" && \
+   tts --model_name "$MODEL" \
+       --text "$TEXT" \
+       --speaker_idx "$SPEAKER" \
+       --language_idx "$LANGUAGE" \
+       --out_path "$OUT_PATH" 2>&1; then
+
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - START_TIME))
+    FILE_SIZE=$(stat -f%z "$OUT_PATH" 2>/dev/null || echo "unknown")
+
+    echo "✓ Speech generated successfully"
+    echo "  Duration: ${DURATION}s"
+    echo "  File: $OUT_PATH (${FILE_SIZE} bytes)"
+
+    log_entry "success" '{"text":"'"$TEXT"'","output":"'"$OUT_PATH"'","duration":'$DURATION',"file_size":"'"$FILE_SIZE"'"}'
+else
+    echo "✗ TTS generation failed"
+    log_entry "error" '{"text":"'"$TEXT"'","message":"TTS generation failed"}'
+    exit 1
+fi
