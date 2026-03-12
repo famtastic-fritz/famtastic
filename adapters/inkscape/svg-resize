@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# svg-resize — Resize SVG and export at multiple sizes
+# Usage: adapters/inkscape/svg-resize <input.svg> <output-dir> [sizes]
+# Example: adapters/inkscape/svg-resize logo.svg ./assets "64 128 256 512"
+
+INPUT="${1:?Usage: svg-resize <input.svg> <output-dir> [sizes]}"
+OUTDIR="${2:?Usage: svg-resize <input.svg> <output-dir> [sizes]}"
+SIZES="${3:-64 128 256 512}"
+
+if ! command -v inkscape >/dev/null 2>&1; then
+  echo "[inkscape] Not installed. Install with: brew install inkscape"
+  exit 1
+fi
+
+BASENAME=$(basename "$INPUT" .svg)
+mkdir -p "$OUTDIR"
+
+for SIZE in $SIZES; do
+  OUT="$OUTDIR/${BASENAME}-${SIZE}.png"
+  inkscape "$INPUT" --export-type=png --export-filename="$OUT" -w "$SIZE" -h "$SIZE" 2>/dev/null
+  echo "[inkscape] Exported: $OUT (${SIZE}x${SIZE})"
+done

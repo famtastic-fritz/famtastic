@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# site-template — Apply a template to a site, replacing placeholders with spec values
+# Usage: scripts/site-template <tag> <template-name>
+# Templates: event, business, portfolio, landing
+#
+# Reads spec.json for the site and replaces {{PLACEHOLDERS}} in the template.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+TAG="${1:?Usage: site-template <tag> <template-name>}"
+TEMPLATE="${2:?Usage: site-template <tag> <template-name>}"
+
+SITE_DIR="./sites/$TAG"
+DIST="$SITE_DIR/dist"
+SPEC="$SITE_DIR/spec.json"
+TEMPLATE_DIR="./config/site-templates/$TEMPLATE"
+TEMPLATE_FILE="$TEMPLATE_DIR/index.html"
+
+if [ ! -f "$TEMPLATE_FILE" ]; then
+  echo "[template] Template '$TEMPLATE' not found."
+  echo "[template] Available templates:"
+  for d in config/site-templates/*/; do
+    [ -d "$d" ] && echo "  - $(basename "$d")"
+  done
+  exit 1
+fi
+
+if [ ! -f "$SPEC" ]; then
+  echo "[template] No spec.json found for $TAG"
+  exit 1
+fi
+
+mkdir -p "$DIST/assets"
+
+# Read values from spec
+SITE_NAME=$(jq -r '.site_name // "My Site"' "$SPEC")
+PRIMARY=$(jq -r '.colors.primary // "#1e40af"' "$SPEC")
+SECONDARY=$(jq -r '.colors.secondary // "#f59e0b"' "$SPEC")
+ACCENT=$(jq -r '.colors.accent // "#10b981"' "$SPEC")
+HEADING_FONT=$(jq -r '.fonts.heading // "Inter"' "$SPEC")
+BODY_FONT=$(jq -r '.fonts.body // "Inter"' "$SPEC")
+
+# Apply template with replacements
+sed \
+  -e "s|{{SITE_NAME}}|${SITE_NAME}|g" \
+  -e "s|{{PRIMARY}}|${PRIMARY}|g" \
+  -e "s|{{SECONDARY}}|${SECONDARY}|g" \
+  -e "s|{{ACCENT}}|${ACCENT}|g" \
+  -e "s|{{HEADING_FONT}}|${HEADING_FONT}|g" \
+  -e "s|{{BODY_FONT}}|${BODY_FONT}|g" \
+  "$TEMPLATE_FILE" > "$DIST/index.html"
+
+echo "[template] Applied '$TEMPLATE' template to $TAG"
+echo "[template] Output: $DIST/index.html"

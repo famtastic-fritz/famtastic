@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# site-preview — Serve a site with live-reload for local preview
+# Usage: scripts/site-preview <tag> [port]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+TAG="${1:?Usage: site-preview <tag> [port]}"
+PORT="${2:-3333}"
+DIST="./sites/$TAG/dist"
+
+if [ ! -d "$DIST" ]; then
+  echo "[preview] No site found at $DIST"
+  echo "[preview] Build first with: fam-hub orchestrator site $TAG"
+  exit 1
+fi
+
+if [ ! -f "$DIST/index.html" ]; then
+  echo "[preview] No index.html in $DIST — build the site first."
+  exit 1
+fi
+
+echo "[preview] Serving $TAG at http://localhost:$PORT"
+echo "[preview] Press Ctrl+C to stop"
+echo ""
+
+# Use Node.js live-reload server if available, otherwise Python fallback
+if command -v node >/dev/null 2>&1; then
+  node -e "
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const dist = '${DIST}';
+const port = ${PORT};
+
+const MIME = {
+  '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
+  '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.jpg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf',
+};
+
+// Track file modification times for live-reload
+let lastMod = Date.now();
+function checkMod() {
+  try {
+    const files = fs.readdirSync(dist, { recursive: true });
+    for (const f of files) {
+      const fp = path.join(dist, f);
+      const stat = fs.statSync(fp);
+      if (stat.mtimeMs > lastMod) { lastMod = stat.mtimeMs; return true; }
+    }
+  } catch {}
+  return false;
+}
+
+// Live-reload script injected into HTML responses
+const RELOAD_SCRIPT = \`<script>
+(function() {
+  let last = 0;
+  setInterval(async () => {
+    try {
+      const r = await fetch('/__reload');
+      const d = await r.json();
+      if (last && d.t > last) location.reload();
+      last = d.t;
+    } catch {}
+  }, 1000);
+})();
+</script>\`;
+
+const server = http.createServer((req, res) => {
+  // Live-reload endpoint
+  if (req.url === '/__reload') {
+    checkMod();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ t: lastMod }));
+    return;
+  }
+
+  let filePath = path.join(dist, req.url === '/' ? 'index.html' : req.url);
+  if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) filePath += '.html';
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) filePath = path.join(filePath, 'index.html');
+
+  if (!fs.existsSync(filePath)) {
+    res.writeHead(404);
+    res.end('Not found');
+    return;
+  }
+
+  const ext = path.extname(filePath);
+  const mime = MIME[ext] || 'application/octet-stream';
+  let content = fs.readFileSync(filePath);
+
+  // Inject live-reload script into HTML
+  if (ext === '.html') {
+    content = content.toString().replace('</body>', RELOAD_SCRIPT + '</body>');
+  }
+
+  res.writeHead(200, { 'Content-Type': mime });
+  res.end(content);
+});
+
+server.listen(port, () => {
+  console.log('[preview] Live at http://localhost:' + port);
+  console.log('[preview] Auto-reload enabled (polling every 1s)');
+});
+"
+else
+  echo "[preview] Node.js not found, falling back to Python..."
+  python3 -m http.server "$PORT" --directory "$DIST"
+fi

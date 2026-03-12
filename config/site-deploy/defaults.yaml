@@ -1,0 +1,21 @@
+# Site Deploy — Default Configuration
+# Provider options: netlify, cloudflare
+default_provider: netlify
+
+# Domain strategy:
+#   Register domains via GoDaddy reseller account
+#   Host on Netlify/Cloudflare (free tier)
+#   Point GoDaddy DNS to hosting provider
+
+# Netlify settings
+netlify:
+  # Team slug (optional, uses default account if empty)
+  team: ""
+  # Default deploy is draft (preview URL). Use --prod for production.
+
+# Cloudflare Pages settings (when using Cloudflare)
+cloudflare:
+  # Account ID (set via CLOUDFLARE_ACCOUNT_ID env or wrangler login)
+  account_id: ""
+  # Default branch for production deploys
+  production_branch: main

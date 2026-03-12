@@ -1,0 +1,15 @@
+{
+  "name": "famtastic-site-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chat-driven website builder for the FAMtastic ecosystem",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  }
+}

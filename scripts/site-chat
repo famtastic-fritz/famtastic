@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# site-chat — Launch Site Studio (chat UI + preview server)
+# Usage: scripts/site-chat <tag> [--no-open]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+TAG="${1:?Usage: site-chat <tag> [--no-open]}"
+NO_OPEN="${2:-}"
+STUDIO_PORT="${STUDIO_PORT:-3334}"
+PREVIEW_PORT="${PREVIEW_PORT:-3333}"
+
+# Ensure tag starts with site-
+[[ "$TAG" == site-* ]] || TAG="site-$TAG"
+
+SITE_DIR="./sites/$TAG"
+DIST="$SITE_DIR/dist"
+
+# Initialize site if it doesn't exist
+if [ ! -d "$SITE_DIR" ]; then
+  echo "[chat] No site found for $TAG, initializing..."
+  ./scripts/orchestrator-site "$TAG" --skip-ai
+fi
+
+# Track PIDs for cleanup
+PIDS=()
+cleanup() {
+  echo ""
+  echo "[chat] Shutting down..."
+  for pid in "${PIDS[@]}"; do
+    kill "$pid" 2>/dev/null || true
+  done
+  wait 2>/dev/null || true
+  echo "[chat] Done."
+}
+trap cleanup EXIT INT TERM
+
+# Start preview server in background
+echo "[chat] Starting preview server on port $PREVIEW_PORT..."
+./scripts/site-preview "$TAG" "$PREVIEW_PORT" &
+PIDS+=($!)
+sleep 1
+
+# Start site-studio in background
+echo "[chat] Starting Site Studio on port $STUDIO_PORT..."
+SITE_TAG="$TAG" STUDIO_PORT="$STUDIO_PORT" PREVIEW_PORT="$PREVIEW_PORT" \
+  node site-studio/server.js &
+PIDS+=($!)
+sleep 1
+
+echo ""
+echo "============================================"
+echo "  FAMtastic Site Studio"
+echo "  Chat:    http://localhost:$STUDIO_PORT"
+echo "  Preview: http://localhost:$PREVIEW_PORT"
+echo "  Site:    $TAG"
+echo "============================================"
+echo ""
+
+# Open browser unless --no-open
+if [ "$NO_OPEN" != "--no-open" ]; then
+  if command -v open >/dev/null 2>&1; then
+    open "http://localhost:$STUDIO_PORT"
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "http://localhost:$STUDIO_PORT"
+  fi
+fi
+
+echo "[chat] Press Ctrl+C to stop"
+
+# Wait for processes
+wait

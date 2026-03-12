@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# svg-to-png — Convert SVG to PNG via Inkscape CLI
+# Usage: adapters/inkscape/svg-to-png <input.svg> <output.png> [width]
+
+INPUT="${1:?Usage: svg-to-png <input.svg> <output.png> [width]}"
+OUTPUT="${2:?Usage: svg-to-png <input.svg> <output.png> [width]}"
+WIDTH="${3:-400}"
+
+if ! command -v inkscape >/dev/null 2>&1; then
+  echo "[inkscape] Not installed. Install with: brew install inkscape"
+  exit 1
+fi
+
+inkscape "$INPUT" --export-type=png --export-filename="$OUTPUT" -w "$WIDTH" 2>/dev/null
+echo "[inkscape] Exported: $OUTPUT (width: ${WIDTH}px)"

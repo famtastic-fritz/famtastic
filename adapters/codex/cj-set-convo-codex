@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-. "$(dirname "$0")/../../scripts/lib/hub-common"
-
-
-tag="${1:-latest-convo}"
-echo "[set-codex] implement publish back to Codex if desired (reading $CJ_SOURCES_DIR/codex/$tag.jsonl)"

@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# site-deploy — Deploy a site to hosting
+# Usage: scripts/site-deploy <tag> [--provider netlify|cloudflare] [--prod]
+#
+# Deploys the contents of sites/<tag>/dist/ to the configured provider.
+# Default provider: netlify (installed globally)
+# Alternate: cloudflare (via npx wrangler)
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+. scripts/lib/hub-common 2>/dev/null || true
+
+TAG="${1:?Usage: site-deploy <tag> [--provider netlify|cloudflare] [--prod]}"
+shift
+
+# Parse flags
+PROVIDER=""
+PROD_FLAG=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --provider) PROVIDER="$2"; shift 2 ;;
+    --prod)     PROD_FLAG="--prod"; shift ;;
+    *)          shift ;;
+  esac
+done
+
+SITE_DIR="./sites/$TAG"
+DIST="$SITE_DIR/dist"
+SPEC="$SITE_DIR/spec.json"
+SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/site"
+DEPLOY_CONFIG="./config/site-deploy/defaults.yaml"
+
+mkdir -p "$SRC"
+
+# Validate site exists
+if [ ! -d "$DIST" ] || [ ! -f "$DIST/index.html" ]; then
+  echo "[deploy] No site found at $DIST. Build first with: fam-hub site build $TAG"
+  exit 1
+fi
+
+# Read site name from spec
+SITE_NAME="$TAG"
+if [ -f "$SPEC" ]; then
+  SITE_NAME=$(jq -r '.site_name // "'$TAG'"' "$SPEC")
+fi
+
+# Determine provider (flag > spec > config > auto-detect)
+if [ -z "$PROVIDER" ] && [ -f "$SPEC" ]; then
+  PROVIDER=$(jq -r '.deploy_provider // ""' "$SPEC")
+fi
+if [ -z "$PROVIDER" ] && [ -f "$DEPLOY_CONFIG" ]; then
+  PROVIDER=$(grep 'default_provider' "$DEPLOY_CONFIG" 2>/dev/null | awk '{print $2}' || true)
+fi
+if [ -z "$PROVIDER" ]; then
+  # Auto-detect: use whatever CLI is available
+  if command -v netlify >/dev/null 2>&1; then
+    PROVIDER="netlify"
+  elif command -v wrangler >/dev/null 2>&1 || npx wrangler --version >/dev/null 2>&1; then
+    PROVIDER="cloudflare"
+  else
+    echo "[deploy] No deploy provider found."
+    echo "  Install one of:"
+    echo "    npm install -g netlify-cli"
+    echo "    npm install -g wrangler"
+    exit 1
+  fi
+fi
+
+echo "[deploy] Deploying $SITE_NAME ($TAG)"
+echo "[deploy] Provider: $PROVIDER"
+echo "[deploy] Directory: $DIST"
+echo ""
+
+# --- Netlify ---
+deploy_netlify() {
+  # Sanitize site name for Netlify (lowercase, alphanumeric + hyphens)
+  NETLIFY_SITE=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+
+  # Check if site already linked
+  if [ -f "$SITE_DIR/.netlify/state.json" ]; then
+    echo "[deploy] Found existing Netlify link"
+  else
+    echo "[deploy] Creating new Netlify site: $NETLIFY_SITE"
+    # Try to create/link site
+    mkdir -p "$SITE_DIR/.netlify"
+    # Run netlify init with the dist directory
+    (cd "$SITE_DIR" && netlify sites:create --name "$NETLIFY_SITE" --disable-linking 2>/dev/null) || true
+  fi
+
+  # Deploy
+  echo "[deploy] Uploading to Netlify..."
+  if [ -n "$PROD_FLAG" ]; then
+    DEPLOY_OUTPUT=$(cd "$SITE_DIR" && netlify deploy --dir="dist" --prod 2>&1)
+  else
+    DEPLOY_OUTPUT=$(cd "$SITE_DIR" && netlify deploy --dir="dist" 2>&1)
+  fi
+
+  echo "$DEPLOY_OUTPUT"
+
+  # Extract URL from output
+  DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9._-]+\.netlify\.app[^ ]*' | head -1 || true)
+  if [ -z "$DEPLOY_URL" ]; then
+    DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^ ]+' | head -1 || true)
+  fi
+
+  echo "$DEPLOY_URL"
+}
+
+# --- Cloudflare Pages ---
+deploy_cloudflare() {
+  CF_PROJECT=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+
+  echo "[deploy] Uploading to Cloudflare Pages: $CF_PROJECT"
+  if [ -n "$PROD_FLAG" ]; then
+    DEPLOY_OUTPUT=$(npx wrangler pages deploy "$DIST" --project-name "$CF_PROJECT" --branch main 2>&1)
+  else
+    DEPLOY_OUTPUT=$(npx wrangler pages deploy "$DIST" --project-name "$CF_PROJECT" 2>&1)
+  fi
+
+  echo "$DEPLOY_OUTPUT"
+
+  DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^ ]+' | tail -1 || true)
+  echo "$DEPLOY_URL"
+}
+
+# --- Execute deploy ---
+case "$PROVIDER" in
+  netlify)    DEPLOY_URL=$(deploy_netlify) ;;
+  cloudflare) DEPLOY_URL=$(deploy_cloudflare) ;;
+  *)
+    echo "[deploy] Unknown provider: $PROVIDER"
+    echo "  Supported: netlify, cloudflare"
+    exit 1
+    ;;
+esac
+
+# --- Update spec with deploy info ---
+if [ -n "$DEPLOY_URL" ] && [ -f "$SPEC" ]; then
+  TS="$(date -u +%FT%TZ)"
+  TMP=$(mktemp)
+  jq --arg url "$DEPLOY_URL" --arg at "$TS" --arg p "$PROVIDER" \
+    '.deployed_url = $url | .deployed_at = $at | .deploy_provider = $p | .state = "deployed"' \
+    "$SPEC" > "$TMP" && mv "$TMP" "$SPEC"
+  echo ""
+  echo "[deploy] Updated spec.json with deploy info"
+fi
+
+# --- Log to JSONL ---
+TS="$(date -u +%FT%TZ)"
+ID=$(printf '%s' "$TAG-deploy-$TS" | shasum -a 256 | awk '{print $1}')
+jq -c -n --arg id "$ID" --arg at "$TS" --arg tag "$TAG" \
+  --arg provider "$PROVIDER" --arg url "${DEPLOY_URL:-unknown}" \
+  '{id:$id, at:$at, agent:"site-deploy", tag:$tag, messages:[{role:"system",content:("deploy via " + $provider)},{role:"assistant",content:("Deployed to " + $url)}]}' \
+  >> "$SRC/$TAG.jsonl"
+
+echo ""
+echo "============================================"
+echo "  Deployed: $SITE_NAME"
+echo "  URL: ${DEPLOY_URL:-deployment output above}"
+echo "  Provider: $PROVIDER"
+echo "============================================"

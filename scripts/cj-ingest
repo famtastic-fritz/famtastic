@@ -40,8 +40,7 @@ if [[ "$TAG" == resume-* || "$TAG" == job-* || "$TAG" == site-* || "$TAG" == pro
   # Auto-workflow triggers
   case "$TAG" in
     resume-*|job-*)
-      echo "[auto-workflow] orchestrator-resume running for $TAG"
-      "$(dirname "$0")/orchestrator-resume" "$TAG" || true
+      echo "[auto-workflow] no resume orchestrator (removed)"
       ;;
     site-*|project-*)
       echo "[auto-workflow] orchestrator-site running for $TAG"

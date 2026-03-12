@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Site Spec",
+  "description": "Specification for a site built by the FAMtastic site orchestrator",
+  "type": "object",
+  "required": ["site_name", "tag", "colors", "pages"],
+  "properties": {
+    "site_name": {
+      "type": "string",
+      "description": "Display name of the site"
+    },
+    "tag": {
+      "type": "string",
+      "pattern": "^site-[a-z0-9-]+$",
+      "description": "Unique tag identifier (must start with site-)"
+    },
+    "business_type": {
+      "type": "string",
+      "description": "Type of business/purpose (e.g. event, restaurant, portfolio)"
+    },
+    "colors": {
+      "type": "object",
+      "properties": {
+        "primary": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "secondary": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "accent": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      },
+      "required": ["primary"]
+    },
+    "pages": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "List of pages or sections to generate"
+    },
+    "features": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Features to include (hero_banner, contact_form, countdown_timer, etc.)"
+    },
+    "tone": {
+      "type": "string",
+      "description": "Desired tone/voice for the copy"
+    },
+    "fonts": {
+      "type": "object",
+      "properties": {
+        "heading": { "type": "string" },
+        "body": { "type": "string" }
+      }
+    },
+    "assets_needed": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Visual assets to generate (logo, hero_banner, etc.)"
+    },
+    "state": {
+      "type": "string",
+      "enum": ["drafting", "incubating", "blueprint", "prototype", "validating", "deployed"],
+      "description": "Current lifecycle state"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "deployed_url": {
+      "type": "string",
+      "description": "Live URL after deployment"
+    },
+    "deployed_at": {
+      "type": "string",
+      "description": "ISO timestamp of last deployment"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Custom domain (registered via GoDaddy reseller)"
+    }
+  }
+}

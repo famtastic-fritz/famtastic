@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{SITE_NAME}}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '{{PRIMARY}}',
+            secondary: '{{SECONDARY}}',
+            accent: '{{ACCENT}}',
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family={{HEADING_FONT}}:wght@400;700&family={{BODY_FONT}}:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: '{{BODY_FONT}}', sans-serif; scroll-behavior: smooth; }
+    h1, h2, h3 { font-family: '{{HEADING_FONT}}', serif; }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+
+  <!-- Navigation -->
+  <nav class="bg-primary text-white sticky top-0 z-50 shadow-lg">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="#" class="text-2xl font-bold">{{SITE_NAME}}</a>
+      <div class="hidden md:flex space-x-6">
+        <a href="#about" class="hover:text-secondary transition">About</a>
+        <a href="#schedule" class="hover:text-secondary transition">Schedule</a>
+        <a href="#gallery" class="hover:text-secondary transition">Gallery</a>
+        <a href="#rsvp" class="hover:text-secondary transition">RSVP</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section with Countdown -->
+  <section class="relative bg-gradient-to-br from-primary to-primary/80 text-white py-32 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-5xl md:text-7xl font-bold mb-6">{{SITE_NAME}}</h1>
+      <p class="text-xl md:text-2xl mb-8 opacity-90">Join us for an unforgettable celebration</p>
+
+      <!-- Countdown Timer -->
+      <div id="countdown" class="flex justify-center gap-4 md:gap-8 mb-10">
+        <div class="bg-white/20 backdrop-blur rounded-xl p-4 min-w-[80px]">
+          <span id="days" class="text-3xl md:text-4xl font-bold block">00</span>
+          <span class="text-sm uppercase tracking-wide opacity-80">Days</span>
+        </div>
+        <div class="bg-white/20 backdrop-blur rounded-xl p-4 min-w-[80px]">
+          <span id="hours" class="text-3xl md:text-4xl font-bold block">00</span>
+          <span class="text-sm uppercase tracking-wide opacity-80">Hours</span>
+        </div>
+        <div class="bg-white/20 backdrop-blur rounded-xl p-4 min-w-[80px]">
+          <span id="minutes" class="text-3xl md:text-4xl font-bold block">00</span>
+          <span class="text-sm uppercase tracking-wide opacity-80">Min</span>
+        </div>
+        <div class="bg-white/20 backdrop-blur rounded-xl p-4 min-w-[80px]">
+          <span id="seconds" class="text-3xl md:text-4xl font-bold block">00</span>
+          <span class="text-sm uppercase tracking-wide opacity-80">Sec</span>
+        </div>
+      </div>
+
+      <a href="#rsvp" class="inline-block bg-secondary text-white px-10 py-4 rounded-full text-lg font-semibold hover:opacity-90 transition shadow-lg">RSVP Now</a>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="py-20 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-4xl font-bold mb-6 text-primary">About the Event</h2>
+      <p class="text-lg text-gray-600 leading-relaxed mb-8">
+        It's been years since we've all been together, and it's time to reconnect!
+        Join your classmates for a night of memories, laughter, and catching up.
+        We've planned an amazing evening you won't want to miss.
+      </p>
+      <div class="grid md:grid-cols-3 gap-8 mt-12">
+        <div class="bg-gray-50 rounded-xl p-6">
+          <div class="text-4xl mb-4">📅</div>
+          <h3 class="font-bold text-lg mb-2">Date & Time</h3>
+          <p class="text-gray-600">Saturday, October 15, 2026<br>6:00 PM - 11:00 PM</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-6">
+          <div class="text-4xl mb-4">📍</div>
+          <h3 class="font-bold text-lg mb-2">Location</h3>
+          <p class="text-gray-600">The Grand Ballroom<br>123 Main Street</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-6">
+          <div class="text-4xl mb-4">👔</div>
+          <h3 class="font-bold text-lg mb-2">Dress Code</h3>
+          <p class="text-gray-600">Semi-formal / Cocktail<br>Come looking your best!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Schedule Section -->
+  <section id="schedule" class="bg-gray-50 py-20 px-6">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-4xl font-bold mb-12 text-center text-primary">Event Schedule</h2>
+      <div class="space-y-6">
+        <div class="flex items-start gap-4 bg-white rounded-xl p-6 shadow-sm">
+          <span class="bg-primary text-white px-4 py-2 rounded-lg font-bold shrink-0">6:00</span>
+          <div><h3 class="font-bold text-lg">Cocktail Hour & Registration</h3><p class="text-gray-600">Reconnect over drinks and appetizers</p></div>
+        </div>
+        <div class="flex items-start gap-4 bg-white rounded-xl p-6 shadow-sm">
+          <span class="bg-primary text-white px-4 py-2 rounded-lg font-bold shrink-0">7:00</span>
+          <div><h3 class="font-bold text-lg">Dinner & Welcome</h3><p class="text-gray-600">Sit-down dinner with opening remarks</p></div>
+        </div>
+        <div class="flex items-start gap-4 bg-white rounded-xl p-6 shadow-sm">
+          <span class="bg-primary text-white px-4 py-2 rounded-lg font-bold shrink-0">8:30</span>
+          <div><h3 class="font-bold text-lg">Awards & Memories</h3><p class="text-gray-600">Superlatives, slideshow, and special recognitions</p></div>
+        </div>
+        <div class="flex items-start gap-4 bg-white rounded-xl p-6 shadow-sm">
+          <span class="bg-primary text-white px-4 py-2 rounded-lg font-bold shrink-0">9:30</span>
+          <div><h3 class="font-bold text-lg">Dance Floor Opens</h3><p class="text-gray-600">DJ, dancing, and party time until close</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery Placeholder -->
+  <section id="gallery" class="py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-4xl font-bold mb-12 text-center text-primary">Memories</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 1</div>
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 2</div>
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 3</div>
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 4</div>
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 5</div>
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 6</div>
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 7</div>
+        <div class="bg-gray-200 rounded-xl aspect-square flex items-center justify-center text-gray-400">Photo 8</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RSVP Section -->
+  <section id="rsvp" class="bg-primary text-white py-20 px-6">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-4xl font-bold mb-8 text-center">RSVP</h2>
+      <p class="text-center mb-8 opacity-90">Let us know you're coming! Please RSVP by September 30.</p>
+      <form class="space-y-4">
+        <div class="grid md:grid-cols-2 gap-4">
+          <input type="text" placeholder="First Name" class="w-full p-3 rounded-lg text-gray-900 placeholder-gray-500">
+          <input type="text" placeholder="Last Name" class="w-full p-3 rounded-lg text-gray-900 placeholder-gray-500">
+        </div>
+        <input type="email" placeholder="Email Address" class="w-full p-3 rounded-lg text-gray-900 placeholder-gray-500">
+        <div class="grid md:grid-cols-2 gap-4">
+          <select class="w-full p-3 rounded-lg text-gray-900">
+            <option>Will you attend?</option>
+            <option value="yes">Yes, I'll be there!</option>
+            <option value="maybe">Maybe</option>
+            <option value="no">Sorry, can't make it</option>
+          </select>
+          <select class="w-full p-3 rounded-lg text-gray-900">
+            <option>Number of guests</option>
+            <option value="0">Just me</option>
+            <option value="1">+1 guest</option>
+            <option value="2">+2 guests</option>
+          </select>
+        </div>
+        <textarea placeholder="Any dietary restrictions or notes?" rows="3" class="w-full p-3 rounded-lg text-gray-900 placeholder-gray-500"></textarea>
+        <button type="submit" class="w-full bg-secondary text-white py-4 rounded-lg text-lg font-semibold hover:opacity-90 transition">Send RSVP</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 py-8 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+      <p class="mb-2">&copy; 2026 {{SITE_NAME}}. All rights reserved.</p>
+      <p class="text-sm">Questions? Email <a href="mailto:hello@example.com" class="text-secondary hover:underline">hello@example.com</a></p>
+    </div>
+  </footer>
+
+  <!-- Countdown Script -->
+  <script>
+    // Set your event date here
+    const eventDate = new Date('2026-10-15T18:00:00').getTime();
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const diff = eventDate - now;
+      if (diff <= 0) {
+        document.getElementById('countdown').innerHTML = '<p class="text-2xl font-bold">The event is here!</p>';
+        return;
+      }
+      document.getElementById('days').textContent = String(Math.floor(diff / (1000 * 60 * 60 * 24))).padStart(2, '0');
+      document.getElementById('hours').textContent = String(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+      document.getElementById('minutes').textContent = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+      document.getElementById('seconds').textContent = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>

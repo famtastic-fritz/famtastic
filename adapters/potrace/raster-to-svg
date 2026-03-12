@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# raster-to-svg — Convert raster image (PNG/JPG) to SVG via Potrace
+# Usage: adapters/potrace/raster-to-svg <input.png> <output.svg>
+#
+# Potrace works on PBM (bitmap) files, so we convert via ImageMagick or sips first.
+
+INPUT="${1:?Usage: raster-to-svg <input.png> <output.svg>}"
+OUTPUT="${2:?Usage: raster-to-svg <input.png> <output.svg>}"
+
+if ! command -v potrace >/dev/null 2>&1; then
+  echo "[potrace] Not installed. Install with: brew install potrace"
+  exit 1
+fi
+
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+
+# Convert to PBM (required by potrace)
+PBM="$TMPDIR/input.pbm"
+
+if command -v convert >/dev/null 2>&1; then
+  # ImageMagick available
+  convert "$INPUT" -threshold 50% "$PBM"
+elif command -v sips >/dev/null 2>&1; then
+  # macOS fallback: sips can't make PBM directly, try mkbitmap if available
+  if command -v mkbitmap >/dev/null 2>&1; then
+    BMP="$TMPDIR/input.bmp"
+    sips -s format bmp "$INPUT" --out "$BMP" 2>/dev/null
+    mkbitmap "$BMP" -o "$PBM" 2>/dev/null
+  else
+    echo "[potrace] Need ImageMagick or mkbitmap for raster conversion."
+    echo "  Install with: brew install imagemagick"
+    exit 1
+  fi
+else
+  echo "[potrace] Need ImageMagick for raster-to-PBM conversion."
+  echo "  Install with: brew install imagemagick"
+  exit 1
+fi
+
+# Trace to SVG
+potrace "$PBM" -s -o "$OUTPUT" 2>/dev/null
+echo "[potrace] Traced: $OUTPUT"

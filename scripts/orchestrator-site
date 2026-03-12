@@ -1,12 +1,217 @@
 #!/usr/bin/env bash
 set -euo pipefail
-TAG="$1"
-echo "[site-orchestrator] building site for $TAG... (stub)"
 
-# Future implementation:
-# - Parse site requirements from docs/$TAG.md
-# - Generate site structure
-# - Deploy to hosting platform
-# - Log to sources/site/$TAG.jsonl
+# orchestrator-site — Generate a website from a spec.json
+# Usage: scripts/orchestrator-site <tag> [--skip-ai] [--template <name>]
 
-exit 0
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+. scripts/lib/hub-common 2>/dev/null || true
+
+TAG="${1:?Usage: orchestrator-site <tag>}"
+shift
+
+SKIP_AI=""
+TEMPLATE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-ai)   SKIP_AI="--skip-ai"; shift ;;
+    --template)  TEMPLATE="$2"; shift 2 ;;
+    *)           shift ;;
+  esac
+done
+
+SITE_DIR="./sites/$TAG"
+DIST="$SITE_DIR/dist"
+ASSETS="$DIST/assets"
+SPEC="$SITE_DIR/spec.json"
+STATE="$SITE_DIR/state.json"
+SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/site"
+
+# --- Step 0: Initialize site directory ---
+echo "[site] Initializing $TAG..."
+mkdir -p "$DIST" "$ASSETS" "$SRC"
+
+# Create default spec if missing
+if [ ! -f "$SPEC" ]; then
+  cat > "$SPEC" <<'DEFAULTSPEC'
+{
+  "site_name": "New Site",
+  "tag": "",
+  "business_type": "general",
+  "colors": { "primary": "#1e40af", "secondary": "#f59e0b", "accent": "#10b981" },
+  "pages": ["home"],
+  "features": ["hero_banner", "contact_form"],
+  "tone": "professional and clean",
+  "fonts": { "heading": "Inter", "body": "Inter" },
+  "assets_needed": [],
+  "state": "drafting",
+  "version": 1
+}
+DEFAULTSPEC
+  # Patch in the tag
+  TMP=$(mktemp)
+  jq --arg t "$TAG" '.tag = $t' "$SPEC" > "$TMP" && mv "$TMP" "$SPEC"
+  echo "[site] Created default spec.json"
+fi
+
+# Read spec values
+SITE_NAME=$(jq -r '.site_name' "$SPEC")
+BIZ_TYPE=$(jq -r '.business_type' "$SPEC")
+TONE=$(jq -r '.tone' "$SPEC")
+PRIMARY=$(jq -r '.colors.primary' "$SPEC")
+SECONDARY=$(jq -r '.colors.secondary' "$SPEC")
+ACCENT=$(jq -r '.colors.accent' "$SPEC")
+PAGES=$(jq -r '.pages | join(", ")' "$SPEC")
+FEATURES=$(jq -r '.features | join(", ")' "$SPEC")
+HEADING_FONT=$(jq -r '.fonts.heading // "Inter"' "$SPEC")
+BODY_FONT=$(jq -r '.fonts.body // "Inter"' "$SPEC")
+
+echo "[site] Building: $SITE_NAME ($BIZ_TYPE)"
+echo "[site] Pages: $PAGES"
+echo "[site] Features: $FEATURES"
+
+# --- Step 1: Generate HTML via template, Claude, or fallback ---
+
+# If a template was specified, use it and skip AI generation
+if [ -n "$TEMPLATE" ]; then
+  echo "[site] Using template: $TEMPLATE"
+  scripts/site-template "$TAG" "$TEMPLATE"
+  # Jump to state update (skip the generation block below)
+else
+PROMPT="Generate a complete, modern, single-page HTML website with these specifications:
+
+Site name: $SITE_NAME
+Business type: $BIZ_TYPE
+Tone: $TONE
+Primary color: $PRIMARY
+Secondary color: $SECONDARY
+Accent color: $ACCENT
+Pages/sections: $PAGES
+Features: $FEATURES
+Heading font: $HEADING_FONT
+Body font: $BODY_FONT
+
+Requirements:
+- Use Tailwind CSS via CDN (https://cdn.tailwindcss.com)
+- Use Google Fonts for the specified fonts
+- Make it fully responsive (mobile-first)
+- Include a navigation header, hero section, and footer
+- Use the exact color hex values provided via Tailwind config customization
+- Add smooth scroll behavior
+- Include placeholder text that matches the business type and tone
+- Output ONLY the complete HTML file, no explanation or markdown fences
+
+For each feature requested, implement it properly:
+- hero_banner: Full-width hero with headline, subtext, and CTA button
+- contact_form: Working form layout with name, email, message fields
+- countdown_timer: JavaScript countdown to a configurable date
+- photo_gallery: Responsive image grid with placeholder images
+- rsvp_form: RSVP form with name, email, attending yes/no, guest count
+- services: Services/features grid with icons
+- testimonials: Testimonial cards section
+- pricing: Pricing table section
+
+Make it look professional and polished."
+
+if [ "$SKIP_AI" = "--skip-ai" ]; then
+  echo "[site] Skipping AI generation (--skip-ai), using template fallback..."
+  cat > "$DIST/index.html" <<FALLBACK
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${SITE_NAME}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '${PRIMARY}',
+            secondary: '${SECONDARY}',
+            accent: '${ACCENT}',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-white text-gray-900">
+  <header class="bg-primary text-white p-6">
+    <nav class="max-w-6xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">${SITE_NAME}</h1>
+      <div class="space-x-4"><a href="#home" class="hover:underline">Home</a><a href="#contact" class="hover:underline">Contact</a></div>
+    </nav>
+  </header>
+  <section id="home" class="max-w-6xl mx-auto py-20 px-6 text-center">
+    <h2 class="text-5xl font-bold mb-4">${SITE_NAME}</h2>
+    <p class="text-xl text-gray-600 mb-8">Welcome to your new site. Edit this through the chat interface.</p>
+    <a href="#contact" class="bg-accent text-white px-8 py-3 rounded-lg text-lg hover:opacity-90">Get Started</a>
+  </section>
+  <section id="contact" class="bg-gray-50 py-16 px-6">
+    <div class="max-w-2xl mx-auto">
+      <h3 class="text-3xl font-bold mb-8 text-center">Contact Us</h3>
+      <form class="space-y-4">
+        <input type="text" placeholder="Your Name" class="w-full p-3 border rounded-lg">
+        <input type="email" placeholder="Your Email" class="w-full p-3 border rounded-lg">
+        <textarea placeholder="Your Message" rows="4" class="w-full p-3 border rounded-lg"></textarea>
+        <button type="submit" class="bg-primary text-white px-8 py-3 rounded-lg hover:opacity-90">Send</button>
+      </form>
+    </div>
+  </section>
+  <footer class="bg-gray-900 text-gray-400 py-8 text-center">
+    <p>&copy; $(date +%Y) ${SITE_NAME}. All rights reserved.</p>
+  </footer>
+</body>
+</html>
+FALLBACK
+else
+  echo "[site] Step 1: Generating HTML via Claude CLI..."
+  MODEL="$(jq -r '.claude.model // empty' config/agents/defaults.yaml 2>/dev/null || true)"
+  [ -z "$MODEL" ] && MODEL="claude-sonnet-4-20250514"
+
+  RAW_RESPONSE=$(unset CLAUDECODE; echo "$PROMPT" | claude --print --model "$MODEL" --tools "" 2>/dev/null || true)
+
+  # Strip markdown fences if present (claude --print may wrap in ```html```)
+  RESPONSE=$(echo "$RAW_RESPONSE" | sed '/^```/d')
+
+  if [ -n "$RESPONSE" ]; then
+    echo "$RESPONSE" > "$DIST/index.html"
+    echo "[site] HTML generated via Claude CLI ($MODEL)"
+  else
+    echo "[site] Claude CLI call failed, using template fallback..."
+    scripts/orchestrator-site "$TAG" --skip-ai
+    exit $?
+  fi
+fi
+fi  # end template check
+
+# --- Step 2: Update state ---
+TS="$(date -u +%FT%TZ)"
+cat > "$STATE" <<STATEJSON
+{
+  "tag": "$TAG",
+  "state": "prototype",
+  "last_build": "$TS",
+  "build_count": 1,
+  "pages_generated": ["index.html"]
+}
+STATEJSON
+
+# --- Step 3: Log to JSONL ---
+ID=$(printf '%s' "$TAG$TS" | shasum -a 256 | awk '{print $1}')
+jq -c -n --arg id "$ID" --arg at "$TS" --arg tag "$TAG" \
+  --arg site_name "$SITE_NAME" --arg biz "$BIZ_TYPE" \
+  '{id:$id, at:$at, agent:"site-orchestrator", tag:$tag, messages:[{role:"system",content:"site generation"},{role:"assistant",content:("Built site: " + $site_name + " (" + $biz + ")")}]}' \
+  >> "$SRC/$TAG.jsonl"
+
+# --- Step 4: Update spec state ---
+TMP=$(mktemp)
+jq '.state = "prototype"' "$SPEC" > "$TMP" && mv "$TMP" "$SPEC"
+
+echo ""
+echo "[site] Done! Site built at: $DIST/index.html"
+echo "[site] Preview with: fam-hub site preview $TAG"

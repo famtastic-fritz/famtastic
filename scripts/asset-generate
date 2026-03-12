@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# asset-generate — Generate or refine visual assets for a site
+# Usage: scripts/asset-generate <tag> <asset-type> [description]
+#
+# Asset types: logo, icon, hero, divider, favicon, banner, illustration
+# Examples:
+#   scripts/asset-generate site-reunion logo "Class of 96 reunion, nostalgic gold and blue"
+#   scripts/asset-generate site-reunion favicon
+#   scripts/asset-generate site-reunion hero "sunny school campus with autumn colors"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+. scripts/lib/hub-common 2>/dev/null || true
+
+TAG="${1:?Usage: asset-generate <tag> <asset-type> [description]}"
+ASSET_TYPE="${2:?Usage: asset-generate <tag> <asset-type> [description]}"
+DESCRIPTION="${3:-}"
+
+SITE_DIR="./sites/$TAG"
+DIST="$SITE_DIR/dist"
+ASSETS="$DIST/assets"
+SPEC="$SITE_DIR/spec.json"
+SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/site"
+
+mkdir -p "$ASSETS" "$SRC"
+
+# Read spec for context
+SITE_NAME="New Site"
+TONE="professional"
+PRIMARY="#1e40af"
+SECONDARY="#f59e0b"
+ACCENT="#10b981"
+if [ -f "$SPEC" ]; then
+  SITE_NAME=$(jq -r '.site_name // "New Site"' "$SPEC")
+  TONE=$(jq -r '.tone // "professional"' "$SPEC")
+  PRIMARY=$(jq -r '.colors.primary // "#1e40af"' "$SPEC")
+  SECONDARY=$(jq -r '.colors.secondary // "#f59e0b"' "$SPEC")
+  ACCENT=$(jq -r '.colors.accent // "#10b981"' "$SPEC")
+fi
+
+# --- Determine output filename ---
+case "$ASSET_TYPE" in
+  logo)       FILENAME="logo.svg" ;;
+  icon)       FILENAME="icon.svg" ;;
+  hero)       FILENAME="hero.svg" ;;
+  divider)    FILENAME="divider.svg" ;;
+  favicon)    FILENAME="favicon.svg" ;;
+  banner)     FILENAME="banner.svg" ;;
+  illustration) FILENAME="illustration.svg" ;;
+  *)          FILENAME="${ASSET_TYPE}.svg" ;;
+esac
+
+# --- Build prompt based on asset type ---
+case "$ASSET_TYPE" in
+  logo)
+    PROMPT="Create an SVG logo for '${SITE_NAME}'.
+Style: ${TONE}
+Colors: primary ${PRIMARY}, secondary ${SECONDARY}, accent ${ACCENT}
+${DESCRIPTION:+Additional details: $DESCRIPTION}
+
+Requirements:
+- Output ONLY valid SVG code, no explanation
+- Use a viewBox of 0 0 200 60 for a horizontal logo
+- Include the site name as text in a clean, modern font
+- Use the specified colors
+- Keep it simple and scalable
+- No raster images, pure vector paths and text"
+    ;;
+  icon)
+    PROMPT="Create a simple SVG icon for '${SITE_NAME}'.
+Style: ${TONE}
+Colors: primary ${PRIMARY}, accent ${ACCENT}
+${DESCRIPTION:+Additional details: $DESCRIPTION}
+
+Requirements:
+- Output ONLY valid SVG code, no explanation
+- Use a viewBox of 0 0 64 64
+- Simple, recognizable shape
+- Use the specified colors
+- No text, just iconography"
+    ;;
+  hero)
+    PROMPT="Create a decorative SVG hero background/illustration for '${SITE_NAME}'.
+Style: ${TONE}
+Colors: primary ${PRIMARY}, secondary ${SECONDARY}, accent ${ACCENT}
+${DESCRIPTION:+Additional details: $DESCRIPTION}
+
+Requirements:
+- Output ONLY valid SVG code, no explanation
+- Use a viewBox of 0 0 1200 400
+- Create abstract shapes, waves, gradients, or geometric patterns
+- Use the specified colors with varying opacity
+- Make it suitable as a background decoration
+- Keep paths optimized and minimal"
+    ;;
+  divider)
+    PROMPT="Create an SVG section divider for a website.
+Colors: primary ${PRIMARY}, accent ${ACCENT}
+${DESCRIPTION:+Style: $DESCRIPTION}
+
+Requirements:
+- Output ONLY valid SVG code, no explanation
+- Use a viewBox of 0 0 1200 60
+- Create a wave, curve, or decorative line pattern
+- Use the specified colors
+- Should work as a full-width section separator"
+    ;;
+  favicon)
+    PROMPT="Create a simple SVG favicon for '${SITE_NAME}'.
+Colors: primary ${PRIMARY}
+${DESCRIPTION:+Additional details: $DESCRIPTION}
+
+Requirements:
+- Output ONLY valid SVG code, no explanation
+- Use a viewBox of 0 0 32 32
+- Single letter or simple icon that represents the brand
+- Bold, recognizable at small sizes
+- Use the primary color on a white or transparent background"
+    ;;
+  banner)
+    PROMPT="Create a decorative SVG banner header for '${SITE_NAME}'.
+Style: ${TONE}
+Colors: primary ${PRIMARY}, secondary ${SECONDARY}, accent ${ACCENT}
+${DESCRIPTION:+Additional details: $DESCRIPTION}
+
+Requirements:
+- Output ONLY valid SVG code, no explanation
+- Use a viewBox of 0 0 1200 300
+- Include the site name as prominent text
+- Add decorative elements (shapes, lines, gradients)
+- Use the specified colors
+- Professional, modern look"
+    ;;
+  *)
+    PROMPT="Create an SVG illustration: ${DESCRIPTION:-a simple decorative element}.
+Colors: primary ${PRIMARY}, secondary ${SECONDARY}, accent ${ACCENT}
+
+Requirements:
+- Output ONLY valid SVG code, no explanation
+- Use appropriate viewBox dimensions
+- Use the specified colors
+- Keep it clean and scalable"
+    ;;
+esac
+
+# --- Fallback SVG generator (defined before use) ---
+generate_fallback_svg() {
+  case "$ASSET_TYPE" in
+    logo)
+      cat > "$ASSETS/$FILENAME" <<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+  <rect width="200" height="60" rx="8" fill="${PRIMARY}"/>
+  <text x="100" y="38" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="24" font-weight="bold">${SITE_NAME}</text>
+</svg>
+SVG
+      ;;
+    favicon)
+      INITIAL=$(echo "$SITE_NAME" | head -c1)
+      cat > "$ASSETS/$FILENAME" <<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="${PRIMARY}"/>
+  <text x="16" y="23" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="20" font-weight="bold">${INITIAL}</text>
+</svg>
+SVG
+      ;;
+    divider)
+      cat > "$ASSETS/$FILENAME" <<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 60">
+  <path d="M0,30 Q300,0 600,30 T1200,30" fill="none" stroke="${PRIMARY}" stroke-width="2" opacity="0.3"/>
+  <path d="M0,35 Q300,5 600,35 T1200,35" fill="none" stroke="${ACCENT}" stroke-width="1.5" opacity="0.2"/>
+</svg>
+SVG
+      ;;
+    hero)
+      cat > "$ASSETS/$FILENAME" <<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:${PRIMARY};stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:${ACCENT};stop-opacity:0.05"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <circle cx="200" cy="300" r="150" fill="${PRIMARY}" opacity="0.08"/>
+  <circle cx="900" cy="100" r="200" fill="${SECONDARY}" opacity="0.06"/>
+  <circle cx="600" cy="350" r="100" fill="${ACCENT}" opacity="0.1"/>
+</svg>
+SVG
+      ;;
+    banner)
+      cat > "$ASSETS/$FILENAME" <<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300">
+  <rect width="1200" height="300" fill="${PRIMARY}"/>
+  <rect x="0" y="260" width="1200" height="40" fill="${SECONDARY}" opacity="0.3"/>
+  <text x="600" y="160" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="48" font-weight="bold">${SITE_NAME}</text>
+  <text x="600" y="200" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="16" opacity="0.7">${TONE}</text>
+</svg>
+SVG
+      ;;
+    *)
+      cat > "$ASSETS/$FILENAME" <<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="16" fill="${PRIMARY}" opacity="0.1"/>
+  <circle cx="100" cy="100" r="60" fill="${PRIMARY}" opacity="0.2"/>
+  <text x="100" y="108" text-anchor="middle" fill="${PRIMARY}" font-family="Inter, sans-serif" font-size="14">${ASSET_TYPE}</text>
+</svg>
+SVG
+      ;;
+  esac
+  echo "[asset] Created fallback: $ASSETS/$FILENAME"
+}
+
+# --- Generate SVG ---
+echo "[asset] Generating $ASSET_TYPE for $TAG..."
+
+MODEL="${MODEL:-claude-sonnet-4-20250514}"
+
+RAW_RESPONSE=$(unset CLAUDECODE; echo "$PROMPT" | claude --print --model "$MODEL" --tools "" 2>/dev/null || true)
+
+# Strip markdown fences if present (claude --print may wrap SVG in ```svg```)
+RESPONSE=$(echo "$RAW_RESPONSE" | sed '/^```/d')
+
+if [ -n "$RESPONSE" ] && echo "$RESPONSE" | grep -q '<svg'; then
+  # Extract just the SVG part
+  SVG=$(echo "$RESPONSE" | sed -n '/<svg/,/<\/svg>/p')
+  if [ -n "$SVG" ]; then
+    echo "$SVG" > "$ASSETS/$FILENAME"
+    echo "[asset] Created: $ASSETS/$FILENAME"
+  else
+    echo "$RESPONSE" > "$ASSETS/$FILENAME"
+    echo "[asset] Created: $ASSETS/$FILENAME (raw output)"
+  fi
+else
+  echo "[asset] Claude CLI did not return valid SVG. Using fallback."
+  generate_fallback_svg
+fi
+
+# --- Convert to PNG if Inkscape is available ---
+if command -v inkscape >/dev/null 2>&1; then
+  case "$ASSET_TYPE" in
+    favicon)
+      for SIZE in 16 32 48; do
+        PNG="$ASSETS/favicon-${SIZE}.png"
+        inkscape "$ASSETS/$FILENAME" --export-type=png --export-filename="$PNG" -w "$SIZE" -h "$SIZE" 2>/dev/null
+        echo "[asset] Exported: $PNG (${SIZE}x${SIZE})"
+      done
+      ;;
+    logo|icon)
+      PNG="$ASSETS/${ASSET_TYPE}.png"
+      inkscape "$ASSETS/$FILENAME" --export-type=png --export-filename="$PNG" -w 400 2>/dev/null
+      echo "[asset] Exported: $PNG"
+      ;;
+  esac
+else
+  echo "[asset] Inkscape not installed — SVG only. Install with: brew install inkscape"
+fi
+
+# --- Log ---
+TS="$(date -u +%FT%TZ)"
+ID=$(printf '%s' "$TAG$ASSET_TYPE$TS" | shasum -a 256 | awk '{print $1}')
+jq -c -n --arg id "$ID" --arg at "$TS" --arg tag "$TAG" \
+  --arg asset "$ASSET_TYPE" --arg file "$FILENAME" \
+  '{id:$id, at:$at, agent:"asset-generate", tag:$tag, messages:[{role:"system",content:("asset: " + $asset)},{role:"assistant",content:("Generated " + $file)}]}' \
+  >> "$SRC/$TAG.jsonl"
+
+echo "[asset] Done."

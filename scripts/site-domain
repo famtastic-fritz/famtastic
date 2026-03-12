@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# site-domain — Show DNS records needed to connect a GoDaddy domain to hosting
+# Usage: scripts/site-domain <tag> <domain>
+#
+# Example: scripts/site-domain site-reunion classof96reunion.com
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+TAG="${1:?Usage: site-domain <tag> <domain>}"
+DOMAIN="${2:?Usage: site-domain <tag> <domain>}"
+
+SPEC="./sites/$TAG/spec.json"
+
+# Determine provider
+PROVIDER="netlify"
+if [ -f "$SPEC" ]; then
+  P=$(jq -r '.deploy_provider // ""' "$SPEC")
+  [ -n "$P" ] && PROVIDER="$P"
+  DEPLOY_URL=$(jq -r '.deployed_url // ""' "$SPEC")
+fi
+
+echo ""
+echo "============================================"
+echo "  Domain Setup: $DOMAIN → $TAG"
+echo "  Provider: $PROVIDER"
+echo "============================================"
+echo ""
+
+case "$PROVIDER" in
+  netlify)
+    NETLIFY_SITE=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+    cat <<DNS
+To connect $DOMAIN to your Netlify site:
+
+1. In Netlify dashboard → Site settings → Domain management → Add custom domain
+   Add: $DOMAIN
+
+2. In GoDaddy DNS Manager for $DOMAIN, set these records:
+
+   Type    Name    Value                              TTL
+   ----    ----    -----                              ---
+   CNAME   www     ${NETLIFY_SITE}.netlify.app         600
+   A       @       75.2.60.5                          600
+
+   (Netlify load balancer IPs: 75.2.60.5)
+   For apex domain, you can also use Netlify DNS:
+   - Change nameservers in GoDaddy to Netlify's nameservers
+
+3. Wait for DNS propagation (up to 48 hours, usually minutes)
+
+4. Netlify will auto-provision SSL (Let's Encrypt) once DNS is verified.
+
+DNS
+    ;;
+  cloudflare)
+    CF_PROJECT=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+    cat <<DNS
+To connect $DOMAIN to your Cloudflare Pages site:
+
+1. Add domain to Cloudflare (free plan):
+   - Go to Cloudflare dashboard → Add a site → $DOMAIN
+
+2. Change nameservers in GoDaddy to Cloudflare's:
+   - GoDaddy → My Domains → $DOMAIN → DNS → Nameservers → Change
+   - Set to Cloudflare's nameservers (shown in Cloudflare dashboard)
+
+3. In Cloudflare → Pages → $CF_PROJECT → Custom domains:
+   Add: $DOMAIN
+
+4. Cloudflare handles SSL automatically.
+
+DNS
+    ;;
+esac
+
+# Update spec with domain
+if [ -f "$SPEC" ]; then
+  TMP=$(mktemp)
+  jq --arg d "$DOMAIN" '.domain = $d' "$SPEC" > "$TMP" && mv "$TMP" "$SPEC"
+  echo "[domain] Updated spec.json with domain: $DOMAIN"
+fi

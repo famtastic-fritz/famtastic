@@ -1,16 +1,192 @@
 #!/usr/bin/env bash
-# fam-hub — Unified CLI for FAMtastic Agent Hub
+# fam-hub — Unified CLI for FAMtastic
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+HUB_ROOT="$SCRIPT_DIR/.."
+cd "$HUB_ROOT"
 
 CMD="${1:-help}"
 SUBCMD="${2:-}"
 
 case "$CMD" in
+
+  # --- Site Factory ---
+  site)
+    SITECMD="${2:-help}"
+    case "$SITECMD" in
+      new)
+        TAG="${3:-}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub site new <tag>"
+          echo "  Tag should start with 'site-' (e.g., site-reunion)"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        shift 3 || true
+        scripts/site-chat "$TAG" "$@"
+        ;;
+      chat)
+        TAG="${3:-}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub site chat <tag>"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        shift 3 || true
+        scripts/site-chat "$TAG" "$@"
+        ;;
+      preview)
+        TAG="${3:-}"
+        PORT="${4:-3333}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub site preview <tag> [port]"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        scripts/site-preview "$TAG" "$PORT"
+        ;;
+      build)
+        TAG="${3:-}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub site build <tag> [--template name]"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        shift 3 || true
+        scripts/orchestrator-site "$TAG" "$@"
+        ;;
+      list|status)
+        TAG="${3:-}"
+        if [[ -z "$TAG" ]]; then
+          echo ""
+          echo "FAMtastic Site Portfolio"
+          echo "========================"
+          echo ""
+          COUNT=0
+          for spec in sites/*/spec.json; do
+            [ -f "$spec" ] || continue
+            COUNT=$((COUNT + 1))
+            t=$(jq -r '.tag' "$spec")
+            n=$(jq -r '.site_name' "$spec")
+            s=$(jq -r '.state' "$spec")
+            biz=$(jq -r '.business_type // "-"' "$spec")
+            url=$(jq -r '.deployed_url // ""' "$spec")
+            domain=$(jq -r '.domain // ""' "$spec")
+            has_html="no"
+            [ -f "sites/$t/dist/index.html" ] && has_html="yes"
+
+            printf "  %-25s %-25s [%s]\n" "$t" "$n" "$s"
+            printf "    Type: %-15s  HTML: %-5s" "$biz" "$has_html"
+            [ -n "$url" ] && printf "  URL: %s" "$url"
+            [ -n "$domain" ] && printf "  Domain: %s" "$domain"
+            echo ""
+          done
+          if [ "$COUNT" -eq 0 ]; then
+            echo "  (no sites yet)"
+            echo ""
+            echo "  Create one: fam-hub site new <tag>"
+          else
+            echo ""
+            echo "  $COUNT site(s) total"
+          fi
+          echo ""
+        else
+          [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+          if [ -f "sites/$TAG/spec.json" ]; then
+            echo "Site: $TAG"
+            jq '.' "sites/$TAG/spec.json"
+            [ -f "sites/$TAG/state.json" ] && echo "" && echo "State:" && jq '.' "sites/$TAG/state.json"
+          else
+            echo "No site found for tag: $TAG"
+            exit 1
+          fi
+        fi
+        ;;
+      deploy)
+        TAG="${3:-}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub site deploy <tag> [--prod]"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        shift 3 || true
+        scripts/site-deploy "$TAG" "$@"
+        ;;
+      domain)
+        TAG="${3:-}"
+        DOMAIN="${4:-}"
+        if [[ -z "$TAG" || -z "$DOMAIN" ]]; then
+          echo "Usage: fam-hub site domain <tag> <domain>"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        scripts/site-domain "$TAG" "$DOMAIN"
+        ;;
+      *)
+        cat <<'SITEHELP'
+fam-hub site — Site Factory
+
+Usage:
+  fam-hub site new <tag>                    Create site + open chat studio
+  fam-hub site chat <tag>                   Open chat studio for existing site
+  fam-hub site preview <tag> [port]         Live preview (default port 3333)
+  fam-hub site build <tag> [--template name] Rebuild (batch mode)
+  fam-hub site list [tag]                   Dashboard / site detail
+  fam-hub site deploy <tag> [--prod]        Deploy to hosting
+  fam-hub site domain <tag> <domain>        DNS setup for custom domain
+
+SITEHELP
+        ;;
+    esac
+    ;;
+
+  # --- Idea Capture (from Think-Tank) ---
+  idea)
+    IDEACMD="${2:-help}"
+    shift 2 || true
+    case "$IDEACMD" in
+      capture)   python3 cli/idea/capture.py "$@" ;;
+      triage)    python3 cli/idea/triage.py "$@" ;;
+      blueprint) python3 cli/idea/blueprint.py "$@" ;;
+      proto|prototype) python3 cli/idea/prototype.py "$@" ;;
+      validate)  python3 cli/idea/validate.py "$@" ;;
+      learn)     python3 cli/idea/learn.py "$@" ;;
+      digest)    python3 cli/idea/digest.py "$@" ;;
+      *)
+        cat <<'IDEAHELP'
+fam-hub idea — Idea Capture & Lifecycle
+
+Usage:
+  fam-hub idea capture "<text>" [--tag <t>]  Capture a new idea
+  fam-hub idea triage [--list]               List / categorize ideas
+  fam-hub idea blueprint <tag>               Create structured plan
+  fam-hub idea proto <tag>                   Build prototype
+  fam-hub idea validate <tag>                Run validation checks
+  fam-hub idea learn <tag> --note "<text>"   Record lesson learned
+  fam-hub idea digest [--all]                Summary across all stages
+
+IDEAHELP
+        ;;
+    esac
+    ;;
+
+  # --- Multi-Agent Workflow ---
+  agent)
+    AGENT="${2:-}"; TAG="${3:-}"
+    if [[ -z "$AGENT" || -z "$TAG" ]]; then
+      echo "Usage: fam-hub agent run <agent> <tag> [prompt]"
+      exit 1
+    fi
+    shift 3
+    scripts/agents run "$AGENT" "$TAG" "$@"
+    ;;
+
   convo)
     case "$SUBCMD" in
       reconcile) shift 2; scripts/cj-reconcile-convo "$@" ;;
-      *) echo "Usage: fam-hub convo {reconcile} <tag>" ;;
+      *) echo "Usage: fam-hub convo reconcile <tag>" ;;
     esac
     ;;
 
@@ -24,43 +200,6 @@ case "$CMD" in
     scripts/cj-ingest "$TAG" "$TYPE" "$@"
     ;;
 
-  sync)
-    TAG="${2:-latest-convo}"
-    shift 2 || true
-    scripts/chatgpt-local-sync "$TAG" "$@"
-    ;;
-
-  agent)
-    AGENT="${2:-}"; TAG="${3:-}"
-    if [[ -z "$AGENT" || -z "$TAG" ]]; then
-      echo "Usage: fam-hub agent run <agent> <tag>"
-      exit 1
-    fi
-    shift 3
-    scripts/agents run "$AGENT" "$TAG" "$@"
-    ;;
-
-  orchestrator)
-    TYPE="${2:-}"; TAG="${3:-}"
-    if [[ -z "$TYPE" || -z "$TAG" ]]; then
-      echo "Usage: fam-hub orchestrator {resume|site|job} <tag>"
-      exit 1
-    fi
-    shift 3
-    case "$TYPE" in
-      resume) scripts/orchestrator-resume "$TAG" "$@" ;;
-      site) scripts/orchestrator-site "$TAG" "$@" ;;
-      job) scripts/orchestrator-job "$TAG" "$@" ;;
-      *) echo "Unknown orchestrator type: $TYPE" ;;
-    esac
-    ;;
-
-  tts)
-    TAG="${2:-latest-convo}"
-    shift 2 || true
-    scripts/tts-agent "$TAG" "$@"
-    ;;
-
   promote)
     TAG="${2:-}"
     if [[ -z "$TAG" ]]; then
@@ -71,34 +210,92 @@ case "$CMD" in
     scripts/cj-promote "$TAG" "$@"
     ;;
 
-  *)
-    cat <<EOF
-fam-hub — Unified CLI for FAMtastic Agent Hub
+  # --- Admin ---
+  admin)
+    ADMINCMD="${2:-help}"
+    case "$ADMINCMD" in
+      doctor)
+        echo "FAMtastic Health Check"
+        echo "======================"
+        echo ""
+        printf "  %-25s " "claude CLI"
+        command -v claude >/dev/null 2>&1 && echo "[OK]" || echo "[MISSING]"
+        printf "  %-25s " "node"
+        command -v node >/dev/null 2>&1 && echo "[OK] $(node --version)" || echo "[MISSING]"
+        printf "  %-25s " "python3"
+        command -v python3 >/dev/null 2>&1 && echo "[OK] $(python3 --version 2>&1)" || echo "[MISSING]"
+        printf "  %-25s " "jq"
+        command -v jq >/dev/null 2>&1 && echo "[OK]" || echo "[MISSING]"
+        printf "  %-25s " "netlify"
+        command -v netlify >/dev/null 2>&1 && echo "[OK]" || echo "[MISSING]"
+        printf "  %-25s " "site-studio deps"
+        [ -d "site-studio/node_modules" ] && echo "[OK]" || echo "[MISSING] run: cd site-studio && npm install"
+        printf "  %-25s " "sites directory"
+        SITE_COUNT=$(find sites -maxdepth 2 -name spec.json 2>/dev/null | wc -l | tr -d ' ')
+        echo "[$SITE_COUNT sites]"
+        echo ""
+        ;;
+      verify)
+        echo "Verifying repo structure..."
+        ERRORS=0
+        for f in scripts/fam-hub scripts/orchestrator-site scripts/claude-cli scripts/site-preview scripts/site-deploy; do
+          if [ -x "$f" ]; then
+            printf "  [+] %s\n" "$f"
+          else
+            printf "  [x] %s (missing or not executable)\n" "$f"
+            ERRORS=$((ERRORS + 1))
+          fi
+        done
+        for d in sites config/site-templates site-studio/public adapters schemas; do
+          if [ -d "$d" ]; then
+            printf "  [+] %s/\n" "$d"
+          else
+            printf "  [x] %s/ (missing)\n" "$d"
+            ERRORS=$((ERRORS + 1))
+          fi
+        done
+        echo ""
+        [ "$ERRORS" -eq 0 ] && echo "All checks passed." || echo "$ERRORS issue(s) found."
+        ;;
+      *)
+        cat <<'ADMINHELP'
+fam-hub admin — Health & Diagnostics
 
 Usage:
-  fam-hub convo reconcile <tag>                # Reconcile conversation
-  fam-hub ingest <tag> {md|json}              # Ingest ChatGPT → Hub
-  fam-hub sync [tag]                          # Sync bundle (default latest-convo)
-  fam-hub agent run <agent> <tag>             # Run specific agent on a tag
-  fam-hub orchestrator {resume|site|job} <tag> # Run orchestrator
-  fam-hub tts [tag]                           # Generate speech from summary
-  fam-hub promote <tag>                       # Promote draft to final
+  fam-hub admin doctor    Check tool dependencies
+  fam-hub admin verify    Verify repo structure
 
-Examples:
-  fam-hub convo reconcile my-project          # Reconcile project conversation
-  fam-hub ingest resume-notes md              # Ingest markdown notes
-  fam-hub sync my-project                     # Create sync bundle
-  fam-hub orchestrator resume job-amazon      # Generate tailored resume
-  fam-hub tts job-amazon                      # Read summary aloud
+ADMINHELP
+        ;;
+    esac
+    ;;
 
-Commands:
-  convo        Conversation management
-  ingest       Content ingestion from ChatGPT
-  sync         Bundle creation for ChatGPT
-  agent        Direct agent execution
-  orchestrator Multi-agent workflows
-  tts          Text-to-speech generation
-  promote      File promotion utilities
+  *)
+    cat <<'EOF'
+fam-hub — FAMtastic CLI
+
+Site Factory:
+  fam-hub site new <tag>            Create site + open chat studio
+  fam-hub site build <tag>          Rebuild site (batch mode)
+  fam-hub site list                 Dashboard of all sites
+  fam-hub site deploy <tag>         Deploy to hosting
+  fam-hub site domain <tag> <dom>   DNS setup guide
+
+Idea Capture:
+  fam-hub idea capture "<text>"     Capture a new idea
+  fam-hub idea digest [--all]       Summary across all stages
+  fam-hub idea validate <tag>       Run validation checks
+
+Multi-Agent Workflow:
+  fam-hub agent run <agent> <tag>   Run agent on a tag
+  fam-hub convo reconcile <tag>     Reconcile multi-agent conversation
+  fam-hub ingest <tag> {md|json}    Ingest content
+
+Admin:
+  fam-hub admin doctor              Check dependencies
+  fam-hub admin verify              Verify repo structure
+
+Run 'fam-hub <command>' for detailed help on each command.
 
 EOF
     ;;

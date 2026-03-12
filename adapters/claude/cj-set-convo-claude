@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-TAG="${1:-latest-convo}"; SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/claude/$TAG.jsonl"
-[ -f "$SRC" ] || { echo "[claude:set] no source for $TAG"; exit 0; }
-echo "[claude:set] (stub) would publish back from $SRC"
