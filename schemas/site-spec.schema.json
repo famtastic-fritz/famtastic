@@ -74,6 +74,90 @@
     "domain": {
       "type": "string",
       "description": "Custom domain (registered via GoDaddy reseller)"
+    },
+    "design_brief": {
+      "type": "object",
+      "description": "Structured design brief created during planning mode",
+      "properties": {
+        "goal": { "type": "string" },
+        "audience": { "type": "string" },
+        "tone": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "visual_direction": {
+          "type": "object",
+          "properties": {
+            "layout": { "type": "string" },
+            "typography": { "type": "string" },
+            "color_usage": { "type": "string" },
+            "motion": { "type": "string" },
+            "density": { "type": "string" }
+          }
+        },
+        "content_priorities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "must_have_sections": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "avoid": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "open_questions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Whether the user has approved this brief"
+        }
+      }
+    },
+    "design_decisions": {
+      "type": "array",
+      "description": "Log of durable design decisions made during the build",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": ["typography", "layout", "color", "content", "interaction", "structure"]
+          },
+          "decision": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["approved", "rejected", "superseded"]
+          }
+        },
+        "required": ["timestamp", "category", "decision", "status"]
+      }
+    },
+    "uploaded_assets": {
+      "type": "array",
+      "description": "Assets uploaded by the user with intent metadata",
+      "items": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["image", "text", "prompt", "logo", "screenshot"]
+          },
+          "role": {
+            "type": "string",
+            "enum": ["inspiration", "content", "brand_asset", "layout_reference", "style_reference"]
+          },
+          "label": { "type": "string" },
+          "notes": { "type": "string" },
+          "uploaded_at": { "type": "string" }
+        },
+        "required": ["filename", "role"]
+      }
     }
   }
 }

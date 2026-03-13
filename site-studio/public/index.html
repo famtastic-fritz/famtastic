@@ -10,7 +10,7 @@
       theme: {
         extend: {
           colors: {
-            studio: { bg: '#0f172a', panel: '#1e293b', accent: '#3b82f6', text: '#e2e8f0', muted: '#94a3b8' }
+            studio: { bg: '#0f172a', panel: '#1e293b', accent: '#3b82f6', text: '#e2e8f0', muted: '#94a3b8', success: '#22c55e' }
           }
         }
       }
@@ -25,10 +25,18 @@
     .msg-assistant { background: #334155; color: #e2e8f0; }
     .msg-status { background: transparent; color: #94a3b8; font-style: italic; border: 1px dashed #475569; }
     .msg-error { background: #7f1d1d; color: #fca5a5; }
-    .typing-indicator span { animation: blink 1.4s infinite both; }
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+    .msg-brief { background: #1e293b; border: 1px solid #3b82f6; color: #e2e8f0; }
+    .msg-changes { background: #1a2332; border-left: 3px solid #22c55e; color: #e2e8f0; }
+    .step-done { color: #22c55e; }
+    .step-active { color: #3b82f6; }
+    .step-dot { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .upload-zone { border: 2px dashed #475569; transition: all 0.2s; }
+    .upload-zone.drag-over { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+    .upload-thumb { position: relative; }
+    .upload-thumb img { object-fit: cover; }
+    .role-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; }
+    .role-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: flex; align-items: center; justify-content: center; }
   </style>
 </head>
 <body class="bg-studio-bg text-studio-text h-screen flex flex-col overflow-hidden">
@@ -41,6 +49,7 @@
     </div>
     <div class="flex items-center gap-4">
       <button onclick="rebuildSite()" class="text-sm bg-studio-accent hover:bg-blue-600 text-white px-4 py-1.5 rounded transition">Rebuild</button>
+      <button onclick="toggleStudioPanel()" id="studio-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Studio</button>
       <button onclick="togglePreview()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Toggle Preview</button>
     </div>
   </header>
@@ -48,19 +57,28 @@
   <!-- Asset bar (shown when assets exist) -->
   <div id="asset-bar" class="bg-studio-panel border-b border-gray-700 px-4 py-2 gap-2 items-center overflow-x-auto shrink-0" style="display: none;"></div>
 
-  <!-- Main content: Chat + Preview -->
+  <!-- Main content: Chat + Preview + Studio -->
   <div class="flex flex-1 overflow-hidden">
 
     <!-- Chat Panel -->
-    <div class="w-1/2 flex flex-col border-r border-gray-700">
+    <div id="chat-panel" class="w-1/2 flex flex-col border-r border-gray-700">
 
       <!-- Messages -->
       <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
         <div class="msg-assistant rounded-lg px-4 py-3 max-w-[90%]">
-          Welcome to Site Studio! Describe the website you want to build, and I'll help you create it step by step.<br><br>
-          Try: <em>"I'm building a site for my 30th class reunion"</em>
+          Welcome to Site Studio! Describe the website you want to build, and I'll create a design brief before generating anything.<br><br>
+          Try: <em>"I'm building a site for my landscaping company called GreenScape Pro. We do lawn care, tree trimming, and garden design. I want it to feel premium and modern."</em>
         </div>
       </div>
+
+      <!-- Upload drop zone (shown on drag) -->
+      <div id="upload-drop-zone" class="upload-zone rounded-lg mx-4 mb-2 p-6 text-center hidden">
+        <div class="text-studio-muted text-sm">Drop images here</div>
+        <div class="text-studio-muted text-xs mt-1">PNG, JPG, GIF, SVG, WebP — max 5MB</div>
+      </div>
+
+      <!-- Upload preview bar (shown when files are staged) -->
+      <div id="upload-preview-bar" class="px-4 pb-2 flex gap-2 items-center overflow-x-auto hidden"></div>
 
       <!-- Input -->
       <div class="p-4 border-t border-gray-700 bg-studio-panel">
@@ -72,6 +90,10 @@
             autocomplete="off"
             class="flex-1 bg-studio-bg border border-gray-600 rounded-lg px-4 py-2.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent"
           >
+          <label class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2.5 rounded-lg cursor-pointer transition flex items-center" title="Upload image">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp" multiple class="hidden" onchange="handleFileSelect(this.files)">
+          </label>
           <button type="submit" class="bg-studio-accent hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium transition">Send</button>
         </form>
       </div>
@@ -88,6 +110,39 @@
       </div>
       <iframe id="preview-frame" class="flex-1 w-full" src="about:blank"></iframe>
     </div>
+
+    <!-- Studio State Panel (hidden by default) -->
+    <div id="studio-panel" class="w-80 flex flex-col border-l border-gray-700 bg-studio-panel overflow-y-auto" style="display: none;">
+      <div class="p-4 border-b border-gray-700">
+        <h2 class="text-sm font-bold text-white mb-1">Studio State</h2>
+        <div id="studio-tag" class="text-xs text-studio-muted"></div>
+        <div id="studio-updated" class="text-xs text-studio-muted"></div>
+      </div>
+
+      <!-- Brief Section -->
+      <div class="p-4 border-b border-gray-700">
+        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Design Brief</h3>
+        <div id="studio-brief" class="text-xs text-studio-text">No brief yet</div>
+      </div>
+
+      <!-- Decisions Section -->
+      <div class="p-4 border-b border-gray-700">
+        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Design Decisions</h3>
+        <div id="studio-decisions" class="text-xs text-studio-text space-y-1">No decisions yet</div>
+      </div>
+
+      <!-- Uploaded Assets Section -->
+      <div class="p-4 border-b border-gray-700">
+        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Uploaded Assets</h3>
+        <div id="studio-uploads" class="text-xs text-studio-text space-y-1">No uploads yet</div>
+      </div>
+
+      <!-- Files Section -->
+      <div class="p-4">
+        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Files</h3>
+        <div id="studio-files" class="text-xs text-studio-text font-mono space-y-0.5">Loading...</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -95,6 +150,7 @@
     let ws = null;
     let config = {};
     let previewVisible = true;
+    let studioPanelVisible = false;
     let streamBuffer = '';
 
     // --- Init ---
@@ -105,7 +161,11 @@
 
       // Load conversation history
       const history = await (await fetch('/api/history')).json();
-      history.forEach(msg => addMessage(msg.role, msg.content, false));
+      history.forEach(msg => {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          addMessage(msg.role, msg.content, false);
+        }
+      });
 
       // Set preview URL
       const frame = document.getElementById('preview-frame');
@@ -134,9 +194,10 @@
             addMessage('assistant', msg.content);
             break;
           case 'status':
-            addMessage('status', msg.content);
+            addStep(msg.content);
             break;
           case 'error':
+            hideStepLog();
             addMessage('error', msg.content);
             break;
           case 'stream':
@@ -144,12 +205,17 @@
             break;
           case 'reload-preview':
             reloadPreview();
+            refreshStudioPanel();
             break;
           case 'asset-created':
             addAssetPreview(msg.filename, msg.path);
             break;
           case 'spec-updated':
-            addMessage('status', 'Spec updated');
+            refreshStudioPanel();
+            break;
+          case 'brief':
+            hideStepLog();
+            showBriefCard(msg.brief);
             break;
         }
       };
@@ -157,9 +223,58 @@
 
     function flushStream() {
       if (streamBuffer.trim()) {
-        // Stream was raw output, the final assistant message replaces it
         streamBuffer = '';
       }
+    }
+
+    // --- Step Log (replaces old typing indicator) ---
+    let steps = [];
+    let stepTimer = null;
+    let stepStart = null;
+
+    function addStep(text) {
+      // Mark previous active step as done
+      steps.forEach(s => { if (s.status === 'active') s.status = 'done'; });
+      // Add new active step
+      steps.push({ text, status: 'active' });
+      if (!stepStart) stepStart = Date.now();
+      renderStepLog();
+      // Start timer if not running
+      if (!stepTimer) {
+        stepTimer = setInterval(() => renderStepLog(), 1000);
+      }
+    }
+
+    function renderStepLog() {
+      let el = document.getElementById('step-log');
+      if (!el) {
+        const container = document.getElementById('chat-messages');
+        el = document.createElement('div');
+        el.id = 'step-log';
+        el.className = 'msg-assistant rounded-lg px-4 py-3 max-w-[90%]';
+        container.appendChild(el);
+      }
+
+      const elapsed = stepStart ? Math.floor((Date.now() - stepStart) / 1000) : 0;
+
+      el.innerHTML = steps.map(s => {
+        if (s.status === 'done') {
+          return `<div class="flex items-center gap-2 text-xs step-done"><span>&#10003;</span> ${escapeHtml(s.text)}</div>`;
+        } else {
+          return `<div class="flex items-center gap-2 text-xs step-active"><span class="step-dot">&#9679;</span> ${escapeHtml(s.text)}${elapsed > 2 ? ` <span class="text-studio-muted ml-auto">${elapsed}s</span>` : ''}</div>`;
+        }
+      }).join('');
+
+      const container = document.getElementById('chat-messages');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function hideStepLog() {
+      if (stepTimer) { clearInterval(stepTimer); stepTimer = null; }
+      const el = document.getElementById('step-log');
+      if (el) el.remove();
+      steps = [];
+      stepStart = null;
     }
 
     // --- Chat ---
@@ -172,13 +287,32 @@
       addMessage('user', text);
       ws.send(JSON.stringify({ type: 'chat', content: text }));
       input.value = '';
-      showTyping();
+      // Start step log with initial step
+      steps = [];
+      stepStart = null;
+      addStep('Processing...');
     });
 
     function addMessage(role, content, scroll = true) {
-      hideTyping();
+      hideStepLog();
       const container = document.getElementById('chat-messages');
       const div = document.createElement('div');
+
+      // Check if content has a change summary
+      if (role === 'assistant' && content.includes('\n-')) {
+        const parts = content.split('\n');
+        const firstLine = parts[0];
+        const bullets = parts.filter(l => l.startsWith('-') || l.startsWith('*'));
+
+        if (bullets.length > 0 && firstLine.match(/updated|built|changed/i)) {
+          div.className = 'msg-changes rounded-lg px-4 py-3 max-w-[90%] text-sm';
+          div.innerHTML = `<div class="font-medium mb-2">${escapeHtml(firstLine)}</div><div class="text-xs text-studio-muted space-y-1">${bullets.map(b => `<div>${escapeHtml(b)}</div>`).join('')}</div>`;
+          container.appendChild(div);
+          if (scroll) container.scrollTop = container.scrollHeight;
+          return;
+        }
+      }
+
       const cls = role === 'user' ? 'msg-user ml-auto' :
                   role === 'status' ? 'msg-status' :
                   role === 'error' ? 'msg-error' : 'msg-assistant';
@@ -188,37 +322,88 @@
       if (scroll) container.scrollTop = container.scrollHeight;
     }
 
-    function showTyping() {
-      hideTyping();
+    // --- Brief Card ---
+    function showBriefCard(brief) {
       const container = document.getElementById('chat-messages');
       const div = document.createElement('div');
-      div.id = 'typing';
-      div.className = 'msg-assistant rounded-lg px-4 py-3 max-w-[90%] typing-indicator';
-      div.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+      div.className = 'msg-brief rounded-lg px-5 py-4 max-w-[95%]';
+
+      const avoidHtml = (brief.avoid || []).length > 0
+        ? `<div class="mt-2"><span class="text-red-400 font-medium">Avoid:</span> ${brief.avoid.map(a => `<span class="bg-red-900/30 text-red-300 text-xs px-1.5 py-0.5 rounded">${escapeHtml(a)}</span>`).join(' ')}</div>`
+        : '';
+
+      const questionsHtml = (brief.open_questions || []).length > 0
+        ? `<div class="mt-3 p-3 bg-studio-bg rounded"><span class="text-yellow-400 text-xs font-medium">Open questions:</span>${brief.open_questions.map(q => `<div class="text-xs text-studio-muted mt-1">- ${escapeHtml(q)}</div>`).join('')}</div>`
+        : '';
+
+      const vd = brief.visual_direction || {};
+
+      div.innerHTML = `
+        <div class="text-sm font-bold text-white mb-3">Design Brief</div>
+        <div class="space-y-2 text-xs">
+          <div><span class="text-studio-muted">Goal:</span> ${escapeHtml(brief.goal || '')}</div>
+          <div><span class="text-studio-muted">Audience:</span> ${escapeHtml(brief.audience || '')}</div>
+          <div><span class="text-studio-muted">Tone:</span> ${(brief.tone || []).map(t => `<span class="bg-studio-accent/20 text-studio-accent px-1.5 py-0.5 rounded">${escapeHtml(t)}</span>`).join(' ')}</div>
+          <div class="grid grid-cols-2 gap-2 mt-2 p-3 bg-studio-bg rounded">
+            <div><span class="text-studio-muted">Layout:</span> ${escapeHtml(vd.layout || '-')}</div>
+            <div><span class="text-studio-muted">Typography:</span> ${escapeHtml(vd.typography || '-')}</div>
+            <div><span class="text-studio-muted">Color usage:</span> ${escapeHtml(vd.color_usage || '-')}</div>
+            <div><span class="text-studio-muted">Density:</span> ${escapeHtml(vd.density || '-')}</div>
+          </div>
+          <div><span class="text-studio-muted">Sections:</span> ${(brief.must_have_sections || []).join(', ')}</div>
+          ${avoidHtml}
+          ${questionsHtml}
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button onclick="approveBrief()" class="bg-studio-accent hover:bg-blue-600 text-white text-sm px-4 py-2 rounded font-medium transition">Build From Brief</button>
+          <button onclick="editBrief()" class="bg-gray-600 hover:bg-gray-500 text-white text-sm px-4 py-2 rounded transition">Edit Brief</button>
+          <button onclick="skipBrief()" class="bg-transparent border border-gray-600 hover:border-gray-400 text-studio-muted text-sm px-4 py-2 rounded transition">Skip to Build</button>
+        </div>
+      `;
+
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
+
+      // Refresh studio panel to show new brief
+      refreshStudioPanel();
     }
 
-    function hideTyping() {
-      const el = document.getElementById('typing');
-      if (el) el.remove();
+    function approveBrief() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'Build from brief');
+      ws.send(JSON.stringify({ type: 'approve-brief' }));
+      steps = [];
+      stepStart = null;
+      addStep('Brief approved, building site...');
+    }
+
+    function editBrief() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: 'edit-brief' }));
+      document.getElementById('chat-input').focus();
+      document.getElementById('chat-input').placeholder = 'Tell me what to change in the brief...';
+    }
+
+    function skipBrief() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'Skip brief, build directly');
+      ws.send(JSON.stringify({ type: 'skip-brief' }));
+      steps = [];
+      stepStart = null;
+      addStep('Skipping brief, building...');
     }
 
     // --- Asset Preview ---
     function addAssetPreview(filename, assetPath) {
-      hideTyping();
+      hideStepLog();
       const container = document.getElementById('chat-messages');
       const div = document.createElement('div');
       div.className = 'msg-assistant rounded-lg px-4 py-3 max-w-[90%]';
 
-      const isSvg = filename.endsWith('.svg');
       div.innerHTML = `
-        <div class="text-sm mb-2 font-medium">Asset created: ${filename}</div>
+        <div class="text-sm mb-2 font-medium">Asset created: ${escapeHtml(filename)}</div>
         <div class="bg-white rounded-lg p-4 inline-block border border-gray-600" style="max-width: 300px;">
-          ${isSvg
-            ? `<img src="/site-assets/${filename}?t=${Date.now()}" alt="${filename}" class="max-w-full h-auto" style="max-height: 200px;" />`
-            : `<img src="/site-assets/${filename}?t=${Date.now()}" alt="${filename}" class="max-w-full h-auto" style="max-height: 200px;" />`
-          }
+          <img src="/site-assets/${filename}?t=${Date.now()}" alt="${escapeHtml(filename)}" class="max-w-full h-auto" style="max-height: 200px;" />
         </div>
         <div class="mt-2 text-xs text-studio-muted">
           Say "make it more playful" or "change the colors" to refine
@@ -227,7 +412,6 @@
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
 
-      // Also refresh asset list
       refreshAssetBar();
     }
 
@@ -248,7 +432,83 @@
 
     function viewAsset(name) {
       addMessage('status', `Viewing: ${name}`);
-      // Could open in preview panel or modal
+    }
+
+    // --- Studio State Panel ---
+    function toggleStudioPanel() {
+      studioPanelVisible = !studioPanelVisible;
+      const panel = document.getElementById('studio-panel');
+      const btn = document.getElementById('studio-btn');
+      panel.style.display = studioPanelVisible ? 'flex' : 'none';
+      btn.className = studioPanelVisible
+        ? 'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition'
+        : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
+      if (studioPanelVisible) refreshStudioPanel();
+    }
+
+    async function refreshStudioPanel() {
+      if (!studioPanelVisible) return;
+      try {
+        const state = await (await fetch('/api/studio-state')).json();
+
+        document.getElementById('studio-tag').textContent = `Tag: ${state.tag}`;
+        document.getElementById('studio-updated').textContent = state.lastUpdated
+          ? `Updated: ${new Date(state.lastUpdated).toLocaleString()}`
+          : 'Not built yet';
+
+        // Brief
+        const briefEl = document.getElementById('studio-brief');
+        if (state.brief) {
+          briefEl.innerHTML = `
+            <div class="${state.brief.approved ? 'text-studio-success' : 'text-yellow-400'} font-medium mb-1">${state.brief.approved ? 'Approved' : 'Draft'}</div>
+            <div><span class="text-studio-muted">Goal:</span> ${escapeHtml(state.brief.goal || '-')}</div>
+            <div><span class="text-studio-muted">Tone:</span> ${(state.brief.tone || []).join(', ')}</div>
+            <div><span class="text-studio-muted">Avoid:</span> ${(state.brief.avoid || []).join(', ') || '-'}</div>
+          `;
+        } else {
+          briefEl.textContent = 'No brief yet — describe your site to start';
+        }
+
+        // Decisions
+        const decisionsEl = document.getElementById('studio-decisions');
+        if (state.decisions && state.decisions.length > 0) {
+          decisionsEl.innerHTML = state.decisions.map(d =>
+            `<div class="flex gap-1"><span class="text-studio-muted shrink-0">[${d.category}]</span> ${escapeHtml(d.decision)}</div>`
+          ).join('');
+        } else {
+          decisionsEl.textContent = 'No decisions yet';
+        }
+
+        // Uploaded Assets
+        const uploadsEl = document.getElementById('studio-uploads');
+        const uploads = state.spec?.uploaded_assets || [];
+        if (uploads.length > 0) {
+          uploadsEl.innerHTML = uploads.map(a => {
+            const roleColors = { content: 'text-green-400', brand_asset: 'text-blue-400', inspiration: 'text-purple-400', layout_reference: 'text-yellow-400', style_reference: 'text-pink-400' };
+            const color = roleColors[a.role] || 'text-studio-muted';
+            return `<div class="flex items-center gap-2">
+              <span class="${color} shrink-0">[${a.role}]</span>
+              <span class="truncate">${escapeHtml(a.filename)}</span>
+              ${a.label ? `<span class="text-studio-muted truncate">"${escapeHtml(a.label)}"</span>` : ''}
+            </div>`;
+          }).join('');
+        } else {
+          uploadsEl.textContent = 'No uploads — drag, paste, or click the image button';
+        }
+
+        // Files
+        const filesEl = document.getElementById('studio-files');
+        if (state.files && state.files.length > 0) {
+          filesEl.innerHTML = state.files.map(f => {
+            const sizeStr = f.size > 1024 ? `${(f.size / 1024).toFixed(1)}KB` : `${f.size}B`;
+            return `<div class="flex justify-between"><span>${escapeHtml(f.name)}</span><span class="text-studio-muted">${sizeStr}</span></div>`;
+          }).join('');
+        } else {
+          filesEl.textContent = 'No files generated yet';
+        }
+      } catch (e) {
+        console.error('[studio-panel]', e);
+      }
     }
 
     // --- Preview ---
@@ -261,8 +521,6 @@
       const panel = document.getElementById('preview-panel');
       previewVisible = !previewVisible;
       panel.style.display = previewVisible ? 'flex' : 'none';
-      // Adjust chat width
-      panel.previousElementSibling.style.width = previewVisible ? '50%' : '100%';
     }
 
     // --- Actions ---
@@ -270,7 +528,176 @@
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       addMessage('user', 'Build the site');
       ws.send(JSON.stringify({ type: 'chat', content: 'build the site' }));
-      showTyping();
+      steps = [];
+      stepStart = null;
+      addStep('Building site...');
+    }
+
+    // --- Helpers ---
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // --- Upload / Drag-Drop / Paste ---
+    const ROLES = [
+      { value: 'content', label: 'Content', desc: 'Use directly on the site' },
+      { value: 'brand_asset', label: 'Brand Asset', desc: 'Logo, icon, or brand element' },
+      { value: 'inspiration', label: 'Inspiration', desc: 'Shows the vibe I want' },
+      { value: 'layout_reference', label: 'Layout Ref', desc: 'Arrange like this' },
+      { value: 'style_reference', label: 'Style Ref', desc: 'Match this visual style' },
+    ];
+
+    // Drag-drop on chat panel
+    const chatPanel = document.getElementById('chat-panel');
+    const dropZone = document.getElementById('upload-drop-zone');
+    let dragCounter = 0;
+
+    chatPanel.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      dropZone.classList.remove('hidden');
+      dropZone.classList.add('drag-over');
+    });
+
+    chatPanel.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        dropZone.classList.add('hidden');
+        dropZone.classList.remove('drag-over');
+      }
+    });
+
+    chatPanel.addEventListener('dragover', (e) => e.preventDefault());
+
+    chatPanel.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dropZone.classList.add('hidden');
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) {
+        handleFileSelect(e.dataTransfer.files);
+      }
+    });
+
+    // Clipboard paste
+    document.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const files = [];
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) files.push(file);
+        }
+      }
+      if (files.length > 0) {
+        e.preventDefault();
+        handleFileSelect(files);
+      }
+    });
+
+    function handleFileSelect(files) {
+      for (const file of files) {
+        showRoleSelector(file);
+      }
+    }
+
+    function showRoleSelector(file) {
+      // Create inline preview + role selector
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const modal = document.createElement('div');
+        modal.className = 'role-modal';
+        modal.innerHTML = `
+          <div class="bg-studio-panel rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div class="text-sm font-bold text-white mb-3">Assign Role</div>
+            <div class="flex gap-3 mb-4">
+              <div class="w-20 h-20 bg-white rounded-lg overflow-hidden flex items-center justify-center border border-gray-600">
+                <img src="${e.target.result}" class="max-w-full max-h-full object-contain" />
+              </div>
+              <div>
+                <div class="text-xs text-studio-text truncate max-w-[200px]">${escapeHtml(file.name)}</div>
+                <div class="text-xs text-studio-muted mt-1">${(file.size / 1024).toFixed(1)} KB</div>
+                <input id="upload-label" type="text" placeholder="Label (optional)" class="mt-2 text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1 text-studio-text w-full focus:outline-none focus:border-studio-accent" />
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              ${ROLES.map(r => `
+                <button onclick="uploadWithRole(this, '${r.value}')" class="w-full text-left px-3 py-2 rounded bg-studio-bg hover:bg-gray-600 transition text-xs">
+                  <span class="text-white font-medium">${r.label}</span>
+                  <span class="text-studio-muted ml-1">— ${r.desc}</span>
+                </button>
+              `).join('')}
+            </div>
+            <button onclick="this.closest('.role-modal').remove()" class="mt-3 text-xs text-studio-muted hover:text-white transition">Cancel</button>
+          </div>
+        `;
+
+        // Store file reference on modal
+        modal._file = file;
+        document.body.appendChild(modal);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function uploadWithRole(btn, role) {
+      const modal = btn.closest('.role-modal');
+      const file = modal._file;
+      const label = modal.querySelector('#upload-label')?.value || '';
+      modal.remove();
+
+      // Upload via FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('role', role);
+      formData.append('label', label);
+
+      addStep('Uploading ' + file.name + '...');
+
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.error) {
+          hideStepLog();
+          addMessage('error', data.error);
+          return;
+        }
+
+        hideStepLog();
+
+        // Show inline confirmation
+        const roleName = ROLES.find(r => r.value === role)?.label || role;
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = 'msg-assistant rounded-lg px-4 py-3 max-w-[90%]';
+        div.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="w-16 h-16 bg-white rounded overflow-hidden flex items-center justify-center shrink-0 border border-gray-600">
+              <img src="${data.path}?t=${Date.now()}" class="max-w-full max-h-full object-contain" />
+            </div>
+            <div>
+              <div class="text-sm font-medium">Uploaded: ${escapeHtml(data.asset.filename)}</div>
+              <div class="flex gap-2 mt-1">
+                <span class="role-badge bg-studio-accent/20 text-studio-accent">${escapeHtml(roleName)}</span>
+                ${label ? `<span class="text-xs text-studio-muted">"${escapeHtml(label)}"</span>` : ''}
+              </div>
+              <div class="text-xs text-studio-muted mt-1">This asset will be included in future generation context.</div>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+
+        refreshStudioPanel();
+        refreshAssetBar();
+      } catch (e) {
+        hideStepLog();
+        addMessage('error', 'Upload failed: ' + e.message);
+      }
     }
 
     // --- Start ---

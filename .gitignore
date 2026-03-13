@@ -1,0 +1,4 @@
+node_modules/
+.DS_Store
+sites/*/dist/
+sites/*/conversation.jsonl
