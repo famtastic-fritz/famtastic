@@ -51,6 +51,9 @@
       <button onclick="rebuildSite()" class="text-sm bg-studio-accent hover:bg-blue-600 text-white px-4 py-1.5 rounded transition">Rebuild</button>
       <button onclick="toggleStudioPanel()" id="studio-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Studio</button>
       <button onclick="togglePreview()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Toggle Preview</button>
+      <button onclick="openSettings()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition" title="Settings">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -825,6 +828,92 @@
       } catch (e) {
         hideStepLog();
         addMessage('error', 'Upload failed: ' + e.message);
+      }
+    }
+
+    // --- Settings ---
+    async function openSettings() {
+      const settings = await (await fetch('/api/settings')).json();
+
+      const modal = document.createElement('div');
+      modal.className = 'role-modal';
+      modal.id = 'settings-modal';
+      modal.innerHTML = `
+        <div class="bg-studio-panel rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div class="text-sm font-bold text-white mb-4">Studio Settings</div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-studio-muted block mb-1">AI Model</label>
+              <select id="set-model" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text">
+                <option value="claude-sonnet-4-20250514" ${settings.model === 'claude-sonnet-4-20250514' ? 'selected' : ''}>Claude Sonnet 4</option>
+                <option value="claude-opus-4-6" ${settings.model === 'claude-opus-4-6' ? 'selected' : ''}>Claude Opus 4.6</option>
+                <option value="claude-haiku-4-5-20251001" ${settings.model === 'claude-haiku-4-5-20251001' ? 'selected' : ''}>Claude Haiku 4.5</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-studio-muted block mb-1">Deploy Target</label>
+              <select id="set-deploy" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text">
+                <option value="netlify" ${settings.deploy_target === 'netlify' ? 'selected' : ''}>Netlify</option>
+                <option value="vercel" ${settings.deploy_target === 'vercel' ? 'selected' : ''}>Vercel</option>
+                <option value="manual" ${settings.deploy_target === 'manual' ? 'selected' : ''}>Manual / Export</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-studio-muted block mb-1">Deploy Team</label>
+              <input id="set-team" type="text" value="${escapeHtml(settings.deploy_team || '')}" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-studio-muted block mb-1">Max Upload (MB)</label>
+                <input id="set-upload-size" type="number" value="${settings.max_upload_size_mb}" min="1" max="50" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text">
+              </div>
+              <div>
+                <label class="text-xs text-studio-muted block mb-1">Max Versions</label>
+                <input id="set-max-versions" type="number" value="${settings.max_versions}" min="5" max="200" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text">
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-2 text-xs text-studio-text cursor-pointer">
+                <input id="set-auto-summary" type="checkbox" ${settings.auto_summary ? 'checked' : ''} class="rounded">
+                Auto-summarize sessions
+              </label>
+              <label class="flex items-center gap-2 text-xs text-studio-text cursor-pointer">
+                <input id="set-auto-version" type="checkbox" ${settings.auto_version ? 'checked' : ''} class="rounded">
+                Auto-version files
+              </label>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-5">
+            <button onclick="saveSettings()" class="bg-studio-accent hover:bg-blue-600 text-white text-sm px-4 py-2 rounded font-medium transition">Save</button>
+            <button onclick="document.getElementById('settings-modal').remove()" class="bg-gray-600 hover:bg-gray-500 text-white text-sm px-4 py-2 rounded transition">Cancel</button>
+          </div>
+          <div class="mt-3 text-xs text-studio-muted">Settings stored at ~/.config/famtastic/studio-config.json</div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    async function saveSettings() {
+      const settings = {
+        model: document.getElementById('set-model').value,
+        deploy_target: document.getElementById('set-deploy').value,
+        deploy_team: document.getElementById('set-team').value,
+        max_upload_size_mb: parseInt(document.getElementById('set-upload-size').value) || 5,
+        max_versions: parseInt(document.getElementById('set-max-versions').value) || 50,
+        auto_summary: document.getElementById('set-auto-summary').checked,
+        auto_version: document.getElementById('set-auto-version').checked,
+      };
+
+      try {
+        await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        document.getElementById('settings-modal').remove();
+        addMessage('status', 'Settings saved. Some changes take effect on next session.');
+      } catch (e) {
+        addMessage('error', 'Failed to save settings: ' + e.message);
       }
     }
 

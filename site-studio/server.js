@@ -191,7 +191,7 @@ ${convoText}
 SUMMARY:`;
 
   const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: 'claude-sonnet-4-20250514' },
+    env: { ...process.env, MODEL: loadSettings().model },
     cwd: HUB_ROOT,
   });
 
@@ -609,6 +609,47 @@ app.post('/api/summarize', (req, res) => {
   res.json({ status: 'summary generation started' });
 });
 
+// --- Settings API ---
+const SETTINGS_FILE = path.join(process.env.HOME || '~', '.config', 'famtastic', 'studio-config.json');
+
+function loadSettings() {
+  const defaults = {
+    model: 'claude-sonnet-4-20250514',
+    deploy_target: 'netlify',
+    deploy_team: 'fritz-medine',
+    preview_port: 3333,
+    studio_port: 3334,
+    max_upload_size_mb: 5,
+    max_uploads_per_site: 20,
+    auto_summary: true,
+    auto_version: true,
+    max_versions: 50,
+  };
+  if (fs.existsSync(SETTINGS_FILE)) {
+    try {
+      return { ...defaults, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) };
+    } catch { return defaults; }
+  }
+  return defaults;
+}
+
+function saveSettings(settings) {
+  const dir = path.dirname(SETTINGS_FILE);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
+
+app.get('/api/settings', (req, res) => {
+  res.json(loadSettings());
+});
+
+app.put('/api/settings', (req, res) => {
+  const current = loadSettings();
+  const updated = { ...current, ...req.body };
+  saveSettings(updated);
+  res.json(updated);
+});
+
 // --- Request Classifier ---
 // Classifies user intent. Returns one of:
 // new_site, major_revision, restyle, layout_update, content_update, bug_fix, asset_import, build, deploy, query
@@ -894,7 +935,7 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
   ws.send(JSON.stringify({ type: 'status', content: 'Creating design brief...' }));
 
   const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: 'claude-sonnet-4-20250514' },
+    env: { ...process.env, MODEL: loadSettings().model },
     cwd: HUB_ROOT,
   });
 
@@ -1006,7 +1047,7 @@ Respond as a thoughtful creative partner:
 Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
   const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: 'claude-sonnet-4-20250514' },
+    env: { ...process.env, MODEL: loadSettings().model },
     cwd: HUB_ROOT,
   });
 
@@ -1139,7 +1180,7 @@ IMPORTANT:
   ws.send(JSON.stringify({ type: 'status', content: 'Sending to Claude...' }));
 
   const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: 'claude-sonnet-4-20250514' },
+    env: { ...process.env, MODEL: loadSettings().model },
     cwd: HUB_ROOT,
   });
 
