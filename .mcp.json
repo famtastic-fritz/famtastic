@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "famtastic": {
+      "command": "node",
+      "args": ["mcp-server/server.js"],
+      "cwd": "/Users/famtasticfritz/famtastic"
+    }
+  }
+}

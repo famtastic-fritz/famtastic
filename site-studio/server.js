@@ -672,6 +672,9 @@ function classifyRequest(message, spec) {
   // Summarize session
   if (lower.match(/\b(summarize|summary|wrap\s+up|save\s+progress)\b/)) return 'summarize';
 
+  // Data model / database planning
+  if (lower.match(/\b(data\s+model|database|schema|entities|what\s+data|need\s+a\s+db|cms|dynamic\s+content|user\s+accounts|e-?commerce|booking\s+system)\b/)) return 'data_model';
+
   // Tech stack advice
   if (lower.match(/\b(what\s+tech|tech\s+stack|which\s+platform|should\s+i\s+use|recommend.*(?:stack|tech|platform)|static\s+or\s+(?:cms|dynamic)|cms\s+or)\b/)) return 'tech_advice';
 
@@ -891,6 +894,112 @@ function analyzeTechStack(brief) {
   }
 
   return recommendations;
+}
+
+// --- Data Model Planner (Database-driven sites, concept phase) ---
+function handleDataModelPlanning(ws, userMessage, spec) {
+  ws.send(JSON.stringify({ type: 'status', content: 'Analyzing data requirements...' }));
+
+  const brief = spec.design_brief ? JSON.stringify(spec.design_brief, null, 2) : 'none';
+  const techRecs = spec.tech_recommendations ? JSON.stringify(spec.tech_recommendations, null, 2) : 'none';
+
+  const prompt = `You are a database architect for FAMtastic Site Studio.
+
+The user is planning a site that may need dynamic data. Analyze their requirements and produce a DATA MODEL PLAN.
+
+DESIGN BRIEF: ${brief}
+TECH RECOMMENDATIONS: ${techRecs}
+USER REQUEST: "${userMessage}"
+
+Respond with a structured data model plan:
+
+DATA_MODEL:
+{
+  "needs_database": true/false,
+  "reason": "why or why not",
+  "suggested_stack": "e.g., PostgreSQL + Prisma, or MongoDB, or 'none - static is fine'",
+  "entities": [
+    {
+      "name": "EntityName",
+      "description": "what this represents",
+      "fields": [
+        { "name": "field_name", "type": "string|number|boolean|date|reference", "required": true/false, "notes": "any special behavior" }
+      ],
+      "relationships": ["has_many: OtherEntity", "belongs_to: ParentEntity"]
+    }
+  ],
+  "mock_approach": "how to represent this with static HTML for now (e.g., hardcoded JSON, static cards, placeholder content)",
+  "migration_path": "how to move from static mock to real database later"
+}
+
+Be practical. If the site doesn't need a database, say so clearly. If it does, keep the model minimal — only include what's actually needed.`;
+
+  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
+    env: { ...process.env, MODEL: loadSettings().model },
+    cwd: HUB_ROOT,
+  });
+
+  let response = '';
+  child.stdout.on('data', (chunk) => { response += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { console.error('[data-model]', chunk.toString()); });
+
+  child.on('close', (code) => {
+    if (code !== 0 || !response.trim()) {
+      ws.send(JSON.stringify({ type: 'error', content: 'Data model planning failed. Try describing your data needs.' }));
+      return;
+    }
+
+    response = response.trim();
+
+    // Try to extract JSON data model
+    const modelStart = response.indexOf('DATA_MODEL:');
+    if (modelStart !== -1) {
+      const jsonStr = response.substring(modelStart + 11).trim();
+      const firstBrace = jsonStr.indexOf('{');
+      if (firstBrace !== -1) {
+        let depth = 0, end = firstBrace;
+        for (let i = firstBrace; i < jsonStr.length; i++) {
+          if (jsonStr[i] === '{') depth++;
+          if (jsonStr[i] === '}') depth--;
+          if (depth === 0) { end = i + 1; break; }
+        }
+        try {
+          const dataModel = JSON.parse(jsonStr.substring(firstBrace, end));
+          // Save to spec
+          const currentSpec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+          currentSpec.data_model = dataModel;
+          fs.writeFileSync(SPEC_FILE, JSON.stringify(currentSpec, null, 2));
+
+          // Format for display
+          let display = `**Data Model Analysis**\n\n`;
+          display += `Database needed: ${dataModel.needs_database ? 'Yes' : 'No'}\n`;
+          display += `Reason: ${dataModel.reason}\n`;
+          if (dataModel.suggested_stack) display += `Suggested stack: ${dataModel.suggested_stack}\n`;
+          if (dataModel.entities && dataModel.entities.length > 0) {
+            display += `\nEntities:\n`;
+            dataModel.entities.forEach(e => {
+              display += `- ${e.name}: ${e.description}\n`;
+              e.fields.forEach(f => {
+                display += `    ${f.name} (${f.type})${f.required ? ' *' : ''}\n`;
+              });
+            });
+          }
+          if (dataModel.mock_approach) display += `\nMock approach: ${dataModel.mock_approach}\n`;
+          if (dataModel.migration_path) display += `Migration path: ${dataModel.migration_path}\n`;
+
+          ws.send(JSON.stringify({ type: 'assistant', content: display }));
+          appendConvo({ role: 'assistant', content: display, intent: 'data_model', at: new Date().toISOString() });
+          return;
+        } catch (e) {
+          console.error('[data-model] Failed to parse JSON:', e.message);
+        }
+      }
+    }
+
+    // Fallback: show raw response
+    ws.send(JSON.stringify({ type: 'assistant', content: response }));
+    appendConvo({ role: 'assistant', content: response, intent: 'data_model', at: new Date().toISOString() });
+  });
 }
 
 // --- Planning Handler ---
@@ -1482,6 +1591,10 @@ wss.on('connection', (ws) => {
           appendConvo({ role: 'assistant', content: 'Session summary generated', at: new Date().toISOString() });
           break;
         }
+
+        case 'data_model':
+          handleDataModelPlanning(ws, userMessage, spec);
+          break;
 
         case 'tech_advice': {
           const brief = spec.design_brief || null;
