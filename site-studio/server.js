@@ -15,6 +15,14 @@ const SITE_DIR = path.join(HUB_ROOT, 'sites', TAG);
 const DIST_DIR = path.join(SITE_DIR, 'dist');
 const CONVO_FILE = path.join(SITE_DIR, 'conversation.jsonl');
 const SPEC_FILE = path.join(SITE_DIR, 'spec.json');
+const STUDIO_FILE = path.join(SITE_DIR, '.studio.json');
+const VERSIONS_DIR = path.join(DIST_DIR, '.versions');
+const SUMMARIES_DIR = path.join(SITE_DIR, 'summaries');
+
+// --- Multi-page state ---
+let currentPage = 'index.html';
+let sessionMessageCount = 0;
+let sessionStartedAt = new Date().toISOString();
 
 // --- Upload config ---
 const UPLOADS_DIR = path.join(DIST_DIR, 'assets', 'uploads');
@@ -70,6 +78,261 @@ function sanitizeSvg(svgContent) {
   return clean;
 }
 
+// --- Site Versioning ---
+function versionFile(page, reason) {
+  const htmlPath = path.join(DIST_DIR, page);
+  if (!fs.existsSync(htmlPath)) return null;
+
+  const pageDir = path.join(VERSIONS_DIR, page.replace('.html', ''));
+  fs.mkdirSync(pageDir, { recursive: true });
+
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  const versionPath = path.join(pageDir, `${ts}.html`);
+  fs.copyFileSync(htmlPath, versionPath);
+
+  // Store version metadata in .studio.json
+  let studio;
+  try {
+    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+  } catch { studio = {}; }
+
+  if (!studio.versions) studio.versions = [];
+  const entry = {
+    page,
+    timestamp: new Date().toISOString(),
+    file: path.relative(DIST_DIR, versionPath),
+    reason: reason || 'update',
+    size: fs.statSync(htmlPath).size,
+  };
+  studio.versions.push(entry);
+
+  // Keep last 50 versions total
+  if (studio.versions.length > 50) {
+    const removed = studio.versions.splice(0, studio.versions.length - 50);
+    // Clean up old version files
+    for (const old of removed) {
+      const oldPath = path.join(DIST_DIR, old.file);
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch {}
+      }
+    }
+  }
+
+  fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+  return entry;
+}
+
+function getVersions(page) {
+  let studio;
+  try {
+    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+  } catch { studio = {}; }
+
+  const versions = studio.versions || [];
+  if (page) return versions.filter(v => v.page === page);
+  return versions;
+}
+
+function rollbackToVersion(page, timestamp) {
+  const versions = getVersions(page);
+  const target = versions.find(v => v.timestamp === timestamp);
+  if (!target) return { error: 'Version not found' };
+
+  const versionPath = path.join(DIST_DIR, target.file);
+  if (!fs.existsSync(versionPath)) return { error: 'Version file missing' };
+
+  const htmlPath = path.join(DIST_DIR, page);
+
+  // Save current state as a version before rolling back
+  versionFile(page, 'pre-rollback');
+
+  // Copy the old version back
+  fs.copyFileSync(versionPath, htmlPath);
+
+  return { success: true, restoredFrom: target.timestamp, page };
+}
+
+// --- Session Summaries ---
+function loadSessionSummaries(count) {
+  if (!fs.existsSync(SUMMARIES_DIR)) return [];
+  const files = fs.readdirSync(SUMMARIES_DIR)
+    .filter(f => f.endsWith('.md'))
+    .sort()
+    .slice(-(count || 3));
+  return files.map(f => {
+    const content = fs.readFileSync(path.join(SUMMARIES_DIR, f), 'utf8');
+    return { file: f, content };
+  });
+}
+
+function generateSessionSummary(ws) {
+  // Read recent conversation
+  if (!fs.existsSync(CONVO_FILE)) return;
+  const lines = fs.readFileSync(CONVO_FILE, 'utf8').trim().split('\n').filter(Boolean);
+  if (lines.length < 3) return; // Not enough to summarize
+
+  // Take last 40 messages for summary context
+  const recent = lines.slice(-40).map(l => {
+    try { return JSON.parse(l); } catch { return null; }
+  }).filter(Boolean);
+
+  const convoText = recent.map(m => `[${m.role}] ${m.content}`).join('\n');
+
+  const prompt = `Summarize this website design conversation in 3-5 bullet points. Focus on:
+- Key decisions made (design, layout, content)
+- What was built or changed
+- Open items or next steps discussed
+
+Keep it concise — this summary will be injected into future sessions for context continuity.
+
+CONVERSATION:
+${convoText}
+
+SUMMARY:`;
+
+  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
+    env: { ...process.env, MODEL: 'claude-sonnet-4-20250514' },
+    cwd: HUB_ROOT,
+  });
+
+  let response = '';
+  child.stdout.on('data', (chunk) => { response += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { console.error('[summary]', chunk.toString()); });
+
+  child.on('close', (code) => {
+    if (code !== 0 || !response.trim()) {
+      console.error('[summary] Failed to generate session summary');
+      return;
+    }
+
+    fs.mkdirSync(SUMMARIES_DIR, { recursive: true });
+    const sessionNum = (getStudioSessionCount() || 0).toString().padStart(3, '0');
+    const summaryFile = path.join(SUMMARIES_DIR, `session-${sessionNum}.md`);
+    const header = `# Session ${sessionNum} — ${new Date().toISOString().split('T')[0]}\n\n`;
+    fs.writeFileSync(summaryFile, header + response.trim() + '\n');
+    console.log(`[summary] Wrote session summary: ${summaryFile}`);
+
+    // Also store in .studio.json
+    try {
+      const studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+      studio.conversation_summary = response.trim();
+      fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+    } catch {}
+  });
+}
+
+function getStudioSessionCount() {
+  try {
+    const studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    return studio.session_count || 0;
+  } catch { return 0; }
+}
+
+// --- Studio Persistence ---
+function loadStudio() {
+  if (fs.existsSync(STUDIO_FILE)) {
+    try {
+      const studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8'));
+      currentPage = studio.current_page || 'index.html';
+      // Verify current page still exists
+      if (!fs.existsSync(path.join(DIST_DIR, currentPage))) {
+        currentPage = 'index.html';
+      }
+      return studio;
+    } catch (e) {
+      console.error('[studio] Failed to load .studio.json:', e.message);
+    }
+  }
+  return null;
+}
+
+function saveStudio() {
+  let studio;
+  if (fs.existsSync(STUDIO_FILE)) {
+    try { studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')); } catch { studio = null; }
+  }
+  if (!studio) {
+    studio = {
+      version: 1,
+      tag: TAG,
+      created_at: new Date().toISOString(),
+      session_count: 0,
+      sessions: [],
+    };
+  }
+  studio.updated_at = new Date().toISOString();
+  studio.current_page = currentPage;
+  fs.mkdirSync(SITE_DIR, { recursive: true });
+  fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+  return studio;
+}
+
+function endSession() {
+  if (!fs.existsSync(STUDIO_FILE)) return;
+  try {
+    const studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8'));
+    // Update the most recent session
+    if (studio.sessions && studio.sessions.length > 0) {
+      const last = studio.sessions[studio.sessions.length - 1];
+      if (!last.ended_at) {
+        last.ended_at = new Date().toISOString();
+        last.message_count = sessionMessageCount;
+      }
+    }
+    studio.updated_at = new Date().toISOString();
+    fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+
+    // Generate session summary if there was meaningful conversation
+    if (sessionMessageCount >= 3) {
+      generateSessionSummary();
+    }
+  } catch (e) {
+    console.error('[studio] Failed to save session end:', e.message);
+  }
+}
+
+function startSession() {
+  let studio;
+  if (fs.existsSync(STUDIO_FILE)) {
+    try { studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')); } catch { studio = null; }
+  }
+  if (!studio) {
+    studio = {
+      version: 1,
+      tag: TAG,
+      created_at: new Date().toISOString(),
+      session_count: 0,
+      sessions: [],
+    };
+  }
+  studio.session_count = (studio.session_count || 0) + 1;
+  if (!studio.sessions) studio.sessions = [];
+  studio.sessions.push({ started_at: new Date().toISOString() });
+  // Keep only last 20 sessions
+  if (studio.sessions.length > 20) {
+    studio.sessions = studio.sessions.slice(-20);
+  }
+  studio.updated_at = new Date().toISOString();
+  studio.current_page = currentPage;
+  fs.mkdirSync(SITE_DIR, { recursive: true });
+  fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+  sessionMessageCount = 0;
+  sessionStartedAt = new Date().toISOString();
+  return studio;
+}
+
+// Helper: list HTML pages in dist
+function listPages() {
+  if (!fs.existsSync(DIST_DIR)) return [];
+  return fs.readdirSync(DIST_DIR)
+    .filter(f => f.endsWith('.html'))
+    .sort((a, b) => {
+      if (a === 'index.html') return -1;
+      if (b === 'index.html') return 1;
+      return a.localeCompare(b);
+    });
+}
+
 // --- Express app ---
 const app = express();
 app.use(express.json());
@@ -114,6 +377,23 @@ app.use('/site-assets', express.static(path.join(DIST_DIR, 'assets')));
 // Get site config
 app.get('/api/config', (req, res) => {
   res.json({ tag: TAG, previewPort: PREVIEW_PORT, studioPort: PORT });
+});
+
+// List pages and current page
+app.get('/api/pages', (req, res) => {
+  res.json({ pages: listPages(), currentPage });
+});
+
+// Set current page
+app.post('/api/pages/current', (req, res) => {
+  const page = req.body.page;
+  if (!page) return res.status(400).json({ error: 'page required' });
+  if (!fs.existsSync(path.join(DIST_DIR, page))) {
+    return res.status(404).json({ error: 'Page not found' });
+  }
+  currentPage = page;
+  saveStudio();
+  res.json({ currentPage });
 });
 
 // List available templates
@@ -251,6 +531,46 @@ app.use('/assets/uploads', express.static(UPLOADS_DIR, {
   },
 }));
 
+// --- Version History API ---
+app.get('/api/versions', (req, res) => {
+  const page = req.query.page || null;
+  const versions = getVersions(page);
+  res.json(versions.reverse()); // newest first
+});
+
+app.get('/api/versions/:page/:timestamp', (req, res) => {
+  const page = req.params.page + '.html';
+  const versions = getVersions(page);
+  const target = versions.find(v => v.timestamp === req.params.timestamp);
+  if (!target) return res.status(404).json({ error: 'Version not found' });
+
+  const versionPath = path.join(DIST_DIR, target.file);
+  if (!fs.existsSync(versionPath)) return res.status(404).json({ error: 'Version file missing' });
+
+  const content = fs.readFileSync(versionPath, 'utf8');
+  res.json({ ...target, content });
+});
+
+app.post('/api/rollback', (req, res) => {
+  const { page, timestamp } = req.body;
+  if (!page || !timestamp) return res.status(400).json({ error: 'page and timestamp required' });
+
+  const result = rollbackToVersion(page, timestamp);
+  if (result.error) return res.status(400).json(result);
+  res.json(result);
+});
+
+// --- Session Summaries API ---
+app.get('/api/summaries', (req, res) => {
+  const summaries = loadSessionSummaries(10);
+  res.json(summaries);
+});
+
+app.post('/api/summarize', (req, res) => {
+  generateSessionSummary();
+  res.json({ status: 'summary generation started' });
+});
+
 // --- Request Classifier ---
 // Classifies user intent. Returns one of:
 // new_site, major_revision, restyle, layout_update, content_update, bug_fix, asset_import, build, deploy, query
@@ -259,13 +579,34 @@ function classifyRequest(message, spec) {
   const hasBrief = spec && spec.design_brief && spec.design_brief.approved;
   const hasHtml = fs.existsSync(path.join(DIST_DIR, 'index.html'));
 
-  // Precedence: new_site > major_revision > restyle > layout_update > content_update > bug_fix > asset_import
+  // Precedence: brainstorm > rollback > new_site > major_revision > restyle > layout_update > content_update > bug_fix > asset_import
+
+  // Brainstorm mode — explore ideas without generating HTML
+  if (lower.match(/\b(brainstorm|let'?s?\s+(think|explore|plan\s+more|discuss|ideate)|think\s+about|explore\s+ideas|planning\s+mode)\b/)) return 'brainstorm';
+
+  // Version rollback
+  if (lower.match(/\b(rollback|roll\s+back|revert|undo|go\s+back\s+to|restore|previous\s+version)\b/)) return 'rollback';
+
+  // Version history
+  if (lower.match(/\b(version|versions|history|changelog|change\s+log)\b/)) return 'version_history';
+
+  // Summarize session
+  if (lower.match(/\b(summarize|summary|wrap\s+up|save\s+progress)\b/)) return 'summarize';
+
+  // Page navigation — switch to a different page for editing
+  const pageMatch = lower.match(/\b(?:go\s+to|switch\s+to|edit|show|open)\s+(?:the\s+)?(\w+)\s+page\b/);
+  if (pageMatch) {
+    const pageName = pageMatch[1].toLowerCase();
+    const pages = listPages();
+    const targetPage = pages.find(p => p.replace('.html', '') === pageName || (pageName === 'home' && p === 'index.html'));
+    if (targetPage) return 'page_switch';
+  }
 
   // Explicit commands first
   if (lower.match(/\bdeploy\b/) && !lower.match(/\bhow\s+to\s+deploy\b/)) return 'deploy';
   if (lower.match(/\b(build|rebuild)\s+(the\s+)?site\b/) || lower.match(/\b(generate|create|make)\s+(the\s+)?site\b/)) return 'build';
   if (lower.match(/\buse\s+(the\s+)?(event|business|portfolio|landing)\s+template\b/) || lower.match(/\bapply\s+(the\s+)?(event|business|portfolio|landing)\s+template\b/)) return 'build';
-  if (lower.match(/\b(list|show|what)\s+(assets|templates)\b/) || lower.includes('preview')) return 'query';
+  if (lower.match(/\b(list|show|what)\s+(assets|templates|pages)\b/) || lower.includes('preview')) return 'query';
 
   // Asset generation
   if (lower.match(/(?:create|make|generate|design|draw)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(logo|icon|favicon|hero|banner|divider|illustration)/)) return 'asset_import';
@@ -299,12 +640,18 @@ function classifyRequest(message, spec) {
 function buildPromptContext(requestType, spec, userMessage) {
   const brief = spec.design_brief || null;
   const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-5);
-  const htmlPath = path.join(DIST_DIR, 'index.html');
+  const pages = listPages();
+  const htmlPath = path.join(DIST_DIR, currentPage);
   const currentHtml = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '';
 
   // Build HTML context based on request type
   let htmlContext = '';
-  if (requestType === 'bug_fix' || requestType === 'content_update') {
+  if (requestType === 'build' || requestType === 'major_revision') {
+    // For builds, just list existing pages — we'll generate fresh
+    htmlContext = pages.length > 0
+      ? `Existing pages: ${pages.join(', ')}`
+      : '(no site generated yet)';
+  } else if (requestType === 'bug_fix' || requestType === 'content_update') {
     // Full source needed for precise edits
     htmlContext = currentHtml;
   } else if (requestType === 'layout_update' || requestType === 'restyle') {
@@ -315,8 +662,13 @@ function buildPromptContext(requestType, spec, userMessage) {
       htmlContext = currentHtml;
     }
   } else {
-    // Build / new — summary only
     htmlContext = currentHtml ? summarizeHtml(currentHtml) : '(no site generated yet)';
+  }
+
+  // Add multi-page context for edit requests
+  if (pages.length > 1 && requestType !== 'build' && requestType !== 'major_revision') {
+    const otherPages = pages.filter(p => p !== currentPage);
+    htmlContext += `\n\nCURRENT PAGE: ${currentPage}\nOther pages in this site: ${otherPages.join(', ')}`;
   }
 
   // Build brief context
@@ -354,6 +706,13 @@ function buildPromptContext(requestType, spec, userMessage) {
     assetsContext += '\nIMPORTANT: "inspiration" assets show the VIBE the user wants, not content to copy literally. "content" assets should be used directly. "brand_asset" assets (logos, etc.) should be referenced in the HTML.';
   }
 
+  // Cross-session context
+  let sessionContext = '';
+  const summaries = loadSessionSummaries(2);
+  if (summaries.length > 0) {
+    sessionContext = '\nPREVIOUS SESSION CONTEXT:\n' + summaries.map(s => s.content).join('\n---\n');
+  }
+
   // Core anti-cookie-cutter rules
   const systemRules = `RULES:
 - Never default to a generic business template layout
@@ -363,7 +722,7 @@ function buildPromptContext(requestType, spec, userMessage) {
 - Every section should feel intentional for THIS specific business/project
 - If the user's request conflicts with the brief, flag it — don't silently override`;
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext };
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext };
 }
 
 function summarizeHtml(html) {
@@ -490,28 +849,122 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
   });
 }
 
+// --- Brainstorm Handler ---
+function handleBrainstorm(ws, userMessage, spec) {
+  ws.send(JSON.stringify({ type: 'status', content: 'Entering brainstorm mode...' }));
+
+  const brief = spec.design_brief ? JSON.stringify(spec.design_brief, null, 2) : 'none yet';
+  const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-5);
+  const decisionsText = decisions.length > 0
+    ? decisions.map(d => `- [${d.category}] ${d.decision}`).join('\n')
+    : 'none yet';
+
+  // Load session summaries for cross-session context
+  const summaries = loadSessionSummaries(3);
+  const summaryContext = summaries.length > 0
+    ? '\nPREVIOUS SESSION SUMMARIES:\n' + summaries.map(s => s.content).join('\n---\n')
+    : '';
+
+  const pages = listPages();
+
+  const prompt = `You are a creative design strategist for FAMtastic Site Studio. The user wants to BRAINSTORM — explore ideas, think through possibilities, discuss strategy.
+
+DO NOT generate any HTML, CSS, or code. This is a THINKING conversation.
+
+CURRENT PROJECT STATE:
+- Site tag: ${TAG}
+- Site name: ${spec.site_name || 'not set'}
+- Business type: ${spec.business_type || 'not set'}
+- Pages built: ${pages.length > 0 ? pages.join(', ') : 'none yet'}
+- Design brief: ${brief}
+- Active decisions: ${decisionsText}
+${summaryContext}
+
+USER'S MESSAGE:
+"${userMessage}"
+
+Respond as a thoughtful creative partner:
+- Explore the idea with them
+- Ask clarifying questions if needed
+- Suggest creative directions
+- Reference their existing decisions and brief
+- Be opinionated but collaborative
+- Keep it conversational, not formal
+
+Do NOT output any HTML or suggest code changes. This is pure ideation.`;
+
+  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
+    env: { ...process.env, MODEL: 'claude-sonnet-4-20250514' },
+    cwd: HUB_ROOT,
+  });
+
+  let response = '';
+  child.stdout.on('data', (chunk) => { response += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { console.error('[brainstorm]', chunk.toString()); });
+
+  child.on('close', (code) => {
+    if (code !== 0 || !response.trim()) {
+      ws.send(JSON.stringify({ type: 'error', content: 'Brainstorm failed. Try again.' }));
+      return;
+    }
+
+    ws.send(JSON.stringify({ type: 'assistant', content: response.trim() }));
+    appendConvo({ role: 'assistant', content: response.trim(), intent: 'brainstorm', at: new Date().toISOString() });
+  });
+}
+
 // --- Enhanced Chat Handler ---
 function handleChatMessage(ws, userMessage, requestType, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext } = buildPromptContext(requestType, spec, userMessage);
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext } = buildPromptContext(requestType, spec, userMessage);
 
   ws.send(JSON.stringify({ type: 'status', content: `Classified as: ${requestType}` }));
 
   // Build mode-specific prompt
   let modeInstruction = '';
+  const pages = listPages();
+  const specPages = spec.pages || ['home'];
+  const isMultiPage = specPages.length > 1 || (specPages.length === 1 && specPages[0] !== 'home');
+
   switch (requestType) {
     case 'content_update':
-      modeInstruction = 'The user wants to change TEXT CONTENT only. Preserve all layout, styling, and structure. Only modify the specific text they mentioned.';
+      modeInstruction = `The user wants to change TEXT CONTENT only on ${currentPage}. Preserve all layout, styling, and structure. Only modify the specific text they mentioned.`;
       break;
     case 'layout_update':
-      modeInstruction = 'The user wants to change LAYOUT or add/remove SECTIONS. Preserve the overall design language and approved decisions. Make targeted structural changes.';
+      modeInstruction = `The user wants to change LAYOUT or add/remove SECTIONS on ${currentPage}. Preserve the overall design language and approved decisions. Make targeted structural changes.`;
       break;
     case 'bug_fix':
-      modeInstruction = 'The user is reporting a BUG or visual issue. Fix only the specific problem. Do not change design direction or content.';
+      modeInstruction = `The user is reporting a BUG or visual issue on ${currentPage}. Fix only the specific problem. Do not change design direction or content.`;
       break;
     case 'restyle':
       modeInstruction = 'The user wants a VISUAL RESTYLE. Change the aesthetic feel while preserving content and core structure. Update the design language holistically.';
+      break;
+    case 'build':
+      if (isMultiPage) {
+        modeInstruction = `Generate a MULTI-PAGE website with separate HTML files for EACH page: ${specPages.join(', ')}.
+
+PAGE CONTENT — generate real content for each:
+- home (index.html): Hero, value proposition, highlights, CTA
+- about: Story, mission, team, differentiators
+- services: Service cards with descriptions and icons
+- contact: Contact form, address/phone/email, hours
+- portfolio/gallery: Image grid with captions
+- pricing: Pricing tiers with features and CTAs
+- Any other page: Content that fits its name and business type
+
+RULES:
+- EVERY page MUST be a complete HTML document (<!DOCTYPE html> to </html>)
+- EVERY page MUST have real, substantial body content — multiple sections, styled layout, real copy
+- ALL pages share the SAME nav bar with links to ALL other pages using real filenames (about.html, NOT #about)
+- ALL pages share the SAME footer, Tailwind config, fonts, colors
+- Do NOT output empty pages or skeleton pages
+- Page naming: 'home' → index.html, others → lowercase-hyphenated.html
+
+Use the MULTI_UPDATE response format with --- PAGE: filename.html --- delimiters between each page.`;
+      } else {
+        modeInstruction = 'Generate a complete single-page website.';
+      }
       break;
     default:
       modeInstruction = 'Process the user request and update the site accordingly.';
@@ -526,6 +979,7 @@ MODE: ${modeInstruction}
 ${briefContext}
 ${decisionsContext}
 ${assetsContext}
+${sessionContext}
 
 SITE SPEC:
 ${JSON.stringify({ site_name: spec.site_name, business_type: spec.business_type, colors: spec.colors, tone: spec.tone, fonts: spec.fonts }, null, 2)}
@@ -537,24 +991,38 @@ USER REQUEST: "${userMessage}"
 
 RESPOND WITH ONE OF THESE FORMATS:
 
-1. To UPDATE the site HTML:
+1. To UPDATE a SINGLE page:
 First line: HTML_UPDATE:
 Then: the complete updated HTML file
 Then on a new line: CHANGES:
 Then: 2-4 bullet points explaining what changed and why
 
-2. To CREATE an SVG asset:
+2. To CREATE MULTIPLE pages (for build/new site only):
+First line must be exactly: MULTI_UPDATE:
+Then each page separated by delimiter lines:
+--- PAGE: index.html ---
+(COMPLETE HTML document from <!DOCTYPE html> to </html>)
+--- PAGE: about.html ---
+(COMPLETE HTML document from <!DOCTYPE html> to </html>)
+After ALL pages, on its own line: CHANGES:
+Then: 2-4 bullet points
+
+CRITICAL: Every page between delimiters MUST contain a full, complete HTML document with real content. Do NOT output empty pages.
+
+3. To CREATE an SVG asset:
 First line: SVG_ASSET:<filename>
 Then: complete SVG code
 
-3. To ask a question or respond conversationally:
+4. To ask a question or respond conversationally:
 Just respond as text.
 
 IMPORTANT:
 - When outputting HTML, include the FULL complete file (not a diff)
 - Use Tailwind CSS via CDN
 - Keep it responsive and modern
-- The CHANGES summary is required after every HTML_UPDATE`;
+- The CHANGES summary is required after every HTML_UPDATE or MULTI_UPDATE
+- For multi-page sites: every page must have the SAME nav bar, footer, Tailwind config, and fonts
+- Nav links must be real file links (about.html) NOT anchors (#about)`;
 
   ws.send(JSON.stringify({ type: 'status', content: 'Sending to Claude...' }));
 
@@ -589,8 +1057,75 @@ IMPORTANT:
 
     response = response.trim();
 
-    if (response.startsWith('HTML_UPDATE:')) {
-      ws.send(JSON.stringify({ type: 'status', content: 'Writing updated HTML...' }));
+    // Detect multi-page output — either explicit MULTI_UPDATE prefix or PAGE delimiters anywhere
+    const hasMultiPrefix = response.startsWith('MULTI_UPDATE:');
+    const hasPageDelimiters = /^---\s*PAGE:\s*\S+\s*---\s*$/m.test(response);
+
+    if (hasMultiPrefix || hasPageDelimiters) {
+      ws.send(JSON.stringify({ type: 'status', content: 'Writing multiple pages...' }));
+
+      // Strip MULTI_UPDATE prefix if present, also strip any preamble before first PAGE delimiter
+      let body = hasMultiPrefix ? response.replace(/^MULTI_UPDATE:\s*/, '') : response;
+
+      // Extract CHANGES summary from end
+      let changeSummary = '';
+      const changesIdx = body.lastIndexOf('CHANGES:');
+      if (changesIdx !== -1) {
+        // Only treat as CHANGES if it's after the last PAGE content
+        const afterChanges = body.substring(changesIdx + 8).trim();
+        if (afterChanges.includes('-') || afterChanges.includes('*')) {
+          changeSummary = afterChanges;
+          body = body.substring(0, changesIdx).trim();
+        }
+      }
+
+      // Parse pages by --- PAGE: filename.html --- delimiter
+      fs.mkdirSync(DIST_DIR, { recursive: true });
+      const pageParts = body.split(/^---\s*PAGE:\s*(\S+)\s*---\s*$/m);
+      const writtenPages = [];
+      for (let i = 1; i < pageParts.length; i += 2) {
+        const filename = pageParts[i].trim();
+        let html = (pageParts[i + 1] || '').trim();
+        // Strip markdown fences wrapping individual pages
+        html = html.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+        if (filename && html.length > 20) {
+          versionFile(filename, requestType);
+          fs.writeFileSync(path.join(DIST_DIR, filename), html);
+          writtenPages.push(filename);
+          console.log(`[multi-page] Wrote: ${filename} (${html.length} bytes)`);
+        } else if (filename) {
+          console.warn(`[multi-page] WARN: ${filename} was empty or too small (${html.length} bytes), skipped`);
+        }
+      }
+
+      if (changeSummary) {
+        extractDecisions(spec, changeSummary, requestType);
+      }
+
+      if (writtenPages.length > 0) {
+        const msg = changeSummary
+          ? `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}\n\n${changeSummary}`
+          : `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}`;
+        ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+        ws.send(JSON.stringify({ type: 'reload-preview' }));
+        ws.send(JSON.stringify({ type: 'pages-updated', pages: writtenPages }));
+        appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+      } else {
+        // Parsing failed — fall back to treating as single-page HTML_UPDATE
+        console.warn('[multi-page] No pages parsed from response, falling back to single-page');
+        const html = body.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+        if (html.length > 20) {
+          fs.writeFileSync(path.join(DIST_DIR, 'index.html'), html);
+          ws.send(JSON.stringify({ type: 'assistant', content: 'Site updated! Check the preview.' }));
+          ws.send(JSON.stringify({ type: 'reload-preview' }));
+          appendConvo({ role: 'assistant', content: 'Site updated (single page fallback)', at: new Date().toISOString() });
+        } else {
+          ws.send(JSON.stringify({ type: 'error', content: 'Build produced empty output. Try again or be more specific.' }));
+        }
+      }
+      saveStudio();
+    } else if (response.startsWith('HTML_UPDATE:')) {
+      ws.send(JSON.stringify({ type: 'status', content: `Writing updated ${currentPage}...` }));
 
       // Split HTML and change summary
       const afterPrefix = response.replace(/^HTML_UPDATE:\s*/, '');
@@ -607,7 +1142,8 @@ IMPORTANT:
       html = html.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
 
       fs.mkdirSync(DIST_DIR, { recursive: true });
-      fs.writeFileSync(path.join(DIST_DIR, 'index.html'), html);
+      versionFile(currentPage, requestType);
+      fs.writeFileSync(path.join(DIST_DIR, currentPage), html);
 
       // Extract and log design decisions from change summary
       if (changeSummary) {
@@ -615,11 +1151,12 @@ IMPORTANT:
       }
 
       const msg = changeSummary
-        ? `Site updated!\n\n${changeSummary}`
-        : 'Site updated! Check the preview.';
+        ? `${currentPage} updated!\n\n${changeSummary}`
+        : `${currentPage} updated! Check the preview.`;
       ws.send(JSON.stringify({ type: 'assistant', content: msg }));
       ws.send(JSON.stringify({ type: 'reload-preview' }));
       appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+      saveStudio();
     } else if (response.startsWith('SVG_ASSET:')) {
       const firstNewline = response.indexOf('\n');
       const header = response.substring(0, firstNewline);
@@ -685,6 +1222,26 @@ const wss = new WebSocketServer({ server });
 wss.on('connection', (ws) => {
   console.log('[studio] Client connected');
 
+  // Send persistence state on connect
+  const studioState = loadStudio();
+  const pages = listPages();
+  if (studioState && studioState.session_count > 0) {
+    const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+    const briefStatus = spec.design_brief?.approved ? 'approved' : (spec.design_brief ? 'draft' : 'none');
+    let welcomeMsg = `Welcome back! Session #${studioState.session_count + 1} for ${TAG}.`;
+    if (pages.length > 1) {
+      welcomeMsg += `\nPages: ${pages.join(', ')} (viewing: ${currentPage})`;
+    }
+    if (briefStatus !== 'none') {
+      welcomeMsg += `\nDesign brief: ${briefStatus}`;
+    }
+    ws.send(JSON.stringify({ type: 'assistant', content: welcomeMsg }));
+    ws.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+  }
+
+  // Start a new session
+  startSession();
+
   ws.on('message', async (data) => {
     let msg;
     try { msg = JSON.parse(data); } catch { return; }
@@ -692,6 +1249,7 @@ wss.on('connection', (ws) => {
     if (msg.type === 'chat') {
       const userMessage = msg.content;
       const ts = new Date().toISOString();
+      sessionMessageCount++;
 
       // Log user message
       appendConvo({ role: 'user', content: userMessage, at: ts });
@@ -706,6 +1264,72 @@ wss.on('connection', (ws) => {
 
       // Route based on classification
       switch (requestType) {
+        case 'page_switch': {
+          const pageSwitchMatch = userMessage.toLowerCase().match(/\b(?:go\s+to|switch\s+to|edit|show|open)\s+(?:the\s+)?(\w+)\s+page\b/);
+          if (pageSwitchMatch) {
+            const pageName = pageSwitchMatch[1].toLowerCase();
+            const allPages = listPages();
+            const target = allPages.find(p => p.replace('.html', '') === pageName || (pageName === 'home' && p === 'index.html'));
+            if (target) {
+              currentPage = target;
+              saveStudio();
+              ws.send(JSON.stringify({ type: 'page-changed', page: currentPage }));
+              ws.send(JSON.stringify({ type: 'assistant', content: `Switched to ${currentPage}. You can now edit this page.` }));
+              appendConvo({ role: 'assistant', content: `Switched to ${currentPage}`, at: new Date().toISOString() });
+            }
+          }
+          break;
+        }
+
+        case 'brainstorm':
+          handleBrainstorm(ws, userMessage, spec);
+          break;
+
+        case 'rollback': {
+          // Find the most recent version of the current page to roll back to
+          const versions = getVersions(currentPage);
+          if (versions.length === 0) {
+            ws.send(JSON.stringify({ type: 'assistant', content: 'No previous versions found for this page. There\'s nothing to roll back to.' }));
+            appendConvo({ role: 'assistant', content: 'No versions to rollback', at: new Date().toISOString() });
+          } else {
+            // Roll back to the most recent version (second-to-last, since the last is the current state)
+            const targetVersion = versions.length >= 2 ? versions[versions.length - 2] : versions[versions.length - 1];
+            const result = rollbackToVersion(currentPage, targetVersion.timestamp);
+            if (result.error) {
+              ws.send(JSON.stringify({ type: 'error', content: `Rollback failed: ${result.error}` }));
+            } else {
+              ws.send(JSON.stringify({ type: 'assistant', content: `Rolled back ${currentPage} to version from ${new Date(result.restoredFrom).toLocaleString()}` }));
+              ws.send(JSON.stringify({ type: 'reload-preview' }));
+              appendConvo({ role: 'assistant', content: `Rolled back ${currentPage} to ${result.restoredFrom}`, at: new Date().toISOString() });
+            }
+          }
+          break;
+        }
+
+        case 'version_history': {
+          const versionList = getVersions(currentPage);
+          if (versionList.length === 0) {
+            ws.send(JSON.stringify({ type: 'assistant', content: 'No version history yet. Versions are saved automatically every time a page is updated.' }));
+          } else {
+            const lines = versionList.slice(-10).reverse().map((v, i) => {
+              const date = new Date(v.timestamp).toLocaleString();
+              const sizeKb = (v.size / 1024).toFixed(1);
+              return `${i === 0 ? '  → ' : '    '}${date} — ${v.reason} (${sizeKb}KB)`;
+            });
+            ws.send(JSON.stringify({ type: 'assistant', content: `Version history for ${currentPage}:\n${lines.join('\n')}\n\nSay "rollback" to revert to the previous version, or use the Studio panel for more options.` }));
+          }
+          appendConvo({ role: 'assistant', content: 'Showed version history', at: new Date().toISOString() });
+          break;
+        }
+
+        case 'summarize': {
+          ws.send(JSON.stringify({ type: 'status', content: 'Generating session summary...' }));
+          generateSessionSummary(ws);
+          ws.send(JSON.stringify({ type: 'assistant', content: 'Session summary saved. This context will carry over to future sessions.' }));
+          appendConvo({ role: 'assistant', content: 'Session summary generated', at: new Date().toISOString() });
+          break;
+        }
+
         case 'new_site':
         case 'major_revision':
         case 'restyle':
@@ -756,8 +1380,9 @@ wss.on('connection', (ws) => {
         fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
         ws.send(JSON.stringify({ type: 'status', content: 'Brief approved! Building site...' }));
         appendConvo({ role: 'system', content: 'Design brief approved', at: new Date().toISOString() });
-        // Build using the brief context
-        handleChatMessage(ws, `Build this site based on the approved design brief. Follow it precisely. Site name: ${spec.site_name || TAG}`, 'build', spec);
+        // Build using the brief context — include pages from spec
+        const pagesList = (spec.pages || ['home']).join(', ');
+        handleChatMessage(ws, `Build this site based on the approved design brief. Follow it precisely. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}`, 'build', spec);
       }
     }
 
@@ -792,6 +1417,15 @@ wss.on('connection', (ws) => {
       runAssetGenerate(ws, assetType, description);
     }
 
+    if (msg.type === 'set-page') {
+      const page = msg.page;
+      if (page && fs.existsSync(path.join(DIST_DIR, page))) {
+        currentPage = page;
+        saveStudio();
+        ws.send(JSON.stringify({ type: 'page-changed', page: currentPage }));
+      }
+    }
+
     if (msg.type === 'update-spec') {
       try {
         const currentSpec = JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8'));
@@ -804,7 +1438,10 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.on('close', () => console.log('[studio] Client disconnected'));
+  ws.on('close', () => {
+    console.log('[studio] Client disconnected');
+    endSession();
+  });
 });
 
 // --- Query handler (list assets, templates, preview) ---
@@ -834,6 +1471,16 @@ function handleQuery(ws, userMessage) {
       : 'No templates available yet.';
     ws.send(JSON.stringify({ type: 'assistant', content }));
     appendConvo({ role: 'assistant', content, at: new Date().toISOString() });
+  } else if (lowerMsg.match(/\b(list|show|what)\s+pages\b/)) {
+    const pages = listPages();
+    if (pages.length > 0) {
+      const content = `Pages in this site:\n${pages.map(p => `  ${p === currentPage ? '→' : '-'} ${p}${p === currentPage ? ' (active)' : ''}`).join('\n')}\n\nSay "switch to <page> page" to edit a different page.`;
+      ws.send(JSON.stringify({ type: 'assistant', content }));
+      ws.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+    } else {
+      ws.send(JSON.stringify({ type: 'assistant', content: 'No pages generated yet. Describe your site to get started.' }));
+    }
+    appendConvo({ role: 'assistant', content: 'Listed pages', at: new Date().toISOString() });
   } else if (lowerMsg.includes('preview')) {
     ws.send(JSON.stringify({ type: 'assistant', content: `Preview is running at http://localhost:${PREVIEW_PORT}. Check the right panel.` }));
     appendConvo({ role: 'assistant', content: `Preview at http://localhost:${PREVIEW_PORT}`, at: new Date().toISOString() });
@@ -948,8 +1595,24 @@ function escapeForShell(str) {
 }
 
 // --- Start ---
+// Load persisted state
+const initialStudio = loadStudio();
+if (initialStudio) {
+  console.log(`[site-studio] Loaded .studio.json — session #${(initialStudio.session_count || 0) + 1}, current page: ${currentPage}`);
+} else {
+  console.log('[site-studio] No .studio.json found — fresh project');
+}
+
+// Clean up session on process exit
+process.on('SIGTERM', () => { endSession(); process.exit(0); });
+process.on('SIGINT', () => { endSession(); process.exit(0); });
+
 server.listen(PORT, () => {
   console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
   console.log(`[site-studio] Site tag: ${TAG}`);
   console.log(`[site-studio] Preview at: http://localhost:${PREVIEW_PORT}`);
+  const pages = listPages();
+  if (pages.length > 0) {
+    console.log(`[site-studio] Pages: ${pages.join(', ')}`);
+  }
 });

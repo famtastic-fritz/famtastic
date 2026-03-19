@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Studio Project",
+  "description": "Project persistence file for Site Studio sessions",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Schema version"
+    },
+    "tag": {
+      "type": "string",
+      "description": "Site tag identifier"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO timestamp of first studio session"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "ISO timestamp of last state change"
+    },
+    "current_page": {
+      "type": "string",
+      "default": "index.html",
+      "description": "Currently active page in preview/editing"
+    },
+    "session_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of studio sessions"
+    },
+    "sessions": {
+      "type": "array",
+      "description": "History of studio sessions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "started_at": { "type": "string" },
+          "ended_at": { "type": "string" },
+          "message_count": { "type": "integer" },
+          "summary": { "type": "string" }
+        },
+        "required": ["started_at"]
+      }
+    },
+    "conversation_summary": {
+      "type": "string",
+      "description": "AI-generated summary of conversation history for context injection"
+    },
+    "versions": {
+      "type": "array",
+      "description": "Version history of HTML files",
+      "items": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "string", "description": "HTML filename (e.g., index.html)" },
+          "timestamp": { "type": "string", "description": "ISO timestamp of version snapshot" },
+          "file": { "type": "string", "description": "Relative path to version file in dist/.versions/" },
+          "reason": { "type": "string", "description": "What triggered this version (e.g., content_update, build)" },
+          "size": { "type": "integer", "description": "File size in bytes" }
+        },
+        "required": ["page", "timestamp", "file"]
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "User-added notes about the project"
+    }
+  },
+  "required": ["version", "tag", "created_at"]
+}

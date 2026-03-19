@@ -101,12 +101,16 @@
 
     <!-- Preview Panel -->
     <div id="preview-panel" class="w-1/2 flex flex-col bg-white">
-      <div class="bg-gray-100 border-b px-4 py-2 flex items-center justify-between shrink-0">
-        <span class="text-gray-600 text-sm font-medium">Live Preview</span>
-        <div class="flex items-center gap-2">
-          <span id="preview-status" class="text-xs text-gray-400">connecting...</span>
-          <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition">Refresh</button>
+      <div class="bg-gray-100 border-b px-4 py-2 flex flex-col shrink-0">
+        <div class="flex items-center justify-between">
+          <span class="text-gray-600 text-sm font-medium">Live Preview</span>
+          <div class="flex items-center gap-2">
+            <span id="preview-status" class="text-xs text-gray-400">connecting...</span>
+            <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition">Refresh</button>
+          </div>
         </div>
+        <!-- Page tabs (shown when multiple pages exist) -->
+        <div id="page-tabs" class="flex gap-1 mt-1.5 overflow-x-auto" style="display: none;"></div>
       </div>
       <iframe id="preview-frame" class="flex-1 w-full" src="about:blank"></iframe>
     </div>
@@ -137,6 +141,19 @@
         <div id="studio-uploads" class="text-xs text-studio-text space-y-1">No uploads yet</div>
       </div>
 
+      <!-- Version History Section -->
+      <div class="p-4 border-b border-gray-700">
+        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Version History</h3>
+        <div id="studio-versions" class="text-xs text-studio-text space-y-1">No versions yet</div>
+      </div>
+
+      <!-- Session Summaries Section -->
+      <div class="p-4 border-b border-gray-700">
+        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Session Context</h3>
+        <div id="studio-summaries" class="text-xs text-studio-text space-y-1">No summaries yet</div>
+        <button onclick="triggerSummarize()" class="mt-2 text-xs bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition">Save Summary</button>
+      </div>
+
       <!-- Files Section -->
       <div class="p-4">
         <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Files</h3>
@@ -152,6 +169,8 @@
     let previewVisible = true;
     let studioPanelVisible = false;
     let streamBuffer = '';
+    let sitePages = [];
+    let activePage = 'index.html';
 
     // --- Init ---
     async function init() {
@@ -172,8 +191,9 @@
       frame.src = `http://localhost:${config.previewPort}/`;
       document.getElementById('preview-status').textContent = `localhost:${config.previewPort}`;
 
-      // Load assets bar
+      // Load assets bar and pages
       refreshAssetBar();
+      loadPages();
 
       // Connect WebSocket
       connectWS();
@@ -216,6 +236,14 @@
           case 'brief':
             hideStepLog();
             showBriefCard(msg.brief);
+            break;
+          case 'pages-updated':
+            updatePageTabs(msg.pages, msg.currentPage);
+            break;
+          case 'page-changed':
+            activePage = msg.page;
+            renderPageTabs();
+            navigateToPage(msg.page);
             break;
         }
       };
@@ -506,15 +534,100 @@
         } else {
           filesEl.textContent = 'No files generated yet';
         }
+        // Version History
+        const versionsEl = document.getElementById('studio-versions');
+        try {
+          const versions = await (await fetch(`/api/versions?page=${encodeURIComponent(activePage)}`)).json();
+          if (versions.length > 0) {
+            versionsEl.innerHTML = versions.slice(0, 8).map((v, i) => {
+              const date = new Date(v.timestamp).toLocaleString();
+              const sizeKb = (v.size / 1024).toFixed(1);
+              return `<div class="flex items-center gap-1">
+                <span class="text-studio-muted shrink-0">${date}</span>
+                <span class="truncate">${v.reason}</span>
+                <span class="text-studio-muted shrink-0">${sizeKb}KB</span>
+                <button onclick="rollbackVersion('${v.page}', '${v.timestamp}')" class="text-yellow-400 hover:text-yellow-300 shrink-0 ml-auto" title="Rollback to this version">↩</button>
+              </div>`;
+            }).join('');
+          } else {
+            versionsEl.textContent = 'No versions yet — auto-saved on each update';
+          }
+        } catch { versionsEl.textContent = 'No versions yet'; }
+
+        // Session Summaries
+        const summariesEl = document.getElementById('studio-summaries');
+        try {
+          const summaries = await (await fetch('/api/summaries')).json();
+          if (summaries.length > 0) {
+            summariesEl.innerHTML = summaries.slice(-3).reverse().map(s => {
+              const preview = s.content.split('\n').filter(l => l.trim()).slice(0, 3).join('<br>');
+              return `<div class="bg-studio-bg rounded p-2 mb-1">${preview}</div>`;
+            }).join('');
+          } else {
+            summariesEl.textContent = 'No session summaries yet — generated when sessions end';
+          }
+        } catch { summariesEl.textContent = 'No summaries yet'; }
+
       } catch (e) {
         console.error('[studio-panel]', e);
       }
+    }
+
+    // --- Page Tabs ---
+    function updatePageTabs(pages, current) {
+      if (pages) sitePages = pages;
+      if (current) activePage = current;
+      renderPageTabs();
+    }
+
+    function renderPageTabs() {
+      const tabsEl = document.getElementById('page-tabs');
+      if (sitePages.length <= 1) {
+        tabsEl.style.display = 'none';
+        return;
+      }
+      tabsEl.style.display = 'flex';
+      tabsEl.innerHTML = sitePages.map(p => {
+        const isActive = p === activePage;
+        const label = p.replace('.html', '').replace('index', 'home');
+        return `<button onclick="switchPage('${p}')"
+          class="text-xs px-3 py-1 rounded transition whitespace-nowrap ${
+            isActive
+              ? 'bg-blue-500 text-white font-medium'
+              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+          }">${label}</button>`;
+      }).join('');
+    }
+
+    function switchPage(page) {
+      if (page === activePage) return;
+      activePage = page;
+      renderPageTabs();
+      navigateToPage(page);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'set-page', page }));
+      }
+    }
+
+    function navigateToPage(page) {
+      const frame = document.getElementById('preview-frame');
+      const pagePath = page === 'index.html' ? '/' : `/${page}`;
+      frame.src = `http://localhost:${config.previewPort}${pagePath}`;
+    }
+
+    async function loadPages() {
+      try {
+        const data = await (await fetch('/api/pages')).json();
+        updatePageTabs(data.pages, data.currentPage);
+      } catch {}
     }
 
     // --- Preview ---
     function reloadPreview() {
       const frame = document.getElementById('preview-frame');
       frame.src = frame.src;
+      // Refresh page tabs in case new pages were created
+      loadPages();
     }
 
     function togglePreview() {
@@ -697,6 +810,40 @@
       } catch (e) {
         hideStepLog();
         addMessage('error', 'Upload failed: ' + e.message);
+      }
+    }
+
+    // --- Rollback ---
+    async function rollbackVersion(page, timestamp) {
+      if (!confirm(`Roll back ${page} to ${new Date(timestamp).toLocaleString()}? Current version will be saved first.`)) return;
+
+      try {
+        const res = await fetch('/api/rollback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page, timestamp }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          addMessage('error', `Rollback failed: ${data.error}`);
+        } else {
+          addMessage('assistant', `Rolled back ${page} to version from ${new Date(data.restoredFrom).toLocaleString()}`);
+          reloadPreview();
+          refreshStudioPanel();
+        }
+      } catch (e) {
+        addMessage('error', 'Rollback failed: ' + e.message);
+      }
+    }
+
+    // --- Summarize ---
+    async function triggerSummarize() {
+      try {
+        await fetch('/api/summarize', { method: 'POST' });
+        addMessage('status', 'Session summary is being generated...');
+        setTimeout(refreshStudioPanel, 5000);
+      } catch (e) {
+        addMessage('error', 'Summary failed: ' + e.message);
       }
     }
 

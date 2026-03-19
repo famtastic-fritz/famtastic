@@ -31,7 +31,7 @@
       "type": "array",
       "items": { "type": "string" },
       "minItems": 1,
-      "description": "List of pages or sections to generate"
+      "description": "List of pages to generate (e.g. home, about, services, contact). Each becomes a separate HTML file."
     },
     "features": {
       "type": "array",

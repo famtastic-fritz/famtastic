@@ -29,6 +29,9 @@ SPEC="$SITE_DIR/spec.json"
 STATE="$SITE_DIR/state.json"
 SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/site"
 
+# Default pages list — overridden by parsing below
+PAGES_GENERATED=("index.html")
+
 # --- Step 0: Initialize site directory ---
 echo "[site] Initializing $TAG..."
 mkdir -p "$DIST" "$ASSETS" "$SRC"
@@ -80,40 +83,63 @@ if [ -n "$TEMPLATE" ]; then
   scripts/site-template "$TAG" "$TEMPLATE"
   # Jump to state update (skip the generation block below)
 else
-PROMPT="Generate a complete, modern, single-page HTML website with these specifications:
+# --- Build page list ---
+# Convert spec page names to filenames
+IFS=', ' read -ra PAGE_NAMES <<< "$PAGES"
+PAGE_FILES=()
 
-Site name: $SITE_NAME
+# Function to map page name to filename
+page_to_file() {
+  local pname="$1"
+  if [ "$pname" = "home" ]; then
+    echo "index.html"
+  else
+    echo "$pname" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g' | sed 's/$/.html/'
+  fi
+}
+
+for pname in "${PAGE_NAMES[@]}"; do
+  pname=$(echo "$pname" | xargs)
+  [ -z "$pname" ] && continue
+  PAGE_FILES+=("$(page_to_file "$pname")")
+done
+
+# --- Shared prompt context ---
+SHARED_CONTEXT="Site name: $SITE_NAME
 Business type: $BIZ_TYPE
 Tone: $TONE
 Primary color: $PRIMARY
 Secondary color: $SECONDARY
 Accent color: $ACCENT
-Pages/sections: $PAGES
+All pages in this site: ${PAGE_FILES[*]}
 Features: $FEATURES
 Heading font: $HEADING_FONT
 Body font: $BODY_FONT
 
-Requirements:
+Requirements for EVERY page:
 - Use Tailwind CSS via CDN (https://cdn.tailwindcss.com)
 - Use Google Fonts for the specified fonts
 - Make it fully responsive (mobile-first)
-- Include a navigation header, hero section, and footer
 - Use the exact color hex values provided via Tailwind config customization
 - Add smooth scroll behavior
-- Include placeholder text that matches the business type and tone
-- Output ONLY the complete HTML file, no explanation or markdown fences
+- Include a navigation header with links to ALL pages: ${PAGE_FILES[*]}
+- Nav links must use real page file links (about.html, services.html) NOT anchor links
+- Include a professional footer
+- Include real, substantial, relevant placeholder content — not lorem ipsum"
 
-For each feature requested, implement it properly:
-- hero_banner: Full-width hero with headline, subtext, and CTA button
-- contact_form: Working form layout with name, email, message fields
-- countdown_timer: JavaScript countdown to a configurable date
-- photo_gallery: Responsive image grid with placeholder images
-- rsvp_form: RSVP form with name, email, attending yes/no, guest count
-- services: Services/features grid with icons
-- testimonials: Testimonial cards section
-- pricing: Pricing table section
-
-Make it look professional and polished."
+# --- Page content guide ---
+page_content_for() {
+  local pname="$1"
+  case "$pname" in
+    home)    echo "This is the HOME / LANDING page. Include: hero banner/slideshow, value proposition, service highlights, testimonials preview, strong call-to-action. This page should make visitors want to explore further." ;;
+    about)   echo "This is the ABOUT page. Include: company story and history, mission statement, team section with bios, why choose us, company values. Make it personal and trustworthy." ;;
+    services) echo "This is the SERVICES page. Include: detailed service cards with descriptions and icons, pricing if applicable, process/how-it-works section, service area, FAQ. Make each service feel distinct." ;;
+    contact) echo "This is the CONTACT page. Include: contact form (name, email, phone, message), business address, phone number, email, business hours, service area map placeholder. Make it easy to reach out." ;;
+    gallery|portfolio) echo "This is the GALLERY/PORTFOLIO page. Include: image grid with captions, project showcases, before/after comparisons, filterable categories. Use placeholder images from picsum.photos." ;;
+    pricing) echo "This is the PRICING page. Include: pricing tiers/packages, feature comparison, FAQ about pricing, money-back guarantee if applicable, CTA buttons." ;;
+    *)       echo "This is the $(echo "$pname" | tr '[:lower:]' '[:upper:]') page. Generate content that makes sense for a page named '$pname' for a $BIZ_TYPE business." ;;
+  esac
+}
 
 if [ "$SKIP_AI" = "--skip-ai" ]; then
   echo "[site] Skipping AI generation (--skip-ai), using template fallback..."
@@ -143,24 +169,14 @@ if [ "$SKIP_AI" = "--skip-ai" ]; then
   <header class="bg-primary text-white p-6">
     <nav class="max-w-6xl mx-auto flex justify-between items-center">
       <h1 class="text-2xl font-bold">${SITE_NAME}</h1>
-      <div class="space-x-4"><a href="#home" class="hover:underline">Home</a><a href="#contact" class="hover:underline">Contact</a></div>
+      <div class="space-x-4"><a href="index.html" class="hover:underline">Home</a><a href="contact.html" class="hover:underline">Contact</a></div>
+
     </nav>
   </header>
-  <section id="home" class="max-w-6xl mx-auto py-20 px-6 text-center">
+  <section class="max-w-6xl mx-auto py-20 px-6 text-center">
     <h2 class="text-5xl font-bold mb-4">${SITE_NAME}</h2>
     <p class="text-xl text-gray-600 mb-8">Welcome to your new site. Edit this through the chat interface.</p>
-    <a href="#contact" class="bg-accent text-white px-8 py-3 rounded-lg text-lg hover:opacity-90">Get Started</a>
-  </section>
-  <section id="contact" class="bg-gray-50 py-16 px-6">
-    <div class="max-w-2xl mx-auto">
-      <h3 class="text-3xl font-bold mb-8 text-center">Contact Us</h3>
-      <form class="space-y-4">
-        <input type="text" placeholder="Your Name" class="w-full p-3 border rounded-lg">
-        <input type="email" placeholder="Your Email" class="w-full p-3 border rounded-lg">
-        <textarea placeholder="Your Message" rows="4" class="w-full p-3 border rounded-lg"></textarea>
-        <button type="submit" class="bg-primary text-white px-8 py-3 rounded-lg hover:opacity-90">Send</button>
-      </form>
-    </div>
+    <a href="contact.html" class="bg-accent text-white px-8 py-3 rounded-lg text-lg hover:opacity-90">Get Started</a>
   </section>
   <footer class="bg-gray-900 text-gray-400 py-8 text-center">
     <p>&copy; $(date +%Y) ${SITE_NAME}. All rights reserved.</p>
@@ -169,25 +185,96 @@ if [ "$SKIP_AI" = "--skip-ai" ]; then
 </html>
 FALLBACK
 else
-  echo "[site] Step 1: Generating HTML via Claude CLI..."
+  echo "[site] Step 1: Generating pages via Claude CLI (one per call)..."
   MODEL="$(jq -r '.claude.model // empty' config/agents/defaults.yaml 2>/dev/null || true)"
   [ -z "$MODEL" ] && MODEL="claude-sonnet-4-20250514"
 
-  RAW_RESPONSE=$(unset CLAUDECODE; echo "$PROMPT" | claude --print --model "$MODEL" --tools "" 2>/dev/null || true)
+  PAGES_GENERATED=()
+  SHARED_STYLE=""
 
-  # Strip markdown fences if present (claude --print may wrap in ```html```)
-  RESPONSE=$(echo "$RAW_RESPONSE" | sed '/^```/d')
+  for pname in "${PAGE_NAMES[@]}"; do
+    pname=$(echo "$pname" | xargs)
+    [ -z "$pname" ] && continue
+    fname="$(page_to_file "$pname")"
+    PAGE_GUIDE=$(page_content_for "$pname")
 
-  if [ -n "$RESPONSE" ]; then
-    echo "$RESPONSE" > "$DIST/index.html"
-    echo "[site] HTML generated via Claude CLI ($MODEL)"
-  else
-    echo "[site] Claude CLI call failed, using template fallback..."
+    echo "[site] Generating: $fname ($pname)..."
+
+    # After the first page, include the shared style context
+    STYLE_CONTEXT=""
+    if [ -n "$SHARED_STYLE" ]; then
+      STYLE_CONTEXT="IMPORTANT: Match the EXACT same visual style as the home page. Use the same:
+- Tailwind config (colors, fonts)
+- Navigation bar HTML (same structure, links, styling)
+- Footer HTML (same structure, styling)
+- CSS animations and custom styles
+- Overall design language
+
+Here is the <head> section and nav/footer from the home page — copy them exactly:
+$SHARED_STYLE"
+    fi
+
+    PAGE_PROMPT="Generate a COMPLETE HTML page for a website.
+
+$SHARED_CONTEXT
+
+CURRENT PAGE: $fname ($pname)
+$PAGE_GUIDE
+
+$STYLE_CONTEXT
+
+Output ONLY the complete HTML file from <!DOCTYPE html> to </html>.
+No markdown fences, no explanations, no delimiters.
+The page must have substantial, real content — multiple sections with styled layouts.
+Make it look professional and polished."
+
+    RAW=$(unset CLAUDECODE; echo "$PAGE_PROMPT" | claude --print --model "$MODEL" --tools "" 2>/dev/null || true)
+    CLEANED=$(echo "$RAW" | sed '/^```/d')
+
+    if [ -n "$CLEANED" ] && [ ${#CLEANED} -gt 100 ]; then
+      echo "$CLEANED" > "$DIST/$fname"
+      PAGES_GENERATED+=("$fname")
+      echo "[site] Wrote: $fname ($(echo "$CLEANED" | wc -c | xargs) bytes)"
+
+      # After first page, extract shared style for consistency
+      if [ -z "$SHARED_STYLE" ]; then
+        SHARED_STYLE=$(node -e '
+          const fs = require("fs");
+          const html = fs.readFileSync(process.argv[1], "utf8");
+          // Extract <head> content
+          const head = html.match(/<head[\s\S]*?<\/head>/i);
+          // Extract <nav> or <header>
+          const nav = html.match(/<(?:nav|header)[\s\S]*?<\/(?:nav|header)>/i);
+          // Extract <footer>
+          const footer = html.match(/<footer[\s\S]*?<\/footer>/i);
+          let shared = "";
+          if (head) shared += "HEAD:\n" + head[0] + "\n\n";
+          if (nav) shared += "NAV:\n" + nav[0] + "\n\n";
+          if (footer) shared += "FOOTER:\n" + footer[0];
+          console.log(shared);
+        ' "$DIST/$fname" 2>/dev/null || true)
+        echo "[site] Extracted shared style from $fname for consistency"
+      fi
+    else
+      echo "[site] WARN: Failed to generate $fname, skipping"
+    fi
+  done
+
+  if [ ${#PAGES_GENERATED[@]} -eq 0 ]; then
+    echo "[site] All pages failed, using template fallback..."
     scripts/orchestrator-site "$TAG" --skip-ai
     exit $?
   fi
+
+  echo "[site] Generated ${#PAGES_GENERATED[@]} pages via Claude CLI ($MODEL)"
 fi
 fi  # end template check
+
+# Build pages JSON array for state
+if [ ${#PAGES_GENERATED[@]} -eq 0 ]; then
+  PAGES_GENERATED=("index.html")
+fi
+PAGES_JSON=$(printf '%s\n' "${PAGES_GENERATED[@]}" | jq -R . | jq -s .)
 
 # --- Step 2: Update state ---
 TS="$(date -u +%FT%TZ)"
@@ -197,7 +284,7 @@ cat > "$STATE" <<STATEJSON
   "state": "prototype",
   "last_build": "$TS",
   "build_count": 1,
-  "pages_generated": ["index.html"]
+  "pages_generated": $PAGES_JSON
 }
 STATEJSON
 

@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+# site-brainstorm — Terminal brainstorm session for a site project
+# Usage: site-brainstorm <tag>
+#
+# Opens an interactive brainstorm loop in the terminal.
+# No HTML output — pure ideation. Session summaries are saved.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+HUB_ROOT="$SCRIPT_DIR/.."
+
+TAG="${1:-}"
+if [[ -z "$TAG" ]]; then
+  echo "Usage: site-brainstorm <tag>"
+  exit 1
+fi
+
+SITE_DIR="$HUB_ROOT/sites/$TAG"
+SPEC_FILE="$SITE_DIR/spec.json"
+CONVO_FILE="$SITE_DIR/conversation.jsonl"
+SUMMARIES_DIR="$SITE_DIR/summaries"
+BRAINSTORM_LOG="$SITE_DIR/brainstorm.jsonl"
+
+mkdir -p "$SITE_DIR" "$SUMMARIES_DIR"
+
+# Load context
+SITE_NAME=""
+BIZ_TYPE=""
+BRIEF=""
+PREV_SUMMARIES=""
+
+if [[ -f "$SPEC_FILE" ]]; then
+  SITE_NAME=$(jq -r '.site_name // ""' "$SPEC_FILE")
+  BIZ_TYPE=$(jq -r '.business_type // ""' "$SPEC_FILE")
+  BRIEF=$(jq -c '.design_brief // null' "$SPEC_FILE")
+fi
+
+if [[ -d "$SUMMARIES_DIR" ]]; then
+  # Load last 3 summaries
+  for f in $(ls -t "$SUMMARIES_DIR"/*.md 2>/dev/null | head -3); do
+    PREV_SUMMARIES="$PREV_SUMMARIES
+---
+$(cat "$f")"
+  done
+fi
+
+echo ""
+echo "==================================="
+echo "  FAMtastic Brainstorm — $TAG"
+echo "==================================="
+echo ""
+if [[ -n "$SITE_NAME" ]]; then
+  echo "  Site: $SITE_NAME ($BIZ_TYPE)"
+fi
+if [[ "$BRIEF" != "null" && -n "$BRIEF" ]]; then
+  echo "  Brief: loaded"
+else
+  echo "  Brief: not yet created"
+fi
+echo ""
+echo "  Type your thoughts. Say 'done' or 'exit' to end."
+echo "  Say 'summary' to save a session summary."
+echo ""
+
+# Build system prompt
+SYSTEM_PROMPT="You are a creative design strategist for FAMtastic Site Studio. You are in BRAINSTORM MODE — a free-form thinking session.
+
+DO NOT generate any HTML, CSS, or code. This is a THINKING conversation.
+
+PROJECT CONTEXT:
+- Site tag: $TAG
+- Site name: ${SITE_NAME:-not set}
+- Business type: ${BIZ_TYPE:-not set}
+- Design brief: ${BRIEF:-none yet}"
+
+if [[ -n "$PREV_SUMMARIES" ]]; then
+  SYSTEM_PROMPT="$SYSTEM_PROMPT
+
+PREVIOUS SESSION SUMMARIES:
+$PREV_SUMMARIES"
+fi
+
+SYSTEM_PROMPT="$SYSTEM_PROMPT
+
+Be a thoughtful creative partner:
+- Explore ideas freely
+- Ask clarifying questions
+- Suggest creative directions
+- Be opinionated but collaborative
+- Keep it conversational"
+
+CONVO_CONTEXT=""
+MSG_COUNT=0
+
+while true; do
+  printf "\n\033[1;34myou:\033[0m "
+  read -r USER_INPUT || break
+
+  # Exit commands
+  case "$USER_INPUT" in
+    done|exit|quit|bye)
+      echo ""
+      echo "Ending brainstorm session."
+      # Save summary if meaningful conversation happened
+      if [[ $MSG_COUNT -ge 2 ]]; then
+        echo "Generating session summary..."
+        SUMMARY_PROMPT="Summarize this brainstorm conversation in 3-5 bullet points. Focus on key ideas, decisions, and next steps.
+
+CONVERSATION:
+$CONVO_CONTEXT
+
+SUMMARY:"
+        SUMMARY=$(echo "$SUMMARY_PROMPT" | "$HUB_ROOT/scripts/claude-cli" 2>/dev/null || echo "")
+        if [[ -n "$SUMMARY" ]]; then
+          SESSION_NUM=$(ls "$SUMMARIES_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+          SESSION_NUM=$((SESSION_NUM + 1))
+          PADDED=$(printf "%03d" "$SESSION_NUM")
+          SUMMARY_FILE="$SUMMARIES_DIR/session-${PADDED}.md"
+          echo "# Session $PADDED — $(date +%Y-%m-%d) (brainstorm)" > "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "$SUMMARY" >> "$SUMMARY_FILE"
+          echo "Summary saved: $SUMMARY_FILE"
+        fi
+      fi
+      echo "Done."
+      exit 0
+      ;;
+    summary)
+      if [[ $MSG_COUNT -lt 2 ]]; then
+        echo "Not enough conversation to summarize yet. Keep going!"
+        continue
+      fi
+      echo "Generating summary..."
+      SUMMARY_PROMPT="Summarize this brainstorm conversation in 3-5 bullet points. Focus on key ideas, decisions, and next steps.
+
+CONVERSATION:
+$CONVO_CONTEXT
+
+SUMMARY:"
+      SUMMARY=$(echo "$SUMMARY_PROMPT" | "$HUB_ROOT/scripts/claude-cli" 2>/dev/null || echo "")
+      if [[ -n "$SUMMARY" ]]; then
+        SESSION_NUM=$(ls "$SUMMARIES_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+        SESSION_NUM=$((SESSION_NUM + 1))
+        PADDED=$(printf "%03d" "$SESSION_NUM")
+        SUMMARY_FILE="$SUMMARIES_DIR/session-${PADDED}.md"
+        echo "# Session $PADDED — $(date +%Y-%m-%d) (brainstorm)" > "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "$SUMMARY" >> "$SUMMARY_FILE"
+        echo ""
+        echo "Summary saved: $SUMMARY_FILE"
+        echo ""
+        echo "$SUMMARY"
+      else
+        echo "Failed to generate summary."
+      fi
+      continue
+      ;;
+  esac
+
+  MSG_COUNT=$((MSG_COUNT + 1))
+  CONVO_CONTEXT="$CONVO_CONTEXT
+[user] $USER_INPUT"
+
+  # Log to brainstorm file
+  echo "{\"role\":\"user\",\"content\":$(echo "$USER_INPUT" | jq -Rs .),\"at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" >> "$BRAINSTORM_LOG"
+
+  # Build prompt with conversation context
+  FULL_PROMPT="$SYSTEM_PROMPT
+
+CONVERSATION SO FAR:
+$CONVO_CONTEXT
+
+Respond to the user's latest message. Keep it conversational and focused."
+
+  printf "\n\033[1;32mstudio:\033[0m "
+
+  RESPONSE=$(echo "$FULL_PROMPT" | "$HUB_ROOT/scripts/claude-cli" 2>/dev/null || echo "Something went wrong. Try again.")
+  echo "$RESPONSE"
+
+  CONVO_CONTEXT="$CONVO_CONTEXT
+[assistant] $RESPONSE"
+
+  # Log response
+  echo "{\"role\":\"assistant\",\"content\":$(echo "$RESPONSE" | jq -Rs .),\"at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" >> "$BRAINSTORM_LOG"
+done

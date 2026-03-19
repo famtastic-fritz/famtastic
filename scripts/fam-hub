@@ -37,6 +37,17 @@ case "$CMD" in
         shift 3 || true
         scripts/site-chat "$TAG" "$@"
         ;;
+      brainstorm)
+        TAG="${3:-}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub site brainstorm <tag>"
+          echo "  Opens a brainstorm session for the given site (no HTML output)"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        shift 3 || true
+        scripts/site-brainstorm "$TAG" "$@"
+        ;;
       preview)
         TAG="${3:-}"
         PORT="${4:-3333}"
@@ -131,6 +142,7 @@ fam-hub site — Site Factory
 Usage:
   fam-hub site new <tag>                    Create site + open chat studio
   fam-hub site chat <tag>                   Open chat studio for existing site
+  fam-hub site brainstorm <tag>             Brainstorm ideas from terminal
   fam-hub site preview <tag> [port]         Live preview (default port 3333)
   fam-hub site build <tag> [--template name] Rebuild (batch mode)
   fam-hub site list [tag]                   Dashboard / site detail
@@ -276,6 +288,7 @@ fam-hub — FAMtastic CLI
 
 Site Factory:
   fam-hub site new <tag>            Create site + open chat studio
+  fam-hub site brainstorm <tag>     Brainstorm ideas from terminal
   fam-hub site build <tag>          Rebuild site (batch mode)
   fam-hub site list                 Dashboard of all sites
   fam-hub site deploy <tag>         Deploy to hosting
