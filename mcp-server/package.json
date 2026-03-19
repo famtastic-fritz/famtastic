@@ -6,8 +6,6 @@
   "scripts": {
     "start": "node server.js"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0"
-  },
+  "dependencies": {},
   "private": true
 }
