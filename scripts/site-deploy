@@ -79,23 +79,36 @@ deploy_netlify() {
   # Sanitize site name for Netlify (lowercase, alphanumeric + hyphens)
   NETLIFY_SITE=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
 
-  # Check if site already linked
+  # Check if site already linked (has a site ID)
+  SITE_ID=""
   if [ -f "$SITE_DIR/.netlify/state.json" ]; then
-    echo "[deploy] Found existing Netlify link"
-  else
-    echo "[deploy] Creating new Netlify site: $NETLIFY_SITE"
-    # Try to create/link site
-    mkdir -p "$SITE_DIR/.netlify"
-    # Run netlify init with the dist directory
-    (cd "$SITE_DIR" && netlify sites:create --name "$NETLIFY_SITE" --disable-linking 2>/dev/null) || true
+    SITE_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json")
   fi
 
-  # Deploy
   echo "[deploy] Uploading to Netlify..."
-  if [ -n "$PROD_FLAG" ]; then
-    DEPLOY_OUTPUT=$(cd "$SITE_DIR" && netlify deploy --dir="dist" --prod 2>&1)
+  if [ -n "$SITE_ID" ]; then
+    # Existing site — deploy to it
+    echo "[deploy] Deploying to existing site: $SITE_ID"
+    if [ -n "$PROD_FLAG" ]; then
+      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" --prod 2>&1)
+    else
+      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" 2>&1)
+    fi
   else
-    DEPLOY_OUTPUT=$(cd "$SITE_DIR" && netlify deploy --dir="dist" 2>&1)
+    # New site — create and deploy in one command
+    echo "[deploy] Creating new site: $NETLIFY_SITE"
+    if [ -n "$PROD_FLAG" ]; then
+      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --create-site "$NETLIFY_SITE" --team fritz-medine --prod 2>&1)
+    else
+      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --create-site "$NETLIFY_SITE" --team fritz-medine 2>&1)
+    fi
+    # Save site ID for future deploys
+    CREATED_ID=$(echo "$DEPLOY_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1 || true)
+    if [ -n "$CREATED_ID" ]; then
+      mkdir -p "$SITE_DIR/.netlify"
+      echo '{"siteId":"'"$CREATED_ID"'"}' > "$SITE_DIR/.netlify/state.json"
+      echo "[deploy] Saved site ID: $CREATED_ID"
+    fi
   fi
 
   echo "$DEPLOY_OUTPUT"
