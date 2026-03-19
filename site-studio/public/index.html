@@ -37,6 +37,17 @@
     .upload-thumb img { object-fit: cover; }
     .role-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; }
     .role-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: flex; align-items: center; justify-content: center; }
+    .health-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .health-green { background: #22c55e; }
+    .health-yellow { background: #eab308; }
+    .health-red { background: #ef4444; }
+    .health-gray { background: #6b7280; }
+    .session-banner { background: #1e3a5f; border: 1px solid #3b82f6; color: #93c5fd; }
+    .inline-edit-form input, .inline-edit-form textarea, .inline-edit-form select {
+      background: #0f172a; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #e2e8f0; width: 100%;
+    }
+    .inline-edit-form textarea { resize: vertical; min-height: 40px; }
+    .inline-edit-form input:focus, .inline-edit-form textarea:focus, .inline-edit-form select:focus { outline: none; border-color: #3b82f6; }
   </style>
 </head>
 <body class="bg-studio-bg text-studio-text h-screen flex flex-col overflow-hidden">
@@ -126,16 +137,53 @@
         <div id="studio-updated" class="text-xs text-studio-muted"></div>
       </div>
 
-      <!-- Brief Section -->
+      <!-- Brief Section (editable) -->
       <div class="p-4 border-b border-gray-700">
-        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Design Brief</h3>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Design Brief</h3>
+          <button onclick="toggleBriefEdit()" id="brief-edit-btn" class="text-xs text-studio-muted hover:text-white transition" title="Edit brief">&#9998;</button>
+        </div>
         <div id="studio-brief" class="text-xs text-studio-text">No brief yet</div>
+        <div id="studio-brief-form" class="hidden inline-edit-form space-y-2">
+          <div><label class="text-xs text-studio-muted block mb-0.5">Goal</label><textarea id="bf-goal" rows="2" placeholder="What this site should accomplish"></textarea></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Audience</label><input id="bf-audience" type="text" placeholder="Who it's for"></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Tone (comma-separated)</label><input id="bf-tone" type="text" placeholder="e.g. modern, premium, bold"></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Layout</label><input id="bf-layout" type="text" placeholder="Layout approach"></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Typography</label><input id="bf-typography" type="text" placeholder="Font style"></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Color Usage</label><input id="bf-color-usage" type="text" placeholder="How colors should be applied"></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Density</label><input id="bf-density" type="text" placeholder="spacious, balanced, or dense"></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Must-have Sections</label><textarea id="bf-sections" rows="2" placeholder="hero, about, services..."></textarea></div>
+          <div><label class="text-xs text-studio-muted block mb-0.5">Avoid</label><textarea id="bf-avoid" rows="2" placeholder="Things NOT to do"></textarea></div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="saveBriefEdit()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Save</button>
+            <button onclick="fillBriefViaChat()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded transition">Fill via Chat</button>
+            <button onclick="cancelBriefEdit()" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+          </div>
+        </div>
       </div>
 
-      <!-- Decisions Section -->
+      <!-- Decisions Section (editable) -->
       <div class="p-4 border-b border-gray-700">
-        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Design Decisions</h3>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Design Decisions</h3>
+          <button onclick="showAddDecision()" class="text-xs text-studio-accent hover:text-blue-400 transition">+ Add</button>
+        </div>
         <div id="studio-decisions" class="text-xs text-studio-text space-y-1">No decisions yet</div>
+        <div id="add-decision-form" class="hidden inline-edit-form mt-2 space-y-1.5">
+          <select id="ad-category" class="text-xs">
+            <option value="color">Color</option>
+            <option value="typography">Typography</option>
+            <option value="layout">Layout</option>
+            <option value="content">Content</option>
+            <option value="structure">Structure</option>
+            <option value="interaction">Interaction</option>
+          </select>
+          <input id="ad-text" type="text" placeholder="Decision text..." class="text-xs">
+          <div class="flex gap-2">
+            <button onclick="saveNewDecision()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Add</button>
+            <button onclick="document.getElementById('add-decision-form').classList.add('hidden')" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+          </div>
+        </div>
       </div>
 
       <!-- Uploaded Assets Section -->
@@ -144,17 +192,50 @@
         <div id="studio-uploads" class="text-xs text-studio-text space-y-1">No uploads yet</div>
       </div>
 
+      <!-- Brand Health Section -->
+      <div class="p-4 border-b border-gray-700">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Brand Health</h3>
+          <button onclick="refreshBrandHealth()" class="text-xs text-studio-muted hover:text-white transition" title="Refresh">&#8635;</button>
+        </div>
+        <div id="studio-brand-health" class="text-xs text-studio-text space-y-1.5">
+          <div class="text-studio-muted">Click refresh to scan</div>
+        </div>
+      </div>
+
+      <!-- Media Specs Section -->
+      <div class="p-4 border-b border-gray-700">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Media Specs</h3>
+          <button onclick="showAddMediaSpec()" class="text-xs text-studio-accent hover:text-blue-400 transition">+ Add</button>
+        </div>
+        <div id="studio-media-specs" class="text-xs text-studio-text space-y-1">No specs yet</div>
+        <div id="add-media-spec-form" class="hidden inline-edit-form mt-2 space-y-1.5">
+          <input id="ms-slot" type="text" placeholder="Slot name (e.g. hero_image)" class="text-xs">
+          <input id="ms-dimensions" type="text" placeholder="Dimensions (e.g. 1920x1080)" class="text-xs">
+          <input id="ms-format" type="text" placeholder="Format (e.g. jpg, svg)" class="text-xs">
+          <input id="ms-purpose" type="text" placeholder="Purpose" class="text-xs">
+          <div class="flex gap-2">
+            <button onclick="saveNewMediaSpec()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Add</button>
+            <button onclick="document.getElementById('add-media-spec-form').classList.add('hidden')" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Version History Section -->
       <div class="p-4 border-b border-gray-700">
         <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Version History</h3>
         <div id="studio-versions" class="text-xs text-studio-text space-y-1">No versions yet</div>
       </div>
 
-      <!-- Session Summaries Section -->
+      <!-- Sessions Section -->
       <div class="p-4 border-b border-gray-700">
-        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Session Context</h3>
-        <div id="studio-summaries" class="text-xs text-studio-text space-y-1">No summaries yet</div>
-        <button onclick="triggerSummarize()" class="mt-2 text-xs bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition">Save Summary</button>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Sessions</h3>
+          <button onclick="triggerSummarize()" class="text-xs text-studio-muted hover:text-white transition" title="Save summary">Save Summary</button>
+        </div>
+        <div id="session-viewing-banner" class="hidden session-banner text-xs rounded px-3 py-2 mb-2"></div>
+        <div id="studio-sessions" class="text-xs text-studio-text space-y-1.5">Loading...</div>
       </div>
 
       <!-- Files Section -->
@@ -482,35 +563,50 @@
       if (studioPanelVisible) refreshStudioPanel();
     }
 
+    // --- Cached studio state for brief/decisions editing ---
+    let cachedStudioState = null;
+
     async function refreshStudioPanel() {
       if (!studioPanelVisible) return;
       try {
         const state = await (await fetch('/api/studio-state')).json();
+        cachedStudioState = state;
 
         document.getElementById('studio-tag').textContent = `Tag: ${state.tag}`;
         document.getElementById('studio-updated').textContent = state.lastUpdated
           ? `Updated: ${new Date(state.lastUpdated).toLocaleString()}`
           : 'Not built yet';
 
-        // Brief
+        // Brief (read-only view)
         const briefEl = document.getElementById('studio-brief');
         if (state.brief) {
+          const vd = state.brief.visual_direction || {};
           briefEl.innerHTML = `
-            <div class="${state.brief.approved ? 'text-studio-success' : 'text-yellow-400'} font-medium mb-1">${state.brief.approved ? 'Approved' : 'Draft'}</div>
+            <div class="${state.brief.approved ? 'text-green-400' : 'text-yellow-400'} font-medium mb-1">${state.brief.approved ? 'Approved' : 'Draft'}</div>
             <div><span class="text-studio-muted">Goal:</span> ${escapeHtml(state.brief.goal || '-')}</div>
+            <div><span class="text-studio-muted">Audience:</span> ${escapeHtml(state.brief.audience || '-')}</div>
             <div><span class="text-studio-muted">Tone:</span> ${(state.brief.tone || []).join(', ')}</div>
+            <div><span class="text-studio-muted">Sections:</span> ${(state.brief.must_have_sections || []).join(', ') || '-'}</div>
             <div><span class="text-studio-muted">Avoid:</span> ${(state.brief.avoid || []).join(', ') || '-'}</div>
           `;
         } else {
-          briefEl.textContent = 'No brief yet — describe your site to start';
+          briefEl.innerHTML = '<div class="text-studio-muted">No brief yet — describe your site to start</div>';
         }
 
-        // Decisions
+        // Decisions (with edit/delete controls)
         const decisionsEl = document.getElementById('studio-decisions');
-        if (state.decisions && state.decisions.length > 0) {
-          decisionsEl.innerHTML = state.decisions.map(d =>
-            `<div class="flex gap-1"><span class="text-studio-muted shrink-0">[${d.category}]</span> ${escapeHtml(d.decision)}</div>`
-          ).join('');
+        const allDecisions = state.spec?.design_decisions || [];
+        const approvedDecisions = allDecisions.filter(d => d.status === 'approved');
+        if (approvedDecisions.length > 0) {
+          decisionsEl.innerHTML = allDecisions.map((d, i) => {
+            if (d.status !== 'approved') return '';
+            return `<div class="flex items-center gap-1 group">
+              <span class="text-studio-muted shrink-0">[${escapeHtml(d.category)}]</span>
+              <span class="flex-1 truncate">${escapeHtml(d.decision)}</span>
+              <button onclick="editDecision(${i})" class="text-studio-muted hover:text-white opacity-0 group-hover:opacity-100 transition shrink-0" title="Edit">&#9998;</button>
+              <button onclick="deleteDecision(${i})" class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition shrink-0" title="Delete">&times;</button>
+            </div>`;
+          }).filter(Boolean).join('');
         } else {
           decisionsEl.textContent = 'No decisions yet';
         }
@@ -532,6 +628,9 @@
           uploadsEl.textContent = 'No uploads — drag, paste, or click the image button';
         }
 
+        // Media Specs
+        refreshMediaSpecs(state.spec?.media_specs || []);
+
         // Files
         const filesEl = document.getElementById('studio-files');
         if (state.files && state.files.length > 0) {
@@ -542,6 +641,7 @@
         } else {
           filesEl.textContent = 'No files generated yet';
         }
+
         // Version History
         const versionsEl = document.getElementById('studio-versions');
         try {
@@ -554,7 +654,7 @@
                 <span class="text-studio-muted shrink-0">${date}</span>
                 <span class="truncate">${v.reason}</span>
                 <span class="text-studio-muted shrink-0">${sizeKb}KB</span>
-                <button onclick="rollbackVersion('${v.page}', '${v.timestamp}')" class="text-yellow-400 hover:text-yellow-300 shrink-0 ml-auto" title="Rollback to this version">↩</button>
+                <button onclick="rollbackVersion('${v.page}', '${v.timestamp}')" class="text-yellow-400 hover:text-yellow-300 shrink-0 ml-auto" title="Rollback to this version">&#8617;</button>
               </div>`;
             }).join('');
           } else {
@@ -562,22 +662,383 @@
           }
         } catch { versionsEl.textContent = 'No versions yet'; }
 
-        // Session Summaries
-        const summariesEl = document.getElementById('studio-summaries');
-        try {
-          const summaries = await (await fetch('/api/summaries')).json();
-          if (summaries.length > 0) {
-            summariesEl.innerHTML = summaries.slice(-3).reverse().map(s => {
-              const preview = s.content.split('\n').filter(l => l.trim()).slice(0, 3).join('<br>');
-              return `<div class="bg-studio-bg rounded p-2 mb-1">${preview}</div>`;
-            }).join('');
-          } else {
-            summariesEl.textContent = 'No session summaries yet — generated when sessions end';
-          }
-        } catch { summariesEl.textContent = 'No summaries yet'; }
+        // Sessions
+        refreshSessionsList();
 
       } catch (e) {
         console.error('[studio-panel]', e);
+      }
+    }
+
+    // --- Wave 1: Brief Edit ---
+    function toggleBriefEdit() {
+      const form = document.getElementById('studio-brief-form');
+      const display = document.getElementById('studio-brief');
+      const isEditing = !form.classList.contains('hidden');
+
+      if (isEditing) {
+        cancelBriefEdit();
+        return;
+      }
+
+      // Pre-fill from cached state
+      const brief = cachedStudioState?.brief || {};
+      const vd = brief.visual_direction || {};
+      document.getElementById('bf-goal').value = brief.goal || '';
+      document.getElementById('bf-audience').value = brief.audience || '';
+      document.getElementById('bf-tone').value = (brief.tone || []).join(', ');
+      document.getElementById('bf-layout').value = vd.layout || '';
+      document.getElementById('bf-typography').value = vd.typography || '';
+      document.getElementById('bf-color-usage').value = vd.color_usage || '';
+      document.getElementById('bf-density').value = vd.density || '';
+      document.getElementById('bf-sections').value = (brief.must_have_sections || []).join(', ');
+      document.getElementById('bf-avoid').value = (brief.avoid || []).join(', ');
+
+      display.classList.add('hidden');
+      form.classList.remove('hidden');
+    }
+
+    function cancelBriefEdit() {
+      document.getElementById('studio-brief-form').classList.add('hidden');
+      document.getElementById('studio-brief').classList.remove('hidden');
+    }
+
+    async function saveBriefEdit() {
+      const tone = document.getElementById('bf-tone').value.split(',').map(s => s.trim()).filter(Boolean);
+      const sections = document.getElementById('bf-sections').value.split(',').map(s => s.trim()).filter(Boolean);
+      const avoid = document.getElementById('bf-avoid').value.split(',').map(s => s.trim()).filter(Boolean);
+
+      const briefUpdate = {
+        goal: document.getElementById('bf-goal').value,
+        audience: document.getElementById('bf-audience').value,
+        tone,
+        visual_direction: {
+          layout: document.getElementById('bf-layout').value,
+          typography: document.getElementById('bf-typography').value,
+          color_usage: document.getElementById('bf-color-usage').value,
+          density: document.getElementById('bf-density').value,
+        },
+        must_have_sections: sections,
+        avoid,
+      };
+
+      try {
+        await fetch('/api/brief', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(briefUpdate),
+        });
+        cancelBriefEdit();
+        refreshStudioPanel();
+      } catch (e) {
+        addMessage('error', 'Failed to save brief: ' + e.message);
+      }
+    }
+
+    function fillBriefViaChat() {
+      cancelBriefEdit();
+      const input = document.getElementById('chat-input');
+      input.value = "Let's work on the design brief";
+      input.focus();
+    }
+
+    // --- Wave 1: Decisions CRUD ---
+    function showAddDecision() {
+      document.getElementById('add-decision-form').classList.remove('hidden');
+      document.getElementById('ad-text').focus();
+    }
+
+    async function saveNewDecision() {
+      const category = document.getElementById('ad-category').value;
+      const text = document.getElementById('ad-text').value.trim();
+      if (!text) return;
+
+      try {
+        await fetch('/api/decisions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', decision: { category, decision: text, status: 'approved' } }),
+        });
+        document.getElementById('ad-text').value = '';
+        document.getElementById('add-decision-form').classList.add('hidden');
+        refreshStudioPanel();
+      } catch (e) {
+        addMessage('error', 'Failed to add decision: ' + e.message);
+      }
+    }
+
+    async function editDecision(index) {
+      const allDecisions = cachedStudioState?.spec?.design_decisions || [];
+      const d = allDecisions[index];
+      if (!d) return;
+
+      const newText = prompt('Edit decision:', d.decision);
+      if (newText === null || newText.trim() === '') return;
+
+      try {
+        await fetch('/api/decisions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', index, decision: { decision: newText.trim() } }),
+        });
+        refreshStudioPanel();
+      } catch (e) {
+        addMessage('error', 'Failed to update decision: ' + e.message);
+      }
+    }
+
+    async function deleteDecision(index) {
+      if (!confirm('Delete this decision?')) return;
+      try {
+        await fetch('/api/decisions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', index }),
+        });
+        refreshStudioPanel();
+      } catch (e) {
+        addMessage('error', 'Failed to delete decision: ' + e.message);
+      }
+    }
+
+    // --- Wave 2: Sessions ---
+    let viewingOldSession = false;
+
+    async function refreshSessionsList() {
+      const el = document.getElementById('studio-sessions');
+      try {
+        const sessions = await (await fetch('/api/sessions')).json();
+        if (sessions.length === 0) {
+          el.textContent = 'No sessions yet';
+          return;
+        }
+        el.innerHTML = sessions.slice().reverse().map((s, displayIdx) => {
+          const isCurrent = displayIdx === 0 && !s.ended_at;
+          const date = new Date(s.started_at).toLocaleDateString();
+          const time = new Date(s.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const msgs = s.message_count || 0;
+          const preview = s.summary_preview ? `<div class="text-studio-muted mt-0.5 truncate">${escapeHtml(s.summary_preview)}</div>` : '';
+          return `<div class="bg-studio-bg rounded p-2 ${isCurrent ? 'border border-studio-accent' : ''}">
+            <div class="flex items-center justify-between">
+              <span>${date} ${time}</span>
+              <span class="text-studio-muted">${msgs} msgs</span>
+            </div>
+            ${isCurrent ? '<span class="text-studio-accent text-[10px] font-medium">CURRENT</span>' : `<button onclick="loadSession(${s.index})" class="text-studio-accent hover:text-blue-400 text-[10px] transition">Load</button>`}
+            ${preview}
+          </div>`;
+        }).join('');
+      } catch {
+        el.textContent = 'No sessions yet';
+      }
+    }
+
+    async function loadSession(sessionIndex) {
+      try {
+        const res = await fetch('/api/sessions/load', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_index: sessionIndex }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          addMessage('error', data.error);
+          return;
+        }
+
+        // Clear chat and repopulate with session messages
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+        viewingOldSession = true;
+
+        // Show banner
+        const banner = document.getElementById('session-viewing-banner');
+        const sessionDate = new Date(data.session.started_at).toLocaleDateString();
+        banner.textContent = `Viewing session #${data.session.session_id || sessionIndex + 1} from ${sessionDate}`;
+        banner.classList.remove('hidden');
+
+        // Populate messages
+        data.messages.forEach(msg => {
+          if (msg.role === 'user' || msg.role === 'assistant') {
+            addMessage(msg.role, msg.content, false);
+          }
+        });
+
+        container.scrollTop = container.scrollHeight;
+      } catch (e) {
+        addMessage('error', 'Failed to load session: ' + e.message);
+      }
+    }
+
+    // --- Wave 3: Brand Health ---
+    async function refreshBrandHealth() {
+      const el = document.getElementById('studio-brand-health');
+      el.innerHTML = '<div class="text-studio-muted">Scanning...</div>';
+
+      try {
+        const data = await (await fetch('/api/brand-health')).json();
+        const h = data.health;
+        const dot = (status) => {
+          if (status === 'uploaded' || status === 'set_in_html' || status === true) return '<span class="health-dot health-green"></span>';
+          if (status === 'generated') return '<span class="health-dot health-yellow"></span>';
+          return '<span class="health-dot health-red"></span>';
+        };
+
+        let html = '';
+        html += `<div class="flex items-center gap-2">${dot(h.logo.status)} <span>Logo</span> <span class="text-studio-muted ml-auto">${h.logo.status}</span>`;
+        if (h.logo.status === 'missing') html += ` <button onclick="triggerBrandAction('logo', 'upload')" class="text-studio-accent text-[10px]">Upload</button> <button onclick="triggerBrandAction('logo', 'generate')" class="text-green-400 text-[10px]">Generate</button> <button onclick="generateAiPrompt('logo')" class="text-purple-400 text-[10px]">AI Prompt</button>`;
+        html += '</div>';
+
+        html += `<div class="flex items-center gap-2">${dot(h.favicon.status)} <span>Favicon</span> <span class="text-studio-muted ml-auto">${h.favicon.status}</span>`;
+        if (h.favicon.status === 'missing') html += ` <button onclick="triggerBrandAction('favicon', 'generate')" class="text-green-400 text-[10px]">Generate</button>`;
+        html += '</div>';
+
+        html += `<div class="flex items-center gap-2">${dot(h.hero_image.status)} <span>Hero Image</span> <span class="text-studio-muted ml-auto">${h.hero_image.status}</span>`;
+        if (h.hero_image.status === 'missing') html += ` <button onclick="triggerBrandAction('hero', 'upload')" class="text-studio-accent text-[10px]">Upload</button> <button onclick="generateAiPrompt('hero_image')" class="text-purple-400 text-[10px]">AI Prompt</button>`;
+        html += '</div>';
+
+        html += `<div class="flex items-center gap-2">${h.font_icons.using ? dot(true) : '<span class="health-dot health-gray"></span>'} <span>Font Icons</span> <span class="text-studio-muted ml-auto">${h.font_icons.using ? h.font_icons.provider : 'none'}</span></div>`;
+        html += `<div class="flex items-center gap-2">${dot(h.social_meta.og_image)} <span>OG Image</span> <span class="text-studio-muted ml-auto">${h.social_meta.og_image ? 'set' : 'missing'}</span></div>`;
+        html += `<div class="flex items-center gap-2">${dot(h.social_meta.twitter_card)} <span>Twitter Card</span> <span class="text-studio-muted ml-auto">${h.social_meta.twitter_card ? 'set' : 'missing'}</span></div>`;
+
+        el.innerHTML = html;
+      } catch (e) {
+        el.innerHTML = '<div class="text-red-400">Failed to scan</div>';
+      }
+    }
+
+    function triggerBrandAction(assetType, action) {
+      if (action === 'upload') {
+        document.getElementById('file-input').click();
+      } else if (action === 'generate') {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        addMessage('user', `Create a ${assetType}`);
+        ws.send(JSON.stringify({ type: 'chat', content: `create a ${assetType}` }));
+        steps = [];
+        stepStart = null;
+        addStep(`Generating ${assetType}...`);
+      }
+    }
+
+    // --- Wave 3: AI Prompt Generator ---
+    async function generateAiPrompt(slot) {
+      // Show modal with loading state
+      const modal = document.createElement('div');
+      modal.className = 'role-modal';
+      modal.id = 'ai-prompt-modal';
+      modal.innerHTML = `
+        <div class="bg-studio-panel rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div class="text-sm font-bold text-white mb-3">AI Image Prompt</div>
+          <div class="text-xs text-studio-muted mb-2">Generating prompt for: <span class="text-white">${escapeHtml(slot)}</span></div>
+          <div id="ai-prompt-content" class="text-xs text-studio-muted">Generating...</div>
+          <div id="ai-prompt-actions" class="hidden flex gap-2 mt-4">
+            <button onclick="copyAiPrompt()" class="bg-studio-accent hover:bg-blue-600 text-white text-xs px-4 py-2 rounded font-medium transition">Copy to Clipboard</button>
+            <button onclick="document.getElementById('file-input').click(); document.getElementById('ai-prompt-modal').remove();" class="bg-gray-600 hover:bg-gray-500 text-white text-xs px-4 py-2 rounded transition">Upload Result</button>
+          </div>
+          <button onclick="document.getElementById('ai-prompt-modal').remove()" class="mt-3 text-xs text-studio-muted hover:text-white transition block">Close</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      try {
+        const res = await fetch('/api/generate-image-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot, context: '' }),
+        });
+        const data = await res.json();
+        const contentEl = document.getElementById('ai-prompt-content');
+        if (data.error) {
+          contentEl.innerHTML = `<div class="text-red-400">${escapeHtml(data.error)}</div>`;
+          return;
+        }
+        contentEl.innerHTML = `
+          <div class="bg-studio-bg rounded p-3 mb-2 text-studio-text whitespace-pre-wrap" id="ai-prompt-text">${escapeHtml(data.prompt)}</div>
+          <div class="flex gap-4 text-studio-muted">
+            <span>Dimensions: ${escapeHtml(data.suggested_dimensions)}</span>
+            <span>Format: ${escapeHtml(data.format)}</span>
+          </div>
+        `;
+        document.getElementById('ai-prompt-actions').classList.remove('hidden');
+      } catch (e) {
+        const contentEl = document.getElementById('ai-prompt-content');
+        if (contentEl) contentEl.innerHTML = `<div class="text-red-400">Failed: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function copyAiPrompt() {
+      const text = document.getElementById('ai-prompt-text')?.textContent;
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+          addMessage('status', 'AI prompt copied to clipboard');
+        });
+      }
+    }
+
+    // --- Wave 3: Media Specs ---
+    function refreshMediaSpecs(specs) {
+      const el = document.getElementById('studio-media-specs');
+      if (!specs || specs.length === 0) {
+        el.textContent = 'No media specs defined';
+        return;
+      }
+      el.innerHTML = specs.map((s, i) => {
+        const statusColor = s.status === 'uploaded' ? 'text-green-400' : s.status === 'missing' ? 'text-red-400' : 'text-yellow-400';
+        return `<div class="flex items-center gap-1 group">
+          <span class="${statusColor} shrink-0">${s.status === 'uploaded' ? '&#10003;' : '&#9679;'}</span>
+          <span class="font-medium">${escapeHtml(s.slot)}</span>
+          <span class="text-studio-muted">${escapeHtml(s.dimensions || '-')}</span>
+          <span class="text-studio-muted">${escapeHtml(s.format || '-')}</span>
+          <button onclick="generateAiPrompt('${escapeHtml(s.slot)}')" class="text-purple-400 hover:text-purple-300 opacity-0 group-hover:opacity-100 transition shrink-0 ml-auto text-[10px]" title="AI Prompt">AI</button>
+          <button onclick="deleteMediaSpec(${i})" class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition shrink-0" title="Delete">&times;</button>
+        </div>`;
+      }).join('');
+    }
+
+    function showAddMediaSpec() {
+      document.getElementById('add-media-spec-form').classList.remove('hidden');
+      document.getElementById('ms-slot').focus();
+    }
+
+    async function saveNewMediaSpec() {
+      const slot = document.getElementById('ms-slot').value.trim();
+      if (!slot) return;
+
+      try {
+        await fetch('/api/media-specs', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'add',
+            media_spec: {
+              slot,
+              dimensions: document.getElementById('ms-dimensions').value.trim(),
+              format: document.getElementById('ms-format').value.trim(),
+              purpose: document.getElementById('ms-purpose').value.trim(),
+              status: 'missing',
+            },
+          }),
+        });
+        document.getElementById('ms-slot').value = '';
+        document.getElementById('ms-dimensions').value = '';
+        document.getElementById('ms-format').value = '';
+        document.getElementById('ms-purpose').value = '';
+        document.getElementById('add-media-spec-form').classList.add('hidden');
+        refreshStudioPanel();
+      } catch (e) {
+        addMessage('error', 'Failed to add media spec: ' + e.message);
+      }
+    }
+
+    async function deleteMediaSpec(index) {
+      try {
+        await fetch('/api/media-specs', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', index }),
+        });
+        refreshStudioPanel();
+      } catch (e) {
+        addMessage('error', 'Failed to delete media spec: ' + e.message);
       }
     }
 

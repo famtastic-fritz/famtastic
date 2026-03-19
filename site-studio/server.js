@@ -307,7 +307,7 @@ function startSession() {
   }
   studio.session_count = (studio.session_count || 0) + 1;
   if (!studio.sessions) studio.sessions = [];
-  studio.sessions.push({ started_at: new Date().toISOString() });
+  studio.sessions.push({ session_id: studio.session_count, started_at: new Date().toISOString() });
   // Keep only last 20 sessions
   if (studio.sessions.length > 20) {
     studio.sessions = studio.sessions.slice(-20);
@@ -598,6 +598,287 @@ app.post('/api/rollback', (req, res) => {
   res.json(result);
 });
 
+// --- Brief Edit API ---
+app.put('/api/brief', (req, res) => {
+  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  if (!spec.design_brief) spec.design_brief = {};
+  // Merge partial fields into existing brief
+  const allowed = ['goal', 'audience', 'tone', 'visual_direction', 'content_priorities', 'must_have_sections', 'avoid'];
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) {
+      spec.design_brief[key] = req.body[key];
+    }
+  }
+  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  // Broadcast to connected clients
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify({ type: 'spec-updated', spec }));
+    }
+  });
+  res.json({ success: true, brief: spec.design_brief });
+});
+
+// --- Decisions CRUD API ---
+app.put('/api/decisions', (req, res) => {
+  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  if (!spec.design_decisions) spec.design_decisions = [];
+  const { action, index, decision } = req.body;
+
+  switch (action) {
+    case 'add':
+      if (!decision || !decision.category || !decision.decision) {
+        return res.status(400).json({ error: 'category and decision text required' });
+      }
+      spec.design_decisions.push({
+        timestamp: new Date().toISOString(),
+        category: decision.category,
+        decision: decision.decision,
+        status: decision.status || 'approved',
+      });
+      break;
+    case 'update':
+      if (index === undefined || index < 0 || index >= spec.design_decisions.length) {
+        return res.status(400).json({ error: 'invalid index' });
+      }
+      if (decision.category) spec.design_decisions[index].category = decision.category;
+      if (decision.decision) spec.design_decisions[index].decision = decision.decision;
+      if (decision.status) spec.design_decisions[index].status = decision.status;
+      break;
+    case 'delete':
+      if (index === undefined || index < 0 || index >= spec.design_decisions.length) {
+        return res.status(400).json({ error: 'invalid index' });
+      }
+      spec.design_decisions.splice(index, 1);
+      break;
+    default:
+      return res.status(400).json({ error: 'action must be add, update, or delete' });
+  }
+
+  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify({ type: 'spec-updated', spec }));
+    }
+  });
+  res.json({ success: true, decisions: spec.design_decisions });
+});
+
+// --- Sessions API ---
+app.get('/api/sessions', (req, res) => {
+  let studio;
+  try {
+    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+  } catch { studio = {}; }
+
+  const sessions = (studio.sessions || []).map((s, i) => {
+    const entry = {
+      index: i,
+      session_id: s.session_id || i + 1,
+      started_at: s.started_at,
+      ended_at: s.ended_at || null,
+      message_count: s.message_count || 0,
+      summary_preview: null,
+    };
+    // Enrich with summary preview if exists
+    const summaryFile = path.join(SUMMARIES_DIR, `session-${String(entry.session_id).padStart(3, '0')}.md`);
+    if (fs.existsSync(summaryFile)) {
+      const content = fs.readFileSync(summaryFile, 'utf8');
+      const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#')).slice(0, 2);
+      entry.summary_preview = lines.join(' ').substring(0, 120);
+    }
+    return entry;
+  });
+
+  res.json(sessions);
+});
+
+app.post('/api/sessions/load', (req, res) => {
+  const { session_index } = req.body;
+  let studio;
+  try {
+    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+  } catch { studio = {}; }
+
+  const sessions = studio.sessions || [];
+  if (session_index === undefined || session_index < 0 || session_index >= sessions.length) {
+    return res.status(400).json({ error: 'invalid session_index' });
+  }
+
+  const session = sessions[session_index];
+  if (!session.started_at) {
+    return res.status(400).json({ error: 'session has no start time' });
+  }
+
+  // Read conversation and filter by timestamp range
+  if (!fs.existsSync(CONVO_FILE)) return res.json([]);
+  const lines = fs.readFileSync(CONVO_FILE, 'utf8').trim().split('\n').filter(Boolean);
+  const startTime = new Date(session.started_at).getTime();
+  const endTime = session.ended_at ? new Date(session.ended_at).getTime() : Date.now();
+
+  const messages = lines.map(l => {
+    try { return JSON.parse(l); } catch { return null; }
+  }).filter(Boolean).filter(m => {
+    // Filter by session_id if present, otherwise by timestamp
+    if (m.session_id && session.session_id) {
+      return m.session_id === session.session_id;
+    }
+    if (m.at) {
+      const t = new Date(m.at).getTime();
+      return t >= startTime && t <= endTime;
+    }
+    return false;
+  });
+
+  res.json({ session, messages });
+});
+
+// --- Brand Health Scanner ---
+function scanBrandHealth() {
+  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const uploads = spec.uploaded_assets || [];
+
+  const htmlPath = path.join(DIST_DIR, 'index.html');
+  const html = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '';
+
+  const logoUpload = uploads.find(a => a.role === 'brand_asset' || a.filename.match(/logo/i));
+  const logoInHtml = html.match(/<img[^>]*(?:logo|brand)[^>]*>/i);
+  const logoStatus = logoUpload ? 'uploaded' : (logoInHtml ? 'set_in_html' : 'missing');
+
+  const faviconInHtml = html.match(/<link[^>]*rel=["'](?:icon|shortcut icon)["'][^>]*>/i);
+  const faviconUpload = uploads.find(a => a.filename.match(/favicon|ico/i));
+  const faviconStatus = faviconUpload ? 'uploaded' : (faviconInHtml ? 'set_in_html' : 'missing');
+
+  const heroUpload = uploads.find(a => a.filename.match(/hero/i) || a.label?.match(/hero/i));
+  const heroInHtml = html.match(/hero/i) && html.match(/<img[^>]*>/i);
+  const heroStatus = heroUpload ? 'uploaded' : (heroInHtml ? 'set_in_html' : 'missing');
+
+  const fontAwesome = html.match(/font-?awesome/i);
+  const heroicons = html.match(/heroicons/i);
+  const materialIcons = html.match(/material.*icons/i);
+  const usingFontIcons = !!(fontAwesome || heroicons || materialIcons);
+  const fontIconProvider = fontAwesome ? 'Font Awesome' : heroicons ? 'Heroicons' : materialIcons ? 'Material Icons' : null;
+
+  const ogImage = !!html.match(/<meta[^>]*property=["']og:image["'][^>]*>/i);
+  const twitterCard = !!html.match(/<meta[^>]*name=["']twitter:card["'][^>]*>/i);
+
+  const health = {
+    logo: { status: logoStatus, filename: logoUpload?.filename || null },
+    favicon: { status: faviconStatus, filename: faviconUpload?.filename || null },
+    hero_image: { status: heroStatus, filename: heroUpload?.filename || null },
+    font_icons: { using: usingFontIcons, provider: fontIconProvider },
+    social_meta: { og_image: ogImage, twitter_card: twitterCard },
+  };
+
+  const suggestions = [];
+  if (logoStatus === 'missing') suggestions.push({ item: 'logo', action: 'Upload your logo or say "create a logo" in chat' });
+  if (faviconStatus === 'missing') suggestions.push({ item: 'favicon', action: 'Upload a favicon or say "create a favicon" in chat' });
+  if (heroStatus === 'missing') suggestions.push({ item: 'hero_image', action: 'Upload a hero image or generate one with AI' });
+  if (!ogImage) suggestions.push({ item: 'og_image', action: 'Add Open Graph image meta tag for social sharing' });
+  if (!twitterCard) suggestions.push({ item: 'twitter_card', action: 'Add Twitter card meta for better social previews' });
+
+  spec.brand_health = health;
+  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+
+  return { health, suggestions };
+}
+
+app.get('/api/brand-health', (req, res) => {
+  res.json(scanBrandHealth());
+});
+
+// --- Media Specs API ---
+app.put('/api/media-specs', (req, res) => {
+  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  if (!spec.media_specs) spec.media_specs = [];
+  const { action, index, media_spec } = req.body;
+
+  switch (action) {
+    case 'add':
+      if (!media_spec || !media_spec.slot) {
+        return res.status(400).json({ error: 'slot is required' });
+      }
+      spec.media_specs.push({
+        slot: media_spec.slot,
+        dimensions: media_spec.dimensions || '',
+        format: media_spec.format || '',
+        purpose: media_spec.purpose || '',
+        status: media_spec.status || 'missing',
+        filename: media_spec.filename || null,
+      });
+      break;
+    case 'update':
+      if (index === undefined || index < 0 || index >= spec.media_specs.length) {
+        return res.status(400).json({ error: 'invalid index' });
+      }
+      Object.assign(spec.media_specs[index], media_spec);
+      break;
+    case 'delete':
+      if (index === undefined || index < 0 || index >= spec.media_specs.length) {
+        return res.status(400).json({ error: 'invalid index' });
+      }
+      spec.media_specs.splice(index, 1);
+      break;
+    default:
+      return res.status(400).json({ error: 'action must be add, update, or delete' });
+  }
+
+  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  res.json({ success: true, media_specs: spec.media_specs });
+});
+
+// --- AI Image Prompt Generator ---
+app.post('/api/generate-image-prompt', (req, res) => {
+  const { slot, context } = req.body;
+  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const brief = spec.design_brief || {};
+
+  const prompt = `Generate a concise, effective image generation prompt for Midjourney or DALL-E.
+
+CONTEXT:
+- Image slot: ${slot || 'general'}
+- Additional context: ${context || 'none'}
+- Site goal: ${brief.goal || 'not specified'}
+- Audience: ${brief.audience || 'not specified'}
+- Tone: ${Array.isArray(brief.tone) ? brief.tone.join(', ') : brief.tone || 'not specified'}
+- Visual direction: ${JSON.stringify(brief.visual_direction || {})}
+- Colors: ${JSON.stringify(spec.colors || {})}
+
+OUTPUT FORMAT (respond with ONLY this JSON, no other text):
+{
+  "prompt": "the image generation prompt text",
+  "suggested_dimensions": "e.g. 1920x1080",
+  "format": "jpg or png or svg"
+}
+
+Make the prompt specific, visual, and tailored to the brand. Include style keywords. Do NOT include text/words in the image prompt.`;
+
+  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
+    env: { ...process.env, MODEL: loadSettings().model },
+    cwd: HUB_ROOT,
+  });
+
+  let response = '';
+  child.stdout.on('data', (chunk) => { response += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { console.error('[image-prompt]', chunk.toString()); });
+
+  child.on('close', (code) => {
+    if (code !== 0 || !response.trim()) {
+      return res.status(500).json({ error: 'Failed to generate image prompt' });
+    }
+    // Try to parse JSON from response
+    try {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const result = JSON.parse(jsonMatch[0]);
+        return res.json(result);
+      }
+    } catch {}
+    // Fallback: return raw text as prompt
+    res.json({ prompt: response.trim(), suggested_dimensions: '1920x1080', format: 'jpg' });
+  });
+});
+
 // --- Session Summaries API ---
 app.get('/api/summaries', (req, res) => {
   const summaries = loadSessionSummaries(10);
@@ -659,6 +940,12 @@ function classifyRequest(message, spec) {
   const hasHtml = fs.existsSync(path.join(DIST_DIR, 'index.html'));
 
   // Precedence: brainstorm > rollback > new_site > major_revision > restyle > layout_update > content_update > bug_fix > asset_import
+
+  // Brief edit — update the design brief directly
+  if (lower.match(/\b(edit\s+(?:the\s+)?brief|update\s+(?:the\s+)?brief|change\s+the\s+goal|fix\s+the\s+audience|modify\s+(?:the\s+)?brief)\b/)) return 'brief_edit';
+
+  // Brand health check
+  if (lower.match(/\b(check\s+brand|brand\s+health|what'?s?\s+missing|asset\s+checklist|brand\s+check|missing\s+assets)\b/)) return 'brand_health';
 
   // Brainstorm mode — explore ideas without generating HTML
   if (lower.match(/\b(brainstorm|let'?s?\s+(think|explore|plan\s+more|discuss|ideate)|think\s+about|explore\s+ideas|planning\s+mode)\b/)) return 'brainstorm';
@@ -1543,6 +1830,31 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'brief_edit':
+          // Route to planning flow with existing brief pre-loaded
+          handlePlanning(ws, userMessage, spec);
+          break;
+
+        case 'brand_health': {
+          ws.send(JSON.stringify({ type: 'status', content: 'Checking brand health...' }));
+          const healthResult = scanBrandHealth();
+          let report = '**Brand Health Report**\n\n';
+          const h = healthResult.health;
+          const icon = (s) => s === 'missing' ? '🔴' : s === 'uploaded' ? '🟢' : '🟡';
+          report += `${icon(h.logo.status)} Logo: ${h.logo.status}${h.logo.filename ? ` (${h.logo.filename})` : ''}\n`;
+          report += `${icon(h.favicon.status)} Favicon: ${h.favicon.status}${h.favicon.filename ? ` (${h.favicon.filename})` : ''}\n`;
+          report += `${icon(h.hero_image.status)} Hero Image: ${h.hero_image.status}${h.hero_image.filename ? ` (${h.hero_image.filename})` : ''}\n`;
+          report += `${h.font_icons.using ? '🟢' : '⚪'} Font Icons: ${h.font_icons.using ? h.font_icons.provider : 'not detected'}\n`;
+          report += `${h.social_meta.og_image ? '🟢' : '🔴'} OG Image: ${h.social_meta.og_image ? 'set' : 'missing'}\n`;
+          report += `${h.social_meta.twitter_card ? '🟢' : '🔴'} Twitter Card: ${h.social_meta.twitter_card ? 'set' : 'missing'}\n`;
+          if (healthResult.suggestions.length > 0) {
+            report += '\n**Suggestions:**\n' + healthResult.suggestions.map(s => `- ${s.action}`).join('\n');
+          }
+          ws.send(JSON.stringify({ type: 'assistant', content: report }));
+          appendConvo({ role: 'assistant', content: 'Brand health report generated', at: new Date().toISOString() });
+          break;
+        }
+
         case 'brainstorm':
           handleBrainstorm(ws, userMessage, spec);
           break;
@@ -1870,7 +2182,13 @@ function runAssetGenerate(ws, assetType, description) {
 // --- Helpers ---
 function appendConvo(entry) {
   fs.mkdirSync(SITE_DIR, { recursive: true });
-  const line = JSON.stringify({ ...entry, tag: TAG }) + '\n';
+  // Include session_id from current studio state
+  let sessionId = null;
+  try {
+    const studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    sessionId = studio.session_count || null;
+  } catch {}
+  const line = JSON.stringify({ ...entry, tag: TAG, session_id: sessionId }) + '\n';
   fs.appendFileSync(CONVO_FILE, line);
 }
 
