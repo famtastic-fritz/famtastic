@@ -26,7 +26,7 @@ let sessionStartedAt = new Date().toISOString();
 
 // --- Upload config ---
 const UPLOADS_DIR = path.join(DIST_DIR, 'assets', 'uploads');
-const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp)$/i;
+const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_UPLOADS_PER_SITE = 20;
 
@@ -52,7 +52,7 @@ const upload = multer({
     if (ACCEPTED_TYPES.test(file.originalname)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are accepted (.png, .jpg, .gif, .svg, .webp)'));
+      cb(new Error('Accepted: .png, .jpg, .gif, .svg, .webp, .html, .zip'));
     }
   },
 });
@@ -470,6 +470,44 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
   // Determine type from extension
   const ext = path.extname(req.file.filename).toLowerCase();
+
+  // Handle template imports
+  if (role === 'template') {
+    fs.mkdirSync(DIST_DIR, { recursive: true });
+
+    if (ext === '.html') {
+      // Version existing index.html before overwriting
+      versionFile('index.html', 'template_import');
+      fs.copyFileSync(req.file.path, path.join(DIST_DIR, 'index.html'));
+      fs.unlinkSync(req.file.path); // clean up from uploads dir
+      // Update spec
+      spec.template_imported = true;
+      spec.template_source = req.file.originalname;
+      fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+      return res.json({ success: true, message: `Template imported as index.html`, imported: 'index.html' });
+    }
+
+    if (ext === '.zip') {
+      const { execSync } = require('child_process');
+      try {
+        execSync(`unzip -o "${req.file.path}" -d "${DIST_DIR}"`, { stdio: 'pipe' });
+        fs.unlinkSync(req.file.path); // clean up zip
+        spec.template_imported = true;
+        spec.template_source = req.file.originalname;
+        fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+        const imported = fs.readdirSync(DIST_DIR).filter(f => f.endsWith('.html'));
+        return res.json({ success: true, message: `Template extracted: ${imported.join(', ')}`, imported });
+      } catch (e) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: 'Failed to extract ZIP: ' + e.message });
+      }
+    }
+
+    // Not a supported template format
+    fs.unlinkSync(req.file.path);
+    return res.status(400).json({ error: 'Templates must be .html or .zip files' });
+  }
+
   let fileType = 'image';
   if (ext === '.svg') fileType = 'logo'; // default SVGs to logo, user can change
 
@@ -592,6 +630,12 @@ function classifyRequest(message, spec) {
 
   // Summarize session
   if (lower.match(/\b(summarize|summary|wrap\s+up|save\s+progress)\b/)) return 'summarize';
+
+  // Tech stack advice
+  if (lower.match(/\b(what\s+tech|tech\s+stack|which\s+platform|should\s+i\s+use|recommend.*(?:stack|tech|platform)|static\s+or\s+(?:cms|dynamic)|cms\s+or)\b/)) return 'tech_advice';
+
+  // Template import
+  if (lower.match(/\b(import|use|apply|start\s+from|start\s+with)\s+(?:this\s+|a\s+|the\s+)?(?:template|mockup|html\s+file)\b/)) return 'template_import';
 
   // Page navigation — switch to a different page for editing
   const pageMatch = lower.match(/\b(?:go\s+to|switch\s+to|edit|show|open)\s+(?:the\s+)?(\w+)\s+page\b/);
@@ -745,6 +789,69 @@ FULL HTML:
 ${html}`;
 }
 
+// --- Tech Stack Analysis ---
+function analyzeTechStack(brief) {
+  const goal = (brief.goal || '').toLowerCase();
+  const sections = (brief.must_have_sections || []).map(s => s.toLowerCase());
+  const allText = goal + ' ' + sections.join(' ');
+
+  const recommendations = [];
+
+  // Detect dynamic needs
+  const hasDynamic = allText.match(/booking|e-?commerce|shop|store|cart|checkout|login|account|dashboard|payment|subscription/);
+  const hasCMS = allText.match(/blog|news|articles|portfolio|gallery|updates|posts|magazine/);
+  const hasForm = allText.match(/contact|form|inquiry|quote|booking/);
+
+  if (hasDynamic) {
+    recommendations.push({
+      category: 'architecture',
+      suggestion: 'Custom web application',
+      reason: 'Dynamic features detected — needs server-side logic for ' + hasDynamic[0],
+      stack: 'Next.js or Express + database',
+    });
+  } else if (hasCMS) {
+    recommendations.push({
+      category: 'architecture',
+      suggestion: 'Static site with CMS',
+      reason: 'Content-heavy site benefits from a CMS for easy updates',
+      stack: 'Static HTML + headless CMS (or WordPress)',
+    });
+  } else {
+    recommendations.push({
+      category: 'architecture',
+      suggestion: 'Static site',
+      reason: 'Straightforward site — static HTML + Tailwind is the fastest path to launch',
+      stack: 'HTML + Tailwind CSS (current setup)',
+    });
+  }
+
+  // Hosting
+  if (hasDynamic) {
+    recommendations.push({
+      category: 'hosting',
+      suggestion: 'Vercel or Railway',
+      reason: 'Needs server-side rendering or API routes',
+    });
+  } else {
+    recommendations.push({
+      category: 'hosting',
+      suggestion: 'Netlify',
+      reason: 'Already configured — free tier, CDN, instant deploys',
+    });
+  }
+
+  // Forms
+  if (hasForm && !hasDynamic) {
+    recommendations.push({
+      category: 'forms',
+      suggestion: 'Netlify Forms or Formspree',
+      reason: 'Contact forms on static sites need a form backend service',
+    });
+  }
+
+  return recommendations;
+}
+
 // --- Planning Handler ---
 function handlePlanning(ws, userMessage, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Analyzing your vision...' }));
@@ -837,9 +944,14 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
       // Save brief to spec
       const currentSpec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
       currentSpec.design_brief = briefJson;
+
+      // Analyze tech stack
+      const techRecommendations = analyzeTechStack(briefJson);
+      currentSpec.tech_recommendations = techRecommendations;
+
       fs.writeFileSync(SPEC_FILE, JSON.stringify(currentSpec, null, 2));
 
-      ws.send(JSON.stringify({ type: 'brief', brief: briefJson }));
+      ws.send(JSON.stringify({ type: 'brief', brief: briefJson, techRecommendations }));
       appendConvo({ role: 'assistant', content: `Design brief created`, brief: briefJson, at: new Date().toISOString() });
     } else {
       // Couldn't parse — send raw response as text
@@ -1329,6 +1441,24 @@ wss.on('connection', (ws) => {
           appendConvo({ role: 'assistant', content: 'Session summary generated', at: new Date().toISOString() });
           break;
         }
+
+        case 'tech_advice': {
+          const brief = spec.design_brief || null;
+          if (!brief) {
+            ws.send(JSON.stringify({ type: 'assistant', content: 'Describe your site first so I can analyze what tech stack fits best. What kind of site are you building?' }));
+          } else {
+            const recs = analyzeTechStack(brief);
+            const lines = recs.map(r => `- **${r.category}:** ${r.suggestion} — ${r.reason}${r.stack ? ` (${r.stack})` : ''}`);
+            ws.send(JSON.stringify({ type: 'assistant', content: `Tech recommendations based on your brief:\n\n${lines.join('\n')}` }));
+          }
+          appendConvo({ role: 'assistant', content: 'Tech stack advice given', at: new Date().toISOString() });
+          break;
+        }
+
+        case 'template_import':
+          ws.send(JSON.stringify({ type: 'assistant', content: 'Upload an HTML file or ZIP using the image button (or drag-drop), then select the "Template" role. I\'ll use it as the starting point for your site.' }));
+          appendConvo({ role: 'assistant', content: 'Template import instructions given', at: new Date().toISOString() });
+          break;
 
         case 'new_site':
         case 'major_revision':

@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# site-export — Export a site as a standalone project
+# Usage: site-export <tag> <target-path>
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+HUB_ROOT="$SCRIPT_DIR/.."
+
+TAG="${1:-}"
+TARGET="${2:-}"
+
+if [[ -z "$TAG" || -z "$TARGET" ]]; then
+  echo "Usage: site-export <tag> <target-path>"
+  echo "  Exports a site as a standalone project with all files"
+  exit 1
+fi
+
+SITE_DIR="$HUB_ROOT/sites/$TAG"
+DIST_DIR="$SITE_DIR/dist"
+SPEC_FILE="$SITE_DIR/spec.json"
+
+if [[ ! -d "$DIST_DIR" ]]; then
+  echo "Error: No dist/ directory found for $TAG"
+  exit 1
+fi
+
+HTML_COUNT=$(find "$DIST_DIR" -maxdepth 1 -name "*.html" 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$HTML_COUNT" -eq 0 ]]; then
+  echo "Error: No HTML files found in $DIST_DIR"
+  exit 1
+fi
+
+# Read site name from spec
+SITE_NAME="$TAG"
+if [[ -f "$SPEC_FILE" ]]; then
+  SITE_NAME=$(jq -r '.site_name // "'$TAG'"' "$SPEC_FILE")
+fi
+
+# Create target directory
+mkdir -p "$TARGET"
+
+# Copy all dist files (excluding .versions/)
+rsync -a --exclude='.versions' "$DIST_DIR/" "$TARGET/"
+
+# Copy spec.json if it exists
+if [[ -f "$SPEC_FILE" ]]; then
+  cp "$SPEC_FILE" "$TARGET/spec.json"
+fi
+
+# Copy summaries if they exist
+if [[ -d "$SITE_DIR/summaries" ]]; then
+  cp -r "$SITE_DIR/summaries" "$TARGET/summaries"
+fi
+
+# Generate package.json
+cat > "$TARGET/package.json" <<PKGJSON
+{
+  "name": "$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')",
+  "version": "1.0.0",
+  "description": "$SITE_NAME — exported from FAMtastic Site Studio",
+  "scripts": {
+    "serve": "npx serve . -p 3000",
+    "preview": "open http://localhost:3000 && npx serve . -p 3000"
+  },
+  "private": true
+}
+PKGJSON
+
+# Generate README
+cat > "$TARGET/README.md" <<README
+# $SITE_NAME
+
+Exported from FAMtastic Site Studio on $(date +%Y-%m-%d).
+
+## Quick Start
+
+\`\`\`bash
+npm run serve
+\`\`\`
+
+Opens at http://localhost:3000
+
+## Files
+
+$(find "$TARGET" -maxdepth 2 -name "*.html" -printf "- %P\n" 2>/dev/null || find "$TARGET" -maxdepth 2 -name "*.html" | sed "s|$TARGET/|- |")
+
+## Re-import into Studio
+
+\`\`\`bash
+fam-hub site import "$TARGET" $TAG
+\`\`\`
+README
+
+echo ""
+echo "Exported $TAG to $TARGET"
+echo "  HTML files: $HTML_COUNT"
+echo "  Site name: $SITE_NAME"
+echo ""
+echo "  cd $TARGET && npm run serve"
+echo ""

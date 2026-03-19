@@ -125,6 +125,27 @@ case "$CMD" in
         shift 3 || true
         scripts/site-deploy "$TAG" "$@"
         ;;
+      export)
+        TAG="${3:-}"
+        TARGET="${4:-}"
+        if [[ -z "$TAG" || -z "$TARGET" ]]; then
+          echo "Usage: fam-hub site export <tag> <target-path>"
+          echo "  Exports site as a standalone project"
+          exit 1
+        fi
+        [[ "$TAG" == site-* ]] || TAG="site-$TAG"
+        scripts/site-export "$TAG" "$TARGET"
+        ;;
+      import)
+        SOURCE="${3:-}"
+        TAG="${4:-}"
+        if [[ -z "$SOURCE" ]]; then
+          echo "Usage: fam-hub site import <source-path> [tag]"
+          echo "  Imports existing HTML files into Studio"
+          exit 1
+        fi
+        scripts/site-import "$SOURCE" "$TAG"
+        ;;
       domain)
         TAG="${3:-}"
         DOMAIN="${4:-}"
@@ -145,6 +166,8 @@ Usage:
   fam-hub site brainstorm <tag>             Brainstorm ideas from terminal
   fam-hub site preview <tag> [port]         Live preview (default port 3333)
   fam-hub site build <tag> [--template name] Rebuild (batch mode)
+  fam-hub site export <tag> <path>            Export as standalone project
+  fam-hub site import <path> [tag]           Import existing HTML into Studio
   fam-hub site list [tag]                   Dashboard / site detail
   fam-hub site deploy <tag> [--prod]        Deploy to hosting
   fam-hub site domain <tag> <domain>        DNS setup for custom domain
@@ -290,6 +313,8 @@ Site Factory:
   fam-hub site new <tag>            Create site + open chat studio
   fam-hub site brainstorm <tag>     Brainstorm ideas from terminal
   fam-hub site build <tag>          Rebuild site (batch mode)
+  fam-hub site export <tag> <path>  Export as standalone project
+  fam-hub site import <path> [tag]  Import existing HTML into Studio
   fam-hub site list                 Dashboard of all sites
   fam-hub site deploy <tag>         Deploy to hosting
   fam-hub site domain <tag> <dom>   DNS setup guide

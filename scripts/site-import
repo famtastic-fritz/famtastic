@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# site-import — Import an existing site into Studio
+# Usage: site-import <source-path> [tag]
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+HUB_ROOT="$SCRIPT_DIR/.."
+
+SOURCE="${1:-}"
+TAG="${2:-}"
+
+if [[ -z "$SOURCE" ]]; then
+  echo "Usage: site-import <source-path> [tag]"
+  echo "  Imports HTML files into a new Studio project"
+  exit 1
+fi
+
+if [[ ! -d "$SOURCE" ]]; then
+  echo "Error: Source path '$SOURCE' is not a directory"
+  exit 1
+fi
+
+# Find HTML files
+HTML_FILES=$(find "$SOURCE" -maxdepth 2 -name "*.html" 2>/dev/null)
+if [[ -z "$HTML_FILES" ]]; then
+  echo "Error: No HTML files found in $SOURCE"
+  exit 1
+fi
+
+# Derive tag from directory name if not provided
+if [[ -z "$TAG" ]]; then
+  TAG="site-$(basename "$SOURCE" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g')"
+fi
+[[ "$TAG" == site-* ]] || TAG="site-$TAG"
+
+SITE_DIR="$HUB_ROOT/sites/$TAG"
+DIST_DIR="$SITE_DIR/dist"
+
+if [[ -d "$SITE_DIR" ]]; then
+  echo "Warning: Site $TAG already exists. Files will be merged."
+fi
+
+mkdir -p "$DIST_DIR"
+
+# Copy files into dist/
+# If source has a dist/ subdirectory, use that; otherwise copy everything
+if [[ -d "$SOURCE/dist" ]]; then
+  rsync -a --exclude='.versions' --exclude='node_modules' "$SOURCE/dist/" "$DIST_DIR/"
+else
+  rsync -a --exclude='.versions' --exclude='node_modules' --exclude='.git' "$SOURCE/" "$DIST_DIR/"
+fi
+
+# Extract site name from index.html <title>
+SITE_NAME="$TAG"
+if [[ -f "$DIST_DIR/index.html" ]]; then
+  EXTRACTED=$(grep -oP '(?<=<title>)[^<]+' "$DIST_DIR/index.html" 2>/dev/null || echo "")
+  if [[ -n "$EXTRACTED" ]]; then
+    SITE_NAME="$EXTRACTED"
+  fi
+fi
+
+# List pages
+PAGES=$(find "$DIST_DIR" -maxdepth 1 -name "*.html" -exec basename {} \; | sort)
+PAGES_JSON=$(echo "$PAGES" | jq -R -s 'split("\n") | map(select(length > 0) | sub("\\.html$"; "")) | map(if . == "index" then "home" else . end)')
+
+# Import spec.json if it exists in source
+if [[ -f "$SOURCE/spec.json" ]]; then
+  cp "$SOURCE/spec.json" "$SITE_DIR/spec.json"
+  # Update tag and state
+  jq --arg tag "$TAG" '.tag = $tag | .state = "imported"' "$SITE_DIR/spec.json" > "$SITE_DIR/spec.tmp" && mv "$SITE_DIR/spec.tmp" "$SITE_DIR/spec.json"
+else
+  # Generate skeleton spec.json
+  cat > "$SITE_DIR/spec.json" <<SPEC
+{
+  "tag": "$TAG",
+  "site_name": "$SITE_NAME",
+  "state": "imported",
+  "pages": $PAGES_JSON,
+  "imported_from": "$SOURCE",
+  "imported_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+SPEC
+fi
+
+# Import summaries if they exist
+if [[ -d "$SOURCE/summaries" ]]; then
+  mkdir -p "$SITE_DIR/summaries"
+  cp -r "$SOURCE/summaries/"* "$SITE_DIR/summaries/" 2>/dev/null || true
+fi
+
+HTML_COUNT=$(echo "$PAGES" | wc -l | tr -d ' ')
+
+echo ""
+echo "Imported into $TAG"
+echo "  Source: $SOURCE"
+echo "  Site name: $SITE_NAME"
+echo "  Pages: $HTML_COUNT ($PAGES)"
+echo ""
+echo "  Open in Studio: fam-hub site chat $TAG"
+echo ""
