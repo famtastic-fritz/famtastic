@@ -3,6 +3,10 @@ set -euo pipefail
 . scripts/lib/hub-common 2>/dev/null || true
 DEFAULT_MODEL="$(yq -r .claude.model config/agents/defaults.yaml 2>/dev/null || echo claude-sonnet-4-20250514)"
 MODEL="${MODEL:-$DEFAULT_MODEL}"
-if [ $# -gt 0 ]; then PROMPT="$*"; else PROMPT="$(cat)"; fi
 unset CLAUDECODE
-echo "$PROMPT" | claude --print --model "$MODEL" --tools ""
+if [ $# -gt 0 ]; then
+  PROMPT="$*"
+else
+  PROMPT="$(cat)"
+fi
+printf '%s' "$PROMPT" | claude --print --model "$MODEL" --tools ""

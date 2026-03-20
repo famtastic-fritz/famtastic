@@ -1400,7 +1400,14 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
   const child = spawnClaude(prompt);
 
   let response = '';
-  child.stdout.on('data', (chunk) => { response += chunk.toString(); });
+  let firstChunk = true;
+  child.stdout.on('data', (chunk) => {
+    response += chunk.toString();
+    if (firstChunk) {
+      ws.send(JSON.stringify({ type: 'status', content: 'Generating data model...' }));
+      firstChunk = false;
+    }
+  });
   child.stderr.on('data', (chunk) => { console.error('[data-model]', chunk.toString()); });
 
   child.on('close', (code) => {
@@ -1426,6 +1433,7 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
         try {
           const dataModel = JSON.parse(jsonStr.substring(firstBrace, end));
           // Save to spec
+          ws.send(JSON.stringify({ type: 'status', content: 'Saving data model to spec...' }));
           const currentSpec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
           currentSpec.data_model = dataModel;
           fs.writeFileSync(SPEC_FILE(), JSON.stringify(currentSpec, null, 2));
@@ -1640,7 +1648,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
   // Build mode-specific prompt
   let modeInstruction = '';
   const pages = listPages();
-  const specPages = spec.pages || ['home'];
+  const specPages = spec.pages || spec.design_brief?.must_have_sections || ['home'];
   const isMultiPage = specPages.length > 1 || (specPages.length === 1 && specPages[0] !== 'home');
 
   switch (requestType) {
@@ -1740,12 +1748,21 @@ IMPORTANT:
 - For multi-page sites: every page must have the SAME nav bar, footer, Tailwind config, and fonts
 - Nav links must be real file links (about.html) NOT anchors (#about)`;
 
-  ws.send(JSON.stringify({ type: 'status', content: 'Sending to Claude...' }));
+  // Context-aware pre-build status
+  const pagesList = spec.pages || spec.design_brief?.must_have_sections || ['index.html'];
+  if (requestType === 'build' && pagesList.length > 1) {
+    ws.send(JSON.stringify({ type: 'status', content: `Building ${pagesList.length}-page site...` }));
+  } else if (requestType === 'build') {
+    ws.send(JSON.stringify({ type: 'status', content: 'Building site...' }));
+  } else {
+    ws.send(JSON.stringify({ type: 'status', content: 'Sending to Claude...' }));
+  }
 
   const child = spawnClaude(prompt);
 
   let response = '';
   let firstChunk = true;
+  let pagesDetected = 0;
 
   child.stdout.on('data', (chunk) => {
     response += chunk.toString();
@@ -1753,15 +1770,30 @@ IMPORTANT:
       ws.send(JSON.stringify({ type: 'status', content: 'Claude is generating...' }));
       firstChunk = false;
     }
+
+    // Detect page delimiters in stream for real-time progress
+    const pageMatches = response.match(/^---\s*PAGE:\s*(\S+)\s*---\s*$/gm);
+    if (pageMatches && pageMatches.length > pagesDetected) {
+      const newPage = pageMatches[pageMatches.length - 1].match(/PAGE:\s*(\S+)/)[1];
+      pagesDetected = pageMatches.length;
+      ws.send(JSON.stringify({
+        type: 'status',
+        content: `Generating page ${pagesDetected}: ${newPage}...`
+      }));
+    }
+
     ws.send(JSON.stringify({ type: 'stream', content: chunk.toString() }));
   });
 
+  let stderrOutput = '';
   child.stderr.on('data', (chunk) => {
+    stderrOutput += chunk.toString();
     console.error('[claude]', chunk.toString());
   });
 
   child.on('close', (code) => {
     if (code !== 0 || !response.trim()) {
+      console.error(`[claude] Build failed — exit code: ${code}, response length: ${response.length}, stderr: ${stderrOutput.substring(0, 500)}`);
       const fallback = "I couldn't process that request right now. Try being more specific about what you'd like to change, or say 'build the site' to regenerate.";
       ws.send(JSON.stringify({ type: 'assistant', content: fallback }));
       appendConvo({ role: 'assistant', content: fallback, at: new Date().toISOString() });
@@ -1796,12 +1828,15 @@ IMPORTANT:
       fs.mkdirSync(DIST_DIR(), { recursive: true });
       const pageParts = body.split(/^---\s*PAGE:\s*(\S+)\s*---\s*$/m);
       const writtenPages = [];
+      const totalPages = Math.floor((pageParts.length - 1) / 2);
       for (let i = 1; i < pageParts.length; i += 2) {
         const filename = pageParts[i].trim();
         let html = (pageParts[i + 1] || '').trim();
         // Strip markdown fences wrapping individual pages
         html = html.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
         if (filename && html.length > 20) {
+          const pageNum = Math.ceil(i / 2);
+          ws.send(JSON.stringify({ type: 'status', content: `Writing ${filename} (${pageNum} of ${totalPages})...` }));
           versionFile(filename, requestType);
           fs.writeFileSync(path.join(DIST_DIR(), filename), html);
           writtenPages.push(filename);
@@ -1812,11 +1847,13 @@ IMPORTANT:
       }
 
       if (changeSummary) {
+        ws.send(JSON.stringify({ type: 'status', content: 'Extracting design decisions...' }));
         extractDecisions(spec, changeSummary, requestType);
       }
 
       if (writtenPages.length > 0) {
         // Auto-detect media specs from first written page (usually index.html)
+        ws.send(JSON.stringify({ type: 'status', content: 'Detecting media specs...' }));
         const firstHtml = fs.readFileSync(path.join(DIST_DIR(), writtenPages[0]), 'utf8');
         autoDetectMediaSpecs(firstHtml);
 
@@ -1863,10 +1900,12 @@ IMPORTANT:
       fs.writeFileSync(path.join(DIST_DIR(), currentPage), html);
 
       // Auto-detect media specs from updated HTML
+      ws.send(JSON.stringify({ type: 'status', content: 'Detecting media specs...' }));
       autoDetectMediaSpecs(html);
 
       // Extract and log design decisions from change summary
       if (changeSummary) {
+        ws.send(JSON.stringify({ type: 'status', content: 'Extracting design decisions...' }));
         extractDecisions(spec, changeSummary, requestType);
       }
 
