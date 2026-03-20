@@ -25,6 +25,7 @@ function UPLOADS_DIR() { return path.join(DIST_DIR(), 'assets', 'uploads'); }
 
 // --- Multi-page state ---
 let currentPage = 'index.html';
+let currentMode = 'build'; // 'build' or 'brainstorm'
 let sessionMessageCount = 0;
 let sessionStartedAt = new Date().toISOString();
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
@@ -897,6 +898,7 @@ app.post('/api/switch-site', (req, res) => {
   // Switch
   TAG = newTag;
   currentPage = 'index.html';
+  currentMode = 'build';
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
 
@@ -2016,6 +2018,25 @@ wss.on('connection', (ws) => {
       // Load spec
       const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
 
+      // Check persistent brainstorm mode before classifying
+      if (currentMode === 'brainstorm') {
+        const lower = userMessage.toLowerCase();
+        const releasePatterns = /\b(i'?m\s+ready\s+to\s+build|let'?s?\s+(implement|build|do\s+it|make\s+it)|exit\s+brainstorm|done\s+brainstorming|stop\s+brainstorming|back\s+to\s+build|build\s+mode|start\s+building)\b/;
+        if (releasePatterns.test(lower)) {
+          currentMode = 'build';
+          console.log(`[mode] Exited brainstorm mode`);
+          ws.send(JSON.stringify({ type: 'mode-changed', mode: 'build' }));
+          ws.send(JSON.stringify({ type: 'assistant', content: 'Exiting brainstorm mode — back to build mode. What would you like to do?' }));
+          appendConvo({ role: 'assistant', content: 'Exited brainstorm mode', at: new Date().toISOString() });
+          return;
+        }
+        // Stay in brainstorm — skip classifier entirely
+        console.log(`[mode] Brainstorm mode active — routing directly to handleBrainstorm`);
+        ws.send(JSON.stringify({ type: 'status', content: 'Brainstorming...' }));
+        handleBrainstorm(ws, userMessage, spec);
+        return;
+      }
+
       // Classify request
       ws.send(JSON.stringify({ type: 'status', content: 'Classifying request...' }));
       const requestType = classifyRequest(userMessage, spec);
@@ -2066,6 +2087,9 @@ wss.on('connection', (ws) => {
         }
 
         case 'brainstorm':
+          currentMode = 'brainstorm';
+          console.log(`[mode] Entered brainstorm mode`);
+          ws.send(JSON.stringify({ type: 'mode-changed', mode: 'brainstorm' }));
           handleBrainstorm(ws, userMessage, spec);
           break;
 
