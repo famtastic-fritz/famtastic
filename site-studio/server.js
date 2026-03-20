@@ -922,6 +922,8 @@ app.post('/api/switch-site', (req, res) => {
 app.post('/api/new-site', (req, res) => {
   let newTag = req.body.tag;
   if (!newTag) return res.status(400).json({ error: 'tag required' });
+  // Sanitize: lowercase, replace spaces/special chars with hyphens
+  newTag = newTag.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   if (!newTag.startsWith('site-')) newTag = 'site-' + newTag;
 
   const newSiteDir = path.join(SITES_ROOT, newTag);
@@ -1159,6 +1161,9 @@ function classifyRequest(message, spec) {
 
   // New site — no brief exists yet (HTML may exist from fallback template)
   if (!hasBrief) return 'new_site';
+
+  // Brief approved but no HTML built yet — need to build first
+  if (hasBrief && !hasHtml) return 'build';
 
   // Major revision signals
   if (lower.match(/\b(start\s+over|from\s+scratch|completely\s+different|total(ly)?\s+(re)?do|scrap\s+(it|this|everything))\b/)) return 'major_revision';
@@ -2364,13 +2369,20 @@ function escapeForShell(str) {
 
 // Safe Claude CLI spawn — pipes prompt via stdin instead of shell embedding
 function spawnClaude(prompt) {
+  const env = { ...process.env, MODEL: loadSettings().model };
+  // Ensure CLAUDECODE is unset to prevent nested-session guard
+  delete env.CLAUDECODE;
   const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: loadSettings().model },
+    env,
     cwd: HUB_ROOT,
     stdio: ['pipe', 'pipe', 'pipe'],
   });
   child.stdin.write(prompt);
   child.stdin.end();
+  child.on('error', (err) => console.error('[claude-spawn] Error:', err.message));
+  child.on('close', (code) => {
+    if (code !== 0) console.error(`[claude-spawn] Exited with code ${code}`);
+  });
   return child;
 }
 
