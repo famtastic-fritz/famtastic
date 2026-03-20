@@ -56,7 +56,22 @@
   <header class="bg-studio-panel border-b border-gray-700 px-6 py-3 flex items-center justify-between shrink-0">
     <div class="flex items-center gap-3">
       <h1 class="text-lg font-bold text-white">FAMtastic Site Studio</h1>
-      <span id="site-tag" class="text-sm bg-studio-accent/20 text-studio-accent px-2 py-0.5 rounded">loading...</span>
+      <div class="relative">
+        <button onclick="toggleProjectPicker()" id="site-tag" class="text-sm bg-studio-accent/20 text-studio-accent px-2 py-0.5 rounded cursor-pointer hover:bg-studio-accent/30 transition">loading... &#9662;</button>
+        <div id="project-picker" class="hidden absolute top-full left-0 mt-1 bg-studio-panel border border-gray-600 rounded-lg shadow-2xl z-50 w-72 max-h-80 overflow-y-auto">
+          <div class="p-3 border-b border-gray-700">
+            <div class="text-xs font-bold text-white mb-2">Projects</div>
+            <div id="project-list" class="space-y-1"></div>
+          </div>
+          <div class="p-3">
+            <div class="text-xs font-bold text-white mb-2">New Project</div>
+            <div class="flex gap-1">
+              <input id="new-project-tag" type="text" placeholder="tag (e.g. my-site)" class="flex-1 text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent">
+              <button onclick="createNewProject()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Create</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="flex items-center gap-4">
       <button onclick="rebuildSite()" class="text-sm bg-studio-accent hover:bg-blue-600 text-white px-4 py-1.5 rounded transition">Rebuild</button>
@@ -259,7 +274,7 @@
     // --- Init ---
     async function init() {
       config = await (await fetch('/api/config')).json();
-      document.getElementById('site-tag').textContent = config.tag;
+      document.getElementById('site-tag').innerHTML = `${escapeHtml(config.tag)} &#9662;`;
       document.title = `Site Studio — ${config.tag}`;
 
       // Load conversation history
@@ -328,6 +343,9 @@
             activePage = msg.page;
             renderPageTabs();
             navigateToPage(msg.page);
+            break;
+          case 'site-switched':
+            handleSiteSwitch(msg.tag, msg.pages, msg.currentPage);
             break;
         }
       };
@@ -1410,6 +1428,137 @@
       } catch (e) {
         addMessage('error', 'Summary failed: ' + e.message);
       }
+    }
+
+    // --- Project Picker ---
+    let projectPickerOpen = false;
+
+    function toggleProjectPicker() {
+      projectPickerOpen = !projectPickerOpen;
+      const picker = document.getElementById('project-picker');
+      picker.classList.toggle('hidden', !projectPickerOpen);
+      if (projectPickerOpen) loadProjects();
+    }
+
+    // Close picker on outside click
+    document.addEventListener('click', (e) => {
+      const picker = document.getElementById('project-picker');
+      const tag = document.getElementById('site-tag');
+      if (projectPickerOpen && !picker.contains(e.target) && e.target !== tag) {
+        projectPickerOpen = false;
+        picker.classList.add('hidden');
+      }
+    });
+
+    async function loadProjects() {
+      const el = document.getElementById('project-list');
+      el.innerHTML = '<div class="text-xs text-studio-muted">Loading...</div>';
+      try {
+        const projects = await (await fetch('/api/projects')).json();
+        if (projects.length === 0) {
+          el.innerHTML = '<div class="text-xs text-studio-muted">No projects yet</div>';
+          return;
+        }
+        el.innerHTML = projects.map(p => {
+          const statusDot = p.has_html ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-yellow"></span>';
+          return `<button onclick="switchProject('${escapeHtml(p.tag)}')" class="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-600 transition flex items-center gap-2 ${p.is_current ? 'bg-studio-accent/20 border border-studio-accent/30' : ''}">
+            ${statusDot}
+            <div class="flex-1 min-w-0">
+              <div class="text-white font-medium truncate">${escapeHtml(p.name)}</div>
+              <div class="text-studio-muted truncate">${escapeHtml(p.tag)}${p.page_count ? ` · ${p.page_count} pages` : ''}${p.business_type ? ` · ${escapeHtml(p.business_type)}` : ''}</div>
+            </div>
+            ${p.is_current ? '<span class="text-studio-accent text-[10px] shrink-0">ACTIVE</span>' : ''}
+          </button>`;
+        }).join('');
+      } catch (e) {
+        el.innerHTML = '<div class="text-xs text-red-400">Failed to load projects</div>';
+      }
+    }
+
+    async function switchProject(tag) {
+      if (tag === config.tag) {
+        projectPickerOpen = false;
+        document.getElementById('project-picker').classList.add('hidden');
+        return;
+      }
+      try {
+        const res = await fetch('/api/switch-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          addMessage('error', data.error);
+          return;
+        }
+        // The server broadcasts site-switched, but also handle it directly
+        handleSiteSwitch(data.tag, data.pages, data.currentPage);
+      } catch (e) {
+        addMessage('error', 'Failed to switch site: ' + e.message);
+      }
+      projectPickerOpen = false;
+      document.getElementById('project-picker').classList.add('hidden');
+    }
+
+    async function createNewProject() {
+      const input = document.getElementById('new-project-tag');
+      const tag = input.value.trim();
+      if (!tag) return;
+
+      try {
+        const res = await fetch('/api/new-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          addMessage('error', data.error);
+          return;
+        }
+        input.value = '';
+        handleSiteSwitch(data.tag, [], 'index.html');
+      } catch (e) {
+        addMessage('error', 'Failed to create project: ' + e.message);
+      }
+      projectPickerOpen = false;
+      document.getElementById('project-picker').classList.add('hidden');
+    }
+
+    async function handleSiteSwitch(tag, pages, newCurrentPage) {
+      config.tag = tag;
+      document.getElementById('site-tag').innerHTML = `${escapeHtml(tag)} &#9662;`;
+      document.title = `Site Studio — ${tag}`;
+
+      // Clear chat
+      const container = document.getElementById('chat-messages');
+      container.innerHTML = '';
+      viewingOldSession = false;
+      const banner = document.getElementById('session-viewing-banner');
+      if (banner) banner.classList.add('hidden');
+
+      // Reset page state
+      activePage = newCurrentPage || 'index.html';
+      sitePages = pages || [];
+      renderPageTabs();
+
+      // Load conversation history for new site
+      try {
+        const history = await (await fetch('/api/history')).json();
+        history.forEach(msg => {
+          if (msg.role === 'user' || msg.role === 'assistant') {
+            addMessage(msg.role, msg.content, false);
+          }
+        });
+      } catch {}
+
+      // Reload preview
+      reloadPreview();
+      refreshAssetBar();
+      refreshStudioPanel();
+
+      addMessage('status', `Switched to ${tag}`);
     }
 
     // --- Start ---

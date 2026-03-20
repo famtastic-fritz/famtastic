@@ -9,23 +9,24 @@ const multer = require('multer');
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
 const PREVIEW_PORT = parseInt(process.env.PREVIEW_PORT || '3333', 10);
-const TAG = process.env.SITE_TAG || 'site-demo';
+let TAG = process.env.SITE_TAG || 'site-demo';
 const HUB_ROOT = path.resolve(__dirname, '..');
-const SITE_DIR = path.join(HUB_ROOT, 'sites', TAG);
-const DIST_DIR = path.join(SITE_DIR, 'dist');
-const CONVO_FILE = path.join(SITE_DIR, 'conversation.jsonl');
-const SPEC_FILE = path.join(SITE_DIR, 'spec.json');
-const STUDIO_FILE = path.join(SITE_DIR, '.studio.json');
-const VERSIONS_DIR = path.join(DIST_DIR, '.versions');
-const SUMMARIES_DIR = path.join(SITE_DIR, 'summaries');
+const SITES_ROOT = path.join(HUB_ROOT, 'sites');
+
+// Derived paths — recomputed on site switch
+function SITE_DIR() { return path.join(SITES_ROOT, TAG); }
+function DIST_DIR() { return path.join(SITE_DIR(), 'dist'); }
+function CONVO_FILE() { return path.join(SITE_DIR(), 'conversation.jsonl'); }
+function SPEC_FILE() { return path.join(SITE_DIR(), 'spec.json'); }
+function STUDIO_FILE() { return path.join(SITE_DIR(), '.studio.json'); }
+function VERSIONS_DIR() { return path.join(DIST_DIR(), '.versions'); }
+function SUMMARIES_DIR() { return path.join(SITE_DIR(), 'summaries'); }
+function UPLOADS_DIR() { return path.join(DIST_DIR(), 'assets', 'uploads'); }
 
 // --- Multi-page state ---
 let currentPage = 'index.html';
 let sessionMessageCount = 0;
 let sessionStartedAt = new Date().toISOString();
-
-// --- Upload config ---
-const UPLOADS_DIR = path.join(DIST_DIR, 'assets', 'uploads');
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_UPLOADS_PER_SITE = 20;
@@ -33,13 +34,13 @@ const MAX_UPLOADS_PER_SITE = 20;
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-      cb(null, UPLOADS_DIR);
+      fs.mkdirSync(UPLOADS_DIR(), { recursive: true });
+      cb(null, UPLOADS_DIR());
     },
     filename: (req, file, cb) => {
       // Sanitize: lowercase, strip special chars, add timestamp if duplicate
       let name = file.originalname.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
-      if (fs.existsSync(path.join(UPLOADS_DIR, name))) {
+      if (fs.existsSync(path.join(UPLOADS_DIR(), name))) {
         const ext = path.extname(name);
         const base = path.basename(name, ext);
         name = `${base}-${Date.now()}${ext}`;
@@ -80,10 +81,10 @@ function sanitizeSvg(svgContent) {
 
 // --- Site Versioning ---
 function versionFile(page, reason) {
-  const htmlPath = path.join(DIST_DIR, page);
+  const htmlPath = path.join(DIST_DIR(), page);
   if (!fs.existsSync(htmlPath)) return null;
 
-  const pageDir = path.join(VERSIONS_DIR, page.replace('.html', ''));
+  const pageDir = path.join(VERSIONS_DIR(), page.replace('.html', ''));
   fs.mkdirSync(pageDir, { recursive: true });
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-');
@@ -93,14 +94,14 @@ function versionFile(page, reason) {
   // Store version metadata in .studio.json
   let studio;
   try {
-    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
   } catch { studio = {}; }
 
   if (!studio.versions) studio.versions = [];
   const entry = {
     page,
     timestamp: new Date().toISOString(),
-    file: path.relative(DIST_DIR, versionPath),
+    file: path.relative(DIST_DIR(), versionPath),
     reason: reason || 'update',
     size: fs.statSync(htmlPath).size,
   };
@@ -111,21 +112,21 @@ function versionFile(page, reason) {
     const removed = studio.versions.splice(0, studio.versions.length - 50);
     // Clean up old version files
     for (const old of removed) {
-      const oldPath = path.join(DIST_DIR, old.file);
+      const oldPath = path.join(DIST_DIR(), old.file);
       if (fs.existsSync(oldPath)) {
         try { fs.unlinkSync(oldPath); } catch {}
       }
     }
   }
 
-  fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+  fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
   return entry;
 }
 
 function getVersions(page) {
   let studio;
   try {
-    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
   } catch { studio = {}; }
 
   const versions = studio.versions || [];
@@ -138,10 +139,10 @@ function rollbackToVersion(page, timestamp) {
   const target = versions.find(v => v.timestamp === timestamp);
   if (!target) return { error: 'Version not found' };
 
-  const versionPath = path.join(DIST_DIR, target.file);
+  const versionPath = path.join(DIST_DIR(), target.file);
   if (!fs.existsSync(versionPath)) return { error: 'Version file missing' };
 
-  const htmlPath = path.join(DIST_DIR, page);
+  const htmlPath = path.join(DIST_DIR(), page);
 
   // Save current state as a version before rolling back
   versionFile(page, 'pre-rollback');
@@ -154,21 +155,21 @@ function rollbackToVersion(page, timestamp) {
 
 // --- Session Summaries ---
 function loadSessionSummaries(count) {
-  if (!fs.existsSync(SUMMARIES_DIR)) return [];
-  const files = fs.readdirSync(SUMMARIES_DIR)
+  if (!fs.existsSync(SUMMARIES_DIR())) return [];
+  const files = fs.readdirSync(SUMMARIES_DIR())
     .filter(f => f.endsWith('.md'))
     .sort()
     .slice(-(count || 3));
   return files.map(f => {
-    const content = fs.readFileSync(path.join(SUMMARIES_DIR, f), 'utf8');
+    const content = fs.readFileSync(path.join(SUMMARIES_DIR(), f), 'utf8');
     return { file: f, content };
   });
 }
 
 function generateSessionSummary(ws) {
   // Read recent conversation
-  if (!fs.existsSync(CONVO_FILE)) return;
-  const lines = fs.readFileSync(CONVO_FILE, 'utf8').trim().split('\n').filter(Boolean);
+  if (!fs.existsSync(CONVO_FILE())) return;
+  const lines = fs.readFileSync(CONVO_FILE(), 'utf8').trim().split('\n').filter(Boolean);
   if (lines.length < 3) return; // Not enough to summarize
 
   // Take last 40 messages for summary context
@@ -205,37 +206,37 @@ SUMMARY:`;
       return;
     }
 
-    fs.mkdirSync(SUMMARIES_DIR, { recursive: true });
+    fs.mkdirSync(SUMMARIES_DIR(), { recursive: true });
     const sessionNum = (getStudioSessionCount() || 0).toString().padStart(3, '0');
-    const summaryFile = path.join(SUMMARIES_DIR, `session-${sessionNum}.md`);
+    const summaryFile = path.join(SUMMARIES_DIR(), `session-${sessionNum}.md`);
     const header = `# Session ${sessionNum} — ${new Date().toISOString().split('T')[0]}\n\n`;
     fs.writeFileSync(summaryFile, header + response.trim() + '\n');
     console.log(`[summary] Wrote session summary: ${summaryFile}`);
 
     // Also store in .studio.json
     try {
-      const studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+      const studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
       studio.conversation_summary = response.trim();
-      fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+      fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
     } catch {}
   });
 }
 
 function getStudioSessionCount() {
   try {
-    const studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    const studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
     return studio.session_count || 0;
   } catch { return 0; }
 }
 
 // --- Studio Persistence ---
 function loadStudio() {
-  if (fs.existsSync(STUDIO_FILE)) {
+  if (fs.existsSync(STUDIO_FILE())) {
     try {
-      const studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8'));
+      const studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8'));
       currentPage = studio.current_page || 'index.html';
       // Verify current page still exists
-      if (!fs.existsSync(path.join(DIST_DIR, currentPage))) {
+      if (!fs.existsSync(path.join(DIST_DIR(), currentPage))) {
         currentPage = 'index.html';
       }
       return studio;
@@ -248,8 +249,8 @@ function loadStudio() {
 
 function saveStudio() {
   let studio;
-  if (fs.existsSync(STUDIO_FILE)) {
-    try { studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')); } catch { studio = null; }
+  if (fs.existsSync(STUDIO_FILE())) {
+    try { studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')); } catch { studio = null; }
   }
   if (!studio) {
     studio = {
@@ -262,15 +263,15 @@ function saveStudio() {
   }
   studio.updated_at = new Date().toISOString();
   studio.current_page = currentPage;
-  fs.mkdirSync(SITE_DIR, { recursive: true });
-  fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+  fs.mkdirSync(SITE_DIR(), { recursive: true });
+  fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
   return studio;
 }
 
 function endSession() {
-  if (!fs.existsSync(STUDIO_FILE)) return;
+  if (!fs.existsSync(STUDIO_FILE())) return;
   try {
-    const studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8'));
+    const studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8'));
     // Update the most recent session
     if (studio.sessions && studio.sessions.length > 0) {
       const last = studio.sessions[studio.sessions.length - 1];
@@ -280,7 +281,7 @@ function endSession() {
       }
     }
     studio.updated_at = new Date().toISOString();
-    fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+    fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
 
     // Generate session summary if there was meaningful conversation
     if (sessionMessageCount >= 3) {
@@ -293,8 +294,8 @@ function endSession() {
 
 function startSession() {
   let studio;
-  if (fs.existsSync(STUDIO_FILE)) {
-    try { studio = JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')); } catch { studio = null; }
+  if (fs.existsSync(STUDIO_FILE())) {
+    try { studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')); } catch { studio = null; }
   }
   if (!studio) {
     studio = {
@@ -314,8 +315,8 @@ function startSession() {
   }
   studio.updated_at = new Date().toISOString();
   studio.current_page = currentPage;
-  fs.mkdirSync(SITE_DIR, { recursive: true });
-  fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio, null, 2));
+  fs.mkdirSync(SITE_DIR(), { recursive: true });
+  fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
   return studio;
@@ -323,8 +324,8 @@ function startSession() {
 
 // Helper: list HTML pages in dist
 function listPages() {
-  if (!fs.existsSync(DIST_DIR)) return [];
-  return fs.readdirSync(DIST_DIR)
+  if (!fs.existsSync(DIST_DIR())) return [];
+  return fs.readdirSync(DIST_DIR())
     .filter(f => f.endsWith('.html'))
     .sort((a, b) => {
       if (a === 'index.html') return -1;
@@ -340,8 +341,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve spec.json
 app.get('/api/spec', (req, res) => {
-  if (fs.existsSync(SPEC_FILE)) {
-    res.json(JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')));
+  if (fs.existsSync(SPEC_FILE())) {
+    res.json(JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')));
   } else {
     res.json({ error: 'No spec.json found' });
   }
@@ -349,8 +350,8 @@ app.get('/api/spec', (req, res) => {
 
 // Serve conversation history
 app.get('/api/history', (req, res) => {
-  if (!fs.existsSync(CONVO_FILE)) return res.json([]);
-  const lines = fs.readFileSync(CONVO_FILE, 'utf8').trim().split('\n').filter(Boolean);
+  if (!fs.existsSync(CONVO_FILE())) return res.json([]);
+  const lines = fs.readFileSync(CONVO_FILE(), 'utf8').trim().split('\n').filter(Boolean);
   const messages = lines.map(l => {
     try { return JSON.parse(l); } catch { return null; }
   }).filter(Boolean);
@@ -359,7 +360,7 @@ app.get('/api/history', (req, res) => {
 
 // List assets
 app.get('/api/assets', (req, res) => {
-  const assetsDir = path.join(DIST_DIR, 'assets');
+  const assetsDir = path.join(DIST_DIR(), 'assets');
   if (!fs.existsSync(assetsDir)) return res.json([]);
   const files = fs.readdirSync(assetsDir).filter(f => /\.(svg|png|jpg|gif|ico)$/i.test(f));
   res.json(files.map(f => ({
@@ -372,11 +373,11 @@ app.get('/api/assets', (req, res) => {
 });
 
 // Serve asset files directly
-app.use('/site-assets', express.static(path.join(DIST_DIR, 'assets')));
+app.use('/site-assets', express.static(path.join(DIST_DIR(), 'assets')));
 
 // Get site config
 app.get('/api/config', (req, res) => {
-  res.json({ tag: TAG, previewPort: PREVIEW_PORT, studioPort: PORT });
+  res.json({ tag: TAG, previewPort: PREVIEW_PORT, studioPort: PORT, sitesRoot: SITES_ROOT });
 });
 
 // List pages and current page
@@ -388,7 +389,7 @@ app.get('/api/pages', (req, res) => {
 app.post('/api/pages/current', (req, res) => {
   const page = req.body.page;
   if (!page) return res.status(400).json({ error: 'page required' });
-  if (!fs.existsSync(path.join(DIST_DIR, page))) {
+  if (!fs.existsSync(path.join(DIST_DIR(), page))) {
     return res.status(404).json({ error: 'Page not found' });
   }
   currentPage = page;
@@ -409,13 +410,13 @@ app.get('/api/templates', (req, res) => {
 
 // Studio state — brief, decisions, files, spec
 app.get('/api/studio-state', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
-  const stateFile = path.join(SITE_DIR, 'state.json');
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const stateFile = path.join(SITE_DIR(), 'state.json');
   const state = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : {};
 
   // Gather files
   const files = [];
-  if (fs.existsSync(DIST_DIR)) {
+  if (fs.existsSync(DIST_DIR())) {
     const walk = (dir, prefix) => {
       for (const f of fs.readdirSync(dir)) {
         const full = path.join(dir, f);
@@ -427,7 +428,7 @@ app.get('/api/studio-state', (req, res) => {
         }
       }
     };
-    walk(DIST_DIR, 'dist');
+    walk(DIST_DIR(), 'dist');
   }
 
   res.json({
@@ -448,7 +449,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   }
 
   // Check upload limit
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   const existingUploads = spec.uploaded_assets || [];
   if (existingUploads.length >= MAX_UPLOADS_PER_SITE) {
     // Remove the uploaded file
@@ -473,29 +474,29 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
   // Handle template imports
   if (role === 'template') {
-    fs.mkdirSync(DIST_DIR, { recursive: true });
+    fs.mkdirSync(DIST_DIR(), { recursive: true });
 
     if (ext === '.html') {
       // Version existing index.html before overwriting
       versionFile('index.html', 'template_import');
-      fs.copyFileSync(req.file.path, path.join(DIST_DIR, 'index.html'));
+      fs.copyFileSync(req.file.path, path.join(DIST_DIR(), 'index.html'));
       fs.unlinkSync(req.file.path); // clean up from uploads dir
       // Update spec
       spec.template_imported = true;
       spec.template_source = req.file.originalname;
-      fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+      fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
       return res.json({ success: true, message: `Template imported as index.html`, imported: 'index.html' });
     }
 
     if (ext === '.zip') {
       const { execSync } = require('child_process');
       try {
-        execSync(`unzip -o "${req.file.path}" -d "${DIST_DIR}"`, { stdio: 'pipe' });
+        execSync(`unzip -o "${req.file.path}" -d "${DIST_DIR()}"`, { stdio: 'pipe' });
         fs.unlinkSync(req.file.path); // clean up zip
         spec.template_imported = true;
         spec.template_source = req.file.originalname;
-        fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
-        const imported = fs.readdirSync(DIST_DIR).filter(f => f.endsWith('.html'));
+        fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+        const imported = fs.readdirSync(DIST_DIR()).filter(f => f.endsWith('.html'));
         return res.json({ success: true, message: `Template extracted: ${imported.join(', ')}`, imported });
       } catch (e) {
         fs.unlinkSync(req.file.path);
@@ -523,7 +524,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
   if (!spec.uploaded_assets) spec.uploaded_assets = [];
   spec.uploaded_assets.push(asset);
-  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
 
   res.json({
     success: true,
@@ -534,7 +535,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
 // Update asset metadata (role, label, notes)
 app.put('/api/upload/:filename', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   const assets = spec.uploaded_assets || [];
   const asset = assets.find(a => a.filename === req.params.filename);
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
@@ -543,23 +544,23 @@ app.put('/api/upload/:filename', (req, res) => {
   if (req.body.label !== undefined) asset.label = req.body.label;
   if (req.body.notes !== undefined) asset.notes = req.body.notes;
 
-  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
   res.json({ success: true, asset });
 });
 
 // List uploaded assets
 app.get('/api/uploads', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   const assets = (spec.uploaded_assets || []).map(a => ({
     ...a,
     url: `/assets/uploads/${a.filename}`,
-    exists: fs.existsSync(path.join(UPLOADS_DIR, a.filename)),
+    exists: fs.existsSync(path.join(UPLOADS_DIR(), a.filename)),
   }));
   res.json(assets);
 });
 
 // Serve uploaded files (images only — never execute)
-app.use('/assets/uploads', express.static(UPLOADS_DIR, {
+app.use('/assets/uploads', express.static(UPLOADS_DIR(), {
   setHeaders: (res, filePath) => {
     res.set('X-Content-Type-Options', 'nosniff');
     // Force SVGs to be served as images, not executed
@@ -582,7 +583,7 @@ app.get('/api/versions/:page/:timestamp', (req, res) => {
   const target = versions.find(v => v.timestamp === req.params.timestamp);
   if (!target) return res.status(404).json({ error: 'Version not found' });
 
-  const versionPath = path.join(DIST_DIR, target.file);
+  const versionPath = path.join(DIST_DIR(), target.file);
   if (!fs.existsSync(versionPath)) return res.status(404).json({ error: 'Version file missing' });
 
   const content = fs.readFileSync(versionPath, 'utf8');
@@ -600,7 +601,7 @@ app.post('/api/rollback', (req, res) => {
 
 // --- Brief Edit API ---
 app.put('/api/brief', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   if (!spec.design_brief) spec.design_brief = {};
   // Merge partial fields into existing brief
   const allowed = ['goal', 'audience', 'tone', 'visual_direction', 'content_priorities', 'must_have_sections', 'avoid'];
@@ -609,7 +610,7 @@ app.put('/api/brief', (req, res) => {
       spec.design_brief[key] = req.body[key];
     }
   }
-  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
   // Broadcast to connected clients
   wss.clients.forEach(client => {
     if (client.readyState === 1) {
@@ -621,7 +622,7 @@ app.put('/api/brief', (req, res) => {
 
 // --- Decisions CRUD API ---
 app.put('/api/decisions', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   if (!spec.design_decisions) spec.design_decisions = [];
   const { action, index, decision } = req.body;
 
@@ -655,7 +656,7 @@ app.put('/api/decisions', (req, res) => {
       return res.status(400).json({ error: 'action must be add, update, or delete' });
   }
 
-  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
   wss.clients.forEach(client => {
     if (client.readyState === 1) {
       client.send(JSON.stringify({ type: 'spec-updated', spec }));
@@ -668,7 +669,7 @@ app.put('/api/decisions', (req, res) => {
 app.get('/api/sessions', (req, res) => {
   let studio;
   try {
-    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
   } catch { studio = {}; }
 
   const sessions = (studio.sessions || []).map((s, i) => {
@@ -681,7 +682,7 @@ app.get('/api/sessions', (req, res) => {
       summary_preview: null,
     };
     // Enrich with summary preview if exists
-    const summaryFile = path.join(SUMMARIES_DIR, `session-${String(entry.session_id).padStart(3, '0')}.md`);
+    const summaryFile = path.join(SUMMARIES_DIR(), `session-${String(entry.session_id).padStart(3, '0')}.md`);
     if (fs.existsSync(summaryFile)) {
       const content = fs.readFileSync(summaryFile, 'utf8');
       const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#')).slice(0, 2);
@@ -697,7 +698,7 @@ app.post('/api/sessions/load', (req, res) => {
   const { session_index } = req.body;
   let studio;
   try {
-    studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
   } catch { studio = {}; }
 
   const sessions = studio.sessions || [];
@@ -711,8 +712,8 @@ app.post('/api/sessions/load', (req, res) => {
   }
 
   // Read conversation and filter by timestamp range
-  if (!fs.existsSync(CONVO_FILE)) return res.json([]);
-  const lines = fs.readFileSync(CONVO_FILE, 'utf8').trim().split('\n').filter(Boolean);
+  if (!fs.existsSync(CONVO_FILE())) return res.json([]);
+  const lines = fs.readFileSync(CONVO_FILE(), 'utf8').trim().split('\n').filter(Boolean);
   const startTime = new Date(session.started_at).getTime();
   const endTime = session.ended_at ? new Date(session.ended_at).getTime() : Date.now();
 
@@ -735,10 +736,10 @@ app.post('/api/sessions/load', (req, res) => {
 
 // --- Brand Health Scanner ---
 function scanBrandHealth() {
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   const uploads = spec.uploaded_assets || [];
 
-  const htmlPath = path.join(DIST_DIR, 'index.html');
+  const htmlPath = path.join(DIST_DIR(), 'index.html');
   const html = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '';
 
   const logoUpload = uploads.find(a => a.role === 'brand_asset' || a.filename.match(/logo/i));
@@ -778,7 +779,7 @@ function scanBrandHealth() {
   if (!twitterCard) suggestions.push({ item: 'twitter_card', action: 'Add Twitter card meta for better social previews' });
 
   spec.brand_health = health;
-  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
 
   return { health, suggestions };
 }
@@ -787,9 +788,185 @@ app.get('/api/brand-health', (req, res) => {
   res.json(scanBrandHealth());
 });
 
+// --- Auto Media Spec Scanner ---
+// Scans HTML for image slots and auto-creates media specs for missing ones
+function autoDetectMediaSpecs(html) {
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  if (!spec.media_specs) spec.media_specs = [];
+  const existing = new Set(spec.media_specs.map(s => s.slot));
+  let added = 0;
+
+  // Detect hero images/backgrounds
+  if (html.match(/(?:hero|banner)[\s\S]{0,500}(?:background-image|<img)/i) && !existing.has('hero_image')) {
+    spec.media_specs.push({ slot: 'hero_image', dimensions: '1920x1080', format: 'jpg', purpose: 'Landing hero background', status: 'missing' });
+    added++;
+  }
+
+  // Detect logo references
+  if (html.match(/<img[^>]*(?:logo|brand)[^>]*>/i) && !existing.has('logo')) {
+    spec.media_specs.push({ slot: 'logo', dimensions: '200x50', format: 'svg', purpose: 'Primary brand mark', status: 'missing' });
+    added++;
+  }
+
+  // Detect favicon
+  if (html.match(/<link[^>]*rel=["'](?:icon|shortcut icon)["']/i) && !existing.has('favicon')) {
+    spec.media_specs.push({ slot: 'favicon', dimensions: '32x32', format: 'png', purpose: 'Browser tab icon', status: 'missing' });
+    added++;
+  }
+
+  // Detect OG image meta
+  if (html.match(/<meta[^>]*property=["']og:image["']/i) && !existing.has('og_image')) {
+    spec.media_specs.push({ slot: 'og_image', dimensions: '1200x630', format: 'jpg', purpose: 'Social sharing preview image', status: 'missing' });
+    added++;
+  }
+
+  // Detect gallery/portfolio images
+  if (html.match(/(?:gallery|portfolio|grid)[\s\S]{0,1000}(?:<img[^>]*>[\s\S]{0,200}){3,}/i) && !existing.has('gallery_images')) {
+    spec.media_specs.push({ slot: 'gallery_images', dimensions: '800x600', format: 'jpg', purpose: 'Gallery/portfolio photos', status: 'missing' });
+    added++;
+  }
+
+  // Detect team/about section images
+  if (html.match(/(?:team|about|staff)[\s\S]{0,500}<img/i) && !existing.has('team_photos')) {
+    spec.media_specs.push({ slot: 'team_photos', dimensions: '400x400', format: 'jpg', purpose: 'Team member headshots', status: 'missing' });
+    added++;
+  }
+
+  // Cross-reference uploaded assets — mark specs as uploaded if matching asset exists
+  const uploads = spec.uploaded_assets || [];
+  for (const ms of spec.media_specs) {
+    if (ms.status === 'missing') {
+      const match = uploads.find(a =>
+        a.filename.match(new RegExp(ms.slot.replace('_', '[-_]?'), 'i')) ||
+        a.label?.match(new RegExp(ms.slot.replace('_', '[ _-]?'), 'i'))
+      );
+      if (match) {
+        ms.status = 'uploaded';
+        ms.filename = match.filename;
+      }
+    }
+  }
+
+  if (added > 0) {
+    fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+    console.log(`[media-specs] Auto-detected ${added} new media spec(s)`);
+  }
+  return added;
+}
+
+// --- Project List & Switch APIs ---
+app.get('/api/projects', (req, res) => {
+  if (!fs.existsSync(SITES_ROOT)) return res.json([]);
+  const dirs = fs.readdirSync(SITES_ROOT).filter(d => {
+    return fs.statSync(path.join(SITES_ROOT, d)).isDirectory() &&
+           fs.existsSync(path.join(SITES_ROOT, d, 'spec.json'));
+  });
+
+  const projects = dirs.map(d => {
+    try {
+      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8'));
+      const hasHtml = fs.existsSync(path.join(SITES_ROOT, d, 'dist', 'index.html'));
+      const pageCount = hasHtml ? fs.readdirSync(path.join(SITES_ROOT, d, 'dist')).filter(f => f.endsWith('.html')).length : 0;
+      return {
+        tag: d,
+        name: spec.site_name || d,
+        state: spec.state || 'unknown',
+        business_type: spec.business_type || null,
+        has_html: hasHtml,
+        page_count: pageCount,
+        deployed_url: spec.deployed_url || null,
+        has_brief: !!spec.design_brief,
+        is_current: d === TAG,
+      };
+    } catch {
+      return { tag: d, name: d, state: 'error', is_current: d === TAG };
+    }
+  }).sort((a, b) => (b.is_current ? 1 : 0) - (a.is_current ? 1 : 0));
+
+  res.json(projects);
+});
+
+app.post('/api/switch-site', (req, res) => {
+  const newTag = req.body.tag;
+  if (!newTag) return res.status(400).json({ error: 'tag required' });
+  const newSiteDir = path.join(SITES_ROOT, newTag);
+  if (!fs.existsSync(newSiteDir)) {
+    return res.status(404).json({ error: `Site "${newTag}" not found` });
+  }
+
+  // End current session
+  endSession();
+
+  // Switch
+  TAG = newTag;
+  currentPage = 'index.html';
+  sessionMessageCount = 0;
+  sessionStartedAt = new Date().toISOString();
+
+  // Load new site state
+  const studio = loadStudio();
+  startSession();
+
+  // Notify all connected clients
+  const pages = listPages();
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
+      client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+      client.send(JSON.stringify({ type: 'spec-updated', spec }));
+    }
+  });
+
+  console.log(`[studio] Switched to site: ${TAG}`);
+  res.json({ success: true, tag: TAG, pages, currentPage });
+});
+
+app.post('/api/new-site', (req, res) => {
+  let newTag = req.body.tag;
+  if (!newTag) return res.status(400).json({ error: 'tag required' });
+  if (!newTag.startsWith('site-')) newTag = 'site-' + newTag;
+
+  const newSiteDir = path.join(SITES_ROOT, newTag);
+  if (fs.existsSync(newSiteDir)) {
+    return res.status(400).json({ error: `Site "${newTag}" already exists` });
+  }
+
+  // Create minimal site structure
+  const distDir = path.join(newSiteDir, 'dist');
+  fs.mkdirSync(distDir, { recursive: true });
+
+  const spec = {
+    tag: newTag,
+    site_name: req.body.name || newTag.replace('site-', '').replace(/-/g, ' '),
+    business_type: req.body.business_type || '',
+    state: 'new',
+    created_at: new Date().toISOString(),
+  };
+  fs.writeFileSync(path.join(newSiteDir, 'spec.json'), JSON.stringify(spec, null, 2));
+
+  // Switch to the new site
+  endSession();
+  TAG = newTag;
+  currentPage = 'index.html';
+  sessionMessageCount = 0;
+  sessionStartedAt = new Date().toISOString();
+  startSession();
+
+  const pages = listPages();
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
+    }
+  });
+
+  console.log(`[studio] Created and switched to new site: ${TAG}`);
+  res.json({ success: true, tag: TAG });
+});
+
 // --- Media Specs API ---
 app.put('/api/media-specs', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   if (!spec.media_specs) spec.media_specs = [];
   const { action, index, media_spec } = req.body;
 
@@ -823,14 +1000,14 @@ app.put('/api/media-specs', (req, res) => {
       return res.status(400).json({ error: 'action must be add, update, or delete' });
   }
 
-  fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
   res.json({ success: true, media_specs: spec.media_specs });
 });
 
 // --- AI Image Prompt Generator ---
 app.post('/api/generate-image-prompt', (req, res) => {
   const { slot, context } = req.body;
-  const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   const brief = spec.design_brief || {};
 
   const prompt = `Generate a concise, effective image generation prompt for Midjourney or DALL-E.
@@ -937,7 +1114,7 @@ app.put('/api/settings', (req, res) => {
 function classifyRequest(message, spec) {
   const lower = message.toLowerCase();
   const hasBrief = spec && spec.design_brief && spec.design_brief.approved;
-  const hasHtml = fs.existsSync(path.join(DIST_DIR, 'index.html'));
+  const hasHtml = fs.existsSync(path.join(DIST_DIR(), 'index.html'));
 
   // Precedence: brainstorm > rollback > new_site > major_revision > restyle > layout_update > content_update > bug_fix > asset_import
 
@@ -1016,7 +1193,7 @@ function buildPromptContext(requestType, spec, userMessage) {
   const brief = spec.design_brief || null;
   const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-5);
   const pages = listPages();
-  const htmlPath = path.join(DIST_DIR, currentPage);
+  const htmlPath = path.join(DIST_DIR(), currentPage);
   const currentHtml = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '';
 
   // Build HTML context based on request type
@@ -1253,9 +1430,9 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
         try {
           const dataModel = JSON.parse(jsonStr.substring(firstBrace, end));
           // Save to spec
-          const currentSpec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+          const currentSpec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
           currentSpec.data_model = dataModel;
-          fs.writeFileSync(SPEC_FILE, JSON.stringify(currentSpec, null, 2));
+          fs.writeFileSync(SPEC_FILE(), JSON.stringify(currentSpec, null, 2));
 
           // Format for display
           let display = `**Data Model Analysis**\n\n`;
@@ -1379,14 +1556,14 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
     if (briefJson) {
       briefJson.approved = false;
       // Save brief to spec
-      const currentSpec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+      const currentSpec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
       currentSpec.design_brief = briefJson;
 
       // Analyze tech stack
       const techRecommendations = analyzeTechStack(briefJson);
       currentSpec.tech_recommendations = techRecommendations;
 
-      fs.writeFileSync(SPEC_FILE, JSON.stringify(currentSpec, null, 2));
+      fs.writeFileSync(SPEC_FILE(), JSON.stringify(currentSpec, null, 2));
 
       ws.send(JSON.stringify({ type: 'brief', brief: briefJson, techRecommendations }));
       appendConvo({ role: 'assistant', content: `Design brief created`, brief: briefJson, at: new Date().toISOString() });
@@ -1629,7 +1806,7 @@ IMPORTANT:
       }
 
       // Parse pages by --- PAGE: filename.html --- delimiter
-      fs.mkdirSync(DIST_DIR, { recursive: true });
+      fs.mkdirSync(DIST_DIR(), { recursive: true });
       const pageParts = body.split(/^---\s*PAGE:\s*(\S+)\s*---\s*$/m);
       const writtenPages = [];
       for (let i = 1; i < pageParts.length; i += 2) {
@@ -1639,7 +1816,7 @@ IMPORTANT:
         html = html.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
         if (filename && html.length > 20) {
           versionFile(filename, requestType);
-          fs.writeFileSync(path.join(DIST_DIR, filename), html);
+          fs.writeFileSync(path.join(DIST_DIR(), filename), html);
           writtenPages.push(filename);
           console.log(`[multi-page] Wrote: ${filename} (${html.length} bytes)`);
         } else if (filename) {
@@ -1652,6 +1829,10 @@ IMPORTANT:
       }
 
       if (writtenPages.length > 0) {
+        // Auto-detect media specs from first written page (usually index.html)
+        const firstHtml = fs.readFileSync(path.join(DIST_DIR(), writtenPages[0]), 'utf8');
+        autoDetectMediaSpecs(firstHtml);
+
         const msg = changeSummary
           ? `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}\n\n${changeSummary}`
           : `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}`;
@@ -1664,7 +1845,7 @@ IMPORTANT:
         console.warn('[multi-page] No pages parsed from response, falling back to single-page');
         const html = body.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
         if (html.length > 20) {
-          fs.writeFileSync(path.join(DIST_DIR, 'index.html'), html);
+          fs.writeFileSync(path.join(DIST_DIR(), 'index.html'), html);
           ws.send(JSON.stringify({ type: 'assistant', content: 'Site updated! Check the preview.' }));
           ws.send(JSON.stringify({ type: 'reload-preview' }));
           appendConvo({ role: 'assistant', content: 'Site updated (single page fallback)', at: new Date().toISOString() });
@@ -1690,9 +1871,12 @@ IMPORTANT:
       // Strip markdown fences if present
       html = html.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
 
-      fs.mkdirSync(DIST_DIR, { recursive: true });
+      fs.mkdirSync(DIST_DIR(), { recursive: true });
       versionFile(currentPage, requestType);
-      fs.writeFileSync(path.join(DIST_DIR, currentPage), html);
+      fs.writeFileSync(path.join(DIST_DIR(), currentPage), html);
+
+      // Auto-detect media specs from updated HTML
+      autoDetectMediaSpecs(html);
 
       // Extract and log design decisions from change summary
       if (changeSummary) {
@@ -1714,8 +1898,8 @@ IMPORTANT:
       // Strip markdown fences if present
       svg = svg.replace(/^```(?:svg|xml)?\s*/i, '').replace(/\s*```\s*$/, '');
 
-      const assetPath = path.join(DIST_DIR, 'assets', filename);
-      fs.mkdirSync(path.join(DIST_DIR, 'assets'), { recursive: true });
+      const assetPath = path.join(DIST_DIR(), 'assets', filename);
+      fs.mkdirSync(path.join(DIST_DIR(), 'assets'), { recursive: true });
       fs.writeFileSync(assetPath, svg);
       ws.send(JSON.stringify({ type: 'assistant', content: `Created asset: ${filename}` }));
       ws.send(JSON.stringify({ type: 'asset-created', filename, path: `/assets/${filename}` }));
@@ -1733,7 +1917,7 @@ function extractDecisions(spec, changeSummary, requestType) {
   // Only log durable decisions from restyle, layout_update, and build
   if (!['restyle', 'layout_update', 'build', 'major_revision'].includes(requestType)) return;
 
-  const currentSpec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+  const currentSpec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
   if (!currentSpec.design_decisions) currentSpec.design_decisions = [];
 
   // Parse bullet points from change summary as potential decisions
@@ -1761,7 +1945,7 @@ function extractDecisions(spec, changeSummary, requestType) {
   }
 
   // Prune: keep last 20 approved + all superseded in file, but only show 10 active
-  fs.writeFileSync(SPEC_FILE, JSON.stringify(currentSpec, null, 2));
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(currentSpec, null, 2));
 }
 
 // --- HTTP + WebSocket server ---
@@ -1775,7 +1959,7 @@ wss.on('connection', (ws) => {
   const studioState = loadStudio();
   const pages = listPages();
   if (studioState && studioState.session_count > 0) {
-    const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+    const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
     const briefStatus = spec.design_brief?.approved ? 'approved' : (spec.design_brief ? 'draft' : 'none');
     let welcomeMsg = `Welcome back! Session #${studioState.session_count + 1} for ${TAG}.`;
     if (pages.length > 1) {
@@ -1804,7 +1988,7 @@ wss.on('connection', (ws) => {
       appendConvo({ role: 'user', content: userMessage, at: ts });
 
       // Load spec
-      const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
 
       // Classify request
       ws.send(JSON.stringify({ type: 'status', content: 'Classifying request...' }));
@@ -1970,10 +2154,10 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'approve-brief') {
       // User approved the brief — mark it and trigger build
-      const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
       if (spec.design_brief) {
         spec.design_brief.approved = true;
-        fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+        fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
         ws.send(JSON.stringify({ type: 'status', content: 'Brief approved! Building site...' }));
         appendConvo({ role: 'system', content: 'Design brief approved', at: new Date().toISOString() });
         // Build using the brief context — include pages from spec
@@ -1989,19 +2173,19 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'skip-brief') {
       // User wants to skip planning and build directly
-      const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
       ws.send(JSON.stringify({ type: 'status', content: 'Skipping brief, building directly...' }));
       runOrchestratorSite(ws, null);
     }
 
     if (msg.type === 'upload-role-update') {
       // Update role/label for an uploaded asset
-      const spec = fs.existsSync(SPEC_FILE) ? JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8')) : {};
+      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
       const asset = (spec.uploaded_assets || []).find(a => a.filename === msg.filename);
       if (asset) {
         if (msg.role) asset.role = msg.role;
         if (msg.label !== undefined) asset.label = msg.label;
-        fs.writeFileSync(SPEC_FILE, JSON.stringify(spec, null, 2));
+        fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
         ws.send(JSON.stringify({ type: 'assistant', content: `Updated ${msg.filename}: role → ${msg.role || asset.role}` }));
       }
     }
@@ -2015,7 +2199,7 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'set-page') {
       const page = msg.page;
-      if (page && fs.existsSync(path.join(DIST_DIR, page))) {
+      if (page && fs.existsSync(path.join(DIST_DIR(), page))) {
         currentPage = page;
         saveStudio();
         ws.send(JSON.stringify({ type: 'page-changed', page: currentPage }));
@@ -2024,9 +2208,9 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'update-spec') {
       try {
-        const currentSpec = JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8'));
+        const currentSpec = JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8'));
         const updated = { ...currentSpec, ...msg.updates };
-        fs.writeFileSync(SPEC_FILE, JSON.stringify(updated, null, 2));
+        fs.writeFileSync(SPEC_FILE(), JSON.stringify(updated, null, 2));
         ws.send(JSON.stringify({ type: 'spec-updated', spec: updated }));
       } catch (e) {
         ws.send(JSON.stringify({ type: 'error', content: 'Failed to update spec: ' + e.message }));
@@ -2045,7 +2229,7 @@ function handleQuery(ws, userMessage) {
   const lowerMsg = userMessage.toLowerCase();
 
   if (lowerMsg.match(/\b(list|show|what)\s+assets\b/)) {
-    const assetsDir = path.join(DIST_DIR, 'assets');
+    const assetsDir = path.join(DIST_DIR(), 'assets');
     if (fs.existsSync(assetsDir)) {
       const files = fs.readdirSync(assetsDir).filter(f => /\.(svg|png|jpg|gif)$/i.test(f));
       if (files.length) {
@@ -2181,15 +2365,15 @@ function runAssetGenerate(ws, assetType, description) {
 
 // --- Helpers ---
 function appendConvo(entry) {
-  fs.mkdirSync(SITE_DIR, { recursive: true });
+  fs.mkdirSync(SITE_DIR(), { recursive: true });
   // Include session_id from current studio state
   let sessionId = null;
   try {
-    const studio = fs.existsSync(STUDIO_FILE) ? JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) : {};
+    const studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
     sessionId = studio.session_count || null;
   } catch {}
   const line = JSON.stringify({ ...entry, tag: TAG, session_id: sessionId }) + '\n';
-  fs.appendFileSync(CONVO_FILE, line);
+  fs.appendFileSync(CONVO_FILE(), line);
 }
 
 function escapeForShell(str) {
