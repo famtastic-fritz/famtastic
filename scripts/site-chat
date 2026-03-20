@@ -37,14 +37,8 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Start preview server in background
-echo "[chat] Starting preview server on port $PREVIEW_PORT..."
-./scripts/site-preview "$TAG" "$PREVIEW_PORT" &
-PIDS+=($!)
-sleep 1
-
-# Start site-studio in background
-echo "[chat] Starting Site Studio on port $STUDIO_PORT..."
+# Start site-studio (includes built-in preview server)
+echo "[chat] Starting Site Studio on port $STUDIO_PORT (preview on $PREVIEW_PORT)..."
 SITE_TAG="$TAG" STUDIO_PORT="$STUDIO_PORT" PREVIEW_PORT="$PREVIEW_PORT" \
   node site-studio/server.js &
 PIDS+=($!)

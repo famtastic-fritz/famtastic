@@ -191,10 +191,7 @@ ${convoText}
 
 SUMMARY:`;
 
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: loadSettings().model },
-    cwd: HUB_ROOT,
-  });
+  const child = spawnClaude(prompt);
 
   let response = '';
   child.stdout.on('data', (chunk) => { response += chunk.toString(); });
@@ -1030,10 +1027,7 @@ OUTPUT FORMAT (respond with ONLY this JSON, no other text):
 
 Make the prompt specific, visual, and tailored to the brand. Include style keywords. Do NOT include text/words in the image prompt.`;
 
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: loadSettings().model },
-    cwd: HUB_ROOT,
-  });
+  const child = spawnClaude(prompt);
 
   let response = '';
   child.stdout.on('data', (chunk) => { response += chunk.toString(); });
@@ -1398,10 +1392,7 @@ DATA_MODEL:
 
 Be practical. If the site doesn't need a database, say so clearly. If it does, keep the model minimal — only include what's actually needed.`;
 
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: loadSettings().model },
-    cwd: HUB_ROOT,
-  });
+  const child = spawnClaude(prompt);
 
   let response = '';
   child.stdout.on('data', (chunk) => { response += chunk.toString(); });
@@ -1507,10 +1498,7 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
 
   ws.send(JSON.stringify({ type: 'status', content: 'Creating design brief...' }));
 
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: loadSettings().model },
-    cwd: HUB_ROOT,
-  });
+  const child = spawnClaude(prompt);
 
   let response = '';
 
@@ -1619,10 +1607,7 @@ Respond as a thoughtful creative partner:
 
 Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: loadSettings().model },
-    cwd: HUB_ROOT,
-  });
+  const child = spawnClaude(prompt);
 
   let response = '';
   child.stdout.on('data', (chunk) => { response += chunk.toString(); });
@@ -1752,10 +1737,7 @@ IMPORTANT:
 
   ws.send(JSON.stringify({ type: 'status', content: 'Sending to Claude...' }));
 
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && echo "${escapeForShell(prompt)}" | ./scripts/claude-cli`], {
-    env: { ...process.env, MODEL: loadSettings().model },
-    cwd: HUB_ROOT,
-  });
+  const child = spawnClaude(prompt);
 
   let response = '';
   let firstChunk = true;
@@ -2380,6 +2362,93 @@ function escapeForShell(str) {
   return str.replace(/'/g, "'\\''").replace(/"/g, '\\"').replace(/\n/g, '\\n');
 }
 
+// Safe Claude CLI spawn — pipes prompt via stdin instead of shell embedding
+function spawnClaude(prompt) {
+  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && ./scripts/claude-cli`], {
+    env: { ...process.env, MODEL: loadSettings().model },
+    cwd: HUB_ROOT,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  child.stdin.write(prompt);
+  child.stdin.end();
+  return child;
+}
+
+// --- Built-in Preview Server (dynamic, follows site switches) ---
+const MIME_TYPES = {
+  '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
+  '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.webp': 'image/webp',
+};
+
+let previewLastMod = Date.now();
+function checkPreviewMod() {
+  try {
+    const dist = DIST_DIR();
+    if (!fs.existsSync(dist)) return false;
+    const files = fs.readdirSync(dist, { recursive: true });
+    for (const f of files) {
+      const fp = path.join(dist, String(f));
+      try {
+        const stat = fs.statSync(fp);
+        if (stat.isFile() && stat.mtimeMs > previewLastMod) { previewLastMod = stat.mtimeMs; return true; }
+      } catch {}
+    }
+  } catch {}
+  return false;
+}
+
+const RELOAD_SCRIPT = `<script>
+(function() {
+  let last = 0;
+  setInterval(async () => {
+    try {
+      const r = await fetch('/__reload');
+      const d = await r.json();
+      if (last && d.t > last) location.reload();
+      last = d.t;
+    } catch {}
+  }, 1000);
+})();
+</` + 'script>';
+
+const previewServer = http.createServer((req, res) => {
+  if (req.url === '/__reload') {
+    checkPreviewMod();
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ t: previewLastMod }));
+    return;
+  }
+
+  const dist = DIST_DIR();
+  let filePath = path.join(dist, req.url === '/' ? 'index.html' : req.url);
+  if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) filePath += '.html';
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) filePath = path.join(filePath, 'index.html');
+
+  if (!fs.existsSync(filePath)) {
+    if (!fs.existsSync(dist) || !fs.existsSync(path.join(dist, 'index.html'))) {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end('<!DOCTYPE html><html><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#94a3b8"><div style="text-align:center"><h2>No pages yet</h2><p>Describe your site in the chat to get started.</p></div>' + RELOAD_SCRIPT + '</body></html>');
+      return;
+    }
+    res.writeHead(404);
+    res.end('Not found');
+    return;
+  }
+
+  const ext = path.extname(filePath);
+  const mime = MIME_TYPES[ext] || 'application/octet-stream';
+  let content = fs.readFileSync(filePath);
+
+  if (ext === '.html') {
+    content = content.toString().replace('</body>', RELOAD_SCRIPT + '</body>');
+  }
+
+  res.writeHead(200, { 'Content-Type': mime });
+  res.end(content);
+});
+
 // --- Start ---
 // Load persisted state
 const initialStudio = loadStudio();
@@ -2392,6 +2461,11 @@ if (initialStudio) {
 // Clean up session on process exit
 process.on('SIGTERM', () => { endSession(); process.exit(0); });
 process.on('SIGINT', () => { endSession(); process.exit(0); });
+
+// Start preview server on PREVIEW_PORT
+previewServer.listen(PREVIEW_PORT, () => {
+  console.log(`[preview] Live preview at http://localhost:${PREVIEW_PORT} (dynamic, follows site switches)`);
+});
 
 server.listen(PORT, () => {
   console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
