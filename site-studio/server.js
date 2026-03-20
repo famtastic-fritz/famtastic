@@ -2114,8 +2114,16 @@ wss.on('connection', (ws) => {
           const lowerMsg = userMessage.toLowerCase();
           const templateMatch = lowerMsg.match(/\b(event|business|portfolio|landing)\b/);
           const template = templateMatch ? templateMatch[1] : null;
-          ws.send(JSON.stringify({ type: 'status', content: template ? `Building with ${template} template...` : 'Building site...' }));
-          runOrchestratorSite(ws, template);
+          if (template) {
+            // Template-based build uses the orchestrator script
+            ws.send(JSON.stringify({ type: 'status', content: `Building with ${template} template...` }));
+            runOrchestratorSite(ws, template);
+          } else {
+            // Brief-based build uses Claude directly via handleChatMessage
+            const pagesList = (spec.pages || spec.design_brief?.must_have_sections || ['home']).join(', ');
+            ws.send(JSON.stringify({ type: 'status', content: 'Building site from brief...' }));
+            handleChatMessage(ws, `Build this site based on the design brief. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}`, 'build', spec);
+          }
           break;
         }
 
