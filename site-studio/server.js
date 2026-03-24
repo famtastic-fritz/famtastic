@@ -5,6 +5,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const nodemailer = require('nodemailer');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -23,9 +24,66 @@ function VERSIONS_DIR() { return path.join(DIST_DIR(), '.versions'); }
 function SUMMARIES_DIR() { return path.join(SITE_DIR(), 'summaries'); }
 function UPLOADS_DIR() { return path.join(DIST_DIR(), 'assets', 'uploads'); }
 
+// --- Spec.json write-through cache ---
+// Single-process Node.js: all reads/writes go through these two functions.
+// Eliminates read-modify-write race conditions across concurrent handlers.
+let _specCache = null;
+let _specCacheTag = null; // tracks which TAG the cache belongs to
+
+function readSpec() {
+  if (_specCache && _specCacheTag === TAG) return _specCache;
+  if (fs.existsSync(SPEC_FILE())) {
+    try {
+      _specCache = JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8'));
+      _specCacheTag = TAG;
+      // Lightweight schema check — warn on missing core fields but don't crash
+      if (_specCache && typeof _specCache === 'object') {
+        if (!_specCache.tag) console.warn(`[spec] ${TAG}: missing 'tag' field`);
+        if (!_specCache.site_name) console.warn(`[spec] ${TAG}: missing 'site_name' field`);
+        // Ensure arrays are actually arrays
+        if (_specCache.media_specs && !Array.isArray(_specCache.media_specs)) {
+          console.warn(`[spec] ${TAG}: media_specs is not an array, resetting`);
+          _specCache.media_specs = [];
+        }
+        if (_specCache.design_decisions && !Array.isArray(_specCache.design_decisions)) {
+          console.warn(`[spec] ${TAG}: design_decisions is not an array, resetting`);
+          _specCache.design_decisions = [];
+        }
+      }
+    } catch (e) {
+      console.error(`[spec] Failed to parse ${SPEC_FILE()}: ${e.message}`);
+      _specCache = {};
+      _specCacheTag = TAG;
+    }
+  } else {
+    _specCache = {};
+    _specCacheTag = TAG;
+  }
+  return _specCache;
+}
+
+function writeSpec(spec) {
+  _specCache = spec;
+  _specCacheTag = TAG;
+  fs.mkdirSync(SITE_DIR(), { recursive: true });
+  writeSpec(spec);
+}
+
+function invalidateSpecCache() {
+  _specCache = null;
+  _specCacheTag = null;
+}
+
+// --- Path safety ---
+// Validates that a page name is safe (no traversal, alphanumeric + hyphens only)
+function isValidPageName(name) {
+  return /^[a-z0-9][a-z0-9._-]*\.html$/i.test(name) && !name.includes('..');
+}
+
 // --- Multi-page state ---
 let currentPage = 'index.html';
 let currentMode = 'build'; // 'build' or 'brainstorm'
+let buildInProgress = false;
 let sessionMessageCount = 0;
 let sessionStartedAt = new Date().toISOString();
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
@@ -61,27 +119,29 @@ const upload = multer({
 
 // --- SVG Sanitizer ---
 function sanitizeSvg(svgContent) {
-  // Whitelist approach: strip dangerous elements and attributes
   let clean = svgContent;
-  // Remove <script> tags and content
-  clean = clean.replace(/<script[\s\S]*?<\/script>/gi, '');
-  clean = clean.replace(/<script[^>]*\/>/gi, '');
-  // Remove on* event attributes
-  clean = clean.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, '');
-  clean = clean.replace(/\s+on\w+\s*=\s*'[^']*'/gi, '');
-  // Remove javascript: URIs
-  clean = clean.replace(/href\s*=\s*"javascript:[^"]*"/gi, 'href="#"');
-  clean = clean.replace(/href\s*=\s*'javascript:[^']*'/gi, "href='#'");
-  clean = clean.replace(/xlink:href\s*=\s*"javascript:[^"]*"/gi, 'xlink:href="#"');
-  // Remove <foreignObject> (can embed HTML)
-  clean = clean.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '');
-  // Remove <use> with external references (can load remote content)
-  clean = clean.replace(/<use[^>]*href\s*=\s*"https?:[^"]*"[^>]*\/?>(?:<\/use>)?/gi, '');
+  // Remove <script> tags — handle whitespace/case variations
+  clean = clean.replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, '');
+  clean = clean.replace(/<\s*script[^>]*\/\s*>/gi, '');
+  // Remove ALL on* event handler attributes (any casing, any quote style, unquoted)
+  clean = clean.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  // Remove javascript:/data: URIs from ALL src-like attributes (href, src, xlink:href, poster, data, action, formaction)
+  clean = clean.replace(/((?:href|src|xlink:href|poster|data|action|formaction)\s*=\s*)(?:"(?:javascript|data\s*:)[^"]*"|'(?:javascript|data\s*:)[^']*')/gi, '$1"#"');
+  // Remove <foreignObject> (can embed arbitrary HTML)
+  clean = clean.replace(/<\s*foreignObject[\s\S]*?<\s*\/\s*foreignObject\s*>/gi, '');
+  // Remove <use> with external references
+  clean = clean.replace(/<\s*use[^>]*(?:href|xlink:href)\s*=\s*(?:"https?:[^"]*"|'https?:[^']*')[^>]*\/?\s*>(?:<\s*\/\s*use\s*>)?/gi, '');
+  // Remove <iframe>, <embed>, <object>, <applet>, <base>, <form>
+  clean = clean.replace(/<\s*(?:iframe|embed|object|applet|base|form)[\s\S]*?(?:<\s*\/\s*(?:iframe|embed|object|applet|base|form)\s*>|\/\s*>)/gi, '');
+  // Remove CSS expressions and url(javascript:) in style attributes
+  clean = clean.replace(/style\s*=\s*"[^"]*(?:expression|javascript|url\s*\(\s*['"]?\s*javascript)[^"]*"/gi, 'style=""');
+  clean = clean.replace(/style\s*=\s*'[^']*(?:expression|javascript|url\s*\(\s*['"]?\s*javascript)[^']*'/gi, "style=''");
   return clean;
 }
 
 // --- Site Versioning ---
 function versionFile(page, reason) {
+  if (!loadSettings().auto_version) return null;
   const htmlPath = path.join(DIST_DIR(), page);
   if (!fs.existsSync(htmlPath)) return null;
 
@@ -168,19 +228,20 @@ function loadSessionSummaries(count) {
 }
 
 function generateSessionSummary(ws) {
-  // Read recent conversation
-  if (!fs.existsSync(CONVO_FILE())) return;
-  const lines = fs.readFileSync(CONVO_FILE(), 'utf8').trim().split('\n').filter(Boolean);
-  if (lines.length < 3) return; // Not enough to summarize
+  return new Promise((resolve) => {
+    // Read recent conversation
+    if (!fs.existsSync(CONVO_FILE())) return resolve();
+    const lines = fs.readFileSync(CONVO_FILE(), 'utf8').trim().split('\n').filter(Boolean);
+    if (lines.length < 3) return resolve();
 
-  // Take last 40 messages for summary context
-  const recent = lines.slice(-40).map(l => {
-    try { return JSON.parse(l); } catch { return null; }
-  }).filter(Boolean);
+    // Take last 40 messages for summary context
+    const recent = lines.slice(-40).map(l => {
+      try { return JSON.parse(l); } catch { return null; }
+    }).filter(Boolean);
 
-  const convoText = recent.map(m => `[${m.role}] ${m.content}`).join('\n');
+    const convoText = recent.map(m => `[${m.role}] ${m.content}`).join('\n');
 
-  const prompt = `Summarize this website design conversation in 3-5 bullet points. Focus on:
+    const prompt = `Summarize this website design conversation in 3-5 bullet points. Focus on:
 - Key decisions made (design, layout, content)
 - What was built or changed
 - Open items or next steps discussed
@@ -192,31 +253,40 @@ ${convoText}
 
 SUMMARY:`;
 
-  const child = spawnClaude(prompt);
-
-  let response = '';
-  child.stdout.on('data', (chunk) => { response += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { console.error('[summary]', chunk.toString()); });
-
-  child.on('close', (code) => {
-    if (code !== 0 || !response.trim()) {
-      console.error('[summary] Failed to generate session summary');
-      return;
+    // Notify client that summary is being generated (if still connected)
+    if (ws && ws.readyState === 1) {
+      try { ws.send(JSON.stringify({ type: 'status', content: 'Generating session summary...' })); } catch {}
     }
 
-    fs.mkdirSync(SUMMARIES_DIR(), { recursive: true });
-    const sessionNum = (getStudioSessionCount() || 0).toString().padStart(3, '0');
-    const summaryFile = path.join(SUMMARIES_DIR(), `session-${sessionNum}.md`);
-    const header = `# Session ${sessionNum} — ${new Date().toISOString().split('T')[0]}\n\n`;
-    fs.writeFileSync(summaryFile, header + response.trim() + '\n');
-    console.log(`[summary] Wrote session summary: ${summaryFile}`);
+    const child = spawnClaude(prompt);
+    const summaryTimeout = setTimeout(() => { console.error('[summary] Timed out after 2 minutes'); child.kill(); }, 120000);
 
-    // Also store in .studio.json
-    try {
-      const studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
-      studio.conversation_summary = response.trim();
-      fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
-    } catch {}
+    let response = '';
+    child.stdout.on('data', (chunk) => { response += chunk.toString(); });
+    child.stderr.on('data', (chunk) => { console.error('[summary]', chunk.toString()); });
+
+    child.on('close', (code) => {
+      clearTimeout(summaryTimeout);
+      if (code !== 0 || !response.trim()) {
+        console.error('[summary] Failed to generate session summary');
+        return resolve();
+      }
+
+      fs.mkdirSync(SUMMARIES_DIR(), { recursive: true });
+      const sessionNum = (getStudioSessionCount() || 0).toString().padStart(3, '0');
+      const summaryFile = path.join(SUMMARIES_DIR(), `session-${sessionNum}.md`);
+      const header = `# Session ${sessionNum} — ${new Date().toISOString().split('T')[0]}\n\n`;
+      fs.writeFileSync(summaryFile, header + response.trim() + '\n');
+      console.log(`[summary] Wrote session summary: ${summaryFile}`);
+
+      // Also store in .studio.json
+      try {
+        const studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
+        studio.conversation_summary = response.trim();
+        fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
+      } catch {}
+      resolve();
+    });
   });
 }
 
@@ -266,7 +336,7 @@ function saveStudio() {
   return studio;
 }
 
-function endSession() {
+async function endSession(ws) {
   if (!fs.existsSync(STUDIO_FILE())) return;
   try {
     const studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8'));
@@ -281,9 +351,9 @@ function endSession() {
     studio.updated_at = new Date().toISOString();
     fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
 
-    // Generate session summary if there was meaningful conversation
-    if (sessionMessageCount >= 3) {
-      generateSessionSummary();
+    // Generate session summary before closing — await so it completes before disconnect
+    if (sessionMessageCount >= 3 && loadSettings().auto_summary) {
+      await generateSessionSummary(ws);
     }
   } catch (e) {
     console.error('[studio] Failed to save session end:', e.message);
@@ -324,7 +394,7 @@ function startSession() {
 function listPages() {
   if (!fs.existsSync(DIST_DIR())) return [];
   return fs.readdirSync(DIST_DIR())
-    .filter(f => f.endsWith('.html'))
+    .filter(f => f.endsWith('.html') && !f.startsWith('_'))
     .sort((a, b) => {
       if (a === 'index.html') return -1;
       if (b === 'index.html') return 1;
@@ -337,10 +407,84 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// CSRF protection — reject cross-origin mutations
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+  const origin = req.get('origin') || req.get('referer') || '';
+  const allowed = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
+  if (origin && !allowed.some(a => origin.startsWith(a))) {
+    return res.status(403).json({ error: 'Cross-origin request blocked' });
+  }
+  next();
+});
+
 // Serve spec.json
+// Deploy & environment info
+app.get('/api/deploy-info', (req, res) => {
+  try {
+    const spec = readSpec();
+
+    // Detect repo info
+    let repo = null;
+    try {
+      const { execSync } = require('child_process');
+      const remoteUrl = execSync('git remote get-url origin 2>/dev/null', { cwd: HUB_ROOT, encoding: 'utf8' }).trim();
+      const branch = execSync('git branch --show-current 2>/dev/null', { cwd: HUB_ROOT, encoding: 'utf8' }).trim();
+      repo = { url: remoteUrl, branch };
+    } catch {}
+
+    // Build environments list
+    const environments = [];
+
+    // Local / dev
+    environments.push({
+      name: 'Local',
+      type: 'dev',
+      status: 'running',
+      url: `http://localhost:${PREVIEW_PORT}`,
+      paths: {
+        site_dir: SITE_DIR(),
+        dist_dir: DIST_DIR(),
+        spec_file: SPEC_FILE(),
+      },
+    });
+
+    // Production (Netlify)
+    if (spec.deployed_url) {
+      environments.push({
+        name: 'Production',
+        type: 'production',
+        status: spec.state === 'deployed' ? 'live' : 'draft',
+        url: spec.deployed_url,
+        provider: 'Netlify',
+        site_id: spec.netlify_site_id || null,
+        custom_domain: spec.custom_domain || null,
+      });
+    }
+
+    res.json({
+      deployed: !!spec.deployed_url,
+      url: spec.deployed_url || null,
+      site_id: spec.netlify_site_id || null,
+      state: spec.state || (spec.deployed_url ? 'deployed' : 'draft'),
+      custom_domain: spec.custom_domain || null,
+      environments,
+      repo,
+      local: {
+        site_dir: SITE_DIR(),
+        dist_dir: DIST_DIR(),
+        spec_file: SPEC_FILE(),
+      },
+    });
+  } catch {
+    res.json({ deployed: false, environments: [], repo: null, local: {} });
+  }
+});
+
 app.get('/api/spec', (req, res) => {
-  if (fs.existsSync(SPEC_FILE())) {
-    res.json(JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')));
+  const spec = readSpec();
+  if (Object.keys(spec).length > 0) {
+    res.json(spec);
   } else {
     res.json({ error: 'No spec.json found' });
   }
@@ -387,6 +531,7 @@ app.get('/api/pages', (req, res) => {
 app.post('/api/pages/current', (req, res) => {
   const page = req.body.page;
   if (!page) return res.status(400).json({ error: 'page required' });
+  if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
   if (!fs.existsSync(path.join(DIST_DIR(), page))) {
     return res.status(404).json({ error: 'Page not found' });
   }
@@ -408,7 +553,7 @@ app.get('/api/templates', (req, res) => {
 
 // Studio state — brief, decisions, files, spec
 app.get('/api/studio-state', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   const stateFile = path.join(SITE_DIR(), 'state.json');
   const state = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : {};
 
@@ -447,7 +592,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   }
 
   // Check upload limit
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   const existingUploads = spec.uploaded_assets || [];
   if (existingUploads.length >= MAX_UPLOADS_PER_SITE) {
     // Remove the uploaded file
@@ -482,22 +627,47 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
       // Update spec
       spec.template_imported = true;
       spec.template_source = req.file.originalname;
-      fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+      writeSpec(spec);
       return res.json({ success: true, message: `Template imported as index.html`, imported: 'index.html' });
     }
 
     if (ext === '.zip') {
       const { execSync } = require('child_process');
+      const os = require('os');
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fam-zip-'));
       try {
-        execSync(`unzip -o "${req.file.path}" -d "${DIST_DIR()}"`, { stdio: 'pipe' });
-        fs.unlinkSync(req.file.path); // clean up zip
+        execSync(`unzip -o "${req.file.path}" -d "${tmpDir}"`, { stdio: 'pipe' });
+        fs.unlinkSync(req.file.path);
+        // Validate extracted paths — reject any traversal attempts
+        const extractedFiles = [];
+        const walk = (dir) => {
+          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            const rel = path.relative(tmpDir, full);
+            if (rel.startsWith('..') || path.isAbsolute(rel)) {
+              throw new Error(`Path traversal detected in ZIP: ${rel}`);
+            }
+            if (entry.isDirectory()) walk(full);
+            else extractedFiles.push(rel);
+          }
+        };
+        walk(tmpDir);
+        // Safe — copy validated files to dist
+        fs.mkdirSync(DIST_DIR(), { recursive: true });
+        for (const rel of extractedFiles) {
+          const dest = path.join(DIST_DIR(), rel);
+          fs.mkdirSync(path.dirname(dest), { recursive: true });
+          fs.copyFileSync(path.join(tmpDir, rel), dest);
+        }
+        fs.rmSync(tmpDir, { recursive: true, force: true });
         spec.template_imported = true;
         spec.template_source = req.file.originalname;
-        fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
-        const imported = fs.readdirSync(DIST_DIR()).filter(f => f.endsWith('.html'));
+        writeSpec(spec);
+        const imported = extractedFiles.filter(f => f.endsWith('.html'));
         return res.json({ success: true, message: `Template extracted: ${imported.join(', ')}`, imported });
       } catch (e) {
-        fs.unlinkSync(req.file.path);
+        try { fs.unlinkSync(req.file.path); } catch {}
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
         return res.status(400).json({ error: 'Failed to extract ZIP: ' + e.message });
       }
     }
@@ -522,7 +692,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
   if (!spec.uploaded_assets) spec.uploaded_assets = [];
   spec.uploaded_assets.push(asset);
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+  writeSpec(spec);
 
   res.json({
     success: true,
@@ -533,7 +703,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
 // Update asset metadata (role, label, notes)
 app.put('/api/upload/:filename', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   const assets = spec.uploaded_assets || [];
   const asset = assets.find(a => a.filename === req.params.filename);
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
@@ -542,13 +712,13 @@ app.put('/api/upload/:filename', (req, res) => {
   if (req.body.label !== undefined) asset.label = req.body.label;
   if (req.body.notes !== undefined) asset.notes = req.body.notes;
 
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+  writeSpec(spec);
   res.json({ success: true, asset });
 });
 
 // List uploaded assets
 app.get('/api/uploads', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   const assets = (spec.uploaded_assets || []).map(a => ({
     ...a,
     url: `/assets/uploads/${a.filename}`,
@@ -577,11 +747,13 @@ app.get('/api/versions', (req, res) => {
 
 app.get('/api/versions/:page/:timestamp', (req, res) => {
   const page = req.params.page + '.html';
+  if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
+
   const versions = getVersions(page);
   const target = versions.find(v => v.timestamp === req.params.timestamp);
   if (!target) return res.status(404).json({ error: 'Version not found' });
 
-  const versionPath = path.join(DIST_DIR(), target.file);
+  const versionPath = path.join(VERSIONS_DIR(), path.basename(target.file));
   if (!fs.existsSync(versionPath)) return res.status(404).json({ error: 'Version file missing' });
 
   const content = fs.readFileSync(versionPath, 'utf8');
@@ -591,6 +763,7 @@ app.get('/api/versions/:page/:timestamp', (req, res) => {
 app.post('/api/rollback', (req, res) => {
   const { page, timestamp } = req.body;
   if (!page || !timestamp) return res.status(400).json({ error: 'page and timestamp required' });
+  if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
 
   const result = rollbackToVersion(page, timestamp);
   if (result.error) return res.status(400).json(result);
@@ -599,16 +772,20 @@ app.post('/api/rollback', (req, res) => {
 
 // --- Brief Edit API ---
 app.put('/api/brief', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'JSON body required' });
+  const spec = readSpec();
   if (!spec.design_brief) spec.design_brief = {};
-  // Merge partial fields into existing brief
+  // Merge partial fields into existing brief — only allowed keys, with type checks
   const allowed = ['goal', 'audience', 'tone', 'visual_direction', 'content_priorities', 'must_have_sections', 'avoid'];
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
-      spec.design_brief[key] = req.body[key];
+      // Strings stay strings, arrays stay arrays, objects stay objects
+      const val = req.body[key];
+      if (typeof val === 'string' && val.length > 5000) return res.status(400).json({ error: `${key} exceeds max length` });
+      spec.design_brief[key] = val;
     }
   }
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+  writeSpec(spec);
   // Broadcast to connected clients
   wss.clients.forEach(client => {
     if (client.readyState === 1) {
@@ -620,14 +797,25 @@ app.put('/api/brief', (req, res) => {
 
 // --- Decisions CRUD API ---
 app.put('/api/decisions', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   if (!spec.design_decisions) spec.design_decisions = [];
   const { action, index, decision } = req.body;
 
   switch (action) {
-    case 'add':
+    case 'add': {
       if (!decision || !decision.category || !decision.decision) {
         return res.status(400).json({ error: 'category and decision text required' });
+      }
+      const validCategories = ['typography', 'layout', 'color', 'content', 'interaction', 'structure'];
+      const validStatuses = ['approved', 'rejected', 'superseded'];
+      if (!validCategories.includes(decision.category)) {
+        return res.status(400).json({ error: `category must be one of: ${validCategories.join(', ')}` });
+      }
+      if (typeof decision.decision !== 'string' || decision.decision.length > 500) {
+        return res.status(400).json({ error: 'decision text required and must be under 500 chars' });
+      }
+      if (decision.status && !validStatuses.includes(decision.status)) {
+        return res.status(400).json({ error: `status must be one of: ${validStatuses.join(', ')}` });
       }
       spec.design_decisions.push({
         timestamp: new Date().toISOString(),
@@ -635,6 +823,7 @@ app.put('/api/decisions', (req, res) => {
         decision: decision.decision,
         status: decision.status || 'approved',
       });
+    }
       break;
     case 'update':
       if (index === undefined || index < 0 || index >= spec.design_decisions.length) {
@@ -654,7 +843,7 @@ app.put('/api/decisions', (req, res) => {
       return res.status(400).json({ error: 'action must be add, update, or delete' });
   }
 
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+  writeSpec(spec);
   wss.clients.forEach(client => {
     if (client.readyState === 1) {
       client.send(JSON.stringify({ type: 'spec-updated', spec }));
@@ -734,120 +923,824 @@ app.post('/api/sessions/load', (req, res) => {
 
 // --- Brand Health Scanner ---
 function scanBrandHealth() {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
-  const uploads = spec.uploaded_assets || [];
+  const spec = readSpec();
+  const mediaSpecs = spec.media_specs || [];
+  const pages = listPages();
 
-  const htmlPath = path.join(DIST_DIR(), 'index.html');
-  const html = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '';
+  // Read combined HTML for font icons and social meta detection
+  let combinedHtml = '';
+  let indexHtml = '';
+  for (const page of pages) {
+    const p = path.join(DIST_DIR(), page);
+    if (fs.existsSync(p)) {
+      const html = fs.readFileSync(p, 'utf8');
+      combinedHtml += html;
+      if (page === 'index.html') indexHtml = html;
+    }
+  }
 
-  const logoUpload = uploads.find(a => a.role === 'brand_asset' || a.filename.match(/logo/i));
-  const logoInHtml = html.match(/<img[^>]*(?:logo|brand)[^>]*>/i);
-  const logoStatus = logoUpload ? 'uploaded' : (logoInHtml ? 'set_in_html' : 'missing');
+  // --- Slot-based image status (from media_specs — single source of truth) ---
+  const totalSlots = mediaSpecs.length;
+  const emptySlots = mediaSpecs.filter(s => s.status === 'empty');
+  const stockSlots = mediaSpecs.filter(s => s.status === 'stock');
+  const uploadedSlots = mediaSpecs.filter(s => s.status === 'uploaded');
+  const finalSlots = mediaSpecs.filter(s => s.status === 'final');
 
-  const faviconInHtml = html.match(/<link[^>]*rel=["'](?:icon|shortcut icon)["'][^>]*>/i);
-  const faviconUpload = uploads.find(a => a.filename.match(/favicon|ico/i));
-  const faviconStatus = faviconUpload ? 'uploaded' : (faviconInHtml ? 'set_in_html' : 'missing');
+  // Individual key slots
+  const heroSlot = mediaSpecs.find(s => s.role === 'hero');
+  const logoSlot = mediaSpecs.find(s => s.role === 'logo');
+  const faviconSlot = mediaSpecs.find(s => s.role === 'favicon');
 
-  const heroUpload = uploads.find(a => a.filename.match(/hero/i) || a.label?.match(/hero/i));
-  const heroInHtml = html.match(/hero/i) && html.match(/<img[^>]*>/i);
-  const heroStatus = heroUpload ? 'uploaded' : (heroInHtml ? 'set_in_html' : 'missing');
+  // Aggregate sets
+  const testimonialSlots = mediaSpecs.filter(s => s.role === 'testimonial');
+  const gallerySlots = mediaSpecs.filter(s => s.role === 'gallery');
+  const serviceSlots = mediaSpecs.filter(s => s.role === 'service');
+  const teamSlots = mediaSpecs.filter(s => s.role === 'team');
 
-  const fontAwesome = html.match(/font-?awesome/i);
-  const heroicons = html.match(/heroicons/i);
-  const materialIcons = html.match(/material.*icons/i);
-  const usingFontIcons = !!(fontAwesome || heroicons || materialIcons);
-  const fontIconProvider = fontAwesome ? 'Font Awesome' : heroicons ? 'Heroicons' : materialIcons ? 'Material Icons' : null;
+  // --- Font Icons ---
+  const fontAwesome = combinedHtml.match(/font-?awesome/i);
+  const heroicons = combinedHtml.match(/heroicons/i);
+  const materialIcons = combinedHtml.match(/material.*icons/i);
+  const iconProviders = [];
+  if (fontAwesome) iconProviders.push('Font Awesome');
+  if (heroicons) iconProviders.push('Heroicons');
+  if (materialIcons) iconProviders.push('Material Icons');
 
-  const ogImage = !!html.match(/<meta[^>]*property=["']og:image["'][^>]*>/i);
-  const twitterCard = !!html.match(/<meta[^>]*name=["']twitter:card["'][^>]*>/i);
+  // --- Social Meta ---
+  const ogImage = !!indexHtml.match(/<meta[^>]*property=["']og:image["'][^>]*>/i);
+  const twitterCard = !!indexHtml.match(/<meta[^>]*name=["']twitter:card["'][^>]*>/i);
 
+  // --- SEO Checks ---
+  const hasMetaDescription = !!indexHtml.match(/<meta[^>]*name=["']description["'][^>]*content=["'][^"']+["'][^>]*>/i);
+  const hasCanonical = !!indexHtml.match(/<link[^>]*rel=["']canonical["'][^>]*>/i);
+  const hasSchemaOrg = !!indexHtml.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>/i);
+  const hasViewport = !!indexHtml.match(/<meta[^>]*name=["']viewport["'][^>]*>/i);
+  const hasTitle = !!indexHtml.match(/<title>[^<]+<\/title>/i);
+  const hasLang = !!indexHtml.match(/<html[^>]*lang=["'][a-z]{2}/i);
+
+  // Check all pages for alt text on images
+  const imgWithoutAlt = (combinedHtml.match(/<img(?![^>]*alt=["'][^"']+["'])[^>]*>/gi) || []).length;
+  const totalImages = (combinedHtml.match(/<img[^>]*>/gi) || []).length;
+
+  // --- Build health report ---
   const health = {
-    logo: { status: logoStatus, filename: logoUpload?.filename || null },
-    favicon: { status: faviconStatus, filename: faviconUpload?.filename || null },
-    hero_image: { status: heroStatus, filename: heroUpload?.filename || null },
-    font_icons: { using: usingFontIcons, provider: fontIconProvider },
+    slots: {
+      total: totalSlots,
+      empty: emptySlots.length,
+      stock: stockSlots.length,
+      uploaded: uploadedSlots.length,
+      final: finalSlots.length,
+    },
+    hero: heroSlot ? { slot_id: heroSlot.slot_id, status: heroSlot.status } : { status: 'not_found' },
+    logo: logoSlot ? { slot_id: logoSlot.slot_id, status: logoSlot.status } : { status: 'not_found' },
+    favicon: faviconSlot ? { slot_id: faviconSlot.slot_id, status: faviconSlot.status } : { status: 'not_found' },
+    sets: {
+      testimonials: { total: testimonialSlots.length, filled: testimonialSlots.filter(s => s.status !== 'empty').length },
+      gallery: { total: gallerySlots.length, filled: gallerySlots.filter(s => s.status !== 'empty').length },
+      services: { total: serviceSlots.length, filled: serviceSlots.filter(s => s.status !== 'empty').length },
+      team: { total: teamSlots.length, filled: teamSlots.filter(s => s.status !== 'empty').length },
+    },
+    font_icons: { using: iconProviders.length > 0, provider: iconProviders[0] || null, providers: iconProviders },
     social_meta: { og_image: ogImage, twitter_card: twitterCard },
+    seo: {
+      meta_description: hasMetaDescription,
+      canonical_url: hasCanonical,
+      schema_org: hasSchemaOrg,
+      viewport: hasViewport,
+      title: hasTitle,
+      lang_attr: hasLang,
+      images_without_alt: imgWithoutAlt,
+      total_images: totalImages,
+    },
   };
 
   const suggestions = [];
-  if (logoStatus === 'missing') suggestions.push({ item: 'logo', action: 'Upload your logo or say "create a logo" in chat' });
-  if (faviconStatus === 'missing') suggestions.push({ item: 'favicon', action: 'Upload a favicon or say "create a favicon" in chat' });
-  if (heroStatus === 'missing') suggestions.push({ item: 'hero_image', action: 'Upload a hero image or generate one with AI' });
-  if (!ogImage) suggestions.push({ item: 'og_image', action: 'Add Open Graph image meta tag for social sharing' });
-  if (!twitterCard) suggestions.push({ item: 'twitter_card', action: 'Add Twitter card meta for better social previews' });
+  if (emptySlots.length > 0) suggestions.push({ item: 'images', action: `Fill ${emptySlots.length} empty image slot(s) — say "add images" or use Upload` });
+  if (heroSlot?.status === 'empty') suggestions.push({ item: 'hero', action: 'Upload or fill hero image' });
+  if (logoSlot?.status === 'empty') suggestions.push({ item: 'logo', action: 'Upload or generate a logo' });
+  if (!ogImage) suggestions.push({ item: 'og_image', action: 'Add OG image meta tag for social sharing' });
+  if (!twitterCard) suggestions.push({ item: 'twitter_card', action: 'Add Twitter card meta for social previews' });
+  // SEO suggestions
+  if (!hasMetaDescription) suggestions.push({ item: 'meta_description', action: 'Add a meta description for search engine results' });
+  if (!hasTitle) suggestions.push({ item: 'title', action: 'Add a <title> tag for search engine indexing' });
+  if (!hasSchemaOrg) suggestions.push({ item: 'schema_org', action: 'Add Schema.org JSON-LD structured data (LocalBusiness, Organization, etc.)' });
+  if (!hasLang) suggestions.push({ item: 'lang', action: 'Add lang attribute to <html> tag for accessibility and SEO' });
+  if (imgWithoutAlt > 0) suggestions.push({ item: 'alt_text', action: `${imgWithoutAlt} image(s) missing alt text — impacts accessibility and SEO` });
+
+  // Build slot list (replaces old placeholders array)
+  const slotList = mediaSpecs.map(s => ({
+    slot_id: s.slot_id,
+    role: s.role,
+    status: s.status,
+    dimensions: s.dimensions,
+    page: s.page,
+  }));
 
   spec.brand_health = health;
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+  writeSpec(spec);
 
-  return { health, suggestions };
+  return { health, suggestions, slots: slotList, placeholders: slotList, pages_scanned: pages.length };
 }
+
+// --- Placeholder SVG Generator ---
+// Creates branded SVG placeholders (no Claude call — template-based, fast)
+function generatePlaceholderSVG(label, section, brandColors) {
+  const primary = brandColors.primary || '#1a5c2e';
+  const accent = brandColors.accent || '#d4a843';
+  const bg = brandColors.bg || '#f0f4f0';
+  const width = 800;
+  const height = 500;
+  const displayLabel = label || section || 'Image';
+  // Truncate label for display
+  const shortLabel = displayLabel.length > 30 ? displayLabel.substring(0, 27) + '...' : displayLabel;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <rect width="${width}" height="${height}" fill="${bg}" rx="8"/>
+  <rect x="4" y="4" width="${width - 8}" height="${height - 8}" fill="none" stroke="${primary}" stroke-width="2" stroke-dasharray="8 4" rx="6" opacity="0.3"/>
+  <g transform="translate(${width / 2}, ${height / 2 - 30})">
+    <rect x="-30" y="-25" width="60" height="50" rx="6" fill="${primary}" opacity="0.15"/>
+    <circle cx="-10" cy="-8" r="7" fill="${accent}" opacity="0.6"/>
+    <polygon points="-20,18 0,-5 20,18" fill="${primary}" opacity="0.3"/>
+    <polygon points="5,18 18,-2 30,18" fill="${accent}" opacity="0.25"/>
+  </g>
+  <text x="${width / 2}" y="${height / 2 + 45}" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="${primary}">${shortLabel}</text>
+  <text x="${width / 2}" y="${height / 2 + 70}" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="${primary}" opacity="0.5">placeholder — replace with real image</text>
+</svg>`;
+}
+
+// Extract brand colors from spec design brief
+function extractBrandColors(spec) {
+  const colors = { primary: '#1a5c2e', accent: '#d4a843', bg: '#f0f4f0' };
+  const brief = spec?.design_brief;
+  if (!brief) return colors;
+
+  const colorText = brief.visual_direction?.color_usage || '';
+  // Try to extract hex colors if present in spec
+  const hexes = colorText.match(/#[0-9a-fA-F]{3,6}/g);
+  if (hexes && hexes.length >= 2) {
+    colors.primary = hexes[0];
+    colors.accent = hexes[1];
+  }
+  return colors;
+}
+
+// Sanitize a label into a valid filename
+function labelToFilename(label, section, page) {
+  const base = (label || section || 'placeholder').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 40);
+  const pagePrefix = page.replace('.html', '').replace(/[^a-z0-9]/g, '-');
+  return `${pagePrefix}-${base}.svg`;
+}
+
+// --- Bulk Generate Placeholders ---
+// Scans all pages, generates branded SVG placeholders, replaces gray divs and broken imgs in HTML
+function bulkGeneratePlaceholders(ws) {
+  const spec = readSpec();
+  const brandColors = extractBrandColors(spec);
+  const pages = listPages();
+  const placeholderDir = path.join(DIST_DIR(), 'assets', 'placeholders');
+  fs.mkdirSync(placeholderDir, { recursive: true });
+
+  let totalGenerated = 0;
+  let totalReplaced = 0;
+  const usedFilenames = new Set();
+
+  for (const page of pages) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    let html = fs.readFileSync(filePath, 'utf8');
+    let modified = false;
+    let pageCounter = 0;
+
+    // 1. Replace gray-box div placeholders with <img> tags
+    // Match opening tags only, then find matching close tag via nesting counter
+    const grayDivOpenPattern = /<div([^>]*(?:bg-gray-[1-4]00|background-color:\s*(?:#f3f4f6|#d1d5db|#e5e7eb|#ccc|#ddd|#e2e8f0|#9ca3af|gray))[^>]*)>/gi;
+    const divReplacements = [];
+
+    let divMatch;
+    while ((divMatch = grayDivOpenPattern.exec(html)) !== null) {
+      const openTag = divMatch[0];
+      const attrs = divMatch[1];
+      const startIdx = divMatch.index;
+
+      // Must have meaningful height or centering
+      const hasHeight = attrs.match(/\bh-(?:2[4-9]|[3-9]\d|\d{3})\b/) ||
+                        attrs.match(/\bh-full\b|\baspect-/) ||
+                        attrs.match(/height:\s*(?:[4-9]\d|\d{3,})px/);
+      const hasCentering = attrs.match(/flex.*items-center|items-center.*justify-center/i);
+      if (!hasHeight && !hasCentering) continue;
+
+      // Skip nav/header/footer/buttons
+      if (attrs.match(/nav|header|footer|btn|button/i)) continue;
+
+      // Find matching </div> using nesting counter
+      let depth = 1;
+      let pos = startIdx + openTag.length;
+      while (depth > 0 && pos < html.length) {
+        const nextOpen = html.indexOf('<div', pos);
+        const nextClose = html.indexOf('</div>', pos);
+        if (nextClose === -1) break;
+        if (nextOpen !== -1 && nextOpen < nextClose) {
+          depth++;
+          pos = nextOpen + 4;
+        } else {
+          depth--;
+          if (depth === 0) {
+            pos = nextClose + 6; // length of '</div>'
+          } else {
+            pos = nextClose + 6;
+          }
+        }
+      }
+      if (depth !== 0) continue; // couldn't find matching close tag
+
+      const fullMatch = html.substring(startIdx, pos);
+      const innerContent = html.substring(startIdx + openTag.length, pos - 6);
+
+      // Skip if this div contains nested gray divs (it's a wrapper, not a leaf placeholder)
+      if (innerContent.match(/<div[^>]*bg-gray-[1-4]00/i)) continue;
+      // Skip if already contains placeholder images (idempotency)
+      if (innerContent.match(/assets\/placeholders\//)) continue;
+
+      // Extract text labels from inner content (project names, descriptions)
+      const textParts = [];
+      const textMatches = innerContent.matchAll(/>([A-Za-z][^<]{3,})</g);
+      for (const tm of textMatches) {
+        const t = tm[1].trim();
+        if (t.length > 3 && t.length < 60) textParts.push(t);
+      }
+      const label = textParts[0] || '';
+
+      // Detect section from surrounding context
+      const context = html.substring(Math.max(0, startIdx - 400), Math.min(html.length, startIdx + 500));
+      const sectionHints = context.match(/(?:hero|banner|gallery|portfolio|testimonial|team|about|service|before|after|project|work|contact|feature|benefit|pricing)/i);
+      const section = sectionHints ? sectionHints[0].toLowerCase() : 'image';
+
+      pageCounter++;
+      let filename = labelToFilename(label, section, page);
+      if (usedFilenames.has(filename)) {
+        filename = filename.replace('.svg', `-${pageCounter}.svg`);
+      }
+      usedFilenames.add(filename);
+
+      const displayLabel = label || section;
+      const svgContent = generatePlaceholderSVG(displayLabel, section, brandColors);
+      try {
+        fs.writeFileSync(path.join(placeholderDir, filename), svgContent);
+        totalGenerated++;
+      } catch (e) {
+        console.error(`[placeholders] Failed to write ${filename}: ${e.message}`);
+        continue;
+      }
+
+      // Preserve sizing classes from the matched div
+      const classMatch = attrs.match(/class=["']([^"']*)["']/);
+      const existingClasses = classMatch ? classMatch[1] : '';
+      const cleanClasses = existingClasses
+        .replace(/bg-gray-\d+/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const altText = label || section + ' image';
+      const imgTag = `<img src="assets/placeholders/${filename}" alt="${altText}" class="${cleanClasses} object-cover" loading="lazy">`;
+
+      divReplacements.push({ start: startIdx, end: pos, replacement: imgTag });
+    }
+
+    // Apply div replacements in reverse order to preserve indices
+    for (const rep of divReplacements.sort((a, b) => b.start - a.start)) {
+      html = html.substring(0, rep.start) + rep.replacement + html.substring(rep.end);
+      modified = true;
+      totalReplaced++;
+    }
+
+    // 2. Replace broken/placeholder <img> srcs
+    const imgPattern = /<img([^>]*)>/gi;
+    html = html.replace(imgPattern, (fullMatch, attrs) => {
+      const srcMatch = attrs.match(/src=["']([^"']*)["']/i);
+      const src = srcMatch ? srcMatch[1] : '';
+
+      // Skip already-replaced placeholders
+      if (src.includes('assets/placeholders/')) return fullMatch;
+      // Skip small icons
+      const widthMatch = attrs.match(/width=["']?(\d+)/i);
+      if (widthMatch && parseInt(widthMatch[1]) < 20) return fullMatch;
+
+      let isPlaceholder = false;
+      if (!src || src === '#' || src === 'about:blank') {
+        isPlaceholder = true;
+      } else if (src.match(/via\.placeholder|placehold\.|picsum|dummyimage|fakeimg/i)) {
+        isPlaceholder = true;
+      } else if (src.startsWith('data:image/') && src.length < 200) {
+        isPlaceholder = true;
+      } else if (src.match(/placeholder|dummy|sample|example|default|temp|stock|mock/i)) {
+        isPlaceholder = true;
+      } else if (!src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('//')) {
+        const localPath = path.join(DIST_DIR(), src);
+        if (!fs.existsSync(localPath)) isPlaceholder = true;
+      }
+
+      if (!isPlaceholder) return fullMatch;
+
+      const altMatch = attrs.match(/alt=["']([^"']*)["']/i);
+      const alt = altMatch ? altMatch[1] : '';
+      const label = alt || 'image';
+      pageCounter++;
+      let filename = labelToFilename(label, 'img', page);
+      if (usedFilenames.has(filename)) {
+        filename = filename.replace('.svg', `-${pageCounter}.svg`);
+      }
+      usedFilenames.add(filename);
+      const svgContent = generatePlaceholderSVG(label, '', brandColors);
+      try {
+        fs.writeFileSync(path.join(placeholderDir, filename), svgContent);
+        totalGenerated++;
+      } catch (e) {
+        console.error(`[placeholders] Failed to write ${filename}: ${e.message}`);
+        return fullMatch; // keep original on failure
+      }
+
+      // Replace src
+      const newAttrs = attrs.replace(/src=["'][^"']*["']/i, `src="assets/placeholders/${filename}"`);
+      modified = true;
+      totalReplaced++;
+      return `<img${newAttrs}>`;
+    });
+
+    if (modified) {
+      fs.writeFileSync(filePath, html);
+      if (ws) ws.send(JSON.stringify({ type: 'status', content: `Generated placeholders for ${page}` }));
+      console.log(`[placeholders] ${page}: replaced ${totalReplaced} placeholders`);
+    }
+  }
+
+  // Track in spec
+  if (totalGenerated > 0) {
+    const currentSpec = readSpec();
+    currentSpec.placeholder_generation = {
+      last_run: new Date().toISOString(),
+      total_generated: totalGenerated,
+      total_replaced: totalReplaced,
+      directory: 'assets/placeholders/'
+    };
+    writeSpec(currentSpec);
+  }
+
+  return { generated: totalGenerated, replaced: totalReplaced };
+}
+
+// API endpoint for manual bulk generate trigger
+app.post('/api/bulk-generate-placeholders', (req, res) => {
+  const result = bulkGeneratePlaceholders(null);
+  res.json(result);
+});
+
+// Extract nav from a page and sync to all others
+app.post('/api/sync-nav', (req, res) => {
+  const sourcePage = req.body.page || 'index.html';
+  try {
+    syncNavFromPage(null, sourcePage);
+    const result = syncNavPartial(null);
+    res.json({ success: true, source: sourcePage, synced: result.synced });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/sync-footer', (req, res) => {
+  const sourcePage = req.body.page || 'index.html';
+  try {
+    syncFooterFromPage(null, sourcePage);
+    const result = syncFooterPartial(null);
+    res.json({ success: true, source: sourcePage, synced: result.synced });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Replace a placeholder src with a new image src across all pages
+app.post('/api/replace-placeholder', (req, res) => {
+  const { oldSrc, newSrc } = req.body;
+  if (!oldSrc || !newSrc) return res.status(400).json({ error: 'oldSrc and newSrc required' });
+
+  const pages = listPages();
+  let totalReplaced = 0;
+  const modifiedPages = [];
+
+  for (const page of pages) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    let html = fs.readFileSync(filePath, 'utf8');
+
+    // Replace exact src match in img tags
+    const pattern = new RegExp(`(src=["'])${oldSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(["'])`, 'g');
+    const newHtml = html.replace(pattern, `$1${newSrc}$2`);
+
+    if (newHtml !== html) {
+      fs.writeFileSync(filePath, newHtml);
+      totalReplaced++;
+      modifiedPages.push(page);
+      console.log(`[replace] ${page}: replaced ${oldSrc} → ${newSrc}`);
+    }
+  }
+
+  res.json({ replaced: totalReplaced, pages: modifiedPages });
+});
+
+// Slot-based replacement — target by data-slot-id
+app.post('/api/replace-slot', (req, res) => {
+  const { slot_id, newSrc } = req.body;
+  if (!slot_id || !newSrc) return res.status(400).json({ error: 'slot_id and newSrc required' });
+  if (typeof slot_id !== 'string' || !/^[a-z0-9-]+$/i.test(slot_id)) return res.status(400).json({ error: 'Invalid slot_id' });
+  if (typeof newSrc !== 'string' || newSrc.length > 1000) return res.status(400).json({ error: 'Invalid newSrc' });
+
+  const pages = listPages();
+  const distDir = DIST_DIR();
+  let updated = false;
+  let updatedPage = null;
+
+  const escapedId = slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    let html = fs.readFileSync(filePath, 'utf8');
+
+    // Match the img tag with this slot ID and replace src + status
+    const srcRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)src=["'][^"']*["']`, 'i');
+    const statusRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)data-slot-status=["'][^"']*["']`, 'i');
+
+    if (html.match(srcRegex)) {
+      html = html.replace(srcRegex, `$1src="${newSrc}"`);
+      html = html.replace(statusRegex, `$1data-slot-status="uploaded"`);
+      fs.writeFileSync(filePath, html);
+      updated = true;
+      updatedPage = page;
+      console.log(`[replace-slot] ${page}: slot ${slot_id} → ${newSrc}`);
+
+      // Delete old stock photo if exists
+      const oldStockPath = path.join(distDir, 'assets', 'stock', `${slot_id}.jpg`);
+      if (fs.existsSync(oldStockPath)) {
+        fs.unlinkSync(oldStockPath);
+        console.log(`[replace-slot] Deleted old stock photo: ${oldStockPath}`);
+      }
+      break;
+    }
+  }
+
+  // Update media_specs
+  if (updated) {
+    const spec = readSpec();
+    const ms = (spec.media_specs || []).find(s => s.slot_id === slot_id);
+    if (ms) {
+      ms.status = 'uploaded';
+      writeSpec(spec);
+    }
+  }
+
+  res.json({ success: updated, slot_id, page: updatedPage });
+});
 
 app.get('/api/brand-health', (req, res) => {
   res.json(scanBrandHealth());
 });
 
-// --- Auto Media Spec Scanner ---
-// Scans HTML for image slots and auto-creates media specs for missing ones
-function autoDetectMediaSpecs(html) {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
-  if (!spec.media_specs) spec.media_specs = [];
-  const existing = new Set(spec.media_specs.map(s => s.slot));
-  let added = 0;
+// --- Nav Partial Sync ---
+// Keeps a single _nav.html partial as source of truth, injects into all pages
+function syncNavPartial(ws) {
+  const distDir = DIST_DIR();
+  const partialsDir = path.join(distDir, '_partials');
+  const navPartialPath = path.join(partialsDir, '_nav.html');
+  const pages = listPages();
 
-  // Detect hero images/backgrounds
-  if (html.match(/(?:hero|banner)[\s\S]{0,500}(?:background-image|<img)/i) && !existing.has('hero_image')) {
-    spec.media_specs.push({ slot: 'hero_image', dimensions: '1920x1080', format: 'jpg', purpose: 'Landing hero background', status: 'missing' });
-    added++;
+  if (pages.length === 0) return { synced: 0 };
+
+  // Ensure partial exists — extract from index.html (or first page)
+  if (!fs.existsSync(navPartialPath)) {
+    const sourcePage = pages.includes('index.html') ? 'index.html' : pages[0];
+    const sourceHtml = fs.readFileSync(path.join(distDir, sourcePage), 'utf8');
+    const navMatch = sourceHtml.match(/<nav[\s\S]*?<\/nav>/i);
+    if (!navMatch) return { synced: 0 };
+
+    fs.mkdirSync(partialsDir, { recursive: true });
+    fs.writeFileSync(navPartialPath, navMatch[0]);
+    if (ws) ws.send(JSON.stringify({ type: 'status', content: 'Extracted nav partial from ' + sourcePage }));
+    console.log(`[nav-sync] Extracted nav partial from ${sourcePage}`);
   }
 
-  // Detect logo references
-  if (html.match(/<img[^>]*(?:logo|brand)[^>]*>/i) && !existing.has('logo')) {
-    spec.media_specs.push({ slot: 'logo', dimensions: '200x50', format: 'svg', purpose: 'Primary brand mark', status: 'missing' });
-    added++;
+  // Ensure .netlifyignore excludes build artifacts
+  const ignoreFile = path.join(distDir, '.netlifyignore');
+  const ignoreEntries = ['_partials/', '.versions/', '.studio.json', 'conversation.jsonl'];
+  const existing = fs.existsSync(ignoreFile) ? fs.readFileSync(ignoreFile, 'utf8') : '';
+  const missing = ignoreEntries.filter(e => !existing.includes(e));
+  if (missing.length) fs.appendFileSync(ignoreFile, missing.join('\n') + '\n');
+
+  // Read canonical nav and inject into all pages
+  const canonicalNav = fs.readFileSync(navPartialPath, 'utf8');
+  let synced = 0;
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    let html = fs.readFileSync(filePath, 'utf8');
+    const navMatch = html.match(/<nav[\s\S]*?<\/nav>/i);
+    if (!navMatch) continue;
+    if (navMatch[0] === canonicalNav) continue; // already in sync
+
+    html = html.replace(/<nav[\s\S]*?<\/nav>/i, canonicalNav);
+    fs.writeFileSync(filePath, html);
+    synced++;
+    console.log(`[nav-sync] Synced nav in ${page}`);
   }
 
-  // Detect favicon
-  if (html.match(/<link[^>]*rel=["'](?:icon|shortcut icon)["']/i) && !existing.has('favicon')) {
-    spec.media_specs.push({ slot: 'favicon', dimensions: '32x32', format: 'png', purpose: 'Browser tab icon', status: 'missing' });
-    added++;
+  if (synced > 0 && ws) {
+    ws.send(JSON.stringify({ type: 'status', content: `Nav synced across ${synced} page(s)` }));
+  }
+  return { synced };
+}
+
+// When a single page is updated, check if its nav changed and propagate
+function syncNavFromPage(ws, sourcePage) {
+  const distDir = DIST_DIR();
+  const partialsDir = path.join(distDir, '_partials');
+  const navPartialPath = path.join(partialsDir, '_nav.html');
+
+  const sourceFilePath = path.join(distDir, sourcePage);
+  if (!fs.existsSync(sourceFilePath)) return;
+
+  const sourceHtml = fs.readFileSync(sourceFilePath, 'utf8');
+  const sourceNav = sourceHtml.match(/<nav[\s\S]*?<\/nav>/i);
+  if (!sourceNav) return;
+
+  if (fs.existsSync(navPartialPath)) {
+    const existingPartial = fs.readFileSync(navPartialPath, 'utf8');
+    if (sourceNav[0] !== existingPartial) {
+      // Page has a new nav — update the partial
+      fs.writeFileSync(navPartialPath, sourceNav[0]);
+      console.log(`[nav-sync] Updated partial from ${sourcePage}`);
+    }
+  } else {
+    fs.mkdirSync(partialsDir, { recursive: true });
+    fs.writeFileSync(navPartialPath, sourceNav[0]);
   }
 
-  // Detect OG image meta
-  if (html.match(/<meta[^>]*property=["']og:image["']/i) && !existing.has('og_image')) {
-    spec.media_specs.push({ slot: 'og_image', dimensions: '1200x630', format: 'jpg', purpose: 'Social sharing preview image', status: 'missing' });
-    added++;
+  // Sync all pages to match
+  syncNavPartial(ws);
+}
+
+// --- Footer Partial Sync ---
+// Same pattern as nav sync — keeps a canonical _footer.html across all pages
+function syncFooterPartial(ws) {
+  const distDir = DIST_DIR();
+  const partialsDir = path.join(distDir, '_partials');
+  const footerPartialPath = path.join(partialsDir, '_footer.html');
+  const pages = listPages();
+
+  if (pages.length === 0) return { synced: 0 };
+
+  // Ensure partial exists — extract from index.html (or first page)
+  if (!fs.existsSync(footerPartialPath)) {
+    const sourcePage = pages.includes('index.html') ? 'index.html' : pages[0];
+    const sourceHtml = fs.readFileSync(path.join(distDir, sourcePage), 'utf8');
+    const footerMatch = sourceHtml.match(/<footer[\s\S]*?<\/footer>/i);
+    if (!footerMatch) return { synced: 0 };
+
+    fs.mkdirSync(partialsDir, { recursive: true });
+    fs.writeFileSync(footerPartialPath, footerMatch[0]);
+    if (ws) ws.send(JSON.stringify({ type: 'status', content: 'Extracted footer partial from ' + sourcePage }));
+    console.log(`[footer-sync] Extracted footer partial from ${sourcePage}`);
   }
 
-  // Detect gallery/portfolio images
-  if (html.match(/(?:gallery|portfolio|grid)[\s\S]{0,1000}(?:<img[^>]*>[\s\S]{0,200}){3,}/i) && !existing.has('gallery_images')) {
-    spec.media_specs.push({ slot: 'gallery_images', dimensions: '800x600', format: 'jpg', purpose: 'Gallery/portfolio photos', status: 'missing' });
-    added++;
+  const canonicalFooter = fs.readFileSync(footerPartialPath, 'utf8');
+  let synced = 0;
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    let html = fs.readFileSync(filePath, 'utf8');
+    const footerMatch = html.match(/<footer[\s\S]*?<\/footer>/i);
+    if (!footerMatch) continue;
+    if (footerMatch[0] === canonicalFooter) continue;
+
+    html = html.replace(/<footer[\s\S]*?<\/footer>/i, canonicalFooter);
+    fs.writeFileSync(filePath, html);
+    synced++;
+    console.log(`[footer-sync] Synced footer in ${page}`);
   }
 
-  // Detect team/about section images
-  if (html.match(/(?:team|about|staff)[\s\S]{0,500}<img/i) && !existing.has('team_photos')) {
-    spec.media_specs.push({ slot: 'team_photos', dimensions: '400x400', format: 'jpg', purpose: 'Team member headshots', status: 'missing' });
-    added++;
+  if (synced > 0 && ws) {
+    ws.send(JSON.stringify({ type: 'status', content: `Footer synced across ${synced} page(s)` }));
+  }
+  return { synced };
+}
+
+function syncFooterFromPage(ws, sourcePage) {
+  const distDir = DIST_DIR();
+  const partialsDir = path.join(distDir, '_partials');
+  const footerPartialPath = path.join(partialsDir, '_footer.html');
+
+  const sourceFilePath = path.join(distDir, sourcePage);
+  if (!fs.existsSync(sourceFilePath)) return;
+
+  const sourceHtml = fs.readFileSync(sourceFilePath, 'utf8');
+  const sourceFooter = sourceHtml.match(/<footer[\s\S]*?<\/footer>/i);
+  if (!sourceFooter) return;
+
+  if (fs.existsSync(footerPartialPath)) {
+    const existingPartial = fs.readFileSync(footerPartialPath, 'utf8');
+    if (sourceFooter[0] !== existingPartial) {
+      fs.writeFileSync(footerPartialPath, sourceFooter[0]);
+      console.log(`[footer-sync] Updated partial from ${sourcePage}`);
+    }
+  } else {
+    fs.mkdirSync(partialsDir, { recursive: true });
+    fs.writeFileSync(footerPartialPath, sourceFooter[0]);
   }
 
-  // Cross-reference uploaded assets — mark specs as uploaded if matching asset exists
-  const uploads = spec.uploaded_assets || [];
-  for (const ms of spec.media_specs) {
-    if (ms.status === 'missing') {
-      const match = uploads.find(a =>
-        a.filename.match(new RegExp(ms.slot.replace('_', '[-_]?'), 'i')) ||
-        a.label?.match(new RegExp(ms.slot.replace('_', '[ _-]?'), 'i'))
-      );
-      if (match) {
-        ms.status = 'uploaded';
-        ms.filename = match.filename;
+  syncFooterPartial(ws);
+}
+
+// --- Head Section Sync ---
+// Syncs Tailwind CDN, Google Fonts, and custom <style> blocks across all pages
+// Uses index.html as source of truth for <head> content
+function syncHeadSection(ws) {
+  const distDir = DIST_DIR();
+  const pages = listPages();
+  if (pages.length < 2) return { synced: 0 };
+
+  const sourcePage = pages.includes('index.html') ? 'index.html' : pages[0];
+  const sourceHtml = fs.readFileSync(path.join(distDir, sourcePage), 'utf8');
+  const sourceHead = sourceHtml.match(/<head[\s\S]*?<\/head>/i);
+  if (!sourceHead) return { synced: 0 };
+
+  // Extract syncable elements from source <head>
+  const extractSyncableHead = (headHtml) => {
+    const elements = [];
+    // Tailwind CDN
+    const tailwind = headHtml.match(/<script[^>]*src=["'][^"']*tailwindcss[^"']*["'][^>]*><\/script>/gi);
+    if (tailwind) elements.push(...tailwind);
+    // Tailwind config
+    const tailwindConfig = headHtml.match(/<script>\s*tailwind\.config[\s\S]*?<\/script>/gi);
+    if (tailwindConfig) elements.push(...tailwindConfig);
+    // Google Fonts
+    const fonts = headHtml.match(/<link[^>]*href=["'][^"']*fonts\.googleapis[^"']*["'][^>]*\/?>/gi);
+    if (fonts) elements.push(...fonts);
+    const fontPreconnect = headHtml.match(/<link[^>]*href=["'][^"']*fonts\.gstatic[^"']*["'][^>]*\/?>/gi);
+    if (fontPreconnect) elements.push(...fontPreconnect);
+    // Custom style blocks (but not page-specific ones marked with data-page)
+    const styles = headHtml.match(/<style(?![^>]*data-page)[^>]*>[\s\S]*?<\/style>/gi);
+    if (styles) elements.push(...styles);
+    // Icon CDNs (Font Awesome, Material Icons, etc.)
+    const iconCdns = headHtml.match(/<link[^>]*href=["'][^"']*(?:font-?awesome|material.*icons|heroicons)[^"']*["'][^>]*\/?>/gi);
+    if (iconCdns) elements.push(...iconCdns);
+    return elements;
+  };
+
+  const sourceElements = extractSyncableHead(sourceHead[0]);
+  if (sourceElements.length === 0) return { synced: 0 };
+
+  let synced = 0;
+  for (const page of pages) {
+    if (page === sourcePage) continue;
+    const filePath = path.join(distDir, page);
+    let html = fs.readFileSync(filePath, 'utf8');
+    const pageHead = html.match(/<head[\s\S]*?<\/head>/i);
+    if (!pageHead) continue;
+
+    let headContent = pageHead[0];
+    let changed = false;
+
+    for (const element of sourceElements) {
+      // Normalize for comparison — strip whitespace differences
+      const normalized = element.replace(/\s+/g, ' ').trim();
+      const headNormalized = headContent.replace(/\s+/g, ' ');
+
+      if (!headNormalized.includes(normalized.substring(0, Math.min(80, normalized.length)))) {
+        // Element missing from this page's head — inject before </head>
+        headContent = headContent.replace(/<\/head>/i, `  ${element}\n  </head>`);
+        changed = true;
       }
+    }
+
+    if (changed) {
+      html = html.replace(/<head[\s\S]*?<\/head>/i, headContent);
+      fs.writeFileSync(filePath, html);
+      synced++;
+      console.log(`[head-sync] Synced head elements in ${page}`);
     }
   }
 
+  if (synced > 0 && ws) {
+    ws.send(JSON.stringify({ type: 'status', content: `Head section synced across ${synced} page(s)` }));
+  }
+  return { synced };
+}
+
+// --- Auto Media Spec Scanner ---
+// Scans HTML for image slots and auto-creates media specs for missing ones
+// Dimension defaults by role
+const SLOT_DIMENSIONS = {
+  hero: '1920x1080',
+  testimonial: '400x500',
+  service: '800x600',
+  team: '400x400',
+  gallery: '800x600',
+  logo: '400x200',
+  favicon: '512x512',
+};
+
+// Extract slot data from a single HTML string, returns array of { slot_id, role, status, page }
+function extractSlotsFromPage(html, page) {
+  const slots = [];
+  const imgRegex = /<img[^>]*data-slot-id=["']([^"']+)["'][^>]*>/gi;
+  let match;
+  while ((match = imgRegex.exec(html)) !== null) {
+    const tag = match[0];
+    const slotId = match[1];
+    const roleMatch = tag.match(/data-slot-role=["']([^"']+)["']/i);
+    const statusMatch = tag.match(/data-slot-status=["']([^"']+)["']/i);
+    const role = roleMatch ? roleMatch[1] : 'unknown';
+    const status = statusMatch ? statusMatch[1] : 'empty';
+    const dimensions = SLOT_DIMENSIONS[role] || '800x600';
+    slots.push({ slot_id: slotId, role, dimensions, status, page });
+  }
+  return slots;
+}
+
+// Scan all pages in dist and register slots in media_specs (spec.json)
+function extractAndRegisterSlots(pages) {
+  const spec = readSpec();
+  const distDir = DIST_DIR();
+
+  // Collect all slots from provided pages (or all pages if none specified)
+  const pagesToScan = pages && pages.length > 0 ? pages : listPages();
+  const allSlots = [];
+  for (const page of pagesToScan) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+    allSlots.push(...extractSlotsFromPage(html, page));
+  }
+
+  // Merge into media_specs — preserve status of existing slots (don't regress stock→empty)
+  if (!spec.media_specs) spec.media_specs = [];
+  const existingBySlotId = new Map(spec.media_specs.map(s => [s.slot_id, s]));
+
+  for (const slot of allSlots) {
+    const existing = existingBySlotId.get(slot.slot_id);
+    if (existing) {
+      // Update page/role/dimensions but preserve status if already upgraded
+      existing.page = slot.page;
+      existing.role = slot.role;
+      existing.dimensions = slot.dimensions;
+      // Don't regress: stock/uploaded/final should not go back to empty
+    } else {
+      spec.media_specs.push(slot);
+      existingBySlotId.set(slot.slot_id, slot);
+    }
+  }
+
+  // Remove specs for slots no longer in HTML (across scanned pages only)
+  const scannedPages = new Set(pagesToScan);
+  const currentSlotIds = new Set(allSlots.map(s => s.slot_id));
+  spec.media_specs = spec.media_specs.filter(s =>
+    !scannedPages.has(s.page) || currentSlotIds.has(s.slot_id)
+  );
+
+  writeSpec(spec);
+  console.log(`[slots] Registered ${allSlots.length} slot(s) across ${pagesToScan.length} page(s)`);
+  return allSlots.length;
+}
+
+// Legacy wrapper — kept for backward compatibility during transition
+function autoDetectMediaSpecs(html) {
+  // If HTML has data-slot-id attributes, use new slot extraction
+  if (html.match(/data-slot-id=/i)) {
+    // Single-page call — extract slots but don't register (caller should use extractAndRegisterSlots)
+    return 0;
+  }
+  // Legacy fallback for pre-slot HTML — detect by heuristics
+  const spec = readSpec();
+  if (!spec.media_specs) spec.media_specs = [];
+  const existing = new Set(spec.media_specs.map(s => s.slot_id || s.slot));
+  let added = 0;
+
+  if (html.match(/(?:hero|banner)[\s\S]{0,500}(?:background-image|<img)/i) && !existing.has('hero_image')) {
+    spec.media_specs.push({ slot_id: 'hero-1', role: 'hero', dimensions: '1920x1080', status: 'empty', page: 'index.html' });
+    added++;
+  }
+  if (html.match(/<img[^>]*(?:logo|brand)[^>]*>/i) && !existing.has('logo')) {
+    spec.media_specs.push({ slot_id: 'logo-1', role: 'logo', dimensions: '400x200', status: 'empty', page: 'index.html' });
+    added++;
+  }
+  if (html.match(/(?:gallery|portfolio|grid)[\s\S]{0,1000}(?:<img[^>]*>[\s\S]{0,200}){3,}/i) && !existing.has('gallery_images')) {
+    spec.media_specs.push({ slot_id: 'gallery-1', role: 'gallery', dimensions: '800x600', status: 'empty', page: 'index.html' });
+    added++;
+  }
+  if (html.match(/(?:team|about|staff)[\s\S]{0,500}<img/i) && !existing.has('team_photos')) {
+    spec.media_specs.push({ slot_id: 'team-1', role: 'team', dimensions: '400x400', status: 'empty', page: 'index.html' });
+    added++;
+  }
+
   if (added > 0) {
-    fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
-    console.log(`[media-specs] Auto-detected ${added} new media spec(s)`);
+    writeSpec(spec);
+    console.log(`[media-specs] Legacy auto-detected ${added} new media spec(s)`);
   }
   return added;
 }
@@ -884,6 +1777,24 @@ app.get('/api/projects', (req, res) => {
   res.json(projects);
 });
 
+app.delete('/api/projects/:tag', (req, res) => {
+  const tag = req.params.tag;
+  if (!tag || tag === TAG) {
+    return res.status(400).json({ error: tag === TAG ? 'Cannot delete the active site — switch to another first' : 'tag required' });
+  }
+  const siteDir = path.join(SITES_ROOT, tag);
+  if (!fs.existsSync(siteDir)) {
+    return res.status(404).json({ error: `Site "${tag}" not found` });
+  }
+  // Move to trash directory instead of permanent delete
+  const trashDir = path.join(SITES_ROOT, '.trash');
+  fs.mkdirSync(trashDir, { recursive: true });
+  const trashDest = path.join(trashDir, `${tag}-${Date.now()}`);
+  fs.renameSync(siteDir, trashDest);
+  console.log(`[studio] Moved site "${tag}" to trash: ${trashDest}`);
+  res.json({ success: true, tag });
+});
+
 app.post('/api/switch-site', (req, res) => {
   const newTag = req.body.tag;
   if (!newTag) return res.status(400).json({ error: 'tag required' });
@@ -897,6 +1808,7 @@ app.post('/api/switch-site', (req, res) => {
 
   // Switch
   TAG = newTag;
+  invalidateSpecCache();
   currentPage = 'index.html';
   currentMode = 'build';
   sessionMessageCount = 0;
@@ -908,7 +1820,7 @@ app.post('/api/switch-site', (req, res) => {
 
   // Notify all connected clients
   const pages = listPages();
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   wss.clients.forEach(client => {
     if (client.readyState === 1) {
       client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
@@ -949,6 +1861,7 @@ app.post('/api/new-site', (req, res) => {
   // Switch to the new site
   endSession();
   TAG = newTag;
+  invalidateSpecCache();
   currentPage = 'index.html';
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
@@ -967,23 +1880,37 @@ app.post('/api/new-site', (req, res) => {
 
 // --- Media Specs API ---
 app.put('/api/media-specs', (req, res) => {
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   if (!spec.media_specs) spec.media_specs = [];
   const { action, index, media_spec } = req.body;
 
   switch (action) {
-    case 'add':
-      if (!media_spec || !media_spec.slot) {
-        return res.status(400).json({ error: 'slot is required' });
+    case 'add': {
+      if (!media_spec || !(media_spec.slot_id || media_spec.slot)) {
+        return res.status(400).json({ error: 'slot_id is required' });
+      }
+      const slotId = media_spec.slot_id || media_spec.slot;
+      if (typeof slotId !== 'string' || slotId.length > 100 || !/^[a-z0-9-]+$/i.test(slotId)) {
+        return res.status(400).json({ error: 'slot_id must be alphanumeric with hyphens' });
+      }
+      const validRoles = ['hero', 'testimonial', 'team', 'service', 'gallery', 'logo', 'favicon', 'unknown'];
+      const role = media_spec.role || 'unknown';
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ error: `role must be one of: ${validRoles.join(', ')}` });
+      }
+      const validSlotStatuses = ['empty', 'stock', 'uploaded', 'final'];
+      const status = media_spec.status || 'empty';
+      if (!validSlotStatuses.includes(status)) {
+        return res.status(400).json({ error: `status must be one of: ${validSlotStatuses.join(', ')}` });
       }
       spec.media_specs.push({
-        slot: media_spec.slot,
+        slot_id: slotId,
+        role,
         dimensions: media_spec.dimensions || '',
-        format: media_spec.format || '',
-        purpose: media_spec.purpose || '',
-        status: media_spec.status || 'missing',
-        filename: media_spec.filename || null,
+        status,
+        page: media_spec.page || 'index.html',
       });
+    }
       break;
     case 'update':
       if (index === undefined || index < 0 || index >= spec.media_specs.length) {
@@ -1001,20 +1928,40 @@ app.put('/api/media-specs', (req, res) => {
       return res.status(400).json({ error: 'action must be add, update, or delete' });
   }
 
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+  writeSpec(spec);
   res.json({ success: true, media_specs: spec.media_specs });
 });
 
 // --- AI Image Prompt Generator ---
 app.post('/api/generate-image-prompt', (req, res) => {
   const { slot, context } = req.body;
-  const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const spec = readSpec();
   const brief = spec.design_brief || {};
+
+  // Look up slot-specific dimensions from media specs or infer from slot name
+  const mediaSpecs = spec.media_specs || [];
+  const slotLower = (slot || '').toLowerCase();
+  const matchedSpec = mediaSpecs.find(s => slotLower.includes((s.slot_id || s.slot || '').toLowerCase()));
+
+  // Infer dimensions based on slot type
+  let suggestedDims = matchedSpec?.dimensions || '800x600'; // default: standard photo
+  if (!matchedSpec) {
+    if (slotLower.match(/logo|brand/)) suggestedDims = '400x100';
+    else if (slotLower.match(/favicon|icon/)) suggestedDims = '512x512';
+    else if (slotLower.match(/og|social|twitter|meta/)) suggestedDims = '1200x630';
+    else if (slotLower.match(/hero|banner|full.?width|cover/)) suggestedDims = '1920x1080';
+    else if (slotLower.match(/gallery|portfolio|project|before|after/)) suggestedDims = '800x600';
+    else if (slotLower.match(/team|profile|headshot|member|avatar/)) suggestedDims = '400x400';
+    else if (slotLower.match(/testimonial/)) suggestedDims = '200x200';
+    else if (slotLower.match(/service|feature|benefit|why|choose|expertise|reliability|affordability/)) suggestedDims = '600x400';
+    else if (slotLower.match(/story|about|company/)) suggestedDims = '800x600';
+  }
 
   const prompt = `Generate a concise, effective image generation prompt for Midjourney or DALL-E.
 
 CONTEXT:
 - Image slot: ${slot || 'general'}
+- Required dimensions: ${suggestedDims}
 - Additional context: ${context || 'none'}
 - Site goal: ${brief.goal || 'not specified'}
 - Audience: ${brief.audience || 'not specified'}
@@ -1025,19 +1972,21 @@ CONTEXT:
 OUTPUT FORMAT (respond with ONLY this JSON, no other text):
 {
   "prompt": "the image generation prompt text",
-  "suggested_dimensions": "e.g. 1920x1080",
+  "suggested_dimensions": "${suggestedDims}",
   "format": "jpg or png or svg"
 }
 
-Make the prompt specific, visual, and tailored to the brand. Include style keywords. Do NOT include text/words in the image prompt.`;
+Make the prompt specific, visual, and tailored to the brand. Include style keywords. Do NOT include text/words in the image prompt. Use the EXACT dimensions provided — do not default to 1920x1080.`;
 
   const child = spawnClaude(prompt);
+  const imgTimeout = setTimeout(() => { console.error('[image-prompt] Timed out'); child.kill(); }, 120000);
 
   let response = '';
   child.stdout.on('data', (chunk) => { response += chunk.toString(); });
   child.stderr.on('data', (chunk) => { console.error('[image-prompt]', chunk.toString()); });
 
   child.on('close', (code) => {
+    clearTimeout(imgTimeout);
     if (code !== 0 || !response.trim()) {
       return res.status(500).json({ error: 'Failed to generate image prompt' });
     }
@@ -1046,12 +1995,234 @@ Make the prompt specific, visual, and tailored to the brand. Include style keywo
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const result = JSON.parse(jsonMatch[0]);
+        // Force-override dimensions — don't trust Claude's output for this
+        result.suggested_dimensions = suggestedDims;
         return res.json(result);
       }
     } catch {}
     // Fallback: return raw text as prompt
-    res.json({ prompt: response.trim(), suggested_dimensions: '1920x1080', format: 'jpg' });
+    res.json({ prompt: response.trim(), suggested_dimensions: suggestedDims, format: 'jpg' });
   });
+});
+
+// --- Stock Photo Fill ---
+app.post('/api/stock-photo', async (req, res) => {
+  const { slot_id, query, width, height } = req.body;
+  if (!slot_id || !query) {
+    return res.status(400).json({ error: 'slot_id and query required' });
+  }
+
+  const spec = readSpec();
+  const mediaSpecs = spec.media_specs || [];
+  const slotSpec = mediaSpecs.find(s => s.slot_id === slot_id);
+  if (!slotSpec) {
+    return res.status(404).json({ error: `Slot ${slot_id} not found in media_specs` });
+  }
+
+  const w = width || parseInt((slotSpec.dimensions || '800x600').split('x')[0]) || 800;
+  const h = height || parseInt((slotSpec.dimensions || '800x600').split('x')[1]) || 600;
+
+  const distDir = DIST_DIR();
+  const stockDir = path.join(distDir, 'assets', 'stock');
+  fs.mkdirSync(stockDir, { recursive: true });
+  const outputFile = path.join(stockDir, `${slot_id}.jpg`);
+
+  try {
+    // Load API key from config
+    const config = loadSettings();
+    const apiKey = config.stock_photo?.unsplash_api_key || '';
+    const env = { ...process.env };
+    if (apiKey) env.UNSPLASH_API_KEY = apiKey;
+
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'stock-photo');
+    const { execFileSync } = require('child_process');
+    execFileSync(scriptPath, [query, String(w), String(h), outputFile], { env, timeout: 30000 });
+
+    // Atomic update: set src in HTML + update status
+    const pages = listPages();
+    let updated = false;
+    for (const page of pages) {
+      const filePath = path.join(distDir, page);
+      let html = fs.readFileSync(filePath, 'utf8');
+      const slotRegex = new RegExp(`(<img[^>]*data-slot-id=["']${slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?)data-slot-status=["'][^"']*["']`, 'i');
+      const srcRegex = new RegExp(`(<img[^>]*data-slot-id=["']${slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?)src=["'][^"']*["']`, 'i');
+      if (html.match(slotRegex) || html.match(srcRegex)) {
+        html = html.replace(slotRegex, `$1data-slot-status="stock"`);
+        html = html.replace(srcRegex, `$1src="assets/stock/${slot_id}.jpg"`);
+        fs.writeFileSync(filePath, html);
+        updated = true;
+      }
+    }
+
+    // Update media_specs status
+    slotSpec.status = 'stock';
+    writeSpec(spec);
+
+    res.json({ success: true, slot_id, src: `assets/stock/${slot_id}.jpg`, updated });
+  } catch (err) {
+    console.error('[stock-photo]', err.message);
+    res.status(500).json({ error: `Failed to fetch stock photo: ${err.message}` });
+  }
+});
+
+// --- Share Site ---
+app.post('/api/share', async (req, res) => {
+  const { type, recipient, message, subject } = req.body;
+  if (!type || !recipient || !message) {
+    return res.status(400).json({ error: 'type, recipient, and message required' });
+  }
+
+  const config = loadSettings();
+  const emailSubject = subject || 'Check out this website';
+
+  if (type === 'email') {
+    const emailConfig = config.email || {};
+    if (!emailConfig.user || !emailConfig.app_password) {
+      // Fallback to mailto URI
+      return res.json({
+        success: false,
+        fallback: 'mailto',
+        error: 'Email not configured. Add Gmail credentials in Settings → Notifications.',
+        mailto: `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(message)}`
+      });
+    }
+
+    try {
+      const providerMap = {
+        gmail: { service: 'gmail', host: 'smtp.gmail.com', port: 587 },
+        outlook: { service: 'hotmail', host: 'smtp-mail.outlook.com', port: 587 },
+        sendgrid: { host: 'smtp.sendgrid.net', port: 587 },
+        custom: { host: emailConfig.host, port: emailConfig.port || 587 },
+      };
+      const prov = providerMap[emailConfig.provider || 'gmail'] || providerMap.gmail;
+      const transportOpts = {
+        host: prov.host,
+        port: prov.port,
+        secure: false,
+        auth: {
+          user: emailConfig.provider === 'sendgrid' ? 'apikey' : emailConfig.user,
+          pass: emailConfig.app_password,
+        },
+      };
+      if (prov.service) transportOpts.service = prov.service;
+      const transporter = nodemailer.createTransport(transportOpts);
+
+      await transporter.sendMail({
+        from: emailConfig.from_name ? `"${emailConfig.from_name}" <${emailConfig.user}>` : emailConfig.user,
+        to: recipient,
+        subject: emailSubject,
+        text: message,
+        html: `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+          <p style="font-size:16px;color:#333;">${message.replace(/\n/g, '<br>').replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#2563eb;text-decoration:underline;">$1</a>')}</p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+          <p style="font-size:12px;color:#9ca3af;">Sent from FAMtastic Site Studio</p>
+        </div>`,
+      });
+
+      console.log(`[share] Email sent to ${recipient}`);
+      return res.json({ success: true });
+    } catch (e) {
+      console.error('[share] Email failed:', e.message);
+      return res.json({ success: false, error: `Email failed: ${e.message}. Check your Gmail App Password in Settings.` });
+    }
+  } else if (type === 'text') {
+    const smsConfig = config.sms || {};
+    const smsProvider = smsConfig.provider || 'email_gateway';
+
+    if (smsProvider === 'email_gateway') {
+      // Send SMS via carrier email gateway — uses the email config
+      const emailConfig = config.email || {};
+      if (!emailConfig.user || !emailConfig.app_password) {
+        return res.json({
+          success: false,
+          fallback: 'sms',
+          error: 'Email not configured. Email gateway SMS requires email settings.',
+          sms: `sms:${encodeURIComponent(recipient)}?body=${encodeURIComponent(message)}`
+        });
+      }
+      const carrier = smsConfig.carrier || 'tmomail.net';
+      // Strip non-digits from phone number
+      const digits = recipient.replace(/\D/g, '').replace(/^1/, '');
+      const gatewayAddr = `${digits}@${carrier}`;
+
+      try {
+        const providerMap = {
+          gmail: { service: 'gmail', host: 'smtp.gmail.com', port: 587 },
+          outlook: { service: 'hotmail', host: 'smtp-mail.outlook.com', port: 587 },
+          sendgrid: { host: 'smtp.sendgrid.net', port: 587 },
+          custom: { host: emailConfig.host, port: emailConfig.port || 587 },
+        };
+        const prov = providerMap[emailConfig.provider || 'gmail'] || providerMap.gmail;
+        const transportOpts = {
+          host: prov.host, port: prov.port, secure: false,
+          auth: { user: emailConfig.provider === 'sendgrid' ? 'apikey' : emailConfig.user, pass: emailConfig.app_password },
+        };
+        if (prov.service) transportOpts.service = prov.service;
+        const transporter = nodemailer.createTransport(transportOpts);
+
+        await transporter.sendMail({
+          from: emailConfig.from_name ? `"${emailConfig.from_name}" <${emailConfig.user}>` : emailConfig.user,
+          to: gatewayAddr,
+          subject: subject || 'Check out this site',
+          text: message,
+        });
+
+        console.log(`[share] SMS via gateway sent to ${gatewayAddr}`);
+        return res.json({ success: true });
+      } catch (e) {
+        console.error('[share] SMS gateway failed:', e.message);
+        return res.json({ success: false, error: `SMS gateway failed: ${e.message}` });
+      }
+    }
+
+    // Twilio / Vonage API path
+    if (smsProvider === 'vonage') {
+      if (!smsConfig.api_key || !smsConfig.api_secret || !smsConfig.from_number) {
+        return res.json({
+          success: false, fallback: 'sms',
+          error: 'Vonage SMS not configured. Add api_key, api_secret, and from_number in Settings.',
+          sms: `sms:${encodeURIComponent(recipient)}?body=${encodeURIComponent(message)}`
+        });
+      }
+      try {
+        const { Vonage } = require('@vonage/server-sdk');
+        const vonage = new Vonage({ apiKey: smsConfig.api_key, apiSecret: smsConfig.api_secret });
+        await vonage.sms.send({ to: recipient.replace(/\D/g, ''), from: smsConfig.from_number, text: message });
+        console.log(`[share] SMS via Vonage sent to ${recipient}`);
+        return res.json({ success: true });
+      } catch (e) {
+        console.error('[share] Vonage SMS failed:', e.message);
+        return res.json({ success: false, error: `Vonage SMS failed: ${e.message}. Check credentials in Settings.` });
+      }
+    }
+
+    // Twilio (default API provider)
+    if (!smsConfig.account_sid || !smsConfig.auth_token || !smsConfig.from_number) {
+      return res.json({
+        success: false,
+        fallback: 'sms',
+        error: 'Twilio SMS not configured. Add account_sid, auth_token, and from_number in Settings.',
+        sms: `sms:${encodeURIComponent(recipient)}?body=${encodeURIComponent(message)}`
+      });
+    }
+
+    try {
+      const twilio = require('twilio')(smsConfig.account_sid, smsConfig.auth_token);
+      await twilio.messages.create({
+        body: message,
+        from: smsConfig.from_number,
+        to: recipient,
+      });
+
+      console.log(`[share] SMS via Twilio sent to ${recipient}`);
+      return res.json({ success: true });
+    } catch (e) {
+      console.error('[share] Twilio SMS failed:', e.message);
+      return res.json({ success: false, error: `Twilio SMS failed: ${e.message}. Check credentials in Settings.` });
+    }
+  }
+
+  res.status(400).json({ error: 'Unknown share type' });
 });
 
 // --- Session Summaries API ---
@@ -1070,7 +2241,7 @@ const SETTINGS_FILE = path.join(process.env.HOME || '~', '.config', 'famtastic',
 
 function loadSettings() {
   const defaults = {
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-haiku-4-5-20251001',
     deploy_target: 'netlify',
     deploy_team: 'fritz-medine',
     preview_port: 3333,
@@ -1100,10 +2271,16 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.put('/api/settings', (req, res) => {
+  if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'JSON body required' });
+  const allowedKeys = ['model', 'deploy_target', 'deploy_team', 'preview_port', 'studio_port',
+    'max_upload_size_mb', 'max_uploads_per_site', 'auto_summary', 'auto_version', 'max_versions',
+    'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id'];
   const current = loadSettings();
-  const updated = { ...current, ...req.body };
-  saveSettings(updated);
-  res.json(updated);
+  for (const key of Object.keys(req.body)) {
+    if (allowedKeys.includes(key)) current[key] = req.body[key];
+  }
+  saveSettings(current);
+  res.json(current);
 });
 
 // --- Request Classifier ---
@@ -1160,6 +2337,11 @@ function classifyRequest(message, spec) {
 
   // Asset generation
   if (lower.match(/(?:create|make|generate|design|draw)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(logo|icon|favicon|hero|banner|divider|illustration)/)) return 'asset_import';
+
+  // Fill stock photos — bulk fill empty image slots
+  if (lower.match(/\b(add|fill|insert|get|find|need)\s+(?:some\s+|all\s+)?(?:placeholder\s+)?(?:images?|photos?|stock\s+photos?|pictures?)\b/) ||
+      lower.match(/\b(fill\s+(?:the\s+)?(?:image|photo)\s+slots?|stock\s+photos?)\b/) ||
+      lower.match(/\bi\s+need\s+images?\b/)) return 'fill_stock_photos';
 
   // New site — no brief exists yet (HTML may exist from fallback template)
   if (!hasBrief) return 'new_site';
@@ -1400,6 +2582,7 @@ DATA_MODEL:
 Be practical. If the site doesn't need a database, say so clearly. If it does, keep the model minimal — only include what's actually needed.`;
 
   const child = spawnClaude(prompt);
+  const dmTimeout = setTimeout(() => { console.error('[data-model] Timed out'); child.kill(); }, 180000);
 
   let response = '';
   let firstChunk = true;
@@ -1413,6 +2596,7 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
   child.stderr.on('data', (chunk) => { console.error('[data-model]', chunk.toString()); });
 
   child.on('close', (code) => {
+    clearTimeout(dmTimeout);
     if (code !== 0 || !response.trim()) {
       ws.send(JSON.stringify({ type: 'error', content: 'Data model planning failed. Try describing your data needs.' }));
       return;
@@ -1436,9 +2620,9 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
           const dataModel = JSON.parse(jsonStr.substring(firstBrace, end));
           // Save to spec
           ws.send(JSON.stringify({ type: 'status', content: 'Saving data model to spec...' }));
-          const currentSpec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+          const currentSpec = readSpec();
           currentSpec.data_model = dataModel;
-          fs.writeFileSync(SPEC_FILE(), JSON.stringify(currentSpec, null, 2));
+          writeSpec(currentSpec);
 
           // Format for display
           let display = `**Data Model Analysis**\n\n`;
@@ -1514,6 +2698,7 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
   ws.send(JSON.stringify({ type: 'status', content: 'Creating design brief...' }));
 
   const child = spawnClaude(prompt);
+  const planTimeout = setTimeout(() => { console.error('[planning] Timed out'); child.kill(); }, 180000);
 
   let response = '';
 
@@ -1526,6 +2711,7 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
   });
 
   child.on('close', (code) => {
+    clearTimeout(planTimeout);
     if (code !== 0 || !response.trim()) {
       ws.send(JSON.stringify({ type: 'error', content: 'Failed to create brief. Try describing your site again.' }));
       return;
@@ -1559,14 +2745,14 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
     if (briefJson) {
       briefJson.approved = false;
       // Save brief to spec
-      const currentSpec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+      const currentSpec = readSpec();
       currentSpec.design_brief = briefJson;
 
       // Analyze tech stack
       const techRecommendations = analyzeTechStack(briefJson);
       currentSpec.tech_recommendations = techRecommendations;
 
-      fs.writeFileSync(SPEC_FILE(), JSON.stringify(currentSpec, null, 2));
+      writeSpec(currentSpec);
 
       ws.send(JSON.stringify({ type: 'brief', brief: briefJson, techRecommendations }));
       appendConvo({ role: 'assistant', content: `Design brief created`, brief: briefJson, at: new Date().toISOString() });
@@ -1623,12 +2809,14 @@ Respond as a thoughtful creative partner:
 Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
   const child = spawnClaude(prompt);
+  const bsTimeout = setTimeout(() => { console.error('[brainstorm] Timed out'); child.kill(); }, 180000);
 
   let response = '';
   child.stdout.on('data', (chunk) => { response += chunk.toString(); });
   child.stderr.on('data', (chunk) => { console.error('[brainstorm]', chunk.toString()); });
 
   child.on('close', (code) => {
+    clearTimeout(bsTimeout);
     if (code !== 0 || !response.trim()) {
       ws.send(JSON.stringify({ type: 'error', content: 'Brainstorm failed. Try again.' }));
       return;
@@ -1641,6 +2829,13 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
 // --- Enhanced Chat Handler ---
 function handleChatMessage(ws, userMessage, requestType, spec) {
+  // Concurrent build guard — prevent parallel Claude calls
+  if (buildInProgress) {
+    ws.send(JSON.stringify({ type: 'chat', content: 'A build is already in progress. Please wait for it to finish before sending another request.' }));
+    return;
+  }
+  buildInProgress = true;
+
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
   const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext } = buildPromptContext(requestType, spec, userMessage);
@@ -1696,6 +2891,17 @@ Use the MULTI_UPDATE response format with --- PAGE: filename.html --- delimiters
       modeInstruction = 'Process the user request and update the site accordingly.';
   }
 
+  // Analytics snippet injection
+  const settings = loadSettings();
+  let analyticsInstruction = '';
+  if (settings.analytics_provider && settings.analytics_id) {
+    if (settings.analytics_provider === 'ga4') {
+      analyticsInstruction = `\nANALYTICS:\nInclude Google Analytics (GA4) in the <head> of every page:\n<script async src="https://www.googletagmanager.com/gtag/js?id=${settings.analytics_id}"></script>\n<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${settings.analytics_id}');</script>\n`;
+    } else if (settings.analytics_provider === 'plausible') {
+      analyticsInstruction = `\nANALYTICS:\nInclude Plausible Analytics in the <head> of every page:\n<script defer data-domain="${settings.analytics_id}" src="https://plausible.io/js/script.js"></script>\n`;
+    }
+  }
+
   const prompt = `You are a premium website builder assistant for FAMtastic Site Studio.
 
 ${systemRules}
@@ -1748,7 +2954,39 @@ IMPORTANT:
 - Keep it responsive and modern
 - The CHANGES summary is required after every HTML_UPDATE or MULTI_UPDATE
 - For multi-page sites: every page must have the SAME nav bar, footer, Tailwind config, and fonts
-- Nav links must be real file links (about.html) NOT anchors (#about)`;
+- Nav links must be real file links (about.html) NOT anchors (#about)
+
+CSS THEMING (REQUIRED):
+- Define brand colors as CSS custom properties in a <style> block inside <head>:
+  :root { --color-primary: ${spec.colors?.primary || '#1a5c2e'}; --color-accent: ${spec.colors?.accent || '#d4a843'}; --color-bg: ${spec.colors?.bg || '#f0f4f0'}; }
+- Use these variables throughout: style="color: var(--color-primary)" or in Tailwind arbitrary values like text-[var(--color-primary)]
+- This enables one-place color changes across the entire site
+- Also define font families if specified: :root { --font-heading: ...; --font-body: ...; }
+
+IMAGE SLOTS (CRITICAL):
+Every <img> tag MUST have these three data attributes:
+- data-slot-id: unique role-based ID derived from context (e.g. "hero-1", "testimonial-1", "testimonial-2", "service-mowing", "team-1", "gallery-1", "logo-1")
+- data-slot-status="empty" (always "empty" on initial generation)
+- data-slot-role: semantic purpose — one of: hero, testimonial, team, service, gallery, logo, favicon
+- src must be "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" (transparent 1x1 pixel)
+- Do NOT use Unsplash URLs, placeholder.com, or any external image URLs
+- Do NOT use fake filenames like "hero.jpg" — always use the transparent data URI
+- Each slot ID must be unique across the entire page
+- For repeating elements (testimonials, gallery items, team members), number them: testimonial-1, testimonial-2, etc.
+- For service-specific images, use descriptive slugs: service-mowing, service-landscaping
+
+FORMS:
+- If the site needs a contact form, booking form, or inquiry form, use Netlify Forms:
+  <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+    <input type="hidden" name="form-name" value="contact">
+    <p class="hidden"><label>Don't fill this out: <input name="bot-field"></label></p>
+    <!-- form fields here -->
+  </form>
+- Always include: name, email, message fields at minimum
+- Add a hidden honeypot field for spam protection
+- Style the submit button to match the site's design
+- For static sites this works out of the box on Netlify — no backend code needed
+${analyticsInstruction}`;
 
   // Context-aware pre-build status
   const pagesList = spec.pages || spec.design_brief?.must_have_sections || ['index.html'];
@@ -1761,6 +2999,14 @@ IMPORTANT:
   }
 
   const child = spawnClaude(prompt);
+
+  // 5-minute timeout — kill hung Claude CLI, reset build guard
+  const buildTimeout = setTimeout(() => {
+    console.error('[claude] Build timed out after 5 minutes, killing process');
+    child.kill();
+    buildInProgress = false;
+    try { ws.send(JSON.stringify({ type: 'error', content: 'Build timed out after 5 minutes. The Claude CLI may be unresponsive. Try again or check your network.' })); } catch {}
+  }, 300000);
 
   let response = '';
   let firstChunk = true;
@@ -1794,6 +3040,9 @@ IMPORTANT:
   });
 
   child.on('close', (code) => {
+    clearTimeout(buildTimeout);
+    buildInProgress = false;
+
     if (code !== 0 || !response.trim()) {
       console.error(`[claude] Build failed — exit code: ${code}, response length: ${response.length}, stderr: ${stderrOutput.substring(0, 500)}`);
       const fallback = "I couldn't process that request right now. Try being more specific about what you'd like to change, or say 'build the site' to regenerate.";
@@ -1854,14 +3103,26 @@ IMPORTANT:
       }
 
       if (writtenPages.length > 0) {
-        // Auto-detect media specs from first written page (usually index.html)
-        ws.send(JSON.stringify({ type: 'status', content: 'Detecting media specs...' }));
-        const firstHtml = fs.readFileSync(path.join(DIST_DIR(), writtenPages[0]), 'utf8');
-        autoDetectMediaSpecs(firstHtml);
+        // Extract and register image slots from all written pages
+        ws.send(JSON.stringify({ type: 'status', content: 'Registering image slots...' }));
+        const slotCount = extractAndRegisterSlots(writtenPages);
+        const slotMsg = slotCount > 0 ? `\n\n🖼️ Registered ${slotCount} image slot(s)` : '';
+
+        // Bulk generate branded placeholders for all detected slots
+        ws.send(JSON.stringify({ type: 'status', content: 'Generating placeholder assets...' }));
+        const placeholderResult = bulkGeneratePlaceholders(ws);
+        const placeholderMsg = placeholderResult.replaced > 0
+          ? `\n\n📦 Generated ${placeholderResult.generated} placeholder assets, replaced ${placeholderResult.replaced} slots`
+          : '';
+
+        // Sync nav, footer, and head across all pages
+        syncNavPartial(ws);
+        syncFooterPartial(ws);
+        syncHeadSection(ws);
 
         const msg = changeSummary
-          ? `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}\n\n${changeSummary}`
-          : `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}`;
+          ? `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}\n\n${changeSummary}${slotMsg}${placeholderMsg}`
+          : `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}${slotMsg}${placeholderMsg}`;
         ws.send(JSON.stringify({ type: 'assistant', content: msg }));
         ws.send(JSON.stringify({ type: 'reload-preview' }));
         ws.send(JSON.stringify({ type: 'pages-updated', pages: writtenPages }));
@@ -1901,9 +3162,20 @@ IMPORTANT:
       versionFile(currentPage, requestType);
       fs.writeFileSync(path.join(DIST_DIR(), currentPage), html);
 
-      // Auto-detect media specs from updated HTML
-      ws.send(JSON.stringify({ type: 'status', content: 'Detecting media specs...' }));
-      autoDetectMediaSpecs(html);
+      // Extract and register image slots from updated page
+      ws.send(JSON.stringify({ type: 'status', content: 'Registering image slots...' }));
+      extractAndRegisterSlots([currentPage]);
+
+      // Bulk generate branded placeholders for any new slots on this page
+      ws.send(JSON.stringify({ type: 'status', content: 'Generating placeholder assets...' }));
+      const placeholderResult = bulkGeneratePlaceholders(ws);
+      const placeholderMsg = placeholderResult.replaced > 0
+        ? `\n\n📦 Generated ${placeholderResult.generated} placeholder assets, replaced ${placeholderResult.replaced} slots`
+        : '';
+
+      // Sync nav and footer from this page to all others
+      syncNavFromPage(ws, currentPage);
+      syncFooterFromPage(ws, currentPage);
 
       // Extract and log design decisions from change summary
       if (changeSummary) {
@@ -1912,8 +3184,8 @@ IMPORTANT:
       }
 
       const msg = changeSummary
-        ? `${currentPage} updated!\n\n${changeSummary}`
-        : `${currentPage} updated! Check the preview.`;
+        ? `${currentPage} updated!\n\n${changeSummary}${placeholderMsg}`
+        : `${currentPage} updated! Check the preview.${placeholderMsg}`;
       ws.send(JSON.stringify({ type: 'assistant', content: msg }));
       ws.send(JSON.stringify({ type: 'reload-preview' }));
       appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
@@ -1945,7 +3217,7 @@ function extractDecisions(spec, changeSummary, requestType) {
   // Only log durable decisions from restyle, layout_update, and build
   if (!['restyle', 'layout_update', 'build', 'major_revision'].includes(requestType)) return;
 
-  const currentSpec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+  const currentSpec = readSpec();
   if (!currentSpec.design_decisions) currentSpec.design_decisions = [];
 
   // Parse bullet points from change summary as potential decisions
@@ -1973,7 +3245,7 @@ function extractDecisions(spec, changeSummary, requestType) {
   }
 
   // Prune: keep last 20 approved + all superseded in file, but only show 10 active
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(currentSpec, null, 2));
+  writeSpec(currentSpec);
 }
 
 // --- HTTP + WebSocket server ---
@@ -1987,7 +3259,7 @@ wss.on('connection', (ws) => {
   const studioState = loadStudio();
   const pages = listPages();
   if (studioState && studioState.session_count > 0) {
-    const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+    const spec = readSpec();
     const briefStatus = spec.design_brief?.approved ? 'approved' : (spec.design_brief ? 'draft' : 'none');
     let welcomeMsg = `Welcome back! Session #${studioState.session_count + 1} for ${TAG}.`;
     if (pages.length > 1) {
@@ -2007,6 +3279,8 @@ wss.on('connection', (ws) => {
     let msg;
     try { msg = JSON.parse(data); } catch { return; }
 
+    try {
+
     if (msg.type === 'chat') {
       const userMessage = msg.content;
       const ts = new Date().toISOString();
@@ -2016,7 +3290,7 @@ wss.on('connection', (ws) => {
       appendConvo({ role: 'user', content: userMessage, at: ts });
 
       // Load spec
-      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+      const spec = readSpec();
 
       // Check persistent brainstorm mode before classifying
       if (currentMode === 'brainstorm') {
@@ -2069,15 +3343,29 @@ wss.on('connection', (ws) => {
         case 'brand_health': {
           ws.send(JSON.stringify({ type: 'status', content: 'Checking brand health...' }));
           const healthResult = scanBrandHealth();
-          let report = '**Brand Health Report**\n\n';
           const h = healthResult.health;
-          const icon = (s) => s === 'missing' ? '🔴' : s === 'uploaded' ? '🟢' : '🟡';
-          report += `${icon(h.logo.status)} Logo: ${h.logo.status}${h.logo.filename ? ` (${h.logo.filename})` : ''}\n`;
-          report += `${icon(h.favicon.status)} Favicon: ${h.favicon.status}${h.favicon.filename ? ` (${h.favicon.filename})` : ''}\n`;
-          report += `${icon(h.hero_image.status)} Hero Image: ${h.hero_image.status}${h.hero_image.filename ? ` (${h.hero_image.filename})` : ''}\n`;
-          report += `${h.font_icons.using ? '🟢' : '⚪'} Font Icons: ${h.font_icons.using ? h.font_icons.provider : 'not detected'}\n`;
+          const slotIcon = (s) => s === 'empty' ? '🔴' : s === 'stock' ? '🟡' : s === 'uploaded' || s === 'final' ? '🟢' : '⚪';
+
+          let report = '**Brand Health Report**\n\n';
+          report += `**Image Slots:** ${h.slots.total} total — ${h.slots.empty} empty, ${h.slots.stock} stock, ${h.slots.uploaded} uploaded, ${h.slots.final} final\n\n`;
+
+          // Key slots
+          report += `${slotIcon(h.hero.status)} Hero: ${h.hero.status}${h.hero.slot_id ? ` (${h.hero.slot_id})` : ''}\n`;
+          report += `${slotIcon(h.logo.status)} Logo: ${h.logo.status}${h.logo.slot_id ? ` (${h.logo.slot_id})` : ''}\n`;
+          report += `${slotIcon(h.favicon.status)} Favicon: ${h.favicon.status}${h.favicon.slot_id ? ` (${h.favicon.slot_id})` : ''}\n`;
+
+          // Sets
+          const setReport = (name, set) => set.total > 0 ? `${set.filled === set.total ? '🟢' : '🟡'} ${name}: ${set.filled}/${set.total} filled\n` : '';
+          report += setReport('Testimonials', h.sets.testimonials);
+          report += setReport('Gallery', h.sets.gallery);
+          report += setReport('Services', h.sets.services);
+          report += setReport('Team', h.sets.team);
+
+          // Other checks
+          report += `\n${h.font_icons.using ? '🟢' : '⚪'} Font Icons: ${h.font_icons.using ? h.font_icons.provider : 'not detected'}\n`;
           report += `${h.social_meta.og_image ? '🟢' : '🔴'} OG Image: ${h.social_meta.og_image ? 'set' : 'missing'}\n`;
           report += `${h.social_meta.twitter_card ? '🟢' : '🔴'} Twitter Card: ${h.social_meta.twitter_card ? 'set' : 'missing'}\n`;
+
           if (healthResult.suggestions.length > 0) {
             report += '\n**Suggestions:**\n' + healthResult.suggestions.map(s => `- ${s.action}`).join('\n');
           }
@@ -2199,6 +3487,118 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'fill_stock_photos': {
+          ws.send(JSON.stringify({ type: 'status', content: 'Filling image slots with stock photos...' }));
+          const fillSpec = readSpec();
+          const emptySlots = (fillSpec.media_specs || []).filter(s => s.status === 'empty');
+
+          if (emptySlots.length === 0) {
+            ws.send(JSON.stringify({ type: 'assistant', content: 'All image slots are already filled. No empty slots to fill.' }));
+            appendConvo({ role: 'assistant', content: 'No empty slots to fill', at: new Date().toISOString() });
+            break;
+          }
+
+          // Check for Unsplash API key — if missing, use SVG fallback
+          const fillConfig = loadSettings();
+          const hasApiKey = !!fillConfig.stock_photo?.unsplash_api_key;
+
+          if (!hasApiKey) {
+            // Offline fallback: generate branded SVG placeholders
+            ws.send(JSON.stringify({ type: 'status', content: 'No Unsplash API key — generating branded SVG placeholders...' }));
+            const placeholderResult = bulkGeneratePlaceholders(ws);
+
+            // Update slot statuses to 'stock' for generated placeholders
+            const updatedSpec = readSpec();
+            let upgraded = 0;
+            for (const ms of (updatedSpec.media_specs || [])) {
+              if (ms.status === 'empty') {
+                // Check if a placeholder SVG was generated for this slot
+                const svgPath = path.join(DIST_DIR(), 'assets', 'placeholders', `${ms.slot_id}.svg`);
+                if (fs.existsSync(svgPath)) {
+                  ms.status = 'stock';
+                  upgraded++;
+                }
+              }
+            }
+            if (upgraded > 0) {
+              writeSpec(updatedSpec);
+            }
+
+            const msg = placeholderResult.generated > 0
+              ? `Generated ${placeholderResult.generated} branded SVG placeholder(s) and replaced ${placeholderResult.replaced} slot(s).\n\nTo use real stock photos, add an Unsplash API key in Settings → stock_photo.unsplash_api_key`
+              : 'No empty slots could be filled. Try building the site first.';
+            ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+            ws.send(JSON.stringify({ type: 'reload-preview' }));
+            appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+            break;
+          }
+
+          // Unsplash API key available — fill with stock photos
+          const brief = fillSpec.design_brief || {};
+          const industry = fillSpec.business_type || brief.audience || 'professional';
+          const tone = Array.isArray(brief.tone) ? brief.tone.join(', ') : (brief.tone || 'professional');
+          let filled = 0;
+          let errors = 0;
+
+          for (const slot of emptySlots) {
+            // Generate contextual search query from slot role + site context
+            const queryMap = {
+              hero: `${industry} ${tone} hero banner`,
+              testimonial: `professional headshot portrait`,
+              team: `professional team member portrait`,
+              service: `${industry} ${slot.slot_id.replace(/^service-/, '').replace(/-/g, ' ')} service`,
+              gallery: `${industry} project showcase`,
+              logo: `${industry} brand logo minimal`,
+              favicon: `${industry} icon minimal`,
+            };
+            const searchQuery = queryMap[slot.role] || `${industry} ${slot.role}`;
+            ws.send(JSON.stringify({ type: 'status', content: `Filling ${slot.slot_id}...` }));
+
+            try {
+              const [w, h] = (slot.dimensions || '800x600').split('x').map(Number);
+              const stockDir = path.join(DIST_DIR(), 'assets', 'stock');
+              fs.mkdirSync(stockDir, { recursive: true });
+              const outputFile = path.join(stockDir, `${slot.slot_id}.jpg`);
+
+              const env = { ...process.env, UNSPLASH_API_KEY: fillConfig.stock_photo.unsplash_api_key };
+              const scriptPath = path.join(__dirname, '..', 'scripts', 'stock-photo');
+              const { execFileSync } = require('child_process');
+              execFileSync(scriptPath, [searchQuery, String(w), String(h), outputFile], { env, timeout: 30000 });
+
+              // Update HTML
+              const pages = listPages();
+              for (const page of pages) {
+                const filePath = path.join(DIST_DIR(), page);
+                let html = fs.readFileSync(filePath, 'utf8');
+                const escapedId = slot.slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const slotRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)data-slot-status=["'][^"']*["']`, 'i');
+                const srcRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)src=["'][^"']*["']`, 'i');
+                if (html.match(slotRegex) || html.match(srcRegex)) {
+                  html = html.replace(slotRegex, `$1data-slot-status="stock"`);
+                  html = html.replace(srcRegex, `$1src="assets/stock/${slot.slot_id}.jpg"`);
+                  fs.writeFileSync(filePath, html);
+                }
+              }
+
+              // Update media_specs
+              slot.status = 'stock';
+              filled++;
+            } catch (err) {
+              console.error(`[stock-photo] Failed to fill ${slot.slot_id}:`, err.message);
+              errors++;
+            }
+          }
+
+          // Persist updated media_specs
+          writeSpec(fillSpec);
+
+          const fillMsg = `Filled ${filled} of ${emptySlots.length} image slot(s) with stock photos.${errors > 0 ? ` ${errors} failed.` : ''}`;
+          ws.send(JSON.stringify({ type: 'assistant', content: fillMsg }));
+          ws.send(JSON.stringify({ type: 'reload-preview' }));
+          appendConvo({ role: 'assistant', content: fillMsg, at: new Date().toISOString() });
+          break;
+        }
+
         case 'query':
           handleQuery(ws, userMessage);
           break;
@@ -2212,10 +3612,10 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'approve-brief') {
       // User approved the brief — mark it and trigger build
-      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+      const spec = readSpec();
       if (spec.design_brief) {
         spec.design_brief.approved = true;
-        fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+        writeSpec(spec);
         ws.send(JSON.stringify({ type: 'status', content: 'Brief approved! Building site...' }));
         appendConvo({ role: 'system', content: 'Design brief approved', at: new Date().toISOString() });
         // Build using the brief context — include pages from spec
@@ -2231,19 +3631,19 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'skip-brief') {
       // User wants to skip planning and build directly
-      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+      const spec = readSpec();
       ws.send(JSON.stringify({ type: 'status', content: 'Skipping brief, building directly...' }));
       runOrchestratorSite(ws, null);
     }
 
     if (msg.type === 'upload-role-update') {
       // Update role/label for an uploaded asset
-      const spec = fs.existsSync(SPEC_FILE()) ? JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')) : {};
+      const spec = readSpec();
       const asset = (spec.uploaded_assets || []).find(a => a.filename === msg.filename);
       if (asset) {
         if (msg.role) asset.role = msg.role;
         if (msg.label !== undefined) asset.label = msg.label;
-        fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+        writeSpec(spec);
         ws.send(JSON.stringify({ type: 'assistant', content: `Updated ${msg.filename}: role → ${msg.role || asset.role}` }));
       }
     }
@@ -2266,19 +3666,24 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'update-spec') {
       try {
-        const currentSpec = JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8'));
+        const currentSpec = readSpec();
         const updated = { ...currentSpec, ...msg.updates };
-        fs.writeFileSync(SPEC_FILE(), JSON.stringify(updated, null, 2));
+        writeSpec(updated);
         ws.send(JSON.stringify({ type: 'spec-updated', spec: updated }));
       } catch (e) {
         ws.send(JSON.stringify({ type: 'error', content: 'Failed to update spec: ' + e.message }));
       }
     }
+
+    } catch (err) {
+      console.error('[ws] Unhandled error in message handler:', err);
+      try { ws.send(JSON.stringify({ type: 'error', content: 'An unexpected error occurred. Please try again.' })); } catch {}
+    }
   });
 
-  ws.on('close', () => {
+  ws.on('close', async () => {
     console.log('[studio] Client disconnected');
-    endSession();
+    await endSession(ws);
   });
 });
 
@@ -2327,8 +3732,9 @@ function handleQuery(ws, userMessage) {
 
 // --- Run orchestrator-site ---
 function runOrchestratorSite(ws, template) {
-  const templateFlag = template ? ` --template ${template}` : '';
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && ./scripts/orchestrator-site "${TAG}"${templateFlag}`], {
+  const args = [path.join(HUB_ROOT, 'scripts', 'orchestrator-site'), TAG];
+  if (template) { args.push('--template', template); }
+  const child = spawn(args[0], args.slice(1), {
     env: process.env,
     cwd: HUB_ROOT,
   });
@@ -2357,8 +3763,9 @@ function runOrchestratorSite(ws, template) {
 
 // --- Run site-deploy ---
 function runDeploy(ws, isProd) {
-  const prodFlag = isProd ? '--prod' : '';
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && ./scripts/site-deploy "${TAG}" ${prodFlag}`], {
+  const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG];
+  if (isProd) args.push('--prod');
+  const child = spawn(args[0], args.slice(1), {
     env: process.env,
     cwd: HUB_ROOT,
   });
@@ -2371,7 +3778,9 @@ function runDeploy(ws, isProd) {
   });
 
   child.stderr.on('data', (chunk) => {
-    console.error('[deploy]', chunk.toString());
+    const text = chunk.toString().trim();
+    console.error('[deploy]', text);
+    if (text) ws.send(JSON.stringify({ type: 'status', content: text }));
   });
 
   child.on('close', (code) => {
@@ -2389,10 +3798,10 @@ function runDeploy(ws, isProd) {
 
 // --- Run asset-generate script ---
 function runAssetGenerate(ws, assetType, description) {
-  const args = [`"${TAG}"`, `"${assetType}"`];
-  if (description) args.push(`"${escapeForShell(description)}"`);
-
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && ./scripts/asset-generate ${args.join(' ')}`], {
+  const scriptPath = path.join(HUB_ROOT, 'scripts', 'asset-generate');
+  const args = [TAG, assetType];
+  if (description) args.push(description);
+  const child = spawn(scriptPath, args, {
     env: process.env,
     cwd: HUB_ROOT,
   });
@@ -2432,10 +3841,15 @@ function appendConvo(entry) {
   } catch {}
   const line = JSON.stringify({ ...entry, tag: TAG, session_id: sessionId }) + '\n';
   fs.appendFileSync(CONVO_FILE(), line);
-}
 
-function escapeForShell(str) {
-  return str.replace(/'/g, "'\\''").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+  // Rolling window — keep last 500 messages to prevent unbounded growth
+  try {
+    const content = fs.readFileSync(CONVO_FILE(), 'utf8');
+    const lines = content.trim().split('\n').filter(Boolean);
+    if (lines.length > 600) {
+      fs.writeFileSync(CONVO_FILE(), lines.slice(-500).join('\n') + '\n');
+    }
+  } catch {}
 }
 
 // Safe Claude CLI spawn — pipes prompt via stdin instead of shell embedding
@@ -2443,7 +3857,7 @@ function spawnClaude(prompt) {
   const env = { ...process.env, MODEL: loadSettings().model };
   // Ensure CLAUDECODE is unset to prevent nested-session guard
   delete env.CLAUDECODE;
-  const child = spawn('bash', ['-c', `cd "${HUB_ROOT}" && ./scripts/claude-cli`], {
+  const child = spawn(path.join(HUB_ROOT, 'scripts', 'claude-cli'), [], {
     env,
     cwd: HUB_ROOT,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -2542,20 +3956,37 @@ if (initialStudio) {
 }
 
 // Clean up session on process exit
-process.on('SIGTERM', () => { endSession(); process.exit(0); });
-process.on('SIGINT', () => { endSession(); process.exit(0); });
+async function gracefulShutdown() {
+  await endSession();
+  wss.clients.forEach(client => {
+    try { client.close(1001, 'Server shutting down'); } catch {}
+  });
+  process.exit(0);
+}
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
-// Start preview server on PREVIEW_PORT
-previewServer.listen(PREVIEW_PORT, () => {
-  console.log(`[preview] Live preview at http://localhost:${PREVIEW_PORT} (dynamic, follows site switches)`);
-});
+// --- Exports for testing ---
+module.exports = {
+  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest,
+  extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS,
+  // Expose internals for integration tests
+  app, server, wss, readSpec, writeSpec, invalidateSpecCache,
+};
 
-server.listen(PORT, () => {
-  console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
-  console.log(`[site-studio] Site tag: ${TAG}`);
-  console.log(`[site-studio] Preview at: http://localhost:${PREVIEW_PORT}`);
-  const pages = listPages();
-  if (pages.length > 0) {
-    console.log(`[site-studio] Pages: ${pages.join(', ')}`);
-  }
-});
+// Start servers only when run directly (not when imported by tests)
+if (require.main === module) {
+  previewServer.listen(PREVIEW_PORT, () => {
+    console.log(`[preview] Live preview at http://localhost:${PREVIEW_PORT} (dynamic, follows site switches)`);
+  });
+
+  server.listen(PORT, () => {
+    console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
+    console.log(`[site-studio] Site tag: ${TAG}`);
+    console.log(`[site-studio] Preview at: http://localhost:${PREVIEW_PORT}`);
+    const pages = listPages();
+    if (pages.length > 0) {
+      console.log(`[site-studio] Pages: ${pages.join(', ')}`);
+    }
+  });
+}

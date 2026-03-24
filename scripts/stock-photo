@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# stock-photo — Download a stock photo from Unsplash
+# Usage: stock-photo <query> <width> <height> <output-path>
+# Requires UNSPLASH_API_KEY env var or falls back to source.unsplash.com
+
+set -euo pipefail
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not installed. Install with: brew install jq" >&2
+  exit 1
+fi
+
+QUERY="${1:?Usage: stock-photo <query> <width> <height> <output-path>}"
+WIDTH="${2:-800}"
+HEIGHT="${3:-600}"
+OUTPUT="${4:?Output path required}"
+
+# Ensure output directory exists
+mkdir -p "$(dirname "$OUTPUT")"
+
+if [ -n "${UNSPLASH_API_KEY:-}" ]; then
+  # Use Unsplash API for better quality and reliability
+  RESPONSE=$(curl -s "https://api.unsplash.com/search/photos?query=$(printf '%s' "$QUERY" | jq -sRr @uri)&per_page=1&orientation=landscape" \
+    -H "Authorization: Client-ID $UNSPLASH_API_KEY")
+
+  URL=$(echo "$RESPONSE" | jq -r '.results[0].urls.regular // empty')
+
+  if [ -z "$URL" ]; then
+    echo "No results for query: $QUERY" >&2
+    exit 1
+  fi
+
+  # Download with size parameters
+  curl -sL "${URL}&w=${WIDTH}&h=${HEIGHT}&fit=crop" -o "$OUTPUT"
+else
+  # Fallback: source.unsplash.com (no API key needed, less reliable)
+  curl -sL "https://source.unsplash.com/featured/${WIDTH}x${HEIGHT}/?$(printf '%s' "$QUERY" | jq -sRr @uri)" -o "$OUTPUT"
+fi
+
+# Verify file was downloaded and is an image
+if [ ! -s "$OUTPUT" ]; then
+  echo "Download failed — empty file" >&2
+  rm -f "$OUTPUT"
+  exit 1
+fi
+
+echo "$OUTPUT"

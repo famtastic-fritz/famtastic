@@ -6,11 +6,19 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@vonage/server-sdk": "^3.26.4",
     "express": "^4.21.0",
     "multer": "^2.1.1",
+    "nodemailer": "^8.0.3",
+    "twilio": "^5.13.0",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.1"
   }
 }

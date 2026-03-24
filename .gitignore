@@ -4,3 +4,6 @@ sites/*/dist/
 sites/*/conversation.jsonl
 sites/*/.studio.json
 sites/*/brainstorm.jsonl
+
+# Local Netlify folder
+.netlify

@@ -23,7 +23,7 @@
     #chat-messages::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
     .msg-user { background: #3b82f6; color: white; }
     .msg-assistant { background: #334155; color: #e2e8f0; }
-    .msg-status { background: transparent; color: #94a3b8; font-style: italic; border: 1px dashed #475569; }
+    .msg-status { background: transparent; color: #cbd5e1; font-style: italic; border: 1px dashed #475569; }
     .msg-error { background: #7f1d1d; color: #fca5a5; }
     .msg-brief { background: #1e293b; border: 1px solid #3b82f6; color: #e2e8f0; }
     .msg-changes { background: #1a2332; border-left: 3px solid #22c55e; color: #e2e8f0; }
@@ -42,7 +42,38 @@
     .health-yellow { background: #eab308; }
     .health-red { background: #ef4444; }
     .health-gray { background: #6b7280; }
+    .health-blue { background: #3b82f6; }
     .session-banner { background: #1e3a5f; border: 1px solid #3b82f6; color: #93c5fd; }
+    .studio-tab { background: transparent; color: #94a3b8; border: 1px solid transparent; border-bottom: none; }
+    .studio-tab:hover { color: #e2e8f0; }
+    .studio-tab-active { background: #1e293b; color: #3b82f6; border-color: #374151; border-bottom-color: #1e293b; margin-bottom: -1px; }
+    .accordion-arrow { display: inline-block; transition: transform 0.15s; }
+    .accordion-open > .accordion-trigger .accordion-arrow { transform: rotate(90deg); }
+    .tree-arrow { display: inline-block; width: 10px; text-align: center; }
+    .accordion-body { animation: accordionIn 0.15s ease-out; }
+    @keyframes accordionIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 2000px; } }
+    .brainstorm-active { border-color: #8b5cf6 !important; }
+    .brainstorm-banner {
+      background: #4c1d95; color: #c4b5fd; padding: 8px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 13px;
+    }
+    /* Mobile responsive */
+    @media (max-width: 1024px) {
+      .main-layout { flex-direction: column !important; }
+      #preview-panel { min-height: 40vh; }
+      #studio-panel { width: 100% !important; max-height: 50vh; overflow-y: auto; border-left: none !important; border-top: 1px solid #374151; }
+      #chat-panel { min-height: 40vh; border-right: none !important; border-bottom: 1px solid #374151; }
+    }
+    @media (max-width: 640px) {
+      header { flex-wrap: wrap; gap: 8px; }
+      header .flex.items-center.gap-4 { flex-wrap: wrap; gap: 4px; }
+    }
+    .brainstorm-banner button {
+      background: #6d28d9; color: white; border: none; border-radius: 6px;
+      padding: 4px 12px; cursor: pointer; font-size: 12px;
+    }
+    .brainstorm-banner button:hover { background: #7c3aed; }
     .inline-edit-form input, .inline-edit-form textarea, .inline-edit-form select {
       background: #0f172a; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #e2e8f0; width: 100%;
     }
@@ -58,15 +89,25 @@
       <h1 class="text-lg font-bold text-white">FAMtastic Site Studio</h1>
       <div class="relative">
         <button onclick="toggleProjectPicker()" id="site-tag" class="text-sm bg-studio-accent/20 text-studio-accent px-2 py-0.5 rounded cursor-pointer hover:bg-studio-accent/30 transition">loading... &#9662;</button>
-        <div id="project-picker" class="hidden absolute top-full left-0 mt-1 bg-studio-panel border border-gray-600 rounded-lg shadow-2xl z-50 w-72 max-h-80 overflow-y-auto">
-          <div class="p-3 border-b border-gray-700">
-            <div class="text-xs font-bold text-white mb-2">Projects</div>
-            <div id="project-list" class="space-y-1"></div>
+        <div id="project-picker" class="hidden absolute top-full left-0 mt-1 bg-studio-panel border border-gray-600 rounded-lg shadow-2xl z-50 w-80 max-h-[28rem] flex flex-col">
+          <div class="p-3 border-b border-gray-700 shrink-0">
+            <input id="project-search" type="text" placeholder="Search projects..." oninput="filterProjects()" class="w-full text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent">
           </div>
-          <div class="p-3">
-            <div class="text-xs font-bold text-white mb-2">New Project</div>
+          <div class="flex-1 overflow-y-auto p-3">
+            <div id="project-list" class="space-y-1"></div>
+            <div id="project-empty" class="hidden text-xs text-studio-muted text-center py-4">No matches</div>
+          </div>
+          <div class="px-3 py-2 border-t border-gray-700 shrink-0">
+            <div class="flex items-center gap-3 text-[10px] text-studio-muted">
+              <span class="flex items-center gap-1"><span class="health-dot health-blue"></span> Deployed</span>
+              <span class="flex items-center gap-1"><span class="health-dot health-green"></span> Built</span>
+              <span class="flex items-center gap-1"><span class="health-dot health-yellow"></span> Not built</span>
+              <span class="flex items-center gap-1 ml-auto text-red-400/50">&times; Delete</span>
+            </div>
+          </div>
+          <div class="p-3 border-t border-gray-700 shrink-0">
             <div class="flex gap-1">
-              <input id="new-project-tag" type="text" placeholder="tag (e.g. my-site)" class="flex-1 text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent">
+              <input id="new-project-tag" type="text" placeholder="new-site-tag" class="flex-1 text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent">
               <button onclick="createNewProject()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Create</button>
             </div>
           </div>
@@ -77,7 +118,7 @@
       <button onclick="rebuildSite()" class="text-sm bg-studio-accent hover:bg-blue-600 text-white px-4 py-1.5 rounded transition">Rebuild</button>
       <button onclick="toggleStudioPanel()" id="studio-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Studio</button>
       <button onclick="togglePreview()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Toggle Preview</button>
-      <button onclick="openSettings()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition" title="Settings">
+      <button onclick="openSettings()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition" title="Settings" aria-label="Settings">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       </button>
     </div>
@@ -87,10 +128,10 @@
   <div id="asset-bar" class="bg-studio-panel border-b border-gray-700 px-4 py-2 gap-2 items-center overflow-x-auto shrink-0" style="display: none;"></div>
 
   <!-- Main content: Chat + Preview + Studio -->
-  <div class="flex flex-1 overflow-hidden">
+  <div class="flex flex-1 overflow-hidden main-layout">
 
     <!-- Chat Panel -->
-    <div id="chat-panel" class="w-1/2 flex flex-col border-r border-gray-700">
+    <div id="chat-panel" class="flex-1 min-w-0 flex flex-col border-r border-gray-700">
 
       <!-- Messages -->
       <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
@@ -112,14 +153,15 @@
       <!-- Input -->
       <div class="p-4 border-t border-gray-700 bg-studio-panel">
         <form id="chat-form" class="flex gap-2">
-          <input
+          <textarea
             id="chat-input"
-            type="text"
+            rows="1"
             placeholder="Describe what you want..."
             autocomplete="off"
-            class="flex-1 bg-studio-bg border border-gray-600 rounded-lg px-4 py-2.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent"
-          >
-          <label class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2.5 rounded-lg cursor-pointer transition flex items-center" title="Upload image">
+            class="flex-1 bg-studio-bg border border-gray-600 rounded-lg px-4 py-2.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent resize-none"
+            style="max-height: 120px; overflow-y: auto;"
+          ></textarea>
+          <label class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2.5 rounded-lg cursor-pointer transition flex items-center" title="Upload image" aria-label="Upload image">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" multiple class="hidden" onchange="handleFileSelect(this.files)">
           </label>
@@ -129,134 +171,291 @@
     </div>
 
     <!-- Preview Panel -->
-    <div id="preview-panel" class="w-1/2 flex flex-col bg-white">
+    <div id="preview-panel" class="flex-1 min-w-0 flex flex-col bg-white">
       <div class="bg-gray-100 border-b px-4 py-2 flex flex-col shrink-0">
         <div class="flex items-center justify-between">
           <span class="text-gray-600 text-sm font-medium">Live Preview</span>
           <div class="flex items-center gap-2">
+            <!-- Device width toggle -->
+            <div id="device-toggle" class="flex items-center gap-1 border border-gray-300 rounded overflow-hidden">
+              <button onclick="setPreviewDevice('mobile')" class="device-btn text-xs px-1.5 py-0.5 text-gray-500 hover:bg-gray-200 transition" title="Mobile (375px)" aria-label="Mobile preview">
+                <svg width="12" height="16" viewBox="0 0 12 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="14" rx="2"/><line x1="4" y1="13" x2="8" y2="13"/></svg>
+              </button>
+              <button onclick="setPreviewDevice('tablet')" class="device-btn text-xs px-1.5 py-0.5 text-gray-500 hover:bg-gray-200 transition" title="Tablet (768px)" aria-label="Tablet preview">
+                <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="12" height="14" rx="2"/><line x1="5" y1="13" x2="9" y2="13"/></svg>
+              </button>
+              <button onclick="setPreviewDevice('desktop')" class="device-btn text-xs px-1.5 py-0.5 bg-gray-200 text-gray-700 transition" title="Desktop (full width)" aria-label="Desktop preview">
+                <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="10" rx="1"/><line x1="5" y1="13" x2="11" y2="13"/><line x1="8" y1="11" x2="8" y2="13"/></svg>
+              </button>
+            </div>
             <span id="preview-status" class="text-xs text-gray-400">connecting...</span>
-            <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition">Refresh</button>
+            <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition" aria-label="Refresh preview">Refresh</button>
           </div>
         </div>
         <!-- Page tabs (shown when multiple pages exist) -->
         <div id="page-tabs" class="flex gap-1 mt-1.5 overflow-x-auto" style="display: none;"></div>
       </div>
-      <iframe id="preview-frame" class="flex-1 w-full" src="about:blank"></iframe>
+      <div id="preview-container" class="flex-1 flex justify-center bg-gray-200 overflow-auto">
+        <iframe id="preview-frame" class="w-full h-full bg-white" src="about:blank" style="transition: width 0.3s ease;"></iframe>
+      </div>
     </div>
 
     <!-- Studio State Panel (hidden by default) -->
-    <div id="studio-panel" class="w-80 flex flex-col border-l border-gray-700 bg-studio-panel overflow-y-auto" style="display: none;">
-      <div class="p-4 border-b border-gray-700">
+    <div id="studio-panel" class="w-80 shrink-0 flex flex-col border-l border-gray-700 bg-studio-panel" style="display: none;">
+      <!-- Fixed header -->
+      <div class="p-4 border-b border-gray-700 shrink-0">
         <h2 class="text-sm font-bold text-white mb-1">Studio State</h2>
         <div id="studio-tag" class="text-xs text-studio-muted"></div>
         <div id="studio-updated" class="text-xs text-studio-muted"></div>
+        <div id="studio-live-url" class="text-xs mt-1 hidden"></div>
       </div>
 
-      <!-- Brief Section (editable) -->
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Design Brief</h3>
-          <button onclick="toggleBriefEdit()" id="brief-edit-btn" class="text-xs text-studio-muted hover:text-white transition" title="Edit brief">&#9998;</button>
-        </div>
-        <div id="studio-brief" class="text-xs text-studio-text">No brief yet</div>
-        <div id="studio-brief-form" class="hidden inline-edit-form space-y-2">
-          <div><label class="text-xs text-studio-muted block mb-0.5">Goal</label><textarea id="bf-goal" rows="2" placeholder="What this site should accomplish"></textarea></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Audience</label><input id="bf-audience" type="text" placeholder="Who it's for"></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Tone (comma-separated)</label><input id="bf-tone" type="text" placeholder="e.g. modern, premium, bold"></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Layout</label><input id="bf-layout" type="text" placeholder="Layout approach"></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Typography</label><input id="bf-typography" type="text" placeholder="Font style"></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Color Usage</label><input id="bf-color-usage" type="text" placeholder="How colors should be applied"></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Density</label><input id="bf-density" type="text" placeholder="spacious, balanced, or dense"></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Must-have Sections</label><textarea id="bf-sections" rows="2" placeholder="hero, about, services..."></textarea></div>
-          <div><label class="text-xs text-studio-muted block mb-0.5">Avoid</label><textarea id="bf-avoid" rows="2" placeholder="Things NOT to do"></textarea></div>
-          <div class="flex gap-2 pt-1">
-            <button onclick="saveBriefEdit()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Save</button>
-            <button onclick="fillBriefViaChat()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded transition">Fill via Chat</button>
-            <button onclick="cancelBriefEdit()" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+      <!-- Tab bar -->
+      <div class="flex border-b border-gray-700 shrink-0 px-2 pt-2 gap-1">
+        <button onclick="switchStudioTab('assets')" id="studio-tab-assets" class="studio-tab studio-tab-active text-xs px-3 py-1.5 rounded-t transition">Assets</button>
+        <button onclick="switchStudioTab('deploy')" id="studio-tab-deploy" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Deploy</button>
+        <button onclick="switchStudioTab('design')" id="studio-tab-design" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Design</button>
+        <button onclick="switchStudioTab('history')" id="studio-tab-history" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">History</button>
+      </div>
+
+      <!-- Scrollable tab content -->
+      <div class="flex-1 overflow-y-auto">
+
+        <!-- ========== ASSETS TAB ========== -->
+        <div id="studio-tab-content-assets" class="studio-tab-content">
+
+          <!-- Brand Health accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('brand-health')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-brand-health">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Brand Health</h3>
+            </div>
+            <div id="accordion-brand-health" class="accordion-body hidden px-4 pb-4">
+              <div class="flex justify-end mb-2">
+                <button onclick="refreshBrandHealth()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Refresh</button>
+              </div>
+              <div id="studio-brand-health" class="text-xs text-studio-text space-y-1.5">
+                <div class="text-studio-muted">Click refresh to scan</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Decisions Section (editable) -->
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Design Decisions</h3>
-          <button onclick="showAddDecision()" class="text-xs text-studio-accent hover:text-blue-400 transition">+ Add</button>
-        </div>
-        <div id="studio-decisions" class="text-xs text-studio-text space-y-1">No decisions yet</div>
-        <div id="add-decision-form" class="hidden inline-edit-form mt-2 space-y-1.5">
-          <select id="ad-category" class="text-xs">
-            <option value="color">Color</option>
-            <option value="typography">Typography</option>
-            <option value="layout">Layout</option>
-            <option value="content">Content</option>
-            <option value="structure">Structure</option>
-            <option value="interaction">Interaction</option>
-          </select>
-          <input id="ad-text" type="text" placeholder="Decision text..." class="text-xs">
-          <div class="flex gap-2">
-            <button onclick="saveNewDecision()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Add</button>
-            <button onclick="document.getElementById('add-decision-form').classList.add('hidden')" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+          <!-- File Tree accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('files')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-files">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">File Tree</h3>
+            </div>
+            <div id="accordion-files" class="accordion-body hidden px-4 pb-4">
+              <input id="file-tree-search" type="text" placeholder="Search files..." oninput="filterFileTree()" class="w-full text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent mb-2">
+              <div id="studio-files" class="text-xs text-studio-text font-mono">Loading...</div>
+              <div id="file-search-results" class="text-xs text-studio-text font-mono hidden"></div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Uploaded Assets Section -->
-      <div class="p-4 border-b border-gray-700">
-        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Uploaded Assets</h3>
-        <div id="studio-uploads" class="text-xs text-studio-text space-y-1">No uploads yet</div>
-      </div>
-
-      <!-- Brand Health Section -->
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Brand Health</h3>
-          <button onclick="refreshBrandHealth()" class="text-xs text-studio-muted hover:text-white transition" title="Refresh">&#8635;</button>
-        </div>
-        <div id="studio-brand-health" class="text-xs text-studio-text space-y-1.5">
-          <div class="text-studio-muted">Click refresh to scan</div>
-        </div>
-      </div>
-
-      <!-- Media Specs Section -->
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Media Specs</h3>
-          <button onclick="showAddMediaSpec()" class="text-xs text-studio-accent hover:text-blue-400 transition">+ Add</button>
-        </div>
-        <div id="studio-media-specs" class="text-xs text-studio-text space-y-1">No specs yet</div>
-        <div id="add-media-spec-form" class="hidden inline-edit-form mt-2 space-y-1.5">
-          <input id="ms-slot" type="text" placeholder="Slot name (e.g. hero_image)" class="text-xs">
-          <input id="ms-dimensions" type="text" placeholder="Dimensions (e.g. 1920x1080)" class="text-xs">
-          <input id="ms-format" type="text" placeholder="Format (e.g. jpg, svg)" class="text-xs">
-          <input id="ms-purpose" type="text" placeholder="Purpose" class="text-xs">
-          <div class="flex gap-2">
-            <button onclick="saveNewMediaSpec()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Add</button>
-            <button onclick="document.getElementById('add-media-spec-form').classList.add('hidden')" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+          <!-- Media Specs accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('media-specs')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-media-specs">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Media Specs</h3>
+            </div>
+            <div id="accordion-media-specs" class="accordion-body hidden px-4 pb-4">
+              <div class="flex justify-end mb-2">
+                <button onclick="showAddMediaSpec()" class="text-xs text-studio-accent hover:text-blue-400 transition">+ Add</button>
+              </div>
+              <div id="studio-media-specs" class="text-xs text-studio-text space-y-1">No specs yet</div>
+              <div id="add-media-spec-form" class="hidden inline-edit-form mt-2 space-y-1.5">
+                <input id="ms-slot" type="text" placeholder="Slot name (e.g. hero_image)" class="text-xs">
+                <input id="ms-dimensions" type="text" placeholder="Dimensions (e.g. 1920x1080)" class="text-xs">
+                <input id="ms-format" type="text" placeholder="Format (e.g. jpg, svg)" class="text-xs">
+                <input id="ms-purpose" type="text" placeholder="Purpose" class="text-xs">
+                <div class="flex gap-2">
+                  <button onclick="saveNewMediaSpec()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Add</button>
+                  <button onclick="document.getElementById('add-media-spec-form').classList.add('hidden')" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- Uploaded Assets accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('uploads')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-uploads">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Uploaded Assets</h3>
+            </div>
+            <div id="accordion-uploads" class="accordion-body hidden px-4 pb-4">
+              <div id="studio-uploads" class="text-xs text-studio-text space-y-1">No uploads yet</div>
+            </div>
+          </div>
+
         </div>
-      </div>
 
-      <!-- Version History Section -->
-      <div class="p-4 border-b border-gray-700">
-        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Version History</h3>
-        <div id="studio-versions" class="text-xs text-studio-text space-y-1">No versions yet</div>
-      </div>
+        <!-- ========== DESIGN TAB ========== -->
+        <div id="studio-tab-content-design" class="studio-tab-content hidden">
 
-      <!-- Sessions Section -->
-      <div class="p-4 border-b border-gray-700">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Sessions</h3>
-          <button onclick="triggerSummarize()" class="text-xs text-studio-muted hover:text-white transition" title="Save summary">Save Summary</button>
+          <!-- Brief accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('brief')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-brief">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Design Brief</h3>
+            </div>
+            <div id="accordion-brief" class="accordion-body hidden px-4 pb-4">
+              <div class="flex justify-end mb-2">
+                <button onclick="toggleBriefEdit()" id="brief-edit-btn" class="text-xs text-studio-muted hover:text-white transition" title="Edit brief">&#9998; Edit</button>
+              </div>
+              <div id="studio-brief" class="text-xs text-studio-text">No brief yet</div>
+              <div id="studio-brief-form" class="hidden inline-edit-form space-y-2">
+                <div><label class="text-xs text-studio-muted block mb-0.5">Goal</label><textarea id="bf-goal" rows="2" placeholder="What this site should accomplish"></textarea></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Audience</label><input id="bf-audience" type="text" placeholder="Who it's for"></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Tone (comma-separated)</label><input id="bf-tone" type="text" placeholder="e.g. modern, premium, bold"></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Layout</label><input id="bf-layout" type="text" placeholder="Layout approach"></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Typography</label><input id="bf-typography" type="text" placeholder="Font style"></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Color Usage</label><input id="bf-color-usage" type="text" placeholder="How colors should be applied"></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Density</label><input id="bf-density" type="text" placeholder="spacious, balanced, or dense"></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Must-have Sections</label><textarea id="bf-sections" rows="2" placeholder="hero, about, services..."></textarea></div>
+                <div><label class="text-xs text-studio-muted block mb-0.5">Avoid</label><textarea id="bf-avoid" rows="2" placeholder="Things NOT to do"></textarea></div>
+                <div class="flex gap-2 pt-1">
+                  <button onclick="saveBriefEdit()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Save</button>
+                  <button onclick="fillBriefViaChat()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded transition">Fill via Chat</button>
+                  <button onclick="cancelBriefEdit()" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Decisions accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('decisions')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-decisions">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Design Decisions</h3>
+            </div>
+            <div id="accordion-decisions" class="accordion-body hidden px-4 pb-4">
+              <div class="flex justify-end mb-2">
+                <button onclick="showAddDecision()" class="text-xs text-studio-accent hover:text-blue-400 transition">+ Add</button>
+              </div>
+              <div id="studio-decisions" class="text-xs text-studio-text space-y-1">No decisions yet</div>
+              <div id="add-decision-form" class="hidden inline-edit-form mt-2 space-y-1.5">
+                <select id="ad-category" class="text-xs">
+                  <option value="color">Color</option>
+                  <option value="typography">Typography</option>
+                  <option value="layout">Layout</option>
+                  <option value="content">Content</option>
+                  <option value="structure">Structure</option>
+                  <option value="interaction">Interaction</option>
+                </select>
+                <input id="ad-text" type="text" placeholder="Decision text..." class="text-xs">
+                <div class="flex gap-2">
+                  <button onclick="saveNewDecision()" class="text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition">Add</button>
+                  <button onclick="document.getElementById('add-decision-form').classList.add('hidden')" class="text-xs text-studio-muted hover:text-white transition">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
-        <div id="session-viewing-banner" class="hidden session-banner text-xs rounded px-3 py-2 mb-2"></div>
-        <div id="studio-sessions" class="text-xs text-studio-text space-y-1.5">Loading...</div>
-      </div>
 
-      <!-- Files Section -->
-      <div class="p-4">
-        <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider mb-2">Files</h3>
-        <div id="studio-files" class="text-xs text-studio-text font-mono space-y-0.5">Loading...</div>
+        <!-- ========== DEPLOY TAB ========== -->
+        <div id="studio-tab-content-deploy" class="studio-tab-content hidden">
+
+          <!-- Actions -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('deploy-actions')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-deploy-actions">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Actions</h3>
+            </div>
+            <div id="accordion-deploy-actions" class="accordion-body hidden px-4 pb-4">
+              <div class="space-y-2">
+                <button onclick="redeploySite()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Redeploy to Production</button>
+                <div id="share-section" class="border-t border-gray-700 pt-2 mt-2 hidden">
+                  <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-2">Share Live Site</div>
+                  <div class="flex gap-2">
+                    <button onclick="shareSite('copy')" class="flex-1 text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Copy Link</button>
+                    <button onclick="shareSite('text')" class="flex-1 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded transition">Text</button>
+                    <button onclick="shareSite('email')" class="flex-1 text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Email</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Environments -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('environments')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-environments">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Environments</h3>
+            </div>
+            <div id="accordion-environments" class="accordion-body hidden px-4 pb-4">
+              <div id="studio-environments" class="text-xs text-studio-text space-y-3">
+                <div class="text-studio-muted">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Local Paths -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('local-paths')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-local-paths">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Local Paths</h3>
+            </div>
+            <div id="accordion-local-paths" class="accordion-body hidden px-4 pb-4">
+              <div id="studio-local-paths" class="text-xs text-studio-text font-mono space-y-1.5">
+                <div class="text-studio-muted">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Repository -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('repo')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-repo">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Repository</h3>
+            </div>
+            <div id="accordion-repo" class="accordion-body hidden px-4 pb-4">
+              <div id="studio-repo" class="text-xs text-studio-text space-y-1">
+                <div class="text-studio-muted">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========== HISTORY TAB ========== -->
+        <div id="studio-tab-content-history" class="studio-tab-content hidden">
+
+          <!-- Sessions accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('sessions')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-sessions">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Sessions</h3>
+            </div>
+            <div id="accordion-sessions" class="accordion-body hidden px-4 pb-4">
+              <div class="flex justify-end mb-2">
+                <button onclick="triggerSummarize()" class="text-xs text-studio-muted hover:text-white transition">Save Summary</button>
+              </div>
+              <div id="session-viewing-banner" class="hidden session-banner text-xs rounded px-3 py-2 mb-2"></div>
+              <div id="studio-sessions" class="text-xs text-studio-text space-y-1.5">Loading...</div>
+            </div>
+          </div>
+
+          <!-- Version History accordion -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('versions')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-versions">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Version History</h3>
+            </div>
+            <div id="accordion-versions" class="accordion-body hidden px-4 pb-4">
+              <div class="mb-2">
+                <select id="version-page-filter" onchange="refreshVersionsFiltered()" class="text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1 text-studio-text w-full">
+                  <option value="">All pages</option>
+                </select>
+              </div>
+              <div id="studio-versions" class="text-xs text-studio-text space-y-1">No versions yet</div>
+              <button id="versions-show-more" onclick="showMoreVersions()" class="hidden text-xs text-studio-accent hover:text-blue-400 mt-2 transition">Show more...</button>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </div>
   </div>
@@ -269,6 +468,12 @@
     let studioPanelVisible = false;
     let streamBuffer = '';
     let sitePages = [];
+    let hasUnsavedWork = false;
+
+    // Warn before closing tab with unsaved work
+    window.addEventListener('beforeunload', (e) => {
+      if (hasUnsavedWork) { e.preventDefault(); }
+    });
     let activePage = 'index.html';
 
     // --- Init ---
@@ -298,12 +503,56 @@
       connectWS();
     }
 
+    // --- Modal utility: focus trap + Esc + ARIA ---
+    function setupModal(modal) {
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      // Esc to close
+      const escHandler = (e) => {
+        if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); }
+      };
+      document.addEventListener('keydown', escHandler);
+      // Click backdrop to close
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) { modal.remove(); document.removeEventListener('keydown', escHandler); }
+      });
+      // Focus first interactive element
+      requestAnimationFrame(() => {
+        const focusable = modal.querySelector('button, input, select, textarea, [tabindex]');
+        if (focusable) focusable.focus();
+      });
+    }
+
+    let wsReconnectDelay = 2000;
+    let wsConnected = false;
+
+    function showConnectionBanner(show) {
+      let banner = document.getElementById('ws-disconnect-banner');
+      if (show && !banner) {
+        banner = document.createElement('div');
+        banner.id = 'ws-disconnect-banner';
+        banner.className = 'bg-red-900 text-red-200 text-xs text-center py-1.5 px-4';
+        banner.textContent = 'Disconnected from server — reconnecting...';
+        document.body.insertBefore(banner, document.body.children[1]);
+      } else if (!show && banner) {
+        banner.remove();
+      }
+    }
+
     function connectWS() {
       ws = new WebSocket(`ws://localhost:${config.studioPort}`);
-      ws.onopen = () => console.log('[ws] connected');
+      ws.onopen = () => {
+        console.log('[ws] connected');
+        wsReconnectDelay = 2000;
+        wsConnected = true;
+        showConnectionBanner(false);
+      };
       ws.onclose = () => {
-        console.log('[ws] disconnected, reconnecting...');
-        setTimeout(connectWS, 2000);
+        console.log('[ws] disconnected, reconnecting in ' + wsReconnectDelay + 'ms...');
+        wsConnected = false;
+        showConnectionBanner(true);
+        setTimeout(connectWS, wsReconnectDelay);
+        wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000); // backoff: 2s → 4s → 8s → ... → 30s cap
       };
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
@@ -323,6 +572,7 @@
             streamBuffer += msg.content;
             break;
           case 'reload-preview':
+            hasUnsavedWork = false;
             reloadPreview();
             refreshStudioPanel();
             break;
@@ -343,6 +593,9 @@
             activePage = msg.page;
             renderPageTabs();
             navigateToPage(msg.page);
+            break;
+          case 'mode-changed':
+            updateModeIndicator(msg.mode);
             break;
           case 'site-switched':
             handleSiteSwitch(msg.tag, msg.pages, msg.currentPage);
@@ -412,15 +665,36 @@
       e.preventDefault();
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
-      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+      if (!text) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        addMessage('error', 'Not connected to server. Waiting for reconnection...');
+        return;
+      }
 
+      hasUnsavedWork = true;
       addMessage('user', text);
       ws.send(JSON.stringify({ type: 'chat', content: text }));
       input.value = '';
+      input.style.height = 'auto';
       // Start step log with initial step
       steps = [];
       stepStart = null;
       addStep('Processing...');
+    });
+
+    // Textarea auto-resize
+    const chatInput = document.getElementById('chat-input');
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+    });
+
+    // Enter submits, Shift+Enter inserts newline
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+      }
     });
 
     function addMessage(role, content, scroll = true) {
@@ -547,29 +821,107 @@
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
 
+      addAssetToBar(filename);
+    }
+
+    // Asset bar only shows when a new asset is created in the current session
+    let sessionAssets = [];
+
+    async function refreshAssetBar() {
+      const bar = document.getElementById('asset-bar');
+      if (!sessionAssets.length) { bar.style.display = 'none'; return; }
+      bar.style.display = 'flex';
+      bar.innerHTML = sessionAssets.map(a => `
+        <div class="shrink-0 bg-white rounded p-1 cursor-pointer hover:ring-2 hover:ring-studio-accent"
+             onclick="viewAsset('${a}')" title="${a}">
+          <img src="/site-assets/${a}?t=${Date.now()}" alt="${a}" class="h-8 w-auto" />
+        </div>
+      `).join('') + `<button onclick="sessionAssets=[];refreshAssetBar()" class="text-studio-muted hover:text-white text-xs ml-2 shrink-0">&times;</button>`;
+    }
+
+    function addAssetToBar(filename) {
+      if (!sessionAssets.includes(filename)) sessionAssets.push(filename);
       refreshAssetBar();
     }
 
-    async function refreshAssetBar() {
-      try {
-        const assets = await (await fetch('/api/assets')).json();
-        const bar = document.getElementById('asset-bar');
-        if (!assets.length) { bar.style.display = 'none'; return; }
-        bar.style.display = 'flex';
-        bar.innerHTML = assets.map(a => `
-          <div class="shrink-0 bg-white rounded p-1 cursor-pointer hover:ring-2 hover:ring-studio-accent"
-               onclick="viewAsset('${a.name}')" title="${a.name}">
-            <img src="/site-assets/${a.name}?t=${Date.now()}" alt="${a.name}" class="h-8 w-auto" />
-          </div>
-        `).join('');
-      } catch {}
-    }
-
     function viewAsset(name) {
-      addMessage('status', `Viewing: ${name}`);
+      previewPlaceholder('assets/' + name, name);
     }
 
     // --- Studio State Panel ---
+    // --- Studio Tabs ---
+    let activeStudioTab = 'assets';
+
+    function switchStudioTab(tab) {
+      activeStudioTab = tab;
+      ['design', 'assets', 'deploy', 'history'].forEach(t => {
+        const btn = document.getElementById(`studio-tab-${t}`);
+        const content = document.getElementById(`studio-tab-content-${t}`);
+        if (t === tab) {
+          btn.classList.add('studio-tab-active');
+          content.classList.remove('hidden');
+        } else {
+          btn.classList.remove('studio-tab-active');
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    // --- Accordions ---
+    function toggleAccordion(id) {
+      const body = document.getElementById(`accordion-${id}`);
+      const parent = body.parentElement;
+      const isOpen = parent.classList.contains('accordion-open');
+      if (isOpen) {
+        parent.classList.remove('accordion-open');
+        body.classList.add('hidden');
+      } else {
+        parent.classList.add('accordion-open');
+        body.classList.remove('hidden');
+      }
+    }
+
+    // --- Version filtering ---
+    let allVersions = [];
+    let versionsShown = 5;
+
+    function refreshVersionsFiltered() {
+      const filter = document.getElementById('version-page-filter').value;
+      const filtered = filter ? allVersions.filter(v => v.page === filter) : allVersions;
+      renderVersionsList(filtered);
+    }
+
+    function renderVersionsList(versions) {
+      const el = document.getElementById('studio-versions');
+      const showMoreBtn = document.getElementById('versions-show-more');
+      if (!versions.length) {
+        el.textContent = 'No versions yet';
+        showMoreBtn.classList.add('hidden');
+        return;
+      }
+      const visible = versions.slice(0, versionsShown);
+      el.innerHTML = visible.map(v => {
+        const date = new Date(v.timestamp).toLocaleString();
+        const sizeKb = (v.size / 1024).toFixed(1);
+        return `<div class="flex items-center gap-1">
+          <span class="text-studio-muted shrink-0">${date}</span>
+          <span class="truncate">${v.reason}</span>
+          <span class="text-studio-muted shrink-0">${sizeKb}KB</span>
+          <button onclick="rollbackVersion('${v.page}', '${v.timestamp}')" class="text-yellow-400 hover:text-yellow-300 shrink-0 ml-auto" title="Rollback">&#8617;</button>
+        </div>`;
+      }).join('');
+      if (versions.length > versionsShown) {
+        showMoreBtn.classList.remove('hidden');
+      } else {
+        showMoreBtn.classList.add('hidden');
+      }
+    }
+
+    function showMoreVersions() {
+      versionsShown += 10;
+      refreshVersionsFiltered();
+    }
+
     function toggleStudioPanel() {
       studioPanelVisible = !studioPanelVisible;
       const panel = document.getElementById('studio-panel');
@@ -579,21 +931,39 @@
         ? 'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition'
         : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
       if (studioPanelVisible) refreshStudioPanel();
+      updatePanelLayout();
     }
 
     // --- Cached studio state for brief/decisions editing ---
     let cachedStudioState = null;
 
-    async function refreshStudioPanel() {
+    let _refreshTimer = null;
+    function refreshStudioPanel() {
+      if (_refreshTimer) clearTimeout(_refreshTimer);
+      _refreshTimer = setTimeout(_refreshStudioPanelNow, 300);
+    }
+    async function _refreshStudioPanelNow() {
       if (!studioPanelVisible) return;
       try {
         const state = await (await fetch('/api/studio-state')).json();
         cachedStudioState = state;
 
         document.getElementById('studio-tag').textContent = `Tag: ${state.tag}`;
-        document.getElementById('studio-updated').textContent = state.lastUpdated
-          ? `Updated: ${new Date(state.lastUpdated).toLocaleString()}`
-          : 'Not built yet';
+        // Determine status from available data
+        const hasFiles = state.files && state.files.length > 0;
+        const isDeployed = !!state.spec?.deployed_url;
+        let statusText = 'Not built yet';
+        if (isDeployed) {
+          statusText = 'Deployed';
+        } else if (hasFiles) {
+          statusText = 'Built';
+        } else if (state.brief) {
+          statusText = 'Brief created';
+        }
+        if (state.lastUpdated) {
+          statusText += ` · ${new Date(state.lastUpdated).toLocaleString()}`;
+        }
+        document.getElementById('studio-updated').textContent = statusText;
 
         // Brief (read-only view)
         const briefEl = document.getElementById('studio-brief');
@@ -649,43 +1019,247 @@
         // Media Specs
         refreshMediaSpecs(state.spec?.media_specs || []);
 
-        // Files
+        // File Tree
         const filesEl = document.getElementById('studio-files');
         if (state.files && state.files.length > 0) {
-          filesEl.innerHTML = state.files.map(f => {
-            const sizeStr = f.size > 1024 ? `${(f.size / 1024).toFixed(1)}KB` : `${f.size}B`;
-            return `<div class="flex justify-between"><span>${escapeHtml(f.name)}</span><span class="text-studio-muted">${sizeStr}</span></div>`;
-          }).join('');
+          filesEl.innerHTML = buildFileTree(state.files);
         } else {
           filesEl.textContent = 'No files generated yet';
         }
 
-        // Version History
-        const versionsEl = document.getElementById('studio-versions');
+        // Version History — fetch all pages, populate filter, use new renderer
         try {
           const versions = await (await fetch(`/api/versions?page=${encodeURIComponent(activePage)}`)).json();
-          if (versions.length > 0) {
-            versionsEl.innerHTML = versions.slice(0, 8).map((v, i) => {
-              const date = new Date(v.timestamp).toLocaleString();
-              const sizeKb = (v.size / 1024).toFixed(1);
-              return `<div class="flex items-center gap-1">
-                <span class="text-studio-muted shrink-0">${date}</span>
-                <span class="truncate">${v.reason}</span>
-                <span class="text-studio-muted shrink-0">${sizeKb}KB</span>
-                <button onclick="rollbackVersion('${v.page}', '${v.timestamp}')" class="text-yellow-400 hover:text-yellow-300 shrink-0 ml-auto" title="Rollback to this version">&#8617;</button>
-              </div>`;
-            }).join('');
-          } else {
-            versionsEl.textContent = 'No versions yet — auto-saved on each update';
-          }
-        } catch { versionsEl.textContent = 'No versions yet'; }
+          allVersions = versions;
+          versionsShown = 5;
+          // Populate page filter
+          const filterEl = document.getElementById('version-page-filter');
+          const pages = [...new Set(versions.map(v => v.page))];
+          filterEl.innerHTML = '<option value="">All pages</option>' + pages.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+          refreshVersionsFiltered();
+        } catch {
+          document.getElementById('studio-versions').textContent = 'No versions yet';
+        }
 
         // Sessions
         refreshSessionsList();
 
+        // Deploy info
+        refreshDeployInfo();
+
       } catch (e) {
         console.error('[studio-panel]', e);
       }
+    }
+
+    // --- Deploy Info ---
+    async function refreshDeployInfo() {
+      try {
+        const info = await (await fetch('/api/deploy-info')).json();
+
+        // Header live URL
+        const urlEl = document.getElementById('studio-live-url');
+        const shareSection = document.getElementById('share-section');
+        if (info.deployed && info.url) {
+          urlEl.innerHTML = `<a href="${escapeHtml(info.url)}" target="_blank" class="text-studio-accent hover:underline">${escapeHtml(info.url)} &#8599;</a>`;
+          urlEl.classList.remove('hidden');
+          if (shareSection) shareSection.classList.remove('hidden');
+        } else {
+          urlEl.classList.add('hidden');
+          if (shareSection) shareSection.classList.add('hidden');
+        }
+
+        // Environments
+        const envEl = document.getElementById('studio-environments');
+        if (info.environments && info.environments.length > 0) {
+          envEl.innerHTML = info.environments.map(env => {
+            const colors = { live: '#22c55e', running: '#3b82f6', draft: '#eab308', stopped: '#6b7280' };
+            const dotColor = colors[env.status] || '#6b7280';
+            const labels = { live: 'Live', running: 'Running', draft: 'Draft', stopped: 'Stopped' };
+            const label = labels[env.status] || env.status;
+            return `<div class="p-2 rounded bg-studio-bg">
+              <div class="flex items-center gap-2 mb-1">
+                <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;" title="${label}"></span>
+                <span class="font-medium text-white">${escapeHtml(env.name)}</span>
+                <span class="text-studio-muted text-[10px] uppercase">${escapeHtml(env.type)}</span>
+              </div>
+              <div class="truncate"><a href="${escapeHtml(env.url)}" target="_blank" class="text-studio-accent hover:underline text-[11px]">${escapeHtml(env.url)} &#8599;</a></div>
+              ${env.provider ? `<div class="text-studio-muted mt-0.5">${escapeHtml(env.provider)}${env.site_id ? ` · ${escapeHtml(env.site_id.substring(0, 12))}...` : ''}</div>` : ''}
+              ${env.custom_domain ? `<div class="text-studio-muted mt-0.5">Domain: ${escapeHtml(env.custom_domain)}</div>` : env.type === 'production' ? '<div class="text-studio-muted mt-0.5">No custom domain</div>' : ''}
+            </div>`;
+          }).join('');
+        } else {
+          envEl.innerHTML = '<div class="text-studio-muted">No environments configured</div>';
+        }
+
+        // Local paths
+        const pathsEl = document.getElementById('studio-local-paths');
+        if (info.local) {
+          pathsEl.innerHTML = `
+            <div><span class="text-studio-muted">Site:</span> ${escapeHtml(info.local.site_dir)}</div>
+            <div><span class="text-studio-muted">Dist:</span> ${escapeHtml(info.local.dist_dir)}</div>
+            <div><span class="text-studio-muted">Spec:</span> ${escapeHtml(info.local.spec_file)}</div>
+          `;
+        }
+
+        // Repo
+        const repoEl = document.getElementById('studio-repo');
+        if (info.repo) {
+          repoEl.innerHTML = `
+            <div><span class="text-studio-muted">Remote:</span> ${escapeHtml(info.repo.url)}</div>
+            <div><span class="text-studio-muted">Branch:</span> ${escapeHtml(info.repo.branch)}</div>
+          `;
+        } else {
+          repoEl.innerHTML = '<div class="text-studio-muted">No git remote detected</div>';
+        }
+
+      } catch {
+        const envEl = document.getElementById('studio-environments');
+        if (envEl) envEl.innerHTML = '<div class="text-studio-muted">Unable to load</div>';
+      }
+    }
+
+    function redeploySite() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'deploy to production');
+      ws.send(JSON.stringify({ type: 'chat', content: 'deploy to production' }));
+      steps = [];
+      stepStart = null;
+      addStep('Deploying...');
+    }
+
+    // --- Share Site ---
+    function shareSite(method) {
+      const urlEl = document.getElementById('studio-live-url');
+      const link = urlEl?.querySelector('a');
+      const siteUrl = link?.href;
+
+      if (!siteUrl) {
+        addMessage('error', 'Site is not deployed yet. Deploy first, then share.');
+        return;
+      }
+
+      const siteName = document.getElementById('project-current-name')?.textContent || 'my site';
+
+      if (method === 'copy') {
+        navigator.clipboard.writeText(siteUrl).then(() => {
+          addMessage('status', 'Link copied to clipboard');
+        });
+      } else if (method === 'text') {
+        showShareModal('text', siteUrl, siteName);
+      } else if (method === 'email') {
+        showShareModal('email', siteUrl, siteName);
+      }
+    }
+
+    function showShareModal(type, siteUrl, siteName) {
+      const isText = type === 'text';
+      const modal = document.createElement('div');
+      modal.className = 'role-modal';
+      modal.id = 'share-modal';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      const defaultMsg = `Check out ${siteName}: ${siteUrl}`;
+
+      modal.innerHTML = `
+        <div class="bg-studio-panel rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div class="text-sm font-bold text-white mb-3">${isText ? 'Share via Text' : 'Share via Email'}</div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-studio-muted block mb-1">${isText ? 'Phone Number' : 'Email Address'}</label>
+              <input id="share-recipient" type="${isText ? 'tel' : 'email'}" placeholder="${isText ? '+1 (555) 123-4567' : 'name@example.com'}"
+                class="w-full text-xs bg-studio-bg border border-gray-600 rounded px-3 py-2 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent">
+            </div>
+            <div>
+              <label class="text-xs text-studio-muted block mb-1">Message</label>
+              <textarea id="share-message" rows="3"
+                class="w-full text-xs bg-studio-bg border border-gray-600 rounded px-3 py-2 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent resize-none">${escapeHtml(defaultMsg)}</textarea>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="sendShare('${type}')" class="flex-1 text-xs ${isText ? 'bg-green-700 hover:bg-green-600' : 'bg-blue-700 hover:bg-blue-600'} text-white px-4 py-2 rounded font-medium transition">Send</button>
+              <button onclick="document.getElementById('share-modal').remove()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded transition">Cancel</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModal(modal);
+      document.getElementById('share-recipient').focus();
+    }
+
+    async function sendShare(type) {
+      const recipient = document.getElementById('share-recipient')?.value?.trim();
+      const message = document.getElementById('share-message')?.value?.trim();
+
+      if (!recipient) {
+        addMessage('error', type === 'text' ? 'Enter a phone number' : 'Enter an email address');
+        return;
+      }
+
+      const modal = document.getElementById('share-modal');
+
+      if (type === 'text') {
+        // Open native Messages app directly
+        const smsUrl = `sms:${encodeURIComponent(recipient)}?body=${encodeURIComponent(message)}`;
+        window.open(smsUrl, '_self');
+        modal?.remove();
+        addMessage('status', 'Opening Messages app...');
+        return;
+      }
+
+      const btn = modal?.querySelector('button');
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+      try {
+        const res = await fetch('/api/share', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, recipient, message }),
+        });
+        const data = await res.json();
+        modal?.remove();
+        if (data.success) {
+          addMessage('status', `Email sent to ${recipient}`);
+        } else if (data.fallback === 'mailto' && data.mailto) {
+          window.open(data.mailto, '_blank');
+          addMessage('status', 'Opening your email client...');
+        } else {
+          addMessage('error', data.error || 'Failed to send');
+        }
+      } catch (e) {
+        modal?.remove();
+        addMessage('error', 'Failed to send: ' + e.message);
+      }
+    }
+
+    // --- Brainstorm Mode Indicator ---
+    function updateModeIndicator(mode) {
+      const chatPanel = document.getElementById('chat-panel');
+      const input = document.getElementById('chat-input');
+      const existingBanner = document.getElementById('brainstorm-banner');
+
+      if (mode === 'brainstorm') {
+        chatPanel.classList.add('brainstorm-active');
+        input.placeholder = 'Keep brainstorming...';
+        if (!existingBanner) {
+          const banner = document.createElement('div');
+          banner.id = 'brainstorm-banner';
+          banner.className = 'brainstorm-banner shrink-0';
+          banner.innerHTML = '<span>&#129504; Brainstorm Mode &mdash; exploring ideas, no code generated</span><button onclick="exitBrainstorm()">Exit Brainstorm</button>';
+          const messages = document.getElementById('chat-messages');
+          chatPanel.insertBefore(banner, messages);
+        }
+      } else {
+        chatPanel.classList.remove('brainstorm-active');
+        input.placeholder = 'Describe what you want...';
+        if (existingBanner) existingBanner.remove();
+      }
+    }
+
+    function exitBrainstorm() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'exit brainstorm');
+      ws.send(JSON.stringify({ type: 'chat', content: 'exit brainstorm' }));
     }
 
     // --- Wave 1: Brief Edit ---
@@ -890,41 +1464,159 @@
     // --- Wave 3: Brand Health ---
     async function refreshBrandHealth() {
       const el = document.getElementById('studio-brand-health');
-      el.innerHTML = '<div class="text-studio-muted">Scanning...</div>';
+      el.innerHTML = '<div class="text-studio-muted">Scanning all pages...</div>';
 
       try {
         const data = await (await fetch('/api/brand-health')).json();
         const h = data.health;
-        const dot = (status) => {
-          if (status === 'uploaded' || status === 'set_in_html' || status === true) return '<span class="health-dot health-green"></span>';
-          if (status === 'generated') return '<span class="health-dot health-yellow"></span>';
-          return '<span class="health-dot health-red"></span>';
+        const slotDot = (status) => {
+          if (status === 'uploaded' || status === 'final') return '<span class="health-dot health-green"></span>';
+          if (status === 'stock') return '<span class="health-dot health-yellow"></span>';
+          if (status === 'empty') return '<span class="health-dot health-red"></span>';
+          return '<span class="health-dot health-gray"></span>';
         };
 
-        let html = '';
-        html += `<div class="flex items-center gap-2">${dot(h.logo.status)} <span>Logo</span> <span class="text-studio-muted ml-auto">${h.logo.status}</span>`;
-        if (h.logo.status === 'missing') html += ` <button onclick="triggerBrandAction('logo', 'upload')" class="text-studio-accent text-[10px]">Upload</button> <button onclick="triggerBrandAction('logo', 'generate')" class="text-green-400 text-[10px]">Generate</button> <button onclick="generateAiPrompt('logo')" class="text-purple-400 text-[10px]">AI Prompt</button>`;
-        html += '</div>';
+        let html = `<div class="text-studio-muted text-[10px] mb-2">${data.pages_scanned} page${data.pages_scanned !== 1 ? 's' : ''} scanned · ${h.slots?.total || 0} image slots</div>`;
 
-        html += `<div class="flex items-center gap-2">${dot(h.favicon.status)} <span>Favicon</span> <span class="text-studio-muted ml-auto">${h.favicon.status}</span>`;
-        if (h.favicon.status === 'missing') html += ` <button onclick="triggerBrandAction('favicon', 'generate')" class="text-green-400 text-[10px]">Generate</button>`;
-        html += '</div>';
+        // Slot summary bar
+        if (h.slots && h.slots.total > 0) {
+          html += `<div class="flex gap-2 text-[10px] mb-3 py-1.5 px-2 bg-gray-700/30 rounded">
+            <span class="text-red-400">${h.slots.empty} empty</span>
+            <span class="text-yellow-400">${h.slots.stock} stock</span>
+            <span class="text-green-400">${h.slots.uploaded} uploaded</span>
+            <span class="text-emerald-400">${h.slots.final} final</span>
+          </div>`;
 
-        html += `<div class="flex items-center gap-2">${dot(h.hero_image.status)} <span>Hero Image</span> <span class="text-studio-muted ml-auto">${h.hero_image.status}</span>`;
-        if (h.hero_image.status === 'missing') html += ` <button onclick="triggerBrandAction('hero', 'upload')" class="text-studio-accent text-[10px]">Upload</button> <button onclick="generateAiPrompt('hero_image')" class="text-purple-400 text-[10px]">AI Prompt</button>`;
-        html += '</div>';
+          if (h.slots.empty > 0) {
+            html += `<div class="mb-3"><button onclick="fillStockPhotos()" class="text-[10px] bg-blue-700 hover:bg-blue-600 text-white px-2 py-1 rounded w-full">Fill ${h.slots.empty} Empty Slots with Images</button></div>`;
+          }
+        }
 
-        html += `<div class="flex items-center gap-2">${h.font_icons.using ? dot(true) : '<span class="health-dot health-gray"></span>'} <span>Font Icons</span> <span class="text-studio-muted ml-auto">${h.font_icons.using ? h.font_icons.provider : 'none'}</span></div>`;
-        html += `<div class="flex items-center gap-2">${dot(h.social_meta.og_image)} <span>OG Image</span> <span class="text-studio-muted ml-auto">${h.social_meta.og_image ? 'set' : 'missing'}</span></div>`;
-        html += `<div class="flex items-center gap-2">${dot(h.social_meta.twitter_card)} <span>Twitter Card</span> <span class="text-studio-muted ml-auto">${h.social_meta.twitter_card ? 'set' : 'missing'}</span></div>`;
+        // Key slots
+        html += '<div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1 mt-2">Key Slots</div>';
+        const keySlots = [
+          { label: 'Hero', data: h.hero },
+          { label: 'Logo', data: h.logo },
+          { label: 'Favicon', data: h.favicon },
+        ];
+        for (const ks of keySlots) {
+          html += `<div class="py-1 border-b border-gray-700/50">
+            <div class="flex items-center gap-2">${slotDot(ks.data.status)} <span>${ks.label}</span>
+              ${ks.data.slot_id ? `<span class="text-studio-muted text-[10px]">${escapeHtml(ks.data.slot_id)}</span>` : ''}
+              <span class="text-studio-muted ml-auto text-[10px]">${ks.data.status}</span>
+            </div>
+            ${ks.data.status === 'empty' || ks.data.status === 'not_found' ? `<div class="flex gap-1 mt-0.5">
+              <button onclick="triggerBrandAction('${ks.label.toLowerCase()}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Upload</button>
+              <button onclick="generateAiPrompt('${ks.data.slot_id || ks.label.toLowerCase()}')" class="text-purple-400 text-[10px] hover:underline">AI Prompt</button>
+            </div>` : ''}
+          </div>`;
+        }
+
+        // Slot sets
+        const sets = h.sets || {};
+        const setNames = { testimonials: 'Testimonials', gallery: 'Gallery', services: 'Services', team: 'Team' };
+        const hasAnySets = Object.values(sets).some(s => s.total > 0);
+        if (hasAnySets) {
+          html += '<div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1 mt-3">Image Sets</div>';
+          for (const [key, set] of Object.entries(sets)) {
+            if (set.total === 0) continue;
+            const allFilled = set.filled === set.total;
+            html += `<div class="py-1 border-b border-gray-700/50">
+              <div class="flex items-center gap-2">${allFilled ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-yellow"></span>'} <span>${setNames[key] || key}</span>
+              <span class="text-studio-muted ml-auto text-[10px]">${set.filled}/${set.total} filled</span></div>
+            </div>`;
+          }
+        }
+
+        // Social/Meta section
+        html += '<div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1 mt-3">Social & Meta</div>';
+        html += `<div class="py-1 border-b border-gray-700/50">
+          <div class="flex items-center gap-2">${h.social_meta.og_image ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-red"></span>'} <span>OG Image</span> <span class="text-studio-muted ml-auto text-[10px]">${h.social_meta.og_image ? 'set' : 'missing'}</span></div>
+          ${!h.social_meta.og_image ? `<div class="flex gap-1 mt-0.5"><button onclick="triggerBrandAction('og meta tags', 'generate')" class="text-green-400 text-[10px] hover:underline">Generate</button></div>` : ''}
+        </div>`;
+        html += `<div class="py-1 border-b border-gray-700/50">
+          <div class="flex items-center gap-2">${h.social_meta.twitter_card ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-red"></span>'} <span>Twitter Card</span> <span class="text-studio-muted ml-auto text-[10px]">${h.social_meta.twitter_card ? 'set' : 'missing'}</span></div>
+          ${!h.social_meta.twitter_card ? `<div class="flex gap-1 mt-0.5"><button onclick="triggerBrandAction('twitter card meta tags', 'generate')" class="text-green-400 text-[10px] hover:underline">Generate</button></div>` : ''}
+        </div>`;
+
+        // Font Icons
+        const iconProviders = h.font_icons.providers || [];
+        html += `<div class="py-1 border-b border-gray-700/50">
+          <div class="flex items-center gap-2">${h.font_icons.using ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-gray"></span>'} <span>Font Icons</span> <span class="text-studio-muted ml-auto text-[10px]">${iconProviders.length > 0 ? iconProviders.join(', ') : 'none'}</span></div>
+        </div>`;
+
+        // Individual slot list
+        const allSlots = data.slots || [];
+        if (allSlots.length > 0) {
+          const emptySlots = allSlots.filter(s => s.status === 'empty');
+          const stockSlots = allSlots.filter(s => s.status === 'stock');
+          const filledSlots = allSlots.filter(s => s.status === 'uploaded' || s.status === 'final');
+
+          if (emptySlots.length > 0) {
+            html += `<div class="text-[10px] text-studio-muted uppercase tracking-wider mt-3 mb-1">Empty Slots <span class="text-red-400">(${emptySlots.length})</span></div>`;
+            for (const s of emptySlots) {
+              html += `<div class="py-1 pl-2 border-b border-gray-700/50">
+                <div class="flex items-center gap-1">
+                  <span class="health-dot health-red shrink-0"></span>
+                  <span class="truncate">${escapeHtml(s.slot_id)}</span>
+                  <span class="text-studio-muted text-[10px]">${escapeHtml(s.role)}</span>
+                  <span class="text-studio-muted ml-auto text-[10px] shrink-0">${escapeHtml(s.page)}</span>
+                </div>
+                <div class="flex gap-1 mt-0.5 pl-3">
+                  <button onclick="triggerBrandAction('${escapeHtml(s.slot_id)}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Upload</button>
+                  <button onclick="generateAiPrompt('${escapeHtml(s.slot_id)}')" class="text-purple-400 text-[10px] hover:underline">AI Prompt</button>
+                </div>
+              </div>`;
+            }
+          }
+
+          if (stockSlots.length > 0) {
+            html += `<div class="text-[10px] text-studio-muted uppercase tracking-wider mt-3 mb-1">Stock Photos <span class="text-yellow-400">(${stockSlots.length})</span></div>`;
+            for (const s of stockSlots) {
+              html += `<div class="py-1 pl-2 border-b border-gray-700/50">
+                <div class="flex items-center gap-1">
+                  <span class="health-dot health-yellow shrink-0"></span>
+                  <span class="truncate">${escapeHtml(s.slot_id)}</span>
+                  <span class="text-studio-muted text-[10px]">${escapeHtml(s.role)}</span>
+                  <span class="text-studio-muted ml-auto text-[10px] shrink-0">${escapeHtml(s.page)}</span>
+                </div>
+                <div class="flex gap-1 mt-0.5 pl-3">
+                  <button onclick="triggerBrandAction('${escapeHtml(s.slot_id)}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Replace</button>
+                  <button onclick="generateAiPrompt('${escapeHtml(s.slot_id)}')" class="text-purple-400 text-[10px] hover:underline">AI Prompt</button>
+                </div>
+              </div>`;
+            }
+          }
+
+          if (filledSlots.length > 0) {
+            html += `<div class="text-[10px] text-studio-muted uppercase tracking-wider mt-3 mb-1">Uploaded <span class="text-green-400">(${filledSlots.length})</span></div>`;
+            for (const s of filledSlots) {
+              html += `<div class="py-1 pl-2 border-b border-gray-700/50">
+                <div class="flex items-center gap-1">
+                  <span class="health-dot health-green shrink-0"></span>
+                  <span class="truncate">${escapeHtml(s.slot_id)}</span>
+                  <span class="text-studio-muted text-[10px]">${escapeHtml(s.role)}</span>
+                  <span class="text-studio-muted ml-auto text-[10px] shrink-0">${escapeHtml(s.page)}</span>
+                </div>
+                <div class="flex gap-1 mt-0.5 pl-3">
+                  <button onclick="triggerBrandAction('${escapeHtml(s.slot_id)}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Re-upload</button>
+                </div>
+              </div>`;
+            }
+          }
+        }
+
+        if (allSlots.length === 0) {
+          html += '<div class="text-studio-muted text-[10px] mt-3">No image slots found. Build a site to generate slots.</div>';
+        }
 
         el.innerHTML = html;
       } catch (e) {
-        el.innerHTML = '<div class="text-red-400">Failed to scan</div>';
+        el.innerHTML = '<div class="text-red-400">Failed to scan: ' + escapeHtml(e.message) + '</div>';
       }
     }
 
-    function triggerBrandAction(assetType, action) {
+    function triggerBrandAction(assetType, action, placeholderSrc) {
       if (action === 'upload') {
         document.getElementById('file-input').click();
       } else if (action === 'generate') {
@@ -935,6 +1627,31 @@
         stepStart = null;
         addStep(`Generating ${assetType}...`);
       }
+    }
+
+    async function bulkGeneratePlaceholders() {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      try {
+        const res = await fetch('/api/bulk-generate-placeholders', { method: 'POST' });
+        const data = await res.json();
+        addMessage('assistant', `Bulk placeholder generation complete: ${data.generated} assets created, ${data.replaced} slots replaced in HTML.`);
+        // Refresh preview and brand health
+        const iframe = document.getElementById('preview-iframe');
+        if (iframe) iframe.src = iframe.src;
+        refreshBrandHealth();
+      } catch (e) {
+        addMessage('assistant', 'Bulk generate failed: ' + e.message);
+      }
+      btn.disabled = false;
+      btn.textContent = 'Bulk Generate All';
+    }
+
+    async function fillStockPhotos() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'add images');
+      ws.send(JSON.stringify({ type: 'chat', content: 'add images' }));
     }
 
     // --- Wave 3: AI Prompt Generator ---
@@ -956,6 +1673,7 @@
         </div>
       `;
       document.body.appendChild(modal);
+      setupModal(modal);
 
       try {
         const res = await fetch('/api/generate-image-prompt', {
@@ -969,12 +1687,19 @@
           contentEl.innerHTML = `<div class="text-red-400">${escapeHtml(data.error)}</div>`;
           return;
         }
+        // Store raw prompt and dimensions for copy logic
+        window._aiPromptData = { prompt: data.prompt, dims: data.suggested_dimensions, format: data.format };
+        const dimSuffix = ` --ar ${data.suggested_dimensions.replace('x', ':')} [${data.suggested_dimensions}, ${data.format}]`;
         contentEl.innerHTML = `
-          <div class="bg-studio-bg rounded p-3 mb-2 text-studio-text whitespace-pre-wrap" id="ai-prompt-text">${escapeHtml(data.prompt)}</div>
-          <div class="flex gap-4 text-studio-muted">
-            <span>Dimensions: ${escapeHtml(data.suggested_dimensions)}</span>
+          <div class="bg-studio-bg rounded p-3 mb-2 text-studio-text whitespace-pre-wrap" id="ai-prompt-text">${escapeHtml(data.prompt)}<span id="ai-prompt-dims-inline" class="text-studio-accent font-medium">${escapeHtml(dimSuffix)}</span></div>
+          <div class="flex items-center gap-4 text-studio-muted mt-2">
+            <span class="text-white font-medium">Dimensions: ${escapeHtml(data.suggested_dimensions)}</span>
             <span>Format: ${escapeHtml(data.format)}</span>
           </div>
+          <label class="flex items-center gap-2 mt-2 cursor-pointer">
+            <input type="checkbox" id="ai-prompt-include-dims" checked onchange="toggleDimsInPrompt()" class="accent-studio-accent">
+            <span class="text-xs text-studio-muted">Include dimensions in prompt</span>
+          </label>
         `;
         document.getElementById('ai-prompt-actions').classList.remove('hidden');
       } catch (e) {
@@ -983,13 +1708,51 @@
       }
     }
 
+    function toggleDimsInPrompt() {
+      const el = document.getElementById('ai-prompt-dims-inline');
+      const checked = document.getElementById('ai-prompt-include-dims')?.checked;
+      if (el) el.style.display = checked ? 'inline' : 'none';
+    }
+
     function copyAiPrompt() {
-      const text = document.getElementById('ai-prompt-text')?.textContent;
+      const promptText = window._aiPromptData?.prompt || '';
+      const includeDims = document.getElementById('ai-prompt-include-dims')?.checked;
+      let text = promptText;
+      if (includeDims && window._aiPromptData) {
+        text += ` --ar ${window._aiPromptData.dims.replace('x', ':')} [${window._aiPromptData.dims}, ${window._aiPromptData.format}]`;
+      }
       if (text) {
         navigator.clipboard.writeText(text).then(() => {
           addMessage('status', 'AI prompt copied to clipboard');
         });
       }
+    }
+
+    function previewPlaceholder(src, alt) {
+      const modal = document.createElement('div');
+      modal.className = 'role-modal';
+      modal.id = 'placeholder-preview-modal';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+      // Build preview URL — placeholder paths are under /site-assets (serves from dist/assets)
+      const previewUrl = src.startsWith('assets/') ? '/site-' + src : '/site-assets/' + src;
+      modal.innerHTML = `
+        <div class="bg-studio-panel rounded-xl p-5 max-w-lg w-full mx-4 shadow-2xl">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-sm font-bold text-white">${escapeHtml(alt)}</div>
+            <button onclick="document.getElementById('placeholder-preview-modal').remove()" class="text-studio-muted hover:text-white text-lg">&times;</button>
+          </div>
+          <div class="bg-studio-bg rounded-lg p-2 flex items-center justify-center" style="min-height:200px">
+            <img src="${escapeHtml(previewUrl)}" alt="${escapeHtml(alt)}" class="max-w-full max-h-80 rounded">
+          </div>
+          <div class="text-[10px] text-studio-muted mt-2 break-all">${escapeHtml(src)}</div>
+          <div class="flex gap-2 mt-3">
+            <button onclick="triggerBrandAction('${escapeHtml(alt)}', 'upload', '${escapeHtml(src)}'); document.getElementById('placeholder-preview-modal').remove();" class="bg-studio-accent hover:bg-blue-600 text-white text-xs px-3 py-1.5 rounded transition">Upload Replacement</button>
+            <button onclick="generateAiPrompt('${escapeHtml(alt)}'); document.getElementById('placeholder-preview-modal').remove();" class="bg-purple-700 hover:bg-purple-600 text-white text-xs px-3 py-1.5 rounded transition">AI Prompt</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModal(modal);
     }
 
     // --- Wave 3: Media Specs ---
@@ -1000,13 +1763,15 @@
         return;
       }
       el.innerHTML = specs.map((s, i) => {
-        const statusColor = s.status === 'uploaded' ? 'text-green-400' : s.status === 'missing' ? 'text-red-400' : 'text-yellow-400';
+        const slotName = s.slot_id || s.slot || '?';
+        const statusColor = s.status === 'uploaded' ? 'text-green-400' : s.status === 'empty' ? 'text-yellow-400' : s.status === 'stock' ? 'text-blue-400' : s.status === 'final' ? 'text-green-400' : 'text-red-400';
+        const statusIcon = (s.status === 'uploaded' || s.status === 'final') ? '&#10003;' : '&#9679;';
         return `<div class="flex items-center gap-1 group">
-          <span class="${statusColor} shrink-0">${s.status === 'uploaded' ? '&#10003;' : '&#9679;'}</span>
-          <span class="font-medium">${escapeHtml(s.slot)}</span>
+          <span class="${statusColor} shrink-0">${statusIcon}</span>
+          <span class="font-medium">${escapeHtml(slotName)}</span>
+          <span class="text-studio-muted">${escapeHtml(s.role || s.format || '-')}</span>
           <span class="text-studio-muted">${escapeHtml(s.dimensions || '-')}</span>
-          <span class="text-studio-muted">${escapeHtml(s.format || '-')}</span>
-          <button onclick="generateAiPrompt('${escapeHtml(s.slot)}')" class="text-purple-400 hover:text-purple-300 opacity-0 group-hover:opacity-100 transition shrink-0 ml-auto text-[10px]" title="AI Prompt">AI</button>
+          <button onclick="generateAiPrompt('${escapeHtml(slotName)}')" class="text-purple-400 hover:text-purple-300 opacity-0 group-hover:opacity-100 transition shrink-0 ml-auto text-[10px]" title="AI Prompt">AI</button>
           <button onclick="deleteMediaSpec(${i})" class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition shrink-0" title="Delete">&times;</button>
         </div>`;
       }).join('');
@@ -1028,11 +1793,11 @@
           body: JSON.stringify({
             action: 'add',
             media_spec: {
-              slot,
+              slot_id: slot,
+              role: document.getElementById('ms-format').value.trim() || 'unknown',
               dimensions: document.getElementById('ms-dimensions').value.trim(),
-              format: document.getElementById('ms-format').value.trim(),
-              purpose: document.getElementById('ms-purpose').value.trim(),
-              status: 'missing',
+              status: 'empty',
+              page: 'index.html',
             },
           }),
         });
@@ -1110,6 +1875,26 @@
     }
 
     // --- Preview ---
+    const DEVICE_WIDTHS = { mobile: '375px', tablet: '768px', desktop: '100%' };
+    let currentDevice = 'desktop';
+
+    function setPreviewDevice(device) {
+      currentDevice = device;
+      const frame = document.getElementById('preview-frame');
+      frame.style.width = DEVICE_WIDTHS[device];
+      frame.style.maxWidth = '100%';
+      // Update button styles
+      document.querySelectorAll('.device-btn').forEach(btn => {
+        btn.classList.remove('bg-gray-200', 'text-gray-700');
+        btn.classList.add('text-gray-500');
+      });
+      const activeBtn = document.querySelector(`[onclick="setPreviewDevice('${device}')"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-gray-200', 'text-gray-700');
+        activeBtn.classList.remove('text-gray-500');
+      }
+    }
+
     function reloadPreview() {
       const frame = document.getElementById('preview-frame');
       frame.src = frame.src;
@@ -1118,9 +1903,28 @@
     }
 
     function togglePreview() {
-      const panel = document.getElementById('preview-panel');
       previewVisible = !previewVisible;
-      panel.style.display = previewVisible ? 'flex' : 'none';
+      document.getElementById('preview-panel').style.display = previewVisible ? 'flex' : 'none';
+      updatePanelLayout();
+    }
+
+    function updatePanelLayout() {
+      const chat = document.getElementById('chat-panel');
+      const studio = document.getElementById('studio-panel');
+      if (!previewVisible && studioPanelVisible) {
+        // Chat + Studio only: 50/50
+        chat.style.flex = '1 1 50%';
+        studio.style.width = '50%';
+        studio.style.flex = '1 1 50%';
+        studio.classList.remove('w-80', 'shrink-0');
+      } else {
+        // Reset to default layout
+        chat.style.flex = '';
+        studio.style.width = '';
+        studio.style.flex = '';
+        if (!studio.classList.contains('w-80')) studio.classList.add('w-80');
+        if (!studio.classList.contains('shrink-0')) studio.classList.add('shrink-0');
+      }
     }
 
     // --- Actions ---
@@ -1134,6 +1938,123 @@
     }
 
     // --- Helpers ---
+    // --- File Tree ---
+    let cachedFileList = [];
+
+    function buildFileTree(files) {
+      cachedFileList = files;
+      // Build nested structure from flat paths like "dist/index.html", "dist/assets/logo.svg"
+      const root = {};
+      files.forEach(f => {
+        const parts = f.name.split('/');
+        let node = root;
+        parts.forEach((part, i) => {
+          if (i === parts.length - 1) {
+            // leaf file
+            node[part] = { _file: true, _size: f.size, _path: f.name };
+          } else {
+            if (!node[part]) node[part] = {};
+            node = node[part];
+          }
+        });
+      });
+      return renderTreeNode(root, 0);
+    }
+
+    function renderTreeNode(node, depth) {
+      let html = '';
+      // Sort: folders first, then files
+      const entries = Object.entries(node).sort((a, b) => {
+        const aIsFile = a[1]._file;
+        const bIsFile = b[1]._file;
+        if (aIsFile !== bIsFile) return aIsFile ? 1 : -1;
+        return a[0].localeCompare(b[0]);
+      });
+
+      for (const [name, val] of entries) {
+        const indent = depth * 16;
+        if (val._file) {
+          const sizeStr = val._size > 1024 ? `${(val._size / 1024).toFixed(1)}K` : `${val._size}B`;
+          const ext = name.split('.').pop().toLowerCase();
+          const icon = { html: '&#128196;', css: '&#127912;', js: '&#9881;', json: '&#128203;', svg: '&#128248;', png: '&#128248;', jpg: '&#128248;', gif: '&#128248;', webp: '&#128248;', ico: '&#128248;' }[ext] || '&#128196;';
+          const isHtml = ext === 'html';
+          const clickAttr = isHtml ? `onclick="fileTreeOpenPage('${escapeHtml(name)}')" class="hover:text-studio-accent cursor-pointer"` : '';
+          html += `<div class="flex items-center gap-1 py-0.5 group" style="padding-left:${indent}px">
+            <span class="shrink-0 text-[10px]">${icon}</span>
+            <span ${clickAttr} class="truncate ${isHtml ? 'hover:text-studio-accent cursor-pointer' : ''}" title="${escapeHtml(val._path)}">${escapeHtml(name)}</span>
+            <span class="text-studio-muted ml-auto shrink-0">${sizeStr}</span>
+          </div>`;
+        } else {
+          const folderId = `tree-${name}-${depth}`;
+          html += `<div class="py-0.5" style="padding-left:${indent}px">
+            <div onclick="toggleTreeFolder('${folderId}')" class="flex items-center gap-1 cursor-pointer hover:text-white">
+              <span class="tree-arrow text-studio-muted text-[10px]" id="arrow-${folderId}">&#9656;</span>
+              <span class="shrink-0 text-[10px]">&#128193;</span>
+              <span class="font-medium">${escapeHtml(name)}/</span>
+            </div>
+            <div id="${folderId}" class="hidden">${renderTreeNode(val, depth + 1)}</div>
+          </div>`;
+        }
+      }
+      return html;
+    }
+
+    function toggleTreeFolder(id) {
+      const el = document.getElementById(id);
+      const arrow = document.getElementById('arrow-' + id);
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        arrow.innerHTML = '&#9662;';
+      } else {
+        el.classList.add('hidden');
+        arrow.innerHTML = '&#9656;';
+      }
+    }
+
+    function fileTreeOpenPage(filename) {
+      // Navigate preview to this page
+      const frame = document.getElementById('preview-frame');
+      frame.src = `http://localhost:${config.previewPort}/${filename}`;
+      // Also switch active page context
+      if (sitePages.includes(filename)) {
+        activePage = filename;
+        renderPageTabs();
+      }
+    }
+
+    function filterFileTree() {
+      const q = document.getElementById('file-tree-search').value.toLowerCase().trim();
+      const tree = document.getElementById('studio-files');
+      const results = document.getElementById('file-search-results');
+      if (!q) {
+        tree.classList.remove('hidden');
+        results.classList.add('hidden');
+        return;
+      }
+      // Switch to flat filtered list
+      tree.classList.add('hidden');
+      results.classList.remove('hidden');
+      const matches = cachedFileList.filter(f => f.name.toLowerCase().includes(q));
+      if (matches.length === 0) {
+        results.innerHTML = '<div class="text-studio-muted py-2">No files match</div>';
+        return;
+      }
+      results.innerHTML = matches.map(f => {
+        const sizeStr = f.size > 1024 ? `${(f.size / 1024).toFixed(1)}K` : `${f.size}B`;
+        const name = f.name;
+        const ext = name.split('.').pop().toLowerCase();
+        const icon = { html: '&#128196;', css: '&#127912;', js: '&#9881;', json: '&#128203;', svg: '&#128248;', png: '&#128248;', jpg: '&#128248;', gif: '&#128248;', webp: '&#128248;', ico: '&#128248;' }[ext] || '&#128196;';
+        const isHtml = ext === 'html';
+        const basename = name.split('/').pop();
+        const dir = name.substring(0, name.length - basename.length);
+        return `<div class="flex items-center gap-1 py-0.5">
+          <span class="shrink-0 text-[10px]">${icon}</span>
+          <span class="text-studio-muted">${escapeHtml(dir)}</span><span ${isHtml ? `onclick="fileTreeOpenPage('${escapeHtml(basename)}')" class="hover:text-studio-accent cursor-pointer"` : ''}>${escapeHtml(basename)}</span>
+          <span class="text-studio-muted ml-auto shrink-0">${sizeStr}</span>
+        </div>`;
+      }).join('');
+    }
+
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str;
@@ -1202,19 +2123,36 @@
     });
 
     function handleFileSelect(files) {
+      const maxSize = 5 * 1024 * 1024; // 5MB
       for (const file of files) {
+        if (file.size > maxSize) {
+          addMessage('error', `File "${file.name}" exceeds 5MB limit (${(file.size / 1024 / 1024).toFixed(1)}MB). Skipped.`);
+          continue;
+        }
         showRoleSelector(file);
       }
     }
 
-    function showRoleSelector(file) {
-      // Create inline preview + role selector
+    async function showRoleSelector(file) {
+      // Fetch slots from media_specs for the replace dropdown
+      let slotOptions = '<option value="">Don\'t replace — just upload</option>';
+      try {
+        const specRes = await fetch('/api/site-info');
+        const specData = await specRes.json();
+        const slots = (specData.spec?.media_specs || []);
+        for (const s of slots) {
+          const slotId = s.slot_id || s.slot || '?';
+          const statusLabel = s.status === 'empty' ? '(empty)' : s.status === 'stock' ? '(stock)' : `(${s.status})`;
+          slotOptions += `<option value="${escapeHtml(slotId)}">${escapeHtml(slotId)} — ${escapeHtml(s.role || 'unknown')} ${statusLabel} [${escapeHtml(s.page || '?')}]</option>`;
+        }
+      } catch (e) { /* ignore — dropdown just won't have options */ }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const modal = document.createElement('div');
         modal.className = 'role-modal';
         modal.innerHTML = `
-          <div class="bg-studio-panel rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+          <div class="bg-studio-panel rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="text-sm font-bold text-white mb-3">Assign Role</div>
             <div class="flex gap-3 mb-4">
               <div class="w-20 h-20 bg-white rounded-lg overflow-hidden flex items-center justify-center border border-gray-600">
@@ -1225,6 +2163,12 @@
                 <div class="text-xs text-studio-muted mt-1">${(file.size / 1024).toFixed(1)} KB</div>
                 <input id="upload-label" type="text" placeholder="Label (optional)" class="mt-2 text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1 text-studio-text w-full focus:outline-none focus:border-studio-accent" />
               </div>
+            </div>
+            <div class="mb-3">
+              <label class="text-[10px] text-studio-muted uppercase tracking-wider block mb-1">Replace Image Slot</label>
+              <select id="upload-replace-slot" class="w-full text-xs bg-studio-bg border border-gray-600 rounded px-2 py-1.5 text-studio-text">
+                ${slotOptions}
+              </select>
             </div>
             <div class="space-y-1.5">
               ${ROLES.map(r => `
@@ -1241,6 +2185,7 @@
         // Store file reference on modal
         modal._file = file;
         document.body.appendChild(modal);
+      setupModal(modal);
       };
       reader.readAsDataURL(file);
     }
@@ -1249,6 +2194,8 @@
       const modal = btn.closest('.role-modal');
       const file = modal._file;
       const label = modal.querySelector('#upload-label')?.value || '';
+      // Check if user selected a slot to replace from the dropdown
+      const replaceSlotId = modal.querySelector('#upload-replace-slot')?.value || '';
       modal.remove();
 
       // Upload via FormData
@@ -1302,8 +2249,26 @@
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
 
+        // If this upload was targeting a specific slot, replace it in the HTML
+        if (replaceSlotId && data.path) {
+          try {
+            const replaceRes = await fetch('/api/replace-slot', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ slot_id: replaceSlotId, newSrc: data.path.replace(/^\//, '') }),
+            });
+            const replaceData = await replaceRes.json();
+            if (replaceData.success) {
+              addMessage('assistant', `Replaced slot "${replaceSlotId}" in ${replaceData.page} with uploaded image.`);
+              reloadPreview();
+              refreshBrandHealth();
+            }
+          } catch (e) {
+            console.error('Replace slot failed:', e);
+          }
+        }
+
         refreshStudioPanel();
-        refreshAssetBar();
       } catch (e) {
         hideStepLog();
         addMessage('error', 'Upload failed: ' + e.message);
@@ -1318,7 +2283,7 @@
       modal.className = 'role-modal';
       modal.id = 'settings-modal';
       modal.innerHTML = `
-        <div class="bg-studio-panel rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+        <div class="bg-studio-panel rounded-xl p-6 max-w-lg w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
           <div class="text-sm font-bold text-white mb-4">Studio Settings</div>
           <div class="space-y-3">
             <div>
@@ -1361,6 +2326,57 @@
                 Auto-version files
               </label>
             </div>
+
+            <div class="border-t border-gray-700 pt-3 mt-3">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="text-xs font-bold text-white">Email Provider</div>
+                <select id="set-email-provider" onchange="toggleEmailFields()" class="bg-studio-bg border border-gray-600 rounded px-2 py-1 text-xs text-studio-text ml-auto">
+                  <option value="gmail" ${(settings.email?.provider || 'gmail') === 'gmail' ? 'selected' : ''}>Gmail</option>
+                  <option value="outlook" ${settings.email?.provider === 'outlook' ? 'selected' : ''}>Outlook / Hotmail</option>
+                  <option value="sendgrid" ${settings.email?.provider === 'sendgrid' ? 'selected' : ''}>SendGrid</option>
+                  <option value="custom" ${settings.email?.provider === 'custom' ? 'selected' : ''}>Custom SMTP</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <input id="set-email-user" type="email" value="${escapeHtml(settings.email?.user || '')}" placeholder="your@email.com" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                <input id="set-email-password" type="password" value="${escapeHtml(settings.email?.app_password || '')}" placeholder="App Password / API Key" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                <div id="email-custom-fields" class="space-y-2 hidden">
+                  <input id="set-email-host" type="text" value="${escapeHtml(settings.email?.host || '')}" placeholder="SMTP Host (e.g. smtp.example.com)" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                  <input id="set-email-port" type="number" value="${settings.email?.port || ''}" placeholder="Port (587)" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                </div>
+                <input id="set-email-from" type="text" value="${escapeHtml(settings.email?.from_name || '')}" placeholder="From Name (e.g. FAMtastic Studio)" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                <div id="email-help" class="text-[10px] text-studio-muted"></div>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-700 pt-3 mt-3">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="text-xs font-bold text-white">SMS Provider</div>
+                <select id="set-sms-provider" onchange="toggleSmsFields()" class="bg-studio-bg border border-gray-600 rounded px-2 py-1 text-xs text-studio-text ml-auto">
+                  <option value="email_gateway" ${(settings.sms?.provider || 'email_gateway') === 'email_gateway' ? 'selected' : ''}>Email Gateway (Free)</option>
+                  <option value="twilio" ${settings.sms?.provider === 'twilio' ? 'selected' : ''}>Twilio</option>
+                  <option value="vonage" ${settings.sms?.provider === 'vonage' ? 'selected' : ''}>Vonage (Nexmo)</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <div id="sms-gateway-fields">
+                  <select id="set-sms-carrier" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text mb-2">
+                    <option value="tmomail.net" ${(settings.sms?.carrier || 'tmomail.net') === 'tmomail.net' ? 'selected' : ''}>T-Mobile (tmomail.net)</option>
+                    <option value="tmobile.net" ${settings.sms?.carrier === 'tmobile.net' ? 'selected' : ''}>T-Mobile (tmobile.net)</option>
+                    <option value="vtext.com" ${settings.sms?.carrier === 'vtext.com' ? 'selected' : ''}>Verizon</option>
+                    <option value="txt.att.net" ${settings.sms?.carrier === 'txt.att.net' ? 'selected' : ''}>AT&T</option>
+                    <option value="messaging.sprintpcs.com" ${settings.sms?.carrier === 'messaging.sprintpcs.com' ? 'selected' : ''}>Sprint</option>
+                    <option value="msg.fi.google.com" ${settings.sms?.carrier === 'msg.fi.google.com' ? 'selected' : ''}>Google Fi</option>
+                  </select>
+                </div>
+                <div id="sms-api-fields" class="space-y-2 hidden">
+                  <input id="set-sms-sid" type="text" value="${escapeHtml(settings.sms?.account_sid || '')}" placeholder="Account SID / API Key" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                  <input id="set-sms-token" type="password" value="${escapeHtml(settings.sms?.auth_token || '')}" placeholder="Auth Token / API Secret" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                </div>
+                <input id="set-sms-from" type="tel" value="${escapeHtml(settings.sms?.from_number || '')}" placeholder="From Number (+1...)" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                <div id="sms-help" class="text-[10px] text-studio-muted"></div>
+              </div>
+            </div>
           </div>
           <div class="flex gap-2 mt-5">
             <button onclick="saveSettings()" class="bg-studio-accent hover:bg-blue-600 text-white text-sm px-4 py-2 rounded font-medium transition">Save</button>
@@ -1370,6 +2386,55 @@
         </div>
       `;
       document.body.appendChild(modal);
+      setupModal(modal);
+      toggleEmailFields();
+      toggleSmsFields();
+    }
+
+    function toggleEmailFields() {
+      const provider = document.getElementById('set-email-provider').value;
+      const customFields = document.getElementById('email-custom-fields');
+      const helpEl = document.getElementById('email-help');
+      const passEl = document.getElementById('set-email-password');
+      customFields.classList.toggle('hidden', provider !== 'custom');
+      const hints = {
+        gmail: 'Create an App Password at myaccount.google.com &rarr; Security &rarr; App Passwords',
+        outlook: 'Use your Outlook password or generate an App Password in account settings',
+        sendgrid: 'Use "apikey" as username, your SendGrid API key as password',
+        custom: 'Enter your SMTP server details above',
+      };
+      const placeholders = {
+        gmail: 'Gmail App Password', outlook: 'Password / App Password',
+        sendgrid: 'SendGrid API Key', custom: 'SMTP Password',
+      };
+      helpEl.innerHTML = hints[provider] || '';
+      passEl.placeholder = placeholders[provider] || 'Password';
+    }
+
+    function toggleSmsFields() {
+      const provider = document.getElementById('set-sms-provider').value;
+      const helpEl = document.getElementById('sms-help');
+      const gatewayFields = document.getElementById('sms-gateway-fields');
+      const apiFields = document.getElementById('sms-api-fields');
+      const fromEl = document.getElementById('set-sms-from');
+      const isGateway = provider === 'email_gateway';
+      gatewayFields.classList.toggle('hidden', !isGateway);
+      apiFields.classList.toggle('hidden', isGateway);
+      fromEl.placeholder = isGateway ? 'Your phone number (for replies)' : 'From Number (+1...)';
+      const hints = {
+        email_gateway: 'Uses your email config to send SMS via carrier gateway — no API needed',
+        twilio: 'Get credentials at console.twilio.com',
+        vonage: 'Get credentials at dashboard.nexmo.com',
+      };
+      helpEl.innerHTML = hints[provider] || '';
+      if (!isGateway) {
+        const sidEl = document.getElementById('set-sms-sid');
+        const tokenEl = document.getElementById('set-sms-token');
+        const sidPlaceholders = { twilio: 'Account SID', vonage: 'API Key' };
+        const tokenPlaceholders = { twilio: 'Auth Token', vonage: 'API Secret' };
+        sidEl.placeholder = sidPlaceholders[provider] || 'Account ID';
+        tokenEl.placeholder = tokenPlaceholders[provider] || 'Auth Token';
+      }
     }
 
     async function saveSettings() {
@@ -1381,6 +2446,21 @@
         max_versions: parseInt(document.getElementById('set-max-versions').value) || 50,
         auto_summary: document.getElementById('set-auto-summary').checked,
         auto_version: document.getElementById('set-auto-version').checked,
+        email: {
+          provider: document.getElementById('set-email-provider').value,
+          user: document.getElementById('set-email-user').value.trim(),
+          app_password: document.getElementById('set-email-password').value.trim(),
+          from_name: document.getElementById('set-email-from').value.trim(),
+          host: document.getElementById('set-email-host')?.value.trim() || '',
+          port: parseInt(document.getElementById('set-email-port')?.value) || 0,
+        },
+        sms: {
+          provider: document.getElementById('set-sms-provider').value,
+          carrier: document.getElementById('set-sms-carrier')?.value || 'tmomail.net',
+          account_sid: document.getElementById('set-sms-sid')?.value.trim() || '',
+          auth_token: document.getElementById('set-sms-token')?.value.trim() || '',
+          from_number: document.getElementById('set-sms-from').value.trim(),
+        },
       };
 
       try {
@@ -1450,28 +2530,70 @@
       }
     });
 
+    let allProjects = [];
+
     async function loadProjects() {
       const el = document.getElementById('project-list');
       el.innerHTML = '<div class="text-xs text-studio-muted">Loading...</div>';
+      document.getElementById('project-search').value = '';
+      document.getElementById('project-empty').classList.add('hidden');
       try {
-        const projects = await (await fetch('/api/projects')).json();
-        if (projects.length === 0) {
-          el.innerHTML = '<div class="text-xs text-studio-muted">No projects yet</div>';
-          return;
-        }
-        el.innerHTML = projects.map(p => {
-          const statusDot = p.has_html ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-yellow"></span>';
-          return `<button onclick="switchProject('${escapeHtml(p.tag)}')" class="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-600 transition flex items-center gap-2 ${p.is_current ? 'bg-studio-accent/20 border border-studio-accent/30' : ''}">
-            ${statusDot}
-            <div class="flex-1 min-w-0">
-              <div class="text-white font-medium truncate">${escapeHtml(p.name)}</div>
-              <div class="text-studio-muted truncate">${escapeHtml(p.tag)}${p.page_count ? ` · ${p.page_count} pages` : ''}${p.business_type ? ` · ${escapeHtml(p.business_type)}` : ''}</div>
-            </div>
-            ${p.is_current ? '<span class="text-studio-accent text-[10px] shrink-0">ACTIVE</span>' : ''}
-          </button>`;
-        }).join('');
+        allProjects = await (await fetch('/api/projects')).json();
+        renderProjects(allProjects);
       } catch (e) {
         el.innerHTML = '<div class="text-xs text-red-400">Failed to load projects</div>';
+      }
+    }
+
+    function renderProjects(projects) {
+      const el = document.getElementById('project-list');
+      const emptyEl = document.getElementById('project-empty');
+      if (projects.length === 0) {
+        el.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+      el.innerHTML = projects.map(p => {
+        const dotClass = p.deployed_url ? 'health-blue' : p.has_html ? 'health-green' : 'health-yellow';
+        const dotTip = p.deployed_url ? 'Deployed' : p.has_html ? 'Built' : 'Not built yet';
+        const statusDot = `<span class="health-dot ${dotClass}" title="${dotTip}"></span>`;
+        const deleteBtn = p.is_current ? '' : `<button onclick="event.stopPropagation(); deleteProject('${escapeHtml(p.tag)}')" class="text-red-400/50 hover:text-red-400 hover:bg-red-400/10 shrink-0 rounded px-1.5 py-0.5 transition text-base leading-none" title="Delete">&times;</button>`;
+        return `<div onclick="switchProject('${escapeHtml(p.tag)}')" class="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-gray-600 transition flex items-center gap-2 cursor-pointer ${p.is_current ? 'bg-studio-accent/20 border border-studio-accent/30' : ''}">
+          ${statusDot}
+          <div class="flex-1 min-w-0">
+            <div class="text-white font-medium truncate">${escapeHtml(p.name)}</div>
+            <div class="text-studio-muted truncate">${escapeHtml(p.tag)}${p.page_count ? ` · ${p.page_count} pages` : ''}${p.business_type ? ` · ${escapeHtml(p.business_type)}` : ''}</div>
+          </div>
+          ${p.is_current ? '<span class="text-studio-accent text-[10px] shrink-0">ACTIVE</span>' : deleteBtn}
+        </div>`;
+      }).join('');
+    }
+
+    function filterProjects() {
+      const q = document.getElementById('project-search').value.toLowerCase().trim();
+      if (!q) { renderProjects(allProjects); return; }
+      const filtered = allProjects.filter(p =>
+        p.tag.toLowerCase().includes(q) ||
+        p.name.toLowerCase().includes(q) ||
+        (p.business_type || '').toLowerCase().includes(q)
+      );
+      renderProjects(filtered);
+    }
+
+    async function deleteProject(tag) {
+      if (!confirm(`Delete "${tag}"?\n\nThis will remove all files from sites/${tag}/ (HTML, spec, uploads, versions).\n\nFiles are moved to sites/.trash/ and can be recovered manually, but this cannot be undone from Studio.`)) return;
+      try {
+        const res = await fetch(`/api/projects/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.error) {
+          addMessage('error', data.error);
+          return;
+        }
+        addMessage('status', `Site "${tag}" moved to trash`);
+        loadProjects();
+      } catch (e) {
+        addMessage('error', 'Failed to delete: ' + e.message);
       }
     }
 

@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not installed. Install with: brew install jq" >&2
+  exit 1
+fi
+
 # site-deploy — Deploy a site to hosting
 # Usage: scripts/site-deploy <tag> [--provider netlify|cloudflare] [--prod]
 #
@@ -84,11 +89,20 @@ deploy_netlify() {
   if [ -f "$SITE_DIR/.netlify/state.json" ]; then
     SITE_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json")
   fi
+  # Fallback: check spec.json for netlify_site_id
+  if [ -z "$SITE_ID" ] && [ -f "$SPEC" ]; then
+    SITE_ID=$(jq -r '.netlify_site_id // empty' "$SPEC")
+    if [ -n "$SITE_ID" ]; then
+      mkdir -p "$SITE_DIR/.netlify"
+      echo '{"siteId":"'"$SITE_ID"'"}' > "$SITE_DIR/.netlify/state.json"
+      echo "[deploy] Recovered site ID from spec.json: $SITE_ID" >&2
+    fi
+  fi
 
-  echo "[deploy] Uploading to Netlify..."
+  echo "[deploy] Uploading to Netlify..." >&2
   if [ -n "$SITE_ID" ]; then
     # Existing site — deploy to it
-    echo "[deploy] Deploying to existing site: $SITE_ID"
+    echo "[deploy] Deploying to existing site: $SITE_ID" >&2
     if [ -n "$PROD_FLAG" ]; then
       DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" --prod 2>&1)
     else
@@ -96,7 +110,7 @@ deploy_netlify() {
     fi
   else
     # New site — create and deploy in one command
-    echo "[deploy] Creating new site: $NETLIFY_SITE"
+    echo "[deploy] Creating new site: $NETLIFY_SITE" >&2
     if [ -n "$PROD_FLAG" ]; then
       DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --create-site "$NETLIFY_SITE" --team fritz-medine --prod 2>&1)
     else
@@ -107,13 +121,13 @@ deploy_netlify() {
     if [ -n "$CREATED_ID" ]; then
       mkdir -p "$SITE_DIR/.netlify"
       echo '{"siteId":"'"$CREATED_ID"'"}' > "$SITE_DIR/.netlify/state.json"
-      echo "[deploy] Saved site ID: $CREATED_ID"
+      echo "[deploy] Saved site ID: $CREATED_ID" >&2
     fi
   fi
 
-  echo "$DEPLOY_OUTPUT"
+  echo "$DEPLOY_OUTPUT" >&2
 
-  # Extract URL from output
+  # Extract URL from output — only the URL goes to stdout
   DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9._-]+\.netlify\.app[^ ]*' | head -1 || true)
   if [ -z "$DEPLOY_URL" ]; then
     DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^ ]+' | head -1 || true)
@@ -126,14 +140,31 @@ deploy_netlify() {
 deploy_cloudflare() {
   CF_PROJECT=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
 
-  echo "[deploy] Uploading to Cloudflare Pages: $CF_PROJECT"
+  echo "[deploy] Uploading to Cloudflare Pages: $CF_PROJECT" >&2
   if [ -n "$PROD_FLAG" ]; then
     DEPLOY_OUTPUT=$(npx wrangler pages deploy "$DIST" --project-name "$CF_PROJECT" --branch main 2>&1)
   else
     DEPLOY_OUTPUT=$(npx wrangler pages deploy "$DIST" --project-name "$CF_PROJECT" 2>&1)
   fi
 
-  echo "$DEPLOY_OUTPUT"
+  echo "$DEPLOY_OUTPUT" >&2
+
+  DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^ ]+' | tail -1 || true)
+  echo "$DEPLOY_URL"
+}
+
+# --- Vercel ---
+deploy_vercel() {
+  VERCEL_PROJECT=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+
+  echo "[deploy] Uploading to Vercel: $VERCEL_PROJECT" >&2
+  if [ -n "$PROD_FLAG" ]; then
+    DEPLOY_OUTPUT=$(npx vercel deploy "$DIST" --name "$VERCEL_PROJECT" --prod --yes 2>&1)
+  else
+    DEPLOY_OUTPUT=$(npx vercel deploy "$DIST" --name "$VERCEL_PROJECT" --yes 2>&1)
+  fi
+
+  echo "$DEPLOY_OUTPUT" >&2
 
   DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[^ ]+' | tail -1 || true)
   echo "$DEPLOY_URL"
@@ -143,9 +174,10 @@ deploy_cloudflare() {
 case "$PROVIDER" in
   netlify)    DEPLOY_URL=$(deploy_netlify) ;;
   cloudflare) DEPLOY_URL=$(deploy_cloudflare) ;;
+  vercel)     DEPLOY_URL=$(deploy_vercel) ;;
   *)
     echo "[deploy] Unknown provider: $PROVIDER"
-    echo "  Supported: netlify, cloudflare"
+    echo "  Supported: netlify, cloudflare, vercel"
     exit 1
     ;;
 esac
