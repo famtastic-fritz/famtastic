@@ -42,6 +42,9 @@ SECONDARY=$(jq -r '.colors.secondary // "#f59e0b"' "$SPEC")
 ACCENT=$(jq -r '.colors.accent // "#10b981"' "$SPEC")
 HEADING_FONT=$(jq -r '.fonts.heading // "Inter"' "$SPEC")
 BODY_FONT=$(jq -r '.fonts.body // "Inter"' "$SPEC")
+# URL-encode font names for Google Fonts URLs (spaces → +)
+HEADING_FONT_URL="${HEADING_FONT// /+}"
+BODY_FONT_URL="${BODY_FONT// /+}"
 
 # Apply template with replacements
 sed \
@@ -49,7 +52,9 @@ sed \
   -e "s|{{PRIMARY}}|${PRIMARY}|g" \
   -e "s|{{SECONDARY}}|${SECONDARY}|g" \
   -e "s|{{ACCENT}}|${ACCENT}|g" \
+  -e "s|{{HEADING_FONT_URL}}|${HEADING_FONT_URL}|g" \
   -e "s|{{HEADING_FONT}}|${HEADING_FONT}|g" \
+  -e "s|{{BODY_FONT_URL}}|${BODY_FONT_URL}|g" \
   -e "s|{{BODY_FONT}}|${BODY_FONT}|g" \
   "$TEMPLATE_FILE" > "$DIST/index.html"
 

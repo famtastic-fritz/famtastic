@@ -17,7 +17,7 @@
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
     #chat-messages::-webkit-scrollbar { width: 6px; }
     #chat-messages::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
@@ -58,6 +58,20 @@
       display: flex; align-items: center; justify-content: space-between;
       font-size: 13px;
     }
+    /* Slot Mode */
+    #slot-mode-btn.slot-mode-active { background:#1d4ed8; border-color:#3b82f6 !important; color:#fff !important; }
+    #preview-frame.slot-mode-active { outline:2px solid #3b82f6; outline-offset:-2px; }
+    #quick-slot-fill { position:fixed; bottom:24px; right:24px; width:300px; max-height:80vh;
+      display:flex; flex-direction:column; background:#1e293b; border:1px solid #3b82f6;
+      border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.6); z-index:200; overflow:hidden; }
+    #quick-slot-fill.hidden { display:none !important; }
+    .qsf-thumb-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px;
+      padding:8px; overflow-y:auto; flex:1; min-height:0; }
+    .qsf-thumb { aspect-ratio:1; border-radius:4px; overflow:hidden; cursor:pointer;
+      border:2px solid transparent; transition:border-color .15s; background:#0f172a; }
+    .qsf-thumb:hover { border-color:#3b82f6; }
+    .qsf-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+
     /* Mobile responsive */
     @media (max-width: 1024px) {
       .main-layout { flex-direction: column !important; }
@@ -74,6 +88,195 @@
       padding: 4px 12px; cursor: pointer; font-size: 12px;
     }
     .brainstorm-banner button:hover { background: #7c3aed; }
+
+    /* --- Brainstorm Mode: Full Visual Overhaul --- */
+
+    /* Transition all panels smoothly */
+    #chat-panel, #preview-panel, #studio-panel, header,
+    #chat-messages, #chat-input, .msg-assistant, .msg-user {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Body-level class drives everything */
+    body.brainstorm-mode header {
+      background: #1c1917 !important;
+      border-color: #44403c !important;
+    }
+
+    body.brainstorm-mode #chat-panel {
+      border-color: #44403c !important;
+      background: #1c1917 !important;
+    }
+
+    body.brainstorm-mode #chat-messages {
+      background: radial-gradient(ellipse at 50% 0%, #2c1810 0%, #1c1917 70%) !important;
+    }
+
+    body.brainstorm-mode #chat-input {
+      background: #292524 !important;
+      border-color: #78716c !important;
+      font-family: 'DM Sans', sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.01em;
+    }
+
+    body.brainstorm-mode #chat-input::placeholder {
+      color: #a8a29e !important;
+    }
+
+    body.brainstorm-mode .chat-input-area {
+      background: #1c1917 !important;
+      border-color: #44403c !important;
+    }
+
+    /* Brainstorm message bubbles — warm, distinct */
+    .msg-brainstorm {
+      background: linear-gradient(135deg, #44403c, #3a2f28) !important;
+      color: #e7e5e4 !important;
+      font-family: 'DM Sans', sans-serif !important;
+      font-size: 15px !important;
+      line-height: 1.7 !important;
+      border-left: 3px solid #d97706 !important;
+      border-radius: 4px 12px 12px 4px !important;
+    }
+
+    /* User messages in brainstorm — amber instead of blue */
+    body.brainstorm-mode .msg-user {
+      background: #b45309 !important;
+    }
+
+    /* Brainstorm banner — redesigned as a warm ambient bar */
+    .brainstorm-banner-v2 {
+      background: linear-gradient(90deg, #451a03, #1c1917);
+      color: #fbbf24;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      border-bottom: 1px solid #78350f;
+    }
+
+    .brainstorm-banner-v2 .banner-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brainstorm-banner-v2 .banner-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+      animation: brainstorm-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes brainstorm-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+    }
+
+    .brainstorm-banner-v2 button {
+      background: #78350f;
+      color: #fbbf24;
+      border: 1px solid #92400e;
+      border-radius: 6px;
+      padding: 4px 14px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.2s;
+    }
+
+    .brainstorm-banner-v2 button:hover {
+      background: #92400e;
+    }
+
+    /* Ambient background glow — subtle warm orb */
+    body.brainstorm-mode::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 30%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(circle, rgba(217, 119, 6, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      animation: ambient-drift 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes ambient-drift {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(-10%, 15%) scale(1.2); }
+    }
+
+    /* Mode transition overlay — the "breath" effect */
+    .mode-transition-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0;
+      animation: mode-breath 0.5s ease-in-out;
+    }
+
+    @keyframes mode-breath {
+      0% { opacity: 0; }
+      40% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Brainstorm action bar — approve/continue buttons after responses */
+    .brainstorm-actions {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      max-width: 90%;
+      animation: fadeSlideUp 0.3s ease-out;
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .brainstorm-actions button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .brainstorm-actions .btn-approve {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: white;
+      border-color: #f59e0b;
+    }
+
+    .brainstorm-actions .btn-approve:hover {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .brainstorm-actions .btn-continue {
+      background: #44403c;
+      color: #d6d3d1;
+      border-color: #57534e;
+    }
+
+    .brainstorm-actions .btn-continue:hover {
+      background: #57534e;
+    }
+
     .inline-edit-form input, .inline-edit-form textarea, .inline-edit-form select {
       background: #0f172a; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #e2e8f0; width: 100%;
     }
@@ -151,7 +354,7 @@
       <div id="upload-preview-bar" class="px-4 pb-2 flex gap-2 items-center overflow-x-auto hidden"></div>
 
       <!-- Input -->
-      <div class="p-4 border-t border-gray-700 bg-studio-panel">
+      <div class="p-4 border-t border-gray-700 bg-studio-panel chat-input-area">
         <form id="chat-form" class="flex gap-2">
           <textarea
             id="chat-input"
@@ -189,6 +392,13 @@
               </button>
             </div>
             <span id="preview-status" class="text-xs text-gray-400">connecting...</span>
+            <button id="slot-mode-btn" onclick="toggleSlotMode()"
+              class="text-xs px-2 py-1 rounded border border-gray-400 text-gray-500 hover:border-blue-400 hover:text-blue-500 transition"
+              title="Slot Mode — click any image slot in the preview to fill it"
+              aria-pressed="false">Slots</button>
+            <button id="rescan-btn" onclick="runRescan()"
+              class="text-xs px-2 py-1 rounded border border-gray-400 text-gray-500 hover:border-emerald-400 hover:text-emerald-500 transition"
+              title="Rescan all pages — re-registers image slots and removes orphaned mappings">Rescan</button>
             <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition" aria-label="Refresh preview">Refresh</button>
           </div>
         </div>
@@ -213,9 +423,11 @@
       <!-- Tab bar -->
       <div class="flex border-b border-gray-700 shrink-0 px-2 pt-2 gap-1">
         <button onclick="switchStudioTab('assets')" id="studio-tab-assets" class="studio-tab studio-tab-active text-xs px-3 py-1.5 rounded-t transition">Assets</button>
+        <button onclick="switchStudioTab('blueprint')" id="studio-tab-blueprint" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Blueprint</button>
         <button onclick="switchStudioTab('deploy')" id="studio-tab-deploy" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Deploy</button>
         <button onclick="switchStudioTab('design')" id="studio-tab-design" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Design</button>
         <button onclick="switchStudioTab('history')" id="studio-tab-history" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">History</button>
+        <button onclick="switchStudioTab('metrics')" id="studio-tab-metrics" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Metrics</button>
       </div>
 
       <!-- Scrollable tab content -->
@@ -284,7 +496,7 @@
               <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Uploaded Assets</h3>
             </div>
             <div id="accordion-uploads" class="accordion-body hidden px-4 pb-4">
-              <div id="studio-uploads" class="text-xs text-studio-text space-y-1">No uploads yet</div>
+              <div id="studio-uploads" class="text-xs text-studio-text grid grid-cols-3 gap-2">No uploads yet</div>
             </div>
           </div>
 
@@ -456,6 +668,42 @@
 
         </div>
 
+        <!-- ========== BLUEPRINT TAB ========== -->
+        <div id="studio-tab-content-blueprint" class="studio-tab-content hidden">
+          <div class="p-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Site Blueprint</h3>
+              <button onclick="refreshBlueprint()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Refresh</button>
+            </div>
+
+            <!-- Global settings -->
+            <div id="blueprint-global" class="text-xs text-studio-text mb-4 space-y-1"></div>
+
+            <!-- Per-page entries -->
+            <div id="blueprint-pages" class="space-y-3"></div>
+
+            <div class="mt-3 pt-3 border-t border-gray-700">
+              <p class="text-[10px] text-studio-muted">Blueprint auto-updates after every build. Edit entries to preserve specific sections/components across rebuilds.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== METRICS TAB ========== -->
+        <div id="studio-tab-content-metrics" class="studio-tab-content hidden">
+          <div class="p-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Build Metrics</h3>
+              <button onclick="refreshMetrics()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Refresh</button>
+            </div>
+
+            <!-- Summary stats -->
+            <div id="metrics-summary" class="text-xs text-studio-text mb-4 space-y-1"></div>
+
+            <!-- Build history -->
+            <div id="metrics-history" class="text-xs text-studio-text space-y-1.5"></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -475,6 +723,10 @@
       if (hasUnsavedWork) { e.preventDefault(); }
     });
     let activePage = 'index.html';
+
+    // --- Slot Mode State ---
+    let slotModeActive = false;
+    let currentSlotTarget = null;
 
     // --- Init ---
     async function init() {
@@ -597,8 +849,14 @@
           case 'mode-changed':
             updateModeIndicator(msg.mode);
             break;
+          case 'brainstorm-actions':
+            addBrainstormActions();
+            break;
           case 'site-switched':
             handleSiteSwitch(msg.tag, msg.pages, msg.currentPage);
+            break;
+          case 'chat':
+            addMessage('assistant', msg.content);
             break;
         }
       };
@@ -672,6 +930,8 @@
       }
 
       hasUnsavedWork = true;
+      // Clear brainstorm action bars when user sends a message
+      document.querySelectorAll('.brainstorm-actions').forEach(el => el.remove());
       addMessage('user', text);
       ws.send(JSON.stringify({ type: 'chat', content: text }));
       input.value = '';
@@ -717,9 +977,11 @@
         }
       }
 
+      const isBrainstorm = document.body.classList.contains('brainstorm-mode');
       const cls = role === 'user' ? 'msg-user ml-auto' :
                   role === 'status' ? 'msg-status' :
-                  role === 'error' ? 'msg-error' : 'msg-assistant';
+                  role === 'error' ? 'msg-error' :
+                  isBrainstorm ? 'msg-brainstorm' : 'msg-assistant';
       div.className = `${cls} rounded-lg px-4 py-3 max-w-[90%] text-sm whitespace-pre-wrap`;
       div.textContent = content;
       container.appendChild(div);
@@ -854,7 +1116,7 @@
 
     function switchStudioTab(tab) {
       activeStudioTab = tab;
-      ['design', 'assets', 'deploy', 'history'].forEach(t => {
+      ['design', 'assets', 'deploy', 'history', 'blueprint', 'metrics'].forEach(t => {
         const btn = document.getElementById(`studio-tab-${t}`);
         const content = document.getElementById(`studio-tab-content-${t}`);
         if (t === tab) {
@@ -865,6 +1127,9 @@
           content.classList.add('hidden');
         }
       });
+      // Auto-refresh data when switching to these tabs
+      if (tab === 'blueprint') refreshBlueprint();
+      if (tab === 'metrics') refreshMetrics();
     }
 
     // --- Accordions ---
@@ -1002,18 +1267,34 @@
         // Uploaded Assets
         const uploadsEl = document.getElementById('studio-uploads');
         const uploads = state.spec?.uploaded_assets || [];
+        const mediaSlots = state.spec?.media_specs || [];
         if (uploads.length > 0) {
-          uploadsEl.innerHTML = uploads.map(a => {
-            const roleColors = { content: 'text-green-400', brand_asset: 'text-blue-400', inspiration: 'text-purple-400', layout_reference: 'text-yellow-400', style_reference: 'text-pink-400' };
-            const color = roleColors[a.role] || 'text-studio-muted';
-            return `<div class="flex items-center gap-2">
-              <span class="${color} shrink-0">[${a.role}]</span>
-              <span class="truncate">${escapeHtml(a.filename)}</span>
-              ${a.label ? `<span class="text-studio-muted truncate">"${escapeHtml(a.label)}"</span>` : ''}
+          const roleColors = { content: 'bg-green-500/20 text-green-400', site_image: 'bg-green-500/20 text-green-400', brand_asset: 'bg-blue-500/20 text-blue-400', reference: 'bg-purple-500/20 text-purple-400', inspiration: 'bg-purple-500/20 text-purple-400', layout_reference: 'bg-purple-500/20 text-purple-400', style_reference: 'bg-purple-500/20 text-purple-400' };
+          const roleLabels = { content: 'Image', site_image: 'Image', brand_asset: 'Brand', reference: 'Ref', inspiration: 'Ref', layout_reference: 'Ref', style_reference: 'Ref' };
+          uploadsEl.innerHTML = uploads.map((a, idx) => {
+            const color = roleColors[a.role] || 'bg-gray-500/20 text-studio-muted';
+            const label = roleLabels[a.role] || a.role;
+            const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(a.filename);
+            const thumbSrc = isImage ? `/site-assets/uploads/${encodeURIComponent(a.filename)}` : '';
+            return `<div class="upload-card group relative bg-studio-bg rounded-lg overflow-hidden border border-gray-700 hover:border-studio-accent transition" title="${escapeHtml(a.filename)}">
+              <div class="w-full aspect-square flex items-center justify-center bg-gray-800 relative cursor-pointer" onclick="showAssignSlot(${idx})">
+                ${thumbSrc ? `<img src="${thumbSrc}" class="w-full h-full object-cover" alt="${escapeHtml(a.filename)}" />` : `<span class="text-studio-muted text-lg">&#128196;</span>`}
+                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                  <span class="text-[10px] text-white font-semibold tracking-wide">Assign to slot &rarr;</span>
+                </div>
+                <button onclick="deleteUpload(event,'${escapeHtml(a.filename)}')"
+                  class="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] leading-none
+                         opacity-0 group-hover:opacity-100 transition flex items-center justify-center hover:bg-red-500 z-10"
+                  title="Delete this upload">&times;</button>
+              </div>
+              <div class="p-1.5">
+                <div class="truncate text-[10px] text-studio-text">${escapeHtml(a.filename)}</div>
+                <span class="inline-block mt-0.5 text-[9px] px-1 rounded ${color}">${escapeHtml(label)}</span>
+              </div>
             </div>`;
           }).join('');
         } else {
-          uploadsEl.textContent = 'No uploads — drag, paste, or click the image button';
+          uploadsEl.innerHTML = '<div class="col-span-3 text-studio-muted">No uploads — drag, paste, or click the image button</div>';
         }
 
         // Media Specs
@@ -1234,25 +1515,117 @@
 
     // --- Brainstorm Mode Indicator ---
     function updateModeIndicator(mode) {
+      const body = document.body;
       const chatPanel = document.getElementById('chat-panel');
       const input = document.getElementById('chat-input');
       const existingBanner = document.getElementById('brainstorm-banner');
+      const previewPanel = document.getElementById('preview-panel');
+      const studioPanel = document.getElementById('studio-panel');
+
+      // Play transition overlay ("breath" effect)
+      const overlay = document.createElement('div');
+      overlay.className = 'mode-transition-overlay';
+      body.appendChild(overlay);
+      setTimeout(() => overlay.remove(), 500);
 
       if (mode === 'brainstorm') {
-        chatPanel.classList.add('brainstorm-active');
-        input.placeholder = 'Keep brainstorming...';
-        if (!existingBanner) {
-          const banner = document.createElement('div');
-          banner.id = 'brainstorm-banner';
-          banner.className = 'brainstorm-banner shrink-0';
-          banner.innerHTML = '<span>&#129504; Brainstorm Mode &mdash; exploring ideas, no code generated</span><button onclick="exitBrainstorm()">Exit Brainstorm</button>';
-          const messages = document.getElementById('chat-messages');
-          chatPanel.insertBefore(banner, messages);
+        // Track pre-brainstorm panel state so we can restore
+        window._preBrainstormState = {
+          previewVisible,
+          studioPanelVisible
+        };
+
+        // Add body class — drives all CSS changes
+        body.classList.add('brainstorm-mode');
+
+        // Hide preview and studio panels — full focus on conversation
+        if (previewVisible) {
+          previewPanel.style.display = 'none';
+          previewVisible = false;
         }
-      } else {
-        chatPanel.classList.remove('brainstorm-active');
-        input.placeholder = 'Describe what you want...';
+        if (studioPanelVisible) {
+          studioPanel.style.display = 'none';
+          studioPanelVisible = false;
+          document.getElementById('studio-btn').className =
+            'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
+        }
+
+        // Chat goes full width
+        chatPanel.style.flex = '1 1 100%';
+        chatPanel.classList.add('brainstorm-active');
+
+        // Input styling
+        input.placeholder = 'What if we...';
+        input.style.fontFamily = "'DM Sans', sans-serif";
+        input.style.fontSize = '15px';
+
+        // Swap banner
         if (existingBanner) existingBanner.remove();
+        const banner = document.createElement('div');
+        banner.id = 'brainstorm-banner';
+        banner.className = 'brainstorm-banner-v2 shrink-0';
+        banner.innerHTML = `
+          <div class="banner-label">
+            <span class="banner-dot"></span>
+            Brainstorm Mode — exploring ideas, no code generated
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <select id="brainstorm-profile-select" onchange="changeBrainstormProfile(this.value)" style="background:#2d1b4e;color:#c4b5fd;border:1px solid #6d28d9;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;">
+              <option value="deep">Deep</option>
+              <option value="balanced" selected>Balanced</option>
+              <option value="concise">Concise</option>
+            </select>
+            <button onclick="exitBrainstorm()">Back to Build</button>
+          </div>
+        `;
+        const messages = document.getElementById('chat-messages');
+        chatPanel.insertBefore(banner, messages);
+
+        // Load current profile setting
+        fetch('/api/settings').then(r => r.json()).then(s => {
+          const sel = document.getElementById('brainstorm-profile-select');
+          if (sel && s.brainstorm_profile) sel.value = s.brainstorm_profile;
+        }).catch(() => {});
+
+        // Update header buttons to show brainstorm state
+        document.getElementById('studio-btn').style.opacity = '0.4';
+        document.querySelector('[onclick="togglePreview()"]').style.opacity = '0.4';
+        document.querySelector('[onclick="rebuildSite()"]').style.opacity = '0.4';
+
+      } else {
+        // Remove body class — all CSS reverts via transitions
+        body.classList.remove('brainstorm-mode');
+
+        // Restore panels from pre-brainstorm state
+        const prev = window._preBrainstormState || { previewVisible: true, studioPanelVisible: false };
+
+        if (prev.previewVisible) {
+          previewPanel.style.display = 'flex';
+          previewVisible = true;
+        }
+        if (prev.studioPanelVisible) {
+          studioPanel.style.display = 'flex';
+          studioPanelVisible = true;
+          document.getElementById('studio-btn').className =
+            'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition';
+        }
+
+        chatPanel.classList.remove('brainstorm-active');
+        chatPanel.style.flex = '';
+        updatePanelLayout();
+
+        input.placeholder = 'Describe what you want...';
+        input.style.fontFamily = '';
+        input.style.fontSize = '';
+
+        if (existingBanner) existingBanner.remove();
+        // Also check by id in case reference is stale
+        document.getElementById('brainstorm-banner')?.remove();
+
+        // Restore header button opacity
+        document.getElementById('studio-btn').style.opacity = '';
+        document.querySelector('[onclick="togglePreview()"]').style.opacity = '';
+        document.querySelector('[onclick="rebuildSite()"]').style.opacity = '';
       }
     }
 
@@ -1260,6 +1633,48 @@
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       addMessage('user', 'exit brainstorm');
       ws.send(JSON.stringify({ type: 'chat', content: 'exit brainstorm' }));
+    }
+
+    function addBrainstormActions() {
+      const container = document.getElementById('chat-messages');
+      // Remove any existing action bars first
+      container.querySelectorAll('.brainstorm-actions').forEach(el => el.remove());
+
+      const bar = document.createElement('div');
+      bar.className = 'brainstorm-actions';
+      bar.innerHTML = `
+        <button class="btn-approve" onclick="approveBrainstorm()">Build This</button>
+        <button class="btn-continue" onclick="continueBrainstorm()">Keep Exploring</button>
+      `;
+      container.appendChild(bar);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function approveBrainstorm() {
+      // Remove action bars
+      document.querySelectorAll('.brainstorm-actions').forEach(el => el.remove());
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      const msg = "Build this";
+      addMessage('user', msg);
+      ws.send(JSON.stringify({ type: 'chat', content: msg }));
+    }
+
+    async function changeBrainstormProfile(profile) {
+      try {
+        await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brainstorm_profile: profile }),
+        });
+      } catch (e) {
+        console.error('Failed to save brainstorm profile:', e);
+      }
+    }
+
+    function continueBrainstorm() {
+      // Remove action bars and focus input for more brainstorming
+      document.querySelectorAll('.brainstorm-actions').forEach(el => el.remove());
+      document.getElementById('chat-input').focus();
     }
 
     // --- Wave 1: Brief Edit ---
@@ -1467,16 +1882,30 @@
       el.innerHTML = '<div class="text-studio-muted">Scanning all pages...</div>';
 
       try {
-        const data = await (await fetch('/api/brand-health')).json();
+        const resp = await fetch('/api/brand-health');
+        const data = await resp.json();
+        if (data.error || !data.health) {
+          el.innerHTML = '<div class="text-red-400">Brand health scan failed: ' + escapeHtml(data.error || 'No health data returned') + '</div>';
+          return;
+        }
         const h = data.health;
         const slotDot = (status) => {
           if (status === 'uploaded' || status === 'final') return '<span class="health-dot health-green"></span>';
           if (status === 'stock') return '<span class="health-dot health-yellow"></span>';
-          if (status === 'empty') return '<span class="health-dot health-red"></span>';
+          if (status === 'empty' || status === 'not_found') return '<span class="health-dot health-red"></span>';
           return '<span class="health-dot health-gray"></span>';
+        };
+        const slotLabel = (status) => {
+          if (status === 'not_found') return 'not set';
+          return status;
         };
 
         let html = `<div class="text-studio-muted text-[10px] mb-2">${data.pages_scanned} page${data.pages_scanned !== 1 ? 's' : ''} scanned · ${h.slots?.total || 0} image slots</div>`;
+        html += `<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-studio-muted mb-2 pb-2 border-b border-gray-700/50">
+          <span><span class="health-dot health-red"></span> empty / not set</span>
+          <span><span class="health-dot health-yellow"></span> stock photo</span>
+          <span><span class="health-dot health-green"></span> uploaded / set</span>
+        </div>`;
 
         // Slot summary bar
         if (h.slots && h.slots.total > 0) {
@@ -1500,14 +1929,15 @@
           { label: 'Favicon', data: h.favicon },
         ];
         for (const ks of keySlots) {
+          const ksData = ks.data || { status: 'not_found' };
           html += `<div class="py-1 border-b border-gray-700/50">
-            <div class="flex items-center gap-2">${slotDot(ks.data.status)} <span>${ks.label}</span>
-              ${ks.data.slot_id ? `<span class="text-studio-muted text-[10px]">${escapeHtml(ks.data.slot_id)}</span>` : ''}
-              <span class="text-studio-muted ml-auto text-[10px]">${ks.data.status}</span>
+            <div class="flex items-center gap-2">${slotDot(ksData.status)} <span>${ks.label}</span>
+              ${ksData.slot_id ? `<span class="text-studio-muted text-[10px]">${escapeHtml(ksData.slot_id)}</span>` : ''}
+              <span class="text-studio-muted ml-auto text-[10px]">${slotLabel(ksData.status)}</span>
             </div>
-            ${ks.data.status === 'empty' || ks.data.status === 'not_found' ? `<div class="flex gap-1 mt-0.5">
+            ${ksData.status === 'empty' || ksData.status === 'not_found' ? `<div class="flex gap-1 mt-0.5">
               <button onclick="triggerBrandAction('${ks.label.toLowerCase()}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Upload</button>
-              <button onclick="generateAiPrompt('${ks.data.slot_id || ks.label.toLowerCase()}')" class="text-purple-400 text-[10px] hover:underline">AI Prompt</button>
+              <button onclick="generateAiPrompt('${ksData.slot_id || ks.label.toLowerCase()}')" class="text-purple-400 text-[10px] hover:underline">AI Prompt</button>
             </div>` : ''}
           </div>`;
         }
@@ -1531,11 +1961,11 @@
         // Social/Meta section
         html += '<div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1 mt-3">Social & Meta</div>';
         html += `<div class="py-1 border-b border-gray-700/50">
-          <div class="flex items-center gap-2">${h.social_meta.og_image ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-red"></span>'} <span>OG Image</span> <span class="text-studio-muted ml-auto text-[10px]">${h.social_meta.og_image ? 'set' : 'missing'}</span></div>
+          <div class="flex items-center gap-2">${h.social_meta.og_image ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-red"></span>'} <span>OG Image</span> <span class="text-studio-muted ml-auto text-[10px]">${h.social_meta.og_image ? 'set' : 'not set'}</span></div>
           ${!h.social_meta.og_image ? `<div class="flex gap-1 mt-0.5"><button onclick="triggerBrandAction('og meta tags', 'generate')" class="text-green-400 text-[10px] hover:underline">Generate</button></div>` : ''}
         </div>`;
         html += `<div class="py-1 border-b border-gray-700/50">
-          <div class="flex items-center gap-2">${h.social_meta.twitter_card ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-red"></span>'} <span>Twitter Card</span> <span class="text-studio-muted ml-auto text-[10px]">${h.social_meta.twitter_card ? 'set' : 'missing'}</span></div>
+          <div class="flex items-center gap-2">${h.social_meta.twitter_card ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-red"></span>'} <span>Twitter Card</span> <span class="text-studio-muted ml-auto text-[10px]">${h.social_meta.twitter_card ? 'set' : 'not set'}</span></div>
           ${!h.social_meta.twitter_card ? `<div class="flex gap-1 mt-0.5"><button onclick="triggerBrandAction('twitter card meta tags', 'generate')" class="text-green-400 text-[10px] hover:underline">Generate</button></div>` : ''}
         </div>`;
 
@@ -1545,69 +1975,58 @@
           <div class="flex items-center gap-2">${h.font_icons.using ? '<span class="health-dot health-green"></span>' : '<span class="health-dot health-gray"></span>'} <span>Font Icons</span> <span class="text-studio-muted ml-auto text-[10px]">${iconProviders.length > 0 ? iconProviders.join(', ') : 'none'}</span></div>
         </div>`;
 
-        // Individual slot list
-        const allSlots = data.slots || [];
-        if (allSlots.length > 0) {
-          const emptySlots = allSlots.filter(s => s.status === 'empty');
-          const stockSlots = allSlots.filter(s => s.status === 'stock');
-          const filledSlots = allSlots.filter(s => s.status === 'uploaded' || s.status === 'final');
+        // --- Metrics Dashboard ---
+        html += '<div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1 mt-3">Site Metrics</div>';
 
-          if (emptySlots.length > 0) {
-            html += `<div class="text-[10px] text-studio-muted uppercase tracking-wider mt-3 mb-1">Empty Slots <span class="text-red-400">(${emptySlots.length})</span></div>`;
-            for (const s of emptySlots) {
-              html += `<div class="py-1 pl-2 border-b border-gray-700/50">
-                <div class="flex items-center gap-1">
-                  <span class="health-dot health-red shrink-0"></span>
-                  <span class="truncate">${escapeHtml(s.slot_id)}</span>
-                  <span class="text-studio-muted text-[10px]">${escapeHtml(s.role)}</span>
-                  <span class="text-studio-muted ml-auto text-[10px] shrink-0">${escapeHtml(s.page)}</span>
-                </div>
-                <div class="flex gap-1 mt-0.5 pl-3">
-                  <button onclick="triggerBrandAction('${escapeHtml(s.slot_id)}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Upload</button>
-                  <button onclick="generateAiPrompt('${escapeHtml(s.slot_id)}')" class="text-purple-400 text-[10px] hover:underline">AI Prompt</button>
-                </div>
-              </div>`;
-            }
-          }
+        // Slot coverage progress bar
+        const totalSlots = h.slots?.total || 0;
+        const filledCount = (h.slots?.uploaded || 0) + (h.slots?.stock || 0) + (h.slots?.final || 0);
+        const coveragePct = totalSlots > 0 ? Math.round((filledCount / totalSlots) * 100) : 0;
+        const coverageColor = coveragePct >= 80 ? '#22c55e' : coveragePct >= 40 ? '#eab308' : '#ef4444';
+        html += `<div class="py-1.5 border-b border-gray-700/50">
+          <div class="flex justify-between text-[10px] mb-1">
+            <span>Slot coverage</span>
+            <span style="color:${coverageColor}">${filledCount}/${totalSlots} (${coveragePct}%)</span>
+          </div>
+          <div style="height:4px;background:#1e293b;border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${coveragePct}%;background:${coverageColor};border-radius:2px;transition:width .3s;"></div>
+          </div>
+        </div>`;
 
-          if (stockSlots.length > 0) {
-            html += `<div class="text-[10px] text-studio-muted uppercase tracking-wider mt-3 mb-1">Stock Photos <span class="text-yellow-400">(${stockSlots.length})</span></div>`;
-            for (const s of stockSlots) {
-              html += `<div class="py-1 pl-2 border-b border-gray-700/50">
-                <div class="flex items-center gap-1">
-                  <span class="health-dot health-yellow shrink-0"></span>
-                  <span class="truncate">${escapeHtml(s.slot_id)}</span>
-                  <span class="text-studio-muted text-[10px]">${escapeHtml(s.role)}</span>
-                  <span class="text-studio-muted ml-auto text-[10px] shrink-0">${escapeHtml(s.page)}</span>
-                </div>
-                <div class="flex gap-1 mt-0.5 pl-3">
-                  <button onclick="triggerBrandAction('${escapeHtml(s.slot_id)}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Replace</button>
-                  <button onclick="generateAiPrompt('${escapeHtml(s.slot_id)}')" class="text-purple-400 text-[10px] hover:underline">AI Prompt</button>
-                </div>
-              </div>`;
-            }
-          }
+        // Upload usage
+        const uploadCount = data.upload_count || 0;
+        const uploadLimit = data.upload_limit || 100;
+        const uploadPct = Math.round((uploadCount / uploadLimit) * 100);
+        const uploadColor = uploadPct >= 90 ? '#ef4444' : uploadPct >= 70 ? '#eab308' : '#22c55e';
+        html += `<div class="py-1.5 border-b border-gray-700/50">
+          <div class="flex justify-between text-[10px] mb-1">
+            <span>Uploads used</span>
+            <span style="color:${uploadColor}">${uploadCount}/${uploadLimit}</span>
+          </div>
+          <div style="height:4px;background:#1e293b;border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${uploadPct}%;background:${uploadColor};border-radius:2px;transition:width .3s;"></div>
+          </div>
+        </div>`;
 
-          if (filledSlots.length > 0) {
-            html += `<div class="text-[10px] text-studio-muted uppercase tracking-wider mt-3 mb-1">Uploaded <span class="text-green-400">(${filledSlots.length})</span></div>`;
-            for (const s of filledSlots) {
-              html += `<div class="py-1 pl-2 border-b border-gray-700/50">
-                <div class="flex items-center gap-1">
-                  <span class="health-dot health-green shrink-0"></span>
-                  <span class="truncate">${escapeHtml(s.slot_id)}</span>
-                  <span class="text-studio-muted text-[10px]">${escapeHtml(s.role)}</span>
-                  <span class="text-studio-muted ml-auto text-[10px] shrink-0">${escapeHtml(s.page)}</span>
-                </div>
-                <div class="flex gap-1 mt-0.5 pl-3">
-                  <button onclick="triggerBrandAction('${escapeHtml(s.slot_id)}', 'upload')" class="text-studio-accent text-[10px] hover:underline">Re-upload</button>
-                </div>
-              </div>`;
-            }
-          }
+        // Orphaned mappings
+        const orphanCount = data.orphaned_mappings || 0;
+        html += `<div class="py-1.5 border-b border-gray-700/50 flex items-center gap-2">
+          <span class="text-[10px]">Orphaned mappings</span>
+          <span class="text-[10px] ml-auto" style="color:${orphanCount > 0 ? '#f59e0b' : '#22c55e'}">${orphanCount}</span>
+          ${orphanCount > 0 ? `<button onclick="runRescan()" class="text-[9px] text-amber-400 hover:underline ml-1">Rescan to fix</button>` : ''}
+        </div>`;
+
+        // Empty slot count with action
+        if ((h.slots?.empty || 0) > 0) {
+          html += `<div class="py-1.5 border-b border-gray-700/50 flex items-center gap-2">
+            <span class="text-[10px] text-red-400">${h.slots.empty} empty slot${h.slots.empty !== 1 ? 's' : ''}</span>
+            <button onclick="fillStockPhotos()" class="text-[9px] text-blue-400 hover:underline ml-auto">Fill all with stock</button>
+            <button onclick="toggleSlotMode()" class="text-[9px] text-cyan-400 hover:underline">Open Slots</button>
+          </div>`;
         }
 
-        if (allSlots.length === 0) {
-          html += '<div class="text-studio-muted text-[10px] mt-3">No image slots found. Build a site to generate slots.</div>';
+        if (totalSlots === 0) {
+          html += '<div class="text-studio-muted text-[10px] mt-3">No image slots found. Build a site first, then click Rescan.</div>';
         }
 
         el.innerHTML = html;
@@ -1616,8 +2035,12 @@
       }
     }
 
+    let pendingSlotForUpload = null;
+
     function triggerBrandAction(assetType, action, placeholderSrc) {
       if (action === 'upload') {
+        // Store the slot ID so the role modal can pre-select it
+        pendingSlotForUpload = assetType;
         document.getElementById('file-input').click();
       } else if (action === 'generate') {
         if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -1862,9 +2285,54 @@
     }
 
     function navigateToPage(page) {
+      if (slotModeActive) { loadSlotPreview(page); return; }
       const frame = document.getElementById('preview-frame');
       const pagePath = page === 'index.html' ? '/' : `/${page}`;
       frame.src = `http://localhost:${config.previewPort}${pagePath}`;
+    }
+
+    function loadSlotPreview(page) {
+      let p = page.replace(/^\//, '');
+      if (!p.endsWith('.html')) p += '.html';
+      activePage = p;
+      document.getElementById('preview-frame').src = `/slot-preview/${encodeURIComponent(p)}`;
+      renderPageTabs();
+    }
+
+    async function runRescan() {
+      const btn = document.getElementById('rescan-btn');
+      const status = document.getElementById('preview-status');
+      if (btn) { btn.disabled = true; btn.textContent = 'Scanning…'; }
+      try {
+        const res = await fetch('/api/rescan', { method: 'POST' });
+        const data = await res.json();
+        const msg = `Rescan: ${data.slots_registered} slots · ${data.orphans_removed} orphans removed · ${data.pages_scanned} pages`;
+        if (status) status.textContent = msg;
+        setTimeout(() => { if (status) status.textContent = ''; }, 5000);
+        refreshBrandHealth();
+        if (slotModeActive) loadSlotPreview(activePage);
+      } catch (e) {
+        if (status) status.textContent = 'Rescan failed';
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Rescan'; }
+      }
+    }
+
+    function toggleSlotMode() {
+      slotModeActive = !slotModeActive;
+      const btn = document.getElementById('slot-mode-btn');
+      const frame = document.getElementById('preview-frame');
+      btn.classList.toggle('slot-mode-active', slotModeActive);
+      btn.setAttribute('aria-pressed', String(slotModeActive));
+      frame.classList.toggle('slot-mode-active', slotModeActive);
+      if (slotModeActive) {
+        loadSlotPreview(activePage);
+        window.addEventListener('message', handleSlotMessage);
+      } else {
+        window.removeEventListener('message', handleSlotMessage);
+        closeQuickSlotFill();
+        navigateToPage(activePage);
+      }
     }
 
     async function loadPages() {
@@ -1896,9 +2364,12 @@
     }
 
     function reloadPreview() {
-      const frame = document.getElementById('preview-frame');
-      frame.src = frame.src;
-      // Refresh page tabs in case new pages were created
+      if (slotModeActive) {
+        loadSlotPreview(activePage);
+      } else {
+        const frame = document.getElementById('preview-frame');
+        frame.src = frame.src;
+      }
       loadPages();
     }
 
@@ -2063,12 +2534,9 @@
 
     // --- Upload / Drag-Drop / Paste ---
     const ROLES = [
-      { value: 'content', label: 'Content', desc: 'Use directly on the site' },
+      { value: 'site_image', label: 'Site Image', desc: 'Use directly on the site' },
       { value: 'brand_asset', label: 'Brand Asset', desc: 'Logo, icon, or brand element' },
-      { value: 'inspiration', label: 'Inspiration', desc: 'Shows the vibe I want' },
-      { value: 'layout_reference', label: 'Layout Ref', desc: 'Arrange like this' },
-      { value: 'style_reference', label: 'Style Ref', desc: 'Match this visual style' },
-      { value: 'template', label: 'Template', desc: 'Use as starting HTML for the site' },
+      { value: 'reference', label: 'Reference', desc: 'For context only — match the style, don\'t copy' },
     ];
 
     // Drag-drop on chat panel
@@ -2185,6 +2653,18 @@
         // Store file reference on modal
         modal._file = file;
         document.body.appendChild(modal);
+
+        // If a slot triggered this upload, pre-select it in the Replace Slot dropdown
+        if (pendingSlotForUpload) {
+          const slotSelect = modal.querySelector('#upload-replace-slot');
+          if (slotSelect) {
+            for (const opt of slotSelect.options) {
+              if (opt.value === pendingSlotForUpload) { opt.selected = true; break; }
+            }
+          }
+          pendingSlotForUpload = null;
+        }
+
       setupModal(modal);
       };
       reader.readAsDataURL(file);
@@ -2273,6 +2753,420 @@
         hideStepLog();
         addMessage('error', 'Upload failed: ' + e.message);
       }
+    }
+
+    // --- Assign Upload to Slot (click thumbnail in media library) ---
+    async function showAssignSlot(uploadIdx) {
+      let slots = [];
+      try {
+        const specRes = await fetch('/api/site-info');
+        const specData = await specRes.json();
+        slots = specData.spec?.media_specs || [];
+      } catch {}
+      const uploads = (await (await fetch('/api/site-info')).json()).spec?.uploaded_assets || [];
+      const asset = uploads[uploadIdx];
+      if (!asset) return;
+
+      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(asset.filename);
+      const thumbSrc = isImage ? `/site-assets/uploads/${encodeURIComponent(asset.filename)}` : '';
+
+      const modal = document.createElement('div');
+      modal.className = 'role-modal';
+      modal.innerHTML = `
+        <div class="bg-studio-panel rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="text-sm font-bold text-white mb-3">Assign to Slot</div>
+          <div class="flex gap-3 mb-4">
+            <div class="w-20 h-20 bg-white rounded-lg overflow-hidden flex items-center justify-center border border-gray-600">
+              ${thumbSrc ? `<img src="${thumbSrc}" class="max-w-full max-h-full object-contain" />` : `<span class="text-gray-400 text-2xl">&#128196;</span>`}
+            </div>
+            <div>
+              <div class="text-xs text-studio-text">${escapeHtml(asset.filename)}</div>
+              <div class="text-[10px] text-studio-muted mt-1">Role: ${escapeHtml(asset.role)}</div>
+              ${asset.label ? `<div class="text-[10px] text-studio-muted">"${escapeHtml(asset.label)}"</div>` : ''}
+            </div>
+          </div>
+          ${slots.length > 0 ? `
+            <div class="space-y-1.5 max-h-60 overflow-y-auto">
+              ${slots.map(s => {
+                const slotId = s.slot_id || s.slot || '?';
+                const statusBadge = s.status === 'empty' ? 'bg-red-500/20 text-red-400' : s.status === 'stock' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400';
+                return `<button onclick="assignUploadToSlot('${escapeHtml(asset.filename)}', '${escapeHtml(slotId)}', this)" class="w-full text-left px-3 py-2 rounded bg-studio-bg hover:bg-gray-600 transition text-xs flex items-center gap-2">
+                  <span class="text-white font-medium truncate flex-1">${escapeHtml(slotId)}</span>
+                  <span class="inline-block text-[9px] px-1.5 py-0.5 rounded ${statusBadge}">${escapeHtml(s.status || 'unknown')}</span>
+                  <span class="text-studio-muted text-[10px]">${escapeHtml(s.page || '?')}</span>
+                </button>`;
+              }).join('')}
+            </div>
+          ` : '<div class="text-xs text-studio-muted">No image slots found. Build a site first.</div>'}
+          <button onclick="this.closest('.role-modal').remove()" class="mt-3 text-xs text-studio-muted hover:text-white transition">Cancel</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      setupModal(modal);
+    }
+
+    async function assignUploadToSlot(filename, slotId, btn) {
+      const modal = btn.closest('.role-modal');
+      modal.remove();
+      addStep(`Assigning ${filename} to ${slotId}...`);
+      try {
+        const res = await fetch('/api/replace-slot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot_id: slotId, newSrc: `assets/uploads/${filename}` }),
+        });
+        const data = await res.json();
+        hideStepLog();
+        if (data.success) {
+          addMessage('assistant', `Assigned "${filename}" to slot "${slotId}" in ${data.page}.`);
+          reloadPreview();
+          refreshStudioPanel();
+          refreshBrandHealth();
+        } else {
+          addMessage('error', `Could not assign to slot "${slotId}" — slot not found in any page.`);
+        }
+      } catch (e) {
+        hideStepLog();
+        addMessage('error', 'Assign failed: ' + e.message);
+      }
+    }
+
+    // --- Slot Mode: postMessage handler ---
+    function handleSlotMessage(event) {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'slot-click') {
+        openQuickSlotFill(data.slotId, data.role, data.status, data.dimensions);
+      }
+      if (data.type === 'slot-mode-navigate') {
+        let page = data.page || 'index.html';
+        if (!page.endsWith('.html')) page += '.html';
+        loadSlotPreview(page);
+        closeQuickSlotFill();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'set-page', page }));
+        }
+      }
+    }
+
+    // --- Quick Slot Fill Panel ---
+    function ensureQuickSlotFillPanel() {
+      if (document.getElementById('quick-slot-fill')) return;
+      const el = document.createElement('div');
+      el.id = 'quick-slot-fill';
+      el.className = 'hidden';
+      el.innerHTML = `
+        <div style="padding:12px 14px 10px;border-bottom:1px solid #334155;flex-shrink:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div id="qsf-slot-id" style="font:700 13px/1 system-ui,sans-serif;color:#f1f5f9">—</div>
+              <div style="margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <span id="qsf-role-badge" style="font:600 9px/1 system-ui,sans-serif;padding:2px 6px;border-radius:3px;background:#3b82f6;color:#fff">role</span>
+                <span id="qsf-dims" style="font:400 10px/1 system-ui,sans-serif;color:#94a3b8">—</span>
+                <span id="qsf-status-badge" style="font:600 9px/1 system-ui,sans-serif;padding:2px 6px;border-radius:3px;background:#374151;color:#9ca3af">—</span>
+              </div>
+            </div>
+            <button onclick="closeQuickSlotFill()"
+              style="color:#64748b;font-size:20px;line-height:1;cursor:pointer;background:none;border:none;padding:0 2px;flex-shrink:0"
+              aria-label="Close">&times;</button>
+          </div>
+        </div>
+        <div id="qsf-detail-bar"></div>
+        <div class="qsf-thumb-grid" id="qsf-thumb-grid"></div>
+        <div id="qsf-empty-state" style="display:none;padding:16px;text-align:center;color:#64748b;font-size:12px">
+          No uploads yet — use Upload below
+        </div>
+        <div style="padding:8px 10px;border-top:1px solid #334155;display:flex;gap:6px;flex-shrink:0">
+          <button onclick="qsfUploadNew()"
+            style="flex:1;font-size:11px;padding:7px 0;border-radius:6px;background:#3b82f6;color:#fff;border:none;cursor:pointer;font-weight:600">
+            Upload
+          </button>
+          <button onclick="qsfStockPhoto()"
+            style="flex:1;font-size:11px;padding:7px 0;border-radius:6px;background:#374151;color:#d1d5db;border:none;cursor:pointer">
+            Stock
+          </button>
+          <button onclick="qsfAiPrompt()"
+            style="flex:1;font-size:11px;padding:7px 0;border-radius:6px;background:#6d28d9;color:#e9d5ff;border:none;cursor:pointer">
+            AI
+          </button>
+        </div>
+      `;
+      document.body.appendChild(el);
+    }
+
+    async function openQuickSlotFill(slotId, role, status, dimensions) {
+      ensureQuickSlotFillPanel();
+      currentSlotTarget = { slotId, role, status, dimensions };
+
+      document.getElementById('qsf-slot-id').textContent = slotId;
+
+      const roleBadge = document.getElementById('qsf-role-badge');
+      roleBadge.textContent = role || 'unknown';
+      const ROLE_COLORS = { hero:'#7c3aed', gallery:'#0891b2', team:'#15803d',
+        service:'#c2410c', logo:'#1d4ed8', favicon:'#4f46e5', testimonial:'#b45309' };
+      roleBadge.style.background = ROLE_COLORS[role] || '#374151';
+
+      document.getElementById('qsf-dims').textContent = dimensions || '?';
+
+      const sb = document.getElementById('qsf-status-badge');
+      sb.textContent = status || '?';
+      const STATUS_STYLES = {
+        empty:    'background:#ef4444;color:#fff',
+        stock:    'background:#ca8a04;color:#fff',
+        uploaded: 'background:#16a34a;color:#fff',
+        final:    'background:#16a34a;color:#fff',
+      };
+      sb.setAttribute('style',
+        (STATUS_STYLES[status] || 'background:#374151;color:#9ca3af')
+        + ';font:600 9px/1 system-ui,sans-serif;padding:2px 6px;border-radius:3px');
+
+      // Slot detail bar — show provider/query/credit if already assigned
+      const detailBar = document.getElementById('qsf-detail-bar');
+      if (detailBar) {
+        detailBar.innerHTML = '';
+        try {
+          const info = await (await fetch('/api/site-info')).json();
+          const mapping = info.spec?.slot_mappings?.[slotId];
+          if (mapping && (mapping.provider || mapping.query || mapping.credit)) {
+            const parts = [];
+            if (mapping.provider) parts.push(`<span style="background:${mapping.provider==='unsplash'?'#ef4444':mapping.provider==='pexels'?'#22c55e':'#6366f1'};color:#fff;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;">${escapeHtml(mapping.provider)}</span>`);
+            if (mapping.credit) parts.push(`<span style="color:#94a3b8;font-size:9px;">${escapeHtml(mapping.credit)}</span>`);
+            if (mapping.query) parts.push(`<span style="color:#64748b;font-size:9px;font-style:italic;">"${escapeHtml(mapping.query)}"</span>`);
+            detailBar.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 10px;border-bottom:1px solid #334155;background:#0f172a;">
+              ${parts.join('')}
+              <button onclick="clearSlotAssignment('${escapeHtml(slotId)}')" style="margin-left:auto;color:#ef4444;background:none;border:none;cursor:pointer;font-size:9px;">Clear</button>
+            </div>`;
+          }
+        } catch {}
+      }
+
+      await refreshQsfThumbs();
+      document.getElementById('quick-slot-fill').classList.remove('hidden');
+    }
+
+    async function clearSlotAssignment(slotId) {
+      if (!confirm(`Clear assignment for "${slotId}"? The slot will return to empty.`)) return;
+      try {
+        const res = await fetch('/api/replace-slot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot_id: slotId, newSrc: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', newStatus: 'empty' }),
+        });
+        if ((await res.json()).success) {
+          // Remove from slot_mappings
+          await fetch('/api/clear-slot-mapping', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot_id: slotId }),
+          });
+          closeQuickSlotFill();
+          if (slotModeActive) loadSlotPreview(activePage);
+          refreshBrandHealth();
+        }
+      } catch (e) { addMessage('error', 'Clear failed: ' + e.message); }
+    }
+
+    async function refreshQsfThumbs() {
+      const grid = document.getElementById('qsf-thumb-grid');
+      const empty = document.getElementById('qsf-empty-state');
+      if (!grid) return;
+      grid.innerHTML = '<div style="grid-column:span 3;color:#64748b;font-size:11px;padding:8px">Loading…</div>';
+      try {
+        const data = await (await fetch('/api/site-info')).json();
+        const uploads = (data.spec?.uploaded_assets || [])
+          .filter(a => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(a.filename));
+        if (uploads.length === 0) {
+          grid.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        grid.innerHTML = uploads.map(a => {
+          const src = `/site-assets/uploads/${encodeURIComponent(a.filename)}`;
+          return `<div class="qsf-thumb" onclick="qsfAssignUpload('${escapeHtml(a.filename)}')" title="${escapeHtml(a.filename)}">
+            <img src="${escapeHtml(src)}" alt="${escapeHtml(a.filename)}" loading="lazy" />
+          </div>`;
+        }).join('');
+      } catch (e) {
+        grid.innerHTML = `<div style="grid-column:span 3;color:#ef4444;font-size:11px;padding:8px">Load failed</div>`;
+      }
+    }
+
+    async function qsfAssignUpload(filename) {
+      if (!currentSlotTarget) return;
+      const { slotId } = currentSlotTarget;
+      closeQuickSlotFill();
+      addStep(`Assigning ${filename} to ${slotId}…`);
+      try {
+        const res = await fetch('/api/replace-slot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot_id: slotId, newSrc: `assets/uploads/${filename}` }),
+        });
+        const data = await res.json();
+        hideStepLog();
+        if (data.success) {
+          addMessage('assistant', `Assigned "${filename}" → slot "${slotId}" on ${data.page}.`);
+          loadSlotPreview(activePage);
+          refreshBrandHealth();
+        } else {
+          addMessage('error', `Slot "${slotId}" not found on any page.`);
+        }
+      } catch (e) {
+        hideStepLog();
+        addMessage('error', 'Quick assign failed: ' + e.message);
+      }
+    }
+
+    async function deleteUpload(e, filename) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+      try {
+        await fetch(`/api/upload/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        refreshStudioPanel();
+        // Refresh QSF thumbs if panel is open
+        if (currentSlotTarget && !document.getElementById('quick-slot-fill')?.classList.contains('hidden')) {
+          refreshQsfThumbs();
+        }
+      } catch (e) {
+        addMessage('error', 'Delete failed: ' + e.message);
+      }
+    }
+
+    function qsfUploadNew() {
+      if (!currentSlotTarget) return;
+      pendingSlotForUpload = currentSlotTarget.slotId;
+      closeQuickSlotFill();
+      document.getElementById('file-input').click();
+    }
+
+    async function qsfStockPhoto() {
+      if (!currentSlotTarget) return;
+      const { slotId, role, dimensions } = currentSlotTarget;
+
+      // Build contextual query
+      let query = role;
+      try {
+        const info = await (await fetch('/api/site-info')).json();
+        const siteName = info.spec?.site_name || '';
+        const category = info.spec?.design_brief?.category || info.spec?.design_brief?.industry || '';
+        const keywords = info.spec?.design_brief?.keywords || '';
+        query = [siteName, category, keywords, role].filter(Boolean).join(' ').trim() || role;
+      } catch {}
+
+      showStockSearchPanel(slotId, query, dimensions);
+    }
+
+    async function showStockSearchPanel(slotId, initialQuery, dimensions) {
+      // Remove any existing stock panel
+      document.getElementById('stock-search-panel')?.remove();
+
+      const panel = document.createElement('div');
+      panel.id = 'stock-search-panel';
+      panel.style.cssText = 'position:fixed;bottom:24px;right:24px;width:340px;max-height:80vh;display:flex;flex-direction:column;background:#1e293b;border:1px solid #22d3ee;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:300;overflow:hidden;';
+      panel.innerHTML = `
+        <div style="padding:10px 12px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;">
+          <span style="color:#e2e8f0;font-size:12px;font-weight:600;">Stock Photos — <span style="color:#94a3b8;">${escapeHtml(slotId)}</span></span>
+          <button onclick="document.getElementById('stock-search-panel').remove()" style="color:#94a3b8;background:none;border:none;cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+        </div>
+        <div style="padding:8px 12px;border-bottom:1px solid #334155;display:flex;gap:6px;">
+          <input id="stock-query-input" type="text" value="${escapeHtml(initialQuery)}"
+            style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;padding:5px 8px;font-size:11px;outline:none;"
+            placeholder="Describe the image…" />
+          <button onclick="refreshStockResults('${escapeHtml(slotId)}','${escapeHtml(dimensions||'800x600')}')"
+            style="background:#22d3ee;color:#0f172a;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;">Search</button>
+        </div>
+        <div id="stock-results-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px;overflow-y:auto;flex:1;min-height:120px;">
+          <div style="grid-column:1/-1;text-align:center;padding:20px;color:#64748b;font-size:11px;">Searching…</div>
+        </div>`;
+      document.body.appendChild(panel);
+
+      // Trigger initial search
+      await refreshStockResults(slotId, dimensions || '800x600', initialQuery);
+    }
+
+    async function refreshStockResults(slotId, dimensions, overrideQuery) {
+      const input = document.getElementById('stock-query-input');
+      const query = overrideQuery || input?.value || '';
+      const grid = document.getElementById('stock-results-grid');
+      if (!grid) return;
+
+      const [w, h] = (dimensions || '800x600').split('x').map(Number);
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#64748b;font-size:11px;">Searching…</div>';
+
+      try {
+        const res = await fetch(`/api/stock-search?query=${encodeURIComponent(query)}&width=${w}&height=${h}`);
+        const data = await res.json();
+        const results = data.results || [];
+
+        if (results.length === 0) {
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#64748b;font-size:11px;">No results. Try a different query.</div>';
+          return;
+        }
+
+        const providerColors = { unsplash: '#ef4444', pexels: '#22c55e', placeholder: '#6366f1' };
+        grid.innerHTML = results.map(r => `
+          <div onclick="applyStockResult('${escapeHtml(slotId)}','${escapeHtml(r.url)}','${escapeHtml(r.credit)}','${escapeHtml(r.provider)}','${escapeHtml(query)}','${escapeHtml(dimensions||'800x600')}')"
+            style="position:relative;aspect-ratio:1;border-radius:4px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;"
+            onmouseover="this.style.borderColor='#22d3ee'" onmouseout="this.style.borderColor='transparent'">
+            <img src="${escapeHtml(r.thumb)}" alt="${escapeHtml(r.credit)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:4px 4px 3px;">
+              <span style="display:inline-block;font-size:8px;font-weight:700;color:#fff;background:${providerColors[r.provider]||'#64748b'};border-radius:2px;padding:1px 3px;">${escapeHtml(r.provider)}</span>
+            </div>
+          </div>`).join('');
+      } catch (e) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#f87171;font-size:11px;">Search failed: ${e.message}</div>`;
+      }
+    }
+
+    async function applyStockResult(slotId, imageUrl, credit, provider, query, dimensions) {
+      document.getElementById('stock-search-panel')?.remove();
+      addStep(`Applying ${provider} photo to ${slotId}…`);
+
+      const [w, h] = (dimensions || '800x600').split('x').map(Number);
+
+      // For data: URLs (placeholder), write directly via replace-slot
+      if (imageUrl.startsWith('data:')) {
+        hideStepLog();
+        addMessage('assistant', `Placeholder applied to "${slotId}".`);
+        if (slotModeActive) loadSlotPreview(activePage);
+        return;
+      }
+
+      // Download and save via stock-photo endpoint using the direct URL as query won't work —
+      // instead POST to stock-photo with the selected URL as a download target
+      try {
+        const res = await fetch('/api/stock-apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot_id: slotId, image_url: imageUrl, credit, provider, query, width: w, height: h }),
+        });
+        const data = await res.json();
+        hideStepLog();
+        if (data.success) {
+          addMessage('assistant', `"${slotId}" filled via ${provider} (${credit}).`);
+          if (slotModeActive) loadSlotPreview(activePage);
+          refreshBrandHealth();
+        } else {
+          addMessage('error', data.error || 'Apply failed');
+        }
+      } catch (e) {
+        hideStepLog();
+        addMessage('error', 'Apply failed: ' + e.message);
+      }
+    }
+
+    function qsfAiPrompt() {
+      if (!currentSlotTarget) return;
+      const { slotId } = currentSlotTarget;
+      closeQuickSlotFill();
+      generateAiPrompt(slotId);
+    }
+
+    function closeQuickSlotFill() {
+      const panel = document.getElementById('quick-slot-fill');
+      if (panel) panel.classList.add('hidden');
+      currentSlotTarget = null;
     }
 
     // --- Settings ---
@@ -2377,6 +3271,16 @@
                 <div id="sms-help" class="text-[10px] text-studio-muted"></div>
               </div>
             </div>
+
+            <div class="border-t border-gray-700 pt-3 mt-3">
+              <div class="text-xs font-bold text-white mb-2">Stock Photos</div>
+              <div class="text-[10px] text-studio-muted mb-2">API keys for auto-filling image slots. Uses Unsplash first, then Pexels, then Pixabay.</div>
+              <div class="space-y-2">
+                <input id="set-stock-unsplash" type="password" value="${escapeHtml(settings.stock_photo?.unsplash_api_key || '')}" placeholder="Unsplash API Key" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                <input id="set-stock-pexels" type="password" value="${escapeHtml(settings.stock_photo?.pexels_api_key || '')}" placeholder="Pexels API Key" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+                <input id="set-stock-pixabay" type="password" value="${escapeHtml(settings.stock_photo?.pixabay_api_key || '')}" placeholder="Pixabay API Key" class="w-full bg-studio-bg border border-gray-600 rounded px-3 py-2 text-xs text-studio-text placeholder-studio-muted">
+              </div>
+            </div>
           </div>
           <div class="flex gap-2 mt-5">
             <button onclick="saveSettings()" class="bg-studio-accent hover:bg-blue-600 text-white text-sm px-4 py-2 rounded font-medium transition">Save</button>
@@ -2460,6 +3364,11 @@
           account_sid: document.getElementById('set-sms-sid')?.value.trim() || '',
           auth_token: document.getElementById('set-sms-token')?.value.trim() || '',
           from_number: document.getElementById('set-sms-from').value.trim(),
+        },
+        stock_photo: {
+          unsplash_api_key: document.getElementById('set-stock-unsplash')?.value.trim() || '',
+          pexels_api_key: document.getElementById('set-stock-pexels')?.value.trim() || '',
+          pixabay_api_key: document.getElementById('set-stock-pixabay')?.value.trim() || '',
         },
       };
 
@@ -2660,6 +3569,16 @@
       const banner = document.getElementById('session-viewing-banner');
       if (banner) banner.classList.add('hidden');
 
+      // Reset slot mode on site switch
+      if (slotModeActive) {
+        slotModeActive = false;
+        closeQuickSlotFill();
+        window.removeEventListener('message', handleSlotMessage);
+        const btn = document.getElementById('slot-mode-btn');
+        if (btn) { btn.classList.remove('slot-mode-active'); btn.setAttribute('aria-pressed','false'); }
+        document.getElementById('preview-frame')?.classList.remove('slot-mode-active');
+      }
+
       // Reset page state
       activePage = newCurrentPage || 'index.html';
       sitePages = pages || [];
@@ -2681,6 +3600,168 @@
       refreshStudioPanel();
 
       addMessage('status', `Switched to ${tag}`);
+    }
+
+    // --- Blueprint Tab ---
+    let cachedBlueprint = null;
+
+    async function refreshBlueprint() {
+      try {
+        const res = await fetch('/api/blueprint');
+        cachedBlueprint = await res.json();
+        renderBlueprint();
+      } catch (e) {
+        document.getElementById('blueprint-pages').innerHTML = '<div class="text-studio-muted">Failed to load blueprint</div>';
+      }
+    }
+
+    function renderBlueprint() {
+      const bp = cachedBlueprint;
+      if (!bp) return;
+
+      // Global
+      const globalEl = document.getElementById('blueprint-global');
+      if (bp.global && Object.keys(bp.global).length > 0) {
+        globalEl.innerHTML = `<div class="font-semibold text-studio-accent mb-1">Global</div>` +
+          (bp.global.nav_style ? `<div><span class="text-studio-muted">Nav:</span> ${escapeHtml(bp.global.nav_style.substring(0, 60))}</div>` : '') +
+          (bp.global.footer_style ? `<div><span class="text-studio-muted">Footer:</span> ${escapeHtml(bp.global.footer_style.substring(0, 60))}</div>` : '') +
+          (bp.global.logo ? `<div><span class="text-studio-muted">Logo:</span> ${escapeHtml(bp.global.logo)}</div>` : '') +
+          (bp.last_updated ? `<div class="text-studio-muted mt-1">Updated: ${new Date(bp.last_updated).toLocaleString()}</div>` : '');
+      } else {
+        globalEl.innerHTML = '<div class="text-studio-muted">No blueprint yet — build or chat to generate one.</div>';
+      }
+
+      // Pages
+      const pagesEl = document.getElementById('blueprint-pages');
+      const pageNames = Object.keys(bp.pages || {});
+      if (pageNames.length === 0) {
+        pagesEl.innerHTML = '';
+        return;
+      }
+
+      pagesEl.innerHTML = pageNames.map(page => {
+        const entry = bp.pages[page];
+        return `<div class="bg-studio-bg rounded p-3 border border-gray-700">
+          <div class="font-semibold text-white mb-1">${escapeHtml(entry.title || page)} <span class="text-studio-muted font-normal">(${escapeHtml(page)})</span></div>
+          ${entry.sections.length > 0 ? `<div class="mb-1"><span class="text-studio-muted">Sections:</span> ${entry.sections.map(s => `<span class="inline-block bg-gray-700 rounded px-1.5 py-0.5 mr-1 mb-0.5">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+          ${entry.components.length > 0 ? `<div class="mb-1"><span class="text-studio-muted">Components:</span> ${entry.components.map(c => `<span class="inline-block bg-purple-900/50 text-purple-300 rounded px-1.5 py-0.5 mr-1 mb-0.5">${escapeHtml(c.type)}</span>`).join('')}</div>` : ''}
+          ${entry.layout_notes.length > 0 ? `<div><span class="text-studio-muted">Notes:</span><ul class="list-disc list-inside mt-0.5">${entry.layout_notes.map(n => `<li>${escapeHtml(n.substring(0, 120))}</li>`).join('')}</ul></div>` : ''}
+          <div class="mt-1.5 flex gap-2">
+            <button onclick="addLayoutNote('${escapeHtml(page)}')" class="text-[10px] text-studio-accent hover:text-blue-400 transition">+ Note</button>
+            <button onclick="addBlueprintSection('${escapeHtml(page)}')" class="text-[10px] text-studio-accent hover:text-blue-400 transition">+ Section</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function addLayoutNote(page) {
+      const note = prompt('Enter layout note:');
+      if (!note || !note.trim()) return;
+      const bp = cachedBlueprint || { version: 1, pages: {}, global: {} };
+      if (!bp.pages[page]) bp.pages[page] = { title: page.replace('.html', ''), sections: [], components: [], layout_notes: [] };
+      bp.pages[page].layout_notes.push(note.trim());
+      await fetch('/api/blueprint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pages: { [page]: bp.pages[page] } }),
+      });
+      refreshBlueprint();
+    }
+
+    async function addBlueprintSection(page) {
+      const section = prompt('Enter section name (e.g. "hero", "testimonials"):');
+      if (!section || !section.trim()) return;
+      const bp = cachedBlueprint || { version: 1, pages: {}, global: {} };
+      if (!bp.pages[page]) bp.pages[page] = { title: page.replace('.html', ''), sections: [], components: [], layout_notes: [] };
+      if (!bp.pages[page].sections.includes(section.trim())) {
+        bp.pages[page].sections.push(section.trim());
+      }
+      await fetch('/api/blueprint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pages: { [page]: bp.pages[page] } }),
+      });
+      refreshBlueprint();
+    }
+
+    // --- Metrics Tab ---
+    async function refreshMetrics() {
+      try {
+        const res = await fetch('/api/build-metrics');
+        const metrics = await res.json();
+        renderMetrics(metrics);
+      } catch (e) {
+        document.getElementById('metrics-summary').innerHTML = '<div class="text-studio-muted">Failed to load metrics</div>';
+      }
+    }
+
+    function renderMetrics(metrics) {
+      const summaryEl = document.getElementById('metrics-summary');
+      const historyEl = document.getElementById('metrics-history');
+
+      if (!metrics || metrics.length === 0) {
+        summaryEl.innerHTML = '<div class="text-studio-muted">No builds yet.</div>';
+        historyEl.innerHTML = '';
+        return;
+      }
+
+      // Summary stats
+      const last = metrics[metrics.length - 1];
+      const totalBuilds = metrics.length;
+      const avgTime = Math.round(metrics.reduce((sum, m) => sum + (m.elapsed_seconds || 0), 0) / totalBuilds);
+      const totalPages = metrics.reduce((sum, m) => sum + (m.pages_built || 0), 0);
+
+      // Group by type
+      const byType = {};
+      for (const m of metrics) {
+        const t = m.type || 'unknown';
+        if (!byType[t]) byType[t] = { count: 0, totalTime: 0 };
+        byType[t].count++;
+        byType[t].totalTime += m.elapsed_seconds || 0;
+      }
+
+      summaryEl.innerHTML = `
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="bg-studio-bg rounded p-2 text-center border border-gray-700">
+            <div class="text-lg font-bold text-white">${totalBuilds}</div>
+            <div class="text-[10px] text-studio-muted">Total Builds</div>
+          </div>
+          <div class="bg-studio-bg rounded p-2 text-center border border-gray-700">
+            <div class="text-lg font-bold text-white">${avgTime}s</div>
+            <div class="text-[10px] text-studio-muted">Avg Time</div>
+          </div>
+          <div class="bg-studio-bg rounded p-2 text-center border border-gray-700">
+            <div class="text-lg font-bold text-white">${totalPages}</div>
+            <div class="text-[10px] text-studio-muted">Pages Built</div>
+          </div>
+        </div>
+        <div class="mb-2">
+          <span class="text-studio-muted">Last build:</span> ${last.timestamp ? new Date(last.timestamp).toLocaleString() : 'unknown'}
+          — ${last.type || 'unknown'}, ${last.elapsed_seconds || '?'}s, ${last.pages_built || '?'} page(s)
+          ${last.model ? `<span class="text-studio-muted">(${last.model})</span>` : ''}
+        </div>
+        <div class="text-studio-muted mb-1">By type:</div>
+        ${Object.entries(byType).map(([type, data]) =>
+          `<div class="ml-2"><span class="text-white">${type}:</span> ${data.count} builds, avg ${Math.round(data.totalTime / data.count)}s</div>`
+        ).join('')}
+      `;
+
+      // Build history — most recent first, last 20
+      const recent = metrics.slice(-20).reverse();
+      historyEl.innerHTML = `<div class="text-studio-muted mb-1 mt-2">Recent builds:</div>` +
+        recent.map(m => {
+          const date = m.timestamp ? new Date(m.timestamp).toLocaleString() : '?';
+          return `<div class="flex justify-between items-center py-1 border-b border-gray-700/50">
+            <div>
+              <span class="text-white">${m.type || 'unknown'}</span>
+              <span class="text-studio-muted ml-1">${m.pages_built || '?'} pg</span>
+            </div>
+            <div class="text-right">
+              <span class="text-white">${m.elapsed_seconds || '?'}s</span>
+              <div class="text-[10px] text-studio-muted">${date}</div>
+            </div>
+          </div>`;
+        }).join('');
     }
 
     // --- Start ---

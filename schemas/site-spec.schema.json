@@ -158,6 +158,60 @@
         },
         "required": ["filename", "role"]
       }
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO timestamp of site creation"
+    },
+    "netlify_site_id": {
+      "type": "string",
+      "description": "Netlify site UUID for redeployments"
+    },
+    "deploy_provider": {
+      "type": "string",
+      "enum": ["netlify", "cloudflare", "vercel"],
+      "description": "Deployment provider used"
+    },
+    "brand_health": {
+      "type": "object",
+      "description": "Brand health metrics computed by scanBrandHealth()",
+      "properties": {
+        "score": { "type": "number" },
+        "slots": { "type": "object" },
+        "last_scan": { "type": "string" }
+      }
+    },
+    "media_specs": {
+      "type": "object",
+      "description": "Image slot registry — maps slot IDs to metadata (page, role, status, dimensions, src)",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "string" },
+          "role": { "type": "string" },
+          "status": { "type": "string" },
+          "dimensions": { "type": "string" },
+          "src": { "type": "string" }
+        }
+      }
+    },
+    "slot_mappings": {
+      "type": "object",
+      "description": "Persistent slot-to-image mappings that survive rebuilds",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "src": { "type": "string" },
+          "provider": { "type": "string" },
+          "credit": { "type": "string" },
+          "query": { "type": "string" }
+        }
+      }
+    },
+    "tech_recommendations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tech stack recommendations generated from brief analysis"
     }
   }
 }

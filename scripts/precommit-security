@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # block obvious plaintext secrets (very basic)
-if git diff --cached -G '(sk-|AIza|AKIA|xoxb-|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY)' --name-only | grep -v '^secrets/agents.enc.yaml | grep -q .; then
+if git diff --cached -G '(sk-|AIza|AKIA|xoxb-|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY)' --name-only | grep -v '^secrets/agents.enc.yaml' | grep -q .; then
   echo "Refusing commit: potential plaintext secret in staged files." >&2
   exit 1
 fi

@@ -392,12 +392,25 @@ function updateBlueprint(writtenPages) {
     if (!fs.existsSync(htmlPath)) continue;
     const html = fs.readFileSync(htmlPath, 'utf8');
 
-    // Extract sections — look for <section> with id or class
+    // Extract sections — prefer id attribute, skip Tailwind utility classes
     const sections = [];
-    const sectionMatches = html.matchAll(/<section[^>]*(?:id=["']([^"']+)["']|class=["']([^"']+)["'])[^>]*>/gi);
+    const sectionMatches = html.matchAll(/<section[^>]*(?:id=["']([^"']+)["'])?[^>]*(?:class=["']([^"']+)["'])?[^>]*>/gi);
+    let sectionIdx = 0;
+    const isTailwindClass = (cls) => /^-?[a-z]+(?:-[a-z0-9/[\].]+)+$/.test(cls) || /^(?:relative|absolute|fixed|sticky|flex|grid|block|inline|hidden|overflow|container)$/.test(cls);
     for (const m of sectionMatches) {
-      const id = m[1] || m[2]?.split(/\s+/)[0] || 'unnamed';
-      if (!sections.includes(id)) sections.push(id);
+      sectionIdx++;
+      if (m[1]) {
+        // Has id — use it (most semantic)
+        if (!sections.includes(m[1])) sections.push(m[1]);
+      } else if (m[2]) {
+        // No id — find first semantic class (skip Tailwind utilities)
+        const classes = m[2].split(/\s+/);
+        const semantic = classes.find(c => !isTailwindClass(c));
+        const label = semantic || `section-${sectionIdx}`;
+        if (!sections.includes(label)) sections.push(label);
+      } else {
+        sections.push(`section-${sectionIdx}`);
+      }
     }
 
     // Extract components — popups, modals, overlays
@@ -1996,7 +2009,12 @@ function syncHeadSection(ws) {
       const normalized = element.replace(/\s+/g, ' ').trim();
       const headNormalized = headContent.replace(/\s+/g, ' ');
 
-      if (!headNormalized.includes(normalized.substring(0, Math.min(80, normalized.length)))) {
+      // Use content hash for reliable matching instead of 80-char prefix
+      const crypto = require('crypto');
+      const elemHash = crypto.createHash('md5').update(normalized).digest('hex').substring(0, 12);
+      const headHashes = headContent.replace(/\s+/g, ' ').match(/<(?:style|script|link)[^>]*(?:>[\s\S]*?<\/(?:style|script)>|\/>)/gi) || [];
+      const existingHashes = headHashes.map(el => crypto.createHash('md5').update(el.replace(/\s+/g, ' ').trim()).digest('hex').substring(0, 12));
+      if (!existingHashes.includes(elemHash) && !headNormalized.includes(normalized)) {
         // Element missing from this page's head — inject before </head>
         headContent = headContent.replace(/<\/head>/i, `  ${element}\n  </head>`);
         changed = true;
@@ -2094,12 +2112,20 @@ function extractSharedCss(ws) {
   const pages = listPages();
   let updated = 0;
 
+  // Build a set of normalized extracted style contents for matching
+  const extractedStyleSet = new Set(styleBlocks.map(s => s.trim().replace(/\s+/g, ' ')));
+
   for (const page of pages) {
     const filePath = path.join(distDir, page);
     let html = fs.readFileSync(filePath, 'utf8');
 
-    // Remove shared <style> blocks (keep data-page ones)
-    html = html.replace(/<style(?![^>]*data-page)[^>]*>[\s\S]*?<\/style>/gi, '');
+    // Only remove <style> blocks whose content matches what was extracted from index.html
+    // This preserves page-specific styles that weren't in the shared set
+    html = html.replace(/<style(?![^>]*data-page)[^>]*>([\s\S]*?)<\/style>/gi, (fullMatch, content) => {
+      const normalized = content.trim().replace(/\s+/g, ' ');
+      if (extractedStyleSet.has(normalized)) return ''; // shared style — remove
+      return fullMatch; // page-specific style — keep
+    });
 
     // Add <link> to styles.css if not already present
     if (!html.includes('assets/styles.css')) {
@@ -3064,7 +3090,26 @@ app.get('/api/build-metrics', (req, res) => {
 });
 
 app.get('/api/settings', (req, res) => {
-  res.json(loadSettings());
+  const settings = loadSettings();
+  // Redact sensitive values — only expose whether keys are configured
+  const safe = JSON.parse(JSON.stringify(settings));
+  const secretPaths = [
+    ['stock_photo', 'unsplash_api_key'],
+    ['stock_photo', 'pexels_api_key'],
+    ['stock_photo', 'pixabay_api_key'],
+    ['email', 'app_password'],
+    ['sms', 'auth_token'],
+    ['sms', 'api_key'],
+    ['sms', 'api_secret'],
+    ['sms', 'account_sid'],
+  ];
+  for (const [section, key] of secretPaths) {
+    if (safe[section] && safe[section][key]) {
+      safe[section][key + '_configured'] = true;
+      delete safe[section][key];
+    }
+  }
+  res.json(safe);
 });
 
 app.put('/api/settings', (req, res) => {
@@ -3099,11 +3144,12 @@ function classifyRequest(message, spec) {
   // Brainstorm mode — explore ideas without generating HTML
   if (lower.match(/\b(brainstorm|let'?s?\s+(think|explore|plan\s+more|discuss|ideate)|think\s+about|explore\s+ideas|planning\s+mode)\b/)) return 'brainstorm';
 
-  // Version rollback
-  if (lower.match(/\b(rollback|roll\s+back|revert|undo|go\s+back\s+to|restore|previous\s+version)\b/)) return 'rollback';
+  // Version rollback — require version/previous context near "restore" to avoid matching "restore the original colors"
+  if (lower.match(/\b(rollback|roll\s+back|revert|undo|go\s+back\s+to|previous\s+version)\b/)) return 'rollback';
+  if (lower.match(/\brestore\b/) && lower.match(/\b(version|previous|backup|earlier|last)\b/)) return 'rollback';
 
-  // Version history
-  if (lower.match(/\b(version|versions|history|changelog|change\s+log)\b/)) return 'version_history';
+  // Version history — require "version" as anchor to avoid matching "what's the history of this font"
+  if (lower.match(/\b(versions?|changelog|change\s+log)\b/) || lower.match(/\bversion\s+history\b/)) return 'version_history';
 
   // Summarize session
   if (lower.match(/\b(summarize|summary|wrap\s+up|save\s+progress)\b/)) return 'summarize';
@@ -3171,21 +3217,37 @@ function classifyRequest(message, spec) {
 // --- Curated Prompt Builder ---
 function buildPromptContext(requestType, spec, userMessage) {
   const brief = spec.design_brief || null;
-  const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-5);
+  const allDecisions = (spec.design_decisions || []).filter(d => d.status === 'approved');
+  // Include all approved decisions (cap at 2000 chars to keep prompt lean)
+  let decisionsText = allDecisions.map(d => `- [${d.category}] ${d.decision}`).join('\n');
+  if (decisionsText.length > 2000) {
+    // If too many, keep most recent with a note about truncation
+    const truncated = allDecisions.slice(-15);
+    decisionsText = `(${allDecisions.length - truncated.length} earlier decisions omitted)\n` +
+      truncated.map(d => `- [${d.category}] ${d.decision}`).join('\n');
+  }
+  const decisions = allDecisions; // keep array for backward compat
   const pages = listPages();
 
   // Auto-detect if the user's message targets a different page than currentPage
   // e.g. "fix the popup on index.html" while viewing gallery.html
+  // Auto-switch page: match "fix on about.html" or "fix the about page" or "changes to services"
   const pageRefMatch = userMessage.toLowerCase().match(/\b(?:on|in|for|to|update|fix|change|edit)\s+(?:the\s+)?(\w+)\.html\b/);
-  if (pageRefMatch && requestType !== 'build' && requestType !== 'major_revision') {
-    const refPage = pageRefMatch[1].toLowerCase() + '.html';
-    if (pages.includes(refPage) && refPage !== currentPage) {
-      console.log(`[context] User references ${refPage} (currently on ${currentPage}) — auto-switching`);
-      currentPage = refPage;
+  const pageNameMatch = !pageRefMatch && userMessage.toLowerCase().match(/\b(?:on|in|for|to|update|fix|change|edit)\s+(?:the\s+)?(\w+)\s+page\b/);
+  const matchedPageName = pageRefMatch ? pageRefMatch[1].toLowerCase() + '.html'
+    : pageNameMatch ? pageNameMatch[1].toLowerCase() + '.html'
+    : null;
+  // Resolve which page to use — but don't mutate module-level currentPage here.
+  // Return resolvedPage so the caller can update currentPage explicitly.
+  let resolvedPage = currentPage;
+  if (matchedPageName && requestType !== 'build' && requestType !== 'major_revision') {
+    if (pages.includes(matchedPageName) && matchedPageName !== currentPage) {
+      console.log(`[context] User references ${matchedPageName} (currently on ${currentPage}) — resolved for context`);
+      resolvedPage = matchedPageName;
     }
   }
 
-  const htmlPath = path.join(DIST_DIR(), currentPage);
+  const htmlPath = path.join(DIST_DIR(), resolvedPage);
   const currentHtml = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '';
 
   // Build HTML context based on request type
@@ -3300,11 +3362,11 @@ function buildPromptContext(requestType, spec, userMessage) {
       }).join('\n');
   }
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext };
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, resolvedPage };
 }
 
 function summarizeHtml(html) {
-  // Extract structural summary: sections, key elements, approximate layout
+  // Extract structural summary without dumping full HTML (that was a no-op before)
   const sections = [];
   const sectionMatch = html.match(/<(?:section|header|footer|nav|main|div)\s[^>]*(?:id|class)="[^"]*"/g) || [];
   sectionMatch.slice(0, 15).forEach(s => sections.push(s));
@@ -3312,15 +3374,16 @@ function summarizeHtml(html) {
   const headings = html.match(/<h[1-6][^>]*>([^<]+)</g) || [];
   const headingText = headings.slice(0, 10).map(h => h.replace(/<h[1-6][^>]*>/, ''));
 
+  // Extract slot IDs for reference
+  const slots = html.match(/data-slot-id="([^"]+)"/g) || [];
+  const slotIds = slots.map(s => s.match(/"([^"]+)"/)[1]);
+
   const lineCount = html.split('\n').length;
 
   return `[HTML SUMMARY: ${lineCount} lines]
 Sections found: ${sections.length > 0 ? sections.join(', ') : 'none identified'}
 Headings: ${headingText.length > 0 ? headingText.join(' | ') : 'none'}
-Full source available if needed for precise edits.
-
-FULL HTML:
-${html}`;
+Slots: ${slotIds.length > 0 ? slotIds.join(', ') : 'none'}`;
 }
 
 // --- Tech Stack Analysis ---
@@ -3610,10 +3673,15 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
 // --- Brainstorm Handler ---
 function handleBrainstorm(ws, userMessage, spec) {
   const brief = spec.design_brief ? JSON.stringify(spec.design_brief, null, 2) : 'none yet';
-  const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-5);
-  const decisionsText = decisions.length > 0
+  const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved');
+  let decisionsText = decisions.length > 0
     ? decisions.map(d => `- [${d.category}] ${d.decision}`).join('\n')
     : 'none yet';
+  if (decisionsText.length > 2000) {
+    const truncated = decisions.slice(-15);
+    decisionsText = `(${decisions.length - truncated.length} earlier decisions omitted)\n` +
+      truncated.map(d => `- [${d.category}] ${d.decision}`).join('\n');
+  }
 
   // Load session summaries for cross-session context
   const summaries = loadSessionSummaries(3);
@@ -3828,23 +3896,17 @@ ${sharedRules}`;
     ws.send(JSON.stringify({ type: 'status', content: `Spawning ${pagesLeft.length} inner pages in parallel...` }));
     let innerCompleted = 0;
     const innerTotal = pagesLeft.length;
+    const timedOutPages = new Set();
 
     for (const pageFile of pagesLeft) {
       const { child, getResponse, appendResponse } = spawnPage(pageFile, seedContext);
 
       const pageTimeout = setTimeout(() => {
         console.error(`[parallel-build] ${pageFile} timed out after 5 minutes`);
+        timedOutPages.add(pageFile);
         child.kill();
         ws.send(JSON.stringify({ type: 'error', content: `Build timed out for ${pageFile} — continuing with other pages.` }));
-        innerCompleted++;
-        if (innerCompleted === innerTotal) {
-          if (writtenPages.length === 0) {
-            buildInProgress = false;
-            ws.send(JSON.stringify({ type: 'error', content: 'All pages timed out. Check Claude CLI and try again.' }));
-          } else {
-            finishParallelBuild(ws, writtenPages, startTime, spec);
-          }
-        }
+        // Don't increment here — the kill() will trigger the close event which handles completion
       }, 300000);
 
       child.stdout.on('data', (chunk) => { appendResponse(chunk.toString()); });
@@ -3945,20 +4007,24 @@ ${sharedRules}`;
 function runPostProcessing(ws, writtenPages, options = {}) {
   const { isFullBuild = false, sourcePage = null } = options;
 
-  // Always safe — metadata only
+  // Step 1: Extract and register slots FIRST so mappings know about all slot IDs
+  extractAndRegisterSlots(writtenPages);
+
+  // Step 2: Reapply saved slot mappings (images survive rebuilds)
+  reapplySlotMappings(writtenPages);
+
+  // Step 3: Metadata
   updateBlueprint(writtenPages);
   injectSeoMeta(ws);
 
-  // Slot mappings — always re-apply, then clean up orphans
-  reapplySlotMappings(writtenPages);
+  // Step 4: Clean up orphaned slot mappings
   reconcileSlotMappings();
 
-  // Logo variant — swap data-logo-v content based on whether assets/logo.{ext} exists
+  // Step 5: Logo variant — swap data-logo-v content based on whether assets/logo.{ext} exists
   applyLogoV(writtenPages);
 
   if (isFullBuild) {
-    // Full build: extract slots, sync everything from index.html
-    extractAndRegisterSlots(writtenPages);
+    // Full build: sync everything from index.html
 
     // Refresh nav partial from freshly built index.html before syncing
     const distDir = DIST_DIR();
@@ -3979,13 +4045,12 @@ function runPostProcessing(ws, writtenPages, options = {}) {
     syncHeadSection(ws);
     extractSharedCss(ws);
   } else if (sourcePage) {
-    // Single-page edit: propagate FROM this page, skip overwriting it
+    // Single-page edit: propagate FROM this page
     syncNavFromPage(ws, sourcePage);
     syncFooterFromPage(ws, sourcePage);
+    ensureHeadDependencies(ws);
     // NO extractSharedCss — don't strip inline styles on chat edits
     // NO syncHeadSection — don't mess with head on single edits
-    // Rescan the edited page so new slots (e.g. about-hero) get registered in media_specs
-    extractAndRegisterSlots(writtenPages);
   }
 }
 
@@ -4032,10 +4097,11 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
   const prevPage = currentPage;
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext } = buildPromptContext(requestType, spec, userMessage);
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
 
-  // If buildPromptContext auto-switched to a different page, notify the client
-  if (currentPage !== prevPage) {
+  // If buildPromptContext resolved a different page, update currentPage explicitly here
+  if (resolvedPage !== prevPage) {
+    currentPage = resolvedPage;
     ws.send(JSON.stringify({ type: 'page-changed', page: currentPage }));
     ws.send(JSON.stringify({ type: 'status', content: `Auto-switched to ${currentPage} (referenced in your message)` }));
   }
@@ -4069,14 +4135,13 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
     case 'bug_fix':
       modeInstruction = `The user is reporting a BUG or visual issue on ${currentPage}. Fix only the specific problem. Do not change design direction or content.`;
       break;
-    case 'restyle':
-      modeInstruction = 'The user wants a VISUAL RESTYLE. Change the aesthetic feel while preserving content and core structure. Update the design language holistically.';
-      break;
+    // Note: 'restyle' is routed to handlePlanning() by the WS router upstream — it never reaches handleChatMessage
     case 'build':
       if (isMultiPage) {
         // Parallel build — handled separately
         ws.send(JSON.stringify({ type: 'status', content: `Parallel build: ${specPages.length} pages...` }));
-        buildInProgress = false; // Release guard — parallelBuild manages its own
+        // Don't reset buildInProgress here — parallelBuild() already has it set to true
+        // and will reset it when all pages complete. Resetting creates a race window.
         return parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext);
       } else {
         modeInstruction = 'Generate a complete single-page website.';
@@ -4350,6 +4415,8 @@ ${analyticsInstruction}`;
         const html = body.replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
         if (html.length > 20) {
           fs.writeFileSync(path.join(DIST_DIR(), 'index.html'), html);
+          // Run post-processing even on fallback path
+          runPostProcessing(ws, ['index.html'], { sourcePage: 'index.html' });
           ws.send(JSON.stringify({ type: 'assistant', content: 'Site updated! Check the preview.' }));
           ws.send(JSON.stringify({ type: 'reload-preview' }));
           appendConvo({ role: 'assistant', content: 'Site updated (single page fallback)', at: new Date().toISOString() });
@@ -4471,8 +4538,11 @@ function extractDecisions(spec, changeSummary, requestType) {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+let activeClientCount = 0;
+
 wss.on('connection', (ws) => {
-  console.log('[studio] Client connected');
+  activeClientCount++;
+  console.log(`[studio] Client connected (${activeClientCount} active)`);
 
   // Send persistence state on connect
   const studioState = loadStudio();
@@ -4491,8 +4561,21 @@ wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
   }
 
-  // Start a new session
-  startSession();
+  // Only start a new session if this is the first active connection
+  // (prevents second tabs from resetting session counters)
+  if (activeClientCount === 1) {
+    startSession();
+  }
+
+  ws.on('close', () => {
+    activeClientCount = Math.max(0, activeClientCount - 1);
+    console.log(`[studio] Client disconnected (${activeClientCount} active)`);
+    // Reset build lock if client disconnects mid-build to prevent permanent deadlock
+    if (buildInProgress) {
+      console.warn('[studio] Client disconnected during build — releasing buildInProgress lock');
+      buildInProgress = false;
+    }
+  });
 
   ws.on('message', async (data) => {
     let msg;
@@ -4515,7 +4598,7 @@ wss.on('connection', (ws) => {
       if (currentMode === 'brainstorm') {
         const lower = userMessage.toLowerCase();
         // "Build this" patterns — exit brainstorm AND route into build with brainstorm context
-        const buildPatterns = /\b(i'?m\s+ready\s+to\s+build|let'?s?\s+(implement|build|do\s+it|make\s+it)|build\s+this|start\s+building)\b/;
+        const buildPatterns = /\b(i'?m\s+ready\s+to\s+build|let'?s?\s+(implement|build|do\s+it|make\s+it|go)|build\s+this|start\s+building|do\s+it|ship\s+it|create\s+it|make\s+this\s+happen|looks?\s+good,?\s+build|i'?m\s+happy\s+with\s+this|ok\s+let'?s?\s+go)\b/;
         // "Exit only" patterns — just leave brainstorm, no build
         const exitPatterns = /\b(exit\s+brainstorm|done\s+brainstorming|stop\s+brainstorming|back\s+to\s+build|build\s+mode)\b/;
 
@@ -4970,8 +5053,22 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'update-spec') {
       try {
+        // Whitelist allowed fields to prevent arbitrary spec overwrite
+        const ALLOWED_SPEC_FIELDS = ['design_brief', 'design_decisions', 'site_name', 'business_type'];
+        const filtered = {};
+        for (const key of Object.keys(msg.updates || {})) {
+          if (ALLOWED_SPEC_FIELDS.includes(key)) {
+            filtered[key] = msg.updates[key];
+          } else {
+            console.warn(`[update-spec] Rejected non-whitelisted field: ${key}`);
+          }
+        }
+        if (Object.keys(filtered).length === 0) {
+          ws.send(JSON.stringify({ type: 'error', content: 'No valid fields to update.' }));
+          return;
+        }
         const currentSpec = readSpec();
-        const updated = { ...currentSpec, ...msg.updates };
+        const updated = { ...currentSpec, ...filtered };
         writeSpec(updated);
         ws.send(JSON.stringify({ type: 'spec-updated', spec: updated }));
       } catch (e) {
@@ -5252,7 +5349,14 @@ function spawnClaude(prompt) {
   });
   child.stdin.write(prompt);
   child.stdin.end();
-  child.on('error', (err) => console.error('[claude-spawn] Error:', err.message));
+  child.on('error', (err) => {
+    console.error('[claude-spawn] Error:', err.message);
+    // Reset build lock on spawn failure to prevent permanent deadlock
+    if (buildInProgress) {
+      console.warn('[claude-spawn] Resetting buildInProgress after spawn error');
+      buildInProgress = false;
+    }
+  });
   child.on('close', (code) => {
     if (code !== 0) console.error(`[claude-spawn] Exited with code ${code}`);
   });
@@ -5359,6 +5463,7 @@ module.exports = {
   sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
+  truncateAssistantMessage, loadRecentConversation,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };

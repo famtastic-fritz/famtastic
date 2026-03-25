@@ -7,7 +7,7 @@ export GEMINI_API_KEY="$GK"
 DEFAULT_MODEL="$(yq -r .gemini.model config/agents/defaults.yaml 2>/dev/null || echo gemini-2.5-pro)"
 MODEL="${MODEL:-$DEFAULT_MODEL}"
 if [ $# -gt 0 ]; then PROMPT="$*"; else PROMPT="$(cat)"; fi
-python3 - "$MODEL" <<'PY'
+printf '%s' "$PROMPT" | python3 - "$MODEL" <<'PY'
 import sys, os, google.generativeai as genai
 model=sys.argv[1]
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])

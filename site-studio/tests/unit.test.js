@@ -12,6 +12,8 @@ const {
   extractBrandColors,
   labelToFilename,
   SLOT_DIMENSIONS,
+  truncateAssistantMessage,
+  ensureHeadDependencies,
 } = require('../server');
 
 // classifyRequest checks fs.existsSync for index.html — ensure it exists
@@ -302,5 +304,91 @@ describe('labelToFilename', () => {
 
   it('strips special characters', () => {
     expect(labelToFilename("John's Photo #1!", '', 'index.html')).toBe('index-john-s-photo-1.svg');
+  });
+});
+
+// --- truncateAssistantMessage ---
+describe('truncateAssistantMessage', () => {
+  it('returns empty string for null/undefined', () => {
+    expect(truncateAssistantMessage(null)).toBe('');
+    expect(truncateAssistantMessage(undefined)).toBe('');
+    expect(truncateAssistantMessage('')).toBe('');
+  });
+
+  it('keeps short non-HTML messages intact', () => {
+    const msg = 'Sure, I can help with that!';
+    expect(truncateAssistantMessage(msg)).toBe(msg);
+  });
+
+  it('truncates long non-HTML messages at 500 chars', () => {
+    const long = 'a'.repeat(600);
+    const result = truncateAssistantMessage(long);
+    expect(result.length).toBeLessThanOrEqual(503); // 500 + '...'
+    expect(result).toContain('...');
+  });
+
+  it('extracts CHANGES: section from HTML_UPDATE responses', () => {
+    const html = 'HTML_UPDATE:\n<!DOCTYPE html><html><body>...</body></html>\n\nCHANGES:\n- Added hero section\n- Updated nav';
+    const result = truncateAssistantMessage(html);
+    expect(result).toContain('[Generated HTML]');
+    expect(result).toContain('Added hero section');
+    expect(result).not.toContain('<!DOCTYPE');
+  });
+
+  it('detects MULTI_UPDATE pages', () => {
+    const multi = 'MULTI_UPDATE:\n--- PAGE: index.html ---\n<html>...</html>\n--- PAGE: about.html ---\n<html>...</html>';
+    const result = truncateAssistantMessage(multi);
+    expect(result).toContain('index.html');
+    expect(result).toContain('about.html');
+  });
+
+  it('returns fallback for HTML without CHANGES or PAGE markers', () => {
+    const html = '<!DOCTYPE html><html><head></head><body></body></html>';
+    const result = truncateAssistantMessage(html);
+    expect(result).toBe('[Generated/updated site HTML]');
+  });
+});
+
+// --- classifyRequest edge cases ---
+describe('classifyRequest edge cases', () => {
+  const withBrief = { design_brief: { approved: true } };
+
+  it('does not classify "history of this font" as version_history', () => {
+    // "history" alone should not trigger version_history anymore
+    const result = classifyRequest("what's the history of this font choice?", withBrief);
+    expect(result).not.toBe('version_history');
+  });
+
+  it('classifies "show versions" as version_history', () => {
+    expect(classifyRequest('show me the versions', withBrief)).toBe('version_history');
+  });
+
+  it('does not classify "restore the original colors" as rollback', () => {
+    // "restore" without version context should not be rollback
+    const result = classifyRequest('restore the original colors', withBrief);
+    expect(result).not.toBe('rollback');
+  });
+
+  it('classifies "restore previous version" as rollback', () => {
+    expect(classifyRequest('restore previous version', withBrief)).toBe('rollback');
+  });
+});
+
+// --- ensureHeadDependencies ---
+describe('ensureHeadDependencies', () => {
+  const testDir = path.join(DIST_DIR, '_test_head');
+
+  beforeAll(() => {
+    fs.mkdirSync(testDir, { recursive: true });
+  });
+
+  afterAll(() => {
+    try { fs.rmSync(testDir, { recursive: true }); } catch {}
+  });
+
+  it('does not crash on empty dist directory', () => {
+    // ensureHeadDependencies reads listPages() which reads from DIST_DIR
+    // This test just verifies no throw on normal run
+    expect(() => ensureHeadDependencies(null)).not.toThrow();
   });
 });
