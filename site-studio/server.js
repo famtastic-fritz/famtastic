@@ -4147,7 +4147,7 @@ First line: SVG_ASSET:<filename>
 Then: complete SVG code
 
 4. To ask a question or respond conversationally:
-Just respond as text.
+Just respond as text. Use this ONLY when genuinely ambiguous. If the user asked for a change, DO the change — output HTML_UPDATE with the full updated page. Do NOT describe what you would do, ask for confirmation, or explain your plan. Act.
 
 IMPORTANT:
 - When outputting HTML, include the FULL complete file (not a diff)
