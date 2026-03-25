@@ -68,7 +68,7 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 
 ### Core Engine
 
-**Request Classifier** — `classifyRequest(message, spec)`. 18 intent types with anchored patterns: `brief_edit`, `brand_health`, `brainstorm`, `rollback` (requires version/previous context near "restore"), `version_history` (requires "version" anchor), `summarize`, `data_model`, `tech_advice`, `template_import`, `page_switch`, `deploy`, `build`, `query`, `asset_import`, `fill_stock_photos`, `new_site`, `major_revision`, `restyle`, `layout_update`, `content_update`, `bug_fix`. Default fallback: `layout_update`.
+**Request Classifier** — `classifyRequest(message, spec)`. 21 intent types with anchored patterns: `brief_edit`, `brand_health`, `brainstorm`, `rollback` (requires version/previous context near "restore"), `version_history` (requires "version" anchor), `summarize`, `data_model`, `tech_advice`, `template_import`, `page_switch`, `deploy`, `build`, `query`, `asset_import`, `fill_stock_photos`, `new_site`, `major_revision`, `restyle`, `layout_update`, `content_update`, `bug_fix`. Default fallback: `layout_update`.
 
 **Planning Mode** — `handlePlanning()`. Produces `design_brief` in `spec.json`. Three-button UI: Build From Brief, Edit Brief, Skip to Build.
 
