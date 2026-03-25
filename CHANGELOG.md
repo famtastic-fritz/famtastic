@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-24 — Add conversation history to chat context (fixes stateless Claude calls)
+
+Each `spawnClaude()` call was completely stateless — it only saw the current user message. When users said "yes proceed" or "make it better," Claude had no idea what was discussed and asked redundant questions. Added `loadRecentConversation(15)` which reads the last 15 messages from `conversation.jsonl` for the current session and injects them into every prompt via `buildPromptContext()`. Assistant messages containing full HTML pages are truncated to their `CHANGES:` summary to keep token usage at ~1-2K chars. Threaded through both `handleChatMessage()` and `parallelBuild()`. Brainstorm mode is unaffected (has its own history mechanism). All 41 tests pass.
+
 ## 2026-03-24 — Fix missing Tailwind CDN + head dependency guardrail
 
 Root cause found for unstyled pages: Tailwind CDN and Google Fonts were never in the build prompts, so Claude never included them. Pages used Tailwind utility classes (bg-gray-900, py-12, h-10) that were completely dead without the CDN. Added HEAD REQUIREMENTS section to `sharedRules` with explicit Tailwind CDN + Google Fonts instructions. Added `ensureHeadDependencies()` post-processor as a safety net — injects missing Tailwind/Fonts into any page after build. Patched all 7 live pages with the missing CDN links. Also fixed `header-content` → `header-container` class on services.html and why-choose-us.html (styles.css only defines header-container).

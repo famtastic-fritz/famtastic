@@ -11,6 +11,7 @@ const nodemailer = require('nodemailer');
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
 const PREVIEW_PORT = parseInt(process.env.PREVIEW_PORT || '3333', 10);
 let TAG = process.env.SITE_TAG || 'site-demo';
+const RECENT_CONVO_COUNT = 15; // Recent conversation turns to include in prompt context
 const HUB_ROOT = path.resolve(__dirname, '..');
 const SITES_ROOT = path.join(HUB_ROOT, 'sites');
 
@@ -3254,6 +3255,14 @@ function buildPromptContext(requestType, spec, userMessage) {
     sessionContext = '\nPREVIOUS SESSION CONTEXT:\n' + summaries.map(s => s.content).join('\n---\n');
   }
 
+  // Recent conversation history (intra-session continuity)
+  let conversationHistory = '';
+  const recentConvo = loadRecentConversation(RECENT_CONVO_COUNT);
+  if (recentConvo) {
+    console.log(`[convo-history] Injected ${recentConvo.length} chars (${recentConvo.split('\n').length} lines) into prompt`);
+    conversationHistory = '\nRECENT CONVERSATION (for context — the user may reference these exchanges):\n' + recentConvo;
+  }
+
   // Core anti-cookie-cutter rules
   const systemRules = `RULES:
 - Never default to a generic business template layout
@@ -3279,7 +3288,7 @@ function buildPromptContext(requestType, spec, userMessage) {
       }).join('\n');
   }
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, blueprintContext, slotMappingContext };
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext };
 }
 
 function summarizeHtml(html) {
@@ -3657,7 +3666,7 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 }
 
 // --- Parallel Multi-Page Build ---
-function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, analyticsInstruction, slotMappingContext) {
+function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext) {
   buildInProgress = true;
   const startTime = Date.now();
 
@@ -3684,6 +3693,7 @@ ${briefContext}
 ${decisionsContext}
 ${assetsContext}
 ${sessionContext}
+${conversationHistory}
 ${slotMappingContext || ''}
 
 ${systemRules}
@@ -4002,7 +4012,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
 
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, blueprintContext, slotMappingContext } = buildPromptContext(requestType, spec, userMessage);
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext } = buildPromptContext(requestType, spec, userMessage);
 
   ws.send(JSON.stringify({ type: 'status', content: `Classified as: ${requestType}` }));
 
@@ -4041,7 +4051,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
         // Parallel build — handled separately
         ws.send(JSON.stringify({ type: 'status', content: `Parallel build: ${specPages.length} pages...` }));
         buildInProgress = false; // Release guard — parallelBuild manages its own
-        return parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, analyticsInstruction, slotMappingContext);
+        return parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext);
       } else {
         modeInstruction = 'Generate a complete single-page website.';
       }
@@ -4076,6 +4086,7 @@ ${briefContext}
 ${decisionsContext}
 ${assetsContext}
 ${sessionContext}
+${conversationHistory}
 ${blueprintContext}
 ${slotMappingContext}
 
@@ -5111,6 +5122,90 @@ function appendConvo(entry) {
       fs.writeFileSync(CONVO_FILE(), lines.slice(-500).join('\n') + '\n');
     }
   } catch {}
+}
+
+// --- Conversation History Helpers ---
+// Truncates assistant messages to keep token budget low.
+// HTML responses (full page outputs) are replaced with their CHANGES: summary.
+function truncateAssistantMessage(content) {
+  if (!content) return '';
+
+  // Detect HTML responses
+  const isHtmlResponse = content.startsWith('HTML_UPDATE:') ||
+                          content.startsWith('MULTI_UPDATE:') ||
+                          content.includes('<!DOCTYPE html>');
+
+  if (!isHtmlResponse) {
+    // Non-HTML: keep full text but cap at 500 chars
+    return content.length > 500 ? content.substring(0, 500) + '...' : content;
+  }
+
+  // HTML response: extract CHANGES: section if present
+  const changesIdx = content.lastIndexOf('CHANGES:');
+  if (changesIdx !== -1) {
+    const changes = content.substring(changesIdx + 8).trim();
+    return `[Generated HTML] Changes: ${changes.substring(0, 400)}`;
+  }
+
+  // Fallback: note which pages were generated
+  const pageMatch = content.match(/--- PAGE: (\S+) ---/g);
+  if (pageMatch) {
+    const pages = pageMatch.map(m => m.replace(/--- PAGE: | ---/g, ''));
+    return `[Generated HTML for: ${pages.join(', ')}]`;
+  }
+
+  return '[Generated/updated site HTML]';
+}
+
+// Loads the last N messages from conversation.jsonl for the current session.
+// Drops the last user message (already in the prompt as USER REQUEST).
+// Returns a formatted string or empty string if insufficient history.
+function loadRecentConversation(count) {
+  try {
+    if (!fs.existsSync(CONVO_FILE())) return '';
+    const lines = fs.readFileSync(CONVO_FILE(), 'utf8').trim().split('\n').filter(Boolean);
+    if (lines.length < 2) return '';
+
+    // Get current session ID
+    let currentSessionId = null;
+    try {
+      const studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
+      currentSessionId = studio.session_count || null;
+    } catch {}
+
+    // Walk backwards, collect recent messages from current session
+    const recent = [];
+    for (let i = lines.length - 1; i >= 0 && recent.length < count; i--) {
+      try {
+        const entry = JSON.parse(lines[i]);
+        // Only include current session messages
+        if (currentSessionId && entry.session_id !== currentSessionId) break;
+        if (entry.role === 'user' || entry.role === 'assistant') {
+          recent.unshift(entry);
+        }
+      } catch {}
+    }
+
+    if (recent.length < 2) return ''; // Need at least one exchange
+
+    // Skip the very last user message (it's the current request, already in the prompt)
+    if (recent.length > 0 && recent[recent.length - 1].role === 'user') {
+      recent.pop();
+    }
+
+    // Format with truncation for HTML responses
+    const formatted = recent.map(m => {
+      let content = m.content;
+      if (m.role === 'assistant') {
+        content = truncateAssistantMessage(content);
+      }
+      return `[${m.role}]: ${content}`;
+    }).join('\n');
+
+    return formatted;
+  } catch {
+    return '';
+  }
 }
 
 // Safe Claude CLI spawn — pipes prompt via stdin instead of shell embedding
