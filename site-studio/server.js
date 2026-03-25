@@ -2225,7 +2225,10 @@ function applyTemplateToPages(ws, writtenPages) {
       changed = true;
     }
 
-    if (changed) fs.writeFileSync(filePath, html);
+    if (changed) {
+      fs.writeFileSync(filePath, html);
+      updated++;
+    }
   }
 
   if (ws && updated > 0) {
@@ -2244,7 +2247,7 @@ function loadTemplateContext() {
   if (!components.headBlock && !components.headerHtml && !components.footerHtml) return '';
 
   // Strip <title> from head block so pages can set their own page-specific title
-  const headBlockNoTitle = components.headBlock.replace(/<title[^>]*>[^<]*<\/title>/i, '<!-- Page sets its own <title> -->');
+  const headBlockNoTitle = components.headBlock.replace(/<title[^>]*>[\s\S]*?<\/title>/i, '<!-- Page sets its own <title> -->');
 
   return `
 SITE TEMPLATE (CRITICAL — copy header and footer VERBATIM into your output):
@@ -4078,12 +4081,11 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
     'blog.html': 'Blog post previews with dates, categories, read-more links',
   };
 
-  // Hybrid build strategy:
-  // Phase 1 — Build index.html alone to establish the CSS/design language seed.
-  // Phase 2 — Extract the <head> styles and <nav> from index.html, inject into all
-  //            inner page prompts so they match the design exactly, then launch all
-  //            inner pages simultaneously.
-  // This gives CSS+nav consistency without losing the parallel speedup for N-1 pages.
+  // Template-first build strategy:
+  // Step 1 — Build _template.html (header/nav, footer, shared CSS) in one Claude call.
+  // Step 2 — Extract template components, write artifacts (styles.css, _partials/).
+  // Step 3 — Build ALL pages in true parallel, each receiving the template as context.
+  // Fallback — If template fails, build pages without template (legacy mode).
   fs.mkdirSync(DIST_DIR(), { recursive: true });
 
   const writtenPages = [];
