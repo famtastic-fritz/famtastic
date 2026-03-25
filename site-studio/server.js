@@ -3173,6 +3173,18 @@ function buildPromptContext(requestType, spec, userMessage) {
   const brief = spec.design_brief || null;
   const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-5);
   const pages = listPages();
+
+  // Auto-detect if the user's message targets a different page than currentPage
+  // e.g. "fix the popup on index.html" while viewing gallery.html
+  const pageRefMatch = userMessage.toLowerCase().match(/\b(?:on|in|for|to|update|fix|change|edit)\s+(?:the\s+)?(\w+)\.html\b/);
+  if (pageRefMatch && requestType !== 'build' && requestType !== 'major_revision') {
+    const refPage = pageRefMatch[1].toLowerCase() + '.html';
+    if (pages.includes(refPage) && refPage !== currentPage) {
+      console.log(`[context] User references ${refPage} (currently on ${currentPage}) — auto-switching`);
+      currentPage = refPage;
+    }
+  }
+
   const htmlPath = path.join(DIST_DIR(), currentPage);
   const currentHtml = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '';
 
@@ -4019,7 +4031,14 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
 
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
+  const prevPage = currentPage;
   const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext } = buildPromptContext(requestType, spec, userMessage);
+
+  // If buildPromptContext auto-switched to a different page, notify the client
+  if (currentPage !== prevPage) {
+    ws.send(JSON.stringify({ type: 'page-changed', page: currentPage }));
+    ws.send(JSON.stringify({ type: 'status', content: `Auto-switched to ${currentPage} (referenced in your message)` }));
+  }
 
   ws.send(JSON.stringify({ type: 'status', content: `Classified as: ${requestType}` }));
 
