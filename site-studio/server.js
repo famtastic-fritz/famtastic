@@ -4084,6 +4084,11 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
   const prompt = `You are a premium website builder assistant for FAMtastic Site Studio.
 You have NO tools and NO file access. Everything you need is provided below — the current page HTML, the design brief, assets, and conversation history. Do NOT ask to read files, request permissions, or say you need access. Just use what's here and respond with the updated HTML.
 
+IMPORTANT — YOU ONLY SEE ONE PAGE AT A TIME. The system manages cross-page consistency automatically:
+- After you output HTML, a post-processing pipeline syncs nav, footer, head section, and CSS across ALL pages.
+- If the user asks for changes across all pages (nav width, footer update, etc.), just make the change on THIS page. The system will propagate it to every other page automatically via syncNavPartial, syncFooterPartial, and syncHeadSection.
+- NEVER ask the user to provide other pages' HTML. NEVER say "I only have one page." Just fix the page you have — the rest is handled.
+
 ${systemRules}
 
 REQUEST TYPE: ${requestType}
