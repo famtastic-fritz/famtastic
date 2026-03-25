@@ -56,6 +56,53 @@ PY
   echo "[secrets] rotated $key"
 }
 
+action_status(){
+  . scripts/lib/hub-common 2>/dev/null || true
+  local found=0
+
+  # 1) Check for active lock files (indicate an agent hold)
+  if [ -d "$CJ_LOCK_DIR" ]; then
+    for lockdir in "$CJ_LOCK_DIR"/*.lock; do
+      [ -d "$lockdir" ] || continue
+      tag="$(basename "$lockdir" .lock)"
+      echo "  locked   $tag  (lock: $lockdir)"
+      found=1
+    done
+  fi
+
+  # 2) Check for running agent CLI processes
+  for agent in claude gemini codex; do
+    pids="$(pgrep -f "${ROOT}/scripts/${agent}-cli" 2>/dev/null || true)"
+    if [ -n "$pids" ]; then
+      while IFS= read -r pid; do
+        elapsed="$(ps -o etime= -p "$pid" 2>/dev/null | tr -d ' ')" || elapsed="?"
+        echo "  running  $agent  pid=$pid  elapsed=$elapsed"
+        found=1
+      done <<< "$pids"
+    fi
+  done
+
+  # 3) Show most recent JSONL entries per agent (last activity)
+  if [ -d "$CJ_SOURCES_DIR" ]; then
+    echo ""
+    echo "Last activity:"
+    for agent_dir in "$CJ_SOURCES_DIR"/*/; do
+      [ -d "$agent_dir" ] || continue
+      agent="$(basename "$agent_dir")"
+      latest="$(ls -t "$agent_dir"*.jsonl 2>/dev/null | head -1)" || true
+      if [ -n "$latest" ]; then
+        tag="$(basename "$latest" .jsonl)"
+        ts="$(tail -1 "$latest" 2>/dev/null | jq -r '.at // empty' 2>/dev/null)" || ts="?"
+        echo "  $agent  tag=$tag  last=$ts"
+      fi
+    done
+  fi
+
+  if [ "$found" -eq 0 ]; then
+    echo "No agents currently running."
+  fi
+}
+
 action_run(){
   agent="${1:-}"; tag="${2:-latest-convo}"; shift 2 || true
   prompt="$*"; [ -n "$prompt" ] || prompt="$(cat)"
@@ -71,11 +118,13 @@ case "$cmd" in
   repo-secrets) action_repo_secrets ;;
   rotate)       action_rotate "$@" ;;
   run)          action_run "$@" ;;
+  status|ps)    action_status ;;
   *) cat <<USAGE
-Usage: scripts/agents {repo-secrets|rotate|run}
+Usage: scripts/agents {repo-secrets|rotate|run|status}
   repo-secrets           Merge ANTHROPIC_API_KEY/GEMINI_API_KEY from env → encrypted secrets
   rotate <KEY> <VALUE>   Set/rotate a single key into encrypted secrets
   run <agent> <tag> "…"  Run native CLI and append JSONL in one go
+  status (or ps)         Show running agents, locks, and recent activity
 USAGE
      ;;
 esac
