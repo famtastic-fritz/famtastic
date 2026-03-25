@@ -45,6 +45,22 @@ function readSpec() {
           console.warn(`[spec] ${TAG}: media_specs is not an array, resetting`);
           _specCache.media_specs = [];
         }
+        // Normalize old-format media_specs (slot→slot_id, missing→empty, infer role)
+        if (Array.isArray(_specCache.media_specs)) {
+          let migrated = false;
+          _specCache.media_specs = _specCache.media_specs.map(s => {
+            if (s.slot_id && s.role && s.status !== 'missing') return s;
+            migrated = true;
+            const slotId = s.slot_id || s.slot || 'unknown';
+            const status = s.status === 'missing' ? 'empty' : (s.status || 'empty');
+            const role = s.role || (slotId.match(/hero/i) ? 'hero' : slotId.match(/logo/i) ? 'logo' : slotId.match(/gallery/i) ? 'gallery' : slotId.match(/team/i) ? 'team' : slotId.match(/service/i) ? 'service' : slotId.match(/testimonial/i) ? 'testimonial' : slotId.match(/favicon/i) ? 'favicon' : 'gallery');
+            return { ...s, slot_id: slotId, status, role, page: s.page || 'index.html' };
+          });
+          if (migrated) {
+            console.log(`[spec] ${TAG}: migrated old-format media_specs to slot-based format`);
+            fs.writeFileSync(SPEC_FILE(), JSON.stringify(_specCache, null, 2));
+          }
+        }
         if (_specCache.design_decisions && !Array.isArray(_specCache.design_decisions)) {
           console.warn(`[spec] ${TAG}: design_decisions is not an array, resetting`);
           _specCache.design_decisions = [];
@@ -66,7 +82,7 @@ function writeSpec(spec) {
   _specCache = spec;
   _specCacheTag = TAG;
   fs.mkdirSync(SITE_DIR(), { recursive: true });
-  writeSpec(spec);
+  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
 }
 
 function invalidateSpecCache() {
@@ -88,7 +104,7 @@ let sessionMessageCount = 0;
 let sessionStartedAt = new Date().toISOString();
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_UPLOADS_PER_SITE = 20;
+const MAX_UPLOADS_PER_SITE = 100; // default; overridden at runtime by loadSettings().max_uploads_per_site
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -212,6 +228,250 @@ function rollbackToVersion(page, timestamp) {
   fs.copyFileSync(versionPath, htmlPath);
 
   return { success: true, restoredFrom: target.timestamp, page };
+}
+
+// --- Site Blueprint ---
+function BLUEPRINT_FILE() { return path.join(SITE_DIR(), 'blueprint.json'); }
+
+function readBlueprint() {
+  if (fs.existsSync(BLUEPRINT_FILE())) {
+    try { return JSON.parse(fs.readFileSync(BLUEPRINT_FILE(), 'utf8')); } catch { return null; }
+  }
+  return null;
+}
+
+function writeBlueprint(bp) {
+  fs.mkdirSync(SITE_DIR(), { recursive: true });
+  bp.last_updated = new Date().toISOString();
+  fs.writeFileSync(BLUEPRINT_FILE(), JSON.stringify(bp, null, 2));
+}
+
+// Swap data-logo-v anchor content: img if assets/logo.{ext} exists, site name text otherwise
+function applyLogoV(pages) {
+  try {
+    const distDir = DIST_DIR();
+    const spec = readSpec();
+    const siteName = spec.site_name || spec.design_brief?.business_name || '';
+
+    const logoSvg = fs.existsSync(path.join(distDir, 'assets', 'logo.svg'));
+    const logoPng = fs.existsSync(path.join(distDir, 'assets', 'logo.png'));
+    const logoFile = logoSvg ? 'assets/logo.svg' : logoPng ? 'assets/logo.png' : null;
+
+    const newContent = logoFile
+      ? `<img src="${logoFile}" alt="${siteName}" class="h-10 w-auto">`
+      : siteName;
+
+    const logoVRegex = /(<a[^>]*data-logo-v[^>]*>)([\s\S]*?)(<\/a>)/i;
+
+    // Update the canonical nav partial first so syncNavPartial won't clobber it
+    const navPartialPath = path.join(distDir, '_partials', '_nav.html');
+    if (fs.existsSync(navPartialPath)) {
+      let nav = fs.readFileSync(navPartialPath, 'utf8');
+      if (logoVRegex.test(nav)) {
+        nav = nav.replace(logoVRegex, `$1${newContent}$3`);
+        fs.writeFileSync(navPartialPath, nav);
+      }
+    }
+
+    // Update all pages
+    let updated = 0;
+    const allPages = pages || listPages();
+    for (const page of allPages) {
+      const filePath = path.join(distDir, page);
+      if (!fs.existsSync(filePath)) continue;
+      let html = fs.readFileSync(filePath, 'utf8');
+      if (logoVRegex.test(html)) {
+        html = html.replace(logoVRegex, `$1${newContent}$3`);
+        fs.writeFileSync(filePath, html);
+        updated++;
+      }
+    }
+
+    if (updated > 0) {
+      console.log(`[logo-v] Applied ${logoFile ? 'image' : 'text'} logo to ${updated} page(s)`);
+    }
+  } catch (err) {
+    console.error('[logo-v] Error:', err.message);
+  }
+}
+
+// Patch a slot img tag regardless of attribute order — finds the full <img> tag by slot-id,
+// then does targeted replacements for src and/or data-slot-status within it.
+// Returns { html, changed } — html is the (possibly modified) string.
+function patchSlotImg(html, escapedId, { src, status } = {}) {
+  const imgRegex = new RegExp(`<img([^>]*data-slot-id=["']${escapedId}["'][^>]*)>`, 'i');
+  let changed = false;
+  const result = html.replace(imgRegex, (match, attrs) => {
+    let a = attrs;
+    if (src !== undefined)    a = a.replace(/src=["'][^"']*["']/i, `src="${src}"`);
+    if (status !== undefined) a = a.replace(/data-slot-status=["'][^"']*["']/i, `data-slot-status="${status}"`);
+    if (a !== attrs) changed = true;
+    return `<img${a}>`;
+  });
+  return { html: result, changed };
+}
+
+// Re-apply saved slot→image mappings after builds so uploads/stock photos survive rebuilds
+function reapplySlotMappings(writtenPages) {
+  try {
+    const spec = readSpec();
+    const mappings = spec.slot_mappings;
+    if (!mappings || Object.keys(mappings).length === 0) return;
+
+    const distDir = DIST_DIR();
+    let applied = 0;
+
+    for (const page of writtenPages) {
+      const filePath = path.join(distDir, page);
+      if (!fs.existsSync(filePath)) continue;
+      let html = fs.readFileSync(filePath, 'utf8');
+      let changed = false;
+
+      for (const [slotId, mapping] of Object.entries(mappings)) {
+        const escapedId = slotId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const patched = patchSlotImg(html, escapedId, { src: mapping.src, status: 'uploaded' });
+        if (patched.changed) {
+          html = patched.html;
+          changed = true;
+          applied++;
+        }
+      }
+
+      if (changed) {
+        fs.writeFileSync(filePath, html);
+      }
+    }
+
+    if (applied > 0) {
+      console.log(`[slot-mappings] Re-applied ${applied} image mapping(s) across ${writtenPages.length} page(s)`);
+    }
+  } catch (err) {
+    console.error('[slot-mappings] Error re-applying mappings:', err.message);
+  }
+}
+
+// Remove slot_mappings keys that no longer correspond to any data-slot-id in any page
+function reconcileSlotMappings() {
+  try {
+    const distDir = DIST_DIR();
+    const spec = readSpec();
+    if (!spec.slot_mappings || Object.keys(spec.slot_mappings).length === 0) return { removed: [] };
+
+    // Collect all real slot IDs across every page
+    const realSlotIds = new Set();
+    for (const page of listPages()) {
+      const filePath = path.join(distDir, page);
+      if (!fs.existsSync(filePath)) continue;
+      const html = fs.readFileSync(filePath, 'utf8');
+      for (const m of html.matchAll(/data-slot-id=["']([^"']+)["']/gi)) {
+        realSlotIds.add(m[1]);
+      }
+    }
+
+    const orphans = Object.keys(spec.slot_mappings).filter(id => !realSlotIds.has(id));
+    if (orphans.length > 0) {
+      for (const id of orphans) delete spec.slot_mappings[id];
+      writeSpec(spec);
+      console.log(`[reconcile] Removed ${orphans.length} orphaned mapping(s): ${orphans.join(', ')}`);
+    }
+
+    return { removed: orphans };
+  } catch (err) {
+    console.error('[reconcile] Error:', err.message);
+    return { removed: [] };
+  }
+}
+
+function updateBlueprint(writtenPages) {
+  const bp = readBlueprint() || { version: 1, pages: {}, global: {}, last_updated: null };
+  const distDir = DIST_DIR();
+
+  for (const page of writtenPages) {
+    const htmlPath = path.join(distDir, page);
+    if (!fs.existsSync(htmlPath)) continue;
+    const html = fs.readFileSync(htmlPath, 'utf8');
+
+    // Extract sections — look for <section> with id or class
+    const sections = [];
+    const sectionMatches = html.matchAll(/<section[^>]*(?:id=["']([^"']+)["']|class=["']([^"']+)["'])[^>]*>/gi);
+    for (const m of sectionMatches) {
+      const id = m[1] || m[2]?.split(/\s+/)[0] || 'unnamed';
+      if (!sections.includes(id)) sections.push(id);
+    }
+
+    // Extract components — popups, modals, overlays
+    const components = [];
+    const compMatches = html.matchAll(/<(?:div|section|aside)[^>]*class=["'][^"']*\b(popup|modal|overlay|lightbox|drawer|dialog)\b[^"']*["'][^>]*>/gi);
+    for (const m of compMatches) {
+      const type = m[1].toLowerCase();
+      if (!components.find(c => c.type === type)) {
+        components.push({ type, added: new Date().toISOString().split('T')[0] });
+      }
+    }
+
+    // Extract title from <title> tag
+    const titleMatch = html.match(/<title[^>]*>([^<|]+)/i);
+    const title = titleMatch ? titleMatch[1].trim() : page.replace('.html', '');
+
+    // Merge with existing entry — preserve layout_notes from previous runs
+    const existing = bp.pages[page] || {};
+    bp.pages[page] = {
+      title,
+      sections,
+      components: mergeComponents(existing.components || [], components),
+      layout_notes: existing.layout_notes || [],
+    };
+  }
+
+  // Extract global nav/footer structure from index.html
+  const indexPath = path.join(distDir, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    const indexHtml = fs.readFileSync(indexPath, 'utf8');
+    const navMatch = indexHtml.match(/<nav[^>]*class=["']([^"']+)["']/i);
+    if (navMatch) bp.global.nav_style = navMatch[1].substring(0, 100);
+    const footerMatch = indexHtml.match(/<footer[^>]*class=["']([^"']+)["']/i);
+    if (footerMatch) bp.global.footer_style = footerMatch[1].substring(0, 100);
+    // Detect logo
+    const logoSvg = fs.existsSync(path.join(distDir, 'assets', 'logo.svg'));
+    const logoPng = fs.existsSync(path.join(distDir, 'assets', 'logo.png'));
+    if (logoSvg) bp.global.logo = 'assets/logo.svg';
+    else if (logoPng) bp.global.logo = 'assets/logo.png';
+  }
+
+  writeBlueprint(bp);
+  console.log(`[blueprint] Updated for ${writtenPages.length} page(s)`);
+  return bp;
+}
+
+function mergeComponents(existing, extracted) {
+  const merged = [...existing];
+  for (const comp of extracted) {
+    if (!merged.find(c => c.type === comp.type && c.content === comp.content)) {
+      merged.push(comp);
+    }
+  }
+  return merged;
+}
+
+function buildBlueprintContext(page) {
+  const bp = readBlueprint();
+  if (!bp || !bp.pages) return '';
+
+  const entry = bp.pages[page];
+  if (!entry) return '';
+
+  let ctx = `\nBLUEPRINT FOR ${page}:`;
+  if (entry.sections.length > 0) {
+    ctx += `\nRequired sections: ${entry.sections.join(', ')}`;
+  }
+  if (entry.components.length > 0) {
+    ctx += `\nComponents that MUST be preserved: ${entry.components.map(c => `${c.type}${c.trigger ? ` (trigger: ${c.trigger})` : ''}${c.content ? ` — ${c.content}` : ''}`).join('; ')}`;
+  }
+  if (entry.layout_notes.length > 0) {
+    ctx += `\nLayout rules: ${entry.layout_notes.join('; ')}`;
+  }
+  ctx += '\nThese sections and components currently exist. Preserve them UNLESS the user explicitly asks to remove, replace, or restructure them. User requests always take priority over the blueprint.\n';
+  return ctx;
 }
 
 // --- Session Summaries ---
@@ -490,6 +750,12 @@ app.get('/api/spec', (req, res) => {
   }
 });
 
+// Alias used by client code: wraps spec in { spec } envelope
+app.get('/api/site-info', (req, res) => {
+  const spec = readSpec();
+  res.json({ spec });
+});
+
 // Serve conversation history
 app.get('/api/history', (req, res) => {
   if (!fs.existsSync(CONVO_FILE())) return res.json([]);
@@ -594,10 +860,10 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   // Check upload limit
   const spec = readSpec();
   const existingUploads = spec.uploaded_assets || [];
-  if (existingUploads.length >= MAX_UPLOADS_PER_SITE) {
-    // Remove the uploaded file
+  const uploadLimit = loadSettings().max_uploads_per_site || MAX_UPLOADS_PER_SITE;
+  if (existingUploads.length >= uploadLimit) {
     fs.unlinkSync(req.file.path);
-    return res.status(400).json({ error: `Upload limit reached (max ${MAX_UPLOADS_PER_SITE} per site)` });
+    return res.status(400).json({ error: `Upload limit reached (max ${uploadLimit} per site). Delete unused uploads to make room.` });
   }
 
   // Sanitize SVGs
@@ -694,6 +960,14 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   spec.uploaded_assets.push(asset);
   writeSpec(spec);
 
+  // If role is logo, copy to canonical assets/logo.{ext} and swap all data-logo-v elements
+  if (role === 'logo') {
+    const canonicalPath = path.join(DIST_DIR(), 'assets', `logo${ext}`);
+    fs.mkdirSync(path.join(DIST_DIR(), 'assets'), { recursive: true });
+    fs.copyFileSync(req.file.path, canonicalPath);
+    applyLogoV(listPages());
+  }
+
   res.json({
     success: true,
     asset,
@@ -714,6 +988,27 @@ app.put('/api/upload/:filename', (req, res) => {
 
   writeSpec(spec);
   res.json({ success: true, asset });
+});
+
+// Delete an uploaded asset — removes file from disk and from spec
+app.delete('/api/upload/:filename', (req, res) => {
+  const filename = req.params.filename;
+  if (!/^[a-zA-Z0-9._\-]+$/.test(filename)) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  // Remove file from disk
+  const filePath = path.join(UPLOADS_DIR(), filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+
+  // Remove from spec.uploaded_assets
+  const spec = readSpec();
+  spec.uploaded_assets = (spec.uploaded_assets || []).filter(a => a.filename !== filename);
+  writeSpec(spec);
+
+  res.json({ success: true, filename });
 });
 
 // List uploaded assets
@@ -921,8 +1216,111 @@ app.post('/api/sessions/load', (req, res) => {
   res.json({ session, messages });
 });
 
+// --- Retrofit Slot Attributes for Pre-Slot HTML ---
+// Scans existing <img> tags in dist/ pages and adds data-slot-id, data-slot-role,
+// data-slot-status attributes. Rebuilds media_specs from actual HTML reality.
+// Only runs if pages have <img> tags but no data-slot-id attributes.
+function retrofitSlotAttributes() {
+  const pages = listPages();
+  const distDir = DIST_DIR();
+  let totalImgs = 0;
+  let totalSlotted = 0;
+  let hasAnySlots = false;
+
+  // First pass: check if any page already has slot attributes
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+    if (html.match(/data-slot-id=/i)) { hasAnySlots = true; break; }
+    totalImgs += (html.match(/<img[^>]*>/gi) || []).length;
+  }
+
+  // Skip if site already has slot attributes or has no images at all
+  if (hasAnySlots || totalImgs === 0) return 0;
+
+  console.log(`[retrofit] Site has ${totalImgs} <img> tag(s) but no slot attributes — retrofitting`);
+
+  const newMediaSpecs = [];
+  const usedIds = new Set();
+
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    let html = fs.readFileSync(filePath, 'utf8');
+    let modified = false;
+    let pageCounter = 0;
+
+    // Find all <img> tags
+    const imgRegex = /<img([^>]*)>/gi;
+    html = html.replace(imgRegex, (fullMatch, attrs) => {
+      // Skip if already has slot attributes (shouldn't happen given check above)
+      if (attrs.match(/data-slot-id=/i)) return fullMatch;
+
+      pageCounter++;
+      const pageName = page.replace('.html', '');
+
+      // Infer role from context: alt text, src filename, class names, surrounding HTML
+      const altMatch = attrs.match(/alt=["']([^"']*)["']/i);
+      const srcMatch = attrs.match(/src=["']([^"']*)["']/i);
+      const alt = (altMatch ? altMatch[1] : '').toLowerCase();
+      const src = (srcMatch ? srcMatch[1] : '').toLowerCase();
+      const combined = `${alt} ${src} ${attrs.toLowerCase()}`;
+
+      let role = 'gallery'; // default
+      if (combined.match(/hero|banner|jumbotron/)) role = 'hero';
+      else if (combined.match(/logo|brand/)) role = 'logo';
+      else if (combined.match(/team|staff|headshot|member/)) role = 'team';
+      else if (combined.match(/testimonial|review|quote/)) role = 'testimonial';
+      else if (combined.match(/service|feature|offering/)) role = 'service';
+      else if (combined.match(/favicon/)) role = 'favicon';
+      else if (combined.match(/gallery|portfolio|project|showcase/)) role = 'gallery';
+      else if (combined.match(/about|story|company/)) role = 'service';
+
+      // Generate unique slot_id
+      let slotId = `${pageName}-${role}-${pageCounter}`;
+      while (usedIds.has(slotId)) {
+        pageCounter++;
+        slotId = `${pageName}-${role}-${pageCounter}`;
+      }
+      usedIds.add(slotId);
+
+      // Determine status from src
+      let status = 'empty';
+      if (src.match(/assets\/uploads\//)) status = 'uploaded';
+      else if (src.match(/assets\/placeholders\//) || src.match(/assets\/stock\//)) status = 'stock';
+      else if (src.match(/data:image\/gif/)) status = 'empty';
+      else if (src && !src.match(/placeholder|picsum|via\.placeholder/)) status = 'uploaded';
+
+      const dimensions = SLOT_DIMENSIONS[role] || '800x600';
+      newMediaSpecs.push({ slot_id: slotId, role, dimensions, status, page });
+
+      // Add slot attributes to the tag
+      modified = true;
+      totalSlotted++;
+      return `<img data-slot-id="${slotId}" data-slot-role="${role}" data-slot-status="${status}"${attrs}>`;
+    });
+
+    if (modified) {
+      fs.writeFileSync(filePath, html);
+    }
+  }
+
+  // Replace media_specs entirely with what we found in HTML
+  if (newMediaSpecs.length > 0) {
+    const spec = readSpec();
+    spec.media_specs = newMediaSpecs;
+    writeSpec(spec);
+    console.log(`[retrofit] Added slot attributes to ${totalSlotted} <img> tag(s), registered ${newMediaSpecs.length} slot(s)`);
+  }
+
+  return totalSlotted;
+}
+
 // --- Brand Health Scanner ---
 function scanBrandHealth() {
+  // Auto-retrofit pre-slot sites on first brand health scan
+  retrofitSlotAttributes();
   const spec = readSpec();
   const mediaSpecs = spec.media_specs || [];
   const pages = listPages();
@@ -1095,199 +1493,10 @@ function labelToFilename(label, section, page) {
 }
 
 // --- Bulk Generate Placeholders ---
-// Scans all pages, generates branded SVG placeholders, replaces gray divs and broken imgs in HTML
+// Disabled — auto-placeholder generation removed.
+// Users fill images via stock photos or upload.
 function bulkGeneratePlaceholders(ws) {
-  const spec = readSpec();
-  const brandColors = extractBrandColors(spec);
-  const pages = listPages();
-  const placeholderDir = path.join(DIST_DIR(), 'assets', 'placeholders');
-  fs.mkdirSync(placeholderDir, { recursive: true });
-
-  let totalGenerated = 0;
-  let totalReplaced = 0;
-  const usedFilenames = new Set();
-
-  for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
-    if (!fs.existsSync(filePath)) continue;
-    let html = fs.readFileSync(filePath, 'utf8');
-    let modified = false;
-    let pageCounter = 0;
-
-    // 1. Replace gray-box div placeholders with <img> tags
-    // Match opening tags only, then find matching close tag via nesting counter
-    const grayDivOpenPattern = /<div([^>]*(?:bg-gray-[1-4]00|background-color:\s*(?:#f3f4f6|#d1d5db|#e5e7eb|#ccc|#ddd|#e2e8f0|#9ca3af|gray))[^>]*)>/gi;
-    const divReplacements = [];
-
-    let divMatch;
-    while ((divMatch = grayDivOpenPattern.exec(html)) !== null) {
-      const openTag = divMatch[0];
-      const attrs = divMatch[1];
-      const startIdx = divMatch.index;
-
-      // Must have meaningful height or centering
-      const hasHeight = attrs.match(/\bh-(?:2[4-9]|[3-9]\d|\d{3})\b/) ||
-                        attrs.match(/\bh-full\b|\baspect-/) ||
-                        attrs.match(/height:\s*(?:[4-9]\d|\d{3,})px/);
-      const hasCentering = attrs.match(/flex.*items-center|items-center.*justify-center/i);
-      if (!hasHeight && !hasCentering) continue;
-
-      // Skip nav/header/footer/buttons
-      if (attrs.match(/nav|header|footer|btn|button/i)) continue;
-
-      // Find matching </div> using nesting counter
-      let depth = 1;
-      let pos = startIdx + openTag.length;
-      while (depth > 0 && pos < html.length) {
-        const nextOpen = html.indexOf('<div', pos);
-        const nextClose = html.indexOf('</div>', pos);
-        if (nextClose === -1) break;
-        if (nextOpen !== -1 && nextOpen < nextClose) {
-          depth++;
-          pos = nextOpen + 4;
-        } else {
-          depth--;
-          if (depth === 0) {
-            pos = nextClose + 6; // length of '</div>'
-          } else {
-            pos = nextClose + 6;
-          }
-        }
-      }
-      if (depth !== 0) continue; // couldn't find matching close tag
-
-      const fullMatch = html.substring(startIdx, pos);
-      const innerContent = html.substring(startIdx + openTag.length, pos - 6);
-
-      // Skip if this div contains nested gray divs (it's a wrapper, not a leaf placeholder)
-      if (innerContent.match(/<div[^>]*bg-gray-[1-4]00/i)) continue;
-      // Skip if already contains placeholder images (idempotency)
-      if (innerContent.match(/assets\/placeholders\//)) continue;
-
-      // Extract text labels from inner content (project names, descriptions)
-      const textParts = [];
-      const textMatches = innerContent.matchAll(/>([A-Za-z][^<]{3,})</g);
-      for (const tm of textMatches) {
-        const t = tm[1].trim();
-        if (t.length > 3 && t.length < 60) textParts.push(t);
-      }
-      const label = textParts[0] || '';
-
-      // Detect section from surrounding context
-      const context = html.substring(Math.max(0, startIdx - 400), Math.min(html.length, startIdx + 500));
-      const sectionHints = context.match(/(?:hero|banner|gallery|portfolio|testimonial|team|about|service|before|after|project|work|contact|feature|benefit|pricing)/i);
-      const section = sectionHints ? sectionHints[0].toLowerCase() : 'image';
-
-      pageCounter++;
-      let filename = labelToFilename(label, section, page);
-      if (usedFilenames.has(filename)) {
-        filename = filename.replace('.svg', `-${pageCounter}.svg`);
-      }
-      usedFilenames.add(filename);
-
-      const displayLabel = label || section;
-      const svgContent = generatePlaceholderSVG(displayLabel, section, brandColors);
-      try {
-        fs.writeFileSync(path.join(placeholderDir, filename), svgContent);
-        totalGenerated++;
-      } catch (e) {
-        console.error(`[placeholders] Failed to write ${filename}: ${e.message}`);
-        continue;
-      }
-
-      // Preserve sizing classes from the matched div
-      const classMatch = attrs.match(/class=["']([^"']*)["']/);
-      const existingClasses = classMatch ? classMatch[1] : '';
-      const cleanClasses = existingClasses
-        .replace(/bg-gray-\d+/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-      const altText = label || section + ' image';
-      const imgTag = `<img src="assets/placeholders/${filename}" alt="${altText}" class="${cleanClasses} object-cover" loading="lazy">`;
-
-      divReplacements.push({ start: startIdx, end: pos, replacement: imgTag });
-    }
-
-    // Apply div replacements in reverse order to preserve indices
-    for (const rep of divReplacements.sort((a, b) => b.start - a.start)) {
-      html = html.substring(0, rep.start) + rep.replacement + html.substring(rep.end);
-      modified = true;
-      totalReplaced++;
-    }
-
-    // 2. Replace broken/placeholder <img> srcs
-    const imgPattern = /<img([^>]*)>/gi;
-    html = html.replace(imgPattern, (fullMatch, attrs) => {
-      const srcMatch = attrs.match(/src=["']([^"']*)["']/i);
-      const src = srcMatch ? srcMatch[1] : '';
-
-      // Skip already-replaced placeholders
-      if (src.includes('assets/placeholders/')) return fullMatch;
-      // Skip small icons
-      const widthMatch = attrs.match(/width=["']?(\d+)/i);
-      if (widthMatch && parseInt(widthMatch[1]) < 20) return fullMatch;
-
-      let isPlaceholder = false;
-      if (!src || src === '#' || src === 'about:blank') {
-        isPlaceholder = true;
-      } else if (src.match(/via\.placeholder|placehold\.|picsum|dummyimage|fakeimg/i)) {
-        isPlaceholder = true;
-      } else if (src.startsWith('data:image/') && src.length < 200) {
-        isPlaceholder = true;
-      } else if (src.match(/placeholder|dummy|sample|example|default|temp|stock|mock/i)) {
-        isPlaceholder = true;
-      } else if (!src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('//')) {
-        const localPath = path.join(DIST_DIR(), src);
-        if (!fs.existsSync(localPath)) isPlaceholder = true;
-      }
-
-      if (!isPlaceholder) return fullMatch;
-
-      const altMatch = attrs.match(/alt=["']([^"']*)["']/i);
-      const alt = altMatch ? altMatch[1] : '';
-      const label = alt || 'image';
-      pageCounter++;
-      let filename = labelToFilename(label, 'img', page);
-      if (usedFilenames.has(filename)) {
-        filename = filename.replace('.svg', `-${pageCounter}.svg`);
-      }
-      usedFilenames.add(filename);
-      const svgContent = generatePlaceholderSVG(label, '', brandColors);
-      try {
-        fs.writeFileSync(path.join(placeholderDir, filename), svgContent);
-        totalGenerated++;
-      } catch (e) {
-        console.error(`[placeholders] Failed to write ${filename}: ${e.message}`);
-        return fullMatch; // keep original on failure
-      }
-
-      // Replace src
-      const newAttrs = attrs.replace(/src=["'][^"']*["']/i, `src="assets/placeholders/${filename}"`);
-      modified = true;
-      totalReplaced++;
-      return `<img${newAttrs}>`;
-    });
-
-    if (modified) {
-      fs.writeFileSync(filePath, html);
-      if (ws) ws.send(JSON.stringify({ type: 'status', content: `Generated placeholders for ${page}` }));
-      console.log(`[placeholders] ${page}: replaced ${totalReplaced} placeholders`);
-    }
-  }
-
-  // Track in spec
-  if (totalGenerated > 0) {
-    const currentSpec = readSpec();
-    currentSpec.placeholder_generation = {
-      last_run: new Date().toISOString(),
-      total_generated: totalGenerated,
-      total_replaced: totalReplaced,
-      directory: 'assets/placeholders/'
-    };
-    writeSpec(currentSpec);
-  }
-
-  return { generated: totalGenerated, replaced: totalReplaced };
+  return { generated: 0, replaced: 0 };
 }
 
 // API endpoint for manual bulk generate trigger
@@ -1366,13 +1575,10 @@ app.post('/api/replace-slot', (req, res) => {
     if (!fs.existsSync(filePath)) continue;
     let html = fs.readFileSync(filePath, 'utf8');
 
-    // Match the img tag with this slot ID and replace src + status
-    const srcRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)src=["'][^"']*["']`, 'i');
-    const statusRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)data-slot-status=["'][^"']*["']`, 'i');
-
-    if (html.match(srcRegex)) {
-      html = html.replace(srcRegex, `$1src="${newSrc}"`);
-      html = html.replace(statusRegex, `$1data-slot-status="uploaded"`);
+    // Patch src + status regardless of attribute order in the img tag
+    const patched = patchSlotImg(html, escapedId, { src: newSrc, status: 'uploaded' });
+    if (patched.changed) {
+      html = patched.html;
       fs.writeFileSync(filePath, html);
       updated = true;
       updatedPage = page;
@@ -1388,26 +1594,198 @@ app.post('/api/replace-slot', (req, res) => {
     }
   }
 
-  // Update media_specs
+  // Update media_specs and store slot mapping for rebuild persistence
   if (updated) {
     const spec = readSpec();
     const ms = (spec.media_specs || []).find(s => s.slot_id === slot_id);
     if (ms) {
       ms.status = 'uploaded';
-      writeSpec(spec);
     }
+    if (!spec.slot_mappings) spec.slot_mappings = {};
+    spec.slot_mappings[slot_id] = { src: newSrc, alt: ms?.alt || slot_id.replace(/-/g, ' ') };
+    writeSpec(spec);
   }
 
   res.json({ success: updated, slot_id, page: updatedPage });
 });
 
+// Clear a single slot mapping (used by QSF "Clear" button)
+app.post('/api/clear-slot-mapping', (req, res) => {
+  const { slot_id } = req.body;
+  if (!slot_id || typeof slot_id !== 'string' || !/^[a-z0-9-]+$/i.test(slot_id)) {
+    return res.status(400).json({ error: 'Invalid slot_id' });
+  }
+  const spec = readSpec();
+  if (spec.slot_mappings && spec.slot_mappings[slot_id]) {
+    delete spec.slot_mappings[slot_id];
+    writeSpec(spec);
+    console.log(`[clear-slot-mapping] Removed mapping for ${slot_id}`);
+  }
+  // Also update media_specs status back to empty
+  const ms = (spec.media_specs || []).find(s => s.slot_id === slot_id);
+  if (ms) ms.status = 'empty';
+  writeSpec(spec);
+  res.json({ success: true, slot_id });
+});
+
 app.get('/api/brand-health', (req, res) => {
-  res.json(scanBrandHealth());
+  try {
+    const result = scanBrandHealth();
+    // Attach orphaned mapping count so the UI can surface it
+    const spec = readSpec();
+    const slotMappings = spec.slot_mappings || {};
+    const distDir = DIST_DIR();
+    const realSlotIds = new Set();
+    for (const page of listPages()) {
+      const fp = path.join(distDir, page);
+      if (!fs.existsSync(fp)) continue;
+      for (const m of fs.readFileSync(fp, 'utf8').matchAll(/data-slot-id=["']([^"']+)["']/gi)) {
+        realSlotIds.add(m[1]);
+      }
+    }
+    result.orphaned_mappings = Object.keys(slotMappings).filter(id => !realSlotIds.has(id)).length;
+    result.upload_count = (spec.uploaded_assets || []).length;
+    result.upload_limit = loadSettings().max_uploads_per_site || 100;
+    res.json(result);
+  } catch (e) {
+    console.error('[brand-health] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Visual Slot Mode ---
+// Serves a page with interactive slot overlays injected — never modifies dist files
+function buildSlotInspectorScript(safeSlotMetaJson) {
+  return `<script id="slot-inspector">
+(function() {
+  var SLOT_META = ${safeSlotMetaJson};
+  var STATUS_COLORS = {
+    empty:    { border:'#ef4444', badge:'#ef4444', text:'#fff', icon:'\u25cb' },
+    stock:    { border:'#eab308', badge:'#ca8a04', text:'#fff', icon:'\u25c8' },
+    uploaded: { border:'#22c55e', badge:'#16a34a', text:'#fff', icon:'\u25cf' },
+    final:    { border:'#22c55e', badge:'#16a34a', text:'#fff', icon:'\u2605' },
+  };
+  var DEFAULT_COLOR = { border:'#6b7280', badge:'#4b5563', text:'#fff', icon:'?' };
+
+  function decorate() {
+    var imgs = document.querySelectorAll('[data-slot-id]');
+    imgs.forEach(function(img) {
+      var slotId   = img.getAttribute('data-slot-id');
+      var slotRole = img.getAttribute('data-slot-role') || '';
+      var status   = (img.getAttribute('data-slot-status') || 'empty').toLowerCase();
+      var meta     = SLOT_META[slotId] || {};
+      var dims     = meta.dimensions || '?';
+      var c        = STATUS_COLORS[status] || DEFAULT_COLOR;
+      var parent   = img.parentElement;
+
+      // Ensure positioning context
+      var ps = window.getComputedStyle(parent).position;
+      if (!['relative','absolute','fixed','sticky'].includes(ps)) {
+        parent.style.position = 'relative';
+      }
+
+      // Border overlay (pointer-events:none — doesn't block site interactions)
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:absolute;inset:0;pointer-events:none;border:2.5px solid '
+        + c.border + ';z-index:9000;box-sizing:border-box;transition:border-width .1s';
+      var badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;top:4px;left:4px;background:' + c.badge
+        + ';color:' + c.text + ';font:700 9px/1 system-ui,sans-serif;padding:2px 6px;'
+        + 'border-radius:3px;pointer-events:none;z-index:9001;white-space:nowrap;'
+        + 'max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis';
+      badge.textContent = c.icon + ' ' + slotId;
+      ov.appendChild(badge);
+      parent.appendChild(ov);
+
+      // Click target (captures events above the image)
+      var ct = document.createElement('div');
+      ct.style.cssText = 'position:absolute;inset:0;z-index:9002;cursor:pointer';
+      // Tooltip
+      var tt = document.createElement('div');
+      tt.style.cssText = 'display:none;position:absolute;bottom:6px;left:6px;'
+        + 'background:rgba(15,23,42,.95);color:#e2e8f0;font:400 11px/1.5 system-ui,sans-serif;'
+        + 'padding:6px 10px;border-radius:6px;border:1px solid #334155;'
+        + 'white-space:nowrap;z-index:9003;pointer-events:none';
+      tt.innerHTML = '<strong>' + slotId + '</strong><br>Role: '
+        + (slotRole || meta.role || '-') + '<br>Dims: ' + dims + '<br>Status: ' + status;
+      ct.appendChild(tt);
+      ct.addEventListener('mouseenter', function() { tt.style.display='block'; ov.style.borderWidth='4px'; });
+      ct.addEventListener('mouseleave', function() { tt.style.display='none';  ov.style.borderWidth='2.5px'; });
+      ct.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        window.parent.postMessage({
+          type:'slot-click', slotId:slotId,
+          role:slotRole||meta.role||'', status:status, dimensions:dims
+        }, '*');
+      });
+      parent.appendChild(ct);
+    });
+
+    // Intercept internal .html nav links — send page-switch to Studio instead
+    document.addEventListener('click', function(e) {
+      var a = e.target.closest('a[href]');
+      if (!a) return;
+      var href = a.getAttribute('href');
+      if (href && href.endsWith('.html')
+          && !href.startsWith('http') && !href.startsWith('#')
+          && !href.startsWith('mailto') && !href.startsWith('tel')) {
+        e.preventDefault();
+        window.parent.postMessage({ type:'slot-mode-navigate', page:href }, '*');
+      }
+    }, true);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', decorate);
+  } else {
+    decorate();
+  }
+})();
+<\/script>`;
+}
+
+app.get('/slot-preview/:page', (req, res) => {
+  const page = req.params.page;
+  if (!isValidPageName(page)) return res.status(400).send('Invalid page name');
+
+  const filePath = path.join(DIST_DIR(), page);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Page not found');
+
+  let html = fs.readFileSync(filePath, 'utf8');
+
+  // Build slot metadata map for the injected script (avoids async fetch inside iframe)
+  const spec = readSpec();
+  const slotMeta = {};
+  for (const s of (spec.media_specs || [])) {
+    slotMeta[s.slot_id] = { dimensions: s.dimensions, role: s.role, status: s.status };
+  }
+
+  // Inject <base> tag so relative paths still resolve via the preview static server
+  if (!html.includes('<base ')) {
+    html = html.replace(/<head([^>]*)>/i,
+      `<head$1>\n  <base href="http://localhost:${PREVIEW_PORT}/">`);
+  }
+
+  // Rewrite absolute /assets/ paths to fully-qualified preview server URLs
+  // (base tag only helps relative paths; absolute /assets/... would hit studio port instead)
+  const previewBase = `http://localhost:${PREVIEW_PORT}`;
+  html = html.replace(/src="\/assets\//g,  `src="${previewBase}/assets/`);
+  html = html.replace(/src='\/assets\//g,  `src='${previewBase}/assets/`);
+  html = html.replace(/href="\/assets\//g, `href="${previewBase}/assets/`);
+  html = html.replace(/href='\/assets\//g, `href='${previewBase}/assets/`);
+
+  // Inject slot inspector before </body>
+  html = html.replace(/<\/body>/i,
+    buildSlotInspectorScript(JSON.stringify(slotMeta)) + '\n</body>');
+
+  res.set('Content-Type', 'text/html');
+  res.set('Cache-Control', 'no-store');
+  res.send(html);
 });
 
 // --- Nav Partial Sync ---
 // Keeps a single _nav.html partial as source of truth, injects into all pages
-function syncNavPartial(ws) {
+function syncNavPartial(ws, excludePages = []) {
   const distDir = DIST_DIR();
   const partialsDir = path.join(distDir, '_partials');
   const navPartialPath = path.join(partialsDir, '_nav.html');
@@ -1439,6 +1817,7 @@ function syncNavPartial(ws) {
   const canonicalNav = fs.readFileSync(navPartialPath, 'utf8');
   let synced = 0;
   for (const page of pages) {
+    if (excludePages.includes(page)) continue;
     const filePath = path.join(distDir, page);
     let html = fs.readFileSync(filePath, 'utf8');
     const navMatch = html.match(/<nav[\s\S]*?<\/nav>/i);
@@ -1482,13 +1861,13 @@ function syncNavFromPage(ws, sourcePage) {
     fs.writeFileSync(navPartialPath, sourceNav[0]);
   }
 
-  // Sync all pages to match
-  syncNavPartial(ws);
+  // Sync all pages to match — but skip the source page so we don't clobber the edit
+  syncNavPartial(ws, [sourcePage]);
 }
 
 // --- Footer Partial Sync ---
 // Same pattern as nav sync — keeps a canonical _footer.html across all pages
-function syncFooterPartial(ws) {
+function syncFooterPartial(ws, excludePages = []) {
   const distDir = DIST_DIR();
   const partialsDir = path.join(distDir, '_partials');
   const footerPartialPath = path.join(partialsDir, '_footer.html');
@@ -1512,6 +1891,7 @@ function syncFooterPartial(ws) {
   const canonicalFooter = fs.readFileSync(footerPartialPath, 'utf8');
   let synced = 0;
   for (const page of pages) {
+    if (excludePages.includes(page)) continue;
     const filePath = path.join(distDir, page);
     let html = fs.readFileSync(filePath, 'utf8');
     const footerMatch = html.match(/<footer[\s\S]*?<\/footer>/i);
@@ -1553,7 +1933,8 @@ function syncFooterFromPage(ws, sourcePage) {
     fs.writeFileSync(footerPartialPath, sourceFooter[0]);
   }
 
-  syncFooterPartial(ws);
+  // Sync all pages — skip the source page so we don't clobber the edit
+  syncFooterPartial(ws, [sourcePage]);
 }
 
 // --- Head Section Sync ---
@@ -1586,6 +1967,9 @@ function syncHeadSection(ws) {
     // Custom style blocks (but not page-specific ones marked with data-page)
     const styles = headHtml.match(/<style(?![^>]*data-page)[^>]*>[\s\S]*?<\/style>/gi);
     if (styles) elements.push(...styles);
+    // External stylesheet link (assets/styles.css)
+    const cssLink = headHtml.match(/<link[^>]*href=["'][^"']*assets\/styles\.css["'][^>]*\/?>/gi);
+    if (cssLink) elements.push(...cssLink);
     // Icon CDNs (Font Awesome, Material Icons, etc.)
     const iconCdns = headHtml.match(/<link[^>]*href=["'][^"']*(?:font-?awesome|material.*icons|heroicons)[^"']*["'][^>]*\/?>/gi);
     if (iconCdns) elements.push(...iconCdns);
@@ -1630,6 +2014,139 @@ function syncHeadSection(ws) {
     ws.send(JSON.stringify({ type: 'status', content: `Head section synced across ${synced} page(s)` }));
   }
   return { synced };
+}
+
+// --- CSS Extraction Post-Processor ---
+// Extracts shared <style> blocks from index.html into assets/styles.css,
+// then replaces inline styles with a <link> in all pages.
+// NOTE: Tailwind CDN runtime styles must NEVER be extracted — only explicit <style> blocks written by Claude.
+function extractSharedCss(ws) {
+  const distDir = DIST_DIR();
+  const indexPath = path.join(distDir, 'index.html');
+  if (!fs.existsSync(indexPath)) return { extracted: false };
+
+  const indexHtml = fs.readFileSync(indexPath, 'utf8');
+
+  // Match shared <style> blocks (NOT data-page ones, NOT Tailwind config scripts)
+  const sharedStyleRegex = /<style(?![^>]*data-page)[^>]*>([\s\S]*?)<\/style>/gi;
+  const styleBlocks = [];
+  let match;
+  while ((match = sharedStyleRegex.exec(indexHtml)) !== null) {
+    // Skip empty styles
+    if (match[1].trim()) styleBlocks.push(match[1]);
+  }
+
+  if (styleBlocks.length === 0) return { extracted: false };
+
+  // Write combined CSS to assets/styles.css
+  const cssContent = styleBlocks.join('\n\n');
+  const assetsDir = path.join(distDir, 'assets');
+  fs.mkdirSync(assetsDir, { recursive: true });
+  fs.writeFileSync(path.join(assetsDir, 'styles.css'), cssContent);
+
+  const linkTag = '<link rel="stylesheet" href="assets/styles.css">';
+  const pages = listPages();
+  let updated = 0;
+
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    let html = fs.readFileSync(filePath, 'utf8');
+
+    // Remove shared <style> blocks (keep data-page ones)
+    html = html.replace(/<style(?![^>]*data-page)[^>]*>[\s\S]*?<\/style>/gi, '');
+
+    // Add <link> to styles.css if not already present
+    if (!html.includes('assets/styles.css')) {
+      html = html.replace(/<\/head>/i, `  ${linkTag}\n  </head>`);
+    }
+
+    fs.writeFileSync(filePath, html);
+    updated++;
+  }
+
+  if (ws && updated > 0) {
+    ws.send(JSON.stringify({ type: 'status', content: `Extracted shared CSS to assets/styles.css (${updated} pages updated)` }));
+  }
+  console.log(`[css-extract] Extracted ${styleBlocks.length} style block(s) to assets/styles.css, updated ${updated} pages`);
+  return { extracted: true, pages: updated };
+}
+
+// --- SEO Meta Injection (post-processing) ---
+function injectSeoMeta(ws) {
+  const distDir = DIST_DIR();
+  const pages = listPages();
+  const spec = readSpec();
+  const siteName = spec.site_name || 'Website';
+  const brief = spec.design_brief || {};
+  const goal = brief.goal || '';
+  const audience = brief.audience || '';
+  const businessType = spec.business_type || '';
+  const tone = Array.isArray(brief.tone) ? brief.tone.join(', ') : (brief.tone || '');
+
+  let injected = 0;
+
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    let html = fs.readFileSync(filePath, 'utf8');
+    let changed = false;
+
+    // Derive page name from filename
+    const pageName = page === 'index.html' ? 'Home'
+      : page.replace('.html', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    // Build description from spec context
+    const baseDesc = goal
+      ? goal.substring(0, 155)
+      : `${siteName} — ${pageName}. ${businessType ? businessType + '.' : ''} ${tone ? 'We are ' + tone + '.' : ''}`;
+    const description = baseDesc.length > 160 ? baseDesc.substring(0, 157) + '...' : baseDesc;
+
+    // Build keywords from spec
+    const keywords = [
+      siteName, businessType, pageName.toLowerCase(),
+      ...(brief.content_priorities || []).slice(0, 3).map(p => p.split(' ').slice(0, 3).join(' ')),
+      ...(Array.isArray(brief.tone) ? brief.tone : [])
+    ].filter(Boolean).join(', ');
+
+    // Ensure <html lang="en">
+    if (!html.match(/<html[^>]*lang=/i)) {
+      html = html.replace(/<html/i, '<html lang="en"');
+      changed = true;
+    }
+
+    // Build the meta block — all tags that are missing
+    const ogTitle = `${pageName} | ${siteName}`;
+    const metaTags = [];
+    if (!html.match(/<meta[^>]*name=["']description["']/i))
+      metaTags.push(`    <meta name="description" content="${description.replace(/"/g, '&quot;')}">`);
+    if (!html.match(/<meta[^>]*name=["']keywords["']/i))
+      metaTags.push(`    <meta name="keywords" content="${keywords.replace(/"/g, '&quot;')}">`);
+    if (!html.match(/<meta[^>]*property=["']og:title["']/i))
+      metaTags.push(`    <meta property="og:title" content="${ogTitle.replace(/"/g, '&quot;')}">`);
+    if (!html.match(/<meta[^>]*property=["']og:description["']/i))
+      metaTags.push(`    <meta property="og:description" content="${description.replace(/"/g, '&quot;')}">`);
+    if (!html.match(/<meta[^>]*property=["']og:type["']/i))
+      metaTags.push(`    <meta property="og:type" content="website">`);
+    if (!html.match(/<meta[^>]*name=["']robots["']/i))
+      metaTags.push(`    <meta name="robots" content="index, follow">`);
+
+    // Inject as a block right after </title>
+    if (metaTags.length > 0) {
+      const metaBlock = '\n' + metaTags.join('\n');
+      html = html.replace(/(<\/title>)/i, `$1${metaBlock}`);
+      changed = true;
+    }
+
+    if (changed) {
+      fs.writeFileSync(filePath, html);
+      injected++;
+    }
+  }
+
+  if (injected > 0 && ws) {
+    console.log(`[seo] Injected meta tags in ${injected} page(s)`);
+    ws.send(JSON.stringify({ type: 'status', content: `SEO meta tags added to ${injected} page(s)` }));
+  }
+  return { injected };
 }
 
 // --- Auto Media Spec Scanner ---
@@ -1932,6 +2449,23 @@ app.put('/api/media-specs', (req, res) => {
   res.json({ success: true, media_specs: spec.media_specs });
 });
 
+// --- Rescan all pages: re-register slots + remove orphaned mappings ---
+app.post('/api/rescan', (req, res) => {
+  try {
+    const pagesBefore = (readSpec().media_specs || []).length;
+    extractAndRegisterSlots(listPages());
+    const { removed } = reconcileSlotMappings();
+    const pagesAfter = (readSpec().media_specs || []).length;
+    const slots_registered = pagesAfter;
+    const pages_scanned = listPages().length;
+    console.log(`[rescan] ${pages_scanned} pages, ${slots_registered} slots, ${removed.length} orphans removed`);
+    res.json({ success: true, slots_registered, orphans_removed: removed.length, pages_scanned, orphans: removed });
+  } catch (err) {
+    console.error('[rescan] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- AI Image Prompt Generator ---
 app.post('/api/generate-image-prompt', (req, res) => {
   const { slot, context } = req.body;
@@ -2005,6 +2539,92 @@ Make the prompt specific, visual, and tailored to the brand. Include style keywo
   });
 });
 
+// --- Multi-provider stock photo fetcher ---
+// Returns up to `limit` results from one provider, or a fallback SVG placeholder.
+// result: [{ url, thumb, credit, provider }]
+async function fetchFromProvider(provider, query, width, height, limit = 6) {
+  const config = loadSettings();
+  const sp = config.stock_photo || {};
+  const w = width || 800;
+  const h = height || 600;
+
+  if (provider === 'unsplash') {
+    const key = sp.unsplash_api_key;
+    if (!key) return [];
+    try {
+      const https = require('https');
+      const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${limit}&orientation=landscape&client_id=${key}`;
+      const data = await new Promise((resolve, reject) => {
+        https.get(url, { headers: { 'Accept-Version': 'v1' } }, (res) => {
+          let body = '';
+          res.on('data', c => body += c);
+          res.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error('parse error')); } });
+        }).on('error', reject);
+      });
+      return (data.results || []).map(p => ({
+        url: `${p.urls.raw}&w=${w}&h=${h}&fit=crop&auto=format`,
+        thumb: p.urls.thumb,
+        credit: p.user?.name || 'Unsplash',
+        provider: 'unsplash',
+      }));
+    } catch { return []; }
+  }
+
+  if (provider === 'pexels') {
+    const key = sp.pexels_api_key;
+    if (!key) return [];
+    try {
+      const https = require('https');
+      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${limit}&orientation=landscape`;
+      const data = await new Promise((resolve, reject) => {
+        https.get(url, { headers: { 'Authorization': key } }, (res) => {
+          let body = '';
+          res.on('data', c => body += c);
+          res.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error('parse error')); } });
+        }).on('error', reject);
+      });
+      return (data.photos || []).map(p => ({
+        url: p.src?.landscape || p.src?.original,
+        thumb: p.src?.small,
+        credit: p.photographer || 'Pexels',
+        provider: 'pexels',
+      }));
+    } catch { return []; }
+  }
+
+  if (provider === 'placeholder') {
+    // Zero-dependency SVG placeholder — always works
+    const label = query.split(' ').slice(0, 3).join(' ');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="#1e293b"/><text x="50%" y="50%" font-family="system-ui,sans-serif" font-size="18" fill="#64748b" text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`;
+    const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+    return [{ url: dataUrl, thumb: dataUrl, credit: 'Placeholder', provider: 'placeholder' }];
+  }
+
+  return [];
+}
+
+// --- Stock photo search (preview grid for QSF) ---
+app.get('/api/stock-search', async (req, res) => {
+  const { query, width, height } = req.query;
+  if (!query) return res.status(400).json({ error: 'query required' });
+
+  const w = parseInt(width) || 800;
+  const h = parseInt(height) || 600;
+
+  const [unsplashResults, pexelsResults] = await Promise.all([
+    fetchFromProvider('unsplash', query, w, h, 3),
+    fetchFromProvider('pexels', query, w, h, 3),
+  ]);
+
+  const results = [...unsplashResults, ...pexelsResults];
+  // Always pad with placeholder if we have < 2 real results
+  if (results.length < 2) {
+    results.push(...await fetchFromProvider('placeholder', query, w, h, 1));
+  }
+
+  res.json({ results, query });
+});
+
 // --- Stock Photo Fill ---
 app.post('/api/stock-photo', async (req, res) => {
   const { slot_id, query, width, height } = req.body;
@@ -2012,11 +2632,21 @@ app.post('/api/stock-photo', async (req, res) => {
     return res.status(400).json({ error: 'slot_id and query required' });
   }
 
-  const spec = readSpec();
-  const mediaSpecs = spec.media_specs || [];
-  const slotSpec = mediaSpecs.find(s => s.slot_id === slot_id);
+  let spec = readSpec();
+  let mediaSpecs = spec.media_specs || [];
+  let slotSpec = mediaSpecs.find(s => s.slot_id === slot_id);
+
+  // Slot may exist in HTML but not yet registered — rescan and retry
   if (!slotSpec) {
-    return res.status(404).json({ error: `Slot ${slot_id} not found in media_specs` });
+    extractAndRegisterSlots(listPages());
+    spec = readSpec();
+    mediaSpecs = spec.media_specs || [];
+    slotSpec = mediaSpecs.find(s => s.slot_id === slot_id);
+  }
+  // Still not found — create a minimal entry so the fill can proceed
+  if (!slotSpec) {
+    slotSpec = { slot_id, role: 'unknown', dimensions: `${width||800}x${height||600}`, status: 'empty', page: '' };
+    spec.media_specs = [...mediaSpecs, slotSpec];
   }
 
   const w = width || parseInt((slotSpec.dimensions || '800x600').split('x')[0]) || 800;
@@ -2028,15 +2658,26 @@ app.post('/api/stock-photo', async (req, res) => {
   const outputFile = path.join(stockDir, `${slot_id}.jpg`);
 
   try {
-    // Load API key from config
+    // Build contextual query if caller just passed the role name
+    const brief = spec.design_brief || {};
+    const businessName = spec.site_name || brief.business_name || '';
+    const industry = spec.business_type || brief.industry || brief.category || '';
+    let finalQuery = query;
+    if (query === slotSpec.role && (businessName || industry)) {
+      finalQuery = [businessName, industry, query].filter(Boolean).join(' ');
+    }
+
+    // Load all provider API keys from config
     const config = loadSettings();
-    const apiKey = config.stock_photo?.unsplash_api_key || '';
+    const sp = config.stock_photo || {};
     const env = { ...process.env };
-    if (apiKey) env.UNSPLASH_API_KEY = apiKey;
+    if (sp.unsplash_api_key) env.UNSPLASH_API_KEY = sp.unsplash_api_key;
+    if (sp.pexels_api_key) env.PEXELS_API_KEY = sp.pexels_api_key;
+    if (sp.pixabay_api_key) env.PIXABAY_API_KEY = sp.pixabay_api_key;
 
     const scriptPath = path.join(__dirname, '..', 'scripts', 'stock-photo');
     const { execFileSync } = require('child_process');
-    execFileSync(scriptPath, [query, String(w), String(h), outputFile], { env, timeout: 30000 });
+    execFileSync(scriptPath, [finalQuery, String(w), String(h), outputFile], { env, timeout: 30000 });
 
     // Atomic update: set src in HTML + update status
     const pages = listPages();
@@ -2044,24 +2685,98 @@ app.post('/api/stock-photo', async (req, res) => {
     for (const page of pages) {
       const filePath = path.join(distDir, page);
       let html = fs.readFileSync(filePath, 'utf8');
-      const slotRegex = new RegExp(`(<img[^>]*data-slot-id=["']${slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?)data-slot-status=["'][^"']*["']`, 'i');
-      const srcRegex = new RegExp(`(<img[^>]*data-slot-id=["']${slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?)src=["'][^"']*["']`, 'i');
-      if (html.match(slotRegex) || html.match(srcRegex)) {
-        html = html.replace(slotRegex, `$1data-slot-status="stock"`);
-        html = html.replace(srcRegex, `$1src="assets/stock/${slot_id}.jpg"`);
-        fs.writeFileSync(filePath, html);
+      const escapedStockId = slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const patched = patchSlotImg(html, escapedStockId, {
+        src: `assets/stock/${slot_id}.jpg`,
+        status: 'stock',
+      });
+      if (patched.changed) {
+        fs.writeFileSync(filePath, patched.html);
         updated = true;
       }
     }
 
     // Update media_specs status
     slotSpec.status = 'stock';
+    // Store query used so it's visible in slot detail / QSF
+    if (!spec.slot_mappings) spec.slot_mappings = {};
+    spec.slot_mappings[slot_id] = {
+      src: `assets/stock/${slot_id}.jpg`,
+      alt: slot_id.replace(/-/g, ' '),
+      provider: 'stock',
+      query: finalQuery,
+    };
+    writeSpec(spec);
+
+    res.json({ success: true, slot_id, src: `assets/stock/${slot_id}.jpg`, query: finalQuery, updated });
+  } catch (err) {
+    console.error('[stock-photo]', err.message);
+    res.status(500).json({ error: `Failed to fetch stock photo: ${err.message}` });
+  }
+});
+
+// --- Apply a pre-selected stock photo URL to a slot ---
+app.post('/api/stock-apply', async (req, res) => {
+  const { slot_id, image_url, credit, provider, query, width, height } = req.body;
+  if (!slot_id || !image_url) return res.status(400).json({ error: 'slot_id and image_url required' });
+
+  // Validate URL
+  let parsedUrl;
+  try { parsedUrl = new URL(image_url); } catch { return res.status(400).json({ error: 'invalid image_url' }); }
+  if (!['https:', 'http:'].includes(parsedUrl.protocol)) return res.status(400).json({ error: 'invalid protocol' });
+
+  const distDir = DIST_DIR();
+  const stockDir = path.join(distDir, 'assets', 'stock');
+  fs.mkdirSync(stockDir, { recursive: true });
+  const outputFile = path.join(stockDir, `${slot_id}.jpg`);
+
+  try {
+    // Download the image
+    await new Promise((resolve, reject) => {
+      const https = require('https');
+      const http = require('http');
+      const proto = parsedUrl.protocol === 'https:' ? https : http;
+      const file = fs.createWriteStream(outputFile);
+      proto.get(image_url, (response) => {
+        if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+          // Follow one redirect
+          proto.get(response.headers.location, (r2) => { r2.pipe(file); file.on('finish', resolve); }).on('error', reject);
+        } else {
+          response.pipe(file);
+          file.on('finish', resolve);
+        }
+      }).on('error', reject);
+    });
+
+    // Patch HTML slot
+    const pages = listPages();
+    let updated = false;
+    for (const page of pages) {
+      const filePath = path.join(distDir, page);
+      let html = fs.readFileSync(filePath, 'utf8');
+      const escaped = slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const patched = patchSlotImg(html, escaped, { src: `assets/stock/${slot_id}.jpg`, status: 'stock' });
+      if (patched.changed) { fs.writeFileSync(filePath, patched.html); updated = true; }
+    }
+
+    // Update spec
+    let spec = readSpec();
+    const slotSpec = (spec.media_specs || []).find(s => s.slot_id === slot_id);
+    if (slotSpec) slotSpec.status = 'stock';
+    if (!spec.slot_mappings) spec.slot_mappings = {};
+    spec.slot_mappings[slot_id] = {
+      src: `assets/stock/${slot_id}.jpg`,
+      alt: slot_id.replace(/-/g, ' '),
+      provider: provider || 'stock',
+      credit: credit || '',
+      query: query || '',
+    };
     writeSpec(spec);
 
     res.json({ success: true, slot_id, src: `assets/stock/${slot_id}.jpg`, updated });
   } catch (err) {
-    console.error('[stock-photo]', err.message);
-    res.status(500).json({ error: `Failed to fetch stock photo: ${err.message}` });
+    console.error('[stock-apply]', err.message);
+    res.status(500).json({ error: `Failed to download image: ${err.message}` });
   }
 });
 
@@ -2244,10 +2959,11 @@ function loadSettings() {
     model: 'claude-haiku-4-5-20251001',
     deploy_target: 'netlify',
     deploy_team: 'fritz-medine',
+    brainstorm_profile: 'balanced',
     preview_port: 3333,
     studio_port: 3334,
     max_upload_size_mb: 5,
-    max_uploads_per_site: 20,
+    max_uploads_per_site: 100,
     auto_summary: true,
     auto_version: true,
     max_versions: 50,
@@ -2266,6 +2982,41 @@ function saveSettings(settings) {
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
 }
 
+app.get('/api/blueprint', (req, res) => {
+  const bp = readBlueprint();
+  res.json(bp || { version: 1, pages: {}, global: {}, last_updated: null });
+});
+
+app.post('/api/blueprint', (req, res) => {
+  if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'JSON body required' });
+  const bp = readBlueprint() || { version: 1, pages: {}, global: {}, last_updated: null };
+  // Merge incoming changes
+  if (req.body.pages) {
+    for (const [page, entry] of Object.entries(req.body.pages)) {
+      if (!isValidPageName(page)) continue;
+      bp.pages[page] = {
+        title: entry.title || bp.pages[page]?.title || page.replace('.html', ''),
+        sections: Array.isArray(entry.sections) ? entry.sections : (bp.pages[page]?.sections || []),
+        components: Array.isArray(entry.components) ? entry.components : (bp.pages[page]?.components || []),
+        layout_notes: Array.isArray(entry.layout_notes) ? entry.layout_notes : (bp.pages[page]?.layout_notes || []),
+      };
+    }
+  }
+  if (req.body.global) bp.global = { ...bp.global, ...req.body.global };
+  writeBlueprint(bp);
+  res.json(bp);
+});
+
+app.get('/api/build-metrics', (req, res) => {
+  const metricsFile = path.join(SITE_DIR(), 'build-metrics.jsonl');
+  if (!fs.existsSync(metricsFile)) return res.json([]);
+  try {
+    const lines = fs.readFileSync(metricsFile, 'utf8').trim().split('\n').filter(Boolean);
+    const metrics = lines.map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    res.json(metrics);
+  } catch { res.json([]); }
+});
+
 app.get('/api/settings', (req, res) => {
   res.json(loadSettings());
 });
@@ -2274,7 +3025,7 @@ app.put('/api/settings', (req, res) => {
   if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'JSON body required' });
   const allowedKeys = ['model', 'deploy_target', 'deploy_team', 'preview_port', 'studio_port',
     'max_upload_size_mb', 'max_uploads_per_site', 'auto_summary', 'auto_version', 'max_versions',
-    'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id'];
+    'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id', 'brainstorm_profile'];
   const current = loadSettings();
   for (const key of Object.keys(req.body)) {
     if (allowedKeys.includes(key)) current[key] = req.body[key];
@@ -2389,7 +3140,10 @@ function buildPromptContext(requestType, spec, userMessage) {
   } else if (requestType === 'bug_fix' || requestType === 'content_update') {
     // Full source needed for precise edits
     htmlContext = currentHtml;
-  } else if (requestType === 'layout_update' || requestType === 'restyle') {
+  } else if (requestType === 'layout_update') {
+    // Full source needed — layout changes must see existing content to preserve it
+    htmlContext = currentHtml;
+  } else if (requestType === 'restyle') {
     // Structural summary + key sections
     if (currentHtml.length > 3000) {
       htmlContext = summarizeHtml(currentHtml);
@@ -2436,9 +3190,16 @@ function buildPromptContext(requestType, spec, userMessage) {
       if (a.label) desc += ` "${a.label}"`;
       if (a.notes) desc += ` (${a.notes})`;
       desc += ` → /assets/uploads/${a.filename}`;
+      // Role-specific instruction
+      if (a.role === 'brand_asset') {
+        desc += ' — USE this file directly in the HTML (logo, favicon, brand element)';
+      } else if (a.role === 'content' || a.role === 'site_image') {
+        desc += ' — Place this image in the appropriate section';
+      } else if (['reference', 'inspiration', 'layout_reference', 'style_reference'].includes(a.role)) {
+        desc += ' — This shows the STYLE the user wants — match the aesthetic, do NOT use this file in the HTML';
+      }
       return desc;
     }).join('\n');
-    assetsContext += '\nIMPORTANT: "inspiration" assets show the VIBE the user wants, not content to copy literally. "content" assets should be used directly. "brand_asset" assets (logos, etc.) should be referenced in the HTML.';
   }
 
   // Cross-session context
@@ -2457,7 +3218,23 @@ function buildPromptContext(requestType, spec, userMessage) {
 - Every section should feel intentional for THIS specific business/project
 - If the user's request conflicts with the brief, flag it — don't silently override`;
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext };
+  // Blueprint context — prevents rebuild regression
+  const blueprintContext = buildBlueprintContext(currentPage);
+
+  // Slot mapping context — tell Claude about existing images so it preserves them
+  let slotMappingContext = '';
+  const slotMappings = spec.slot_mappings || {};
+  const mappingEntries = Object.entries(slotMappings);
+  if (mappingEntries.length > 0) {
+    slotMappingContext = '\nEXISTING IMAGES (uploaded or stock — use these exact src values, do NOT replace with placeholders):\n' +
+      mappingEntries.map(([slotId, mapping]) => {
+        let line = `- ${slotId}: ${mapping.src}`;
+        if (mapping.alt) line += ` (alt: "${mapping.alt}")`;
+        return line;
+      }).join('\n');
+  }
+
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, blueprintContext, slotMappingContext };
 }
 
 function summarizeHtml(html) {
@@ -2766,8 +3543,6 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
 
 // --- Brainstorm Handler ---
 function handleBrainstorm(ws, userMessage, spec) {
-  ws.send(JSON.stringify({ type: 'status', content: 'Entering brainstorm mode...' }));
-
   const brief = spec.design_brief ? JSON.stringify(spec.design_brief, null, 2) : 'none yet';
   const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-5);
   const decisionsText = decisions.length > 0
@@ -2782,9 +3557,20 @@ function handleBrainstorm(ws, userMessage, spec) {
 
   const pages = listPages();
 
+  // Profile-aware brainstorm style
+  const profile = loadSettings().brainstorm_profile || 'balanced';
+  const profileInstructions = {
+    deep: 'Ask clarifying questions. Explore multiple directions. Challenge assumptions. Be thorough. Dig into trade-offs and edge cases.',
+    balanced: 'Be a thoughtful creative partner. Explore ideas, ask questions when needed, suggest creative directions. Be opinionated but collaborative.',
+    concise: 'Give 2-3 focused suggestions. No questions unless critical. Be direct and actionable. Keep responses short.',
+  };
+  const styleGuide = profileInstructions[profile] || profileInstructions.balanced;
+
   const prompt = `You are a creative design strategist for FAMtastic Site Studio. The user wants to BRAINSTORM — explore ideas, think through possibilities, discuss strategy.
 
 DO NOT generate any HTML, CSS, or code. This is a THINKING conversation.
+
+STYLE: ${styleGuide}
 
 CURRENT PROJECT STATE:
 - Site tag: ${TAG}
@@ -2798,10 +3584,7 @@ ${summaryContext}
 USER'S MESSAGE:
 "${userMessage}"
 
-Respond as a thoughtful creative partner:
-- Explore the idea with them
-- Ask clarifying questions if needed
-- Suggest creative directions
+Respond following the STYLE guidance above:
 - Reference their existing decisions and brief
 - Be opinionated but collaborative
 - Keep it conversational, not formal
@@ -2823,8 +3606,335 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
     }
 
     ws.send(JSON.stringify({ type: 'assistant', content: response.trim() }));
+    ws.send(JSON.stringify({ type: 'brainstorm-actions' }));
     appendConvo({ role: 'assistant', content: response.trim(), intent: 'brainstorm', at: new Date().toISOString() });
   });
+}
+
+// --- Parallel Multi-Page Build ---
+function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, analyticsInstruction, slotMappingContext) {
+  buildInProgress = true;
+  const startTime = Date.now();
+
+  // Detect logo file
+  const logoSvg = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.svg'));
+  const logoPng = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.png'));
+  const logoFile = logoSvg ? 'assets/logo.svg' : logoPng ? 'assets/logo.png' : null;
+  const logoInstruction = logoFile
+    ? `\nLOGO: A logo file exists at "${logoFile}". Use <a href="index.html" data-logo-v class="block"><img src="${logoFile}" alt="${spec.site_name || 'Logo'}" class="h-10 w-auto"></a> for the logo. Do NOT show site name text next to the logo image.\n`
+    : `\nLOGO: No logo image file exists. Use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">${spec.site_name || ''}</a> as the logo. This element will automatically swap to an image when a logo is uploaded.\n`;
+
+  // Normalize page names
+  const pageFiles = specPages.map(p => {
+    if (p === 'home' || p === 'hero') return 'index.html';
+    return p.replace(/\s+/g, '-').toLowerCase().replace(/\.html$/, '') + '.html';
+  });
+  const allPageLinks = pageFiles.map(f => f).join(', ');
+
+  const siteContext = `
+SITE SPEC:
+${JSON.stringify({ site_name: spec.site_name, business_type: spec.business_type, colors: spec.colors, tone: spec.tone, fonts: spec.fonts }, null, 2)}
+${logoInstruction}
+${briefContext}
+${decisionsContext}
+${assetsContext}
+${sessionContext}
+${slotMappingContext || ''}
+
+${systemRules}
+
+USER REQUEST: "${userMessage}"
+
+BEFORE YOU RESPOND — SEO CHECKLIST (verify the page has ALL of these):
+□ <html lang="en">
+□ <title>Page Name | ${spec.site_name || 'Business Name'}</title>
+□ <meta name="description" content="..."> (unique, 150-160 chars)
+□ <meta name="keywords" content="..."> (5-10 terms)
+□ <meta property="og:title" content="...">
+□ <meta property="og:description" content="...">
+□ <meta property="og:type" content="website">
+□ <meta name="robots" content="index, follow">
+${analyticsInstruction}`;
+
+  // Shared prompt rules for every page
+  const sharedRules = `
+CSS THEMING (REQUIRED):
+- Define brand colors as CSS custom properties in a <style> block inside <head>:
+  :root { --color-primary: ${spec.colors?.primary || '#1a5c2e'}; --color-accent: ${spec.colors?.accent || '#d4a843'}; --color-bg: ${spec.colors?.bg || '#f0f4f0'}; }
+- Use these variables throughout
+- Also define font families if specified
+- Put page-specific styles in a <style data-page="true"> block. Shared styles go in the main <style> block.
+
+LOGO RULE (CRITICAL):
+- The logo anchor MUST have data-logo-v attribute — this enables automatic logo swapping
+- If a logo file exists: use <a href="index.html" data-logo-v class="block"><img src="..." class="h-10 w-auto"></a>
+- If no logo file: use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">Site Name</a>
+- NEVER show both a logo image AND logo text — pick one
+- NEVER use a placeholder image for the logo — logos are either a real file or styled text, nothing else
+- Do NOT create an image slot (data-slot-id) for the logo — the logo is handled via data-logo-v
+
+IMAGE SLOTS (CRITICAL):
+Every <img> tag MUST have these data attributes:
+- data-slot-id: unique role-based ID (e.g. "hero-1", "service-mowing")
+- data-slot-status="empty"
+- data-slot-role: one of: hero, testimonial, team, service, gallery, favicon
+- src must be "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+- Do NOT use Unsplash URLs or placeholder.com
+
+FORMS:
+- All forms must use: method="POST" data-netlify="true"
+- Add a hidden honeypot field for spam protection
+
+NAVIGATION:
+- Nav must link to ALL pages using real filenames: ${allPageLinks}
+- Use real file links (about.html) NOT anchors (#about)
+
+OUTPUT FORMAT:
+Respond with ONLY the complete HTML document — from <!DOCTYPE html> to </html>.
+No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
+
+  const pageContentGuide = {
+    'index.html': 'Hero section, value proposition, highlights from other pages, primary CTA, trust signals',
+    'about.html': 'Company story, mission statement, team members, differentiators, why choose us',
+    'services.html': 'Service cards with descriptions and icons/images, pricing hints, CTAs per service',
+    'contact.html': 'Contact form (name/email/phone/message), address, phone, email, business hours, map placeholder',
+    'gallery.html': 'Image grid with captions and hover overlays, categorization if relevant',
+    'testimonials.html': 'Customer testimonials with names and star ratings, trust badges',
+    'pricing.html': 'Pricing tiers with features and CTAs, comparison table',
+    'faq.html': 'Frequently asked questions with expandable answers',
+    'blog.html': 'Blog post previews with dates, categories, read-more links',
+  };
+
+  // Hybrid build strategy:
+  // Phase 1 — Build index.html alone to establish the CSS/design language seed.
+  // Phase 2 — Extract the <head> styles and <nav> from index.html, inject into all
+  //            inner page prompts so they match the design exactly, then launch all
+  //            inner pages simultaneously.
+  // This gives CSS+nav consistency without losing the parallel speedup for N-1 pages.
+  fs.mkdirSync(DIST_DIR(), { recursive: true });
+
+  const writtenPages = [];
+  const innerPages = pageFiles.filter(f => f !== 'index.html');
+  // If the site has no index.html (unusual), fall back to pure parallel
+  const hasSeedPage = pageFiles.includes('index.html');
+
+  function spawnPage(pageFile, extraSeedContext) {
+    const content = pageContentGuide[pageFile] || `Content appropriate for a "${pageFile.replace('.html', '').replace(/-/g, ' ')}" page`;
+    const pagePrompt = `You are a premium website builder. Generate the ${pageFile} page for a ${specPages.length}-page website.
+
+PAGE TO BUILD: ${pageFile}
+PAGE CONTENT: ${content}
+All pages in this site: ${allPageLinks}
+${buildBlueprintContext(pageFile)}
+DESIGN CONSISTENCY: All pages in this site share an identical visual identity — the same nav structure linking to all pages, the same footer, the same CSS custom properties for colors and typography, and the same overall layout style. Build this page's nav and footer to match the design spec precisely. A post-build sync step will harmonize nav/footer across all pages.
+${extraSeedContext || ''}
+${siteContext}
+${sharedRules}`;
+
+    const child = spawnClaude(pagePrompt);
+    let pageResponse = '';
+    return { child, getResponse: () => pageResponse, appendResponse: (c) => { pageResponse += c; } };
+  }
+
+  function spawnInnerPages(seedContext) {
+    const pagesLeft = hasSeedPage ? innerPages : pageFiles;
+    if (pagesLeft.length === 0) {
+      finishParallelBuild(ws, writtenPages, startTime, spec);
+      return;
+    }
+
+    ws.send(JSON.stringify({ type: 'status', content: `Spawning ${pagesLeft.length} inner pages in parallel...` }));
+    let innerCompleted = 0;
+    const innerTotal = pagesLeft.length;
+
+    for (const pageFile of pagesLeft) {
+      const { child, getResponse, appendResponse } = spawnPage(pageFile, seedContext);
+
+      const pageTimeout = setTimeout(() => {
+        console.error(`[parallel-build] ${pageFile} timed out after 5 minutes`);
+        child.kill();
+        ws.send(JSON.stringify({ type: 'error', content: `Build timed out for ${pageFile} — continuing with other pages.` }));
+        innerCompleted++;
+        if (innerCompleted === innerTotal) {
+          if (writtenPages.length === 0) {
+            buildInProgress = false;
+            ws.send(JSON.stringify({ type: 'error', content: 'All pages timed out. Check Claude CLI and try again.' }));
+          } else {
+            finishParallelBuild(ws, writtenPages, startTime, spec);
+          }
+        }
+      }, 300000);
+
+      child.stdout.on('data', (chunk) => { appendResponse(chunk.toString()); });
+      child.stderr.on('data', (chunk) => { console.error(`[parallel-build:${pageFile}]`, chunk.toString()); });
+
+      child.on('close', (code) => {
+        clearTimeout(pageTimeout);
+        innerCompleted++;
+        const total = (hasSeedPage ? 1 : 0) + innerTotal;
+        const overallCompleted = writtenPages.length + innerCompleted;
+        const response = getResponse().trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+
+        if (code === 0 && response.length > 50) {
+          versionFile(pageFile, 'build');
+          fs.writeFileSync(path.join(DIST_DIR(), pageFile), response);
+          writtenPages.push(pageFile);
+          console.log(`[parallel-build] ${pageFile} done (${response.length} bytes)`);
+          ws.send(JSON.stringify({ type: 'status', content: `${pageFile} built (${overallCompleted}/${total} — ${Math.round((Date.now() - startTime) / 1000)}s)` }));
+        } else {
+          console.error(`[parallel-build] ${pageFile} failed (code ${code}, ${response.length} bytes)`);
+          ws.send(JSON.stringify({ type: 'status', content: `${pageFile} failed — will retry on next build` }));
+        }
+
+        if (innerCompleted === innerTotal) {
+          if (writtenPages.length === 0) {
+            buildInProgress = false;
+            ws.send(JSON.stringify({ type: 'error', content: 'All pages failed to build. Try again.' }));
+          } else {
+            finishParallelBuild(ws, writtenPages, startTime, spec);
+          }
+        }
+      });
+    }
+  }
+
+  if (!hasSeedPage) {
+    // No index.html — pure parallel, no seed available
+    ws.send(JSON.stringify({ type: 'status', content: `Spawning all ${pageFiles.length} pages in parallel...` }));
+    spawnInnerPages('');
+    return;
+  }
+
+  // Phase 1: Build index.html to establish CSS/design seed
+  ws.send(JSON.stringify({ type: 'status', content: 'Building index.html to establish design language...' }));
+  const { child: seedChild, getResponse: getSeedResponse, appendResponse: appendSeedResponse } = spawnPage('index.html', '');
+
+  const seedTimeout = setTimeout(() => {
+    console.error('[parallel-build] index.html (seed) timed out — falling back to no-seed parallel build');
+    seedChild.kill();
+    ws.send(JSON.stringify({ type: 'error', content: 'index.html timed out — building remaining pages without CSS seed.' }));
+    spawnInnerPages('');
+  }, 300000);
+
+  seedChild.stdout.on('data', (chunk) => { appendSeedResponse(chunk.toString()); });
+  seedChild.stderr.on('data', (chunk) => { console.error('[parallel-build:index.html]', chunk.toString()); });
+
+  seedChild.on('close', (code) => {
+    clearTimeout(seedTimeout);
+    const seedHtml = getSeedResponse().trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+
+    if (code === 0 && seedHtml.length > 50) {
+      versionFile('index.html', 'build');
+      fs.writeFileSync(path.join(DIST_DIR(), 'index.html'), seedHtml);
+      writtenPages.push('index.html');
+      ws.send(JSON.stringify({ type: 'status', content: `index.html built (1/${pageFiles.length} — ${Math.round((Date.now() - startTime) / 1000)}s) — seeding inner pages...` }));
+
+      // Extract CSS seed: shared <style> blocks and nav HTML from index.html
+      const headMatch = seedHtml.match(/<head[\s\S]*?<\/head>/i);
+      const navMatch = seedHtml.match(/<nav[\s\S]*?<\/nav>/i);
+
+      let cssBlocks = '';
+      if (headMatch) {
+        const sharedStyles = headMatch[0].match(/<style(?![^>]*data-page)[^>]*>[\s\S]*?<\/style>/gi);
+        if (sharedStyles) cssBlocks = sharedStyles.join('\n');
+      }
+
+      const navHtml = navMatch ? navMatch[0] : '';
+      let seedContext = '';
+      if (cssBlocks) {
+        seedContext += `\nCSS SEED (copy these exact styles into your <head> — do not invent new color values or font stacks):\n${cssBlocks}\n`;
+      }
+      if (navHtml) {
+        seedContext += `\nNAV SEED (use this exact nav HTML — preserve all class names, links, and structure):\n${navHtml}\n`;
+      }
+
+      // Phase 2: All inner pages in parallel with the CSS/nav seed
+      spawnInnerPages(seedContext);
+    } else {
+      console.error(`[parallel-build] index.html failed (code ${code}) — building remaining pages without CSS seed`);
+      ws.send(JSON.stringify({ type: 'status', content: 'index.html failed — building remaining pages without CSS seed.' }));
+      spawnInnerPages('');
+    }
+  });
+}
+
+// --- Unified Post-Processing Pipeline ---
+// Replaces 3 inline pipelines with a single function
+function runPostProcessing(ws, writtenPages, options = {}) {
+  const { isFullBuild = false, sourcePage = null } = options;
+
+  // Always safe — metadata only
+  updateBlueprint(writtenPages);
+  injectSeoMeta(ws);
+
+  // Slot mappings — always re-apply, then clean up orphans
+  reapplySlotMappings(writtenPages);
+  reconcileSlotMappings();
+
+  // Logo variant — swap data-logo-v content based on whether assets/logo.{ext} exists
+  applyLogoV(writtenPages);
+
+  if (isFullBuild) {
+    // Full build: extract slots, sync everything from index.html
+    extractAndRegisterSlots(writtenPages);
+
+    // Refresh nav partial from freshly built index.html before syncing
+    const distDir = DIST_DIR();
+    const indexPath = path.join(distDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      const indexHtml = fs.readFileSync(indexPath, 'utf8');
+      const navMatch = indexHtml.match(/<nav[\s\S]*?<\/nav>/i);
+      if (navMatch) {
+        const partialsDir = path.join(distDir, '_partials');
+        fs.mkdirSync(partialsDir, { recursive: true });
+        fs.writeFileSync(path.join(partialsDir, '_nav.html'), navMatch[0]);
+      }
+    }
+
+    syncNavPartial(ws);
+    syncFooterPartial(ws);
+    syncHeadSection(ws);
+    extractSharedCss(ws);
+  } else if (sourcePage) {
+    // Single-page edit: propagate FROM this page, skip overwriting it
+    syncNavFromPage(ws, sourcePage);
+    syncFooterFromPage(ws, sourcePage);
+    // NO extractSharedCss — don't strip inline styles on chat edits
+    // NO syncHeadSection — don't mess with head on single edits
+    // Rescan the edited page so new slots (e.g. about-hero) get registered in media_specs
+    extractAndRegisterSlots(writtenPages);
+  }
+}
+
+function finishParallelBuild(ws, writtenPages, startTime, spec) {
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+
+  // Post-processing
+  ws.send(JSON.stringify({ type: 'status', content: 'Post-processing...' }));
+  runPostProcessing(ws, writtenPages, { isFullBuild: true });
+
+  buildInProgress = false;
+
+  // Save build metrics
+  const buildMetrics = {
+    timestamp: new Date().toISOString(),
+    type: 'parallel_build',
+    elapsed_seconds: elapsed,
+    pages_built: writtenPages.length,
+    pages: writtenPages,
+    model: loadSettings().model || 'unknown'
+  };
+  try {
+    const metricsFile = path.join(SITE_DIR(), 'build-metrics.jsonl');
+    fs.appendFileSync(metricsFile, JSON.stringify(buildMetrics) + '\n');
+  } catch {}
+
+  const msg = `Site built! ${writtenPages.length} pages in ${elapsed}s: ${writtenPages.join(', ')}`;
+  ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+  ws.send(JSON.stringify({ type: 'reload-preview' }));
+  ws.send(JSON.stringify({ type: 'pages-updated', pages: writtenPages }));
+  appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+  saveStudio();
 }
 
 // --- Enhanced Chat Handler ---
@@ -2838,7 +3948,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
 
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext } = buildPromptContext(requestType, spec, userMessage);
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, blueprintContext, slotMappingContext } = buildPromptContext(requestType, spec, userMessage);
 
   ws.send(JSON.stringify({ type: 'status', content: `Classified as: ${requestType}` }));
 
@@ -2847,6 +3957,17 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
   const pages = listPages();
   const specPages = spec.pages || spec.design_brief?.must_have_sections || ['home'];
   const isMultiPage = specPages.length > 1 || (specPages.length === 1 && specPages[0] !== 'home');
+
+  // Analytics snippet injection (before switch so parallel build can use it)
+  const settings = loadSettings();
+  let analyticsInstruction = '';
+  if (settings.analytics_provider && settings.analytics_id) {
+    if (settings.analytics_provider === 'ga4') {
+      analyticsInstruction = `\nANALYTICS:\nInclude Google Analytics (GA4) in the <head> of every page:\n<script async src="https://www.googletagmanager.com/gtag/js?id=${settings.analytics_id}"></script>\n<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${settings.analytics_id}');</script>\n`;
+    } else if (settings.analytics_provider === 'plausible') {
+      analyticsInstruction = `\nANALYTICS:\nInclude Plausible Analytics in the <head> of every page:\n<script defer data-domain="${settings.analytics_id}" src="https://plausible.io/js/script.js"></script>\n`;
+    }
+  }
 
   switch (requestType) {
     case 'content_update':
@@ -2863,26 +3984,10 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
       break;
     case 'build':
       if (isMultiPage) {
-        modeInstruction = `Generate a MULTI-PAGE website with separate HTML files for EACH page: ${specPages.join(', ')}.
-
-PAGE CONTENT — generate real content for each:
-- home (index.html): Hero, value proposition, highlights, CTA
-- about: Story, mission, team, differentiators
-- services: Service cards with descriptions and icons
-- contact: Contact form, address/phone/email, hours
-- portfolio/gallery: Image grid with captions
-- pricing: Pricing tiers with features and CTAs
-- Any other page: Content that fits its name and business type
-
-RULES:
-- EVERY page MUST be a complete HTML document (<!DOCTYPE html> to </html>)
-- EVERY page MUST have real, substantial body content — multiple sections, styled layout, real copy
-- ALL pages share the SAME nav bar with links to ALL other pages using real filenames (about.html, NOT #about)
-- ALL pages share the SAME footer, Tailwind config, fonts, colors
-- Do NOT output empty pages or skeleton pages
-- Page naming: 'home' → index.html, others → lowercase-hyphenated.html
-
-Use the MULTI_UPDATE response format with --- PAGE: filename.html --- delimiters between each page.`;
+        // Parallel build — handled separately
+        ws.send(JSON.stringify({ type: 'status', content: `Parallel build: ${specPages.length} pages...` }));
+        buildInProgress = false; // Release guard — parallelBuild manages its own
+        return parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, analyticsInstruction, slotMappingContext);
       } else {
         modeInstruction = 'Generate a complete single-page website.';
       }
@@ -2891,16 +3996,19 @@ Use the MULTI_UPDATE response format with --- PAGE: filename.html --- delimiters
       modeInstruction = 'Process the user request and update the site accordingly.';
   }
 
-  // Analytics snippet injection
-  const settings = loadSettings();
-  let analyticsInstruction = '';
-  if (settings.analytics_provider && settings.analytics_id) {
-    if (settings.analytics_provider === 'ga4') {
-      analyticsInstruction = `\nANALYTICS:\nInclude Google Analytics (GA4) in the <head> of every page:\n<script async src="https://www.googletagmanager.com/gtag/js?id=${settings.analytics_id}"></script>\n<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${settings.analytics_id}');</script>\n`;
-    } else if (settings.analytics_provider === 'plausible') {
-      analyticsInstruction = `\nANALYTICS:\nInclude Plausible Analytics in the <head> of every page:\n<script defer data-domain="${settings.analytics_id}" src="https://plausible.io/js/script.js"></script>\n`;
-    }
-  }
+  // Detect logo for main prompt
+  const _logoSvg = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.svg'));
+  const _logoPng = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.png'));
+  const _logoFile = _logoSvg ? 'assets/logo.svg' : _logoPng ? 'assets/logo.png' : null;
+  const _logoInstruction = _logoFile
+    ? `\nLOGO: A logo file exists at "${_logoFile}". Use <a href="index.html" data-logo-v class="block"><img src="${_logoFile}" alt="${spec.site_name || 'Logo'}" class="h-10 w-auto"></a> for the logo. Do NOT show site name text next to the logo image.\n`
+    : `\nLOGO: No logo image file exists. Use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">${spec.site_name || ''}</a> as the logo. This element will automatically swap to an image when a logo is uploaded.\n`;
+
+  // Slot ID stability — inject current page's slot IDs to prevent drift on rebuilds
+  const _currentPageSlots = (spec.media_specs || []).filter(s => s.page === currentPage);
+  const _slotStabilityInstruction = _currentPageSlots.length > 0
+    ? `\nSLOT ID PRESERVATION (CRITICAL): This page has existing image slot assignments. You MUST preserve these exact slot IDs — do not rename, renumber, or remove them:\n${_currentPageSlots.map(s => `  ${s.slot_id} (${s.role})`).join('\n')}\nOnly create NEW slot IDs for genuinely new images added in this edit.\n`
+    : '';
 
   const prompt = `You are a premium website builder assistant for FAMtastic Site Studio.
 
@@ -2908,10 +4016,14 @@ ${systemRules}
 
 REQUEST TYPE: ${requestType}
 MODE: ${modeInstruction}
+${_logoInstruction}
+${_slotStabilityInstruction}
 ${briefContext}
 ${decisionsContext}
 ${assetsContext}
 ${sessionContext}
+${blueprintContext}
+${slotMappingContext}
 
 SITE SPEC:
 ${JSON.stringify({ site_name: spec.site_name, business_type: spec.business_type, colors: spec.colors, tone: spec.tone, fonts: spec.fonts }, null, 2)}
@@ -2920,6 +4032,17 @@ CURRENT SITE:
 ${htmlContext}
 
 USER REQUEST: "${userMessage}"
+
+BEFORE YOU RESPOND — SEO CHECKLIST (verify every page you output has ALL of these):
+□ <html lang="en">
+□ <title>Page Name | ${spec.site_name || 'Business Name'}</title>
+□ <meta name="description" content="..."> (unique, 150-160 chars)
+□ <meta name="keywords" content="..."> (5-10 terms)
+□ <meta property="og:title" content="...">
+□ <meta property="og:description" content="...">
+□ <meta property="og:type" content="website">
+□ <meta name="robots" content="index, follow">
+If any are missing from the current HTML, ADD them. Never remove existing meta tags.
 
 RESPOND WITH ONE OF THESE FORMATS:
 
@@ -2963,11 +4086,19 @@ CSS THEMING (REQUIRED):
 - This enables one-place color changes across the entire site
 - Also define font families if specified: :root { --font-heading: ...; --font-body: ...; }
 
+LOGO RULE (CRITICAL):
+- The logo anchor MUST have data-logo-v attribute — this enables automatic logo swapping
+- If a logo file exists: use <a href="index.html" data-logo-v class="block"><img src="..." class="h-10 w-auto"></a>
+- If no logo file: use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">Site Name</a>
+- NEVER show both a logo image AND logo text — pick one
+- NEVER use a placeholder image for the logo — logos are either a real file or styled text, nothing else
+- Do NOT create an image slot (data-slot-id) for the logo — the logo is handled via data-logo-v
+
 IMAGE SLOTS (CRITICAL):
 Every <img> tag MUST have these three data attributes:
-- data-slot-id: unique role-based ID derived from context (e.g. "hero-1", "testimonial-1", "testimonial-2", "service-mowing", "team-1", "gallery-1", "logo-1")
+- data-slot-id: unique role-based ID derived from context (e.g. "hero-1", "testimonial-1", "testimonial-2", "service-mowing", "team-1", "gallery-1")
 - data-slot-status="empty" (always "empty" on initial generation)
-- data-slot-role: semantic purpose — one of: hero, testimonial, team, service, gallery, logo, favicon
+- data-slot-role: semantic purpose — one of: hero, testimonial, team, service, gallery, favicon
 - src must be "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" (transparent 1x1 pixel)
 - Do NOT use Unsplash URLs, placeholder.com, or any external image URLs
 - Do NOT use fake filenames like "hero.jpg" — always use the transparent data URI
@@ -2998,6 +4129,7 @@ ${analyticsInstruction}`;
     ws.send(JSON.stringify({ type: 'status', content: 'Sending to Claude...' }));
   }
 
+  const buildStartTime = Date.now();
   const child = spawnClaude(prompt);
 
   // 5-minute timeout — kill hung Claude CLI, reset build guard
@@ -3103,26 +4235,14 @@ ${analyticsInstruction}`;
       }
 
       if (writtenPages.length > 0) {
-        // Extract and register image slots from all written pages
-        ws.send(JSON.stringify({ type: 'status', content: 'Registering image slots...' }));
-        const slotCount = extractAndRegisterSlots(writtenPages);
-        const slotMsg = slotCount > 0 ? `\n\n🖼️ Registered ${slotCount} image slot(s)` : '';
-
-        // Bulk generate branded placeholders for all detected slots
-        ws.send(JSON.stringify({ type: 'status', content: 'Generating placeholder assets...' }));
-        const placeholderResult = bulkGeneratePlaceholders(ws);
-        const placeholderMsg = placeholderResult.replaced > 0
-          ? `\n\n📦 Generated ${placeholderResult.generated} placeholder assets, replaced ${placeholderResult.replaced} slots`
-          : '';
-
-        // Sync nav, footer, and head across all pages
-        syncNavPartial(ws);
-        syncFooterPartial(ws);
-        syncHeadSection(ws);
+        // Unified post-processing
+        ws.send(JSON.stringify({ type: 'status', content: 'Post-processing...' }));
+        runPostProcessing(ws, writtenPages, { isFullBuild: true });
+        const slotMsg = '';
 
         const msg = changeSummary
-          ? `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}\n\n${changeSummary}${slotMsg}${placeholderMsg}`
-          : `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}${slotMsg}${placeholderMsg}`;
+          ? `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}\n\n${changeSummary}${slotMsg}`
+          : `Site built! ${writtenPages.length} pages created: ${writtenPages.join(', ')}${slotMsg}`;
         ws.send(JSON.stringify({ type: 'assistant', content: msg }));
         ws.send(JSON.stringify({ type: 'reload-preview' }));
         ws.send(JSON.stringify({ type: 'pages-updated', pages: writtenPages }));
@@ -3162,20 +4282,8 @@ ${analyticsInstruction}`;
       versionFile(currentPage, requestType);
       fs.writeFileSync(path.join(DIST_DIR(), currentPage), html);
 
-      // Extract and register image slots from updated page
-      ws.send(JSON.stringify({ type: 'status', content: 'Registering image slots...' }));
-      extractAndRegisterSlots([currentPage]);
-
-      // Bulk generate branded placeholders for any new slots on this page
-      ws.send(JSON.stringify({ type: 'status', content: 'Generating placeholder assets...' }));
-      const placeholderResult = bulkGeneratePlaceholders(ws);
-      const placeholderMsg = placeholderResult.replaced > 0
-        ? `\n\n📦 Generated ${placeholderResult.generated} placeholder assets, replaced ${placeholderResult.replaced} slots`
-        : '';
-
-      // Sync nav and footer from this page to all others
-      syncNavFromPage(ws, currentPage);
-      syncFooterFromPage(ws, currentPage);
+      // Unified post-processing — single-page edit mode
+      runPostProcessing(ws, [currentPage], { sourcePage: currentPage });
 
       // Extract and log design decisions from change summary
       if (changeSummary) {
@@ -3183,9 +4291,23 @@ ${analyticsInstruction}`;
         extractDecisions(spec, changeSummary, requestType);
       }
 
+      const buildElapsed = Math.round((Date.now() - buildStartTime) / 1000);
+      // Save build metrics
+      try {
+        const metricsFile = path.join(SITE_DIR(), 'build-metrics.jsonl');
+        fs.appendFileSync(metricsFile, JSON.stringify({
+          timestamp: new Date().toISOString(),
+          type: requestType,
+          elapsed_seconds: buildElapsed,
+          pages_built: 1,
+          pages: [currentPage],
+          model: loadSettings().model || 'unknown'
+        }) + '\n');
+      } catch {}
+
       const msg = changeSummary
-        ? `${currentPage} updated!\n\n${changeSummary}${placeholderMsg}`
-        : `${currentPage} updated! Check the preview.${placeholderMsg}`;
+        ? `${currentPage} updated! (${buildElapsed}s)\n\n${changeSummary}`
+        : `${currentPage} updated! (${buildElapsed}s) Check the preview.`;
       ws.send(JSON.stringify({ type: 'assistant', content: msg }));
       ws.send(JSON.stringify({ type: 'reload-preview' }));
       appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
@@ -3295,18 +4417,103 @@ wss.on('connection', (ws) => {
       // Check persistent brainstorm mode before classifying
       if (currentMode === 'brainstorm') {
         const lower = userMessage.toLowerCase();
-        const releasePatterns = /\b(i'?m\s+ready\s+to\s+build|let'?s?\s+(implement|build|do\s+it|make\s+it)|exit\s+brainstorm|done\s+brainstorming|stop\s+brainstorming|back\s+to\s+build|build\s+mode|start\s+building)\b/;
-        if (releasePatterns.test(lower)) {
+        // "Build this" patterns — exit brainstorm AND route into build with brainstorm context
+        const buildPatterns = /\b(i'?m\s+ready\s+to\s+build|let'?s?\s+(implement|build|do\s+it|make\s+it)|build\s+this|start\s+building)\b/;
+        // "Exit only" patterns — just leave brainstorm, no build
+        const exitPatterns = /\b(exit\s+brainstorm|done\s+brainstorming|stop\s+brainstorming|back\s+to\s+build|build\s+mode)\b/;
+
+        if (buildPatterns.test(lower)) {
+          // Exit brainstorm and route brainstorm ideas into build
+          currentMode = 'build';
+          console.log(`[mode] Exited brainstorm → building from brainstorm context`);
+          ws.send(JSON.stringify({ type: 'mode-changed', mode: 'build' }));
+
+          // Gather recent brainstorm messages as build context
+          let brainstormContext = '';
+          try {
+            const lines = fs.readFileSync(CONVO_FILE(), 'utf8').trim().split('\n').filter(Boolean);
+            const brainstormMsgs = [];
+            // Walk backwards to find the brainstorm conversation
+            for (let i = lines.length - 1; i >= 0 && brainstormMsgs.length < 20; i--) {
+              const entry = JSON.parse(lines[i]);
+              if (entry.intent === 'brainstorm' || (entry.role === 'user' && brainstormMsgs.length > 0)) {
+                brainstormMsgs.unshift(entry);
+              } else if (brainstormMsgs.length > 0) {
+                break; // Hit non-brainstorm content, stop
+              }
+            }
+            if (brainstormMsgs.length > 0) {
+              brainstormContext = brainstormMsgs.map(m => `${m.role}: ${m.content}`).join('\n');
+            }
+          } catch {}
+
+          // Detect target page from brainstorm context
+          if (brainstormContext) {
+            const contextLower = brainstormContext.toLowerCase();
+            const pages = listPages();
+            // Check for page references like "home page", "about page", "contact page"
+            const pageRef = contextLower.match(/\b(home|index|about|contact|gallery|services|testimonials|why.choose.us|faq|pricing|blog)\s*page\b/);
+            if (pageRef) {
+              let targetName = pageRef[1].toLowerCase().replace(/\s+/g, '-');
+              if (targetName === 'home') targetName = 'index';
+              const targetPage = pages.find(p => p.replace('.html', '') === targetName);
+              if (targetPage && targetPage !== currentPage) {
+                currentPage = targetPage;
+                console.log(`[mode] Brainstorm-to-build: switched to ${currentPage}`);
+                ws.send(JSON.stringify({ type: 'page-changed', page: currentPage }));
+              }
+            }
+          }
+
+          // Write brainstorm ideas into blueprint before building
+          if (brainstormContext) {
+            const bp = readBlueprint() || { version: 1, pages: {}, global: {}, last_updated: null };
+            if (!bp.pages[currentPage]) bp.pages[currentPage] = { title: currentPage.replace('.html', ''), sections: [], components: [], layout_notes: [] };
+            const entry = bp.pages[currentPage];
+            // Parse brainstorm context for structural elements
+            const bsLower = brainstormContext.toLowerCase();
+            const compTypes = ['popup', 'modal', 'slider', 'carousel', 'accordion', 'tabs', 'overlay', 'drawer', 'banner', 'countdown', 'form'];
+            for (const ct of compTypes) {
+              if (bsLower.includes(ct) && !entry.components.find(c => c.type === ct)) {
+                entry.components.push({ type: ct, added: new Date().toISOString().split('T')[0], source: 'brainstorm' });
+              }
+            }
+            // Add a layout note summarizing the brainstorm intent
+            const summaryLine = brainstormContext.split('\n').filter(l => l.startsWith('assistant:')).pop();
+            if (summaryLine) {
+              const note = `Brainstorm: ${summaryLine.replace('assistant:', '').trim().substring(0, 200)}`;
+              if (!entry.layout_notes.includes(note)) entry.layout_notes.push(note);
+            }
+            writeBlueprint(bp);
+            console.log('[blueprint] Updated from brainstorm context');
+          }
+
+          // Build a synthesized instruction from the brainstorm
+          const buildInstruction = brainstormContext
+            ? `ADD the following ideas to the EXISTING ${currentPage} — do NOT remove or replace any existing content, sections, or functionality. Keep everything that's already on the page and ADD these new elements:\n\n${brainstormContext}\n\nIMPORTANT: This is an ADDITIVE change. The current page already has content that must be preserved. Only add what was discussed in the brainstorm.`
+            : userMessage;
+
+          appendConvo({ role: 'assistant', content: `Building from brainstorm ideas on ${currentPage}`, at: new Date().toISOString() });
+
+          // Route directly as a layout_update — skip classifier since it would
+          // re-match "brainstorm" from the conversation context
+          ws.send(JSON.stringify({ type: 'status', content: `Building on ${currentPage}...` }));
+          const requestType = 'layout_update';
+          console.log(`[classify] brainstorm-to-build (${currentPage}) → ${requestType} (forced)`);
+          handleChatMessage(ws, buildInstruction, requestType, spec);
+          return;
+        }
+
+        if (exitPatterns.test(lower)) {
           currentMode = 'build';
           console.log(`[mode] Exited brainstorm mode`);
           ws.send(JSON.stringify({ type: 'mode-changed', mode: 'build' }));
-          ws.send(JSON.stringify({ type: 'assistant', content: 'Exiting brainstorm mode — back to build mode. What would you like to do?' }));
           appendConvo({ role: 'assistant', content: 'Exited brainstorm mode', at: new Date().toISOString() });
           return;
         }
+
         // Stay in brainstorm — skip classifier entirely
         console.log(`[mode] Brainstorm mode active — routing directly to handleBrainstorm`);
-        ws.send(JSON.stringify({ type: 'status', content: 'Brainstorming...' }));
         handleBrainstorm(ws, userMessage, spec);
         return;
       }
@@ -3498,50 +4705,34 @@ wss.on('connection', (ws) => {
             break;
           }
 
-          // Check for Unsplash API key — if missing, use SVG fallback
+          // Check for any stock photo API keys (Unsplash, Pexels, Pixabay)
           const fillConfig = loadSettings();
-          const hasApiKey = !!fillConfig.stock_photo?.unsplash_api_key;
+          const sp = fillConfig.stock_photo || {};
+          const hasAnyKey = !!(sp.unsplash_api_key || sp.pexels_api_key || sp.pixabay_api_key);
 
-          if (!hasApiKey) {
-            // Offline fallback: generate branded SVG placeholders
-            ws.send(JSON.stringify({ type: 'status', content: 'No Unsplash API key — generating branded SVG placeholders...' }));
-            const placeholderResult = bulkGeneratePlaceholders(ws);
-
-            // Update slot statuses to 'stock' for generated placeholders
-            const updatedSpec = readSpec();
-            let upgraded = 0;
-            for (const ms of (updatedSpec.media_specs || [])) {
-              if (ms.status === 'empty') {
-                // Check if a placeholder SVG was generated for this slot
-                const svgPath = path.join(DIST_DIR(), 'assets', 'placeholders', `${ms.slot_id}.svg`);
-                if (fs.existsSync(svgPath)) {
-                  ms.status = 'stock';
-                  upgraded++;
-                }
-              }
-            }
-            if (upgraded > 0) {
-              writeSpec(updatedSpec);
-            }
-
-            const msg = placeholderResult.generated > 0
-              ? `Generated ${placeholderResult.generated} branded SVG placeholder(s) and replaced ${placeholderResult.replaced} slot(s).\n\nTo use real stock photos, add an Unsplash API key in Settings → stock_photo.unsplash_api_key`
-              : 'No empty slots could be filled. Try building the site first.';
-            ws.send(JSON.stringify({ type: 'assistant', content: msg }));
-            ws.send(JSON.stringify({ type: 'reload-preview' }));
-            appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+          if (!hasAnyKey) {
+            const noKeyMsg = 'No stock photo API keys configured. Add them in Settings (gear icon) under Stock Photos — supports Unsplash, Pexels, and Pixabay.';
+            ws.send(JSON.stringify({ type: 'assistant', content: noKeyMsg }));
+            appendConvo({ role: 'assistant', content: noKeyMsg, at: new Date().toISOString() });
             break;
           }
 
-          // Unsplash API key available — fill with stock photos
+          // Fill slots with real stock photos via 3-provider fallback
           const brief = fillSpec.design_brief || {};
           const industry = fillSpec.business_type || brief.audience || 'professional';
           const tone = Array.isArray(brief.tone) ? brief.tone.join(', ') : (brief.tone || 'professional');
           let filled = 0;
           let errors = 0;
+          const providerLog = [];
+
+          const env = {
+            ...process.env,
+            UNSPLASH_API_KEY: sp.unsplash_api_key || '',
+            PEXELS_API_KEY: sp.pexels_api_key || '',
+            PIXABAY_API_KEY: sp.pixabay_api_key || '',
+          };
 
           for (const slot of emptySlots) {
-            // Generate contextual search query from slot role + site context
             const queryMap = {
               hero: `${industry} ${tone} hero banner`,
               testimonial: `professional headshot portrait`,
@@ -3560,41 +4751,57 @@ wss.on('connection', (ws) => {
               fs.mkdirSync(stockDir, { recursive: true });
               const outputFile = path.join(stockDir, `${slot.slot_id}.jpg`);
 
-              const env = { ...process.env, UNSPLASH_API_KEY: fillConfig.stock_photo.unsplash_api_key };
               const scriptPath = path.join(__dirname, '..', 'scripts', 'stock-photo');
               const { execFileSync } = require('child_process');
-              execFileSync(scriptPath, [searchQuery, String(w), String(h), outputFile], { env, timeout: 30000 });
+              const result = execFileSync(scriptPath, [searchQuery, String(w), String(h), outputFile], {
+                env, timeout: 30000, encoding: 'utf8'
+              }).trim();
 
-              // Update HTML
+              // Parse provider from script output (first line: provider=unsplash/pexels/pixabay)
+              const providerMatch = result.match(/^provider=(\w+)/);
+              const provider = providerMatch ? providerMatch[1] : 'unknown';
+
+              // Update HTML — find slot and replace src
               const pages = listPages();
               for (const page of pages) {
                 const filePath = path.join(DIST_DIR(), page);
                 let html = fs.readFileSync(filePath, 'utf8');
                 const escapedId = slot.slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const slotRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)data-slot-status=["'][^"']*["']`, 'i');
-                const srcRegex = new RegExp(`(<img[^>]*data-slot-id=["']${escapedId}["'][^>]*?)src=["'][^"']*["']`, 'i');
-                if (html.match(slotRegex) || html.match(srcRegex)) {
-                  html = html.replace(slotRegex, `$1data-slot-status="stock"`);
-                  html = html.replace(srcRegex, `$1src="assets/stock/${slot.slot_id}.jpg"`);
-                  fs.writeFileSync(filePath, html);
+                const patched = patchSlotImg(html, escapedId, {
+                  src: `assets/stock/${slot.slot_id}.jpg`,
+                  status: 'stock',
+                });
+                if (patched.changed) {
+                  fs.writeFileSync(filePath, patched.html);
                 }
               }
 
-              // Update media_specs
+              // Store slot mapping for rebuild persistence
+              if (!fillSpec.slot_mappings) fillSpec.slot_mappings = {};
+              fillSpec.slot_mappings[slot.slot_id] = {
+                src: `assets/stock/${slot.slot_id}.jpg`,
+                alt: slot.alt || slot.slot_id.replace(/-/g, ' '),
+                provider,
+              };
+
               slot.status = 'stock';
               filled++;
+              providerLog.push(`${slot.slot_id} filled via ${provider}`);
+              ws.send(JSON.stringify({ type: 'status', content: `${slot.slot_id} filled via ${provider}` }));
             } catch (err) {
               console.error(`[stock-photo] Failed to fill ${slot.slot_id}:`, err.message);
+              ws.send(JSON.stringify({ type: 'status', content: `${slot.slot_id} failed — skipping` }));
               errors++;
             }
           }
 
-          // Persist updated media_specs
+          // Persist updated media_specs and slot_mappings
           writeSpec(fillSpec);
 
-          const fillMsg = `Filled ${filled} of ${emptySlots.length} image slot(s) with stock photos.${errors > 0 ? ` ${errors} failed.` : ''}`;
+          const fillMsg = `Filled ${filled} of ${emptySlots.length} image slot(s) with real stock photos.${errors > 0 ? ` ${errors} failed.` : ''}\n\n${providerLog.join('\n')}`;
           ws.send(JSON.stringify({ type: 'assistant', content: fillMsg }));
           ws.send(JSON.stringify({ type: 'reload-preview' }));
+          ws.send(JSON.stringify({ type: 'spec-updated' }));
           appendConvo({ role: 'assistant', content: fillMsg, at: new Date().toISOString() });
           break;
         }
@@ -3969,7 +5176,8 @@ process.on('SIGINT', gracefulShutdown);
 // --- Exports for testing ---
 module.exports = {
   sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest,
-  extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS,
+  extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
+  readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };
