@@ -4082,6 +4082,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
     : '';
 
   const prompt = `You are a premium website builder assistant for FAMtastic Site Studio.
+You have NO tools and NO file access. Everything you need is provided below — the current page HTML, the design brief, assets, and conversation history. Do NOT ask to read files, request permissions, or say you need access. Just use what's here and respond with the updated HTML.
 
 ${systemRules}
 
@@ -4100,7 +4101,7 @@ ${slotMappingContext}
 SITE SPEC:
 ${JSON.stringify({ site_name: spec.site_name, business_type: spec.business_type, colors: spec.colors, tone: spec.tone, fonts: spec.fonts }, null, 2)}
 
-CURRENT SITE:
+CURRENT PAGE HTML (this is the full source — do NOT ask to read files, you already have the content):
 ${htmlContext}
 
 USER REQUEST: "${userMessage}"
