@@ -3609,6 +3609,12 @@ function handleBrainstorm(ws, userMessage, spec) {
     ? '\nPREVIOUS SESSION SUMMARIES:\n' + summaries.map(s => s.content).join('\n---\n')
     : '';
 
+  // Recent conversation history — so brainstorm can reference prior exchanges
+  const recentConvo = loadRecentConversation(RECENT_CONVO_COUNT);
+  const convoContext = recentConvo
+    ? '\nRECENT CONVERSATION:\n' + recentConvo
+    : '';
+
   const pages = listPages();
 
   // Profile-aware brainstorm style
@@ -3634,6 +3640,7 @@ CURRENT PROJECT STATE:
 - Design brief: ${brief}
 - Active decisions: ${decisionsText}
 ${summaryContext}
+${convoContext}
 
 USER'S MESSAGE:
 "${userMessage}"
