@@ -5626,8 +5626,13 @@ function loadRecentConversation(count) {
 // Safe Claude CLI spawn — pipes prompt via stdin instead of shell embedding
 function spawnClaude(prompt) {
   const env = { ...process.env, MODEL: loadSettings().model };
-  // Ensure CLAUDECODE is unset to prevent nested-session guard
-  delete env.CLAUDECODE;
+  // Remove ALL Claude Code env vars to prevent nested-session detection.
+  // Without this, `claude --print` refuses to run inside a Claude Code session.
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('CLAUDE_') || key === 'CLAUDECODE') {
+      delete env[key];
+    }
+  }
   const child = spawn(path.join(HUB_ROOT, 'scripts', 'claude-cli'), [], {
     env,
     cwd: HUB_ROOT,
