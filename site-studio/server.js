@@ -2016,6 +2016,51 @@ function syncHeadSection(ws) {
   return { synced };
 }
 
+// --- Head Guardrail Post-Processor ---
+// Ensures Tailwind CDN and Google Fonts are present in every page.
+// This runs as a safety net after build — even if Claude omits them from the HTML,
+// the site won't be completely unstyled.
+function ensureHeadDependencies(ws) {
+  const distDir = DIST_DIR();
+  const pages = listPages();
+  const spec = readSpec();
+  const fontSerif = spec.fonts?.heading || 'Playfair Display';
+  const fontSans = spec.fonts?.body || 'Inter';
+  const fontUrl = `https://fonts.googleapis.com/css2?family=${fontSerif.replace(/\s+/g, '+').replace(/&/g, '&amp;')}:wght@400;500;600;700&family=${fontSans.replace(/\s+/g, '+').replace(/&/g, '&amp;')}:wght@300;400;500;600;700&display=swap`;
+
+  const tailwindTag = '<script src="https://cdn.tailwindcss.com"></script>';
+  const fontTags = `<link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="${fontUrl}" rel="stylesheet">`;
+
+  let fixed = 0;
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    let html = fs.readFileSync(filePath, 'utf8');
+    let changed = false;
+
+    if (!html.includes('tailwindcss')) {
+      html = html.replace(/<\/title>/i, `</title>\n    ${tailwindTag}`);
+      changed = true;
+    }
+    if (!html.includes('fonts.googleapis')) {
+      html = html.replace(/<\/title>/i, `</title>\n    ${fontTags}`);
+      changed = true;
+    }
+
+    if (changed) {
+      fs.writeFileSync(filePath, html);
+      fixed++;
+    }
+  }
+
+  if (fixed > 0) {
+    console.log(`[head-guardrail] Injected missing Tailwind/Fonts into ${fixed} page(s)`);
+    if (ws) ws.send(JSON.stringify({ type: 'status', content: `Head dependencies ensured in ${fixed} page(s)` }));
+  }
+  return { fixed };
+}
+
 // --- CSS Extraction Post-Processor ---
 // Extracts shared <style> blocks from index.html into assets/styles.css,
 // then replaces inline styles with a <link> in all pages.
@@ -3656,13 +3701,21 @@ BEFORE YOU RESPOND — SEO CHECKLIST (verify the page has ALL of these):
 □ <meta name="robots" content="index, follow">
 ${analyticsInstruction}`;
 
+  // Font configuration from spec
+  const fontSerif = spec.fonts?.heading || 'Playfair Display';
+  const fontSans = spec.fonts?.body || 'Inter';
+  const fontUrl = `https://fonts.googleapis.com/css2?family=${fontSerif.replace(/\s+/g, '+')}:wght@400;500;600;700&family=${fontSans.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`;
+
   // Shared prompt rules for every page
   const sharedRules = `
+HEAD REQUIREMENTS (CRITICAL — every page MUST include these in <head>):
+- Tailwind CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Google Fonts: <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="${fontUrl}" rel="stylesheet">
+
 CSS THEMING (REQUIRED):
 - Define brand colors as CSS custom properties in a <style> block inside <head>:
-  :root { --color-primary: ${spec.colors?.primary || '#1a5c2e'}; --color-accent: ${spec.colors?.accent || '#d4a843'}; --color-bg: ${spec.colors?.bg || '#f0f4f0'}; }
-- Use these variables throughout
-- Also define font families if specified
+  :root { --color-primary: ${spec.colors?.primary || '#1a5c2e'}; --color-accent: ${spec.colors?.accent || '#d4a843'}; --color-bg: ${spec.colors?.bg || '#f0f4f0'}; --font-serif: '${fontSerif}', serif; --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+- Use these variables throughout — reference var(--color-primary), var(--font-sans), etc.
 - Put page-specific styles in a <style data-page="true"> block. Shared styles go in the main <style> block.
 
 LOGO RULE (CRITICAL):
@@ -3893,6 +3946,7 @@ function runPostProcessing(ws, writtenPages, options = {}) {
 
     syncNavPartial(ws);
     syncFooterPartial(ws);
+    ensureHeadDependencies(ws);
     syncHeadSection(ws);
     extractSharedCss(ws);
   } else if (sourcePage) {
@@ -5177,7 +5231,7 @@ process.on('SIGINT', gracefulShutdown);
 module.exports = {
   sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
-  readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss,
+  readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };

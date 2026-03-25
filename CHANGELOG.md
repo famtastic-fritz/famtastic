@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-24 — Fix missing Tailwind CDN + head dependency guardrail
+
+Root cause found for unstyled pages: Tailwind CDN and Google Fonts were never in the build prompts, so Claude never included them. Pages used Tailwind utility classes (bg-gray-900, py-12, h-10) that were completely dead without the CDN. Added HEAD REQUIREMENTS section to `sharedRules` with explicit Tailwind CDN + Google Fonts instructions. Added `ensureHeadDependencies()` post-processor as a safety net — injects missing Tailwind/Fonts into any page after build. Patched all 7 live pages with the missing CDN links. Also fixed `header-content` → `header-container` class on services.html and why-choose-us.html (styles.css only defines header-container).
+
 ## 2026-03-24 — parallelBuild: hybrid CSS-seed strategy for design consistency
 
 Replaced the fully-parallel build strategy (which caused CSS and nav inconsistencies) with a hybrid approach: index.html builds first to establish the design language, then its `<style>` blocks and `<nav>` HTML are extracted and injected as a seed into all inner page prompts, which then launch simultaneously. Inner pages no longer generate CSS from the brief alone — they copy the exact custom properties, font stacks, and nav structure from index.html. Per-page 5-minute timeouts remain from the previous fix. If index.html fails or times out, inner pages fall back to seedless parallel build rather than blocking. All 41 unit tests pass.
