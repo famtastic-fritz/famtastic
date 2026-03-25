@@ -1822,7 +1822,7 @@ function syncNavPartial(ws, excludePages = []) {
 
   // Ensure .netlifyignore excludes build artifacts
   const ignoreFile = path.join(distDir, '.netlifyignore');
-  const ignoreEntries = ['_partials/', '.versions/', '.studio.json', 'conversation.jsonl'];
+  const ignoreEntries = ['_partials/', '_template.html', '.versions/', '.studio.json', 'conversation.jsonl'];
   const existing = fs.existsSync(ignoreFile) ? fs.readFileSync(ignoreFile, 'utf8') : '';
   const missing = ignoreEntries.filter(e => !existing.includes(e));
   if (missing.length) fs.appendFileSync(ignoreFile, missing.join('\n') + '\n');
@@ -2141,6 +2141,226 @@ function extractSharedCss(ws) {
   }
   console.log(`[css-extract] Extracted ${styleBlocks.length} style block(s) to assets/styles.css, updated ${updated} pages`);
   return { extracted: true, pages: updated };
+}
+
+// --- Template-First Architecture ---
+// Replaces the index-first CSS seed approach with a shared template.
+// _template.html holds header/nav, footer, and shared CSS.
+// Each page copies chrome verbatim and only generates <main> content.
+
+function extractTemplateComponents(templateHtml) {
+  const headMatch = templateHtml.match(/<head[\s\S]*?<\/head>/i);
+  const headerMatch = templateHtml.match(/<header[^>]*data-template="header"[^>]*>[\s\S]*?<\/header>/i);
+  const footerMatch = templateHtml.match(/<footer[^>]*data-template="footer"[^>]*>[\s\S]*?<\/footer>/i);
+  const sharedStyleMatch = templateHtml.match(/<style[^>]*data-template="shared"[^>]*>([\s\S]*?)<\/style>/i);
+  // Also extract <nav> from inside the header for _partials/_nav.html
+  const headerHtml = headerMatch ? headerMatch[0] : '';
+  const navMatch = headerHtml.match(/<nav[\s\S]*?<\/nav>/i);
+
+  return {
+    headBlock: headMatch ? headMatch[0] : '',
+    headerHtml,
+    footerHtml: footerMatch ? footerMatch[0] : '',
+    sharedCss: sharedStyleMatch ? sharedStyleMatch[1] : '',
+    navHtml: navMatch ? navMatch[0] : '',
+  };
+}
+
+function writeTemplateArtifacts(ws) {
+  const distDir = DIST_DIR();
+  const templatePath = path.join(distDir, '_template.html');
+  if (!fs.existsSync(templatePath)) return null;
+
+  const templateHtml = fs.readFileSync(templatePath, 'utf8');
+  const components = extractTemplateComponents(templateHtml);
+
+  // Write _partials/_nav.html from template header's nav
+  if (components.navHtml) {
+    const partialsDir = path.join(distDir, '_partials');
+    fs.mkdirSync(partialsDir, { recursive: true });
+    fs.writeFileSync(path.join(partialsDir, '_nav.html'), components.navHtml);
+  }
+
+  // Write _partials/_footer.html from template footer
+  if (components.footerHtml) {
+    const partialsDir = path.join(distDir, '_partials');
+    fs.mkdirSync(partialsDir, { recursive: true });
+    fs.writeFileSync(path.join(partialsDir, '_footer.html'), components.footerHtml);
+  }
+
+  // Write assets/styles.css from template shared CSS
+  if (components.sharedCss) {
+    const assetsDir = path.join(distDir, 'assets');
+    fs.mkdirSync(assetsDir, { recursive: true });
+    fs.writeFileSync(path.join(assetsDir, 'styles.css'), components.sharedCss.trim());
+    if (ws) ws.send(JSON.stringify({ type: 'status', content: 'Wrote shared CSS from template to assets/styles.css' }));
+  }
+
+  console.log('[template] Wrote template artifacts (_partials, styles.css)');
+  return components;
+}
+
+function applyTemplateToPages(ws, writtenPages) {
+  const distDir = DIST_DIR();
+  const pages = writtenPages && writtenPages.length > 0 ? writtenPages : listPages();
+  let updated = 0;
+
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    let html = fs.readFileSync(filePath, 'utf8');
+
+    // Replace inline <style data-template="shared"> with <link> to external stylesheet
+    let changed = false;
+    const hadTemplateStyle = html.match(/<style[^>]*data-template="shared"[^>]*>[\s\S]*?<\/style>/i);
+    if (hadTemplateStyle) {
+      html = html.replace(/<style[^>]*data-template="shared"[^>]*>[\s\S]*?<\/style>/i, '');
+      changed = true;
+    }
+
+    // Ensure <link rel="stylesheet" href="assets/styles.css"> exists — but only if the file was actually written
+    const cssPath = path.join(distDir, 'assets', 'styles.css');
+    if (!html.includes('assets/styles.css') && fs.existsSync(cssPath)) {
+      html = html.replace(/<\/head>/i, `  <link rel="stylesheet" href="assets/styles.css">\n  </head>`);
+      changed = true;
+    }
+
+    if (changed) fs.writeFileSync(filePath, html);
+  }
+
+  if (ws && updated > 0) {
+    ws.send(JSON.stringify({ type: 'status', content: `Applied template styles to ${pages.length} pages` }));
+  }
+  console.log(`[template] Applied template to ${pages.length} pages (${updated} updated)`);
+}
+
+function loadTemplateContext() {
+  const distDir = DIST_DIR();
+  const templatePath = path.join(distDir, '_template.html');
+  if (!fs.existsSync(templatePath)) return '';
+
+  const templateHtml = fs.readFileSync(templatePath, 'utf8');
+  const components = extractTemplateComponents(templateHtml);
+  if (!components.headBlock && !components.headerHtml && !components.footerHtml) return '';
+
+  // Strip <title> from head block so pages can set their own page-specific title
+  const headBlockNoTitle = components.headBlock.replace(/<title[^>]*>[^<]*<\/title>/i, '<!-- Page sets its own <title> -->');
+
+  return `
+SITE TEMPLATE (CRITICAL — copy header and footer VERBATIM into your output):
+
+HEAD BLOCK (copy this <head> block, then add your own <title> and <style data-page="[pagename]"> block):
+${headBlockNoTitle}
+
+HEADER (copy this element VERBATIM — do NOT modify any classes, links, or attributes):
+${components.headerHtml}
+
+FOOTER (copy this element VERBATIM — do NOT change structure or content):
+${components.footerHtml}
+
+TEMPLATE RULES:
+- The data-template attributes on header and footer MUST be preserved — the build system requires them
+- Page-specific styles go in a single <style data-page="[pagename]"> block ONLY
+- Do NOT repeat :root variables or shared utility classes — they are in the template <head>
+- Do NOT modify the nav links, footer structure, or shared CSS in any way
+`;
+}
+
+function buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction) {
+  const fontSerif = spec.fonts?.heading || 'Playfair Display';
+  const fontSans = spec.fonts?.body || 'Inter';
+  const fontUrl = `https://fonts.googleapis.com/css2?family=${fontSerif.replace(/\s+/g, '+')}:wght@400;500;600;700&family=${fontSans.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`;
+  const allPageLinks = pageFiles.join(', ');
+
+  // Detect logo file
+  const distDir = DIST_DIR();
+  const logoSvg = fs.existsSync(path.join(distDir, 'assets', 'logo.svg'));
+  const logoPng = fs.existsSync(path.join(distDir, 'assets', 'logo.png'));
+  const logoFile = logoSvg ? 'assets/logo.svg' : logoPng ? 'assets/logo.png' : null;
+  const logoInstruction = logoFile
+    ? `Use <a href="index.html" data-logo-v class="block"><img src="${logoFile}" alt="${spec.site_name || 'Logo'}" class="h-10 w-auto"></a> in the nav. Do NOT show site name text next to the logo image.`
+    : `Use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">${spec.site_name || ''}</a> as the logo in the nav. This will automatically swap to an image when a logo is uploaded.`;
+
+  return `You are building the SHARED DESIGN TEMPLATE for a ${pageFiles.length}-page website.
+
+IMPORTANT: Generate ONLY the shared chrome — header, nav, footer, and shared CSS.
+Do NOT generate any page content — no hero sections, no service cards, no body copy, no images.
+
+SITE: ${spec.site_name || 'Website'}
+BUSINESS TYPE: ${spec.business_type || 'general'}
+
+${briefContext}
+${decisionsContext}
+
+OUTPUT FORMAT — generate this EXACT structure:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${spec.site_name || 'Website'}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="${fontUrl}" rel="stylesheet">
+  <style data-template="shared">
+    :root {
+      --color-primary: ${spec.colors?.primary || '#1a5c2e'};
+      --color-accent: ${spec.colors?.accent || '#d4a843'};
+      --color-bg: ${spec.colors?.bg || '#f0f4f0'};
+      --font-serif: '${fontSerif}', serif;
+      --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    /* Add all shared utility classes here: .text-primary, .bg-accent, .btn-primary, .hover-lift, etc. */
+    /* Add mobile nav toggle CSS */
+    /* Add any animation keyframes needed across multiple pages */
+  </style>
+  ${analyticsInstruction || ''}
+</head>
+<body>
+  <header data-template="header">
+    <!-- Complete header with desktop + mobile nav -->
+    <!-- Nav must link to ALL pages: ${allPageLinks} -->
+    <!-- Use real file links (about.html) NOT anchors (#about) -->
+  </header>
+  <footer data-template="footer">
+    <!-- Complete footer with business info, quick links, copyright -->
+  </footer>
+</body>
+</html>
+
+STYLE GUIDE:
+- This template defines the ENTIRE visual identity of the site
+- Every page will copy the header and footer VERBATIM — make them complete and polished
+- The <style data-template="shared"> block should contain ALL styles shared across pages:
+  - CSS custom properties in :root
+  - Utility classes (.text-primary, .bg-accent, .hover-lift, .font-serif, etc.)
+  - Mobile menu toggle (CSS-only checkbox pattern preferred)
+  - Common component patterns (.btn-primary, .section-heading, .card, etc.)
+  - Animation keyframes used on multiple pages
+- Do NOT include page-specific styles — those go in per-page <style data-page="pagename"> blocks
+
+LOGO: ${logoInstruction}
+
+NAVIGATION:
+- Must link to ALL ${pageFiles.length} pages: ${allPageLinks}
+- Include both desktop and responsive mobile nav
+- Mobile menu should use a CSS-only toggle or minimal inline JS
+- Active page highlighting will be handled per-page
+
+FOOTER:
+- Business name and tagline
+- Quick links to all pages
+- Contact information (phone, email, address if in brief)
+- Copyright line: © ${new Date().getFullYear()} ${spec.site_name || 'Business Name'}
+
+DESIGN DIRECTION:
+${assetsContext || 'No specific assets referenced.'}
+
+${systemRules}
+
+OUTPUT: Respond with ONLY the complete HTML document. No explanation, no markdown fences.
+The <body> should contain ONLY the <header> and <footer> — no other elements.`;
 }
 
 // --- SEO Meta Injection (post-processing) ---
@@ -3362,7 +3582,10 @@ function buildPromptContext(requestType, spec, userMessage) {
       }).join('\n');
   }
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, resolvedPage };
+  // Load template context for single-page edits (so Claude copies chrome from template)
+  const templateContext = loadTemplateContext();
+
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage };
 }
 
 function summarizeHtml(html) {
@@ -3864,42 +4087,95 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
   fs.mkdirSync(DIST_DIR(), { recursive: true });
 
   const writtenPages = [];
-  const innerPages = pageFiles.filter(f => f !== 'index.html');
-  // If the site has no index.html (unusual), fall back to pure parallel
-  const hasSeedPage = pageFiles.includes('index.html');
 
-  function spawnPage(pageFile, extraSeedContext) {
+  function spawnPage(pageFile, templateContext) {
     const content = pageContentGuide[pageFile] || `Content appropriate for a "${pageFile.replace('.html', '').replace(/-/g, ' ')}" page`;
-    const pagePrompt = `You are a premium website builder. Generate the ${pageFile} page for a ${specPages.length}-page website.
+
+    // Build slot stability instruction for this page (fixes known bug — was missing from parallel builds)
+    const currentPageSlots = (spec.media_specs || []).filter(s => s.page === pageFile);
+    let slotStabilityBlock = '';
+    if (currentPageSlots.length > 0) {
+      slotStabilityBlock = `\nSLOT ID PRESERVATION (CRITICAL): This page has existing image slot assignments.\nYou MUST preserve these exact slot IDs — do not rename, renumber, or remove them:\n` +
+        currentPageSlots.map(s => `  ${s.slot_id} (${s.role})`).join('\n') + '\n';
+    }
+
+    let pagePrompt;
+    if (templateContext) {
+      // Template-first build: page receives template components to copy verbatim
+      pagePrompt = `You are a premium website builder. Generate the ${pageFile} page for a ${specPages.length}-page website.
 
 PAGE TO BUILD: ${pageFile}
 PAGE CONTENT: ${content}
 All pages in this site: ${allPageLinks}
 ${buildBlueprintContext(pageFile)}
-DESIGN CONSISTENCY: All pages in this site share an identical visual identity — the same nav structure linking to all pages, the same footer, the same CSS custom properties for colors and typography, and the same overall layout style. Build this page's nav and footer to match the design spec precisely. A post-build sync step will harmonize nav/footer across all pages.
-${extraSeedContext || ''}
+${slotStabilityBlock}
+${templateContext}
+
+YOUR OUTPUT STRUCTURE:
+<!DOCTYPE html>
+<html lang="en">
+  <!-- Copy the <head> from the template above, then add: -->
+  <!-- <title>Page Name | ${spec.site_name || 'Site'}</title> -->
+  <!-- <meta name="description" content="..."> -->
+  <!-- <style data-page="${pageFile.replace('.html', '')}"> for page-specific styles ONLY -->
+<body>
+  <!-- Copy the header from the template VERBATIM -->
+  <main>
+    <!-- YOUR PAGE CONTENT: ${content} -->
+    <!-- All sections, images, text unique to this page go here -->
+  </main>
+  <!-- Copy the footer from the template VERBATIM -->
+</body>
+</html>
+
+${siteContext}
+
+IMAGE SLOTS (CRITICAL):
+Every <img> tag MUST have these data attributes:
+- data-slot-id: unique role-based ID (e.g. "hero-1", "service-mowing")
+- data-slot-status="empty"
+- data-slot-role: one of: hero, testimonial, team, service, gallery, favicon
+- src must be "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+
+FORMS:
+- All forms must use: method="POST" data-netlify="true"
+- Add a hidden honeypot field for spam protection
+
+OUTPUT FORMAT:
+Respond with ONLY the complete HTML document — from <!DOCTYPE html> to </html>.
+No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
+    } else {
+      // Fallback: no template available — use legacy full-page generation
+      pagePrompt = `You are a premium website builder. Generate the ${pageFile} page for a ${specPages.length}-page website.
+
+PAGE TO BUILD: ${pageFile}
+PAGE CONTENT: ${content}
+All pages in this site: ${allPageLinks}
+${buildBlueprintContext(pageFile)}
+${slotStabilityBlock}
+DESIGN CONSISTENCY: All pages share identical nav, footer, CSS custom properties, and layout style.
 ${siteContext}
 ${sharedRules}`;
+    }
 
     const child = spawnClaude(pagePrompt);
     let pageResponse = '';
     return { child, getResponse: () => pageResponse, appendResponse: (c) => { pageResponse += c; } };
   }
 
-  function spawnInnerPages(seedContext) {
-    const pagesLeft = hasSeedPage ? innerPages : pageFiles;
-    if (pagesLeft.length === 0) {
+  function spawnAllPages(templateContext) {
+    if (pageFiles.length === 0) {
       finishParallelBuild(ws, writtenPages, startTime, spec);
       return;
     }
 
-    ws.send(JSON.stringify({ type: 'status', content: `Spawning ${pagesLeft.length} inner pages in parallel...` }));
-    let innerCompleted = 0;
-    const innerTotal = pagesLeft.length;
+    ws.send(JSON.stringify({ type: 'status', content: `Spawning all ${pageFiles.length} pages in parallel...` }));
+    let completed = 0;
+    const total = pageFiles.length;
     const timedOutPages = new Set();
 
-    for (const pageFile of pagesLeft) {
-      const { child, getResponse, appendResponse } = spawnPage(pageFile, seedContext);
+    for (const pageFile of pageFiles) {
+      const { child, getResponse, appendResponse } = spawnPage(pageFile, templateContext);
 
       const pageTimeout = setTimeout(() => {
         console.error(`[parallel-build] ${pageFile} timed out after 5 minutes`);
@@ -3914,9 +4190,7 @@ ${sharedRules}`;
 
       child.on('close', (code) => {
         clearTimeout(pageTimeout);
-        innerCompleted++;
-        const total = (hasSeedPage ? 1 : 0) + innerTotal;
-        const overallCompleted = writtenPages.length + innerCompleted;
+        completed++;
         const response = getResponse().trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
 
         if (code === 0 && response.length > 50) {
@@ -3924,13 +4198,13 @@ ${sharedRules}`;
           fs.writeFileSync(path.join(DIST_DIR(), pageFile), response);
           writtenPages.push(pageFile);
           console.log(`[parallel-build] ${pageFile} done (${response.length} bytes)`);
-          ws.send(JSON.stringify({ type: 'status', content: `${pageFile} built (${overallCompleted}/${total} — ${Math.round((Date.now() - startTime) / 1000)}s)` }));
+          ws.send(JSON.stringify({ type: 'status', content: `${pageFile} built (${completed}/${total} — ${Math.round((Date.now() - startTime) / 1000)}s)` }));
         } else {
           console.error(`[parallel-build] ${pageFile} failed (code ${code}, ${response.length} bytes)`);
           ws.send(JSON.stringify({ type: 'status', content: `${pageFile} failed — will retry on next build` }));
         }
 
-        if (innerCompleted === innerTotal) {
+        if (completed === total) {
           if (writtenPages.length === 0) {
             buildInProgress = false;
             ws.send(JSON.stringify({ type: 'error', content: 'All pages failed to build. Try again.' }));
@@ -3942,62 +4216,58 @@ ${sharedRules}`;
     }
   }
 
-  if (!hasSeedPage) {
-    // No index.html — pure parallel, no seed available
-    ws.send(JSON.stringify({ type: 'status', content: `Spawning all ${pageFiles.length} pages in parallel...` }));
-    spawnInnerPages('');
-    return;
-  }
+  // Template-first build strategy:
+  // Step 1 — Build _template.html (header/nav, footer, shared CSS) in one Claude call.
+  // Step 2 — Extract template components, write artifacts (styles.css, _partials/).
+  // Step 3 — Build ALL pages in true parallel, each receiving the template as context.
+  // Fallback — If template build fails, fall back to legacy no-seed parallel build.
+  ws.send(JSON.stringify({ type: 'status', content: 'Building design template (header, nav, footer, shared CSS)...' }));
 
-  // Phase 1: Build index.html to establish CSS/design seed
-  ws.send(JSON.stringify({ type: 'status', content: 'Building index.html to establish design language...' }));
-  const { child: seedChild, getResponse: getSeedResponse, appendResponse: appendSeedResponse } = spawnPage('index.html', '');
+  const templatePrompt = buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction);
+  const templateChild = spawnClaude(templatePrompt);
+  let templateResponse = '';
+  let templateSpawned = false; // Guard against double-spawn from timeout + close race
 
-  const seedTimeout = setTimeout(() => {
-    console.error('[parallel-build] index.html (seed) timed out — falling back to no-seed parallel build');
-    seedChild.kill();
-    ws.send(JSON.stringify({ type: 'error', content: 'index.html timed out — building remaining pages without CSS seed.' }));
-    spawnInnerPages('');
-  }, 300000);
+  const templateTimeout = setTimeout(() => {
+    if (templateSpawned) return;
+    templateSpawned = true;
+    console.error('[parallel-build] Template timed out after 3 minutes — falling back to legacy build');
+    templateChild.kill();
+    ws.send(JSON.stringify({ type: 'error', content: 'Template timed out — building pages without template (legacy mode).' }));
+    spawnAllPages('');
+  }, 180000); // 3 minute timeout for template (simpler than a full page)
 
-  seedChild.stdout.on('data', (chunk) => { appendSeedResponse(chunk.toString()); });
-  seedChild.stderr.on('data', (chunk) => { console.error('[parallel-build:index.html]', chunk.toString()); });
+  templateChild.stdout.on('data', (chunk) => { templateResponse += chunk.toString(); });
+  templateChild.stderr.on('data', (chunk) => { console.error('[parallel-build:template]', chunk.toString()); });
 
-  seedChild.on('close', (code) => {
-    clearTimeout(seedTimeout);
-    const seedHtml = getSeedResponse().trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+  templateChild.on('close', (code) => {
+    if (templateSpawned) return; // timeout already handled this
+    templateSpawned = true;
+    clearTimeout(templateTimeout);
+    const templateHtml = templateResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
 
-    if (code === 0 && seedHtml.length > 50) {
-      versionFile('index.html', 'build');
-      fs.writeFileSync(path.join(DIST_DIR(), 'index.html'), seedHtml);
-      writtenPages.push('index.html');
-      ws.send(JSON.stringify({ type: 'status', content: `index.html built (1/${pageFiles.length} — ${Math.round((Date.now() - startTime) / 1000)}s) — seeding inner pages...` }));
+    if (code === 0 && templateHtml.length > 50) {
+      // Write _template.html to dist
+      fs.writeFileSync(path.join(DIST_DIR(), '_template.html'), templateHtml);
+      ws.send(JSON.stringify({ type: 'status', content: `Template built (${Math.round((Date.now() - startTime) / 1000)}s) — writing artifacts...` }));
 
-      // Extract CSS seed: shared <style> blocks and nav HTML from index.html
-      const headMatch = seedHtml.match(/<head[\s\S]*?<\/head>/i);
-      const navMatch = seedHtml.match(/<nav[\s\S]*?<\/nav>/i);
+      // Extract components and write artifacts (styles.css, _partials/)
+      const components = writeTemplateArtifacts(ws);
 
-      let cssBlocks = '';
-      if (headMatch) {
-        const sharedStyles = headMatch[0].match(/<style(?![^>]*data-page)[^>]*>[\s\S]*?<\/style>/gi);
-        if (sharedStyles) cssBlocks = sharedStyles.join('\n');
+      if (components && (components.headBlock || components.headerHtml)) {
+        // Build template context string for page prompts
+        const templateContext = loadTemplateContext();
+        ws.send(JSON.stringify({ type: 'status', content: `Template ready — launching all ${pageFiles.length} pages in parallel...` }));
+        spawnAllPages(templateContext);
+      } else {
+        console.warn('[parallel-build] Template parsed but no usable components — falling back to legacy build');
+        ws.send(JSON.stringify({ type: 'status', content: 'Template incomplete — building pages without template.' }));
+        spawnAllPages('');
       }
-
-      const navHtml = navMatch ? navMatch[0] : '';
-      let seedContext = '';
-      if (cssBlocks) {
-        seedContext += `\nCSS SEED (copy these exact styles into your <head> — do not invent new color values or font stacks):\n${cssBlocks}\n`;
-      }
-      if (navHtml) {
-        seedContext += `\nNAV SEED (use this exact nav HTML — preserve all class names, links, and structure):\n${navHtml}\n`;
-      }
-
-      // Phase 2: All inner pages in parallel with the CSS/nav seed
-      spawnInnerPages(seedContext);
     } else {
-      console.error(`[parallel-build] index.html failed (code ${code}) — building remaining pages without CSS seed`);
-      ws.send(JSON.stringify({ type: 'status', content: 'index.html failed — building remaining pages without CSS seed.' }));
-      spawnInnerPages('');
+      console.error(`[parallel-build] Template failed (code ${code}, ${templateHtml.length} bytes) — falling back to legacy build`);
+      ws.send(JSON.stringify({ type: 'status', content: 'Template failed — building pages without template (legacy mode).' }));
+      spawnAllPages('');
     }
   });
 }
@@ -4024,31 +4294,44 @@ function runPostProcessing(ws, writtenPages, options = {}) {
   applyLogoV(writtenPages);
 
   if (isFullBuild) {
-    // Full build: sync everything from index.html
-
-    // Refresh nav partial from freshly built index.html before syncing
-    const distDir = DIST_DIR();
-    const indexPath = path.join(distDir, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      const indexHtml = fs.readFileSync(indexPath, 'utf8');
-      const navMatch = indexHtml.match(/<nav[\s\S]*?<\/nav>/i);
-      if (navMatch) {
-        const partialsDir = path.join(distDir, '_partials');
-        fs.mkdirSync(partialsDir, { recursive: true });
-        fs.writeFileSync(path.join(partialsDir, '_nav.html'), navMatch[0]);
+    // Template-first build: template artifacts (styles.css, _partials/) were already written
+    // by writeTemplateArtifacts() during the build phase. Now just swap inline template styles
+    // for <link> references in each page.
+    const templatePath = path.join(DIST_DIR(), '_template.html');
+    if (fs.existsSync(templatePath)) {
+      // Template-first path: simple and deterministic
+      applyTemplateToPages(ws, writtenPages);
+    } else {
+      // Legacy fallback (no template — old-style build): use sync-based post-processing
+      const distDir = DIST_DIR();
+      const indexPath = path.join(distDir, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        const indexHtml = fs.readFileSync(indexPath, 'utf8');
+        const navMatch = indexHtml.match(/<nav[\s\S]*?<\/nav>/i);
+        if (navMatch) {
+          const partialsDir = path.join(distDir, '_partials');
+          fs.mkdirSync(partialsDir, { recursive: true });
+          fs.writeFileSync(path.join(partialsDir, '_nav.html'), navMatch[0]);
+        }
       }
+      syncNavPartial(ws);
+      syncFooterPartial(ws);
+      ensureHeadDependencies(ws);
+      syncHeadSection(ws);
+      extractSharedCss(ws);
     }
-
-    syncNavPartial(ws);
-    syncFooterPartial(ws);
-    ensureHeadDependencies(ws);
-    syncHeadSection(ws);
-    extractSharedCss(ws);
   } else if (sourcePage) {
-    // Single-page edit: propagate FROM this page
-    syncNavFromPage(ws, sourcePage);
-    syncFooterFromPage(ws, sourcePage);
-    ensureHeadDependencies(ws);
+    // Single-page edit: template guarantees consistent nav/footer/head
+    const templatePath = path.join(DIST_DIR(), '_template.html');
+    if (fs.existsSync(templatePath)) {
+      // Template-first: just swap inline template styles for <link>
+      applyTemplateToPages(ws, writtenPages);
+    } else {
+      // Legacy fallback: propagate FROM edited page
+      syncNavFromPage(ws, sourcePage);
+      syncFooterFromPage(ws, sourcePage);
+      ensureHeadDependencies(ws);
+    }
     // NO extractSharedCss — don't strip inline styles on chat edits
     // NO syncHeadSection — don't mess with head on single edits
   }
@@ -4097,7 +4380,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
   const prevPage = currentPage;
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
 
   // If buildPromptContext resolved a different page, update currentPage explicitly here
   if (resolvedPage !== prevPage) {
@@ -4186,6 +4469,7 @@ ${sessionContext}
 ${conversationHistory}
 ${blueprintContext}
 ${slotMappingContext}
+${templateContext || ''}
 
 SITE SPEC:
 ${JSON.stringify({ site_name: spec.site_name, business_type: spec.business_type, colors: spec.colors, tone: spec.tone, fonts: spec.fonts }, null, 2)}
@@ -5464,6 +5748,7 @@ module.exports = {
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
+  extractTemplateComponents, loadTemplateContext, applyTemplateToPages, writeTemplateArtifacts,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };

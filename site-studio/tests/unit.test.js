@@ -14,6 +14,7 @@ const {
   SLOT_DIMENSIONS,
   truncateAssistantMessage,
   ensureHeadDependencies,
+  extractTemplateComponents,
 } = require('../server');
 
 // classifyRequest checks fs.existsSync for index.html — ensure it exists
@@ -390,5 +391,68 @@ describe('ensureHeadDependencies', () => {
     // ensureHeadDependencies reads listPages() which reads from DIST_DIR
     // This test just verifies no throw on normal run
     expect(() => ensureHeadDependencies(null)).not.toThrow();
+  });
+});
+
+// --- extractTemplateComponents ---
+describe('extractTemplateComponents', () => {
+  it('extracts all four components from valid template', () => {
+    const template = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style data-template="shared">
+    :root { --color-primary: #1a5c2e; }
+    .text-primary { color: var(--color-primary); }
+  </style>
+</head>
+<body>
+  <header data-template="header">
+    <nav><a href="index.html">Home</a><a href="about.html">About</a></nav>
+  </header>
+  <footer data-template="footer">
+    <p>© 2026 Test Business</p>
+  </footer>
+</body>
+</html>`;
+    const result = extractTemplateComponents(template);
+    expect(result.headBlock).toContain('tailwindcss');
+    expect(result.headBlock).toContain('data-template="shared"');
+    expect(result.headerHtml).toContain('data-template="header"');
+    expect(result.headerHtml).toContain('<nav>');
+    expect(result.footerHtml).toContain('data-template="footer"');
+    expect(result.footerHtml).toContain('2026 Test Business');
+    expect(result.sharedCss).toContain('--color-primary');
+    expect(result.sharedCss).toContain('.text-primary');
+    expect(result.navHtml).toContain('<a href="index.html">');
+  });
+
+  it('returns empty strings for missing components', () => {
+    const minimal = '<html><head><title>Test</title></head><body></body></html>';
+    const result = extractTemplateComponents(minimal);
+    expect(result.headBlock).toContain('<head>');
+    expect(result.headerHtml).toBe('');
+    expect(result.footerHtml).toBe('');
+    expect(result.sharedCss).toBe('');
+    expect(result.navHtml).toBe('');
+  });
+
+  it('handles malformed HTML gracefully', () => {
+    const broken = 'not html at all';
+    const result = extractTemplateComponents(broken);
+    expect(result.headBlock).toBe('');
+    expect(result.headerHtml).toBe('');
+    expect(result.footerHtml).toBe('');
+    expect(result.sharedCss).toBe('');
+  });
+
+  it('extracts nav from inside header', () => {
+    const template = `<html><head></head><body>
+      <header data-template="header"><div class="container"><nav class="flex gap-4"><a href="/">Home</a></nav></div></header>
+    </body></html>`;
+    const result = extractTemplateComponents(template);
+    expect(result.navHtml).toContain('<nav');
+    expect(result.navHtml).toContain('Home');
   });
 });
