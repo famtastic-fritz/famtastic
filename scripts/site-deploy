@@ -24,10 +24,12 @@ shift
 # Parse flags
 PROVIDER=""
 PROD_FLAG=""
+DEPLOY_ENV=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --provider) PROVIDER="$2"; shift 2 ;;
     --prod)     PROD_FLAG="--prod"; shift ;;
+    --env)      DEPLOY_ENV="$2"; shift 2 ;;
     *)          shift ;;
   esac
 done
@@ -82,21 +84,27 @@ echo ""
 # --- Netlify ---
 deploy_netlify() {
   # Sanitize site name for Netlify (lowercase, alphanumeric + hyphens)
-  NETLIFY_SITE=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+  local BASE_SITE=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+  # Environment-aware naming: staging gets -staging suffix, production uses base name
+  if [ "$DEPLOY_ENV" = "staging" ]; then
+    NETLIFY_SITE="${BASE_SITE}-staging"
+  else
+    NETLIFY_SITE="$BASE_SITE"
+  fi
 
   # Check if site already linked (has a site ID)
   SITE_ID=""
-  if [ -f "$SITE_DIR/.netlify/state.json" ]; then
+  # First: check spec.environments[env].site_id
+  if [ -n "$DEPLOY_ENV" ] && [ -f "$SPEC" ]; then
+    SITE_ID=$(jq -r ".environments.${DEPLOY_ENV}.site_id // empty" "$SPEC" 2>/dev/null || true)
+  fi
+  # Fallback: check .netlify/state.json (legacy, only if no --env)
+  if [ -z "$SITE_ID" ] && [ -z "$DEPLOY_ENV" ] && [ -f "$SITE_DIR/.netlify/state.json" ]; then
     SITE_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json")
   fi
-  # Fallback: check spec.json for netlify_site_id
-  if [ -z "$SITE_ID" ] && [ -f "$SPEC" ]; then
+  # Fallback: check spec.json flat field (legacy)
+  if [ -z "$SITE_ID" ] && [ -z "$DEPLOY_ENV" ] && [ -f "$SPEC" ]; then
     SITE_ID=$(jq -r '.netlify_site_id // empty' "$SPEC")
-    if [ -n "$SITE_ID" ]; then
-      mkdir -p "$SITE_DIR/.netlify"
-      echo '{"siteId":"'"$SITE_ID"'"}' > "$SITE_DIR/.netlify/state.json"
-      echo "[deploy] Recovered site ID from spec.json: $SITE_ID" >&2
-    fi
   fi
 
   echo "[deploy] Uploading to Netlify..." >&2
@@ -186,11 +194,24 @@ esac
 if [ -n "$DEPLOY_URL" ] && [ -f "$SPEC" ]; then
   TS="$(date -u +%FT%TZ)"
   TMP=$(mktemp)
-  jq --arg url "$DEPLOY_URL" --arg at "$TS" --arg p "$PROVIDER" \
-    '.deployed_url = $url | .deployed_at = $at | .deploy_provider = $p | .state = "deployed"' \
-    "$SPEC" > "$TMP" && mv "$TMP" "$SPEC"
+  if [ -n "$DEPLOY_ENV" ]; then
+    # Write to environments[env] structure
+    # Also save site_id if we just created a new site
+    NEW_SITE_ID=""
+    if [ -f "$SITE_DIR/.netlify/state.json" ]; then
+      NEW_SITE_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json" 2>/dev/null || true)
+    fi
+    jq --arg url "$DEPLOY_URL" --arg at "$TS" --arg p "$PROVIDER" --arg env "$DEPLOY_ENV" --arg sid "$NEW_SITE_ID" \
+      '.environments[$env] = (.environments[$env] // {}) | .environments[$env].url = $url | .environments[$env].deployed_at = $at | .environments[$env].provider = $p | .environments[$env].state = "deployed" | (if $sid != "" then .environments[$env].site_id = $sid else . end) | .deployed_url = $url | .deployed_at = $at | .deploy_provider = $p | .state = "deployed"' \
+      "$SPEC" > "$TMP" && mv "$TMP" "$SPEC"
+  else
+    # Legacy flat field update
+    jq --arg url "$DEPLOY_URL" --arg at "$TS" --arg p "$PROVIDER" \
+      '.deployed_url = $url | .deployed_at = $at | .deploy_provider = $p | .state = "deployed"' \
+      "$SPEC" > "$TMP" && mv "$TMP" "$SPEC"
+  fi
   echo ""
-  echo "[deploy] Updated spec.json with deploy info"
+  echo "[deploy] Updated spec.json with deploy info ($DEPLOY_ENV)"
 fi
 
 # --- Log to JSONL ---

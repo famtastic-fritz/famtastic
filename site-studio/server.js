@@ -10,8 +10,21 @@ const nodemailer = require('nodemailer');
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
 const PREVIEW_PORT = parseInt(process.env.PREVIEW_PORT || '3333', 10);
-let TAG = process.env.SITE_TAG || 'site-demo';
+// Restore last active site from settings, fall back to env var or 'site-demo'
+const LAST_SITE_FILE = path.join(process.env.HOME || '~', '.config', 'famtastic', '.last-site');
+function readLastSite() {
+  try { return fs.readFileSync(LAST_SITE_FILE, 'utf8').trim(); } catch { return null; }
+}
+function writeLastSite(tag) {
+  try {
+    const dir = path.dirname(LAST_SITE_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(LAST_SITE_FILE, tag);
+  } catch {}
+}
+let TAG = process.env.SITE_TAG || readLastSite() || 'site-demo';
 const RECENT_CONVO_COUNT = 15; // Recent conversation turns to include in prompt context
+const serverStartedAt = new Date().toISOString();
 const HUB_ROOT = path.resolve(__dirname, '..');
 const SITES_ROOT = path.join(HUB_ROOT, 'sites');
 
@@ -65,6 +78,20 @@ function readSpec() {
         if (_specCache.design_decisions && !Array.isArray(_specCache.design_decisions)) {
           console.warn(`[spec] ${TAG}: design_decisions is not an array, resetting`);
           _specCache.design_decisions = [];
+        }
+        // Migrate flat deploy fields to environments object
+        if (_specCache.deployed_url && !_specCache.environments) {
+          _specCache.environments = {
+            staging: {
+              provider: _specCache.deploy_provider || 'netlify',
+              site_id: _specCache.netlify_site_id || null,
+              url: _specCache.deployed_url,
+              deployed_at: _specCache.deployed_at || null,
+              state: 'deployed',
+            },
+          };
+          console.log(`[spec] ${TAG}: migrated flat deploy fields to environments.staging`);
+          fs.writeFileSync(SPEC_FILE(), JSON.stringify(_specCache, null, 2));
         }
       }
     } catch (e) {
@@ -686,19 +713,20 @@ app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
   const origin = req.get('origin') || req.get('referer') || '';
   const allowed = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
-  if (origin && !allowed.some(a => origin.startsWith(a))) {
+  if (!allowed.some(a => origin.startsWith(a))) {
     return res.status(403).json({ error: 'Cross-origin request blocked' });
   }
   next();
 });
 
 // Serve spec.json
-// Deploy & environment info
+// Deploy & environment info (structured: local + staging + production)
 app.get('/api/deploy-info', (req, res) => {
   try {
     const spec = readSpec();
+    const envs = spec.environments || {};
 
-    // Detect repo info
+    // Detect repo info — uses execSync with hardcoded commands (no user input)
     let repo = null;
     try {
       const { execSync } = require('child_process');
@@ -707,51 +735,36 @@ app.get('/api/deploy-info', (req, res) => {
       repo = { url: remoteUrl, branch };
     } catch {}
 
-    // Build environments list
-    const environments = [];
-
-    // Local / dev
-    environments.push({
-      name: 'Local',
-      type: 'dev',
-      status: 'running',
-      url: `http://localhost:${PREVIEW_PORT}`,
-      paths: {
-        site_dir: SITE_DIR(),
-        dist_dir: DIST_DIR(),
-        spec_file: SPEC_FILE(),
-      },
-    });
-
-    // Production (Netlify)
-    if (spec.deployed_url) {
-      environments.push({
-        name: 'Production',
-        type: 'production',
-        status: spec.state === 'deployed' ? 'live' : 'draft',
-        url: spec.deployed_url,
-        provider: 'Netlify',
-        site_id: spec.netlify_site_id || null,
-        custom_domain: spec.custom_domain || null,
-      });
-    }
-
     res.json({
-      deployed: !!spec.deployed_url,
-      url: spec.deployed_url || null,
-      site_id: spec.netlify_site_id || null,
-      state: spec.state || (spec.deployed_url ? 'deployed' : 'draft'),
-      custom_domain: spec.custom_domain || null,
-      environments,
-      repo,
       local: {
+        url: `http://localhost:${PREVIEW_PORT}`,
+        status: 'running',
         site_dir: SITE_DIR(),
         dist_dir: DIST_DIR(),
         spec_file: SPEC_FILE(),
       },
+      staging: envs.staging ? {
+        url: envs.staging.url || null,
+        state: envs.staging.state || 'not deployed',
+        deployed_at: envs.staging.deployed_at || null,
+        provider: envs.staging.provider || null,
+        site_id: envs.staging.site_id || null,
+      } : null,
+      production: envs.production ? {
+        url: envs.production.url || null,
+        state: envs.production.state || 'not deployed',
+        deployed_at: envs.production.deployed_at || null,
+        provider: envs.production.provider || null,
+        site_id: envs.production.site_id || null,
+        custom_domain: envs.production.custom_domain || null,
+      } : null,
+      repo,
+      // Backward compat
+      deployed: !!(envs.staging?.url || envs.production?.url),
+      url: envs.production?.url || envs.staging?.url || null,
     });
   } catch {
-    res.json({ deployed: false, environments: [], repo: null, local: {} });
+    res.json({ local: {}, staging: null, production: null, repo: null, deployed: false });
   }
 });
 
@@ -800,6 +813,47 @@ app.use('/site-assets', express.static(path.join(DIST_DIR(), 'assets')));
 // Get site config
 app.get('/api/config', (req, res) => {
   res.json({ tag: TAG, previewPort: PREVIEW_PORT, studioPort: PORT, sitesRoot: SITES_ROOT });
+});
+
+// Server info — session metadata, uptime, file status
+app.get('/api/server-info', (req, res) => {
+  const settings = loadSettings();
+  const studio = loadStudio();
+  let serverFileModified = null;
+  try { serverFileModified = fs.statSync(path.join(__dirname, 'server.js')).mtime.toISOString(); } catch {}
+  let indexFileModified = null;
+  try { indexFileModified = fs.statSync(path.join(__dirname, 'public', 'index.html')).mtime.toISOString(); } catch {}
+  res.json({
+    tag: TAG,
+    studioPort: PORT,
+    previewPort: PREVIEW_PORT,
+    model: settings.model || 'unknown',
+    startedAt: serverStartedAt,
+    uptime: Math.floor(process.uptime()),
+    sessionId: studio?.session_count || 0,
+    sessionStartedAt,
+    messageCount: sessionMessageCount,
+    currentPage,
+    currentMode,
+    buildInProgress,
+    activeClients: activeClientCount,
+    pages: listPages(),
+    nodeVersion: process.version,
+    serverFileModified,
+    indexFileModified,
+    heroFullWidth: settings.hero_full_width ?? true,
+  });
+});
+
+// Restart server (requires wrapper script to auto-restart on exit 0)
+app.post('/api/restart', (req, res) => {
+  res.json({ success: true, message: 'Server restarting...' });
+  // Notify all WS clients
+  wss.clients.forEach(client => {
+    try { client.send(JSON.stringify({ type: 'server-restarting' })); } catch {}
+  });
+  // Graceful exit — wrapper script restarts the process
+  setTimeout(() => process.exit(0), 500);
 });
 
 // List pages and current page
@@ -2637,6 +2691,7 @@ app.post('/api/switch-site', (req, res) => {
 
   // Switch
   TAG = newTag;
+  writeLastSite(TAG);
   invalidateSpecCache();
   currentPage = 'index.html';
   currentMode = 'build';
@@ -2690,6 +2745,7 @@ app.post('/api/new-site', (req, res) => {
   // Switch to the new site
   endSession();
   TAG = newTag;
+  writeLastSite(TAG);
   invalidateSpecCache();
   currentPage = 'index.html';
   sessionMessageCount = 0;
@@ -5234,9 +5290,11 @@ wss.on('connection', (ws) => {
           break;
 
         case 'deploy': {
-          const isProd = userMessage.toLowerCase().includes('prod') || userMessage.toLowerCase().includes('production') || userMessage.toLowerCase().includes('live');
-          ws.send(JSON.stringify({ type: 'status', content: `Deploying ${isProd ? '(production)' : '(draft)'}...` }));
-          runDeploy(ws, isProd);
+          const lowerDeploy = userMessage.toLowerCase();
+          const deployEnv = (lowerDeploy.includes('prod') || lowerDeploy.includes('production') || lowerDeploy.includes('live'))
+            ? 'production' : 'staging';
+          ws.send(JSON.stringify({ type: 'status', content: `Deploying to ${deployEnv}...` }));
+          runDeploy(ws, deployEnv);
           break;
         }
 
@@ -5561,9 +5619,11 @@ function runOrchestratorSite(ws, template) {
 }
 
 // --- Run site-deploy ---
-function runDeploy(ws, isProd) {
-  const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG];
-  if (isProd) args.push('--prod');
+// env: 'staging' | 'production'
+function runDeploy(ws, env) {
+  env = env || 'staging';
+  const envLabel = env.charAt(0).toUpperCase() + env.slice(1);
+  const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG, '--prod', '--env', env];
   const child = spawn(args[0], args.slice(1), {
     env: process.env,
     cwd: HUB_ROOT,
@@ -5585,13 +5645,32 @@ function runDeploy(ws, isProd) {
   child.on('close', (code) => {
     const urlMatch = output.match(/https:\/\/[^\s]+/);
     if (code === 0 && urlMatch) {
-      ws.send(JSON.stringify({ type: 'assistant', content: `Site deployed!\n\nURL: ${urlMatch[0]}\n\nUse "fam-hub site domain ${TAG} yourdomain.com" to connect a custom domain.` }));
+      // Update spec.environments
+      const spec = readSpec();
+      if (!spec.environments) spec.environments = {};
+      spec.environments[env] = {
+        provider: spec.deploy_provider || loadSettings().deploy_target || 'netlify',
+        site_id: spec.environments?.[env]?.site_id || spec.netlify_site_id || null,
+        url: urlMatch[0],
+        deployed_at: new Date().toISOString(),
+        state: 'deployed',
+        custom_domain: spec.environments?.[env]?.custom_domain || null,
+      };
+      // Keep flat fields for backward compat
+      spec.deployed_url = urlMatch[0];
+      spec.deployed_at = spec.environments[env].deployed_at;
+      spec.state = 'deployed';
+      writeSpec(spec);
+
+      ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` }));
+      // Notify client to refresh deploy info
+      ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] }));
     } else if (code === 0) {
-      ws.send(JSON.stringify({ type: 'assistant', content: 'Deploy completed. Check the output above for the URL.' }));
+      ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy completed. Check the output above for the URL.` }));
     } else {
-      ws.send(JSON.stringify({ type: 'error', content: 'Deploy failed. You may need to run "netlify login" first.' }));
+      ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed. You may need to run "netlify login" first.` }));
     }
-    appendConvo({ role: 'assistant', content: `Deploy ${code === 0 ? 'succeeded' : 'failed'}: ${urlMatch ? urlMatch[0] : 'see logs'}`, at: new Date().toISOString() });
+    appendConvo({ role: 'assistant', content: `${envLabel} deploy ${code === 0 ? 'succeeded' : 'failed'}: ${urlMatch ? urlMatch[0] : 'see logs'}`, at: new Date().toISOString() });
 
     // Auto-sync to git after successful deploy
     if (code === 0) {
@@ -5602,23 +5681,35 @@ function runDeploy(ws, isProd) {
 }
 
 // --- Git Push — commit + push to remote ---
+let gitPushInProgress = false;
 function runGitPush(ws, { silent = false } = {}) {
+  if (gitPushInProgress) {
+    if (!silent) {
+      try { ws.send(JSON.stringify({ type: 'status', content: 'Git push already in progress — skipping.' })); } catch {}
+    }
+    return;
+  }
+  gitPushInProgress = true;
   const send = (type, content) => {
+    if (silent && (type === 'assistant' || type === 'status')) return;
     try { ws.send(JSON.stringify({ type, content })); } catch {}
   };
-  if (!silent) send('status', 'Checking for changes...');
+  const finish = () => { gitPushInProgress = false; };
+  send('status', 'Checking for changes...');
 
   // Step 1: git add -A
-  const addChild = spawn('git', ['add', '-A'], { cwd: HUB_ROOT });
+  const addChild = spawn('git', ['add', '-A'], { cwd: HUB_ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
+  addChild.stderr.resume(); // drain stderr
   addChild.on('close', (addCode) => {
     if (addCode !== 0) {
       send('error', 'Git add failed.');
+      finish();
       return;
     }
 
     // Step 2: git status --porcelain to check if anything to commit
     let statusOut = '';
-    const statusChild = spawn('git', ['status', '--porcelain'], { cwd: HUB_ROOT });
+    const statusChild = spawn('git', ['status', '--porcelain'], { cwd: HUB_ROOT, stdio: ['ignore', 'pipe', 'ignore'] });
     statusChild.stdout.on('data', (chunk) => { statusOut += chunk.toString(); });
     statusChild.on('close', () => {
       const hasChanges = statusOut.trim().length > 0;
@@ -5626,24 +5717,25 @@ function runGitPush(ws, { silent = false } = {}) {
       const doPush = () => {
         // Step 4: detect branch name
         let branch = 'main';
-        const branchChild = spawn('git', ['branch', '--show-current'], { cwd: HUB_ROOT });
+        const branchChild = spawn('git', ['branch', '--show-current'], { cwd: HUB_ROOT, stdio: ['ignore', 'pipe', 'ignore'] });
         let branchOut = '';
         branchChild.stdout.on('data', (chunk) => { branchOut += chunk.toString(); });
         branchChild.on('close', () => {
           if (branchOut.trim()) branch = branchOut.trim();
-          if (!silent) send('status', `Pushing to origin/${branch}...`);
+          send('status', `Pushing to origin/${branch}...`);
 
           // Step 5: git push
           let pushErr = '';
-          const pushChild = spawn('git', ['push', 'origin', branch], { cwd: HUB_ROOT });
+          const pushChild = spawn('git', ['push', 'origin', branch], { cwd: HUB_ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
           pushChild.stderr.on('data', (chunk) => { pushErr += chunk.toString(); });
           pushChild.on('close', (pushCode) => {
             if (pushCode === 0) {
-              send('assistant', `Repo synced to origin/${branch}.${hasChanges ? ' Changes committed and pushed.' : ' Already up to date — pushed.'}`);
+              if (!silent) send('assistant', `Repo synced to origin/${branch}.${hasChanges ? ' Changes committed and pushed.' : ' Already up to date — pushed.'}`);
             } else {
               send('error', `Git push failed: ${pushErr.trim() || 'unknown error'}. You may need to configure git credentials.`);
             }
             appendConvo({ role: 'assistant', content: `Git push ${pushCode === 0 ? 'succeeded' : 'failed'}: origin/${branch}`, at: new Date().toISOString() });
+            finish();
           });
         });
       };
@@ -5652,11 +5744,13 @@ function runGitPush(ws, { silent = false } = {}) {
         // Step 3: git commit
         const timestamp = new Date().toISOString().split('T')[0];
         const commitMsg = `Studio: sync ${TAG} — ${timestamp}`;
-        if (!silent) send('status', 'Committing changes...');
-        const commitChild = spawn('git', ['commit', '-m', commitMsg], { cwd: HUB_ROOT });
+        send('status', 'Committing changes...');
+        const commitChild = spawn('git', ['commit', '-m', commitMsg], { cwd: HUB_ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
+        commitChild.stderr.resume(); // drain stderr
         commitChild.on('close', (commitCode) => {
           if (commitCode !== 0) {
             send('error', 'Git commit failed. Check for pre-commit hook errors.');
+            finish();
             return;
           }
           doPush();
@@ -5951,11 +6045,46 @@ module.exports = {
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };
 
+// --- File change detection ---
+// Watch server files for changes and notify clients when restart is needed
+function setupFileWatcher() {
+  const filesToWatch = [
+    path.join(__dirname, 'server.js'),
+    path.join(__dirname, 'public', 'index.html'),
+  ];
+  for (const filePath of filesToWatch) {
+    try {
+      let debounceTimer = null;
+      fs.watch(filePath, () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          const fileName = path.basename(filePath);
+          console.log(`[file-watch] ${fileName} changed — restart recommended`);
+          wss.clients.forEach(client => {
+            try {
+              client.send(JSON.stringify({ type: 'restart-needed', file: fileName, timestamp: new Date().toISOString() }));
+            } catch {}
+          });
+        }, 2000);
+      });
+    } catch (err) {
+      console.log(`[file-watch] Could not watch ${path.basename(filePath)}: ${err.message}`);
+    }
+  }
+}
+
 // Start servers only when run directly (not when imported by tests)
 if (require.main === module) {
   previewServer.listen(PREVIEW_PORT, () => {
     console.log(`[preview] Live preview at http://localhost:${PREVIEW_PORT} (dynamic, follows site switches)`);
   });
+
+  // Validate the restored TAG before listening — prevents requests hitting a non-existent site dir
+  if (!fs.existsSync(path.join(SITES_ROOT, TAG))) {
+    console.log(`[site-studio] Last site "${TAG}" not found, falling back to site-demo`);
+    TAG = 'site-demo';
+  }
+  writeLastSite(TAG);
 
   server.listen(PORT, () => {
     console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
@@ -5965,5 +6094,6 @@ if (require.main === module) {
     if (pages.length > 0) {
       console.log(`[site-studio] Pages: ${pages.join(', ')}`);
     }
+    setupFileWatcher();
   });
 }

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# Studio server wrapper — auto-restarts on clean exit (code 0)
+# Used by POST /api/restart to trigger a server restart from the UI.
+# Start with: scripts/studio-server
+# Stop with: Ctrl+C (SIGINT passes through to the child)
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+while true; do
+  node "$SCRIPT_DIR/site-studio/server.js" "$@"
+  EXIT=$?
+  if [ $EXIT -ne 0 ]; then
+    echo "[studio-server] Server exited with code $EXIT — not restarting"
+    break
+  fi
+  echo "[studio-server] Restarting..."
+  sleep 1
+done

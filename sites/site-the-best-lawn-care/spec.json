@@ -831,5 +831,14 @@
       "alt": "about hero 1",
       "provider": "unsplash"
     }
+  },
+  "environments": {
+    "staging": {
+      "provider": "netlify",
+      "site_id": "d58f9ba9-78eb-4329-89e7-710fac8480fa",
+      "url": "https://the-best-lawn-care.netlify.app",
+      "deployed_at": "2026-03-26T22:13:30Z",
+      "state": "deployed"
+    }
   }
 }

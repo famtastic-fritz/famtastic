@@ -428,6 +428,7 @@
         <button onclick="switchStudioTab('design')" id="studio-tab-design" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Design</button>
         <button onclick="switchStudioTab('history')" id="studio-tab-history" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">History</button>
         <button onclick="switchStudioTab('metrics')" id="studio-tab-metrics" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Metrics</button>
+        <button onclick="switchStudioTab('server')" id="studio-tab-server" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Server</button>
       </div>
 
       <!-- Scrollable tab content -->
@@ -571,64 +572,55 @@
 
           <!-- Actions -->
           <div class="border-b border-gray-700">
-            <div onclick="toggleAccordion('deploy-actions')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
-              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-deploy-actions">&#9656;</span>
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Actions</h3>
+            <!-- DEPLOY -->
+            <div class="p-4 border-b border-gray-700 space-y-2">
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1">Deploy</div>
+              <button onclick="deployToStaging()" class="w-full text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Deploy to Staging</button>
+              <button onclick="deployToProduction()" id="deploy-prod-btn" class="w-full text-xs bg-gray-700 text-gray-400 px-3 py-1.5 rounded transition cursor-not-allowed" disabled title="Add a custom domain to enable production deploys">Deploy to Production</button>
+              <div id="deploy-prod-hint" class="text-[10px] text-studio-muted">Add a custom domain to enable production deploys</div>
             </div>
-            <div id="accordion-deploy-actions" class="accordion-body hidden px-4 pb-4">
-              <div class="space-y-2">
-                <button onclick="redeploySite()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Redeploy to Production</button>
-                <button onclick="pushToRepo()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Push to Repo</button>
-                <div id="share-section" class="border-t border-gray-700 pt-2 mt-2 hidden">
-                  <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-2">Share Live Site</div>
-                  <div class="flex gap-2">
-                    <button onclick="shareSite('copy')" class="flex-1 text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Copy Link</button>
-                    <button onclick="shareSite('text')" class="flex-1 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded transition">Text</button>
-                    <button onclick="shareSite('email')" class="flex-1 text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Email</button>
-                  </div>
+
+            <!-- SYNC -->
+            <div class="p-4 border-b border-gray-700">
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-2">Sync</div>
+              <button onclick="pushToRepo()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Push to Repo</button>
+            </div>
+
+            <!-- SHARE -->
+            <div class="p-4 border-b border-gray-700" id="share-section">
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-2">Share</div>
+              <div class="flex gap-2">
+                <button onclick="shareSite('copy')" class="flex-1 text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Copy Link</button>
+                <button onclick="shareSite('text')" class="flex-1 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded transition">Text</button>
+                <button onclick="shareSite('email')" class="flex-1 text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Email</button>
+              </div>
+            </div>
+
+            <!-- ENVIRONMENTS STATUS -->
+            <div class="border-b border-gray-700">
+              <div onclick="toggleAccordion('environments')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+                <span class="accordion-arrow text-studio-muted text-xs" id="arrow-environments">&#9656;</span>
+                <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Environment Status</h3>
+              </div>
+              <div id="accordion-environments" class="accordion-body hidden px-4 pb-4">
+                <div id="studio-environments" class="text-xs text-studio-text space-y-3">
+                  <div class="text-studio-muted">Loading...</div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Environments -->
-          <div class="border-b border-gray-700">
-            <div onclick="toggleAccordion('environments')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
-              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-environments">&#9656;</span>
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Environments</h3>
-            </div>
-            <div id="accordion-environments" class="accordion-body hidden px-4 pb-4">
-              <div id="studio-environments" class="text-xs text-studio-text space-y-3">
-                <div class="text-studio-muted">Loading...</div>
+            <!-- REPOSITORY -->
+            <div class="border-b border-gray-700">
+              <div onclick="toggleAccordion('repo')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+                <span class="accordion-arrow text-studio-muted text-xs" id="arrow-repo">&#9656;</span>
+                <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Repository</h3>
+              </div>
+              <div id="accordion-repo" class="accordion-body hidden px-4 pb-4">
+                <div id="studio-repo" class="text-xs text-studio-text space-y-1">
+                  <div class="text-studio-muted">Loading...</div>
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- Local Paths -->
-          <div class="border-b border-gray-700">
-            <div onclick="toggleAccordion('local-paths')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
-              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-local-paths">&#9656;</span>
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Local Paths</h3>
-            </div>
-            <div id="accordion-local-paths" class="accordion-body hidden px-4 pb-4">
-              <div id="studio-local-paths" class="text-xs text-studio-text font-mono space-y-1.5">
-                <div class="text-studio-muted">Loading...</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Repository -->
-          <div class="border-b border-gray-700">
-            <div onclick="toggleAccordion('repo')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
-              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-repo">&#9656;</span>
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Repository</h3>
-            </div>
-            <div id="accordion-repo" class="accordion-body hidden px-4 pb-4">
-              <div id="studio-repo" class="text-xs text-studio-text space-y-1">
-                <div class="text-studio-muted">Loading...</div>
-              </div>
-            </div>
-          </div>
 
         </div>
 
@@ -705,7 +697,65 @@
           </div>
         </div>
 
+        <!-- ========== SERVER TAB ========== -->
+        <div id="studio-tab-content-server" class="studio-tab-content hidden">
+          <div class="p-4 space-y-4">
+            <div class="flex justify-between items-center">
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Server</h3>
+              <button onclick="refreshServerInfo()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Refresh</button>
+            </div>
+
+            <!-- Restart button -->
+            <button onclick="restartServer()" class="w-full text-xs bg-orange-700 hover:bg-orange-600 text-white px-3 py-2 rounded transition font-semibold">Restart Studio</button>
+
+            <!-- Uptime -->
+            <div class="bg-gray-800/50 rounded p-3">
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1">Uptime</div>
+              <div id="server-uptime" class="text-sm text-white font-mono">--</div>
+              <div id="server-started" class="text-[10px] text-studio-muted mt-1">Started: --</div>
+            </div>
+
+            <!-- Session info -->
+            <div class="bg-gray-800/50 rounded p-3 space-y-2">
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider">Session</div>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div><span class="text-studio-muted">ID:</span> <span id="server-session-id" class="text-white">--</span></div>
+                <div><span class="text-studio-muted">Messages:</span> <span id="server-msg-count" class="text-white">--</span></div>
+                <div><span class="text-studio-muted">Mode:</span> <span id="server-mode" class="text-white">--</span></div>
+                <div><span class="text-studio-muted">Clients:</span> <span id="server-clients" class="text-white">--</span></div>
+              </div>
+            </div>
+
+            <!-- Config -->
+            <div class="bg-gray-800/50 rounded p-3 space-y-2">
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider">Configuration</div>
+              <div class="grid grid-cols-1 gap-1 text-xs">
+                <div><span class="text-studio-muted">Model:</span> <span id="server-model" class="text-white">--</span></div>
+                <div><span class="text-studio-muted">Site:</span> <span id="server-tag" class="text-white">--</span></div>
+                <div><span class="text-studio-muted">Page:</span> <span id="server-page" class="text-white">--</span></div>
+                <div><span class="text-studio-muted">Node:</span> <span id="server-node" class="text-white font-mono">--</span></div>
+                <div><span class="text-studio-muted">Ports:</span> <span id="server-ports" class="text-white font-mono">--</span></div>
+              </div>
+            </div>
+
+            <!-- File status -->
+            <div class="bg-gray-800/50 rounded p-3 space-y-2">
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider">File Status</div>
+              <div id="server-file-status" class="text-xs space-y-1"></div>
+            </div>
+          </div>
+        </div>
+
       </div>
+    </div>
+  </div>
+
+  <!-- Restart needed banner (hidden by default) -->
+  <div id="restart-banner" class="hidden fixed bottom-0 left-0 right-0 z-50 bg-orange-600 text-white text-sm px-4 py-2 flex items-center justify-between">
+    <span id="restart-banner-msg">Server files changed — restart recommended</span>
+    <div class="flex gap-2">
+      <button onclick="restartServer()" class="bg-white text-orange-700 text-xs font-semibold px-3 py-1 rounded hover:bg-orange-100 transition">Restart Now</button>
+      <button onclick="document.getElementById('restart-banner').classList.add('hidden')" class="text-white/80 hover:text-white text-xs px-2">Dismiss</button>
     </div>
   </div>
 
@@ -799,6 +849,21 @@
         wsReconnectDelay = 2000;
         wsConnected = true;
         showConnectionBanner(false);
+        // Refresh UI state after reconnect (e.g. after server restart)
+        fetch('/api/pages').then(function(r) { return r.json(); }).then(function(data) {
+          if (data.pages) updatePageTabs(data.pages, data.currentPage);
+        }).catch(function() {});
+        fetch('/api/config').then(function(r) { return r.json(); }).then(function(data) {
+          if (data.tag) document.title = 'Studio — ' + data.tag;
+        }).catch(function() {});
+        // Refresh server tab if active
+        if (activeStudioTab === 'server') refreshServerInfo();
+        // Reload preview iframe to pick up any changes
+        var preview = document.getElementById('preview-frame');
+        if (preview && preview.src) preview.src = preview.src;
+        // Hide restart banner since we just restarted
+        var restartBanner = document.getElementById('restart-banner');
+        if (restartBanner) restartBanner.classList.add('hidden');
       };
       ws.onclose = () => {
         console.log('[ws] disconnected, reconnecting in ' + wsReconnectDelay + 'ms...');
@@ -858,6 +923,22 @@
             break;
           case 'chat':
             addMessage('assistant', msg.content);
+            break;
+          case 'restart-needed': {
+            const banner = document.getElementById('restart-banner');
+            const bannerMsg = document.getElementById('restart-banner-msg');
+            if (banner && bannerMsg) {
+              var label = msg.file === 'index.html' ? 'Studio UI (index.html)' : msg.file === 'server.js' ? 'Studio backend (server.js)' : (msg.file || 'A Studio file');
+              bannerMsg.textContent = label + ' changed — restart recommended';
+              banner.classList.remove('hidden');
+            }
+            break;
+          }
+          case 'server-restarting':
+            addMessage('assistant', 'Server restarting... reconnecting automatically.');
+            break;
+          case 'deploy-updated':
+            refreshDeployInfo();
             break;
         }
       };
@@ -1116,8 +1197,13 @@
     let activeStudioTab = 'assets';
 
     function switchStudioTab(tab) {
+      // Clean up server tab interval when switching away
+      if (activeStudioTab === 'server' && tab !== 'server' && serverUptimeInterval) {
+        clearInterval(serverUptimeInterval);
+        serverUptimeInterval = null;
+      }
       activeStudioTab = tab;
-      ['design', 'assets', 'deploy', 'history', 'blueprint', 'metrics'].forEach(t => {
+      ['design', 'assets', 'deploy', 'history', 'blueprint', 'metrics', 'server'].forEach(t => {
         const btn = document.getElementById(`studio-tab-${t}`);
         const content = document.getElementById(`studio-tab-content-${t}`);
         if (t === tab) {
@@ -1131,6 +1217,7 @@
       // Auto-refresh data when switching to these tabs
       if (tab === 'blueprint') refreshBlueprint();
       if (tab === 'metrics') refreshMetrics();
+      if (tab === 'server') refreshServerInfo();
     }
 
     // --- Accordions ---
@@ -1338,76 +1425,176 @@
     async function refreshDeployInfo() {
       try {
         const info = await (await fetch('/api/deploy-info')).json();
+        deployInfoCache = info;
 
         // Header live URL
         const urlEl = document.getElementById('studio-live-url');
-        const shareSection = document.getElementById('share-section');
         if (info.deployed && info.url) {
-          urlEl.innerHTML = `<a href="${escapeHtml(info.url)}" target="_blank" class="text-studio-accent hover:underline">${escapeHtml(info.url)} &#8599;</a>`;
+          urlEl.textContent = '';
+          var link = document.createElement('a');
+          link.href = info.url;
+          link.target = '_blank';
+          link.className = 'text-studio-accent hover:underline';
+          link.textContent = info.url;
+          urlEl.appendChild(link);
           urlEl.classList.remove('hidden');
-          if (shareSection) shareSection.classList.remove('hidden');
         } else {
           urlEl.classList.add('hidden');
-          if (shareSection) shareSection.classList.add('hidden');
         }
 
-        // Environments
-        const envEl = document.getElementById('studio-environments');
-        if (info.environments && info.environments.length > 0) {
-          envEl.innerHTML = info.environments.map(env => {
-            const colors = { live: '#22c55e', running: '#3b82f6', draft: '#eab308', stopped: '#6b7280' };
-            const dotColor = colors[env.status] || '#6b7280';
-            const labels = { live: 'Live', running: 'Running', draft: 'Draft', stopped: 'Stopped' };
-            const label = labels[env.status] || env.status;
-            return `<div class="p-2 rounded bg-studio-bg">
-              <div class="flex items-center gap-2 mb-1">
-                <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;" title="${label}"></span>
-                <span class="font-medium text-white">${escapeHtml(env.name)}</span>
-                <span class="text-studio-muted text-[10px] uppercase">${escapeHtml(env.type)}</span>
-              </div>
-              <div class="truncate"><a href="${escapeHtml(env.url)}" target="_blank" class="text-studio-accent hover:underline text-[11px]">${escapeHtml(env.url)} &#8599;</a></div>
-              ${env.provider ? `<div class="text-studio-muted mt-0.5">${escapeHtml(env.provider)}${env.site_id ? ` · ${escapeHtml(env.site_id.substring(0, 12))}...` : ''}</div>` : ''}
-              ${env.custom_domain ? `<div class="text-studio-muted mt-0.5">Domain: ${escapeHtml(env.custom_domain)}</div>` : env.type === 'production' ? '<div class="text-studio-muted mt-0.5">No custom domain</div>' : ''}
-            </div>`;
-          }).join('');
+        // Enable/disable production deploy button based on custom domain
+        var deployProdBtn = document.getElementById('deploy-prod-btn');
+        var deployProdHint = document.getElementById('deploy-prod-hint');
+        var hasCustomDomain = (info.production && info.production.custom_domain) || (info.staging && info.staging.custom_domain);
+        if (hasCustomDomain) {
+          deployProdBtn.disabled = false;
+          deployProdBtn.className = 'w-full text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded transition';
+          deployProdBtn.title = '';
+          if (deployProdHint) deployProdHint.classList.add('hidden');
         } else {
-          envEl.innerHTML = '<div class="text-studio-muted">No environments configured</div>';
+          deployProdBtn.disabled = true;
+          deployProdBtn.className = 'w-full text-xs bg-gray-700 text-gray-400 px-3 py-1.5 rounded transition cursor-not-allowed';
+          if (deployProdHint) deployProdHint.classList.remove('hidden');
         }
 
-        // Local paths
-        const pathsEl = document.getElementById('studio-local-paths');
-        if (info.local) {
-          pathsEl.innerHTML = `
-            <div><span class="text-studio-muted">Site:</span> ${escapeHtml(info.local.site_dir)}</div>
-            <div><span class="text-studio-muted">Dist:</span> ${escapeHtml(info.local.dist_dir)}</div>
-            <div><span class="text-studio-muted">Spec:</span> ${escapeHtml(info.local.spec_file)}</div>
-          `;
+        // Environment status cards (safe DOM)
+        var envEl = document.getElementById('studio-environments');
+        envEl.textContent = '';
+        var envNames = ['local', 'staging', 'production'];
+        envNames.forEach(function(name) {
+          var env = info[name];
+          if (!env) return;
+          var card = document.createElement('div');
+          card.className = 'p-2 rounded bg-studio-bg';
+          var header = document.createElement('div');
+          header.className = 'flex items-center gap-2 mb-1';
+          var dot = document.createElement('span');
+          var isDeployed = env.state === 'deployed' || env.status === 'running';
+          dot.className = 'w-2 h-2 rounded-full inline-block ' + (isDeployed ? 'bg-green-400' : 'bg-gray-500');
+          var label = document.createElement('span');
+          label.className = 'font-medium text-white';
+          label.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+          var badge = document.createElement('span');
+          badge.className = 'text-studio-muted text-[10px] uppercase';
+          badge.textContent = env.state || env.status || 'not deployed';
+          header.appendChild(dot);
+          header.appendChild(label);
+          header.appendChild(badge);
+          card.appendChild(header);
+          if (env.url) {
+            var urlRow = document.createElement('div');
+            urlRow.className = 'flex items-center gap-2 mt-1';
+            var a = document.createElement('a');
+            a.href = env.url;
+            a.target = '_blank';
+            a.className = 'text-studio-accent hover:underline text-[11px] truncate';
+            a.textContent = env.url;
+            urlRow.appendChild(a);
+            var viewBtn = document.createElement('button');
+            viewBtn.className = 'text-[10px] bg-gray-600 hover:bg-gray-500 text-white px-2 py-0.5 rounded transition flex-shrink-0';
+            viewBtn.textContent = 'View';
+            viewBtn.onclick = (function(u) { return function() { window.open(u, '_blank'); }; })(env.url);
+            urlRow.appendChild(viewBtn);
+            card.appendChild(urlRow);
+          } else if (name === 'local') {
+            var localRow = document.createElement('div');
+            localRow.className = 'flex items-center gap-2 mt-1';
+            var localUrl = document.createElement('span');
+            localUrl.className = 'text-studio-accent text-[11px]';
+            localUrl.textContent = 'http://localhost:' + (config.previewPort || 3333);
+            localRow.appendChild(localUrl);
+            var localBtn = document.createElement('button');
+            localBtn.className = 'text-[10px] bg-gray-600 hover:bg-gray-500 text-white px-2 py-0.5 rounded transition flex-shrink-0';
+            localBtn.textContent = 'View';
+            localBtn.onclick = function() { window.open('http://localhost:' + (config.previewPort || 3333), '_blank'); };
+            localRow.appendChild(localBtn);
+            card.appendChild(localRow);
+          }
+          if (env.deployed_at) {
+            var ts = document.createElement('div');
+            ts.className = 'text-studio-muted mt-0.5';
+            ts.textContent = 'Last deploy: ' + new Date(env.deployed_at).toLocaleString();
+            card.appendChild(ts);
+          }
+          if (env.provider) {
+            var prov = document.createElement('div');
+            prov.className = 'text-studio-muted mt-0.5';
+            prov.textContent = env.provider + (env.site_id ? ' · ' + env.site_id.substring(0, 12) + '...' : '');
+            card.appendChild(prov);
+          }
+          if (env.custom_domain) {
+            var dom = document.createElement('div');
+            dom.className = 'text-studio-muted mt-0.5';
+            dom.textContent = 'Domain: ' + env.custom_domain;
+            card.appendChild(dom);
+          }
+          envEl.appendChild(card);
+        });
+        if (envEl.children.length === 0) {
+          envEl.textContent = 'No environments configured';
         }
 
         // Repo
-        const repoEl = document.getElementById('studio-repo');
+        var repoEl = document.getElementById('studio-repo');
+        repoEl.textContent = '';
         if (info.repo) {
-          repoEl.innerHTML = `
-            <div><span class="text-studio-muted">Remote:</span> ${escapeHtml(info.repo.url)}</div>
-            <div><span class="text-studio-muted">Branch:</span> ${escapeHtml(info.repo.branch)}</div>
-          `;
+          var r1 = document.createElement('div');
+          var s1 = document.createElement('span');
+          s1.className = 'text-studio-muted';
+          s1.textContent = 'Remote: ';
+          r1.appendChild(s1);
+          r1.appendChild(document.createTextNode(info.repo.url));
+          var r2 = document.createElement('div');
+          var s2 = document.createElement('span');
+          s2.className = 'text-studio-muted';
+          s2.textContent = 'Branch: ';
+          r2.appendChild(s2);
+          r2.appendChild(document.createTextNode(info.repo.branch));
+          repoEl.appendChild(r1);
+          repoEl.appendChild(r2);
         } else {
-          repoEl.innerHTML = '<div class="text-studio-muted">No git remote detected</div>';
+          repoEl.textContent = 'No git remote detected';
         }
 
       } catch {
-        const envEl = document.getElementById('studio-environments');
-        if (envEl) envEl.innerHTML = '<div class="text-studio-muted">Unable to load</div>';
+        var envEl = document.getElementById('studio-environments');
+        if (envEl) envEl.textContent = 'Unable to load';
       }
     }
 
-    function redeploySite() {
+    // Legacy alias
+    function redeploySite() { deployToStaging(); }
+
+    let deployInfoCache = {};
+
+    function deployToStaging() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'deploy to staging');
+      ws.send(JSON.stringify({ type: 'chat', content: 'deploy to staging' }));
+      steps = [];
+      stepStart = null;
+      addStep('Deploying to staging...');
+    }
+
+    function deployToProduction() {
+      if (!confirm('Deploy to production? This will update the live site.')) return;
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       addMessage('user', 'deploy to production');
       ws.send(JSON.stringify({ type: 'chat', content: 'deploy to production' }));
       steps = [];
       stepStart = null;
-      addStep('Deploying...');
+      addStep('Deploying to production...');
+    }
+
+    function viewEnvironment(env) {
+      if (env === 'local') {
+        window.open('http://localhost:' + (config.previewPort || 3333), '_blank');
+        return;
+      }
+      var url = deployInfoCache[env] && deployInfoCache[env].url;
+      if (url) {
+        window.open(url, '_blank');
+      }
     }
 
     function pushToRepo() {
@@ -1417,6 +1604,98 @@
       steps = [];
       stepStart = null;
       addStep('Pushing to repository...');
+    }
+
+    // --- Server Tab ---
+    let serverUptimeInterval = null;
+    let serverStartedAtTs = null;
+
+    function formatUptime(seconds) {
+      const d = Math.floor(seconds / 86400);
+      const h = Math.floor((seconds % 86400) / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+      if (h > 0) return h + 'h ' + m + 'm ' + s + 's';
+      return m + 'm ' + s + 's';
+    }
+
+    function renderFileStatusRow(container, name, modDate, startedTs) {
+      const changed = modDate && modDate.getTime() > startedTs;
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2';
+      const dot = document.createElement('span');
+      dot.className = 'w-2 h-2 rounded-full ' + (changed ? 'bg-orange-400' : 'bg-green-400');
+      const label = document.createElement('span');
+      label.className = 'text-studio-muted';
+      label.textContent = name;
+      const time = document.createElement('span');
+      time.className = 'text-white';
+      time.textContent = modDate ? modDate.toLocaleTimeString() : '--';
+      row.appendChild(dot);
+      row.appendChild(label);
+      row.appendChild(time);
+      if (changed) {
+        const badge = document.createElement('span');
+        badge.className = 'text-orange-400 text-[10px]';
+        badge.textContent = 'changed';
+        row.appendChild(badge);
+      }
+      container.appendChild(row);
+    }
+
+    async function refreshServerInfo() {
+      try {
+        const r = await fetch('/api/server-info');
+        const info = await r.json();
+        document.getElementById('server-uptime').textContent = formatUptime(info.uptime);
+        document.getElementById('server-started').textContent = 'Started: ' + new Date(info.startedAt).toLocaleString();
+        document.getElementById('server-session-id').textContent = '#' + info.sessionId;
+        document.getElementById('server-msg-count').textContent = info.messageCount;
+        document.getElementById('server-mode').textContent = info.currentMode + (info.buildInProgress ? ' (building)' : '');
+        document.getElementById('server-clients').textContent = info.activeClients;
+        document.getElementById('server-model').textContent = info.model;
+        document.getElementById('server-tag').textContent = info.tag;
+        document.getElementById('server-page').textContent = info.currentPage;
+        document.getElementById('server-node').textContent = info.nodeVersion;
+        document.getElementById('server-ports').textContent = 'Studio: ' + info.studioPort + ' / Preview: ' + info.previewPort;
+
+        // File status (safe DOM construction)
+        const fileStatus = document.getElementById('server-file-status');
+        const startedTs = new Date(info.startedAt).getTime();
+        fileStatus.textContent = '';
+        const serverMod = info.serverFileModified ? new Date(info.serverFileModified) : null;
+        const indexMod = info.indexFileModified ? new Date(info.indexFileModified) : null;
+        renderFileStatusRow(fileStatus, 'server.js', serverMod, startedTs);
+        renderFileStatusRow(fileStatus, 'index.html', indexMod, startedTs);
+
+        // Live uptime ticker
+        serverStartedAtTs = new Date(info.startedAt).getTime();
+        if (!serverUptimeInterval) {
+          serverUptimeInterval = setInterval(function() {
+            if (activeStudioTab !== 'server') return;
+            var now = Date.now();
+            var upSec = Math.floor((now - serverStartedAtTs) / 1000);
+            document.getElementById('server-uptime').textContent = formatUptime(upSec);
+          }, 1000);
+        }
+      } catch (err) {
+        var errorFields = ['server-uptime', 'server-started', 'server-session-id', 'server-msg-count',
+          'server-mode', 'server-clients', 'server-model', 'server-tag', 'server-page',
+          'server-node', 'server-ports'];
+        errorFields.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.textContent = '--';
+        });
+        document.getElementById('server-uptime').textContent = 'Unavailable';
+        var fs = document.getElementById('server-file-status');
+        if (fs) fs.textContent = 'Server unreachable';
+      }
+    }
+
+    function restartServer() {
+      if (!confirm('Restart Studio? The page will reconnect automatically.')) return;
+      fetch('/api/restart', { method: 'POST' }).catch(function() {});
     }
 
     // --- Share Site ---
