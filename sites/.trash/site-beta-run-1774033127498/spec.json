@@ -1,0 +1,83 @@
+{
+  "site_name": "New Site",
+  "tag": "site-beta-run",
+  "business_type": "general",
+  "colors": {
+    "primary": "#1e40af",
+    "secondary": "#f59e0b",
+    "accent": "#10b981"
+  },
+  "pages": [
+    "home"
+  ],
+  "features": [
+    "hero_banner",
+    "contact_form"
+  ],
+  "tone": "professional and clean",
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter"
+  },
+  "assets_needed": [],
+  "state": "prototype",
+  "version": 1,
+  "design_brief": {
+    "goal": "Establish GreenScape Pro as the premium choice for landscaping services and drive qualified leads from homeowners seeking high-end lawn care, tree work, and garden design",
+    "audience": "Affluent homeowners and property managers who value quality craftsmanship and are willing to pay for premium landscaping services",
+    "tone": [
+      "sophisticated",
+      "trustworthy",
+      "fresh"
+    ],
+    "visual_direction": {
+      "layout": "Spacious, grid-based design with generous whitespace to convey premium positioning and let beautiful landscape photography breathe",
+      "typography": "Modern sans-serif base with elegant script/cursive accents for key brand elements — use cursive for company name, section dividers, or testimonial quotes to add warmth and craftsmanship feel while keeping body text clean and readable",
+      "color_usage": "Earth-forward palette with deep greens as primary, warm wood/stone tones as secondary, and bright accent for calls-to-action — avoid oversaturated colors",
+      "motion": "Subtle parallax scrolling and gentle hover effects that feel organic and natural, avoiding flashy or aggressive animations",
+      "density": "spacious"
+    },
+    "content_priorities": [
+      "Service capabilities and expertise demonstration",
+      "Trust signals through portfolio and testimonials"
+    ],
+    "must_have_sections": [
+      "hero",
+      "services",
+      "portfolio",
+      "about",
+      "testimonials",
+      "contact"
+    ],
+    "avoid": [
+      "Generic stock photos of people in hard hats",
+      "Corporate blue color schemes that feel cold",
+      "Overly busy layouts with multiple CTAs competing",
+      "Cheap-looking before/after sliders",
+      "Industry jargon without clear benefit explanations",
+      "Overuse of cursive fonts that compromises readability",
+      "Script fonts that look unprofessional or overly decorative"
+    ],
+    "open_questions": [],
+    "approved": true
+  },
+  "design_decisions": [],
+  "uploaded_assets": [
+    {
+      "filename": "chatgpt-image-mar-13--2026--05_51_30-pm.png",
+      "type": "image",
+      "role": "style_reference",
+      "label": "",
+      "notes": "",
+      "uploaded_at": "2026-03-13T21:52:04.587Z"
+    },
+    {
+      "filename": "famlogo.jpg",
+      "type": "image",
+      "role": "content",
+      "label": "",
+      "notes": "",
+      "uploaded_at": "2026-03-13T22:00:17.688Z"
+    }
+  ]
+}

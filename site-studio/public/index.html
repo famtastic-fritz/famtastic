@@ -578,6 +578,7 @@
             <div id="accordion-deploy-actions" class="accordion-body hidden px-4 pb-4">
               <div class="space-y-2">
                 <button onclick="redeploySite()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Redeploy to Production</button>
+                <button onclick="pushToRepo()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Push to Repo</button>
                 <div id="share-section" class="border-t border-gray-700 pt-2 mt-2 hidden">
                   <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-2">Share Live Site</div>
                   <div class="flex gap-2">
@@ -1407,6 +1408,15 @@
       steps = [];
       stepStart = null;
       addStep('Deploying...');
+    }
+
+    function pushToRepo() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'push to repo');
+      ws.send(JSON.stringify({ type: 'chat', content: 'push to repo' }));
+      steps = [];
+      stepStart = null;
+      addStep('Pushing to repository...');
     }
 
     // --- Share Site ---

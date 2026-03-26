@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "tag": "site-beta-biz",
+  "created_at": "2026-03-20T01:25:59.900Z",
+  "session_count": 2,
+  "sessions": [
+    {
+      "session_id": 1,
+      "started_at": "2026-03-20T01:25:59.900Z",
+      "ended_at": "2026-03-20T01:26:14.254Z",
+      "message_count": 0
+    },
+    {
+      "session_id": 2,
+      "started_at": "2026-03-20T18:51:24.315Z",
+      "ended_at": "2026-03-20T18:51:28.762Z",
+      "message_count": 0
+    }
+  ],
+  "updated_at": "2026-03-20T18:51:28.762Z",
+  "current_page": "index.html"
+}

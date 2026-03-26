@@ -1,0 +1,70 @@
+{
+  "site_name": "New Site",
+  "tag": "site-first-real",
+  "business_type": "general",
+  "colors": {
+    "primary": "#1e40af",
+    "secondary": "#f59e0b",
+    "accent": "#10b981"
+  },
+  "pages": [
+    "home"
+  ],
+  "features": [
+    "hero_banner",
+    "contact_form"
+  ],
+  "tone": "professional and clean",
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter"
+  },
+  "assets_needed": [],
+  "state": "prototype",
+  "version": 1,
+  "design_brief": {
+    "goal": "Generate qualified leads for GreenScape Pro's landscaping services while establishing premium market positioning and credibility in lawn care, tree trimming, and garden design",
+    "audience": "Property owners (residential and commercial) who value professional, high-quality landscaping services and are willing to invest in premium outdoor maintenance and design",
+    "tone": [
+      "premium",
+      "modern",
+      "trustworthy"
+    ],
+    "visual_direction": {
+      "layout": "Multi-page architecture with dedicated service pages, spacious sections that breathe, and clear navigation between lawn care, tree trimming, and garden design offerings",
+      "typography": "Elegant cursive fonts for headers to convey sophistication, paired with clean sans-serif body text for readability and modern feel",
+      "color_usage": "Leverage existing green accent (#10b981) as primary for nature connection, blue (#1e40af) for trust/professionalism, amber (#f59e0b) sparingly for calls-to-action and highlights",
+      "motion": "Integrated slideshow with relevant landscaping videos, smooth page transitions, subtle parallax on hero sections to enhance premium feel",
+      "density": "spacious"
+    },
+    "content_priorities": [
+      "Service differentiation and expertise demonstration",
+      "Trust signals and credibility markers"
+    ],
+    "must_have_sections": [
+      "hero",
+      "lawn-care-page",
+      "tree-trimming-page",
+      "garden-design-page",
+      "about",
+      "contact",
+      "portfolio-gallery"
+    ],
+    "avoid": [
+      "Single-page cramming all content",
+      "Generic stock photos that look fake",
+      "Budget/DIY aesthetic",
+      "Overwhelming text blocks",
+      "Cheap-looking slideshow implementations"
+    ],
+    "open_questions": [
+      "What geographic area does GreenScape Pro serve (impacts local SEO and messaging focus)?",
+      "Do they have existing project photos or need to rely entirely on stock imagery?"
+    ],
+    "approved": true
+  },
+  "design_decisions": [],
+  "deployed_url": "[deploy] Uploading to Netlify...\n[deploy] Creating new site: site-first-real\nCreating new site: site-first-real\n\u001b[96m\u001b[1m​\u001b[22m\u001b[39m\n\u001b[96m\u001b[1mNetlify Build                                                 \u001b[22m\u001b[39m\n\u001b[96m\u001b[1m────────────────────────────────────────────────────────────────\u001b[22m\u001b[39m\n\u001b[36m\u001b[1m​\u001b[22m\u001b[39m\n\u001b[36m\u001b[1m❯ Version\u001b[22m\u001b[39m\n  @netlify/build 35.8.3\n\u001b[36m\u001b[1m​\u001b[22m\u001b[39m\n\u001b[36m\u001b[1m❯ Flags\u001b[22m\u001b[39m\n  deployId: 69bc39a6539cd60667f44a48\n\u001b[36m\u001b[1m​\u001b[22m\u001b[39m\n\u001b[36m\u001b[1m❯ Current directory\u001b[22m\u001b[39m\n  /Users/famtasticfritz/famtastic\n\u001b[36m\u001b[1m​\u001b[22m\u001b[39m\n\u001b[36m\u001b[1m❯ Config file\u001b[22m\u001b[39m\n  No config file was defined: using default values.\n\u001b[36m\u001b[1m​\u001b[22m\u001b[39m\n\u001b[36m\u001b[1m❯ Context\u001b[22m\u001b[39m\n  production\n\nDeploying to Netlify\n────────────────────────────────────────────────────────────────\n\n\u001b[32mDeploy path: \u001b[39m/Users/famtasticfritz/famtastic/sites/site-first-real/dist\n\n⠋ Uploading blobs to deploy store...\n\n✔ Finished uploading blobs to deploy store\n⠋ Hashing files...\n⠋ Looking for a functions cache...\n✔ No cached functions were found\n✔ Finished hashing \n⠋ CDN diffing files...\n✔ CDN requesting 2 files\n⠋ Uploading 2 files\n✔ Finished uploading 2 assets\n⠋ Waiting for deploy to go live...\n✔ Deploy is live!\n\u001b[96m\u001b[1m​\u001b[22m\u001b[39m\n\u001b[96m\u001b[1mNetlify Build Complete                                        \u001b[22m\u001b[39m\n\u001b[96m\u001b[1m────────────────────────────────────────────────────────────────\u001b[22m\u001b[39m\n​\n\u001b[90m(Netlify Build completed in 2.1s)\u001b[39m\n\n🚀 Deploy complete\n────────────────────────────────────────────────────────────────\n\n   ╭─────────────────── ⬥  Draft deploy is live ⬥  ────────────────────╮\n   │                                                                   │\n   │                         Deployed draft to                         │\n   │   https://69bc39a6539cd60667f44a48--site-first-real.netlify.app   │\n   │                                                                   │\n   ╰───────────────────────────────────────────────────────────────────╯\n\n\u001b[32mBuild logs: \u001b[39m        https://app.netlify.com/projects/site-first-real/deploys/69bc39a6539cd60667f44a48\n\u001b[32mFunction logs: \u001b[39m     https://app.netlify.com/projects/site-first-real/logs/functions?scope=deploy:69bc39a6539cd60667f44a48\n\u001b[32mEdge function Logs: \u001b[39mhttps://app.netlify.com/projects/site-first-real/logs/edge-functions?scope=deployid:69bc39a6539cd60667f44a48\n\nIf everything looks good on your draft URL, deploy it to your main project URL with the --prod flag:\nnetlify deploy --prod\nhttps://69bc39a6539cd60667f44a48--site-first-real.netlify.app",
+  "deployed_at": "2026-03-19T18:00:08Z",
+  "deploy_provider": "netlify"
+}

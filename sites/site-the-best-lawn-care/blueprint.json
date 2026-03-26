@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "pages": {
+    "index.html": {
+      "title": "Professional Lawn Care Services",
+      "sections": [
+        "section-1",
+        "section-2",
+        "section-3",
+        "section-4",
+        "section-5",
+        "section-6"
+      ],
+      "components": [
+        {
+          "type": "overlay",
+          "added": "2026-03-24"
+        },
+        {
+          "type": "popup",
+          "added": "2026-03-24"
+        },
+        {
+          "type": "modal",
+          "added": "2026-03-25"
+        }
+      ],
+      "layout_notes": []
+    },
+    "contact.html": {
+      "title": "Contact Us",
+      "sections": [
+        "section-1",
+        "section-2",
+        "section-3"
+      ],
+      "components": [],
+      "layout_notes": []
+    },
+    "gallery.html": {
+      "title": "Gallery",
+      "sections": [
+        "section-1",
+        "section-2",
+        "section-3",
+        "section-4"
+      ],
+      "components": [
+        {
+          "type": "overlay",
+          "added": "2026-03-24"
+        }
+      ],
+      "layout_notes": []
+    },
+    "about.html": {
+      "title": "About Us",
+      "sections": [
+        "section-1",
+        "section-2",
+        "section-3",
+        "section-4",
+        "section-5",
+        "section-6",
+        "section-7"
+      ],
+      "components": [
+        {
+          "type": "overlay",
+          "added": "2026-03-25"
+        }
+      ],
+      "layout_notes": []
+    },
+    "testimonials.html": {
+      "title": "Customer Testimonials",
+      "sections": [
+        "section-1",
+        "section-2",
+        "section-3",
+        "section-4"
+      ],
+      "components": [],
+      "layout_notes": []
+    },
+    "why-choose-us.html": {
+      "title": "Why Choose Us",
+      "sections": [
+        "section-1",
+        "section-2",
+        "section-3",
+        "section-4",
+        "section-5",
+        "section-6"
+      ],
+      "components": [
+        {
+          "type": "overlay",
+          "added": "2026-03-25"
+        }
+      ],
+      "layout_notes": []
+    },
+    "services.html": {
+      "title": "Services",
+      "sections": [
+        "section-1",
+        "section-2",
+        "section-3",
+        "section-4",
+        "section-5"
+      ],
+      "components": [],
+      "layout_notes": []
+    }
+  },
+  "global": {
+    "nav_style": "nav-links",
+    "footer_style": "bg-primary text-white py-12 mt-20",
+    "logo": "assets/logo.svg"
+  },
+  "last_updated": "2026-03-26T21:33:08.337Z"
+}

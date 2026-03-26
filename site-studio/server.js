@@ -3413,6 +3413,9 @@ function classifyRequest(message, spec) {
     if (targetPage) return 'page_switch';
   }
 
+  // Git push — push repo to remote
+  if (lower.match(/\b(push\s+to\s+(repo|git|github|remote)|git\s+push|sync\s+repo|update\s+repo)\b/)) return 'git_push';
+
   // Explicit commands first
   if (lower.match(/\bdeploy\b/) && !lower.match(/\bhow\s+to\s+deploy\b/)) return 'deploy';
   if (lower.match(/\b(build|rebuild)\s+(the\s+)?site\b/) || lower.match(/\b(generate|create|make)\s+(the\s+)?site\b/)) return 'build';
@@ -5237,6 +5240,12 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'git_push': {
+          ws.send(JSON.stringify({ type: 'status', content: 'Pushing to repository...' }));
+          runGitPush(ws);
+          break;
+        }
+
         case 'build': {
           const lowerMsg = userMessage.toLowerCase();
           const templateMatch = lowerMsg.match(/\b(event|business|portfolio|landing)\b/);
@@ -5583,6 +5592,80 @@ function runDeploy(ws, isProd) {
       ws.send(JSON.stringify({ type: 'error', content: 'Deploy failed. You may need to run "netlify login" first.' }));
     }
     appendConvo({ role: 'assistant', content: `Deploy ${code === 0 ? 'succeeded' : 'failed'}: ${urlMatch ? urlMatch[0] : 'see logs'}`, at: new Date().toISOString() });
+
+    // Auto-sync to git after successful deploy
+    if (code === 0) {
+      ws.send(JSON.stringify({ type: 'status', content: 'Auto-syncing to repository...' }));
+      runGitPush(ws, { silent: true });
+    }
+  });
+}
+
+// --- Git Push — commit + push to remote ---
+function runGitPush(ws, { silent = false } = {}) {
+  const send = (type, content) => {
+    try { ws.send(JSON.stringify({ type, content })); } catch {}
+  };
+  if (!silent) send('status', 'Checking for changes...');
+
+  // Step 1: git add -A
+  const addChild = spawn('git', ['add', '-A'], { cwd: HUB_ROOT });
+  addChild.on('close', (addCode) => {
+    if (addCode !== 0) {
+      send('error', 'Git add failed.');
+      return;
+    }
+
+    // Step 2: git status --porcelain to check if anything to commit
+    let statusOut = '';
+    const statusChild = spawn('git', ['status', '--porcelain'], { cwd: HUB_ROOT });
+    statusChild.stdout.on('data', (chunk) => { statusOut += chunk.toString(); });
+    statusChild.on('close', () => {
+      const hasChanges = statusOut.trim().length > 0;
+
+      const doPush = () => {
+        // Step 4: detect branch name
+        let branch = 'main';
+        const branchChild = spawn('git', ['branch', '--show-current'], { cwd: HUB_ROOT });
+        let branchOut = '';
+        branchChild.stdout.on('data', (chunk) => { branchOut += chunk.toString(); });
+        branchChild.on('close', () => {
+          if (branchOut.trim()) branch = branchOut.trim();
+          if (!silent) send('status', `Pushing to origin/${branch}...`);
+
+          // Step 5: git push
+          let pushErr = '';
+          const pushChild = spawn('git', ['push', 'origin', branch], { cwd: HUB_ROOT });
+          pushChild.stderr.on('data', (chunk) => { pushErr += chunk.toString(); });
+          pushChild.on('close', (pushCode) => {
+            if (pushCode === 0) {
+              send('assistant', `Repo synced to origin/${branch}.${hasChanges ? ' Changes committed and pushed.' : ' Already up to date — pushed.'}`);
+            } else {
+              send('error', `Git push failed: ${pushErr.trim() || 'unknown error'}. You may need to configure git credentials.`);
+            }
+            appendConvo({ role: 'assistant', content: `Git push ${pushCode === 0 ? 'succeeded' : 'failed'}: origin/${branch}`, at: new Date().toISOString() });
+          });
+        });
+      };
+
+      if (hasChanges) {
+        // Step 3: git commit
+        const timestamp = new Date().toISOString().split('T')[0];
+        const commitMsg = `Studio: sync ${TAG} — ${timestamp}`;
+        if (!silent) send('status', 'Committing changes...');
+        const commitChild = spawn('git', ['commit', '-m', commitMsg], { cwd: HUB_ROOT });
+        commitChild.on('close', (commitCode) => {
+          if (commitCode !== 0) {
+            send('error', 'Git commit failed. Check for pre-commit hook errors.');
+            return;
+          }
+          doPush();
+        });
+      } else {
+        if (!silent) send('status', 'No new changes to commit.');
+        doPush();
+      }
+    });
   });
 }
 

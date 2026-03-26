@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenScape Pro - Premium Landscaping Services</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#22543d',
+            secondary: '#8b4513', 
+            accent: '#68d391',
+            earth: '#a0522d'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-white text-gray-900">
+  <header class="bg-white shadow-lg sticky top-0 z-50">
+    <nav class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-3xl font-bold text-primary">GreenScape Pro</h1>
+      <div class="hidden md:flex space-x-8">
+        <a href="#home" class="text-gray-700 hover:text-primary transition-colors">Home</a>
+        <a href="#services" class="text-gray-700 hover:text-primary transition-colors">Services</a>
+        <a href="#portfolio" class="text-gray-700 hover:text-primary transition-colors">Portfolio</a>
+        <a href="#about" class="text-gray-700 hover:text-primary transition-colors">About</a>
+        <a href="#testimonials" class="text-gray-700 hover:text-primary transition-colors">Reviews</a>
+        <a href="#contact" class="bg-primary text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity">Get Quote</a>
+      </div>
+    </nav>
+  </header>
+
+  <section id="home" class="relative bg-gradient-to-r from-primary to-green-800 text-white min-h-screen flex items-center">
+    <div class="max-w-6xl mx-auto px-6 py-20">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 class="text-6xl font-bold mb-6 leading-tight">Transform Your Property Into a Masterpiece</h2>
+          <p class="text-xl mb-8 text-green-100">Premium landscaping services for discerning property owners who demand excellence. Create stunning outdoor spaces that enhance both beauty and value.</p>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a href="#contact" class="bg-accent text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:opacity-90 transition-opacity text-center">Get Free Consultation</a>
+            <a href="#portfolio" class="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-primary transition-colors text-center">View Our Work</a>
+          </div>
+        </div>
+        <div class="hidden md:block">
+          <div class="bg-white/10 backdrop-blur-sm rounded-lg p-8 text-center">
+            <div class="text-4xl mb-4">🏡</div>
+            <p class="text-lg">Premium landscape design that reflects your vision and enhances your property value</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="services" class="py-20 px-6 bg-gray-50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h3 class="text-4xl font-bold text-primary mb-4">Premium Landscaping Services</h3>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">From concept to completion, we deliver exceptional outdoor spaces tailored to your lifestyle and property needs.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
+          <div class="text-4xl mb-4 text-primary">🎨</div>
+          <h4 class="text-2xl font-bold mb-4 text-primary">Landscape Design</h4>
+          <p class="text-gray-600 mb-6">Custom landscape architecture and design services that blend aesthetic beauty with functional outdoor living spaces.</p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Site analysis and planning</li>
+            <li>• 3D design visualization</li>
+            <li>• Plant selection and placement</li>
+            <li>• Hardscape integration</li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
+          <div class="text-4xl mb-4 text-secondary">🏗️</div>
+          <h4 class="text-2xl font-bold mb-4 text-primary">Installation & Construction</h4>
+          <p class="text-gray-600 mb-6">Expert installation of landscapes, hardscapes, and outdoor living features with meticulous attention to detail.</p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Professional installation</li>
+            <li>• Irrigation systems</li>
+            <li>• Hardscape construction</li>
+            <li>• Lighting installation</li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
+          <div class="text-4xl mb-4 text-accent">🌿</div>
+          <h4 class="text-2xl font-bold mb-4 text-primary">Maintenance & Care</h4>
+          <p class="text-gray-600 mb-6">Ongoing maintenance programs to keep your landscape investment looking pristine year-round.</p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Seasonal maintenance</li>
+            <li>• Pruning and trimming</li>
+            <li>• Fertilization programs</li>
+            <li>• Pest management</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="portfolio" class="py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h3 class="text-4xl font-bold text-primary mb-4">Transformational Results</h3>
+        <p class="text-xl text-gray-600">See how we've transformed ordinary spaces into extraordinary outdoor environments</p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="bg-gray-200 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+          <div class="h-64 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+            <div class="text-white text-center">
+              <div class="text-4xl mb-2">🏡</div>
+              <p class="font-semibold">Residential Estate</p>
+              <p class="text-sm opacity-80">Complete landscape redesign</p>
+            </div>
+          </div>
+          <div class="p-6">
+            <h4 class="text-xl font-bold mb-2">Modern Estate Transformation</h4>
+            <p class="text-gray-600 text-sm">Complete renovation featuring native plantings, custom water features, and entertainment spaces.</p>
+          </div>
+        </div>
+        <div class="bg-gray-200 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+          <div class="h-64 bg-gradient-to-br from-secondary to-yellow-600 flex items-center justify-center">
+            <div class="text-white text-center">
+              <div class="text-4xl mb-2">🏢</div>
+              <p class="font-semibold">Commercial Property</p>
+              <p class="text-sm opacity-80">Corporate campus design</p>
+            </div>
+          </div>
+          <div class="p-6">
+            <h4 class="text-xl font-bold mb-2">Corporate Campus Redesign</h4>
+            <p class="text-gray-600 text-sm">Sustainable landscape design for a Fortune 500 company headquarters with drought-resistant plantings.</p>
+          </div>
+        </div>
+        <div class="bg-gray-200 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+          <div class="h-64 bg-gradient-to-br from-accent to-green-400 flex items-center justify-center">
+            <div class="text-white text-center">
+              <div class="text-4xl mb-2">🌊</div>
+              <p class="font-semibold">Waterfront Property</p>
+              <p class="text-sm opacity-80">Coastal landscape design</p>
+            </div>
+          </div>
+          <div class="p-6">
+            <h4 class="text-xl font-bold mb-2">Coastal Oasis Creation</h4>
+            <p class="text-gray-600 text-sm">Oceanfront property featuring salt-tolerant plants, natural stone work, and infinity pool integration.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="py-20 px-6 bg-gray-50">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <h3 class="text-4xl font-bold text-primary mb-6">Crafting Excellence Since 1998</h3>
+          <p class="text-lg text-gray-600 mb-6">For over 25 years, GreenScape Pro has been the trusted choice for discerning property owners who demand nothing but the finest in landscape design and installation.</p>
+          <p class="text-gray-600 mb-8">Our team of certified landscape architects and horticulturists brings unparalleled expertise to every project, ensuring that your outdoor space not only meets but exceeds your highest expectations.</p>
+          <div class="grid grid-cols-2 gap-6">
+            <div class="text-center">
+              <div class="text-3xl font-bold text-primary">500+</div>
+              <p class="text-gray-600">Projects Completed</p>
+            </div>
+            <div class="text-center">
+              <div class="text-3xl font-bold text-primary">25+</div>
+              <p class="text-gray-600">Years Experience</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-primary/10 rounded-lg p-8">
+          <h4 class="text-2xl font-bold text-primary mb-4">Our Commitment</h4>
+          <ul class="space-y-3 text-gray-700">
+            <li class="flex items-start"><span class="text-accent mr-3">✓</span>Licensed and insured professionals</li>
+            <li class="flex items-start"><span class="text-accent mr-3">✓</span>Sustainable and eco-friendly practices</li>
+            <li class="flex items-start"><span class="text-accent mr-3">✓</span>100% satisfaction guarantee</li>
+            <li class="flex items-start"><span class="text-accent mr-3">✓</span>Ongoing support and maintenance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="testimonials" class="py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h3 class="text-4xl font-bold text-primary mb-4">What Our Clients Say</h3>
+        <p class="text-xl text-gray-600">Trusted by homeowners and businesses throughout the region</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="flex mb-4">
+            <span class="text-yellow-400">★★★★★</span>
+          </div>
+          <p class="text-gray-600 mb-6 italic">"GreenScape Pro transformed our property beyond our wildest dreams. The attention to detail and quality of work is simply outstanding. Every neighbor stops to compliment our landscape."</p>
+          <div class="font-semibold text-primary">Sarah & Michael Chen</div>
+          <div class="text-sm text-gray-500">Residential Client</div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="flex mb-4">
+            <span class="text-yellow-400">★★★★★</span>
+          </div>
+          <p class="text-gray-600 mb-6 italic">"Professional, reliable, and incredibly talented. They delivered our commercial project on time and on budget while exceeding all expectations for quality and design."</p>
+          <div class="font-semibold text-primary">David Rodriguez</div>
+          <div class="text-sm text-gray-500">Property Manager</div>
+        </div>
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          <div class="flex mb-4">
+            <span class="text-yellow-400">★★★★★</span>
+          </div>
+          <p class="text-gray-600 mb-6 italic">"The team's expertise in sustainable landscaping helped us create a beautiful, water-efficient garden that looks amazing year-round. Highly recommended."</p>
+          <div class="font-semibold text-primary">Jennifer Thompson</div>
+          <div class="text-sm text-gray-500">Commercial Client</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="py-20 px-6 bg-primary text-white">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <h3 class="text-4xl font-bold mb-4">Ready to Transform Your Property?</h3>
+        <p class="text-xl text-green-100">Contact us today for a complimentary consultation and design proposal</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-12">
+        <div>
+          <h4 class="text-2xl font-bold mb-6">Get Your Free Consultation</h4>
+          <form class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-4">
+              <input type="text" placeholder="First Name" class="w-full p-4 border-0 rounded-lg text-gray-900 bg-white">
+              <input type="text" placeholder="Last Name" class="w-full p-4 border-0 rounded-lg text-gray-900 bg-white">
+            </div>
+            <input type="email" placeholder="Email Address" class="w-full p-4 border-0 rounded-lg text-gray-900 bg-white">
+            <input type="tel" placeholder="Phone Number" class="w-full p-4 border-0 rounded-lg text-gray-900 bg-white">
+            <select class="w-full p-4 border-0 rounded-lg text-gray-900 bg-white">
+              <option>Select Service Interest</option>
+              <option>Landscape Design</option>
+              <option>Installation & Construction</option>
+              <option>Maintenance Services</option>
+              <option>Consultation Only</option>
+            </select>
+            <textarea placeholder="Tell us about your project vision and goals" rows="4" class="w-full p-4 border-0 rounded-lg text-gray-900 bg-white"></textarea>
+            <button type="submit" class="w-full bg-accent text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:opacity-90 transition-opacity">Request Free Consultation</button>
+          </form>
+        </div>
+        <div class="space-y-8">
+          <div>
+            <h4 class="text-2xl font-bold mb-6">Contact Information</h4>
+            <div class="space-y-4">
+              <div class="flex items-center">
+                <span class="text-accent mr-4">📞</span>
+                <div>
+                  <p class="font-semibold">(555) 123-4567</p>
+                  <p class="text-green-100 text-sm">Mon-Fri 8AM-6PM, Sat 9AM-4PM</p>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <span class="text-accent mr-4">✉️</span>
+                <div>
+                  <p class="font-semibold">info@greenscapepro.com</p>
+                  <p class="text-green-100 text-sm">We respond within 24 hours</p>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <span class="text-accent mr-4">📍</span>
+                <div>
+                  <p class="font-semibold">Serving Greater Metropolitan Area</p>
+                  <p class="text-green-100 text-sm">Licensed & insured in all counties</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+            <h5 class="text-xl font-bold mb-3">Why Choose GreenScape Pro?</h5>
+            <ul class="space-y-2 text-green-100">
+              <li>✓ Free on-site consultations</li>
+              <li>✓ Custom design proposals</li>
+              <li>✓ Licensed & fully insured</li>
+              <li>✓ 5-year workmanship warranty</li>
+              <li>✓ Sustainable practices</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-gray-900 text-gray-400 py-12">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <h4 class="text-xl font-bold text-white mb-4">GreenScape Pro</h4>
+          <p class="text-sm mb-4">Premium landscaping services for discerning property owners since 1998.</p>
+          <p class="text-sm">Licensed, bonded & insured</p>
+        </div>
+        <div>
+          <h5 class="font-semibold text-white mb-4">Services</h5>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#services" class="hover:text-accent transition-colors">Landscape Design</a></li>
+            <li><a href="#services" class="hover:text-accent transition-colors">Installation</a></li>
+            <li><a href="#services" class="hover:text-accent transition-colors">Maintenance</a></li>
+            <li><a href="#services" class="hover:text-accent transition-colors">Consultation</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5 class="font-semibold text-white mb-4">Company</h5>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#about" class="hover:text-accent transition-colors">About Us</a></li>
+            <li><a href="#portfolio" class="hover:text-accent transition-colors">Portfolio</a></li>
+            <li><a href="#testimonials" class="hover:text-accent transition-colors">Reviews</a></li>
+            <li><a href="#contact" class="hover:text-accent transition-colors">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5 class="font-semibold text-white mb-4">Connect</h5>
+          <p class="text-sm mb-2">(555) 123-4567</p>
+          <p class="text-sm mb-4">info@greenscapepro.com</p>
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-400 hover:text-accent transition-colors">Facebook</a>
+            <a href="#" class="text-gray-400 hover:text-accent transition-colors">Instagram</a>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 pt-8 text-center text-sm">
+        <p>&copy; 2026 GreenScape Pro. All rights reserved. | Privacy Policy | Terms of Service</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

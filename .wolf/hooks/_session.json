@@ -1,0 +1,194 @@
+{
+  "session_id": "session-2026-03-26-1747",
+  "started": "2026-03-26T21:47:53.298Z",
+  "files_read": {
+    "/Users/famtasticfritz/SITE-LEARNINGS.md": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-03-26T21:49:55.973Z"
+    },
+    "/Users/famtasticfritz/famtastic/CHANGELOG.md": {
+      "count": 1,
+      "tokens": 2986,
+      "first_read": "2026-03-26T21:50:41.771Z"
+    },
+    "/Users/famtasticfritz/famtastic/site-studio/server.js": {
+      "count": 6,
+      "tokens": 72408,
+      "first_read": "2026-03-26T21:55:31.765Z"
+    },
+    "/Users/famtasticfritz/famtastic/FAMTASTIC-STATE.md": {
+      "count": 5,
+      "tokens": 7407,
+      "first_read": "2026-03-26T21:57:20.319Z"
+    },
+    "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md": {
+      "count": 5,
+      "tokens": 5233,
+      "first_read": "2026-03-26T22:01:18.283Z"
+    },
+    "/Users/famtasticfritz/famtastic/site-studio/public/index.html": {
+      "count": 3,
+      "tokens": 49598,
+      "first_read": "2026-03-26T22:21:58.987Z"
+    },
+    "/Users/famtasticfritz/famtastic/scripts/site-deploy": {
+      "count": 2,
+      "tokens": 1863,
+      "first_read": "2026-03-26T22:22:01.927Z"
+    },
+    "/Users/famtasticfritz/.claude/plans/floofy-dancing-mccarthy.md": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-03-26T22:22:42.894Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/Users/famtasticfritz/SITE-LEARNINGS.md",
+      "action": "edit",
+      "tokens": 723,
+      "at": "2026-03-26T21:50:23.807Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/CHANGELOG.md",
+      "action": "edit",
+      "tokens": 228,
+      "at": "2026-03-26T21:50:49.937Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMTASTIC-STATE.md",
+      "action": "create",
+      "tokens": 8242,
+      "at": "2026-03-26T22:01:12.717Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 26,
+      "at": "2026-03-26T22:01:52.534Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 18,
+      "at": "2026-03-26T22:01:57.406Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 276,
+      "at": "2026-03-26T22:02:13.558Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 205,
+      "at": "2026-03-26T22:02:25.910Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 210,
+      "at": "2026-03-26T22:02:37.225Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 32,
+      "at": "2026-03-26T22:02:43.384Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 244,
+      "at": "2026-03-26T22:02:55.096Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 48,
+      "at": "2026-03-26T22:03:01.708Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 27,
+      "at": "2026-03-26T22:03:08.624Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 18,
+      "at": "2026-03-26T22:03:13.720Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 127,
+      "at": "2026-03-26T22:03:22.719Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/FAMtastic-Web-Context.md",
+      "action": "edit",
+      "tokens": 17,
+      "at": "2026-03-26T22:03:28.008Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/.claude/plans/floofy-dancing-mccarthy.md",
+      "action": "edit",
+      "tokens": 991,
+      "at": "2026-03-26T22:23:25.374Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/site-studio/server.js",
+      "action": "edit",
+      "tokens": 80,
+      "at": "2026-03-26T22:24:04.240Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/site-studio/server.js",
+      "action": "edit",
+      "tokens": 832,
+      "at": "2026-03-26T22:24:31.180Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/site-studio/server.js",
+      "action": "edit",
+      "tokens": 163,
+      "at": "2026-03-26T22:24:54.054Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/site-studio/server.js",
+      "action": "edit",
+      "tokens": 110,
+      "at": "2026-03-26T22:25:05.877Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/site-studio/public/index.html",
+      "action": "edit",
+      "tokens": 123,
+      "at": "2026-03-26T22:25:36.102Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/site-studio/public/index.html",
+      "action": "edit",
+      "tokens": 103,
+      "at": "2026-03-26T22:25:52.909Z"
+    }
+  ],
+  "edit_counts": {
+    "../SITE-LEARNINGS.md": 1,
+    "CHANGELOG.md": 1,
+    "FAMTASTIC-STATE.md": 1,
+    "FAMtastic-Web-Context.md": 12,
+    "../.claude/plans/floofy-dancing-mccarthy.md": 1,
+    "site-studio/server.js": 4,
+    "site-studio/public/index.html": 2
+  },
+  "anatomy_hits": 6,
+  "anatomy_misses": 2,
+  "repeated_reads_warned": 17,
+  "cerebrum_warnings": 0,
+  "stop_count": 8
+}

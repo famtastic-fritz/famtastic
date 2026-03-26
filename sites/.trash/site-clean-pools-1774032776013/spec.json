@@ -1,0 +1,91 @@
+{
+  "site_name": "Keep It Clean Pool Services",
+  "tag": "site-clean-pools",
+  "business_type": "pool cleaning and maintenance service",
+  "colors": {
+    "primary": "#0077b6",
+    "secondary": "#00b4d8",
+    "accent": "#90e0ef"
+  },
+  "pages": [
+    "home",
+    "services",
+    "about",
+    "gallery",
+    "contact"
+  ],
+  "features": [
+    "hero_slideshow",
+    "water_animations",
+    "timed_cta_popups",
+    "pool_cleaning_images",
+    "contact_form",
+    "services",
+    "testimonials",
+    "photo_gallery"
+  ],
+  "tone": "professional, trustworthy, clean and refreshing",
+  "fonts": {
+    "heading": "Playfair Display",
+    "body": "Lato"
+  },
+  "assets_needed": [
+    "logo"
+  ],
+  "state": "prototype",
+  "version": 1,
+  "design_brief": {
+    "goal": "Convert pool owners into customers by establishing trust, showcasing reliability, and making it effortless to book cleaning services",
+    "audience": "Busy homeowners with pools who value professional maintenance over DIY upkeep",
+    "tone": [
+      "professional",
+      "trustworthy",
+      "refreshing"
+    ],
+    "visual_direction": {
+      "layout": "Clean, spacious grid with generous white space that mirrors the clarity of well-maintained pool water",
+      "typography": "Modern sans-serif with strong hierarchy — bold headings for confidence, cursive lettering for elegant touches and special elements, readable body text for service details",
+      "color_usage": "Primary blue anchors trust elements (CTAs, headers), secondary blue for service highlights, accent blue for subtle accents and hover states",
+      "motion": "Gentle, water-inspired transitions — subtle fade-ins and smooth scrolling that feels like calm water movement",
+      "density": "spacious"
+    },
+    "content_priorities": [
+      "Social proof and credentials to build immediate trust",
+      "Clear service offerings with transparent pricing or booking flow"
+    ],
+    "must_have_sections": [
+      "hero",
+      "services",
+      "testimonials",
+      "about",
+      "contact"
+    ],
+    "avoid": [
+      "Generic pool stock photos with fake-looking water",
+      "Cluttered layouts that feel chaotic or dirty",
+      "Aggressive sales language that breaks trust",
+      "Dark or muddy color schemes",
+      "Overuse of cursive that compromises readability"
+    ],
+    "open_questions": [],
+    "approved": true
+  },
+  "tech_recommendations": [
+    {
+      "category": "architecture",
+      "suggestion": "Static site",
+      "reason": "Straightforward site — static HTML + Tailwind is the fastest path to launch",
+      "stack": "HTML + Tailwind CSS (current setup)"
+    },
+    {
+      "category": "hosting",
+      "suggestion": "Netlify",
+      "reason": "Already configured — free tier, CDN, instant deploys"
+    },
+    {
+      "category": "forms",
+      "suggestion": "Netlify Forms or Formspree",
+      "reason": "Contact forms on static sites need a form backend service"
+    }
+  ]
+}

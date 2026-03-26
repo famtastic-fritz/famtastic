@@ -1,47 +1,98 @@
 #!/usr/bin/env bash
-# stock-photo — Download a stock photo from Unsplash
+# stock-photo — Download a stock photo from Unsplash, Pexels, or Pixabay
 # Usage: stock-photo <query> <width> <height> <output-path>
-# Requires UNSPLASH_API_KEY env var or falls back to source.unsplash.com
+# Env vars: UNSPLASH_API_KEY, PEXELS_API_KEY, PIXABAY_API_KEY
+# Tries providers in order, uses first success. Picks randomly from results for variety.
 
 set -euo pipefail
-
-if ! command -v jq >/dev/null 2>&1; then
-  echo "Error: jq is required but not installed. Install with: brew install jq" >&2
-  exit 1
-fi
 
 QUERY="${1:?Usage: stock-photo <query> <width> <height> <output-path>}"
 WIDTH="${2:-800}"
 HEIGHT="${3:-600}"
 OUTPUT="${4:?Output path required}"
 
-# Ensure output directory exists
 mkdir -p "$(dirname "$OUTPUT")"
 
+ENCODED_QUERY=$(printf '%s' "$QUERY" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read()))")
+
+# --- Provider 1: Unsplash ---
 if [ -n "${UNSPLASH_API_KEY:-}" ]; then
-  # Use Unsplash API for better quality and reliability
-  RESPONSE=$(curl -s "https://api.unsplash.com/search/photos?query=$(printf '%s' "$QUERY" | jq -sRr @uri)&per_page=1&orientation=landscape" \
-    -H "Authorization: Client-ID $UNSPLASH_API_KEY")
+  RESPONSE=$(curl -sf "https://api.unsplash.com/search/photos?query=${ENCODED_QUERY}&per_page=20&order_by=relevant&orientation=landscape" \
+    -H "Authorization: Client-ID $UNSPLASH_API_KEY" 2>/dev/null || true)
 
-  URL=$(echo "$RESPONSE" | jq -r '.results[0].urls.regular // empty')
-
-  if [ -z "$URL" ]; then
-    echo "No results for query: $QUERY" >&2
-    exit 1
+  if [ -n "$RESPONSE" ]; then
+    # Pick a random result from the returned set for variety
+    URL=$(echo "$RESPONSE" | python3 -c "
+import sys, json, random
+d = json.load(sys.stdin)
+r = d.get('results', [])
+if r:
+    pick = random.choice(r)
+    print(pick['urls']['regular'])
+" 2>/dev/null || true)
+    if [ -n "$URL" ]; then
+      curl -sfL "${URL}&w=${WIDTH}&h=${HEIGHT}&fit=crop" -o "$OUTPUT" 2>/dev/null
+      if [ -s "$OUTPUT" ]; then
+        echo "provider=unsplash"
+        echo "$OUTPUT"
+        exit 0
+      fi
+      rm -f "$OUTPUT"
+    fi
   fi
-
-  # Download with size parameters
-  curl -sL "${URL}&w=${WIDTH}&h=${HEIGHT}&fit=crop" -o "$OUTPUT"
-else
-  # Fallback: source.unsplash.com (no API key needed, less reliable)
-  curl -sL "https://source.unsplash.com/featured/${WIDTH}x${HEIGHT}/?$(printf '%s' "$QUERY" | jq -sRr @uri)" -o "$OUTPUT"
 fi
 
-# Verify file was downloaded and is an image
-if [ ! -s "$OUTPUT" ]; then
-  echo "Download failed — empty file" >&2
-  rm -f "$OUTPUT"
-  exit 1
+# --- Provider 2: Pexels ---
+if [ -n "${PEXELS_API_KEY:-}" ]; then
+  RESPONSE=$(curl -sf "https://api.pexels.com/v1/search?query=${ENCODED_QUERY}&per_page=20&orientation=landscape" \
+    -H "Authorization: ${PEXELS_API_KEY}" 2>/dev/null || true)
+
+  if [ -n "$RESPONSE" ]; then
+    URL=$(echo "$RESPONSE" | python3 -c "
+import sys, json, random
+d = json.load(sys.stdin)
+p = d.get('photos', [])
+if p:
+    pick = random.choice(p)
+    print(pick['src']['large'])
+" 2>/dev/null || true)
+    if [ -n "$URL" ]; then
+      curl -sfL "$URL" -o "$OUTPUT" 2>/dev/null
+      if [ -s "$OUTPUT" ]; then
+        echo "provider=pexels"
+        echo "$OUTPUT"
+        exit 0
+      fi
+      rm -f "$OUTPUT"
+    fi
+  fi
 fi
 
-echo "$OUTPUT"
+# --- Provider 3: Pixabay ---
+if [ -n "${PIXABAY_API_KEY:-}" ]; then
+  RESPONSE=$(curl -sf "https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${ENCODED_QUERY}&per_page=20&image_type=photo&orientation=horizontal" 2>/dev/null || true)
+
+  if [ -n "$RESPONSE" ]; then
+    URL=$(echo "$RESPONSE" | python3 -c "
+import sys, json, random
+d = json.load(sys.stdin)
+h = d.get('hits', [])
+if h:
+    pick = random.choice(h)
+    print(pick['largeImageURL'])
+" 2>/dev/null || true)
+    if [ -n "$URL" ]; then
+      curl -sfL "$URL" -o "$OUTPUT" 2>/dev/null
+      if [ -s "$OUTPUT" ]; then
+        echo "provider=pixabay"
+        echo "$OUTPUT"
+        exit 0
+      fi
+      rm -f "$OUTPUT"
+    fi
+  fi
+fi
+
+# All providers failed
+echo "All stock photo providers failed for query: $QUERY" >&2
+exit 1

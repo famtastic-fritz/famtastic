@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "tag": "site-demo",
+  "created_at": "2026-03-20T19:59:34.880Z",
+  "session_count": 1,
+  "sessions": [
+    {
+      "session_id": 1,
+      "started_at": "2026-03-20T19:59:34.880Z"
+    }
+  ],
+  "updated_at": "2026-03-20T19:59:34.880Z",
+  "current_page": "index.html"
+}

@@ -1,0 +1,122 @@
+# Cerebrum
+
+> OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
+> Do not edit manually unless correcting an error.
+> Last updated: 2026-03-24
+
+## User Preferences
+
+<!-- How the user likes things done. Code style, tools, patterns, communication. -->
+
+## Key Learnings
+
+- **Project:** famtastic
+- **Description:** Owns adapters, router/config, and installers for agents. Writes local sources to:
+- **Post-processing pipeline order matters:** extractAndRegisterSlots MUST run before reapplySlotMappings, otherwise renamed slots lose their images
+- **buildPromptContext mutates currentPage:** This was a hidden side effect — now returns resolvedPage instead, caller updates explicitly
+- **syncHeadSection 80-char fingerprint:** Style blocks were matched by first 80 chars which missed content-only updates. Now uses MD5 hash.
+- **extractSharedCss strips ALL non-data-page styles:** This was removing page-specific styles. Now only strips styles that match content extracted from index.html.
+- **summarizeHtml was a no-op:** It appended "FULL HTML:" + full source after the summary, defeating the purpose. Fixed to return summary only.
+- **classifyRequest false positives:** "history" alone triggered version_history, "restore" alone triggered rollback. Both now require version/previous context words.
+- **Multi-page fallback path has no post-processing:** When Claude's multi-page response failed to parse, HTML was written directly without any post-processing. Now calls runPostProcessing.
+- **Single-page edits skip ensureHeadDependencies:** Only full builds called it. Now single-page edits call it too.
+- **gemini-cli stdin consumed twice:** bash `$(cat)` reads stdin, then Python `os.read(0,...)` tries again on empty stdin. Fixed by piping with printf.
+- **precommit-security had unclosed quote:** The security grep was silently bypassed because a single quote was never closed, swallowing the pipe.
+- **Parallel build timeout race condition:** Timeout handler AND close handler both incremented `innerCompleted`. Fixed by removing increment from timeout (kill triggers close).
+- **Two browser tabs cause session reset:** Each new WS connection called `startSession()`. Now only the first connection starts a session.
+- **`chat` WS type dropped silently:** Server sent `{type:'chat'}` for build-in-progress errors but client had no handler. Added `case 'chat':` handler.
+- **Template font URLs break with multi-word fonts:** `{{HEADING_FONT}}` in Google Fonts URL produced broken URLs for "Playfair Display". Added `{{HEADING_FONT_URL}}` with `+` encoding.
+
+- **bp.global is dead code:** buildBlueprintContext() only reads bp.pages[page], never bp.global. nav_style, footer_style, logo are written but never injected into prompts.
+- **Blueprint components never reconcile:** mergeComponents() only adds, never removes. Deleted popups/modals persist forever, causing Claude to re-insert them.
+- **Blueprint escape hatch too wide:** "User requests always take priority" lets any change request override all blueprint protections. No mechanism to distinguish "change X" from "change Y but preserve X".
+- **Blueprint title regex has stray pipe:** `/<title[^>]*>([^<|]+)/i` — the `|` in character class stops matching at literal pipe. Minor but technically wrong.
+- **No blueprint page cleanup:** Deleted pages stay in bp.pages forever. Need reconciliation against DIST_DIR files.
+- **restyle routes to handlePlanning() — wrong handler:** The routing switch at line ~4757 sends `restyle` to `handlePlanning()` (brief creation flow) instead of `handleChatMessage()`. The restyle mode instruction exists inside handleChatMessage but is unreachable dead code. Need to route restyle to handleChatMessage.
+- **No conversational ack type:** Messages like "yes", "ok", "looks good" when brief exists fall to `layout_update` default and trigger full Claude HTML generation. Need a `conversational_ack` or `affirmation` classifier type.
+- **fill_stock_photos too aggressive:** "add an image to the hero section" triggers bulk stock fill. Needs guard to distinguish single-image targeted requests from bulk fills.
+- **asset_import catches hero as section name:** "create a hero section" fires asset_import because `hero` matches. Needs image/asset context words to disambiguate.
+- **bug_fix catches non-bug uses of "fix":** "fix the colors to match brand" → bug_fix mode that says "fix only the specific problem, don't change design direction" — suppresses the actual change.
+- **brainstorm-to-build hard-codes layout_update:** Should infer request type from brainstorm discussion context.
+- **handleQuery() silent no-op:** If none of 4 internal branches match, user gets no response at all.
+- **Prompt injection:** userMessage is injected verbatim into Claude prompt at `USER REQUEST: "${userMessage}"`. Pasted code/adversarial text has no sanitization.
+
+- **POST /api/replace-placeholder has no newSrc validation:** Can inject `onerror="alert(1)"` into every `<img>` tag. Fix: validate scheme (only assets/, http(s)://), length cap, reject event handler patterns.
+- **WebSocket has no origin check:** wss.on('connection') never validates Origin header. Any localhost page can establish a WS connection. Fix: check origin against localhost:3334.
+- **DELETE /api/projects/:tag has no path traversal check:** `../important-dir` as tag would move directories above sites/. Fix: validate tag against `/^[a-z0-9][a-z0-9-]*$/`.
+- **set-page WS message skips isValidPageName():** `../spec.json` as page could overwrite spec.json via Claude. Fix: call isValidPageName() before path operations.
+- **6 dead settings in studio-config.json:** `deploy_target` (never forwarded to deploy script), `deploy_team` (script hardcodes "fritz-medine"), `max_upload_size_mb` (multer uses hardcoded 5MB), `max_versions` (never enforced), `preview_port`/`studio_port` (server reads env vars). Fix: wire each setting to its actual behavior or remove from UI.
+- **analytics_provider/analytics_id have no Settings UI:** Build pipeline injects GA4/Plausible snippets but there's no modal field to configure them. Must edit studio-config.json by hand.
+- **Site switch writes summary to wrong site:** endSession() is not awaited before TAG changes on site switch. generateSessionSummary resolves SUMMARIES_DIR() after TAG has changed, writing the summary to the new site's directory. Fix: await endSession() before changing TAG, or capture SUMMARIES_DIR() path before the switch.
+- **134/137 ws.send calls unguarded:** No ws.readyState check before sending in child.on('close') and other build completion handlers. Mid-build WS disconnect causes unhandled throw → potential server crash. Fix: wrap all ws.send in a safeSend(ws, data) helper that checks readyState.
+- **generateSessionSummary can hang gracefulShutdown:** Failed fs.writeFileSync inside the promise never calls resolve(). gracefulShutdown awaits endSession() which awaits the summary → SIGTERM handler blocks forever. Fix: wrap writeFileSync in try/catch inside the promise.
+- **Client onmessage has no JSON.parse guard:** Malformed server message throws uncaught in the handler. Fix: wrap JSON.parse in try/catch.
+- **MCP server is read-only:** 4 tools read from disk only. No write capability — cannot trigger builds, switch pages, fill images, or post chat messages. Studio has 40+ REST endpoints that should be exposed as MCP tools.
+- **No programmatic chat/build endpoint:** Builds can only be triggered via browser WebSocket. Adding `POST /api/chat` would make the system scriptable from MCP, CLI, and CI.
+- **Playwright MCP unused:** Installed but not connected to build validation or test pipeline. Should validate generated sites after builds.
+- **settings.local.json has dead paths:** 155 allow entries reference old repos (famtastic-agent-hub, famtastic-platform, famtastic-think-tank) from before consolidation.
+- **User brainstorm messages not tagged:** Only assistant responses get `intent:'brainstorm'`. User messages have no intent tag. Context-gathering heuristic at brainstorm-to-build transition is fragile — breaks if non-brainstorm entry appears mid-session.
+- **20-message brainstorm cap drops context silently:** Long brainstorm sessions lose earliest ideas with no warning or summary step. No truncation notice in build instruction.
+- **Empty brainstorm → "Build this" is destructive:** Falls through as literal `layout_update "Build this"` with no brainstorm context. Classifier bypassed. Could cause unintended regeneration.
+- **Blueprint layout_notes never populated:** The `startsWith('assistant:')` filter in brainstorm-to-blueprint fails for multi-line content. All real sites have `layout_notes: []`.
+- **No brainstorm-vs-brief conflict detection:** If brainstorm discusses contradicting the brief (e.g., "go dark mode" when brief says "white"), Claude reconciles silently with no flagging step.
+- **DELETE /api/upload doesn't clean slot_mappings:** Deleting an upload removes it from uploaded_assets and disk but not from slot_mappings. The orphaned mapping gets reapplied on every rebuild → broken image in production. Fix: also delete slot_mappings entry pointing to that file.
+- **parallelBuild missing slot stability instruction:** _slotStabilityInstruction is only built inside handleChatMessage, never inside parallelBuild. Full rebuilds let Claude rename slot IDs freely, orphaning all mappings. Fix: inject slot stability per-page in parallel build prompts.
+- **clearSlotAssignment is non-atomic:** Two sequential calls (replace-slot then clear-slot-mapping). If second fails, media_specs shows status='uploaded' for a transparent GIF. Fix: create a dedicated clear endpoint or make it atomic.
+- **reapplySlotMappings hardcodes status:'uploaded':** Stock photo slots become 'uploaded' after rebuild. Fix: store original status in slot_mappings and restore it.
+- **scanBrandHealth has write side effect:** Writes spec.brand_health on every GET call, invalidating spec cache. Should compute and return without persisting, or cache separately.
+- **spec.json schema required fields never written:** `colors` and `pages` are marked required in site-spec.schema.json but are never populated. Code falls through to `design_brief.must_have_sections` for pages and `extractBrandColors()` for colors. Schema is decorative — no runtime validation.
+- **.studio.json has no write-through cache:** Unlike spec.json (readSpec/writeSpec), `.studio.json` uses raw read-modify-write from 4 code paths (versionFile, saveStudio, startSession, generateSessionSummary). Lost-write race possible during async summary generation.
+- **writeSpec() not atomic:** Uses `fs.writeFileSync()` directly — no `.tmp` + rename pattern. Process crash mid-write could corrupt spec.json.
+- **media_specs / slot_mappings redundancy:** Two structures track same slots with overlapping data. Could be unified by adding src/alt/provider/credit/query to media_specs entries directly.
+- **business_type always empty:** Read in 6 places (SEO, stock queries, new-site flow) but written as empty string during creation and never updated.
+- **design_decisions garbage entries:** extractDecisions() can capture AI prompt fragments as decisions. `superseded` status exists in schema but no code path ever sets it.
+- **PUT /api/settings allowedKeys incomplete:** Nested objects (email, sms, stock_photo) can't be modified through the settings API — only direct file edit works.
+
+## Do-Not-Repeat
+
+<!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
+<!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
+- [2026-03-25] Never mutate module-level state inside a function that looks like a pure reader (buildPromptContext). Return the resolved value and let the caller mutate.
+- [2026-03-25] When extracting shared CSS, only strip blocks whose content matches what was extracted — don't blindly strip all non-data-page style blocks.
+- [2026-03-25] String prefix matching (substring(0, 80)) is unreliable for deduplication. Use content hashes.
+- [2026-03-25] Every HTML write path must go through runPostProcessing — no exceptions, including fallback paths.
+- [2026-03-25] When a timeout handler kills a process, don't increment counters in both the timeout and the close event — the close event already fires from kill().
+
+- **Root cause of all integration failures:** Five independent state readers (classifyRequest, buildPromptContext, runPostProcessing, HTTP handlers, WS handler) all read state from disk/globals independently. When one modifies state, others don't know. This is a state architecture problem, not a logic problem.
+- **POST-PROCESSING CONTEXT section needed in prompts:** Claude doesn't know what happens to its output (nav sync, CSS extraction, head injection). Adding ~120 tokens of pipeline description prevents an entire class of CSS consistency and slot drift bugs.
+- **server.js decomposition plan:** 5381 lines → ~200 line thin assembler + 12 modules in lib/. Key modules: SessionStore (owns all mutable state), SiteSpec (write-through cache), PromptBuilder (guaranteed context inclusion), Classifier (confidence tiers + session context), PostProcessor (document-map pattern — read once, mutate in-memory, write once), ClaudeRunner, ResponseParser, SlotManager, StockPhotoService, BlueprintStore, Settings (TTL cache), ConversationLog (with intent field).
+- **Phase priority: 3→2→1→4→5→6→7.** PromptBuilder first (highest UX ROI), then ConversationLog+Settings, then SessionStore, then Classifier, then PostProcessor, then route extraction, then UI JS extraction.
+
+## Decision Log
+
+<!-- Significant technical decisions with rationale. Why X was chosen over Y. -->
+- [2026-03-25] TEMPLATE-FIRST ARCHITECTURE APPROVED: Build `_template.html` first (header, nav, footer, shared CSS, head deps) in one Claude call, then build ALL pages in true parallel. Each page copies chrome verbatim from template, generates only `<main>` content + `<style data-page="pagename">` block. Eliminates 7 of 11 post-processing steps (syncNav, syncFooter, syncHead, ensureHeadDeps, extractSharedCss, reconcileSlotMappings, CSS seed extraction). Template uses `data-template="shared|header|footer"` attribute anchors for extraction. Per-page CSS stays inline (not separate files) at 3-10 page scale. `_template.html` lives in dist/ but is excluded from deploys. All SSGs (Hugo, Eleventy, Astro, Jekyll) use this pattern. Implementation: 5 phases, each independently shippable.
+- [2026-03-25] POST-PROCESSING ORDER: extract slots → reapply mappings → metadata → reconcile → logo → nav/footer → head deps → head sync → CSS extract. This ensures slots exist before mappings are applied, and head dependencies are injected before head sync propagates them.
+- [2026-03-25] SPEC WHITELIST: Only design_brief, design_decisions, site_name, business_type can be updated via WS update-spec. This prevents arbitrary spec overwrites.
+- [2026-03-25] SETTINGS REDACTION: GET /api/settings redacts all API keys, showing only `_configured: true/false`. POST still accepts full values for saving.
+- [2026-03-25] CLASSIFIER ANCHORING: version_history requires "version" as anchor word. Rollback requires "version" or "previous" near "restore". This prevents false positives on common words.
+
+## Do-Not-Repeat
+
+- [2026-03-26] SPAWN_CLAUDE_CWD: Never set cwd to HUB_ROOT (~/famtastic/) in spawnClaude(). CLAUDE.md in that dir contains OpenWolf instructions; with --tools "" the subprocess cannot execute them and produces 0 bytes. Use os.tmpdir() instead.
+- [2026-03-26] FIXED_LAYOUT_PATCHER_DOUBLE_INJECT: fixLayoutOverflow() used html.includes('STUDIO LAYOUT FOUNDATION') to skip already-patched pages. But the string is in styles.css (external), not in the HTML. So every build injected another inline <style> block into every page. Fix: skip ALL inline patching when styles.css exists.
+- [2026-03-26] INLINE_CSS_INJECTION_NEWLINE: When injecting CSS into an existing <style> block, always prefix with \n. Without it, the injection concatenates onto the previous declaration's last token, silently breaking it.
+- [2026-03-26] MAIN_OVERFLOW_COMMENT_ACCURACY: main { overflow-x: hidden } is a secondary clip layer. The primary protection against header stretching is html/body { overflow-x: hidden }. Do not comment main as "prevents header from widening" — that's the body rule doing it.
+- [2026-03-26] TEMPLATE_PROMPT_MAIN_STYLES: Do not include main{} rules in buildTemplatePrompt() shared CSS block. Claude generates a template with no <main> in the body — it will skip or inconsistently include main styles. Post-processing (fixLayoutOverflow) handles main containment reliably.
+
+## Key Learnings
+
+- [2026-03-26] TEMPLATE_FIRST_PATTERN: Studio uses a two-phase build — template first (header/nav/footer/shared CSS), then all pages in parallel. Each page copies chrome verbatim. Functions: buildTemplatePrompt(), extractTemplateComponents(), loadTemplateContext(), writeTemplateArtifacts(), applyTemplateToPages(). Guard: templateSpawned flag prevents double-build race.
+- [2026-03-26] NAV_CONTAINMENT_MODEL: Nav width stability = two rules: (1) html/body overflow-x:hidden stops body layout expanding past viewport. (2) main overflow-x:hidden clips page content inside main before it affects ancestors. .container class (max-width: 90rem) is injected into every styles.css as a shared utility.
+
+### 2026-03-26 — overflow-x hidden breaks hero breakout
+- `overflow-x: hidden` on body or main clips CSS breakout techniques (`width: 100vw; left: 50%; margin-left: -50vw`)
+- For the hero breakout to work, neither body nor main can have overflow-x: hidden
+- The 90% max-width on main is sufficient to prevent horizontal scrollbars — overflow-x hidden is not needed as a belt-and-suspenders
+
+### 2026-03-26 — CLAUDE.md in cwd hijacks claude --print subprocess
+- When `claude --print` runs from a directory containing CLAUDE.md, it reads project instructions
+- With `--tools ""` active, those instructions (especially OpenWolf "check anatomy.md") cause empty output
+- Fix: set cwd to os.tmpdir() so no CLAUDE.md is found
+- Also: scripts/claude-cli wrapper fails with relative paths when cwd != HUB_ROOT — bypass it entirely

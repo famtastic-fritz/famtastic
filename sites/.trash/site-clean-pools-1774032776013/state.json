@@ -1,0 +1,13 @@
+{
+  "tag": "site-clean-pools",
+  "state": "prototype",
+  "last_build": "2026-03-19T21:23:08Z",
+  "build_count": 1,
+  "pages_generated": [
+  "index.html",
+  "services.html",
+  "about.html",
+  "gallery.html",
+  "contact.html"
+]
+}
