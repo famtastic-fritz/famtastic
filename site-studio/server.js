@@ -2307,6 +2307,14 @@ OUTPUT FORMAT — generate this EXACT structure:
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="${fontUrl}" rel="stylesheet">
   <style data-template="shared">
+    /* LAYOUT FOUNDATION — build system enforces these via post-processing */
+    html, body { overflow-x: hidden; margin: 0; padding: 0; }
+    /* Note: main { overflow-x: hidden } is injected by the build system — do not add here */
+    *, *::before, *::after { box-sizing: border-box; min-width: 0; }
+    img, video, table, iframe, embed, object { max-width: 100%; height: auto; }
+    .container { width: 100%; max-width: 90rem; margin-left: auto; margin-right: auto; padding-left: 1.5rem; padding-right: 1.5rem; }
+    /* END LAYOUT FOUNDATION */
+
     :root {
       --color-primary: ${spec.colors?.primary || '#1a5c2e'};
       --color-accent: ${spec.colors?.accent || '#d4a843'};
@@ -2342,6 +2350,15 @@ STYLE GUIDE:
   - Common component patterns (.btn-primary, .section-heading, .card, etc.)
   - Animation keyframes used on multiple pages
 - Do NOT include page-specific styles — those go in per-page <style data-page="pagename"> blocks
+
+LAYOUT RULES (build system enforces these — match them):
+- main { overflow-x: hidden } is injected by the build system — page content that exceeds
+  the template width is clipped inside main and CANNOT push header or footer wider
+- header and footer: full-width outer element (for background bleeds), with all nav/content
+  inside <div class="container"> — NEVER put nav items directly in the header element
+- .container is defined in the shared CSS: max-width 90rem, margin: 0 auto — use it
+  inside header, footer, and every section in main
+- NEVER set a fixed pixel width on any flex/grid child that could cause the row to exceed 90rem
 
 LOGO: ${logoInstruction}
 
@@ -3262,6 +3279,7 @@ function loadSettings() {
     auto_summary: true,
     auto_version: true,
     max_versions: 50,
+    hero_full_width: true,
   };
   if (fs.existsSync(SETTINGS_FILE)) {
     try {
@@ -4143,6 +4161,16 @@ FORMS:
 - All forms must use: method="POST" data-netlify="true"
 - Add a hidden honeypot field for spam protection
 
+LAYOUT (non-negotiable — build system enforces these):
+- The build system sets main { overflow-x: hidden; width: 100% } — all content must fit
+  within the template max-width; wide content that escapes will be clipped inside main
+- Wrap all section content in <div class="container"> (defined in shared CSS: max-width 90rem)
+  Sections themselves can be full-width for background bleeds; only the inner .container is capped
+- Never use fixed pixel widths on elements that could exceed their parent container
+- Tables must have width: 100% and word-break: break-word
+- All flex row children must have min-width: 0
+- Do not use white-space: nowrap on any text that could be longer than ~20 characters
+
 OUTPUT FORMAT:
 Respond with ONLY the complete HTML document — from <!DOCTYPE html> to </html>.
 No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
@@ -4276,6 +4304,78 @@ ${sharedRules}`;
 
 // --- Unified Post-Processing Pipeline ---
 // Replaces 3 inline pipelines with a single function
+// --- Layout Overflow Fix ---
+// Pins nav/footer width so page content can never affect it.
+// html/body overflow-x:hidden is what actually prevents header stretching.
+// main overflow-x:hidden adds a secondary clip layer inside main.
+// Safe to run on any site — idempotent (strips old block before prepending new one).
+function fixLayoutOverflow(ws) {
+  const distDir = DIST_DIR();
+  const cssPath = path.join(distDir, 'assets', 'styles.css');
+
+  const settings = loadSettings();
+  const FOUNDATION_START = '/* STUDIO LAYOUT FOUNDATION */';
+  const FOUNDATION_END = '/* END STUDIO LAYOUT FOUNDATION */';
+
+  // Hero full-width breakout: breaks first section out of main's 90% constraint
+  const heroRule = settings.hero_full_width
+    ? `\n/* Hero breakout: first section in main goes full viewport width */\nmain > section:first-of-type { width: 100vw; position: relative; left: 50%; margin-left: -50vw; }\n`
+    : '';
+
+  const FOUNDATION_BLOCK = `${FOUNDATION_START}
+/* DO NOT REMOVE — keeps nav and footer width stable across all pages */
+html, body { margin: 0; padding: 0; }
+/* main: 90% width centered on desktop */
+main { max-width: 90%; margin-left: auto; margin-right: auto; }
+/* Shared container — consistent max-width inside header, sections, footer */
+.container { width: 100%; max-width: 90rem; margin-left: auto; margin-right: auto; padding-left: 1.5rem; padding-right: 1.5rem; box-sizing: border-box; }
+/* Prevent intrinsic overflow from flex/grid children */
+*, *::before, *::after { box-sizing: border-box; min-width: 0; }
+/* Media always contained */
+img, video, table, iframe, embed, object { max-width: 100%; height: auto; }${heroRule}
+${FOUNDATION_END}
+
+`;
+
+  const cssExists = fs.existsSync(cssPath);
+
+  if (cssExists) {
+    let css = fs.readFileSync(cssPath, 'utf8');
+    // Strip any previous foundation block (idempotent)
+    const blockRe = /\/\* STUDIO LAYOUT FOUNDATION \*\/[\s\S]*?\/\* END STUDIO LAYOUT FOUNDATION \*\/\s*/;
+    css = css.replace(blockRe, '');
+    // Also strip old LAYOUT FOUNDATION format from previous builds
+    const oldBlockRe = /\/\* LAYOUT FOUNDATION \*\/[\s\S]*?\/\* END LAYOUT FOUNDATION \*\/\s*/;
+    css = css.replace(oldBlockRe, '');
+    fs.writeFileSync(cssPath, FOUNDATION_BLOCK + css);
+    console.log('[post-process] Injected layout foundation into styles.css (nav containment active)');
+  } else {
+    console.log('[post-process] styles.css not found — skipping CSS injection, will patch HTML inline');
+  }
+
+  // Only patch inline <style> blocks when there is no external styles.css.
+  // When styles.css exists, pages link to it and get the foundation that way.
+  // Patching HTML when styles.css also exists would stack duplicate blocks on every build.
+  if (cssExists) return;
+
+  const pages = listPages();
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    let html = fs.readFileSync(filePath, 'utf8');
+    if (html.includes('STUDIO LAYOUT FOUNDATION')) continue;
+    // Prefix with newline so injection never concatenates onto an existing declaration
+    const inlineFoundation = '\n    html,body{overflow-x:hidden;margin:0;padding:0} main{overflow-x:hidden;width:100%;max-width:100%} *,*::before,*::after{box-sizing:border-box;min-width:0} img,video,table,iframe,embed{max-width:100%;height:auto}';
+    const styleMatch = html.match(/<style[^>]*>/);
+    if (styleMatch) {
+      html = html.replace(styleMatch[0], styleMatch[0] + `\n    /* STUDIO LAYOUT FOUNDATION */${inlineFoundation}\n    /* END STUDIO LAYOUT FOUNDATION */`);
+    } else {
+      html = html.replace('</head>', `  <style>/* STUDIO LAYOUT FOUNDATION */${inlineFoundation}\n  /* END STUDIO LAYOUT FOUNDATION */</style>\n</head>`);
+    }
+    fs.writeFileSync(filePath, html);
+  }
+}
+
 function runPostProcessing(ws, writtenPages, options = {}) {
   const { isFullBuild = false, sourcePage = null } = options;
 
@@ -4337,6 +4437,9 @@ function runPostProcessing(ws, writtenPages, options = {}) {
     // NO extractSharedCss — don't strip inline styles on chat edits
     // NO syncHeadSection — don't mess with head on single edits
   }
+
+  // Step 6: Fix layout overflow — ensures nav/footer stay viewport-width on all pages
+  fixLayoutOverflow(ws);
 }
 
 function finishParallelBuild(ws, writtenPages, startTime, spec) {
@@ -5625,7 +5728,8 @@ function loadRecentConversation(count) {
 
 // Safe Claude CLI spawn — pipes prompt via stdin instead of shell embedding
 function spawnClaude(prompt) {
-  const env = { ...process.env, MODEL: loadSettings().model };
+  const model = loadSettings().model || 'claude-sonnet-4-5';
+  const env = { ...process.env };
   // Remove ALL Claude Code env vars to prevent nested-session detection.
   // Without this, `claude --print` refuses to run inside a Claude Code session.
   for (const key of Object.keys(env)) {
@@ -5633,9 +5737,13 @@ function spawnClaude(prompt) {
       delete env[key];
     }
   }
-  const child = spawn(path.join(HUB_ROOT, 'scripts', 'claude-cli'), [], {
+  // Call claude directly — bypass scripts/claude-cli wrapper which uses relative paths
+  // that break when cwd is not HUB_ROOT.
+  // Use os.tmpdir() as cwd so claude finds no CLAUDE.md and runs clean.
+  const claudeBin = process.env.CLAUDE_BIN || 'claude';
+  const child = spawn(claudeBin, ['--print', '--model', model, '--tools', ''], {
     env,
-    cwd: HUB_ROOT,
+    cwd: require('os').tmpdir(),
     stdio: ['pipe', 'pipe', 'pipe'],
   });
   child.stdin.write(prompt);

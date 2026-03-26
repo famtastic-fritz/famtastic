@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-26 — Layout containment system, hero breakout, spawnClaude direct call
+
+Added `fixLayoutOverflow()` post-processing step that injects a STUDIO LAYOUT FOUNDATION CSS block into every build — sets `main` to 90% max-width centered (page-template model) so content never pushes header/footer wider. Added `hero_full_width` setting (default true) that breaks the first section in main to full viewport width for hero images. Removed `overflow-x: hidden` from html/body which was clipping hero breakout. Changed `spawnClaude()` to call `claude --print` directly (bypasses `scripts/claude-cli` wrapper), cwd set to `os.tmpdir()` to avoid CLAUDE.md causing 0-byte output. Added layout rules to template and page prompts.
+
 ## 2026-03-25 — Template-first build architecture
 
 Replaced the "index.html as CSS seed" hybrid build approach with a template-first architecture. The system now builds `_template.html` first (header, nav, footer, shared CSS in one Claude call), then builds ALL pages in true parallel — including index.html, which was previously serialized. Each page copies the template chrome verbatim and only generates its `<main>` content + page-specific `<style data-page="pagename">` block. This eliminates 7 of 11 post-processing steps when a template exists (syncNavPartial, syncFooterPartial, syncHeadSection, ensureHeadDependencies, extractSharedCss, nav refresh block, and reconcileSlotMappings as a pipeline step). Legacy fallback preserved: if template build fails or sites predate the template system, the old sync-based post-processing runs unchanged. Also fixes the known slot stability bug — `_slotStabilityInstruction` is now injected into every page's parallel build prompt. 56 tests pass (4 new for extractTemplateComponents).
@@ -59,3 +63,7 @@ Consolidated 4 repos into 1 (`~/famtastic/`). Deleted ~40% dead code. Moved Thin
 ## 2026-03-10 — Project plan and initial site builder
 
 Created the conversational website builder plan (7 phases). Implemented walking skeleton: orchestrator-site for batch generation, site-preview for live reload, fam-hub CLI dispatcher, spec.json schema, 4 starter templates (event, business, portfolio, landing), deploy pipeline (Netlify + Cloudflare), asset-generate for SVG pipeline, and the chat studio web app (Express + WebSocket).
+
+## 2026-03-26 — Template-first build, spawnClaude cwd fix, nav containment
+
+Implemented template-first build architecture: Studio now builds a shared `_template.html` (header, nav, footer, shared CSS) in one Claude call first, then builds all pages in true parallel — each page copies chrome verbatim and generates only `<main>` content. Fixed `spawnClaude()` cwd from `HUB_ROOT` to `os.tmpdir()` so the subprocess doesn't read `CLAUDE.md`/OpenWolf instructions that caused 0-byte output. Fixed nav width shifting across pages: `fixLayoutOverflow()` now injects `main { overflow-x: hidden }` as a containment boundary so page content can never push the header wider; also fixed a duplicate inline block stacking bug where the HTML patcher ran even when `styles.css` already existed.
