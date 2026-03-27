@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-03-26
+**Last updated:** 2026-03-27
 
 ---
 
@@ -194,7 +194,13 @@ Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage(
 
 ### Deploy and Share
 
-**Deploy** — `scripts/site-deploy` (209 lines). Netlify (tested), Cloudflare Pages, Vercel.
+**Per-Site Repos** — Each site gets its own repo at `~/famtastic-sites/<tag>/` with `dev`, `staging`, `main` branches. Auto-created on first build via `createSiteRepo()`. Scaffold files: CLAUDE.md (tweak instructions), SITE-LEARNINGS.md (design context), README.md. GitHub repo created via `gh repo create --private`.
+
+**Git Flow** — Push to Repo → dev branch. Deploy to Staging → merge dev→staging. Deploy to Production → merge staging→main. All merges use `--no-edit`. Failed merges auto-abort (`git merge --abort`). `syncSiteRepo()` handles the full branch-aware flow with concurrency guard.
+
+**Deploy** — `scripts/site-deploy` (209 lines). Netlify (tested), Cloudflare Pages, Vercel. Accepts `--env staging|production` flag. Separate Netlify sites per environment.
+
+**Hub Repo** — `~/famtastic/` is pure tooling (sites/ in .gitignore). "Push Studio Code" button in Server tab pushes tooling changes via `pushHubRepo()`.
 
 **Share** — `POST /api/share`. Email (nodemailer), Text (macOS `sms:` URI), Copy Link.
 
@@ -229,7 +235,18 @@ Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage(
 | `claude --print` is text-only | Tier 4 | Cannot pass uploaded images for vision analysis. |
 | Platform dashboard deferred | Tier 4 | No multi-site management UI beyond CLI. |
 
-### Recently Closed (2026-03-26, Layout Containment + spawnClaude Fix)
+### Recently Closed (2026-03-27, Per-Site Repo Architecture)
+
+- **Per-site repos with branching** — dev/staging/main branches, auto-created on first build
+- **famtastic repo is pure tooling** — sites/ removed from tracking, .gitignore updated
+- **Deploy tab HTML nesting** — unclosed div caused 4 of 7 sidebar tabs to be invisible
+- **Studio State URLs** — Local/Staging/Prod URLs shown in header with clickable links
+- **Merge failure recovery** — git merge --abort prevents stuck MERGING state
+- **Checkout exit codes** — staging/main checkout failures detected, prevents wrong-branch push
+- **Hub repo cached** — execSync calls moved to startup, no more blocking per request
+- **Tab refresh** — all tabs refresh data on panel open + tab switch
+
+### Closed (2026-03-26, Layout Containment + spawnClaude Fix)
 
 - **Nav width shifting across pages** — `fixLayoutOverflow()` injects STUDIO LAYOUT FOUNDATION: `main { max-width: 90%; margin: 0 auto }` so content never pushes header/footer wider
 - **Hero images clipped** — Removed `overflow-x: hidden` from html/body; added hero breakout rule (`hero_full_width` setting, default true)
@@ -346,12 +363,21 @@ Prove the system produces meaningfully different sites to validate anti-cookie-c
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `site-studio/server.js` | ~5,886 | Main backend. Express + WebSocket. Request classifier, prompt builder (returns resolvedPage + templateContext), template-first build system, layout containment (fixLayoutOverflow), blueprint system, CSS extraction, lifecycle integrity, multi-provider image system, post-build pipeline (6 steps), safeSettings() redaction, multi-tab session guard, deadlock prevention. spawnClaude calls claude directly from os.tmpdir(). |
-| `site-studio/public/index.html` | ~3,771 | Single-file frontend. Chat, preview iframe, studio sidebar (6 tabs), settings modal, upload modal, project picker, QSF panel with stock search grid and slot detail bar. |
+| `site-studio/server.js` | ~6,561 | Main backend. Express + WebSocket. Request classifier, prompt builder (returns resolvedPage + templateContext), template-first build system, layout containment (fixLayoutOverflow), blueprint system, CSS extraction, lifecycle integrity, multi-provider image system, post-build pipeline (6 steps), safeSettings() redaction, multi-tab session guard, deadlock prevention. spawnClaude calls claude directly from os.tmpdir(). |
+| `site-studio/public/index.html` | ~4,176 | Single-file frontend. Chat, preview iframe, studio sidebar (6 tabs), settings modal, upload modal, project picker, QSF panel with stock search grid and slot detail bar. |
 | `site-studio/package.json` | 24 | Dependencies: express, ws, multer, nodemailer, twilio, @vonage/server-sdk. Dev: vitest. |
 | `site-studio/tests/unit.test.js` | ~458 | 56 unit tests: isValidPageName (4), sanitizeSvg (9), extractSlotsFromPage (4), classifyRequest (15+4 edge), extractBrandColors (3), labelToFilename (5), truncateAssistantMessage (5), ensureHeadDependencies (1), extractTemplateComponents (4). |
 | `site-studio/vitest.config.js` | 7 | Vitest ESM configuration. |
 | `mcp-server/server.js` | 343 | MCP server. 4 tools via stdio JSON-RPC. |
+
+### Key Functions (2026-03-27, Per-Site Repo)
+
+| Function | File | Purpose |
+|----------|------|---------|
+| `createSiteRepo(ws)` | server.js | Creates per-site repo with dev/staging/main branches, scaffold files, gh repo create |
+| `syncSiteRepo(ws, spec, branch, cb)` | server.js | Branch-aware sync: copies dist, commits dev, merges to target branch, pushes |
+| `pushHubRepo(ws)` | server.js | Pushes famtastic tooling repo (separate from site repos) |
+| `_tryGhRepoCreate(ws, spec, path, name)` | server.js | Helper: attempts gh repo create, saves site_repo to spec |
 
 ### Key Functions (2026-03-26, Layout + spawnClaude)
 
