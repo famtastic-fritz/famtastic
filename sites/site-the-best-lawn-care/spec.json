@@ -3,7 +3,7 @@
   "site_name": "the best lawn care",
   "business_type": "",
   "state": "deployed",
-  "deployed_url": "https://the-best-lawn-care.netlify.app",
+  "deployed_url": "https://the-best-lawn-care-prod.netlify.app",
   "netlify_site_id": "d58f9ba9-78eb-4329-89e7-710fac8480fa",
   "created_at": "2026-03-20T14:40:06.276Z",
   "design_brief": {
@@ -39,7 +39,7 @@
       "Overuse of cursive typography",
       "Cheap or flashy design elements",
       "Lorem ipsum placeholder text",
-      "Generic lawn care clich\u00e9s"
+      "Generic lawn care clichés"
     ],
     "approved": true
   },
@@ -53,7 +53,7 @@
     {
       "category": "hosting",
       "suggestion": "Netlify",
-      "reason": "Already configured \u2014 free tier, CDN, instant deploys"
+      "reason": "Already configured — free tier, CDN, instant deploys"
     },
     {
       "category": "forms",
@@ -185,7 +185,7 @@
     {
       "timestamp": "2026-03-20T23:05:21.197Z",
       "category": "structure",
-      "decision": "Used the firefly_luxury-1920x1080.jpg asset as the social share image\u2014professional, brand-appropriate, and 1920x1080 (ideal for Twitter cards)",
+      "decision": "Used the firefly_luxury-1920x1080.jpg asset as the social share image—professional, brand-appropriate, and 1920x1080 (ideal for Twitter cards)",
       "status": "approved"
     },
     {
@@ -221,13 +221,13 @@
     {
       "timestamp": "2026-03-24T03:00:20.322Z",
       "category": "content",
-      "decision": "Enhanced hover interactions**: Gallery overlays now display project names in gold text on a semi-transparent dark green background with smooth opacity transitions \u2014 reinforces the transformation focus",
+      "decision": "Enhanced hover interactions**: Gallery overlays now display project names in gold text on a semi-transparent dark green background with smooth opacity transitions — reinforces the transformation focus",
       "status": "approved"
     },
     {
       "timestamp": "2026-03-25T04:28:30.379Z",
       "category": "content",
-      "decision": "Header width is already `max-w-6xl` matching all main content sections (gallery-hero, gallery-section, trust-section, footer) \u2014 consistent across the site",
+      "decision": "Header width is already `max-w-6xl` matching all main content sections (gallery-hero, gallery-section, trust-section, footer) — consistent across the site",
       "status": "approved"
     },
     {
@@ -681,7 +681,7 @@
     "total_replaced": 28,
     "directory": "assets/placeholders/"
   },
-  "deployed_at": "2026-03-26T22:13:30Z",
+  "deployed_at": "2026-03-27T02:21:10.919Z",
   "deploy_provider": "netlify",
   "slot_mappings": {
     "gallery-3": {
@@ -840,6 +840,14 @@
       "deployed_at": "2026-03-26T22:13:30Z",
       "state": "deployed",
       "custom_domain": "test.thebestlawncare.com"
+    },
+    "production": {
+      "provider": "netlify",
+      "site_id": "19d68d74-77c2-4d7a-adbc-4ce68bcef8ba",
+      "url": "https://the-best-lawn-care-prod.netlify.app",
+      "deployed_at": "2026-03-27T02:21:10.919Z",
+      "state": "deployed",
+      "custom_domain": null
     }
   }
 }

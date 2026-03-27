@@ -33,8 +33,8 @@
       "first_read": "2026-03-26T22:21:58.987Z"
     },
     "/Users/famtasticfritz/famtastic/scripts/site-deploy": {
-      "count": 12,
-      "tokens": 2310,
+      "count": 14,
+      "tokens": 2744,
       "first_read": "2026-03-26T22:22:01.927Z"
     },
     "/Users/famtasticfritz/.claude/plans/floofy-dancing-mccarthy.md": {
@@ -848,6 +848,18 @@
       "action": "edit",
       "tokens": 85,
       "at": "2026-03-27T01:02:01.056Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/scripts/site-deploy",
+      "action": "edit",
+      "tokens": 756,
+      "at": "2026-03-27T02:17:18.280Z"
+    },
+    {
+      "file": "/Users/famtasticfritz/famtastic/scripts/site-deploy",
+      "action": "edit",
+      "tokens": 140,
+      "at": "2026-03-27T02:20:41.831Z"
     }
   ],
   "edit_counts": {
@@ -859,11 +871,11 @@
     "site-studio/server.js": 59,
     "site-studio/public/index.html": 39,
     "scripts/studio-server": 1,
-    "scripts/site-deploy": 9
+    "scripts/site-deploy": 11
   },
   "anatomy_hits": 9,
   "anatomy_misses": 4,
-  "repeated_reads_warned": 168,
+  "repeated_reads_warned": 170,
   "cerebrum_warnings": 0,
-  "stop_count": 38
+  "stop_count": 41
 }

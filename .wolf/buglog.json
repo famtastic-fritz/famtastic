@@ -1201,6 +1201,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-03-27T00:41:53.567Z"
+    },
+    {
+      "id": "bug-076",
+      "timestamp": "2026-03-27T02:17:18.281Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/site-deploy",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 25→55 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "unknown"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T02:17:18.281Z"
     }
   ]
 }

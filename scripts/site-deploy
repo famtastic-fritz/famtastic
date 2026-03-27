@@ -117,27 +117,57 @@ deploy_netlify() {
 
   echo "[deploy] Uploading to Netlify..." >&2
   if [ -n "$SITE_ID" ]; then
-    # Existing site — deploy to it
+    # Existing site — deploy to it (always use --site to bypass .netlify/state.json)
     echo "[deploy] Deploying to existing site: $SITE_ID" >&2
     if [ -n "$PROD_FLAG" ]; then
       DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" --prod 2>&1)
     else
       DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" 2>&1)
     fi
-  else
-    # New site — create and deploy in one command
-    echo "[deploy] Creating new site: $NETLIFY_SITE" >&2
-    if [ -n "$PROD_FLAG" ]; then
-      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --create-site "$NETLIFY_SITE" --team fritz-medine --prod 2>&1)
-    else
-      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --create-site "$NETLIFY_SITE" --team fritz-medine 2>&1)
+  elif [ -n "$DEPLOY_ENV" ]; then
+    # New site for a specific environment — create first, then deploy by ID
+    # (cannot use --create-site because .netlify/state.json from staging overrides it)
+    echo "[deploy] Creating new Netlify site: $NETLIFY_SITE" >&2
+    CREATE_OUTPUT=$(netlify sites:create --name "$NETLIFY_SITE" --account-slug fritz-medine 2>&1)
+    echo "$CREATE_OUTPUT" >&2
+    SITE_ID=$(echo "$CREATE_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1 || true)
+    if [ -z "$SITE_ID" ]; then
+      echo "[deploy] Failed to create Netlify site" >&2
+      echo ""
+      exit 1
     fi
-    # Save site ID for future deploys
-    CREATED_ID=$(echo "$DEPLOY_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1 || true)
-    if [ -n "$CREATED_ID" ]; then
-      mkdir -p "$SITE_DIR/.netlify"
-      echo '{"siteId":"'"$CREATED_ID"'"}' > "$SITE_DIR/.netlify/state.json"
-      echo "[deploy] Saved site ID: $CREATED_ID" >&2
+    echo "[deploy] Created site $SITE_ID — deploying..." >&2
+    if [ -n "$PROD_FLAG" ]; then
+      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" --prod 2>&1)
+    else
+      DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" 2>&1)
+    fi
+  else
+    # Legacy path — no --env, use .netlify/state.json or create in one command
+    if [ -f "$SITE_DIR/.netlify/state.json" ]; then
+      local LEGACY_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json")
+      if [ -n "$LEGACY_ID" ]; then
+        echo "[deploy] Deploying to existing site: $LEGACY_ID" >&2
+        if [ -n "$PROD_FLAG" ]; then
+          DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$LEGACY_ID" --prod 2>&1)
+        else
+          DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$LEGACY_ID" 2>&1)
+        fi
+      fi
+    fi
+    if [ -z "${DEPLOY_OUTPUT:-}" ]; then
+      echo "[deploy] Creating new site: $NETLIFY_SITE" >&2
+      if [ -n "$PROD_FLAG" ]; then
+        DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --create-site "$NETLIFY_SITE" --team fritz-medine --prod 2>&1)
+      else
+        DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --create-site "$NETLIFY_SITE" --team fritz-medine 2>&1)
+      fi
+      CREATED_ID=$(echo "$DEPLOY_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1 || true)
+      if [ -n "$CREATED_ID" ]; then
+        mkdir -p "$SITE_DIR/.netlify"
+        echo '{"siteId":"'"$CREATED_ID"'"}' > "$SITE_DIR/.netlify/state.json"
+        echo "[deploy] Saved site ID: $CREATED_ID" >&2
+      fi
     fi
   fi
 
@@ -204,9 +234,11 @@ if [ -n "$DEPLOY_URL" ] && [ -f "$SPEC" ]; then
   TMP=$(mktemp)
   if [ -n "$DEPLOY_ENV" ]; then
     # Write to environments[env] structure
-    # Use the SITE_ID we resolved earlier (from spec.environments[env])
-    # For new sites, read the ID that deploy_netlify saved to .netlify/state.json
-    NEW_SITE_ID="$SITE_ID"
+    # Resolve site ID: check spec.environments[env].site_id first, then .netlify/state.json
+    NEW_SITE_ID=""
+    if [ -f "$SPEC" ]; then
+      NEW_SITE_ID=$(jq -r --arg env "$DEPLOY_ENV" '.environments[$env].site_id // empty' "$SPEC" 2>/dev/null || true)
+    fi
     if [ -z "$NEW_SITE_ID" ] && [ -f "$SITE_DIR/.netlify/state.json" ]; then
       NEW_SITE_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json" 2>/dev/null || true)
     fi
