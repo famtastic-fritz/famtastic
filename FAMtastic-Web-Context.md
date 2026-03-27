@@ -21,44 +21,45 @@ FAMtastic is a consolidated software ecosystem built by Fritz Medine — a Drupa
 ### Repository Structure
 
 ```
-~/famtastic/                          # The one repo — everything lives here
+~/famtastic/                          # TOOLING repo — Studio code, CLI, scripts
   MANIFESTO.md                        # The FAMtastic declaration
   FAMtastic-Web-Context.md            # This file
   scripts/
     fam-hub                           # Unified CLI dispatcher
-    orchestrator-site                 # Batch site generation (Claude CLI + template + fallback)
+    studio-server                     # Server wrapper (auto-restart on UI restart)
+    orchestrator-site                 # Batch site generation
     site-chat                         # Launches Studio + browser
-    site-deploy                       # Deploy to Netlify/Cloudflare/Vercel
+    site-deploy                       # Deploy to Netlify/Cloudflare/Vercel (--env staging|production)
     site-preview                      # Standalone preview server
     site-brainstorm                   # Terminal brainstorm loop
     site-export / site-import         # Export/import sites
     asset-generate                    # SVG asset pipeline via Claude CLI
     stock-photo                       # Unsplash stock photo downloader
-    claude-cli                        # Claude CLI wrapper
+    claude-cli                        # Claude CLI wrapper (bypassed by spawnClaude)
     gemini-cli / codex-cli            # Other agent wrappers
   site-studio/
-    server.js                         # Main backend (5,886 lines) — Express + WebSocket
-    public/index.html                 # Single-file frontend — chat + preview + studio panel
-  sites/<tag>/                        # Per-site working directories
+    server.js                         # Main backend (6,561 lines) — Express + WebSocket
+    public/index.html                 # Single-file frontend (4,176 lines) — chat + preview + studio panel
+  sites/<tag>/                        # LOCAL working directories (NOT in git — .gitignore)
     spec.json                         # Site specification (brief, decisions, media_specs, etc.)
     .studio.json                      # Session state, version metadata
     conversation.jsonl                # Chat history
     summaries/session-NNN.md          # AI-generated session summaries
     dist/                             # Built site files
-      .versions/<page>/<timestamp>.html  # Version snapshots
-      _partials/_nav.html             # Canonical nav element
-      assets/uploads/                 # User-uploaded files
-      assets/stock/                   # Unsplash stock photos
-      assets/placeholders/            # Generated SVG placeholders
   cli/idea/                           # 7 Python CLIs for idea lifecycle
-    capture.py, triage.py, blueprint.py, prototype.py,
-    validate.py, learn.py, digest.py
   adapters/                           # Agent + tool adapters
   config/site-templates/              # 4 HTML templates (event, business, portfolio, landing)
   mcp-server/server.js                # MCP server for Claude Desktop/Code integration
-  .mcp.json                           # MCP auto-discovery config
   .claude/skills/                     # Custom Claude Code skills
-  tests/unit.test.js                  # 56 unit tests (vitest)
+  site-studio/tests/unit.test.js      # 56 unit tests (vitest)
+
+~/famtastic-sites/<tag>/              # PER-SITE repos (one per client/project)
+  branches: dev, staging, main        # Git flow: dev → staging → main
+  CLAUDE.md                           # Tweak/maintain instructions for this site
+  SITE-LEARNINGS.md                   # Design context from spec.json
+  README.md                           # Site name, pages, staging URL
+  index.html, about.html, ...        # Built site files (from dist/)
+  assets/                            # CSS, images, uploads
 ```
 
 ### Shared Paths
@@ -131,7 +132,10 @@ User opens Studio → describes site in chat
   → Live preview updates via WebSocket reload
   → User refines via conversation ("make the header blue", "add a contact section")
   → Each refinement re-classified, routed to appropriate handler
-  → Deploy: `fam-hub site deploy <tag>` pushes to Netlify, returns live URL
+  → Site repo auto-created on first build (~/famtastic-sites/<tag>/, dev/staging/main branches)
+  → Push to Repo: commits to dev branch in site repo
+  → Deploy to Staging: merges dev → staging, deploys to Netlify staging site
+  → Deploy to Production: merges staging → main, deploys to Netlify prod site
 ```
 
 ### Key Technical Decisions
@@ -142,6 +146,8 @@ User opens Studio → describes site in chat
 - **`spawnClaude()` runs from `os.tmpdir()`**: avoids reading `CLAUDE.md` project instructions that cause 0-byte output with `--tools ""`
 - **Template-first build**: `_template.html` built once (chrome only), then all pages in true parallel — eliminates 7 of 11 post-processing steps
 - **Layout containment**: `main { max-width: 90%; margin: 0 auto }` prevents content from pushing header/footer wider; hero breakout via `width: 100vw` negative-margin technique
+- **Per-site repos**: each site gets its own repo at `~/famtastic-sites/<tag>/` with `dev`/`staging`/`main` branches. famtastic repo is pure tooling (`sites/` in .gitignore)
+- **Git flow**: Push to Repo → dev. Deploy to Staging → merge dev→staging. Deploy to Production → merge staging→main. Failed merges auto-abort.
 - **SVG-first assets**: no GPU needed, Claude generates SVGs, Inkscape refines
 - **Slot-based image system**: every `<img>` carries `data-slot-id`, `data-slot-status`, `data-slot-role` — identity survives HTML regeneration
 - **`printf '%s'` not `echo`**: echo corrupts escape sequences in HTML/JSON prompts
@@ -226,7 +232,11 @@ The classifier routes every chat message to the right handler. Precedence matter
 
 ### Deploy & Share
 
-- **Deploy targets**: Netlify (primary), Cloudflare Pages, Vercel
+- **Per-site repos**: each site gets `~/famtastic-sites/<tag>/` with dev/staging/main branches, auto-created on first build
+- **Git flow**: Push to Repo → dev. Deploy to Staging → merge dev→staging. Deploy to Production → merge staging→main.
+- **Deploy targets**: Netlify (primary), Cloudflare Pages, Vercel. Separate Netlify sites per environment.
+- **Studio State**: shows Local/Staging/Prod URLs with clickable links in sidebar header
+- **Server tab**: Restart Studio button, Push Studio Code (hub repo), uptime, session info, file change detection
 - **Share**: Email (Gmail/Outlook/SendGrid SMTP), Text (macOS `sms:` URI), Copy Link
 - **Domain**: GoDaddy DNS record helper
 - **Form handling**: Netlify Forms template with honeypot spam protection
@@ -280,14 +290,17 @@ The system completed a 34-finding gap analysis across 5 waves (2026-03-23). Key 
 ### What's Production-Ready
 
 - Template-first build pipeline (spec → brief → template → parallel pages → preview → deploy)
+- Per-site repos with dev/staging/main branching and git flow
 - Layout containment system (main 90% centered, hero breakout, nav/footer stable)
 - Multi-page sites with template-based chrome propagation
 - Image slot system with stock photo fill and upload replacement
+- Staging/production deploy environments with separate Netlify sites
+- Server tab with restart, uptime, session info, file change detection
 - Versioning with rollback
 - Session management with summaries
 - Design brief and decisions memory
-- 21-intent request classifier
-- Security-hardened (5-wave gap analysis complete)
+- 22-intent request classifier
+- Security-hardened (5-wave gap analysis + 3 code review rounds)
 - 56 unit tests passing
 
 ### What's Not Yet Built
@@ -334,7 +347,7 @@ Ideas flow through `ideas/` directory stages: `ideas/captured/`, `ideas/triaged/
 
 | File | Purpose |
 |------|---------|
-| `site-studio/server.js` | Main backend (5,886 lines) — classifier, prompt builder, template-first build, layout containment, post-build pipeline, all API endpoints |
+| `site-studio/server.js` | Main backend (6,561 lines) — classifier, prompt builder, template-first build, layout containment, per-site repo system, post-build pipeline, all API endpoints |
 | `site-studio/public/index.html` | Single-file frontend — chat, preview, studio panel, modals |
 | `scripts/fam-hub` | Unified CLI dispatcher |
 | `scripts/orchestrator-site` | Batch site generation |
