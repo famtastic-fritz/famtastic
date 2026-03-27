@@ -27,12 +27,18 @@ PROD_FLAG=""
 DEPLOY_ENV=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --provider) PROVIDER="$2"; shift 2 ;;
+    --provider) PROVIDER="${2:-}"; shift; shift ;;
     --prod)     PROD_FLAG="--prod"; shift ;;
-    --env)      DEPLOY_ENV="$2"; shift 2 ;;
+    --env)      DEPLOY_ENV="${2:-}"; shift; shift ;;
     *)          shift ;;
   esac
 done
+
+# Validate --env value
+if [ -n "$DEPLOY_ENV" ] && [ "$DEPLOY_ENV" != "staging" ] && [ "$DEPLOY_ENV" != "production" ]; then
+  echo "[deploy] Invalid --env value: $DEPLOY_ENV (must be staging or production)" >&2
+  exit 1
+fi
 
 SITE_DIR="./sites/$TAG"
 DIST="$SITE_DIR/dist"
@@ -96,7 +102,7 @@ deploy_netlify() {
   SITE_ID=""
   # First: check spec.environments[env].site_id
   if [ -n "$DEPLOY_ENV" ] && [ -f "$SPEC" ]; then
-    SITE_ID=$(jq -r ".environments.${DEPLOY_ENV}.site_id // empty" "$SPEC" 2>/dev/null || true)
+    SITE_ID=$(jq -r --arg env "$DEPLOY_ENV" '.environments[$env].site_id // empty' "$SPEC" 2>/dev/null || true)
   fi
   # Fallback: check .netlify/state.json (legacy, only if no --env)
   if [ -z "$SITE_ID" ] && [ -z "$DEPLOY_ENV" ] && [ -f "$SITE_DIR/.netlify/state.json" ]; then
@@ -196,9 +202,10 @@ if [ -n "$DEPLOY_URL" ] && [ -f "$SPEC" ]; then
   TMP=$(mktemp)
   if [ -n "$DEPLOY_ENV" ]; then
     # Write to environments[env] structure
-    # Also save site_id if we just created a new site
-    NEW_SITE_ID=""
-    if [ -f "$SITE_DIR/.netlify/state.json" ]; then
+    # Use the SITE_ID we resolved earlier (from spec.environments[env])
+    # For new sites, read the ID that deploy_netlify saved to .netlify/state.json
+    NEW_SITE_ID="$SITE_ID"
+    if [ -z "$NEW_SITE_ID" ] && [ -f "$SITE_DIR/.netlify/state.json" ]; then
       NEW_SITE_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json" 2>/dev/null || true)
     fi
     jq --arg url "$DEPLOY_URL" --arg at "$TS" --arg p "$PROVIDER" --arg env "$DEPLOY_ENV" --arg sid "$NEW_SITE_ID" \

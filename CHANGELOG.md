@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-26 — Studio tweaks: Server tab, staging/production deploys, production repos
+
+Added Server tab (7th sidebar tab) with Restart Studio button, live uptime counter, session info, file change detection (fs.watch on server.js + index.html with restart-needed banner). Added Push to Repo button + auto-sync after deploy. Added site persistence on restart (last-site file). Redesigned Deploy tab with staging/production environments: Deploy to Staging (always active), Deploy to Production (gated behind custom domain), environment status cards with View buttons. Added production repo system: createProdRepo creates standalone git repo at ~/famtastic-sites/<tag>/ with gh repo create, syncProdRepo copies dist/ to prod repo after production deploys. Added scripts/studio-server wrapper for UI-triggered restarts. Security: fixed CSRF bypass (empty origin), XSS in version history and brief arrays, URL scheme validation, path containment on env-repo endpoint. Added concurrency guards on git push, prod repo create, and prod repo sync. 56 tests pass.
+
 ## 2026-03-26 — Layout containment system, hero breakout, spawnClaude direct call
 
 Added `fixLayoutOverflow()` post-processing step that injects a STUDIO LAYOUT FOUNDATION CSS block into every build — sets `main` to 90% max-width centered (page-template model) so content never pushes header/footer wider. Added `hero_full_width` setting (default true) that breaks the first section in main to full viewport width for hero images. Removed `overflow-x: hidden` from html/body which was clipping hero breakout. Changed `spawnClaude()` to call `claude --print` directly (bypasses `scripts/claude-cli` wrapper), cwd set to `os.tmpdir()` to avoid CLAUDE.md causing 0-byte output. Added layout rules to template and page prompts.

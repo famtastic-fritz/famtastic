@@ -72,7 +72,7 @@ function readSpec() {
           });
           if (migrated) {
             console.log(`[spec] ${TAG}: migrated old-format media_specs to slot-based format`);
-            fs.writeFileSync(SPEC_FILE(), JSON.stringify(_specCache, null, 2));
+            writeSpec(_specCache);
           }
         }
         if (_specCache.design_decisions && !Array.isArray(_specCache.design_decisions)) {
@@ -757,6 +757,7 @@ app.get('/api/deploy-info', (req, res) => {
         provider: envs.production.provider || null,
         site_id: envs.production.site_id || null,
         custom_domain: envs.production.custom_domain || null,
+        repo: envs.production.repo || null,
       } : null,
       repo,
       // Backward compat
@@ -766,6 +767,40 @@ app.get('/api/deploy-info', (req, res) => {
   } catch {
     res.json({ local: {}, staging: null, production: null, repo: null, deployed: false });
   }
+});
+
+// Create production repo for the current site
+app.post('/api/create-prod-repo', (req, res) => {
+  // Need at least one WS client to send progress to
+  const client = [...wss.clients].find(c => c.readyState === 1);
+  if (!client) return res.status(400).json({ error: 'No WebSocket client connected' });
+  createProdRepo(client);
+  res.json({ success: true, message: 'Creating production repo...' });
+});
+
+// Manually set repo path/remote for an environment (for adopting existing repos)
+app.put('/api/env-repo', (req, res) => {
+  const { env, repoPath, remote } = req.body;
+  if (!env || !['staging', 'production'].includes(env)) {
+    return res.status(400).json({ error: 'env must be staging or production' });
+  }
+  if (!repoPath) return res.status(400).json({ error: 'repoPath required' });
+  // Validate path is under home directory to prevent arbitrary filesystem access
+  const resolvedPath = path.resolve(repoPath);
+  const home = require('os').homedir();
+  if (!resolvedPath.startsWith(home + path.sep) && resolvedPath !== home) {
+    return res.status(400).json({ error: 'repoPath must be under home directory' });
+  }
+
+  const spec = readSpec();
+  if (!spec.environments) spec.environments = {};
+  if (!spec.environments[env]) spec.environments[env] = {};
+  spec.environments[env].repo = {
+    path: repoPath,
+    remote: remote || null,
+  };
+  writeSpec(spec);
+  res.json({ success: true, env, repo: spec.environments[env].repo });
 });
 
 app.get('/api/spec', (req, res) => {
@@ -853,7 +888,7 @@ app.post('/api/restart', (req, res) => {
     try { client.send(JSON.stringify({ type: 'server-restarting' })); } catch {}
   });
   // Graceful exit — wrapper script restarts the process
-  setTimeout(() => process.exit(0), 500);
+  setTimeout(() => gracefulShutdown(), 500);
 });
 
 // List pages and current page
@@ -3336,6 +3371,7 @@ function loadSettings() {
     auto_version: true,
     max_versions: 50,
     hero_full_width: true,
+    prod_sites_base: path.join(require('os').homedir(), 'famtastic-sites'),
   };
   if (fs.existsSync(SETTINGS_FILE)) {
     try {
@@ -3413,7 +3449,8 @@ app.put('/api/settings', (req, res) => {
   if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'JSON body required' });
   const allowedKeys = ['model', 'deploy_target', 'deploy_team', 'preview_port', 'studio_port',
     'max_upload_size_mb', 'max_uploads_per_site', 'auto_summary', 'auto_version', 'max_versions',
-    'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id', 'brainstorm_profile'];
+    'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id', 'brainstorm_profile',
+    'prod_sites_base'];
   const current = loadSettings();
   for (const key of Object.keys(req.body)) {
     if (allowedKeys.includes(key)) current[key] = req.body[key];
@@ -5676,6 +5713,11 @@ function runDeploy(ws, env) {
     if (code === 0) {
       ws.send(JSON.stringify({ type: 'status', content: 'Auto-syncing to repository...' }));
       runGitPush(ws, { silent: true });
+      // Sync production repo if this was a production deploy
+      if (env === 'production') {
+        const freshSpec = readSpec();
+        syncProdRepo(ws, freshSpec);
+      }
     }
   });
 }
@@ -5759,6 +5801,197 @@ function runGitPush(ws, { silent = false } = {}) {
         if (!silent) send('status', 'No new changes to commit.');
         doPush();
       }
+    });
+  });
+}
+
+// --- Production Repo ---
+// Creates a standalone git repo for production deploys containing only dist/ output
+let prodRepoInProgress = false;
+function createProdRepo(ws) {
+  if (prodRepoInProgress) {
+    try { ws.send(JSON.stringify({ type: 'error', content: 'Production repo creation already in progress.' })); } catch {}
+    return;
+  }
+  prodRepoInProgress = true;
+  const send = (type, content) => {
+    try { ws.send(JSON.stringify({ type, content })); } catch {}
+  };
+
+  const settings = loadSettings();
+  const basePath = settings.prod_sites_base || path.join(require('os').homedir(), 'famtastic-sites');
+  const repoPath = path.join(basePath, TAG);
+  const distDir = DIST_DIR();
+  const spec = readSpec();
+  const siteName = spec.site_name || TAG;
+
+  // Check if already exists
+  if (spec.environments?.production?.repo?.path && spec.environments?.production?.repo?.remote) {
+    send('error', `Production repo already exists at ${spec.environments.production.repo.path} → ${spec.environments.production.repo.remote}`);
+    prodRepoInProgress = false;
+    return;
+  }
+
+  if (!fs.existsSync(distDir) || !fs.existsSync(path.join(distDir, 'index.html'))) {
+    send('error', 'No built site found. Build the site first.');
+    prodRepoInProgress = false;
+    return;
+  }
+
+  send('status', `Creating production repo at ${repoPath}...`);
+
+  // Step 1: Create directory and copy dist
+  try {
+    fs.mkdirSync(repoPath, { recursive: true });
+    fs.cpSync(distDir, repoPath, { recursive: true });
+    // Write .gitignore
+    fs.writeFileSync(path.join(repoPath, '.gitignore'), 'node_modules/\n.DS_Store\n.env\n');
+    // Write README
+    fs.writeFileSync(path.join(repoPath, 'README.md'), `# ${siteName}\n\nProduction site files. Managed by FAMtastic Site Studio.\n`);
+  } catch (err) {
+    send('error', `Failed to create repo directory: ${err.message}`);
+    prodRepoInProgress = false;
+    return;
+  }
+
+  // Step 2: git init
+  send('status', 'Initializing git repository...');
+  const initChild = spawn('git', ['init'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+  initChild.stderr.resume();
+  initChild.on('close', (initCode) => {
+    if (initCode !== 0) { send('error', 'git init failed.'); prodRepoInProgress = false; return; }
+
+    // Step 3: git add + commit
+    send('status', 'Creating initial commit...');
+    const addChild = spawn('git', ['add', '-A'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+    addChild.stderr.resume();
+    addChild.on('close', () => {
+      const commitChild = spawn('git', ['commit', '-m', `Initial production deploy: ${siteName}`], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+      commitChild.stderr.resume();
+      commitChild.on('close', (commitCode) => {
+        if (commitCode !== 0) { send('error', 'Initial commit failed.'); prodRepoInProgress = false; return; }
+
+        // Step 4: Try gh repo create
+        send('status', 'Creating GitHub repository...');
+        const ghName = TAG.replace(/^site-/, '');
+        let ghErr = '';
+        const ghChild = spawn('gh', ['repo', 'create', ghName, '--private', '--source', '.', '--push'], {
+          cwd: repoPath,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
+        let ghOut = '';
+        ghChild.stdout.on('data', (chunk) => { ghOut += chunk.toString(); });
+        ghChild.stderr.on('data', (chunk) => { ghErr += chunk.toString(); });
+        ghChild.on('close', (ghCode) => {
+          let remote = null;
+
+          if (ghCode === 0) {
+            // Extract remote URL from gh output
+            const urlMatch = ghOut.match(/https:\/\/github\.com\/[^\s]+/) || ghErr.match(/https:\/\/github\.com\/[^\s]+/);
+            remote = urlMatch ? urlMatch[0] : null;
+            if (!remote) {
+              // Try to get it from git config
+              try {
+                const { execSync } = require('child_process');
+                remote = execSync('git remote get-url origin', { cwd: repoPath, encoding: 'utf8' }).trim();
+              } catch {}
+            }
+            send('assistant', `Production repo created!\n\nPath: ${repoPath}\nGitHub: ${remote || 'check gh output'}`);
+          } else {
+            send('status', `gh repo create failed (${ghErr.trim() || 'gh CLI not available'}). You can set the remote manually.`);
+            send('assistant', `Production repo created locally at ${repoPath}.\n\nTo add a remote:\n  cd ${repoPath}\n  git remote add origin <your-repo-url>\n  git push -u origin main`);
+          }
+
+          // Save to spec
+          if (!spec.environments) spec.environments = {};
+          if (!spec.environments.production) spec.environments.production = {};
+          spec.environments.production.repo = {
+            path: repoPath,
+            remote: remote,
+          };
+          writeSpec(spec);
+
+          // Notify client
+          ws.send(JSON.stringify({ type: 'deploy-updated', env: 'production' }));
+          appendConvo({ role: 'assistant', content: `Production repo created at ${repoPath}${remote ? ' — pushed to ' + remote : ''}`, at: new Date().toISOString() });
+          prodRepoInProgress = false;
+        });
+      });
+    });
+  });
+}
+
+// Sync dist/ to production repo (called after production deploy)
+let syncProdRepoInProgress = false;
+function syncProdRepo(ws, spec) {
+  if (syncProdRepoInProgress) return;
+  const repo = spec.environments?.production?.repo;
+  if (!repo || !repo.path) return;
+  if (!fs.existsSync(repo.path)) {
+    try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo path not found — skipping sync.' })); } catch {}
+    return;
+  }
+  syncProdRepoInProgress = true;
+  const finish = () => { syncProdRepoInProgress = false; };
+
+  const distDir = DIST_DIR();
+  try { ws.send(JSON.stringify({ type: 'status', content: 'Syncing to production repo...' })); } catch {}
+
+  // Copy dist to prod repo (overwrite)
+  try {
+    // Clear existing files (except .git, .gitignore, README.md)
+    const entries = fs.readdirSync(repo.path);
+    for (const entry of entries) {
+      if (entry === '.git' || entry === '.gitignore' || entry === 'README.md') continue;
+      const fullPath = path.join(repo.path, entry);
+      fs.rmSync(fullPath, { recursive: true, force: true });
+    }
+    fs.cpSync(distDir, repo.path, { recursive: true });
+  } catch (err) {
+    try { ws.send(JSON.stringify({ type: 'error', content: `Failed to copy dist to prod repo: ${err.message}` })); } catch {}
+    finish();
+    return;
+  }
+
+  // git add + commit + push
+  const timestamp = new Date().toISOString().split('T')[0];
+  const addChild = spawn('git', ['add', '-A'], { cwd: repo.path, stdio: ['ignore', 'ignore', 'pipe'] });
+  addChild.stderr.resume();
+  addChild.on('close', () => {
+    // Check if anything to commit
+    let statusOut = '';
+    const statusChild = spawn('git', ['status', '--porcelain'], { cwd: repo.path, stdio: ['ignore', 'pipe', 'ignore'] });
+    statusChild.stdout.on('data', (chunk) => { statusOut += chunk.toString(); });
+    statusChild.on('close', () => {
+      if (!statusOut.trim()) {
+        try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo already up to date.' })); } catch {}
+        finish();
+        return;
+      }
+      const commitChild = spawn('git', ['commit', '-m', `Deploy: ${TAG} — ${timestamp}`], { cwd: repo.path, stdio: ['ignore', 'ignore', 'pipe'] });
+      commitChild.stderr.resume();
+      commitChild.on('close', (commitCode) => {
+        if (commitCode !== 0) {
+          try { ws.send(JSON.stringify({ type: 'error', content: 'Production repo commit failed.' })); } catch {}
+          finish();
+          return;
+        }
+        if (repo.remote) {
+          const pushChild = spawn('git', ['push'], { cwd: repo.path, stdio: ['ignore', 'ignore', 'pipe'] });
+          pushChild.stderr.resume();
+          pushChild.on('close', (pushCode) => {
+            if (pushCode === 0) {
+              try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo synced and pushed.' })); } catch {}
+            } else {
+              try { ws.send(JSON.stringify({ type: 'error', content: 'Production repo push failed — check credentials.' })); } catch {}
+            }
+            finish();
+          });
+        } else {
+          try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo committed (no remote configured — push manually).' })); } catch {}
+          finish();
+        }
+      });
     });
   });
 }
@@ -6026,6 +6259,7 @@ if (initialStudio) {
 // Clean up session on process exit
 async function gracefulShutdown() {
   await endSession();
+  fileWatchers.forEach(w => { try { w.close(); } catch {} });
   wss.clients.forEach(client => {
     try { client.close(1001, 'Server shutting down'); } catch {}
   });
@@ -6047,6 +6281,7 @@ module.exports = {
 
 // --- File change detection ---
 // Watch server files for changes and notify clients when restart is needed
+const fileWatchers = [];
 function setupFileWatcher() {
   const filesToWatch = [
     path.join(__dirname, 'server.js'),
@@ -6055,7 +6290,7 @@ function setupFileWatcher() {
   for (const filePath of filesToWatch) {
     try {
       let debounceTimer = null;
-      fs.watch(filePath, () => {
+      const watcher = fs.watch(filePath, () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           const fileName = path.basename(filePath);
@@ -6067,6 +6302,7 @@ function setupFileWatcher() {
           });
         }, 2000);
       });
+      fileWatchers.push(watcher);
     } catch (err) {
       console.log(`[file-watch] Could not watch ${path.basename(filePath)}: ${err.message}`);
     }
