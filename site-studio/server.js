@@ -5658,7 +5658,13 @@ function runOrchestratorSite(ws, template) {
 
 // --- Run site-deploy ---
 // env: 'staging' | 'production'
+let deployInProgress = false;
 function runDeploy(ws, env) {
+  if (deployInProgress) {
+    try { ws.send(JSON.stringify({ type: 'status', content: 'Deploy already in progress.' })); } catch {}
+    return;
+  }
+  deployInProgress = true;
   env = env || 'staging';
   const envLabel = env.charAt(0).toUpperCase() + env.slice(1);
   const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG, '--prod', '--env', env];
@@ -5683,16 +5689,18 @@ function runDeploy(ws, env) {
   child.on('close', (code) => {
     const urlMatch = output.match(/https:\/\/[^\s]+/);
     if (code === 0 && urlMatch) {
-      // Update spec.environments
+      // Invalidate cache — deploy script wrote to spec.json via jq
+      invalidateSpecCache();
+      // Update spec.environments (merge — preserve existing fields like repo, custom_domain)
       const spec = readSpec();
       if (!spec.environments) spec.environments = {};
       spec.environments[env] = {
+        ...(spec.environments[env] || {}),
         provider: spec.deploy_provider || loadSettings().deploy_target || 'netlify',
         site_id: spec.environments?.[env]?.site_id || spec.netlify_site_id || null,
         url: urlMatch[0],
         deployed_at: new Date().toISOString(),
         state: 'deployed',
-        custom_domain: spec.environments?.[env]?.custom_domain || null,
       };
       // Keep flat fields for backward compat
       spec.deployed_url = urlMatch[0];
@@ -5714,12 +5722,19 @@ function runDeploy(ws, env) {
     if (code === 0) {
       ws.send(JSON.stringify({ type: 'status', content: 'Auto-syncing to repository...' }));
       runGitPush(ws, { silent: true });
-      // Sync production repo if this was a production deploy
+      // Production deploy: create repo if needed, then sync
       if (env === 'production') {
         const freshSpec = readSpec();
-        syncProdRepo(ws, freshSpec);
+        if (freshSpec.environments?.production?.repo?.path) {
+          syncProdRepo(ws, freshSpec);
+        } else {
+          // Auto-create production repo on first production deploy
+          ws.send(JSON.stringify({ type: 'status', content: 'Creating production repo...' }));
+          createProdRepo(ws);
+        }
       }
     }
+    deployInProgress = false;
   });
 }
 
@@ -5816,10 +5831,22 @@ function _tryGhRepoCreate(ws, spec, repoPath, siteName) {
   const ghName = TAG.replace(/^site-/, '');
   let ghErr = '';
   let ghOut = '';
-  const ghChild = spawn('gh', ['repo', 'create', ghName, '--private', '--source', '.', '--push'], {
-    cwd: repoPath,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  let ghChild;
+  try {
+    ghChild = spawn('gh', ['repo', 'create', ghName, '--private', '--source', '.', '--push'], {
+      cwd: repoPath,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    send('error', `gh command not found: ${err.message}. Set the remote manually.`);
+    // Still save the local repo path to spec
+    if (!spec.environments) spec.environments = {};
+    if (!spec.environments.production) spec.environments.production = {};
+    spec.environments.production.repo = { path: repoPath, remote: null };
+    writeSpec(spec);
+    prodRepoInProgress = false;
+    return;
+  }
   ghChild.stdout.on('data', (chunk) => { ghOut += chunk.toString(); });
   ghChild.stderr.on('data', (chunk) => { ghErr += chunk.toString(); });
   ghChild.on('close', (ghCode) => {

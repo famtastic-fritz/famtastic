@@ -136,6 +136,8 @@ deploy_netlify() {
       echo ""
       exit 1
     fi
+    # Save site ID to temp file so the parent scope can read it after subshell
+    echo "$SITE_ID" > "$SITE_DIR/.netlify-new-site-id"
     echo "[deploy] Created site $SITE_ID — deploying..." >&2
     if [ -n "$PROD_FLAG" ]; then
       DEPLOY_OUTPUT=$(netlify deploy --dir="$DIST" --site "$SITE_ID" --prod 2>&1)
@@ -234,10 +236,14 @@ if [ -n "$DEPLOY_URL" ] && [ -f "$SPEC" ]; then
   TMP=$(mktemp)
   if [ -n "$DEPLOY_ENV" ]; then
     # Write to environments[env] structure
-    # Resolve site ID: check spec.environments[env].site_id first, then .netlify/state.json
+    # Resolve site ID: spec.environments[env] → new-site temp file → .netlify/state.json
     NEW_SITE_ID=""
     if [ -f "$SPEC" ]; then
       NEW_SITE_ID=$(jq -r --arg env "$DEPLOY_ENV" '.environments[$env].site_id // empty' "$SPEC" 2>/dev/null || true)
+    fi
+    if [ -z "$NEW_SITE_ID" ] && [ -f "$SITE_DIR/.netlify-new-site-id" ]; then
+      NEW_SITE_ID=$(cat "$SITE_DIR/.netlify-new-site-id" 2>/dev/null || true)
+      rm -f "$SITE_DIR/.netlify-new-site-id"
     fi
     if [ -z "$NEW_SITE_ID" ] && [ -f "$SITE_DIR/.netlify/state.json" ]; then
       NEW_SITE_ID=$(jq -r '.siteId // empty' "$SITE_DIR/.netlify/state.json" 2>/dev/null || true)
