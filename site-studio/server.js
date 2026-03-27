@@ -28,6 +28,15 @@ const serverStartedAt = new Date().toISOString();
 const HUB_ROOT = path.resolve(__dirname, '..');
 const SITES_ROOT = path.join(HUB_ROOT, 'sites');
 
+// Cache hub repo info at startup (doesn't change at runtime)
+let _hubRepoCache = null;
+try {
+  const { execSync: _es } = require('child_process');
+  const _url = _es('git remote get-url origin', { cwd: HUB_ROOT, encoding: 'utf8' }).trim();
+  const _branch = _es('git branch --show-current', { cwd: HUB_ROOT, encoding: 'utf8' }).trim();
+  _hubRepoCache = { url: _url, branch: _branch };
+} catch {}
+
 // Derived paths — recomputed on site switch
 function SITE_DIR() { return path.join(SITES_ROOT, TAG); }
 function DIST_DIR() { return path.join(SITE_DIR(), 'dist'); }
@@ -726,14 +735,7 @@ app.get('/api/deploy-info', (req, res) => {
     const spec = readSpec();
     const envs = spec.environments || {};
 
-    // Detect repo info — uses execSync with hardcoded commands (no user input)
-    let repo = null;
-    try {
-      const { execSync } = require('child_process');
-      const remoteUrl = execSync('git remote get-url origin 2>/dev/null', { cwd: HUB_ROOT, encoding: 'utf8' }).trim();
-      const branch = execSync('git branch --show-current 2>/dev/null', { cwd: HUB_ROOT, encoding: 'utf8' }).trim();
-      repo = { url: remoteUrl, branch };
-    } catch {}
+    // Hub repo info (cached at startup — doesn't change at runtime)
 
     res.json({
       local: {
@@ -760,7 +762,8 @@ app.get('/api/deploy-info', (req, res) => {
         custom_domain: envs.production.custom_domain || null,
         repo: envs.production.repo || null,
       } : null,
-      repo,
+      hub_repo: _hubRepoCache,
+      site_repo: spec.site_repo || null,
       // Backward compat
       deployed: !!(envs.staging?.url || envs.production?.url),
       url: envs.production?.url || envs.staging?.url || null,
@@ -771,22 +774,18 @@ app.get('/api/deploy-info', (req, res) => {
 });
 
 // Create production repo for the current site
-app.post('/api/create-prod-repo', (req, res) => {
-  // Need at least one WS client to send progress to
+app.post('/api/create-site-repo', (req, res) => {
   const client = [...wss.clients].find(c => c.readyState === 1);
   if (!client) return res.status(400).json({ error: 'No WebSocket client connected' });
-  createProdRepo(client);
-  res.json({ success: true, message: 'Creating production repo...' });
+  createSiteRepo(client);
+  res.json({ success: true, message: 'Creating site repo...' });
 });
 
 // Manually set repo path/remote for an environment (for adopting existing repos)
-app.put('/api/env-repo', (req, res) => {
-  const { env, repoPath, remote } = req.body;
-  if (!env || !['staging', 'production'].includes(env)) {
-    return res.status(400).json({ error: 'env must be staging or production' });
-  }
+// Set the site repo path/remote (for adopting existing repos)
+app.put('/api/site-repo', (req, res) => {
+  const { repoPath, remote } = req.body;
   if (!repoPath) return res.status(400).json({ error: 'repoPath required' });
-  // Validate path is under home directory to prevent arbitrary filesystem access
   const resolvedPath = path.resolve(repoPath);
   const home = require('os').homedir();
   if (!resolvedPath.startsWith(home + path.sep) && resolvedPath !== home) {
@@ -794,14 +793,12 @@ app.put('/api/env-repo', (req, res) => {
   }
 
   const spec = readSpec();
-  if (!spec.environments) spec.environments = {};
-  if (!spec.environments[env]) spec.environments[env] = {};
-  spec.environments[env].repo = {
-    path: repoPath,
+  spec.site_repo = {
+    path: resolvedPath,
     remote: remote || null,
   };
   writeSpec(spec);
-  res.json({ success: true, env, repo: spec.environments[env].repo });
+  res.json({ success: true, site_repo: spec.site_repo });
 });
 
 app.get('/api/spec', (req, res) => {
@@ -3508,6 +3505,7 @@ function classifyRequest(message, spec) {
   }
 
   // Git push — push repo to remote
+  if (lower.match(/\b(push\s+studio\s+code|push\s+hub|sync\s+studio)\b/)) return 'hub_push';
   if (lower.match(/\b(push\s+to\s+(repo|git|github|remote)|git\s+push|sync\s+repo|update\s+repo)\b/)) return 'git_push';
 
   // Explicit commands first
@@ -4568,6 +4566,13 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   ws.send(JSON.stringify({ type: 'pages-updated', pages: writtenPages }));
   appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
   saveStudio();
+
+  // Auto-create site repo on first successful build
+  const currentSpec = readSpec();
+  if (!currentSpec.site_repo?.path) {
+    ws.send(JSON.stringify({ type: 'status', content: 'Creating site repo...' }));
+    createSiteRepo(ws);
+  }
 }
 
 // --- Enhanced Chat Handler ---
@@ -5337,8 +5342,14 @@ wss.on('connection', (ws) => {
         }
 
         case 'git_push': {
-          ws.send(JSON.stringify({ type: 'status', content: 'Pushing to repository...' }));
+          ws.send(JSON.stringify({ type: 'status', content: 'Pushing to site repo (dev)...' }));
           runGitPush(ws);
+          break;
+        }
+
+        case 'hub_push': {
+          ws.send(JSON.stringify({ type: 'status', content: 'Pushing Studio code...' }));
+          pushHubRepo(ws);
           break;
         }
 
@@ -5718,111 +5729,97 @@ function runDeploy(ws, env) {
     }
     appendConvo({ role: 'assistant', content: `${envLabel} deploy ${code === 0 ? 'succeeded' : 'failed'}: ${urlMatch ? urlMatch[0] : 'see logs'}`, at: new Date().toISOString() });
 
-    // Auto-sync to git after successful deploy
+    // Auto-sync site repo after successful deploy
+    // staging → syncs dev then merges dev→staging
+    // production → syncs dev then merges dev→staging→main
     if (code === 0) {
-      ws.send(JSON.stringify({ type: 'status', content: 'Auto-syncing to repository...' }));
-      runGitPush(ws, { silent: true });
-      // Production deploy: create repo if needed, then sync
-      if (env === 'production') {
-        const freshSpec = readSpec();
-        if (freshSpec.environments?.production?.repo?.path) {
-          syncProdRepo(ws, freshSpec);
-        } else {
-          // Auto-create production repo on first production deploy
-          ws.send(JSON.stringify({ type: 'status', content: 'Creating production repo...' }));
-          createProdRepo(ws);
-        }
+      const freshSpec = readSpec();
+      if (freshSpec.site_repo?.path) {
+        const targetBranch = env === 'production' ? 'main' : 'staging';
+        ws.send(JSON.stringify({ type: 'status', content: `Syncing site repo (${targetBranch})...` }));
+        syncSiteRepo(ws, freshSpec, targetBranch);
       }
     }
     deployInProgress = false;
   });
 }
 
-// --- Git Push — commit + push to remote ---
-let gitPushInProgress = false;
+// --- Git Push — push to site repo (dev branch) ---
 function runGitPush(ws, { silent = false } = {}) {
-  if (gitPushInProgress) {
+  const spec = readSpec();
+  if (!spec.site_repo?.path) {
     if (!silent) {
-      try { ws.send(JSON.stringify({ type: 'status', content: 'Git push already in progress — skipping.' })); } catch {}
+      const msg = siteRepoInProgress
+        ? 'Site repo is being created — please wait a moment.'
+        : 'No site repo configured. Build the site first.';
+      try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
     }
     return;
   }
-  gitPushInProgress = true;
-  const send = (type, content) => {
-    if (silent && (type === 'assistant' || type === 'status')) return;
-    try { ws.send(JSON.stringify({ type, content })); } catch {}
-  };
-  const finish = () => { gitPushInProgress = false; };
-  send('status', 'Checking for changes...');
+  syncSiteRepo(ws, spec, 'dev');
+}
 
-  // Step 1: git add -A
+// --- Push Hub Repo (famtastic tooling) ---
+// Separate from site pushes — only for Studio code changes
+let hubPushInProgress = false;
+function pushHubRepo(ws) {
+  if (hubPushInProgress) {
+    try { ws.send(JSON.stringify({ type: 'status', content: 'Hub push already in progress.' })); } catch {}
+    return;
+  }
+  hubPushInProgress = true;
+  const send = (type, content) => { try { ws.send(JSON.stringify({ type, content })); } catch {} };
+  const finish = () => { hubPushInProgress = false; };
+  send('status', 'Pushing Studio code...');
+
   const addChild = spawn('git', ['add', '-A'], { cwd: HUB_ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
-  addChild.stderr.resume(); // drain stderr
+  addChild.stderr.resume();
   addChild.on('close', (addCode) => {
-    if (addCode !== 0) {
-      send('error', 'Git add failed.');
-      finish();
-      return;
-    }
+    if (addCode !== 0) { send('error', 'Git add failed.'); finish(); return; }
 
-    // Step 2: git status --porcelain to check if anything to commit
     let statusOut = '';
     const statusChild = spawn('git', ['status', '--porcelain'], { cwd: HUB_ROOT, stdio: ['ignore', 'pipe', 'ignore'] });
     statusChild.stdout.on('data', (chunk) => { statusOut += chunk.toString(); });
     statusChild.on('close', () => {
-      const hasChanges = statusOut.trim().length > 0;
+      if (!statusOut.trim()) {
+        send('status', 'No Studio code changes to push.');
+        // Still push in case there are unpushed commits
+      }
 
       const doPush = () => {
-        // Step 4: detect branch name
         let branch = 'main';
         const branchChild = spawn('git', ['branch', '--show-current'], { cwd: HUB_ROOT, stdio: ['ignore', 'pipe', 'ignore'] });
         let branchOut = '';
         branchChild.stdout.on('data', (chunk) => { branchOut += chunk.toString(); });
         branchChild.on('close', () => {
           if (branchOut.trim()) branch = branchOut.trim();
-          send('status', `Pushing to origin/${branch}...`);
-
-          // Step 5: git push
-          let pushErr = '';
           const pushChild = spawn('git', ['push', 'origin', branch], { cwd: HUB_ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
-          pushChild.stderr.on('data', (chunk) => { pushErr += chunk.toString(); });
+          pushChild.stderr.resume();
           pushChild.on('close', (pushCode) => {
-            if (pushCode === 0) {
-              if (!silent) send('assistant', `Repo synced to origin/${branch}.${hasChanges ? ' Changes committed and pushed.' : ' Already up to date — pushed.'}`);
-            } else {
-              send('error', `Git push failed: ${pushErr.trim() || 'unknown error'}. You may need to configure git credentials.`);
-            }
-            appendConvo({ role: 'assistant', content: `Git push ${pushCode === 0 ? 'succeeded' : 'failed'}: origin/${branch}`, at: new Date().toISOString() });
+            send(pushCode === 0 ? 'assistant' : 'error',
+              pushCode === 0 ? `Studio code pushed to origin/${branch}.` : 'Studio push failed.');
             finish();
           });
         });
       };
 
-      if (hasChanges) {
-        // Step 3: git commit
+      if (statusOut.trim()) {
         const timestamp = new Date().toISOString().split('T')[0];
-        const commitMsg = `Studio: sync ${TAG} — ${timestamp}`;
-        send('status', 'Committing changes...');
-        const commitChild = spawn('git', ['commit', '-m', commitMsg], { cwd: HUB_ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
-        commitChild.stderr.resume(); // drain stderr
+        const commitChild = spawn('git', ['commit', '-m', `Studio: ${timestamp}`], { cwd: HUB_ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
+        commitChild.stderr.resume();
         commitChild.on('close', (commitCode) => {
-          if (commitCode !== 0) {
-            send('error', 'Git commit failed. Check for pre-commit hook errors.');
-            finish();
-            return;
-          }
+          if (commitCode !== 0) { send('error', 'Hub commit failed.'); finish(); return; }
           doPush();
         });
       } else {
-        if (!silent) send('status', 'No new changes to commit.');
         doPush();
       }
     });
   });
 }
 
-// --- Production Repo ---
-// Helper: try gh repo create on an existing local repo (used by createProdRepo and retry path)
+// --- Per-Site Repo (dev/staging/main branches) ---
+// Helper: try gh repo create on an existing local repo
 function _tryGhRepoCreate(ws, spec, repoPath, siteName) {
   const send = (type, content) => {
     try { ws.send(JSON.stringify({ type, content })); } catch {}
@@ -5840,11 +5837,9 @@ function _tryGhRepoCreate(ws, spec, repoPath, siteName) {
   } catch (err) {
     send('error', `gh command not found: ${err.message}. Set the remote manually.`);
     // Still save the local repo path to spec
-    if (!spec.environments) spec.environments = {};
-    if (!spec.environments.production) spec.environments.production = {};
-    spec.environments.production.repo = { path: repoPath, remote: null };
+    spec.site_repo = { path: repoPath, remote: null };
     writeSpec(spec);
-    prodRepoInProgress = false;
+    siteRepoInProgress = false;
     return;
   }
   ghChild.stdout.on('data', (chunk) => { ghOut += chunk.toString(); });
@@ -5865,28 +5860,26 @@ function _tryGhRepoCreate(ws, spec, repoPath, siteName) {
       send('status', `gh repo create failed (${ghErr.trim() || 'gh CLI not available'}). You can set the remote manually.`);
       send('assistant', `Production repo created locally at ${repoPath}.\n\nTo add a remote:\n  cd ${repoPath}\n  git remote add origin <your-repo-url>\n  git push -u origin main`);
     }
-    // Save to spec
-    if (!spec.environments) spec.environments = {};
-    if (!spec.environments.production) spec.environments.production = {};
-    spec.environments.production.repo = {
+    // Save to spec.site_repo
+    spec.site_repo = {
       path: repoPath,
       remote: remote,
     };
     writeSpec(spec);
     try { ws.send(JSON.stringify({ type: 'deploy-updated', env: 'production' })); } catch {}
     appendConvo({ role: 'assistant', content: `Production repo created at ${repoPath}${remote ? ' — pushed to ' + remote : ''}`, at: new Date().toISOString() });
-    prodRepoInProgress = false;
+    siteRepoInProgress = false;
   });
 }
 
 // Creates a standalone git repo for production deploys containing only dist/ output
-let prodRepoInProgress = false;
-function createProdRepo(ws) {
-  if (prodRepoInProgress) {
+let siteRepoInProgress = false;
+function createSiteRepo(ws) {
+  if (siteRepoInProgress) {
     try { ws.send(JSON.stringify({ type: 'error', content: 'Production repo creation already in progress.' })); } catch {}
     return;
   }
-  prodRepoInProgress = true;
+  siteRepoInProgress = true;
   const send = (type, content) => {
     try { ws.send(JSON.stringify({ type, content })); } catch {}
   };
@@ -5899,15 +5892,15 @@ function createProdRepo(ws) {
   const siteName = spec.site_name || TAG;
 
   // Check if already fully set up (path + remote both exist)
-  if (spec.environments?.production?.repo?.path && spec.environments?.production?.repo?.remote) {
-    send('error', `Production repo already exists at ${spec.environments.production.repo.path} → ${spec.environments.production.repo.remote}`);
-    prodRepoInProgress = false;
+  if (spec.site_repo?.path && spec.site_repo?.remote) {
+    send('error', `Site repo already exists at ${spec.site_repo.path} → ${spec.site_repo.remote}`);
+    siteRepoInProgress = false;
     return;
   }
 
   // Retry case: repo created locally but gh failed — skip to gh step
-  const existingRepoPath = spec.environments?.production?.repo?.path;
-  if (existingRepoPath && fs.existsSync(path.join(existingRepoPath, '.git')) && !spec.environments?.production?.repo?.remote) {
+  const existingRepoPath = spec.site_repo?.path;
+  if (existingRepoPath && fs.existsSync(path.join(existingRepoPath, '.git')) && !spec.site_repo?.remote) {
     send('status', 'Local repo exists but no remote — retrying GitHub setup...');
     _tryGhRepoCreate(ws, spec, existingRepoPath, spec.site_name || TAG);
     return;
@@ -5915,7 +5908,7 @@ function createProdRepo(ws) {
 
   if (!fs.existsSync(distDir) || !fs.existsSync(path.join(distDir, 'index.html'))) {
     send('error', 'No built site found. Build the site first.');
-    prodRepoInProgress = false;
+    siteRepoInProgress = false;
     return;
   }
 
@@ -6010,7 +6003,7 @@ function createProdRepo(ws) {
     ].join('\n'));
   } catch (err) {
     send('error', `Failed to create repo directory: ${err.message}`);
-    prodRepoInProgress = false;
+    siteRepoInProgress = false;
     return;
   }
 
@@ -6019,104 +6012,210 @@ function createProdRepo(ws) {
   const initChild = spawn('git', ['init'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
   initChild.stderr.resume();
   initChild.on('close', (initCode) => {
-    if (initCode !== 0) { send('error', 'git init failed.'); prodRepoInProgress = false; return; }
+    if (initCode !== 0) { send('error', 'git init failed.'); siteRepoInProgress = false; return; }
 
     // Step 3: git add + commit
     send('status', 'Creating initial commit...');
     const addChild = spawn('git', ['add', '-A'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
     addChild.stderr.resume();
     addChild.on('close', (addCode) => {
-      if (addCode !== 0) { send('error', 'git add failed in prod repo.'); prodRepoInProgress = false; return; }
+      if (addCode !== 0) { send('error', 'git add failed in prod repo.'); siteRepoInProgress = false; return; }
       const commitChild = spawn('git', ['commit', '-m', `Initial production deploy: ${siteName}`], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
       commitChild.stderr.resume();
       commitChild.on('close', (commitCode) => {
-        if (commitCode !== 0) { send('error', 'Initial commit failed.'); prodRepoInProgress = false; return; }
+        if (commitCode !== 0) { send('error', 'Initial commit failed.'); siteRepoInProgress = false; return; }
 
-        // Step 4: Try gh repo create (uses shared helper)
-        _tryGhRepoCreate(ws, spec, repoPath, siteName);
+        // Step 4: Create staging and main branches from dev
+        send('status', 'Creating branches (dev, staging, main)...');
+        // Rename default branch to dev
+        const renameChild = spawn('git', ['branch', '-M', 'dev'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+        renameChild.stderr.resume();
+        renameChild.on('close', (rnCode) => {
+          if (rnCode !== 0) { send('error', 'Failed to rename branch to dev.'); siteRepoInProgress = false; return; }
+          // Create staging and main branches
+          const stagingChild = spawn('git', ['branch', 'staging'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+          stagingChild.stderr.resume();
+          stagingChild.on('close', (stCode) => {
+            if (stCode !== 0) { send('error', 'Failed to create staging branch.'); siteRepoInProgress = false; return; }
+            const mainChild = spawn('git', ['branch', 'main'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+            mainChild.stderr.resume();
+            mainChild.on('close', (mnCode) => {
+              if (mnCode !== 0) { send('error', 'Failed to create main branch.'); siteRepoInProgress = false; return; }
+              // Step 5: Try gh repo create (uses shared helper)
+              _tryGhRepoCreate(ws, spec, repoPath, siteName);
+            });
+          });
+        });
       });
     });
   });
 }
 
-// Sync dist/ to production repo (called after production deploy)
-let syncProdRepoInProgress = false;
-function syncProdRepo(ws, spec) {
-  if (syncProdRepoInProgress) return;
-  const repo = spec.environments?.production?.repo;
-  if (!repo || !repo.path) return;
-  if (!fs.existsSync(repo.path)) {
-    try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo path not found — skipping sync.' })); } catch {}
+// Sync dist/ to site repo on a specific branch, optionally merge to target branch
+// branch: 'dev' (push to repo), 'staging' (merge dev→staging), 'main' (merge staging→main)
+let syncSiteRepoInProgress = false;
+function syncSiteRepo(ws, spec, targetBranch, callback) {
+  if (syncSiteRepoInProgress) {
+    try { ws.send(JSON.stringify({ type: 'status', content: 'Site repo sync already in progress.' })); } catch {}
     return;
   }
-  syncProdRepoInProgress = true;
-  const finish = () => { syncProdRepoInProgress = false; };
+  const repo = spec.site_repo;
+  if (!repo || !repo.path) {
+    try { ws.send(JSON.stringify({ type: 'status', content: 'No site repo configured.' })); } catch {}
+    return;
+  }
+  if (!fs.existsSync(repo.path)) {
+    try { ws.send(JSON.stringify({ type: 'status', content: 'Site repo path not found.' })); } catch {}
+    return;
+  }
+  syncSiteRepoInProgress = true;
+  const finish = () => { syncSiteRepoInProgress = false; if (callback) callback(); };
+  const send = (type, content) => { try { ws.send(JSON.stringify({ type, content })); } catch {} };
 
   const distDir = DIST_DIR();
-  try { ws.send(JSON.stringify({ type: 'status', content: 'Syncing to production repo...' })); } catch {}
-
-  // Copy dist to prod repo (overwrite)
-  try {
-    // Clear existing files (except .git, .gitignore, README.md)
-    const entries = fs.readdirSync(repo.path);
-    for (const entry of entries) {
-      if (entry === '.git' || entry === '.gitignore' || entry === 'README.md' || entry === 'CLAUDE.md' || entry === 'SITE-LEARNINGS.md') continue;
-      const fullPath = path.join(repo.path, entry);
-      fs.rmSync(fullPath, { recursive: true, force: true });
-    }
-    const syncFilter = (src) => {
-      const rel = path.relative(distDir, src);
-      return !rel.startsWith('.versions') && rel !== '_template.html';
-    };
-    fs.cpSync(distDir, repo.path, { recursive: true, filter: syncFilter });
-  } catch (err) {
-    try { ws.send(JSON.stringify({ type: 'error', content: `Failed to copy dist to prod repo: ${err.message}` })); } catch {}
-    finish();
-    return;
-  }
-
-  // git add + commit + push
+  const repoPath = repo.path;
   const timestamp = new Date().toISOString().split('T')[0];
-  const addChild = spawn('git', ['add', '-A'], { cwd: repo.path, stdio: ['ignore', 'ignore', 'pipe'] });
-  addChild.stderr.resume();
-  addChild.on('close', (addCode) => {
-    if (addCode !== 0) {
-      try { ws.send(JSON.stringify({ type: 'error', content: 'git add failed in prod repo.' })); } catch {}
-      finish();
-      return;
-    }
-    // Check if anything to commit
-    let statusOut = '';
-    const statusChild = spawn('git', ['status', '--porcelain'], { cwd: repo.path, stdio: ['ignore', 'pipe', 'ignore'] });
-    statusChild.stdout.on('data', (chunk) => { statusOut += chunk.toString(); });
-    statusChild.on('close', () => {
-      if (!statusOut.trim()) {
-        try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo already up to date.' })); } catch {}
-        finish();
-        return;
+  const SKIP = new Set(['.git', '.gitignore', 'README.md', 'CLAUDE.md', 'SITE-LEARNINGS.md']);
+  const distFilter = (src) => {
+    const rel = path.relative(distDir, src);
+    return !rel.startsWith('.versions') && rel !== '_template.html';
+  };
+
+  // Step 1: checkout dev and sync dist/
+  send('status', `Syncing to site repo (${targetBranch})...`);
+  const checkoutDev = spawn('git', ['checkout', 'dev'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+  checkoutDev.stderr.resume();
+  checkoutDev.on('close', (devCode) => {
+    if (devCode !== 0) { send('error', 'Failed to checkout dev branch.'); finish(); return; }
+
+    // Copy dist/ to repo (clear old files, keep scaffold)
+    try {
+      const entries = fs.readdirSync(repoPath);
+      for (const entry of entries) {
+        if (SKIP.has(entry)) continue;
+        fs.rmSync(path.join(repoPath, entry), { recursive: true, force: true });
       }
-      const commitChild = spawn('git', ['commit', '-m', `Deploy: ${TAG} — ${timestamp}`], { cwd: repo.path, stdio: ['ignore', 'ignore', 'pipe'] });
-      commitChild.stderr.resume();
-      commitChild.on('close', (commitCode) => {
-        if (commitCode !== 0) {
-          try { ws.send(JSON.stringify({ type: 'error', content: 'Production repo commit failed.' })); } catch {}
-          finish();
-          return;
-        }
-        if (repo.remote) {
-          const pushChild = spawn('git', ['push'], { cwd: repo.path, stdio: ['ignore', 'ignore', 'pipe'] });
-          pushChild.stderr.resume();
-          pushChild.on('close', (pushCode) => {
-            if (pushCode === 0) {
-              try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo synced and pushed.' })); } catch {}
+      fs.cpSync(distDir, repoPath, { recursive: true, filter: distFilter });
+    } catch (err) {
+      send('error', `Failed to copy dist to site repo: ${err.message}`);
+      finish(); return;
+    }
+
+    // Step 2: git add + commit on dev
+    const addChild = spawn('git', ['add', '-A'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+    addChild.stderr.resume();
+    addChild.on('close', (addCode) => {
+      if (addCode !== 0) { send('error', 'git add failed in site repo.'); finish(); return; }
+
+      let statusOut = '';
+      const statusChild = spawn('git', ['status', '--porcelain'], { cwd: repoPath, stdio: ['ignore', 'pipe', 'ignore'] });
+      statusChild.stdout.on('data', (chunk) => { statusOut += chunk.toString(); });
+      statusChild.on('close', () => {
+        const hasChanges = statusOut.trim().length > 0;
+
+        const afterDevCommit = () => {
+          // If target is just dev, push dev and done
+          if (targetBranch === 'dev') {
+            if (repo.remote) {
+              const pushChild = spawn('git', ['push', 'origin', 'dev'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+              pushChild.stderr.resume();
+              pushChild.on('close', (pushCode) => {
+                send(pushCode === 0 ? 'status' : 'error',
+                  pushCode === 0 ? 'Pushed to site repo (dev).' : 'Push to dev failed.');
+                finish();
+              });
             } else {
-              try { ws.send(JSON.stringify({ type: 'error', content: 'Production repo push failed — check credentials.' })); } catch {}
+              send('status', 'Committed to dev (no remote — push manually).');
+              finish();
             }
-            finish();
+            return;
+          }
+
+          // Step 3: merge dev → staging
+          send('status', 'Merging dev → staging...');
+          const checkoutStaging = spawn('git', ['checkout', 'staging'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+          checkoutStaging.stderr.resume();
+          checkoutStaging.on('close', (csCode) => {
+            if (csCode !== 0) { send('error', 'Failed to checkout staging branch.'); finish(); return; }
+            const mergeToStaging = spawn('git', ['merge', 'dev', '--no-edit'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+            mergeToStaging.stderr.resume();
+            mergeToStaging.on('close', (mergeCode) => {
+              if (mergeCode !== 0) {
+                const abort = spawn('git', ['merge', '--abort'], { cwd: repoPath, stdio: 'ignore' });
+                abort.on('close', () => { send('error', 'Merge dev → staging failed — aborted. Manual conflict resolution needed.'); finish(); });
+                return;
+              }
+
+              // If target is staging, push staging and return to dev
+              if (targetBranch === 'staging') {
+                if (repo.remote) {
+                  const pushChild = spawn('git', ['push', 'origin', 'staging'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+                  pushChild.stderr.resume();
+                  pushChild.on('close', (pushCode) => {
+                    send(pushCode === 0 ? 'status' : 'error',
+                      pushCode === 0 ? 'Pushed to site repo (staging).' : 'Push to staging failed.');
+                    // Return to dev branch
+                    const backToDev = spawn('git', ['checkout', 'dev'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+                    backToDev.stderr.resume();
+                    backToDev.on('close', () => finish());
+                  });
+                } else {
+                  send('status', 'Merged to staging (no remote).');
+                  const backToDev = spawn('git', ['checkout', 'dev'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+                  backToDev.stderr.resume();
+                  backToDev.on('close', () => finish());
+                }
+                return;
+              }
+
+              // Step 4: merge staging → main (target is 'main')
+              send('status', 'Merging staging → main...');
+              const checkoutMain = spawn('git', ['checkout', 'main'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+              checkoutMain.stderr.resume();
+              checkoutMain.on('close', (cmCode) => {
+                if (cmCode !== 0) { send('error', 'Failed to checkout main branch.'); finish(); return; }
+                const mergeToMain = spawn('git', ['merge', 'staging', '--no-edit'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+                mergeToMain.stderr.resume();
+                mergeToMain.on('close', (mainMergeCode) => {
+                  if (mainMergeCode !== 0) {
+                    const abort = spawn('git', ['merge', '--abort'], { cwd: repoPath, stdio: 'ignore' });
+                    abort.on('close', () => { send('error', 'Merge staging → main failed — aborted. Manual conflict resolution needed.'); finish(); });
+                    return;
+                  }
+                  if (repo.remote) {
+                    const pushChild = spawn('git', ['push', 'origin', 'main'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+                    pushChild.stderr.resume();
+                    pushChild.on('close', (pushCode) => {
+                      send(pushCode === 0 ? 'status' : 'error',
+                        pushCode === 0 ? 'Pushed to site repo (main).' : 'Push to main failed.');
+                      const backToDev = spawn('git', ['checkout', 'dev'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+                      backToDev.stderr.resume();
+                      backToDev.on('close', () => finish());
+                    });
+                  } else {
+                    send('status', 'Merged to main (no remote).');
+                    const backToDev = spawn('git', ['checkout', 'dev'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+                    backToDev.stderr.resume();
+                    backToDev.on('close', () => finish());
+                  }
+                });
+              });
+            });
+          });
+        };
+
+        if (hasChanges) {
+          const commitChild = spawn('git', ['commit', '-m', `${targetBranch === 'dev' ? 'WIP' : 'Deploy'}: ${TAG} — ${timestamp}`],
+            { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
+          commitChild.stderr.resume();
+          commitChild.on('close', (commitCode) => {
+            if (commitCode !== 0) { send('error', 'Commit failed in site repo.'); finish(); return; }
+            afterDevCommit();
           });
         } else {
-          try { ws.send(JSON.stringify({ type: 'status', content: 'Production repo committed (no remote configured — push manually).' })); } catch {}
-          finish();
+          send('status', 'No new changes to commit.');
+          if (targetBranch === 'dev') { finish(); return; }
+          afterDevCommit();
         }
       });
     });

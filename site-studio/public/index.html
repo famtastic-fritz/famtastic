@@ -418,6 +418,7 @@
         <div id="studio-tag" class="text-xs text-studio-muted"></div>
         <div id="studio-updated" class="text-xs text-studio-muted"></div>
         <div id="studio-live-url" class="text-xs mt-1 hidden"></div>
+        <div id="studio-env-urls" class="text-xs mt-2 space-y-1"></div>
       </div>
 
       <!-- Tab bar -->
@@ -570,15 +571,13 @@
         <!-- ========== DEPLOY TAB ========== -->
         <div id="studio-tab-content-deploy" class="studio-tab-content hidden">
 
-          <!-- Actions -->
-          <div class="border-b border-gray-700">
             <!-- DEPLOY -->
             <div class="p-4 border-b border-gray-700 space-y-2">
               <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1">Deploy</div>
               <button onclick="deployToStaging()" class="w-full text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Deploy to Staging</button>
               <button onclick="deployToProduction()" id="deploy-prod-btn" class="w-full text-xs bg-gray-700 text-gray-400 px-3 py-1.5 rounded transition cursor-not-allowed" disabled title="Add a custom domain to enable production deploys">Deploy to Production</button>
               <div id="deploy-prod-hint" class="text-[10px] text-studio-muted">Add a custom domain to enable production deploys</div>
-              <button onclick="createProdRepo()" id="create-prod-repo-btn" class="w-full text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded transition hidden">Create Production Repo</button>
+              <button onclick="createProdRepo()" id="create-prod-repo-btn" class="w-full text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded transition hidden">Create Site Repo</button>
               <div id="prod-repo-info" class="text-[10px] text-studio-muted hidden"></div>
             </div>
 
@@ -709,6 +708,7 @@
 
             <!-- Restart button -->
             <button onclick="restartServer()" class="w-full text-xs bg-orange-700 hover:bg-orange-600 text-white px-3 py-2 rounded transition font-semibold">Restart Studio</button>
+            <button onclick="pushStudioCode()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Push Studio Code</button>
 
             <!-- Uptime -->
             <div class="bg-gray-800/50 rounded p-3">
@@ -1220,6 +1220,9 @@
       if (tab === 'blueprint') refreshBlueprint();
       if (tab === 'metrics') refreshMetrics();
       if (tab === 'server') refreshServerInfo();
+      if (tab === 'deploy') refreshDeployInfo();
+      if (tab === 'history') refreshStudioPanel();
+      if (tab === 'assets') refreshStudioPanel();
     }
 
     // --- Accordions ---
@@ -1285,7 +1288,14 @@
       btn.className = studioPanelVisible
         ? 'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition'
         : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
-      if (studioPanelVisible) refreshStudioPanel();
+      if (studioPanelVisible) {
+        refreshStudioPanel();
+        // Refresh all independent tab data sources
+        refreshBlueprint();
+        refreshMetrics();
+        refreshServerInfo();
+        refreshDeployInfo();
+      }
       updatePanelLayout();
     }
 
@@ -1429,20 +1439,40 @@
         const info = await (await fetch('/api/deploy-info')).json();
         deployInfoCache = info;
 
-        // Header live URL
+        // Header live URL (backward compat — single URL)
         const urlEl = document.getElementById('studio-live-url');
-        if (info.deployed && isSafeUrl(info.url)) {
-          urlEl.textContent = '';
-          var link = document.createElement('a');
-          link.href = info.url;
-          link.target = '_blank';
-          link.className = 'text-studio-accent hover:underline';
-          link.textContent = info.url;
-          urlEl.appendChild(link);
-          urlEl.classList.remove('hidden');
-        } else {
-          urlEl.classList.add('hidden');
-        }
+        urlEl.classList.add('hidden'); // replaced by env URL rows below
+
+        // Environment URL rows in Studio State
+        var envUrlsEl = document.getElementById('studio-env-urls');
+        envUrlsEl.textContent = '';
+        var envRows = [
+          { label: 'Local', url: 'http://localhost:' + (config.previewPort || 3333), always: true },
+          { label: 'Staging', url: info.staging && info.staging.url },
+          { label: 'Prod', url: info.production && info.production.url },
+        ];
+        envRows.forEach(function(row) {
+          var div = document.createElement('div');
+          div.className = 'flex items-center gap-2';
+          var label = document.createElement('span');
+          label.className = 'text-studio-muted w-12';
+          label.textContent = row.label;
+          div.appendChild(label);
+          if (row.url && (row.always || isSafeUrl(row.url))) {
+            var a = document.createElement('a');
+            a.href = row.url;
+            a.target = '_blank';
+            a.className = 'text-studio-accent hover:underline truncate';
+            a.textContent = row.url;
+            div.appendChild(a);
+          } else {
+            var na = document.createElement('span');
+            na.className = 'text-gray-500';
+            na.textContent = 'not deployed';
+            div.appendChild(na);
+          }
+          envUrlsEl.appendChild(div);
+        });
 
         // Enable/disable production deploy button based on custom domain
         var deployProdBtn = document.getElementById('deploy-prod-btn');
@@ -1462,17 +1492,14 @@
         // Create Prod Repo button: show when prod env exists but no repo yet
         var createProdBtn = document.getElementById('create-prod-repo-btn');
         var prodRepoInfo = document.getElementById('prod-repo-info');
-        var hasProdRepo = info.production && info.production.repo && info.production.repo.path;
-        if (hasCustomDomain && info.production && !hasProdRepo) {
+        var hasSiteRepo = info.site_repo && info.site_repo.path;
+        if (!hasSiteRepo) {
           createProdBtn.classList.remove('hidden');
           prodRepoInfo.classList.add('hidden');
-        } else if (hasProdRepo) {
-          createProdBtn.classList.add('hidden');
-          prodRepoInfo.classList.remove('hidden');
-          prodRepoInfo.textContent = 'Repo: ' + info.production.repo.path + (info.production.repo.remote ? ' → ' + info.production.repo.remote : '');
         } else {
           createProdBtn.classList.add('hidden');
-          prodRepoInfo.classList.add('hidden');
+          prodRepoInfo.classList.remove('hidden');
+          prodRepoInfo.textContent = 'Site repo: ' + info.site_repo.path + (info.site_repo.remote ? ' → ' + info.site_repo.remote : '');
         }
 
         // Environment status cards (safe DOM)
@@ -1567,22 +1594,51 @@
         // Repo
         var repoEl = document.getElementById('studio-repo');
         repoEl.textContent = '';
-        if (info.repo) {
-          var r1 = document.createElement('div');
-          var s1 = document.createElement('span');
-          s1.className = 'text-studio-muted';
-          s1.textContent = 'Remote: ';
-          r1.appendChild(s1);
-          r1.appendChild(document.createTextNode(info.repo.url));
-          var r2 = document.createElement('div');
-          var s2 = document.createElement('span');
-          s2.className = 'text-studio-muted';
-          s2.textContent = 'Branch: ';
-          r2.appendChild(s2);
-          r2.appendChild(document.createTextNode(info.repo.branch));
-          repoEl.appendChild(r1);
-          repoEl.appendChild(r2);
-        } else {
+        // Site repo (per-site, dev/staging/main branches)
+        if (info.site_repo && info.site_repo.path) {
+          var sr1 = document.createElement('div');
+          sr1.className = 'font-medium text-white mb-1';
+          sr1.textContent = 'Site Repo';
+          repoEl.appendChild(sr1);
+          var sr2 = document.createElement('div');
+          var ss1 = document.createElement('span');
+          ss1.className = 'text-studio-muted';
+          ss1.textContent = 'Path: ';
+          sr2.appendChild(ss1);
+          sr2.appendChild(document.createTextNode(info.site_repo.path));
+          repoEl.appendChild(sr2);
+          if (info.site_repo.remote) {
+            var sr3 = document.createElement('div');
+            var ss2 = document.createElement('span');
+            ss2.className = 'text-studio-muted';
+            ss2.textContent = 'Remote: ';
+            sr3.appendChild(ss2);
+            sr3.appendChild(document.createTextNode(info.site_repo.remote));
+            repoEl.appendChild(sr3);
+          }
+          var sr4 = document.createElement('div');
+          var ss3 = document.createElement('span');
+          ss3.className = 'text-studio-muted';
+          ss3.textContent = 'Branches: ';
+          sr4.appendChild(ss3);
+          sr4.appendChild(document.createTextNode('dev / staging / main'));
+          repoEl.appendChild(sr4);
+        }
+        // Hub repo (famtastic tooling)
+        if (info.hub_repo) {
+          var hr1 = document.createElement('div');
+          hr1.className = 'font-medium text-white mb-1 mt-2';
+          hr1.textContent = 'Studio Hub';
+          repoEl.appendChild(hr1);
+          var hr2 = document.createElement('div');
+          var hs1 = document.createElement('span');
+          hs1.className = 'text-studio-muted';
+          hs1.textContent = 'Remote: ';
+          hr2.appendChild(hs1);
+          hr2.appendChild(document.createTextNode(info.hub_repo.url));
+          repoEl.appendChild(hr2);
+        }
+        if (!info.site_repo && !info.hub_repo) {
           repoEl.textContent = 'No git remote detected';
         }
 
@@ -1617,8 +1673,8 @@
     }
 
     function createProdRepo() {
-      if (!confirm('Create a production repository? This will create a new GitHub repo with your site files.')) return;
-      fetch('/api/create-prod-repo', { method: 'POST' })
+      if (!confirm('Create a site repository? This will create a new GitHub repo with dev/staging/main branches.')) return;
+      fetch('/api/create-site-repo', { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.error) addMessage('error', data.error);
@@ -1737,6 +1793,15 @@
         var fs = document.getElementById('server-file-status');
         if (fs) fs.textContent = 'Server unreachable';
       }
+    }
+
+    function pushStudioCode() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      addMessage('user', 'push studio code');
+      ws.send(JSON.stringify({ type: 'chat', content: 'push studio code' }));
+      steps = [];
+      stepStart = null;
+      addStep('Pushing Studio code...');
     }
 
     function restartServer() {

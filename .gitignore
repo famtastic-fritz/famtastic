@@ -1,9 +1,9 @@
 node_modules/
 .DS_Store
-sites/*/dist/
-sites/*/conversation.jsonl
-sites/*/.studio.json
-sites/*/brainstorm.jsonl
+
+# Site working directories — local only, not committed to hub repo
+# Each site gets its own repo at ~/famtastic-sites/<tag>/
+sites/
 
 # Local Netlify folder
 .netlify
