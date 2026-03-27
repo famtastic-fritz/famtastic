@@ -5846,8 +5846,81 @@ function createProdRepo(ws) {
     fs.cpSync(distDir, repoPath, { recursive: true });
     // Write .gitignore
     fs.writeFileSync(path.join(repoPath, '.gitignore'), 'node_modules/\n.DS_Store\n.env\n');
-    // Write README
-    fs.writeFileSync(path.join(repoPath, 'README.md'), `# ${siteName}\n\nProduction site files. Managed by FAMtastic Site Studio.\n`);
+
+    // Scaffold: CLAUDE.md
+    const pages = listPages();
+    fs.writeFileSync(path.join(repoPath, 'CLAUDE.md'), [
+      `# ${siteName} — Production Site`,
+      '',
+      'This repo contains the production build output for this site.',
+      'It is managed by FAMtastic Site Studio.',
+      '',
+      '## What you can do here',
+      '- Edit HTML/CSS directly for quick tweaks',
+      '- Replace images in assets/',
+      '- Update text content',
+      '- Fix styling issues',
+      '',
+      '## What you should NOT do here',
+      '- Do not restructure pages (use Studio for that)',
+      '- Do not add new pages (use Studio)',
+      '- Do not modify the build pipeline (it lives in the Studio repo)',
+      '',
+      '## For major changes',
+      'Open FAMtastic Site Studio:',
+      `  cd ~/famtastic && fam-hub site chat ${TAG}`,
+      '',
+      '## Conventions',
+      '- Shared CSS: assets/styles.css (do not remove STUDIO LAYOUT FOUNDATION block)',
+      '- Page-specific CSS: inline <style data-page="pagename"> blocks',
+      '- Images use data-slot-id attributes for slot system tracking',
+      '- Navigation and footer are shared across all pages',
+    ].join('\n'));
+
+    // Scaffold: SITE-LEARNINGS.md
+    const brief = spec.design_brief || {};
+    const colors = spec.colors || brief.colors || {};
+    const fonts = spec.fonts || brief.fonts || {};
+    const stagingUrl = spec.environments?.staging?.url || 'not deployed';
+    fs.writeFileSync(path.join(repoPath, 'SITE-LEARNINGS.md'), [
+      `# ${siteName} — Site Learnings`,
+      '',
+      '## Design Brief',
+      `- Goal: ${brief.goal || 'not set'}`,
+      `- Audience: ${brief.audience || 'not set'}`,
+      `- Tone: ${(brief.tone || []).join(', ') || 'not set'}`,
+      `- Sections: ${(brief.must_have_sections || []).join(', ') || 'not set'}`,
+      `- Avoid: ${(brief.avoid || []).join(', ') || 'none'}`,
+      '',
+      '## Colors',
+      `- Primary: ${colors.primary || 'not set'}`,
+      `- Accent: ${colors.accent || 'not set'}`,
+      `- Background: ${colors.bg || 'not set'}`,
+      '',
+      '## Fonts',
+      `- Heading: ${fonts.heading || 'not set'}`,
+      `- Body: ${fonts.body || 'not set'}`,
+      '',
+      '## Pages',
+      ...pages.map(p => `- ${p}`),
+      '',
+      '## Deploy Info',
+      `- Staging: ${stagingUrl}`,
+      '- Production: not yet configured',
+      '- Studio repo: ~/famtastic',
+      `- Studio command: fam-hub site chat ${TAG}`,
+    ].join('\n'));
+
+    // Enhanced README
+    fs.writeFileSync(path.join(repoPath, 'README.md'), [
+      `# ${siteName}`,
+      '',
+      'Production site files. Managed by FAMtastic Site Studio.',
+      '',
+      `**Pages:** ${pages.join(', ')}`,
+      `**Staging:** ${stagingUrl}`,
+      `**Studio:** \`cd ~/famtastic && fam-hub site chat ${TAG}\``,
+    ].join('\n'));
   } catch (err) {
     send('error', `Failed to create repo directory: ${err.message}`);
     prodRepoInProgress = false;
@@ -5942,7 +6015,7 @@ function syncProdRepo(ws, spec) {
     // Clear existing files (except .git, .gitignore, README.md)
     const entries = fs.readdirSync(repo.path);
     for (const entry of entries) {
-      if (entry === '.git' || entry === '.gitignore' || entry === 'README.md') continue;
+      if (entry === '.git' || entry === '.gitignore' || entry === 'README.md' || entry === 'CLAUDE.md' || entry === 'SITE-LEARNINGS.md') continue;
       const fullPath = path.join(repo.path, entry);
       fs.rmSync(fullPath, { recursive: true, force: true });
     }
