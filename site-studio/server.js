@@ -5806,6 +5806,51 @@ function runGitPush(ws, { silent = false } = {}) {
 }
 
 // --- Production Repo ---
+// Helper: try gh repo create on an existing local repo (used by createProdRepo and retry path)
+function _tryGhRepoCreate(ws, spec, repoPath, siteName) {
+  const send = (type, content) => {
+    try { ws.send(JSON.stringify({ type, content })); } catch {}
+  };
+  send('status', 'Creating GitHub repository...');
+  const ghName = TAG.replace(/^site-/, '');
+  let ghErr = '';
+  let ghOut = '';
+  const ghChild = spawn('gh', ['repo', 'create', ghName, '--private', '--source', '.', '--push'], {
+    cwd: repoPath,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  ghChild.stdout.on('data', (chunk) => { ghOut += chunk.toString(); });
+  ghChild.stderr.on('data', (chunk) => { ghErr += chunk.toString(); });
+  ghChild.on('close', (ghCode) => {
+    let remote = null;
+    if (ghCode === 0) {
+      const urlMatch = ghOut.match(/https:\/\/github\.com\/[^\s]+/) || ghErr.match(/https:\/\/github\.com\/[^\s]+/);
+      remote = urlMatch ? urlMatch[0] : null;
+      if (!remote) {
+        try {
+          const { execSync } = require('child_process');
+          remote = execSync('git remote get-url origin', { cwd: repoPath, encoding: 'utf8' }).trim();
+        } catch {}
+      }
+      send('assistant', `Production repo created!\n\nPath: ${repoPath}\nGitHub: ${remote || 'check gh output'}`);
+    } else {
+      send('status', `gh repo create failed (${ghErr.trim() || 'gh CLI not available'}). You can set the remote manually.`);
+      send('assistant', `Production repo created locally at ${repoPath}.\n\nTo add a remote:\n  cd ${repoPath}\n  git remote add origin <your-repo-url>\n  git push -u origin main`);
+    }
+    // Save to spec
+    if (!spec.environments) spec.environments = {};
+    if (!spec.environments.production) spec.environments.production = {};
+    spec.environments.production.repo = {
+      path: repoPath,
+      remote: remote,
+    };
+    writeSpec(spec);
+    try { ws.send(JSON.stringify({ type: 'deploy-updated', env: 'production' })); } catch {}
+    appendConvo({ role: 'assistant', content: `Production repo created at ${repoPath}${remote ? ' — pushed to ' + remote : ''}`, at: new Date().toISOString() });
+    prodRepoInProgress = false;
+  });
+}
+
 // Creates a standalone git repo for production deploys containing only dist/ output
 let prodRepoInProgress = false;
 function createProdRepo(ws) {
@@ -5825,10 +5870,18 @@ function createProdRepo(ws) {
   const spec = readSpec();
   const siteName = spec.site_name || TAG;
 
-  // Check if already exists
+  // Check if already fully set up (path + remote both exist)
   if (spec.environments?.production?.repo?.path && spec.environments?.production?.repo?.remote) {
     send('error', `Production repo already exists at ${spec.environments.production.repo.path} → ${spec.environments.production.repo.remote}`);
     prodRepoInProgress = false;
+    return;
+  }
+
+  // Retry case: repo created locally but gh failed — skip to gh step
+  const existingRepoPath = spec.environments?.production?.repo?.path;
+  if (existingRepoPath && fs.existsSync(path.join(existingRepoPath, '.git')) && !spec.environments?.production?.repo?.remote) {
+    send('status', 'Local repo exists but no remote — retrying GitHub setup...');
+    _tryGhRepoCreate(ws, spec, existingRepoPath, spec.site_name || TAG);
     return;
   }
 
@@ -5843,12 +5896,18 @@ function createProdRepo(ws) {
   // Step 1: Create directory and copy dist
   try {
     fs.mkdirSync(repoPath, { recursive: true });
-    fs.cpSync(distDir, repoPath, { recursive: true });
-    // Write .gitignore
-    fs.writeFileSync(path.join(repoPath, '.gitignore'), 'node_modules/\n.DS_Store\n.env\n');
+    // Copy dist/ but exclude internal build artifacts
+    const distFilter = (src) => {
+      const rel = path.relative(distDir, src);
+      return !rel.startsWith('.versions') && rel !== '_template.html';
+    };
+    fs.cpSync(distDir, repoPath, { recursive: true, filter: distFilter });
+    // Write .gitignore (include internal dirs in case they leak in)
+    fs.writeFileSync(path.join(repoPath, '.gitignore'), 'node_modules/\n.DS_Store\n.env\n.versions/\n_template.html\n');
 
     // Scaffold: CLAUDE.md
     const pages = listPages();
+    const pageNames = pages.map(p => p.replace('.html', ''));
     fs.writeFileSync(path.join(repoPath, 'CLAUDE.md'), [
       `# ${siteName} — Production Site`,
       '',
@@ -5902,7 +5961,7 @@ function createProdRepo(ws) {
       `- Body: ${fonts.body || 'not set'}`,
       '',
       '## Pages',
-      ...pages.map(p => `- ${p}`),
+      ...pageNames.map(p => `- ${p}`),
       '',
       '## Deploy Info',
       `- Staging: ${stagingUrl}`,
@@ -5917,7 +5976,7 @@ function createProdRepo(ws) {
       '',
       'Production site files. Managed by FAMtastic Site Studio.',
       '',
-      `**Pages:** ${pages.join(', ')}`,
+      `**Pages:** ${pageNames.join(', ')}`,
       `**Staging:** ${stagingUrl}`,
       `**Studio:** \`cd ~/famtastic && fam-hub site chat ${TAG}\``,
     ].join('\n'));
@@ -5938,57 +5997,15 @@ function createProdRepo(ws) {
     send('status', 'Creating initial commit...');
     const addChild = spawn('git', ['add', '-A'], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
     addChild.stderr.resume();
-    addChild.on('close', () => {
+    addChild.on('close', (addCode) => {
+      if (addCode !== 0) { send('error', 'git add failed in prod repo.'); prodRepoInProgress = false; return; }
       const commitChild = spawn('git', ['commit', '-m', `Initial production deploy: ${siteName}`], { cwd: repoPath, stdio: ['ignore', 'ignore', 'pipe'] });
       commitChild.stderr.resume();
       commitChild.on('close', (commitCode) => {
         if (commitCode !== 0) { send('error', 'Initial commit failed.'); prodRepoInProgress = false; return; }
 
-        // Step 4: Try gh repo create
-        send('status', 'Creating GitHub repository...');
-        const ghName = TAG.replace(/^site-/, '');
-        let ghErr = '';
-        const ghChild = spawn('gh', ['repo', 'create', ghName, '--private', '--source', '.', '--push'], {
-          cwd: repoPath,
-          stdio: ['ignore', 'pipe', 'pipe'],
-        });
-        let ghOut = '';
-        ghChild.stdout.on('data', (chunk) => { ghOut += chunk.toString(); });
-        ghChild.stderr.on('data', (chunk) => { ghErr += chunk.toString(); });
-        ghChild.on('close', (ghCode) => {
-          let remote = null;
-
-          if (ghCode === 0) {
-            // Extract remote URL from gh output
-            const urlMatch = ghOut.match(/https:\/\/github\.com\/[^\s]+/) || ghErr.match(/https:\/\/github\.com\/[^\s]+/);
-            remote = urlMatch ? urlMatch[0] : null;
-            if (!remote) {
-              // Try to get it from git config
-              try {
-                const { execSync } = require('child_process');
-                remote = execSync('git remote get-url origin', { cwd: repoPath, encoding: 'utf8' }).trim();
-              } catch {}
-            }
-            send('assistant', `Production repo created!\n\nPath: ${repoPath}\nGitHub: ${remote || 'check gh output'}`);
-          } else {
-            send('status', `gh repo create failed (${ghErr.trim() || 'gh CLI not available'}). You can set the remote manually.`);
-            send('assistant', `Production repo created locally at ${repoPath}.\n\nTo add a remote:\n  cd ${repoPath}\n  git remote add origin <your-repo-url>\n  git push -u origin main`);
-          }
-
-          // Save to spec
-          if (!spec.environments) spec.environments = {};
-          if (!spec.environments.production) spec.environments.production = {};
-          spec.environments.production.repo = {
-            path: repoPath,
-            remote: remote,
-          };
-          writeSpec(spec);
-
-          // Notify client
-          ws.send(JSON.stringify({ type: 'deploy-updated', env: 'production' }));
-          appendConvo({ role: 'assistant', content: `Production repo created at ${repoPath}${remote ? ' — pushed to ' + remote : ''}`, at: new Date().toISOString() });
-          prodRepoInProgress = false;
-        });
+        // Step 4: Try gh repo create (uses shared helper)
+        _tryGhRepoCreate(ws, spec, repoPath, siteName);
       });
     });
   });
@@ -6019,7 +6036,11 @@ function syncProdRepo(ws, spec) {
       const fullPath = path.join(repo.path, entry);
       fs.rmSync(fullPath, { recursive: true, force: true });
     }
-    fs.cpSync(distDir, repo.path, { recursive: true });
+    const syncFilter = (src) => {
+      const rel = path.relative(distDir, src);
+      return !rel.startsWith('.versions') && rel !== '_template.html';
+    };
+    fs.cpSync(distDir, repo.path, { recursive: true, filter: syncFilter });
   } catch (err) {
     try { ws.send(JSON.stringify({ type: 'error', content: `Failed to copy dist to prod repo: ${err.message}` })); } catch {}
     finish();
@@ -6030,7 +6051,12 @@ function syncProdRepo(ws, spec) {
   const timestamp = new Date().toISOString().split('T')[0];
   const addChild = spawn('git', ['add', '-A'], { cwd: repo.path, stdio: ['ignore', 'ignore', 'pipe'] });
   addChild.stderr.resume();
-  addChild.on('close', () => {
+  addChild.on('close', (addCode) => {
+    if (addCode !== 0) {
+      try { ws.send(JSON.stringify({ type: 'error', content: 'git add failed in prod repo.' })); } catch {}
+      finish();
+      return;
+    }
     // Check if anything to commit
     let statusOut = '';
     const statusChild = spawn('git', ['status', '--porcelain'], { cwd: repo.path, stdio: ['ignore', 'pipe', 'ignore'] });
