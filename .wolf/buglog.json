@@ -657,6 +657,550 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-03-26T22:25:52.910Z"
+    },
+    {
+      "id": "bug-042",
+      "timestamp": "2026-03-26T22:31:48.861Z",
+      "error_message": "Missing error handling in readLastSite",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T22:31:48.861Z"
+    },
+    {
+      "id": "bug-043",
+      "timestamp": "2026-03-26T22:46:14.019Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // --- File change detection ---; // Watch server files for changes and notify clients when re",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-26T22:46:59.473Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-03-26T22:47:18.182Z",
+      "error_message": "Wrong reference: div should be button",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Used \"div\" instead of \"button\"",
+      "fix": "Changed div → button",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T22:47:18.182Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-03-26T22:48:37.555Z",
+      "error_message": "Missing error handling in formatUptime",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T22:48:37.555Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-03-26T22:53:22.943Z",
+      "error_message": "Wrong condition in logic",
+      "file": "site-studio/server.js",
+      "root_cause": "Condition was: if (origin && !allowed.some(a => origin.startsWith(a)",
+      "fix": "Changed to: if (!allowed.some(a => origin.startsWith(a)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T22:53:22.943Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-03-26T22:54:59.594Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had \"hidden fixed top-0 left-0 right-0 z-50 bg-orange-",
+      "fix": "Changed to \"hidden fixed bottom-0 left-0 right-0 z-50 bg-oran",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-26T22:55:10.748Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-03-26T23:04:40.179Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T23:04:40.179Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-03-26T23:04:52.101Z",
+      "error_message": "Wrong reference: Server should be Studio",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Used \"Server\" instead of \"Studio\"",
+      "fix": "Changed Server → Studio",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T23:04:52.101Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-03-26T23:04:57.740Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had 'Restart the Studio server? The page will reconnec",
+      "fix": "Changed to 'Restart Studio? The page will reconnect automatic",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-26T23:08:04.524Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-03-26T23:09:38.477Z",
+      "error_message": "Wrong condition in logic",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Condition was: if (preview && preview.src)",
+      "fix": "Changed to: if (activeStudioTab === 'server')",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T23:09:38.477Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-03-26T23:26:28.064Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/server.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: // Deploy & environment info (structured: local + staging + ; const envs = spec.environments || {};",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-26T23:27:21.832Z"
+    },
+    {
+      "id": "bug-053",
+      "timestamp": "2026-03-26T23:27:52.640Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/site-deploy",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 18→24 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "unknown"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T23:27:52.640Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-03-26T23:29:01.669Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/public/index.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→34 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T23:29:01.669Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-03-26T23:29:47.088Z",
+      "error_message": "Missing guard clause",
+      "file": "site-studio/public/index.html",
+      "root_cause": "No early return/throw for edge case: info.deployed && info.url",
+      "fix": "Added guard clause: if (info.deployed && info.url)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-26T23:29:47.088Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-03-26T23:47:20.128Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/public/index.html",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 16→7 lines (8 removed) | Also: urlRow.className = 'truncate';; a.className = 'text-studio-accent hover:underline ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-26T23:47:58.219Z"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-03-27T00:02:42.245Z",
+      "error_message": "Missing import: os",
+      "file": "site-studio/server.js",
+      "root_cause": "Module(s) not imported: os",
+      "fix": "Added import(s) for os",
+      "tags": [
+        "auto-detected",
+        "missing-import",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:02:42.245Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-03-27T00:03:41.358Z",
+      "error_message": "Missing error handling in createProdRepo",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:03:41.358Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-03-27T00:03:57.586Z",
+      "error_message": "Missing guard clause",
+      "file": "site-studio/server.js",
+      "root_cause": "No early return/throw for edge case: !client",
+      "fix": "Added guard clause: if (!client)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:03:57.586Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-03-27T00:04:48.085Z",
+      "error_message": "Missing error handling in createProdRepo",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:04:48.085Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-03-27T00:05:15.599Z",
+      "error_message": "Wrong reference: null should be repo",
+      "file": "site-studio/server.js",
+      "root_cause": "Used \"null\" instead of \"repo\"",
+      "fix": "Changed null → repo",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:05:15.599Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-03-27T00:11:29.385Z",
+      "error_message": "Missing error handling in createProdRepo",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:11:29.385Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-03-27T00:11:57.646Z",
+      "error_message": "Wrong reference: return should be prodRepoInProgress",
+      "file": "site-studio/server.js",
+      "root_cause": "Used \"return\" instead of \"prodRepoInProgress\"",
+      "fix": "Changed return → prodRepoInProgress",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-03-27T00:12:21.686Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-03-27T00:12:36.333Z",
+      "error_message": "Wrong condition in logic",
+      "file": "site-studio/server.js",
+      "root_cause": "Condition was: if (spec.environments?.production?.repo?.path)",
+      "fix": "Changed to: if (spec.environments?.production?.repo?.path && spec.)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:12:36.333Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-03-27T00:12:45.406Z",
+      "error_message": "Missing guard clause",
+      "file": "site-studio/server.js",
+      "root_cause": "No early return/throw for edge case: syncProdRepoInProgress",
+      "fix": "Added guard clause: if (syncProdRepoInProgress)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:12:45.406Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-03-27T00:15:50.072Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had \">Avoid:</span> ${(state.brief.avoid || []).join('",
+      "fix": "Changed to \">Avoid:</span> ${(state.brief.avoid || []).map(a ",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-27T00:16:35.553Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-03-27T00:16:14.835Z",
+      "error_message": "Wrong condition in logic",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Condition was: if (info.deployed && info.url)",
+      "fix": "Changed to: if (info.deployed && isSafeUrl(info.url)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-27T00:16:28.600Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-03-27T00:16:43.298Z",
+      "error_message": "Wrong reference: hasProdRepo should be info",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Used \"hasProdRepo\" instead of \"info\"",
+      "fix": "Changed hasProdRepo → info",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:16:43.298Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-03-27T00:17:07.399Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/site-deploy",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 12→18 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "unknown"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:17:07.399Z"
+    },
+    {
+      "id": "bug-070",
+      "timestamp": "2026-03-27T00:34:18.572Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/server.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:34:18.572Z"
+    },
+    {
+      "id": "bug-071",
+      "timestamp": "2026-03-27T00:34:25.715Z",
+      "error_message": "Wrong reference: continue should be entry",
+      "file": "site-studio/server.js",
+      "root_cause": "Used \"continue\" instead of \"entry\"",
+      "fix": "Changed continue → entry",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:34:25.715Z"
+    },
+    {
+      "id": "bug-072",
+      "timestamp": "2026-03-27T00:39:33.059Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/server.js",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 4→9 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:39:33.059Z"
+    },
+    {
+      "id": "bug-073",
+      "timestamp": "2026-03-27T00:39:58.535Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // Helper: try gh repo create on an existing local repo (use; function _tryGhRepoCreate(ws, spec, repoPath, siteName) { | Also: addChild.on('close', (addCode) => {; if (addCode !== 0) {",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-03-27T00:41:15.520Z"
+    },
+    {
+      "id": "bug-074",
+      "timestamp": "2026-03-27T00:41:47.580Z",
+      "error_message": "Wrong reference: pages should be pageNames",
+      "file": "site-studio/server.js",
+      "root_cause": "Used \"pages\" instead of \"pageNames\"",
+      "fix": "Changed pages → pageNames",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:41:47.580Z"
+    },
+    {
+      "id": "bug-075",
+      "timestamp": "2026-03-27T00:41:53.567Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/server.js",
+      "root_cause": "Had `**Pages:** ${pages.join('",
+      "fix": "Changed to `**Pages:** ${pageNames.join('",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T00:41:53.567Z"
     }
   ]
 }

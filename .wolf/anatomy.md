@@ -1,11 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-03-26T22:25:52.903Z
-> Files: 272 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-03-27T00:52:18.052Z
+> Files: 273 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~19152 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~19862 tok)
 
 ## ../.claude/
 
@@ -13,7 +13,7 @@
 
 ## ../.claude/plans/
 
-- `floofy-dancing-mccarthy.md` — Feature: Git Push Button + Post-Deploy Git Sync (~868 tok)
+- `floofy-dancing-mccarthy.md` — Feature: Scaffold project files in production repos (~1038 tok)
 
 ## ../.claude/projects/-Users-famtasticfritz-famtastic/memory/
 
@@ -24,7 +24,7 @@
 
 - `.gitignore` — Git ignore rules (~39 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~3364 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~3628 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~7212 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~5640 tok)
@@ -424,7 +424,7 @@
 - `precommit-security` (~91 tok)
 - `site-brainstorm` — site-brainstorm — Terminal brainstorm session for a site project (~1428 tok)
 - `site-chat` (~465 tok)
-- `site-deploy` (~1863 tok)
+- `site-deploy` (~2310 tok)
 - `site-domain` (~654 tok)
 - `site-export` — site-export — Export a site as a standalone project (~606 tok)
 - `site-import` — site-import — Import an existing site into Studio (~767 tok)
@@ -435,6 +435,7 @@
 - `smoke-gemini` (~61 tok)
 - `smoke-secrets` (~55 tok)
 - `stock-photo` — stock-photo — Download a stock photo from Unsplash, Pexels, or Pixabay (~790 tok)
+- `studio-server` (~148 tok)
 - `tts-cli` (~1073 tok)
 - `verify` (~58 tok)
 
@@ -446,12 +447,12 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: SITE_DIR, DIST_DIR, CONVO_FILE + 18 more (~73322 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~79064 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~49677 tok)
+- `index.html` — FAMtastic Site Studio (~54177 tok)
 
 ## site-studio/tests/
 

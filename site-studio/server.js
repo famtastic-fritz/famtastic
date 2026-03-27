@@ -749,6 +749,7 @@ app.get('/api/deploy-info', (req, res) => {
         deployed_at: envs.staging.deployed_at || null,
         provider: envs.staging.provider || null,
         site_id: envs.staging.site_id || null,
+        custom_domain: envs.staging.custom_domain || null,
       } : null,
       production: envs.production ? {
         url: envs.production.url || null,
