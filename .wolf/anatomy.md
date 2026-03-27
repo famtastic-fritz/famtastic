@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-03-27T00:52:18.052Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-03-27T01:02:01.048Z
 > Files: 273 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
@@ -424,7 +424,7 @@
 - `precommit-security` (~91 tok)
 - `site-brainstorm` — site-brainstorm — Terminal brainstorm session for a site project (~1428 tok)
 - `site-chat` (~465 tok)
-- `site-deploy` (~2310 tok)
+- `site-deploy` (~2344 tok)
 - `site-domain` (~654 tok)
 - `site-export` — site-export — Export a site as a standalone project (~606 tok)
 - `site-import` — site-import — Import an existing site into Studio (~767 tok)

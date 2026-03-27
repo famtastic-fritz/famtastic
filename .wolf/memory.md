@@ -860,3 +860,6 @@
 | 20:50 | Session end: 127 writes across 9 files (SITE-LEARNINGS.md, CHANGELOG.md, FAMTASTIC-STATE.md, FAMtastic-Web-Context.md, floofy-dancing-mccarthy.md) | 13 reads | ~200385 tok |
 | 20:52 | Edited site-studio/server.js | 7→8 lines | ~100 |
 | 20:52 | Session end: 128 writes across 9 files (SITE-LEARNINGS.md, CHANGELOG.md, FAMTASTIC-STATE.md, FAMtastic-Web-Context.md, floofy-dancing-mccarthy.md) | 13 reads | ~200485 tok |
+| 21:01 | Edited scripts/site-deploy | 8→8 lines | ~108 |
+| 21:02 | Edited scripts/site-deploy | 6→8 lines | ~79 |
+| 21:02 | Session end: 130 writes across 9 files (SITE-LEARNINGS.md, CHANGELOG.md, FAMTASTIC-STATE.md, FAMtastic-Web-Context.md, floofy-dancing-mccarthy.md) | 13 reads | ~200721 tok |

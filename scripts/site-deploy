@@ -89,11 +89,13 @@ echo ""
 
 # --- Netlify ---
 deploy_netlify() {
-  # Sanitize site name for Netlify (lowercase, alphanumeric + hyphens)
-  local BASE_SITE=$(echo "$TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
-  # Environment-aware naming: staging gets -staging suffix, production uses base name
+  # Sanitize site name for Netlify (lowercase, alphanumeric + hyphens, strip site- prefix)
+  local BASE_SITE=$(echo "$TAG" | sed 's/^site-//' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+  # Environment-aware naming for NEW site creation (existing sites use site_id, not name)
   if [ "$DEPLOY_ENV" = "staging" ]; then
     NETLIFY_SITE="${BASE_SITE}-staging"
+  elif [ "$DEPLOY_ENV" = "production" ]; then
+    NETLIFY_SITE="${BASE_SITE}-prod"
   else
     NETLIFY_SITE="$BASE_SITE"
   fi
