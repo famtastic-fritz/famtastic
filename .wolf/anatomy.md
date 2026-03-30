@@ -1,19 +1,27 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-03-27T02:20:41.824Z
-> Files: 273 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-03-30T23:16:48.706Z
+> Files: 279 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~19862 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~21700 tok)
 
 ## ../.claude/
 
 - `settings.json` (~287 tok)
 
+## ../.claude/agents/
+
+- `famtastic-accessibility.md` — Accessibility Auditor (~561 tok)
+- `famtastic-console-health.md` — Console Health Monitor (~463 tok)
+- `famtastic-mobile-responsive.md` — Responsive Layout Verifier (~540 tok)
+- `famtastic-performance.md` — Performance Scout (~565 tok)
+- `famtastic-visual-layout.md` — Visual Layout Verifier (~506 tok)
+
 ## ../.claude/plans/
 
-- `floofy-dancing-mccarthy.md` — Feature: Scaffold project files in production repos (~1038 tok)
+- `floofy-dancing-mccarthy.md` — Per-Site Repo Architecture + Studio State URLs (~1614 tok)
 
 ## ../.claude/projects/-Users-famtasticfritz-famtastic/memory/
 
@@ -22,17 +30,18 @@
 
 ## ./
 
-- `.gitignore` — Git ignore rules (~39 tok)
+- `.gitignore` — Git ignore rules (~96 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~3628 tok)
-- `CLAUDE.md` — OpenWolf (~57 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~7212 tok)
-- `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~5640 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~4484 tok)
+- `CLAUDE.md` — FAMtastic Global Rules (~1882 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~9501 tok)
+- `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6348 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
 
 ## .claude/
 
+- `launch.json` (~58 tok)
 - `settings.json` (~441 tok)
 - `settings.local.json` (~2026 tok)
 
@@ -424,7 +433,7 @@
 - `precommit-security` (~91 tok)
 - `site-brainstorm` — site-brainstorm — Terminal brainstorm session for a site project (~1428 tok)
 - `site-chat` (~465 tok)
-- `site-deploy` (~2766 tok)
+- `site-deploy` (~2857 tok)
 - `site-domain` (~654 tok)
 - `site-export` — site-export — Export a site as a standalone project (~606 tok)
 - `site-import` — site-import — Import an existing site into Studio (~767 tok)
@@ -447,12 +456,12 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~79064 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~83694 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~54177 tok)
+- `index.html` — FAMtastic Site Studio (~57101 tok)
 
 ## site-studio/tests/
 

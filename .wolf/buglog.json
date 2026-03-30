@@ -1217,6 +1217,422 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-03-27T02:17:18.281Z"
+    },
+    {
+      "id": "bug-077",
+      "timestamp": "2026-03-27T02:23:46.484Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/server.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T02:23:46.484Z"
+    },
+    {
+      "id": "bug-078",
+      "timestamp": "2026-03-27T02:30:16.807Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/site-deploy",
+      "root_cause": "Had \"[deploy] Created site $SITE_ID — deploying...\"",
+      "fix": "Changed to \"$SITE_ID\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "unknown"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T02:30:16.807Z"
+    },
+    {
+      "id": "bug-079",
+      "timestamp": "2026-03-27T02:30:52.178Z",
+      "error_message": "Missing error handling in runDeploy",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T02:30:52.178Z"
+    },
+    {
+      "id": "bug-080",
+      "timestamp": "2026-03-27T05:28:34.181Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/server.js",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 8→6 lines (4 removed) | Also: if (!spec.environments) spec.environments = {};; if (!spec.environments.production) spec.environmen | Also: if (freshSpec.environments?.production?.repo?.path; syncProdRepo(ws, freshSpec); | Also: // Sync dist/ to production repo (called after pro; let syncProdRepoInProgress = false; | Also: app.put('/api/env-repo', (req, res) => {; const { env, repoPath, remote } = req.body;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-03-27T05:34:09.997Z"
+    },
+    {
+      "id": "bug-081",
+      "timestamp": "2026-03-27T05:29:02.096Z",
+      "error_message": "Wrong reference: prodRepoInProgress should be siteRepoInProgress",
+      "file": "site-studio/server.js",
+      "root_cause": "Used \"prodRepoInProgress\" instead of \"siteRepoInProgress\"",
+      "fix": "Changed prodRepoInProgress → siteRepoInProgress",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-27T05:29:07.353Z"
+    },
+    {
+      "id": "bug-082",
+      "timestamp": "2026-03-27T05:29:28.602Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/server.js",
+      "root_cause": "Had `Production repo already exists at ${spec.environm",
+      "fix": "Changed to `Site repo already exists at ${spec.site_repo.path",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-27T05:32:33.093Z"
+    },
+    {
+      "id": "bug-083",
+      "timestamp": "2026-03-27T05:31:31.002Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/server.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: // Auto-create site repo on first successful build; const currentSpec = readSpec();",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-27T05:33:07.006Z"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-03-27T05:34:48.393Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/public/index.html",
+      "root_cause": "11 lines replaced/restructured",
+      "fix": "Rewrote 14→34 lines (11 removed) | Also: if (info.repo) {; var r1 = document.createElement('div');",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-27T05:36:15.293Z"
+    },
+    {
+      "id": "bug-085",
+      "timestamp": "2026-03-27T05:34:54.914Z",
+      "error_message": "Wrong reference: Production should be Site",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Used \"Production\" instead of \"Site\"",
+      "fix": "Changed Production → Site",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T05:34:54.914Z"
+    },
+    {
+      "id": "bug-086",
+      "timestamp": "2026-03-27T05:35:02.732Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had 'Create a production repository? This will create ",
+      "fix": "Changed to 'Create a site repository? This will create a new ",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T05:35:02.732Z"
+    },
+    {
+      "id": "bug-087",
+      "timestamp": "2026-03-27T05:35:43.882Z",
+      "error_message": "Missing guard clause",
+      "file": "site-studio/public/index.html",
+      "root_cause": "No early return/throw for edge case: !ws || ws.readyState !== WebSocket.OPEN",
+      "fix": "Added guard clause: if (!ws || ws.readyState !== WebSocket.OPEN)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T05:35:43.882Z"
+    },
+    {
+      "id": "bug-088",
+      "timestamp": "2026-03-27T05:36:28.899Z",
+      "error_message": "Significant refactor of ",
+      "file": ".gitignore",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 9→9 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "unknown"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T05:36:28.899Z"
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-03-27T05:56:20.960Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/server.js",
+      "root_cause": "Had 'git'",
+      "fix": "Changed to 'error'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-27T05:56:32.365Z"
+    },
+    {
+      "id": "bug-090",
+      "timestamp": "2026-03-27T05:56:48.597Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/server.js",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 8→11 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T05:56:48.597Z"
+    },
+    {
+      "id": "bug-091",
+      "timestamp": "2026-03-27T05:57:14.086Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T05:57:14.086Z"
+    },
+    {
+      "id": "bug-092",
+      "timestamp": "2026-03-27T05:57:40.545Z",
+      "error_message": "Wrong reference: repo should be _hubRepoCache",
+      "file": "site-studio/server.js",
+      "root_cause": "Used \"repo\" instead of \"_hubRepoCache\"",
+      "fix": "Changed repo → _hubRepoCache",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T05:57:40.545Z"
+    },
+    {
+      "id": "bug-093",
+      "timestamp": "2026-03-27T06:10:45.351Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/public/index.html",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 8→8 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T06:10:45.351Z"
+    },
+    {
+      "id": "bug-094",
+      "timestamp": "2026-03-27T06:15:06.163Z",
+      "error_message": "Wrong reference: Actions should be DEPLOY",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Used \"Actions\" instead of \"DEPLOY\"",
+      "fix": "Changed Actions → DEPLOY",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T06:15:06.163Z"
+    },
+    {
+      "id": "bug-095",
+      "timestamp": "2026-03-27T06:30:24.986Z",
+      "error_message": "Significant refactor of ",
+      "file": "FAMtastic-Web-Context.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 12→15 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-27T06:30:24.986Z"
+    },
+    {
+      "id": "bug-096",
+      "timestamp": "2026-03-30T22:06:25.331Z",
+      "error_message": "Missing await",
+      "file": "site-studio/server.js",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: app.post('/api/switch-site', async (req, res) => {; // End current session — must await so summary writes to the | Also: app.post('/api/new-site', async (req, res) => {; // Switch to the new site — await so summary writes to the o",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-03-30T22:07:13.386Z"
+    },
+    {
+      "id": "bug-097",
+      "timestamp": "2026-03-30T22:07:36.961Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-30T22:07:36.961Z"
+    },
+    {
+      "id": "bug-098",
+      "timestamp": "2026-03-30T22:51:33.579Z",
+      "error_message": "Missing guard clause",
+      "file": "site-studio/server.js",
+      "root_cause": "No early return/throw for edge case: !fs.existsSync(filePath",
+      "fix": "Added guard clause: if (!fs.existsSync(filePath)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-30T22:51:33.579Z"
+    },
+    {
+      "id": "bug-099",
+      "timestamp": "2026-03-30T22:51:46.606Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // --- Verification API ---; app.get('/api/verify', (req, res) => {",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-30T22:51:59.631Z"
+    },
+    {
+      "id": "bug-100",
+      "timestamp": "2026-03-30T22:52:39.865Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had 'server'",
+      "fix": "Changed to 'verify'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-30T22:53:11.458Z"
+    },
+    {
+      "id": "bug-101",
+      "timestamp": "2026-03-30T22:54:00.098Z",
+      "error_message": "Missing error handling in updateVerifyIndicator",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-30T22:54:00.098Z"
+    },
+    {
+      "id": "bug-102",
+      "timestamp": "2026-03-30T23:06:53.859Z",
+      "error_message": "Missing error handling in operations",
+      "file": "../SITE-LEARNINGS.md",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-30T23:06:53.859Z"
     }
   ]
 }

@@ -149,7 +149,14 @@
       "Bash(claude --version)",
       "Bash(pkill -f \"node site-studio/server.js\")",
       "Bash(~/famtastic/scripts/claude-cli 2)",
-      "Bash(/tmp/cli-err.txt echo:*)"
+      "Bash(/tmp/cli-err.txt echo:*)",
+      "Bash(curl -s http://localhost:3334/api/deploy-info)",
+      "Bash(curl -s http://localhost:3334/api/sites)",
+      "Bash(curl -s http://localhost:3334/api/projects)",
+      "Bash(mcp__plugin_playwright_playwright__browser_console_messages)",
+      "Bash(curl -s http://localhost:3334/api/studio-state)",
+      "Bash(curl -s http://localhost:3334/api/blueprint)",
+      "Bash(1 curl:*)"
     ],
     "deny": [],
     "ask": []

@@ -38,8 +38,8 @@ FAMtastic is a consolidated software ecosystem built by Fritz Medine — a Drupa
     claude-cli                        # Claude CLI wrapper (bypassed by spawnClaude)
     gemini-cli / codex-cli            # Other agent wrappers
   site-studio/
-    server.js                         # Main backend (6,561 lines) — Express + WebSocket
-    public/index.html                 # Single-file frontend (4,176 lines) — chat + preview + studio panel
+    server.js                         # Main backend (6,830 lines) — Express + WebSocket
+    public/index.html                 # Single-file frontend (4,320 lines) — chat + preview + studio panel
   sites/<tag>/                        # LOCAL working directories (NOT in git — .gitignore)
     spec.json                         # Site specification (brief, decisions, media_specs, etc.)
     .studio.json                      # Session state, version metadata
@@ -128,6 +128,8 @@ User opens Studio → describes site in chat
     → Each page copies chrome verbatim, generates only <main> + page-specific CSS
   → Post-build pipeline (6 steps): extract slots → reapply mappings → metadata
     → reconcile orphans → applyLogoV → template-to-page CSS swap → layout foundation
+  → Build verification (5 file-based checks): slot attrs, CSS coherence, cross-page consistency,
+    head dependencies, logo + layout — results stored in spec.last_verification, pill shown in toolbar
   → Layout containment: main { max-width: 90% } centered, hero breakout to 100vw
   → Live preview updates via WebSocket reload
   → User refines via conversation ("make the header blue", "add a contact section")
@@ -248,6 +250,13 @@ The classifier routes every chat message to the right handler. Precedence matter
 - Analytics: GA4 or Plausible snippet auto-injected when configured
 - Responsive preview toggle: Mobile (375px), Tablet (768px), Desktop
 
+### Build Verification System
+
+- **Phase 1 — File-based (always-on, zero tokens)**: `verifySlotAttributes`, `verifyCssCoherence`, `verifyCrossPageConsistency`, `verifyHeadDependencies`, `verifyLogoAndLayout` — 5 functions run automatically after every build via `runBuildVerification(pages)`. Results in `spec.last_verification`.
+- **Phase 2 — Browser-based (on-demand)**: 5 Claude Code agent definitions in `~/.claude/agents/`: visual-layout, console-health, mobile-responsive, accessibility, performance. Triggered by asking Claude Code to run a visual audit.
+- **Studio UI**: Verification pill in toolbar (green/yellow/red/gray). Verify tab (8th sidebar tab) with collapsible checks, Run Verification, View in Browser buttons. Amber chat notification on failures.
+- **API**: `GET /api/verify` (read last result), `POST /api/verify` (manual trigger), `POST /api/visual-verify` (agent readiness).
+
 ### Other Capabilities
 
 - **Brainstorm mode**: no-HTML ideation via chat or terminal
@@ -289,18 +298,19 @@ The system completed a 34-finding gap analysis across 5 waves (2026-03-23). Key 
 
 ### What's Production-Ready
 
-- Template-first build pipeline (spec → brief → template → parallel pages → preview → deploy)
+- Template-first build pipeline (spec → brief → template → parallel pages → verification → preview → deploy)
 - Per-site repos with dev/staging/main branching and git flow
 - Layout containment system (main 90% centered, hero breakout, nav/footer stable)
 - Multi-page sites with template-based chrome propagation
 - Image slot system with stock photo fill and upload replacement
 - Staging/production deploy environments with separate Netlify sites
+- Build Verification System: Phase 1 (5 file-based checks, always-on) + Phase 2 (5 browser-based agents, on-demand)
 - Server tab with restart, uptime, session info, file change detection
 - Versioning with rollback
 - Session management with summaries
 - Design brief and decisions memory
 - 22-intent request classifier
-- Security-hardened (5-wave gap analysis + 3 code review rounds)
+- Security-hardened (5-wave gap analysis + 4 code review rounds)
 - 56 unit tests passing
 
 ### What's Not Yet Built
@@ -347,7 +357,7 @@ Ideas flow through `ideas/` directory stages: `ideas/captured/`, `ideas/triaged/
 
 | File | Purpose |
 |------|---------|
-| `site-studio/server.js` | Main backend (6,561 lines) — classifier, prompt builder, template-first build, layout containment, per-site repo system, post-build pipeline, all API endpoints |
+| `site-studio/server.js` | Main backend (6,830 lines) — classifier, prompt builder, template-first build, layout containment, build verification (5 file-based checks), per-site repo system, post-build pipeline, all API endpoints |
 | `site-studio/public/index.html` | Single-file frontend — chat, preview, studio panel, modals |
 | `scripts/fam-hub` | Unified CLI dispatcher |
 | `scripts/orchestrator-site` | Batch site generation |
@@ -441,6 +451,7 @@ Key working preferences:
   "uploaded_assets": [{ "filename": "...", "role": "brand_asset", "label": "..." }],
   "deployed_url": "https://...",
   "netlify_site_id": "...",
+  "last_verification": { "status": "passed|warned|failed", "checks": [...], "issues": [...], "timestamp": "..." },
   "data_model": { "needs_database": false, "entities": [...], "migration_path": "..." }
 }
 ```

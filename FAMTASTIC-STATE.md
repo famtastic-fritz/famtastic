@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-03-27
+**Last updated:** 2026-03-30
 
 ---
 
@@ -15,8 +15,8 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 | Layer | Technology | Role |
 |-------|-----------|------|
 | AI Engine | Claude CLI (`claude --print`) | Generates all HTML, SVG assets, design briefs, session summaries, and image prompts. Uses the Claude Code subscription — no separate API key. Default model: `claude-sonnet-4-5`. |
-| Backend | Node.js + Express 4.21 | HTTP server, REST API endpoints, WebSocket server for real-time chat and preview updates. Single file: `site-studio/server.js` (5,886 lines). |
-| Frontend | Single HTML file + Tailwind CDN | `site-studio/public/index.html` (3,771 lines). Chat panel, iframe preview, studio sidebar, modals. No build step, no framework. |
+| Backend | Node.js + Express 4.21 | HTTP server, REST API endpoints, WebSocket server for real-time chat and preview updates. Single file: `site-studio/server.js` (6,830 lines). |
+| Frontend | Single HTML file + Tailwind CDN | `site-studio/public/index.html` (4,320 lines). Chat panel, iframe preview, studio sidebar, modals. No build step, no framework. |
 | CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties (`--color-primary`, `--color-accent`, `--color-bg`) map from spec colors. Shared styles extracted to external CSS by post-processor; page-specific styles stay inline via `<style data-page="true">`. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
 | WebSocket | `ws` 8.18 | Real-time bidirectional: chat messages, build progress, preview reload, panel updates. |
 | File Upload | `multer` 2.1 | Image upload with drag-drop, paste, file picker. 5MB limit, 100 files per site (configurable). SVG sanitization on upload. |
@@ -27,7 +27,7 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 | Config | `~/.config/famtastic/studio-config.json` | Model selection, deploy target/team, brainstorm profile, email/SMS credentials, upload limits (default 100), version limits, analytics, stock photo API keys (Unsplash/Pexels/Pixabay), `hero_full_width` (default true). Editable via Settings UI in Studio. |
 | CLI | Bash (`scripts/fam-hub`) | Unified CLI dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest` subcommands. |
 | Conversation State | JSONL | Per-site `conversation.jsonl` with rolling window truncation (500 messages, trims at 600+). |
-| Site State | JSON | `spec.json` (design brief, decisions, media specs, slot_mappings, deploy info) + `.studio.json` (session state, versions) + `blueprint.json` (per-page sections, components, layout notes). |
+| Site State | JSON | `spec.json` (design brief, decisions, media specs, slot_mappings, deploy info, last_verification) + `.studio.json` (session state, versions) + `blueprint.json` (per-page sections, components, layout notes). |
 | MCP | stdio JSON-RPC | `mcp-server/server.js` exposes site state to Claude Desktop/Code. 4 tools: `list_sites`, `get_site_state`, `get_session_summary`, `suggest_tech_stack`. |
 
 ---
@@ -60,9 +60,11 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
    - **Single-page edit without template:** `syncNavFromPage()`, `syncFooterFromPage()`, `ensureHeadDependencies()`
 7. `fixLayoutOverflow()` — injects STUDIO LAYOUT FOUNDATION CSS block (always runs, idempotent)
 
-**Step 6 — Images.** "Add images" → `fill_stock_photos` intent. Reads all `empty` slots from `media_specs`. Contextual queries: `"${businessName} ${industry} ${role}"`. Calls `scripts/stock-photo` per slot.
+**Step 6 — Build Verification.** `runBuildVerification(writtenPages)` runs 5 zero-token file-based checks automatically inside `finishParallelBuild()`. Results stored in `spec.last_verification`, sent to client via `verification-result` WS message. Failures trigger amber chat notification (`verification-warning` WS message).
 
-**Step 7 — Deploy.** "Deploy" → `runDeploy()` → `scripts/site-deploy`. Netlify deploy --prod. Updates `spec.json` with `deployed_url`, `deployed_at`, `deploy_provider`, `state: "deployed"`.
+**Step 7 — Images.** "Add images" → `fill_stock_photos` intent. Reads all `empty` slots from `media_specs`. Contextual queries: `"${businessName} ${industry} ${role}"`. Calls `scripts/stock-photo` per slot.
+
+**Step 8 — Deploy.** "Deploy" → `runDeploy()` → `scripts/site-deploy`. Netlify deploy --prod. Updates `spec.json` with `deployed_url`, `deployed_at`, `deploy_provider`, `state: "deployed"`.
 
 ---
 
@@ -114,6 +116,42 @@ Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage(
 
 **Guard Flags** — `templateSpawned` flag prevents double-build race between timeout handler and close handler.
 
+### Build Verification System (2026-03-30)
+
+**Phase 1 — File-Based (always-on, zero tokens).** Five functions run automatically inside `finishParallelBuild()` after every build:
+
+| Function | What it checks |
+|----------|----------------|
+| `verifySlotAttributes(pages)` | Every `<img>` has `data-slot-id`, `data-slot-status`, `data-slot-role` |
+| `verifyCssCoherence()` | `assets/styles.css` exists, ≥50 lines, STUDIO LAYOUT FOUNDATION present exactly once, `:root` with CSS vars, `main` with 90% max-width |
+| `verifyCrossPageConsistency(pages)` | Nav and footer HTML match across all pages; Google Fonts URL consistent |
+| `verifyHeadDependencies(pages)` | Tailwind CDN, `assets/styles.css` link, Google Fonts present in every page's `<head>` |
+| `verifyLogoAndLayout(pages)` | `data-logo-v` in nav, no legacy placeholder paths (`via.placeholder.com`, `placehold.it`), `<main>` exists on every page |
+
+`runBuildVerification(pages)` orchestrates all five, computes `overallStatus` (failed > warned > passed), stores in `spec.last_verification`, sends `verification-result` WS message. Failed builds also send `verification-warning` amber chat notification.
+
+**Phase 2 — Browser-Based (on-demand, costs tokens).** Five Claude Code agent definitions in `~/.claude/agents/`:
+
+| Agent | What it checks |
+|-------|----------------|
+| `famtastic-visual-layout.md` | Header/footer viewport width, hero visibility, content centering, overflow |
+| `famtastic-console-health.md` | JS console errors, 404 network failures |
+| `famtastic-mobile-responsive.md` | Layout at 375px / 768px / 1280px viewports |
+| `famtastic-accessibility.md` | Alt text, heading hierarchy, contrast, form labels |
+| `famtastic-performance.md` | Request count, render-blocking resources, asset sizes |
+
+Triggered manually — ask Claude Code to run a visual audit. Requires Chrome DevTools MCP. Deliberate cost gate: browser-based checks are most useful for pre-deploy final reviews, not every iterative edit.
+
+**API Endpoints:**
+- `GET /api/verify` — returns `spec.last_verification` (or 404 if no verification yet)
+- `POST /api/verify` — triggers a manual `runBuildVerification(listPages())` and saves result
+- `POST /api/visual-verify` — returns agent readiness info (agent list, Chrome DevTools status)
+
+**Studio UI:**
+- Verification pill in preview toolbar (green Verified / yellow Warnings / red N Issues / gray Unchecked). Clicking opens Verify tab.
+- Verify tab (8th sidebar tab) — overall status badge, collapsible check sections with pass/fail/warn counts, Run Verification button, View in Browser button (opens Phase 2 prompt-copy modal).
+- Amber chat notification on build failure with issue count.
+
 ### Multi-Page Sites
 
 **Parallel Build** — All pages build in true parallel (no index-first serialization). Template-first path provides template context; legacy path provides `sharedRules`.
@@ -150,19 +188,21 @@ Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage(
 
 **Layout** — Three-panel: chat (left), live preview iframe (center), studio sidebar (right). Mobile responsive below 1024px.
 
-**Preview Toolbar** — Page tabs, responsive preview toggle (Mobile 375px / Tablet 768px / Desktop), Slots toggle, Rescan button.
+**Preview Toolbar** — Page tabs, responsive preview toggle (Mobile 375px / Tablet 768px / Desktop), Slots toggle, Rescan button, verification pill indicator (green/yellow/red/gray).
 
-**Studio Sidebar Tabs** — Six tabs: Assets, Blueprint, Deploy, Design, History, Metrics.
+**Studio Sidebar Tabs** — Eight tabs: Assets, Blueprint, Deploy, Design, History, Metrics, Verify, Server.
 
 **Brand Health Metrics Dashboard** — Slot coverage %, upload usage, orphaned mappings, empty slots, key slots, image sets, social/meta, font icons.
 
-**Project Picker** — Header dropdown. `POST /api/switch-site` / `POST /api/new-site`.
+**Project Picker** — Header dropdown. `POST /api/switch-site` / `POST /api/new-site`. Both handlers are `async` with `await endSession()` before TAG change to prevent session summaries writing to the wrong site.
 
 **Settings Modal** — Model, deploy target/team, email/SMS, stock photo API keys, upload limits, version limits, analytics, hero_full_width toggle.
 
 **Upload Modal** — Drag-drop, clipboard paste, file picker. Role selector + slot targeting.
 
 **WebSocket Reconnect** — Exponential backoff (2s → 30s cap) + red banner.
+
+**WebSocket Message Guard** — Client-side `ws.onmessage` wraps `JSON.parse()` in try/catch — malformed messages are silently dropped rather than crashing the message loop.
 
 ### Intelligence Features
 
@@ -202,7 +242,7 @@ Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage(
 
 **Hub Repo** — `~/famtastic/` is pure tooling (sites/ in .gitignore). "Push Studio Code" button in Server tab pushes tooling changes via `pushHubRepo()`.
 
-**Share** — `POST /api/share`. Email (nodemailer), Text (macOS `sms:` URI), Copy Link.
+**Share** — `POST /api/share`. Email (nodemailer), Text (macOS `sms:` URI), Copy Link. `shareSite()` reads deployed URL from `deployInfoCache` (not from a DOM element).
 
 **Domain Helper** — `scripts/site-domain`. DNS record output for GoDaddy.
 
@@ -234,6 +274,17 @@ Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage(
 | `final` slot status unused | Tier 4 | Defined but no automated flow transitions slots to it. |
 | `claude --print` is text-only | Tier 4 | Cannot pass uploaded images for vision analysis. |
 | Platform dashboard deferred | Tier 4 | No multi-site management UI beyond CLI. |
+| Remaining code review items | Tier 2 | 12 high/medium/low issues from deep code review deferred — get their own session after verification system is confirmed working. |
+
+### Recently Closed (2026-03-30, Build Verification + Critical Bugs + OpenWolf Cleanup)
+
+- **Build Verification System** — Phase 1 (5 file-based checks, always-on) + Phase 2 (5 browser-based Claude Code agents, on-demand). Verify tab (8th sidebar tab), toolbar pill indicator.
+- **Duplicate ws.on('close') handlers** — `activeClientCount` went negative after 2+ connect/disconnect cycles. Merged into single async handler.
+- **endSession() not awaited on site switch** — session summaries wrote to wrong site's directory. Both /api/switch-site and /api/new-site now async with await.
+- **ws.onmessage JSON.parse unguarded** — malformed server message crashed entire message loop. Wrapped in try/catch.
+- **shareSite() read from hidden DOM element** — always showed "not deployed." Now reads from deployInfoCache.
+- **OpenWolf CLAUDE.md overwrite** — OpenWolf had replaced ~/famtastic/CLAUDE.md with a 2-line redirect. Full FAMtastic rules restored with OpenWolf reference section at bottom.
+- **OpenWolf ephemeral git pollution** — 17 .wolf/ files were tracked that should be local-only. .gitignore updated; files untracked.
 
 ### Recently Closed (2026-03-27, Per-Site Repo Architecture)
 
@@ -315,6 +366,10 @@ All 34 findings closed: spec.json race condition, Claude CLI hang, security hard
 
 `openwolf@1.0.4` — token-conscious session tracking. Initialized in `~/famtastic/`. Creates `.wolf/` directory. Protocol: check `anatomy.md` before reading files, update `cerebrum.md` on new learnings, log to `memory.md` after significant actions, log bugs to `buglog.json`.
 
+Three intelligence files are tracked in git: `anatomy.md`, `cerebrum.md`, `buglog.json`. Ephemeral files are excluded (added 2026-03-30): `token-ledger.json`, `memory.md`, `hooks/`, `config.json`, `*.log`.
+
+**Important:** OpenWolf had overwritten `~/famtastic/CLAUDE.md` with a 2-line redirect. Restored 2026-03-30 — now contains full FAMtastic rules with OpenWolf reference section at the bottom.
+
 ### Agent Teams (Experimental)
 
 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` enabled. Requires new session to activate.
@@ -363,12 +418,23 @@ Prove the system produces meaningfully different sites to validate anti-cookie-c
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `site-studio/server.js` | ~6,561 | Main backend. Express + WebSocket. Request classifier, prompt builder (returns resolvedPage + templateContext), template-first build system, layout containment (fixLayoutOverflow), blueprint system, CSS extraction, lifecycle integrity, multi-provider image system, post-build pipeline (6 steps), safeSettings() redaction, multi-tab session guard, deadlock prevention. spawnClaude calls claude directly from os.tmpdir(). |
-| `site-studio/public/index.html` | ~4,176 | Single-file frontend. Chat, preview iframe, studio sidebar (6 tabs), settings modal, upload modal, project picker, QSF panel with stock search grid and slot detail bar. |
+| `site-studio/server.js` | ~6,830 | Main backend. Express + WebSocket. Request classifier, prompt builder (returns resolvedPage + templateContext), template-first build system, layout containment (fixLayoutOverflow), build verification system (5 file-based checks), blueprint system, CSS extraction, lifecycle integrity, multi-provider image system, post-build pipeline (6 steps + verification), safeSettings() redaction, multi-tab session guard, deadlock prevention. spawnClaude calls claude directly from os.tmpdir(). |
+| `site-studio/public/index.html` | ~4,320 | Single-file frontend. Chat, preview iframe, studio sidebar (8 tabs), settings modal, upload modal, project picker, QSF panel with stock search grid and slot detail bar. Verify tab with collapsible checks. Verification pill in toolbar. ws.onmessage JSON.parse guard. |
 | `site-studio/package.json` | 24 | Dependencies: express, ws, multer, nodemailer, twilio, @vonage/server-sdk. Dev: vitest. |
 | `site-studio/tests/unit.test.js` | ~458 | 56 unit tests: isValidPageName (4), sanitizeSvg (9), extractSlotsFromPage (4), classifyRequest (15+4 edge), extractBrandColors (3), labelToFilename (5), truncateAssistantMessage (5), ensureHeadDependencies (1), extractTemplateComponents (4). |
 | `site-studio/vitest.config.js` | 7 | Vitest ESM configuration. |
 | `mcp-server/server.js` | 343 | MCP server. 4 tools via stdio JSON-RPC. |
+
+### Key Functions (2026-03-30, Build Verification)
+
+| Function | File | Purpose |
+|----------|------|---------|
+| `verifySlotAttributes(pages)` | server.js | Checks all imgs for data-slot-id/status/role attrs |
+| `verifyCssCoherence()` | server.js | Validates styles.css: exists, ≥50 lines, STUDIO LAYOUT FOUNDATION once, :root CSS vars, main 90% |
+| `verifyCrossPageConsistency(pages)` | server.js | Nav/footer match across pages, Google Fonts URL consistent |
+| `verifyHeadDependencies(pages)` | server.js | Tailwind CDN, assets/styles.css link, Google Fonts present per page |
+| `verifyLogoAndLayout(pages)` | server.js | data-logo-v in nav, no legacy placeholder paths, main element exists |
+| `runBuildVerification(pages)` | server.js | Runs all 5 checks, returns { status, checks, issues, timestamp }, saves to spec.last_verification |
 
 ### Key Functions (2026-03-27, Per-Site Repo)
 
@@ -422,21 +488,33 @@ Prove the system produces meaningfully different sites to validate anti-cookie-c
 | `scripts/stock-photo` | ~105 | 3-provider stock photo downloader (Unsplash → Pexels → Pixabay). |
 | `scripts/claude-cli` | 12 | Claude CLI wrapper (bypassed by spawnClaude — kept for manual use). |
 
-### OpenWolf Files
+### Claude Code Agents (Phase 2 Visual Verification)
 
 | File | Purpose |
 |------|---------|
-| `.wolf/anatomy.md` | Project file index with token estimates |
-| `.wolf/cerebrum.md` | Patterns, preferences, do-not-repeat rules |
-| `.wolf/memory.md` | Per-session action log |
-| `.wolf/buglog.json` | Bug tracking across sessions |
-| `.wolf/config.json` | OpenWolf configuration |
+| `~/.claude/agents/famtastic-visual-layout.md` | Visual layout verifier — header width, hero visibility, content centering, overflow |
+| `~/.claude/agents/famtastic-console-health.md` | Console errors + 404 checker |
+| `~/.claude/agents/famtastic-mobile-responsive.md` | Responsive layout at 375/768/1280px |
+| `~/.claude/agents/famtastic-accessibility.md` | Alt text, heading hierarchy, contrast, labels |
+| `~/.claude/agents/famtastic-performance.md` | Request count, blocking resources, asset sizes |
+
+### OpenWolf Files
+
+| File | Git | Purpose |
+|------|-----|---------|
+| `.wolf/anatomy.md` | tracked | Project file index with token estimates |
+| `.wolf/cerebrum.md` | tracked | Patterns, preferences, do-not-repeat rules |
+| `.wolf/buglog.json` | tracked | Bug tracking across sessions |
+| `.wolf/memory.md` | ignored | Per-session action log (ephemeral) |
+| `.wolf/token-ledger.json` | ignored | Token usage ledger (ephemeral) |
+| `.wolf/hooks/` | ignored | OpenWolf hooks (ephemeral) |
+| `.wolf/config.json` | ignored | OpenWolf configuration (local) |
 
 ### Per-Site Files
 
 | File | Purpose |
 |------|---------|
-| `sites/<tag>/spec.json` | Site spec: `design_brief`, `design_decisions`, `media_specs`, `uploaded_assets`, `slot_mappings`, `deployed_url`, `netlify_site_id`, `data_model`. |
+| `sites/<tag>/spec.json` | Site spec: `design_brief`, `design_decisions`, `media_specs`, `uploaded_assets`, `slot_mappings`, `last_verification`, `deployed_url`, `netlify_site_id`, `data_model`. |
 | `sites/<tag>/blueprint.json` | Per-page sections, components, layout notes. |
 | `sites/<tag>/build-metrics.jsonl` | One object per build. |
 | `sites/<tag>/.studio.json` | Session state, version metadata. |

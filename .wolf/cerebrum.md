@@ -120,3 +120,9 @@
 - With `--tools ""` active, those instructions (especially OpenWolf "check anatomy.md") cause empty output
 - Fix: set cwd to os.tmpdir() so no CLAUDE.md is found
 - Also: scripts/claude-cli wrapper fails with relative paths when cwd != HUB_ROOT — bypass it entirely
+
+### 2026-03-27 — Studio code push UX needs rethinking
+- Currently "Push Studio Code" in Server tab does a quick git add/commit/push of the famtastic hub repo
+- But proper commits with meaningful messages should go through CLI
+- Future: Studio should be able to manage its own code changes with commit message prompts, possibly a dedicated "Studio Updates" panel or integration with the existing git flow
+- The separation of site repo vs hub repo pushes needs clearer UX — users shouldn't have to think about which repo they're pushing to
