@@ -8,7 +8,7 @@ FAMtastic (adj.): Fearless deviation from established norms with a bold and unap
 - Commit messages should read as if a human developer wrote them — clean, professional, no attribution.
 
 ## SITE-LEARNINGS.md
-- A `SITE-LEARNINGS.md` file is maintained at `~/SITE-LEARNINGS.md` (outside any repo) to capture architecture notes, lessons learned, and ecosystem-level context.
+- A `SITE-LEARNINGS.md` file is maintained at `~/famtastic/SITE-LEARNINGS.md` (tracked in the repo) to capture architecture notes, lessons learned, and ecosystem-level context.
 - When meaningful discoveries, patterns, or decisions are made, update the SITE-LEARNINGS file.
 
 ## FAMtastic Ecosystem

@@ -1633,6 +1633,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-03-30T23:06:53.859Z"
+    },
+    {
+      "id": "bug-103",
+      "timestamp": "2026-03-30T23:39:59.844Z",
+      "error_message": "Incorrect value in code",
+      "file": "CLAUDE.md",
+      "root_cause": "Had `~/SITE-LEARNINGS.md`",
+      "fix": "Changed to `~/famtastic/SITE-LEARNINGS.md`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-30T23:40:19.264Z"
+    },
+    {
+      "id": "bug-104",
+      "timestamp": "2026-03-30T23:40:32.676Z",
+      "error_message": "Incorrect value in code",
+      "file": "FAMtastic-Web-Context.md",
+      "root_cause": "Had `~/SITE-LEARNINGS.md`",
+      "fix": "Changed to `SITE-LEARNINGS.md`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-30T23:40:36.469Z"
     }
   ]
 }

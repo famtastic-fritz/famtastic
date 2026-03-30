@@ -1,10 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-03-30T23:16:48.706Z
-> Files: 279 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-03-30T23:40:36.462Z
+> Files: 280 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
+- `CLAUDE.md` — FAMtastic Global Rules (~1766 tok)
 - `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~21700 tok)
 
 ## ../.claude/
@@ -33,9 +34,9 @@
 - `.gitignore` — Git ignore rules (~96 tok)
 - `.mcp.json` (~47 tok)
 - `CHANGELOG.md` — FAMtastic Changelog (~4484 tok)
-- `CLAUDE.md` — FAMtastic Global Rules (~1882 tok)
+- `CLAUDE.md` — FAMtastic Global Rules (~1885 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~9501 tok)
-- `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6348 tok)
+- `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6354 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
 

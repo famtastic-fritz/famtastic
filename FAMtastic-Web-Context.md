@@ -370,7 +370,7 @@ Ideas flow through `ideas/` directory stages: `ideas/captured/`, `ideas/triaged/
 | `site-studio/tests/unit.test.js` | 56 unit tests (vitest) |
 | `cli/idea/*.py` | 7 Python CLIs for idea lifecycle |
 | `~/.config/famtastic/studio-config.json` | Settings — model, deploy, email, SMS, limits |
-| `~/SITE-LEARNINGS.md` | Full architecture docs and learnings log |
+| `SITE-LEARNINGS.md` | Full architecture docs and learnings log (tracked in repo) |
 | `~/CLAUDE.md` | Global rules (commit policy, ecosystem layout, documentation rules) |
 
 ---
@@ -409,7 +409,7 @@ Key working preferences:
 - One thing at a time — implement and verify before moving to the next
 - Commits must never reference AI — clean, professional, human-readable
 - Documentation is part of the work, not separate from it
-- `SITE-LEARNINGS.md` at `~/SITE-LEARNINGS.md` is the system's memory — must always reflect reality
+- `SITE-LEARNINGS.md` at `~/famtastic/SITE-LEARNINGS.md` is the system's memory — must always reflect reality
 - `CHANGELOG.md` at `~/famtastic/CHANGELOG.md` gets a session summary entry at end of every session
 
 ---
