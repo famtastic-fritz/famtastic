@@ -2711,7 +2711,7 @@ app.delete('/api/projects/:tag', (req, res) => {
   res.json({ success: true, tag });
 });
 
-app.post('/api/switch-site', (req, res) => {
+app.post('/api/switch-site', async (req, res) => {
   const newTag = req.body.tag;
   if (!newTag) return res.status(400).json({ error: 'tag required' });
   const newSiteDir = path.join(SITES_ROOT, newTag);
@@ -2719,8 +2719,8 @@ app.post('/api/switch-site', (req, res) => {
     return res.status(404).json({ error: `Site "${newTag}" not found` });
   }
 
-  // End current session
-  endSession();
+  // End current session — must await so summary writes to the current site, not the new one
+  await endSession();
 
   // Switch
   TAG = newTag;
@@ -2750,7 +2750,7 @@ app.post('/api/switch-site', (req, res) => {
   res.json({ success: true, tag: TAG, pages, currentPage });
 });
 
-app.post('/api/new-site', (req, res) => {
+app.post('/api/new-site', async (req, res) => {
   let newTag = req.body.tag;
   if (!newTag) return res.status(400).json({ error: 'tag required' });
   // Sanitize: lowercase, replace spaces/special chars with hyphens
@@ -2775,8 +2775,8 @@ app.post('/api/new-site', (req, res) => {
   };
   fs.writeFileSync(path.join(newSiteDir, 'spec.json'), JSON.stringify(spec, null, 2));
 
-  // Switch to the new site
-  endSession();
+  // Switch to the new site — await so summary writes to the old site directory
+  await endSession();
   TAG = newTag;
   writeLastSite(TAG);
   invalidateSpecCache();
@@ -5058,7 +5058,7 @@ wss.on('connection', (ws) => {
     startSession();
   }
 
-  ws.on('close', () => {
+  ws.on('close', async () => {
     activeClientCount = Math.max(0, activeClientCount - 1);
     console.log(`[studio] Client disconnected (${activeClientCount} active)`);
     // Reset build lock if client disconnects mid-build to prevent permanent deadlock
@@ -5066,6 +5066,7 @@ wss.on('connection', (ws) => {
       console.warn('[studio] Client disconnected during build — releasing buildInProgress lock');
       buildInProgress = false;
     }
+    await endSession(ws);
   });
 
   ws.on('message', async (data) => {
@@ -5587,11 +5588,8 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.on('close', async () => {
-    console.log('[studio] Client disconnected');
-    await endSession(ws);
-  });
 });
+
 
 // --- Query handler (list assets, templates, preview) ---
 function handleQuery(ws, userMessage) {

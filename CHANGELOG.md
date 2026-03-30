@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-30 — Fix 4 critical bugs from deep code review
+
+Fixed duplicate ws.on('close') handlers (activeClientCount decremented twice, going negative after two connect/disconnect cycles). Fixed endSession() not awaited on site switch and new-site — session summaries were writing to the wrong site directory. Added JSON.parse guard to client ws.onmessage — malformed server messages no longer crash the entire message loop. Fixed shareSite() reading from a permanently hidden DOM element — now reads deployed URL from deployInfoCache. 56 tests pass.
+
 ## 2026-03-30 — Clean up OpenWolf git pollution, restore CLAUDE.md
 
 Restored ~/famtastic/CLAUDE.md which OpenWolf had overwritten with a 2-line redirect to .wolf/OPENWOLF.md. Full FAMtastic rules (commit policy, documentation rules, ecosystem layout) restored from ~/CLAUDE.md, with a clean OpenWolf reference section at the bottom. Updated .gitignore to exclude ephemeral .wolf/ files (token-ledger.json, memory.md, hooks/, config.json, *.log) while keeping the three intelligence files tracked (anatomy.md, cerebrum.md, buglog.json). Untracked 17 previously committed .wolf/ files that should have been local-only. 56 tests pass.

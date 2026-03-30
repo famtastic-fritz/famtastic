@@ -875,7 +875,8 @@
         wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000); // backoff: 2s → 4s → 8s → ... → 30s cap
       };
       ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
+        let msg;
+        try { msg = JSON.parse(event.data); } catch { return; }
         switch (msg.type) {
           case 'assistant':
             flushStream();
@@ -1811,16 +1812,16 @@
 
     // --- Share Site ---
     function shareSite(method) {
-      const urlEl = document.getElementById('studio-live-url');
-      const link = urlEl?.querySelector('a');
-      const siteUrl = link?.href;
+      // Read deployed URL from cache — production takes priority over staging
+      const siteUrl = (deployInfoCache.production && deployInfoCache.production.url)
+        || (deployInfoCache.staging && deployInfoCache.staging.url);
 
       if (!siteUrl) {
         addMessage('error', 'Site is not deployed yet. Deploy first, then share.');
         return;
       }
 
-      const siteName = document.getElementById('project-current-name')?.textContent || 'my site';
+      const siteName = config.tag ? config.tag.replace('site-', '').replace(/-/g, ' ') : 'my site';
 
       if (method === 'copy') {
         navigator.clipboard.writeText(siteUrl).then(() => {
