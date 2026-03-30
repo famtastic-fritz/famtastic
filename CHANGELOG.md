@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-30 — Build Verification System (Phase 1 + Phase 2)
+
+Two-phase verification system for automated quality assurance of built sites. Phase 1 adds five zero-token, zero-latency file-based checks that run automatically after every build: verifySlotAttributes (img data-slot attributes), verifyCssCoherence (styles.css structure + layout foundation), verifyCrossPageConsistency (nav/footer/font uniformity), verifyHeadDependencies (Tailwind CDN, styles.css link, Google Fonts), verifyLogoAndLayout (data-logo-v, legacy placeholders, main element). Results stored in spec.last_verification, sent to client as verification-result WS message. Studio UI additions: verification pill indicator in preview toolbar (green/yellow/red/gray), Verify tab in sidebar with collapsible check sections, amber chat notification on failures, View in Browser button for Phase 2. API endpoints: GET /api/verify (read last result), POST /api/verify (trigger manual run), POST /api/visual-verify (agent readiness check). Phase 2 adds five Claude Code agent definitions for on-demand browser-based visual verification: visual-layout, console-health, mobile-responsive, accessibility, performance. These are deliberately on-demand (cost tokens, require browser) vs Phase 1's always-on file checks. 56 tests pass.
+
 ## 2026-03-30 — Fix 4 critical bugs from deep code review
 
 Fixed duplicate ws.on('close') handlers (activeClientCount decremented twice, going negative after two connect/disconnect cycles). Fixed endSession() not awaited on site switch and new-site — session summaries were writing to the wrong site directory. Added JSON.parse guard to client ws.onmessage — malformed server messages no longer crash the entire message loop. Fixed shareSite() reading from a permanently hidden DOM element — now reads deployed URL from deployInfoCache. 56 tests pass.

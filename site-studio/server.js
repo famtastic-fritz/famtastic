@@ -3420,6 +3420,41 @@ app.get('/api/build-metrics', (req, res) => {
   } catch { res.json([]); }
 });
 
+// --- Verification API ---
+app.get('/api/verify', (req, res) => {
+  const spec = readSpec();
+  res.json(spec.last_verification || null);
+});
+
+app.post('/api/verify', (req, res) => {
+  const pages = listPages();
+  if (pages.length === 0) return res.json({ status: 'failed', checks: [], issues: ['No pages found'], timestamp: new Date().toISOString() });
+  const result = runBuildVerification(pages);
+  try {
+    const spec = readSpec();
+    spec.last_verification = result;
+    writeSpec(spec);
+  } catch {}
+  res.json(result);
+});
+
+app.post('/api/visual-verify', (req, res) => {
+  const pages = listPages();
+  res.json({
+    ready: true,
+    pages,
+    previewUrl: 'http://localhost:3333',
+    agents: [
+      'famtastic-visual-layout',
+      'famtastic-console-health',
+      'famtastic-mobile-responsive',
+      'famtastic-accessibility',
+      'famtastic-performance'
+    ],
+    prompt: 'Run a full visual audit of the current FAMtastic site at http://localhost:3333'
+  });
+});
+
 app.get('/api/settings', (req, res) => {
   const settings = loadSettings();
   // Redact sensitive values — only expose whether keys are configured
@@ -4537,6 +4572,223 @@ function runPostProcessing(ws, writtenPages, options = {}) {
   fixLayoutOverflow(ws);
 }
 
+// --- Build Verification System (Phase 1) ---
+// Zero-token, zero-latency file-based verification that runs after every build.
+
+function verifySlotAttributes(pages) {
+  const issues = [];
+  let totalSlots = 0;
+  const transparentPixel = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+  for (const page of pages) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+    const imgTags = html.match(/<img[^>]*>/gi) || [];
+
+    for (const img of imgTags) {
+      totalSlots++;
+      const hasSlotId = /data-slot-id\s*=/.test(img);
+      const hasSlotStatus = /data-slot-status\s*=/.test(img);
+      const hasSlotRole = /data-slot-role\s*=/.test(img);
+
+      if (!hasSlotId || !hasSlotStatus || !hasSlotRole) {
+        const missing = [];
+        if (!hasSlotId) missing.push('data-slot-id');
+        if (!hasSlotStatus) missing.push('data-slot-status');
+        if (!hasSlotRole) missing.push('data-slot-role');
+        issues.push(`${page}: img missing ${missing.join(', ')}`);
+      }
+
+      const statusMatch = img.match(/data-slot-status\s*=\s*["']([^"']+)["']/);
+      const srcMatch = img.match(/src\s*=\s*["']([^"']+)["']/);
+      if (statusMatch && srcMatch) {
+        const status = statusMatch[1];
+        const src = srcMatch[1];
+        if (status === 'empty' && src && !src.startsWith('data:image/')) {
+          issues.push(`${page}: slot marked empty but has real src: ${src.substring(0, 60)}`);
+        }
+        if ((status === 'stock' || status === 'uploaded') && src && src.startsWith('data:image/')) {
+          issues.push(`${page}: slot marked ${status} but src is a data URI (transparent pixel)`);
+        }
+      }
+    }
+  }
+
+  const status = issues.length > 0 ? 'failed' : 'passed';
+  return { check: 'slot-attributes', status, issues, slotsChecked: totalSlots };
+}
+
+function verifyCssCoherence() {
+  const issues = [];
+  const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+
+  if (!fs.existsSync(cssPath)) {
+    return { check: 'css-coherence', status: 'failed', issues: ['styles.css not found'] };
+  }
+
+  const css = fs.readFileSync(cssPath, 'utf8');
+  const lines = css.split('\n');
+
+  if (lines.length < 50) {
+    issues.push(`styles.css is thin (${lines.length} lines)`);
+  }
+
+  const foundationCount = (css.match(/STUDIO LAYOUT FOUNDATION/g) || []).length;
+  if (foundationCount === 0) {
+    issues.push('layout foundation missing');
+  } else if (foundationCount > 2) {
+    // 2 is expected (start + end markers), more means duplication
+    issues.push(`layout foundation duplicated (found ${foundationCount} marker occurrences)`);
+  }
+
+  if (!/:root\s*\{/.test(css)) {
+    issues.push(':root block missing');
+  } else {
+    if (!css.includes('--color-primary')) issues.push('--color-primary missing from :root');
+    if (!css.includes('--color-accent')) issues.push('--color-accent missing from :root');
+    if (!css.includes('--color-bg')) issues.push('--color-bg missing from :root');
+  }
+
+  if (!/main\s*\{\s*[^}]*max-width:\s*90%/.test(css) && !/main\s*\{[^}]*max-width:\s*90%/.test(css)) {
+    issues.push('main max-width 90% constraint missing');
+  }
+
+  const hasFailure = issues.some(i => !i.includes('thin') && !i.includes('missing from :root'));
+  const status = issues.length === 0 ? 'passed' : hasFailure ? 'failed' : 'warned';
+  return { check: 'css-coherence', status, issues };
+}
+
+function verifyCrossPageConsistency(pages) {
+  const issues = [];
+  if (pages.length <= 1) return { check: 'cross-page-consistency', status: 'passed', issues: [] };
+
+  const navs = {};
+  const footers = {};
+  const fontUrls = {};
+
+  for (const page of pages) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+
+    const navMatch = html.match(/<nav[\s\S]*?<\/nav>/i);
+    navs[page] = navMatch ? navMatch[0] : null;
+
+    const footerMatch = html.match(/<footer[\s\S]*?<\/footer>/i);
+    footers[page] = footerMatch ? footerMatch[0] : null;
+
+    const fontMatch = html.match(/<link[^>]*href=["']([^"']*fonts\.googleapis\.com[^"']*)["'][^>]*>/i);
+    fontUrls[page] = fontMatch ? fontMatch[1] : null;
+  }
+
+  const pageList = Object.keys(navs);
+  const refPage = pageList[0];
+
+  // Check nav consistency
+  for (const page of pageList) {
+    if (!navs[page]) {
+      issues.push(`${page}: missing <nav> element`);
+    } else if (navs[page] !== navs[refPage]) {
+      issues.push(`${page}: nav differs from ${refPage}`);
+    }
+  }
+
+  // Check footer consistency
+  for (const page of pageList) {
+    if (!footers[page]) {
+      issues.push(`${page}: missing <footer> element`);
+    } else if (footers[page] !== footers[refPage]) {
+      issues.push(`${page}: footer differs from ${refPage}`);
+    }
+  }
+
+  // Check font URL consistency
+  const refFont = fontUrls[refPage];
+  for (const page of pageList) {
+    if (fontUrls[page] && refFont && fontUrls[page] !== refFont) {
+      issues.push(`${page}: Google Fonts URL differs from ${refPage}`);
+    }
+  }
+
+  const hasNavFooterIssue = issues.some(i => i.includes('missing <nav>') || i.includes('missing <footer>') || i.includes('differs from'));
+  const hasFontOnly = issues.length > 0 && issues.every(i => i.includes('Google Fonts'));
+  const status = issues.length === 0 ? 'passed' : hasFontOnly ? 'warned' : 'failed';
+  return { check: 'cross-page-consistency', status, issues };
+}
+
+function verifyHeadDependencies(pages) {
+  const issues = [];
+
+  for (const page of pages) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+
+    if (!html.includes('cdn.tailwindcss.com')) {
+      issues.push(`${page}: missing Tailwind CDN script`);
+    }
+    if (!html.includes('assets/styles.css')) {
+      issues.push(`${page}: missing assets/styles.css link`);
+    }
+    if (!html.includes('fonts.googleapis.com')) {
+      issues.push(`${page}: missing Google Fonts link`);
+    }
+  }
+
+  const status = issues.length === 0 ? 'passed' : 'failed';
+  return { check: 'head-dependencies', status, issues };
+}
+
+function verifyLogoAndLayout(pages) {
+  const issues = [];
+
+  for (const page of pages) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+
+    // Check nav has data-logo-v
+    const navMatch = html.match(/<nav[\s\S]*?<\/nav>/i);
+    if (navMatch && !/data-logo-v/.test(navMatch[0])) {
+      issues.push(`${page}: nav missing data-logo-v attribute`);
+    }
+
+    // Check for legacy placeholder paths
+    if (/src=["'][^"']*assets\/placeholders\//.test(html)) {
+      issues.push(`${page}: legacy placeholder path found (assets/placeholders/)`);
+    }
+
+    // Check <main> exists
+    if (!/<main[\s>]/i.test(html)) {
+      issues.push(`${page}: missing <main> element`);
+    }
+  }
+
+  const hasFailure = issues.some(i => i.includes('missing <main>') || i.includes('data-logo-v'));
+  const hasWarnOnly = issues.length > 0 && issues.every(i => i.includes('placeholder'));
+  const status = issues.length === 0 ? 'passed' : hasWarnOnly ? 'warned' : 'failed';
+  return { check: 'logo-and-layout', status, issues };
+}
+
+function runBuildVerification(pages) {
+  const checks = [
+    verifySlotAttributes(pages),
+    verifyCssCoherence(),
+    verifyCrossPageConsistency(pages),
+    verifyHeadDependencies(pages),
+    verifyLogoAndLayout(pages)
+  ];
+
+  const overallStatus = checks.some(c => c.status === 'failed') ? 'failed'
+    : checks.some(c => c.status === 'warned') ? 'warned'
+    : 'passed';
+
+  const allIssues = checks.flatMap(c => c.issues);
+
+  return { status: overallStatus, checks, issues: allIssues, timestamp: new Date().toISOString() };
+}
+
 function finishParallelBuild(ws, writtenPages, startTime, spec) {
   const elapsed = Math.round((Date.now() - startTime) / 1000);
 
@@ -4559,6 +4811,22 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
     const metricsFile = path.join(SITE_DIR(), 'build-metrics.jsonl');
     fs.appendFileSync(metricsFile, JSON.stringify(buildMetrics) + '\n');
   } catch {}
+
+  // Run build verification
+  ws.send(JSON.stringify({ type: 'status', content: 'Verifying build...' }));
+  const verification = runBuildVerification(writtenPages);
+  try {
+    const vSpec = readSpec();
+    vSpec.last_verification = verification;
+    writeSpec(vSpec);
+  } catch {}
+  ws.send(JSON.stringify({ type: 'verification-result', ...verification }));
+
+  // Notify chat only on failures
+  if (verification.status === 'failed') {
+    const issueCount = verification.issues.length;
+    ws.send(JSON.stringify({ type: 'verification-warning', content: `Build complete — ${issueCount} verification issue${issueCount !== 1 ? 's' : ''} found. Check the Verify tab for details.` }));
+  }
 
   const msg = `Site built! ${writtenPages.length} pages in ${elapsed}s: ${writtenPages.join(', ')}`;
   ws.send(JSON.stringify({ type: 'assistant', content: msg }));
@@ -6499,6 +6767,9 @@ module.exports = {
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
   extractTemplateComponents, loadTemplateContext, applyTemplateToPages, writeTemplateArtifacts,
+  // Verification
+  verifySlotAttributes, verifyCssCoherence, verifyCrossPageConsistency,
+  verifyHeadDependencies, verifyLogoAndLayout, runBuildVerification,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };
