@@ -137,8 +137,21 @@ identifiable in the git history separately from code changes. Example:
 This project uses OpenWolf (`.wolf/`) for cross-session context management.
 Three files are tracked in git as project intelligence:
 
-- `.wolf/anatomy.md` — file descriptions and token estimates (check before reading files)
-- `.wolf/cerebrum.md` — learnings, preferences, do-not-repeat list (check before generating code)
-- `.wolf/buglog.json` — bug history with root causes and fixes
+- `.wolf/anatomy.md` — file inventory with token estimates. Check this BEFORE
+  reading any file so you know where things live and can give accurate estimates
+  without searching.
+- `.wolf/cerebrum.md` — accumulated learnings, architectural decisions, and
+  do-not-repeat rules captured across sessions. Check this BEFORE generating
+  any code to avoid repeating past mistakes and to honor standing constraints.
+- `.wolf/buglog.json` — bug history with root causes and fixes. Check this
+  BEFORE debugging any issue to see if the same problem has been solved before.
+
+**Mandatory session-start protocol:** Before beginning ANY work in a session —
+before reading files, before writing code, before making recommendations —
+read all three files above in the order listed. They are not optional background
+reading. They are prerequisites. The cerebrum.md do-not-repeat rules and
+decision log represent hard-won knowledge from debugging sessions and
+architectural investigations. Violating them means repeating work that has
+already been done and mistakes that have already been fixed.
 
 See `.wolf/OPENWOLF.md` for the full operating protocol.
