@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-30 — Clean up OpenWolf git pollution, restore CLAUDE.md
+
+Restored ~/famtastic/CLAUDE.md which OpenWolf had overwritten with a 2-line redirect to .wolf/OPENWOLF.md. Full FAMtastic rules (commit policy, documentation rules, ecosystem layout) restored from ~/CLAUDE.md, with a clean OpenWolf reference section at the bottom. Updated .gitignore to exclude ephemeral .wolf/ files (token-ledger.json, memory.md, hooks/, config.json, *.log) while keeping the three intelligence files tracked (anatomy.md, cerebrum.md, buglog.json). Untracked 17 previously committed .wolf/ files that should have been local-only. 56 tests pass.
+
 ## 2026-03-27 — Per-site repo architecture with dev/staging/main branches
 
 Major restructure: famtastic repo is now pure tooling (sites/ in .gitignore, removed from tracking). Each site gets its own repo at ~/famtastic-sites/<tag>/ with dev/staging/main branches. Push to Repo commits to dev, Deploy to Staging merges dev→staging, Deploy to Production merges staging→main. createSiteRepo replaces createProdRepo — auto-created on first build with scaffold files (CLAUDE.md, SITE-LEARNINGS.md, README.md). syncSiteRepo replaces syncProdRepo with branch-aware merges + git merge --abort on conflict. pushHubRepo added for Studio code pushes (Push Studio Code button in Server tab). Studio State header now shows Local/Staging/Prod URLs with clickable links. Fixed Deploy tab HTML nesting bug (unclosed div caused 4 of 7 tabs to be invisible). All tabs now refresh data on panel open + tab switch. Hub repo info cached at startup. 56 tests pass.

@@ -7,3 +7,10 @@ sites/
 
 # Local Netlify folder
 .netlify
+
+# OpenWolf — ephemeral/local files (anatomy.md, cerebrum.md, buglog.json are tracked)
+.wolf/token-ledger.json
+.wolf/memory.md
+.wolf/hooks/
+.wolf/config.json
+.wolf/*.log
