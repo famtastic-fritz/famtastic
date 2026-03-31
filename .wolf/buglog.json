@@ -1729,6 +1729,86 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-03-31T00:29:50.703Z"
+    },
+    {
+      "id": "bug-109",
+      "timestamp": "2026-03-31T02:08:35.809Z",
+      "error_message": "Wrong condition in logic",
+      "file": "site-studio/server.js",
+      "root_cause": "Condition was: if (navMatch && !/data-logo-v/.test(navMatch[0])",
+      "fix": "Changed to: if (headerMatch && !/data-logo-v/.test(headerMatch[0])",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-31T02:08:35.809Z"
+    },
+    {
+      "id": "bug-110",
+      "timestamp": "2026-03-31T02:41:43.837Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/server.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-31T02:41:43.837Z"
+    },
+    {
+      "id": "bug-111",
+      "timestamp": "2026-03-31T02:43:35.359Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/tests/unit.test.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-31T02:43:35.359Z"
+    },
+    {
+      "id": "bug-112",
+      "timestamp": "2026-03-31T02:45:51.038Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/vitest.config.js",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 10→10 lines (2 removed) | Also: // SITE_TAG must be set before server.js is import; process.env.SITE_TAG = process.env.SITE_TAG || 'si",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-03-31T02:46:01.078Z"
+    },
+    {
+      "id": "bug-113",
+      "timestamp": "2026-03-31T02:48:25.044Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/server.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-31T02:48:25.044Z"
     }
   ]
 }

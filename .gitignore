@@ -14,3 +14,8 @@ sites/
 .wolf/hooks/
 .wolf/config.json
 .wolf/*.log
+.wolf/cron-manifest.json
+.wolf/cron-state.json
+.wolf/designqc-report.json
+.wolf/identity.md
+.wolf/suggestions.json

@@ -156,7 +156,18 @@
       "Bash(mcp__plugin_playwright_playwright__browser_console_messages)",
       "Bash(curl -s http://localhost:3334/api/studio-state)",
       "Bash(curl -s http://localhost:3334/api/blueprint)",
-      "Bash(1 curl:*)"
+      "Bash(1 curl:*)",
+      "Bash(lsof -ti:3333 -ti:3334)",
+      "Bash(ps -p 54771 -o command=)",
+      "Bash(curl -s -X POST http://localhost:3334/api/verify)",
+      "Bash(curl -s -X POST http://localhost:3334/api/verify -H \"Origin: http://localhost:3334\" -H \"Content-Type: application/json\")",
+      "Bash(mkdir -p sites/site-demo/dist)",
+      "Bash(/tmp/test-autotag-debug.html:*)",
+      "Bash(cp /tmp/test-autotag-debug.html sites/site-demo/dist/test-debug.html)",
+      "Bash(SITE_TAG=site-demo npx vitest run)",
+      "Bash(curl -s -X POST http://localhost:3334/api/verify -H \"Origin: http://localhost:3334\")",
+      "Bash(do grep:*)",
+      "Bash(grep -A5 '<img$' sites/site-the-best-lawn-care/dist/index.html)"
     ],
     "deny": [],
     "ask": []

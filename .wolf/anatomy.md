@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-03-31T00:29:50.695Z
-> Files: 282 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-03-31T02:57:35.890Z
+> Files: 286 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -26,27 +26,33 @@
 
 ## ../.claude/projects/-Users-famtasticfritz-famtastic/memory/
 
-- `MEMORY.md` — Memory Index (~71 tok)
+- `feedback_docs_always_pushed.md` (~420 tok)
+- `feedback_dynamic_crud.md` — Declares should (~486 tok)
+- `MEMORY.md` — Memory Index (~175 tok)
 - `project_template_upload_future.md` — Declares names (~444 tok)
 
 ## ./
 
-- `.gitignore` — Git ignore rules (~96 tok)
+- `.gitignore` — Git ignore rules (~127 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~4648 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~4844 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10035 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10243 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~21844 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~22355 tok)
 
 ## .claude/
 
 - `launch.json` (~58 tok)
 - `settings.json` (~441 tok)
 - `settings.local.json` (~2026 tok)
+
+## .claude/plans/
+
+- `floofy-dancing-mccarthy.md` — Auto-Fix Untagged Images (Dynamic CRUD Post-Processor) (~2061 tok)
 
 ## .claude/rules/
 
@@ -459,7 +465,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~83694 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~85889 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/public/
@@ -468,7 +474,8 @@
 
 ## site-studio/tests/
 
-- `unit.test.js` — Declares require (~4818 tok)
+- `setup.js` — Set SITE_TAG before any module imports — server.js reads it at require time (~40 tok)
+- `unit.test.js` — Must set before requiring server.js — TAG reads from SITE_TAG at module load (~5520 tok)
 
 ## sites/.trash/site-beta-biz-1774033104576/
 
