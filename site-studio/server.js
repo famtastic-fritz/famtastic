@@ -4748,10 +4748,16 @@ function verifyLogoAndLayout(pages) {
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
-    // Check nav has data-logo-v
-    const navMatch = html.match(/<nav[\s\S]*?<\/nav>/i);
-    if (navMatch && !/data-logo-v/.test(navMatch[0])) {
-      issues.push(`${page}: nav missing data-logo-v attribute`);
+    // Check header/nav area has data-logo-v (logo anchor lives in header, often outside <nav>)
+    const headerMatch = html.match(/<header[\s\S]*?<\/header>/i);
+    if (headerMatch && !/data-logo-v/.test(headerMatch[0])) {
+      issues.push(`${page}: header missing data-logo-v attribute`);
+    } else if (!headerMatch) {
+      // fallback: check nav if no header element
+      const navMatch = html.match(/<nav[\s\S]*?<\/nav>/i);
+      if (navMatch && !/data-logo-v/.test(navMatch[0])) {
+        issues.push(`${page}: nav missing data-logo-v attribute`);
+      }
     }
 
     // Check for legacy placeholder paths
@@ -4765,7 +4771,7 @@ function verifyLogoAndLayout(pages) {
     }
   }
 
-  const hasFailure = issues.some(i => i.includes('missing <main>') || i.includes('data-logo-v'));
+  const hasFailure = issues.some(i => i.includes('missing <main>') || i.includes('data-logo-v') || i.includes('missing data-logo-v'));
   const hasWarnOnly = issues.length > 0 && issues.every(i => i.includes('placeholder'));
   const status = issues.length === 0 ? 'passed' : hasWarnOnly ? 'warned' : 'failed';
   return { check: 'logo-and-layout', status, issues };
