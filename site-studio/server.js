@@ -6285,6 +6285,7 @@ const wss = new WebSocketServer({ server });
 let activeClientCount = 0;
 
 wss.on('connection', (ws) => {
+  currentMode = 'build'; // reset ephemeral session state — must not survive reconnects
   activeClientCount++;
   console.log(`[studio] Client connected (${activeClientCount} active)`);
 
@@ -6437,10 +6438,16 @@ wss.on('connection', (ws) => {
           return;
         }
 
-        // Stay in brainstorm — skip classifier entirely
-        console.log(`[mode] Brainstorm mode active — routing directly to handleBrainstorm`);
-        handleBrainstorm(ws, userMessage, spec);
-        return;
+        // Page switch is a UI navigation command — must route correctly regardless of mode
+        if (classifyRequest(userMessage, spec) === 'page_switch') {
+          console.log(`[mode] Brainstorm mode: page_switch detected — routing normally`);
+          // Fall through to the classifier routing block below
+        } else {
+          // Stay in brainstorm — skip classifier entirely
+          console.log(`[mode] Brainstorm mode active — routing directly to handleBrainstorm`);
+          handleBrainstorm(ws, userMessage, spec);
+          return;
+        }
       }
 
       // Classify request
