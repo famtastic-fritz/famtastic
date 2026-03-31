@@ -3648,6 +3648,7 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(overflow\w*|responsive\s+check|mobile\s+check|tablet\s+check|screenshot|any\s+(?:js\s+)?errors?|console\s+errors?|broken\s+images?|check\s+(?:on\s+)?mobile|check\s+(?:on\s+)?tablet|how\s+(?:does\s+it\s+)?look\s+on\s+mobile)\b/)) return 'visual_inspect';
   if (lower.match(/\bwhat\s+does\s+(?:the\s+)?(\w+)\s+(?:page\s+)?look\s+like\b/)) return 'visual_inspect';
   if (lower.match(/\b(what\s+(?:color|font|size)\s+is|how\s+(?:wide|tall|big)\s+is)\b/)) return 'visual_inspect';
+  if (lower.match(/\b(accessib\w*|a11y|aria\s+check|heading\s+hierarchy|seo\s+audit|check\s+seo|check\s+links|broken\s+links|dead\s+links|link\s+checker|form\s+validation|check\s+(?:the\s+)?forms?|performance\s+check|page\s+size|how\s+heavy|nav\s+consistency|compare\s+nav)\b/)) return 'visual_inspect';
 
   // Brand health check
   if (lower.match(/\b(check\s+brand|brand\s+health|what'?s?\s+missing|asset\s+checklist|brand\s+check|missing\s+assets)\b/)) return 'brand_health';
@@ -5044,6 +5045,349 @@ function fileInspect(question, page) {
     })).get();
   }
 
+  // --- Accessibility Audit ---
+  if (lower.match(/\b(accessib\w*|a11y|aria|heading\s+hierarchy|labels?)\b/)) {
+    const a11y = { issues: [], passed: [] };
+
+    // Heading hierarchy
+    const headings = [];
+    $('h1, h2, h3, h4, h5, h6').each((i, el) => {
+      headings.push({ level: parseInt(el.tagName[1]), text: $(el).text().trim().substring(0, 60) });
+    });
+    const h1Count = headings.filter(h => h.level === 1).length;
+    if (h1Count === 0) a11y.issues.push('Missing <h1> — every page should have exactly one');
+    else if (h1Count > 1) a11y.issues.push(`${h1Count} <h1> tags found — should be exactly one`);
+    else a11y.passed.push('Single <h1> present');
+
+    for (let i = 1; i < headings.length; i++) {
+      if (headings[i].level > headings[i - 1].level + 1) {
+        a11y.issues.push(`Heading skip: h${headings[i - 1].level} → h${headings[i].level} ("${headings[i].text}")`);
+      }
+    }
+    if (!a11y.issues.some(i => i.includes('Heading skip'))) a11y.passed.push('Heading hierarchy is sequential');
+
+    // Alt text quality
+    const imgs = $('img').toArray();
+    const noAlt = imgs.filter(el => !$(el).attr('alt') && $(el).attr('alt') !== '');
+    const genericAlt = imgs.filter(el => {
+      const alt = ($(el).attr('alt') || '').toLowerCase();
+      return alt && /^(image|photo|picture|img|icon|logo)\s*\d*$/.test(alt);
+    });
+    if (noAlt.length > 0) a11y.issues.push(`${noAlt.length} image(s) missing alt attribute entirely`);
+    else a11y.passed.push('All images have alt attributes');
+    if (genericAlt.length > 0) a11y.issues.push(`${genericAlt.length} image(s) with generic alt text (e.g., "image 1")`);
+
+    // Form labels
+    $('input, select, textarea').each((i, el) => {
+      const type = $(el).attr('type') || 'text';
+      if (type === 'hidden' || type === 'submit' || type === 'button') return;
+      const id = $(el).attr('id');
+      const name = $(el).attr('name') || type;
+      if (!id || $(`label[for="${id}"]`).length === 0) {
+        const parent = $(el).parent('label');
+        if (parent.length === 0) {
+          a11y.issues.push(`Input "${name}" has no associated <label>`);
+        }
+      }
+    });
+    if (!a11y.issues.some(i => i.includes('no associated'))) a11y.passed.push('All form inputs have labels');
+
+    // ARIA landmarks
+    const landmarks = {
+      main: $('main').length > 0,
+      nav: $('nav').length > 0,
+      header: $('header').length > 0,
+      footer: $('footer').length > 0,
+    };
+    const missingLandmarks = Object.entries(landmarks).filter(([, v]) => !v).map(([k]) => k);
+    if (missingLandmarks.length > 0) a11y.issues.push(`Missing landmarks: ${missingLandmarks.join(', ')}`);
+    else a11y.passed.push('All ARIA landmarks present (header, nav, main, footer)');
+
+    // Link text
+    $('a').each((i, el) => {
+      const text = $(el).text().trim().toLowerCase();
+      if (text === 'click here' || text === 'read more' || text === 'learn more' || text === '') {
+        if (!$(el).attr('aria-label') && $(el).find('img').length === 0) {
+          a11y.issues.push(`Link with poor text: "${text || '(empty)'}" → ${$(el).attr('href') || '(no href)'}`);
+        }
+      }
+    });
+
+    // Lang attribute
+    const lang = $('html').attr('lang');
+    if (!lang) a11y.issues.push('Missing lang attribute on <html>');
+    else a11y.passed.push(`lang="${lang}" set on <html>`);
+
+    a11y.headings = headings;
+    report.accessibility = a11y;
+  }
+
+  // --- Performance Check (file-level) ---
+  if (lower.match(/\b(performance|speed|asset\s+sizes?|page\s+size|how\s+heavy|weight)\b/)) {
+    const perf = {};
+    const htmlSize = Buffer.byteLength(html, 'utf8');
+    perf.htmlSize = `${(htmlSize / 1024).toFixed(1)}KB`;
+
+    // Inline CSS size
+    let inlineCssSize = 0;
+    $('style').each((i, el) => { inlineCssSize += $(el).text().length; });
+    perf.inlineCssSize = `${(inlineCssSize / 1024).toFixed(1)}KB`;
+
+    // External stylesheet
+    const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+    if (fs.existsSync(cssPath)) {
+      perf.externalCssSize = `${(fs.statSync(cssPath).size / 1024).toFixed(1)}KB`;
+    }
+
+    // Script/resource counts
+    perf.scripts = $('script[src]').length;
+    perf.stylesheets = $('link[rel="stylesheet"]').length;
+    perf.images = $('img').length;
+
+    // Render-blocking scripts (no async/defer)
+    const blockingScripts = [];
+    $('script[src]').each((i, el) => {
+      if (!$(el).attr('async') && !$(el).attr('defer')) {
+        blockingScripts.push($(el).attr('src').substring(0, 60));
+      }
+    });
+    perf.renderBlockingScripts = blockingScripts;
+
+    // Image file sizes from disk
+    const imgSizes = [];
+    let totalImgBytes = 0;
+    $('img').each((i, el) => {
+      const src = $(el).attr('src') || '';
+      if (src.startsWith('data:')) return;
+      const imgPath = path.join(DIST_DIR(), src.replace(/^\//, ''));
+      if (fs.existsSync(imgPath)) {
+        const size = fs.statSync(imgPath).size;
+        totalImgBytes += size;
+        if (size > 500 * 1024) { // flag images over 500KB
+          imgSizes.push({ src: src.substring(0, 50), size: `${(size / 1024).toFixed(0)}KB` });
+        }
+      }
+    });
+    perf.totalImageSize = `${(totalImgBytes / 1024).toFixed(0)}KB`;
+    perf.largeImages = imgSizes;
+
+    report.performance = perf;
+  }
+
+  // --- Cross-Page Nav Consistency ---
+  if (lower.match(/\b(nav\s+consistency|compare\s+nav|check\s+nav\s+across|nav\s+across\s+pages?)\b/)) {
+    const allPages = listPages();
+    const navs = {};
+    const footers = {};
+    for (const p of allPages) {
+      const fp = path.join(DIST_DIR(), p);
+      if (!fs.existsSync(fp)) continue;
+      const h = fs.readFileSync(fp, 'utf8');
+      const navMatch = h.match(/<nav[\s\S]*?<\/nav>/i);
+      navs[p] = navMatch ? navMatch[0] : null;
+      const footerMatch = h.match(/<footer[\s\S]*?<\/footer>/i);
+      footers[p] = footerMatch ? footerMatch[0] : null;
+    }
+    const refPage = allPages[0];
+    const navIssues = [];
+    const footerIssues = [];
+    for (const p of allPages.slice(1)) {
+      if (navs[p] !== navs[refPage]) navIssues.push(`${p} nav differs from ${refPage}`);
+      if (footers[p] !== footers[refPage]) footerIssues.push(`${p} footer differs from ${refPage}`);
+    }
+    report.navConsistency = {
+      pagesChecked: allPages.length,
+      navMatch: navIssues.length === 0,
+      navIssues,
+      footerMatch: footerIssues.length === 0,
+      footerIssues,
+    };
+  }
+
+  // --- Form Validation ---
+  if (lower.match(/\b(form\b|form\s+validation|contact\s+form|check\s+(?:the\s+)?form)\b/)) {
+    const forms = [];
+    $('form').each((i, el) => {
+      const form = $(el);
+      const formInfo = {
+        action: form.attr('action') || '(none)',
+        method: form.attr('method') || 'GET',
+        netlify: form.attr('data-netlify') === 'true' || form.attr('netlify') !== undefined,
+        issues: [],
+        passed: [],
+      };
+
+      // Check for action or Netlify
+      if (!form.attr('action') && !formInfo.netlify) {
+        formInfo.issues.push('No action attribute and no Netlify form detection');
+      } else {
+        formInfo.passed.push(formInfo.netlify ? 'Netlify Forms configured' : `Action: ${formInfo.action}`);
+      }
+
+      // Check inputs
+      form.find('input, select, textarea').each((j, inp) => {
+        const type = $(inp).attr('type') || 'text';
+        if (type === 'hidden' || type === 'submit' || type === 'button') return;
+        const name = $(inp).attr('name');
+        if (!name) formInfo.issues.push(`Input (${type}) missing name attribute`);
+      });
+
+      // Email field type
+      const emailInputs = form.find('input[name*="email"], input[placeholder*="email" i]');
+      emailInputs.each((j, inp) => {
+        if ($(inp).attr('type') !== 'email') {
+          formInfo.issues.push(`Email field "${$(inp).attr('name') || 'unnamed'}" should have type="email"`);
+        }
+      });
+
+      // Submit button
+      if (form.find('button[type="submit"], input[type="submit"], button:not([type])').length === 0) {
+        formInfo.issues.push('No submit button found');
+      } else {
+        formInfo.passed.push('Submit button present');
+      }
+
+      // Honeypot
+      const hasHoneypot = form.find('input[name="bot-field"], [data-netlify-honeypot]').length > 0 ||
+                          form.attr('data-netlify-honeypot');
+      if (hasHoneypot) formInfo.passed.push('Honeypot spam protection');
+      else formInfo.issues.push('No honeypot spam protection detected');
+
+      // Required fields
+      const requiredCount = form.find('[required]').length;
+      formInfo.passed.push(`${requiredCount} required field(s)`);
+
+      forms.push(formInfo);
+    });
+    report.forms = forms.length > 0 ? forms : [{ issues: ['No <form> elements found on this page'] }];
+  }
+
+  // --- Link Checker ---
+  if (lower.match(/\b(check\s+links?|broken\s+links?|dead\s+links?|link\s+checker)\b/)) {
+    const links = { internal: [], external: [], issues: [] };
+    const allPages = listPages();
+    const pageSet = new Set(allPages);
+
+    $('a[href]').each((i, el) => {
+      const href = $(el).attr('href');
+      const text = $(el).text().trim().substring(0, 40);
+
+      if (!href || href === '#') {
+        links.issues.push({ href: href || '(empty)', text, issue: 'Empty or placeholder href' });
+        return;
+      }
+      if (href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('sms:')) {
+        return; // skip protocol links
+      }
+      if (href.startsWith('http://') || href.startsWith('https://')) {
+        links.external.push({ href: href.substring(0, 60), text });
+        return;
+      }
+      // Internal link
+      const targetFile = href.split('#')[0].split('?')[0];
+      if (targetFile && !pageSet.has(targetFile)) {
+        // Check if file exists in dist
+        const targetPath = path.join(DIST_DIR(), targetFile);
+        if (!fs.existsSync(targetPath)) {
+          links.issues.push({ href, text, issue: `File not found: ${targetFile}` });
+        }
+      }
+      links.internal.push({ href, text });
+
+      // Check anchor targets
+      if (href.includes('#')) {
+        const anchor = href.split('#')[1];
+        if (anchor) {
+          const targetPage = targetFile || page;
+          const targetHtml = targetPage === page ? html : (() => {
+            const fp = path.join(DIST_DIR(), targetPage);
+            return fs.existsSync(fp) ? fs.readFileSync(fp, 'utf8') : '';
+          })();
+          if (targetHtml && !new RegExp(`id=["']${anchor}["']`).test(targetHtml)) {
+            links.issues.push({ href, text, issue: `Anchor #${anchor} not found in ${targetPage}` });
+          }
+        }
+      }
+    });
+
+    links.summary = {
+      internal: links.internal.length,
+      external: links.external.length,
+      issues: links.issues.length,
+    };
+    report.links = links;
+  }
+
+  // --- SEO Audit ---
+  if (lower.match(/\b(seo|search\s+engine|meta\s+tags?|check\s+seo)\b/)) {
+    const seo = { issues: [], passed: [] };
+
+    // Title
+    const title = $('title').text();
+    if (!title) seo.issues.push('Missing <title> tag');
+    else if (title.length < 30) seo.issues.push(`Title too short (${title.length} chars): "${title}" — aim for 30-60`);
+    else if (title.length > 60) seo.issues.push(`Title too long (${title.length} chars) — aim for 30-60`);
+    else seo.passed.push(`Title (${title.length} chars): "${title}"`);
+
+    // Meta description
+    const metaDesc = $('meta[name="description"]').attr('content');
+    if (!metaDesc) seo.issues.push('Missing meta description');
+    else if (metaDesc.length < 120) seo.issues.push(`Meta description too short (${metaDesc.length} chars) — aim for 120-160`);
+    else if (metaDesc.length > 160) seo.issues.push(`Meta description too long (${metaDesc.length} chars) — aim for 120-160`);
+    else seo.passed.push(`Meta description (${metaDesc.length} chars)`);
+
+    // Heading hierarchy
+    const h1s = $('h1');
+    if (h1s.length === 0) seo.issues.push('No <h1> tag');
+    else if (h1s.length > 1) seo.issues.push(`${h1s.length} <h1> tags — should be exactly 1`);
+    else seo.passed.push(`H1: "${h1s.first().text().trim().substring(0, 60)}"`);
+
+    // Canonical
+    const canonical = $('link[rel="canonical"]').attr('href');
+    if (!canonical) seo.issues.push('Missing canonical URL');
+    else seo.passed.push(`Canonical: ${canonical}`);
+
+    // OG tags
+    const ogTags = ['og:title', 'og:description', 'og:image', 'og:type'];
+    const missingOg = ogTags.filter(tag => $(`meta[property="${tag}"]`).length === 0);
+    if (missingOg.length > 0) seo.issues.push(`Missing OG tags: ${missingOg.join(', ')}`);
+    else seo.passed.push('All Open Graph tags present');
+
+    // Schema.org
+    const hasSchema = $('script[type="application/ld+json"]').length > 0;
+    if (!hasSchema) seo.issues.push('No Schema.org JSON-LD structured data');
+    else seo.passed.push('Schema.org JSON-LD present');
+
+    // Viewport
+    if ($('meta[name="viewport"]').length === 0) seo.issues.push('Missing viewport meta tag');
+    else seo.passed.push('Viewport meta set');
+
+    // Lang
+    const lang = $('html').attr('lang');
+    if (!lang) seo.issues.push('Missing lang attribute on <html>');
+    else seo.passed.push(`Lang: ${lang}`);
+
+    // Robots
+    const robots = $('meta[name="robots"]').attr('content') || '';
+    if (robots.includes('noindex')) seo.issues.push('Page has noindex — will not appear in search');
+
+    // Alt text coverage
+    const totalImgs = $('img').length;
+    const withAlt = $('img[alt]').length;
+    const altPct = totalImgs > 0 ? Math.round((withAlt / totalImgs) * 100) : 100;
+    if (altPct < 100) seo.issues.push(`Alt text coverage: ${altPct}% (${withAlt}/${totalImgs} images)`);
+    else seo.passed.push(`Alt text: 100% coverage (${totalImgs} images)`);
+
+    // All pages reachable from nav
+    const navLinks = $('nav a[href]').map((i, el) => $(el).attr('href')).get().filter(h => !h.startsWith('http'));
+    const allPages = listPages();
+    const unreachable = allPages.filter(p => !navLinks.includes(p) && p !== 'index.html' && !navLinks.includes(p.replace('.html', '')));
+    if (unreachable.length > 0) seo.issues.push(`Pages not in nav: ${unreachable.join(', ')}`);
+    else seo.passed.push('All pages reachable from nav');
+
+    report.seo = seo;
+  }
+
   // Always include page structure summary
   report.pageSummary = {
     title: $('title').text(),
@@ -5163,6 +5507,29 @@ async function browserInspect(question, page) {
       // Give the page a moment to produce errors
       await new Promise(r => setTimeout(r, 1000));
       report.consoleErrors = consoleErrors;
+    }
+
+    // Performance — network request analysis
+    if (lower.match(/\b(performance|speed|load\s+time|network|requests)\b/)) {
+      report.networkPerformance = await tab.evaluate(() => {
+        const entries = performance.getEntriesByType('resource');
+        const byType = {};
+        let totalBytes = 0;
+        for (const e of entries) {
+          const type = e.initiatorType || 'other';
+          if (!byType[type]) byType[type] = { count: 0, totalSize: 0 };
+          byType[type].count++;
+          byType[type].totalSize += e.transferSize || 0;
+          totalBytes += e.transferSize || 0;
+        }
+        return {
+          totalRequests: entries.length,
+          totalTransferSize: `${(totalBytes / 1024).toFixed(0)}KB`,
+          byType: Object.fromEntries(Object.entries(byType).map(([k, v]) => [k, { count: v.count, size: `${(v.totalSize / 1024).toFixed(0)}KB` }])),
+          domContentLoaded: Math.round(performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart),
+          loadComplete: Math.round(performance.timing.loadEventEnd - performance.timing.navigationStart),
+        };
+      });
     }
 
   } finally {
@@ -6033,6 +6400,94 @@ wss.on('connection', (ws) => {
 
               if (r.screenshot) {
                 report += `**Screenshot saved:** ${r.screenshot.path}${r.screenshot.fullPage ? ' (full page)' : ''}\n\n`;
+              }
+
+              // --- New audit report formatters ---
+
+              if (r.accessibility) {
+                const a = r.accessibility;
+                report += `**Accessibility Audit:**\n`;
+                if (a.passed.length > 0) a.passed.forEach(p => { report += `- ✅ ${p}\n`; });
+                if (a.issues.length > 0) a.issues.forEach(i => { report += `- ❌ ${i}\n`; });
+                else report += `- ✅ No accessibility issues found\n`;
+                if (a.headings?.length > 0) {
+                  report += `- Heading structure: ${a.headings.map(h => `h${h.level}`).join(' → ')}\n`;
+                }
+                report += '\n';
+              }
+
+              if (r.performance) {
+                const p = r.performance;
+                report += `**Performance (file analysis):**\n`;
+                report += `- HTML size: ${p.htmlSize}\n`;
+                report += `- Inline CSS: ${p.inlineCssSize}`;
+                if (p.externalCssSize) report += `, External CSS: ${p.externalCssSize}`;
+                report += '\n';
+                report += `- Resources: ${p.scripts} scripts, ${p.stylesheets} stylesheets, ${p.images} images\n`;
+                report += `- Total image data: ${p.totalImageSize}\n`;
+                if (p.renderBlockingScripts.length > 0) {
+                  report += `- ⚠️ Render-blocking scripts: ${p.renderBlockingScripts.join(', ')}\n`;
+                } else {
+                  report += `- ✅ No render-blocking scripts\n`;
+                }
+                if (p.largeImages.length > 0) {
+                  report += `- ⚠️ Large images (>500KB): ${p.largeImages.map(i => `${i.src} (${i.size})`).join(', ')}\n`;
+                }
+                report += '\n';
+              }
+
+              if (r.networkPerformance) {
+                const np = r.networkPerformance;
+                report += `**Performance (browser):**\n`;
+                report += `- Total requests: ${np.totalRequests}, Transfer size: ${np.totalTransferSize}\n`;
+                report += `- DOM ready: ${np.domContentLoaded}ms, Full load: ${np.loadComplete}ms\n`;
+                if (np.byType) {
+                  Object.entries(np.byType).forEach(([type, data]) => {
+                    report += `  - ${type}: ${data.count} requests (${data.size})\n`;
+                  });
+                }
+                report += '\n';
+              }
+
+              if (r.navConsistency) {
+                const nc = r.navConsistency;
+                report += `**Nav Consistency (${nc.pagesChecked} pages):**\n`;
+                report += `- Nav: ${nc.navMatch ? '✅ identical across all pages' : '❌ differences found'}\n`;
+                if (nc.navIssues.length > 0) nc.navIssues.forEach(i => { report += `  - ${i}\n`; });
+                report += `- Footer: ${nc.footerMatch ? '✅ identical across all pages' : '❌ differences found'}\n`;
+                if (nc.footerIssues.length > 0) nc.footerIssues.forEach(i => { report += `  - ${i}\n`; });
+                report += '\n';
+              }
+
+              if (r.forms) {
+                report += `**Form Validation (${r.forms.length} form${r.forms.length !== 1 ? 's' : ''}):**\n`;
+                r.forms.forEach((f, i) => {
+                  if (f.action) report += `- Form ${i + 1}: ${f.netlify ? 'Netlify Forms' : f.action} (${f.method || 'GET'})\n`;
+                  if (f.passed) f.passed.forEach(p => { report += `  - ✅ ${p}\n`; });
+                  if (f.issues) f.issues.forEach(iss => { report += `  - ❌ ${iss}\n`; });
+                });
+                report += '\n';
+              }
+
+              if (r.links) {
+                const l = r.links;
+                report += `**Link Check:**\n`;
+                report += `- ${l.summary.internal} internal, ${l.summary.external} external, ${l.summary.issues} issues\n`;
+                if (l.issues.length > 0) {
+                  l.issues.forEach(iss => { report += `  - ❌ ${iss.issue}: \`${iss.href}\` ("${iss.text}")\n`; });
+                } else {
+                  report += `- ✅ All links valid\n`;
+                }
+                report += '\n';
+              }
+
+              if (r.seo) {
+                const s = r.seo;
+                report += `**SEO Audit:**\n`;
+                if (s.passed.length > 0) s.passed.forEach(p => { report += `- ✅ ${p}\n`; });
+                if (s.issues.length > 0) s.issues.forEach(i => { report += `- ❌ ${i}\n`; });
+                else report += `- ✅ All SEO checks passed\n`;
+                report += '\n';
               }
 
               // Always show page summary
