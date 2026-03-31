@@ -377,27 +377,27 @@ Ideas flow through `ideas/` directory stages: `ideas/captured/`, `ideas/triaged/
 
 ## 12. Active Direction
 
-### Multi-Tier Website Factory (Next Evolution)
+> The full strategic vision is documented in `FAMTASTIC-VISION.md` at the repo root. This section summarizes the current tactical priorities.
 
-Site Studio currently produces HTML+Tailwind static sites. The next step is evolving it into a multi-framework website factory that can output:
+### The North Star
 
-- **Static HTML+Tailwind** (current) — landing pages, event sites, portfolios
-- **React + Next.js** — interactive web applications
-- **Vue + Nuxt** — alternative SPA/SSR framework
-- **WordPress** — traditional CMS for content-heavy sites
-- **Drupal** — enterprise CMS for complex content architectures
-- **Extensible** — new frameworks addable as tiers
+FAMtastic is a digital production empire being built from the inside out. The goal is 1,000 income-generating digital products at $100/month each. Websites are first. Mobile apps, AI-generated media, VR, and games follow. The platform that builds and manages this portfolio eventually becomes a SaaS product — but only after it is proven at scale. The milestones are 10, 50, 100, 500, and 1,000 products. Each milestone is a design checkpoint, not just a number.
 
-The approach prioritizes **production volume + variety** — not cookie-cutter templates, but sites that are genuinely different from each other. The tier system is in discussion phase; implementation begins after alignment on the approach.
+### Immediate Priority — Revenue Path
 
-### Template Upload System (Planned)
+Establishing the end-to-end transaction flow: site build → client preview → payment → domain provisioning → live product. PayPal, GoDaddy reseller, and Netlify infrastructure already exist. The missing piece is the connected flow inside Studio.
 
-Two modes: **full template** (has own CSS/logic — Studio tweaks/fine-tunes, does NOT apply STUDIO LAYOUT FOUNDATION) and **wireframe** (no logic — Studio generates CSS and applies its own rules). Separate rule sets for each mode.
+### Near-Term — Multi-Tier Factory
 
-### Other Pending Items
+HTML+Tailwind static sites are the current output. React+Next.js, WordPress, and Drupal tiers are planned. Implementation begins after the revenue path is proven and the 10-site milestone is reached.
 
-- Client-facing access (Studio runs on localhost — need a way for clients to see/approve sites)
-- Platform dashboard (deferred until 10+ sites exist)
+### Standing Requirement — Intelligence Loop
+
+At regular intervals, FAMtastic surfaces new tools, integrations, and opportunities relevant to the factory. Research output lives in `~/famtastic/intelligence/`. Relevant findings get promoted into the development roadmap. The factory should be self-improving based on real signals, not just reactive to problems.
+
+### Multi-Agent Workflow (~60% Built, Paused)
+
+CLI wiring, 3 adapters (Claude/Gemini/Codex), and conversation reconciliation work. Paused until revenue path is established. Resumes as a productivity multiplier once the factory is generating consistent income.
 
 ---
 

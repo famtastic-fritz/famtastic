@@ -1665,6 +1665,70 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-03-30T23:40:36.469Z"
+    },
+    {
+      "id": "bug-105",
+      "timestamp": "2026-03-30T23:44:53.116Z",
+      "error_message": "Significant refactor of ",
+      "file": "CLAUDE.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 10→23 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-30T23:44:53.116Z"
+    },
+    {
+      "id": "bug-106",
+      "timestamp": "2026-03-31T00:28:24.147Z",
+      "error_message": "Significant refactor of ",
+      "file": "FAMTASTIC-STATE.md",
+      "root_cause": "12 lines replaced/restructured",
+      "fix": "Rewrote 21→33 lines (12 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-31T00:28:24.147Z"
+    },
+    {
+      "id": "bug-107",
+      "timestamp": "2026-03-31T00:28:54.756Z",
+      "error_message": "Significant refactor of ",
+      "file": "FAMtastic-Web-Context.md",
+      "root_cause": "14 lines replaced/restructured",
+      "fix": "Rewrote 23→23 lines (14 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-31T00:28:54.756Z"
+    },
+    {
+      "id": "bug-108",
+      "timestamp": "2026-03-31T00:29:50.703Z",
+      "error_message": "Significant refactor of ",
+      "file": "SITE-LEARNINGS.md",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 8→16 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-31T00:29:50.703Z"
     }
   ]
 }

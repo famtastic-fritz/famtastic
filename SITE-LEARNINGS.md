@@ -639,14 +639,22 @@ After Claude generates HTML (either `MULTI_UPDATE` or `HTML_UPDATE`), the follow
 
 ---
 
-## Recommendations (ordered by business impact)
+## Strategic Direction
 
-1. ~~**Get to first deployed client site.**~~ Done (2026-03-20). "The Best Lawn Care" — 7-page site deployed to https://the-best-lawn-care.netlify.app
-2. ~~**Delete dead code.**~~ Done (2026-03-12).
-3. **Build client-facing access.** Chat studio runs on localhost — need a way for clients to see/approve.
-4. ~~**Consolidate repos.**~~ Done (2026-03-12). 4 → 1.
-5. **Add basic tests.** Zero test coverage across ~4,000 lines. Even smoke tests would help.
-6. **Platform dashboard comes after 10+ sites.** Don't build the control panel before there's data to display.
+> **Superseded (2026-03-30).** The old "Recommendations" list has been replaced by a 7-tier roadmap in `FAMTASTIC-STATE.md → What's Next` and a north star vision document at `FAMTASTIC-VISION.md`. The vision document captures the empire model (portfolio → platform → SaaS), scaling milestones (10/50/100/500/1,000 products), revenue path strategy, continuous intelligence loop, and innovation mandate. All tactical priorities now align to that vision.
+
+**Key documents:**
+- `FAMTASTIC-VISION.md` — strategic north star (what FAMtastic is becoming)
+- `FAMTASTIC-STATE.md` — technical snapshot (what FAMtastic currently is), with 7-tier "What's Next" roadmap
+- `FAMtastic-Web-Context.md` — full context document for Claude Web sessions
+
+**Legacy recommendations status:**
+1. ~~Get to first deployed client site.~~ Done (2026-03-20).
+2. ~~Delete dead code.~~ Done (2026-03-12).
+3. ~~Consolidate repos.~~ Done (2026-03-12). 4 → 1.
+4. Build client-facing access → superseded by Tier 1 (Revenue Path) in the new roadmap.
+5. Add basic tests → now Tier 3 (Factory Quality). 56 unit tests exist.
+6. Platform dashboard → now Tier 2 (Portfolio Management, needed at 10 sites).
 
 ---
 

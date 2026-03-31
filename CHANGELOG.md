@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-30 — FAMTASTIC-VISION.md, documentation consolidation, strategic roadmap
+
+Created FAMTASTIC-VISION.md — the north star document capturing the empire model (portfolio → platform → SaaS), scaling milestones (10/50/100/500/1,000 products), revenue path strategy, continuous intelligence loop, and innovation mandate. Moved SITE-LEARNINGS.md into the repo (was at ~/SITE-LEARNINGS.md outside git). Updated FAMTASTIC-STATE.md "What's Next" with 7-tier roadmap aligned to the vision. Updated FAMtastic-Web-Context.md "Active Direction" to match. Strengthened OpenWolf session-start protocol in CLAUDE.md with mandatory read-before-work requirement.
+
 ## 2026-03-30 — Build Verification System (Phase 1 + Phase 2)
 
 Two-phase verification system for automated quality assurance of built sites. Phase 1 adds five zero-token, zero-latency file-based checks that run automatically after every build: verifySlotAttributes (img data-slot attributes), verifyCssCoherence (styles.css structure + layout foundation), verifyCrossPageConsistency (nav/footer/font uniformity), verifyHeadDependencies (Tailwind CDN, styles.css link, Google Fonts), verifyLogoAndLayout (data-logo-v, legacy placeholders, main element). Results stored in spec.last_verification, sent to client as verification-result WS message. Studio UI additions: verification pill indicator in preview toolbar (green/yellow/red/gray), Verify tab in sidebar with collapsible check sections, amber chat notification on failures, View in Browser button for Phase 2. API endpoints: GET /api/verify (read last result), POST /api/verify (trigger manual run), POST /api/visual-verify (agent readiness check). Phase 2 adds five Claude Code agent definitions for on-demand browser-based visual verification: visual-layout, console-health, mobile-responsive, accessibility, performance. These are deliberately on-demand (cost tokens, require browser) vs Phase 1's always-on file checks. 56 tests pass.

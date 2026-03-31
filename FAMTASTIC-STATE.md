@@ -384,23 +384,35 @@ Three intelligence files are tracked in git: `anatomy.md`, `cerebrum.md`, `buglo
 
 ## What's Next
 
-### 1. Client-Facing Access
-Studio runs on localhost. Need a way for clients to see/approve work. Options: ngrok/Cloudflare Tunnel, Netlify draft deploys, or deploying Studio itself.
+> The full strategic vision lives in `FAMTASTIC-VISION.md`. This section tracks the tactical priorities that serve that vision. Read FAMTASTIC-VISION.md first if you are orienting to a new session.
 
-### 2. Template Upload System
-Allow uploading pre-built HTML/CSS templates. Two modes: full template (has own CSS/logic — Studio tweaks/fine-tunes only) and wireframe (no logic — Studio generates CSS and applies layout rules). Separate rule sets for each mode.
+### Tier 1 — Revenue Path (Build This First)
 
-### 3. Asset Generate → Insert
-SVG generation creates assets but doesn't wire back to replace HTML slots. Planned: generate → approval → replace slot.
+The near-term priority is establishing a complete revenue path: from site build to client preview to payment to domain provisioning to live recurring-revenue product. This is more specific than "client-facing access" — it is the end-to-end transaction flow that turns the factory into a business. Components needed: client preview URL (Cloudflare Tunnel or Netlify draft), payment collection (PayPal integration), domain provisioning (GoDaddy reseller API), and a lightweight client approval flow inside Studio.
 
-### 4. Multi-Tier Website Factory
-Current: HTML+Tailwind static only. Next: framework-aware factory supporting React+Next.js, Vue+Nuxt, WordPress, Drupal.
+### Tier 2 — Portfolio Management (Needed at 10 Sites)
 
-### 5. Smoke and Integration Tests
-56 unit tests. No API endpoint tests, no WebSocket flow tests, no end-to-end pipeline tests.
+The Platform Dashboard does not exist yet. Managing 10+ sites through the CLI alone is unsustainable. A dashboard that shows all deployed sites, their revenue status, their health scores from the verification system, and their next action is required before the first milestone of 10 sites is complete.
 
-### 6. Second Deployed Client Site
-Prove the system produces meaningfully different sites to validate anti-cookie-cutter mechanisms.
+### Tier 3 — Factory Quality (Ongoing)
+
+These items improve the quality and reliability of what the factory produces. Second deployed client site (validates anti-cookie-cutter mechanisms work across projects). Asset generate → insert pipeline (SVG generation wires back to HTML slots). Template upload system (full template vs wireframe modes). Smoke and integration tests (56 unit tests exist, no end-to-end pipeline tests yet).
+
+### Tier 4 — Factory Expansion (Needed at 50 Sites)
+
+The multi-tier website factory expands the product range. Current output: HTML+Tailwind static sites. Next tiers: React+Next.js for interactive applications, WordPress for content-heavy sites, Drupal for enterprise CMS clients. Implementation begins after the revenue path is proven and the first 10-site milestone is reached.
+
+### Tier 5 — Intelligence Loop (Build in Parallel)
+
+Weekly research script using Gemini CLI surfaces new tools, API changes, and opportunities relevant to FAMtastic. Output written to `~/famtastic/intelligence/` directory. Relevant findings promoted into this What's Next section automatically. Pattern analysis across deployed sites feeds learnings back into build prompts and verification system. This runs as a background capability alongside all other tiers.
+
+### Tier 6 — Multi-Agent Workflow (Resume at Revenue)
+
+The multi-agent workflow is ~60% built and paused. CLI wiring, 3 adapters (Claude/Gemini/Codex), and conversation reconciliation all work. Resumes after the revenue path is established and the factory is generating consistent income. At that point, routing tasks to the best-suited agent and reconciling outputs becomes a meaningful productivity multiplier.
+
+### Tier 7 — Platform Expansion (The Long Game)
+
+Mobile apps (iOS/Google Play), AI image generation products, AI video products, VR experiences, and games. Each is a new product type that the factory learns to build. The sequence follows the portfolio — new product types get added as the factory capacity and revenue base grow to support them.
 
 ---
 
