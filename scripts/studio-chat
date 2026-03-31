@@ -55,8 +55,9 @@ ws.on('message', (data) => {
   if (msg.type === 'assistant' || msg.type === 'chat') {
     responses.push({ type: msg.type, content: msg.content });
 
-    // 'assistant' after a status means the real response (not welcome message)
-    if (msg.type === 'assistant' && gotStatus && !done) {
+    // 'assistant' is the real response — either after a status message (Claude path)
+    // or immediately (deterministic handler path). Both are valid.
+    if (msg.type === 'assistant' && !done) {
       done = true;
       clearTimeout(timeout);
       if (jsonMode) {

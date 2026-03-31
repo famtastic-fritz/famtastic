@@ -3645,10 +3645,16 @@ function classifyRequest(message, spec) {
 
   // Visual inspection — check rendered CSS, layout, images, responsive, console errors
   if (lower.match(/\b(check|measure|inspect|examine)\s+(?:the\s+)?(nav|header|footer|hero|layout|width|height|spacing|font|color|section|images?|slots?|structure)/)) return 'visual_inspect';
+  // Page-specific inspection: "check the about page", "inspect the services page"
+  if (lower.match(/\b(check|inspect|examine|look\s+at)\s+(?:the\s+)?(\w+)\s+page\b/) && !lower.match(/\b(contact|quote|cta)\b.*\b(form|button)\b/)) return 'visual_inspect';
   if (lower.match(/\b(overflow\w*|responsive\s+check|mobile\s+check|tablet\s+check|screenshot|any\s+(?:js\s+)?errors?|console\s+errors?|broken\s+images?|check\s+(?:on\s+)?mobile|check\s+(?:on\s+)?tablet|how\s+(?:does\s+it\s+)?look\s+on\s+mobile)\b/)) return 'visual_inspect';
   if (lower.match(/\bwhat\s+does\s+(?:the\s+)?(\w+)\s+(?:page\s+)?look\s+like\b/)) return 'visual_inspect';
   if (lower.match(/\b(what\s+(?:color|font|size)\s+is|how\s+(?:wide|tall|big)\s+is)\b/)) return 'visual_inspect';
-  if (lower.match(/\b(accessib\w*|a11y|aria\s+check|heading\s+hierarchy|seo\s+audit|check\s+seo|check\s+links|broken\s+links|dead\s+links|link\s+checker|form\s+validation|check\s+(?:the\s+)?forms?|performance\s+check|page\s+size|how\s+heavy|nav\s+consistency|compare\s+nav)\b/)) return 'visual_inspect';
+  if (lower.match(/\b(how\s+many\s+(?:sections?|images?|links?|forms?|headings?|pages?)|what\s+(?:images?|sections?|links?|forms?|headings?|colors?|fonts?)\s+(?:are\s+(?:there|on)|does))\b/)) return 'visual_inspect';
+  if (lower.match(/\bdoes\s+this\s+(?:page\s+)?have\s+(?:good\s+)?(?:seo|accessibility|a11y|good\s+structure|proper\s+headings?|heading\s+structure)\b/)) return 'visual_inspect';
+  if (lower.match(/\b(check\s+everything|full\s+audit|run\s+all\s+(?:checks?|audits?)|audit\s+everything|inspect\s+everything|complete\s+audit)\b/)) return 'visual_inspect';
+  if (lower.match(/\b(accessib\w*|a11y|aria\s+check|heading\s+hierarchy|seo\s+audit|check\s+seo|check\s+links|broken\s+links|dead\s+links|link\s+checker|form\s+validation|check\s+(?:the\s+)?(?:\w+\s+)?forms?|performance\s+check|page\s+size|how\s+heavy|nav\s+consistency|compare\s+nav|meta\s+tags?|og\s+tags?|canonical\s+(?:tag|url)|schema\s+(?:markup|org)|json.?ld)\b/)) return 'visual_inspect';
+  if (lower.match(/\b(what\s+fonts?\s+(?:are\s+)?(?:used|does)|is\s+(?:it\s+)?responsive|check\s+(?:for\s+)?responsive\s+issues?|does\s+the\s+nav\s+match|nav\s+match(?:es)?\s+(?:on\s+)?all|is\s+there\s+a\s+form|check\s+the\s+logo|logo\s+check|what(?:'s|\s+is)\s+the\s+(?:page\s+)?title|page\s+title|check\s+required\s+fields?|required\s+fields?|are\s+(?:all\s+)?(?:nav\s+)?links?\s+working|working\s+links?|is\s+(?:the\s+)?canonical\s+(?:set|tag|url|configured)|canonical\s+(?:tag|url|set))\b/)) return 'visual_inspect';
 
   // Brand health check
   if (lower.match(/\b(check\s+brand|brand\s+health|what'?s?\s+missing|asset\s+checklist|brand\s+check|missing\s+assets)\b/)) return 'brand_health';
@@ -4971,7 +4977,10 @@ function fileInspect(question, page) {
   const lower = question.toLowerCase();
   const report = {};
 
-  if (lower.match(/\b(nav|navigation|menu)\b/)) {
+  // Full audit flag — triggers all inspection blocks
+  const fullAudit = lower.match(/\b(check\s+everything|full\s+audit|run\s+all\s+(?:checks?|audits?)|audit\s+everything|inspect\s+everything|complete\s+audit)\b/);
+
+  if (fullAudit || lower.match(/\b(nav|navigation|menu)\b/)) {
     report.nav = {
       links: $('nav a').map((i, el) => ({ text: $(el).text().trim(), href: $(el).attr('href') })).get(),
       classes: $('nav').attr('class') || '',
@@ -4979,7 +4988,7 @@ function fileInspect(question, page) {
     };
   }
 
-  if (lower.match(/\b(header)\b/)) {
+  if (fullAudit || lower.match(/\b(header|logo)\b/) || lower.match(/\bcheck\s+the\s+logo\b/)) {
     report.header = {
       classes: $('header').attr('class') || '',
       hasLogoV: $('[data-logo-v]').length > 0,
@@ -4988,7 +4997,7 @@ function fileInspect(question, page) {
     };
   }
 
-  if (lower.match(/\b(hero|first\s+section|banner)\b/)) {
+  if (fullAudit || lower.match(/\b(hero|first\s+section|banner)\b/)) {
     const hero = $('main > section:first-of-type');
     report.hero = {
       classes: hero.attr('class') || '',
@@ -5002,7 +5011,7 @@ function fileInspect(question, page) {
     };
   }
 
-  if (lower.match(/\b(footer)\b/)) {
+  if (fullAudit || lower.match(/\b(footer)\b/)) {
     report.footer = {
       classes: $('footer').attr('class') || '',
       links: $('footer a').map((i, el) => ({ text: $(el).text().trim(), href: $(el).attr('href') })).get(),
@@ -5010,14 +5019,14 @@ function fileInspect(question, page) {
     };
   }
 
-  if (lower.match(/\b(colou?rs?|palette|primary|accent)\b/)) {
+  if (fullAudit || lower.match(/\b(colou?rs?|palette|primary|accent)\b/)) {
     const rootMatch = css.match(/:root\s*\{([^}]+)\}/);
     report.colors = rootMatch
       ? rootMatch[1].split(';').filter(l => l.includes('--color')).map(l => l.trim()).filter(Boolean)
       : ['no :root CSS variables found'];
   }
 
-  if (lower.match(/\b(fonts?|typography|typeface)\b/)) {
+  if (fullAudit || lower.match(/\b(fonts?|typography|typeface)\b/) || lower.match(/\bwhat\s+fonts?\s+(?:are\s+)?(?:used|does)/)) {
     const fontLink = $('link[href*="fonts.googleapis.com"]').attr('href');
     report.fonts = {
       googleFonts: fontLink || 'none',
@@ -5025,7 +5034,7 @@ function fileInspect(question, page) {
     };
   }
 
-  if (lower.match(/\b(sections?|structure|layout)\b/)) {
+  if (fullAudit || lower.match(/\b(sections?|structure|layout)\b/)) {
     report.sections = $('main > section').map((i, el) => ({
       index: i + 1,
       id: $(el).attr('id') || null,
@@ -5035,7 +5044,7 @@ function fileInspect(question, page) {
     })).get();
   }
 
-  if (lower.match(/\b(images?|img|photos?|slots?)\b/)) {
+  if (fullAudit || lower.match(/\b(images?|img|photos?|slots?)\b/)) {
     report.images = $('img').map((i, el) => ({
       src: $(el).attr('src')?.substring(0, 60),
       alt: $(el).attr('alt'),
@@ -5046,7 +5055,7 @@ function fileInspect(question, page) {
   }
 
   // --- Accessibility Audit ---
-  if (lower.match(/\b(accessib\w*|a11y|aria|heading\s+hierarchy|labels?)\b/)) {
+  if (fullAudit || lower.match(/\b(accessib\w*|a11y|aria|heading\s+hierarchy|labels?|proper\s+headings?|heading\s+structure)\b/)) {
     const a11y = { issues: [], passed: [] };
 
     // Heading hierarchy
@@ -5123,7 +5132,7 @@ function fileInspect(question, page) {
   }
 
   // --- Performance Check (file-level) ---
-  if (lower.match(/\b(performance|speed|asset\s+sizes?|page\s+size|how\s+heavy|weight)\b/)) {
+  if (fullAudit || lower.match(/\b(performance|speed|asset\s+sizes?|page\s+size|how\s+heavy|weight)\b/)) {
     const perf = {};
     const htmlSize = Buffer.byteLength(html, 'utf8');
     perf.htmlSize = `${(htmlSize / 1024).toFixed(1)}KB`;
@@ -5175,7 +5184,7 @@ function fileInspect(question, page) {
   }
 
   // --- Cross-Page Nav Consistency ---
-  if (lower.match(/\b(nav\s+consistency|compare\s+nav|check\s+nav\s+across|nav\s+across\s+pages?)\b/)) {
+  if (fullAudit || lower.match(/\b(nav\s+consistency|compare\s+nav|check\s+nav\s+across|nav\s+across\s+pages?|does\s+the\s+nav\s+match|nav\s+match(?:es)?\s+(?:on\s+)?all)\b/)) {
     const allPages = listPages();
     const navs = {};
     const footers = {};
@@ -5205,7 +5214,7 @@ function fileInspect(question, page) {
   }
 
   // --- Form Validation ---
-  if (lower.match(/\b(form\b|form\s+validation|contact\s+form|check\s+(?:the\s+)?form)\b/)) {
+  if (fullAudit || lower.match(/\b(form\b|form\s+validation|contact\s+form|check\s+(?:the\s+)?(?:\w+\s+)?form|is\s+there\s+a\s+form|check\s+required\s+fields?|required\s+fields?)\b/)) {
     const forms = [];
     $('form').each((i, el) => {
       const form = $(el);
@@ -5263,7 +5272,7 @@ function fileInspect(question, page) {
   }
 
   // --- Link Checker ---
-  if (lower.match(/\b(check\s+links?|broken\s+links?|dead\s+links?|link\s+checker)\b/)) {
+  if (fullAudit || lower.match(/\b(check\s+links?|broken\s+links?|dead\s+links?|link\s+checker|what\s+links?|show\s+links?|list\s+links?|are\s+(?:all\s+)?(?:nav\s+)?links?\s+working|working\s+links?)\b/)) {
     const links = { internal: [], external: [], issues: [] };
     const allPages = listPages();
     const pageSet = new Set(allPages);
@@ -5319,7 +5328,7 @@ function fileInspect(question, page) {
   }
 
   // --- SEO Audit ---
-  if (lower.match(/\b(seo|search\s+engine|meta\s+tags?|check\s+seo)\b/)) {
+  if (fullAudit || lower.match(/\b(seo|search\s+engine|meta\s+tags?|check\s+seo|og\s+tags?|canonical\s+(?:tag|url|set)|schema\s+(?:markup|org)|json.?ld|open\s+graph)\b/)) {
     const seo = { issues: [], passed: [] };
 
     // Title
@@ -5544,7 +5553,7 @@ async function inspectSite(question, page) {
 
   // Tier 2 triggers — needs actual browser rendering
   const needsBrowser = lower.match(
-    /\b(overflow|responsive|mobile|tablet|screenshot|pixel|actual\s+width|computed|js\s+error|console|render|visible|hidden|broken\s+image|measure|dimension|display)/
+    /\b(overflow|responsive|mobile|tablet|screenshot|pixel|actual\s+width|computed|js\s+error|console|render|visible|hidden|broken\s+image|measure|dimension|display|how\s+(?:wide|tall|big|large)\s+is|is\s+it\s+responsive|check\s+(?:for\s+)?responsive)/
   );
 
   if (needsBrowser) {
@@ -5641,23 +5650,35 @@ function tryDeterministicHandler(ws, userMessage, currentPage) {
     const size = sizeMatch ? sizeMatch[0] : '2rem';
 
     if (target === 'footer') {
-      if (!css.includes('footer { margin-top:') && !css.includes('footer {margin-top:')) {
+      const existingRule = css.match(/footer\s*\{\s*margin-top\s*:\s*([^;]+);/);
+      if (existingRule) {
+        css = css.replace(/footer\s*\{\s*margin-top\s*:\s*[^;]+;/, `footer { margin-top: ${size};`);
+        description = `Updated footer margin-top to ${size} (was ${existingRule[1].trim()})`;
+      } else {
         css = css.replace('/* END STUDIO LAYOUT FOUNDATION */', `/* Footer spacing */\nfooter { margin-top: ${size}; }\n\n/* END STUDIO LAYOUT FOUNDATION */`);
         description = `Added ${size} margin-top to footer`;
-        handled = true;
       }
+      handled = true;
     } else if (target === 'header' || target === 'nav') {
-      if (!css.includes('header { margin-bottom:')) {
+      const existingRule = css.match(/header\s*\{\s*margin-bottom\s*:\s*([^;]+);/);
+      if (existingRule) {
+        css = css.replace(/header\s*\{\s*margin-bottom\s*:\s*[^;]+;/, `header { margin-bottom: ${size};`);
+        description = `Updated header margin-bottom to ${size} (was ${existingRule[1].trim()})`;
+      } else {
         css = css.replace('/* END STUDIO LAYOUT FOUNDATION */', `/* Header spacing */\nheader { margin-bottom: ${size}; }\n\n/* END STUDIO LAYOUT FOUNDATION */`);
         description = `Added ${size} margin-bottom to header`;
-        handled = true;
       }
+      handled = true;
     } else if (target.startsWith('section')) {
-      if (!css.includes('main > section { margin-bottom:')) {
+      const existingRule = css.match(/main\s*>\s*section\s*\{\s*margin-bottom\s*:\s*([^;]+);/);
+      if (existingRule) {
+        css = css.replace(/main\s*>\s*section\s*\{\s*margin-bottom\s*:\s*[^;]+;/, `main > section { margin-bottom: ${size};`);
+        description = `Updated section margin-bottom to ${size} (was ${existingRule[1].trim()})`;
+      } else {
         css = css.replace('/* END STUDIO LAYOUT FOUNDATION */', `/* Section spacing */\nmain > section { margin-bottom: ${size}; }\nmain > section:last-child { margin-bottom: 0; }\n\n/* END STUDIO LAYOUT FOUNDATION */`);
         description = `Added ${size} margin-bottom between sections`;
-        handled = true;
       }
+      handled = true;
     }
   }
 
@@ -5665,8 +5686,15 @@ function tryDeterministicHandler(ws, userMessage, currentPage) {
   const colorMatch = lower.match(/\b(?:change|set|make|update)\s+(?:the\s+)?(?:primary|accent|background)\s+colou?r\s+(?:to\s+)?([#\w]+)/);
   if (!handled && colorMatch) {
     const newColor = colorMatch[1];
-    const varName = lower.includes('accent') ? '--color-accent' : lower.includes('background') ? '--color-bg' : '--color-primary';
-    const varRegex = new RegExp(`(${varName.replace('-', '\\-')}\\s*:\\s*)([^;]+)(;)`);
+    // Map user intent to CSS variable — check what actually exists in the CSS
+    let varName = lower.includes('accent') ? '--color-accent' : lower.includes('background') ? '--color-bg' : '--color-primary';
+    // Try exact match first, then common variants
+    let varRegex = new RegExp(`(${varName.replace(/[-]/g, '\\-')}\\s*:\\s*)([^;]+)(;)`);
+    if (!varRegex.test(css) && varName === '--color-bg') {
+      // Fallback: try --color-bg-light which is common in generated sites
+      varName = '--color-bg-light';
+      varRegex = new RegExp(`(${varName.replace(/[-]/g, '\\-')}\\s*:\\s*)([^;]+)(;)`);
+    }
     if (varRegex.test(css)) {
       css = css.replace(varRegex, `$1${newColor}$3`);
       description = `Changed ${varName} to ${newColor}`;
@@ -5675,7 +5703,9 @@ function tryDeterministicHandler(ws, userMessage, currentPage) {
   }
 
   // --- Font size changes ---
-  const fontSizeMatch = lower.match(/\b(?:make|change|set)\s+(?:the\s+)?(?:body|text|font)\s+(?:size\s+)?(?:to\s+)?(\d+(?:\.\d+)?)\s*(px|rem|em)/);
+  const fontSizeMatch = lower.match(/\bfont[\s-]+size\s+(?:to\s+)?(\d+(?:\.\d+)?)\s*(px|rem|em)/) ||
+    lower.match(/\b(?:make|change|set|update)\s+(?:the\s+)?(?:body\s+|text\s+)?font\s+size\s+(?:to\s+)?(\d+(?:\.\d+)?)\s*(px|rem|em)/) ||
+    lower.match(/\b(?:text|font)\s+(?:size\s+)?(?:to\s+)?(\d+(?:\.\d+)?)\s*(px|rem|em)/);
   if (!handled && fontSizeMatch) {
     const size = `${fontSizeMatch[1]}${fontSizeMatch[2]}`;
     if (css.includes('body {')) {
@@ -5688,18 +5718,37 @@ function tryDeterministicHandler(ws, userMessage, currentPage) {
   }
 
   // --- Simple text replacement in HTML ---
-  const textMatch = lower.match(/\b(?:change|update|replace)\s+(?:the\s+)?(?:heading|title|button\s+text|text)\s+(?:from\s+)?["']([^"']+)["']\s+to\s+["']([^"']+)["']/);
-  if (!handled && textMatch) {
-    const oldText = textMatch[1];
-    const newText = textMatch[2];
+  // Match against lowered but extract values from ORIGINAL message to preserve case
+  const textMatchLower = lower.match(/\b(?:change|update|replace)\s+(?:the\s+)?(?:heading|title|button\s+text|text)\s+(?:from\s+)?["']([^"']+)["']\s+(?:to|with)\s+["']([^"']+)["']/) ||
+    lower.match(/\breplace\s+["']([^"']+)["']\s+(?:to|with)\s+["']([^"']+)["']/);
+  if (!handled && textMatchLower) {
+    // Re-extract from original message to preserve case
+    const origMatch = userMessage.match(/["']([^"']+)["']\s+(?:to|with)\s+["']([^"']+)["']/);
+    const oldText = origMatch ? origMatch[1] : textMatchLower[1];
+    const newText = origMatch ? origMatch[2] : textMatchLower[2];
     const pagePath = path.join(DIST_DIR(), currentPage);
     if (fs.existsSync(pagePath)) {
       let html = fs.readFileSync(pagePath, 'utf8');
+      // Try exact match first, then case-insensitive
       if (html.includes(oldText)) {
         html = html.replace(new RegExp(oldText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), newText);
         fs.writeFileSync(pagePath, html);
         description = `Replaced "${oldText}" with "${newText}" on ${currentPage}`;
         handled = true;
+      } else {
+        // Case-insensitive fallback
+        const ciRegex = new RegExp(oldText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        if (ciRegex.test(html)) {
+          html = html.replace(ciRegex, newText);
+          fs.writeFileSync(pagePath, html);
+          description = `Replaced "${oldText}" with "${newText}" on ${currentPage} (case-insensitive)`;
+          handled = true;
+        } else {
+          // Text not found — respond directly instead of falling through to Claude
+          ws.send(JSON.stringify({ type: 'assistant', content: `Could not find "${oldText}" on ${currentPage}. The text may have already been changed, or it might be on a different page.` }));
+          appendConvo({ role: 'assistant', content: `Text "${oldText}" not found on ${currentPage}`, at: new Date().toISOString() });
+          return true; // handled — don't fall through to Claude
+        }
       }
     }
   }
@@ -6426,7 +6475,16 @@ wss.on('connection', (ws) => {
         case 'visual_inspect': {
           // Smart-routed inspection: file-based (cheerio) or browser (Puppeteer)
           ws.send(JSON.stringify({ type: 'status', content: 'Inspecting site...' }));
-          const inspectPage = currentPage || 'index.html';
+          // Allow page-specific inspection: "check the about page", "inspect services"
+          const _lowerMsg = userMessage.toLowerCase();
+          const _pageNameMatch = _lowerMsg.match(/\b(?:check|inspect|examine|look\s+at)\s+(?:the\s+)?(\w+)\s+page\b/);
+          let inspectPage = currentPage || 'index.html';
+          if (_pageNameMatch) {
+            const _targetName = _pageNameMatch[1];
+            const _pages = listPages();
+            const _found = _pages.find(p => p.replace('.html', '') === _targetName || (_targetName === 'home' && p === 'index.html'));
+            if (_found) inspectPage = _found;
+          }
 
           (async () => {
             try {
