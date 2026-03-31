@@ -5622,6 +5622,104 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   }
 }
 
+// --- Deterministic Handlers (no AI needed) ---
+// Simple CSS/HTML changes that can be executed directly without calling Claude.
+// Returns true if handled, false if Claude should take over.
+function tryDeterministicHandler(ws, userMessage, currentPage) {
+  const lower = userMessage.toLowerCase();
+  const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+  if (!fs.existsSync(cssPath)) return false;
+  let css = fs.readFileSync(cssPath, 'utf8');
+  let handled = false;
+  let description = '';
+
+  // --- Spacing changes ---
+  const spacingMatch = lower.match(/\b(?:add|increase|more)\s+(?:some\s+)?(?:space|spacing|gap|margin|padding)\s+(?:above|before|below|after|between)?\s*(?:the\s+)?(footer|header|nav|sections?|hero)/);
+  if (spacingMatch) {
+    const target = spacingMatch[1];
+    const sizeMatch = lower.match(/(\d+)\s*(?:px|rem)/);
+    const size = sizeMatch ? sizeMatch[0] : '2rem';
+
+    if (target === 'footer') {
+      if (!css.includes('footer { margin-top:') && !css.includes('footer {margin-top:')) {
+        css = css.replace('/* END STUDIO LAYOUT FOUNDATION */', `/* Footer spacing */\nfooter { margin-top: ${size}; }\n\n/* END STUDIO LAYOUT FOUNDATION */`);
+        description = `Added ${size} margin-top to footer`;
+        handled = true;
+      }
+    } else if (target === 'header' || target === 'nav') {
+      if (!css.includes('header { margin-bottom:')) {
+        css = css.replace('/* END STUDIO LAYOUT FOUNDATION */', `/* Header spacing */\nheader { margin-bottom: ${size}; }\n\n/* END STUDIO LAYOUT FOUNDATION */`);
+        description = `Added ${size} margin-bottom to header`;
+        handled = true;
+      }
+    } else if (target.startsWith('section')) {
+      if (!css.includes('main > section { margin-bottom:')) {
+        css = css.replace('/* END STUDIO LAYOUT FOUNDATION */', `/* Section spacing */\nmain > section { margin-bottom: ${size}; }\nmain > section:last-child { margin-bottom: 0; }\n\n/* END STUDIO LAYOUT FOUNDATION */`);
+        description = `Added ${size} margin-bottom between sections`;
+        handled = true;
+      }
+    }
+  }
+
+  // --- Color changes ---
+  const colorMatch = lower.match(/\b(?:change|set|make|update)\s+(?:the\s+)?(?:primary|accent|background)\s+colou?r\s+(?:to\s+)?([#\w]+)/);
+  if (!handled && colorMatch) {
+    const newColor = colorMatch[1];
+    const varName = lower.includes('accent') ? '--color-accent' : lower.includes('background') ? '--color-bg' : '--color-primary';
+    const varRegex = new RegExp(`(${varName.replace('-', '\\-')}\\s*:\\s*)([^;]+)(;)`);
+    if (varRegex.test(css)) {
+      css = css.replace(varRegex, `$1${newColor}$3`);
+      description = `Changed ${varName} to ${newColor}`;
+      handled = true;
+    }
+  }
+
+  // --- Font size changes ---
+  const fontSizeMatch = lower.match(/\b(?:make|change|set)\s+(?:the\s+)?(?:body|text|font)\s+(?:size\s+)?(?:to\s+)?(\d+(?:\.\d+)?)\s*(px|rem|em)/);
+  if (!handled && fontSizeMatch) {
+    const size = `${fontSizeMatch[1]}${fontSizeMatch[2]}`;
+    if (css.includes('body {')) {
+      css = css.replace(/(body\s*\{[^}]*)(font-size\s*:[^;]+;)/, `$1font-size: ${size};`);
+    } else {
+      css = css.replace('/* END STUDIO LAYOUT FOUNDATION */', `body { font-size: ${size}; }\n\n/* END STUDIO LAYOUT FOUNDATION */`);
+    }
+    description = `Changed body font-size to ${size}`;
+    handled = true;
+  }
+
+  // --- Simple text replacement in HTML ---
+  const textMatch = lower.match(/\b(?:change|update|replace)\s+(?:the\s+)?(?:heading|title|button\s+text|text)\s+(?:from\s+)?["']([^"']+)["']\s+to\s+["']([^"']+)["']/);
+  if (!handled && textMatch) {
+    const oldText = textMatch[1];
+    const newText = textMatch[2];
+    const pagePath = path.join(DIST_DIR(), currentPage);
+    if (fs.existsSync(pagePath)) {
+      let html = fs.readFileSync(pagePath, 'utf8');
+      if (html.includes(oldText)) {
+        html = html.replace(new RegExp(oldText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), newText);
+        fs.writeFileSync(pagePath, html);
+        description = `Replaced "${oldText}" with "${newText}" on ${currentPage}`;
+        handled = true;
+      }
+    }
+  }
+
+  if (handled) {
+    if (description && !description.includes('Replaced')) {
+      // CSS change — write it back
+      fs.writeFileSync(cssPath, css);
+    }
+    ws.send(JSON.stringify({ type: 'assistant', content: `**Direct edit applied:** ${description}\n\nNo AI call needed — this was a deterministic CSS/HTML change.` }));
+    ws.send(JSON.stringify({ type: 'reload-preview' }));
+    appendConvo({ role: 'assistant', content: `Direct edit: ${description}`, at: new Date().toISOString() });
+    saveStudio();
+    console.log(`[deterministic] ${description}`);
+    return true;
+  }
+
+  return false;
+}
+
 // --- Enhanced Chat Handler ---
 function handleChatMessage(ws, userMessage, requestType, spec) {
   // Concurrent build guard — prevent parallel Claude calls
@@ -5629,6 +5727,14 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
     ws.send(JSON.stringify({ type: 'chat', content: 'A build is already in progress. Please wait for it to finish before sending another request.' }));
     return;
   }
+
+  // Try deterministic handler first — simple CSS/HTML changes without AI
+  if (requestType === 'layout_update' || requestType === 'content_update' || requestType === 'bug_fix') {
+    if (tryDeterministicHandler(ws, userMessage, currentPage)) {
+      return; // Handled without Claude
+    }
+  }
+
   buildInProgress = true;
 
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
@@ -5830,13 +5936,58 @@ ${analyticsInstruction}`;
   }
 
   const buildStartTime = Date.now();
-  const child = spawnClaude(prompt);
+  const currentModel = loadSettings().model || 'claude-sonnet-4-5';
+  let child = spawnClaude(prompt);
+  let retriedWithHaiku = false;
 
-  // 5-minute timeout — kill hung Claude CLI, reset build guard
+  // 30s silence timeout — if no output arrives, fall back to Haiku
+  let silenceTimeout = null;
+  function resetSilenceTimeout() {
+    if (silenceTimeout) clearTimeout(silenceTimeout);
+    if (retriedWithHaiku) return; // don't retry twice
+    silenceTimeout = setTimeout(() => {
+      // Only retry if we got zero output (subscription concurrency issue)
+      if (response.length === 0 && !retriedWithHaiku && currentModel !== 'claude-haiku-4-5-20251001') {
+        console.warn('[claude] No output after 30s — falling back to Haiku');
+        retriedWithHaiku = true;
+        child.kill();
+        try { ws.send(JSON.stringify({ type: 'status', content: 'Sonnet busy — retrying with Haiku...' })); } catch {}
+
+        // Respawn with Haiku
+        const env = { ...process.env };
+        for (const key of Object.keys(env)) { if (key.startsWith('CLAUDE_') || key === 'CLAUDECODE') delete env[key]; }
+        const claudeBin = process.env.CLAUDE_BIN || 'claude';
+        child = spawn(claudeBin, ['--print', '--model', 'claude-haiku-4-5-20251001', '--tools', ''], {
+          env, cwd: require('os').tmpdir(), stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        child.stdin.write(prompt);
+        child.stdin.end();
+        response = '';
+        firstChunk = true;
+
+        child.stdout.on('data', (chunk) => {
+          response += chunk.toString();
+          if (firstChunk) {
+            ws.send(JSON.stringify({ type: 'status', content: 'Haiku is generating...' }));
+            firstChunk = false;
+          }
+        });
+        child.on('close', onChildClose);
+        child.on('error', (err) => {
+          console.error('[claude-haiku-fallback] Error:', err.message);
+          buildInProgress = false;
+        });
+      }
+    }, 30000);
+  }
+  resetSilenceTimeout();
+
+  // 5-minute hard timeout — kill even Haiku if it hangs
   const buildTimeout = setTimeout(() => {
     console.error('[claude] Build timed out after 5 minutes, killing process');
     child.kill();
     buildInProgress = false;
+    if (silenceTimeout) clearTimeout(silenceTimeout);
     try { ws.send(JSON.stringify({ type: 'error', content: 'Build timed out after 5 minutes. The Claude CLI may be unresponsive. Try again or check your network.' })); } catch {}
   }, 300000);
 
@@ -5846,6 +5997,7 @@ ${analyticsInstruction}`;
 
   child.stdout.on('data', (chunk) => {
     response += chunk.toString();
+    resetSilenceTimeout(); // got output, reset silence timer
     if (firstChunk) {
       ws.send(JSON.stringify({ type: 'status', content: 'Claude is generating...' }));
       firstChunk = false;
@@ -5871,8 +6023,9 @@ ${analyticsInstruction}`;
     console.error('[claude]', chunk.toString());
   });
 
-  child.on('close', (code) => {
+  function onChildClose(code) {
     clearTimeout(buildTimeout);
+    if (silenceTimeout) clearTimeout(silenceTimeout);
     buildInProgress = false;
 
     if (code !== 0 || !response.trim()) {
@@ -6036,7 +6189,8 @@ ${analyticsInstruction}`;
       ws.send(JSON.stringify({ type: 'assistant', content: response }));
       appendConvo({ role: 'assistant', content: response, at: new Date().toISOString() });
     }
-  });
+  }
+  child.on('close', onChildClose);
 }
 
 // --- Design Decisions Extraction ---
