@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-30 — Studio inspection suite: 100% test pass rate on 82-test suite
+
+Extended Studio Visual Intelligence with expanded NLP coverage and seven key fixes. Classifier now handles: "check the X page" (page-specific inspection), "how many sections/images/links", "what images/fonts are on this page", "does this page have good seo/accessibility", "check everything / full audit" (triggers all 13 inspection blocks simultaneously), "is it responsive" (browser tier), "meta tags / og tags / canonical / schema markup", "is the canonical set", "are all nav links working", "what's the title". fileInspect fullAudit flag runs all 13 blocks when "check everything" is detected. Browser tier routing fixed for "how wide/tall/big is X". Deterministic spacing handler now UPDATES existing CSS rules instead of silently falling through to Claude (was causing timeouts). studio-chat script fixed to capture deterministic handler responses (no longer requires status message before accepting assistant response). 82 tests, 82 pass, 0 timeouts.
+
 ## 2026-03-31 — Auto-tag missing slot attributes (conditional post-processor)
 
 Added `autoTagMissingSlots()` — a conditional post-processor that runs after build verification detects images missing `data-slot-id/status/role` attributes. Adapted from existing `retrofitSlotAttributes()` but works per-image instead of all-or-nothing. Uses content-derived IDs (alt text slug + role, prefixed with `auto-`) for stability across rebuilds. Skips logo images inside `data-logo-v` anchors, decorative SVGs, and tracking pixels. Also wired into single-page edit path. Fixed `verifySlotAttributes` and `verifyLogoAndLayout` to exclude logo images from slot attribute checks (logo images are managed by the Logo-V system, not the slot system). 60 tests pass (4 new for autoTagMissingSlots).
