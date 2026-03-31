@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+// studio-chat — Send a message to Studio's WebSocket chat and collect the response.
+// Usage: studio-chat "check the nav links"
+// Usage: studio-chat --json "check the nav links"  (raw JSON output)
+// Used by Claude Code to programmatically interact with Studio chat.
+
+const path = require('path');
+const WebSocket = require(path.join(__dirname, '..', 'site-studio', 'node_modules', 'ws'));
+const message = process.argv.slice(2).filter(a => a !== '--json').join(' ');
+const jsonMode = process.argv.includes('--json');
+
+if (!message) {
+  console.error('Usage: studio-chat "your message here"');
+  process.exit(1);
+}
+
+const port = process.env.STUDIO_PORT || 3334;
+const ws = new WebSocket(`ws://localhost:${port}`);
+const responses = [];
+let done = false;
+let sentMessage = false;
+let gotStatus = false;
+
+// Timeout after 60s (Puppeteer inspections can take a while)
+const timeout = setTimeout(() => {
+  if (!done) {
+    done = true;
+    if (jsonMode) {
+      console.log(JSON.stringify({ status: 'timeout', responses }));
+    } else {
+      console.log('[timeout] No final response after 60s');
+      responses.forEach(r => console.log(r.content));
+    }
+    ws.close();
+    process.exit(1);
+  }
+}, 60000);
+
+ws.on('open', () => {
+  // Small delay to let the welcome message arrive first
+  setTimeout(() => {
+    sentMessage = true;
+    ws.send(JSON.stringify({ type: 'chat', content: message }));
+  }, 500);
+});
+
+ws.on('message', (data) => {
+  let msg;
+  try { msg = JSON.parse(data); } catch { return; }
+
+  // Ignore messages before we've sent ours
+  if (!sentMessage) return;
+
+  // Collect all response types
+  if (msg.type === 'assistant' || msg.type === 'chat') {
+    responses.push({ type: msg.type, content: msg.content });
+
+    // 'assistant' after a status means the real response (not welcome message)
+    if (msg.type === 'assistant' && gotStatus && !done) {
+      done = true;
+      clearTimeout(timeout);
+      if (jsonMode) {
+        console.log(JSON.stringify({ status: 'ok', responses }));
+      } else {
+        console.log(msg.content);
+      }
+      // Give a moment for any trailing messages, then close
+      setTimeout(() => { ws.close(); process.exit(0); }, 500);
+    }
+  } else if (msg.type === 'status') {
+    gotStatus = true;
+    responses.push({ type: 'status', content: msg.content });
+    if (!jsonMode) {
+      process.stderr.write(`[status] ${msg.content}\n`);
+    }
+  } else if (msg.type === 'verification-result' || msg.type === 'verification-warning') {
+    responses.push({ type: msg.type, content: msg.content || JSON.stringify(msg) });
+  }
+});
+
+ws.on('error', (err) => {
+  console.error(`Cannot connect to Studio at ws://localhost:${port} — is it running?`);
+  process.exit(1);
+});
+
+ws.on('close', () => {
+  if (!done) {
+    done = true;
+    clearTimeout(timeout);
+    if (responses.length > 0) {
+      if (jsonMode) {
+        console.log(JSON.stringify({ status: 'closed', responses }));
+      } else {
+        responses.filter(r => r.type === 'assistant').forEach(r => console.log(r.content));
+      }
+    }
+  }
+});
