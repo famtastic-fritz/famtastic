@@ -1418,6 +1418,143 @@ function retrofitSlotAttributes() {
   return totalSlotted;
 }
 
+// --- Auto-Tag Missing Slots (Conditional Post-Processor) ---
+// Runs only when verification detects images missing slot attributes.
+// Adapted from retrofitSlotAttributes but works per-image (not all-or-nothing).
+// Dynamic CRUD: creates slots for new images, idempotent, content-derived IDs.
+function autoTagMissingSlots(pages) {
+  const distDir = DIST_DIR();
+  let totalFixed = 0;
+  const usedIds = new Set();
+
+  // Collect ALL existing slot IDs across the site to prevent collisions
+  const allPages = listPages();
+  for (const p of allPages) {
+    const fp = path.join(distDir, p);
+    if (!fs.existsSync(fp)) continue;
+    const h = fs.readFileSync(fp, 'utf8');
+    const idMatches = h.matchAll(/data-slot-id=["']([^"']+)["']/gi);
+    for (const m of idMatches) usedIds.add(m[1]);
+  }
+
+  // Also collect existing slot_mappings src values for orphan prevention
+  const spec = readSpec();
+  const mappingsBySrc = new Map();
+  if (spec.slot_mappings) {
+    for (const [slotId, mapping] of Object.entries(spec.slot_mappings)) {
+      if (mapping.src) mappingsBySrc.set(mapping.src, slotId);
+    }
+  }
+
+  // Find logo anchor spans to exclude logo images
+  const logoVRegex = /(<a[^>]*data-logo-v[^>]*>)([\s\S]*?)(<\/a>)/gi;
+
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    let html = fs.readFileSync(filePath, 'utf8');
+    let modified = false;
+    const pageName = page.replace('.html', '');
+
+    // Find all logo anchor ranges to skip images inside them
+    const logoRanges = [];
+    let logoMatch;
+    while ((logoMatch = logoVRegex.exec(html)) !== null) {
+      logoRanges.push({ start: logoMatch.index, end: logoMatch.index + logoMatch[0].length });
+    }
+    logoVRegex.lastIndex = 0; // reset for next page
+
+    const imgRegex = /<img([^>]*)>/gi;
+    html = html.replace(imgRegex, (fullMatch, attrs, offset) => {
+      // Skip if already has all three slot attributes
+      const hasId = /data-slot-id=/i.test(attrs);
+      const hasRole = /data-slot-role=/i.test(attrs);
+      const hasStatus = /data-slot-status=/i.test(attrs);
+      if (hasId && hasRole && hasStatus) return fullMatch;
+
+      // Skip if inside a data-logo-v anchor
+      const inLogo = logoRanges.some(r => offset >= r.start && offset < r.end);
+      if (inLogo) return fullMatch;
+
+      // Extract alt and src for inference
+      const altMatch = attrs.match(/alt=["']([^"']*)["']/i);
+      const srcMatch = attrs.match(/src=["']([^"']*)["']/i);
+      const alt = (altMatch ? altMatch[1] : '');
+      const src = (srcMatch ? srcMatch[1] : '');
+
+      // Skip decorative: width/height=1 (tracking pixel)
+      if (/\b(?:width|height)=["']1["']/i.test(attrs)) return fullMatch;
+
+      // Skip decorative: empty alt (WCAG decorative signal) AND data URI (no real content)
+      if (alt === '' && src.startsWith('data:image/') && !src.includes('R0lGODlhAQABAIAAAAAAAP')) return fullMatch;
+
+      // Skip external SVGs not in uploads (likely icons/decorations)
+      if (/\.svg/i.test(src) && !/assets\/uploads\//i.test(src) && !/assets\/logo/i.test(src)) return fullMatch;
+
+      const combined = `${alt} ${src} ${attrs}`.toLowerCase();
+
+      // Infer role from context
+      let role = 'gallery'; // default matches retrofitSlotAttributes
+      if (combined.match(/hero|banner|jumbotron/)) role = 'hero';
+      else if (combined.match(/team|staff|headshot|member/)) role = 'team';
+      else if (combined.match(/testimonial|review|quote/)) role = 'testimonial';
+      else if (combined.match(/service|feature|offering/)) role = 'service';
+      else if (combined.match(/gallery|portfolio|project|showcase/)) role = 'gallery';
+      else if (combined.match(/about|story|company/)) role = 'service';
+      else if (combined.match(/favicon/)) role = 'favicon';
+
+      // Determine status from src
+      let status = 'empty';
+      if (/assets\/uploads\//i.test(src)) status = 'uploaded';
+      else if (/assets\/stock\//i.test(src)) status = 'stock';
+      else if (/^data:image\/gif/i.test(src)) status = 'empty';
+      else if (/^https?:\/\//i.test(src)) status = 'stock';
+      else if (src && !src.startsWith('data:')) status = 'stock';
+
+      // Check if an existing slot_mapping matches this image's src (orphan prevention)
+      const existingMappingId = mappingsBySrc.get(src);
+      if (existingMappingId && !usedIds.has(existingMappingId)) {
+        // Reuse the old slot ID to preserve the user's stock photo/upload mapping
+        usedIds.add(existingMappingId);
+        modified = true;
+        totalFixed++;
+        return `<img data-slot-id="${existingMappingId}" data-slot-role="${role}" data-slot-status="${status}"${attrs}>`;
+      }
+
+      // Generate content-derived ID: auto-{page}-{role}-{slug}
+      const altSlug = alt.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 20);
+      const srcBasename = src.split('/').pop().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]+/g, '-').substring(0, 20);
+      const seed = altSlug || srcBasename || '';
+
+      // If no meaningful seed at all, skip — unstable counter IDs are worse than no ID
+      if (!seed && !altSlug && !srcBasename) {
+        return fullMatch;
+      }
+
+      let slotId = `auto-${pageName}-${role}${seed ? '-' + seed : ''}`;
+      let counter = 1;
+      while (usedIds.has(slotId)) {
+        counter++;
+        slotId = `auto-${pageName}-${role}${seed ? '-' + seed : ''}-${counter}`;
+      }
+      usedIds.add(slotId);
+
+      modified = true;
+      totalFixed++;
+      return `<img data-slot-id="${slotId}" data-slot-role="${role}" data-slot-status="${status}"${attrs}>`;
+    });
+
+    if (modified) {
+      fs.writeFileSync(filePath, html);
+    }
+  }
+
+  if (totalFixed > 0) {
+    console.log(`[auto-tag] Tagged ${totalFixed} unattributed image(s) across ${pages.length} page(s)`);
+  }
+  return { totalFixed, pages };
+}
+
 // --- Brand Health Scanner ---
 function scanBrandHealth() {
   // Auto-retrofit pre-slot sites on first brand health scan
@@ -4584,9 +4721,24 @@ function verifySlotAttributes(pages) {
     const filePath = path.join(DIST_DIR(), page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
-    const imgTags = html.match(/<img[^>]*>/gi) || [];
 
-    for (const img of imgTags) {
+    // Find logo anchor ranges — images inside data-logo-v are managed by Logo-V system, not slots
+    const logoRanges = [];
+    const logoVRe = /<a[^>]*data-logo-v[^>]*>[\s\S]*?<\/a>/gi;
+    let lm;
+    while ((lm = logoVRe.exec(html)) !== null) {
+      logoRanges.push({ start: lm.index, end: lm.index + lm[0].length });
+    }
+
+    const imgRegex = /<img[^>]*>/gi;
+    let imgMatch;
+    while ((imgMatch = imgRegex.exec(html)) !== null) {
+      const img = imgMatch[0];
+      const imgOffset = imgMatch.index;
+
+      // Skip images inside data-logo-v anchors
+      if (logoRanges.some(r => imgOffset >= r.start && imgOffset < r.end)) continue;
+
       totalSlots++;
       const hasSlotId = /data-slot-id\s*=/.test(img);
       const hasSlotStatus = /data-slot-status\s*=/.test(img);
@@ -4820,7 +4972,22 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
 
   // Run build verification
   ws.send(JSON.stringify({ type: 'status', content: 'Verifying build...' }));
-  const verification = runBuildVerification(writtenPages);
+  let verification = runBuildVerification(writtenPages);
+
+  // Conditional auto-fix: tag images missing slot attributes (dynamic CRUD)
+  const slotCheck = verification.checks.find(c => c.check === 'slot-attributes');
+  if (slotCheck && slotCheck.status === 'failed') {
+    const fixResult = autoTagMissingSlots(writtenPages);
+    if (fixResult.totalFixed > 0) {
+      ws.send(JSON.stringify({ type: 'status', content: `Auto-tagged ${fixResult.totalFixed} image(s) with slot attributes` }));
+      // Re-register slots so media_specs picks up the new ones
+      extractAndRegisterSlots(writtenPages);
+      // Re-verify for accurate final result
+      verification = runBuildVerification(writtenPages);
+    }
+  }
+
+  // Save verification result AFTER conditional fix
   try {
     const vSpec = readSpec();
     vSpec.last_verification = verification;
@@ -5213,6 +5380,9 @@ ${analyticsInstruction}`;
 
       // Unified post-processing — single-page edit mode
       runPostProcessing(ws, [currentPage], { sourcePage: currentPage });
+
+      // Auto-tag any images missing slot attributes (dynamic CRUD)
+      autoTagMissingSlots([currentPage]);
 
       // Extract and log design decisions from change summary
       if (changeSummary) {
@@ -6773,9 +6943,10 @@ module.exports = {
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
   extractTemplateComponents, loadTemplateContext, applyTemplateToPages, writeTemplateArtifacts,
-  // Verification
+  // Verification + auto-fix
   verifySlotAttributes, verifyCssCoherence, verifyCrossPageConsistency,
   verifyHeadDependencies, verifyLogoAndLayout, runBuildVerification,
+  autoTagMissingSlots,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };

@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-03-31 — Auto-tag missing slot attributes (conditional post-processor)
+
+Added `autoTagMissingSlots()` — a conditional post-processor that runs after build verification detects images missing `data-slot-id/status/role` attributes. Adapted from existing `retrofitSlotAttributes()` but works per-image instead of all-or-nothing. Uses content-derived IDs (alt text slug + role, prefixed with `auto-`) for stability across rebuilds. Skips logo images inside `data-logo-v` anchors, decorative SVGs, and tracking pixels. Also wired into single-page edit path. Fixed `verifySlotAttributes` and `verifyLogoAndLayout` to exclude logo images from slot attribute checks (logo images are managed by the Logo-V system, not the slot system). 60 tests pass (4 new for autoTagMissingSlots).
+
 ## 2026-03-30 — FAMTASTIC-VISION.md, documentation consolidation, strategic roadmap
 
 Created FAMTASTIC-VISION.md — the north star document capturing the empire model (portfolio → platform → SaaS), scaling milestones (10/50/100/500/1,000 products), revenue path strategy, continuous intelligence loop, and innovation mandate. Moved SITE-LEARNINGS.md into the repo (was at ~/SITE-LEARNINGS.md outside git). Updated FAMTASTIC-STATE.md "What's Next" with 7-tier roadmap aligned to the vision. Updated FAMtastic-Web-Context.md "Active Direction" to match. Strengthened OpenWolf session-start protocol in CLAUDE.md with mandatory read-before-work requirement.

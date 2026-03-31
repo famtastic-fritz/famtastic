@@ -935,6 +935,28 @@ Four bugs fixed from deep code review that were causing silent failures or wrong
 
 **Lesson:** WebSocket's `EventEmitter.on()` stacks listeners — multiple `ws.on('close', ...)` calls all fire, unlike DOM's `addEventListener`. When refactoring ws handlers over multiple sessions, always check for stale registrations. For Express route handlers that call async operations and then mutate shared state, always `async/await` — fire-and-forget is a race condition.
 
+### Auto-Tag Missing Slot Attributes — 2026-03-31
+
+Conditional post-processor that auto-tags `<img>` elements missing `data-slot-id`, `data-slot-status`, `data-slot-role` attributes. Runs only when build verification detects the `slot-attributes` check has failed — zero cost when Claude gets all attrs right.
+
+**Function:** `autoTagMissingSlots(pages)` in `server.js`. Adapted from existing `retrofitSlotAttributes()` but per-image instead of all-or-nothing.
+
+**Architecture (dynamic CRUD):**
+- **Conditional trigger:** Only fires when `verifySlotAttributes` reports failures in `finishParallelBuild()`
+- **Content-derived IDs:** Uses `auto-{page}-{role}-{altSlug}` format. Alt text slug (max 20 chars) provides rebuild stability. Collision avoidance via `usedIds` Set.
+- **Orphan prevention:** Checks existing `slot_mappings` by src — if an image's src matches an existing mapping, reuses the old slot ID instead of generating a new one.
+- **Logo exclusion:** Finds `<a data-logo-v>...</a>` spans via regex, skips any `<img>` whose position falls within. Position-range check, not heuristic.
+- **Decorative skip:** Skips `width/height=1` (tracking pixels), external SVGs not in uploads, empty-alt + non-transparent data URIs. Errs toward tagging.
+- **Fallback role:** `"gallery"` (matches `retrofitSlotAttributes` and the accepted-roles list in build prompts).
+- **No-seed skip:** If alt text AND src basename produce no meaningful slug, skips rather than generating an unstable counter-based ID.
+
+**Integration points:**
+- `finishParallelBuild()`: verify → conditional auto-fix → re-register slots → re-verify → save result → send to client
+- Single-page edit path (`HTML_UPDATE`): runs after `runPostProcessing()` on `[currentPage]`
+- `verifySlotAttributes()` and `verifyLogoAndLayout()` both updated to skip logo images inside `data-logo-v` anchors
+
+**Known gap:** Single-page edits run `autoTagMissingSlots` but don't run the full verify → re-verify loop. The verification pill only updates on full builds or manual "Run Verification."
+
 ### Build Verification System — 2026-03-30
 
 Two-tier quality assurance system for built sites.

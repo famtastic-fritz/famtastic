@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
+
+// Must set before requiring server.js — TAG reads from SITE_TAG at module load
+process.env.SITE_TAG = process.env.SITE_TAG || 'site-demo';
+
 const require = createRequire(import.meta.url);
 
 const {
@@ -15,6 +19,7 @@ const {
   truncateAssistantMessage,
   ensureHeadDependencies,
   extractTemplateComponents,
+  autoTagMissingSlots,
 } = require('../server');
 
 // classifyRequest checks fs.existsSync for index.html — ensure it exists
@@ -454,5 +459,60 @@ describe('extractTemplateComponents', () => {
     const result = extractTemplateComponents(template);
     expect(result.navHtml).toContain('<nav');
     expect(result.navHtml).toContain('Home');
+  });
+});
+
+describe('autoTagMissingSlots', () => {
+  const testPage = 'test-autotag.html';
+  const testPath = path.join(DIST_DIR, testPage);
+
+  afterEach(() => {
+    try { fs.unlinkSync(testPath); } catch {}
+  });
+
+  it('tags images missing slot attributes', () => {
+    fs.writeFileSync(testPath, `<html><body><main>
+      <img src="assets/stock/hero.jpg" alt="lawn hero" class="w-full">
+    </main></body></html>`);
+    const result = autoTagMissingSlots([testPage]);
+    expect(result.totalFixed).toBe(1);
+    const html = fs.readFileSync(testPath, 'utf8');
+    expect(html).toContain('data-slot-id=');
+    expect(html).toContain('data-slot-role="hero"');
+    expect(html).toContain('data-slot-status="stock"');
+  });
+
+  it('skips images that already have all three slot attributes', () => {
+    fs.writeFileSync(testPath, `<html><body><main>
+      <img data-slot-id="hero-1" data-slot-role="hero" data-slot-status="empty" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP" alt="hero">
+    </main></body></html>`);
+    const result = autoTagMissingSlots([testPage]);
+    expect(result.totalFixed).toBe(0);
+  });
+
+  it('skips logo images inside data-logo-v anchors', () => {
+    fs.writeFileSync(testPath, `<html><body>
+      <header><a href="/" data-logo-v><img src="assets/logo.svg" alt="My Site" class="h-10"></a></header>
+      <main><img src="assets/stock/hero.jpg" alt="hero image"></main>
+    </body></html>`);
+    const result = autoTagMissingSlots([testPage]);
+    expect(result.totalFixed).toBe(1);
+    const html = fs.readFileSync(testPath, 'utf8');
+    // Logo img should NOT have slot attributes
+    expect(html).toMatch(/<a[^>]*data-logo-v[^>]*><img(?![^>]*data-slot-id)/);
+    // Hero img should have slot attributes
+    expect(html).toContain('data-slot-role="hero"');
+  });
+
+  it('generates content-derived IDs with auto- prefix', () => {
+    fs.writeFileSync(testPath, `<html><body><main>
+      <img src="assets/stock/team.jpg" alt="our team members" class="w-full">
+    </main></body></html>`);
+    autoTagMissingSlots([testPage]);
+    const html = fs.readFileSync(testPath, 'utf8');
+    const idMatch = html.match(/data-slot-id="([^"]+)"/);
+    expect(idMatch).toBeTruthy();
+    expect(idMatch[1]).toMatch(/^auto-/);
+    expect(idMatch[1]).toContain('team');
   });
 });
