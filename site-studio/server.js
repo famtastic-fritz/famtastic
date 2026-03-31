@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
+const cheerio = require('cheerio');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -3642,6 +3643,12 @@ function classifyRequest(message, spec) {
   // Brief edit — update the design brief directly
   if (lower.match(/\b(edit\s+(?:the\s+)?brief|update\s+(?:the\s+)?brief|change\s+the\s+goal|fix\s+the\s+audience|modify\s+(?:the\s+)?brief)\b/)) return 'brief_edit';
 
+  // Visual inspection — check rendered CSS, layout, images, responsive, console errors
+  if (lower.match(/\b(check|measure|inspect|examine)\s+(?:the\s+)?(nav|header|footer|hero|layout|width|height|spacing|font|color|section)/)) return 'visual_inspect';
+  if (lower.match(/\b(overflow|responsive\s+check|mobile\s+check|tablet\s+check|screenshot|any\s+(?:js\s+)?errors?|console\s+errors?|broken\s+images?)\b/)) return 'visual_inspect';
+  if (lower.match(/\bwhat\s+does\s+(?:the\s+)?(\w+)\s+(?:page\s+)?look\s+like\b/)) return 'visual_inspect';
+  if (lower.match(/\b(what\s+(?:color|font|size)\s+is|how\s+(?:wide|tall|big)\s+is)\b/)) return 'visual_inspect';
+
   // Brand health check
   if (lower.match(/\b(check\s+brand|brand\s+health|what'?s?\s+missing|asset\s+checklist|brand\s+check|missing\s+assets)\b/)) return 'brand_health';
 
@@ -4947,6 +4954,238 @@ function runBuildVerification(pages) {
   return { status: overallStatus, checks, issues: allIssues, timestamp: new Date().toISOString() };
 }
 
+// --- Studio Visual Intelligence ---
+// Two-tier site inspection: file-based (cheerio) for structure, Puppeteer for rendering.
+// The server inspects, then feeds results into spawnClaude so Claude answers from real data.
+
+function fileInspect(question, page) {
+  const filePath = path.join(DIST_DIR(), page);
+  if (!fs.existsSync(filePath)) return { tier: 'file', page, report: { error: `${page} not found` } };
+
+  const html = fs.readFileSync(filePath, 'utf8');
+  const $ = cheerio.load(html);
+  const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+  const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
+
+  const lower = question.toLowerCase();
+  const report = {};
+
+  if (lower.match(/\b(nav|navigation|menu)\b/)) {
+    report.nav = {
+      links: $('nav a').map((i, el) => ({ text: $(el).text().trim(), href: $(el).attr('href') })).get(),
+      classes: $('nav').attr('class') || '',
+      parentTag: $('nav').parent().prop('tagName')?.toLowerCase(),
+    };
+  }
+
+  if (lower.match(/\b(header)\b/)) {
+    report.header = {
+      classes: $('header').attr('class') || '',
+      hasLogoV: $('[data-logo-v]').length > 0,
+      logoSrc: $('[data-logo-v] img').attr('src') || null,
+      childTags: $('header').children().map((i, el) => el.tagName.toLowerCase()).get(),
+    };
+  }
+
+  if (lower.match(/\b(hero|first\s+section|banner)\b/)) {
+    const hero = $('main > section:first-of-type');
+    report.hero = {
+      classes: hero.attr('class') || '',
+      id: hero.attr('id') || null,
+      images: hero.find('img').map((i, el) => ({
+        src: $(el).attr('src')?.substring(0, 80),
+        alt: $(el).attr('alt'),
+        slotId: $(el).attr('data-slot-id'),
+      })).get(),
+      headings: hero.find('h1, h2').map((i, el) => $(el).text().trim()).get(),
+    };
+  }
+
+  if (lower.match(/\b(footer)\b/)) {
+    report.footer = {
+      classes: $('footer').attr('class') || '',
+      links: $('footer a').map((i, el) => ({ text: $(el).text().trim(), href: $(el).attr('href') })).get(),
+      text: $('footer').text().trim().substring(0, 200),
+    };
+  }
+
+  if (lower.match(/\b(colou?rs?|palette|primary|accent)\b/)) {
+    const rootMatch = css.match(/:root\s*\{([^}]+)\}/);
+    report.colors = rootMatch
+      ? rootMatch[1].split(';').filter(l => l.includes('--color')).map(l => l.trim()).filter(Boolean)
+      : ['no :root CSS variables found'];
+  }
+
+  if (lower.match(/\b(fonts?|typography|typeface)\b/)) {
+    const fontLink = $('link[href*="fonts.googleapis.com"]').attr('href');
+    report.fonts = {
+      googleFonts: fontLink || 'none',
+      cssVars: (css.match(/font-family[^;]+;/g) || []).slice(0, 5),
+    };
+  }
+
+  if (lower.match(/\b(sections?|structure|layout)\b/)) {
+    report.sections = $('main > section').map((i, el) => ({
+      index: i + 1,
+      id: $(el).attr('id') || null,
+      classes: ($(el).attr('class') || '').substring(0, 80),
+      heading: $(el).find('h1, h2, h3').first().text().trim() || '(no heading)',
+      imageCount: $(el).find('img').length,
+    })).get();
+  }
+
+  if (lower.match(/\b(images?|img|photos?|slots?)\b/)) {
+    report.images = $('img').map((i, el) => ({
+      src: $(el).attr('src')?.substring(0, 60),
+      alt: $(el).attr('alt'),
+      slotId: $(el).attr('data-slot-id'),
+      slotStatus: $(el).attr('data-slot-status'),
+      slotRole: $(el).attr('data-slot-role'),
+    })).get();
+  }
+
+  // Always include page structure summary
+  report.pageSummary = {
+    title: $('title').text(),
+    sections: $('main > section').length,
+    images: $('img').length,
+    links: $('a').length,
+    forms: $('form').length,
+    hasTailwind: $('script[src*="tailwindcss"]').length > 0,
+    hasStylesheet: $('link[href*="styles.css"]').length > 0,
+  };
+
+  return { tier: 'file', page, report };
+}
+
+async function browserInspect(question, page) {
+  const puppeteer = require('puppeteer');
+  let browser;
+  try {
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  } catch (err) {
+    return { tier: 'browser', page, report: { error: `Could not launch browser: ${err.message}` } };
+  }
+
+  const tab = await browser.newPage();
+  const report = {};
+  const lower = question.toLowerCase();
+
+  try {
+    // Set viewport based on question
+    if (lower.match(/\bmobile\b/)) {
+      await tab.setViewport({ width: 375, height: 812 });
+      report.viewport = '375x812 (mobile)';
+    } else if (lower.match(/\btablet\b/)) {
+      await tab.setViewport({ width: 768, height: 1024 });
+      report.viewport = '768x1024 (tablet)';
+    } else {
+      await tab.setViewport({ width: 1280, height: 800 });
+      report.viewport = '1280x800 (desktop)';
+    }
+
+    const url = `http://localhost:${PREVIEW_PORT}/${page}`;
+    await tab.goto(url, { waitUntil: 'networkidle0', timeout: 10000 });
+
+    // Collect console errors
+    const consoleErrors = [];
+    tab.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+
+    // Check for overflow
+    if (lower.match(/\b(overflow|scroll|responsive|mobile|tablet)\b/)) {
+      report.overflow = await tab.evaluate(() => {
+        const body = document.body;
+        const hasHScroll = body.scrollWidth > document.documentElement.clientWidth;
+        const overflowing = [...document.querySelectorAll('*')].filter(el =>
+          el.scrollWidth > el.clientWidth + 2 && el.tagName !== 'HTML' && el.tagName !== 'BODY'
+        ).map(el => ({
+          tag: el.tagName.toLowerCase(),
+          class: (el.className?.substring?.(0, 60)) || '',
+          scrollWidth: el.scrollWidth,
+          clientWidth: el.clientWidth,
+        })).slice(0, 10);
+        return { hasHorizontalScroll: hasHScroll, bodyScrollWidth: body.scrollWidth, viewportWidth: document.documentElement.clientWidth, overflowingElements: overflowing };
+      });
+    }
+
+    // Measure specific elements
+    if (lower.match(/\b(width|height|size|dimension|measure|actual|pixel|spacing|padding|margin)\b/)) {
+      const elName = lower.match(/\b(nav|header|footer|hero|main|section|body|container)\b/)?.[1] || 'header';
+      const selector = elName === 'hero' ? 'main > section:first-of-type' : elName === 'container' ? '.container' : elName;
+      report.measurements = await tab.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return { error: `Element "${sel}" not found` };
+        const rect = el.getBoundingClientRect();
+        const cs = window.getComputedStyle(el);
+        return {
+          selector: sel,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          maxWidth: cs.maxWidth,
+          padding: cs.padding,
+          margin: cs.margin,
+          display: cs.display,
+          position: cs.position,
+          overflow: cs.overflow,
+          overflowX: cs.overflowX,
+        };
+      }, selector);
+    }
+
+    // Screenshot
+    if (lower.match(/\bscreenshot\b/)) {
+      const ssDir = path.join(DIST_DIR(), 'assets');
+      fs.mkdirSync(ssDir, { recursive: true });
+      const ssFile = `inspect-${Date.now()}.png`;
+      const ssPath = path.join(ssDir, ssFile);
+      await tab.screenshot({ path: ssPath, fullPage: lower.includes('full') });
+      report.screenshot = { path: `assets/${ssFile}`, fullPage: lower.includes('full') };
+    }
+
+    // Check images are actually rendering
+    if (lower.match(/\b(image|images|broken|missing|visible|loading|render)\b/)) {
+      report.imageHealth = await tab.evaluate(() => {
+        return [...document.querySelectorAll('img')].map(img => ({
+          src: img.src?.substring(0, 80),
+          alt: img.alt,
+          loaded: img.complete && img.naturalWidth > 0,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          displayedWidth: img.offsetWidth,
+          displayedHeight: img.offsetHeight,
+          visible: img.offsetWidth > 0 && img.offsetHeight > 0,
+        }));
+      });
+    }
+
+    // Console errors (always collected if asked)
+    if (lower.match(/\b(error|console|js|javascript|debug)\b/)) {
+      // Give the page a moment to produce errors
+      await new Promise(r => setTimeout(r, 1000));
+      report.consoleErrors = consoleErrors;
+    }
+
+  } finally {
+    await browser.close();
+  }
+
+  return { tier: 'browser', page, report };
+}
+
+async function inspectSite(question, page) {
+  const lower = question.toLowerCase();
+
+  // Tier 2 triggers — needs actual browser rendering
+  const needsBrowser = lower.match(
+    /\b(overflow|responsive|mobile|tablet|screenshot|pixel|actual\s+width|computed|js\s+error|console|render|visible|hidden|broken\s+image|measure|dimension|display)/
+  );
+
+  if (needsBrowser) {
+    return await browserInspect(question, page);
+  }
+  return fileInspect(question, page);
+}
+
 function finishParallelBuild(ws, writtenPages, startTime, spec) {
   const elapsed = Math.round((Date.now() - startTime) / 1000);
 
@@ -5662,6 +5901,156 @@ wss.on('connection', (ws) => {
           // Route to planning flow with existing brief pre-loaded
           handlePlanning(ws, userMessage, spec);
           break;
+
+        case 'visual_inspect': {
+          // Smart-routed inspection: file-based (cheerio) or browser (Puppeteer)
+          ws.send(JSON.stringify({ type: 'status', content: 'Inspecting site...' }));
+          const inspectPage = currentPage || 'index.html';
+
+          (async () => {
+            try {
+              const inspectResult = await inspectSite(userMessage, inspectPage);
+
+              // Format the report directly — no spawnClaude for Tier 1
+              // This avoids Claude generating HTML_UPDATE responses to diagnostic questions
+              let report = `**Site Inspection — ${inspectPage}** (${inspectResult.tier === 'browser' ? 'browser rendering' : 'file analysis'})\n\n`;
+
+              const r = inspectResult.report;
+
+              if (r.error) {
+                report += `Error: ${r.error}\n`;
+              }
+
+              if (r.nav) {
+                report += `**Navigation:**\n`;
+                report += `- Classes: \`${r.nav.classes}\`\n`;
+                report += `- Links: ${r.nav.links.map(l => `[${l.text}](${l.href})`).join(', ')}\n\n`;
+              }
+
+              if (r.header) {
+                report += `**Header:**\n`;
+                report += `- Classes: \`${r.header.classes}\`\n`;
+                report += `- Logo-V: ${r.header.hasLogoV ? 'yes' : 'no'}${r.header.logoSrc ? ` (${r.header.logoSrc})` : ''}\n`;
+                report += `- Children: ${r.header.childTags.join(', ')}\n\n`;
+              }
+
+              if (r.hero) {
+                report += `**Hero Section:**\n`;
+                report += `- ID: ${r.hero.id || '(none)'}, Classes: \`${r.hero.classes}\`\n`;
+                report += `- Headings: ${r.hero.headings.join(', ') || '(none)'}\n`;
+                report += `- Images: ${r.hero.images.length} — ${r.hero.images.map(i => `${i.slotId || 'unslotted'} (${i.alt || 'no alt'})`).join(', ')}\n\n`;
+              }
+
+              if (r.footer) {
+                report += `**Footer:**\n`;
+                report += `- Classes: \`${r.footer.classes}\`\n`;
+                report += `- Links: ${r.footer.links.length}\n\n`;
+              }
+
+              if (r.colors) {
+                report += `**Colors (CSS vars):**\n`;
+                if (Array.isArray(r.colors)) {
+                  r.colors.forEach(c => { report += `- ${c}\n`; });
+                } else {
+                  report += `- ${r.colors}\n`;
+                }
+                report += '\n';
+              }
+
+              if (r.fonts) {
+                report += `**Typography:**\n`;
+                report += `- Google Fonts: ${r.fonts.googleFonts}\n`;
+                if (r.fonts.cssVars?.length) {
+                  r.fonts.cssVars.forEach(f => { report += `- ${f}\n`; });
+                }
+                report += '\n';
+              }
+
+              if (r.sections) {
+                report += `**Sections (${r.sections.length}):**\n`;
+                r.sections.forEach(s => {
+                  report += `- ${s.index}. ${s.heading} ${s.id ? `#${s.id}` : ''} (${s.imageCount} images)\n`;
+                });
+                report += '\n';
+              }
+
+              if (r.images) {
+                report += `**Images (${r.images.length}):**\n`;
+                r.images.forEach(img => {
+                  const status = img.slotStatus ? `[${img.slotStatus}]` : '[unslotted]';
+                  report += `- ${status} ${img.slotId || '?'} — ${img.alt || '(no alt)'} → ${img.src || '(no src)'}\n`;
+                });
+                report += '\n';
+              }
+
+              // Tier 2 browser-specific results
+              if (r.viewport) {
+                report += `**Viewport:** ${r.viewport}\n\n`;
+              }
+
+              if (r.overflow) {
+                report += `**Overflow Check:**\n`;
+                report += `- Horizontal scroll: ${r.overflow.hasHorizontalScroll ? 'YES — content wider than viewport' : 'none'}\n`;
+                report += `- Body scroll width: ${r.overflow.bodyScrollWidth}px, Viewport: ${r.overflow.viewportWidth}px\n`;
+                if (r.overflow.overflowingElements?.length > 0) {
+                  report += `- Overflowing elements:\n`;
+                  r.overflow.overflowingElements.forEach(el => {
+                    report += `  - \`<${el.tag} class="${el.class}">\` scroll=${el.scrollWidth}px > client=${el.clientWidth}px\n`;
+                  });
+                }
+                report += '\n';
+              }
+
+              if (r.measurements) {
+                if (r.measurements.error) {
+                  report += `**Measurement:** ${r.measurements.error}\n\n`;
+                } else {
+                  report += `**Measurements (${r.measurements.selector}):**\n`;
+                  report += `- Width: ${r.measurements.width}px, Height: ${r.measurements.height}px\n`;
+                  report += `- Max-width: ${r.measurements.maxWidth}, Display: ${r.measurements.display}\n`;
+                  report += `- Padding: ${r.measurements.padding}, Margin: ${r.measurements.margin}\n`;
+                  report += `- Overflow: ${r.measurements.overflow} (X: ${r.measurements.overflowX})\n\n`;
+                }
+              }
+
+              if (r.imageHealth) {
+                const broken = r.imageHealth.filter(i => !i.loaded);
+                const hidden = r.imageHealth.filter(i => !i.visible && i.loaded);
+                report += `**Image Health:** ${r.imageHealth.length} total, ${broken.length} broken, ${hidden.length} hidden\n`;
+                if (broken.length > 0) {
+                  report += `- Broken: ${broken.map(i => i.alt || i.src?.substring(0, 40)).join(', ')}\n`;
+                }
+                report += '\n';
+              }
+
+              if (r.consoleErrors?.length > 0) {
+                report += `**Console Errors (${r.consoleErrors.length}):**\n`;
+                r.consoleErrors.forEach(e => { report += `- ${e}\n`; });
+                report += '\n';
+              } else if (r.consoleErrors) {
+                report += `**Console Errors:** none\n\n`;
+              }
+
+              if (r.screenshot) {
+                report += `**Screenshot saved:** ${r.screenshot.path}${r.screenshot.fullPage ? ' (full page)' : ''}\n\n`;
+              }
+
+              // Always show page summary
+              if (r.pageSummary) {
+                const s = r.pageSummary;
+                report += `**Page Summary:** "${s.title}" — ${s.sections} sections, ${s.images} images, ${s.links} links, ${s.forms} forms`;
+                report += ` | Tailwind: ${s.hasTailwind ? 'yes' : 'no'}, Stylesheet: ${s.hasStylesheet ? 'yes' : 'no'}\n`;
+              }
+
+              ws.send(JSON.stringify({ type: 'assistant', content: report.trim() }));
+              appendConvo({ role: 'assistant', content: report.trim(), at: new Date().toISOString() });
+              saveStudio();
+            } catch (err) {
+              ws.send(JSON.stringify({ type: 'assistant', content: `Inspection failed: ${err.message}` }));
+            }
+          })();
+          break;
+        }
 
         case 'brand_health': {
           ws.send(JSON.stringify({ type: 'status', content: 'Checking brand health...' }));
@@ -6947,6 +7336,8 @@ module.exports = {
   verifySlotAttributes, verifyCssCoherence, verifyCrossPageConsistency,
   verifyHeadDependencies, verifyLogoAndLayout, runBuildVerification,
   autoTagMissingSlots,
+  // Visual intelligence
+  fileInspect, browserInspect, inspectSite,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
 };
