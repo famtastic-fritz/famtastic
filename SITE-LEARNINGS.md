@@ -525,6 +525,26 @@ After Claude generates HTML (either `MULTI_UPDATE` or `HTML_UPDATE`), the follow
 - **Template font URL encoding** — multi-word fonts like "Playfair Display" broke Google Fonts URLs. Fixed: `{{HEADING_FONT_URL}}`/`{{BODY_FONT_URL}}` with `+` encoding in `scripts/site-template` and all 4 template files.
 - **Test coverage gaps** — 41 → 52 tests. Added: `truncateAssistantMessage` (5 cases), `classifyRequest` edge cases (4 cases), `ensureHeadDependencies` (1 case). Exports added: `truncateAssistantMessage`, `loadRecentConversation`.
 
+### Open (identified 2026-03-31 — two-phase integration test suite)
+
+Tests: 28 functional (Phase 1) + 30 extreme (Phase 2). Scores: 25/28 (89%) and 19/30 (63%). New gaps surfaced:
+
+**Phase 1 — Functional failures (3 of 28):**
+
+- **`currentMode` persists across WS connections (F01, F03, F04)** — `currentMode` is a module-level variable in `server.js`. When a session ends in `'brainstorm'` mode (e.g. user used brainstorm then disconnected), the next WS connection to the same running server process inherits that mode. All incoming chat messages route through `handleBrainstorm()` regardless of intent until the mode is explicitly reset. Consequence: `new_site`, `page_switch`, and classifier-routed intents silently miss and get treated as brainstorm queries. Fix: reset `currentMode = 'build'` on every new WS connection (in `wss.on('connection')`).
+
+- **Page switch no-op when `currentMode='brainstorm'` (F03, F04)** — "Go to the about page" / "Show me the contact page" both route through `handleBrainstorm()` when brainstorm mode is active. `handleBrainstorm` calls `spawnClaude` (slow, 30-60s) and never emits `page-changed`. The auto-page-switch logic lives inside `handleChatMessage` which is bypassed. Page switching requires the classifier to run — it never runs in brainstorm mode.
+
+**Phase 2 — Extreme failures (11 of 30):**
+
+- **No input length cap on WS chat messages (E01-E05, E16, E25, E30)** — Messages of any size are accepted and processed verbatim: `appendConvo` writes them to `conversation.jsonl`, `classifyRequest` runs regexes on the full string, and the content is injected into Claude's prompt. Messages of 10K+ chars (plain text, unicode floods, null bytes, newline floods, backslash floods, long page names, command injection text) all cause the server to become unresponsive to follow-up pings within 8 seconds — likely because the Claude subprocess is processing a massive prompt and never completing within the test window. `buildInProgress` should protect subsequent messages, but the follow-up gets 0 responses, suggesting either: (a) Claude subprocess is consuming resources that prevent the WS event loop from responding, or (b) there's a race where `buildInProgress` isn't set before the follow-up's handler fires. Fix: validate `msg.content.length <= MAX_CHAT_INPUT` (suggested: 10,000 chars) at the top of the `msg.type === 'chat'` handler, before `appendConvo` and routing.
+
+- **Message flood returns 0 responses (E12)** — Sending 20 concurrent chat messages in rapid succession on one WS connection yielded 0 responses. `MaxListenersExceededWarning` fired in the test (20 listeners registered on the WS EventEmitter, default max is 10). The 0/20 result is partly a test-side artifact (each `sendChat` adds a listener; the warning may indicate listener registration failures), but it also suggests the server's rapid-message response path (the `buildInProgress` guard → immediate `chat` response) may not flush fast enough under rapid sequential sends. Should set `ws.setMaxListeners(0)` in the test. Server-side investigation needed on whether all rapid-fire messages receive the guard response.
+
+- **Malformed JSON frames cause follow-up silence (E18)** — After sending 3 malformed JSON frames (`{{{invalid json`, `not json at all`, empty string), a follow-up chat message gets 0 responses in 10 seconds. Server correctly drops malformed frames (`try { msg = JSON.parse(data); } catch { return; }`). The silence is likely cascading from zombie Claude processes started by earlier tests (E01-E11) — the server's `buildInProgress` guard should respond immediately, but may be exhausted by ongoing Claude subprocesses from preceding tests.
+
+- **Zombie Claude subprocesses from input bomb tests (E01-E05, E11, E16, E25, E30)** — Each input bomb test triggers a Claude build that never completes within the test window. When the test WS closes, `ws.on('close')` sets `buildInProgress = false` but does NOT kill the running Claude subprocess. Over 10+ pathological tests, multiple Claude processes accumulate and run simultaneously. By E18 (malformed JSON), the server may be running 5-8 Claude subprocesses concurrently. Root cause: the child process reference is not stored in a way that allows per-connection cleanup on WS close. Fix: store the active `child` process reference where the `ws.on('close')` handler can access it, and call `child.kill()` on disconnect.
+
 ### Open (identified 2026-03-24)
 - **Asset generate → insert disconnected** — SVG generation doesn't wire back to replace placeholders in HTML (deferred to focused session)
 - **Brainstorm recommendation chips** — cherry-picking individual suggestions deferred; "Build This" sends full context
