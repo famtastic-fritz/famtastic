@@ -10,6 +10,8 @@ const DEFAULT_BASE_URL = `http://localhost:${DEFAULT_PORT}`;
 async function connect(port = DEFAULT_PORT) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`ws://localhost:${port}`);
+    // Allow many concurrent message listeners (flood tests like E12 add 20+)
+    ws.setMaxListeners(0);
     const timer = setTimeout(() => {
       ws.terminate();
       reject(new Error(`Connection timeout to port ${port}`));

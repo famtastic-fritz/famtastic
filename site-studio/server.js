@@ -4013,6 +4013,7 @@ DATA_MODEL:
 Be practical. If the site doesn't need a database, say so clearly. If it does, keep the model minimal — only include what's actually needed.`;
 
   const child = spawnClaude(prompt);
+  ws.currentChild = child;
   const dmTimeout = setTimeout(() => { console.error('[data-model] Timed out'); child.kill(); }, 180000);
 
   let response = '';
@@ -4028,6 +4029,7 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
 
   child.on('close', (code) => {
     clearTimeout(dmTimeout);
+    ws.currentChild = null;
     if (code !== 0 || !response.trim()) {
       ws.send(JSON.stringify({ type: 'error', content: 'Data model planning failed. Try describing your data needs.' }));
       return;
@@ -4129,6 +4131,7 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
   ws.send(JSON.stringify({ type: 'status', content: 'Creating design brief...' }));
 
   const child = spawnClaude(prompt);
+  ws.currentChild = child;
   const planTimeout = setTimeout(() => { console.error('[planning] Timed out'); child.kill(); }, 180000);
 
   let response = '';
@@ -4143,6 +4146,7 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
 
   child.on('close', (code) => {
     clearTimeout(planTimeout);
+    ws.currentChild = null;
     if (code !== 0 || !response.trim()) {
       ws.send(JSON.stringify({ type: 'error', content: 'Failed to create brief. Try describing your site again.' }));
       return;
@@ -4258,6 +4262,7 @@ Respond following the STYLE guidance above:
 Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
   const child = spawnClaude(prompt);
+  ws.currentChild = child;
   const bsTimeout = setTimeout(() => { console.error('[brainstorm] Timed out'); child.kill(); }, 180000);
 
   let response = '';
@@ -4266,6 +4271,7 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
   child.on('close', (code) => {
     clearTimeout(bsTimeout);
+    ws.currentChild = null;
     if (code !== 0 || !response.trim()) {
       ws.send(JSON.stringify({ type: 'error', content: 'Brainstorm failed. Try again.' }));
       return;
@@ -4470,6 +4476,8 @@ ${sharedRules}`;
     }
 
     const child = spawnClaude(pagePrompt);
+    if (!ws.activeChildren) ws.activeChildren = [];
+    ws.activeChildren.push(child);
     let pageResponse = '';
     return { child, getResponse: () => pageResponse, appendResponse: (c) => { pageResponse += c; } };
   }
@@ -4501,6 +4509,7 @@ ${sharedRules}`;
 
       child.on('close', (code) => {
         clearTimeout(pageTimeout);
+        ws.activeChildren = (ws.activeChildren || []).filter(c => c !== child);
         completed++;
         const response = getResponse().trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
 
@@ -4536,6 +4545,7 @@ ${sharedRules}`;
 
   const templatePrompt = buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction);
   const templateChild = spawnClaude(templatePrompt);
+  ws.currentChild = templateChild;
   let templateResponse = '';
   let templateSpawned = false; // Guard against double-spawn from timeout + close race
 
@@ -4555,6 +4565,7 @@ ${sharedRules}`;
     if (templateSpawned) return; // timeout already handled this
     templateSpawned = true;
     clearTimeout(templateTimeout);
+    ws.currentChild = null;
     const templateHtml = templateResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
 
     if (code === 0 && templateHtml.length > 50) {
@@ -5987,6 +5998,7 @@ ${analyticsInstruction}`;
   const buildStartTime = Date.now();
   const currentModel = loadSettings().model || 'claude-sonnet-4-5';
   let child = spawnClaude(prompt);
+  ws.currentChild = child;
   let retriedWithHaiku = false;
 
   // 30s silence timeout — if no output arrives, fall back to Haiku
@@ -6009,6 +6021,7 @@ ${analyticsInstruction}`;
         child = spawn(claudeBin, ['--print', '--model', 'claude-haiku-4-5-20251001', '--tools', ''], {
           env, cwd: require('os').tmpdir(), stdio: ['pipe', 'pipe', 'pipe'],
         });
+        ws.currentChild = child;
         child.stdin.write(prompt);
         child.stdin.end();
         response = '';
@@ -6076,6 +6089,7 @@ ${analyticsInstruction}`;
     clearTimeout(buildTimeout);
     if (silenceTimeout) clearTimeout(silenceTimeout);
     buildInProgress = false;
+    ws.currentChild = null;
 
     if (code !== 0 || !response.trim()) {
       console.error(`[claude] Build failed — exit code: ${code}, response length: ${response.length}, stderr: ${stderrOutput.substring(0, 500)}`);
@@ -6315,6 +6329,15 @@ wss.on('connection', (ws) => {
   ws.on('close', async () => {
     activeClientCount = Math.max(0, activeClientCount - 1);
     console.log(`[studio] Client disconnected (${activeClientCount} active)`);
+    // Kill any in-flight Claude subprocess to prevent zombie processes
+    if (ws.currentChild) {
+      try { ws.currentChild.kill(); } catch {}
+      ws.currentChild = null;
+    }
+    if (ws.activeChildren && ws.activeChildren.length > 0) {
+      for (const c of ws.activeChildren) { try { c.kill(); } catch {} }
+      ws.activeChildren = [];
+    }
     // Reset build lock if client disconnects mid-build to prevent permanent deadlock
     if (buildInProgress) {
       console.warn('[studio] Client disconnected during build — releasing buildInProgress lock');

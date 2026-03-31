@@ -121,6 +121,15 @@
 - Fix: set cwd to os.tmpdir() so no CLAUDE.md is found
 - Also: scripts/claude-cli wrapper fails with relative paths when cwd != HUB_ROOT — bypass it entirely
 
+### 2026-03-31 — WS connection state and subprocess lifecycle (Wave A–D fixes)
+
+- `currentMode` is module-level and MUST be reset at the top of `wss.on('connection')`. Any persistent session state that should be per-client (not per-process) must be reset on connect, not just on disconnect.
+- `page_switch` intent must be checked BEFORE the brainstorm-mode fallthrough block. The pattern: classify first, then decide whether to fall into mode-specific routing.
+- Input validation must happen BEFORE appendConvo and BEFORE classifyRequest — both functions accept arbitrary string length and have no guards themselves.
+- All WS-routed `spawnClaude` calls must store the child ref on `ws.currentChild` (single child) or push to `ws.activeChildren[]` (parallel builds). `ws.on('close')` is the cleanup site — check both and kill.
+- Haiku fallback in `handleChatMessage` reassigns `child` — must update `ws.currentChild` at the reassignment point, not just at the initial spawn.
+- Test flood utilities: any `connect()` that could have concurrent listeners added should call `ws.setMaxListeners(0)` immediately — this suppresses `MaxListenersExceededWarning` without masking real leaks.
+
 ### 2026-03-27 — Studio code push UX needs rethinking
 - Currently "Push Studio Code" in Server tab does a quick git add/commit/push of the famtastic hub repo
 - But proper commits with meaningful messages should go through CLI
