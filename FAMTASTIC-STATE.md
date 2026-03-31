@@ -262,7 +262,7 @@ Triggered manually — ask Claude Code to run a visual audit. Requires Chrome De
 
 | Gap | Priority | Detail |
 |-----|----------|--------|
-| Client-facing access | Tier 1 | Studio runs on localhost only. No way for clients to see or approve sites without deploying a draft URL. Biggest barrier to revenue. |
+| Revenue path (end-to-end) | Tier 1 | The full transaction flow: site build → client preview → payment (PayPal) → domain provisioning (GoDaddy reseller) → live recurring-revenue product. Studio runs on localhost — need client preview URL (Cloudflare Tunnel or Netlify draft) and lightweight approval flow. See FAMTASTIC-VISION.md for the empire model this serves. |
 | Template upload mode | Tier 2 | Future iteration: allow uploading pre-built templates (with CSS/rules included) where Studio's role shifts to tweaking/fine-tuning, not generating from scratch. Need to account for multiple upload types: full template (has own CSS/logic — don't apply STUDIO LAYOUT FOUNDATION) vs wireframe (no logic — Studio applies its rules). |
 | Asset generate → insert | Tier 2 | SVG generation (`asset-generate`) creates files but doesn't wire back to replace placeholders in HTML. |
 | Smoke / integration tests | Tier 2 | 56 unit tests exist (11 suites). No end-to-end pipeline tests, no API endpoint tests, no WebSocket message flow tests. |
@@ -273,7 +273,7 @@ Triggered manually — ask Claude Code to run a visual audit. Requires Chrome De
 | SMS send path non-functional | Tier 3 | Twilio/Vonage configured but practical path uses macOS `sms:` URI. |
 | `final` slot status unused | Tier 4 | Defined but no automated flow transitions slots to it. |
 | `claude --print` is text-only | Tier 4 | Cannot pass uploaded images for vision analysis. |
-| Platform dashboard deferred | Tier 4 | No multi-site management UI beyond CLI. |
+| Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. Required before the 10-site milestone per FAMTASTIC-VISION.md scaling checkpoints. |
 | Remaining code review items | Tier 2 | 12 high/medium/low issues from deep code review deferred — get their own session after verification system is confirmed working. |
 
 ### Recently Closed (2026-03-30, Build Verification + Critical Bugs + OpenWolf Cleanup)
@@ -425,6 +425,16 @@ Mobile apps (iOS/Google Play), AI image generation products, AI video products, 
 ---
 
 ## File Inventory
+
+### Strategic Documents
+
+| File | Purpose |
+|------|---------|
+| `FAMTASTIC-VISION.md` | North star — empire model, scaling milestones, revenue path, intelligence loop, innovation mandate |
+| `FAMTASTIC-STATE.md` | This file — canonical technical snapshot, feature map, file inventory, known gaps, 7-tier roadmap |
+| `FAMtastic-Web-Context.md` | Full context document for Claude Web sessions |
+| `SITE-LEARNINGS.md` | Authoritative technical reference — architecture notes, lessons learned, learnings log |
+| `CHANGELOG.md` | Chronological session summaries |
 
 ### Core Application
 
