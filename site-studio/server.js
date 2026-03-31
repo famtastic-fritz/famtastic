@@ -6331,6 +6331,13 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'chat') {
       const userMessage = msg.content;
+
+      // Guard: reject oversized inputs before any processing or logging
+      if (typeof userMessage !== 'string' || userMessage.length > 10000) {
+        try { ws.send(JSON.stringify({ type: 'error', content: 'Message too long — please keep inputs under 10,000 characters.' })); } catch {}
+        return;
+      }
+
       const ts = new Date().toISOString();
       sessionMessageCount++;
 
