@@ -117,9 +117,6 @@
       </div>
     </div>
 
-    <!-- Resizer: left ↔ center -->
-    <div class="panel-resizer" id="resizer-lc"></div>
-
     <!-- Resizers use CSS order to position between panels -->
     <div class="panel-resizer" id="resizer-lc" style="order: 2;"></div>
     <div class="panel-resizer" id="resizer-cr" style="order: 4;"></div>
@@ -1401,18 +1398,23 @@
     }
 
     function toggleStudioPanel() {
-      // Studio panel is always visible in three-panel layout.
-      // This function kept for backward compat (verify indicator onclick, Studio button).
-      // Just ensure panel is showing and refresh data.
+      studioPanelVisible = !studioPanelVisible;
       const panel = document.getElementById('studio-panel');
-      panel.style.display = 'flex';
-      studioPanelVisible = true;
-      refreshStudioPanel();
-      refreshBlueprint();
-      refreshMetrics();
-      refreshServerInfo();
-      refreshDeployInfo();
-      refreshVerification();
+      const btn = document.getElementById('studio-btn');
+      panel.style.display = studioPanelVisible ? 'flex' : 'none';
+      if (btn) {
+        btn.className = studioPanelVisible
+          ? 'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition'
+          : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
+      }
+      if (studioPanelVisible) {
+        refreshStudioPanel();
+        refreshBlueprint();
+        refreshMetrics();
+        refreshServerInfo();
+        refreshDeployInfo();
+        refreshVerification();
+      }
     }
 
     // --- Cached studio state for brief/decisions editing ---

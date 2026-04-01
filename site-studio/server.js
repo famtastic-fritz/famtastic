@@ -8262,13 +8262,19 @@ app.post('/api/terminal/create', (req, res) => {
   for (const key of Object.keys(env)) {
     if (key.startsWith('CLAUDE_') || key === 'CLAUDECODE') delete env[key];
   }
-  const ptyProcess = pty.spawn('bash', [], {
+  let ptyProcess;
+  try {
+    ptyProcess = pty.spawn(process.env.SHELL || '/bin/zsh', [], {
     name: 'xterm-256color',
     cols: 80,
     rows: 24,
     cwd: path.join(__dirname, '..'),
     env,
   });
+  } catch (err) {
+    console.error('[terminal] Failed to spawn PTY:', err.message);
+    return res.status(500).json({ error: 'Terminal not available: ' + err.message });
+  }
   const termId = String(nextTermId++);
   terminals.set(termId, { ptyProcess, connections: new Set() });
 

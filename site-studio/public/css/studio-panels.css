@@ -1,8 +1,9 @@
 /* Studio Panels — three-panel layout, resizers, panel sizing */
 
 .panel-resizer {
-  width: 4px; cursor: col-resize; background: transparent;
+  width: 6px; cursor: col-resize; background: transparent;
   flex-shrink: 0; transition: background 0.15s; order: 0;
+  z-index: 10; position: relative;
 }
 .panel-resizer:hover, .panel-resizer.dragging { background: #3b82f6; }
 
