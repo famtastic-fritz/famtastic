@@ -282,6 +282,20 @@
     }
     .inline-edit-form textarea { resize: vertical; min-height: 40px; }
     .inline-edit-form input:focus, .inline-edit-form textarea:focus, .inline-edit-form select:focus { outline: none; border-color: #3b82f6; }
+    /* Mode Selector */
+    #mode-selector {
+      display: flex; border-bottom: 1px solid #2a2a2a;
+      padding: 8px 8px 0; gap: 2px;
+    }
+    .mode-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; padding: 6px 4px;
+      background: transparent; border: none; border-radius: 6px 6px 0 0;
+      color: #6b7280; font-size: 10px; cursor: pointer; transition: all 0.15s;
+    }
+    .mode-btn:hover { background: #1f1f1f; color: #d1d5db; }
+    .mode-btn.active { background: #1e3a5f; color: #60a5fa; }
+
     /* Session Status Bar */
     #status-bar {
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -451,8 +465,35 @@
         <div id="studio-env-urls" class="text-xs mt-2 space-y-1"></div>
       </div>
 
+      <!-- Mode selector -->
+      <div id="mode-selector">
+        <button class="mode-btn active" data-mode="create" title="Build your site" onclick="switchMode('create')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          <span>Create</span>
+        </button>
+        <button class="mode-btn" data-mode="ship" title="Review and publish" onclick="switchMode('ship')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4.5 16.5c-1.5 1.5-2 4-2 4s2.5-.5 4-2"/>
+            <path d="M15 9.5s3-1 3-6c-5 0-6 3-6 3"/>
+            <path d="m9 17 3-3"/>
+            <circle cx="9" cy="9" r="2"/>
+          </svg>
+          <span>Ship</span>
+        </button>
+        <button class="mode-btn" data-mode="grow" title="Track and improve" onclick="switchMode('grow')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+          <span>Grow</span>
+        </button>
+      </div>
+
       <!-- Tab bar -->
-      <div class="flex border-b border-gray-700 shrink-0 px-2 pt-2 gap-1">
+      <div id="studio-tab-bar" class="flex border-b border-gray-700 shrink-0 px-2 pt-2 gap-1">
         <button onclick="switchStudioTab('assets')" id="studio-tab-assets" class="studio-tab studio-tab-active text-xs px-3 py-1.5 rounded-t transition">Media</button>
         <button onclick="switchStudioTab('blueprint')" id="studio-tab-blueprint" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Structure</button>
         <button onclick="switchStudioTab('deploy')" id="studio-tab-deploy" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Publish</button>
@@ -1293,6 +1334,40 @@
     function viewAsset(name) {
       previewPlaceholder('assets/' + name, name);
     }
+
+    // --- Mode Switching ---
+    const MODE_TABS = {
+      create: ['assets', 'blueprint', 'design'],
+      ship:   ['verify', 'deploy', 'server'],
+      grow:   ['history', 'metrics']
+    };
+    let currentStudioMode = localStorage.getItem('studio-mode') || 'create';
+
+    function switchMode(mode) {
+      currentStudioMode = mode;
+      localStorage.setItem('studio-mode', mode);
+
+      // Update mode button active states
+      document.querySelectorAll('.mode-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      // Show/hide tab buttons based on mode
+      var allTabs = ['assets', 'blueprint', 'deploy', 'design', 'history', 'metrics', 'verify', 'server'];
+      var visibleTabs = MODE_TABS[mode] || allTabs;
+      allTabs.forEach(function(t) {
+        var btn = document.getElementById('studio-tab-' + t);
+        if (btn) btn.style.display = visibleTabs.includes(t) ? '' : 'none';
+      });
+
+      // Auto-click the first visible tab
+      if (visibleTabs.length > 0) {
+        switchStudioTab(visibleTabs[0]);
+      }
+    }
+
+    // Initialize mode on load (deferred to after DOM ready)
+    setTimeout(function() { switchMode(currentStudioMode); }, 0);
 
     // --- Studio State Panel ---
     // --- Studio Tabs ---
