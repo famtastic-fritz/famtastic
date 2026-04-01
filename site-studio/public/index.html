@@ -403,7 +403,7 @@
               class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-600 text-gray-400 cursor-pointer hover:border-gray-400 transition"
               title="Build verification status — click to view details">
               <span id="verify-dot" class="w-2 h-2 rounded-full bg-gray-500 inline-block"></span>
-              <span id="verify-label">Unchecked</span>
+              <span id="verify-label">Not Reviewed Yet</span>
             </span>
             <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition" aria-label="Refresh preview">Refresh</button>
           </div>
@@ -429,14 +429,14 @@
 
       <!-- Tab bar -->
       <div class="flex border-b border-gray-700 shrink-0 px-2 pt-2 gap-1">
-        <button onclick="switchStudioTab('assets')" id="studio-tab-assets" class="studio-tab studio-tab-active text-xs px-3 py-1.5 rounded-t transition">Assets</button>
-        <button onclick="switchStudioTab('blueprint')" id="studio-tab-blueprint" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Blueprint</button>
-        <button onclick="switchStudioTab('deploy')" id="studio-tab-deploy" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Deploy</button>
-        <button onclick="switchStudioTab('design')" id="studio-tab-design" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Design</button>
-        <button onclick="switchStudioTab('history')" id="studio-tab-history" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">History</button>
-        <button onclick="switchStudioTab('metrics')" id="studio-tab-metrics" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Metrics</button>
-        <button onclick="switchStudioTab('verify')" id="studio-tab-verify" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Verify</button>
-        <button onclick="switchStudioTab('server')" id="studio-tab-server" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Server</button>
+        <button onclick="switchStudioTab('assets')" id="studio-tab-assets" class="studio-tab studio-tab-active text-xs px-3 py-1.5 rounded-t transition">Media</button>
+        <button onclick="switchStudioTab('blueprint')" id="studio-tab-blueprint" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Structure</button>
+        <button onclick="switchStudioTab('deploy')" id="studio-tab-deploy" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Publish</button>
+        <button onclick="switchStudioTab('design')" id="studio-tab-design" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Style</button>
+        <button onclick="switchStudioTab('history')" id="studio-tab-history" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Activity</button>
+        <button onclick="switchStudioTab('metrics')" id="studio-tab-metrics" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Insights</button>
+        <button onclick="switchStudioTab('verify')" id="studio-tab-verify" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Review</button>
+        <button onclick="switchStudioTab('server')" id="studio-tab-server" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Hosting</button>
       </div>
 
       <!-- Scrollable tab content -->
@@ -449,7 +449,7 @@
           <div class="border-b border-gray-700">
             <div onclick="toggleAccordion('brand-health')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
               <span class="accordion-arrow text-studio-muted text-xs" id="arrow-brand-health">&#9656;</span>
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Brand Health</h3>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Site Health</h3>
             </div>
             <div id="accordion-brand-health" class="accordion-body hidden px-4 pb-4">
               <div class="flex justify-end mb-2">
@@ -580,9 +580,9 @@
 
             <!-- DEPLOY -->
             <div class="p-4 border-b border-gray-700 space-y-2">
-              <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1">Deploy</div>
-              <button onclick="deployToStaging()" class="w-full text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Deploy to Staging</button>
-              <button onclick="deployToProduction()" id="deploy-prod-btn" class="w-full text-xs bg-gray-700 text-gray-400 px-3 py-1.5 rounded transition cursor-not-allowed" disabled title="Add a custom domain to enable production deploys">Deploy to Production</button>
+              <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1">Publish</div>
+              <button onclick="deployToStaging()" class="w-full text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">Publish to Staging</button>
+              <button onclick="deployToProduction()" id="deploy-prod-btn" class="w-full text-xs bg-gray-700 text-gray-400 px-3 py-1.5 rounded transition cursor-not-allowed" disabled title="Add a custom domain to enable production deploys">Publish to Production</button>
               <div id="deploy-prod-hint" class="text-[10px] text-studio-muted">Add a custom domain to enable production deploys</div>
               <button onclick="createProdRepo()" id="create-prod-repo-btn" class="w-full text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded transition hidden">Create Site Repo</button>
               <div id="prod-repo-info" class="text-[10px] text-studio-muted hidden"></div>
@@ -591,7 +591,7 @@
             <!-- SYNC -->
             <div class="p-4 border-b border-gray-700">
               <div class="text-[10px] text-studio-muted uppercase tracking-wider mb-2">Sync</div>
-              <button onclick="pushToRepo()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Push to Repo</button>
+              <button onclick="pushToRepo()" class="w-full text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">Save to Repo</button>
             </div>
 
             <!-- SHARE -->
@@ -673,7 +673,7 @@
         <div id="studio-tab-content-blueprint" class="studio-tab-content hidden">
           <div class="p-4">
             <div class="flex justify-between items-center mb-3">
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Site Blueprint</h3>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Site Structure</h3>
               <button onclick="refreshBlueprint()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Refresh</button>
             </div>
 
@@ -693,7 +693,7 @@
         <div id="studio-tab-content-metrics" class="studio-tab-content hidden">
           <div class="p-4">
             <div class="flex justify-between items-center mb-3">
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Build Metrics</h3>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Build Insights</h3>
               <button onclick="refreshMetrics()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Refresh</button>
             </div>
 
@@ -710,12 +710,12 @@
           <div class="p-4 space-y-4">
             <div class="flex justify-between items-center">
               <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Build Verification</h3>
-              <button onclick="runManualVerification()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Run Verification</button>
+              <button onclick="runManualVerification()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Run Review</button>
             </div>
 
             <!-- Overall status -->
             <div id="verify-summary" class="text-xs text-studio-text">
-              <div class="text-studio-muted">No verification data yet. Build the site or click Run Verification.</div>
+              <div class="text-studio-muted">No verification data yet. Build the site or click Run Review.</div>
             </div>
 
             <!-- Individual checks -->
@@ -723,7 +723,7 @@
 
             <!-- Action buttons -->
             <div class="flex gap-2 mt-4">
-              <button onclick="runManualVerification()" class="flex-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded transition font-semibold">Run Verification</button>
+              <button onclick="runManualVerification()" class="flex-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded transition font-semibold">Run Review</button>
               <button onclick="showVisualVerifyPrompt()" class="flex-1 text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded transition font-semibold">View in Browser</button>
             </div>
           </div>
@@ -733,7 +733,7 @@
         <div id="studio-tab-content-server" class="studio-tab-content hidden">
           <div class="p-4 space-y-4">
             <div class="flex justify-between items-center">
-              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Server</h3>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Hosting</h3>
               <button onclick="refreshServerInfo()" class="text-xs text-studio-muted hover:text-white transition">&#8635; Refresh</button>
             </div>
 
@@ -1802,17 +1802,17 @@
       if (!dot || !label) return;
       if (result.status === 'passed') {
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400 inline-block';
-        label.textContent = 'Verified';
+        label.textContent = 'Looks Good';
       } else if (result.status === 'warned') {
         dot.className = 'w-2 h-2 rounded-full bg-yellow-400 inline-block';
         label.textContent = 'Warnings';
       } else if (result.status === 'failed') {
         dot.className = 'w-2 h-2 rounded-full bg-red-400 inline-block';
         var count = result.issues ? result.issues.length : 0;
-        label.textContent = count + ' Issue' + (count !== 1 ? 's' : '');
+        label.textContent = count + ' Thing' + (count !== 1 ? 's' : '') + ' to Fix';
       } else {
         dot.className = 'w-2 h-2 rounded-full bg-gray-500 inline-block';
-        label.textContent = 'Unchecked';
+        label.textContent = 'Not Reviewed Yet';
       }
     }
 
@@ -2520,7 +2520,7 @@
         </div>`;
 
         // --- Metrics Dashboard ---
-        html += '<div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1 mt-3">Site Metrics</div>';
+        html += '<div class="text-[10px] text-studio-muted uppercase tracking-wider mb-1 mt-3">Site Insights</div>';
 
         // Slot coverage progress bar
         const totalSlots = h.slots?.total || 0;
