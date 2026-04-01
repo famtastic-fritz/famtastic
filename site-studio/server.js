@@ -8195,14 +8195,23 @@ function checkPreviewMod() {
 const RELOAD_SCRIPT = `<script>
 (function() {
   let last = 0;
-  setInterval(async () => {
-    try {
-      const r = await fetch('/__reload');
-      const d = await r.json();
+  let interval = 1000;
+  let failures = 0;
+  function poll() {
+    if (document.hidden) { setTimeout(poll, 2000); return; }
+    fetch('/__reload').then(function(r) { return r.json(); }).then(function(d) {
+      failures = 0;
+      interval = 1000;
       if (last && d.t > last) location.reload();
       last = d.t;
-    } catch {}
-  }, 1000);
+      setTimeout(poll, interval);
+    }).catch(function() {
+      failures++;
+      interval = Math.min(interval * 1.5, 30000);
+      setTimeout(poll, interval);
+    });
+  }
+  poll();
 })();
 </` + 'script>';
 

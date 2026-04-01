@@ -63,8 +63,8 @@
     </div>
     <div class="flex items-center gap-4">
       <button onclick="rebuildSite()" class="text-sm bg-studio-accent hover:bg-blue-600 text-white px-4 py-1.5 rounded transition">Rebuild</button>
-      <button onclick="toggleStudioPanel()" id="studio-btn" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Studio</button>
-      <button onclick="togglePreview()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition">Toggle Preview</button>
+      <button onclick="toggleStudioPanel()" id="studio-btn" class="text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition">Studio</button>
+      <button onclick="togglePreview()" id="preview-btn" class="text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition">Toggle Preview</button>
       <button onclick="openSettings()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition" title="Settings" aria-label="Settings">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       </button>
@@ -1415,6 +1415,7 @@
         refreshDeployInfo();
         refreshVerification();
       }
+      updatePanelLayout();
     }
 
     // --- Cached studio state for brief/decisions editing ---
@@ -2202,7 +2203,7 @@
 
         // Update header buttons to show brainstorm state
         document.getElementById('studio-btn').style.opacity = '0.4';
-        document.querySelector('[onclick="togglePreview()"]').style.opacity = '0.4';
+        document.getElementById('preview-btn').style.opacity = '0.4';
         document.querySelector('[onclick="rebuildSite()"]').style.opacity = '0.4';
 
       } else {
@@ -2237,7 +2238,7 @@
 
         // Restore header button opacity
         document.getElementById('studio-btn').style.opacity = '';
-        document.querySelector('[onclick="togglePreview()"]').style.opacity = '';
+        document.getElementById('preview-btn').style.opacity = '';
         document.querySelector('[onclick="rebuildSite()"]').style.opacity = '';
       }
     }
@@ -2988,26 +2989,50 @@
 
     function togglePreview() {
       previewVisible = !previewVisible;
-      document.getElementById('preview-panel').style.display = previewVisible ? 'flex' : 'none';
+      var previewPanel = document.getElementById('preview-panel');
+      var previewBtn = document.getElementById('preview-btn');
+      previewPanel.style.display = previewVisible ? 'flex' : 'none';
+      // Update button active state
+      if (previewBtn) {
+        previewBtn.className = previewVisible
+          ? 'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition'
+          : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
+      }
       updatePanelLayout();
     }
 
     function updatePanelLayout() {
-      const chat = document.getElementById('chat-panel');
-      const studio = document.getElementById('studio-panel');
-      if (!previewVisible && studioPanelVisible) {
-        // Chat + Studio only: 50/50
-        chat.style.flex = '1 1 50%';
-        studio.style.width = '50%';
-        studio.style.flex = '1 1 50%';
-        studio.classList.remove('w-80', 'shrink-0');
+      var chat = document.getElementById('chat-panel');
+      var studio = document.getElementById('studio-panel');
+      var preview = document.getElementById('preview-panel');
+      var visibleCount = (studioPanelVisible ? 1 : 0) + (previewVisible ? 1 : 0);
+
+      // Chat always gets flex:1 when it's the only panel (or one of two)
+      if (visibleCount === 0) {
+        // Chat only — full width
+        chat.style.flex = '1 1 100%';
+        chat.style.width = '';
+        chat.style.maxWidth = 'none';
+      } else if (visibleCount === 1) {
+        // Chat + one panel — chat gets more room
+        chat.style.flex = '1 1 40%';
+        chat.style.width = '';
+        chat.style.maxWidth = 'none';
+        if (studioPanelVisible) {
+          studio.style.flex = '1 1 60%';
+          studio.style.width = '';
+        }
+        if (previewVisible) {
+          preview.style.flex = '1 1 60%';
+        }
       } else {
-        // Reset to default layout
+        // All three panels — restore defaults
         chat.style.flex = '';
-        studio.style.width = '';
+        chat.style.width = localStorage.getItem('panel-left-width') ? localStorage.getItem('panel-left-width') + 'px' : '280px';
+        chat.style.maxWidth = '420px';
         studio.style.flex = '';
-        if (!studio.classList.contains('w-80')) studio.classList.add('w-80');
-        if (!studio.classList.contains('shrink-0')) studio.classList.add('shrink-0');
+        studio.style.width = localStorage.getItem('panel-center-width') ? localStorage.getItem('panel-center-width') + 'px' : '340px';
+        preview.style.flex = '1';
       }
     }
 
