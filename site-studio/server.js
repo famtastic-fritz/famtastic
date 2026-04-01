@@ -7,6 +7,7 @@ const path = require('path');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const cheerio = require('cheerio');
+const pty = require('node-pty');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -6446,7 +6447,7 @@ function extractDecisions(spec, changeSummary, requestType) {
 
 // --- HTTP + WebSocket server ---
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ noServer: true });
 
 let activeClientCount = 0;
 
@@ -8207,8 +8208,104 @@ if (initialStudio) {
 }
 
 // Clean up session on process exit
+// --- Embedded Terminal (PTY) ---
+const terminals = new Map(); // termId → { ptyProcess, connections: Set }
+let nextTermId = 1;
+
+app.post('/api/terminal/create', (req, res) => {
+  const env = { ...process.env, TERM: 'xterm-256color' };
+  // Strip vars that cause Claude CLI nested-session detection
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('CLAUDE_') || key === 'CLAUDECODE') delete env[key];
+  }
+  const ptyProcess = pty.spawn('bash', [], {
+    name: 'xterm-256color',
+    cols: 80,
+    rows: 24,
+    cwd: path.join(__dirname, '..'),
+    env,
+  });
+  const termId = String(nextTermId++);
+  terminals.set(termId, { ptyProcess, connections: new Set() });
+
+  ptyProcess.onExit(() => {
+    const term = terminals.get(termId);
+    if (term) {
+      for (const ws of term.connections) {
+        try { if (ws.readyState === 1) ws.send('\r\n[Process ended.]\r\n'); } catch {}
+      }
+      terminals.delete(termId);
+    }
+  });
+
+  res.json({ termId });
+});
+
+app.post('/api/terminal/:termId/inject', (req, res) => {
+  const term = terminals.get(req.params.termId);
+  if (!term) return res.status(404).json({ error: 'Terminal not found' });
+  const { command, execute } = req.body;
+  if (typeof command !== 'string') return res.status(400).json({ error: 'command required' });
+  term.ptyProcess.write(execute ? command + '\r' : command);
+  res.json({ success: true });
+});
+
+app.post('/api/terminal/:termId/resize', (req, res) => {
+  const term = terminals.get(req.params.termId);
+  if (!term) return res.status(404).json({ error: 'Terminal not found' });
+  const { cols, rows } = req.body;
+  if (cols > 0 && rows > 0) term.ptyProcess.resize(cols, rows);
+  res.json({ success: true });
+});
+
+app.delete('/api/terminal/:termId', (req, res) => {
+  const term = terminals.get(req.params.termId);
+  if (!term) return res.status(404).json({ error: 'Terminal not found' });
+  try { term.ptyProcess.kill(); } catch {}
+  terminals.delete(req.params.termId);
+  res.json({ success: true });
+});
+
+// Terminal WebSocket upgrade — detect /terminal/:termId path
+server.on('upgrade', (request, socket, head) => {
+  const url = new URL(request.url, 'http://localhost');
+  const match = url.pathname.match(/^\/terminal\/(\d+)$/);
+  if (match) {
+    const termId = match[1];
+    const term = terminals.get(termId);
+    if (!term) { socket.destroy(); return; }
+
+    const termWss = new WebSocketServer({ noServer: true });
+    termWss.handleUpgrade(request, socket, head, (ws) => {
+      term.connections.add(ws);
+
+      term.ptyProcess.onData((data) => {
+        try { if (ws.readyState === 1) ws.send(data); } catch {}
+      });
+
+      ws.on('message', (data) => {
+        term.ptyProcess.write(typeof data === 'string' ? data : data.toString());
+      });
+
+      ws.on('close', () => {
+        term.connections.delete(ws);
+      });
+    });
+    return;
+  }
+  // Let the main wss handle non-terminal upgrades
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
+
 async function gracefulShutdown() {
   await endSession();
+  // Kill all PTY terminals
+  for (const [id, term] of terminals) {
+    try { term.ptyProcess.kill(); } catch {}
+  }
+  terminals.clear();
   fileWatchers.forEach(w => { try { w.close(); } catch {} });
   wss.clients.forEach(client => {
     try { client.close(1001, 'Server shutting down'); } catch {}

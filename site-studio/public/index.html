@@ -364,6 +364,9 @@
     #status-right   { display: flex; align-items: center; gap: 6px; color: #6b7280; }
     .status-sep     { color: #374151; }
   </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.3.0/css/xterm.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.8.0/lib/addon-fit.js"></script>
 </head>
 <body class="bg-studio-bg text-studio-text h-screen flex flex-col overflow-hidden">
 
@@ -552,6 +555,7 @@
         <button onclick="switchStudioTab('metrics')" id="studio-tab-metrics" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Insights</button>
         <button onclick="switchStudioTab('verify')" id="studio-tab-verify" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Review</button>
         <button onclick="switchStudioTab('server')" id="studio-tab-server" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Hosting</button>
+        <button onclick="switchStudioTab('terminal')" id="studio-tab-terminal" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Terminal</button>
       </div>
 
       <!-- Scrollable tab content -->
@@ -892,6 +896,19 @@
               <div id="server-file-status" class="text-xs space-y-1"></div>
             </div>
           </div>
+        </div>
+
+        <!-- Terminal tab content -->
+        <div id="studio-tab-content-terminal" class="studio-tab-content hidden" style="display:none; flex-direction:column; height:100%;">
+          <div id="terminal-toolbar" style="display:flex; align-items:center; justify-content:space-between; padding:8px; border-bottom:1px solid #2a2a2a;">
+            <span id="terminal-status" style="font-size:11px; color:#6b7280;">No session</span>
+            <div style="display:flex; gap:6px;">
+              <button id="btn-start-claude" onclick="startClaudeSession()" class="text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded transition">Start Claude</button>
+              <button onclick="createTerminal()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">+ New</button>
+              <button onclick="if(terminalInstance) terminalInstance.clear()" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1.5 rounded transition">Clear</button>
+            </div>
+          </div>
+          <div id="terminal-container" style="flex:1; overflow:hidden; padding:4px; background:#0d0d0d;"></div>
         </div>
 
       </div>
@@ -1456,6 +1473,80 @@
       previewPlaceholder('assets/' + name, name);
     }
 
+    // --- Embedded Terminal ---
+    var activeTermId = null;
+    var terminalInstance = null;
+    var terminalWs = null;
+    var fitAddon = null;
+
+    async function createTerminal() {
+      var res = await fetch('/api/terminal/create', { method: 'POST' });
+      var data = await res.json();
+      activeTermId = data.termId;
+
+      if (terminalInstance) terminalInstance.dispose();
+      document.getElementById('terminal-container').textContent = '';
+
+      terminalInstance = new Terminal({
+        theme: { background: '#0d0d0d', foreground: '#e5e5e5', cursor: '#60a5fa' },
+        fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+        fontSize: 13, lineHeight: 1.4, cursorBlink: true, scrollback: 2000,
+      });
+
+      fitAddon = new FitAddon.FitAddon();
+      terminalInstance.loadAddon(fitAddon);
+      terminalInstance.open(document.getElementById('terminal-container'));
+      fitAddon.fit();
+
+      var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      terminalWs = new WebSocket(proto + '//' + location.host + '/terminal/' + activeTermId);
+
+      terminalWs.onmessage = function(e) {
+        terminalInstance.write(typeof e.data === 'string' ? e.data : new TextDecoder().decode(e.data));
+      };
+
+      terminalInstance.onData(function(data) {
+        if (terminalWs && terminalWs.readyState === WebSocket.OPEN) terminalWs.send(data);
+      });
+
+      new ResizeObserver(function() {
+        if (fitAddon) fitAddon.fit();
+        if (terminalInstance && activeTermId) {
+          fetch('/api/terminal/' + activeTermId + '/resize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cols: terminalInstance.cols, rows: terminalInstance.rows }),
+          });
+        }
+      }).observe(document.getElementById('terminal-container'));
+
+      document.getElementById('terminal-status').textContent = 'Session active';
+    }
+
+    async function startClaudeSession() {
+      if (!activeTermId) await createTerminal();
+      await new Promise(function(r) { setTimeout(r, 400); });
+      await injectTerminalCommand('claude', true);
+      document.getElementById('terminal-status').textContent = 'Claude Code session';
+    }
+
+    async function injectTerminalCommand(command, execute) {
+      if (!activeTermId) return;
+      await fetch('/api/terminal/' + activeTermId + '/inject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: command, execute: execute !== false }),
+      });
+    }
+
+    async function sendToTerminal(message) {
+      if (!activeTermId) {
+        await createTerminal();
+        await new Promise(function(r) { setTimeout(r, 400); });
+      }
+      await injectTerminalCommand(message, true);
+    }
+
     // --- Plan Approval ---
     function approvePlan(planId, btn) {
       var card = btn.closest('.plan-card');
@@ -1474,7 +1565,7 @@
 
     // --- Mode Switching ---
     const MODE_TABS = {
-      create: ['assets', 'blueprint', 'design'],
+      create: ['assets', 'blueprint', 'design', 'terminal'],
       ship:   ['verify', 'deploy', 'server'],
       grow:   ['history', 'metrics']
     };
@@ -1490,7 +1581,7 @@
       });
 
       // Show/hide tab buttons based on mode
-      var allTabs = ['assets', 'blueprint', 'deploy', 'design', 'history', 'metrics', 'verify', 'server'];
+      var allTabs = ['assets', 'blueprint', 'deploy', 'design', 'history', 'metrics', 'verify', 'server', 'terminal'];
       var visibleTabs = MODE_TABS[mode] || allTabs;
       allTabs.forEach(function(t) {
         var btn = document.getElementById('studio-tab-' + t);
@@ -1569,15 +1660,18 @@
         serverUptimeInterval = null;
       }
       activeStudioTab = tab;
-      ['design', 'assets', 'deploy', 'history', 'blueprint', 'metrics', 'verify', 'server'].forEach(t => {
+      ['design', 'assets', 'deploy', 'history', 'blueprint', 'metrics', 'verify', 'server', 'terminal'].forEach(t => {
         const btn = document.getElementById(`studio-tab-${t}`);
         const content = document.getElementById(`studio-tab-content-${t}`);
+        if (!btn || !content) return;
         if (t === tab) {
           btn.classList.add('studio-tab-active');
           content.classList.remove('hidden');
+          content.style.display = t === 'terminal' ? 'flex' : '';
         } else {
           btn.classList.remove('studio-tab-active');
           content.classList.add('hidden');
+          content.style.display = 'none';
         }
       });
       // Auto-refresh data when switching to these tabs
@@ -1587,6 +1681,7 @@
       if (tab === 'deploy') refreshDeployInfo();
       if (tab === 'verify') refreshVerification();
       if (tab === 'history') refreshStudioPanel();
+      if (tab === 'terminal' && fitAddon) setTimeout(function() { fitAddon.fit(); }, 50);
       if (tab === 'assets') refreshStudioPanel();
     }
 
