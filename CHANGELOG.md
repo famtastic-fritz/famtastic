@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-01 — Build Plan v2: Phase 0 through 2-A complete
+
+Executed the full Revised Build Plan v2 in a single session — 9 commits across 8 waves. Phase 0 (Foundation): renamed all 8 sidebar tabs to user-centric language, added persistent session status bar with token tracking and cost estimation, created .brain/ knowledge base (6 files) wired into every Claude prompt. Phase 1 (UX Shell): three-mode navigation (Create/Ship/Grow), three-panel layout (chat/workspace/preview) with drag-to-resize, plan approval gate before major AI operations. Phase 1.5: embedded PTY terminal via node-pty + xterm.js with Claude session launch. Phase 2-A: SQLite session/build storage at ~/.config/famtastic/studio.db with portfolio stats API. Test count: 60 → 69. Tags: phase-0-complete, phase-1-ux-stable, phase-1-terminal-complete, phase-2a-complete. Claude --print research documented (headless approach, nested session workarounds, limitations).
+
 ## 2026-03-31 — Wave A–D: integration test gap fixes (all 5 closed)
 
 Applied four waves of fixes to close every gap surfaced by the integration test suite. Wave A: reset `currentMode = 'build'` on each new WS connection, and added a `page_switch` classifier check before falling through to `handleBrainstorm()` so navigation commands always route correctly regardless of mode. Wave B: 10,000-char input length guard added at the top of the chat handler — rejects oversized messages with a user-visible error before any processing or Claude spawn. Wave C: all 5 WS-routed `spawnClaude` call sites now track the active child process on `ws.currentChild` / `ws.activeChildren[]`; `ws.on('close')` kills all active children on disconnect, eliminating zombie Claude subprocesses. Wave D: `ws.setMaxListeners(0)` added to `utils.connect()` in the integration test utils, eliminating `MaxListenersExceededWarning` from flood tests. SITE-LEARNINGS.md updated — all 5 gaps moved to Closed.

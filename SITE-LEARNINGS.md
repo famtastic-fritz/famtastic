@@ -949,6 +949,36 @@ Four bugs fixed from deep code review that were causing silent failures or wrong
 
 **Lesson:** WebSocket's `EventEmitter.on()` stacks listeners — multiple `ws.on('close', ...)` calls all fire, unlike DOM's `addEventListener`. When refactoring ws handlers over multiple sessions, always check for stale registrations. For Express route handlers that call async operations and then mutate shared state, always `async/await` — fire-and-forget is a race condition.
 
+### Build Plan v2 — Phases 0 through 2-A (2026-04-01)
+
+Executed the Revised Build Plan v2 in a single session. All Tier 1 and Tier 2 phases complete.
+
+**Phase 0 — Foundation**
+
+- **Tab/label rename (Wave 0-A):** All 8 sidebar tabs renamed to user-centric language. Assets→Media, Blueprint→Structure, Deploy→Publish, Design→Style, History→Activity, Metrics→Insights, Verify→Review, Server→Hosting. Plus 8 button/heading renames (Brand Health→Site Health, etc.). File: `site-studio/public/index.html` only. Cosmetic — no IDs or logic changed.
+
+- **Session status bar (Wave 0-B):** Fixed bottom bar showing model pill (Haiku/Sonnet/Opus with color coding), context window usage bar (green/amber/red at 50%/80%), running cost in USD, session duration. Functions: `calculateSessionCost(model, inputTokens, outputTokens)` (per-model rates), `getContextPercentage(usedTokens, windowSize)`, `broadcastSessionStatus(ws)`. Token tracking is approximate (prompt.length/4) since `--print` text mode has no usage metadata. Context warning fires once at 80%. Files: `server.js` (vars, 3 functions, broadcastSessionStatus call in wss.on('connection') and onChildClose), `index.html` (status bar HTML/CSS, session-status WS handler), `tests/unit.test.js` (6 new tests). Test count: 60 → 66.
+
+- **Brain foundation (Wave 0-C):** `.brain/` directory with 6 files: `INDEX.md` (architecture decisions, known failures, portfolio, unknowns — loaded into every Claude prompt), `patterns.md` (validated patterns with evidence and confidence), `procedures.md` (repeatable workflows), `bugs.md` (bug encyclopedia), `anti-patterns.md` (do-not-repeat rules), `site-log.jsonl` (build history). Functions: `loadBrainContext()` reads `INDEX.md` and injects between sessionContext and conversationHistory in `buildPromptContext()`. `logSiteBuild(spec, verificationResult)` appends to `site-log.jsonl` fire-and-forget after verification in `finishParallelBuild()`. Files: 6 new in `.brain/`, `server.js` (2 functions + injection point + build logging call).
+
+**Phase 1 — UX Shell**
+
+- **Three-mode navigation (Wave 1-A):** Mode selector above tab bar with icons. Create (Media/Structure/Style), Ship (Review/Publish/Hosting), Grow (Activity/Insights). Persists via `localStorage('studio-mode')`. Functions: `switchMode(mode)` shows/hides tab buttons per mode. File: `index.html` only.
+
+- **Three-panel layout (Wave 1-B):** Chat (left, 280px), workspace (center, 340px), preview (right, flex). Uses CSS flex `order` to reorder without moving HTML. Studio panel always visible (was toggle sidebar). Drag-to-resize via `setupResizer()` with localStorage persistence. Mobile responsive stacking below 1024px. File: `index.html` only. Key change: `wss` stays at `{ noServer: true }` for terminal WS coexistence.
+
+- **Plan → Confirm → Execute (Wave 1-C):** Before `layout_update/major_revision/restyle/build` intents, `generatePlan()` calls Claude (2-min timeout) to produce structured JSON plan (summary, affected_pages, changes, estimated_scope). Plan card rendered in chat with approve/edit/cancel buttons. `routeToHandler()` extracts intent dispatch from inline switch. `pendingPlans` Map tracks active plans. `plan_mode` added to settings allowedKeys (default: true). `hero_full_width` also added to allowedKeys (was missing). Files: `server.js` (generatePlan, routeToHandler, execute-plan handler, plan gate in classifier), `index.html` (plan card DOM builder, approvePlan/cancelPlan functions, CSS).
+
+**Phase 1.5 — Embedded Terminal**
+
+PTY-backed terminal in Create mode's Terminal tab. Backend: `node-pty` spawns bash with xterm-256color, CLAUDE_* env vars stripped. REST API: `POST /api/terminal/create` (returns termId), `POST /api/terminal/:termId/inject` (command injection), `POST /api/terminal/:termId/resize`, `DELETE /api/terminal/:termId`. WS upgrade handler on `server.on('upgrade')` routes `/terminal/:termId` to PTY data stream (separate from main wss). Frontend: xterm.js v5.3.0 via CDN, `createTerminal()`, `startClaudeSession()` (launches interactive claude), `sendToTerminal()` for plan card injection. ResizeObserver auto-fits. All PTY processes killed on graceful shutdown. Files: `server.js` (pty require, terminal state, 4 endpoints, WS upgrade, shutdown kill), `index.html` (CDN links, terminal tab button, tab content, JS functions), `package.json` (node-pty dep).
+
+**Phase 2-A — SQLite Session Storage**
+
+`better-sqlite3` with WAL mode at `~/.config/famtastic/studio.db`. Tables: `sessions` (id, site_tag, model, tokens, cost, message_count, status), `builds` (pages_built, verification, duration, tokens, cost), `compaction_events`. File: `site-studio/lib/db.js` — createSession, updateSessionTokens, endSession, logBuild, getSessionHistory, getPortfolioStats, _createTestDb/_closeDb for testing. Wired into: `startSession()` (creates session), `endSession()` (ends session), `onChildClose` (token updates), `finishParallelBuild()` (build logging). API: `GET /api/session-history`, `GET /api/portfolio-stats`. Tests: 3 new (session lifecycle, token accumulation, portfolio stats). Test count: 66 → 69.
+
+**Tags:** `phase-0-complete` (060b128), `phase-1-ux-stable` (c81bbeb), `phase-1-terminal-complete` (c4d83a1), `phase-2a-complete` (0375044).
+
 ### Auto-Tag Missing Slot Attributes — 2026-03-31
 
 Conditional post-processor that auto-tags `<img>` elements missing `data-slot-id`, `data-slot-status`, `data-slot-role` attributes. Runs only when build verification detects the `slot-attributes` check has failed — zero cost when Claude gets all attrs right.
