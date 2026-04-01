@@ -140,6 +140,19 @@ let currentMode = 'build'; // 'build' or 'brainstorm'
 let buildInProgress = false;
 let sessionMessageCount = 0;
 let sessionStartedAt = new Date().toISOString();
+let sessionInputTokens = 0;
+let sessionOutputTokens = 0;
+let contextWarningShown = false;
+
+// Model context window sizes (tokens)
+const MODEL_CONTEXT_WINDOWS = {
+  'claude-sonnet-4-5-20250514': 200000,
+  'claude-sonnet-4-6': 200000,
+  'claude-haiku-4-5-20251001': 200000,
+  'claude-opus-4-5-20250520': 200000,
+  'claude-opus-4-6': 200000,
+};
+
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_UPLOADS_PER_SITE = 100; // default; overridden at runtime by loadSettings().max_uploads_per_site
@@ -698,6 +711,9 @@ function startSession() {
   fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
+  sessionInputTokens = 0;
+  sessionOutputTokens = 0;
+  contextWarningShown = false;
   return studio;
 }
 
@@ -6129,6 +6145,26 @@ ${analyticsInstruction}`;
     buildInProgress = false;
     ws.currentChild = null;
 
+    // Approximate token tracking (no usage data from --print text mode)
+    const inputEstimate = Math.round(prompt.length / 4);
+    const outputEstimate = Math.round(response.length / 4);
+    sessionInputTokens += inputEstimate;
+    sessionOutputTokens += outputEstimate;
+    broadcastSessionStatus(ws);
+
+    // Context warning (once per session)
+    if (!contextWarningShown) {
+      const used = sessionInputTokens + sessionOutputTokens;
+      const model = loadSettings().model || 'claude-sonnet-4-6';
+      const windowSize = MODEL_CONTEXT_WINDOWS[model] || 200000;
+      if (used / windowSize >= 0.8) {
+        contextWarningShown = true;
+        try {
+          ws.send(JSON.stringify({ type: 'assistant', content: '⚠️ Context is getting full (80%+). Quality may start to degrade. Consider starting a fresh session, or ask me to summarize what we\'ve built so far to compress the context.' }));
+        } catch {}
+      }
+    }
+
     if (code !== 0 || !response.trim()) {
       console.error(`[claude] Build failed — exit code: ${code}, response length: ${response.length}, stderr: ${stderrOutput.substring(0, 500)}`);
       const fallback = "I couldn't process that request right now. Try being more specific about what you'd like to change, or say 'build the site' to regenerate.";
@@ -6363,6 +6399,9 @@ wss.on('connection', (ws) => {
   if (activeClientCount === 1) {
     startSession();
   }
+
+  // Send session status to the new client
+  broadcastSessionStatus(ws);
 
   ws.on('close', async () => {
     activeClientCount = Math.max(0, activeClientCount - 1);
@@ -8067,6 +8106,43 @@ async function gracefulShutdown() {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
+// --- Session cost & context tracking ---
+function calculateSessionCost(model, inputTokens, outputTokens) {
+  const rates = {
+    'claude-sonnet-4-6':         { input: 0.000003,  output: 0.000015 },
+    'claude-sonnet-4-5-20250514':{ input: 0.000003,  output: 0.000015 },
+    'claude-haiku-4-5-20251001': { input: 0.0000008, output: 0.000004 },
+    'claude-opus-4-6':           { input: 0.000015,  output: 0.000075 },
+    'claude-opus-4-5-20250520':  { input: 0.000015,  output: 0.000075 },
+  };
+  const r = rates[model] || rates['claude-sonnet-4-6'];
+  return Math.round((inputTokens * r.input + outputTokens * r.output) * 10000) / 10000;
+}
+
+function getContextPercentage(usedTokens, windowSize) {
+  const percentage = Math.min(Math.round(usedTokens / windowSize * 100), 100);
+  const colorClass = percentage < 50 ? 'context-green' :
+                     percentage < 80 ? 'context-amber' : 'context-red';
+  return { percentage, colorClass };
+}
+
+function broadcastSessionStatus(ws) {
+  if (!ws || ws.readyState !== 1) return;
+  const model = loadSettings().model || 'claude-sonnet-4-6';
+  const windowSize = MODEL_CONTEXT_WINDOWS[model] || 200000;
+  try {
+    ws.send(JSON.stringify({
+      type: 'session-status',
+      model,
+      inputTokens: sessionInputTokens,
+      outputTokens: sessionOutputTokens,
+      estimatedCostUsd: calculateSessionCost(model, sessionInputTokens, sessionOutputTokens),
+      sessionStartedAt,
+      contextWindowSize: windowSize,
+    }));
+  } catch {}
+}
+
 // --- Exports for testing ---
 module.exports = {
   sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest,
@@ -8082,6 +8158,8 @@ module.exports = {
   fileInspect, browserInspect, inspectSite,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
+  // Session tracking
+  calculateSessionCost, getContextPercentage,
 };
 
 // --- File change detection ---

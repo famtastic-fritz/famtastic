@@ -20,6 +20,8 @@ const {
   ensureHeadDependencies,
   extractTemplateComponents,
   autoTagMissingSlots,
+  calculateSessionCost,
+  getContextPercentage,
 } = require('../server');
 
 // classifyRequest checks fs.existsSync for index.html — ensure it exists
@@ -514,5 +516,37 @@ describe('autoTagMissingSlots', () => {
     expect(idMatch).toBeTruthy();
     expect(idMatch[1]).toMatch(/^auto-/);
     expect(idMatch[1]).toContain('team');
+  });
+});
+
+// --- Session Cost & Context ---
+
+describe('calculateSessionCost', () => {
+  it('calculates Sonnet cost correctly for known token counts', () => {
+    // 10000 input × $0.000003 + 2000 output × $0.000015 = $0.06
+    expect(calculateSessionCost('claude-sonnet-4-6', 10000, 2000)).toBe(0.06);
+  });
+  it('calculates Haiku cost correctly', () => {
+    // 10000 × $0.0000008 + 2000 × $0.000004 = $0.016
+    expect(calculateSessionCost('claude-haiku-4-5-20251001', 10000, 2000)).toBe(0.016);
+  });
+  it('returns 0 for zero token counts without throwing', () => {
+    expect(calculateSessionCost('claude-sonnet-4-6', 0, 0)).toBe(0);
+  });
+});
+
+describe('getContextPercentage', () => {
+  it('returns green class when usage is below 50%', () => {
+    const r = getContextPercentage(40000, 200000);
+    expect(r.percentage).toBe(20);
+    expect(r.colorClass).toBe('context-green');
+  });
+  it('returns amber class when usage is 50-80%', () => {
+    const r = getContextPercentage(120000, 200000);
+    expect(r.colorClass).toBe('context-amber');
+  });
+  it('returns red class when usage exceeds 80%', () => {
+    const r = getContextPercentage(170000, 200000);
+    expect(r.colorClass).toBe('context-red');
   });
 });

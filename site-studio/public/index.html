@@ -282,6 +282,30 @@
     }
     .inline-edit-form textarea { resize: vertical; min-height: 40px; }
     .inline-edit-form input:focus, .inline-edit-form textarea:focus, .inline-edit-form select:focus { outline: none; border-color: #3b82f6; }
+    /* Session Status Bar */
+    #status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 32px;
+      background: #0f0f0f;
+      border-top: 1px solid #2a2a2a;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      font-size: 11px;
+      z-index: 100;
+      color: #9ca3af;
+    }
+    #status-context-wrap { display: flex; align-items: center; gap: 6px; }
+    #status-context-bar-bg { width: 80px; height: 4px; background: #2a2a2a; border-radius: 2px; }
+    #status-context-bar-fill { height: 100%; border-radius: 2px; width: 0%; transition: width 0.5s; }
+    .context-green  { background: #22c55e; }
+    .context-amber  { background: #f59e0b; }
+    .context-red    { background: #ef4444; }
+    .status-pill    { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .pill-blue      { background: #1d4ed8; color: #bfdbfe; }
+    .pill-purple    { background: #6d28d9; color: #e9d5ff; }
+    .pill-green     { background: #065f46; color: #a7f3d0; }
+    #status-right   { display: flex; align-items: center; gap: 6px; color: #6b7280; }
+    .status-sep     { color: #374151; }
   </style>
 </head>
 <body class="bg-studio-bg text-studio-text h-screen flex flex-col overflow-hidden">
@@ -987,6 +1011,35 @@
             warnDiv.textContent = msg.content;
             document.getElementById('chat-messages').appendChild(warnDiv);
             document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+            break;
+          }
+          case 'session-status': {
+            var mdl = msg.model || '';
+            var modelEl = document.getElementById('status-model');
+            var isHaiku = mdl.includes('haiku');
+            var isOpus = mdl.includes('opus');
+            modelEl.textContent = isHaiku ? 'Haiku' : isOpus ? 'Opus' : 'Sonnet';
+            modelEl.className = 'status-pill ' + (isHaiku ? 'pill-green' : isOpus ? 'pill-purple' : 'pill-blue');
+
+            var used = (msg.inputTokens || 0) + (msg.outputTokens || 0);
+            var ctxSize = msg.contextWindowSize || 200000;
+            var pct = Math.min(Math.round(used / ctxSize * 100), 100);
+            var colorClass = pct < 50 ? 'context-green' : pct < 80 ? 'context-amber' : 'context-red';
+            document.getElementById('status-context-pct').textContent = pct + '%';
+            var fill = document.getElementById('status-context-bar-fill');
+            fill.style.width = pct + '%';
+            fill.className = colorClass;
+
+            document.getElementById('status-cost').textContent = '$' + (msg.estimatedCostUsd || 0).toFixed(2);
+
+            if (msg.sessionStartedAt && !window._statusTimerStarted) {
+              window._statusStartTime = new Date(msg.sessionStartedAt);
+              window._statusTimerStarted = true;
+              setInterval(function() {
+                var mins = Math.floor((Date.now() - window._statusStartTime) / 60000);
+                document.getElementById('status-duration').textContent = mins + ' min';
+              }, 10000);
+            }
             break;
           }
         }
@@ -4316,5 +4369,21 @@
     // --- Start ---
     init();
   </script>
+  <!-- Session Status Bar -->
+  <div id="status-bar">
+    <div id="status-model" class="status-pill"></div>
+    <div id="status-context-wrap">
+      <span id="status-context-label">Context:</span>
+      <div id="status-context-bar-bg">
+        <div id="status-context-bar-fill"></div>
+      </div>
+      <span id="status-context-pct">0%</span>
+    </div>
+    <div id="status-right">
+      <span id="status-cost">$0.00</span>
+      <span class="status-sep">&middot;</span>
+      <span id="status-duration">0 min</span>
+    </div>
+  </div>
 </body>
 </html>
