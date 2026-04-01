@@ -979,6 +979,22 @@ PTY-backed terminal in Create mode's Terminal tab. Backend: `node-pty` spawns ba
 
 **Tags:** `phase-0-complete` (060b128), `phase-1-ux-stable` (c81bbeb), `phase-1-terminal-complete` (c4d83a1), `phase-2a-complete` (0375044).
 
+### CSS File Structure + Terminal Fix + UI Bug Sweep (2026-04-01)
+
+**CSS file structure rule:** Established as non-negotiable in CLAUDE.md and `.brain/anti-patterns.md`. All new CSS goes in `site-studio/public/css/` — never inline `<style>`. Six component files: `studio-base.css` (resets, messages, uploads, health dots), `studio-panels.css` (three-panel layout, resizers, responsive), `studio-chat.css` (plan cards, brainstorm mode), `studio-sidebar.css` (tabs, mode selector, status bar, slot mode), `studio-modals.css` (placeholder), `studio-terminal.css` (placeholder). All linked in `<head>`. Unit test enforces file existence + link integrity. File watcher monitors `public/css/` for change detection. Extracted ~340 lines from inline `<style>` block into the component files. Test count: 69 → 70.
+
+**Terminal fix (critical):** node-pty 1.1.0 fails with `posix_spawnp` on Node 24 + macOS arm64. Upgraded to `node-pty@1.2.0-beta.12` which resolves it. xterm.js CDN was pointing to non-existent v5.3.0 (404, causing `Terminal is not defined`). Updated to `@xterm/xterm@6.0.0` and `@xterm/addon-fit@0.11.0`. Terminal now spawns successfully. Start Claude button launches interactive Claude Code session inside Studio. **Note:** node-pty 1.2.0 is a beta — upgrade to stable when released.
+
+**Preview reload polling flood:** The preview iframe's live-reload script used `setInterval(1000)` with no backoff. When the preview server was unreachable (e.g., during restart), it flooded the browser with `ERR_TIMED_OUT` and `ERR_INSUFFICIENT_RESOURCES` errors, exhausting connection limits. Fix: replaced with recursive `setTimeout` with exponential backoff on failure (1s → 1.5x multiplier → 30s cap). Also skips polling when `document.hidden` (tab not active). File: `site-studio/server.js`, `RELOAD_SCRIPT` constant.
+
+**Panel toggle button states:** Studio and Toggle Preview buttons started gray even though both panels were visible on load. Fixed: both start with `bg-studio-accent` (blue). Toggle switches to `bg-gray-600` when panel hidden, back to blue when shown. Added `id="preview-btn"` for reliable targeting.
+
+**Chat panel layout reflow:** When both Studio and Preview panels were hidden, chat panel stayed at its narrow fixed width. `updatePanelLayout()` rewritten: 0 panels visible → chat `flex: 1 1 100%` (fills viewport), 1 panel visible → chat `flex: 1 1 40%` + remaining panel `flex: 1 1 60%`, all 3 → restore saved widths from localStorage.
+
+**Resizer z-index:** Panel resizer was invisible to mouse events because chat panel's overflow was on top. Fixed: resizer width 4px → 6px, added `z-index: 10; position: relative`. Duplicate `resizer-lc` element removed from DOM.
+
+**Terminal error handling:** `POST /api/terminal/create` now wraps `pty.spawn()` in try/catch and returns `{ error: "..." }` JSON instead of crashing Express with an unhandled exception. Uses `process.env.SHELL` instead of hardcoded `bash`.
+
 ### Auto-Tag Missing Slot Attributes — 2026-03-31
 
 Conditional post-processor that auto-tags `<img>` elements missing `data-slot-id`, `data-slot-status`, `data-slot-role` attributes. Runs only when build verification detects the `slot-attributes` check has failed — zero cost when Claude gets all attrs right.

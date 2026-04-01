@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-01 — CSS file structure rule, terminal fix, UI bug sweep
+
+Established Studio UI CSS file structure rule as a non-negotiable convention in CLAUDE.md and .brain/anti-patterns.md. Extracted all ~340 lines of inline CSS from index.html into 6 component files under public/css/. Added unit test enforcing file existence + link integrity (70 tests). Fixed embedded terminal: upgraded node-pty from 1.1.0 to 1.2.0-beta.12 (fixes posix_spawnp on Node 24 arm64), fixed xterm CDN from non-existent v5.3.0 to v6.0.0. Fixed preview reload polling flood (replaced setInterval with backoff + visibility check). Fixed panel toggle button states (start blue, toggle to gray). Fixed chat panel layout when panels hidden (fills available space). File watcher now monitors public/css/ directory.
+
 ## 2026-04-01 — Build Plan v2: Phase 0 through 2-A complete
 
 Executed the full Revised Build Plan v2 in a single session — 9 commits across 8 waves. Phase 0 (Foundation): renamed all 8 sidebar tabs to user-centric language, added persistent session status bar with token tracking and cost estimation, created .brain/ knowledge base (6 files) wired into every Claude prompt. Phase 1 (UX Shell): three-mode navigation (Create/Ship/Grow), three-panel layout (chat/workspace/preview) with drag-to-resize, plan approval gate before major AI operations. Phase 1.5: embedded PTY terminal via node-pty + xterm.js with Claude session launch. Phase 2-A: SQLite session/build storage at ~/.config/famtastic/studio.db with portfolio stats API. Test count: 60 → 69. Tags: phase-0-complete, phase-1-ux-stable, phase-1-terminal-complete, phase-2a-complete. Claude --print research documented (headless approach, nested session workarounds, limitations).
