@@ -8443,6 +8443,29 @@ function setupFileWatcher() {
       console.log(`[file-watch] Could not watch ${path.basename(filePath)}: ${err.message}`);
     }
   }
+
+  // Watch css/ directory for changes
+  const cssDir = path.join(__dirname, 'public', 'css');
+  if (fs.existsSync(cssDir)) {
+    try {
+      let cssDebouce = null;
+      const cssWatcher = fs.watch(cssDir, (eventType, filename) => {
+        if (!filename || !filename.endsWith('.css')) return;
+        clearTimeout(cssDebouce);
+        cssDebouce = setTimeout(() => {
+          console.log(`[file-watch] css/${filename} changed — restart recommended`);
+          wss.clients.forEach(client => {
+            try {
+              client.send(JSON.stringify({ type: 'restart-needed', file: `css/${filename}`, timestamp: new Date().toISOString() }));
+            } catch {}
+          });
+        }, 2000);
+      });
+      fileWatchers.push(cssWatcher);
+    } catch (err) {
+      console.log(`[file-watch] Could not watch css/ directory: ${err.message}`);
+    }
+  }
 }
 
 // Start servers only when run directly (not when imported by tests)
