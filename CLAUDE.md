@@ -132,6 +132,36 @@ or include "[docs]" in the commit message so documentation changes are
 identifiable in the git history separately from code changes. Example:
 "docs: update SITE-LEARNINGS with slot system and known gaps"
 
+## Studio UI File Structure Rule (Non-Negotiable)
+
+All CSS for the Studio UI belongs in separate files under
+site-studio/public/css/, one file per logical component.
+JavaScript follows the same pattern under site-studio/public/js/
+when extracted. CDN links for external libraries (xterm, Tailwind,
+Google Fonts, etc.) remain in index.html <head> — CDNs are acceptable.
+Tailwind utility classes on HTML elements are exempt from this rule.
+
+File map:
+  site-studio/public/css/
+    studio-base.css      — resets, layout, typography
+    studio-panels.css    — three-panel layout, resizers
+    studio-chat.css      — chat panel, messages, plan cards
+    studio-sidebar.css   — tabs, mode selector, status bar
+    studio-modals.css    — settings, upload, all modal dialogs
+    studio-terminal.css  — terminal panel and toolbar
+
+Rules:
+- New CSS written during any phase goes into the appropriate css/ file
+- Never add new styles to a <style> block in index.html
+- Never add new <script> blocks to index.html for app logic —
+  use the appropriate js/ file instead
+- The existing inline <style> block in index.html is known tech debt,
+  scheduled for extraction after Phase 1.5 completes
+- When adding a new css/ file, add a corresponding <link> tag in
+  index.html <head> immediately — never leave a file unlinked
+- When adding a new js/ file, add a corresponding <script src="...">
+  tag at the bottom of index.html <body> immediately
+
 ## OpenWolf Context Management
 
 This project uses OpenWolf (`.wolf/`) for cross-session context management.

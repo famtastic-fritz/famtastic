@@ -8,3 +8,7 @@
 - NEVER put revenue or business operations data into spec.json — spec.json is a build artifact, not a portfolio ledger. Business data belongs in SQLite.
 - NEVER increment innerCompleted in both timeout handler and close event — kill() triggers close, which handles completion
 - NEVER allow GET /api/settings to return raw API keys — use safeSettings()
+- NEVER add new CSS to the <style> block in index.html — use the appropriate file in site-studio/public/css/ instead
+- NEVER add new app logic JavaScript as an inline <script> block in index.html — use site-studio/public/js/ instead
+- NEVER add a css/ or js/ file without immediately linking it in index.html — unlinked files are invisible to the browser and create confusing debugging sessions
+- CDN links for external libraries ARE acceptable in index.html <head>
