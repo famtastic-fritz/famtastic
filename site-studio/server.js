@@ -153,6 +153,10 @@ const MODEL_CONTEXT_WINDOWS = {
   'claude-opus-4-6': 200000,
 };
 
+// Plan approval state
+const pendingPlans = new Map(); // planId → { userMessage, intent }
+const PLAN_REQUIRED_INTENTS = ['layout_update', 'major_revision', 'restyle', 'build'];
+
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_UPLOADS_PER_SITE = 100; // default; overridden at runtime by loadSettings().max_uploads_per_site
@@ -3667,7 +3671,7 @@ app.put('/api/settings', (req, res) => {
   const allowedKeys = ['model', 'deploy_target', 'deploy_team', 'preview_port', 'studio_port',
     'max_upload_size_mb', 'max_uploads_per_site', 'auto_summary', 'auto_version', 'max_versions',
     'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id', 'brainstorm_profile',
-    'prod_sites_base'];
+    'prod_sites_base', 'plan_mode', 'hero_full_width'];
   const current = loadSettings();
   for (const key of Object.keys(req.body)) {
     if (allowedKeys.includes(key)) current[key] = req.body[key];
@@ -4139,6 +4143,80 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
 }
 
 // --- Planning Handler ---
+async function generatePlan(ws, userMessage, intent, spec) {
+  const prompt = `Given this request: "${userMessage}"
+Site: ${spec.site_name || TAG}, page: ${currentPage}, intent: ${intent}
+Generate a build plan as JSON with this exact structure:
+{
+  "summary": "one sentence of what will change",
+  "affected_pages": ["filename.html"],
+  "changes": [
+    { "area": "area name", "action": "what changes" }
+  ],
+  "estimated_scope": "small"
+}
+estimated_scope must be one of: small, medium, large.
+Return ONLY the JSON object. No preamble, no explanation.`;
+
+  try {
+    const child = spawnClaude(prompt);
+    let response = '';
+    child.stdout.on('data', (chunk) => { response += chunk.toString(); });
+
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => { child.kill(); resolve(null); }, 120000);
+      child.on('close', () => {
+        clearTimeout(timeout);
+        response = response.trim();
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) { resolve(null); return; }
+        try {
+          const plan = JSON.parse(jsonMatch[0]);
+          const planId = require('crypto').randomUUID();
+          pendingPlans.set(planId, { userMessage, intent });
+          ws.send(JSON.stringify({ type: 'build-plan', planId, plan, originalMessage: userMessage }));
+          resolve(planId);
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+  } catch {
+    return null;
+  }
+}
+
+function routeToHandler(ws, requestType, userMessage, spec) {
+  switch (requestType) {
+    case 'layout_update':
+    case 'content_update':
+    case 'bug_fix':
+      handleChatMessage(ws, userMessage, requestType, spec);
+      break;
+    case 'new_site':
+    case 'major_revision':
+    case 'restyle':
+      handlePlanning(ws, userMessage, spec);
+      break;
+    case 'build': {
+      const lowerMsg = userMessage.toLowerCase();
+      const templateMatch = lowerMsg.match(/\b(event|business|portfolio|landing)\b/);
+      if (templateMatch) {
+        ws.send(JSON.stringify({ type: 'status', content: `Building with ${templateMatch[1]} template...` }));
+        runOrchestratorSite(ws, templateMatch[1]);
+      } else {
+        const pagesList = (spec.pages || spec.design_brief?.must_have_sections || ['home']).join(', ');
+        ws.send(JSON.stringify({ type: 'status', content: 'Building site from brief...' }));
+        handleChatMessage(ws, `Build this site based on the design brief. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}`, 'build', spec);
+      }
+      break;
+    }
+    default:
+      handleChatMessage(ws, userMessage, requestType, spec);
+      break;
+  }
+}
+
 function handlePlanning(ws, userMessage, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Analyzing your vision...' }));
 
@@ -6562,6 +6640,22 @@ wss.on('connection', (ws) => {
       const requestType = classifyRequest(userMessage, spec);
       console.log(`[classify] "${userMessage.substring(0, 60)}..." → ${requestType}`);
 
+      // Plan gate: for heavy intents, show a plan card first (if plan_mode enabled)
+      const planMode = loadSettings().plan_mode !== false;
+      if (planMode && PLAN_REQUIRED_INTENTS.includes(requestType)) {
+        ws.send(JSON.stringify({ type: 'status', content: 'Generating plan...' }));
+        generatePlan(ws, userMessage, requestType, readSpec())
+          .then(planId => {
+            if (!planId) {
+              // Plan generation failed — proceed directly
+              routeToHandler(ws, requestType, userMessage, readSpec());
+            }
+            // Otherwise wait for 'execute-plan' from client
+          })
+          .catch(() => routeToHandler(ws, requestType, userMessage, readSpec()));
+        return;
+      }
+
       // Route based on classification
       switch (requestType) {
         case 'page_switch': {
@@ -7169,6 +7263,24 @@ wss.on('connection', (ws) => {
         saveStudio();
         ws.send(JSON.stringify({ type: 'page-changed', page: currentPage }));
       }
+    }
+
+    if (msg.type === 'execute-plan') {
+      const plan = pendingPlans.get(msg.planId);
+      if (!plan) return;
+      pendingPlans.delete(msg.planId);
+
+      if (!msg.approved) {
+        ws.send(JSON.stringify({ type: 'assistant', content: "No problem. What would you like to do differently?" }));
+        appendConvo({ role: 'assistant', content: 'Plan cancelled by user', at: new Date().toISOString() });
+        return;
+      }
+
+      // Execute with the (possibly edited) message
+      const finalMessage = msg.editedMessage || plan.userMessage;
+      const reclassifiedType = classifyRequest(finalMessage, readSpec());
+      routeToHandler(ws, reclassifiedType, finalMessage, readSpec());
+      return;
     }
 
     if (msg.type === 'update-spec') {
