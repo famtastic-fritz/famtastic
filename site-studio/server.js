@@ -8,6 +8,7 @@ const multer = require('multer');
 const nodemailer = require('nodemailer');
 const cheerio = require('cheerio');
 const pty = require('node-pty');
+const db = require('./lib/db');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -144,6 +145,7 @@ let sessionStartedAt = new Date().toISOString();
 let sessionInputTokens = 0;
 let sessionOutputTokens = 0;
 let contextWarningShown = false;
+let currentSessionId = null;
 
 // Model context window sizes (tokens)
 const MODEL_CONTEXT_WINDOWS = {
@@ -680,6 +682,11 @@ async function endSession(ws) {
     studio.updated_at = new Date().toISOString();
     fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
 
+    // End session in SQLite
+    if (currentSessionId) {
+      try { db.endSession(currentSessionId); } catch {}
+    }
+
     // Generate session summary before closing — await so it completes before disconnect
     if (sessionMessageCount >= 3 && loadSettings().auto_summary) {
       await generateSessionSummary(ws);
@@ -719,6 +726,9 @@ function startSession() {
   sessionInputTokens = 0;
   sessionOutputTokens = 0;
   contextWarningShown = false;
+  // Track session in SQLite
+  currentSessionId = require('crypto').randomUUID();
+  try { db.createSession({ id: currentSessionId, siteTag: TAG, model: loadSettings().model || 'unknown' }); } catch {}
   return studio;
 }
 
@@ -871,6 +881,16 @@ app.get('/api/config', (req, res) => {
 });
 
 // Server info — session metadata, uptime, file status
+app.get('/api/session-history', (req, res) => {
+  try { res.json(db.getSessionHistory(TAG)); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/portfolio-stats', (req, res) => {
+  try { res.json(db.getPortfolioStats()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/server-info', (req, res) => {
   const settings = loadSettings();
   const studio = loadStudio();
@@ -5753,6 +5773,24 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   // Log build to .brain/site-log.jsonl (fire-and-forget)
   try { logSiteBuild(spec, verification); } catch {}
 
+  // Log build to SQLite
+  if (currentSessionId) {
+    try {
+      db.logBuild({
+        id: require('crypto').randomUUID(),
+        sessionId: currentSessionId,
+        siteTag: TAG,
+        pagesBuilt: writtenPages.length,
+        verificationStatus: verification?.status,
+        verificationIssues: verification?.issues?.length || 0,
+        durationMs: Math.round((Date.now() - startTime)),
+        model: loadSettings().model || 'unknown',
+        inputTokens: sessionInputTokens,
+        outputTokens: sessionOutputTokens,
+      });
+    } catch {}
+  }
+
   // Notify chat only on failures
   if (verification.status === 'failed') {
     const issueCount = verification.issues.length;
@@ -6230,6 +6268,12 @@ ${analyticsInstruction}`;
     sessionInputTokens += inputEstimate;
     sessionOutputTokens += outputEstimate;
     broadcastSessionStatus(ws);
+
+    // Update SQLite session tokens
+    if (currentSessionId) {
+      const cost = calculateSessionCost(loadSettings().model || 'claude-sonnet-4-6', inputEstimate, outputEstimate);
+      try { db.updateSessionTokens(currentSessionId, inputEstimate, outputEstimate, cost); } catch {}
+    }
 
     // Context warning (once per session)
     if (!contextWarningShown) {

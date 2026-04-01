@@ -24,6 +24,8 @@ const {
   getContextPercentage,
 } = require('../server');
 
+const db = require('../lib/db');
+
 // classifyRequest checks fs.existsSync for index.html — ensure it exists
 const HUB_ROOT = path.resolve(import.meta.dirname, '../../');
 const DIST_DIR = path.join(HUB_ROOT, 'sites', process.env.SITE_TAG || 'site-demo', 'dist');
@@ -548,5 +550,46 @@ describe('getContextPercentage', () => {
   it('returns red class when usage exceeds 80%', () => {
     const r = getContextPercentage(170000, 200000);
     expect(r.colorClass).toBe('context-red');
+  });
+});
+
+// --- SQLite Session Storage ---
+
+describe('db: session lifecycle', () => {
+  beforeAll(() => { db._createTestDb(); });
+  afterAll(() => { db._closeDb(); });
+
+  it('creates and ends a session correctly', () => {
+    db.createSession({ id: 'test-s1', siteTag: 'site-test', model: 'claude-sonnet-4-6' });
+    const rows = db.getSessionHistory('site-test', 10);
+    expect(rows.length).toBe(1);
+    expect(rows[0].status).toBe('active');
+    db.endSession('test-s1');
+    const ended = db.getSessionHistory('site-test', 10);
+    expect(ended[0].status).toBe('completed');
+    expect(ended[0].ended_at).toBeTruthy();
+  });
+
+  it('accumulates token counts across multiple updates', () => {
+    db.createSession({ id: 'test-s2', siteTag: 'site-test', model: 'claude-haiku-4-5-20251001' });
+    db.updateSessionTokens('test-s2', 1000, 200, 0.01);
+    db.updateSessionTokens('test-s2', 500, 100, 0.005);
+    const rows = db.getSessionHistory('site-test', 10);
+    const s = rows.find(r => r.id === 'test-s2');
+    expect(s.total_input_tokens).toBe(1500);
+    expect(s.total_output_tokens).toBe(300);
+    expect(s.message_count).toBe(2);
+  });
+
+  it('returns correct portfolio stats from known data', () => {
+    db.logBuild({
+      id: 'test-b1', sessionId: 'test-s1', siteTag: 'site-test',
+      pagesBuilt: 3, verificationStatus: 'passed', verificationIssues: 0,
+      durationMs: 5000, model: 'claude-sonnet-4-6', inputTokens: 2000, outputTokens: 500,
+    });
+    const stats = db.getPortfolioStats();
+    expect(stats.totalSessions).toBeGreaterThanOrEqual(2);
+    expect(stats.totalBuilds).toBeGreaterThanOrEqual(1);
+    expect(stats.sitesBuilt).toBeGreaterThanOrEqual(1);
   });
 });
