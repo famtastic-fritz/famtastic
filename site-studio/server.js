@@ -3493,6 +3493,36 @@ app.post('/api/summarize', (req, res) => {
 // --- Settings API ---
 const SETTINGS_FILE = path.join(process.env.HOME || '~', '.config', 'famtastic', 'studio-config.json');
 
+function loadBrainContext() {
+  const indexPath = path.join(HUB_ROOT, '.brain', 'INDEX.md');
+  if (!fs.existsSync(indexPath)) return '';
+  try {
+    const content = fs.readFileSync(indexPath, 'utf8');
+    return '\n\n## FAMtastic Institutional Knowledge\n' + content;
+  } catch (e) {
+    console.warn('[brain] Failed to load INDEX.md:', e.message);
+    return '';
+  }
+}
+
+function logSiteBuild(spec, verificationResult) {
+  const logPath = path.join(HUB_ROOT, '.brain', 'site-log.jsonl');
+  const entry = {
+    siteId: TAG,
+    siteName: spec.site_name || TAG,
+    niche: spec.business_type || null,
+    pages: (spec.design_brief?.must_have_sections || []).length,
+    builtAt: new Date().toISOString(),
+    verificationStatus: verificationResult?.status || 'unknown',
+    model: loadSettings().model,
+  };
+  try {
+    fs.appendFileSync(logPath, JSON.stringify(entry) + '\n');
+  } catch (e) {
+    console.warn('[brain] Failed to log build:', e.message);
+  }
+}
+
 function loadSettings() {
   const defaults = {
     model: 'claude-haiku-4-5-20251001',
@@ -3851,6 +3881,9 @@ function buildPromptContext(requestType, spec, userMessage) {
     sessionContext = '\nPREVIOUS SESSION CONTEXT:\n' + summaries.map(s => s.content).join('\n---\n');
   }
 
+  // BRAIN — institutional knowledge from .brain/INDEX.md
+  const brainContext = loadBrainContext();
+
   // Recent conversation history (intra-session continuity)
   let conversationHistory = '';
   const recentConvo = loadRecentConversation(RECENT_CONVO_COUNT);
@@ -3887,7 +3920,7 @@ function buildPromptContext(requestType, spec, userMessage) {
   // Load template context for single-page edits (so Claude copies chrome from template)
   const templateContext = loadTemplateContext();
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage };
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage };
 }
 
 function summarizeHtml(html) {
@@ -4311,6 +4344,7 @@ ${briefContext}
 ${decisionsContext}
 ${assetsContext}
 ${sessionContext}
+${brainContext}
 ${conversationHistory}
 ${slotMappingContext || ''}
 
@@ -5621,6 +5655,9 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   } catch {}
   ws.send(JSON.stringify({ type: 'verification-result', ...verification }));
 
+  // Log build to .brain/site-log.jsonl (fire-and-forget)
+  try { logSiteBuild(spec, verification); } catch {}
+
   // Notify chat only on failures
   if (verification.status === 'failed') {
     const issueCount = verification.issues.length;
@@ -5800,7 +5837,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
   const prevPage = currentPage;
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
 
   // If buildPromptContext resolved a different page, update currentPage explicitly here
   if (resolvedPage !== prevPage) {
@@ -5886,6 +5923,7 @@ ${briefContext}
 ${decisionsContext}
 ${assetsContext}
 ${sessionContext}
+${brainContext}
 ${conversationHistory}
 ${blueprintContext}
 ${slotMappingContext}
