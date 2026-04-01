@@ -593,3 +593,28 @@ describe('db: session lifecycle', () => {
     expect(stats.sitesBuilt).toBeGreaterThanOrEqual(1);
   });
 });
+
+// --- Studio CSS File Structure ---
+
+describe('Studio CSS file structure', () => {
+  it('all expected css/ files exist and are linked in index.html', () => {
+    const cssDir = path.join(__dirname, '../public/css');
+    const indexHtml = fs.readFileSync(
+      path.join(__dirname, '../public/index.html'), 'utf8'
+    );
+    const expectedFiles = [
+      'studio-base.css',
+      'studio-panels.css',
+      'studio-chat.css',
+      'studio-sidebar.css',
+      'studio-modals.css',
+      'studio-terminal.css',
+    ];
+    for (const file of expectedFiles) {
+      expect(fs.existsSync(path.join(cssDir, file)),
+        `${file} missing from public/css/`).toBe(true);
+      expect(indexHtml,
+        `${file} not linked in index.html`).toContain(`href="css/${file}"`);
+    }
+  });
+});
