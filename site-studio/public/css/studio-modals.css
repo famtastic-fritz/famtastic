@@ -1,2 +1,3 @@
 /* Studio Modals — settings modal, upload modal, all dialog overlays */
-/* Content extracted from index.html <style> block in cleanup wave after Phase 1.5 */
+/* Modals currently use Tailwind classes inline — this file receives
+   any custom modal styles extracted from index.html */

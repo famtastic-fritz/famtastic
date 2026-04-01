@@ -1,2 +1,29 @@
 /* Studio Base — resets, layout foundations, typography */
-/* Content extracted from index.html <style> block in cleanup wave after Phase 1.5 */
+
+.msg-assistant { background: #334155; color: #e2e8f0; }
+.msg-status { background: transparent; color: #cbd5e1; font-style: italic; border: 1px dashed #475569; }
+.msg-error { background: #7f1d1d; color: #fca5a5; }
+.msg-brief { background: #1e293b; border: 1px solid #3b82f6; color: #e2e8f0; }
+.msg-changes { background: #1a2332; border-left: 3px solid #22c55e; color: #e2e8f0; }
+.step-done { color: #22c55e; }
+.step-active { color: #3b82f6; }
+.step-dot { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.upload-zone { border: 2px dashed #475569; transition: all 0.2s; }
+.upload-zone.drag-over { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+.upload-thumb { position: relative; }
+.upload-thumb img { object-fit: cover; }
+.role-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; }
+.role-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: flex; align-items: center; justify-content: center; }
+.health-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.health-green { background: #22c55e; }
+.health-yellow { background: #eab308; }
+.health-red { background: #ef4444; }
+.health-gray { background: #6b7280; }
+.health-blue { background: #3b82f6; }
+.session-banner { background: #1e3a5f; border: 1px solid #3b82f6; color: #93c5fd; }
+.inline-edit-form input, .inline-edit-form textarea, .inline-edit-form select {
+  background: #0f172a; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #e2e8f0; width: 100%;
+}
+.inline-edit-form textarea { resize: vertical; min-height: 40px; }
+.inline-edit-form input:focus, .inline-edit-form textarea:focus, .inline-edit-form select:focus { outline: none; border-color: #3b82f6; }

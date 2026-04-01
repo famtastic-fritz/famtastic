@@ -1,2 +1,3 @@
 /* Studio Terminal — terminal panel, toolbar, session status label */
-/* Content extracted from index.html <style> block in cleanup wave after Phase 1.5 */
+/* Terminal styles are minimal — xterm.js provides its own CSS via CDN.
+   Custom overrides for the toolbar and container go here. */
