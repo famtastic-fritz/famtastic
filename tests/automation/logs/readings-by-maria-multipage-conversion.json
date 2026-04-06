@@ -1,0 +1,74 @@
+{
+  "task": "single-page to multi-page conversion",
+  "started_at": "2026-04-06T18:00:00Z",
+  "completed_at": "2026-04-06T18:15:00Z",
+  "attempts": [
+    {
+      "step": 1,
+      "instruction_sent_to_studio": "This site needs to be multiple pages, not a single page with anchor links. Break it into separate pages: Home (index.html), Services (services.html), About (about.html), and Contact (contact.html). Each page should be its own HTML file with proper navigation linking between them.",
+      "studio_response_summary": "Classified as layout_update. Generated a build-plan card with: Internal Links (replace anchors with real page links), Home Page (remove other sections, keep only home content). Plan card showed 'Looks good, build it' button.",
+      "success": false,
+      "failure_reason": "execute-plan WS message did not trigger a Claude subprocess. The plan card remained visible with no build activity in server logs. The plan approval gate failed silently — no error, no build, no response.",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Sent a second chat message: 'Rebuild the site with all 4 pages: home, services, about, contact'. Also manually updated spec.json to include all 4 pages in the pages array before this attempt.",
+      "screenshot": "step1-plan-card-no-build.png",
+      "gap_identified": "execute-plan WS message handler does not trigger builds for layout_update classified requests. The plan approval is cosmetic — clicking 'Looks good' does nothing when the original message was layout_update."
+    },
+    {
+      "step": 2,
+      "instruction_sent_to_studio": "Rebuild the site with all 4 pages: home, services, about, contact",
+      "studio_response_summary": "Classified as 'build'. Generated a new plan card listing all 4 pages: home→index.html, services→services.html, about→about.html, contact→contact.html. Plan tagged as 'medium' scope.",
+      "success": false,
+      "failure_reason": "Same plan-gate issue: execute-plan WS message sent but no build triggered. Plan card remained visible.",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Approved the plan via execute-plan WS message a second time. This time the build classifier was 'build' (not layout_update), and the Claude subprocess finally spawned.",
+      "screenshot": "step2-rebuild-plan.png",
+      "gap_identified": "execute-plan requires multiple approvals or has a race condition. First approval may be consumed by an earlier stale plan card."
+    },
+    {
+      "step": 3,
+      "instruction_sent_to_studio": "(Plan approval for rebuild — second attempt)",
+      "studio_response_summary": "Build triggered successfully. Multi-page parallel build ran. Server logs show: services.html (16506 bytes), about.html (21735 bytes), contact.html (15550 bytes) written. Post-processing: slots registered (2 across 4 pages), blueprint updated for 4 pages, logo applied to 4 pages, nav-sync across all 4, footer-sync across all 4, CSS extracted to styles.css.",
+      "success": true,
+      "failure_reason": null,
+      "manual_intervention_required": false,
+      "manual_steps_taken": "None — Studio handled the full build once the plan was approved and the build classifier was 'build'",
+      "screenshot": "step3-build-complete-4-pages.png",
+      "gap_identified": null
+    },
+    {
+      "step": 4,
+      "instruction_sent_to_studio": "(Verified via page tab clicks: services, about, contact)",
+      "studio_response_summary": "All 4 page tabs visible in Studio (home, about, contact, services). Services page shows 'Services & Pricing' with Tarot Reading $75 — 30 min. About page shows 'About Maria' with origin story and Credentials section. Contact page shows 'Begin Your Session' with booking form fields.",
+      "success": true,
+      "failure_reason": null,
+      "manual_intervention_required": false,
+      "manual_steps_taken": "None",
+      "screenshot": "step4-all-pages-verified.png",
+      "gap_identified": null
+    }
+  ],
+  "prerequisite_manual_step": {
+    "description": "Before any Studio interaction, manually edited spec.json to change pages array from ['home'] to ['home','services','about','contact']. This was a prerequisite learned from Guy's Classy Shoes build — the build classifier reads spec.pages to determine how many pages to generate.",
+    "gap_identified": "spec.json pages array not updated by brief approval or new_site handler. Multi-page builds require manual spec update."
+  },
+  "summary": {
+    "total_attempts": 4,
+    "studio_handled": 2,
+    "manual_intervention_needed": 2,
+    "gaps_discovered": [
+      "execute-plan WS handler does not trigger builds for layout_update classified requests — plan approval is cosmetic for non-build intents",
+      "Multiple plan cards accumulate in DOM — later execute-plan calls may reference wrong planId",
+      "spec.json pages array must be manually updated before multi-page build — brief approval and new_site handler only set pages=['home']",
+      "First chat message ('break into separate pages') classified as layout_update instead of build — classifier needs a 'restructure' or 'split_pages' intent",
+      "The working path was: (1) manually update spec.json pages, (2) send 'Rebuild the site with all 4 pages' which classified as 'build', (3) approve the plan twice due to stale plan card"
+    ],
+    "final_evaluation": {
+      "could_studio_handle_conversion": "Partially. Studio successfully generated the 4-page build once the right classifier intent was triggered ('build'). But the initial 'break into pages' request was misclassified as layout_update, and the plan approval gate failed silently on the first attempt.",
+      "steps_requiring_manual_intervention": "spec.json pages array update (prerequisite), re-sending with 'Rebuild' wording to trigger build classifier, double plan approval due to stale plan cards",
+      "classifier_analysis": "'Break into separate pages' → layout_update (wrong). 'Rebuild the site with all 4 pages' → build (correct). The classifier has no 'restructure' or 'page_split' intent — requests to change site architecture route to layout_update which tries to modify the current page.",
+      "gap_location": "Three separate gaps: (1) Classifier — no restructure intent, (2) Spec updater — brief/new_site don't populate pages array from design_brief.must_have_sections, (3) Plan approval — execute-plan handler has race condition or silent failure when layout_update generates a plan",
+      "what_would_fix_this": "1. Add spec.pages auto-population from design_brief.must_have_sections during brief approval. 2. Add 'restructure' classifier intent that triggers full rebuild. 3. Fix execute-plan handler to actually spawn Claude for all plan types, not just 'build'."
+    }
+  }
+}

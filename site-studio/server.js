@@ -158,7 +158,7 @@ const MODEL_CONTEXT_WINDOWS = {
 
 // Plan approval state
 const pendingPlans = new Map(); // planId → { userMessage, intent }
-const PLAN_REQUIRED_INTENTS = ['layout_update', 'major_revision', 'restyle', 'build'];
+const PLAN_REQUIRED_INTENTS = ['layout_update', 'major_revision', 'restyle', 'build', 'restructure'];
 
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -3789,6 +3789,9 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(start\s+over|from\s+scratch|completely\s+different|total(ly)?\s+(re)?do|scrap\s+(it|this|everything))\b/)) return 'major_revision';
   if (lower.match(/\b(i('m|\s+am)\s+not\s+feeling|hate\s+(it|this)|this\s+(isn't|is\s+not)\s+what|wrong\s+direction)\b/)) return 'major_revision';
 
+  // Restructure — convert to multi-page or change page structure
+  if (lower.match(/\b(break\s+(\w+\s+)?into\s+(\d+\s+)?pages|separate\s+pages|split\s+(\w+\s+)?into\s+(\d+\s+)?pages|make\s+(this\s+|it\s+)?multi[- ]?page|restructure\s+the\s+site|change\s+(the\s+)?page\s+structure|convert\s+to\s+multi[- ]?page|want\s+separate\s+pages|need\s+separate\s+pages)\b/)) return 'restructure';
+
   // Restyle signals — about overall vibe, not specific elements
   if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
   if (lower.match(/\b(more\s+(premium|minimal|bold|elegant|modern|playful|professional|corporate|clean|edgy))\b/) && !lower.match(/\b(header|footer|button|section|nav|hero|card)\b/)) return 'restyle';
@@ -3805,6 +3808,29 @@ function classifyRequest(message, spec) {
 
   // Default: if classifier confidence is low, use least destructive path
   return 'layout_update';
+}
+
+/**
+ * Extract page names from a design brief's must_have_sections.
+ * Returns an array starting with 'home', followed by any recognized page names.
+ */
+function extractPagesFromBrief(brief) {
+  const sections = brief.must_have_sections || [];
+  const KNOWN_PAGES = new Set([
+    'about', 'services', 'contact', 'gallery', 'blog', 'portfolio',
+    'testimonials', 'faq', 'pricing', 'team', 'careers', 'events',
+    'shop', 'products', 'news', 'resources', 'work', 'projects',
+    'menu', 'booking', 'schedule', 'reviews',
+  ]);
+  const pages = ['home'];
+  for (const section of sections) {
+    const cleaned = section.toLowerCase().replace(/\(.*?\)/g, '').trim();
+    const candidate = cleaned.split(/\s+/)[0];
+    if (KNOWN_PAGES.has(candidate) && !pages.includes(candidate)) {
+      pages.push(candidate);
+    }
+  }
+  return pages;
 }
 
 // --- Curated Prompt Builder ---
@@ -4219,6 +4245,7 @@ function routeToHandler(ws, requestType, userMessage, spec) {
     case 'restyle':
       handlePlanning(ws, userMessage, spec);
       break;
+    case 'restructure':
     case 'build': {
       const lowerMsg = userMessage.toLowerCase();
       const templateMatch = lowerMsg.match(/\b(event|business|portfolio|landing)\b/);
@@ -4432,7 +4459,7 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 }
 
 // --- Parallel Multi-Page Build ---
-function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext) {
+function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
   buildInProgress = true;
   const startTime = Date.now();
 
@@ -6015,7 +6042,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
         ws.send(JSON.stringify({ type: 'status', content: `Parallel build: ${specPages.length} pages...` }));
         // Don't reset buildInProgress here — parallelBuild() already has it set to true
         // and will reset it when all pages complete. Resetting creates a race window.
-        return parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext);
+        return parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext);
       } else {
         modeInstruction = 'Generate a complete single-page website.';
       }
@@ -7261,6 +7288,11 @@ wss.on('connection', (ws) => {
       const spec = readSpec();
       if (spec.design_brief) {
         spec.design_brief.approved = true;
+        // Populate spec.pages from brief sections if not already set
+        if (!spec.pages || spec.pages.length <= 1) {
+          spec.pages = extractPagesFromBrief(spec.design_brief);
+          console.log(`[approve-brief] Extracted pages from brief: ${spec.pages.join(', ')}`);
+        }
         writeSpec(spec);
         ws.send(JSON.stringify({ type: 'status', content: 'Brief approved! Building site...' }));
         appendConvo({ role: 'system', content: 'Design brief approved', at: new Date().toISOString() });
@@ -7312,7 +7344,10 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'execute-plan') {
       const plan = pendingPlans.get(msg.planId);
-      if (!plan) return;
+      if (!plan) {
+        ws.send(JSON.stringify({ type: 'error', content: 'Plan not found or already executed. Please try your request again.' }));
+        return;
+      }
       pendingPlans.delete(msg.planId);
 
       if (!msg.approved) {
@@ -8413,7 +8448,7 @@ function broadcastSessionStatus(ws) {
 
 // --- Exports for testing ---
 module.exports = {
-  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest,
+  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest, extractPagesFromBrief,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,

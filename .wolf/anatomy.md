@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-03-31T02:57:35.890Z
-> Files: 286 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-03-31T12:51:08.866Z
+> Files: 288 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -35,7 +35,7 @@
 
 - `.gitignore` — Git ignore rules (~127 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~4844 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~5103 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10243 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
@@ -52,7 +52,7 @@
 
 ## .claude/plans/
 
-- `floofy-dancing-mccarthy.md` — Auto-Fix Untagged Images (Dynamic CRUD Post-Processor) (~2061 tok)
+- `floofy-dancing-mccarthy.md` — Studio Inspection Suite — Seven New Audit Capabilities (~2088 tok)
 
 ## .claude/rules/
 
@@ -453,6 +453,7 @@
 - `smoke-gemini` (~61 tok)
 - `smoke-secrets` (~55 tok)
 - `stock-photo` — stock-photo — Download a stock photo from Unsplash, Pexels, or Pixabay (~790 tok)
+- `studio-chat` — studio-chat — Send a message to Studio's WebSocket chat and collect the response. (~837 tok)
 - `studio-server` (~148 tok)
 - `tts-cli` (~1073 tok)
 - `verify` (~58 tok)
@@ -465,7 +466,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~85889 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~100088 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/public/
@@ -549,9 +550,13 @@
 - `conversation.jsonl` — Declares of (~116376 tok)
 - `spec.json` (~6003 tok)
 
+## sites/site-the-best-lawn-care/dist/
+
+- `about.html` — About Us | the best lawn care (~5697 tok)
+
 ## sites/site-the-best-lawn-care/dist/assets/
 
-- `styles.css` — Styles: 6 vars (~2715 tok)
+- `styles.css` — Styles: 1 rules, 9 vars (~1981 tok)
 
 ## sites/site-the-best-lawn-care/summaries/
 

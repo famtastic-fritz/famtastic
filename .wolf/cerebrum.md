@@ -105,6 +105,22 @@
 - [2026-03-26] MAIN_OVERFLOW_COMMENT_ACCURACY: main { overflow-x: hidden } is a secondary clip layer. The primary protection against header stretching is html/body { overflow-x: hidden }. Do not comment main as "prevents header from widening" — that's the body rule doing it.
 - [2026-03-26] TEMPLATE_PROMPT_MAIN_STYLES: Do not include main{} rules in buildTemplatePrompt() shared CSS block. Claude generates a template with no <main> in the body — it will skip or inconsistently include main styles. Post-processing (fixLayoutOverflow) handles main containment reliably.
 
+### 2026-04-06 — Multi-page conversion via Studio chat: what works and what doesn't
+- "Break into separate pages" classifies as `layout_update` — wrong. Need a `restructure` or `split_pages` classifier intent.
+- "Rebuild the site with all 4 pages" classifies as `build` — correct. Use explicit rebuild language for multi-page generation.
+- `execute-plan` WS handler silently drops plans generated from `layout_update` intent. No error, no build, no feedback. Only `build` classified plans actually trigger Claude.
+- spec.json `pages` array MUST be manually updated before a multi-page rebuild. The brief approval and new_site handler only set `pages: ["home"]` regardless of how many pages the brief requests. The `design_brief.must_have_sections` field has the correct pages but they're never copied to `spec.pages`.
+- Multiple plan cards accumulate in the DOM. When sending execute-plan, use the LAST plan card's planId, not the first.
+- Working multi-page conversion path: (1) edit spec.json pages array, (2) send "Rebuild the site with all N pages: list them", (3) approve the plan.
+
+### 2026-04-03 — Playwright autonomous build: DOM-based detection is the only viable approach
+- WS messages in server.js are unicast (`ws.send()`), never broadcast. A standalone WS client cannot observe responses to another client's messages.
+- DOM-based detection works: count `#chat-messages > div` before sending, wait for count to increase + `#step-log` to disappear.
+- `page.fill()` works for the chat textarea but for long messages (>200 chars), `page.evaluate()` to set `.value` directly is faster and avoids input event timeouts.
+- Plan approval cards (`build-plan` type) block automation — edits trigger plan proposals, not immediate builds. The Playwright script accidentally waited through the 240s timeout, at which point the plan auto-resolved.
+- `new_site` classifier path doesn't generate multi-page sites from brief. It writes spec then calls handleChatMessage which builds single-page. Multi-page requires spec.pages to already have multiple entries before the build triggers.
+- Targeted stock photo searches ("Search for X for the Y") misclassify as `layout_update` instead of stock-related intent.
+
 ## Key Learnings
 
 - [2026-03-26] TEMPLATE_FIRST_PATTERN: Studio uses a two-phase build — template first (header/nav/footer/shared CSS), then all pages in parallel. Each page copies chrome verbatim. Functions: buildTemplatePrompt(), extractTemplateComponents(), loadTemplateContext(), writeTemplateArtifacts(), applyTemplateToPages(). Guard: templateSpawned flag prevents double-build race.

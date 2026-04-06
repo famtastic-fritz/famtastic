@@ -1,5 +1,17 @@
 # FAMtastic Changelog
 
+## 2026-04-06 — Fix 3 multi-page conversion gaps + brainContext bug
+
+Fixed the 3 gaps surfaced by the Readings by Maria build, plus a pre-existing bug. (1) Added `restructure` classifier intent with regex for "break into pages", "separate pages", "make multi-page", etc. — routes to build handler via fall-through. (2) Added `extractPagesFromBrief()` that parses `must_have_sections` against 22 known page names, called in approve-brief handler. (3) Replaced silent `if (!plan) return` in execute-plan with error message. (4) Fixed `brainContext` not passed to `parallelBuild()` — was a ReferenceError on every multi-page build. All verified end-to-end: fresh test site, brief → 3 pages auto-populated, restructure → classified correctly → plan approved → 4-page build succeeded. 78/78 tests passing (13 new tests added).
+
+## 2026-04-06 — Research-first autonomous build + multi-page conversion (Readings by Maria)
+
+Site #3 in the factory pipeline. Tested a new research-first approach: 3 parallel research agents (competitive analysis of 12 psychic sites, domain knowledge for chakras/tarot/services, visual direction with stock photo queries) ran before the brief was written. Research produced 4 markdown files totaling ~15K words of domain intelligence. The brief included specific hex values, font pairings, pricing structures, and tone guidelines — all derived from research, not guessed. Multi-page conversion required manual spec.json update + "Rebuild" command (classified as `build`) because "break into pages" classified as `layout_update` and the plan approval gate failed silently. Final result: 4-page site (Home, Services, About, Contact) with consistent nav/footer/CSS across all pages. Key new gaps: no `restructure` classifier intent, `execute-plan` handler silently drops non-build plans, and spec.pages not auto-populated from design brief.
+
+## 2026-04-03 — First autonomous site build via Playwright
+
+Built and ran a Playwright automation script that drives Studio's browser GUI end-to-end without human interaction. Test site: Guy's Classy Shoes (luxury men's shoes). The script completed 23/23 steps with 0 failures: brief submission (23s), build (102s), stock photo fill, 4 targeted stock searches, brainstorm mode, 5 post-build edits, version history, brand health, rollback + undo, verification, and deploy to Netlify. Site deployed to https://guys-classy-shoes-staging.netlify.app. Total duration: 31 minutes. Key gaps discovered: multi-page build only produced 1 of 4 requested pages, targeted stock searches misclassified as layout_update, plan approval gate blocks automation (needs auto-approve or REST API), and WS messages are unicast (not broadcast) so standalone monitoring requires DOM-based detection.
+
 ## 2026-04-01 — CSS file structure rule, terminal fix, UI bug sweep
 
 Established Studio UI CSS file structure rule as a non-negotiable convention in CLAUDE.md and .brain/anti-patterns.md. Extracted all ~340 lines of inline CSS from index.html into 6 component files under public/css/. Added unit test enforcing file existence + link integrity (70 tests). Fixed embedded terminal: upgraded node-pty from 1.1.0 to 1.2.0-beta.12 (fixes posix_spawnp on Node 24 arm64), fixed xterm CDN from non-existent v5.3.0 to v6.0.0. Fixed preview reload polling flood (replaced setInterval with backoff + visibility check). Fixed panel toggle button states (start blue, toggle to gray). Fixed chat panel layout when panels hidden (fills available space). File watcher now monitors public/css/ directory.

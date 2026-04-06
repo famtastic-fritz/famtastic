@@ -421,6 +421,80 @@ After Claude generates HTML (either `MULTI_UPDATE` or `HTML_UPDATE`), the follow
 
 ---
 
+## Playwright Autonomous Build Pipeline (2026-04-03)
+
+First successful autonomous site build via Playwright driving the Studio GUI.
+
+### What Exists
+- Script: `tests/automation/guys-classy-shoes-build.js` — Playwright headless Chromium, DOM-based response detection
+- Screenshots: `tests/automation/screenshots/guys-classy-shoes/` — 25 screenshots capturing every step
+- Execution log: `tests/automation/logs/guys-classy-shoes-{timestamp}.json` — JSON log with step timing, input/output, success/failure
+- Built site: `sites/site-guys-classy-shoes/dist/` — deployed to https://guys-classy-shoes-staging.netlify.app
+
+### Key Findings
+
+| Metric | Value |
+|--------|-------|
+| Total steps | 23 |
+| Pass rate | 100% (23/23) |
+| Total duration | 31 min |
+| Brief generation | 23s |
+| Multi-page build | 102s (produced 1 of 4 requested pages) |
+| Stock fill (bulk) | 6s |
+| Stock search (targeted) | 124s each (misclassified as layout_update) |
+| Post-build edits | 244s each (plan gate blocked, auto-timed-out to completion) |
+| Brainstorm response | 17s |
+| Brainstorm → build | 55s |
+| Version history / Brand health | 4s each |
+| Rollback + undo | 4s each |
+| Deploy to Netlify | 9s |
+
+### Architecture Decision: DOM-Based Detection
+
+The first version used a standalone WebSocket client to monitor Studio responses. This failed because `server.js` sends WS messages via `ws.send()` (unicast to the originating client), not broadcast. A second WS connection never sees responses.
+
+The working approach uses Playwright's `page.waitForFunction()` to monitor the DOM directly:
+1. Count `#chat-messages > div` elements before sending
+2. Send chat via `page.fill('#chat-input')` + click submit
+3. Wait for `#step-log` to appear (processing) then disappear (done) AND message count to increase
+4. Read last message text content
+
+This is reliable because the Studio UI itself updates the DOM from its own WS messages.
+
+### Bottlenecks for 60-Site Factory
+
+1. **No multi-page build from brief** — Currently generates 1 page per `new_site` build. Multi-page requires spec to already list pages. Fix: update spec pages array from brief before triggering build.
+2. **Plan approval gate** — Every edit triggers a plan card requiring human click. For automation, need either auto-approve or a `POST /api/chat` endpoint.
+3. **Targeted stock searches misclassified** — Goes through full AI rebuild instead of simple image search. Adds ~120s per search unnecessarily.
+4. **No REST chat API** — Everything must go through WS-connected browser. `POST /api/chat` would enable CLI and CI/CD automation.
+
+## Research-First Pipeline — Readings by Maria (2026-04-06)
+
+Second autonomous build (Site #3). Tested a new pipeline step: domain research before brief creation. The system had no prior knowledge of psychic services, chakras, tarot, or spiritual practitioner websites.
+
+### Research Phase
+- **3 parallel research tracks:** Competitive analysis (12 sites), domain knowledge (chakras, tarot, services, symbolism), visual direction (colors, imagery, typography)
+- **4 output files:** `sites/readings-by-maria/research/` — competitive-analysis.md, domain-knowledge.md, visual-direction.md, brief-inputs.md
+- **Key research findings that shaped the build:**
+  - "Midnight Oracle" dark palette with gold accents (#0B0B14 bg, #C9A84C gold, #7B5EA7 violet) — derived from analyzing Tarot by Dante and similar premium sites
+  - Cormorant Garamond + Raleway font pairing — serif headings for ancient wisdom, sans-serif body for modern professionalism
+  - Wellness language over fortune-telling language ("guidance" not "predictions") — identified as credibility differentiator
+  - 24 specific stock photo queries tested against actual Unsplash/Pexels results, plus 7 queries to explicitly avoid
+  - Chakra education section identified as competitive gap (most sites list "chakra balancing" but never explain chakras)
+
+### Multi-Page Conversion Findings
+- **Single-to-multi-page conversion via Studio chat: partially successful**
+- First attempt ("break into separate pages") classified as `layout_update` — wrong intent. Generated a plan card but `execute-plan` approval did nothing.
+- Working path: (1) manually update `spec.json` pages array, (2) send "Rebuild the site with all 4 pages" which classified as `build`, (3) approve plan — multi-page build succeeded.
+- Conversion log: `tests/automation/logs/readings-by-maria-multipage-conversion.json`
+
+### Gaps Specific to Multi-Page Conversion — CLOSED (2026-04-06)
+- **~~No `restructure` classifier intent~~** — FIXED: Added `restructure` intent to `classifyRequest()` with regex for "break into pages", "separate pages", "split into pages", "make multi-page", etc. Routes to `build` handler via fall-through in `routeToHandler()`. Added to `PLAN_REQUIRED_INTENTS`. Function: `classifyRequest()` in `server.js`.
+- **~~`execute-plan` handler silent failure~~** — FIXED: Replaced silent `if (!plan) return` with error message sent to client. Now sends `{type:'error', content:'Plan not found or already executed'}`. Line ~7347 in `server.js`.
+- **Stale plan cards accumulate** — mitigated by Fix 3 error message, but DOM-side cleanup still needed (cosmetic, not blocking)
+- **~~spec.json pages not auto-populated from brief~~** — FIXED: Added `extractPagesFromBrief()` helper that parses `must_have_sections` against 22 known page names. Called in `approve-brief` handler after `brief.approved=true`. Function: `extractPagesFromBrief()` in `server.js`, exported for testing.
+- **brainContext not passed to parallelBuild** — FIXED (pre-existing bug discovered during testing): `parallelBuild()` template literal referenced `${brainContext}` but it wasn't in the function signature. Added to signature and call site.
+
 ## Known Gaps
 
 ### Closed (2026-03-23, wave 1a — workflow-critical)
@@ -538,6 +612,24 @@ Surfaced by two-phase integration test suite (28 functional + 30 extreme). All 5
 - **Zombie Claude subprocesses on WS disconnect (E01–E11, E16, E25, E30)** — `ws.on('close')` released `buildInProgress` but never killed the running Claude child. Fix (Wave C): all 5 WS-routed `spawnClaude` call sites now store child refs on `ws.currentChild` (single child) or `ws.activeChildren[]` (parallel page builds). `ws.on('close')` kills all active children before releasing the lock. Files: `server.js` — `handleDataModelPlanning:~4016`, `handlePlanning:~4134`, `handleBrainstorm:~4265`, `parallelBuild/spawnPage:~4479`, `parallelBuild/templateChild:~4548`, `handleChatMessage:~6001` (+ Haiku reassignment at ~6024), `onChildClose:~6092`, `ws.on('close'):~6332`.
 
 - **`MaxListenersExceededWarning` in flood tests (E12)** — 20 concurrent `sendChat` calls in the test added 20 `ws.on('message', handler)` listeners, exceeding Node.js's default of 10. Fix (Wave D): `ws.setMaxListeners(0)` added to `utils.connect()` so flood tests don't emit spurious warnings. File: `tests/integration/utils.js:~13`.
+
+### Open (identified 2026-04-03 — Playwright autonomous build)
+
+Gaps surfaced by running a full site build autonomously via Playwright against Studio GUI. Test site: Guy's Classy Shoes. Script: `tests/automation/guys-classy-shoes-build.js`. Log: `tests/automation/logs/`.
+
+- **Multi-page build produces single page** — Brief requested 4 pages (Home, Collections, About, Contact) but `new_site` handler only generated `index.html`. The multi-page parallel build path did not fire. The brief's `must_have_sections` populated correctly but pages array stayed at `["home"]`. Root cause: the `new_site` classifier path writes the spec then calls `handleChatMessage` which builds a single-page response. Multi-page builds only trigger when the spec already has multiple pages. Need: spec should be updated with all requested pages before the build call.
+
+- **Stock photo targeted searches misclassified as `layout_update`** — "Search for luxury men's leather oxford shoes for the hero image" classified as `layout_update` instead of `fill_stock_photos` or a targeted image search. This caused the AI to regenerate page content instead of searching for and applying a stock photo. The `fill_stock_photos` classifier only fires on broad fill requests, not targeted image searches.
+
+- **"Run verification" misclassified as `layout_update`** — "Run verification" triggered a build plan instead of running the verification pipeline. The `verification` classifier intent may require specific phrasing.
+
+- **Plan approval gate blocks automation** — Post-brief edits (steps 6a-6d) all triggered the plan approval UI (`build-plan` card with "Looks good, build it" / "Cancel" buttons). The Playwright script detected completion via DOM chat messages, but these were plan proposals, not build completions. The script's 244s durations suggest the plan auto-approved after timeout. Automation needs either: (a) a way to auto-approve plans, or (b) a `POST /api/chat` endpoint that bypasses the plan gate.
+
+- **WS messages are per-client, not broadcast** — `server.js` uses `ws.send()` (unicast to the originating client), not broadcast. A standalone WS client cannot observe responses to a browser client's messages. This makes WS-based monitoring impossible without injecting into the page's own WS connection. Automation must use DOM-based detection.
+
+- **No programmatic build API** — All builds require a browser WS connection. No `POST /api/chat` REST endpoint exists. This was documented in cerebrum.md but confirmed as a real blocker for CI/CD automation.
+
+- **Verification indicator stuck at "Not Reviewed Yet"** — After explicitly requesting verification, the `#verify-label` DOM element still showed "Not Reviewed Yet". The verification pipeline may not have executed (misclassified as layout_update).
 
 ### Open (identified 2026-03-24)
 - **Asset generate → insert disconnected** — SVG generation doesn't wire back to replace placeholders in HTML (deferred to focused session)

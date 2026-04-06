@@ -13,6 +13,7 @@ const {
   isValidPageName,
   extractSlotsFromPage,
   classifyRequest,
+  extractPagesFromBrief,
   extractBrandColors,
   labelToFilename,
   SLOT_DIMENSIONS,
@@ -263,6 +264,80 @@ describe('classifyRequest', () => {
 
   it('defaults to layout_update for ambiguous requests', () => {
     expect(classifyRequest('make it look better', withBrief)).toBe('layout_update');
+  });
+
+  it('classifies restructure intent', () => {
+    expect(classifyRequest('break into pages', withBrief)).toBe('restructure');
+    expect(classifyRequest('break this into 4 pages', withBrief)).toBe('restructure');
+    expect(classifyRequest('I want separate pages for each service', withBrief)).toBe('restructure');
+    expect(classifyRequest('split into pages', withBrief)).toBe('restructure');
+    expect(classifyRequest('split this into 3 pages', withBrief)).toBe('restructure');
+    expect(classifyRequest('make this multi-page', withBrief)).toBe('restructure');
+    expect(classifyRequest('make it multi-page', withBrief)).toBe('restructure');
+    expect(classifyRequest('restructure the site', withBrief)).toBe('restructure');
+    expect(classifyRequest('change the page structure', withBrief)).toBe('restructure');
+    expect(classifyRequest('change page structure', withBrief)).toBe('restructure');
+    expect(classifyRequest('convert to multi-page', withBrief)).toBe('restructure');
+    expect(classifyRequest('I need separate pages', withBrief)).toBe('restructure');
+  });
+
+  it('does not classify layout changes as restructure', () => {
+    expect(classifyRequest('add a testimonial section', withBrief)).toBe('layout_update');
+    expect(classifyRequest('remove the sidebar', withBrief)).toBe('layout_update');
+  });
+});
+
+// --- extractPagesFromBrief ---
+describe('extractPagesFromBrief', () => {
+  it('returns ["home"] when no must_have_sections', () => {
+    expect(extractPagesFromBrief({})).toEqual(['home']);
+    expect(extractPagesFromBrief({ must_have_sections: [] })).toEqual(['home']);
+  });
+
+  it('extracts known page names from sections', () => {
+    const brief = {
+      must_have_sections: ['hero banner', 'about section', 'services grid', 'testimonials carousel', 'contact form'],
+    };
+    const pages = extractPagesFromBrief(brief);
+    expect(pages).toContain('home');
+    expect(pages).toContain('about');
+    expect(pages).toContain('services');
+    expect(pages).toContain('testimonials');
+    expect(pages).toContain('contact');
+    expect(pages).not.toContain('hero');
+  });
+
+  it('does not duplicate pages', () => {
+    const brief = {
+      must_have_sections: ['about', 'about us section', 'contact form', 'contact page'],
+    };
+    const pages = extractPagesFromBrief(brief);
+    const aboutCount = pages.filter(p => p === 'about').length;
+    expect(aboutCount).toBe(1);
+  });
+
+  it('always includes home first', () => {
+    const brief = { must_have_sections: ['services', 'about'] };
+    const pages = extractPagesFromBrief(brief);
+    expect(pages[0]).toBe('home');
+  });
+
+  it('handles parenthetical descriptions', () => {
+    const brief = {
+      must_have_sections: ['Gallery (project photos)', 'FAQ section', 'Pricing tiers'],
+    };
+    const pages = extractPagesFromBrief(brief);
+    expect(pages).toContain('gallery');
+    expect(pages).toContain('faq');
+    expect(pages).toContain('pricing');
+  });
+
+  it('ignores non-page section names', () => {
+    const brief = {
+      must_have_sections: ['hero with video background', 'call to action banner', 'footer with social links'],
+    };
+    const pages = extractPagesFromBrief(brief);
+    expect(pages).toEqual(['home']);
   });
 });
 

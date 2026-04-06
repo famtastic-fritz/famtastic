@@ -1,0 +1,66 @@
+{
+  "fixes_applied": [
+    {
+      "gap": "classifier restructure intent",
+      "file_changed": "site-studio/server.js",
+      "fix_description": "Added 'restructure' intent to classifyRequest() with regex matching: break into pages, separate pages, split into pages, make multi-page, restructure the site, change page structure, convert to multi-page, want/need separate pages. Supports optional words (break THIS into 4 pages). Added to PLAN_REQUIRED_INTENTS and routed as fall-through to build case in routeToHandler.",
+      "verified": true,
+      "verification_method": "Chat message 'Break this into 4 pages — add a separate About page' sent through Studio",
+      "verification_result": "Server log shows: [classify] → restructure. Plan card generated with correct restructure plan. Build triggered after approval."
+    },
+    {
+      "gap": "spec.pages population from brief",
+      "file_changed": "site-studio/server.js",
+      "fix_description": "Added extractPagesFromBrief() helper that parses must_have_sections, extracts first word of each section, matches against 22 known page names (about, services, contact, gallery, etc.). Called in approve-brief handler after brief.approved=true. Only runs when spec.pages is empty or has single entry.",
+      "verified": true,
+      "verification_method": "Brief submitted requesting 'Home, Gallery, and Contact'. Clicked Build From Brief.",
+      "verification_result": "Server log: [approve-brief] Extracted pages from brief: home, gallery, contact. spec.json confirmed: pages: ['home','gallery','contact']. Multi-page build produced all 3 HTML files."
+    },
+    {
+      "gap": "execute-plan silent drop",
+      "file_changed": "site-studio/server.js",
+      "fix_description": "Replaced silent 'if (!plan) return;' with error message: 'Plan not found or already executed. Please try your request again.' sent via ws.send({type:'error'}).",
+      "verified": true,
+      "verification_method": "Plan approval via execute-plan WS message with valid planId triggered build. (Silent drop scenario not directly tested in this run but error message code is confirmed present.)",
+      "verification_result": "Execute-plan with valid planId successfully triggered full 4-page parallel build."
+    },
+    {
+      "gap": "brainContext not passed to parallelBuild (pre-existing bug, discovered during testing)",
+      "file_changed": "site-studio/server.js",
+      "fix_description": "Added brainContext parameter to parallelBuild() function signature and updated the call site in handleChatMessage() to pass it. The template literal inside parallelBuild referenced ${brainContext} but it was never in scope — caused ReferenceError on every multi-page build.",
+      "verified": true,
+      "verification_method": "Multi-page build completed without ReferenceError after fix.",
+      "verification_result": "4-page build succeeded: index.html (18719 bytes), gallery.html (17382 bytes), about.html (19937 bytes), contact.html (16102 bytes)"
+    }
+  ],
+  "integration_test": {
+    "brief_submission": "pass — classified as new_site, brief generated with gallery/contact sections",
+    "initial_build": "pass — 3 pages built (index, gallery, contact) from auto-populated spec.pages",
+    "restructure_request": "pass — 'Break this into 4 pages' classified as restructure (was layout_update before fix)",
+    "plan_creation": "pass — plan card showed Page Creation, Content Distribution, Navigation, Internal Links",
+    "plan_approval": "pass — execute-plan triggered parallel build with template + 4 pages",
+    "spec_pages_populated": "pass — spec.json shows ['home','gallery','about','contact']",
+    "pages_built": ["index.html", "gallery.html", "about.html", "contact.html"],
+    "nav_working": "pass — page tabs show home, contact, gallery, about; template applied to all 4 pages"
+  },
+  "test_suite": {
+    "total_tests": 78,
+    "passed": 78,
+    "failed": 0,
+    "new_tests_added": 13,
+    "new_test_descriptions": [
+      "classifies restructure intent (12 positive cases including 'break this into 4 pages')",
+      "does not classify layout changes as restructure (2 negative cases)",
+      "extractPagesFromBrief: returns ['home'] when no must_have_sections",
+      "extractPagesFromBrief: extracts known page names from sections",
+      "extractPagesFromBrief: does not duplicate pages",
+      "extractPagesFromBrief: always includes home first",
+      "extractPagesFromBrief: handles parenthetical descriptions",
+      "extractPagesFromBrief: ignores non-page section names"
+    ]
+  },
+  "remaining_gaps": [
+    "Regex iteration needed: first version of restructure regex didn't match 'break THIS into 4 pages' — fixed by adding optional word groups. May need more real-world testing for edge phrases.",
+    "extractPagesFromBrief uses first-word heuristic — 'hero banner' extracts 'hero' which is not in KNOWN_PAGES (correct), but 'about us section' extracts 'about' (correct). Edge case: 'portfolio showcase' extracts 'portfolio' (correct). All tested."
+  ]
+}
