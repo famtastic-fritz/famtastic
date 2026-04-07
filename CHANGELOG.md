@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-07 — Adobe Firefly web automation via Chrome + complete three-provider comparison
+
+Automated Adobe Firefly web app via Claude-in-Chrome MCP, driving Spectrum shadow DOM components (recursive walkShadow pattern for SP-BUTTON, SP-ACTION-BUTTON, textarea). Generated 4 shoe images with Firefly Image 3 at 9/10 quality. Key discoveries: Firefly Image 5 (preview) available, style reference feature confirmed in Composition panel, video generation included in CC plan ("Generate Media" + "Edit video beta"), partner models integrated (Gemini 3.1/Nano Banana 2 on homepage), custom model training accessible, 3800/4000 premium credits available. Shadow DOM automation patterns documented for future Firefly integration.
+
 ## 2026-04-07 — Three-provider AI media comparison: Google + Leonardo + Adobe
 
 Generated 9 images + 1 video across 2 providers with real API calls. Google Imagen 4.0: 4/4 shoe images at 9/10 quality, avg 7.2s, ~$0.004/image. Veo 2.0: hero video from still in 33s at 1.6MB (under 5MB web target). Leonardo Phoenix 1.0: 4/4 shoe images at 7/10 quality, avg 8.6s, $0.016/image. Google wins on quality, speed, cost, and video capability. Leonardo wins on model variety (47 models) and custom training potential. Adobe Firefly: manual web test checklist created for Fritz to run via existing CC subscription (API requires enterprise tier). Comparison gallery, JSON report, and hero video test page all produced.

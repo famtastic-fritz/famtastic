@@ -730,6 +730,19 @@ Side-by-side Claude vs Codex comparison with version safety.
 - **Models:** 47 available including FLUX, Kino XL, custom training. Model variety is Leonardo's strength.
 - **API:** REST with polling (vs Google's Python SDK with 3-line generation). More complex integration.
 
+### Adobe Firefly Web App (TESTED — CC subscription, Chrome automation)
+- **Account:** fritz.medine@gmail.com, 3,800/4,000 premium credits (resets April 19)
+- **Status:** WORKING via Chrome shadow DOM automation (Claude-in-Chrome MCP)
+- **Model:** Firefly Image 3 (Firefly Image 5 preview also available)
+- **Quality:** 9/10 — cognac leather oxford with brogue detailing, dramatic warm lighting. On par with Google Imagen 4.0.
+- **Style Reference:** CONFIRMED — "Reference" section in Composition panel with Upload image + Browse gallery + strength slider. This is the key differentiator for image set coherence.
+- **Video:** INCLUDED in CC — "Generate Media" (image+video on infinite canvas) + "Edit video (beta)" for trim/arrange/generate.
+- **Partner Models:** Gemini 3.1 (w/ Nano Banana 2) integrated as default on homepage.
+- **Custom Models:** Training accessible from left nav sidebar.
+- **Content Credentials:** C2PA metadata on all outputs (commercially safe).
+- **Automation Pattern:** Adobe uses Spectrum Web Components with deep shadow DOM. Must use recursive `walkShadow(root, depth)` to find SP-BUTTON/SP-ACTION-BUTTON elements. Textarea requires native value setter + input/change events. Generate button requires full pointer event sequence. File downloads blocked by Chrome extension (use screenshots).
+- **API:** Enterprise only ($1K+/mo). Web app is the viable automation path via Chrome MCP.
+
 ### Integration Architecture (planned)
 - Image Browser tab: add Firefly as provider alongside Unsplash/Pexels
 - `POST /api/firefly/generate` server endpoint for Studio integration

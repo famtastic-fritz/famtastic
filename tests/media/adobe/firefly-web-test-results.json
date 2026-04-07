@@ -1,0 +1,70 @@
+{
+  "provider": "adobe-firefly-web",
+  "method": "chrome-automation-shadow-dom",
+  "auth": "creative-cloud-subscription",
+  "account": "fritz.medine@gmail.com",
+  "credits_before": 3800,
+  "credits_after": "not rechecked (estimated ~3796)",
+  "credits_total": 4000,
+  "credits_reset_date": "2026-04-19",
+  "tests": {
+    "image_generation": {
+      "success": true,
+      "model": "Firefly Image 3",
+      "image5_available": true,
+      "image5_status": "preview",
+      "variations_generated": 4,
+      "quality_rating": 9,
+      "prompt": "Luxury mens leather oxford shoe on dark slate surface, dramatic side lighting, warm gold highlights, shallow depth of field, studio photography, premium product shot",
+      "aspect_ratio": "Square (1:1)",
+      "resolution": "2048x2048",
+      "fast_mode": true,
+      "time_seconds": 10,
+      "notes": "Exceptional quality. Rich cognac leather with brogue detailing, dramatic warm lighting on dark slate. All 4 variations consistent in style. On par with Google Imagen 4.0 quality."
+    },
+    "style_reference": {
+      "available": true,
+      "feature_name": "Reference (Composition section)",
+      "upload_options": ["Upload image", "Browse gallery"],
+      "strength_slider": "visible in UI",
+      "coherence_rating": null,
+      "notes": "Style reference feature confirmed present in left panel under Composition > Reference. Supports image upload and gallery browsing. Full coherence test requires manual file upload (Chrome automation can't access OS file picker). This is the feature that makes Firefly unique for image set coherence — competitors rely on prompt consistency only."
+    },
+    "video": {
+      "available": true,
+      "features": ["Generate Media (image and video on infinite canvas)", "Edit video (beta) - trim, arrange, generate"],
+      "requires_upgrade": false,
+      "included_in_cc": true,
+      "notes": "Both video generation and video editing are accessible from the homepage. 'Generate Media' creates image and video on an infinite canvas. 'Edit video (beta)' allows trimming, arranging, and generating. Included in CC subscription."
+    },
+    "partner_models": {
+      "available": true,
+      "models_found": ["Gemini 3.1 (w/ Nano Banana 2)"],
+      "default_on_homepage": "Gemini 3.1 (w/ Nano Banana 2)",
+      "default_in_generator": "Firefly Image 3",
+      "notes": "The homepage prompt defaults to Gemini 3.1 model. The dedicated text-to-image generator defaults to Firefly Image 3. Partner models are integrated directly into the Firefly interface."
+    },
+    "custom_models": {
+      "available": true,
+      "feature_name": "Custom models",
+      "location": "Left sidebar navigation",
+      "notes": "Custom model training accessible from the left nav. Not tested in this session — would require uploading training images."
+    },
+    "other_features": {
+      "production": "Production workflow tools in left nav",
+      "quick_actions": "Quick action editing tools",
+      "photoshop_web": "Open in Photoshop web directly from generated images",
+      "upscale": "Upscale option on generated images",
+      "boards": "Boards for organizing generated content",
+      "content_credentials": "C2PA metadata on all outputs",
+      "unlimited_standard": "Standard features have unlimited access on CC plan"
+    }
+  },
+  "automation_notes": {
+    "shadow_dom": "Adobe Firefly uses Spectrum Web Components with deep shadow DOM. Standard DOM queries can't reach interactive elements. Must use recursive shadow DOM walker: walkShadow(root, depth) pattern.",
+    "prompt_entry": "Textarea found in shadow DOM. Native value setter + input/change events required to trigger framework bindings.",
+    "generate_button": "SP-BUTTON element in shadow DOM. Must dispatch full pointer event sequence (pointerdown, mousedown, pointerup, mouseup, click) — simple click() doesn't trigger.",
+    "downloads": "File downloads blocked by Chrome extension — can't access OS file picker or save dialog. Screenshots are the viable capture method.",
+    "tooltip_dismiss": "SP-BUTTON 'OK' in shadow DOM — walkShadow pattern required to find and click."
+  }
+}

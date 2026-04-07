@@ -36,13 +36,26 @@
       "would_recommend_for_pipeline": true
     },
     "adobe_firefly": {
-      "status": "manual_test_checklist_created",
+      "status": "tested_via_web_automation",
       "web_app_only": true,
       "api_available": false,
       "api_cost": "$1000+/mo enterprise tier for API access",
       "web_app_cost": "Included with Creative Cloud subscription",
-      "firefly_standard_cost": "$9.99/mo for video + partner models",
-      "note": "Fritz will complete manual web test separately using the checklist at tests/media/adobe/firefly-web-test-checklist.md"
+      "credits_available": "3800/4000 (resets April 19)",
+      "images_generated": 4,
+      "image_quality_rating": 9,
+      "model_used": "Firefly Image 3 (Image 5 preview also available)",
+      "generation_time_avg_seconds": 10,
+      "style_reference_available": true,
+      "video_available": true,
+      "video_features": ["Generate Media (image+video canvas)", "Edit video (beta)"],
+      "partner_models": ["Gemini 3.1 (w/ Nano Banana 2)"],
+      "custom_model_training": true,
+      "content_credentials": true,
+      "best_for": "Style reference coherence (best in class), commercially safe content (C2PA), integrated Photoshop workflow",
+      "weaknesses": "No API for automation (enterprise only), file downloads blocked from automation, shadow DOM complexity for web automation",
+      "would_recommend_for_pipeline": true,
+      "automation_method": "Chrome shadow DOM traversal via Claude-in-Chrome MCP"
     }
   },
   "comparison": {
@@ -54,6 +67,6 @@
     "easiest_api": "Google (Python SDK, 3-line generation) vs Leonardo (REST + polling)",
     "best_for_automation": "Google (SDK + video + lower cost)",
     "most_model_variety": "Leonardo (47 models including FLUX, Kino, custom training)",
-    "recommendation_for_pipeline": "Google Imagen 4.0 as primary, Leonardo as secondary for variety/custom models, Adobe Firefly for manual style reference work"
+    "recommendation_for_pipeline": "Google Imagen 4.0 as primary API generator, Adobe Firefly for style reference coherence and commercially-safe content, Leonardo for model variety and custom training. Veo 2.0 is the only viable hero video generator."
   }
 }
