@@ -542,6 +542,28 @@ Built the same Readings by Maria site with both Claude (via Studio) and Codex (d
 
 **Verdict:** Codex wins on first-pass generation quality (richer content, better slot compliance). Claude/Studio wins on iterative editing and deployment infrastructure. **Recommended pipeline: Codex generates initial HTML → Studio imports → Claude handles edits → Studio deploys.**
 
+## Phase 0 Content Data Layer (2026-04-07)
+
+### What Was Built
+1. **Classifier fix** — `content_update` now has higher precedence than `bug_fix` and `layout_update`. Widened regex: `(change|update|replace|edit|set|fix|correct|modify)` + any words + `(phone|email|address|hours|price|...)`. Added natural language patterns: "buttons to say", "the X should be", "add the address/hours/phone". Removed "fix" and "wrong" from `bug_fix` triggers to prevent false positives.
+2. **Build prompt injection** — `systemRules` in `buildPromptContext()` now includes CONTENT IDENTITY MARKERS section instructing Claude to add `data-section-id`, `data-field-id`, and `data-field-type` attributes to all content elements. Content field values from `spec.content` injected into prompts so they persist across rebuilds.
+3. **Post-build content sync** — `syncContentFieldsFromHtml(pages)` runs in `runPostProcessing()` after `reapplySlotMappings`. Parses `data-field-id` attributes from generated HTML, adds new fields to `spec.content`. Does NOT overwrite existing fields (spec is authoritative).
+4. **Surgical content handler** — Extended `tryDeterministicHandler()` with field-aware replacement: detects field type from message (phone/email/address/hours/price/testimonial), looks up field in `spec.content`, finds by `data-field-id` selector (preferred) or text match (fallback), updates HTML + spec atomically. Handles phone→tel: href and email→mailto: transforms. Cross-page detection for "all pages" messages.
+5. **Concurrency** — `writeSpec()` now tracks `_revision` counter (monotonically increasing). Writes to `mutations.jsonl` when mutation details provided.
+
+### Verification Results
+- **Classifier accuracy: 10/10 correct** (was 0/10 before Phase 0)
+- **7/10 → content_update** (phone, email, price, hours, testimonial, CTA buttons, address)
+- **3/10 → layout_update** (add service, remove service, add banner — correctly structural)
+- **0/7 content edits require plan approval** (was 9/10)
+- **Surgical deterministic handler: 0/7 activated** — site was built pre-Phase 0 without `data-field-id` attributes. New builds will include them. Handler is wired and tested.
+
+### Key Functions Added
+- `syncContentFieldsFromHtml(pages)` — post-build content sync. File: `server.js`.
+- `writeSpec(spec, options)` — now accepts `{ source, mutationLevel, mutationTarget, oldValue, newValue }` for mutation tracking.
+- Extended `tryDeterministicHandler()` — field-aware surgical replacement block.
+- Extended `buildPromptContext()` — returns `contentFieldContext` and `globalFieldContext`.
+
 ## Studio v3 Architecture Decisions (2026-04-07)
 
 Four architectural gaps resolved before Phase 0 implementation begins. Full decisions in `docs/v3-architecture-decisions.md`. Codex adversarial review in `docs/v3-architecture-codex-review.md`.

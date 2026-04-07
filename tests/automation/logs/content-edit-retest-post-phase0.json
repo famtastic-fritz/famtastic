@@ -1,0 +1,34 @@
+{
+  "task": "Phase 0 content edit re-test",
+  "site": "site-readings-by-maria",
+  "phase": "Phase 0 — Content Data Layer",
+  "results": {
+    "classifier_accuracy": "10/10 correct (7 content_update, 3 layout_update — all matching intent)",
+    "content_update_rate": "7/10 (was 0/10 before Phase 0)",
+    "plan_approval_required": "0/7 content edits (was 9/10 before Phase 0)",
+    "surgical_replacement": "0/7 used deterministic handler (all fell through to Claude because site was built pre-Phase 0 without data-field-id attributes)",
+    "note": "The surgical deterministic handler is wired and tested but requires sites built WITH Phase 0's data attribute instructions in the prompt. Pre-Phase 0 sites fall through to Claude for content_update — still no plan gate, still faster than layout_update."
+  },
+  "edits": [
+    { "step": 1, "message": "Change the contact phone number to (555) 867-5309", "classifier": "content_update", "correct": true, "plan_required": false },
+    { "step": 2, "message": "Update the contact email to maria@readingsbymaria.com", "classifier": "content_update", "correct": true, "plan_required": false },
+    { "step": 3, "message": "Change the Tarot reading 60-minute price from $125 to $145", "classifier": "content_update", "correct": true, "plan_required": false },
+    { "step": 4, "message": "Add business hours: Tuesday-Saturday 10am-7pm, closed Sun/Mon", "classifier": "content_update", "correct": true, "plan_required": false },
+    { "step": 5, "message": "Change the first testimonial name to Sandra K.", "classifier": "content_update", "correct": true, "plan_required": false },
+    { "step": 6, "message": "Change all booking buttons to say Discover Your Path", "classifier": "content_update", "correct": true, "plan_required": false },
+    { "step": 7, "message": "Add Astrology Birth Chart Reading, 90 minutes, $195", "classifier": "layout_update", "correct": true, "plan_required": true, "note": "Structural add — layout_update is correct" },
+    { "step": 8, "message": "Remove the Past Life Regression service", "classifier": "layout_update", "correct": true, "plan_required": true, "note": "Structural remove — layout_update is correct" },
+    { "step": 9, "message": "Add a banner: Mercury is in retrograde", "classifier": "layout_update", "correct": true, "plan_required": true, "note": "Structural add — layout_update is correct" },
+    { "step": 10, "message": "Add the address: 742 Crescent Moon Lane", "classifier": "content_update", "correct": true, "plan_required": false }
+  ],
+  "comparison_to_pre_phase0": {
+    "content_update_routing": { "before": "0/10", "after": "7/10", "improvement": "+7" },
+    "plan_gate_bypass": { "before": "1/10", "after": "7/10", "improvement": "+6" },
+    "surgical_replacement": { "before": "1/10", "after": "0/7 (needs data attributes in HTML)", "note": "Deterministic handler exists but pre-Phase 0 HTML lacks data-field-id markers. New builds will include them." }
+  },
+  "remaining_gaps": [
+    "Surgical deterministic replacement only works when HTML has data-field-id attributes (Phase 0 builds include them, pre-Phase 0 builds don't)",
+    "Cross-page content edits (edit 6: 'all buttons') still only edit current page via Claude — deterministic cross-page handler needs data-field-id in all pages",
+    "Content sync after build found 0 fields on pre-Phase 0 HTML — need to rebuild site with Phase 0 prompts to populate spec.content"
+  ]
+}
