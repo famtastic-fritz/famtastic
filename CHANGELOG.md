@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-07 — Phase 1 component library: export API, content field API, skills
+
+Component library foundation: POST /api/components/export extracts a section from a site as a reusable component (HTML template, CSS variables, content fields, image slots). GET /api/components lists library. GET /api/components/:id returns component detail. GET /api/content-fields/:page and POST /api/content-field provide surgical content editing via REST API. GET /api/research serves research markdown files. Created 3 component skills (hero-section, contact-form, pricing-table) with HTML templates including data-field-id attributes. Initialized ~/famtastic/components/library.json. 81 tests passing.
+
 ## 2026-04-07 — Phase 0 content data layer: classifier fix, prompt injection, surgical editing, content sync
 
 Built the Phase 0 foundation for Studio v3. Classifier fix: content_update now has higher precedence than bug_fix and layout_update, with widened regex allowing natural language ("change the contact phone number to X"). Verification: 7/10 edits correctly route to content_update (was 0/10), 3/10 correctly stay layout_update (structural adds/removes), 0/7 content edits require plan approval (was 9/10). Build prompt injection: systemRules now instruct Claude to include data-field-id, data-field-type, and data-section-id attributes on all content elements. Post-build content sync: syncContentFieldsFromHtml() parses generated HTML for data-field-id markers and populates spec.content. Surgical handler: tryDeterministicHandler extended with field-aware replacement using data-field-id selectors and type-based transforms (phone→tel: href, email→mailto:). Concurrency: writeSpec() now tracks _revision counter and writes to mutations.jsonl. 81 tests passing (3 new).
