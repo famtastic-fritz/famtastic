@@ -1,8 +1,8 @@
 # FAMtastic Changelog
 
-## 2026-04-07 — Adobe Firefly + Google Veo proof-of-concept tests
+## 2026-04-07 — Three-provider AI media comparison: Google + Leonardo + Adobe
 
-Installed Adobe Firefly skill and built CLI script (scripts/firefly-generate) with batch mode, style reference, and OAuth 2.0 authentication. Built Google Veo/Imagen integration with google-genai SDK (v1.47.0). Both tests blocked by credentials: Firefly needs Adobe Developer Console project (FIREFLY_CLIENT_ID/SECRET), all Google image/video models (Gemini image, Imagen 4.0, Veo 2.0-3.1) require paid plan (free tier quota is 0). Discovered 12 Google image/video models available. Infrastructure is fully ready — code, output dirs, and test harness all in place. Full comparison report at tests/automation/logs/ai-media-comparison-report.md.
+Generated 9 images + 1 video across 2 providers with real API calls. Google Imagen 4.0: 4/4 shoe images at 9/10 quality, avg 7.2s, ~$0.004/image. Veo 2.0: hero video from still in 33s at 1.6MB (under 5MB web target). Leonardo Phoenix 1.0: 4/4 shoe images at 7/10 quality, avg 8.6s, $0.016/image. Google wins on quality, speed, cost, and video capability. Leonardo wins on model variety (47 models) and custom training potential. Adobe Firefly: manual web test checklist created for Fritz to run via existing CC subscription (API requires enterprise tier). Comparison gallery, JSON report, and hero video test page all produced.
 
 ## 2026-04-07 — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop
 

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Media Provider Comparison — FAMtastic</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; }
+    h1 { font-size: 24px; margin-bottom: 8px; color: #f8fafc; }
+    .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+    .section { margin-bottom: 40px; }
+    .section h2 { font-size: 18px; color: #3b82f6; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .card { background: #1e293b; border-radius: 8px; overflow: hidden; }
+    .card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+    .card .meta { padding: 8px 10px; font-size: 11px; color: #94a3b8; }
+    .card .meta .provider { color: #3b82f6; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .meta .stats { margin-top: 4px; }
+    .comparison-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .comparison-row h3 { font-size: 14px; color: #e2e8f0; margin-bottom: 8px; }
+    .video-section { margin-top: 32px; }
+    .video-section video { width: 100%; max-width: 800px; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; background: #1e293b; color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+    td { padding: 8px 12px; border-bottom: 1px solid #1e293b; }
+    .winner { color: #22c55e; font-weight: 600; }
+    .label { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .label-google { background: #1d4ed8; color: #bfdbfe; }
+    .label-leonardo { background: #7c3aed; color: #ddd6fe; }
+    .label-adobe { background: #dc2626; color: #fecaca; }
+  </style>
+</head>
+<body>
+  <h1>AI Media Provider Comparison</h1>
+  <p class="subtitle">Generated 2026-04-07 — Guy's Classy Shoes (images) + Readings by Maria (video)</p>
+
+  <div class="section">
+    <h2><span class="label label-google">Google</span> Imagen 4.0 — Shoe Product Images</h2>
+    <div class="grid">
+      <div class="card">
+        <img src="google/shoe-1.png" alt="Google Oxford">
+        <div class="meta">
+          <div class="provider">Google Imagen 4.0</div>
+          <div>Oxford shoe</div>
+          <div class="stats">7.1s | 1125 KB</div>
+        </div>
+      </div>
+      <div class="card">
+        <img src="google/shoe-2.png" alt="Google Loafer">
+        <div class="meta">
+          <div class="provider">Google Imagen 4.0</div>
+          <div>Alligator loafer</div>
+          <div class="stats">6.6s | 1115 KB</div>
+        </div>
+      </div>
+      <div class="card">
+        <img src="google/shoe-3.png" alt="Google Chelsea">
+        <div class="meta">
+          <div class="provider">Google Imagen 4.0</div>
+          <div>Chelsea boot</div>
+          <div class="stats">8.2s | 1276 KB</div>
+        </div>
+      </div>
+      <div class="card">
+        <img src="google/shoe-4.png" alt="Google Detail">
+        <div class="meta">
+          <div class="provider">Google Imagen 4.0</div>
+          <div>Craftsmanship detail</div>
+          <div class="stats">6.9s | 1332 KB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="label label-leonardo">Leonardo</span> Phoenix 1.0 — Shoe Product Images</h2>
+    <div class="grid">
+      <div class="card">
+        <img src="leonardo/shoe-1.png" alt="Leonardo Oxford">
+        <div class="meta">
+          <div class="provider">Leonardo Phoenix 1.0</div>
+          <div>Oxford shoe</div>
+          <div class="stats">~6s | 489 KB | $0.016</div>
+        </div>
+      </div>
+      <div class="card">
+        <img src="leonardo/shoe-2.png" alt="Leonardo Loafer">
+        <div class="meta">
+          <div class="provider">Leonardo Phoenix 1.0</div>
+          <div>Alligator loafer</div>
+          <div class="stats">9.5s | 650 KB | $0.016</div>
+        </div>
+      </div>
+      <div class="card">
+        <img src="leonardo/shoe-3.png" alt="Leonardo Chelsea">
+        <div class="meta">
+          <div class="provider">Leonardo Phoenix 1.0</div>
+          <div>Chelsea boot</div>
+          <div class="stats">9.4s | 534 KB | $0.016</div>
+        </div>
+      </div>
+      <div class="card">
+        <img src="leonardo/shoe-4.png" alt="Leonardo Detail">
+        <div class="meta">
+          <div class="provider">Leonardo Phoenix 1.0</div>
+          <div>Craftsmanship detail</div>
+          <div class="stats">9.5s | 769 KB | $0.016</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section video-section">
+    <h2><span class="label label-google">Google</span> Veo 2.0 — Hero Video (Readings by Maria)</h2>
+    <video controls autoplay muted loop>
+      <source src="google/maria-hero.mp4" type="video/mp4">
+    </video>
+    <div style="margin-top:8px; font-size:13px; color:#94a3b8;">
+      Still: Imagen 4.0 (6.9s) | Video: Veo 2.0 (33.4s) | File: 1.6 MB
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Head-to-Head Comparison</h2>
+    <table>
+      <tr>
+        <th>Metric</th>
+        <th><span class="label label-google">Google</span></th>
+        <th><span class="label label-leonardo">Leonardo</span></th>
+        <th><span class="label label-adobe">Adobe</span></th>
+      </tr>
+      <tr>
+        <td>Images generated</td>
+        <td>4/4</td>
+        <td>4/4</td>
+        <td>Manual test pending</td>
+      </tr>
+      <tr>
+        <td>Avg generation time</td>
+        <td class="winner">7.2s</td>
+        <td>8.6s</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>Avg file size</td>
+        <td>1212 KB</td>
+        <td>610 KB</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>Cost per image</td>
+        <td>~$0.004 (pay-as-you-go)</td>
+        <td>$0.016</td>
+        <td>Generative credits</td>
+      </tr>
+      <tr>
+        <td>Video generation</td>
+        <td class="winner">Veo 2.0 (33s, 1.6MB)</td>
+        <td>Not available via API</td>
+        <td>Requires Firefly Standard</td>
+      </tr>
+      <tr>
+        <td>API ease</td>
+        <td class="winner">Python SDK, 3 lines</td>
+        <td>REST API, polling required</td>
+        <td>Enterprise only (web app for CC)</td>
+      </tr>
+      <tr>
+        <td>Models available</td>
+        <td>12 (Imagen 4.0, Veo 3.1, Gemini image)</td>
+        <td>47 (Phoenix, FLUX, Kino, etc.)</td>
+        <td>Firefly Image 5, partner models</td>
+      </tr>
+      <tr>
+        <td>Style reference</td>
+        <td>Via prompt consistency</td>
+        <td>Image guidance API</td>
+        <td class="winner">Best-in-class style matching</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

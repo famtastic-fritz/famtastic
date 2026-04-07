@@ -715,13 +715,20 @@ Side-by-side Claude vs Codex comparison with version safety.
 - **Key capability:** Style reference matching — generate image sets with consistent lighting/color by using an anchor image as style reference
 - **Content Credentials:** All outputs include C2PA metadata (AI provenance tracking)
 
-### Google Gemini Image / Imagen / Veo
-- **SDK:** `google-genai` v1.47.0 installed via pip3
-- **API key:** `GEMINI_API_KEY` is set and valid for text generation
-- **Status:** BLOCKED — all image/video models require paid Google AI plan (free tier quota = 0)
-- **Models discovered:** gemini-3.1-flash-image-preview, gemini-3-pro-image-preview, imagen-4.0-generate-001, imagen-4.0-ultra-generate-001, veo-3.1-generate-preview, veo-3.1-fast-generate-preview (12 total)
-- **Key capability:** Veo 3.1 image-to-video for hero video loops
-- **Upgrade URL:** https://ai.dev/projects
+### Google Imagen 4.0 + Veo 2.0 (TESTED — paid plan active)
+- **SDK:** `google-genai` v1.47.0
+- **Status:** WORKING — paid plan active with $25 credit
+- **Imagen 4.0 results:** 4/4 shoe product images generated. Quality 9/10. Avg 7.2s per image. ~1.1-1.3 MB per image. Exceptional leather texture, lighting, composition. Cost ~$0.004/image.
+- **Veo 2.0 results:** Hero video generated from Imagen still in 33.4s. 1.6 MB file size (well under 5MB web target). Candle flicker and smoke animation look natural. Usable for production hero backgrounds.
+- **Pipeline:** Imagen generates still → Veo animates to video. Total: ~40s for a hero video from text prompt.
+
+### Leonardo.ai Phoenix 1.0 (TESTED — API plan active)
+- **Account:** `famtastic_fritz`, 3,344 API paid tokens + 150 subscription tokens
+- **Status:** WORKING — 4/4 shoe images generated
+- **Quality:** 7/10 — more CGI/rendered look vs Imagen's photorealism. Color accuracy lower (oxford came out navy instead of brown). Coherence between set images lower (5/10 vs Google's 7/10).
+- **Speed:** 8.6s avg per image. Cost: $0.016/image (4x more than Google).
+- **Models:** 47 available including FLUX, Kino XL, custom training. Model variety is Leonardo's strength.
+- **API:** REST with polling (vs Google's Python SDK with 3-line generation). More complex integration.
 
 ### Integration Architecture (planned)
 - Image Browser tab: add Firefly as provider alongside Unsplash/Pexels
