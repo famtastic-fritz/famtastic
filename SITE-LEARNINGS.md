@@ -542,6 +542,19 @@ Built the same Readings by Maria site with both Claude (via Studio) and Codex (d
 
 **Verdict:** Codex wins on first-pass generation quality (richer content, better slot compliance). Claude/Studio wins on iterative editing and deployment infrastructure. **Recommended pipeline: Codex generates initial HTML → Studio imports → Claude handles edits → Studio deploys.**
 
+## Studio v3 Architecture Decisions (2026-04-07)
+
+Four architectural gaps resolved before Phase 0 implementation begins. Full decisions in `docs/v3-architecture-decisions.md`. Codex adversarial review in `docs/v3-architecture-codex-review.md`.
+
+### Decisions Made
+1. **Identity lifecycle:** IDs are page-scoped sequential counters (`{page}-{type}-{n}`). Write-once allocation via `max+1`. Codex flagged DOM-order recovery as insufficient — recommended persisting IDs as `data-*` attributes in HTML for durability.
+2. **Concurrency:** Single-writer priority queue (user edits priority 1 > build results priority 2 > background priority 3). Codex flagged stale-read risk and recommended revision-aware mutations with `spec_version` token.
+3. **Multi-target rendering:** Canonical value + render_targets array with type-based transforms. Codex flagged US-specific phone/address formats — recommended locale-aware structured values.
+4. **Component ownership:** Instance-on-import (fork at import, independent thereafter). Reference mode deferred to v2. Codex agreed this is correct for v1 but flagged re-import fragility without stable slot IDs.
+
+### Schema Updates
+`schemas/site-spec.schema.json` updated with: `slot_queries` (per-slot stock photo queries), `content` (structured fields per page with render_targets), `sections` (section metadata with component references).
+
 ## Known Gaps
 
 ### Closed (2026-03-23, wave 1a — workflow-critical)

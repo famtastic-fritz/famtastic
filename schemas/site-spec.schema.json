@@ -212,6 +212,69 @@
       "type": "array",
       "items": { "type": "string" },
       "description": "Tech stack recommendations generated from brief analysis"
+    },
+    "slot_queries": {
+      "type": "object",
+      "description": "Per-slot preferred stock photo search queries. Keys are slot_ids, values are search query strings.",
+      "additionalProperties": { "type": "string" }
+    },
+    "content": {
+      "type": "object",
+      "description": "Structured content fields per page, extracted from rendered HTML. Keys are page filenames.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field_id": { "type": "string", "description": "Unique field identifier: {page}-{type}-{n}" },
+                "type": { "type": "string", "enum": ["text", "richtext", "phone", "email", "address", "hours", "link", "image", "price", "testimonial", "list"] },
+                "value": { "description": "Field value — string for simple types, object for composite types" },
+                "element": { "type": "string", "description": "HTML element tag (h1, p, a, etc.)" },
+                "scope": { "type": "string", "enum": ["local", "global"], "description": "local = this page only, global = appears across pages" },
+                "editable": { "type": "boolean" },
+                "render_targets": {
+                  "type": "array",
+                  "description": "All DOM locations where this field's value renders",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "page": { "type": "string", "description": "Page filename, or * for all pages" },
+                      "selector": { "type": "string", "description": "CSS selector to locate the element" },
+                      "attribute": { "type": "string", "description": "Which attribute to update (textContent, href, src, etc.)" },
+                      "transform": { "type": "string", "description": "Transform name (display, tel_href, mailto_href, e164, etc.)" }
+                    }
+                  }
+                }
+              },
+              "required": ["field_id", "type", "value"]
+            }
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "object",
+      "description": "Section-level metadata per page, including component references. Keys are page filenames.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "section_id": { "type": "string", "description": "Unique section ID: {page}-{type}-{n}" },
+            "section_type": { "type": "string" },
+            "order": { "type": "integer" },
+            "component_ref": { "type": "string", "description": "Library component reference (if imported)" },
+            "component_version": { "type": "string" },
+            "component_instance_id": { "type": "string", "description": "Site-scoped instance ID: {tag}-{ref}-{n}" },
+            "imported_at": { "type": "string", "format": "date-time" },
+            "diverged_at": { "type": "string", "format": "date-time", "description": "Set when instance is edited after import" },
+            "overrides": { "type": "object", "description": "CSS variable and content field overrides from library defaults" }
+          }
+        }
+      }
     }
   }
 }
