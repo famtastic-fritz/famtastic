@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-07 — Adobe Firefly + Google Veo proof-of-concept tests
+
+Installed Adobe Firefly skill and built CLI script (scripts/firefly-generate) with batch mode, style reference, and OAuth 2.0 authentication. Built Google Veo/Imagen integration with google-genai SDK (v1.47.0). Both tests blocked by credentials: Firefly needs Adobe Developer Console project (FIREFLY_CLIENT_ID/SECRET), all Google image/video models (Gemini image, Imagen 4.0, Veo 2.0-3.1) require paid plan (free tier quota is 0). Discovered 12 Google image/video models available. Infrastructure is fully ready — code, output dirs, and test harness all in place. Full comparison report at tests/automation/logs/ai-media-comparison-report.md.
+
 ## 2026-04-07 — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop
 
 8-wave implementation adding 5 new canvas tabs, 1 CLI tab, 5 server endpoints, and mutation analysis. Canvas: Image Browser (multi-provider stock search with slot targeting), Research View (markdown file viewer with safe DOM renderer), Model Comparison (side-by-side Claude vs Codex with sync scroll, version snapshot before adopt). CLI: Codex tab with non-interactive exec and stdin pipe close. Server: GET /api/research/:filename (allowlisted, 500KB cap), POST /api/codex/exec (120s timeout), GET /api/mutations (paginated, retention at 1000 entries, field frequency), GET /api/metrics/summary, POST /api/compare/generate + /api/compare/adopt (with versionFile snapshot). Tab switching refactored to data-driven via querySelectorAll + data-hook attributes. Codex adversarial review (43 findings) incorporated: S3 XSS fix (DOM-only markdown), S4 path traversal (allowlist), E3 interactive mode (stdin close), I5 version safety (snapshot before adopt), F4 JSONL retention. 81 tests passing.

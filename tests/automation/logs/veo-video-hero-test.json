@@ -1,0 +1,47 @@
+{
+  "tool": "google-veo",
+  "test": "hero-video-generation",
+  "site": "readings-by-maria",
+  "status": "blocked",
+  "blocked_reason": "All Google image/video generation APIs require paid plan. Free tier quota is 0 for image generation models.",
+  "still_model": "gemini-3.1-flash-image-preview",
+  "video_model": "veo-3.1-generate-preview",
+  "still_prompt": "Mystical scene with softly flickering candles, tarot cards spread on dark velvet table, wisps of incense smoke, warm amber lighting, shallow depth of field, cinematic mood, dark and mysterious",
+  "video_prompt": "Slow cinematic movement, candle flames gently flickering, wisps of incense smoke drifting upward, subtle ambient light shifts, mystical atmosphere, seamless loop",
+  "video_duration_seconds": 0,
+  "file_size_mb": 0,
+  "resolution": "not tested",
+  "loops_seamlessly": null,
+  "web_performance_acceptable": null,
+  "quality_rating": null,
+  "generation_time_seconds": 0,
+  "cost": "paid plan required",
+  "api_errors": {
+    "gemini-3.1-flash-image-preview": "429 RESOURCE_EXHAUSTED: quota limit 0 on free tier for gemini-3.1-flash-image",
+    "imagen-4.0-generate-001": "400 INVALID_ARGUMENT: Imagen 3+ is only available on paid plans",
+    "veo-3.1-generate-preview": "429 RESOURCE_EXHAUSTED: quota exhausted on free tier"
+  },
+  "models_discovered": [
+    "gemini-3.1-flash-image-preview",
+    "gemini-3-pro-image-preview",
+    "gemini-2.5-flash-image",
+    "imagen-4.0-generate-001",
+    "imagen-4.0-ultra-generate-001",
+    "imagen-4.0-fast-generate-001",
+    "veo-2.0-generate-001",
+    "veo-3.0-generate-001",
+    "veo-3.0-fast-generate-001",
+    "veo-3.1-generate-preview",
+    "veo-3.1-fast-generate-preview",
+    "veo-3.1-lite-generate-preview"
+  ],
+  "infrastructure_ready": {
+    "google_genai_installed": true,
+    "genai_version": "1.47.0",
+    "api_key_configured": true,
+    "python_version": "3.9 (system)",
+    "output_dir_created": true
+  },
+  "upgrade_url": "https://ai.dev/projects",
+  "notes": "GEMINI_API_KEY is set and valid for text generation (Gemini 2.5 Flash works). But ALL image/video generation models (Gemini image, Imagen 4.0, Veo 2.0-3.1) require a paid Google AI plan. The free tier has a quota of 0 for these models. To test: upgrade to Google AI paid plan at https://ai.dev/projects. Veo 3.1 supports image-to-video, which is exactly what we need for hero video loops."
+}

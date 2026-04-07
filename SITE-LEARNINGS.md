@@ -704,6 +704,32 @@ Side-by-side Claude vs Codex comparison with version safety.
 ### Codex Adversarial Review Summary
 43 findings across 7 categories (Security, Architecture, Edge Cases, UX, Data Model, Integration, Forgotten). Key fixes incorporated: S3 (XSS — DOM-only markdown), S4 (path traversal — filename allowlist), E3 (interactive mode — stdin close), F4 (JSONL retention — 1000 cap), I5 (version safety — snapshot before adopt), U5 (confirmation dialog). Full findings documented in session context.
 
+## AI Media Tools — Proof of Concept (2026-04-07)
+
+### Adobe Firefly
+- **Skill installed:** `.claude/skills/adobe-firefly/SKILL.md`
+- **CLI script:** `scripts/firefly-generate` — supports `--prompt`, `--output`, `--style-ref`, `--batch`, `--width`, `--height`
+- **Auth:** OAuth 2.0 client credentials → Adobe IMS (`https://ims-na1.adobelogin.com/ims/token/v3`)
+- **API:** `POST https://firefly-api.adobe.io/v2/images/generate` with `x-api-key` and `Bearer` token
+- **Status:** BLOCKED — needs `FIREFLY_CLIENT_ID` and `FIREFLY_CLIENT_SECRET` from Adobe Developer Console
+- **Key capability:** Style reference matching — generate image sets with consistent lighting/color by using an anchor image as style reference
+- **Content Credentials:** All outputs include C2PA metadata (AI provenance tracking)
+
+### Google Gemini Image / Imagen / Veo
+- **SDK:** `google-genai` v1.47.0 installed via pip3
+- **API key:** `GEMINI_API_KEY` is set and valid for text generation
+- **Status:** BLOCKED — all image/video models require paid Google AI plan (free tier quota = 0)
+- **Models discovered:** gemini-3.1-flash-image-preview, gemini-3-pro-image-preview, imagen-4.0-generate-001, imagen-4.0-ultra-generate-001, veo-3.1-generate-preview, veo-3.1-fast-generate-preview (12 total)
+- **Key capability:** Veo 3.1 image-to-video for hero video loops
+- **Upgrade URL:** https://ai.dev/projects
+
+### Integration Architecture (planned)
+- Image Browser tab: add Firefly as provider alongside Unsplash/Pexels
+- `POST /api/firefly/generate` server endpoint for Studio integration
+- `POST /api/veo/generate` for video generation
+- Hero video support in build pipeline (post-build step)
+- Style reference workflow: anchor image → batch generation with consistent style
+
 ## Known Gaps
 
 ### Closed (2026-03-23, wave 1a — workflow-critical)
