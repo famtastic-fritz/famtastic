@@ -577,6 +577,133 @@ Four architectural gaps resolved before Phase 0 implementation begins. Full deci
 ### Schema Updates
 `schemas/site-spec.schema.json` updated with: `slot_queries` (per-slot stock photo queries), `content` (structured fields per page with render_targets), `sections` (section metadata with component references).
 
+## Phase 2 — VS Code-Inspired Layout + Editable View (2026-04-07)
+
+Complete UI overhaul from three-horizontal-panel layout to VS Code-inspired workspace with left sidebar, tabbed canvas, bottom CLI bar, and right sidebar.
+
+### Layout Structure
+
+```
+Left Sidebar (220px)     Center Area (flex-1)                Right Sidebar (300px)
+  EXPLORER                 Canvas Tabs: Preview | Editable     Studio State
+  - Pages list              - Preview (iframe, device toggle)   - Mode: Create/Ship/Grow
+  - Sections tree           - Editable View (click-to-edit)     - Tab panels (Media,
+  - Media summary                                                 Structure, Style, etc.)
+                           CLI Bar (280px, adjustable)
+                             - Chat tab (messages + input)
+                             - Terminal tab (xterm.js)
+```
+
+### New Files Created
+- `site-studio/public/css/studio-canvas.css` — canvas tab bar, editable view toolbar, field edit overlay, field highlights
+- `site-studio/public/css/studio-cli.css` — CLI bar container, CLI tab bar, horizontal resizer, chat/terminal pane layout
+
+### Updated Files
+- `site-studio/public/css/studio-panels.css` — rewritten for new layout (left sidebar, center area, right sidebar, vertical resizers, responsive breakpoints)
+- `site-studio/public/index.html` — full HTML restructure + ~350 lines new JS
+
+### Key HTML Elements
+- `#left-sidebar` — collapsible left sidebar with `.ls-section` accordion sections (Pages, Sections, Media)
+- `#center-area` — flex column containing canvas area + horizontal resizer + CLI bar
+- `#canvas-area` — flex-1 with `#canvas-tab-bar` and `#canvas-content`
+- `#canvas-preview` — preview tab pane (migrated from old `#preview-panel`, keeps `#preview-frame`, `#page-tabs`, `#device-toggle`)
+- `#canvas-editable` — editable view tab pane with `#editable-frame` iframe and field edit overlay
+- `#resizer-h` — horizontal drag resizer between canvas and CLI (cursor: row-resize)
+- `#cli-bar` — bottom panel with `#cli-tab-bar` (Chat | Terminal) and `#cli-content`
+- `#cli-chat` — chat messages + input form (migrated from old `#chat-panel`)
+- `#cli-terminal` — terminal toolbar + xterm container (migrated from old studio terminal tab)
+- `#resizer-left`, `#resizer-right` — vertical resizers between sidebars and center
+
+### Key JS Functions (new)
+- `switchCanvasTab(tab)` — switches between 'preview' and 'editable' canvas tabs
+- `switchCliTab(tab)` — switches between 'chat' and 'terminal' CLI tabs, auto-creates terminal on first switch
+- `toggleLeftSidebar()` — shows/hides left sidebar + its resizer
+- `toggleCliBar()` — minimize (36px tab bar only) / restore CLI bar height
+- `toggleLsSection(sectionId)` — accordion toggle for left sidebar sections
+- `setupHResizer()` — horizontal drag-to-resize between canvas and CLI bar, persists height to localStorage
+- `renderPagesList()` — renders page items in left sidebar from `sitePages`, highlights active page
+- `selectPage(page)` — selects page in sidebar, syncs preview via WS, refreshes section tree
+- `loadSectionTree(page)` — fetches `GET /api/content-fields/:page`, renders field tree grouped by section with type icons
+- `scrollToField(fieldId)` — scrolls editable iframe to a field and highlights it
+- `loadEditableView()` — loads same page as preview into editable iframe, injects click handlers
+- `injectEditableOverlay(frame)` — injects CSS for field highlights and click-to-edit handlers on `[data-field-id]` elements
+- `openFieldEditor(el, frame)` — opens floating overlay editor at field position with input + Save/Cancel
+- `updateFieldCount(frame)` — counts `[data-field-id]` elements and shows count in toolbar
+- `refreshLeftSidebar()` — refreshes all left sidebar sections (pages, sections, media)
+- `updateMediaSummary()` — shows slot/upload counts from cached studio state
+
+### Sidebar Toggles (header)
+- Left sidebar toggle: hamburger icon button `#left-sidebar-btn`, calls `toggleLeftSidebar()`
+- Right sidebar toggle: panel icon button `#studio-btn`, calls `toggleStudioPanel()` (unchanged function, same ID)
+- Both buttons turn gray when sidebar is hidden, hide/show their associated resizer
+
+### Panel Width Persistence (localStorage keys)
+- `panel-left-sidebar-width` — left sidebar width
+- `panel-right-sidebar-width` — right sidebar width (was `panel-center-width`)
+- `cli-bar-height` — CLI bar height
+
+### Brainstorm Mode Adaptation
+Brainstorm mode now hides both sidebars + canvas area, expands CLI bar to fill the center column. Restores previous state (sidebar visibility, CLI bar height) on exit.
+
+### Migration Notes
+- Old panel IDs preserved where possible: `#studio-panel` (now right sidebar), `#chat-messages`, `#chat-form`, `#chat-input`, `#preview-frame`, all studio tab content IDs
+- `#chat-panel` → removed (content moved to `#cli-chat`)
+- `#preview-panel` → removed (content moved to `#canvas-preview`)
+- `togglePreview()` → now toggles between Preview and Editable View canvas tabs
+- `updatePanelLayout()` → no-op (CSS flex handles layout automatically)
+- Drag-and-drop target changed from `#chat-panel` to `#cli-chat`
+- Terminal tab in right sidebar shows redirect link to CLI bar terminal
+
+## Phases 3-5 — Multi-Agent, Image Browser, Intelligence Loop (2026-04-07)
+
+8-wave implementation adding canvas tabs, CLI tabs, server endpoints, and analytics.
+
+### Wave 0: Data-Driven Tab Switching
+Refactored `switchCanvasTab()` and `switchCliTab()` from hardcoded arrays to `querySelectorAll('#canvas-tab-bar .canvas-tab')` pattern. Tab buttons use `data-pane` (target pane ID) and `data-hook` (global function name for lazy-load activation). Adding new tabs requires only HTML — no JS changes.
+
+### Wave 1: Image Browser Canvas Tab (Phase 4)
+Full canvas tab for stock photo search, replacing the small QSF floating panel for browsing.
+- **Canvas tab:** `#canvas-images` with search toolbar, provider dropdown (All/Unsplash/Pexels), slot selector, 6-column result grid (responsive: 4-col < 1200px, 3-col < 768px)
+- **Server:** Enhanced `GET /api/stock-search` now accepts `provider` and `limit` params (cap: 20 per provider)
+- **JS functions:** `searchImageBrowser()`, `loadImageBrowserSlots()`, `renderImageResults()`, `applyImageToSlot()` — reuses existing `applyStockResult` backend
+- **Codex fix U1:** Slot selector pins active slot visibly so user always knows where "Apply" targets
+
+### Wave 2: Research View Canvas Tab (Phase 4)
+Canvas tab for viewing research markdown files generated during pre-brief research phase.
+- **Canvas tab:** `#canvas-research` with file list sidebar (220px) + content area
+- **Server:** `GET /api/research/:filename` — allowlisted filenames via `readdirSync` (Codex S4 fix), 500KB size cap (Codex E2/F2), path traversal safe
+- **JS functions:** `loadResearchFiles()`, `viewResearchFile()`, `renderMarkdownSafe()`, `appendInlineFormatted()`
+- **Codex fix S3:** Markdown renderer uses DOM API only (createElement/createTextNode) — no innerHTML. Handles headings, bold, italic, code, lists.
+
+### Wave 3: Codex CLI Tab (Phase 3)
+Third tab in the CLI bar for interacting with Codex directly.
+- **CLI tab:** `#cli-codex` with monospace output area + text input + Run button
+- **Server:** `POST /api/codex/exec` — calls `scripts/codex-cli` via `execFile`, 120s timeout, 10KB prompt cap, stdin immediately closed (Codex E3 fix — prevents interactive mode fallback)
+- **JS functions:** `sendCodexPrompt()`, `appendCodexMessage(role, text)` — Enter key submits, loading indicator, error display for missing codex binary
+
+### Wave 4: Metrics Summary API (Phase 3+5)
+- **Server:** `GET /api/metrics/summary` — reads build-metrics.jsonl, returns `{ totalBuilds, avgTime, byModel, byType }`
+- Uses JSONL as data source (SQLite integration deferred — Codex A1 noted but builds table not always populated)
+
+### Wave 5: Mutation Timeline (Phase 5)
+- **Server:** `GET /api/mutations?page=X&limit=50` — reads mutations.jsonl (reverse chronological), field frequency analysis (`topFields`), JSONL retention at 1000 entries (Codex F4 fix — compacts on read when > 1200 lines)
+- **HTML:** Mutations accordion in History tab (`#accordion-mutations`) with `#mutation-patterns` (top 5 most-changed fields) and `#mutation-timeline` (paginated entries)
+- **JS functions:** `loadMutations(page)`, `renderMutationTimeline()`, `loadMoreMutations()` — auto-triggered on history tab switch
+
+### Wave 6: Model Comparison Canvas Tab (Phase 3)
+Side-by-side Claude vs Codex comparison with version safety.
+- **Canvas tab:** `#canvas-compare` with toolbar (sync scroll checkbox, "Generate Codex Version" button), side-by-side iframes, "Use this" buttons with confirmation dialog
+- **Server:** `POST /api/compare/generate` — calls codex-cli to regenerate current page, saves to `{SITE_DIR}/compare/`. `POST /api/compare/adopt` — with `versionFile()` snapshot before overwrite (Codex I5 fix). Static serve for `/compare/` directory.
+- **JS functions:** `loadCompareView()`, `generateCodexVersion()`, `setupCompareScroll()`, `useCompareVersion(side)` — confirm() before destructive adopt
+- **Codex fixes:** E5 (stale page captured at generation), I5 (version snapshot), U5 (confirmation dialog)
+
+### CSS Files Updated
+- `studio-canvas.css` — added Image Browser (#images-toolbar, #images-results-grid, .image-result-card), Research View (#research-layout, .research-file-item), Model Comparison (#compare-split, .compare-panel)
+- `studio-cli.css` — added Codex pane styles (.codex-msg-user/assistant/error, .codex-loading)
+
+### Codex Adversarial Review Summary
+43 findings across 7 categories (Security, Architecture, Edge Cases, UX, Data Model, Integration, Forgotten). Key fixes incorporated: S3 (XSS — DOM-only markdown), S4 (path traversal — filename allowlist), E3 (interactive mode — stdin close), F4 (JSONL retention — 1000 cap), I5 (version safety — snapshot before adopt), U5 (confirmation dialog). Full findings documented in session context.
+
 ## Known Gaps
 
 ### Closed (2026-03-23, wave 1a — workflow-critical)

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-03-31T12:51:08.866Z
-> Files: 288 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T19:55:02.006Z
+> Files: 291 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -23,6 +23,7 @@
 ## ../.claude/plans/
 
 - `floofy-dancing-mccarthy.md` — Per-Site Repo Architecture + Studio State URLs (~1614 tok)
+- `tidy-snacking-gizmo.md` — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop (~730 tok)
 
 ## ../.claude/projects/-Users-famtasticfritz-famtastic/memory/
 
@@ -35,14 +36,14 @@
 
 - `.gitignore` — Git ignore rules (~127 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~5103 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~8137 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10243 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10331 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~22355 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~31348 tok)
 
 ## .claude/
 
@@ -466,12 +467,17 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 19 more (~100088 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~113661 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~57101 tok)
+- `index.html` — FAMtastic Site Studio (~73032 tok)
+
+## site-studio/public/css/
+
+- `studio-canvas.css` — canvas-tab-bar { (~2776 tok)
+- `studio-cli.css` — cli-bar { (~886 tok)
 
 ## site-studio/tests/
 

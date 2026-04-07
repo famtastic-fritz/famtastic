@@ -96,6 +96,12 @@
 - [2026-03-25] SPEC WHITELIST: Only design_brief, design_decisions, site_name, business_type can be updated via WS update-spec. This prevents arbitrary spec overwrites.
 - [2026-03-25] SETTINGS REDACTION: GET /api/settings redacts all API keys, showing only `_configured: true/false`. POST still accepts full values for saving.
 - [2026-03-25] CLASSIFIER ANCHORING: version_history requires "version" as anchor word. Rollback requires "version" or "previous" near "restore". This prevents false positives on common words.
+- [2026-04-07] VS_CODE_LAYOUT: Studio layout is now left sidebar + tabbed canvas + CLI bar + right sidebar. Key IDs: #left-sidebar, #center-area, #canvas-area, #canvas-tab-bar, #cli-bar, #cli-tab-bar. Old #chat-panel replaced by #cli-chat, old #preview-panel content moved to #canvas-preview. #studio-panel kept as right sidebar ID. Resizers: #resizer-left, #resizer-right (vertical), #resizer-h (horizontal).
+- [2026-04-07] CLI_TAB_PANE_SPECIFICITY: When using ID-based display rules (#cli-terminal { display: flex }) alongside class-based hidden rules (.cli-tab-pane.hidden { display: none }), the ID wins. Fix: use !important on the hidden rule or avoid setting display on the ID selector.
+- [2026-04-07] DATA_DRIVEN_TABS: Canvas and CLI tabs are now data-driven via querySelectorAll + data-pane/data-hook attributes. New tabs need only HTML — no JS array changes. Functions: switchCanvasTab(), switchCliTab(). Canvas tabs: preview, editable, images, research, compare. CLI tabs: chat, terminal, codex.
+- [2026-04-07] CANVAS_PANE_HIDING: Use `display:none !important` for hidden canvas panes, not `opacity:0`. Opacity-based hiding leaks iframe content (especially Compare tab's side-by-side iframes).
+- [2026-04-07] CODEX_STDIN_CLOSE: Always close stdin immediately when exec'ing codex-cli via execFile. The script has an interactive fallback (line 7) that hangs HTTP requests. Fix: `child.stdin.end()` after spawn.
+- [2026-04-07] RESEARCH_FILENAME_ALLOWLIST: Never use req.params directly for file paths. Allowlist via readdirSync then check includes(). Pattern: `const allowed = fs.readdirSync(dir).filter(f => f.endsWith('.md')); if (!allowed.includes(filename)) return 404;`
 
 ## Do-Not-Repeat
 

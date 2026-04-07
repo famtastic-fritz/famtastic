@@ -1,5 +1,13 @@
 # FAMtastic Changelog
 
+## 2026-04-07 — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop
+
+8-wave implementation adding 5 new canvas tabs, 1 CLI tab, 5 server endpoints, and mutation analysis. Canvas: Image Browser (multi-provider stock search with slot targeting), Research View (markdown file viewer with safe DOM renderer), Model Comparison (side-by-side Claude vs Codex with sync scroll, version snapshot before adopt). CLI: Codex tab with non-interactive exec and stdin pipe close. Server: GET /api/research/:filename (allowlisted, 500KB cap), POST /api/codex/exec (120s timeout), GET /api/mutations (paginated, retention at 1000 entries, field frequency), GET /api/metrics/summary, POST /api/compare/generate + /api/compare/adopt (with versionFile snapshot). Tab switching refactored to data-driven via querySelectorAll + data-hook attributes. Codex adversarial review (43 findings) incorporated: S3 XSS fix (DOM-only markdown), S4 path traversal (allowlist), E3 interactive mode (stdin close), I5 version safety (snapshot before adopt), F4 JSONL retention. 81 tests passing.
+
+## 2026-04-07 — Phase 2 VS Code-inspired UI + Editable View
+
+Complete layout overhaul from three-horizontal-panel to VS Code-inspired workspace. Left sidebar (Explorer) with pages list, section tree, and media summary. Tabbed canvas with Preview and Editable View tabs — editable view loads site in iframe with click-to-edit overlay on data-field-id elements. Chat and Terminal moved to bottom CLI bar with tab switching. Both sidebars are independently collapsible with resizers. Horizontal drag-to-resize between canvas and CLI bar. All existing functionality preserved — 81 tests passing, zero console errors. Created 2 new CSS files (studio-canvas.css, studio-cli.css), rewrote studio-panels.css, added ~350 lines of new JS.
+
 ## 2026-04-07 — Phase 1 component library: export API, content field API, skills
 
 Component library foundation: POST /api/components/export extracts a section from a site as a reusable component (HTML template, CSS variables, content fields, image slots). GET /api/components lists library. GET /api/components/:id returns component detail. GET /api/content-fields/:page and POST /api/content-field provide surgical content editing via REST API. GET /api/research serves research markdown files. Created 3 component skills (hero-section, contact-form, pricing-table) with HTML templates including data-field-id attributes. Initialized ~/famtastic/components/library.json. 81 tests passing.

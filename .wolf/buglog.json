@@ -2113,6 +2113,118 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-03-31T12:47:04.728Z"
+    },
+    {
+      "id": "bug-133",
+      "timestamp": "2026-04-07T19:03:20.758Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had 'chat-panel'",
+      "fix": "Changed to 'cli-chat'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T19:03:20.758Z"
+    },
+    {
+      "id": "bug-134",
+      "timestamp": "2026-04-07T19:44:16.991Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T19:44:16.991Z"
+    },
+    {
+      "id": "bug-135",
+      "timestamp": "2026-04-07T19:44:25.585Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had \" class=\"",
+      "fix": "Changed to \" data-pane=\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T19:44:31.003Z"
+    },
+    {
+      "id": "bug-136",
+      "timestamp": "2026-04-07T19:45:33.398Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/server.js",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 21→32 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T19:45:33.398Z"
+    },
+    {
+      "id": "bug-137",
+      "timestamp": "2026-04-07T19:48:55.312Z",
+      "error_message": "Missing error handling in function",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // --- Wave 5: Mutation Timeline ---; let mutationPage = 1;",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T19:50:25.221Z"
+    },
+    {
+      "id": "bug-138",
+      "timestamp": "2026-04-07T19:49:45.820Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T19:49:45.820Z"
+    },
+    {
+      "id": "bug-139",
+      "timestamp": "2026-04-07T19:52:16.444Z",
+      "error_message": "CSS fix: display",
+      "file": "site-studio/public/css/studio-canvas.css",
+      "root_cause": "display: flex → none !important",
+      "fix": "Changed display: flex → none !important",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T19:52:16.444Z"
     }
   ]
 }

@@ -3299,26 +3299,37 @@ async function fetchFromProvider(provider, query, width, height, limit = 6) {
   return [];
 }
 
-// --- Stock photo search (preview grid for QSF) ---
+// --- Stock photo search (preview grid for QSF + Image Browser tab) ---
 app.get('/api/stock-search', async (req, res) => {
-  const { query, width, height } = req.query;
+  const { query, width, height, provider, limit } = req.query;
   if (!query) return res.status(400).json({ error: 'query required' });
 
   const w = parseInt(width) || 800;
   const h = parseInt(height) || 600;
+  const perProvider = Math.min(parseInt(limit) || 6, 20); // cap at 20 per provider
+  const prov = (provider || 'all').toLowerCase();
 
-  const [unsplashResults, pexelsResults] = await Promise.all([
-    fetchFromProvider('unsplash', query, w, h, 3),
-    fetchFromProvider('pexels', query, w, h, 3),
-  ]);
+  let results = [];
+  if (prov === 'unsplash') {
+    results = await fetchFromProvider('unsplash', query, w, h, perProvider);
+  } else if (prov === 'pexels') {
+    results = await fetchFromProvider('pexels', query, w, h, perProvider);
+  } else {
+    // 'all' — split evenly between providers
+    const half = Math.ceil(perProvider / 2);
+    const [unsplashResults, pexelsResults] = await Promise.all([
+      fetchFromProvider('unsplash', query, w, h, half),
+      fetchFromProvider('pexels', query, w, h, half),
+    ]);
+    results = [...unsplashResults, ...pexelsResults];
+  }
 
-  const results = [...unsplashResults, ...pexelsResults];
-  // Always pad with placeholder if we have < 2 real results
+  // Pad with placeholder if we have < 2 real results
   if (results.length < 2) {
     results.push(...await fetchFromProvider('placeholder', query, w, h, 1));
   }
 
-  res.json({ results, query });
+  res.json({ results, query, provider: prov });
 });
 
 // --- Stock Photo Fill ---
@@ -3942,6 +3953,192 @@ app.get('/api/research', (req, res) => {
       }));
     res.json({ files });
   } catch { res.json({ files: [] }); }
+});
+
+// --- Research file content (Wave 2) ---
+app.get('/api/research/:filename', (req, res) => {
+  const filename = req.params.filename;
+  // Allowlist: only serve files that actually exist in the research dir (Codex S4 fix)
+  const researchDir = path.join(SITE_DIR(), 'research');
+  if (!fs.existsSync(researchDir)) return res.status(404).json({ error: 'No research directory' });
+  const allowedFiles = fs.readdirSync(researchDir).filter(f => f.endsWith('.md'));
+  if (!allowedFiles.includes(filename)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  const filePath = path.join(researchDir, filename);
+  const stat = fs.statSync(filePath);
+  // Cap at 500KB (Codex E2, F2 fix)
+  if (stat.size > 512000) {
+    const content = fs.readFileSync(filePath, 'utf8').substring(0, 512000);
+    return res.json({ name: filename, content: content + '\n\n[Truncated — file exceeds 500KB]', truncated: true });
+  }
+  const content = fs.readFileSync(filePath, 'utf8');
+  res.json({ name: filename, content });
+});
+
+// --- Codex exec endpoint (Wave 3) ---
+app.post('/api/codex/exec', async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt || typeof prompt !== 'string') return res.status(400).json({ error: 'prompt required', output: '' });
+  if (prompt.length > 10000) return res.status(400).json({ error: 'prompt too long (max 10000 chars)', output: '' });
+  const { execFile } = require('child_process');
+  const codexPath = path.join(__dirname, '..', 'scripts', 'codex-cli');
+  if (!fs.existsSync(codexPath)) {
+    return res.json({ output: 'Codex CLI not found at scripts/codex-cli. Install Codex first.', error: true });
+  }
+  try {
+    const child = execFile(codexPath, [prompt], {
+      timeout: 120000,
+      maxBuffer: 1024 * 1024,
+      cwd: SITE_DIR(),
+      env: { ...process.env, TERM: 'dumb' },
+    }, (err, stdout, stderr) => {
+      if (err && err.killed) return res.json({ output: 'Codex timed out after 120 seconds', error: true });
+      if (err) return res.json({ output: stderr || err.message, error: true });
+      res.json({ output: stdout || '(no output)', error: false });
+    });
+    // Close stdin immediately to prevent interactive mode (Codex E3 fix)
+    if (child.stdin) child.stdin.end();
+  } catch(e) {
+    res.json({ output: 'Failed to execute Codex: ' + e.message, error: true });
+  }
+});
+
+// --- Mutations API (Wave 5) ---
+app.get('/api/mutations', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+  const mutationLog = path.join(SITE_DIR(), 'mutations.jsonl');
+  if (!fs.existsSync(mutationLog)) return res.json({ mutations: [], total: 0, page, topFields: [] });
+
+  const lines = fs.readFileSync(mutationLog, 'utf8').trim().split('\n').filter(Boolean);
+  // Retention: keep last 1000 entries (Codex F4 fix)
+  if (lines.length > 1200) {
+    const trimmed = lines.slice(-1000);
+    fs.writeFileSync(mutationLog, trimmed.join('\n') + '\n');
+  }
+
+  const all = lines.map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  const total = all.length;
+  const sorted = all.reverse(); // most recent first
+  const start = (page - 1) * limit;
+  const mutations = sorted.slice(start, start + limit);
+
+  // Field frequency analysis
+  const fieldCounts = {};
+  for (const m of all) {
+    const key = m.target_id || m.target || m.level || 'unknown';
+    fieldCounts[key] = (fieldCounts[key] || 0) + 1;
+  }
+  const topFields = Object.entries(fieldCounts)
+    .sort((a, b) => b[1] - a[1]).slice(0, 10)
+    .map(([field, count]) => ({ field, count }));
+
+  res.json({ mutations, total, page, limit, topFields });
+});
+
+// --- Metrics Summary API (Wave 4 — SQLite-only per Codex A1) ---
+app.get('/api/metrics/summary', (req, res) => {
+  try {
+    const tag = TAG;
+    // Read from build-metrics.jsonl as fallback (older data)
+    const metricsFile = path.join(SITE_DIR(), 'build-metrics.jsonl');
+    let metrics = [];
+    if (fs.existsSync(metricsFile)) {
+      metrics = fs.readFileSync(metricsFile, 'utf8').trim().split('\n')
+        .filter(Boolean).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    }
+    const totalBuilds = metrics.length;
+    const avgTime = totalBuilds ? Math.round(metrics.reduce((s, m) => s + (m.elapsed_seconds || 0), 0) / totalBuilds) : 0;
+    // Model usage breakdown
+    const byModel = {};
+    for (const m of metrics) {
+      const model = m.model || 'unknown';
+      if (!byModel[model]) byModel[model] = { count: 0, totalTime: 0 };
+      byModel[model].count++;
+      byModel[model].totalTime += m.elapsed_seconds || 0;
+    }
+    // Build type breakdown
+    const byType = {};
+    for (const m of metrics) { const t = m.type || 'unknown'; byType[t] = (byType[t] || 0) + 1; }
+    res.json({ totalBuilds, avgTime, byModel, byType, tag });
+  } catch(e) {
+    res.json({ totalBuilds: 0, avgTime: 0, byModel: {}, byType: {}, error: e.message });
+  }
+});
+
+// --- Compare generate (Wave 6) ---
+app.post('/api/compare/generate', async (req, res) => {
+  const { page } = req.body;
+  if (!page) return res.status(400).json({ error: 'page required' });
+  const pageName = path.basename(page); // prevent traversal
+  const codexPath = path.join(__dirname, '..', 'scripts', 'codex-cli');
+  if (!fs.existsSync(codexPath)) {
+    return res.json({ error: 'Codex CLI not found. Install Codex first.' });
+  }
+  // Create compare directory
+  const compareDir = path.join(SITE_DIR(), 'compare');
+  if (!fs.existsSync(compareDir)) fs.mkdirSync(compareDir, { recursive: true });
+
+  const spec = readSpec();
+  const brief = spec.design_brief || {};
+  const prompt = `Generate a complete HTML page for "${spec.site_name || TAG}" — page: ${pageName}. Business type: ${spec.business_type || 'general'}. Brief: ${brief.goal || ''}. Tone: ${(brief.tone || []).join(', ')}. Output ONLY the full HTML — no explanation.`;
+
+  const { execFile } = require('child_process');
+  try {
+    const child = execFile(codexPath, [prompt], {
+      timeout: 120000,
+      maxBuffer: 2 * 1024 * 1024,
+      cwd: SITE_DIR(),
+      env: { ...process.env, TERM: 'dumb' },
+    }, (err, stdout, stderr) => {
+      if (err) return res.json({ error: stderr || err.message });
+      // Save Codex output
+      const outFile = path.join(compareDir, pageName);
+      fs.writeFileSync(outFile, stdout);
+      // Serve via preview port
+      const previewPort = process.env.PREVIEW_PORT || 3333;
+      res.json({ url: `http://localhost:${previewPort}/compare/${pageName}`, page: pageName });
+    });
+    if (child.stdin) child.stdin.end();
+  } catch(e) {
+    res.json({ error: e.message });
+  }
+});
+
+// Serve compare directory as static
+app.use('/compare', (req, res, next) => {
+  const compareDir = path.join(SITE_DIR(), 'compare');
+  if (!fs.existsSync(compareDir)) return res.status(404).send('No compare directory');
+  express.static(compareDir)(req, res, next);
+});
+
+// --- Compare adopt (Wave 6 — with version snapshot per Codex I5) ---
+app.post('/api/compare/adopt', (req, res) => {
+  const { page, side } = req.body;
+  if (!page || !side) return res.status(400).json({ error: 'page and side required' });
+  const pageName = path.basename(page);
+  const distDir = path.join(SITE_DIR(), 'dist');
+  const livePath = path.join(distDir, pageName);
+  const comparePath = path.join(SITE_DIR(), 'compare', pageName);
+
+  if (side === 'claude') {
+    // Already the live version — nothing to do
+    return res.json({ success: true, message: 'Claude version is already live' });
+  }
+
+  if (side === 'codex') {
+    if (!fs.existsSync(comparePath)) return res.json({ error: 'No Codex version generated for this page' });
+    // Version snapshot before overwrite (Codex I5 fix)
+    if (fs.existsSync(livePath) && typeof versionFile === 'function') {
+      try { versionFile(pageName); } catch(e) { console.error('[compare] version snapshot failed:', e.message); }
+    }
+    // Copy Codex version to dist
+    fs.copyFileSync(comparePath, livePath);
+    return res.json({ success: true, message: 'Page replaced with Codex version (previous version saved)' });
+  }
+
+  res.status(400).json({ error: 'side must be "claude" or "codex"' });
 });
 
 // --- Verification API ---

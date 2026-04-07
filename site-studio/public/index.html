@@ -27,6 +27,8 @@
   <link rel="stylesheet" href="css/studio-sidebar.css">
   <link rel="stylesheet" href="css/studio-modals.css">
   <link rel="stylesheet" href="css/studio-terminal.css">
+  <link rel="stylesheet" href="css/studio-canvas.css">
+  <link rel="stylesheet" href="css/studio-cli.css">
 </head>
 <body class="bg-studio-bg text-studio-text h-screen flex flex-col overflow-hidden">
 
@@ -63,8 +65,12 @@
     </div>
     <div class="flex items-center gap-4">
       <button onclick="rebuildSite()" class="text-sm bg-studio-accent hover:bg-blue-600 text-white px-4 py-1.5 rounded transition">Rebuild</button>
-      <button onclick="toggleStudioPanel()" id="studio-btn" class="text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition">Studio</button>
-      <button onclick="togglePreview()" id="preview-btn" class="text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition">Toggle Preview</button>
+      <button onclick="toggleLeftSidebar()" id="left-sidebar-btn" class="text-sm bg-studio-accent text-white px-3 py-1.5 rounded transition" title="Toggle Explorer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+      </button>
+      <button onclick="toggleStudioPanel()" id="studio-btn" class="text-sm bg-studio-accent text-white px-3 py-1.5 rounded transition" title="Toggle Panel">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18m12-18v18H3V3h18z"/></svg>
+      </button>
       <button onclick="openSettings()" class="text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition" title="Settings" aria-label="Settings">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       </button>
@@ -74,98 +80,293 @@
   <!-- Asset bar (shown when assets exist) -->
   <div id="asset-bar" class="bg-studio-panel border-b border-gray-700 px-4 py-2 gap-2 items-center overflow-x-auto shrink-0" style="display: none;"></div>
 
-  <!-- Main content: Three-panel layout -->
-  <div id="studio-layout" class="flex flex-1 overflow-hidden main-layout" style="padding-bottom: 32px;">
+  <!-- Main content: VS Code-inspired layout -->
+  <div id="studio-layout" class="flex flex-1 overflow-hidden" style="padding-bottom: 32px;">
 
-    <!-- Left Panel: Chat -->
-    <div id="chat-panel" class="flex flex-col border-r border-gray-700" style="width: 280px; min-width: 220px; max-width: 420px; order: 1; overflow: hidden;">
-
-      <!-- Messages -->
-      <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
-        <div class="msg-assistant rounded-lg px-4 py-3 max-w-[90%]">
-          Welcome to Site Studio! Describe the website you want to build, and I'll create a design brief before generating anything.<br><br>
-          Try: <em>"I'm building a site for my landscaping company called GreenScape Pro. We do lawn care, tree trimming, and garden design. I want it to feel premium and modern."</em>
-        </div>
+    <!-- ===== LEFT SIDEBAR: Explorer ===== -->
+    <div id="left-sidebar">
+      <div class="sidebar-header">
+        <span>Explorer</span>
+        <button onclick="toggleLeftSidebar()" class="text-studio-muted hover:text-white text-xs" title="Collapse">&times;</button>
       </div>
+      <div class="sidebar-body">
 
-      <!-- Upload drop zone (shown on drag) -->
-      <div id="upload-drop-zone" class="upload-zone rounded-lg mx-4 mb-2 p-6 text-center hidden">
-        <div class="text-studio-muted text-sm">Drop images here</div>
-        <div class="text-studio-muted text-xs mt-1">PNG, JPG, GIF, SVG, WebP, HTML, ZIP — max 5MB</div>
-      </div>
-
-      <!-- Upload preview bar (shown when files are staged) -->
-      <div id="upload-preview-bar" class="px-4 pb-2 flex gap-2 items-center overflow-x-auto hidden"></div>
-
-      <!-- Input -->
-      <div class="p-4 border-t border-gray-700 bg-studio-panel chat-input-area">
-        <form id="chat-form" class="flex gap-2">
-          <textarea
-            id="chat-input"
-            rows="1"
-            placeholder="Describe what you want..."
-            autocomplete="off"
-            class="flex-1 bg-studio-bg border border-gray-600 rounded-lg px-4 py-2.5 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent resize-none"
-            style="max-height: 120px; overflow-y: auto;"
-          ></textarea>
-          <label class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2.5 rounded-lg cursor-pointer transition flex items-center" title="Upload image" aria-label="Upload image">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" multiple class="hidden" onchange="handleFileSelect(this.files)">
-          </label>
-          <button type="submit" class="bg-studio-accent hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium transition">Send</button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Resizers use CSS order to position between panels -->
-    <div class="panel-resizer" id="resizer-lc" style="order: 2;"></div>
-    <div class="panel-resizer" id="resizer-cr" style="order: 4;"></div>
-
-    <!-- Right Panel: Preview -->
-    <div id="preview-panel" class="flex-1 min-w-0 flex flex-col bg-white" style="order: 5; min-width: 280px;">
-      <div class="bg-gray-100 border-b px-4 py-2 flex flex-col shrink-0">
-        <div class="flex items-center justify-between">
-          <span class="text-gray-600 text-sm font-medium">Live Preview</span>
-          <div class="flex items-center gap-2">
-            <!-- Device width toggle -->
-            <div id="device-toggle" class="flex items-center gap-1 border border-gray-300 rounded overflow-hidden">
-              <button onclick="setPreviewDevice('mobile')" class="device-btn text-xs px-1.5 py-0.5 text-gray-500 hover:bg-gray-200 transition" title="Mobile (375px)" aria-label="Mobile preview">
-                <svg width="12" height="16" viewBox="0 0 12 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="14" rx="2"/><line x1="4" y1="13" x2="8" y2="13"/></svg>
-              </button>
-              <button onclick="setPreviewDevice('tablet')" class="device-btn text-xs px-1.5 py-0.5 text-gray-500 hover:bg-gray-200 transition" title="Tablet (768px)" aria-label="Tablet preview">
-                <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="12" height="14" rx="2"/><line x1="5" y1="13" x2="9" y2="13"/></svg>
-              </button>
-              <button onclick="setPreviewDevice('desktop')" class="device-btn text-xs px-1.5 py-0.5 bg-gray-200 text-gray-700 transition" title="Desktop (full width)" aria-label="Desktop preview">
-                <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="10" rx="1"/><line x1="5" y1="13" x2="11" y2="13"/><line x1="8" y1="11" x2="8" y2="13"/></svg>
-              </button>
+        <!-- Pages section -->
+        <div class="ls-section open" id="ls-pages">
+          <div class="ls-section-header" onclick="toggleLsSection('ls-pages')">
+            <span class="ls-arrow">&#9656;</span>
+            <span>Pages</span>
+          </div>
+          <div class="ls-section-body">
+            <div id="pages-list">
+              <div class="page-item active" data-page="index">
+                <svg class="page-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Home</span>
+              </div>
             </div>
-            <span id="preview-status" class="text-xs text-gray-400">connecting...</span>
-            <button id="slot-mode-btn" onclick="toggleSlotMode()"
-              class="text-xs px-2 py-1 rounded border border-gray-400 text-gray-500 hover:border-blue-400 hover:text-blue-500 transition"
-              title="Slot Mode — click any image slot in the preview to fill it"
-              aria-pressed="false">Slots</button>
-            <button id="rescan-btn" onclick="runRescan()"
-              class="text-xs px-2 py-1 rounded border border-gray-400 text-gray-500 hover:border-emerald-400 hover:text-emerald-500 transition"
-              title="Rescan all pages — re-registers image slots and removes orphaned mappings">Rescan</button>
-            <span id="verify-indicator" onclick="toggleStudioPanel(); switchStudioTab('verify');"
-              class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-600 text-gray-400 cursor-pointer hover:border-gray-400 transition"
-              title="Build verification status — click to view details">
-              <span id="verify-dot" class="w-2 h-2 rounded-full bg-gray-500 inline-block"></span>
-              <span id="verify-label">Not Reviewed Yet</span>
-            </span>
-            <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition" aria-label="Refresh preview">Refresh</button>
           </div>
         </div>
-        <!-- Page tabs (shown when multiple pages exist) -->
-        <div id="page-tabs" class="flex gap-1 mt-1.5 overflow-x-auto" style="display: none;"></div>
-      </div>
-      <div id="preview-container" class="flex-1 flex justify-center bg-gray-200 overflow-auto">
-        <iframe id="preview-frame" class="w-full h-full bg-white" src="about:blank" style="transition: width 0.3s ease;"></iframe>
+
+        <!-- Sections section -->
+        <div class="ls-section open" id="ls-sections">
+          <div class="ls-section-header" onclick="toggleLsSection('ls-sections')">
+            <span class="ls-arrow">&#9656;</span>
+            <span>Sections</span>
+          </div>
+          <div class="ls-section-body">
+            <div id="sections-tree">
+              <div class="section-item" style="padding-left:24px; color:#64748b; font-style:italic;">Build site to see sections</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Media section (from assets tab) -->
+        <div class="ls-section" id="ls-media">
+          <div class="ls-section-header" onclick="toggleLsSection('ls-media')">
+            <span class="ls-arrow">&#9656;</span>
+            <span>Media</span>
+          </div>
+          <div class="ls-section-body" style="padding: 4px 12px 8px;">
+            <div id="ls-media-summary" class="text-xs text-studio-muted">No media yet</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- Studio State Panel (center workspace — always visible in three-panel layout) -->
-    <div id="studio-panel" class="shrink-0 flex flex-col border-l border-gray-700 bg-studio-panel" style="width: 340px; min-width: 260px; order: 3; overflow: hidden;">
+    <!-- Left sidebar resizer -->
+    <div class="panel-resizer" id="resizer-left"></div>
+
+    <!-- ===== CENTER AREA: Canvas + CLI ===== -->
+    <div id="center-area">
+
+      <!-- Canvas area (tabbed workspace) -->
+      <div id="canvas-area">
+
+        <!-- Canvas tab bar -->
+        <div id="canvas-tab-bar">
+          <button onclick="switchCanvasTab('preview')" id="canvas-tab-preview" data-pane="canvas-preview" class="canvas-tab canvas-tab-active">Preview</button>
+          <button onclick="switchCanvasTab('editable')" id="canvas-tab-editable" data-pane="canvas-editable" data-hook="loadEditableView" class="canvas-tab">Editable View</button>
+          <button onclick="switchCanvasTab('images')" id="canvas-tab-images" data-pane="canvas-images" data-hook="loadImageBrowserSlots" class="canvas-tab">Images</button>
+          <button onclick="switchCanvasTab('research')" id="canvas-tab-research" data-pane="canvas-research" data-hook="loadResearchFiles" class="canvas-tab">Research</button>
+          <button onclick="switchCanvasTab('compare')" id="canvas-tab-compare" data-pane="canvas-compare" data-hook="loadCompareView" class="canvas-tab">Compare</button>
+        </div>
+
+        <!-- Canvas content -->
+        <div id="canvas-content">
+
+          <!-- Preview tab (migrated from old preview-panel) -->
+          <div id="canvas-preview" class="canvas-tab-pane">
+            <div class="preview-toolbar">
+              <div class="preview-toolbar-row">
+                <span class="text-gray-600 text-sm font-medium">Live Preview</span>
+                <div class="flex items-center gap-2">
+                  <div id="device-toggle" class="flex items-center gap-1 border border-gray-300 rounded overflow-hidden">
+                    <button onclick="setPreviewDevice('mobile')" class="device-btn text-xs px-1.5 py-0.5 text-gray-500 hover:bg-gray-200 transition" title="Mobile (375px)" aria-label="Mobile preview">
+                      <svg width="12" height="16" viewBox="0 0 12 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="14" rx="2"/><line x1="4" y1="13" x2="8" y2="13"/></svg>
+                    </button>
+                    <button onclick="setPreviewDevice('tablet')" class="device-btn text-xs px-1.5 py-0.5 text-gray-500 hover:bg-gray-200 transition" title="Tablet (768px)" aria-label="Tablet preview">
+                      <svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="12" height="14" rx="2"/><line x1="5" y1="13" x2="9" y2="13"/></svg>
+                    </button>
+                    <button onclick="setPreviewDevice('desktop')" class="device-btn text-xs px-1.5 py-0.5 bg-gray-200 text-gray-700 transition" title="Desktop (full width)" aria-label="Desktop preview">
+                      <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="10" rx="1"/><line x1="5" y1="13" x2="11" y2="13"/><line x1="8" y1="11" x2="8" y2="13"/></svg>
+                    </button>
+                  </div>
+                  <span id="preview-status" class="text-xs text-gray-400">connecting...</span>
+                  <button id="slot-mode-btn" onclick="toggleSlotMode()"
+                    class="text-xs px-2 py-1 rounded border border-gray-400 text-gray-500 hover:border-blue-400 hover:text-blue-500 transition"
+                    title="Slot Mode — click any image slot in the preview to fill it"
+                    aria-pressed="false">Slots</button>
+                  <button id="rescan-btn" onclick="runRescan()"
+                    class="text-xs px-2 py-1 rounded border border-gray-400 text-gray-500 hover:border-emerald-400 hover:text-emerald-500 transition"
+                    title="Rescan all pages — re-registers image slots and removes orphaned mappings">Rescan</button>
+                  <span id="verify-indicator" onclick="toggleStudioPanel(); switchStudioTab('verify');"
+                    class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-600 text-gray-400 cursor-pointer hover:border-gray-400 transition"
+                    title="Build verification status — click to view details">
+                    <span id="verify-dot" class="w-2 h-2 rounded-full bg-gray-500 inline-block"></span>
+                    <span id="verify-label">Not Reviewed Yet</span>
+                  </span>
+                  <button onclick="reloadPreview()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition" aria-label="Refresh preview">Refresh</button>
+                </div>
+              </div>
+              <div id="page-tabs" class="flex gap-1 mt-1.5 overflow-x-auto" style="display: none;"></div>
+            </div>
+            <div id="preview-container" class="flex-1 flex justify-center bg-gray-200 overflow-auto">
+              <iframe id="preview-frame" class="w-full h-full bg-white" src="about:blank" style="transition: width 0.3s ease;"></iframe>
+            </div>
+          </div>
+
+          <!-- Editable View tab -->
+          <div id="canvas-editable" class="canvas-tab-pane hidden">
+            <div id="editable-toolbar">
+              <div class="toolbar-label">
+                <span id="editable-page-label">Editable View</span>
+                <span id="editable-field-count" class="text-xs text-studio-muted ml-2"></span>
+              </div>
+              <div class="toolbar-actions">
+                <button onclick="refreshEditableView()" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded transition">Refresh</button>
+                <button onclick="toggleFieldHighlights()" id="highlight-toggle" class="text-xs px-2 py-1 rounded border border-gray-500 text-gray-400 hover:border-blue-400 hover:text-blue-400 transition">Highlights On</button>
+              </div>
+            </div>
+            <div id="editable-frame-container">
+              <iframe id="editable-frame" src="about:blank"></iframe>
+            </div>
+          </div>
+
+          <!-- Image Browser tab -->
+          <div id="canvas-images" class="canvas-tab-pane hidden">
+            <div id="images-toolbar">
+              <input id="images-query" type="text" placeholder="Search stock photos..." class="images-search-input" onkeydown="if(event.key==='Enter')searchImageBrowser()">
+              <select id="images-provider-filter" class="images-select">
+                <option value="all">All Providers</option>
+                <option value="unsplash">Unsplash</option>
+                <option value="pexels">Pexels</option>
+              </select>
+              <div class="images-slot-wrap">
+                <label class="images-slot-label">Apply to:</label>
+                <select id="images-slot-selector" class="images-select">
+                  <option value="">Select slot...</option>
+                </select>
+              </div>
+              <button onclick="searchImageBrowser()" class="images-search-btn">Search</button>
+            </div>
+            <div id="images-results" class="flex-1 overflow-y-auto">
+              <div id="images-results-grid"></div>
+              <div id="images-empty-state" class="images-empty">Search for stock photos to fill image slots</div>
+            </div>
+          </div>
+
+          <!-- Research View tab -->
+          <div id="canvas-research" class="canvas-tab-pane hidden">
+            <div id="research-layout">
+              <div id="research-file-list">
+                <div class="research-list-header">Research Files</div>
+                <div id="research-files"></div>
+              </div>
+              <div id="research-content">
+                <div id="research-empty" class="research-placeholder">Select a research file to view, or run research before building a site brief.</div>
+                <div id="research-body" class="hidden"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Model Comparison tab -->
+          <div id="canvas-compare" class="canvas-tab-pane hidden">
+            <div id="compare-toolbar">
+              <span class="toolbar-label">Model Comparison</span>
+              <div class="toolbar-actions">
+                <label class="compare-sync-label"><input type="checkbox" id="compare-sync-scroll" checked> Sync scroll</label>
+                <button onclick="generateCodexVersion()" id="compare-generate-btn" class="text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1 rounded transition">Generate Codex Version</button>
+              </div>
+            </div>
+            <div id="compare-split">
+              <div class="compare-panel">
+                <div class="compare-panel-header">
+                  <span class="compare-model-label">Claude (current)</span>
+                  <button onclick="useCompareVersion('claude')" class="compare-use-btn">Use this</button>
+                </div>
+                <iframe id="compare-frame-left" src="about:blank" class="compare-frame"></iframe>
+              </div>
+              <div id="compare-divider"></div>
+              <div class="compare-panel">
+                <div class="compare-panel-header">
+                  <span class="compare-model-label">Codex</span>
+                  <button onclick="useCompareVersion('codex')" class="compare-use-btn">Use this</button>
+                </div>
+                <iframe id="compare-frame-right" src="about:blank" class="compare-frame"></iframe>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Horizontal resizer (between canvas and CLI) -->
+      <div id="resizer-h"></div>
+
+      <!-- CLI Bar (chat + terminal tabs) -->
+      <div id="cli-bar" style="height: 280px;">
+
+        <!-- CLI tab bar -->
+        <div id="cli-tab-bar">
+          <button onclick="switchCliTab('chat')" id="cli-tab-chat" class="cli-tab cli-tab-active">Chat</button>
+          <button onclick="switchCliTab('terminal')" id="cli-tab-terminal" data-pane="cli-terminal" data-hook="activateTerminal" class="cli-tab">Terminal</button>
+          <button onclick="switchCliTab('codex')" id="cli-tab-codex" data-pane="cli-codex" class="cli-tab">Codex</button>
+          <div class="cli-actions">
+            <button onclick="toggleCliBar()" class="cli-toggle-btn" id="cli-toggle" title="Maximize/Minimize">&#9650;</button>
+          </div>
+        </div>
+
+        <!-- CLI content -->
+        <div id="cli-content">
+
+          <!-- Chat tab -->
+          <div id="cli-chat" class="cli-tab-pane">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+              <div class="msg-assistant rounded-lg px-4 py-3 max-w-[95%]">
+                Welcome to Site Studio! Describe the website you want to build, and I'll create a design brief before generating anything.<br><br>
+                Try: <em>"I'm building a site for my landscaping company called GreenScape Pro. We do lawn care, tree trimming, and garden design. I want it to feel premium and modern."</em>
+              </div>
+            </div>
+            <div id="upload-drop-zone" class="upload-zone rounded-lg mx-3 mb-2 p-4 text-center hidden">
+              <div class="text-studio-muted text-sm">Drop images here</div>
+              <div class="text-studio-muted text-xs mt-1">PNG, JPG, GIF, SVG, WebP, HTML, ZIP — max 5MB</div>
+            </div>
+            <div id="upload-preview-bar" class="px-3 pb-2 flex gap-2 items-center overflow-x-auto hidden"></div>
+            <div class="p-3 border-t border-gray-700 bg-studio-panel chat-input-area">
+              <form id="chat-form" class="flex gap-2">
+                <textarea
+                  id="chat-input"
+                  rows="1"
+                  placeholder="Describe what you want..."
+                  autocomplete="off"
+                  class="flex-1 bg-studio-bg border border-gray-600 rounded-lg px-4 py-2 text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent resize-none text-sm"
+                  style="max-height: 80px; overflow-y: auto;"
+                ></textarea>
+                <label class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg cursor-pointer transition flex items-center" title="Upload image" aria-label="Upload image">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" multiple class="hidden" onchange="handleFileSelect(this.files)">
+                </label>
+                <button type="submit" class="bg-studio-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition text-sm">Send</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Terminal tab -->
+          <div id="cli-terminal" class="cli-tab-pane hidden">
+            <div id="terminal-toolbar">
+              <span id="terminal-status" style="font-size:11px; color:#6b7280;">No session</span>
+              <div style="display:flex; gap:6px;">
+                <button id="btn-start-claude" onclick="startClaudeSession()" class="text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1 rounded transition">Start Claude</button>
+                <button onclick="createTerminal()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded transition">+ New</button>
+                <button onclick="if(terminalInstance) terminalInstance.clear()" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded transition">Clear</button>
+              </div>
+            </div>
+            <div id="terminal-container"></div>
+          </div>
+
+          <!-- Codex CLI pane -->
+          <div id="cli-codex" class="cli-tab-pane hidden">
+            <div id="codex-output" class="flex-1 overflow-y-auto p-3 font-mono text-xs text-studio-text" style="background:#0d0d0d;"></div>
+            <div class="p-3 border-t border-gray-700 bg-studio-panel flex gap-2">
+              <input id="codex-input" type="text" placeholder="Ask Codex..."
+                class="flex-1 bg-studio-bg border border-gray-600 rounded-lg px-3 py-2 text-sm text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent"
+                onkeydown="if(event.key==='Enter')sendCodexPrompt()">
+              <button onclick="sendCodexPrompt()" id="codex-send-btn"
+                class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Run</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right sidebar resizer -->
+    <div class="panel-resizer" id="resizer-right"></div>
+
+    <!-- ===== RIGHT SIDEBAR (was studio-panel) ===== -->
+    <div id="studio-panel">
       <!-- Fixed header -->
       <div class="p-4 border-b border-gray-700 shrink-0">
         <h2 class="text-sm font-bold text-white mb-1">Studio State</h2>
@@ -443,6 +644,19 @@
             </div>
           </div>
 
+          <!-- Mutations accordion (Wave 5) -->
+          <div class="border-b border-gray-700">
+            <div onclick="toggleAccordion('mutations')" class="accordion-trigger w-full flex items-center gap-2 p-4 hover:bg-gray-700/30 transition cursor-pointer">
+              <span class="accordion-arrow text-studio-muted text-xs" id="arrow-mutations">&#9656;</span>
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Mutations</h3>
+            </div>
+            <div id="accordion-mutations" class="accordion-body hidden px-4 pb-4">
+              <div id="mutation-patterns" class="text-xs text-studio-text mb-3"></div>
+              <div id="mutation-timeline" class="text-xs text-studio-text space-y-1">No mutations yet</div>
+              <button id="mutations-show-more" onclick="loadMoreMutations()" class="hidden text-xs text-studio-accent hover:text-blue-400 mt-2 transition">Show more...</button>
+            </div>
+          </div>
+
         </div>
 
         <!-- ========== BLUEPRINT TAB ========== -->
@@ -555,17 +769,12 @@
           </div>
         </div>
 
-        <!-- Terminal tab content -->
-        <div id="studio-tab-content-terminal" class="studio-tab-content hidden" style="display:none; flex-direction:column; height:100%;">
-          <div id="terminal-toolbar" style="display:flex; align-items:center; justify-content:space-between; padding:8px; border-bottom:1px solid #2a2a2a;">
-            <span id="terminal-status" style="font-size:11px; color:#6b7280;">No session</span>
-            <div style="display:flex; gap:6px;">
-              <button id="btn-start-claude" onclick="startClaudeSession()" class="text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded transition">Start Claude</button>
-              <button onclick="createTerminal()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition">+ New</button>
-              <button onclick="if(terminalInstance) terminalInstance.clear()" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1.5 rounded transition">Clear</button>
-            </div>
+        <!-- Terminal tab moved to CLI bar -->
+        <div id="studio-tab-content-terminal" class="studio-tab-content hidden">
+          <div class="p-4 text-xs text-studio-muted text-center">
+            Terminal has moved to the bottom CLI bar.<br>
+            <button onclick="switchCliTab('terminal')" class="text-studio-accent hover:text-blue-400 mt-1">Open Terminal</button>
           </div>
-          <div id="terminal-container" style="flex:1; overflow:hidden; padding:4px; background:#0d0d0d;"></div>
         </div>
 
       </div>
@@ -585,11 +794,16 @@
     // --- State ---
     let ws = null;
     let config = {};
-    let previewVisible = true;
-    let studioPanelVisible = true; // always visible in three-panel layout
+    let previewVisible = true; // legacy compat — kept for brainstorm mode
+    let studioPanelVisible = true;
+    let leftSidebarVisible = true;
     let streamBuffer = '';
     let sitePages = [];
     let hasUnsavedWork = false;
+    let activeCanvasTab = 'preview';
+    let activeCliTab = 'chat';
+    let editableHighlightsOn = true;
+    let cliBarHeight = 280; // persisted
 
     // Warn before closing tab with unsaved work
     window.addEventListener('beforeunload', (e) => {
@@ -1254,18 +1468,25 @@
     // Initialize mode on load (deferred to after DOM ready)
     setTimeout(function() {
       switchMode(currentStudioMode);
-      // Ensure studio panel is visible
+      // Ensure panels are visible
       var sp = document.getElementById('studio-panel');
       if (sp) sp.style.display = 'flex';
+      var ls = document.getElementById('left-sidebar');
+      if (ls) ls.style.display = 'flex';
       // Restore saved panel widths
-      var savedLeft = localStorage.getItem('panel-left-width');
-      var savedCenter = localStorage.getItem('panel-center-width');
-      if (savedLeft) document.getElementById('chat-panel').style.width = savedLeft + 'px';
-      if (savedCenter) document.getElementById('studio-panel').style.width = savedCenter + 'px';
+      var savedLs = localStorage.getItem('panel-left-sidebar-width');
+      var savedRs = localStorage.getItem('panel-right-sidebar-width');
+      var savedCli = localStorage.getItem('cli-bar-height');
+      if (savedLs) document.getElementById('left-sidebar').style.width = savedLs + 'px';
+      if (savedRs) document.getElementById('studio-panel').style.width = savedRs + 'px';
+      if (savedCli) {
+        cliBarHeight = parseInt(savedCli);
+        document.getElementById('cli-bar').style.height = cliBarHeight + 'px';
+      }
     }, 0);
 
-    // --- Panel Resizer ---
-    function setupResizer(resizerId, panelId) {
+    // --- Panel Resizer (vertical — between columns) ---
+    function setupResizer(resizerId, panelId, storageKey) {
       var resizer = document.getElementById(resizerId);
       if (!resizer) return;
       var panel = document.getElementById(panelId);
@@ -1280,9 +1501,10 @@
         document.body.style.userSelect = 'none';
 
         function onMouseMove(e) {
+          var cs = getComputedStyle(panel);
+          var min = parseInt(cs.minWidth) || 160;
+          var max = parseInt(cs.maxWidth) || 600;
           var newWidth = startWidth + (e.clientX - startX);
-          var min = parseInt(panel.style.minWidth) || 220;
-          var max = parseInt(panel.style.maxWidth) || 600;
           newWidth = Math.max(min, Math.min(max, newWidth));
           panel.style.width = newWidth + 'px';
         }
@@ -1293,17 +1515,57 @@
           document.body.style.userSelect = '';
           document.removeEventListener('mousemove', onMouseMove);
           document.removeEventListener('mouseup', onMouseUp);
-          // Persist
-          localStorage.setItem(panelId === 'chat-panel' ? 'panel-left-width' : 'panel-center-width', panel.offsetWidth);
+          localStorage.setItem(storageKey, panel.offsetWidth);
         }
 
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
       });
     }
+
+    // --- Horizontal Resizer (between canvas and CLI bar) ---
+    function setupHResizer() {
+      var resizer = document.getElementById('resizer-h');
+      var cliBar = document.getElementById('cli-bar');
+      if (!resizer || !cliBar) return;
+      var startY, startHeight;
+
+      resizer.addEventListener('mousedown', function(e) {
+        startY = e.clientY;
+        startHeight = cliBar.offsetHeight;
+        resizer.classList.add('dragging');
+        document.body.style.cursor = 'row-resize';
+        document.body.style.userSelect = 'none';
+
+        function onMouseMove(e) {
+          var newHeight = startHeight - (e.clientY - startY);
+          newHeight = Math.max(80, Math.min(window.innerHeight * 0.7, newHeight));
+          cliBar.style.height = newHeight + 'px';
+          cliBarHeight = newHeight;
+        }
+
+        function onMouseUp() {
+          resizer.classList.remove('dragging');
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          localStorage.setItem('cli-bar-height', cliBarHeight);
+          // Refit terminal if visible
+          if (activeCliTab === 'terminal' && fitAddon) {
+            try { fitAddon.fit(); } catch(e) {}
+          }
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+    }
+
     setTimeout(function() {
-      setupResizer('resizer-lc', 'chat-panel');
-      setupResizer('resizer-cr', 'studio-panel');
+      setupResizer('resizer-left', 'left-sidebar', 'panel-left-sidebar-width');
+      setupResizer('resizer-right', 'studio-panel', 'panel-right-sidebar-width');
+      setupHResizer();
     }, 100);
 
     // --- Studio State Panel ---
@@ -1337,7 +1599,7 @@
       if (tab === 'server') refreshServerInfo();
       if (tab === 'deploy') refreshDeployInfo();
       if (tab === 'verify') refreshVerification();
-      if (tab === 'history') refreshStudioPanel();
+      if (tab === 'history') { refreshStudioPanel(); if (typeof loadMutations === 'function') loadMutations(1); }
       if (tab === 'terminal' && fitAddon) setTimeout(function() { fitAddon.fit(); }, 50);
       if (tab === 'assets') refreshStudioPanel();
     }
@@ -1401,11 +1663,13 @@
       studioPanelVisible = !studioPanelVisible;
       const panel = document.getElementById('studio-panel');
       const btn = document.getElementById('studio-btn');
+      const resizerRight = document.getElementById('resizer-right');
       panel.style.display = studioPanelVisible ? 'flex' : 'none';
+      if (resizerRight) resizerRight.style.display = studioPanelVisible ? '' : 'none';
       if (btn) {
         btn.className = studioPanelVisible
-          ? 'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition'
-          : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
+          ? 'text-sm bg-studio-accent text-white px-3 py-1.5 rounded transition'
+          : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition';
       }
       if (studioPanelVisible) {
         refreshStudioPanel();
@@ -1415,7 +1679,26 @@
         refreshDeployInfo();
         refreshVerification();
       }
-      updatePanelLayout();
+    }
+
+    function toggleLeftSidebar() {
+      leftSidebarVisible = !leftSidebarVisible;
+      const sidebar = document.getElementById('left-sidebar');
+      const btn = document.getElementById('left-sidebar-btn');
+      const resizerLeft = document.getElementById('resizer-left');
+      sidebar.style.display = leftSidebarVisible ? 'flex' : 'none';
+      if (resizerLeft) resizerLeft.style.display = leftSidebarVisible ? '' : 'none';
+      if (btn) {
+        btn.className = leftSidebarVisible
+          ? 'text-sm bg-studio-accent text-white px-3 py-1.5 rounded transition'
+          : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition';
+      }
+    }
+
+    // --- Left Sidebar Section Toggle ---
+    function toggleLsSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      if (section) section.classList.toggle('open');
     }
 
     // --- Cached studio state for brief/decisions editing ---
@@ -1431,6 +1714,7 @@
       try {
         const state = await (await fetch('/api/studio-state')).json();
         cachedStudioState = state;
+        if (typeof updateMediaSummary === 'function') updateMediaSummary();
 
         document.getElementById('studio-tag').textContent = `Tag: ${state.tag}`;
         // Determine status from available data
@@ -2130,11 +2414,13 @@
     // --- Brainstorm Mode Indicator ---
     function updateModeIndicator(mode) {
       const body = document.body;
-      const chatPanel = document.getElementById('chat-panel');
+      const cliChat = document.getElementById('cli-chat');
       const input = document.getElementById('chat-input');
       const existingBanner = document.getElementById('brainstorm-banner');
-      const previewPanel = document.getElementById('preview-panel');
+      const leftSidebar = document.getElementById('left-sidebar');
       const studioPanel = document.getElementById('studio-panel');
+      const canvasArea = document.getElementById('canvas-area');
+      const cliBar = document.getElementById('cli-bar');
 
       // Play transition overlay ("breath" effect)
       const overlay = document.createElement('div');
@@ -2143,30 +2429,34 @@
       setTimeout(() => overlay.remove(), 500);
 
       if (mode === 'brainstorm') {
-        // Track pre-brainstorm panel state so we can restore
+        // Track pre-brainstorm state so we can restore
         window._preBrainstormState = {
           previewVisible,
-          studioPanelVisible
+          studioPanelVisible,
+          leftSidebarVisible,
+          cliBarHeight: cliBar ? cliBar.offsetHeight : 280
         };
 
         // Add body class — drives all CSS changes
         body.classList.add('brainstorm-mode');
 
-        // Hide preview and studio panels — full focus on conversation
-        if (previewVisible) {
-          previewPanel.style.display = 'none';
-          previewVisible = false;
+        // Hide sidebars and canvas — full focus on conversation
+        if (leftSidebarVisible) {
+          leftSidebar.style.display = 'none';
+          leftSidebarVisible = false;
+          document.getElementById('resizer-left').style.display = 'none';
         }
         if (studioPanelVisible) {
           studioPanel.style.display = 'none';
           studioPanelVisible = false;
+          document.getElementById('resizer-right').style.display = 'none';
           document.getElementById('studio-btn').className =
-            'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
+            'text-sm bg-gray-600 hover:bg-gray-500 text-white px-3 py-1.5 rounded transition';
         }
-
-        // Chat goes full width
-        chatPanel.style.flex = '1 1 100%';
-        chatPanel.classList.add('brainstorm-active');
+        // Expand CLI bar to fill center, hide canvas
+        if (canvasArea) canvasArea.style.display = 'none';
+        document.getElementById('resizer-h').style.display = 'none';
+        if (cliBar) cliBar.style.flex = '1';
 
         // Input styling
         input.placeholder = 'What if we...';
@@ -2178,32 +2468,43 @@
         const banner = document.createElement('div');
         banner.id = 'brainstorm-banner';
         banner.className = 'brainstorm-banner-v2 shrink-0';
-        banner.innerHTML = `
-          <div class="banner-label">
-            <span class="banner-dot"></span>
-            Brainstorm Mode — exploring ideas, no code generated
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <select id="brainstorm-profile-select" onchange="changeBrainstormProfile(this.value)" style="background:#2d1b4e;color:#c4b5fd;border:1px solid #6d28d9;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;">
-              <option value="deep">Deep</option>
-              <option value="balanced" selected>Balanced</option>
-              <option value="concise">Concise</option>
-            </select>
-            <button onclick="exitBrainstorm()">Back to Build</button>
-          </div>
-        `;
+        const bannerLabel = document.createElement('div');
+        bannerLabel.className = 'banner-label';
+        bannerLabel.textContent = 'Brainstorm Mode \u2014 exploring ideas, no code generated';
+        const dot = document.createElement('span');
+        dot.className = 'banner-dot';
+        bannerLabel.prepend(dot);
+        const bannerActions = document.createElement('div');
+        bannerActions.style.cssText = 'display:flex;align-items:center;gap:8px;';
+        const sel = document.createElement('select');
+        sel.id = 'brainstorm-profile-select';
+        sel.onchange = function() { changeBrainstormProfile(this.value); };
+        sel.style.cssText = 'background:#2d1b4e;color:#c4b5fd;border:1px solid #6d28d9;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;';
+        ['deep', 'balanced', 'concise'].forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v; opt.textContent = v.charAt(0).toUpperCase() + v.slice(1);
+          if (v === 'balanced') opt.selected = true;
+          sel.appendChild(opt);
+        });
+        const exitBtn = document.createElement('button');
+        exitBtn.textContent = 'Back to Build';
+        exitBtn.onclick = exitBrainstorm;
+        bannerActions.appendChild(sel);
+        bannerActions.appendChild(exitBtn);
+        banner.appendChild(bannerLabel);
+        banner.appendChild(bannerActions);
         const messages = document.getElementById('chat-messages');
-        chatPanel.insertBefore(banner, messages);
+        cliChat.insertBefore(banner, messages);
 
         // Load current profile setting
         fetch('/api/settings').then(r => r.json()).then(s => {
-          const sel = document.getElementById('brainstorm-profile-select');
-          if (sel && s.brainstorm_profile) sel.value = s.brainstorm_profile;
+          const profSel = document.getElementById('brainstorm-profile-select');
+          if (profSel && s.brainstorm_profile) profSel.value = s.brainstorm_profile;
         }).catch(() => {});
 
         // Update header buttons to show brainstorm state
         document.getElementById('studio-btn').style.opacity = '0.4';
-        document.getElementById('preview-btn').style.opacity = '0.4';
+        document.getElementById('left-sidebar-btn').style.opacity = '0.4';
         document.querySelector('[onclick="rebuildSite()"]').style.opacity = '0.4';
 
       } else {
@@ -2211,34 +2512,39 @@
         body.classList.remove('brainstorm-mode');
 
         // Restore panels from pre-brainstorm state
-        const prev = window._preBrainstormState || { previewVisible: true, studioPanelVisible: false };
+        const prev = window._preBrainstormState || { previewVisible: true, studioPanelVisible: true, leftSidebarVisible: true, cliBarHeight: 280 };
 
-        if (prev.previewVisible) {
-          previewPanel.style.display = 'flex';
-          previewVisible = true;
+        // Restore canvas
+        if (canvasArea) canvasArea.style.display = '';
+        document.getElementById('resizer-h').style.display = '';
+        if (cliBar) {
+          cliBar.style.flex = '';
+          cliBar.style.height = (prev.cliBarHeight || 280) + 'px';
+        }
+
+        if (prev.leftSidebarVisible) {
+          leftSidebar.style.display = 'flex';
+          leftSidebarVisible = true;
+          document.getElementById('resizer-left').style.display = '';
         }
         if (prev.studioPanelVisible) {
           studioPanel.style.display = 'flex';
           studioPanelVisible = true;
+          document.getElementById('resizer-right').style.display = '';
           document.getElementById('studio-btn').className =
-            'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition';
+            'text-sm bg-studio-accent text-white px-3 py-1.5 rounded transition';
         }
-
-        chatPanel.classList.remove('brainstorm-active');
-        chatPanel.style.flex = '';
-        updatePanelLayout();
 
         input.placeholder = 'Describe what you want...';
         input.style.fontFamily = '';
         input.style.fontSize = '';
 
         if (existingBanner) existingBanner.remove();
-        // Also check by id in case reference is stale
         document.getElementById('brainstorm-banner')?.remove();
 
         // Restore header button opacity
         document.getElementById('studio-btn').style.opacity = '';
-        document.getElementById('preview-btn').style.opacity = '';
+        document.getElementById('left-sidebar-btn').style.opacity = '';
         document.querySelector('[onclick="rebuildSite()"]').style.opacity = '';
       }
     }
@@ -2867,6 +3173,9 @@
       if (pages) sitePages = pages;
       if (current) activePage = current;
       renderPageTabs();
+      // Update left sidebar pages + sections
+      if (typeof renderPagesList === 'function') renderPagesList();
+      if (typeof loadSectionTree === 'function') loadSectionTree(activePage);
     }
 
     function renderPageTabs() {
@@ -2896,6 +3205,11 @@
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'set-page', page }));
       }
+      // Update left sidebar
+      if (typeof renderPagesList === 'function') renderPagesList();
+      if (typeof loadSectionTree === 'function') loadSectionTree(page);
+      // Refresh editable view if active
+      if (activeCanvasTab === 'editable') loadEditableView();
     }
 
     function navigateToPage(page) {
@@ -2988,52 +3302,93 @@
     }
 
     function togglePreview() {
-      previewVisible = !previewVisible;
-      var previewPanel = document.getElementById('preview-panel');
-      var previewBtn = document.getElementById('preview-btn');
-      previewPanel.style.display = previewVisible ? 'flex' : 'none';
-      // Update button active state
-      if (previewBtn) {
-        previewBtn.className = previewVisible
-          ? 'text-sm bg-studio-accent text-white px-4 py-1.5 rounded transition'
-          : 'text-sm bg-gray-600 hover:bg-gray-500 text-white px-4 py-1.5 rounded transition';
+      // Legacy compat — in v2 layout, toggle between canvas tabs instead
+      if (activeCanvasTab === 'preview') {
+        switchCanvasTab('editable');
+      } else {
+        switchCanvasTab('preview');
       }
-      updatePanelLayout();
     }
 
-    function updatePanelLayout() {
-      var chat = document.getElementById('chat-panel');
-      var studio = document.getElementById('studio-panel');
-      var preview = document.getElementById('preview-panel');
-      var visibleCount = (studioPanelVisible ? 1 : 0) + (previewVisible ? 1 : 0);
+    // --- Canvas Tab Switching ---
+    // --- Data-Driven Tab Switching ---
+    // Canvas and CLI tabs discovered from DOM via querySelectorAll.
+    // Each tab button has: id="canvas-tab-{name}", data-pane="canvas-{name}" (pane element ID)
+    // Optional data-hook attribute names a global function to call on activation.
 
-      // Chat always gets flex:1 when it's the only panel (or one of two)
-      if (visibleCount === 0) {
-        // Chat only — full width
-        chat.style.flex = '1 1 100%';
-        chat.style.width = '';
-        chat.style.maxWidth = 'none';
-      } else if (visibleCount === 1) {
-        // Chat + one panel — chat gets more room
-        chat.style.flex = '1 1 40%';
-        chat.style.width = '';
-        chat.style.maxWidth = 'none';
-        if (studioPanelVisible) {
-          studio.style.flex = '1 1 60%';
-          studio.style.width = '';
+    function switchCanvasTab(tab) {
+      activeCanvasTab = tab;
+      document.querySelectorAll('#canvas-tab-bar .canvas-tab').forEach(btn => {
+        const name = btn.id.replace('canvas-tab-', '');
+        const paneId = btn.getAttribute('data-pane') || ('canvas-' + name);
+        const pane = document.getElementById(paneId);
+        if (!pane) return;
+        if (name === tab) {
+          btn.classList.add('canvas-tab-active');
+          pane.classList.remove('hidden');
+        } else {
+          btn.classList.remove('canvas-tab-active');
+          pane.classList.add('hidden');
         }
-        if (previewVisible) {
-          preview.style.flex = '1 1 60%';
+      });
+      // Fire activation hook if defined
+      const activeBtn = document.getElementById('canvas-tab-' + tab);
+      const hook = activeBtn?.getAttribute('data-hook');
+      if (hook && typeof window[hook] === 'function') window[hook]();
+    }
+
+    function switchCliTab(tab) {
+      activeCliTab = tab;
+      document.querySelectorAll('#cli-tab-bar .cli-tab').forEach(btn => {
+        const name = btn.id.replace('cli-tab-', '');
+        const paneId = btn.getAttribute('data-pane') || ('cli-' + name);
+        const pane = document.getElementById(paneId);
+        if (!pane) return;
+        if (name === tab) {
+          btn.classList.add('cli-tab-active');
+          pane.classList.remove('hidden');
+        } else {
+          btn.classList.remove('cli-tab-active');
+          pane.classList.add('hidden');
         }
-      } else {
-        // All three panels — restore defaults
-        chat.style.flex = '';
-        chat.style.width = localStorage.getItem('panel-left-width') ? localStorage.getItem('panel-left-width') + 'px' : '280px';
-        chat.style.maxWidth = '420px';
-        studio.style.flex = '';
-        studio.style.width = localStorage.getItem('panel-center-width') ? localStorage.getItem('panel-center-width') + 'px' : '340px';
-        preview.style.flex = '1';
+      });
+      // Fire activation hook
+      const activeBtn = document.getElementById('cli-tab-' + tab);
+      const hook = activeBtn?.getAttribute('data-hook');
+      if (hook && typeof window[hook] === 'function') window[hook]();
+    }
+
+    // Terminal activation hook (called via data-hook)
+    function activateTerminal() {
+      if (!terminalInstance) {
+        createTerminal();
+      } else if (fitAddon) {
+        setTimeout(() => { try { fitAddon.fit(); } catch(e) {} }, 50);
       }
+    }
+
+    // --- CLI Bar Toggle (maximize/minimize) ---
+    function toggleCliBar() {
+      const cliBar = document.getElementById('cli-bar');
+      const btn = document.getElementById('cli-toggle');
+      if (!cliBar) return;
+      const h = cliBar.offsetHeight;
+      if (h > 100) {
+        // Minimize
+        cliBar.dataset.prevHeight = h;
+        cliBar.style.height = '36px'; // just tab bar
+        if (btn) btn.textContent = '\u25BC'; // down arrow
+      } else {
+        // Restore
+        const prev = parseInt(cliBar.dataset.prevHeight) || 280;
+        cliBar.style.height = prev + 'px';
+        if (btn) btn.textContent = '\u25B2'; // up arrow
+      }
+    }
+
+    // updatePanelLayout — legacy compat (no-op in v2 layout, center area flexes automatically)
+    function updatePanelLayout() {
+      // v2 layout uses CSS flex — no manual panel sizing needed
     }
 
     // --- Actions ---
@@ -3177,8 +3532,8 @@
       { value: 'reference', label: 'Reference', desc: 'For context only — match the style, don\'t copy' },
     ];
 
-    // Drag-drop on chat panel
-    const chatPanel = document.getElementById('chat-panel');
+    // Drag-drop on chat panel (now inside CLI bar)
+    const chatPanel = document.getElementById('cli-chat');
     const dropZone = document.getElementById('upload-drop-zone');
     let dragCounter = 0;
 
@@ -4407,8 +4762,842 @@
         }).join('');
     }
 
+    // ============================================================
+    // Phase 2: Left Sidebar, Canvas Tabs, Editable View
+    // ============================================================
+
+    // --- Left Sidebar: Pages List ---
+    function renderPagesList() {
+      const container = document.getElementById('pages-list');
+      if (!container) return;
+      if (!sitePages || sitePages.length === 0) {
+        container.textContent = '';
+        const item = document.createElement('div');
+        item.className = 'page-item active';
+        item.dataset.page = 'index';
+        item.onclick = () => selectPage('index.html');
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('class', 'page-icon');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z');
+        icon.appendChild(path);
+        item.appendChild(icon);
+        const label = document.createElement('span');
+        label.textContent = 'Home';
+        item.appendChild(label);
+        container.appendChild(item);
+        return;
+      }
+      container.textContent = '';
+      sitePages.forEach(page => {
+        const item = document.createElement('div');
+        item.className = 'page-item' + (page === activePage ? ' active' : '');
+        item.dataset.page = page;
+        item.onclick = () => selectPage(page);
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('class', 'page-icon');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z');
+        icon.appendChild(path);
+        item.appendChild(icon);
+        const label = document.createElement('span');
+        const pageName = page.replace('.html', '').replace(/^index$/, 'Home');
+        label.textContent = pageName.charAt(0).toUpperCase() + pageName.slice(1);
+        item.appendChild(label);
+        container.appendChild(item);
+      });
+    }
+
+    function selectPage(page) {
+      activePage = page;
+      // Update left sidebar selection
+      document.querySelectorAll('.page-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.page === page);
+      });
+      // Switch the preview page via WS
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'set-page', page: page }));
+      }
+      // Refresh section tree for selected page
+      loadSectionTree(page);
+      // If editable view is active, reload it
+      if (activeCanvasTab === 'editable') {
+        loadEditableView();
+      }
+    }
+
+    // --- Left Sidebar: Section Tree ---
+    async function loadSectionTree(page) {
+      const container = document.getElementById('sections-tree');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/content-fields/' + encodeURIComponent(page || activePage));
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+        if (!data.fields || data.fields.length === 0) {
+          container.textContent = '';
+          const empty = document.createElement('div');
+          empty.className = 'section-item';
+          empty.style.paddingLeft = '24px';
+          empty.style.color = '#64748b';
+          empty.style.fontStyle = 'italic';
+          empty.textContent = 'No content fields found';
+          container.appendChild(empty);
+          return;
+        }
+        container.textContent = '';
+        // Group fields by section
+        const sections = {};
+        data.fields.forEach(f => {
+          const sec = f.section || 'page';
+          if (!sections[sec]) sections[sec] = [];
+          sections[sec].push(f);
+        });
+        Object.keys(sections).forEach(sec => {
+          // Section header
+          const secEl = document.createElement('div');
+          secEl.className = 'section-item';
+          secEl.style.paddingLeft = '20px';
+          secEl.style.fontWeight = '600';
+          secEl.style.color = '#94a3b8';
+          const secIcon = document.createElement('span');
+          secIcon.className = 'section-icon';
+          secIcon.textContent = '\u25B8';
+          secEl.appendChild(secIcon);
+          const secLabel = document.createElement('span');
+          secLabel.textContent = sec;
+          secEl.appendChild(secLabel);
+          container.appendChild(secEl);
+          // Fields
+          sections[sec].forEach(f => {
+            const fieldEl = document.createElement('div');
+            fieldEl.className = 'section-item';
+            fieldEl.title = f.type + ': ' + (f.value || '').substring(0, 50);
+            fieldEl.onclick = () => scrollToField(f.field_id);
+            const typeIcon = document.createElement('span');
+            typeIcon.style.cssText = 'font-size:9px;opacity:0.4;min-width:14px;';
+            const iconMap = { text: 'T', phone: '\u260E', email: '@', link: '\u2197', address: '\u2302', hours: '\u23F0', image: '\u25A3' };
+            typeIcon.textContent = iconMap[f.type] || '\u25CB';
+            fieldEl.appendChild(typeIcon);
+            const fieldLabel = document.createElement('span');
+            fieldLabel.textContent = f.field_id;
+            fieldEl.appendChild(fieldLabel);
+            container.appendChild(fieldEl);
+          });
+        });
+      } catch (e) {
+        container.textContent = '';
+        const fallback = document.createElement('div');
+        fallback.className = 'section-item';
+        fallback.style.paddingLeft = '24px';
+        fallback.style.color = '#64748b';
+        fallback.style.fontStyle = 'italic';
+        fallback.textContent = 'Build site to see sections';
+        container.appendChild(fallback);
+      }
+    }
+
+    function scrollToField(fieldId) {
+      // If editable view is open, scroll to that field in the editable iframe
+      if (activeCanvasTab === 'editable') {
+        const frame = document.getElementById('editable-frame');
+        if (frame && frame.contentDocument) {
+          const el = frame.contentDocument.querySelector('[data-field-id="' + fieldId + '"]');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.style.outline = '3px solid #3b82f6';
+            setTimeout(() => { el.style.outline = ''; }, 2000);
+          }
+        }
+      } else {
+        // Switch to editable view and then scroll
+        switchCanvasTab('editable');
+        setTimeout(() => scrollToField(fieldId), 500);
+      }
+    }
+
+    // --- Left Sidebar: Media Summary ---
+    function updateMediaSummary() {
+      const el = document.getElementById('ls-media-summary');
+      if (!el || !cachedStudioState) return;
+      const specs = cachedStudioState.media_specs || [];
+      const uploads = cachedStudioState.uploads || [];
+      const filled = specs.filter(s => s.status !== 'empty').length;
+      el.textContent = specs.length + ' slots (' + filled + ' filled), ' + uploads.length + ' uploads';
+    }
+
+    // --- Editable Page View ---
+    let editableViewLoaded = false;
+
+    async function loadEditableView() {
+      const frame = document.getElementById('editable-frame');
+      if (!frame) return;
+      const previewFrame = document.getElementById('preview-frame');
+      if (!previewFrame || !previewFrame.src || previewFrame.src === 'about:blank') {
+        // No preview loaded yet
+        frame.srcdoc = '<html><body style="background:#1a1a2e;color:#94a3b8;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;"><div style="text-align:center;"><h2 style="color:#e2e8f0;margin-bottom:8px;">No page built yet</h2><p>Build a site first, then switch to Editable View to click-edit content fields.</p></div></body></html>';
+        return;
+      }
+      // Load the same page as preview
+      frame.src = previewFrame.src;
+      frame.onload = function() {
+        injectEditableOverlay(frame);
+        updateFieldCount(frame);
+      };
+      editableViewLoaded = true;
+    }
+
+    function injectEditableOverlay(frame) {
+      try {
+        const doc = frame.contentDocument;
+        if (!doc) return;
+
+        // Add highlight styles
+        const style = doc.createElement('style');
+        style.textContent = `
+          [data-field-id] {
+            position: relative;
+            cursor: pointer;
+            transition: outline 0.15s, background 0.15s;
+          }
+          [data-field-id]:hover {
+            outline: 2px dashed #3b82f6 !important;
+            outline-offset: 2px;
+            background: rgba(59, 130, 246, 0.05) !important;
+          }
+          [data-field-id]::after {
+            content: attr(data-field-id);
+            position: absolute; top: -18px; left: 0;
+            background: #3b82f6; color: #fff; font-size: 10px;
+            padding: 1px 6px; border-radius: 3px;
+            opacity: 0; transition: opacity 0.15s;
+            pointer-events: none; white-space: nowrap; z-index: 10000;
+            font-family: system-ui, sans-serif;
+          }
+          [data-field-id]:hover::after { opacity: 1; }
+          .field-editing { outline: 2px solid #3b82f6 !important; outline-offset: 2px; background: rgba(59, 130, 246, 0.08) !important; }
+        `;
+        doc.head.appendChild(style);
+
+        // Attach click handlers to editable fields
+        const fields = doc.querySelectorAll('[data-field-id]');
+        fields.forEach(el => {
+          el.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openFieldEditor(el, frame);
+          });
+        });
+      } catch(e) {
+        console.error('[editable-view] Could not inject overlay:', e);
+      }
+    }
+
+    function openFieldEditor(el, frame) {
+      // Remove any existing editor
+      document.querySelectorAll('.field-edit-overlay').forEach(o => o.remove());
+
+      const fieldId = el.getAttribute('data-field-id');
+      const fieldType = el.getAttribute('data-field-type') || 'text';
+      const currentValue = el.textContent.trim();
+
+      // Get position relative to viewport
+      const frameRect = frame.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      // Since el is inside iframe, its rect is relative to iframe viewport
+      const iframeDoc = frame.contentDocument;
+      const scrollTop = iframeDoc.documentElement.scrollTop || iframeDoc.body.scrollTop;
+      const scrollLeft = iframeDoc.documentElement.scrollLeft || iframeDoc.body.scrollLeft;
+
+      const top = frameRect.top + elRect.top - scrollTop + elRect.height + 4;
+      const left = frameRect.left + elRect.left - scrollLeft;
+
+      el.classList.add('field-editing');
+
+      // Create overlay editor
+      const overlay = document.createElement('div');
+      overlay.className = 'field-edit-overlay';
+      overlay.style.top = Math.min(top, window.innerHeight - 200) + 'px';
+      overlay.style.left = Math.min(left, window.innerWidth - 300) + 'px';
+
+      const label = document.createElement('div');
+      label.className = 'field-label';
+      label.textContent = fieldId + ' (' + fieldType + ')';
+      overlay.appendChild(label);
+
+      const isMultiline = currentValue.length > 80 || fieldType === 'address';
+      let input;
+      if (isMultiline) {
+        input = document.createElement('textarea');
+        input.rows = 3;
+      } else {
+        input = document.createElement('input');
+        input.type = 'text';
+      }
+      input.value = currentValue;
+      overlay.appendChild(input);
+
+      const actions = document.createElement('div');
+      actions.className = 'field-actions';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.className = 'text-xs bg-studio-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition';
+      saveBtn.onclick = async () => {
+        const newValue = input.value.trim();
+        if (newValue === currentValue) {
+          overlay.remove();
+          el.classList.remove('field-editing');
+          return;
+        }
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+        try {
+          // Send content update via chat (triggers surgical handler)
+          const page = activePage || 'index.html';
+          const msg = 'Change the ' + fieldId + ' to: ' + newValue;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'chat', content: msg }));
+            addMessage('user', msg, true);
+          }
+          // Optimistic update in the iframe
+          el.textContent = newValue;
+          overlay.remove();
+          el.classList.remove('field-editing');
+          // Reload after a short delay to get server-side update
+          setTimeout(() => {
+            if (activeCanvasTab === 'editable') loadEditableView();
+            reloadPreview();
+          }, 2000);
+        } catch (e) {
+          saveBtn.textContent = 'Error';
+          setTimeout(() => { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }, 1500);
+        }
+      };
+      actions.appendChild(saveBtn);
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.className = 'text-xs text-studio-muted hover:text-white transition';
+      cancelBtn.onclick = () => {
+        overlay.remove();
+        el.classList.remove('field-editing');
+      };
+      actions.appendChild(cancelBtn);
+
+      overlay.appendChild(actions);
+      document.body.appendChild(overlay);
+
+      input.focus();
+      input.select();
+
+      // Close on Escape
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { overlay.remove(); el.classList.remove('field-editing'); }
+        if (e.key === 'Enter' && !isMultiline) { saveBtn.click(); }
+      });
+    }
+
+    function updateFieldCount(frame) {
+      const countEl = document.getElementById('editable-field-count');
+      if (!countEl) return;
+      try {
+        const doc = frame.contentDocument;
+        const count = doc ? doc.querySelectorAll('[data-field-id]').length : 0;
+        countEl.textContent = count > 0 ? count + ' editable fields' : '';
+      } catch(e) {
+        countEl.textContent = '';
+      }
+    }
+
+    function refreshEditableView() {
+      loadEditableView();
+    }
+
+    function toggleFieldHighlights() {
+      editableHighlightsOn = !editableHighlightsOn;
+      const btn = document.getElementById('highlight-toggle');
+      if (btn) btn.textContent = editableHighlightsOn ? 'Highlights On' : 'Highlights Off';
+      const frame = document.getElementById('editable-frame');
+      if (!frame || !frame.contentDocument) return;
+      const style = frame.contentDocument.querySelector('style');
+      if (style) {
+        style.disabled = !editableHighlightsOn;
+      }
+    }
+
+    // --- Hook into existing page/site load events ---
+    // Override loadPages to also update left sidebar
+    const _originalLoadPages = typeof loadPages === 'function' ? loadPages : null;
+
+    // Watch for sitePages changes and update sidebar
+    function refreshLeftSidebar() {
+      renderPagesList();
+      loadSectionTree(activePage);
+      updateMediaSummary();
+    }
+
+    // ============================================================
+    // Phases 3-5: Image Browser, Research, Codex, Compare, Mutations
+    // ============================================================
+
+    // --- Wave 1: Image Browser ---
+    async function loadImageBrowserSlots() {
+      const sel = document.getElementById('images-slot-selector');
+      if (!sel) return;
+      try {
+        const state = await (await fetch('/api/studio-state')).json();
+        const specs = state.media_specs || [];
+        sel.textContent = '';
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'Select slot...';
+        sel.appendChild(defaultOpt);
+        specs.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.slot_id;
+          opt.textContent = s.slot_id + ' (' + s.status + ')';
+          sel.appendChild(opt);
+        });
+        // Pre-select active slot if one is set
+        if (currentSlotTarget) sel.value = currentSlotTarget.slotId || '';
+      } catch(e) { console.error('[image-browser] Failed to load slots:', e); }
+    }
+
+    async function searchImageBrowser() {
+      const query = document.getElementById('images-query')?.value?.trim();
+      if (!query) return;
+      const provider = document.getElementById('images-provider-filter')?.value || 'all';
+      const grid = document.getElementById('images-results-grid');
+      const empty = document.getElementById('images-empty-state');
+      if (!grid) return;
+      grid.textContent = '';
+      if (empty) empty.textContent = 'Searching...';
+      try {
+        const res = await fetch('/api/stock-search?query=' + encodeURIComponent(query) + '&provider=' + provider + '&limit=12');
+        const data = await res.json();
+        if (!data.results || data.results.length === 0) {
+          if (empty) empty.textContent = 'No results found. Try a different query.';
+          return;
+        }
+        if (empty) empty.textContent = '';
+        renderImageResults(data.results);
+      } catch(e) {
+        if (empty) empty.textContent = 'Search failed: ' + e.message;
+      }
+    }
+
+    function renderImageResults(results) {
+      const grid = document.getElementById('images-results-grid');
+      if (!grid) return;
+      grid.textContent = '';
+      results.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'image-result-card';
+        const img = document.createElement('img');
+        img.src = r.thumb || r.url;
+        img.alt = r.credit || 'Stock photo';
+        img.loading = 'lazy';
+        card.appendChild(img);
+        // Provider badge
+        const badge = document.createElement('span');
+        badge.className = 'provider-badge';
+        badge.textContent = r.provider || 'stock';
+        card.appendChild(badge);
+        // Credit
+        const credit = document.createElement('span');
+        credit.className = 'credit-label';
+        credit.textContent = r.credit || '';
+        card.appendChild(credit);
+        // Apply button
+        const slotId = document.getElementById('images-slot-selector')?.value;
+        if (slotId) {
+          const applyBtn = document.createElement('button');
+          applyBtn.className = 'apply-btn';
+          applyBtn.textContent = 'Apply';
+          applyBtn.onclick = (e) => {
+            e.stopPropagation();
+            applyImageToSlot(slotId, r);
+          };
+          card.appendChild(applyBtn);
+        }
+        // Click card to preview full size
+        card.onclick = () => {
+          window.open(r.url, '_blank');
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    async function applyImageToSlot(slotId, result) {
+      if (!slotId || !result.url) return;
+      try {
+        const res = await fetch('/api/stock-apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slot_id: slotId,
+            image_url: result.url,
+            credit: result.credit || '',
+            provider: result.provider || 'stock',
+            query: document.getElementById('images-query')?.value || '',
+            width: 800, height: 600
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          addMessage('status', 'Applied ' + result.provider + ' photo to ' + slotId);
+          reloadPreview();
+        } else {
+          addMessage('error', 'Failed to apply: ' + (data.error || 'unknown'));
+        }
+      } catch(e) {
+        addMessage('error', 'Apply failed: ' + e.message);
+      }
+    }
+
+    // --- Wave 2: Research View ---
+    async function loadResearchFiles() {
+      const container = document.getElementById('research-files');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/research');
+        const data = await res.json();
+        container.textContent = '';
+        if (!data.files || data.files.length === 0) {
+          const empty = document.createElement('div');
+          empty.style.cssText = 'padding:12px;color:#64748b;font-size:11px;font-style:italic;';
+          empty.textContent = 'No research files yet';
+          container.appendChild(empty);
+          return;
+        }
+        data.files.forEach(f => {
+          const item = document.createElement('div');
+          item.className = 'research-file-item';
+          item.onclick = () => viewResearchFile(f.name, item);
+          const name = document.createElement('div');
+          name.className = 'file-name';
+          name.textContent = f.name.replace('.md', '');
+          item.appendChild(name);
+          const meta = document.createElement('div');
+          meta.className = 'file-meta';
+          const sizeKb = Math.round(f.size / 1024);
+          const date = new Date(f.modified).toLocaleDateString();
+          meta.textContent = sizeKb + ' KB \u00B7 ' + date;
+          item.appendChild(meta);
+          container.appendChild(item);
+        });
+      } catch(e) {
+        container.textContent = '';
+        const err = document.createElement('div');
+        err.style.cssText = 'padding:12px;color:#64748b;font-size:11px;';
+        err.textContent = 'Failed to load research files';
+        container.appendChild(err);
+      }
+    }
+
+    async function viewResearchFile(filename, itemEl) {
+      // Highlight active file
+      document.querySelectorAll('.research-file-item').forEach(el => el.classList.remove('active'));
+      if (itemEl) itemEl.classList.add('active');
+      const body = document.getElementById('research-body');
+      const empty = document.getElementById('research-empty');
+      if (!body) return;
+      body.classList.remove('hidden');
+      if (empty) empty.classList.add('hidden');
+      body.textContent = 'Loading...';
+      try {
+        const res = await fetch('/api/research/' + encodeURIComponent(filename));
+        if (!res.ok) throw new Error('File not found');
+        const data = await res.json();
+        body.textContent = '';
+        renderMarkdownSafe(data.content, body);
+      } catch(e) {
+        body.textContent = 'Failed to load: ' + e.message;
+      }
+    }
+
+    // Safe DOM-based markdown renderer (no innerHTML — Codex S3 fix)
+    function renderMarkdownSafe(text, container) {
+      const lines = text.split('\n');
+      let currentList = null;
+      lines.forEach(line => {
+        // Headings
+        const h3 = line.match(/^### (.+)/);
+        if (h3) { currentList = null; const el = document.createElement('h3'); el.textContent = h3[1]; container.appendChild(el); return; }
+        const h2 = line.match(/^## (.+)/);
+        if (h2) { currentList = null; const el = document.createElement('h2'); el.textContent = h2[1]; container.appendChild(el); return; }
+        const h1 = line.match(/^# (.+)/);
+        if (h1) { currentList = null; const el = document.createElement('h1'); el.textContent = h1[1]; container.appendChild(el); return; }
+        // List items
+        const li = line.match(/^[-*] (.+)/);
+        if (li) {
+          if (!currentList) { currentList = document.createElement('ul'); container.appendChild(currentList); }
+          const item = document.createElement('li');
+          appendInlineFormatted(li[1], item);
+          currentList.appendChild(item);
+          return;
+        }
+        currentList = null;
+        // Empty line
+        if (line.trim() === '') { return; }
+        // Paragraph
+        const p = document.createElement('p');
+        appendInlineFormatted(line, p);
+        container.appendChild(p);
+      });
+    }
+
+    function appendInlineFormatted(text, parent) {
+      // Bold, italic, code — via regex split + safe DOM nodes
+      const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+      parts.forEach(part => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          const el = document.createElement('strong');
+          el.textContent = part.slice(2, -2);
+          parent.appendChild(el);
+        } else if (part.startsWith('*') && part.endsWith('*')) {
+          const el = document.createElement('em');
+          el.textContent = part.slice(1, -1);
+          parent.appendChild(el);
+        } else if (part.startsWith('`') && part.endsWith('`')) {
+          const el = document.createElement('code');
+          el.textContent = part.slice(1, -1);
+          parent.appendChild(el);
+        } else {
+          parent.appendChild(document.createTextNode(part));
+        }
+      });
+    }
+
+    // --- Wave 3: Codex CLI ---
+    async function sendCodexPrompt() {
+      const input = document.getElementById('codex-input');
+      const output = document.getElementById('codex-output');
+      const btn = document.getElementById('codex-send-btn');
+      if (!input || !output) return;
+      const prompt = input.value.trim();
+      if (!prompt) return;
+      input.value = '';
+      // Show user message
+      appendCodexMessage('user', prompt);
+      // Show loading
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'codex-loading';
+      loadingEl.textContent = 'Running Codex';
+      output.appendChild(loadingEl);
+      output.scrollTop = output.scrollHeight;
+      if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
+      try {
+        const res = await fetch('/api/codex/exec', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        loadingEl.remove();
+        if (data.error) {
+          appendCodexMessage('error', data.output || 'Codex returned an error');
+        } else {
+          appendCodexMessage('assistant', data.output || '(empty response)');
+        }
+      } catch(e) {
+        loadingEl.remove();
+        appendCodexMessage('error', 'Failed to reach Codex: ' + e.message);
+      }
+      if (btn) { btn.disabled = false; btn.textContent = 'Run'; }
+    }
+
+    function appendCodexMessage(role, text) {
+      const output = document.getElementById('codex-output');
+      if (!output) return;
+      const msg = document.createElement('div');
+      msg.className = 'codex-msg codex-msg-' + role;
+      msg.textContent = text;
+      output.appendChild(msg);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    // --- Wave 6: Model Comparison ---
+    function loadCompareView() {
+      const leftFrame = document.getElementById('compare-frame-left');
+      const rightFrame = document.getElementById('compare-frame-right');
+      const previewFrame = document.getElementById('preview-frame');
+      if (!leftFrame || !previewFrame) return;
+      // Load current page into left (Claude) iframe
+      if (previewFrame.src && previewFrame.src !== 'about:blank') {
+        leftFrame.src = previewFrame.src;
+      }
+      // Right frame stays blank until Codex generates
+      if (rightFrame && rightFrame.src === 'about:blank') {
+        rightFrame.srcdoc = '<html><body style="background:#1a1a2e;color:#94a3b8;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;"><div style="text-align:center;"><p>Click "Generate Codex Version" to compare</p></div></body></html>';
+      }
+      // Sync scroll setup
+      setupCompareScroll();
+    }
+
+    async function generateCodexVersion() {
+      const btn = document.getElementById('compare-generate-btn');
+      const rightFrame = document.getElementById('compare-frame-right');
+      if (!rightFrame) return;
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+      rightFrame.srcdoc = '<html><body style="background:#1a1a2e;color:#94a3b8;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;"><div>Generating with Codex...</div></body></html>';
+      try {
+        const page = activePage || 'index.html';
+        const res = await fetch('/api/compare/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page })
+        });
+        const data = await res.json();
+        if (data.error) {
+          rightFrame.srcdoc = '<html><body style="background:#2d1515;color:#fca5a5;padding:24px;font-family:system-ui;"><h3>Generation Failed</h3><p>' + escapeHtml(data.error) + '</p></body></html>';
+        } else if (data.url) {
+          rightFrame.src = data.url;
+        }
+      } catch(e) {
+        rightFrame.srcdoc = '<html><body style="background:#2d1515;color:#fca5a5;padding:24px;font-family:system-ui;"><h3>Error</h3><p>' + escapeHtml(e.message) + '</p></body></html>';
+      }
+      if (btn) { btn.disabled = false; btn.textContent = 'Generate Codex Version'; }
+    }
+
+    function setupCompareScroll() {
+      const left = document.getElementById('compare-frame-left');
+      const right = document.getElementById('compare-frame-right');
+      const syncCheck = document.getElementById('compare-sync-scroll');
+      if (!left || !right) return;
+      try {
+        left.onload = () => {
+          const leftDoc = left.contentDocument || left.contentWindow.document;
+          leftDoc.addEventListener('scroll', () => {
+            if (!syncCheck?.checked) return;
+            try {
+              const rightDoc = right.contentDocument || right.contentWindow.document;
+              const pct = leftDoc.documentElement.scrollTop / (leftDoc.documentElement.scrollHeight - leftDoc.documentElement.clientHeight);
+              rightDoc.documentElement.scrollTop = pct * (rightDoc.documentElement.scrollHeight - rightDoc.documentElement.clientHeight);
+            } catch(e) {}
+          });
+        };
+      } catch(e) {}
+    }
+
+    async function useCompareVersion(side) {
+      if (!confirm('Replace the current page with the ' + side + ' version? A version snapshot will be saved first.')) return;
+      addMessage('status', 'Adopting ' + side + ' version (snapshot saved)...');
+      // The server handles versioning — just send the request
+      try {
+        const page = activePage || 'index.html';
+        const res = await fetch('/api/compare/adopt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page, side })
+        });
+        const data = await res.json();
+        if (data.success) {
+          addMessage('status', 'Page updated from ' + side + ' version.');
+          reloadPreview();
+        } else {
+          addMessage('error', 'Failed: ' + (data.error || 'unknown'));
+        }
+      } catch(e) {
+        addMessage('error', 'Adopt failed: ' + e.message);
+      }
+    }
+
+    // --- Wave 5: Mutation Timeline ---
+    let mutationPage = 1;
+
+    async function loadMutations(page) {
+      page = page || 1;
+      mutationPage = page;
+      const timeline = document.getElementById('mutation-timeline');
+      const patterns = document.getElementById('mutation-patterns');
+      const moreBtn = document.getElementById('mutations-show-more');
+      if (!timeline) return;
+      try {
+        const res = await fetch('/api/mutations?page=' + page + '&limit=50');
+        const data = await res.json();
+        if (page === 1) timeline.textContent = '';
+        if (!data.mutations || data.mutations.length === 0) {
+          if (page === 1) timeline.textContent = 'No mutations recorded yet.';
+          if (moreBtn) moreBtn.classList.add('hidden');
+          return;
+        }
+        // Top fields pattern
+        if (patterns && data.topFields && data.topFields.length > 0 && page === 1) {
+          patterns.textContent = '';
+          const label = document.createElement('div');
+          label.className = 'text-studio-muted mb-1';
+          label.style.fontWeight = '600';
+          label.textContent = 'Most changed:';
+          patterns.appendChild(label);
+          data.topFields.slice(0, 5).forEach(f => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;justify-content:space-between;padding:1px 0;';
+            const name = document.createElement('span');
+            name.textContent = f.field;
+            row.appendChild(name);
+            const count = document.createElement('span');
+            count.className = 'text-studio-muted';
+            count.textContent = f.count + 'x';
+            row.appendChild(count);
+            patterns.appendChild(row);
+          });
+        }
+        // Timeline entries
+        data.mutations.forEach(m => {
+          const entry = document.createElement('div');
+          entry.style.cssText = 'padding:4px 0;border-bottom:1px solid #1e293b;';
+          const header = document.createElement('div');
+          header.style.cssText = 'display:flex;justify-content:space-between;';
+          const target = document.createElement('span');
+          target.style.color = '#93c5fd';
+          target.textContent = (m.target_id || m.target || m.level || '?');
+          header.appendChild(target);
+          const time = document.createElement('span');
+          time.className = 'text-studio-muted';
+          time.textContent = m.timestamp ? new Date(m.timestamp).toLocaleString() : '';
+          header.appendChild(time);
+          entry.appendChild(header);
+          const detail = document.createElement('div');
+          detail.className = 'text-studio-muted';
+          detail.textContent = (m.action || 'change') + (m.source ? ' via ' + m.source : '');
+          entry.appendChild(detail);
+          timeline.appendChild(entry);
+        });
+        // Show more button
+        if (moreBtn) {
+          if (data.mutations.length >= data.limit) {
+            moreBtn.classList.remove('hidden');
+          } else {
+            moreBtn.classList.add('hidden');
+          }
+        }
+      } catch(e) {
+        if (page === 1) timeline.textContent = 'Failed to load mutations.';
+      }
+    }
+
+    function loadMoreMutations() {
+      loadMutations(mutationPage + 1);
+    }
+
     // --- Start ---
     init();
+    // Initialize left sidebar after init
+    setTimeout(refreshLeftSidebar, 500);
   </script>
   <!-- Session Status Bar -->
   <div id="status-bar">

@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-03-30
+**Last updated:** 2026-04-07
 
 ---
 
@@ -16,7 +16,7 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 |-------|-----------|------|
 | AI Engine | Claude CLI (`claude --print`) | Generates all HTML, SVG assets, design briefs, session summaries, and image prompts. Uses the Claude Code subscription — no separate API key. Default model: `claude-sonnet-4-5`. |
 | Backend | Node.js + Express 4.21 | HTTP server, REST API endpoints, WebSocket server for real-time chat and preview updates. Single file: `site-studio/server.js` (6,830 lines). |
-| Frontend | Single HTML file + Tailwind CDN | `site-studio/public/index.html` (4,320 lines). Chat panel, iframe preview, studio sidebar, modals. No build step, no framework. |
+| Frontend | Single HTML file + Tailwind CDN + 8 CSS files | `site-studio/public/index.html` (~5,620 lines). VS Code-inspired layout: left sidebar (Explorer), tabbed canvas (Preview, Editable View, Images, Research, Compare), bottom CLI bar (Chat, Terminal, Codex), right sidebar (Studio State). 8 CSS component files in `public/css/`. No build step, no framework. |
 | CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties (`--color-primary`, `--color-accent`, `--color-bg`) map from spec colors. Shared styles extracted to external CSS by post-processor; page-specific styles stay inline via `<style data-page="true">`. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
 | WebSocket | `ws` 8.18 | Real-time bidirectional: chat messages, build progress, preview reload, panel updates. |
 | File Upload | `multer` 2.1 | Image upload with drag-drop, paste, file picker. 5MB limit, 100 files per site (configurable). SVG sanitization on upload. |
@@ -441,7 +441,7 @@ Mobile apps (iOS/Google Play), AI image generation products, AI video products, 
 | File | Lines | Purpose |
 |------|-------|---------|
 | `site-studio/server.js` | ~6,830 | Main backend. Express + WebSocket. Request classifier, prompt builder (returns resolvedPage + templateContext), template-first build system, layout containment (fixLayoutOverflow), build verification system (5 file-based checks), blueprint system, CSS extraction, lifecycle integrity, multi-provider image system, post-build pipeline (6 steps + verification), safeSettings() redaction, multi-tab session guard, deadlock prevention. spawnClaude calls claude directly from os.tmpdir(). |
-| `site-studio/public/index.html` | ~4,320 | Single-file frontend. Chat, preview iframe, studio sidebar (8 tabs), settings modal, upload modal, project picker, QSF panel with stock search grid and slot detail bar. Verify tab with collapsible checks. Verification pill in toolbar. ws.onmessage JSON.parse guard. |
+| `site-studio/public/index.html` | ~5,620 | Single-file frontend. VS Code-inspired layout: left sidebar (Explorer with pages/sections/media), tabbed canvas (5 tabs: Preview, Editable View, Image Browser, Research View, Model Comparison), bottom CLI bar (3 tabs: Chat, Terminal, Codex), right sidebar (Studio State with mode selector + 8 tabs). Data-driven tab switching via querySelectorAll + data-hook attributes. Settings modal, upload modal, project picker, QSF panel. |
 | `site-studio/package.json` | 24 | Dependencies: express, ws, multer, nodemailer, twilio, @vonage/server-sdk. Dev: vitest. |
 | `site-studio/tests/unit.test.js` | ~458 | 56 unit tests: isValidPageName (4), sanitizeSvg (9), extractSlotsFromPage (4), classifyRequest (15+4 edge), extractBrandColors (3), labelToFilename (5), truncateAssistantMessage (5), ensureHeadDependencies (1), extractTemplateComponents (4). |
 | `site-studio/vitest.config.js` | 7 | Vitest ESM configuration. |
