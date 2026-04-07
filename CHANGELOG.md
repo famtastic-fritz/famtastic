@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-07 — Codex comparison build + content editing gap analysis
+
+Two tests on the Readings by Maria site. (1) Built the same site with Codex for comparison: Codex produced 94KB vs Claude's 52KB, with 17 image slots vs 2, all 7 Sanskrit chakra names, and complete pricing. Codex wins first-pass generation; Claude/Studio wins iterative editing and deployment. Recommended pipeline: Codex generates → Studio imports → Claude edits → Studio deploys. (2) Ran 10 real-world content edits through Studio chat: 8/10 succeeded. Failures: cross-page CTA change only applied to active page, seasonal banner lost during rebuild. Key finding: 0/10 edits classified as content_update (all went to layout_update), 9/10 triggered full page rebuilds instead of surgical replacements, and 9/10 required plan approval for changes that should take seconds. Content editing needs: structured data layer in spec.json, deterministic text replacement, cross-page edit capability, and plan gate bypass for simple edits.
+
 ## 2026-04-06 — Fix 3 multi-page conversion gaps + brainContext bug
 
 Fixed the 3 gaps surfaced by the Readings by Maria build, plus a pre-existing bug. (1) Added `restructure` classifier intent with regex for "break into pages", "separate pages", "make multi-page", etc. — routes to build handler via fall-through. (2) Added `extractPagesFromBrief()` that parses `must_have_sections` against 22 known page names, called in approve-brief handler. (3) Replaced silent `if (!plan) return` in execute-plan with error message. (4) Fixed `brainContext` not passed to `parallelBuild()` — was a ReferenceError on every multi-page build. All verified end-to-end: fresh test site, brief → 3 pages auto-populated, restructure → classified correctly → plan approved → 4-page build succeeded. 78/78 tests passing (13 new tests added).

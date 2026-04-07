@@ -1,0 +1,197 @@
+{
+  "task": "content editing capability test",
+  "site": "site-readings-by-maria",
+  "started_at": "2026-04-06T18:30:00Z",
+  "completed_at": "2026-04-07T01:00:00Z",
+  "attempts": [
+    {
+      "step": 1,
+      "edit_type": "phone_number",
+      "instruction_sent_to_studio": "Change the contact phone number to (555) 867-5309",
+      "classifier_result": "layout_update (should be content_update)",
+      "studio_response_summary": "Generated plan card, approved, rebuilt contact.html. Changed phone in both display text and tel: href with correct +1 prefix.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "(212) 555-1234 / tel:+12125551234",
+      "content_after": "(555) 867-5309 / tel:+15558675309",
+      "collateral_damage": "Full page rebuild — HTML structure may have shifted but phone/email/form all preserved",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Had to approve plan card (plan gate blocks all layout_update edits)",
+      "gap_identified": "content_update regex requires field name immediately after 'the' — 'change the CONTACT phone' has 'contact' between 'the' and 'phone' so it misclassifies as layout_update"
+    },
+    {
+      "step": 2,
+      "edit_type": "email",
+      "instruction_sent_to_studio": "Update the contact email to hello@readingsbymaria.com",
+      "classifier_result": "layout_update (should be content_update)",
+      "studio_response_summary": "Plan card generated, approved, rebuilt contact.html. Email updated in both mailto: link and display text.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "maria@readingsbymaria.com",
+      "content_after": "hello@readingsbymaria.com",
+      "collateral_damage": "Full page rebuild",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Plan approval required",
+      "gap_identified": "Same content_update regex issue — 'update the contact email' has 'contact' between 'the' and 'email'"
+    },
+    {
+      "step": 3,
+      "edit_type": "single_price_change",
+      "instruction_sent_to_studio": "Change the Tarot reading 60-minute price from $125 to $145",
+      "classifier_result": "layout_update (should be content_update)",
+      "studio_response_summary": "Plan card, approved, rebuilt services.html. Changed only the 60-minute Tarot price from $125 to $145.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "$125 — 60 minutes",
+      "content_after": "$145 — 60 minutes",
+      "collateral_damage": "None detected — other prices preserved correctly",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Plan approval",
+      "gap_identified": "content_update regex doesn't match 'change the Tarot reading 60-minute price' — too many words between 'the' and 'price'"
+    },
+    {
+      "step": 4,
+      "edit_type": "business_hours",
+      "instruction_sent_to_studio": "Add business hours to the contact page: Tuesday through Saturday, 10am to 7pm. Closed Sunday and Monday.",
+      "classifier_result": "layout_update",
+      "studio_response_summary": "Plan card, approved, rebuilt contact.html. Hours content added.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "No hours listed",
+      "content_after": "Tuesday-Saturday 10am-7pm, Closed Sunday-Monday (2 matches in HTML)",
+      "collateral_damage": "Full page rebuild — previous edits (phone, email) preserved",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Plan approval",
+      "gap_identified": "This is legitimately layout_update (adding new content), not content_update. But the plan gate adds unnecessary friction for simple additions."
+    },
+    {
+      "step": 5,
+      "edit_type": "testimonial_edit",
+      "instruction_sent_to_studio": "Change the first testimonial name from Sarah to Sandra K. and update the text to: 'Maria helped me find clarity during the most confusing time of my life. Her reading was accurate and compassionate.'",
+      "classifier_result": "layout_update",
+      "studio_response_summary": "Surgical edit — updated testimonial text and attribution from '— Sarah, Chicago' to '— Sandra K.' in 28 seconds. Did NOT rebuild the whole page.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "— Sarah, Chicago + long quote about patterns",
+      "content_after": "— Sandra K. + 'Maria helped me find clarity...'",
+      "collateral_damage": "None — surgical replacement of just the testimonial block",
+      "manual_intervention_required": false,
+      "manual_steps_taken": "None — no plan gate, direct edit executed",
+      "gap_identified": "This one worked perfectly without a plan card. Inconsistency in when the plan gate fires."
+    },
+    {
+      "step": 6,
+      "edit_type": "cross_page_cta_change",
+      "instruction_sent_to_studio": "Change all the booking buttons from whatever they say to 'Discover Your Path'",
+      "classifier_result": "layout_update",
+      "studio_response_summary": "Changed CTAs on index.html only. Other 3 pages not updated.",
+      "success": false,
+      "failure_reason": "Single-page edit scope — only modified the active page (index.html), not all 4 pages",
+      "content_before": "Begin Your Journey (on all pages)",
+      "content_after": "Discover Your Path (index.html only), Begin Your Journey (services, about, contact still unchanged)",
+      "collateral_damage": "Inconsistent CTA text across pages",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Would need to switch to each page and repeat the edit 3 more times",
+      "gap_identified": "No cross-page edit capability. 'All pages' requests only apply to the current page. Need a multi-page edit mode or a 'apply to all pages' flag."
+    },
+    {
+      "step": 7,
+      "edit_type": "add_service",
+      "instruction_sent_to_studio": "Add a new service to the pricing section: Astrology Birth Chart Reading, 90 minutes, $195",
+      "classifier_result": "layout_update",
+      "studio_response_summary": "Plan card, approved, rebuilt services.html. New service card added to the pricing grid.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "6 services listed",
+      "content_after": "7 services listed (Astrology Birth Chart Reading $195 added)",
+      "collateral_damage": "Full page rebuild — all other services preserved with correct pricing",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Plan approval",
+      "gap_identified": "Works but requires full page rebuild for a simple card addition"
+    },
+    {
+      "step": 8,
+      "edit_type": "remove_service",
+      "instruction_sent_to_studio": "Remove the Past Life Regression service from the pricing section",
+      "classifier_result": "layout_update",
+      "studio_response_summary": "Plan card, approved, rebuilt services.html. Past Life Regression removed cleanly.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "Past Life Regression $150 present",
+      "content_after": "Past Life Regression removed (0 matches)",
+      "collateral_damage": "Full page rebuild — other services preserved",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Plan approval",
+      "gap_identified": "Same pattern — works but full rebuild for a single card removal"
+    },
+    {
+      "step": 9,
+      "edit_type": "seasonal_banner",
+      "instruction_sent_to_studio": "Add a banner at the top of the home page that says 'Mercury is in retrograde — book a clarity session before March 15th' with a link to the contact page",
+      "classifier_result": "layout_update",
+      "studio_response_summary": "Build ran (slots registered, blueprint updated, post-processing ran) but banner content not present in final HTML.",
+      "success": false,
+      "failure_reason": "Claude rebuilt the page without including the requested banner. The instruction to add a new element at the top was lost during the full page regeneration.",
+      "content_before": "No banner",
+      "content_after": "Still no banner — 0 matches for mercury/retrograde",
+      "collateral_damage": "Page may have been partially regenerated, losing other edits",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Would need manual HTML edit",
+      "gap_identified": "Adding new structural elements (banner at top) during a layout_update rebuild can fail silently — Claude regenerates the page from brief context and may not include ephemeral/seasonal content that wasn't in the original brief"
+    },
+    {
+      "step": 10,
+      "edit_type": "address_addition",
+      "instruction_sent_to_studio": "Add the studio address to the contact page: 742 Crescent Moon Lane, Suite 3, Port Saint Lucie, FL 34952",
+      "classifier_result": "layout_update",
+      "studio_response_summary": "Plan card, approved, rebuilt contact.html. Address added to the page.",
+      "success": true,
+      "failure_reason": null,
+      "content_before": "No address listed",
+      "content_after": "742 Crescent Moon Lane, Port Saint Lucie, FL 34952 (2 matches)",
+      "collateral_damage": "Full page rebuild — previous edits (phone, email, hours) preserved",
+      "manual_intervention_required": true,
+      "manual_steps_taken": "Plan approval",
+      "gap_identified": null
+    }
+  ],
+  "summary": {
+    "total_edits": 10,
+    "successful": 8,
+    "failed": 2,
+    "partial": 0,
+    "classifier_accuracy": {
+      "routed_to_content_update": 0,
+      "routed_to_layout_update": 10,
+      "should_have_been_content_update": 3,
+      "note": "Zero edits classified as content_update. The content_update regex requires the field name immediately after 'the' but real-world edits include location words (contact phone, Tarot reading price) between 'the' and the field name."
+    },
+    "plan_gate_impact": {
+      "edits_blocked_by_plan_gate": 9,
+      "edits_that_bypassed_plan_gate": 1,
+      "note": "Edit 5 (testimonial) executed directly without a plan card. All others required plan approval. The plan gate adds ~3 minutes of wait time per edit (plan generation + approval click + build)."
+    },
+    "cross_page_capability": {
+      "tested": true,
+      "result": "FAIL — edits only apply to the active page. 'Change all buttons' only changed index.html.",
+      "recommendation": "Need a multi-page edit flag or a 'for all pages' detection that iterates through spec.pages"
+    },
+    "surgical_vs_rebuild": {
+      "surgical_edits": 1,
+      "full_rebuilds": 9,
+      "note": "Only Edit 5 (testimonial) was a surgical text replacement (28s). All others triggered full page rebuilds (120-180s each). The system lacks a deterministic text-find-and-replace path for simple content changes."
+    },
+    "content_preservation": {
+      "edits_that_preserved_previous_changes": 8,
+      "edits_that_lost_content": 1,
+      "note": "Edit 9 (banner) failed — page was regenerated without the banner. Edit 6 (CTA) was partial. All other edits preserved cumulative changes correctly."
+    },
+    "what_content_editing_needs": [
+      "1. Content model / data layer — phone, email, hours, prices stored in spec.json as structured data, not hardcoded in HTML",
+      "2. Deterministic text replacement path — for simple 'change X to Y' requests, find the text in HTML and replace it without invoking Claude",
+      "3. Cross-page edit capability — detect 'all pages' in the request and iterate",
+      "4. Widen content_update regex — allow location words between 'the' and field names",
+      "5. Bypass plan gate for content_update and simple layout_update edits — the approval step adds 3 min overhead for a phone number change"
+    ]
+  }
+}

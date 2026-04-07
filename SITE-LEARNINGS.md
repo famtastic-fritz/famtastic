@@ -495,6 +495,53 @@ Second autonomous build (Site #3). Tested a new pipeline step: domain research b
 - **~~spec.json pages not auto-populated from brief~~** — FIXED: Added `extractPagesFromBrief()` helper that parses `must_have_sections` against 22 known page names. Called in `approve-brief` handler after `brief.approved=true`. Function: `extractPagesFromBrief()` in `server.js`, exported for testing.
 - **brainContext not passed to parallelBuild** — FIXED (pre-existing bug discovered during testing): `parallelBuild()` template literal referenced `${brainContext}` but it wasn't in the function signature. Added to signature and call site.
 
+## Content Editing Gap Analysis (2026-04-07)
+
+Tested 10 real-world content edits through Studio chat on the Readings by Maria site. Results: **8/10 successful, 2 failed**.
+
+### What Works
+- **Phone number change** — surgical tel: link + display text update
+- **Email change** — mailto: and display text both updated
+- **Single price change** — changed only the targeted price, others preserved
+- **Business hours addition** — added new content without breaking existing layout
+- **Testimonial text + name swap** — 28s surgical edit, no page rebuild (the only truly surgical edit)
+- **Add new service** — card added to pricing grid, existing services preserved
+- **Remove service** — clean removal, no layout gaps
+- **Address addition** — proper address block added
+
+### What Fails
+- **Cross-page CTA change** — "change all buttons" only applies to active page. No multi-page edit capability.
+- **Seasonal banner** — "add a banner at the top" failed silently. Claude rebuilt the page without including the banner. Ephemeral content not in the original brief gets dropped during rebuilds.
+
+### Systematic Findings
+- **0/10 edits classified as content_update** — all routed to `layout_update`. The `content_update` regex requires field name immediately after "the" (e.g., "change the phone") but real-world edits include location words ("change the CONTACT phone"). Regex needs widening.
+- **9/10 edits required plan approval** — only the testimonial edit executed directly. The plan gate adds ~3 min overhead per edit for changes that should take seconds.
+- **9/10 edits triggered full page rebuilds** — only 1 was a surgical text replacement. The system lacks a deterministic find-and-replace path.
+- **Content preservation across edits is solid** — cumulative changes survived through multiple rebuilds.
+
+### What Content Editing Needs
+1. **Content model in spec.json** — phone, email, hours, prices as structured data fields, not hardcoded in HTML
+2. **Deterministic text replacement** — for "change X to Y" requests, find the text in HTML and replace without invoking Claude
+3. **Cross-page edit capability** — detect "all pages" and iterate through spec.pages
+4. **Widen content_update regex** — allow any words between "the" and field names
+5. **Plan gate bypass for content_update** — phone number change should not need plan approval
+
+## Codex vs Claude Comparison (2026-04-07)
+
+Built the same Readings by Maria site with both Claude (via Studio) and Codex (direct generation). Same research, same brief.
+
+| Metric | Claude/Studio | Codex |
+|--------|--------------|-------|
+| Total HTML size | 52 KB | 94 KB |
+| Image slots (data-slot-id) | 2 | 17 |
+| Chakra Sanskrit names | 0 | 7 |
+| Services with pricing | Partial (edits altered) | All 6 |
+| Post-processing | Full pipeline | None |
+| Iterative editing | Yes (8/10 edits) | No |
+| Deploy integration | Yes (Netlify) | No |
+
+**Verdict:** Codex wins on first-pass generation quality (richer content, better slot compliance). Claude/Studio wins on iterative editing and deployment infrastructure. **Recommended pipeline: Codex generates initial HTML → Studio imports → Claude handles edits → Studio deploys.**
+
 ## Known Gaps
 
 ### Closed (2026-03-23, wave 1a — workflow-critical)

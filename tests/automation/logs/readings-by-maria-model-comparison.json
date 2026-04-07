@@ -1,0 +1,79 @@
+{
+  "claude_version": {
+    "builder": "Claude via Site Studio (Haiku model)",
+    "pages_built": ["index.html", "services.html", "about.html", "contact.html"],
+    "total_size_bytes": 52197,
+    "slot_compliance": false,
+    "slot_count": 2,
+    "slot_note": "Only 2 data-slot-id attributes across all 4 pages. Multiple content edits during testing may have stripped slots during page rebuilds.",
+    "chakra_sanskrit_names": 0,
+    "chakra_note": "Sanskrit names not present in services.html. The content edits test (adding/removing services) likely caused a rebuild that dropped the chakra section detail.",
+    "accessibility_issues": ["Low slot count means most images lack alt text structure", "Dark theme contrast ratios untested"],
+    "strengths": [
+      "Consistent header/footer across all pages via post-processing pipeline",
+      "CSS extraction to shared styles.css",
+      "Logo integration via logo-v post-processor",
+      "Nav-sync and footer-sync across all pages",
+      "Dark theme colors match the Midnight Oracle palette from research",
+      "Content edits through chat interface (8/10 successful)",
+      "Booking form with Netlify form attributes"
+    ],
+    "weaknesses": [
+      "Only 2 image slots — most images hardcoded or missing",
+      "Content edits trigger full page rebuilds (120-180s each) instead of surgical replacements",
+      "Chakra detail lost during content editing rebuilds",
+      "Cross-page edits don't work (CTA change only applied to active page)",
+      "Banner addition failed silently",
+      "Every edit requires plan approval (adds 3 min overhead)"
+    ]
+  },
+  "codex_version": {
+    "builder": "Codex (GPT-5.4) via direct generation",
+    "pages_built": ["index.html", "services.html", "about.html", "contact.html"],
+    "total_size_bytes": 94038,
+    "slot_compliance": true,
+    "slot_count": 17,
+    "slot_note": "17 data-slot-id attributes across all 4 pages with proper data-slot-role. Significantly better slot coverage than Claude build.",
+    "chakra_sanskrit_names": 7,
+    "chakra_note": "All 7 Sanskrit names present (Muladhara, Svadhisthana, Manipura, Anahata, Vishuddha, Ajna, Sahasrara)",
+    "accessibility_issues": ["Needs audit — generated as standalone HTML without post-processing pipeline"],
+    "strengths": [
+      "Comprehensive content — 80% more HTML content than Claude build",
+      "All 7 chakras with Sanskrit names, colors, body locations",
+      "17 image slots with proper data-slot-id and data-slot-role",
+      "All 6 services with pricing on services page",
+      "Complete FAQ section on contact page",
+      "Session preparation tips included",
+      "Proper Tailwind CSS configuration matching the Midnight Oracle palette",
+      "Responsive design with mobile considerations",
+      "Cross-page consistent navigation"
+    ],
+    "weaknesses": [
+      "No post-processing pipeline (no nav-sync, footer-sync, CSS extraction)",
+      "No blueprint tracking or version history",
+      "No slot mapping persistence — images would need to be manually wired",
+      "Cannot be iteratively edited through Studio chat",
+      "Generated as a one-shot — no conversation context for refinement",
+      "Not integrated with Studio's deploy pipeline"
+    ]
+  },
+  "verdict": {
+    "winner": "codex",
+    "reasoning": "For a first-pass static site build, Codex produced more comprehensive, content-rich HTML with better slot compliance (17 vs 2), complete domain knowledge integration (all 7 Sanskrit chakra names), and 80% more content. The Claude build through Studio has the advantage of iterative editing, post-processing, and deployment integration, but the base HTML quality from Codex is significantly richer.",
+    "what_claude_did_better": [
+      "Post-processing pipeline: nav-sync, footer-sync, CSS extraction, logo injection",
+      "Iterative editing: 8/10 content edits succeeded through chat",
+      "Deployment integration: one command to Netlify",
+      "Version history and rollback capability",
+      "Blueprint tracking for section persistence"
+    ],
+    "what_codex_did_better": [
+      "Content completeness: 94KB vs 52KB, more sections, more detail",
+      "Slot compliance: 17 slots vs 2 — properly structured for stock photo system",
+      "Domain knowledge: all 7 Sanskrit chakra names, detailed descriptions",
+      "One-shot quality: complete, well-structured pages without iteration",
+      "Pricing detail: all 6 services with correct pricing in services.html"
+    ],
+    "recommendations_for_routing": "Use Codex for initial page generation (richer HTML, better slot compliance, more content) and Claude/Studio for iterative refinement, content edits, and deployment. The ideal pipeline: Codex generates initial HTML → Studio imports it → Claude handles edits/refinement → Studio deploys. This combines Codex's generation strength with Studio's edit/deploy infrastructure."
+  }
+}
