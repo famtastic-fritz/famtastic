@@ -20,28 +20,20 @@ Claude Desktop/Code <-> MCP Server (Python) <-> Proxy Server (Node) <-> UXP Plug
 | Component | Location | Status |
 |-----------|----------|--------|
 | Proxy server (Node) | `tools/adb-mcp/adb-proxy-socket/` | Installed (`npm install` done) |
-| MCP servers (Python) | `tools/adb-mcp/mcp/` | BLOCKED — needs Python 3.10+ (system has 3.9.6) |
+| MCP servers (Python) | `tools/adb-mcp/mcp/` | INSTALLED via Python 3.13 (`/opt/homebrew/bin/python3.13`) |
 | UXP plugins | `tools/adb-mcp/uxp/` | Not yet loaded into Adobe apps |
 | CEP plugins (AE/AI) | `tools/adb-mcp/cep/` | Not yet symlinked |
 
-## Unblocking Step: Python Upgrade
+## Python Version Note
 
-The MCP server requires Python 3.10+ (pydantic-core dependency). Current
-system Python is 3.9.6. To unblock:
+The MCP servers require Python 3.10+ (pydantic-core dependency). System
+Python is 3.9.6 but Homebrew Python 3.13 is installed at
+`/opt/homebrew/bin/python3.13`. The `uv run --python` flag was used to
+target the correct version during install. Python 3.14 is too new
+(pydantic-core has no pre-built wheels for it yet).
 
-```bash
-# Option 1: Install via Homebrew
-brew install python@3.12
-
-# Option 2: Install via pyenv
-pyenv install 3.12
-pyenv global 3.12
-
-# Then install MCP servers
-cd ~/famtastic/tools/adb-mcp/mcp
-uv run mcp install --with fonttools --with python-socketio --with mcp \
-  --with requests --with websocket-client --with numpy ps-mcp.py
-```
+**IMPORTANT:** Do NOT use Python 3.14 (`/opt/homebrew/bin/python3`) for
+adb-mcp. Use Python 3.13 (`/opt/homebrew/bin/python3.13`) explicitly.
 
 ## Setup Steps (after Python upgrade)
 
@@ -75,11 +67,11 @@ node proxy.js
 5. In the Adobe app, open the plugin panel and click **Connect**
 
 ### 4. Claude Desktop config
-After Python upgrade and MCP install, the config at
-`~/Library/Application Support/Claude/claude_desktop_config.json`
-will be auto-updated by `uv run mcp install`. The final config
-should include `ps-mcp` and/or `pr-mcp` alongside the existing
-codex servers.
+The `uv run mcp install` command auto-updated the config at
+`~/Library/Application Support/Claude/claude_desktop_config.json`.
+It now includes `Adobe Photoshop MCP Server` and `Adobe Premiere MCP Server`
+alongside the existing codex-official and codex-bridge servers.
+Restart Claude Desktop to pick up the new servers.
 
 ### 5. Claude Code (if supported)
 ```bash

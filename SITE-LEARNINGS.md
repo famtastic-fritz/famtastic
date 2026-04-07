@@ -757,7 +757,7 @@ Side-by-side Claude vs Codex comparison with version safety.
 
 ### Adobe MCP (adb-mcp) — Desktop App Control
 - **Location:** `tools/adb-mcp/` (cloned from github.com/mikechambers/adb-mcp)
-- **Status:** Proxy server installed, MCP server needs Python 3.10+ (system has 3.9.6)
+- **Status:** INSTALLED — Proxy server (Node) + MCP servers (Python 3.13 via Homebrew). Claude Desktop config auto-updated.
 - **Apps supported:** Photoshop, Premiere Pro, InDesign, AfterEffects, Illustrator
 - **Architecture:** MCP Server (Python) <-> Proxy Server (Node ws://localhost:3001) <-> UXP Plugin <-> Adobe App
 - **Docs:** `docs/adobe-mcp-integration.md`
