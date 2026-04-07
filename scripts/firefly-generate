@@ -81,6 +81,17 @@ def download_image(url, output_path):
     print(f"  Saved: {output_path} ({size // 1024} KB)")
     return size
 
+def log_telemetry(data):
+    """Log media operation to Studio telemetry endpoint (best-effort)."""
+    try:
+        telemetry_url = os.environ.get("STUDIO_URL", "http://localhost:3334") + "/api/media/log"
+        body = json.dumps(data).encode()
+        req = urllib.request.Request(telemetry_url, data=body, method="POST")
+        req.add_header("Content-Type", "application/json")
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass  # Telemetry is best-effort — don't fail the generation
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Generate images via Adobe Firefly API")
@@ -135,8 +146,20 @@ def main():
     result, elapsed = generate_image(args.prompt, token, client_id, args.width, args.height, args.style_ref)
     if result and result.get("outputs"):
         url = result["outputs"][0]["image"]["url"]
-        download_image(url, args.output)
+        size = download_image(url, args.output)
         print(f"  Generated in {elapsed:.1f}s")
+        log_telemetry({
+            "provider": "adobe-firefly",
+            "model": "firefly-image-3",
+            "operation": "generate",
+            "cost_usd": 0,
+            "credits_used": 1,
+            "generation_time_seconds": round(elapsed, 1),
+            "file_size_bytes": size,
+            "resolution": f"{args.width}x{args.height}",
+            "prompt": args.prompt,
+            "style_reference_used": bool(args.style_ref),
+        })
     else:
         print("Generation failed.", file=sys.stderr)
         sys.exit(1)

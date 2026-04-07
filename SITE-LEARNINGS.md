@@ -743,6 +743,26 @@ Side-by-side Claude vs Codex comparison with version safety.
 - **Automation Pattern:** Adobe uses Spectrum Web Components with deep shadow DOM. Must use recursive `walkShadow(root, depth)` to find SP-BUTTON/SP-ACTION-BUTTON elements. Textarea requires native value setter + input/change events. Generate button requires full pointer event sequence. File downloads blocked by Chrome extension (use screenshots).
 - **API:** Enterprise only ($1K+/mo). Web app is the viable automation path via Chrome MCP.
 
+### AI Media Telemetry System
+- **Module:** `site-studio/lib/media-telemetry.js`
+- **Functions:** `logMediaOperation(data)`, `getMediaUsage(options)`
+- **Per-site log:** `sites/{tag}/media-telemetry.jsonl`
+- **Global log:** `intelligence/media-usage.jsonl`
+- **Endpoints:** `POST /api/media/log`, `GET /api/media/usage`, `GET /api/media/usage/:provider`
+- **Data captured:** provider, model, operation type, cost_usd, credits_used, credits_remaining, tokens_in/out, generation_time, file_size, resolution, prompt, style_reference_used, batch_size, fallback tracking
+- **Credit alerts:** Warning at 20%, alert at 10% of provider allocation
+- **Recommendations:** Auto-generated cost comparisons between providers
+- **Compaction:** Auto-compacts at 5000 entries (keeps most recent)
+- **Integration:** Wired into `scripts/firefly-generate` and `POST /api/stock-apply`. Future: wire into Google Imagen and Leonardo scripts.
+
+### Adobe MCP (adb-mcp) — Desktop App Control
+- **Location:** `tools/adb-mcp/` (cloned from github.com/mikechambers/adb-mcp)
+- **Status:** Proxy server installed, MCP server needs Python 3.10+ (system has 3.9.6)
+- **Apps supported:** Photoshop, Premiere Pro, InDesign, AfterEffects, Illustrator
+- **Architecture:** MCP Server (Python) <-> Proxy Server (Node ws://localhost:3001) <-> UXP Plugin <-> Adobe App
+- **Docs:** `docs/adobe-mcp-integration.md`
+- **Pipeline role:** Post-processing generated images (resize, enhance, composite) before Studio assembly
+
 ### Integration Architecture (planned)
 - Image Browser tab: add Firefly as provider alongside Unsplash/Pexels
 - `POST /api/firefly/generate` server endpoint for Studio integration

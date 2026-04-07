@@ -3480,6 +3480,21 @@ app.post('/api/stock-apply', async (req, res) => {
     };
     writeSpec(spec);
 
+    // Log telemetry
+    const fileSize = fs.existsSync(outputFile) ? fs.statSync(outputFile).size : 0;
+    logMediaOperation({
+      provider: provider || 'stock',
+      model: provider || 'unsplash',
+      operation: 'generate',
+      site: TAG,
+      cost_usd: 0,
+      credits_used: 0,
+      generation_time_seconds: 0,
+      file_size_bytes: fileSize,
+      prompt: query || '',
+      siteDir: SITE_DIR(),
+    });
+
     res.json({ success: true, slot_id, src: `assets/stock/${slot_id}.jpg`, updated });
   } catch (err) {
     console.error('[stock-apply]', err.message);
@@ -4139,6 +4154,32 @@ app.post('/api/compare/adopt', (req, res) => {
   }
 
   res.status(400).json({ error: 'side must be "claude" or "codex"' });
+});
+
+// --- Media Telemetry API ---
+const { logMediaOperation, getMediaUsage } = require('./lib/media-telemetry');
+
+app.post('/api/media/log', (req, res) => {
+  const data = req.body;
+  if (!data || !data.provider) return res.status(400).json({ error: 'provider required' });
+  data.site = data.site || TAG;
+  data.siteDir = SITE_DIR();
+  const entry = logMediaOperation(data);
+  res.json({ success: true, entry });
+});
+
+app.get('/api/media/usage', (req, res) => {
+  const { provider, site } = req.query;
+  const options = {};
+  if (provider) options.provider = provider;
+  if (site) options.site = site;
+  // Use global log for cross-site view, site log if site-specific
+  if (site) options.siteDir = path.join(__dirname, '..', 'sites', site);
+  res.json(getMediaUsage(options));
+});
+
+app.get('/api/media/usage/:provider', (req, res) => {
+  res.json(getMediaUsage({ provider: req.params.provider }));
 });
 
 // --- Verification API ---

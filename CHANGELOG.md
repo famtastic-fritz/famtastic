@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-07 — Adobe MCP integration + AI media telemetry system
+
+Cloned adb-mcp (Photoshop/Premiere/InDesign/AfterEffects/Illustrator MCP control) to tools/adb-mcp. Proxy server installed (Node), MCP server blocked by Python 3.9 (needs 3.10+). Integration docs at docs/adobe-mcp-integration.md. Built AI media telemetry system: site-studio/lib/media-telemetry.js provides logMediaOperation() and getMediaUsage() with per-site + global JSONL logging, credit alerts at 20%/10% thresholds, 7-day cost trends, provider comparison recommendations, and auto-compaction at 5000 entries. Three endpoints added: POST /api/media/log, GET /api/media/usage, GET /api/media/usage/:provider. Telemetry wired into scripts/firefly-generate and the stock-apply endpoint. 81 tests passing.
+
 ## 2026-04-07 — Adobe Firefly web automation via Chrome + complete three-provider comparison
 
 Automated Adobe Firefly web app via Claude-in-Chrome MCP, driving Spectrum shadow DOM components (recursive walkShadow pattern for SP-BUTTON, SP-ACTION-BUTTON, textarea). Generated 4 shoe images with Firefly Image 3 at 9/10 quality. Key discoveries: Firefly Image 5 (preview) available, style reference feature confirmed in Composition panel, video generation included in CC plan ("Generate Media" + "Edit video beta"), partner models integrated (Gemini 3.1/Nano Banana 2 on homepage), custom model training accessible, 3800/4000 premium credits available. Shadow DOM automation patterns documented for future Firefly integration.
