@@ -14,6 +14,7 @@ const {
   extractSlotsFromPage,
   classifyRequest,
   extractPagesFromBrief,
+  syncContentFieldsFromHtml,
   extractBrandColors,
   labelToFilename,
   SLOT_DIMENSIONS,
@@ -285,6 +286,23 @@ describe('classifyRequest', () => {
     expect(classifyRequest('add a testimonial section', withBrief)).toBe('layout_update');
     expect(classifyRequest('remove the sidebar', withBrief)).toBe('layout_update');
   });
+
+  // Content update classifier — Phase 0 widened regex
+  it('classifies content edits with words between verb and field', () => {
+    expect(classifyRequest('change the contact phone number to 555-1234', withBrief)).toBe('content_update');
+    expect(classifyRequest('update the contact email to test@test.com', withBrief)).toBe('content_update');
+    expect(classifyRequest('change the Tarot reading 60-minute price from $125 to $145', withBrief)).toBe('content_update');
+    expect(classifyRequest('change the first testimonial name to Sandra K.', withBrief)).toBe('content_update');
+    expect(classifyRequest('change all booking buttons to say Discover Your Path', withBrief)).toBe('content_update');
+    expect(classifyRequest('add the address: 742 Crescent Moon Lane', withBrief)).toBe('content_update');
+    expect(classifyRequest('add business hours: Tuesday-Saturday 10am-7pm', withBrief)).toBe('content_update');
+  });
+
+  it('correctly routes structural adds to layout_update', () => {
+    expect(classifyRequest('add a new service section', withBrief)).toBe('layout_update');
+    expect(classifyRequest('remove the hero section', withBrief)).toBe('layout_update');
+    expect(classifyRequest('add a banner at the top', withBrief)).toBe('layout_update');
+  });
 });
 
 // --- extractPagesFromBrief ---
@@ -338,6 +356,15 @@ describe('extractPagesFromBrief', () => {
     };
     const pages = extractPagesFromBrief(brief);
     expect(pages).toEqual(['home']);
+  });
+});
+
+// --- syncContentFieldsFromHtml ---
+describe('syncContentFieldsFromHtml', () => {
+  // Note: syncContentFieldsFromHtml reads from disk, so we test the underlying
+  // cheerio parsing logic by verifying the exported function exists and has correct type
+  it('is exported and callable', () => {
+    expect(typeof syncContentFieldsFromHtml).toBe('function');
   });
 });
 

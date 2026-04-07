@@ -62,6 +62,8 @@ function readSpec() {
     try {
       _specCache = JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8'));
       _specCacheTag = TAG;
+      // Initialize revision counter from spec
+      _specRevision = _specCache._revision || 0;
       // Lightweight schema check — warn on missing core fields but don't crash
       if (_specCache && typeof _specCache === 'object') {
         if (!_specCache.tag) console.warn(`[spec] ${TAG}: missing 'tag' field`);
@@ -118,11 +120,37 @@ function readSpec() {
   return _specCache;
 }
 
-function writeSpec(spec) {
+// Spec revision counter — monotonically increasing, persisted in spec._revision
+let _specRevision = 0;
+
+function writeSpec(spec, options = {}) {
+  const { source = 'unknown', mutationLevel, mutationTarget, oldValue, newValue } = options;
+
+  // Increment revision
+  _specRevision++;
+  spec._revision = _specRevision;
+  spec._last_modified = new Date().toISOString();
+
   _specCache = spec;
   _specCacheTag = TAG;
   fs.mkdirSync(SITE_DIR(), { recursive: true });
   fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+
+  // Append to mutation log if mutation details provided
+  if (mutationLevel && mutationTarget) {
+    const mutationLog = path.join(SITE_DIR(), 'mutations.jsonl');
+    const entry = {
+      timestamp: new Date().toISOString(),
+      level: mutationLevel,
+      target_id: mutationTarget,
+      action: options.action || 'update',
+      old_value: oldValue,
+      new_value: newValue,
+      source,
+      revision: _specRevision,
+    };
+    try { fs.appendFileSync(mutationLog, JSON.stringify(entry) + '\n'); } catch {}
+  }
 }
 
 function invalidateSpecCache() {
@@ -2803,6 +2831,94 @@ function extractAndRegisterSlots(pages) {
   return allSlots.length;
 }
 
+/**
+ * Sync content fields from generated HTML back to spec.json.
+ * Reads data-field-id and data-field-type attributes from the HTML.
+ * Spec is authoritative — this only ADDS new fields Claude generated
+ * and UPDATES values for fields that don't exist in spec yet.
+ * Fields already in spec.content are NOT overwritten (user edits are preserved).
+ */
+function syncContentFieldsFromHtml(pages) {
+  const spec = readSpec();
+  if (!spec.content) spec.content = {};
+
+  const pagesToScan = pages || listPages();
+  let totalFields = 0;
+  let newFields = 0;
+
+  for (const page of pagesToScan) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+    const $ = cheerio.load(html);
+
+    if (!spec.content[page]) spec.content[page] = { fields: [] };
+    const existingFieldIds = new Set((spec.content[page].fields || []).map(f => f.field_id));
+
+    // Find all elements with data-field-id
+    $('[data-field-id]').each((_, el) => {
+      const fieldId = $(el).attr('data-field-id');
+      const fieldType = $(el).attr('data-field-type') || 'text';
+      if (!fieldId) return;
+
+      totalFields++;
+
+      // Extract value based on field type
+      let value;
+      if (fieldType === 'phone') {
+        value = $(el).text().trim();
+      } else if (fieldType === 'email') {
+        const href = $(el).attr('href') || '';
+        value = href.startsWith('mailto:') ? href.replace('mailto:', '') : $(el).text().trim();
+      } else if (fieldType === 'link') {
+        value = { text: $(el).text().trim(), href: $(el).attr('href') || '#' };
+      } else if (fieldType === 'price') {
+        const text = $(el).text().trim();
+        const match = text.match(/\$[\d,.]+/);
+        value = match ? match[0] : text;
+      } else if (fieldType === 'address') {
+        value = $(el).text().trim().replace(/\s+/g, ' ');
+      } else if (fieldType === 'hours') {
+        value = $(el).text().trim().replace(/\s+/g, ' ');
+      } else {
+        value = $(el).text().trim();
+      }
+
+      // Only add if not already in spec (spec is authoritative)
+      if (!existingFieldIds.has(fieldId)) {
+        spec.content[page].fields.push({
+          field_id: fieldId,
+          type: fieldType,
+          value,
+          element: el.tagName,
+          editable: true,
+          scope: ['phone', 'email', 'address', 'hours'].includes(fieldType) ? 'global' : 'local',
+        });
+        existingFieldIds.add(fieldId);
+        newFields++;
+      }
+    });
+
+    // Also extract section IDs for structure tracking
+    $('[data-section-id]').each((_, el) => {
+      const sectionId = $(el).attr('data-section-id');
+      const sectionType = $(el).attr('data-section-type') || 'generic';
+      if (!spec.content[page].sections) spec.content[page].sections = [];
+      const existingSections = new Set(spec.content[page].sections.map(s => s.section_id));
+      if (!existingSections.has(sectionId)) {
+        spec.content[page].sections.push({
+          section_id: sectionId,
+          section_type: sectionType,
+        });
+      }
+    });
+  }
+
+  writeSpec(spec);
+  console.log(`[content] Synced ${totalFields} field(s) across ${pagesToScan.length} page(s) (${newFields} new)`);
+  return totalFields;
+}
+
 // Legacy wrapper — kept for backward compatibility during transition
 function autoDetectMediaSpecs(html) {
   // If HTML has data-slot-id attributes, use new slot extraction
@@ -3792,15 +3908,22 @@ function classifyRequest(message, spec) {
   // Restructure — convert to multi-page or change page structure
   if (lower.match(/\b(break\s+(\w+\s+)?into\s+(\d+\s+)?pages|separate\s+pages|split\s+(\w+\s+)?into\s+(\d+\s+)?pages|make\s+(this\s+|it\s+)?multi[- ]?page|restructure\s+the\s+site|change\s+(the\s+)?page\s+structure|convert\s+to\s+multi[- ]?page|want\s+separate\s+pages|need\s+separate\s+pages)\b/)) return 'restructure';
 
+  // Content update signals — text/copy changes without layout (HIGHER precedence than restyle/bug_fix/layout)
+  // Pattern 1: action verb + optional words + content field type (not structural add/remove)
+  if (lower.match(/\b(change|update|replace|edit|set|fix|correct|modify)\b.*?\b(phone|email|address|name|title|heading|paragraph|description|hours|price|number|text|label|tagline|slogan|testimonial|subtitle|motto|cta)\b/) && !lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|grid)\b/)) return 'content_update';
+  // Pattern 2: "the X should be..." / "make the X say..." / "buttons to say"
+  if (lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|buttons?)\b.*?\b(should\s+be|to\s+be|to\s+say|say|read)\b/)) return 'content_update';
+  // Pattern 3: "X to Y" with field type present
+  if (lower.match(/\b(change|update|set)\b/) && lower.match(/\bto\b/) && lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|button)\b/)) return 'content_update';
+  // Pattern 4: "add the address/hours/phone" — adding a content VALUE (not a structural section)
+  if (lower.match(/\b(add)\s+(the\s+|my\s+|our\s+|a\s+)?(business\s+)?(address|hours|phone|email|number)\b/) && !lower.match(/\b(section|form|block|widget)\b/)) return 'content_update';
+
   // Restyle signals — about overall vibe, not specific elements
   if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
   if (lower.match(/\b(more\s+(premium|minimal|bold|elegant|modern|playful|professional|corporate|clean|edgy))\b/) && !lower.match(/\b(header|footer|button|section|nav|hero|card)\b/)) return 'restyle';
 
   // Bug fix signals
-  if (lower.match(/\b(broken|bug|fix|doesn't\s+work|not\s+working|wrong|misaligned|overlapping|overflow)\b/)) return 'bug_fix';
-
-  // Content update signals — text/copy changes without layout
-  if (lower.match(/\b(change|update|replace|edit)\s+(the\s+)?(text|copy|phone|email|address|name|title|heading|paragraph|description|hours|price)\b/)) return 'content_update';
+  if (lower.match(/\b(broken|bug|doesn't\s+work|not\s+working|misaligned|overlapping|overflow)\b/)) return 'bug_fix';
 
   // Layout update — structural changes to specific elements
   if (lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|button|form|nav|header|footer|sidebar|testimonial|feature|grid)\b/)) return 'layout_update';
@@ -3959,6 +4082,31 @@ function buildPromptContext(requestType, spec, userMessage) {
     conversationHistory = '\nRECENT CONVERSATION (for context — the user may reference these exchanges):\n' + recentConvo;
   }
 
+  // Content field context — inject existing content values so they persist across rebuilds
+  let contentFieldContext = '';
+  const specContent = spec.content || {};
+  const pageContent = specContent[resolvedPage];
+  if (pageContent && pageContent.fields && pageContent.fields.length > 0) {
+    const fieldLines = pageContent.fields
+      .filter(f => f.editable !== false)
+      .map(f => {
+        const val = typeof f.value === 'string' ? f.value : JSON.stringify(f.value);
+        return `  - data-field-id="${f.field_id}" type="${f.type}" → ${val}`;
+      }).join('\n');
+    contentFieldContext = `\nCONTENT FIELDS (use these EXACT values — they have been edited by the user):\n${fieldLines}\nEvery field listed above MUST appear in the output HTML with its data-field-id attribute preserved.`;
+  }
+
+  // Global fields — fields that appear across all pages (phone, email, business name)
+  let globalFieldContext = '';
+  const globalFields = spec.global_fields || [];
+  if (globalFields.length > 0) {
+    const gLines = globalFields.map(f => {
+      const val = typeof f.value === 'string' ? f.value : JSON.stringify(f.value);
+      return `  - ${f.field_id} (${f.type}): ${val}`;
+    }).join('\n');
+    globalFieldContext = `\nGLOBAL FIELDS (appear on every page — use these exact values):\n${gLines}`;
+  }
+
   // Core anti-cookie-cutter rules
   const systemRules = `RULES:
 - Never default to a generic business template layout
@@ -3966,7 +4114,17 @@ function buildPromptContext(requestType, spec, userMessage) {
 - Interpret the site as a coherent brand system, not isolated sections
 - Avoid filler copy and stock structure unless justified
 - Every section should feel intentional for THIS specific business/project
-- If the user's request conflicts with the brief, flag it — don't silently override`;
+- If the user's request conflicts with the brief, flag it — don't silently override
+
+CONTENT IDENTITY MARKERS (CRITICAL):
+- Every <section> MUST include data-section-id="{unique-id}" and data-section-type="{type}" attributes
+- Every editable content element (headings, paragraphs with key info, links, phone numbers, emails, prices, addresses, hours, CTAs) MUST include data-field-id="{unique-id}" and data-field-type="{type}" attributes
+- Field types: text, phone, email, address, hours, price, link, testimonial
+- Field IDs should be semantic: "phone", "email", "hero-heading", "cta-primary", "testimonial-1", "price-tarot-30"
+- These attributes are stable anchors for content editing — do NOT omit them
+- Phone numbers: render as <a href="tel:..." data-field-id="phone" data-field-type="phone">
+- Emails: render as <a href="mailto:..." data-field-id="email" data-field-type="email">
+- Prices: include data-field-id like "price-tarot-30" data-field-type="price"`;
 
   // Blueprint context — prevents rebuild regression
   const blueprintContext = buildBlueprintContext(currentPage);
@@ -3987,7 +4145,7 @@ function buildPromptContext(requestType, spec, userMessage) {
   // Load template context for single-page edits (so Claude copies chrome from template)
   const templateContext = loadTemplateContext();
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage };
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage };
 }
 
 function summarizeHtml(html) {
@@ -4489,6 +4647,15 @@ ${sessionContext}
 ${brainContext}
 ${conversationHistory}
 ${slotMappingContext || ''}
+${(() => {
+  const pageContent = (spec.content || {})[page];
+  if (!pageContent || !pageContent.fields || pageContent.fields.length === 0) return '';
+  const lines = pageContent.fields.filter(f => f.editable !== false).map(f => {
+    const val = typeof f.value === 'string' ? f.value : JSON.stringify(f.value);
+    return `  - data-field-id="${f.field_id}" type="${f.type}" → ${val}`;
+  }).join('\n');
+  return `\nCONTENT FIELDS (preserve these exact values with data-field-id attributes):\n${lines}`;
+})()}
 
 ${systemRules}
 
@@ -4852,6 +5019,9 @@ function runPostProcessing(ws, writtenPages, options = {}) {
 
   // Step 2: Reapply saved slot mappings (images survive rebuilds)
   reapplySlotMappings(writtenPages);
+
+  // Step 2.5: Sync content fields from generated HTML to spec (new fields only — spec is authoritative)
+  syncContentFieldsFromHtml(writtenPages);
 
   // Step 3: Metadata
   updateBlueprint(writtenPages);
@@ -5961,12 +6131,141 @@ function tryDeterministicHandler(ws, userMessage, currentPage) {
     }
   }
 
+  // --- Field-aware content replacement (uses spec.content data-field-id system) ---
+  if (!handled) {
+    const spec = readSpec();
+    const allContent = spec.content || {};
+
+    // Detect which field type the user is editing
+    const FIELD_KEYWORDS = {
+      phone: /\b(phone|number|call|tel)\b/,
+      email: /\b(email|e-mail|mail)\b/,
+      address: /\b(address|location|street|suite)\b/,
+      hours: /\b(hours|schedule|open|closed|days)\b/,
+      price: /\b(price|cost|rate|\$\d+)\b/,
+      testimonial: /\b(testimonial|review|quote)\b/,
+    };
+
+    let detectedFieldType = null;
+    for (const [type, regex] of Object.entries(FIELD_KEYWORDS)) {
+      if (regex.test(lower)) { detectedFieldType = type; break; }
+    }
+
+    // Extract the new value from the message
+    const newValueMatch = userMessage.match(/\bto\s+["']?(.+?)["']?\s*$/i) ||
+      userMessage.match(/:\s*(.+)$/i) ||
+      userMessage.match(/\bsay\s+["']?(.+?)["']?\s*$/i) ||
+      userMessage.match(/\bshould\s+be\s+["']?(.+?)["']?\s*$/i);
+
+    if (detectedFieldType && newValueMatch) {
+      const newValue = newValueMatch[1].trim().replace(/^["']|["']$/g, '');
+
+      // Determine which pages to edit
+      const crossPage = lower.match(/\b(all\s+pages|every\s+page|everywhere|across\s+.*?pages)\b/);
+      const pagesToEdit = crossPage ? listPages() : [currentPage];
+
+      let totalChanges = 0;
+      const changeLog = [];
+
+      for (const page of pagesToEdit) {
+        const pageContent = allContent[page];
+        if (!pageContent || !pageContent.fields) continue;
+
+        // Find matching field
+        const field = pageContent.fields.find(f =>
+          f.type === detectedFieldType ||
+          f.field_id.includes(detectedFieldType)
+        );
+        if (!field) continue;
+
+        const oldValue = typeof field.value === 'string' ? field.value : (field.value?.text || JSON.stringify(field.value));
+
+        // Read page HTML
+        const pagePath = path.join(DIST_DIR(), page);
+        if (!fs.existsSync(pagePath)) continue;
+        let html = fs.readFileSync(pagePath, 'utf8');
+        const $ = cheerio.load(html);
+
+        // Method 1: Find by data-field-id attribute (preferred — stable anchor per Codex review)
+        const fieldEl = $(`[data-field-id="${field.field_id}"]`);
+        if (fieldEl.length > 0) {
+          // Update text content
+          if (detectedFieldType === 'phone') {
+            fieldEl.text(newValue);
+            // Also update tel: href
+            if (fieldEl.attr('href') && fieldEl.attr('href').startsWith('tel:')) {
+              const digits = newValue.replace(/\D/g, '');
+              fieldEl.attr('href', `tel:+1${digits}`);
+            }
+          } else if (detectedFieldType === 'email') {
+            fieldEl.text(newValue);
+            if (fieldEl.attr('href') && fieldEl.attr('href').startsWith('mailto:')) {
+              fieldEl.attr('href', `mailto:${newValue}`);
+            }
+          } else {
+            fieldEl.text(newValue);
+          }
+          html = $.html();
+          fs.writeFileSync(pagePath, html);
+          changeLog.push(`${page}: ${field.field_id} → "${newValue}"`);
+          totalChanges++;
+        } else if (html.includes(oldValue)) {
+          // Method 2: Fallback — find by old value text match
+          const escaped = oldValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          html = html.replace(new RegExp(escaped, 'g'), newValue);
+
+          // Also update tel:/mailto: links if applicable
+          if (detectedFieldType === 'phone') {
+            const oldDigits = oldValue.replace(/\D/g, '');
+            const newDigits = newValue.replace(/\D/g, '');
+            if (oldDigits.length >= 10) {
+              html = html.replace(new RegExp(`tel:\\+?1?${oldDigits}`, 'g'), `tel:+1${newDigits}`);
+            }
+          } else if (detectedFieldType === 'email') {
+            html = html.replace(new RegExp(`mailto:${oldValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'), `mailto:${newValue}`);
+          }
+
+          fs.writeFileSync(pagePath, html);
+          changeLog.push(`${page}: ${field.field_id} → "${newValue}" (text match fallback)`);
+          totalChanges++;
+        }
+
+        // Update spec.content
+        field.value = newValue;
+      }
+
+      if (totalChanges > 0) {
+        writeSpec(spec);
+
+        // Log mutation
+        const mutationLog = path.join(SITE_DIR(), 'mutations.jsonl');
+        const mutation = {
+          timestamp: new Date().toISOString(),
+          level: 'field',
+          target_id: detectedFieldType,
+          action: 'update',
+          old_value: changeLog[0]?.split('→')[0]?.trim() || '',
+          new_value: newValue,
+          source: 'content_update',
+          pages_affected: pagesToEdit.filter((_, i) => i < totalChanges),
+          revision: spec.version || 1,
+        };
+        try { fs.appendFileSync(mutationLog, JSON.stringify(mutation) + '\n'); } catch {}
+
+        description = totalChanges === 1
+          ? `Updated ${detectedFieldType}: ${changeLog[0]}`
+          : `Updated ${detectedFieldType} on ${totalChanges} page(s):\n${changeLog.map(c => `- ${c}`).join('\n')}`;
+        handled = true;
+      }
+    }
+  }
+
   if (handled) {
-    if (description && !description.includes('Replaced')) {
+    if (description && !description.includes('Replaced') && !description.includes('Updated')) {
       // CSS change — write it back
       fs.writeFileSync(cssPath, css);
     }
-    ws.send(JSON.stringify({ type: 'assistant', content: `**Direct edit applied:** ${description}\n\nNo AI call needed — this was a deterministic CSS/HTML change.` }));
+    ws.send(JSON.stringify({ type: 'assistant', content: `**Direct edit applied:** ${description}\n\nNo AI call needed — this was a deterministic change.` }));
     ws.send(JSON.stringify({ type: 'reload-preview' }));
     appendConvo({ role: 'assistant', content: `Direct edit: ${description}`, at: new Date().toISOString() });
     saveStudio();
@@ -5997,7 +6296,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
   const prevPage = currentPage;
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
 
   // If buildPromptContext resolved a different page, update currentPage explicitly here
   if (resolvedPage !== prevPage) {
@@ -6087,6 +6386,8 @@ ${brainContext}
 ${conversationHistory}
 ${blueprintContext}
 ${slotMappingContext}
+${contentFieldContext || ''}
+${globalFieldContext || ''}
 ${templateContext || ''}
 
 SITE SPEC:
@@ -8448,7 +8749,7 @@ function broadcastSessionStatus(ws) {
 
 // --- Exports for testing ---
 module.exports = {
-  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest, extractPagesFromBrief,
+  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest, extractPagesFromBrief, syncContentFieldsFromHtml,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
