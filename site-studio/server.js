@@ -3745,6 +3745,205 @@ app.get('/api/build-metrics', (req, res) => {
   } catch { res.json([]); }
 });
 
+// --- Component Library API ---
+
+// List all components in the library
+app.get('/api/components', (req, res) => {
+  const libPath = path.join(HUB_ROOT, 'components', 'library.json');
+  if (!fs.existsSync(libPath)) return res.json({ version: '1.0', components: [] });
+  try {
+    const lib = JSON.parse(fs.readFileSync(libPath, 'utf8'));
+    res.json(lib);
+  } catch { res.json({ version: '1.0', components: [] }); }
+});
+
+// Get a single component by ID
+app.get('/api/components/:id', (req, res) => {
+  const compPath = path.join(HUB_ROOT, 'components', req.params.id, 'component.json');
+  if (!fs.existsSync(compPath)) return res.status(404).json({ error: 'Component not found' });
+  try {
+    res.json(JSON.parse(fs.readFileSync(compPath, 'utf8')));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Export a section from the current site as a component
+app.post('/api/components/export', (req, res) => {
+  const { page, section_id, component_id } = req.body;
+  if (!page || !component_id) return res.status(400).json({ error: 'page and component_id required' });
+
+  const pagePath = path.join(DIST_DIR(), page);
+  if (!fs.existsSync(pagePath)) return res.status(404).json({ error: 'Page not found' });
+
+  const html = fs.readFileSync(pagePath, 'utf8');
+  const $ = cheerio.load(html);
+
+  // Find the section by data-section-id or by order
+  let section;
+  if (section_id) {
+    section = $(`[data-section-id="${section_id}"]`);
+  }
+  if (!section || section.length === 0) {
+    // Fallback: find <section> or main content area
+    section = $('section').first();
+  }
+  if (!section || section.length === 0) {
+    return res.status(404).json({ error: 'Section not found' });
+  }
+
+  const sectionHtml = $.html(section);
+
+  // Extract CSS variables referenced in the section
+  const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+  const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
+  const varRefs = sectionHtml.match(/var\(--[^)]+\)/g) || [];
+  const cssVariables = {};
+  for (const ref of varRefs) {
+    const varName = ref.match(/--[^)]+/)?.[0];
+    if (!varName) continue;
+    const valMatch = css.match(new RegExp(`${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;]+)`));
+    if (valMatch) cssVariables[varName] = valMatch[1].trim();
+  }
+
+  // Extract fields from the section
+  const fields = [];
+  $('[data-field-id]', section).each((_, el) => {
+    fields.push({
+      id: $(el).attr('data-field-id'),
+      type: $(el).attr('data-field-type') || 'text',
+      default_value: $(el).text().trim(),
+    });
+  });
+
+  // Extract slots
+  const slots = [];
+  $('[data-slot-id]', section).each((_, el) => {
+    slots.push({
+      slot_id: $(el).attr('data-slot-id'),
+      role: $(el).attr('data-slot-role') || 'generic',
+    });
+  });
+
+  const component = {
+    component_id: component_id,
+    name: component_id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    type: section.attr('data-section-type') || 'generic',
+    version: '1.0',
+    created_from: TAG,
+    created_at: new Date().toISOString(),
+    html_template: sectionHtml,
+    css: { variables: cssVariables },
+    content_fields: fields,
+    slots,
+    usage_count: 1,
+    tags: [],
+  };
+
+  // Write component to filesystem
+  const compDir = path.join(HUB_ROOT, 'components', component_id);
+  fs.mkdirSync(compDir, { recursive: true });
+  fs.writeFileSync(path.join(compDir, 'component.json'), JSON.stringify(component, null, 2));
+  fs.writeFileSync(path.join(compDir, `${component_id}.html`), sectionHtml);
+
+  // Update library index
+  const libPath = path.join(HUB_ROOT, 'components', 'library.json');
+  let lib = { version: '1.0', components: [] };
+  if (fs.existsSync(libPath)) {
+    try { lib = JSON.parse(fs.readFileSync(libPath, 'utf8')); } catch {}
+  }
+  lib.components = lib.components.filter(c => c.component_id !== component_id);
+  lib.components.push({
+    component_id,
+    name: component.name,
+    type: component.type,
+    version: '1.0',
+    created_from: TAG,
+    field_count: fields.length,
+    slot_count: slots.length,
+  });
+  lib.last_updated = new Date().toISOString();
+  fs.writeFileSync(libPath, JSON.stringify(lib, null, 2));
+
+  console.log(`[components] Exported "${component_id}" from ${page} (${fields.length} fields, ${slots.length} slots)`);
+  res.json({ success: true, component });
+});
+
+// Content fields API — used by editable page view (Phase 2)
+app.get('/api/content-fields/:page', (req, res) => {
+  const page = req.params.page;
+  if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
+  const spec = readSpec();
+  const fields = spec.content?.[page]?.fields || [];
+  res.json({ page, fields, total: fields.length });
+});
+
+// Update a single content field — surgical edit endpoint
+app.post('/api/content-field', (req, res) => {
+  const { page, field_id, new_value } = req.body;
+  if (!page || !field_id || new_value === undefined) {
+    return res.status(400).json({ error: 'page, field_id, and new_value required' });
+  }
+
+  const spec = readSpec();
+  const field = spec.content?.[page]?.fields?.find(f => f.field_id === field_id);
+  if (!field) return res.status(404).json({ error: 'Field not found in spec.content' });
+
+  const oldValue = typeof field.value === 'string' ? field.value : (field.value?.text || JSON.stringify(field.value));
+
+  // Surgical HTML replacement
+  const pagePath = path.join(DIST_DIR(), page);
+  if (!fs.existsSync(pagePath)) return res.status(404).json({ error: 'Page HTML not found' });
+
+  let html = fs.readFileSync(pagePath, 'utf8');
+  const $ = cheerio.load(html);
+
+  // Try data-field-id selector first
+  const el = $(`[data-field-id="${field_id}"]`);
+  if (el.length > 0) {
+    el.text(new_value);
+    // Update href for phone/email
+    if (field.type === 'phone' && el.attr('href')?.startsWith('tel:')) {
+      el.attr('href', `tel:+1${new_value.replace(/\D/g, '')}`);
+    } else if (field.type === 'email' && el.attr('href')?.startsWith('mailto:')) {
+      el.attr('href', `mailto:${new_value}`);
+    }
+    fs.writeFileSync(pagePath, $.html());
+  } else if (html.includes(oldValue)) {
+    // Fallback: text match
+    html = html.replace(new RegExp(oldValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), new_value);
+    fs.writeFileSync(pagePath, html);
+  } else {
+    return res.status(404).json({ error: `Value "${oldValue}" not found in HTML` });
+  }
+
+  // Update spec
+  field.value = new_value;
+  writeSpec(spec, {
+    source: 'content_field_api',
+    mutationLevel: 'field',
+    mutationTarget: field_id,
+    oldValue,
+    newValue: new_value,
+  });
+
+  res.json({ success: true, field_id, old_value: oldValue, new_value });
+});
+
+// Research files API — serves research markdown for Phase 6 workspace
+app.get('/api/research', (req, res) => {
+  const researchDir = path.join(SITE_DIR(), 'research');
+  if (!fs.existsSync(researchDir)) return res.json({ files: [] });
+  try {
+    const files = fs.readdirSync(researchDir)
+      .filter(f => f.endsWith('.md'))
+      .map(f => ({
+        name: f,
+        size: fs.statSync(path.join(researchDir, f)).size,
+        modified: fs.statSync(path.join(researchDir, f)).mtime.toISOString(),
+      }));
+    res.json({ files });
+  } catch { res.json({ files: [] }); }
+});
+
 // --- Verification API ---
 app.get('/api/verify', (req, res) => {
   const spec = readSpec();
