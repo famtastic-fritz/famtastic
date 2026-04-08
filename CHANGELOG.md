@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-08 — Site #4 gap analysis: Street Family Reunion (Playwright-driven)
+
+Full pipeline test via Playwright browser automation against Studio UI. 5/5 pages built, deployed to https://street-family-reunion-staging.netlify.app. 10 tests run, 3 passed cleanly, 2 partial, 5 failed. CRITICAL finding: design brief colors and fonts are NOT injected into build prompts — Claude generates with generic defaults regardless of brief content. Other gaps: content edits without field names misroute, structural edits go to activePage ignoring requested page, verification misclassified as layout_update, component library has no chat interface. Working: stock photo fill, deploy, price edits with field names. AI media pipeline produced all assets (video 2.9MB, parallax bg, 6 cards at 8/10 coherence, book cover at 10/10 quality). Full gap report at tests/automation/logs/street-family-reunion-build.json.
+
 ## 2026-04-07 — Adobe MCP integration + AI media telemetry system
 
 Cloned adb-mcp (Photoshop/Premiere/InDesign/AfterEffects/Illustrator MCP control) to tools/adb-mcp. Proxy server installed (Node), MCP server blocked by Python 3.9 (needs 3.10+). Integration docs at docs/adobe-mcp-integration.md. Built AI media telemetry system: site-studio/lib/media-telemetry.js provides logMediaOperation() and getMediaUsage() with per-site + global JSONL logging, credit alerts at 20%/10% thresholds, 7-day cost trends, provider comparison recommendations, and auto-compaction at 5000 entries. Three endpoints added: POST /api/media/log, GET /api/media/usage, GET /api/media/usage/:provider. Telemetry wired into scripts/firefly-generate and the stock-apply endpoint. 81 tests passing.

@@ -1,0 +1,36 @@
+<!-- Video Hero Component v1.0 -->
+<!-- Usage: Replace CSS variable values and content fields for your site -->
+<section data-section-id="section-hero" data-section-type="hero" data-component-ref="video-hero" data-component-version="1.0"
+  style="background-color: var(--hero-bg, #0b0b14); padding-top: var(--hero-padding-top, 8rem); padding-bottom: 3rem; position: relative; overflow: hidden; min-height: var(--hero-height, 90vh); display: flex; align-items: center;">
+
+  <!-- Video background layer -->
+  <div class="absolute inset-0" style="z-index: 0;">
+    <video autoplay muted loop playsinline
+      style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;"
+      poster="assets/veo/hero-still.png"
+      data-slot-id="hero-video">
+      <source src="assets/video/hero.mp4" type="video/mp4">
+    </video>
+    <div style="position:absolute; inset:0; background: linear-gradient(to bottom, var(--hero-overlay-start, rgba(11,11,20,0.5)), var(--hero-overlay-end, rgba(11,11,20,0.8)));"></div>
+  </div>
+
+  <!-- Content layer -->
+  <div class="max-w-4xl mx-auto relative z-10 w-full px-4 sm:px-6">
+    <h1 data-field-id="hero-heading" data-field-type="text"
+      style="font-family: var(--hero-heading-font, 'Cormorant Garamond', serif); color: var(--hero-text-color, #f4e4c1); font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 300; text-align: center; margin-bottom: 1.5rem; letter-spacing: 0.02em;">
+      Clarity Through Intuition
+    </h1>
+
+    <p data-field-id="hero-description" data-field-type="text"
+      style="font-family: var(--hero-body-font, 'Raleway', sans-serif); color: var(--hero-subtext-color, #b8a9c9); font-size: clamp(1rem, 2vw, 1.25rem); text-align: center; max-width: 48rem; margin: 0 auto 2rem; line-height: 1.7;">
+      Welcome. Your description here.
+    </p>
+
+    <div style="text-align: center;">
+      <a data-field-id="hero-cta-text" data-field-type="link" href="contact.html"
+        style="display: inline-block; background: var(--hero-cta-bg, #c9a96e); color: var(--hero-cta-text, #0b0b14); padding: 0.875rem 2.5rem; border-radius: 4px; font-family: var(--hero-body-font, 'Raleway', sans-serif); font-weight: 600; font-size: 0.95rem; text-decoration: none; letter-spacing: 0.05em; text-transform: uppercase; transition: opacity 0.2s;">
+        Discover Your Path
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,44 @@
+{
+  "id": "video-hero",
+  "name": "Video Hero Section",
+  "version": "1.0",
+  "type": "hero",
+  "description": "Full-viewport hero section with autoplay video background, gradient overlay, heading, description, and CTA button. Video loops silently with poster image fallback.",
+  "extracted_from": "site-readings-by-maria",
+  "extracted_date": "2026-04-07",
+  "css_variables": {
+    "--hero-bg": { "default": "#0b0b14", "description": "Background color (visible before video loads)" },
+    "--hero-overlay-start": { "default": "rgba(11,11,20,0.5)", "description": "Gradient overlay top color (lighter)" },
+    "--hero-overlay-end": { "default": "rgba(11,11,20,0.8)", "description": "Gradient overlay bottom color (darker, for text readability)" },
+    "--hero-text-color": { "default": "#f4e4c1", "description": "Primary heading text color" },
+    "--hero-subtext-color": { "default": "#b8a9c9", "description": "Description/subheading text color" },
+    "--hero-height": { "default": "90vh", "description": "Minimum height of hero section" },
+    "--hero-padding-top": { "default": "8rem", "description": "Top padding (accounts for fixed nav)" },
+    "--hero-heading-font": { "default": "'Cormorant Garamond', serif", "description": "Heading font family" },
+    "--hero-body-font": { "default": "'Raleway', sans-serif", "description": "Body/description font family" },
+    "--hero-cta-bg": { "default": "#c9a96e", "description": "CTA button background color" },
+    "--hero-cta-text": { "default": "#0b0b14", "description": "CTA button text color" }
+  },
+  "content_fields": [
+    { "id": "hero-heading", "type": "text", "default": "Clarity Through Intuition", "description": "Main heading" },
+    { "id": "hero-description", "type": "text", "default": "Welcome. Your description here.", "description": "Subheading paragraph" },
+    { "id": "hero-cta-text", "type": "text", "default": "Discover Your Path", "description": "CTA button label" },
+    { "id": "hero-cta-link", "type": "link", "default": "contact.html", "description": "CTA button destination" }
+  ],
+  "slots": [
+    { "id": "hero-video", "type": "video", "format": "mp4", "description": "Background video (autoplay, muted, looping)", "required": true },
+    { "id": "hero-poster", "type": "image", "format": "png|jpg", "description": "Poster/fallback image shown before video loads", "required": false }
+  ],
+  "responsive": {
+    "mobile": "Video still plays but poster may be preferable for data savings. Text sizes reduce. CTA becomes full-width.",
+    "tablet": "Standard layout with slightly reduced padding.",
+    "desktop": "Full viewport hero with video background."
+  },
+  "dependencies": {
+    "css": ["video-hero.css"],
+    "js": [],
+    "fonts": ["Cormorant Garamond (Google Fonts)", "Raleway (Google Fonts)"]
+  },
+  "usage_count": 1,
+  "sites_using": ["site-readings-by-maria"]
+}

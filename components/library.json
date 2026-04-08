@@ -1,5 +1,16 @@
 {
   "version": "1.0",
-  "components": [],
-  "last_updated": null
+  "components": [
+    {
+      "id": "video-hero",
+      "name": "Video Hero Section",
+      "type": "hero",
+      "version": "1.0",
+      "path": "video-hero/",
+      "extracted_from": "site-readings-by-maria",
+      "description": "Full-viewport hero with autoplay video background, gradient overlay, heading, description, CTA",
+      "usage_count": 1
+    }
+  ],
+  "last_updated": "2026-04-07T19:00:00Z"
 }

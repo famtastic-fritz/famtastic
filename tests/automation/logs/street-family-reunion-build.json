@@ -1,0 +1,139 @@
+{
+  "site": "street-family-reunion",
+  "build_date": "2026-04-08",
+  "deployed_url": "https://street-family-reunion-staging.netlify.app",
+  "build_cost_usd": 0.15,
+  "build_time_minutes": 41,
+  "context_used_pct": 35,
+  "phases": {
+    "component_extract": {
+      "studio_handled": false,
+      "gaps": ["No Studio chat command to export a component to the library"],
+      "workarounds": ["Manually created components/video-hero/ with component.json, HTML template, CSS variables"]
+    },
+    "component_import": {
+      "studio_handled": false,
+      "gaps": ["No Studio chat command to import a component from the library", "No way to reference library components in build prompts"],
+      "workarounds": ["Would need to manually copy component HTML into the page after build"]
+    },
+    "brief_to_build_fidelity": {
+      "studio_handled": false,
+      "gaps": [
+        "Brief colors NOT injected into build prompt — specified Heritage Burgundy #7B2D3B but got generic blue #1e40af",
+        "Brief fonts NOT injected into build prompt — specified Playfair Display/Lato/Great Vibes but got Inter",
+        "spec.pages not auto-populated from brief — only home+contact extracted, had to manually set 5 pages",
+        "Design decisions from brief not forwarded to Claude during build"
+      ],
+      "severity": "CRITICAL — this is the #1 gap. The brief is decorative, not functional."
+    },
+    "multi_page_build": {
+      "studio_handled": true,
+      "gaps": [
+        "First build attempt only produced index.html (parallel build produced 1 of 5)",
+        "Second full rebuild produced all 5 — but required explicit 'rebuild with all 5 pages' command",
+        "Single-page build request (our-story.html) wrote to index.html instead of creating new file"
+      ],
+      "workarounds": ["Use explicit 'Rebuild the site with all N pages: list them' command"]
+    },
+    "content_edits": {
+      "total": 2,
+      "results": [
+        {
+          "request": "Change the reunion date to August 15, 2026",
+          "expected": "content_update → surgical replacement → no plan gate",
+          "actual": "plan card → Claude asked clarification question instead of making edit",
+          "routed_correctly": false,
+          "surgical": false,
+          "gap": "Generic date change didn't match content_update regex patterns. Routed to layout_update → plan gate → conversational response"
+        },
+        {
+          "request": "Update the PDF price from $24.99 to $19.99 on the our-story page",
+          "expected": "content_update → deterministic replacement",
+          "actual": "PERFECT — Direct edit applied, no AI call, deterministic change",
+          "routed_correctly": true,
+          "surgical": true,
+          "gap": null
+        }
+      ],
+      "summary": "1/2 content edits worked surgically. Price change with specific field name succeeded. Date change without field name failed."
+    },
+    "structural_edit": {
+      "request": "Add a FAQ section to the home page",
+      "studio_handled": false,
+      "gaps": [
+        "Plan card correctly appeared (expected for structural edit)",
+        "BUT plan targeted our-story.html (activePage) instead of index.html (requested page)",
+        "Claude detected the mismatch and asked for clarification instead of auto-switching pages",
+        "Page-aware routing missing — structural edits always go to activePage"
+      ]
+    },
+    "stock_photo_fill": {
+      "studio_handled": true,
+      "gaps": [],
+      "notes": "Worked perfectly. Filled gallery-1970, gallery-1990, gallery-2010 slots via Unsplash. No plan gate. Correct classifier routing."
+    },
+    "verification": {
+      "studio_handled": false,
+      "gaps": [
+        "'Run verification' misclassified as layout_update instead of verification intent",
+        "Generated a plan card with layout modifications instead of running the verification pipeline",
+        "Known gap from Playwright autonomous build test (2026-04-03)"
+      ]
+    },
+    "deploy": {
+      "studio_handled": true,
+      "gaps": [],
+      "notes": "Worked perfectly. 'Deploy the site to staging' → immediate deploy → URL returned. No plan gate."
+    },
+    "parallax": {
+      "studio_handled": false,
+      "gaps": ["Parallax not applied — brief specified parallax with oak tree background but build used generic sections"],
+      "workarounds": ["Would need post-build CSS edit to add background-attachment:fixed"]
+    },
+    "video_hero": {
+      "studio_handled": false,
+      "gaps": ["Video hero component not imported from library", "Build didn't use the video assets at assets/video/hero.mp4"],
+      "workarounds": ["Manual HTML edit to add <video> tag (as done for Readings by Maria)"]
+    },
+    "card_hover_states": {
+      "studio_handled": "unknown",
+      "gaps": ["Not verified — would need to inspect generated CSS for :hover transforms"],
+      "notes": "Build response mentioned 'card hover effects' but needs manual verification"
+    },
+    "three_fonts": {
+      "studio_handled": false,
+      "gaps": ["Build used Inter (1 font) instead of requested Playfair Display + Lato + Great Vibes (3 fonts)"],
+      "severity": "HIGH — font specification in brief is ignored during build"
+    }
+  },
+  "media_generation": {
+    "video_hero": {"provider": "google", "model": "imagen-4.0 + veo-2.0", "time_seconds": 47.6, "size_mb": 2.9, "quality": 8},
+    "parallax_bg": {"provider": "google", "model": "imagen-4.0", "time_seconds": 7, "size_kb": 2265, "quality": 9},
+    "card_set": {"provider": "google", "model": "imagen-4.0", "count": 6, "time_seconds": 65.2, "coherence": 8, "quality": 9},
+    "book_cover": {"provider": "google", "model": "imagen-4.0", "time_seconds": 7, "size_kb": 1238, "quality": 10},
+    "icon_set": {"provider": "google", "model": "imagen-4.0", "count": 2, "note": "4 of 6 rate-limited", "quality": 7}
+  },
+  "summary": {
+    "total_tests": 10,
+    "studio_handled_correctly": 3,
+    "studio_handled_partially": 2,
+    "studio_failed": 5,
+    "working": ["stock photo fill", "deploy", "price content edit (with field name)"],
+    "partially_working": ["multi-page build (needs explicit command)", "structural edit (detects page mismatch but doesn't auto-fix)"],
+    "broken": ["brief colors/fonts not in build", "verification classifier", "component library import/export via chat", "video hero import", "generic date content edit"],
+    "new_gaps_discovered": [
+      "CRITICAL: Design brief visual decisions (colors, fonts) not injected into build prompts",
+      "Content edits without explicit field names route to plan gate instead of content_update",
+      "Structural edits go to activePage regardless of which page user specifies",
+      "Verification intent misclassified as layout_update",
+      "Component library has no chat interface (import/export)"
+    ],
+    "priority_fixes": [
+      "1. Inject brief colors + fonts into every Claude build prompt (highest ROI fix)",
+      "2. Widen content_update classifier to handle 'change the X to Y' without field names",
+      "3. Add page-switching logic before structural edits when user specifies a different page",
+      "4. Fix verification classifier to match 'run verification' pattern",
+      "5. Add component library chat commands (import/export)"
+    ]
+  }
+}

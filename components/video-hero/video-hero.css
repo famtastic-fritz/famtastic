@@ -1,0 +1,43 @@
+/* Video Hero Component v1.0 */
+/* Override these variables to customize for your site */
+
+:root {
+  --hero-bg: #0b0b14;
+  --hero-overlay-start: rgba(11, 11, 20, 0.5);
+  --hero-overlay-end: rgba(11, 11, 20, 0.8);
+  --hero-text-color: #f4e4c1;
+  --hero-subtext-color: #b8a9c9;
+  --hero-height: 90vh;
+  --hero-padding-top: 8rem;
+  --hero-heading-font: 'Cormorant Garamond', serif;
+  --hero-body-font: 'Raleway', sans-serif;
+  --hero-cta-bg: #c9a96e;
+  --hero-cta-text: #0b0b14;
+}
+
+/* CTA hover state */
+[data-component-ref="video-hero"] a[data-field-id="hero-cta-text"]:hover {
+  opacity: 0.85;
+}
+
+/* Mobile: reduce padding, ensure video still looks good */
+@media (max-width: 768px) {
+  [data-component-ref="video-hero"] {
+    min-height: 80vh !important;
+    padding-top: 5rem !important;
+  }
+  [data-component-ref="video-hero"] a[data-field-id="hero-cta-text"] {
+    display: block !important;
+    width: 100%;
+    max-width: 20rem;
+    margin: 0 auto;
+    text-align: center;
+  }
+}
+
+/* Prefers reduced motion: pause video, show poster */
+@media (prefers-reduced-motion: reduce) {
+  [data-component-ref="video-hero"] video {
+    display: none;
+  }
+}
