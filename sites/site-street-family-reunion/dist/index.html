@@ -32,17 +32,14 @@
   </nav>
 
   <!-- Video Hero Section -->
-  <!-- data-firefly-pending: hero_family_reunion.jpg — black family reunion scene, 16:9 landscape -->
-  <!-- Run: firefly-generate --batch scripts/firefly-batch-street-reunion.json when credentials are set -->
   <section data-section-id="hero-video-1" data-section-type="hero" class="hero-video"
     data-slot-id="hero-video-1"
-    data-slot-status="firefly-pending"
+    data-slot-status="google-generated"
     data-slot-role="hero"
-    data-firefly-prompt="Warm joyful Black family reunion outdoors, multi-generational, laughing and embracing, golden afternoon light, lush green park, colorful clothing, cinematic, wide landscape 16:9">
+    data-generated-by="google-veo-2.0 + imagen-4.0"
+    data-generated-date="2026-04-08">
     <video autoplay muted loop playsinline
-      poster="assets/video/hero-still.png"
-      data-firefly-poster="assets/images/hero_family_reunion.jpg"
-      style="background-image:url('assets/video/hero-still.png');background-size:cover;background-position:center;">
+      poster="assets/video/hero-still.png">
       <source src="assets/video/hero.mp4" type="video/mp4">
     </video>
     <div class="hero-video-content">
@@ -76,57 +73,75 @@
 
       <div class="grid md:grid-cols-3 gap-8">
         <!-- Card 1 -->
-        <div class="activity-card bg-white p-8 rounded-lg" data-card-enhanced data-animate="fade-up">
-          <h3 class="text-2xl font-bold mb-4" data-field-id="card-1-title" data-field-type="text">Explore Our Story</h3>
-          <p class="text-gray-700 mb-6" data-field-id="card-1-text" data-field-type="text">
-            Discover our family timeline, generational milestones, and the ancestors who shaped our legacy.
-          </p>
-          <a href="our-story.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-1-cta" data-field-type="link">Learn More →</a>
+        <div class="activity-card bg-white rounded-lg overflow-hidden" data-card-enhanced data-animate="fade-up">
+          <img src="assets/images/generated/card-explore-story.jpg" alt="Family exploring their history together" class="w-full h-48 object-cover" loading="lazy" data-lazy data-slot-id="card-1-img" data-slot-status="google-generated">
+          <div class="p-8">
+            <h3 class="text-2xl font-bold mb-4" data-field-id="card-1-title" data-field-type="text">Explore Our Story</h3>
+            <p class="text-gray-700 mb-6" data-field-id="card-1-text" data-field-type="text">
+              Discover our family timeline, generational milestones, and the ancestors who shaped our legacy.
+            </p>
+            <a href="our-story.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-1-cta" data-field-type="link">Learn More →</a>
+          </div>
         </div>
 
         <!-- Card 2 -->
-        <div class="activity-card bg-white p-8 rounded-lg" data-card-enhanced data-animate="fade-up">
-          <h3 class="text-2xl font-bold mb-4" data-field-id="card-2-title" data-field-type="text">Browse the Gallery</h3>
-          <p class="text-gray-700 mb-6" data-field-id="card-2-text" data-field-type="text">
-            View historical photos organized by decade and upload your own family photos to share with relatives.
-          </p>
-          <a href="gallery.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-2-cta" data-field-type="link">View Gallery →</a>
+        <div class="activity-card bg-white rounded-lg overflow-hidden" data-card-enhanced data-animate="fade-up">
+          <img src="assets/images/generated/card-gallery.jpg" alt="Multi-generational family laughing together at a reunion" class="w-full h-48 object-cover" loading="lazy" data-lazy data-slot-id="card-2-img" data-slot-status="google-generated">
+          <div class="p-8">
+            <h3 class="text-2xl font-bold mb-4" data-field-id="card-2-title" data-field-type="text">Browse the Gallery</h3>
+            <p class="text-gray-700 mb-6" data-field-id="card-2-text" data-field-type="text">
+              View historical photos organized by decade and upload your own family photos to share with relatives.
+            </p>
+            <a href="gallery.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-2-cta" data-field-type="link">View Gallery →</a>
+          </div>
         </div>
 
         <!-- Card 3 -->
-        <div class="activity-card bg-white p-8 rounded-lg" data-card-enhanced data-animate="fade-up">
-          <h3 class="text-2xl font-bold mb-4" data-field-id="card-3-title" data-field-type="text">Find Family Members</h3>
-          <p class="text-gray-700 mb-6" data-field-id="card-3-text" data-field-type="text">
-            Search our family directory, reconnect with relatives, and share your contact information securely.
-          </p>
-          <a href="connect.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-3-cta" data-field-type="link">Connect →</a>
+        <div class="activity-card bg-white rounded-lg overflow-hidden" data-card-enhanced data-animate="fade-up">
+          <img src="assets/images/generated/card-find-family.jpg" alt="Two generations sharing a warm embrace" class="w-full h-48 object-cover" loading="lazy" data-lazy data-slot-id="card-3-img" data-slot-status="google-generated">
+          <div class="p-8">
+            <h3 class="text-2xl font-bold mb-4" data-field-id="card-3-title" data-field-type="text">Find Family Members</h3>
+            <p class="text-gray-700 mb-6" data-field-id="card-3-text" data-field-type="text">
+              Search our family directory, reconnect with relatives, and share your contact information securely.
+            </p>
+            <a href="connect.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-3-cta" data-field-type="link">Connect →</a>
+          </div>
         </div>
 
         <!-- Card 4 -->
-        <div class="activity-card bg-white p-8 rounded-lg" data-card-enhanced data-animate="fade-up">
-          <h3 class="text-2xl font-bold mb-4" data-field-id="card-4-title" data-field-type="text">Buy the Bloodline Book</h3>
-          <p class="text-gray-700 mb-6" data-field-id="card-4-text" data-field-type="text">
-            Get our comprehensive genealogy guide with detailed family trees, ancestral stories, and historical photos.
-          </p>
-          <a href="our-story.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-4-cta" data-field-type="link">Learn More →</a>
+        <div class="activity-card bg-white rounded-lg overflow-hidden" data-card-enhanced data-animate="fade-up">
+          <img src="assets/images/generated/card-book.jpg" alt="Elegant genealogy book with family tree cover" class="w-full h-48 object-cover" loading="lazy" data-lazy data-slot-id="card-4-img" data-slot-status="google-generated">
+          <div class="p-8">
+            <h3 class="text-2xl font-bold mb-4" data-field-id="card-4-title" data-field-type="text">Buy the Bloodline Book</h3>
+            <p class="text-gray-700 mb-6" data-field-id="card-4-text" data-field-type="text">
+              Get our comprehensive genealogy guide with detailed family trees, ancestral stories, and historical photos.
+            </p>
+            <a href="our-story.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-4-cta" data-field-type="link">Learn More →</a>
+          </div>
         </div>
 
         <!-- Card 5 -->
-        <div class="activity-card bg-white p-8 rounded-lg" data-card-enhanced data-animate="fade-up">
-          <h3 class="text-2xl font-bold mb-4" data-field-id="card-5-title" data-field-type="text">Plan Your Stay</h3>
-          <p class="text-gray-700 mb-6" data-field-id="card-5-text" data-field-type="text">
-            View the Reunion 2026 schedule, check accommodations, and explore the event location and activities.
-          </p>
-          <a href="event-details.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-5-cta" data-field-type="link">Event Details →</a>
+        <div class="activity-card bg-white rounded-lg overflow-hidden" data-card-enhanced data-animate="fade-up">
+          <img src="assets/images/generated/card-plan-stay.jpg" alt="Family arriving at a beautifully lit outdoor event venue" class="w-full h-48 object-cover" loading="lazy" data-lazy data-slot-id="card-5-img" data-slot-status="google-generated">
+          <div class="p-8">
+            <h3 class="text-2xl font-bold mb-4" data-field-id="card-5-title" data-field-type="text">Plan Your Stay</h3>
+            <p class="text-gray-700 mb-6" data-field-id="card-5-text" data-field-type="text">
+              View the Reunion 2026 schedule, check accommodations, and explore the event location and activities.
+            </p>
+            <a href="event-details.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-5-cta" data-field-type="link">Event Details →</a>
+          </div>
         </div>
 
         <!-- Card 6 -->
-        <div class="activity-card bg-white p-8 rounded-lg" data-card-enhanced data-animate="fade-up">
-          <h3 class="text-2xl font-bold mb-4" data-field-id="card-6-title" data-field-type="text">Contribute Research</h3>
-          <p class="text-gray-700 mb-6" data-field-id="card-6-text" data-field-type="text">
-            Share ancestral documents, photos, stories, and genealogy research to help us build a complete family archive.
-          </p>
-          <a href="connect.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-6-cta" data-field-type="link">Submit Research →</a>
+        <div class="activity-card bg-white rounded-lg overflow-hidden" data-card-enhanced data-animate="fade-up">
+          <img src="assets/images/generated/card-research.jpg" alt="Elder sharing handwritten documents with a grandchild" class="w-full h-48 object-cover" loading="lazy" data-lazy data-slot-id="card-6-img" data-slot-status="google-generated">
+          <div class="p-8">
+            <h3 class="text-2xl font-bold mb-4" data-field-id="card-6-title" data-field-type="text">Contribute Research</h3>
+            <p class="text-gray-700 mb-6" data-field-id="card-6-text" data-field-type="text">
+              Share ancestral documents, photos, stories, and genealogy research to help us build a complete family archive.
+            </p>
+            <a href="connect.html" class="text-blue-600 font-bold hover:underline" data-field-id="card-6-cta" data-field-type="link">Submit Research →</a>
+          </div>
         </div>
       </div>
     </div>

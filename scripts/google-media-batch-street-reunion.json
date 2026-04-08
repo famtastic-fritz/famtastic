@@ -1,0 +1,53 @@
+[
+  {
+    "type": "video",
+    "filename": "hero.mp4",
+    "still_filename": "hero-still.png",
+    "still_prompt": "Large warm African American family gathering outdoors at a family reunion, multiple generations from young children to great-grandparents, joyful and proud expressions, string lights overhead, golden sunset light filtering through old oak trees, long tables with soul food, watermelon, macaroni and cheese, potato salad, warm earth tones, cinematic photography, shallow depth of field, lush green grass",
+    "video_prompt": "Gentle cinematic camera drift across the joyful family reunion scene, string lights swaying softly in the warm breeze, golden hour light shifting through oak tree leaves, family members laughing and embracing in the background, warm and celebratory atmosphere",
+    "aspect_ratio": "16:9",
+    "duration_seconds": 5
+  },
+  {
+    "type": "image",
+    "filename": "card-explore-story.jpg",
+    "prompt": "African American family — grandmother, adult children, and grandchildren — sitting together around a dining room table covered in old black and white photographs and documents, warm lamp light, engaged and smiling, discovering family history together, photorealistic, warm tones",
+    "aspect_ratio": "4:3"
+  },
+  {
+    "type": "image",
+    "filename": "card-gallery.jpg",
+    "prompt": "Multi-generational Black family group laughing together at an outdoor family reunion, bright sunny day, colorful summer clothing, big genuine smiles, some holding hands, kids running nearby, photorealistic candid style, golden light",
+    "aspect_ratio": "4:3"
+  },
+  {
+    "type": "image",
+    "filename": "card-find-family.jpg",
+    "prompt": "Elderly Black grandmother embracing her teenage granddaughter warmly, both smiling with deep love and connection, soft natural window light, living room setting with family photos on wall behind them, photorealistic, warm and emotional",
+    "aspect_ratio": "4:3"
+  },
+  {
+    "type": "image",
+    "filename": "card-book.jpg",
+    "prompt": "Elegant hardcover genealogy book with a family tree illustration on the cover, warm amber and mahogany tones, placed on a wooden table with reading glasses and an heirloom ring nearby, soft studio lighting, book open showing family photos and handwritten notes, photorealistic product photography",
+    "aspect_ratio": "4:3"
+  },
+  {
+    "type": "image",
+    "filename": "card-plan-stay.jpg",
+    "prompt": "Black family arriving at a beautiful outdoor event venue at dusk, string lights illuminating the space, tables set for a celebration, people embracing and greeting each other, warm golden and twinkling light, festive and joyful reunion atmosphere, photorealistic",
+    "aspect_ratio": "4:3"
+  },
+  {
+    "type": "image",
+    "filename": "card-research.jpg",
+    "prompt": "Elderly African American man in his seventies carefully sharing handwritten letters and old documents with his young adult granddaughter, both leaning over a table, warm afternoon light, books and genealogy records visible, thoughtful and reverent atmosphere, photorealistic",
+    "aspect_ratio": "4:3"
+  },
+  {
+    "type": "image",
+    "filename": "gallery-firefly.jpg",
+    "prompt": "Candid intimate moment at a Black family reunion — several generations gathered around a picnic table under oak trees, string lights, elders telling stories to attentive grandchildren and great-grandchildren, warm golden hour light, documentary photography style, joyful and proud",
+    "aspect_ratio": "4:3"
+  }
+]

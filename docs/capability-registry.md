@@ -1,6 +1,6 @@
 # Studio Capability Registry
 
-Last updated: 2026-04-08
+Last updated: 2026-04-08 (media providers updated)
 Source: cli-handoff-pattern.json (street-family-reunion session)
 
 ---
@@ -50,7 +50,7 @@ Source: cli-handoff-pattern.json (street-family-reunion session)
 2. **Emit data-slideshow on slideshow containers** instead of inline `changeSlide()` script. Replace all inline slideshow scripts at build time.
 3. **Emit data-count-to attributes** on stat number elements when a "stats" or "counter" section type is detected in the brief.
 4. **Emit data-lazy on all images** and include `lazy-load.js` in every build automatically.
-5. **Detect `data-slot-status="firefly-pending"`** and auto-trigger `firefly-generate` batch when credentials are available.
+5. **Detect `data-slot-status="google-pending"` or `data-slot-status="firefly-pending"`** and auto-trigger `google-media-generate` batch when appropriate.
 6. **Include `smooth-scroll.js` in every multi-section site** — this is always needed and has no downside.
 
 ## Routing Rules for Playwright
@@ -67,24 +67,30 @@ When Playwright encounters these task patterns in a Studio chat session, route a
 | "smooth scroll" | Studio first, then CLI for scroll-to-top | CSS handles basic, JS needed for button |
 | "hover effect" / "card lift" | Studio first | CSS-only possible; CLI if icon breakout or timing |
 | "lazy load" | CLI | Fade-in needs `IntersectionObserver` + load event |
-| "generate image" / "AI image" | Firefly script | Use `firefly-generate --batch` when credentials set |
-| "replace video" / "hero image" | Firefly script | Generate `hero_family_reunion.jpg` via batch |
+| "generate image" / "AI image" | `google-media-generate` | Google Imagen 4.0 — $0.004/image, GEMINI_API_KEY |
+| "replace video" / "hero image" | `google-media-generate --video` | Imagen 4 still → Veo 2 animate, ~33s, ~$0.05 |
 
-## Firefly Credential Gate
+## Media Provider Registry (confirmed working 2026-04-08)
 
-Adobe Firefly image generation is blocked until credentials are set:
+### Google Imagen 4.0 + Veo 2.0 — PRIMARY ✅
+- **Images:** `imagen-4.0-generate-001` — $0.004/image, ~7s, quality 9/10
+- **Video:** `veo-2.0-generate-001` — ~$0.05/video, ~33s, 5s loop, 1.6MB MP4
+- **Credentials:** `GEMINI_API_KEY` — active, ~$24.98 of $25 remaining
+- **Script:** `scripts/google-media-generate`
+- **Usage:** `google-media-generate --batch scripts/google-media-batch-[site].json`
 
-```bash
-export FIREFLY_CLIENT_ID=your_client_id
-export FIREFLY_CLIENT_SECRET=your_client_secret
+### Adobe Firefly Web — SECONDARY (style reference only, no API) ⚠️
+- **Available:** Firefly web app via Playwright browser automation ONLY
+- **API:** NOT AVAILABLE — requires $1K+/mo enterprise plan. Do not attempt API calls.
+- **Use for:** Style reference matching and custom model generation via Chrome automation
+- **Method:** Claude-in-Chrome MCP → firefly.adobe.com shadow DOM traversal
 
-# Then generate images for street-family-reunion:
-cd ~/famtastic
-firefly-generate --batch scripts/firefly-batch-street-reunion.json
-```
+### Leonardo.ai — BACKUP ✅
+- **Images:** Phoenix 1.0 and 47 other models
+- **Credits:** ~3278 API tokens remaining
+- **Script:** To be built when needed
+- **Quality:** 7/10 (less photorealistic than Imagen, more CGI look)
 
-Pending images (tagged with `data-slot-status="firefly-pending"`):
-- `sites/site-street-family-reunion/dist/assets/images/hero_family_reunion.jpg` — hero background
-- `sites/site-street-family-reunion/dist/assets/images/firefly_gallery_reunion.jpg` — gallery feature
-
-Setup guide: https://developer.adobe.com/firefly-services/docs/firefly-api/guides/
+### NOT AVAILABLE
+- Firefly API (enterprise $1K+/mo — confirmed not on our CC plan)
+- Sora, Runway, Pika (not integrated)

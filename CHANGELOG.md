@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-08 — Street Family Reunion: Google Imagen/Veo media pass + JS enhancements
+
+Built and confirmed working Google Imagen 4 + Veo 2 media pipeline (`scripts/google-media-generate`). Generated 8 assets for street-family-reunion: 1 Imagen 4 hero still (1.7MB), 1 Veo 2 hero video (2.4MB, 5s loop), 6 activity card images (1.5–1.8MB each) with culturally specific prompts, plus gallery feature image. All wired into site HTML with `data-slot-status="google-generated"` tracking. Adobe Firefly API confirmed NOT available (Creative Cloud plan; requires $1K+/mo enterprise). JS enhancement pass also complete: parallax.js, slideshow.js, card-animations.js, counter-animation.js, smooth-scroll.js, lazy-load.js deployed across all 5 pages. Key safety filter learnings documented: Veo prompts must omit race/ethnicity references; `person_generation` must be `'ALLOW_ADULT'` (uppercase exact match).
+
 ## 2026-04-08 — Fix 7 Studio gaps from Site #4 build
 
 Fixed all 5 broken + 2 partial gaps from the Playwright-driven gap analysis. Fix #1 (CRITICAL): brief colors and fonts now extracted from design decisions + user message + visual_direction and injected as MANDATORY VISUAL REQUIREMENTS at the top of every build prompt. Fix #2: content_update classifier widened with date/location/time/venue/schedule keywords plus natural language patterns. Fix #3: verification intent added to classifier with handler that runs runBuildVerification() directly — no plan gate. Fix #4: component_export and component_import classifier intents with handlers that interface with the component library. Fix #6: extractPagesFromBrief now handles compound page names (our-story, event-details, etc.) via COMPOUND_PAGES lookup table. Fix #7: page auto-switch now resolves aliases (home→index.html) and fuzzy matches partial page names. 81 tests passing.

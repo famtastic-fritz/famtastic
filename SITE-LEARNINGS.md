@@ -1573,24 +1573,69 @@ main > section:first-of-type { width: 100vw; position: relative; left: 50%; marg
 - `data-slideshow` — on slideshow container (gallery.html), replaces inline script
 - `data-count-to`, `data-count-suffix`, `data-count-duration` — on counter spans (our-story.html)
 - `data-lazy` — on gallery and product images
-- `data-slot-status="firefly-pending"` + `data-firefly-prompt` — on hero video (index.html)
+- `data-slot-status="google-generated"` + `data-generated-by` — on hero video and all Imagen-generated images
 
 **Stats section:** Added to `our-story.html` between timeline and family tree sections. Counters: 150+ Family Members, 6 Generations, 45 States Represented, 1 United Family.
 
 **Slideshow bug pattern (do not repeat):** When a page has existing CSS `display:none` on `.slide` elements, and slideshow.js replaces it with opacity-based crossfade, the `display:none` wins and slides stay invisible. Fix: inject `display:block !important` in the slideshow CSS override to ensure all slides are in the layout, with opacity controlling visibility.
 
-**Hero video + Firefly slot:** `index.html` hero video now has `data-slot-status="firefly-pending"` and `data-firefly-prompt` attribute with the exact Black family reunion scene prompt. Video poster uses existing `hero-still.png` as fallback. Run `firefly-generate --batch scripts/firefly-batch-street-reunion.json` once credentials are set to generate: `assets/images/hero_family_reunion.jpg` (16:9 hero) and `assets/images/firefly_gallery_reunion.jpg` (gallery feature). **Adobe Firefly credentials still needed:** Set `FIREFLY_CLIENT_ID` and `FIREFLY_CLIENT_SECRET` — setup at https://developer.adobe.com/firefly-services/docs/firefly-api/guides/
-
 **Component library entries created:**
 - `components/parallax-section/component.json`
-- `components/animated-counter/component.json`  
+- `components/animated-counter/component.json`
 - `components/photo-slideshow/component.json`
 
 Each includes HTML template, data attribute docs, platform notes (Drupal, WordPress, Webflow).
 
+---
+
+### google-imagen-veo-pipeline — 2026-04-08
+
+**Primary media generation pipeline for all FAMtastic sites.**
+
+**Script:** `scripts/google-media-generate`  
+**SDK:** `google.genai` v1.47.0 (NOT `google.generativeai` — different package, not installed)  
+**Credentials:** `GEMINI_API_KEY` env var  
+**Image model:** `imagen-4.0-generate-001` — $0.004/image, ~7s  
+**Video model:** `veo-2.0-generate-001` — ~$0.05/video, ~33s, produces 5s MP4 ~2.4MB
+
+**Batch usage:**
+```
+google-media-generate --batch scripts/google-media-batch-[site].json \
+  --output-dir sites/site-[tag]/dist/assets/images/generated/ \
+  --site-dir sites/site-[tag]/
+```
+
+**Batch JSON format** (`scripts/google-media-batch-street-reunion.json`):
+```json
+[
+  { "type": "video", "filename": "hero.mp4", "still_filename": "hero-still.png",
+    "still_prompt": "...", "video_prompt": "...", "aspect_ratio": "16:9" },
+  { "type": "image", "filename": "card-explore-story.jpg",
+    "prompt": "...", "aspect_ratio": "4:3" }
+]
+```
+
+**street-family-reunion generated assets** (all in `dist/assets/images/generated/`):
+- `hero-still.png` (1.7MB, 16:9) — Imagen 4 Black family reunion scene
+- `hero.mp4` (2.4MB, 16:9) — Veo 2 animated from hero-still
+- `card-explore-story.jpg`, `card-gallery.jpg`, `card-find-family.jpg`,
+  `card-book.jpg`, `card-plan-stay.jpg`, `card-research.jpg`, `gallery-firefly.jpg` (1.5–1.8MB each, 4:3)
+
+**Safety filter rules (do not repeat):**
+1. `person_generation` must be `'ALLOW_ADULT'` (uppercase). `'allow_adult'` silently blocks output. `'ALLOW_ALL'` throws `ValueError` on Gemini API (Vertex only).
+2. Veo video prompts must NOT reference race or ethnicity. "African American family reunion scene" was blocked. Use motion/atmosphere only: "Gentle cinematic drift, string lights swaying, golden hour light through tree leaves." The still image carries the representation visually.
+3. Imagen prompts with explicit ethnic descriptors like "Black grandmother" may be blocked. Use generational descriptions: "two women of different generations sharing a warm embrace" — the scene context and other prompt elements still produce culturally appropriate imagery.
+4. Always check `response.generated_images` before accessing bytes — safety block returns empty list, not an exception.
+
+**Telemetry:** Every generation logged to `intelligence/media-usage.jsonl` (global) and per-site `media-telemetry.jsonl`.
+
+**Adobe Firefly status:** Firefly API is NOT available on Creative Cloud plan. Requires $1K+/mo enterprise plan. Confirmed in Adobe Developer Console. Do not attempt Firefly API calls. Firefly Web (firefly.adobe.com) is available via browser automation (Claude-in-Chrome MCP) only, for style reference.
+
+---
+
 ### Known Gaps (updated 2026-04-08)
 
-- **Adobe Firefly credentials not configured.** `FIREFLY_CLIENT_ID` / `FIREFLY_CLIENT_SECRET` not set. Hero image (`hero_family_reunion.jpg`) and gallery image (`firefly_gallery_reunion.jpg`) for street-family-reunion not generated. Batch script ready at `scripts/firefly-batch-street-reunion.json`.
-- **Hero video content:** Current `hero.mp4` shows generic family scene. Replace with Black family reunion video/image once Firefly credentials are configured.
-- **Stock images in gallery + slideshow:** All gallery and slideshow images are placeholder stock photos. Replace with actual Street family content or Firefly-generated images.
-- **Slideshow component CSS conflict pattern:** Any site that has `.slide { display:none }` in its page CSS will conflict with slideshow.js crossfade approach. Always use `display:block !important` in slideshow.js injected styles (already fixed).
+- **Stock images in gallery + slideshow:** Gallery decade sections (1950s–2010s) use placeholder stock photos. Replace with actual Street family content.
+- **Slideshow component CSS conflict pattern:** Any site that has `.slide { display:none }` in its page CSS will conflict with slideshow.js crossfade approach. Always use `display:block !important` in slideshow.js injected styles (already fixed in street-family-reunion).
+- **Hero video text contrast:** "Welcome Home" heading competes visually with the video scene. Consider adding a semi-transparent overlay or text-shadow if clients report readability issues.
+- **Activity card images sizing on mobile:** Cards stack to single column on mobile; 192px image height (`h-48`) may feel short on large phone screens. No fix needed unless client flags it.

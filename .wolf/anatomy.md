@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T19:55:02.006Z
-> Files: 291 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T16:25:19.800Z
+> Files: 334 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -36,18 +36,18 @@
 
 - `.gitignore` — Git ignore rules (~127 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~8137 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~9722 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10331 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~31348 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~34353 tok)
 
 ## .claude/
 
-- `launch.json` (~58 tok)
+- `launch.json` (~110 tok)
 - `settings.json` (~441 tok)
 - `settings.local.json` (~2026 tok)
 
@@ -58,6 +58,10 @@
 ## .claude/rules/
 
 - `openwolf.md` (~313 tok)
+
+## .claude/skills/adobe-firefly/
+
+- `SKILL.md` — Adobe Firefly API — Image Generation Skill (~656 tok)
 
 ## .claude/skills/brainstorm/
 
@@ -328,6 +332,28 @@
 - `fam-hub.bash` — Bash completion for fam-hub CLI (~943 tok)
 - `fam-hub.zsh` — compdef fam-hub (~1036 tok)
 
+## components/
+
+- `library.json` (~123 tok)
+
+## components/animated-counter/
+
+- `component.json` (~465 tok)
+
+## components/parallax-section/
+
+- `component.json` (~437 tok)
+
+## components/photo-slideshow/
+
+- `component.json` (~512 tok)
+
+## components/video-hero/
+
+- `component.json` (~817 tok)
+- `video-hero.css` — Styles: 2 rules, 11 vars (~329 tok)
+- `video-hero.html` (~650 tok)
+
 ## config/agents/
 
 - `defaults.yaml` (~28 tok)
@@ -379,6 +405,8 @@
 
 ## docs/
 
+- `adobe-mcp-integration.md` — Adobe MCP Integration (adb-mcp) (~1000 tok)
+- `capability-registry.md` — Studio Capability Registry (~1366 tok)
 - `cli-test.md` — Test CLI Integration (~31 tok)
 - `cli-usage.md` — FAMtastic Hub CLI Usage Guide (~892 tok)
 - `CONFIG_OWNERSHIP.md` — Config Ownership — FAMtastic Agent‑Hub (~618 tok)
@@ -389,6 +417,7 @@
 - `PLATFORM_NOTES.md` — Cross‑platform notes (~81 tok)
 - `random-idea.draft.md` — Random Shower Thought (~120 tok)
 - `resume-amazon.md` — Resume Optimization for Amazon Position (~110 tok)
+- `studio-cli-handoff-pattern.md` — Studio → CLI Handoff Pattern (~1432 tok)
 - `test-manual.md` — Test Manual Promotion (~21 tok)
 - `test-notes.draft.md` — Draft Notes from ChatGPT (~112 tok)
 - `wrapper-test.draft.md` — Test Content from Wrapper (~70 tok)
@@ -432,7 +461,11 @@
 - `config-claim` (~343 tok)
 - `doctor` — Declares f (~194 tok)
 - `fam-hub` — fam-hub — Unified CLI for FAMtastic (~2873 tok)
+- `firefly-batch-street-reunion.json` (~353 tok)
+- `firefly-generate` (~2062 tok)
 - `gemini-cli` (~195 tok)
+- `google-media-batch-street-reunion.json` (~1002 tok)
+- `google-media-generate` (~3509 tok)
 - `install-codex-cli` (~99 tok)
 - `install-completions` — Install bash and zsh completions for fam-hub CLI (~886 tok)
 - `install.sh` — Agent-centric installer: Claude (native), Gemini (native), Codex via LiteLLM code-free only (~994 tok)
@@ -467,8 +500,12 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~113661 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~119715 tok)
 - `vitest.config.js` (~33 tok)
+
+## site-studio/lib/
+
+- `media-telemetry.js` — media-telemetry.js — Append-only telemetry log for all AI media operations. (~3084 tok)
 
 ## site-studio/public/
 
@@ -476,7 +513,7 @@
 
 ## site-studio/public/css/
 
-- `studio-canvas.css` — canvas-tab-bar { (~2776 tok)
+- `studio-canvas.css` — canvas-tab-bar { (~2780 tok)
 - `studio-cli.css` — cli-bar { (~886 tok)
 
 ## site-studio/tests/
@@ -548,6 +585,35 @@
 - `spec.json` (~908 tok)
 - `state.json` (~46 tok)
 
+## sites/site-readings-by-maria/dist/
+
+- `hero-video-test.html` — Hero Video Test — Readings by Maria (~677 tok)
+- `index.html` — Home | Readings by Maria (~2752 tok)
+
+## sites/site-street-family-reunion/dist/
+
+- `connect.html` — Connect | The Street Family Reunion (~4350 tok)
+- `event-details.html` — Reunion 2026 | The Street Family Reunion (~6390 tok)
+- `gallery.html` — Gallery | The Street Family Reunion (~4416 tok)
+- `index.html` — Home | The Street Family Reunion (~4656 tok)
+- `our-story.html` — Our Story | The Street Family Reunion (~6119 tok)
+
+## sites/site-street-family-reunion/dist/assets/js/
+
+- `card-animations.js` — card-animations.js — Enhanced card hover with icon breakout effect (~584 tok)
+- `counter-animation.js` — counter-animation.js — Scroll-triggered count-up animation (~788 tok)
+- `lazy-load.js` — lazy-load.js — Lazy loading with fade-in for images (~704 tok)
+- `parallax.js` — parallax.js — Multi-layer parallax + scroll-reveal animations (~968 tok)
+- `slideshow.js` — slideshow.js — Auto-advancing crossfade slideshow with navigation dots (~1265 tok)
+- `smooth-scroll.js` — smooth-scroll.js — Smooth anchor scrolling + scroll-to-top button (~872 tok)
+
+## sites/site-street-family-reunion/research/
+
+- `brief-inputs.md` — Brief Inputs -- Street Family Reunion Website (~4093 tok)
+- `competitive-analysis.md` — Competitive Analysis -- Family Reunion Websites (~2275 tok)
+- `design-research.md` — Design Research -- Family Reunion Heritage Site (~3566 tok)
+- `feature-research.md` — Feature Research -- Family Reunion Site Implementation (~4107 tok)
+
 ## sites/site-the-best-lawn-care/
 
 - `.studio.json` (~3535 tok)
@@ -572,3 +638,22 @@
 - `session-111.md` — Session 111 — 2026-03-24 (~246 tok)
 - `session-117.md` — Session 117 — 2026-03-24 (~296 tok)
 - `session-131.md` — Session 131 — 2026-03-24 (~261 tok)
+
+## tests/automation/logs/
+
+- `ai-media-comparison-report.md` — AI Media Tool Comparison — First Tests (~1720 tok)
+- `cli-handoff-pattern.json` — Declares in (~3576 tok)
+- `firefly-image-set-test.json` (~487 tok)
+- `gap-fixes-codex-review.md` — Codex Adversarial Review — Full Session Changes (~571 tok)
+- `street-family-reunion-build.json` (~2081 tok)
+- `veo-video-hero-test.json` (~387 tok)
+
+## tests/media/
+
+- `comparison-gallery.html` — AI Media Provider Comparison — FAMtastic (~1869 tok)
+- `three-provider-comparison.json` (~1194 tok)
+
+## tests/media/adobe/
+
+- `firefly-web-test-checklist.md` — Adobe Firefly Web App Test Checklist (~748 tok)
+- `firefly-web-test-results.json` (~1181 tok)

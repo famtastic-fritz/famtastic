@@ -1,0 +1,349 @@
+#!/usr/bin/env python3
+"""google-media-generate — Generate images and videos via Google Imagen 4 + Veo 2.
+
+Usage:
+  google-media-generate --prompt "..." --output path/to/image.png
+  google-media-generate --video --prompt "..." --video-prompt "..." --output dir/
+  google-media-generate --batch batch.json [--output-dir path/]
+
+Batch JSON format:
+  [
+    {
+      "type": "image",
+      "filename": "hero.png",
+      "prompt": "...",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "type": "video",
+      "filename": "hero.mp4",
+      "still_filename": "hero.png",
+      "still_prompt": "...",
+      "video_prompt": "...",
+      "duration_seconds": 5
+    }
+  ]
+
+Environment:
+  GEMINI_API_KEY — Google AI Studio API key (paid plan required for Imagen/Veo)
+
+Models:
+  Image: imagen-4.0-generate-001  (~$0.004/image, ~7s)
+  Video: veo-2.0-generate-001     (~$0.05/video, ~33s, 5s loop)
+
+Telemetry:
+  Logs every operation to intelligence/media-usage.jsonl (global)
+  and to the site's media-telemetry.jsonl when --site-dir is provided.
+"""
+
+import os, sys, json, time, argparse, base64
+from pathlib import Path
+
+try:
+    import google.genai as genai
+    from google.genai import types
+except ImportError:
+    print('ERROR: google-genai not installed. Run: pip install google-genai', file=sys.stderr)
+    sys.exit(1)
+
+# ── Constants ────────────────────────────────────────────────────────────────
+
+IMAGE_MODEL = 'imagen-4.0-generate-001'
+VIDEO_MODEL = 'veo-2.0-generate-001'
+HUB_ROOT = Path(__file__).parent.parent
+
+# ── Telemetry ─────────────────────────────────────────────────────────────────
+
+def log_telemetry(entry, site_dir=None):
+    """Append telemetry to intelligence/media-usage.jsonl and optionally per-site log."""
+    entry['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    line = json.dumps(entry) + '\n'
+
+    # Global log
+    global_log = HUB_ROOT / 'intelligence' / 'media-usage.jsonl'
+    global_log.parent.mkdir(exist_ok=True)
+    with open(global_log, 'a') as f:
+        f.write(line)
+
+    # Per-site log
+    if site_dir:
+        site_log = Path(site_dir) / 'media-telemetry.jsonl'
+        with open(site_log, 'a') as f:
+            f.write(line)
+
+# ── Image generation ──────────────────────────────────────────────────────────
+
+def generate_image(client, prompt, output_path, aspect_ratio='16:9', site_dir=None):
+    """Generate one image with Imagen 4 and save to output_path. Returns image_bytes."""
+    print(f'  [imagen] generating: {Path(output_path).name}')
+    print(f'  [imagen] prompt: {prompt[:80]}...' if len(prompt) > 80 else f'  [imagen] prompt: {prompt}')
+
+    t0 = time.time()
+    try:
+        response = client.models.generate_images(
+            model=IMAGE_MODEL,
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio=aspect_ratio,
+                person_generation='ALLOW_ADULT',
+            )
+        )
+    except Exception as e:
+        print(f'  [imagen] ERROR: {e}', file=sys.stderr)
+        raise
+
+    elapsed = round(time.time() - t0, 1)
+    if not response.generated_images:
+        raise RuntimeError('Imagen returned no images — likely blocked by safety filters. Try rephrasing the prompt.')
+    image_bytes = response.generated_images[0].image.image_bytes
+    if not image_bytes:
+        raise RuntimeError('Imagen returned an image with no bytes — safety filter may have blocked output.')
+
+    # Save
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'wb') as f:
+        f.write(image_bytes)
+
+    file_size = output_path.stat().st_size
+    print(f'  [imagen] saved {output_path.name} ({file_size // 1024}KB) in {elapsed}s')
+
+    log_telemetry({
+        'provider': 'google',
+        'model': IMAGE_MODEL,
+        'operation': 'generate',
+        'site': site_dir.split('/')[-2] if site_dir else 'unknown',
+        'cost_usd': 0.004,
+        'credits_used': 0,
+        'generation_time_seconds': elapsed,
+        'file_size_bytes': file_size,
+        'resolution': aspect_ratio,
+        'prompt': prompt,
+        'output_file': str(output_path),
+    }, site_dir)
+
+    return image_bytes
+
+# ── Video generation ───────────────────────────────────────────────────────────
+
+def generate_video(client, still_bytes, video_prompt, output_path,
+                   duration_seconds=5, aspect_ratio='16:9', site_dir=None):
+    """Animate a still image into a video with Veo 2. Returns output_path."""
+    print(f'  [veo] generating video: {Path(output_path).name}')
+    print(f'  [veo] prompt: {video_prompt[:80]}...' if len(video_prompt) > 80 else f'  [veo] prompt: {video_prompt}')
+
+    t0 = time.time()
+
+    # Submit async operation
+    try:
+        op = client.models.generate_videos(
+            model=VIDEO_MODEL,
+            prompt=video_prompt,
+            image=types.Image(image_bytes=still_bytes, mime_type='image/png'),
+            config=types.GenerateVideosConfig(
+                duration_seconds=duration_seconds,
+                aspect_ratio=aspect_ratio,
+                person_generation='ALLOW_ALL',
+                number_of_videos=1,
+            )
+        )
+    except Exception as e:
+        print(f'  [veo] ERROR submitting: {e}', file=sys.stderr)
+        raise
+
+    # Poll until done
+    poll_interval = 5
+    dots = 0
+    while not op.done:
+        time.sleep(poll_interval)
+        elapsed_so_far = round(time.time() - t0, 0)
+        dots += 1
+        print(f'  [veo] waiting... {int(elapsed_so_far)}s', end='\r')
+        sys.stdout.flush()
+        try:
+            op = client.operations.get(operation=op)
+        except Exception as e:
+            print(f'\n  [veo] poll error: {e}', file=sys.stderr)
+            raise
+
+    elapsed = round(time.time() - t0, 1)
+    print(f'\n  [veo] operation complete in {elapsed}s')
+
+    if op.error:
+        print(f'  [veo] generation error: {op.error}', file=sys.stderr)
+        raise RuntimeError(f'Veo error: {op.error}')
+
+    # Get video bytes
+    generated = op.response.generated_videos[0]
+    video = generated.video
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if hasattr(video, 'video_bytes') and video.video_bytes:
+        with open(output_path, 'wb') as f:
+            f.write(video.video_bytes)
+    elif hasattr(video, 'uri') and video.uri:
+        # Download from URI using the API key
+        import urllib.request
+        api_key = os.environ['GEMINI_API_KEY']
+        uri = video.uri
+        if '?' in uri:
+            uri += f'&key={api_key}'
+        else:
+            uri += f'?key={api_key}'
+        urllib.request.urlretrieve(uri, output_path)
+    else:
+        raise RuntimeError('Veo response has no video_bytes or uri')
+
+    file_size = output_path.stat().st_size
+    print(f'  [veo] saved {output_path.name} ({file_size / 1024 / 1024:.1f}MB) in {elapsed}s')
+
+    log_telemetry({
+        'provider': 'google',
+        'model': VIDEO_MODEL,
+        'operation': 'video',
+        'site': site_dir.split('/')[-2] if site_dir else 'unknown',
+        'cost_usd': 0.05,
+        'credits_used': 0,
+        'generation_time_seconds': elapsed,
+        'file_size_bytes': file_size,
+        'resolution': aspect_ratio,
+        'prompt': video_prompt,
+        'output_file': str(output_path),
+    }, site_dir)
+
+    return output_path
+
+# ── Batch mode ────────────────────────────────────────────────────────────────
+
+def run_batch(client, batch_path, output_dir, site_dir=None):
+    """Process a batch JSON file. Returns list of result dicts."""
+    with open(batch_path) as f:
+        items = json.load(f)
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    results = []
+    still_bytes_cache = {}  # filename -> bytes, so video items can reuse the still
+
+    for i, item in enumerate(items):
+        item_type = item.get('type', 'image')
+        filename = item['filename']
+        output_path = output_dir / filename
+
+        print(f'\n[{i+1}/{len(items)}] {item_type}: {filename}')
+
+        try:
+            if item_type == 'image':
+                img_bytes = generate_image(
+                    client,
+                    prompt=item['prompt'],
+                    output_path=output_path,
+                    aspect_ratio=item.get('aspect_ratio', '1:1'),
+                    site_dir=site_dir,
+                )
+                still_bytes_cache[filename] = img_bytes
+                results.append({'filename': filename, 'type': 'image', 'status': 'ok',
+                                 'path': str(output_path)})
+
+            elif item_type == 'video':
+                # Get still bytes: either from cache or generate now
+                still_filename = item.get('still_filename')
+                still_bytes = still_bytes_cache.get(still_filename)
+
+                if still_bytes is None and still_filename:
+                    # Generate the still first
+                    still_out = output_dir / still_filename
+                    still_bytes = generate_image(
+                        client,
+                        prompt=item['still_prompt'],
+                        output_path=still_out,
+                        aspect_ratio=item.get('aspect_ratio', '16:9'),
+                        site_dir=site_dir,
+                    )
+                    still_bytes_cache[still_filename] = still_bytes
+                    results.append({'filename': still_filename, 'type': 'image', 'status': 'ok',
+                                    'path': str(still_out)})
+
+                if still_bytes is None:
+                    raise ValueError(f'No still bytes available for video {filename}')
+
+                generate_video(
+                    client,
+                    still_bytes=still_bytes,
+                    video_prompt=item['video_prompt'],
+                    output_path=output_path,
+                    duration_seconds=item.get('duration_seconds', 5),
+                    aspect_ratio=item.get('aspect_ratio', '16:9'),
+                    site_dir=site_dir,
+                )
+                results.append({'filename': filename, 'type': 'video', 'status': 'ok',
+                                 'path': str(output_path)})
+            else:
+                print(f'  unknown type: {item_type}', file=sys.stderr)
+                results.append({'filename': filename, 'type': item_type, 'status': 'skipped'})
+
+        except Exception as e:
+            print(f'  ERROR: {e}', file=sys.stderr)
+            results.append({'filename': filename, 'type': item_type, 'status': 'error',
+                             'error': str(e)})
+
+    return results
+
+# ── CLI ───────────────────────────────────────────────────────────────────────
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate images and videos via Google Imagen 4 + Veo 2')
+    parser.add_argument('--prompt', help='Image prompt (single image mode)')
+    parser.add_argument('--video', action='store_true', help='Also generate a video from the still')
+    parser.add_argument('--video-prompt', help='Video animation prompt (used with --video)')
+    parser.add_argument('--output', help='Output file path (single mode) or directory (--video mode)')
+    parser.add_argument('--aspect-ratio', default='16:9', help='Aspect ratio (default: 16:9)')
+    parser.add_argument('--duration', type=int, default=5, help='Video duration in seconds (default: 5)')
+    parser.add_argument('--batch', help='Path to batch JSON file')
+    parser.add_argument('--output-dir', help='Output directory (batch mode)')
+    parser.add_argument('--site-dir', help='Site directory for per-site telemetry')
+    args = parser.parse_args()
+
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        print('ERROR: GEMINI_API_KEY not set', file=sys.stderr)
+        sys.exit(1)
+
+    client = genai.Client(api_key=api_key)
+
+    # ── Batch mode ──
+    if args.batch:
+        output_dir = args.output_dir or Path(args.batch).parent
+        print(f'Running batch: {args.batch}')
+        results = run_batch(client, args.batch, output_dir, site_dir=args.site_dir)
+        print(f'\nBatch complete: {sum(1 for r in results if r["status"] == "ok")}/{len(results)} succeeded')
+        for r in results:
+            status = '✓' if r['status'] == 'ok' else '✗'
+            print(f'  {status} {r["filename"]} ({r["type"]})')
+        return
+
+    # ── Single image mode ──
+    if not args.prompt:
+        parser.print_help()
+        sys.exit(1)
+
+    output = args.output or 'output.png'
+    img_bytes = generate_image(client, args.prompt, output,
+                               aspect_ratio=args.aspect_ratio,
+                               site_dir=args.site_dir)
+
+    if args.video:
+        video_prompt = args.video_prompt or args.prompt
+        output_dir = Path(output).parent
+        video_out = output_dir / (Path(output).stem + '.mp4')
+        generate_video(client, img_bytes, video_prompt, video_out,
+                       duration_seconds=args.duration,
+                       aspect_ratio=args.aspect_ratio,
+                       site_dir=args.site_dir)
+
+if __name__ == '__main__':
+    main()

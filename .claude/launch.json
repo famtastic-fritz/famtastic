@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["site-studio/server.js"],
       "port": 3334
+    },
+    {
+      "name": "street-family-reunion",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "sites/site-street-family-reunion/dist"],
+      "autoPort": true
     }
   ]
 }

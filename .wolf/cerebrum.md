@@ -4,6 +4,33 @@
 > Do not edit manually unless correcting an error.
 > Last updated: 2026-03-24
 
+## Tool Availability (Verified April 8, 2026)
+
+### Image Generation
+- Google Imagen 4.0: AVAILABLE (Gemini API, $25 funded, ~$0.004/image)
+- Leonardo.ai Phoenix: AVAILABLE (API, $5 free credit, ~$0.016/image)
+- Adobe Firefly API: NOT AVAILABLE (requires enterprise $1K+/mo — verified in Developer Console)
+- Adobe Firefly Web: AVAILABLE (Playwright automation, CC credits)
+
+### Video Generation
+- Google Veo: AVAILABLE (Gemini API, tested, 33s generation, 1.6MB output)
+- Adobe Firefly Video: AVAILABLE via web only (CC credits, no API)
+
+### Post-Processing
+- Photoshop via adb-mcp: PARTIALLY AVAILABLE (installed, UXP plugin load bug being fixed)
+- Premiere via adb-mcp: PARTIALLY AVAILABLE (installed, same UXP dependency)
+
+### Code Review
+- Codex plugin: AVAILABLE (/codex:review, /codex:adversarial-review, /codex:rescue)
+- Codex MCP (official): AVAILABLE (Claude Desktop)
+- Codex Bridge MCP: AVAILABLE (Claude Desktop)
+
+### Standing Rule
+Never attempt Adobe Firefly API calls. They will always fail.
+Route to Google Imagen API or Firefly web via Playwright instead.
+Every new API integration must be verified in the capability
+registry before first use.
+
 ## User Preferences
 
 <!-- How the user likes things done. Code style, tools, patterns, communication. -->
