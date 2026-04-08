@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auntie Gale's Garage Sales — New Deals Every Week!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="keywords" content="New Site, general, home, Shop/inventory prominence —, Deals/specials — highlighted, Buddy the mascot, bold, playful, friendly, energetic, nostalgic, whimsical">
+    <meta property="og:title" content="Home | New Site">
+    <meta property="og:description" content="Showcase Auntie Gale's garage sales inventory and deals in a fun, energetic way that attracts bargain hunters and makes shopping feel like an adventure. Dr">
+    <meta property="og:type" content="website">
+    <meta name="robots" content="index, follow">
+  <meta name="description" content="Auntie Gale's Garage Sales — curated vintage finds, estate treasures, and unbeatable deals. New items every weekend in the Denver metro area.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <style>
+    /* STUDIO LAYOUT FOUNDATION */
+    html,body{overflow-x:hidden;margin:0;padding:0} main{overflow-x:hidden;width:100%;max-width:100%} *,*::before,*::after{box-sizing:border-box;min-width:0} img,video,table,iframe,embed{max-width:100%;height:auto}
+    /* END STUDIO LAYOUT FOUNDATION */
+    .featured-section { background: #FFF7ED; }
+    .testimonials-section { background: #EFF6FF; border-top: 4px solid var(--dark); border-bottom: 4px solid var(--dark); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ NAVIGATION ═══════════════════════════ -->
+<nav class="site-nav" data-section-id="nav">
+  <div style="max-width:1200px;margin:0 auto;padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+    <a href="index.html" class="nav-logo">Auntie Gale's</a>
+    <div style="display:flex;gap:0.25rem;flex-wrap:wrap;align-items:center;">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="deals.html">Deals</a>
+      <a href="about.html">About</a>
+      <a href="contact.html" class="active">Contact</a>
+    </div>
+    <span style="color:#FBBF24;font-weight:800;font-size:0.85rem;" data-field-id="nav-phone">📞 (303) 555-0192</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════ HERO ══════════════════════════════════ -->
+<section class="hero-section" data-section-id="hero">
+  <video class="hero-video-bg" autoplay muted loop playsinline poster="assets/video/hero-still.png"
+    data-slot-id="hero-video" data-slot-status="google-generated">
+    <source src="assets/video/hero.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+
+  <!-- Starburst 1 — top left -->
+  <div class="starburst" style="position:absolute;top:2rem;left:2rem;width:100px;height:100px;background:#FBBF24;z-index:15;transform:rotate(8deg);">
+    <span style="text-align:center;font-size:0.95rem;line-height:1.1;color:var(--dark);">OPEN<br>SAT &amp;<br>SUN</span>
+  </div>
+
+  <!-- Starburst 2 — upper mid -->
+  <div class="starburst" style="position:absolute;top:1.5rem;left:44%;width:80px;height:80px;background:var(--primary);z-index:15;transform:rotate(-5deg);">
+    <span style="text-align:center;font-size:0.8rem;line-height:1.1;color:var(--white);">FREE<br>ENTRY</span>
+  </div>
+
+  <!-- Starburst 3 — mid-left edge -->
+  <div class="starburst" style="position:absolute;top:52%;left:0.75rem;transform:translateY(-50%) rotate(12deg);width:72px;height:72px;background:var(--green);z-index:15;">
+    <span style="text-align:center;font-size:0.7rem;line-height:1.1;color:var(--white);">NEW<br>ITEMS</span>
+  </div>
+
+  <!-- Hero text -->
+  <div class="hero-content" style="padding:2rem 1.5rem 2rem 2.5rem;">
+    <div class="section-label" data-field-id="hero-label">Curated Estate &amp; Garage Finds</div>
+    <h1 class="hero-title" data-field-id="hero-headline">DEALS SO GOOD<br>IT FEELS LIKE<br>STEALING</h1>
+    <p class="hero-subtitle" data-field-id="hero-subheadline">New treasures every weekend — Denver Metro Area</p>
+    <a href="shop.html" class="hero-cta" data-field-id="hero-cta">Shop This Weekend's Deals →</a>
+  </div>
+
+  <!-- Buddy peeking from right -->
+  <img src="assets/buddy/buddy-peek-right.png"
+    alt="Buddy the woodpecker mascot peeking in"
+    class="buddy-peek-right"
+    data-buddy-placement="hero-peek"
+    data-slot-id="buddy-hero-peek">
+
+  <!-- Speech bubble -->
+  <div class="buddy-speech-bubble" data-field-id="buddy-speech-hero">New treasures every weekend!</div>
+</section>
+
+<!-- ═══════════════════════ WAVY DIVIDER ══════════════════════════ -->
+<div class="wavy-divider" style="background:var(--dark);">
+  <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" fill="#FFF7ED"/>
+  </svg>
+</div>
+
+<!-- ═══════════════════════ FEATURED CAROUSEL ══════════════════════ -->
+<section class="featured-section" style="padding:3rem 0;" data-section-id="featured">
+  <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div class="section-label">Fresh This Week</div>
+      <h2 class="section-title" data-field-id="featured-title">Featured Finds</h2>
+      <p style="font-size:1rem;color:#6B7280;margin-top:0.5rem;" data-field-id="featured-updated">Last updated: April 8, 2026</p>
+    </div>
+
+    <div class="swiper featured-swiper" style="padding-bottom:3rem;">
+      <div class="swiper-wrapper">
+
+        <div class="swiper-slide" style="padding:1rem 0.5rem;">
+          <div class="product-card" data-product-id="feat-1">
+            <div style="height:200px;background:linear-gradient(135deg,#FBBF24,#F59E0B);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:4rem;border-radius:5px 5px 0 0;">🎸</div>
+            <div class="product-card-body">
+              <span class="product-condition">Available</span>
+              <h3 style="font-weight:800;font-size:1.1rem;margin:0.4rem 0;" data-field-id="prod-feat-1-title">Vintage Fender Acoustic Guitar</h3>
+              <div style="display:flex;align-items:baseline;gap:0.75rem;margin-top:0.5rem;">
+                <span class="product-price" data-field-id="prod-feat-1-price">$85</span>
+                <span class="stage-was-price">$150</span>
+              </div>
+              <div style="margin-top:0.3rem;"><span class="tag-badge">Estate Find</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="swiper-slide" style="padding:1rem 0.5rem;">
+          <div class="product-card" data-product-id="feat-2">
+            <div style="height:200px;background:linear-gradient(135deg,#DBEAFE,#93C5FD);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:4rem;border-radius:5px 5px 0 0;">💡</div>
+            <div class="product-card-body">
+              <span class="product-condition">Available</span>
+              <h3 style="font-weight:800;font-size:1.1rem;margin:0.4rem 0;" data-field-id="prod-feat-2-title">Mid-Century Ceramic Table Lamp</h3>
+              <div style="display:flex;align-items:baseline;gap:0.75rem;margin-top:0.5rem;">
+                <span class="product-price" data-field-id="prod-feat-2-price">$35</span>
+              </div>
+              <div style="margin-top:0.3rem;"><span class="tag-badge">Vintage</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="swiper-slide" style="padding:1rem 0.5rem;">
+          <div class="product-card" data-product-id="feat-3">
+            <div style="height:200px;background:linear-gradient(135deg,#DCFCE7,#86EFAC);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:4rem;border-radius:5px 5px 0 0;">📚</div>
+            <div class="product-card-body">
+              <span class="product-condition">Available</span>
+              <h3 style="font-weight:800;font-size:1.1rem;margin:0.4rem 0;" data-field-id="prod-feat-3-title">Box of 50 Vinyl Records — Mixed</h3>
+              <div style="display:flex;align-items:baseline;gap:0.75rem;margin-top:0.5rem;">
+                <span class="product-price" data-field-id="prod-feat-3-price">$45</span>
+                <span class="stage-was-price">$80</span>
+              </div>
+              <div style="margin-top:0.3rem;"><span class="tag-badge">Lot Deal</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="swiper-slide" style="padding:1rem 0.5rem;">
+          <div class="product-card" data-product-id="feat-4">
+            <div style="height:200px;background:linear-gradient(135deg,#FEE2E2,#FCA5A5);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:4rem;border-radius:5px 5px 0 0;">🪑</div>
+            <div class="product-card-body">
+              <span class="product-condition">Available</span>
+              <h3 style="font-weight:800;font-size:1.1rem;margin:0.4rem 0;" data-field-id="prod-feat-4-title">Pair of Cushioned Dining Chairs</h3>
+              <div style="display:flex;align-items:baseline;gap:0.75rem;margin-top:0.5rem;">
+                <span class="product-price" data-field-id="prod-feat-4-price">$60</span>
+              </div>
+              <div style="margin-top:0.3rem;"><span class="tag-badge">Furniture</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="swiper-slide" style="padding:1rem 0.5rem;">
+          <div class="product-card" data-product-id="feat-5">
+            <div style="height:200px;background:linear-gradient(135deg,#FEF9C3,#FDE047);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:4rem;border-radius:5px 5px 0 0;">🎨</div>
+            <div class="product-card-body">
+              <span class="product-condition">Available</span>
+              <h3 style="font-weight:800;font-size:1.1rem;margin:0.4rem 0;" data-field-id="prod-feat-5-title">Framed Oil Painting — Mountain Scene</h3>
+              <div style="display:flex;align-items:baseline;gap:0.75rem;margin-top:0.5rem;">
+                <span class="product-price" data-field-id="prod-feat-5-price">$120</span>
+                <span class="stage-was-price">$200</span>
+              </div>
+              <div style="margin-top:0.3rem;"><span class="tag-badge">Art</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="swiper-pagination"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    </div>
+
+    <div style="text-align:center;margin-top:1rem;">
+      <a href="shop.html" class="btn-secondary">See All Items →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ WAVY DIVIDER 2 ════════════════════════ -->
+<div class="wavy-divider" style="background:#FFF7ED;">
+  <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,20 C360,55 720,0 1080,40 C1260,58 1380,15 1440,20 L1440,60 L0,60 Z" fill="var(--bg)"/>
+  </svg>
+</div>
+
+<!-- ═══════════════════════ BUDDY'S PICKS ════════════════════════ -->
+<section style="padding:4rem 0;background:var(--bg);" data-section-id="buddys-picks">
+  <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;">
+    <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2.5rem;">
+      <img src="assets/buddy/buddy-thumbs-up.png"
+        alt="Buddy giving thumbs up"
+        style="height:100px;flex-shrink:0;"
+        data-buddy-placement="picks-icon">
+      <div>
+        <div class="section-label">Buddy Approved</div>
+        <h2 class="section-title" data-field-id="picks-title">Buddy's Picks</h2>
+        <p style="font-size:1rem;color:#6B7280;" data-field-id="picks-subtitle">Hand-selected deals Buddy personally vouches for</p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:2rem;">
+
+      <div class="product-card" data-product-id="pick-1" data-buddy-pick="true">
+        <img src="assets/buddy/buddy-thumbs-up.png" alt="Buddy's Pick!" class="buddy-pick-badge">
+        <div style="height:180px;background:linear-gradient(135deg,#E0E7FF,#A5B4FC);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:3.5rem;border-radius:5px 5px 0 0;">⌚</div>
+        <div class="product-card-body">
+          <span class="product-condition">Available</span>
+          <h3 style="font-weight:800;margin:0.4rem 0 0.2rem;" data-field-id="pick-1-title">Vintage Seiko Watch</h3>
+          <p style="font-size:0.85rem;color:#6B7280;margin:0 0 0.5rem;" data-field-id="pick-1-desc">1970s automatic wind, fully functional</p>
+          <div class="product-price" data-field-id="pick-1-price">$55</div>
+        </div>
+      </div>
+
+      <div class="product-card" data-product-id="pick-2" data-buddy-pick="true">
+        <img src="assets/buddy/buddy-thumbs-up.png" alt="Buddy's Pick!" class="buddy-pick-badge">
+        <div style="height:180px;background:linear-gradient(135deg,#FEE2E2,#FCA5A5);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:3.5rem;border-radius:5px 5px 0 0;">📷</div>
+        <div class="product-card-body">
+          <span class="product-condition">Available</span>
+          <h3 style="font-weight:800;margin:0.4rem 0 0.2rem;" data-field-id="pick-2-title">Canon AE-1 Film Camera</h3>
+          <p style="font-size:0.85rem;color:#6B7280;margin:0 0 0.5rem;" data-field-id="pick-2-desc">With 50mm lens, tested and working</p>
+          <div class="product-price" data-field-id="pick-2-price">$95</div>
+        </div>
+      </div>
+
+      <div class="product-card" data-product-id="pick-3" data-buddy-pick="true">
+        <img src="assets/buddy/buddy-thumbs-up.png" alt="Buddy's Pick!" class="buddy-pick-badge">
+        <div style="height:180px;background:linear-gradient(135deg,#DCFCE7,#86EFAC);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:3.5rem;border-radius:5px 5px 0 0;">🏺</div>
+        <div class="product-card-body">
+          <span class="product-condition">Available</span>
+          <h3 style="font-weight:800;margin:0.4rem 0 0.2rem;" data-field-id="pick-3-title">Hand-Thrown Pottery Set</h3>
+          <p style="font-size:0.85rem;color:#6B7280;margin:0 0 0.5rem;" data-field-id="pick-3-desc">4-piece mug set, local artisan</p>
+          <div class="product-price" data-field-id="pick-3-price">$40</div>
+        </div>
+      </div>
+
+      <div class="product-card" data-product-id="pick-4" data-buddy-pick="true">
+        <img src="assets/buddy/buddy-thumbs-up.png" alt="Buddy's Pick!" class="buddy-pick-badge">
+        <div style="height:180px;background:linear-gradient(135deg,#FEF9C3,#FDE047);display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--dark);font-size:3.5rem;border-radius:5px 5px 0 0;">📻</div>
+        <div class="product-card-body">
+          <span class="product-condition">Available</span>
+          <h3 style="font-weight:800;margin:0.4rem 0 0.2rem;" data-field-id="pick-4-title">1950s Tube Radio</h3>
+          <p style="font-size:0.85rem;color:#6B7280;margin:0 0 0.5rem;" data-field-id="pick-4-desc">Restored, plays beautifully</p>
+          <div class="product-price" data-field-id="pick-4-price">$150</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:2.5rem;">
+      <a href="shop.html" class="btn-primary">Shop All Buddy's Picks →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ DAILY DEAL STAGE ═════════════════════ -->
+<section style="padding:4rem 0;background:#FFF7ED;border-top:4px solid var(--dark);" data-section-id="daily-deal">
+  <div style="max-width:900px;margin:0 auto;padding:0 1.5rem;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div class="section-label">Today Only</div>
+      <h2 class="section-title" data-field-id="deal-section-title">Daily Deal</h2>
+    </div>
+
+    <div class="display-stage" data-stage-slot="daily-deal" style="margin-left:5rem;">
+      <img src="assets/buddy/buddy-sale-sign.png"
+        alt="Buddy holding sale sign"
+        style="position:absolute;left:-85px;bottom:-10px;height:190px;z-index:20;filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.25));"
+        data-buddy-placement="deal-sign">
+
+      <div class="starburst stage-starburst">
+        <span style="font-size:0.85rem;line-height:1.1;text-align:center;color:var(--dark);">TODAY<br>ONLY</span>
+      </div>
+
+      <div class="display-stage-header">
+        <h2 data-field-id="deal-item-name">Singer Featherweight Sewing Machine</h2>
+        <span class="tag-badge" style="transform:rotate(2deg);">Estate Sale</span>
+      </div>
+
+      <div class="display-stage-body">
+        <div>
+          <div style="height:200px;background:linear-gradient(135deg,#DBEAFE,#93C5FD);display:flex;align-items:center;justify-content:center;border:3px solid var(--dark);border-radius:6px;font-size:5rem;" data-slot-id="deal-image">🧵</div>
+        </div>
+        <div>
+          <div style="margin-bottom:0.5rem;"><span class="stage-was-price" data-field-id="deal-was-price">Was $220</span></div>
+          <div class="stage-price" data-field-id="deal-price">$95</div>
+          <p style="font-size:0.95rem;color:#4B5563;margin:0.75rem 0;" data-field-id="deal-description">
+            1950s Singer Featherweight 221, recently serviced and oiled. Comes with original case and 12 bobbins. A collector's dream.
+          </p>
+          <span class="product-condition" style="display:inline-block;margin-bottom:1rem;">Available</span><br>
+          <a href="contact.html" class="btn-primary" data-field-id="deal-cta">Claim This Deal →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ TESTIMONIALS ═════════════════════════ -->
+<section class="testimonials-section" style="padding:4rem 0;" data-section-id="testimonials">
+  <div style="max-width:1200px;margin:0 auto;padding:0 1.5rem;">
+    <div style="text-align:center;margin-bottom:2.5rem;">
+      <div class="section-label">Happy Customers</div>
+      <h2 class="section-title" data-field-id="testimonials-title">Real People, Real Deals</h2>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;">
+
+      <div class="testimonial-card" data-testimonial-id="t1">
+        <div class="testimonial-stars">★★★★★</div>
+        <p style="margin:1rem 0 0.75rem;font-size:1rem;" data-field-id="t1-text">"Found a set of cast iron pans for $12. My daughter thought I was crazy stopping — I proved her wrong the moment we got home!"</p>
+        <div style="font-weight:800;font-size:0.9rem;" data-field-id="t1-name">— Maureen T., Lakewood</div>
+      </div>
+
+      <div class="testimonial-card" data-testimonial-id="t2">
+        <div class="testimonial-stars">★★★★★</div>
+        <p style="margin:1rem 0 0.75rem;font-size:1rem;" data-field-id="t2-text">"Gale knows her stuff! She told me the lamp I was eyeing was a genuine McCoy piece. Got it for $18. Listed for $140 at the antique mall."</p>
+        <div style="font-weight:800;font-size:0.9rem;" data-field-id="t2-name">— Dennis R., Denver</div>
+      </div>
+
+      <div class="testimonial-card" data-testimonial-id="t3">
+        <div class="testimonial-stars">★★★★★</div>
+        <p style="margin:1rem 0 0.75rem;font-size:1rem;" data-field-id="t3-text">"I've been shopping with Auntie Gale for 3 years. She tests everything before selling it. You know exactly what you're getting."</p>
+        <div style="font-weight:800;font-size:0.9rem;" data-field-id="t3-name">— Sarah K., Aurora</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ NEWSLETTER ═══════════════════════════ -->
+<section class="newsletter-section" style="padding:3rem 0;" data-section-id="newsletter">
+  <div style="max-width:700px;margin:0 auto;padding:0 1.5rem;text-align:center;">
+    <div class="section-label" style="color:#93C5FD;">Get First Dibs</div>
+    <h2 class="section-title" style="color:var(--white);margin-bottom:0.5rem;" data-field-id="newsletter-title">New Items Every Week</h2>
+    <p style="color:#BFDBFE;margin-bottom:1.5rem;" data-field-id="newsletter-body">Sign up and I'll email you before I post publicly. The good stuff goes fast.</p>
+    <form style="display:flex;justify-content:center;flex-wrap:wrap;gap:0;" onsubmit="return false;">
+      <input type="email" class="newsletter-input" placeholder="your@email.com" aria-label="Email address" data-field-id="newsletter-placeholder">
+      <button type="submit" class="newsletter-btn" data-field-id="newsletter-cta">Sign Me Up!</button>
+    </form>
+    <p style="color:#93C5FD;font-size:0.8rem;margin-top:0.75rem;">No spam. Just deals. Unsubscribe anytime.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════════════ -->
+<footer class="site-footer" style="padding:2.5rem 1.5rem 1.5rem;" data-section-id="footer">
+  <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.5rem;">
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">Auntie Gale's</a>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+      <a href="index.html" class="footer-link">Home</a>
+      <a href="shop.html" class="footer-link">Shop</a>
+      <a href="deals.html" class="footer-link">Deals</a>
+      <a href="about.html" class="footer-link">About</a>
+    </div>
+    <span style="color:#9CA3AF;font-size:0.9rem;">📞 (303) 555-0192</span>
+  </div>
+  <div style="border-top:1px solid #374151;padding-top:1rem;text-align:center;max-width:1200px;margin:0 auto;">
+    <p style="color:#6B7280;font-size:0.8rem;">© 2026 Auntie Gale's Garage Sales. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+<script>
+new Swiper('.featured-swiper', {
+  slidesPerView: 1,
+  spaceBetween: 20,
+  loop: true,
+  autoplay: { delay: 3500, disableOnInteraction: false, pauseOnMouseEnter: true },
+  pagination: { el: '.swiper-pagination', clickable: true },
+  navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+  breakpoints: {
+    640:  { slidesPerView: 2 },
+    1024: { slidesPerView: 3 }
+  }
+});
+</script>
+</body>
+</html>
