@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-08 — Fix 7 Studio gaps from Site #4 build
+
+Fixed all 5 broken + 2 partial gaps from the Playwright-driven gap analysis. Fix #1 (CRITICAL): brief colors and fonts now extracted from design decisions + user message + visual_direction and injected as MANDATORY VISUAL REQUIREMENTS at the top of every build prompt. Fix #2: content_update classifier widened with date/location/time/venue/schedule keywords plus natural language patterns. Fix #3: verification intent added to classifier with handler that runs runBuildVerification() directly — no plan gate. Fix #4: component_export and component_import classifier intents with handlers that interface with the component library. Fix #6: extractPagesFromBrief now handles compound page names (our-story, event-details, etc.) via COMPOUND_PAGES lookup table. Fix #7: page auto-switch now resolves aliases (home→index.html) and fuzzy matches partial page names. 81 tests passing.
+
 ## 2026-04-08 — Site #4 gap analysis: Street Family Reunion (Playwright-driven)
 
 Full pipeline test via Playwright browser automation against Studio UI. 5/5 pages built, deployed to https://street-family-reunion-staging.netlify.app. 10 tests run, 3 passed cleanly, 2 partial, 5 failed. CRITICAL finding: design brief colors and fonts are NOT injected into build prompts — Claude generates with generic defaults regardless of brief content. Other gaps: content edits without field names misroute, structural edits go to activePage ignoring requested page, verification misclassified as layout_update, component library has no chat interface. Working: stock photo fill, deploy, price edits with field names. AI media pipeline produced all assets (video 2.9MB, parallax bg, 6 cards at 8/10 coherence, book cover at 10/10 quality). Full gap report at tests/automation/logs/street-family-reunion-build.json.

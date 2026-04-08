@@ -4347,13 +4347,16 @@ function classifyRequest(message, spec) {
 
   // Content update signals — text/copy changes without layout (HIGHER precedence than restyle/bug_fix/layout)
   // Pattern 1: action verb + optional words + content field type (not structural add/remove)
-  if (lower.match(/\b(change|update|replace|edit|set|fix|correct|modify)\b.*?\b(phone|email|address|name|title|heading|paragraph|description|hours|price|number|text|label|tagline|slogan|testimonial|subtitle|motto|cta)\b/) && !lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|grid)\b/)) return 'content_update';
+  if (lower.match(/\b(change|update|replace|edit|set|fix|correct|modify)\b.*?\b(phone|email|address|name|title|heading|paragraph|description|hours|price|number|text|label|tagline|slogan|testimonial|subtitle|motto|cta|date|location|time|schedule|venue)\b/) && !lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|grid)\b/)) return 'content_update';
   // Pattern 2: "the X should be..." / "make the X say..." / "buttons to say"
-  if (lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|buttons?)\b.*?\b(should\s+be|to\s+be|to\s+say|say|read)\b/)) return 'content_update';
+  if (lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|buttons?|date|location|time)\b.*?\b(should\s+be|to\s+be|to\s+say|say|read)\b/)) return 'content_update';
   // Pattern 3: "X to Y" with field type present
-  if (lower.match(/\b(change|update|set)\b/) && lower.match(/\bto\b/) && lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|button)\b/)) return 'content_update';
+  if (lower.match(/\b(change|update|set)\b/) && lower.match(/\bto\b/) && lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|button|date|location|time|venue)\b/)) return 'content_update';
   // Pattern 4: "add the address/hours/phone" — adding a content VALUE (not a structural section)
   if (lower.match(/\b(add)\s+(the\s+|my\s+|our\s+|a\s+)?(business\s+)?(address|hours|phone|email|number)\b/) && !lower.match(/\b(section|form|block|widget)\b/)) return 'content_update';
+  // Pattern 5: "the X to/is VALUE" — natural language content change (Fix #2 from Site 4)
+  if (lower.match(/\b(reunion|event|meeting)\s+(date|time|location)\b.*?\b(to|is|should\s+be|will\s+be)\b/)) return 'content_update';
+  if (lower.match(/\b(the\s+)?(email|phone|price|date|location)\s+(should\s+be|is|to)\s/)) return 'content_update';
 
   // Restyle signals — about overall vibe, not specific elements
   if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
@@ -4361,6 +4364,14 @@ function classifyRequest(message, spec) {
 
   // Bug fix signals
   if (lower.match(/\b(broken|bug|doesn't\s+work|not\s+working|misaligned|overlapping|overflow)\b/)) return 'bug_fix';
+
+  // Verification — run build verification checks (Fix #3 from Site 4 gap analysis)
+  if (lower.match(/\b(run\s+verif|verify\s+the|check\s+the\s+site|run\s+checks|verify\s+the\s+build|check\s+for\s+issues|run\s+review|review\s+the\s+build)\b/)) return 'verification';
+
+  // Component library — export/import (Fix #4 from Site 4 gap analysis)
+  if (lower.match(/\b(export|save)\s+(?:the\s+|this\s+)?(?:\w+\s+)?(?:section|component|hero|card|form)\s+(?:to|as|into)\s+(?:the\s+)?(?:component\s+)?library\b/)) return 'component_export';
+  if (lower.match(/\b(import|use|get|load)\s+(?:the\s+|a\s+)?(?:\w+[\s-])?(?:component|hero|card|form)\s+(?:from|in)\s+(?:the\s+)?library\b/)) return 'component_import';
+  if (lower.match(/\bwhat\s+components?\s+(?:are\s+)?(?:in|available)\b/)) return 'component_import';
 
   // Layout update — structural changes to specific elements
   if (lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|button|form|nav|header|footer|sidebar|testimonial|feature|grid)\b/)) return 'layout_update';
@@ -4376,15 +4387,36 @@ function classifyRequest(message, spec) {
  */
 function extractPagesFromBrief(brief) {
   const sections = brief.must_have_sections || [];
+  // Single-word page names
   const KNOWN_PAGES = new Set([
     'about', 'services', 'contact', 'gallery', 'blog', 'portfolio',
     'testimonials', 'faq', 'pricing', 'team', 'careers', 'events',
     'shop', 'products', 'news', 'resources', 'work', 'projects',
-    'menu', 'booking', 'schedule', 'reviews',
+    'menu', 'booking', 'schedule', 'reviews', 'connect', 'history',
+    'story', 'photos', 'donate', 'rsvp', 'registration', 'sponsors',
   ]);
+  // Multi-word page name patterns → slugified page name
+  const COMPOUND_PAGES = {
+    'our story': 'our-story', 'our history': 'our-history', 'event details': 'event-details',
+    'reunion 2026': 'event-details', 'reunion 2025': 'event-details',
+    'about us': 'about', 'meet the team': 'team', 'photo gallery': 'gallery',
+    'family tree': 'family-tree', 'family history': 'our-story',
+    'get in touch': 'contact', 'contact us': 'contact',
+  };
   const pages = ['home'];
   for (const section of sections) {
     const cleaned = section.toLowerCase().replace(/\(.*?\)/g, '').trim();
+    // Check compound names first (Fix #6 from Site 4 gap analysis)
+    let matched = false;
+    for (const [compound, slug] of Object.entries(COMPOUND_PAGES)) {
+      if (cleaned.includes(compound) && !pages.includes(slug)) {
+        pages.push(slug);
+        matched = true;
+        break;
+      }
+    }
+    if (matched) continue;
+    // Fall back to single-word match
     const candidate = cleaned.split(/\s+/)[0];
     if (KNOWN_PAGES.has(candidate) && !pages.includes(candidate)) {
       pages.push(candidate);
@@ -4413,15 +4445,29 @@ function buildPromptContext(requestType, spec, userMessage) {
   // Auto-switch page: match "fix on about.html" or "fix the about page" or "changes to services"
   const pageRefMatch = userMessage.toLowerCase().match(/\b(?:on|in|for|to|update|fix|change|edit)\s+(?:the\s+)?(\w+)\.html\b/);
   const pageNameMatch = !pageRefMatch && userMessage.toLowerCase().match(/\b(?:on|in|for|to|update|fix|change|edit)\s+(?:the\s+)?(\w+)\s+page\b/);
-  const matchedPageName = pageRefMatch ? pageRefMatch[1].toLowerCase() + '.html'
+  let matchedPageName = pageRefMatch ? pageRefMatch[1].toLowerCase() + '.html'
     : pageNameMatch ? pageNameMatch[1].toLowerCase() + '.html'
     : null;
+  // Fix #7: "home page" → index.html, "history page" → our-story.html (common aliases)
+  if (matchedPageName) {
+    const aliases = { 'home.html': 'index.html', 'homepage.html': 'index.html', 'main.html': 'index.html',
+      'history.html': 'our-story.html', 'story.html': 'our-story.html',
+      'events.html': 'event-details.html', 'event.html': 'event-details.html', 'reunion.html': 'event-details.html',
+      'photos.html': 'gallery.html', 'pictures.html': 'gallery.html' };
+    if (aliases[matchedPageName]) matchedPageName = aliases[matchedPageName];
+    // Also try fuzzy match: if "connect.html" exists in pages, use it
+    if (!pages.includes(matchedPageName)) {
+      const base = matchedPageName.replace('.html', '');
+      const fuzzy = pages.find(p => p.includes(base) || base.includes(p.replace('.html', '')));
+      if (fuzzy) matchedPageName = fuzzy;
+    }
+  }
   // Resolve which page to use — but don't mutate module-level currentPage here.
   // Return resolvedPage so the caller can update currentPage explicitly.
   let resolvedPage = currentPage;
   if (matchedPageName && requestType !== 'build' && requestType !== 'major_revision') {
     if (pages.includes(matchedPageName) && matchedPageName !== currentPage) {
-      console.log(`[context] User references ${matchedPageName} (currently on ${currentPage}) — resolved for context`);
+      console.log(`[context] User references ${matchedPageName} (currently on ${currentPage}) — auto-switching`);
       resolvedPage = matchedPageName;
     }
   }
@@ -4471,6 +4517,74 @@ function buildPromptContext(requestType, spec, userMessage) {
 - Must-have sections: ${(brief.must_have_sections || []).join(', ') || 'not set'}
 - AVOID: ${(brief.avoid || []).join('; ') || 'none specified'}`;
   }
+
+  // Extract mandatory visual requirements from brief + decisions (Fix #1 from Site 4 gap analysis)
+  let visualRequirements = '';
+  {
+    const colorHexes = {};
+    const fontSpecs = {};
+    // Scan decisions for color/font specs
+    for (const d of decisions) {
+      const txt = d.decision || '';
+      // Extract hex colors with labels: "Heritage Burgundy (#7B2D3B)" or "primary: #7B2D3B"
+      const hexMatches = txt.matchAll(/(\w[\w\s]*?)\s*[\(:]?\s*(#[0-9A-Fa-f]{6})\b/g);
+      for (const m of hexMatches) {
+        const label = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
+        if (label.length < 30) colorHexes[label] = m[2];
+      }
+      // Extract font names
+      const fontMatch = txt.match(/(?:font|heading|body|accent)[\s:]*([A-Z][a-z]+(?:\s[A-Z][a-z]+)*)/g);
+      if (fontMatch) {
+        fontMatch.forEach(f => {
+          const name = f.replace(/^(font|heading|body|accent)[\s:]*/i, '').trim();
+          if (name.length > 2 && name.length < 40) {
+            const role = f.match(/heading/i) ? 'heading' : f.match(/body/i) ? 'body' : f.match(/accent/i) ? 'accent' : 'font';
+            fontSpecs[role] = name;
+          }
+        });
+      }
+    }
+    // Also scan visual_direction for colors/fonts
+    const vd = JSON.stringify(brief?.visual_direction || {});
+    const vdHexes = vd.matchAll(/(#[0-9A-Fa-f]{6})\b/g);
+    for (const m of vdHexes) {
+      if (!Object.values(colorHexes).includes(m[1])) colorHexes['from brief'] = m[1];
+    }
+    // Also scan the user message for explicit color/font mentions
+    const msgHexes = userMessage.matchAll(/(?:(\w[\w\s]*?)\s+)?(#[0-9A-Fa-f]{6})\b/g);
+    for (const m of msgHexes) {
+      const label = (m[1] || 'user specified').trim().toLowerCase();
+      colorHexes[label] = m[2];
+    }
+    const msgFonts = userMessage.match(/(?:Playfair\s+Display|Lato|Great\s+Vibes|Cormorant\s+Garamond|Raleway|Source\s+Sans|Merriweather|Roboto|Open\s+Sans|Montserrat|Poppins|Inter|Georgia|Dancing\s+Script)/gi);
+    if (msgFonts) {
+      msgFonts.forEach((f, i) => {
+        if (i === 0 && !fontSpecs.heading) fontSpecs.heading = f;
+        else if (i === 1 && !fontSpecs.body) fontSpecs.body = f;
+        else if (i === 2 && !fontSpecs.accent) fontSpecs.accent = f;
+      });
+    }
+
+    if (Object.keys(colorHexes).length > 0 || Object.keys(fontSpecs).length > 0) {
+      visualRequirements = '\n\nMANDATORY VISUAL REQUIREMENTS (DO NOT DEVIATE):\n';
+      if (Object.keys(colorHexes).length > 0) {
+        visualRequirements += 'Colors (client-approved — using any other colors is a build failure):\n';
+        for (const [label, hex] of Object.entries(colorHexes)) {
+          visualRequirements += `  ${label}: ${hex}\n`;
+        }
+      }
+      if (Object.keys(fontSpecs).length > 0) {
+        visualRequirements += 'Fonts (client-approved — using any other fonts is a build failure):\n';
+        for (const [role, name] of Object.entries(fontSpecs)) {
+          visualRequirements += `  ${role}: ${name}\n`;
+        }
+        visualRequirements += 'Include the correct Google Fonts <link> tag in <head>.\n';
+      }
+      visualRequirements += 'Apply these colors and fonts in Tailwind config AND CSS custom properties.\n';
+    }
+  }
+  // Append visual requirements to briefContext
+  briefContext += visualRequirements;
 
   // Build decisions context
   let decisionsContext = '';
@@ -7898,6 +8012,99 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'component_export': {
+          // Fix #4 from Site 4 gap analysis — export a section to the component library
+          ws.send(JSON.stringify({ type: 'status', content: 'Exporting component to library...' }));
+          try {
+            const exportSpec = readSpec();
+            const exportPage = currentPage;
+            const exportHtml = fs.readFileSync(path.join(DIST_DIR(), exportPage), 'utf8');
+            // Find which section the user wants to export (parse from message)
+            const sectionMatch = userMessage.toLowerCase().match(/(?:export|save)\s+(?:the\s+)?(\w+[\s-]?\w*)\s+(?:section|component)/);
+            const sectionName = sectionMatch ? sectionMatch[1].trim().replace(/\s+/g, '-') : 'hero';
+            // Use the component export API
+            const compRes = await new Promise((resolve) => {
+              const http = require('http');
+              const postData = JSON.stringify({ page: exportPage, section_query: sectionName });
+              const req = http.request({ hostname: 'localhost', port: 3334, path: '/api/components/export', method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': postData.length } }, (res) => {
+                let body = ''; res.on('data', c => body += c); res.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve({ error: body }); } });
+              });
+              req.write(postData); req.end();
+            });
+            if (compRes.error) {
+              ws.send(JSON.stringify({ type: 'assistant', content: `Could not export: ${compRes.error}` }));
+            } else {
+              ws.send(JSON.stringify({ type: 'assistant', content: `Exported "${sectionName}" component to library.\nPath: components/${compRes.id || sectionName}/\nFields: ${(compRes.fields || []).length} content fields, ${(compRes.slots || []).length} image slots.` }));
+            }
+          } catch (e) {
+            ws.send(JSON.stringify({ type: 'assistant', content: `Export failed: ${e.message}` }));
+          }
+          break;
+        }
+
+        case 'component_import': {
+          // Fix #4 from Site 4 gap analysis — import a component from the library
+          ws.send(JSON.stringify({ type: 'status', content: 'Checking component library...' }));
+          try {
+            const libPath = path.join(__dirname, '..', 'components', 'library.json');
+            if (!fs.existsSync(libPath)) {
+              ws.send(JSON.stringify({ type: 'assistant', content: 'No component library found. Export components first using "Export the hero section to the library".' }));
+              break;
+            }
+            const library = JSON.parse(fs.readFileSync(libPath, 'utf8'));
+            const components = library.components || [];
+            if (components.length === 0) {
+              ws.send(JSON.stringify({ type: 'assistant', content: 'Component library is empty. Export components first.' }));
+              break;
+            }
+            // Check if user asked about a specific component
+            const importMatch = userMessage.toLowerCase().match(/(?:import|use|get|load)\s+(?:the\s+|a\s+)?(\w+[\s-]?\w*)\s+(?:component|hero|card|form)/);
+            const searchTerm = importMatch ? importMatch[1].trim().replace(/\s+/g, '-') : null;
+            if (searchTerm) {
+              const match = components.find(c => c.id.includes(searchTerm) || c.name.toLowerCase().includes(searchTerm));
+              if (match) {
+                const compDir = path.join(__dirname, '..', 'components', match.path || match.id);
+                const templateFile = fs.readdirSync(compDir).find(f => f.endsWith('.html'));
+                if (templateFile) {
+                  const template = fs.readFileSync(path.join(compDir, templateFile), 'utf8');
+                  ws.send(JSON.stringify({ type: 'assistant', content: `Found component: ${match.name} (v${match.version})\nType: ${match.type}\nFrom: ${match.extracted_from}\n\nTo use it, I can inject it into the current page. Say "Add the ${match.id} to this page" to apply.` }));
+                } else {
+                  ws.send(JSON.stringify({ type: 'assistant', content: `Found "${match.name}" but no HTML template file in ${compDir}` }));
+                }
+              } else {
+                ws.send(JSON.stringify({ type: 'assistant', content: `No component matching "${searchTerm}" in library.\nAvailable: ${components.map(c => c.id).join(', ')}` }));
+              }
+            } else {
+              // List all components
+              const list = components.map(c => `- **${c.name}** (${c.id}) — ${c.description || c.type}`).join('\n');
+              ws.send(JSON.stringify({ type: 'assistant', content: `Component Library (${components.length} components):\n${list}` }));
+            }
+          } catch (e) {
+            ws.send(JSON.stringify({ type: 'assistant', content: `Library error: ${e.message}` }));
+          }
+          break;
+        }
+
+        case 'verification': {
+          // Fix #3 from Site 4 gap analysis — "run verification" was misclassified as layout_update
+          ws.send(JSON.stringify({ type: 'status', content: 'Running build verification...' }));
+          const verifyPages = listPages();
+          if (verifyPages.length === 0) {
+            ws.send(JSON.stringify({ type: 'assistant', content: 'No pages found to verify. Build the site first.' }));
+            break;
+          }
+          const verifyResult = runBuildVerification(verifyPages);
+          writeSpec(Object.assign(readSpec(), { last_verification: verifyResult }));
+          ws.send(JSON.stringify({ type: 'verification-result', result: verifyResult }));
+          const vSummary = verifyResult.status === 'passed'
+            ? `Build verification passed! ${verifyResult.checks?.length || 0} checks run, 0 issues.`
+            : `Build verification: ${verifyResult.issues?.length || 0} issue(s) found.\n${(verifyResult.issues || []).map(i => '- ' + i).join('\n')}`;
+          ws.send(JSON.stringify({ type: 'assistant', content: vSummary }));
+          appendConvo({ role: 'assistant', content: vSummary, at: new Date().toISOString() });
+          break;
+        }
+
         case 'fill_stock_photos': {
           ws.send(JSON.stringify({ type: 'status', content: 'Filling image slots with stock photos...' }));
           const fillSpec = readSpec();
@@ -8088,7 +8295,7 @@ wss.on('connection', (ws) => {
       }
       pendingPlans.delete(msg.planId);
 
-      if (!msg.approved) {
+      if (msg.approved === false) {
         ws.send(JSON.stringify({ type: 'assistant', content: "No problem. What would you like to do differently?" }));
         appendConvo({ role: 'assistant', content: 'Plan cancelled by user', at: new Date().toISOString() });
         return;
