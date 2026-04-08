@@ -4375,6 +4375,10 @@ function classifyRequest(message, spec) {
   // Codex review: exclude structural nouns near location/schedule to prevent false positives
   if (lower.match(/\b(reunion|event|meeting)\s+(date|time|location)\b.*?\b(to|is|should\s+be|will\s+be)\b/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
   if (lower.match(/\b(the\s+)?(email|phone|price|date)\s+(should\s+be|is|to)\s/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
+  // Pattern 6: "add the phrase/text/subtitle/tagline X" — adding TEXT content, not a structural section (HIGH 7 fix)
+  if (lower.match(/\b(add|include)\s+(?:the\s+)?(?:phrase|text|subtitle|tagline|motto|quote|slogan)\b/) && !lower.match(/\b(section|form|block|widget|page)\b/)) return 'content_update';
+  // Pattern 7: "change the tagline/motto/subtitle to X" — common rebrand content edit
+  if (lower.match(/\b(change|update|set)\s+(?:the\s+)?(main\s+)?(tagline|motto|subtitle|slogan|heading|title)\s+to\b/)) return 'content_update';
 
   // Restyle signals — about overall vibe, not specific elements
   if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
@@ -4390,6 +4394,11 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(export|save)\s+(?:the\s+|this\s+)?(?:\w+\s+)?(?:section|component|hero|card|form)\s+(?:to|as|into)\s+(?:the\s+)?(?:component\s+)?library\b/)) return 'component_export';
   if (lower.match(/\b(import|use|get|load)\s+(?:the\s+|a\s+)?(?:\w+[\s-])?(?:component|hero|card|form)\s+(?:from|in)\s+(?:the\s+)?library\b/)) return 'component_import';
   if (lower.match(/\bwhat\s+components?\s+(?:are\s+)?(?:in|available)\b/)) return 'component_import';
+
+  // SVG pattern/icon generation — routes to asset_import (BLOCKER 3 fix)
+  if (lower.match(/\b(create|generate|make|design)\s+(?:a\s+|an\s+|the\s+)?(?:\w+[\s-])*(?:pattern|svg|icon|symbol|motif|crest|emblem)\b/)) return 'asset_import';
+  // Apply pattern/background — treat as layout_update (HIGH 5 fix)
+  if (lower.match(/\b(apply|use|add|set)\s+(?:the\s+|a\s+)?(?:\w+[\s-])*(?:pattern|texture|svg)\s+(?:as\s+|to\s+|for\s+)?(?:the\s+)?(?:background|overlay|section)\b/)) return 'layout_update';
 
   // Layout update — structural changes to specific elements
   if (lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|button|form|nav|header|footer|sidebar|testimonial|feature|grid)\b/)) return 'layout_update';
@@ -4695,7 +4704,19 @@ CONTENT IDENTITY MARKERS (CRITICAL):
 - These attributes are stable anchors for content editing — do NOT omit them
 - Phone numbers: render as <a href="tel:..." data-field-id="phone" data-field-type="phone">
 - Emails: render as <a href="mailto:..." data-field-id="email" data-field-type="email">
-- Prices: include data-field-id like "price-tarot-30" data-field-type="price"`;
+- Prices: include data-field-id like "price-tarot-30" data-field-type="price"
+
+PARALLAX (when requested):
+- Use CSS background-attachment: fixed for parallax sections — no JavaScript required
+- iOS Safari ignores background-attachment:fixed. Add @supports for fallback: static background with no parallax on mobile
+- Pattern: .parallax { background-image:url('...'); background-attachment:fixed; background-size:cover; background-position:center; }
+- Add a dark overlay div for readability: position:absolute; inset:0; background:rgba(0,0,0,0.5)
+- Do NOT use JavaScript scroll listeners for parallax — CSS-only approach
+
+SVG PATTERNS (when requested):
+- Reference SVG files from assets/patterns/ as background-image
+- Use background-repeat:repeat for tileable patterns
+- Use low opacity (0.05-0.15) for subtle texture backgrounds`;
 
   // Blueprint context — prevents rebuild regression
   const blueprintContext = buildBlueprintContext(resolvedPage); // Codex review fix: use resolvedPage not currentPage
@@ -7525,7 +7546,6 @@ wss.on('connection', (ws) => {
             const bp = readBlueprint() || { version: 1, pages: {}, global: {}, last_updated: null };
             if (!bp.pages[currentPage]) bp.pages[currentPage] = { title: currentPage.replace('.html', ''), sections: [], components: [], layout_notes: [] };
             const entry = bp.pages[currentPage];
-            // Parse brainstorm context for structural elements
             const bsLower = brainstormContext.toLowerCase();
             const compTypes = ['popup', 'modal', 'slider', 'carousel', 'accordion', 'tabs', 'overlay', 'drawer', 'banner', 'countdown', 'form'];
             for (const ct of compTypes) {
@@ -7533,7 +7553,6 @@ wss.on('connection', (ws) => {
                 entry.components.push({ type: ct, added: new Date().toISOString().split('T')[0], source: 'brainstorm' });
               }
             }
-            // Add a layout note summarizing the brainstorm intent
             const summaryLine = brainstormContext.split('\n').filter(l => l.startsWith('assistant:')).pop();
             if (summaryLine) {
               const note = `Brainstorm: ${summaryLine.replace('assistant:', '').trim().substring(0, 200)}`;
@@ -7541,21 +7560,68 @@ wss.on('connection', (ws) => {
             }
             writeBlueprint(bp);
             console.log('[blueprint] Updated from brainstorm context');
+
+            // BLOCKER 1 FIX: Extract colors, fonts, and visual direction from brainstorm
+            // and persist them to spec.design_decisions so Fix #1 injects them as MANDATORY
+            const bsSpec = readSpec();
+            if (!bsSpec.design_decisions) bsSpec.design_decisions = [];
+            // Extract hex colors mentioned in brainstorm
+            const bsHexes = brainstormContext.match(/#[0-9A-Fa-f]{6}\b/g);
+            if (bsHexes && bsHexes.length > 0) {
+              const colorDecision = `Brainstorm color palette: ${[...new Set(bsHexes)].join(', ')}`;
+              if (!bsSpec.design_decisions.find(d => d.decision && d.decision.includes('Brainstorm color'))) {
+                bsSpec.design_decisions.push({ category: 'color', decision: colorDecision, status: 'approved', source: 'brainstorm' });
+              }
+            }
+            // Extract font names mentioned in brainstorm
+            const bsFonts = brainstormContext.match(/(?:Playfair\s+Display|Lato|Great\s+Vibes|Cormorant|Raleway|Source\s+Sans|Merriweather|Roboto|Open\s+Sans|Montserrat|Poppins|Inter|Georgia|Dancing\s+Script|Oswald|Bebas\s+Neue|Ubuntu|Abril\s+Fatface|Bangers|Permanent\s+Marker)/gi);
+            if (bsFonts && bsFonts.length > 0) {
+              const fontDecision = `Brainstorm fonts: ${[...new Set(bsFonts)].join(', ')}`;
+              if (!bsSpec.design_decisions.find(d => d.decision && d.decision.includes('Brainstorm font'))) {
+                bsSpec.design_decisions.push({ category: 'typography', decision: fontDecision, status: 'approved', source: 'brainstorm' });
+              }
+            }
+            // Extract visual direction keywords
+            const bsVisualKeywords = [];
+            if (bsLower.includes('parallax')) bsVisualKeywords.push('parallax scrolling');
+            if (bsLower.includes('dark') || bsLower.includes('dark theme')) bsVisualKeywords.push('dark theme');
+            if (bsLower.includes('afro') || bsLower.includes('african')) bsVisualKeywords.push('Afro-centric design');
+            if (bsLower.includes('kente')) bsVisualKeywords.push('kente-inspired patterns');
+            if (bsLower.includes('adinkra')) bsVisualKeywords.push('Adinkra symbols');
+            if (bsVisualKeywords.length > 0) {
+              const styleDecision = `Brainstorm visual direction: ${bsVisualKeywords.join(', ')}`;
+              if (!bsSpec.design_decisions.find(d => d.decision && d.decision.includes('Brainstorm visual'))) {
+                bsSpec.design_decisions.push({ category: 'layout', decision: styleDecision, status: 'approved', source: 'brainstorm' });
+              }
+            }
+            writeSpec(bsSpec);
+            console.log('[brainstorm] Persisted design decisions to spec');
           }
 
-          // Build a synthesized instruction from the brainstorm
+          // Detect if this is a rebuild/rebrand (mentions rebuild, rebrand, redo, all pages)
+          const isRebuild = /\b(rebuild|rebrand|redo|all\s+of\s+it|start\s+over|from\s+scratch|all\s+pages)\b/i.test(userMessage) || /\b(rebuild|rebrand|redo)\b/i.test(brainstormContext.slice(-500));
+
           const buildInstruction = brainstormContext
-            ? `ADD the following ideas to the EXISTING ${currentPage} — do NOT remove or replace any existing content, sections, or functionality. Keep everything that's already on the page and ADD these new elements:\n\n${brainstormContext}\n\nIMPORTANT: This is an ADDITIVE change. The current page already has content that must be preserved. Only add what was discussed in the brainstorm.`
+            ? (isRebuild
+                ? `REBUILD the site incorporating ALL of the following brainstorm ideas. This is a full rebrand — generate fresh HTML for all pages with the new design direction:\n\n${brainstormContext}`
+                : `ADD the following ideas to the EXISTING ${currentPage} — do NOT remove or replace existing content. Keep everything and ADD these new elements:\n\n${brainstormContext}\n\nIMPORTANT: This is an ADDITIVE change.`)
             : userMessage;
 
-          appendConvo({ role: 'assistant', content: `Building from brainstorm ideas on ${currentPage}`, at: new Date().toISOString() });
+          appendConvo({ role: 'assistant', content: isRebuild ? `Rebuilding site from brainstorm ideas` : `Building from brainstorm ideas on ${currentPage}`, at: new Date().toISOString() });
 
-          // Route directly as a layout_update — skip classifier since it would
-          // re-match "brainstorm" from the conversation context
-          ws.send(JSON.stringify({ type: 'status', content: `Building on ${currentPage}...` }));
-          const requestType = 'layout_update';
-          console.log(`[classify] brainstorm-to-build (${currentPage}) → ${requestType} (forced)`);
-          handleChatMessage(ws, buildInstruction, requestType, spec);
+          // Route as build for rebuilds, layout_update for additive changes
+          const requestType = isRebuild ? 'build' : 'layout_update';
+          ws.send(JSON.stringify({ type: 'status', content: isRebuild ? 'Rebuilding from brainstorm...' : `Building on ${currentPage}...` }));
+          console.log(`[classify] brainstorm-to-build (${currentPage}) → ${requestType} (${isRebuild ? 'full rebuild' : 'additive'})`);
+          if (isRebuild) {
+            // Full rebuild uses parallelBuild for all pages
+            const rebuildSpec = readSpec();
+            const specPages = rebuildSpec.pages || ['home'];
+            const pageFiles = specPages.map(p => p === 'home' || p === 'hero' ? 'index.html' : p.replace(/\s+/g, '-').toLowerCase().replace(/\.html$/, '') + '.html');
+            parallelBuild(ws, pageFiles, rebuildSpec, buildInstruction);
+          } else {
+            handleChatMessage(ws, buildInstruction, requestType, spec);
+          }
           return;
         }
 
