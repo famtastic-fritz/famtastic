@@ -129,9 +129,24 @@ def main():
             )
             if result and result.get("outputs"):
                 url = result["outputs"][0]["image"]["url"]
-                outpath = os.path.join(out_dir, item.get("filename", f"image-{i+1}.jpg"))
+                # Codex review: sanitize filename to prevent path traversal
+                safe_filename = os.path.basename(item.get("filename", f"image-{i+1}.jpg"))
+                outpath = os.path.join(out_dir, safe_filename)
                 size = download_image(url, outpath)
                 results.append({"file": outpath, "elapsed": elapsed, "size": size, "success": True})
+                # Codex review: log telemetry for batch items too
+                log_telemetry({
+                    "provider": "adobe-firefly",
+                    "model": "firefly-image-3",
+                    "operation": "batch",
+                    "cost_usd": 0,
+                    "credits_used": 1,
+                    "generation_time_seconds": round(elapsed, 1),
+                    "file_size_bytes": size,
+                    "prompt": item["prompt"][:200],
+                    "style_reference_used": bool(item.get("style_ref")),
+                    "batch_size": len(items),
+                })
             else:
                 results.append({"file": item.get("filename"), "elapsed": elapsed, "success": False})
                 print(f"  FAILED")

@@ -8,7 +8,8 @@
     <video autoplay muted loop playsinline
       style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;"
       poster="assets/veo/hero-still.png"
-      data-slot-id="hero-video">
+      data-slot-id="hero-video"
+      data-poster-slot="hero-poster">
       <source src="assets/video/hero.mp4" type="video/mp4">
     </video>
     <div style="position:absolute; inset:0; background: linear-gradient(to bottom, var(--hero-overlay-start, rgba(11,11,20,0.5)), var(--hero-overlay-end, rgba(11,11,20,0.8)));"></div>
@@ -27,7 +28,7 @@
     </p>
 
     <div style="text-align: center;">
-      <a data-field-id="hero-cta-text" data-field-type="link" href="contact.html"
+      <a data-field-id="hero-cta-text" data-field-type="text" data-field-href="hero-cta-link" href="contact.html"
         style="display: inline-block; background: var(--hero-cta-bg, #c9a96e); color: var(--hero-cta-text, #0b0b14); padding: 0.875rem 2.5rem; border-radius: 4px; font-family: var(--hero-body-font, 'Raleway', sans-serif); font-weight: 600; font-size: 0.95rem; text-decoration: none; letter-spacing: 0.05em; text-transform: uppercase; transition: opacity 0.2s;">
         Discover Your Path
       </a>

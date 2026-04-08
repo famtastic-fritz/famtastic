@@ -3981,6 +3981,12 @@ app.get('/api/research/:filename', (req, res) => {
     return res.status(404).json({ error: 'File not found' });
   }
   const filePath = path.join(researchDir, filename);
+  // Codex review: reject symlinks that escape the research directory
+  const realFile = fs.realpathSync(filePath);
+  const realDir = fs.realpathSync(researchDir);
+  if (!realFile.startsWith(realDir + path.sep)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
   const stat = fs.statSync(filePath);
   // Cap at 500KB (Codex E2, F2 fix)
   if (stat.size > 512000) {
@@ -4021,8 +4027,8 @@ app.post('/api/codex/exec', async (req, res) => {
 
 // --- Mutations API (Wave 5) ---
 app.get('/api/mutations', (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+  const page = Math.max(1, parseInt(req.query.page) || 1); // Codex review: clamp to >= 1
+  const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 50), 200);
   const mutationLog = path.join(SITE_DIR(), 'mutations.jsonl');
   if (!fs.existsSync(mutationLog)) return res.json({ mutations: [], total: 0, page, topFields: [] });
 
@@ -4086,7 +4092,11 @@ app.get('/api/metrics/summary', (req, res) => {
 app.post('/api/compare/generate', async (req, res) => {
   const { page } = req.body;
   if (!page) return res.status(400).json({ error: 'page required' });
-  const pageName = path.basename(page); // prevent traversal
+  const pageName = path.basename(page);
+  // Codex review: validate page is a real page
+  if (!pageName.endsWith('.html') || !listPages().includes(pageName)) {
+    return res.status(400).json({ error: 'Invalid page — must be an existing HTML page' });
+  }
   const codexPath = path.join(__dirname, '..', 'scripts', 'codex-cli');
   if (!fs.existsSync(codexPath)) {
     return res.json({ error: 'Codex CLI not found. Install Codex first.' });
@@ -4132,7 +4142,11 @@ app.use('/compare', (req, res, next) => {
 app.post('/api/compare/adopt', (req, res) => {
   const { page, side } = req.body;
   if (!page || !side) return res.status(400).json({ error: 'page and side required' });
+  if (side !== 'claude' && side !== 'codex') return res.status(400).json({ error: 'side must be claude or codex' });
   const pageName = path.basename(page);
+  if (!pageName.endsWith('.html') || !listPages().includes(pageName)) {
+    return res.status(400).json({ error: 'Invalid page' });
+  }
   const distDir = path.join(SITE_DIR(), 'dist');
   const livePath = path.join(distDir, pageName);
   const comparePath = path.join(SITE_DIR(), 'compare', pageName);
@@ -4172,9 +4186,12 @@ app.get('/api/media/usage', (req, res) => {
   const { provider, site } = req.query;
   const options = {};
   if (provider) options.provider = provider;
-  if (site) options.site = site;
-  // Use global log for cross-site view, site log if site-specific
-  if (site) options.siteDir = path.join(__dirname, '..', 'sites', site);
+  if (site) {
+    // Codex review: validate site tag to prevent path traversal
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(site)) return res.status(400).json({ error: 'Invalid site tag' });
+    options.site = site;
+    options.siteDir = path.join(__dirname, '..', 'sites', site);
+  }
   res.json(getMediaUsage(options));
 });
 
@@ -4355,8 +4372,9 @@ function classifyRequest(message, spec) {
   // Pattern 4: "add the address/hours/phone" — adding a content VALUE (not a structural section)
   if (lower.match(/\b(add)\s+(the\s+|my\s+|our\s+|a\s+)?(business\s+)?(address|hours|phone|email|number)\b/) && !lower.match(/\b(section|form|block|widget)\b/)) return 'content_update';
   // Pattern 5: "the X to/is VALUE" — natural language content change (Fix #2 from Site 4)
-  if (lower.match(/\b(reunion|event|meeting)\s+(date|time|location)\b.*?\b(to|is|should\s+be|will\s+be)\b/)) return 'content_update';
-  if (lower.match(/\b(the\s+)?(email|phone|price|date|location)\s+(should\s+be|is|to)\s/)) return 'content_update';
+  // Codex review: exclude structural nouns near location/schedule to prevent false positives
+  if (lower.match(/\b(reunion|event|meeting)\s+(date|time|location)\b.*?\b(to|is|should\s+be|will\s+be)\b/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
+  if (lower.match(/\b(the\s+)?(email|phone|price|date)\s+(should\s+be|is|to)\s/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
 
   // Restyle signals — about overall vibe, not specific elements
   if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
@@ -4455,11 +4473,11 @@ function buildPromptContext(requestType, spec, userMessage) {
       'events.html': 'event-details.html', 'event.html': 'event-details.html', 'reunion.html': 'event-details.html',
       'photos.html': 'gallery.html', 'pictures.html': 'gallery.html' };
     if (aliases[matchedPageName]) matchedPageName = aliases[matchedPageName];
-    // Also try fuzzy match: if "connect.html" exists in pages, use it
+    // Also try fuzzy match — but only if the match is unique (Codex review: reject ambiguous)
     if (!pages.includes(matchedPageName)) {
       const base = matchedPageName.replace('.html', '');
-      const fuzzy = pages.find(p => p.includes(base) || base.includes(p.replace('.html', '')));
-      if (fuzzy) matchedPageName = fuzzy;
+      const fuzzyMatches = pages.filter(p => p.includes(base) || base.includes(p.replace('.html', '')));
+      if (fuzzyMatches.length === 1) matchedPageName = fuzzyMatches[0];
     }
   }
   // Resolve which page to use — but don't mutate module-level currentPage here.
@@ -4527,10 +4545,12 @@ function buildPromptContext(requestType, spec, userMessage) {
     for (const d of decisions) {
       const txt = d.decision || '';
       // Extract hex colors with labels: "Heritage Burgundy (#7B2D3B)" or "primary: #7B2D3B"
-      const hexMatches = txt.matchAll(/(\w[\w\s]*?)\s*[\(:]?\s*(#[0-9A-Fa-f]{6})\b/g);
+      // Codex review: only accept proper label forms, filter stopwords
+      const hexMatches = txt.matchAll(/([A-Z][\w\s]*?)\s*[\(:]?\s*(#[0-9A-Fa-f]{6})\b/g);
+      const stopwords = new Set(['use', 'and', 'the', 'with', 'for', 'from', 'set', 'to', 'is', 'as', 'or', 'on', 'in', 'at', 'a', 'an']);
       for (const m of hexMatches) {
         const label = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
-        if (label.length < 30) colorHexes[label] = m[2];
+        if (label.length >= 3 && label.length < 30 && !stopwords.has(label)) colorHexes[label] = m[2];
       }
       // Extract font names
       const fontMatch = txt.match(/(?:font|heading|body|accent)[\s:]*([A-Z][a-z]+(?:\s[A-Z][a-z]+)*)/g);
@@ -4678,7 +4698,7 @@ CONTENT IDENTITY MARKERS (CRITICAL):
 - Prices: include data-field-id like "price-tarot-30" data-field-type="price"`;
 
   // Blueprint context — prevents rebuild regression
-  const blueprintContext = buildBlueprintContext(currentPage);
+  const blueprintContext = buildBlueprintContext(resolvedPage); // Codex review fix: use resolvedPage not currentPage
 
   // Slot mapping context — tell Claude about existing images so it preserves them
   let slotMappingContext = '';
@@ -8013,29 +8033,28 @@ wss.on('connection', (ws) => {
         }
 
         case 'component_export': {
-          // Fix #4 from Site 4 gap analysis — export a section to the component library
+          // Fix #4 — export a section to the component library (Codex review: fixed field names + port)
           ws.send(JSON.stringify({ type: 'status', content: 'Exporting component to library...' }));
           try {
-            const exportSpec = readSpec();
             const exportPage = currentPage;
-            const exportHtml = fs.readFileSync(path.join(DIST_DIR(), exportPage), 'utf8');
-            // Find which section the user wants to export (parse from message)
             const sectionMatch = userMessage.toLowerCase().match(/(?:export|save)\s+(?:the\s+)?(\w+[\s-]?\w*)\s+(?:section|component)/);
             const sectionName = sectionMatch ? sectionMatch[1].trim().replace(/\s+/g, '-') : 'hero';
-            // Use the component export API
+            // Call export API with correct field names (component_id required, section_id optional)
+            const studioPort = process.env.STUDIO_PORT || process.env.PORT || 3334;
             const compRes = await new Promise((resolve) => {
               const http = require('http');
-              const postData = JSON.stringify({ page: exportPage, section_query: sectionName });
-              const req = http.request({ hostname: 'localhost', port: 3334, path: '/api/components/export', method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Content-Length': postData.length } }, (res) => {
+              const postData = JSON.stringify({ page: exportPage, component_id: sectionName, section_id: 'section-' + sectionName });
+              const req = http.request({ hostname: 'localhost', port: studioPort, path: '/api/components/export', method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) } }, (res) => {
                 let body = ''; res.on('data', c => body += c); res.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve({ error: body }); } });
               });
+              req.on('error', (e) => resolve({ error: e.message }));
               req.write(postData); req.end();
             });
             if (compRes.error) {
               ws.send(JSON.stringify({ type: 'assistant', content: `Could not export: ${compRes.error}` }));
             } else {
-              ws.send(JSON.stringify({ type: 'assistant', content: `Exported "${sectionName}" component to library.\nPath: components/${compRes.id || sectionName}/\nFields: ${(compRes.fields || []).length} content fields, ${(compRes.slots || []).length} image slots.` }));
+              ws.send(JSON.stringify({ type: 'assistant', content: `Exported "${sectionName}" component to library.\nID: ${compRes.component_id || sectionName}\nFields: ${compRes.field_count || 0} content fields, ${compRes.slot_count || 0} image slots.` }));
             }
           } catch (e) {
             ws.send(JSON.stringify({ type: 'assistant', content: `Export failed: ${e.message}` }));
@@ -8044,7 +8063,7 @@ wss.on('connection', (ws) => {
         }
 
         case 'component_import': {
-          // Fix #4 from Site 4 gap analysis — import a component from the library
+          // Fix #4 — import/list components from library (Codex review: fixed field name access)
           ws.send(JSON.stringify({ type: 'status', content: 'Checking component library...' }));
           try {
             const libPath = path.join(__dirname, '..', 'components', 'library.json');
@@ -8058,26 +8077,37 @@ wss.on('connection', (ws) => {
               ws.send(JSON.stringify({ type: 'assistant', content: 'Component library is empty. Export components first.' }));
               break;
             }
-            // Check if user asked about a specific component
             const importMatch = userMessage.toLowerCase().match(/(?:import|use|get|load)\s+(?:the\s+|a\s+)?(\w+[\s-]?\w*)\s+(?:component|hero|card|form)/);
             const searchTerm = importMatch ? importMatch[1].trim().replace(/\s+/g, '-') : null;
             if (searchTerm) {
-              const match = components.find(c => c.id.includes(searchTerm) || c.name.toLowerCase().includes(searchTerm));
+              // Search by id, component_id, or name (handle both old and new formats)
+              const match = components.find(c => {
+                const cid = c.id || c.component_id || '';
+                const cname = (c.name || '').toLowerCase();
+                return cid.includes(searchTerm) || cname.includes(searchTerm);
+              });
               if (match) {
-                const compDir = path.join(__dirname, '..', 'components', match.path || match.id);
-                const templateFile = fs.readdirSync(compDir).find(f => f.endsWith('.html'));
-                if (templateFile) {
-                  const template = fs.readFileSync(path.join(compDir, templateFile), 'utf8');
-                  ws.send(JSON.stringify({ type: 'assistant', content: `Found component: ${match.name} (v${match.version})\nType: ${match.type}\nFrom: ${match.extracted_from}\n\nTo use it, I can inject it into the current page. Say "Add the ${match.id} to this page" to apply.` }));
-                } else {
-                  ws.send(JSON.stringify({ type: 'assistant', content: `Found "${match.name}" but no HTML template file in ${compDir}` }));
+                const compId = match.id || match.component_id || searchTerm;
+                const compDir = path.join(__dirname, '..', 'components', match.path || compId);
+                try {
+                  const templateFile = fs.readdirSync(compDir).find(f => f.endsWith('.html'));
+                  if (templateFile) {
+                    ws.send(JSON.stringify({ type: 'assistant', content: `Found component: ${match.name || compId} (v${match.version || '1.0'})\nType: ${match.type || 'section'}\nFrom: ${match.extracted_from || match.created_from || 'unknown'}\n\nTo use it, say "Add the ${compId} to this page".` }));
+                  } else {
+                    ws.send(JSON.stringify({ type: 'assistant', content: `Found "${match.name || compId}" but no HTML template in ${compDir}` }));
+                  }
+                } catch (dirErr) {
+                  ws.send(JSON.stringify({ type: 'assistant', content: `Component "${compId}" registered but directory not found at ${compDir}` }));
                 }
               } else {
-                ws.send(JSON.stringify({ type: 'assistant', content: `No component matching "${searchTerm}" in library.\nAvailable: ${components.map(c => c.id).join(', ')}` }));
+                const available = components.map(c => c.id || c.component_id || '?').join(', ');
+                ws.send(JSON.stringify({ type: 'assistant', content: `No component matching "${searchTerm}" in library.\nAvailable: ${available}` }));
               }
             } else {
-              // List all components
-              const list = components.map(c => `- **${c.name}** (${c.id}) — ${c.description || c.type}`).join('\n');
+              const list = components.map(c => {
+                const cid = c.id || c.component_id || '?';
+                return `- **${c.name || cid}** (${cid}) — ${c.description || c.type || ''}`;
+              }).join('\n');
               ws.send(JSON.stringify({ type: 'assistant', content: `Component Library (${components.length} components):\n${list}` }));
             }
           } catch (e) {

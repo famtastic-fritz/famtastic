@@ -4,7 +4,7 @@
 #canvas-tab-bar {
   display: flex; align-items: center; gap: 1px;
   background: #1e293b; border-bottom: 1px solid #374151;
-  padding: 0 8px; height: 36px; shrink: 0;
+  padding: 0 8px; height: 36px; flex-shrink: 0;
 }
 .canvas-tab {
   padding: 6px 14px; font-size: 12px; font-weight: 500;
@@ -34,7 +34,7 @@
 #canvas-preview { background: #fff; }
 #canvas-preview .preview-toolbar {
   background: #f3f4f6; border-bottom: 1px solid #e5e7eb;
-  padding: 6px 12px; display: flex; flex-direction: column; shrink: 0;
+  padding: 6px 12px; display: flex; flex-direction: column; flex-shrink: 0;
 }
 #canvas-preview .preview-toolbar-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -47,7 +47,7 @@
 #editable-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 6px 12px; background: #1e293b;
-  border-bottom: 1px solid #374151; shrink: 0;
+  border-bottom: 1px solid #374151; flex-shrink: 0;
 }
 #editable-toolbar .toolbar-label {
   font-size: 12px; color: #94a3b8; font-weight: 500;

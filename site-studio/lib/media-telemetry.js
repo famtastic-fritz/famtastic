@@ -85,6 +85,7 @@ function logMediaOperation(data) {
     const siteLog = path.join(data.siteDir, 'media-telemetry.jsonl');
     try {
       fs.appendFileSync(siteLog, line);
+      compactIfNeeded(siteLog); // Codex review: compact per-site logs too
     } catch (e) {
       console.error('[media-telemetry] Per-site write failed:', e.message);
     }
@@ -227,8 +228,11 @@ function emptyUsage() {
 function generateRecommendations(byProvider) {
   const recs = [];
   for (const [name, data] of Object.entries(byProvider)) {
-    if (data.credits_remaining !== null && data.credits_remaining < data.operations * 0.2) {
-      recs.push({ type: 'warning', provider: name, message: `${name} credits running low (${data.credits_remaining} remaining)` });
+    // Codex review: use provider quota percentage, not operation count
+    const quotas = { 'google': 25, 'leonardo': 5000, 'adobe-firefly': 4000 };
+    const quota = quotas[name];
+    if (data.credits_remaining !== null && quota && data.credits_remaining / quota < 0.2) {
+      recs.push({ type: 'warning', provider: name, message: `${name} credits running low (${data.credits_remaining} of ${quota} remaining, ${Math.round(data.credits_remaining / quota * 100)}%)` });
     }
     if (data.avg_quality && data.avg_quality < 6) {
       recs.push({ type: 'info', provider: name, message: `${name} avg quality is ${data.avg_quality}/10 — consider switching providers for this use case` });
