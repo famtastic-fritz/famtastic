@@ -1,0 +1,33 @@
+{
+  "name": "photo-slideshow",
+  "version": "1.0.0",
+  "description": "Auto-advancing crossfade slideshow with navigation dots, arrow controls, touch/swipe support, and pause-on-hover. Replaces the inline script pattern.",
+  "category": "media",
+  "reuse_potential": "high",
+  "js_file": "slideshow.js",
+  "css_file": null,
+  "dependencies": [],
+  "data_attributes": {
+    "data-slideshow": "Marks the container. No value needed.",
+    "data-slideshow-interval": "Integer ms. Auto-advance interval. Default: 4000.",
+    "data-slideshow-transition": "Integer ms. Crossfade duration. Default: 800."
+  },
+  "css_classes": {
+    "slide": "Each slide element — must be direct children of container",
+    "prev": "Previous button — auto-wired if present",
+    "next": "Next button — auto-wired if present",
+    "slide-active": "Added by script to visible slide",
+    "slide-dots": "Dot nav container — auto-appended after slideshow container",
+    "dot": "Individual dot — auto-created",
+    "dot-active": "Active dot — uses --color-secondary CSS variable"
+  },
+  "html_template": "<div data-slideshow data-slideshow-interval=\"4000\" data-slideshow-transition=\"800\">\n  <div class=\"slide\">\n    <img src=\"photo1.jpg\" alt=\"Family photo 1\" />\n  </div>\n  <div class=\"slide\">\n    <img src=\"photo2.jpg\" alt=\"Family photo 2\" />\n  </div>\n  <a class=\"prev\">&#10094;</a>\n  <a class=\"next\">&#10095;</a>\n</div>",
+  "touch_support": true,
+  "pause_on_hover": true,
+  "keyboard": false,
+  "platform_notes": {
+    "drupal": "Use as Views slideshow or Media entity formatter with data attribute template override",
+    "wordpress": "Native Gallery block wrapper with data attributes added via block filter",
+    "webflow": "CMS Collection List with data-slideshow on wrapper div"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "animated-counter",
+  "version": "1.0.0",
+  "description": "Scroll-triggered count-up animation using Intersection Observer. Numbers animate from 0 to target value when section enters viewport. Configurable via data attributes.",
+  "category": "motion",
+  "reuse_potential": "high",
+  "js_file": "counter-animation.js",
+  "css_file": null,
+  "dependencies": [],
+  "data_attributes": {
+    "data-count-to": "Integer. Target number to count up to. Required.",
+    "data-count-suffix": "String. Appended after number. E.g. '+', '%', ' States'. Optional.",
+    "data-count-prefix": "String. Prepended before number. E.g. '$'. Optional.",
+    "data-count-duration": "Integer ms. Animation duration. Default: 2000."
+  },
+  "html_template": "<div class=\"stats-grid\">\n  <div>\n    <span data-count-to=\"150\" data-count-suffix=\"+\" data-count-duration=\"2000\">0</span>\n    <p>Family Members</p>\n  </div>\n  <div>\n    <span data-count-to=\"6\" data-count-duration=\"1500\">0</span>\n    <p>Generations</p>\n  </div>\n</div>",
+  "easing": "Ease-out cubic — fast start, smooth finish",
+  "trigger": "IntersectionObserver at 50% element visibility",
+  "fires_once": true,
+  "reduced_motion": "Jumps to final value immediately",
+  "fallback": "If IntersectionObserver unavailable, all final values shown immediately",
+  "platform_notes": {
+    "drupal": "Add data attributes to Views field output or paragraph templates",
+    "wordpress": "Use as Gutenberg block with data attributes via block.json attributes",
+    "webflow": "Custom Attributes panel — set data-count-to, data-count-suffix, data-count-duration"
+  }
+}

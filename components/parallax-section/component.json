@@ -1,0 +1,26 @@
+{
+  "name": "parallax-section",
+  "version": "1.0.0",
+  "description": "Multi-layer parallax scrolling with Intersection Observer scroll-reveal animations. Configurable speed per section via data attributes. Mobile-disabled for performance.",
+  "category": "motion",
+  "reuse_potential": "high",
+  "js_file": "parallax.js",
+  "css_file": null,
+  "dependencies": [],
+  "data_attributes": {
+    "data-parallax-speed": "Float 0–1. How fast element moves relative to scroll. 0.3 = slow drift, 1 = normal speed. Applied to section background or direct element.",
+    "data-animate": "fade-up | fade-in. Triggers reveal animation when element enters viewport via IntersectionObserver."
+  },
+  "css_classes_added": {
+    "is-visible": "Added when animate element enters viewport, triggers CSS transition",
+    "parallax-ready": "Added to body when parallax is initialized"
+  },
+  "html_template": "<section data-parallax-speed=\"0.3\" style=\"background-image: url('bg.jpg');\">\n  <div data-animate=\"fade-up\">\n    <h2>Section Heading</h2>\n  </div>\n</section>",
+  "mobile_behavior": "Disabled below 768px viewport width",
+  "reduced_motion": "Respects prefers-reduced-motion — elements appear immediately, no transforms",
+  "platform_notes": {
+    "drupal": "Add data attributes via field formatters or template overrides in .html.twig",
+    "wordpress": "Add via add_filter('the_content') or block attributes in block.json",
+    "webflow": "Use Custom Attributes panel in Designer for data-parallax-speed and data-animate"
+  }
+}

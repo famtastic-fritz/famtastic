@@ -1536,3 +1536,61 @@ main > section:first-of-type { width: 100vw; position: relative; left: 50%; marg
 **Deploy tab HTML fix**: unclosed `<div class="border-b border-gray-700">` from old Actions accordion wrapper caused History, Metrics, Server, and partially Blueprint tabs to nest inside the Deploy tab content div. When Deploy tab was hidden (not active), all nested tabs were hidden too — appearing as "blank". Fixed by removing the stale wrapper div.
 
 **Known gap (saved to cerebrum):** Studio code push UX needs rethinking. Currently "Push Studio Code" does a quick git add/commit/push with auto-generated message. Proper commits with meaningful messages should go through CLI. Future: Studio should manage its own code changes with commit message prompts.
+
+### studio-cli-handoff-pattern -- 2026-04-08
+
+**Pattern established:** Playwright drives Studio for HTML + CSS. When Studio can't write JavaScript, Playwright logs the gap and triggers CLI. CLI writes the JS, injects script tags into HTML, and Playwright verifies. High-reuse JS becomes a component in `~/famtastic/components/`.
+
+**Full documentation:** `docs/studio-cli-handoff-pattern.md`
+**Capability registry:** `docs/capability-registry.md`  
+**Task log:** `tests/automation/logs/cli-handoff-pattern.json`
+
+**Studio can handle:** HTML structure, CSS classes, Tailwind utilities, basic CSS transitions (hover lift, button scale), `scroll-behavior:smooth`, `loading="lazy"` attributes, static data attribute scaffolding.
+
+**Studio cannot handle (requires CLI):** Any JavaScript — Intersection Observer, timers, event listeners, dynamic DOM creation, state management.
+
+**Routing rules (for Playwright):**
+
+| Task Pattern | Route To | Why |
+|---|---|---|
+| "add parallax" | CLI | Needs requestAnimationFrame |
+| "animate on scroll" | CLI | Needs IntersectionObserver |
+| "slideshow auto-advance" | CLI | Needs JS timer + state |
+| "counter animation" | CLI | Needs IntersectionObserver + rAF |
+| "scroll-to-top button" | CLI | Needs scroll listener |
+| "hover effect" | Studio first | CSS-only possible |
+| "lazy load fade-in" | CLI | Needs IntersectionObserver |
+
+### street-family-reunion-js-pass -- 2026-04-08
+
+**Site:** `sites/site-street-family-reunion/`  
+**JS files added:** `dist/assets/js/parallax.js`, `slideshow.js`, `card-animations.js`, `counter-animation.js`, `smooth-scroll.js`, `lazy-load.js`
+
+**Data attributes used across all pages:**
+- `data-parallax-speed="0.3"` — on parallax hero sections (our-story.html)
+- `data-animate="fade-up"` — on all activity cards, timeline items, stats items
+- `data-card-enhanced` — on all interactive cards (activates card-animations.js)
+- `data-slideshow` — on slideshow container (gallery.html), replaces inline script
+- `data-count-to`, `data-count-suffix`, `data-count-duration` — on counter spans (our-story.html)
+- `data-lazy` — on gallery and product images
+- `data-slot-status="firefly-pending"` + `data-firefly-prompt` — on hero video (index.html)
+
+**Stats section:** Added to `our-story.html` between timeline and family tree sections. Counters: 150+ Family Members, 6 Generations, 45 States Represented, 1 United Family.
+
+**Slideshow bug pattern (do not repeat):** When a page has existing CSS `display:none` on `.slide` elements, and slideshow.js replaces it with opacity-based crossfade, the `display:none` wins and slides stay invisible. Fix: inject `display:block !important` in the slideshow CSS override to ensure all slides are in the layout, with opacity controlling visibility.
+
+**Hero video + Firefly slot:** `index.html` hero video now has `data-slot-status="firefly-pending"` and `data-firefly-prompt` attribute with the exact Black family reunion scene prompt. Video poster uses existing `hero-still.png` as fallback. Run `firefly-generate --batch scripts/firefly-batch-street-reunion.json` once credentials are set to generate: `assets/images/hero_family_reunion.jpg` (16:9 hero) and `assets/images/firefly_gallery_reunion.jpg` (gallery feature). **Adobe Firefly credentials still needed:** Set `FIREFLY_CLIENT_ID` and `FIREFLY_CLIENT_SECRET` — setup at https://developer.adobe.com/firefly-services/docs/firefly-api/guides/
+
+**Component library entries created:**
+- `components/parallax-section/component.json`
+- `components/animated-counter/component.json`  
+- `components/photo-slideshow/component.json`
+
+Each includes HTML template, data attribute docs, platform notes (Drupal, WordPress, Webflow).
+
+### Known Gaps (updated 2026-04-08)
+
+- **Adobe Firefly credentials not configured.** `FIREFLY_CLIENT_ID` / `FIREFLY_CLIENT_SECRET` not set. Hero image (`hero_family_reunion.jpg`) and gallery image (`firefly_gallery_reunion.jpg`) for street-family-reunion not generated. Batch script ready at `scripts/firefly-batch-street-reunion.json`.
+- **Hero video content:** Current `hero.mp4` shows generic family scene. Replace with Black family reunion video/image once Firefly credentials are configured.
+- **Stock images in gallery + slideshow:** All gallery and slideshow images are placeholder stock photos. Replace with actual Street family content or Firefly-generated images.
+- **Slideshow component CSS conflict pattern:** Any site that has `.slide { display:none }` in its page CSS will conflict with slideshow.js crossfade approach. Always use `display:block !important` in slideshow.js injected styles (already fixed).

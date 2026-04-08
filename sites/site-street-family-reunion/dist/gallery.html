@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse the Street family photo gallery organized by decade. View historical family photos, a photo slideshow, and upload your own family pictures.">
+  <meta name="keywords" content="family photos, photo gallery, Street family, family history, photo slideshow, photo archive">
+  <meta property="og:title" content="Gallery | The Street Family Reunion">
+  <meta property="og:description" content="Browse the Street family photo gallery organized by decade. View historical photos and share your own.">
+  <meta property="og:type" content="website">
+  <meta name="robots" content="index, follow">
+  <title>Gallery | The Street Family Reunion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Lato:wght@400;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    /* STUDIO LAYOUT FOUNDATION */
+    html,body{overflow-x:hidden;margin:0;padding:0} main{overflow-x:hidden;width:100%;max-width:100%} *,*::before,*::after{box-sizing:border-box;min-width:0} img,video,table,iframe,embed{max-width:100%;height:auto}
+    /* END STUDIO LAYOUT FOUNDATION */
+    :root {
+      --color-primary: #7B2D3B;
+      --color-secondary: #C5963A;
+      --color-bg: #FAF6F0;
+      --color-text: #2C1810;
+      --color-accent: #6B3A2A;
+      --font-heading: 'Playfair Display', serif;
+      --font-body: 'Lato', sans-serif;
+      --font-accent: 'Great Vibes', cursive;
+    }
+    
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background-color: var(--color-bg);
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-heading);
+      color: var(--color-primary);
+    }
+    
+    /* Hero Banner */
+    .hero-banner {
+      position: relative;
+      height: 500px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    }
+    
+    .hero-banner-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: white;
+    }
+    
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .gallery-item {
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      aspect-ratio: 1;
+      background-color: #ddd;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .gallery-item:hover {
+      transform: scale(1.05);
+    }
+    
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* Card hover */
+    .card-hover {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(123, 45, 59, 0.15);
+    }
+    
+    /* CTA Button */
+    .btn-primary {
+      background-color: var(--color-secondary);
+      color: white;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--color-primary);
+      transform: scale(1.05);
+    }
+    
+    /* Slideshow */
+    .slideshow-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .slide {
+      display: none;
+      width: 100%;
+    }
+    
+    .slide.active {
+      display: block;
+    }
+    
+    .slide img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .prev, .next {
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      width: auto;
+      margin-top: -22px;
+      padding: 16px;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.5);
+      font-weight: bold;
+      font-size: 18px;
+      transition: 0.3s ease;
+      border-radius: 3px;
+      user-select: none;
+    }
+    
+    .next {
+      right: 0;
+    }
+    
+    .prev {
+      left: 0;
+    }
+    
+    .prev:hover, .next:hover {
+      background-color: rgba(0, 0, 0, 0.8);
+    }
+  </style>
+  
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="sticky top-0 z-50 shadow-lg" style="background-color: var(--color-primary);">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-white hover:opacity-80 transition">The Street Family Reunion</a>
+      <div class="hidden md:flex space-x-8">
+        <a href="index.html" class="text-white hover:text-yellow-300 transition" style="color: var(--color-secondary);">Home</a>
+        <a href="our-story.html" class="text-white hover:text-yellow-300 transition" style="color: rgba(255,255,255,0.9);">Our Story</a>
+        <a href="event-details.html" class="text-white hover:text-yellow-300 transition" style="color: rgba(255,255,255,0.9);">Reunion 2026</a>
+        <a href="connect.html" class="text-white hover:text-yellow-300 transition" style="color: rgba(255,255,255,0.9);">Connect</a>
+        <a href="gallery.html" class="text-white hover:text-yellow-300 transition" style="color: rgba(255,255,255,0.9);">Gallery</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Banner -->
+  <section data-section-id="hero-gallery-1" data-section-type="hero" class="hero-banner">
+    <div class="hero-banner-content">
+      <h1 class="text-6xl md:text-7xl font-bold mb-4" data-field-id="gallery-hero-heading" data-field-type="text">Family Photo Gallery</h1>
+      <p class="text-2xl md:text-3xl opacity-95" data-field-id="gallery-hero-tagline" data-field-type="text">A Century of Memories & Moments</p>
+    </div>
+  </section>
+
+  <!-- Featured Slideshow -->
+  <section data-section-id="slideshow-1" data-section-type="slideshow" class="py-20 px-6 bg-white">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-5xl font-bold text-center mb-4" data-field-id="slideshow-heading" data-field-type="text">Featured Photos</h2>
+      <div class="h-1 w-20 mx-auto mb-12" style="background-color: var(--color-secondary);"></div>
+
+      <div class="slideshow-container" data-slideshow data-slideshow-interval="4500" data-slideshow-transition="800">
+        <div class="slide active">
+          <img 
+            src="assets/stock/slideshow-1.jpg"
+            alt="Family photo 1"
+            data-slot-id="slideshow-1"
+            data-slot-status="stock"
+            data-slot-role="gallery"
+            style="background-color: #ccc; min-height: 500px;"
+          />
+        </div>
+        <div class="slide">
+          <img 
+            src="assets/stock/slideshow-2.jpg"
+            alt="Family photo 2"
+            data-slot-id="slideshow-2"
+            data-slot-status="stock"
+            data-slot-role="gallery"
+            style="background-color: #ccc; min-height: 500px;"
+          />
+        </div>
+        <div class="slide">
+          <img 
+            src="assets/stock/slideshow-3.jpg"
+            alt="Family photo 3"
+            data-slot-id="slideshow-3"
+            data-slot-status="stock"
+            data-slot-role="gallery"
+            style="background-color: #ccc; min-height: 500px;"
+          />
+        </div>
+
+        <a class="prev" onclick="changeSlide(-1)" data-field-id="slideshow-prev" data-field-type="link">❮</a>
+        <a class="next" onclick="changeSlide(1)" data-field-id="slideshow-next" data-field-type="link">❯</a>
+      </div>
+
+      <div class="text-center mt-8">
+        <p class="text-gray-600" data-field-id="slideshow-caption" data-field-type="text">
+          Click the arrows to browse featured family moments. Help us grow this collection by uploading your photos!
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery by Decade -->
+  <section data-section-id="gallery-decades-1" data-section-type="gallery" class="py-20 px-6" style="background-color: var(--color-bg);">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-5xl font-bold text-center mb-4" data-field-id="decades-heading" data-field-type="text">Gallery by Decade</h2>
+      <div class="h-1 w-20 mx-auto mb-12" style="background-color: var(--color-secondary);"></div>
+
+      <!-- 1950s-1960s -->
+      <div class="mb-20">
+        <h3 class="text-3xl font-bold mb-6" data-field-id="decade-1950-title" data-field-type="text">1950s-1960s: Building Our Foundation</h3>
+        <div class="gallery-grid">
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1950-1.jpg"
+              alt="Photo 1950s"
+              data-slot-id="gallery-1950-1"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1950-2.jpg"
+              alt="Photo 1950s"
+              data-slot-id="gallery-1950-2"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1950-3.jpg"
+              alt="Photo 1950s"
+              data-slot-id="gallery-1950-3"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- 1970s-1980s -->
+      <div class="mb-20">
+        <h3 class="text-3xl font-bold mb-6" data-field-id="decade-1970-title" data-field-type="text">1970s-1980s: Growing Together</h3>
+        <div class="gallery-grid">
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1970-1.jpg"
+              alt="Photo 1970s"
+              data-slot-id="gallery-1970-1"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1970-2.jpg"
+              alt="Photo 1970s"
+              data-slot-id="gallery-1970-2"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1970-3.jpg"
+              alt="Photo 1970s"
+              data-slot-id="gallery-1970-3"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- 1990s-2000s -->
+      <div class="mb-20">
+        <h3 class="text-3xl font-bold mb-6" data-field-id="decade-1990-title" data-field-type="text">1990s-2000s: Expanding the Circle</h3>
+        <div class="gallery-grid">
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1990-1.jpg"
+              alt="Photo 1990s"
+              data-slot-id="gallery-1990-1"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1990-2.jpg"
+              alt="Photo 1990s"
+              data-slot-id="gallery-1990-2"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-1990-3.jpg"
+              alt="Photo 1990s"
+              data-slot-id="gallery-1990-3"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- 2010s-Present -->
+      <div>
+        <h3 class="text-3xl font-bold mb-6" data-field-id="decade-2010-title" data-field-type="text">2010s-Present: Living Our Legacy</h3>
+        <div class="gallery-grid">
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-2010-1.jpg"
+              alt="Photo 2010s"
+              data-slot-id="gallery-2010-1"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-2010-2.jpg"
+              alt="Photo 2010s"
+              data-slot-id="gallery-2010-2"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+          <div class="gallery-item" data-animate="fade-up">
+            <img 
+              src="assets/stock/gallery-2010-3.jpg"
+              alt="Photo 2010s"
+              data-slot-id="gallery-2010-3"
+              data-slot-status="stock"
+              data-slot-role="gallery"
+            loading="lazy" data-lazy
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Upload CTA Section -->
+  <section data-section-id="upload-cta-1" data-section-type="cta" class="py-20 px-6 bg-white">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-5xl font-bold mb-4" data-field-id="upload-cta-heading" data-field-type="text">Share Your Memories</h2>
+      <div class="h-1 w-20 mx-auto mb-12" style="background-color: var(--color-secondary);"></div>
+
+      <p class="text-lg mb-8 leading-relaxed" data-field-id="upload-cta-text" data-field-type="text">
+        Do you have family photos we haven't seen? Help us preserve our heritage by uploading photos from any era. 
+        Include captions with dates and names when possible — these details matter for future generations.
+      </p>
+
+      <a href="connect.html" class="btn-primary inline-block py-4 px-8 rounded-lg text-lg font-bold" data-field-id="upload-cta-button" data-field-type="link">
+        Upload Your Photos
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 px-6 text-white" style="background-color: var(--color-primary);">
+    <div class="max-w-6xl mx-auto text-center">
+      <p class="mb-2" data-field-id="footer-copy" data-field-type="text">&copy; 2026 The Street Family Reunion. All rights reserved.</p>
+      <p class="text-sm opacity-75">
+        Questions? Email 
+        <a href="mailto:hello@streetfamilyreunion.com" data-field-id="footer-email" data-field-type="email" class="hover:opacity-100 transition" style="color: var(--color-secondary);">hello@streetfamilyreunion.com</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="assets/js/slideshow.js"></script>
+  <script src="assets/js/parallax.js"></script>
+  <script src="assets/js/smooth-scroll.js"></script>
+  <script src="assets/js/lazy-load.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+[
+  {
+    "filename": "hero_family_reunion.jpg",
+    "output_dir": "sites/site-street-family-reunion/dist/assets/images",
+    "prompt": "Warm joyful Black family reunion outdoors on a sunny summer day. Multi-generational family — grandparents, parents, children, cousins — laughing, embracing, celebrating together in a park. Golden afternoon light, lush green grass, colorful clothing. Cinematic, emotive, photorealistic. Wide landscape 16:9.",
+    "width": 2048,
+    "height": 1152,
+    "content_class": "photo",
+    "notes": "Hero background — replaces video poster and serves as hero image fallback"
+  },
+  {
+    "filename": "firefly_gallery_reunion.jpg",
+    "output_dir": "sites/site-street-family-reunion/dist/assets/images",
+    "prompt": "Candid intimate moment from a Black family reunion — grandparents and elders sharing stories with young grandchildren around a picnic table, warm golden hour light, natural and documentary photography style, beautiful composition, shallow depth of field, emotionally rich.",
+    "width": 1200,
+    "height": 900,
+    "content_class": "photo",
+    "style_ref": "hero_family_reunion.jpg",
+    "notes": "Gallery feature image — placed in gallery section as Firefly-generated example"
+  }
+]
