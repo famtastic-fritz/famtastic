@@ -1,0 +1,53 @@
+<!-- Category Filter Pills
+     Requires .category-pill CSS class from main.css
+     Product cards in target grid must have data-category attributes
+     Grid must have id="product-grid"
+     Result count span must have id="result-count"
+
+     Add/remove category buttons as needed — match data-category values on product cards
+-->
+
+<!-- Result count display (place near grid) -->
+<p style="font-size:0.9rem;color:#6B7280;font-weight:700;" id="result-count">Showing all items</p>
+
+<!-- Filter pill row -->
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:2rem;">
+  <span style="font-family:'Permanent Marker',cursive;font-size:0.9rem;color:#E8420A;margin-right:0.5rem;">Filter:</span>
+  <button class="category-pill active" onclick="filterCategory(this,'all')">All Items</button>
+  <button class="category-pill" onclick="filterCategory(this,'furniture')">Furniture</button>
+  <button class="category-pill" onclick="filterCategory(this,'electronics')">Electronics</button>
+  <button class="category-pill" onclick="filterCategory(this,'clothing')">Clothing</button>
+  <button class="category-pill" onclick="filterCategory(this,'collectibles')">Collectibles</button>
+  <button class="category-pill" onclick="filterCategory(this,'kitchen')">Kitchen</button>
+  <button class="category-pill" onclick="filterCategory(this,'art')">Art &amp; Decor</button>
+  <button class="category-pill" onclick="filterCategory(this,'tools')">Tools</button>
+  <button class="category-pill" onclick="filterCategory(this,'books')">Books &amp; Media</button>
+  <!-- Add more as needed: <button class="category-pill" onclick="filterCategory(this,'{{cat}}')">{{Label}}</button> -->
+</div>
+
+<!-- Product grid — cards need data-category="{{category-slug}}" -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.75rem;" id="product-grid">
+  <!-- Product cards here, each with data-category="electronics" etc. -->
+</div>
+
+<!-- JS — place before </body> -->
+<script>
+function filterCategory(btn, cat) {
+  // Update active pill
+  document.querySelectorAll('.category-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  // Show/hide cards
+  const cards = document.querySelectorAll('#product-grid [data-category]');
+  let shown = 0;
+  cards.forEach(card => {
+    const match = cat === 'all' || card.dataset.category === cat;
+    card.style.display = match ? '' : 'none';
+    if (match) shown++;
+  });
+
+  // Update count
+  const countEl = document.getElementById('result-count');
+  if (countEl) countEl.textContent = `Showing ${shown} item${shown !== 1 ? 's' : ''}`;
+}
+</script>

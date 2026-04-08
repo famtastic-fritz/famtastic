@@ -1,0 +1,59 @@
+<!-- Live Countdown Timer
+     Requires .countdown-* CSS classes from main.css
+     Updates every second via inline JS
+     Default target: next Sunday 2pm local time
+     Customize: change getTargetTime() to return any future Date
+-->
+
+<!-- HTML -->
+<div style="margin-bottom:1.25rem;">
+  <p style="font-family:'Permanent Marker',cursive;font-size:0.9rem;color:#E8420A;margin-bottom:0.5rem;">Deal expires in:</p>
+  <div class="countdown-block" id="my-countdown">
+    <div class="countdown-unit"><span class="countdown-number" id="cd-h">00</span><span class="countdown-label">Hours</span></div>
+    <span style="font-family:'Bangers',cursive;font-size:2rem;color:#E8420A;margin-top:0.2rem;">:</span>
+    <div class="countdown-unit"><span class="countdown-number" id="cd-m">00</span><span class="countdown-label">Mins</span></div>
+    <span style="font-family:'Bangers',cursive;font-size:2rem;color:#E8420A;margin-top:0.2rem;">:</span>
+    <div class="countdown-unit"><span class="countdown-number" id="cd-s">00</span><span class="countdown-label">Secs</span></div>
+  </div>
+</div>
+
+<!-- Script — place before </body> or immediately after HTML above -->
+<script>
+(function() {
+  // ── Customize target date here ──────────────────────────────────
+  function getTargetTime() {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    const target = new Date(now);
+    target.setHours(14, 0, 0, 0); // 2pm
+
+    // Find next Sunday 2pm
+    const daysUntilSunday = day === 0 ? (now.getHours() >= 14 ? 7 : 0) : (7 - day);
+    target.setDate(now.getDate() + daysUntilSunday);
+    return target;
+
+    // --- OR set a fixed date:
+    // return new Date('2026-04-12T14:00:00');
+  }
+  // ───────────────────────────────────────────────────────────────
+
+  function update() {
+    const now = new Date();
+    const target = getTargetTime();
+    let diff = Math.max(0, Math.floor((target - now) / 1000));
+    const h = Math.floor(diff / 3600); diff %= 3600;
+    const m = Math.floor(diff / 60);
+    const s = diff % 60;
+    const pad = n => String(n).padStart(2, '0');
+    const hEl = document.getElementById('cd-h');
+    const mEl = document.getElementById('cd-m');
+    const sEl = document.getElementById('cd-s');
+    if (hEl) hEl.textContent = pad(h);
+    if (mEl) mEl.textContent = pad(m);
+    if (sEl) sEl.textContent = pad(s);
+  }
+
+  update();
+  setInterval(update, 1000);
+})();
+</script>

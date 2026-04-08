@@ -1,0 +1,20 @@
+{
+  "id": "starburst-badge",
+  "name": "CSS Starburst Badge",
+  "type": "decorator",
+  "version": "1.0",
+  "path": "starburst-badge/",
+  "extracted_from": "site-auntie-gale-garage-sales",
+  "description": "12-point CSS starburst shape using clip-path polygon. No SVG, no images — pure CSS. Configurable size, background color, text, and rotation. Used as sale price callouts, section decorators, and corner badges. The .starburst CSS class is defined in main.css and uses the Bangers font for internal text.",
+  "css_classes": ["starburst"],
+  "data_attributes": ["data-field-id"],
+  "usage_count": 1,
+  "variants": [
+    { "name": "hero-starburst", "size": "100px", "bg": "#FBBF24", "text-color": "#1C1917" },
+    { "name": "corner-badge", "size": "80-90px", "bg": "#E8420A", "text-color": "#FFFFFF" },
+    { "name": "accent-small", "size": "70-72px", "bg": "#16A34A", "text-color": "#FFFFFF" },
+    { "name": "stage-corner", "size": "90-100px", "bg": "#FBBF24", "position": "absolute top-right" }
+  ],
+  "requires_css": ["assets/css/main.css (.starburst class)"],
+  "clip_path": "polygon(100% 50%,78.98% 57.76%,93.3% 75%,71.21% 71.21%,75% 93.3%,57.76% 78.98%,50% 100%,42.24% 78.98%,25% 93.3%,28.79% 71.21%,6.7% 75%,21.02% 57.76%,0% 50%,21.02% 42.24%,6.7% 25%,28.79% 28.79%,25% 6.7%,42.24% 21.02%,50% 0%,57.76% 21.02%,75% 6.7%,71.21% 28.79%,93.3% 25%,78.98% 42.24%)"
+}

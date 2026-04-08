@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "components": [
     {
       "id": "video-hero",
@@ -10,7 +10,57 @@
       "extracted_from": "site-readings-by-maria",
       "description": "Full-viewport hero with autoplay video background, gradient overlay, heading, description, CTA",
       "usage_count": 1
+    },
+    {
+      "id": "product-card-garage",
+      "name": "Garage Sale Product Card",
+      "type": "card",
+      "version": "1.0",
+      "path": "product-card-garage/",
+      "extracted_from": "site-auntie-gale-garage-sales",
+      "description": "Bold-bordered product card with image zone, condition badge, title, description, price in Bangers font, and optional Buddy-Pick badge that breaks the top-right corner boundary. Hover lift animation.",
+      "usage_count": 1
+    },
+    {
+      "id": "display-stage",
+      "name": "Display Stage — Deal Showcase",
+      "type": "showcase",
+      "version": "1.0",
+      "path": "display-stage/",
+      "extracted_from": "site-auntie-gale-garage-sales",
+      "description": "Bold-framed deal showcase stage with swappable content slot. Header bar, starburst corner badge, character breakout, image, price (with strikethrough), description, condition badge, and CTA. The 'frame is permanent, content is swappable' pattern.",
+      "usage_count": 1
+    },
+    {
+      "id": "starburst-badge",
+      "name": "CSS Starburst Badge",
+      "type": "decorator",
+      "version": "1.0",
+      "path": "starburst-badge/",
+      "extracted_from": "site-auntie-gale-garage-sales",
+      "description": "12-point CSS starburst shape using clip-path polygon. Pure CSS, no SVG. Configurable size, background, text, and rotation. Uses Bangers font for sale callout text.",
+      "usage_count": 1
+    },
+    {
+      "id": "countdown-timer",
+      "name": "Live Countdown Timer",
+      "type": "interactive",
+      "version": "1.0",
+      "path": "countdown-timer/",
+      "extracted_from": "site-auntie-gale-garage-sales",
+      "description": "Live JS countdown timer with Bangers-font digit blocks. Default target: next Sunday 2pm. Configurable target date. Self-contained HTML + inline script.",
+      "usage_count": 1
+    },
+    {
+      "id": "category-filter-pills",
+      "name": "Category Filter Pills",
+      "type": "interactive",
+      "version": "1.0",
+      "path": "category-filter-pills/",
+      "extracted_from": "site-auntie-gale-garage-sales",
+      "description": "Horizontal clickable pill row that filters a product grid by data-category attribute. Active pill gets primary color. Includes result count update and 'All Items' reset. Self-contained filterCategory() JS function.",
+      "usage_count": 1
     }
   ],
-  "last_updated": "2026-04-07T19:00:00Z"
+  "last_updated": "2026-04-08T18:00:00Z"
 }

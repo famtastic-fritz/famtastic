@@ -1,0 +1,27 @@
+<!-- CSS Starburst Badge — no SVG, no images, pure clip-path
+     Requires .starburst class from main.css
+     Customize: width/height (keep equal), background, transform:rotate(), font-size of inner text
+-->
+
+<!-- Standard starburst — hero decorator -->
+<div class="starburst" style="width:100px;height:100px;background:#FBBF24;transform:rotate(8deg);">
+  <span style="text-align:center;font-size:0.95rem;line-height:1.1;color:#1C1917;">OPEN<br>SAT &amp;<br>SUN</span>
+</div>
+
+<!-- Absolute-positioned corner badge — for stage headers -->
+<div class="starburst stage-starburst" data-field-id="badge-text">
+  <span style="font-size:0.85rem;line-height:1.1;text-align:center;color:#1C1917;">TODAY<br>ONLY</span>
+</div>
+
+<!-- Small floating starburst — section accent -->
+<div class="starburst" style="position:absolute;top:-30px;right:3rem;width:80px;height:80px;background:#E8420A;z-index:10;transform:rotate(10deg);">
+  <span style="font-size:0.75rem;text-align:center;line-height:1.1;color:#FFFFFF;">SALE</span>
+</div>
+
+<!-- Price tag starburst — large, bold -->
+<div class="starburst" style="width:140px;height:140px;background:#FBBF24;">
+  <div style="text-align:center;color:#1C1917;">
+    <span style="font-size:0.7rem;font-family:'Permanent Marker',cursive;display:block;">only</span>
+    <span style="font-size:2rem;line-height:1;">${{price}}</span>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+{
+  "id": "category-filter-pills",
+  "name": "Category Filter Pills",
+  "type": "interactive",
+  "version": "1.0",
+  "path": "category-filter-pills/",
+  "extracted_from": "site-auntie-gale-garage-sales",
+  "description": "Horizontal row of clickable category filter pills. Clicking a pill shows only product cards with matching data-category attribute, hides the rest, and updates a result count display. Active pill gets primary color fill. Includes 'All Items' reset button. Self-contained JS filterCategory() function.",
+  "css_classes": ["category-pill"],
+  "data_attributes": ["data-category"],
+  "usage_count": 1,
+  "requires_css": ["assets/css/main.css (.category-pill class)"],
+  "requires_js": "inline filterCategory() function — see template.html",
+  "notes": "Product cards in the target grid must have data-category attributes. The grid must have id='product-grid' (or change the querySelector in filterCategory()). The result count element must have id='result-count'."
+}

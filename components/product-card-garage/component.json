@@ -1,0 +1,21 @@
+{
+  "id": "product-card-garage",
+  "name": "Garage Sale Product Card",
+  "type": "card",
+  "version": "1.0",
+  "path": "product-card-garage/",
+  "extracted_from": "site-auntie-gale-garage-sales",
+  "description": "Bold-bordered product card with image zone, condition badge (Available/Sold), title, description, price in Bangers font, and optional Buddy-Pick badge that breaks the top-right corner boundary. Includes hover lift animation.",
+  "css_classes": ["product-card", "product-card-body", "product-condition", "product-price", "buddy-pick-badge"],
+  "data_attributes": ["data-product-id", "data-category", "data-buddy-pick"],
+  "usage_count": 1,
+  "slots": [
+    { "id": "card-image", "type": "image", "description": "Product image, 180-200px height" },
+    { "id": "card-title", "type": "text", "description": "Product name" },
+    { "id": "card-desc", "type": "text", "description": "Short description" },
+    { "id": "card-price", "type": "text", "description": "Price in Bangers font" },
+    { "id": "card-condition", "type": "badge", "description": "Available or Sold" }
+  ],
+  "requires_css": ["assets/css/main.css"],
+  "requires_images": ["assets/buddy/buddy-thumbs-up.png (if buddy-pick=true)"]
+}

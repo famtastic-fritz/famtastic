@@ -1,0 +1,15 @@
+{
+  "id": "countdown-timer",
+  "name": "Live Countdown Timer",
+  "type": "interactive",
+  "version": "1.0",
+  "path": "countdown-timer/",
+  "extracted_from": "site-auntie-gale-garage-sales",
+  "description": "Live JavaScript countdown timer with styled digit blocks in Bangers font. Default target: next Sunday 2pm. Configurable target date via JS. Shows hours, minutes, seconds. Updates every second. Styled with red digit blocks and dark border shadow matching the site's bold visual language.",
+  "css_classes": ["countdown-block", "countdown-unit", "countdown-number", "countdown-label"],
+  "data_attributes": [],
+  "usage_count": 1,
+  "requires_css": ["assets/css/main.css (.countdown-* classes)"],
+  "requires_js": "inline script tag — see template.html",
+  "notes": "Self-contained. Drop HTML + script anywhere on page. Change getTargetTime() function to target any future date/time."
+}

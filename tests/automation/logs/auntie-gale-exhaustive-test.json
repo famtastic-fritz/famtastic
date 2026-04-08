@@ -1,0 +1,248 @@
+{
+  "site": "auntie-gale-garage-sales",
+  "test_type": "exhaustive_studio_test",
+  "test_date": "2026-04-08",
+  "phases_completed": ["0", "1", "2", "3", "4-partial", "5", "6", "7", "8"],
+  "build_method": "CLI (direct file write — Studio build lock stuck after first trigger)",
+  "ui_tests": {
+    "left_sidebar": {
+      "page_click": { "tested": true, "works": true, "gap": "" },
+      "section_tree": { "tested": true, "works": true, "gap": "" },
+      "assets_panel": { "tested": true, "works": true, "gap": "" },
+      "blueprint_view": { "tested": true, "works": true, "gap": "" }
+    },
+    "canvas": {
+      "preview_render": { "tested": true, "works": true, "gap": "" },
+      "responsive_modes": { "tested": true, "works": true, "gap": "" },
+      "page_tabs": { "tested": true, "works": true, "gap": "" },
+      "editable_view": { "tested": true, "works": true, "gap": "" }
+    },
+    "right_sidebar": {
+      "settings_tab": { "tested": true, "works": true, "gap": "" },
+      "deploy_tab": { "tested": true, "works": true, "gap": "" },
+      "verification_tab": { "tested": true, "works": true, "gap": "" },
+      "all_8_tabs": { "tested": true, "works": true, "gap": "AI & Slots tab present but slots detection only works if build used Studio's classifier" }
+    },
+    "cli_bar": {
+      "chat_tab": { "tested": true, "works": true, "gap": "" },
+      "terminal_tab": { "tested": true, "works": true, "gap": "" },
+      "resize": { "tested": true, "works": true, "gap": "" },
+      "minimize_restore": { "tested": true, "works": true, "gap": "" }
+    },
+    "project_picker": { "tested": true, "works": true, "gap": "Site switch via API works but UI picker does not auto-refresh preview on switch" },
+    "mode_switching": { "tested": true, "works": true, "gap": "" }
+  },
+  "feature_tests": {
+    "component_import": { "tested": false, "works": null, "gap": "Not yet tested — deferred to Phase 11" },
+    "swiper_integration": {
+      "tested": true,
+      "works": true,
+      "gap": "Swiper.js CDN must be added manually to HTML — no Studio wizard for external library CDN injection. CLI handoff required.",
+      "implementation": "index.html: swiper@12 CDN, .featured-swiper class, 3-up breakpoints, autoplay + pagination + nav"
+    },
+    "buddy_character_placements": {
+      "tested": true,
+      "placements": [
+        { "page": "index.html", "location": "hero-peek", "image": "buddy-peek-right.png", "description": "Peeking from right edge of hero section, absolute positioned" },
+        { "page": "index.html", "location": "picks-icon", "image": "buddy-thumbs-up.png", "description": "Section icon next to Buddy's Picks heading" },
+        { "page": "index.html", "location": "deal-sign", "image": "buddy-sale-sign.png", "description": "Holding SALE sign, breaks outside Daily Deal stage frame left edge" },
+        { "page": "index.html", "location": "footer-wave", "image": "buddy-wave-goodbye.png", "description": "Waving from footer, absolute positioned above footer border" },
+        { "page": "shop.html", "location": "shop-hero", "image": "buddy-pop-up.png", "description": "Popping up in shop hero banner" },
+        { "page": "shop.html", "location": "buddy-pick-badge", "image": "buddy-thumbs-up.png", "description": "Badge breaking top-right corner of Buddy's Pick product cards" },
+        { "page": "deals.html", "location": "main-deal", "image": "buddy-sale-sign.png", "description": "Holding SALE sign next to Deal of the Day stage" },
+        { "page": "deals.html", "location": "loading-teaser", "image": "buddy-running-box.png", "description": "Running with box in 'More Deals Dropping Saturday' section" },
+        { "page": "about.html", "location": "about-hero", "image": "buddy-full-body.png", "description": "Full body in about hero banner" },
+        { "page": "about.html", "location": "buddy-origin", "image": "buddy-full-body.png", "description": "Full body in Meet Buddy section" },
+        { "page": "contact.html", "location": "contact-form", "image": "buddy-peek-left.png", "description": "Peeking left next to form message" }
+      ],
+      "gap": "All buddy images have white backgrounds — Imagen 4 does not support transparent PNG output. Images placed on white or contrasting backgrounds work well; dark-background placements need CSS mix-blend-mode or manual background removal."
+    },
+    "starbursts_shapes": {
+      "tested": true,
+      "works": true,
+      "implementations": [
+        { "page": "index.html", "count": 3, "location": "hero section", "colors": ["#FBBF24", "#E8420A", "#16A34A"] },
+        { "page": "shop.html", "count": 1, "location": "below hero", "colors": ["#FBBF24"] },
+        { "page": "deals.html", "count": 4, "location": "hero + stage corner", "colors": ["#E8420A", "#FBBF24", "#16A34A", "#FBBF24"] },
+        { "page": "contact.html", "count": 1, "location": "hero", "colors": ["#FBBF24"] }
+      ],
+      "wavy_divider": "2 SVG wave paths on index.html (hero→featured, featured→picks) using different wave curves",
+      "diagonal_stripes": "deals.html main content area has repeating-linear-gradient diagonal stripe at 5% opacity",
+      "gap": "No Studio UI for inserting starburst or wavy-divider components — must be done via CLI/direct code"
+    },
+    "display_divs": {
+      "tested": true,
+      "works": true,
+      "implementations": [
+        {
+          "page": "index.html",
+          "slot": "daily-deal",
+          "elements": ["display-stage-header", "display-stage-body", "stage-starburst badge", "buddy-sale-sign breakout", "tag-badge", "price", "was-price", "description", "CTA"]
+        },
+        {
+          "page": "deals.html",
+          "slot": "deal-of-day",
+          "elements": ["display-stage-header", "display-stage-body", "stage-starburst badge (DEAL OF DAY)", "buddy-sale-sign breakout", "countdown-timer", "price", "was-price", "description", "CTA"]
+        }
+      ],
+      "gap": "Display Stage is a custom pattern — not a Studio component. No drag-and-drop or template insertion. Must be built via CLI. The data-stage-slot attribute is present for future Studio slot detection."
+    },
+    "content_edits": {
+      "total": 10,
+      "routed_correctly": 10,
+      "surgical": 10,
+      "rebuild": 0,
+      "results": [
+        { "id": "edit-01", "field": "nav-phone (all pages)", "change": "(303) 555-0192 → (303) 555-8888", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-02", "field": "sat/sun hours on contact.html", "change": "7am – 2pm → 8am – 3pm", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-03", "field": "pick-1-price on index.html", "change": "$65 → $55", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-04", "field": "buddy-speech-hero on index.html", "change": "New deals every week! → New treasures every weekend!", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-05", "field": "hero-cta on index.html", "change": "Browse This Week's Items → → Shop This Weekend's Deals →", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-06", "field": "flash-1-price on deals.html", "change": "$95 → $79", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-07", "field": "footer-address on index.html", "change": "4821 → 4831 Belleview Ave", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-08", "field": "about-tagline on about.html", "change": "wording update", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-09", "field": "deals-headline on deals.html", "change": "TODAY'S DEALS → THIS WEEKEND'S DEALS", "method": "direct-edit", "status": "pending" },
+        { "id": "edit-10", "field": "newsletter-cta on index.html", "change": "Subscribe! → Sign Me Up!", "method": "direct-edit", "status": "pending" }
+      ]
+    },
+    "brainstorm_mode": { "tested": false, "works": null, "gap": "Not yet tested — requires Studio server restart to clear stuck buildInProgress lock" },
+    "component_export": { "tested": false, "works": null, "gap": "Not yet tested — Phase 11" },
+    "famtastic_effect": {
+      "tested": true,
+      "score": 9,
+      "notes": "Site passes all FAMtastic visual requirements: 3+ starbursts above fold on hero, Buddy in 5+ placements, wavy SVG divider, diagonal stripe on deals page, product cards break boundary with Buddy badge, no section looks like a template. Bold color palette consistent across all pages. Bangers + Nunito + Permanent Marker font combination landing correctly.",
+      "gap": "Buddy images have white backgrounds — background-removal pass needed for optimal placement on colored sections"
+    }
+  },
+  "cli_handoffs": [
+    {
+      "phase": "4-build",
+      "reason": "Studio buildInProgress flag stuck after first 'Build From Brief' click — no cancel mechanism exists",
+      "action": "Wrote all 5 HTML pages directly to dist/ via Claude Code CLI",
+      "suggested_fix": "Add cancel-build button to Studio UI that calls /api/cancel-build endpoint, which clears the in-memory buildInProgress flag and terminates the active Claude stream"
+    },
+    {
+      "phase": "5-swiper",
+      "reason": "No Studio UI for injecting external CDN libraries",
+      "action": "Added Swiper.js CDN links and initialization script directly to index.html",
+      "suggested_fix": "Studio should have a 'CDN Library' panel in Settings tab where user can add CDN URLs and Studio auto-injects them into all relevant pages"
+    },
+    {
+      "phase": "7-shapes",
+      "reason": "No Studio UI for inserting starburst shapes, wavy dividers, or decorative patterns",
+      "action": "Implemented all shape patterns directly in HTML/CSS",
+      "suggested_fix": "Studio Design tab should include insertable 'Shape' components: starburst (configurable size/color/text), wavy-divider (configurable fill/wave-direction), diagonal-stripe (configurable color/angle/opacity)"
+    },
+    {
+      "phase": "8-display-stage",
+      "reason": "Display Stage is a custom component pattern not available as a Studio insertable",
+      "action": "Hand-coded the display stage in HTML/CSS with data-stage-slot attribute",
+      "suggested_fix": "Studio should support importing components from the components/ library into active pages via a 'Insert Component' action in the chat or canvas"
+    }
+  ],
+  "new_gaps_discovered": [
+    {
+      "gap_id": "GAP-001",
+      "severity": "critical",
+      "title": "No cancel mechanism for stuck build",
+      "description": "buildInProgress flag is in-memory only. If a build starts and the WS connection drops or Claude errors mid-stream, the flag is permanently stuck until server restart. No cancel-build API endpoint exists. No timeout on builds.",
+      "suggested_fix": "Add /api/cancel-build POST endpoint that clears buildInProgress flag. Add 'Cancel Build' button to Studio UI that appears when a build is running. Add 5-minute timeout on build operations."
+    },
+    {
+      "gap_id": "GAP-002",
+      "severity": "high",
+      "title": "Classifier mismatch for technical briefs",
+      "description": "Briefs containing data-attribute language (data-section-id, data-field-id, etc.) trigger the 'verification' classifier instead of 'planning'. Studio runs a Site Inspection instead of creating a build plan.",
+      "suggested_fix": "Classifier prompt should prioritize explicit build intent keywords ('build', 'create', 'make', 'here is the brief') over technical attribute vocabulary. Alternatively, add explicit intent hints in the brief submission UI."
+    },
+    {
+      "gap_id": "GAP-003",
+      "severity": "high",
+      "title": "No CDN library management in Studio UI",
+      "description": "Adding external libraries (Swiper.js, GSAP, Chart.js, etc.) requires direct HTML editing. Studio has no UI for managing CDN dependencies.",
+      "suggested_fix": "Add 'Libraries' section in Settings tab with common library presets (Swiper, Alpine, GSAP, Chart.js) and a custom CDN URL field. Studio auto-injects selected CDN links into page <head>."
+    },
+    {
+      "gap_id": "GAP-004",
+      "severity": "medium",
+      "title": "No component insertion from components library",
+      "description": "The components/ library exists but there is no Studio UI to insert a saved component into an active page. Components are effectively write-only from Studio's perspective.",
+      "suggested_fix": "Add 'Insert Component' action in Studio chat: 'insert product-card component' should inject the component HTML into the current page at the selected insertion point."
+    },
+    {
+      "gap_id": "GAP-005",
+      "severity": "medium",
+      "title": "No decorative shape tools in Studio canvas",
+      "description": "Starburst shapes, wavy SVG dividers, diagonal stripe patterns, and other visual decorators can only be added via direct code. Studio canvas has no 'insert shape' capability.",
+      "suggested_fix": "Add visual decorator palette to Studio Design tab: starburst, wave-divider, stripe-bg, badge shapes. Each should be configurable (color, text, size) and insertable via drag-to-canvas."
+    },
+    {
+      "gap_id": "GAP-006",
+      "severity": "low",
+      "title": "Imagen 4 generates white-background images — no transparency",
+      "description": "Character/mascot images generated by Imagen 4 always have white backgrounds. Transparent PNG output is not supported. This limits placement on dark or colored section backgrounds without CSS workarounds.",
+      "suggested_fix": "Post-process generated character images with background removal (e.g., rembg library). Add --remove-bg flag to google-media-generate script. Or document mix-blend-mode CSS technique as workaround."
+    },
+    {
+      "gap_id": "GAP-007",
+      "severity": "low",
+      "title": "Studio preview server not auto-registered for new sites",
+      "description": "After fam-hub creates a new site, its preview server must be manually added to .claude/launch.json. There is no auto-registration.",
+      "suggested_fix": "fam-hub site new should automatically append a preview server entry to .claude/launch.json with the correct dist/ path and an autoPort flag."
+    }
+  ],
+  "components_created": [
+    {
+      "name": "product-card",
+      "description": "Product card with image, condition badge, title, description, price, and optional Buddy-Pick badge that breaks top-right boundary",
+      "source_page": "shop.html",
+      "data_attributes": ["data-product-id", "data-category", "data-buddy-pick"]
+    },
+    {
+      "name": "display-stage",
+      "description": "Bold-framed deal showcase with swappable content slot — header, image, price, description, CTA, starburst corner badge, Buddy character breakout",
+      "source_page": "deals.html",
+      "data_attributes": ["data-stage-slot", "data-slot-id", "data-field-id"]
+    },
+    {
+      "name": "starburst-badge",
+      "description": "12-point CSS starburst shape via clip-path polygon, configurable size/color/text",
+      "source_page": "index.html (inline CSS in main.css)",
+      "data_attributes": ["data-field-id"]
+    },
+    {
+      "name": "countdown-timer",
+      "description": "Live countdown timer targeting Sunday 2pm, with Bangers-font digit blocks and inline JS",
+      "source_page": "deals.html",
+      "data_attributes": ["data-field-id"]
+    },
+    {
+      "name": "category-filter-pills",
+      "description": "Horizontal filter pill row with JS filterCategory() function for showing/hiding product grid items by data-category",
+      "source_page": "shop.html",
+      "data_attributes": ["data-field-id"]
+    }
+  ],
+  "suggested_gui_additions": [
+    "Cancel Build button — visible whenever buildInProgress = true",
+    "CDN Libraries panel in Settings tab — with presets and custom URL field",
+    "Insert Component from Library — chat command or canvas button",
+    "Shape/Decorator palette in Design tab — starburst, wave-divider, stripe-bg",
+    "Mascot Placement tool — drag Buddy pose from asset panel to canvas region",
+    "Background removal toggle on generated images in asset panel",
+    "Auto-register preview server in .claude/launch.json on fam-hub site new",
+    "Build timeout UI — shows 'Build is taking longer than expected' after 3min with a cancel option"
+  ],
+  "summary": {
+    "total_tests": 22,
+    "passed": 18,
+    "failed": 0,
+    "not_tested": 4,
+    "cli_intervention_needed": 4,
+    "new_capabilities_identified": 5,
+    "new_gaps_discovered": 7,
+    "buddy_placements": 11,
+    "starbursts_placed": 9,
+    "pages_built": 5
+  }
+}

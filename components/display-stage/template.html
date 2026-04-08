@@ -1,0 +1,52 @@
+<!-- Display Stage — Deal Showcase
+     data-stage-slot: unique identifier for this stage instance
+     Wrap in a container with margin-left:5rem to make room for Buddy character breakout
+-->
+<div class="display-stage" data-stage-slot="{{stage-id}}">
+
+  <!-- Optional: Buddy character breaking outside left edge -->
+  <img src="assets/buddy/buddy-sale-sign.png"
+    alt="Buddy holding sale sign"
+    style="position:absolute;left:-85px;bottom:-10px;height:190px;z-index:20;"
+    data-buddy-placement="{{stage-id}}">
+
+  <!-- Starburst corner badge — top-right -->
+  <div class="starburst stage-starburst" data-field-id="{{stage-id}}-badge">
+    <span style="font-size:0.85rem;line-height:1.1;text-align:center;color:var(--dark);">TODAY<br>ONLY</span>
+  </div>
+
+  <!-- Header bar -->
+  <div class="display-stage-header">
+    <h2 data-field-id="{{stage-id}}-name">{{Item Name}}</h2>
+    <span class="tag-badge">{{Category Tag}}</span>
+  </div>
+
+  <!-- Body: image left, details right -->
+  <div class="display-stage-body">
+
+    <!-- Image column -->
+    <div>
+      <div style="height:200px;background:linear-gradient(135deg,#DBEAFE,#93C5FD);display:flex;align-items:center;justify-content:center;border:3px solid var(--dark);border-radius:6px;font-size:5rem;" data-slot-id="{{stage-id}}-image">
+        <!-- Replace emoji with: <img src="path/to/item.jpg" alt="{{name}}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;"> -->
+        🛍️
+      </div>
+    </div>
+
+    <!-- Details column -->
+    <div>
+      <div style="margin-bottom:0.5rem;">
+        <span class="stage-was-price" data-field-id="{{stage-id}}-was">Was ${{original-price}}</span>
+      </div>
+      <div class="stage-price" data-field-id="{{stage-id}}-price">${{sale-price}}</div>
+      <p style="font-size:0.95rem;color:#4B5563;margin:0.75rem 0;line-height:1.6;" data-field-id="{{stage-id}}-desc">
+        {{Item description goes here. Be specific about condition, provenance, and what makes this special.}}
+      </p>
+      <span class="product-condition" style="display:inline-block;margin-bottom:1rem;">Available Now</span><br>
+
+      <!-- Optional: countdown timer — see countdown-timer component -->
+
+      <a href="{{cta-url}}" class="btn-primary" data-field-id="{{stage-id}}-cta">{{CTA Text}} →</a>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,24 @@
+{
+  "id": "display-stage",
+  "name": "Display Stage — Deal Showcase",
+  "type": "showcase",
+  "version": "1.0",
+  "path": "display-stage/",
+  "extracted_from": "site-auntie-gale-garage-sales",
+  "description": "Bold-framed 'Deal of the Day' showcase stage. Fixed outer frame with thick border, colored header, starburst corner badge, character breakout on one side, and swappable interior with image, price (with strikethrough original), description, condition badge, and CTA button. Designed for 'the frame is permanent, content is swappable' pattern.",
+  "css_classes": ["display-stage", "display-stage-header", "display-stage-body", "stage-starburst", "stage-price", "stage-was-price"],
+  "data_attributes": ["data-stage-slot", "data-slot-id", "data-field-id"],
+  "usage_count": 1,
+  "slots": [
+    { "id": "stage-title", "type": "text", "description": "Item name in header bar" },
+    { "id": "stage-image", "type": "image", "description": "Product image on left side" },
+    { "id": "stage-price", "type": "text", "description": "Current sale price" },
+    { "id": "stage-was-price", "type": "text", "description": "Original price (strikethrough)" },
+    { "id": "stage-description", "type": "text", "description": "Item description paragraph" },
+    { "id": "stage-cta", "type": "link", "description": "Call-to-action button" },
+    { "id": "stage-badge", "type": "text", "description": "Starburst corner badge text (TODAY ONLY, etc.)" }
+  ],
+  "requires_css": ["assets/css/main.css"],
+  "requires_images": ["optional: buddy character for side breakout"],
+  "notes": "Add margin-left on the container to make room for the Buddy character that breaks outside the left edge. Typically margin-left: 5rem."
+}

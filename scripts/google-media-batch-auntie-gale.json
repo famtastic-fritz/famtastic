@@ -1,0 +1,57 @@
+[
+  {
+    "type": "image",
+    "filename": "buddy-full-body.png",
+    "prompt": "Modern cartoon woodpecker mascot character named Buddy, full body standing pose holding a megaphone, wearing a small orange sales apron with pockets, red-orange feather crest on head, cream-colored round body, orange beak, large expressive eyes with white sclera and big dark pupils, thick black outline, flat vector illustration style, bold cheerful colors, energetic and trustworthy expression, solid white background, clean character design, 2026 cartoon mascot style",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "image",
+    "filename": "buddy-peek-right.png",
+    "prompt": "Modern cartoon woodpecker mascot Buddy peeking from the right side, only his head and right hand visible as if peeking around the edge of something, red-orange feather crest, cream body, orange beak, large expressive eyes with big dark pupils, thick black outline, mischievous delighted expression, flat vector illustration style, bold colors, transparent-feeling white background, character is on right edge of frame",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "image",
+    "filename": "buddy-peek-left.png",
+    "prompt": "Modern cartoon woodpecker mascot Buddy peeking from the left side, only his head and left hand visible as if peeking around the edge of something, red-orange feather crest, cream body, orange beak, large expressive eyes with big dark pupils, thick black outline, mischievous delighted expression, flat vector illustration style, bold colors, white background, character is on left edge of frame, mirrored version of right-peeking pose",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "image",
+    "filename": "buddy-pop-up.png",
+    "prompt": "Modern cartoon woodpecker mascot Buddy popping up from the bottom of the frame, only his head and shoulders visible rising from below, red-orange feather crest, cream body, orange beak, wide excited eyes with big dark pupils, surprised delighted expression, arms raised slightly, thick black outline, flat vector illustration style, bold colors, white background, character rising from bottom edge",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "image",
+    "filename": "buddy-thumbs-up.png",
+    "prompt": "Modern cartoon woodpecker mascot Buddy giving a big enthusiastic thumbs up, waist-up portrait pose, red-orange feather crest, cream body, orange beak, big happy squinting eyes with approval expression, wearing orange sales apron, thumb prominently raised, thick black outline, flat vector illustration style, bold colors, white background, perfect for approval badge or endorsement",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "image",
+    "filename": "buddy-wave-goodbye.png",
+    "prompt": "Modern cartoon woodpecker mascot Buddy waving goodbye, full body small pose, one wing raised waving, friendly smile, red-orange feather crest, cream body, orange beak, happy warm eyes, wearing small orange sales apron, thick black outline, flat vector illustration style, bold colors, white background, footer-friendly small cheerful pose",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "image",
+    "filename": "buddy-sale-sign.png",
+    "prompt": "Modern cartoon woodpecker mascot Buddy holding up a big bright yellow starburst-shaped sign that says SALE in bold red letters, full body pose, excited yelling expression with open beak, red-orange feather crest, cream body, orange beak, wearing orange sales apron, thick black outline, flat vector illustration style, bold colors, white background, maximum energy and enthusiasm",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "image",
+    "filename": "buddy-running-box.png",
+    "prompt": "Modern cartoon woodpecker mascot Buddy running fast while carrying a large cardboard box, side view dynamic running pose, legs showing motion blur lines, determined focused expression, red-orange feather crest, cream body, orange beak, wearing orange sales apron, thick black outline, flat vector illustration style, bold colors, white background, loading animation feel, speed lines around character",
+    "aspect_ratio": "1:1"
+  },
+  {
+    "type": "video",
+    "filename": "hero.mp4",
+    "still_filename": "hero-still.png",
+    "still_prompt": "Colorful outdoor garage sale scene, wooden folding tables covered with interesting vintage items, colorful price tags, old books records lamps clothing in bright organized displays, sunlight streaming through tree branches creating dappled light, warm inviting atmosphere, slightly elevated wide angle view, bright cheerful primary colors, fun energetic mood, photo-realistic warm cinematic style",
+    "video_prompt": "Gentle cinematic camera drift across the colorful garage sale scene, soft breeze rustling price tags, warm golden morning light shifting slightly, cheerful welcoming atmosphere, smooth subtle movement"
+  }
+]

@@ -1633,9 +1633,78 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 
 ---
 
+---
+
+### auntie-gale-garage-sales — 2026-04-08
+
+**Site #5. Full FAMtastic build for an independent garage sale curator. Primary purpose: Studio stress test across all 14 phases.**
+
+**Deployed:** `https://effortless-tiramisu-ed9345.netlify.app` (Netlify site ID: `d50d0586-8f28-407f-aebe-14c175a88e1d`)  
+**Pages:** `index.html`, `shop.html`, `deals.html`, `about.html`, `contact.html`  
+**Assets:** `dist/assets/css/main.css`, `dist/assets/buddy/` (8 PNG poses), `dist/assets/video/` (hero.mp4 + still)
+
+**Color palette:** `#E8420A` primary · `#1D4ED8` secondary · `#FBBF24` accent · `#FFFBF5` bg · `#1C1917` dark · `#16A34A` green  
+**Fonts:** Bangers (display) · Nunito (body) · Permanent Marker (accent) — all Google Fonts CDN  
+**Shared stylesheet:** `dist/assets/css/main.css` — 607 lines, defines `.starburst`, `.display-stage*`, `.product-card`, `.countdown-*`, `.category-pill`, nav, hero, footer, Buddy placement classes
+
+**Buddy mascot (11 placements):**
+- `buddy-peek-right.png` — hero right-edge peek with speech bubble (index)
+- `buddy-thumbs-up.png` — section icon (index) + Buddy Pick card badge breaking top-right corner (index + shop)
+- `buddy-sale-sign.png` — Daily Deal stage breakout left (index + deals)
+- `buddy-wave-goodbye.png` — footer absolute position above footer border (index)
+- `buddy-pop-up.png` — shop hero banner (shop)
+- `buddy-running-box.png` — "More Deals Dropping" loading teaser (deals)
+- `buddy-full-body.png` — about hero + Meet Buddy section (about)
+- `buddy-peek-left.png` — contact form green message banner (contact)
+
+**Starburst implementation:** `.starburst` CSS class with `clip-path: polygon(24-point)` in `main.css`. 9 placed across 4 pages. Sizes: 70–140px. Colors vary per context (accent/primary/green). `transform:rotate()` adds personality.
+
+**Display Stage pattern:**
+- Classes: `.display-stage`, `.display-stage-header`, `.display-stage-body`, `.stage-starburst`
+- Container: needs `margin-left:5rem` to accommodate Buddy character breaking outside left
+- Starburst badge: `.stage-starburst` → `position:absolute; top:-30px; right:-30px`
+- Used on `index.html` (Daily Deal) and `deals.html` (Deal of the Day)
+
+**Swiper.js v12 carousel (index.html):**
+- CDN: `swiper@12/swiper-bundle.min.css` + `.min.js` (jsdelivr)
+- Class: `.featured-swiper` — 1→2(640px)→3(1024px) breakpoints, loop, autoplay 3500ms
+
+**Countdown timer (deals.html):**
+- Self-contained IIFE, targets next Sunday 2pm local time
+- IDs: `cd-h`, `cd-m`, `cd-s` — updates every 1000ms
+
+**Category filter pills (shop.html):**
+- `filterCategory(btn, cat)` — reads `data-category` on grid cards
+- `#product-grid` container · `#result-count` display · `.category-pill.active` = primary color
+
+**Components extracted to `components/` library:**
+- `product-card-garage/` — card with optional Buddy badge breakout
+- `display-stage/` — deal showcase with swappable slot
+- `starburst-badge/` — 4 variants, CSS clip-path only
+- `countdown-timer/` — live JS countdown
+- `category-filter-pills/` — filterable product grid
+
+**Studio stress test findings** (full detail in `tests/automation/logs/auntie-gale-exhaustive-test.json`):
+- Build got stuck due to in-memory `buildInProgress` lock → all 5 pages built via CLI direct write
+- Classifier mismatch: brief with data-attribute language routed to `verification` not `planning`
+- 7 new gaps discovered and logged (see Known Gaps section)
+- 11 Buddy placements confirmed via Playwright screenshots
+- 9 starbursts across site
+- Live countdown timer working
+- Swiper carousel functional with autoplay
+
+---
+
 ### Known Gaps (updated 2026-04-08)
 
-- **Stock images in gallery + slideshow:** Gallery decade sections (1950s–2010s) use placeholder stock photos. Replace with actual Street family content.
-- **Slideshow component CSS conflict pattern:** Any site that has `.slide { display:none }` in its page CSS will conflict with slideshow.js crossfade approach. Always use `display:block !important` in slideshow.js injected styles (already fixed in street-family-reunion).
-- **Hero video text contrast:** "Welcome Home" heading competes visually with the video scene. Consider adding a semi-transparent overlay or text-shadow if clients report readability issues.
-- **Activity card images sizing on mobile:** Cards stack to single column on mobile; 192px image height (`h-48`) may feel short on large phone screens. No fix needed unless client flags it.
+- **Stock images in gallery + slideshow (street-family-reunion):** Gallery decade sections use placeholder stock photos. Replace with actual Street family content.
+- **Slideshow CSS conflict pattern:** `.slide { display:none }` in page CSS conflicts with slideshow.js crossfade. Always use `display:block !important` in slideshow.js injected styles.
+- **Hero video text contrast (street-family-reunion):** "Welcome Home" heading may compete with video. Consider semi-transparent overlay.
+- **Activity card images sizing on mobile (street-family-reunion):** 192px image height may feel short on large phones. No fix needed unless flagged.
+- **[CRITICAL] Studio build cancel mechanism missing:** `buildInProgress` is in-memory only. Stuck builds require server restart. No `/api/cancel-build` endpoint, no timeout, no UI cancel button. Add all three.
+- **[HIGH] Studio classifier mismatch for technical briefs:** Briefs with `data-attribute` language trigger `verification` classifier instead of `planning`. Fix: classifier should prioritize explicit build intent verbs over attribute vocabulary.
+- **[HIGH] No CDN library management in Studio UI:** Adding Swiper.js, GSAP, etc. requires direct HTML edit. Add Libraries panel in Settings tab with CDN URL field and common library presets.
+- **[MEDIUM] No component insertion from components/ library:** Library exists but no Studio UI to insert a saved component into an active page. Add "Insert Component" chat command.
+- **[MEDIUM] No decorative shape tools in Studio canvas:** Starbursts, wavy dividers, diagonal stripes require direct code. Add Shape palette to Design tab.
+- **[LOW] Imagen 4 generates white-background images only:** Transparent PNG not supported. Character images on dark/colored sections need CSS `mix-blend-mode: multiply` or background removal (`rembg`). Add `--remove-bg` flag to `google-media-generate`.
+- **[LOW] Preview server not auto-registered on site creation:** Must manually add entry to `.claude/launch.json` after `fam-hub site new`. Auto-registration should be built into site creation flow.

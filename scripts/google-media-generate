@@ -144,7 +144,7 @@ def generate_video(client, still_bytes, video_prompt, output_path,
             config=types.GenerateVideosConfig(
                 duration_seconds=duration_seconds,
                 aspect_ratio=aspect_ratio,
-                person_generation='ALLOW_ALL',
+                person_generation='ALLOW_ADULT',
                 number_of_videos=1,
             )
         )
