@@ -22,6 +22,7 @@ const STUDIO_EVENTS = {
   DEPLOY_COMPLETED:     'deploy:completed',      // site deployed to Netlify
   BRAIN_SWITCHED:       'brain:switched',        // user selects different brain in UI
   RESEARCH_UPDATED:     'research:updated',      // stale Pinecone result refreshed in background
+  MODE_CHANGED:         'mode:changed',          // Studio mode switched (chat/brainstorm/build/edit/deploy)
 };
 
 // Singleton emitter shared across all server modules
