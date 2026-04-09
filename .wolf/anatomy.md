@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T03:48:17.768Z
-> Files: 365 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T18:00:00.000Z
+> Files: 374 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -36,14 +36,14 @@
 
 - `.gitignore` — Git ignore rules (~127 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~10456 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~10712 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10331 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~6584 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~36966 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~37807 tok)
 
 ## .claude/
 
@@ -66,6 +66,10 @@
 ## .claude/skills/brainstorm/
 
 - `SKILL.md` (~188 tok)
+
+## .claude/skills/components/hero-section/
+
+- `SKILL.md` — Hero Section Component Skill (~510 tok)
 
 ## .claude/skills/export-site/
 
@@ -428,6 +432,10 @@
 - `latest-convo__20250923-1200.md` — FAMtastic Agent Hub Summary (~289 tok)
 - `site-fritz-fitness__20250923-1100.md` — Fritz Fitness Site Development Summary (~223 tok)
 
+## docs/intelligence-reports/
+
+- *(runtime — created by POST /api/intel/run-research; stub markdown files per research topic, named `intel-research-<slug>-<timestamp>.md`)*
+
 ## docs/
 
 - `adobe-mcp-integration.md` — Adobe MCP Integration (adb-mcp) (~1000 tok)
@@ -535,7 +543,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~128168 tok)
+- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~141734 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/lib/
@@ -544,11 +552,11 @@
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~74146 tok)
+- `index.html` — FAMtastic Site Studio (~79037 tok)
 
 ## site-studio/public/css/
 
-- `studio-canvas.css` — canvas-tab-bar { (~2780 tok)
+- `studio-canvas.css` — canvas-tab-bar { (~4175 tok)
 - `studio-cli.css` — cli-bar { (~886 tok)
 
 ## site-studio/tests/
@@ -612,6 +620,12 @@
 ## sites/poc-site/
 
 - `index.html` (~42 tok)
+
+## sites/<tag>/ — runtime files (per-site, created on first use)
+
+- `agent-calls.jsonl` — append-only log written by `logAgentCall()`; each line: `{agent, intent, elapsed_ms, cost_usd, valid, score, timestamp}`
+- `mutations.jsonl` — append-only log written on every HTML write; each line: `{page, intent, agent, timestamp}`
+- `intelligence-promotions.json` — JSON array written by `POST /api/intel/promote`; each entry: `{finding_id, finding, promoted_at, action_taken}`
 
 ## sites/site-auntie-gale-garage-sales/
 
@@ -697,6 +711,13 @@
 ## tests/
 
 - `classifier-regression.json` (~1363 tok)
+- `codex-high-fixes-tests.js` — Codex Adversarial Review — HIGH severity fix verification (~2447 tok)
+- `phase0-content-layer-tests.js` — Phase 0 — Content Data Layer Tests (~4782 tok)
+- `phase1-component-skills-tests.js` — Phase 1 — Component Skills Foundation Tests (~4470 tok)
+- `phase2-ui-shell-tests.js` — Phase 2 — UI Shell + Editable Canvas Tests (~4379 tok)
+- `phase3-multi-agent-tests.js` — Phase 3 — Multi-Agent Integration Tests (~4028 tok)
+- `phase4-image-research-tests.js` — Phase 4 — Image Browser + Research View Tests (~3555 tok)
+- `phase5-intelligence-loop-tests.js` — Phase 5 — Intelligence Loop Tests (~3863 tok)
 - `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
 - `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4055 tok)
 - `session4-visual-tests.js` — Session 4 — Visual Quality Tests (~4620 tok)
