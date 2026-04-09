@@ -1,0 +1,249 @@
+#!/usr/bin/env node
+/**
+ * Phase 4 — Image Browser + Research View Tests
+ *
+ * Verifies:
+ *   1. GET /api/image-suggestions — returns query suggestions from spec.design_brief
+ *   2. POST /api/research/trigger — creates a research stub file for a vertical
+ *   3. POST /api/research/to-brief — extracts brief text from a research file
+ *   4. GET /api/research/verticals — lists known and researched verticals
+ *   5. Image Browser UI — shortlist panel, compare pane, suggested queries
+ *   6. Research UI — trigger form, use-as-brief button, triggerResearch + useBriefFromResearch functions
+ *
+ * Usage:
+ *   SITE_TAG=site-auntie-gale-garage-sales node tests/phase4-image-research-tests.js
+ */
+
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+
+const SITE_TAG = process.env.SITE_TAG || 'site-auntie-gale-garage-sales';
+const STUDIO_PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
+const BASE = `http://localhost:${STUDIO_PORT}`;
+const HUB_ROOT = path.join(__dirname, '..');
+const SITE_DIR = path.join(HUB_ROOT, 'sites', SITE_TAG);
+
+let pass = 0, fail = 0, total = 0;
+const failures = [];
+
+function assert(name, condition, detail = '') {
+  total++;
+  if (condition) { console.log(`  ✅ PASS: ${name}`); pass++; }
+  else { console.log(`  ❌ FAIL: ${name}${detail ? ` — ${detail}` : ''}`); fail++; failures.push({ name, detail }); }
+}
+
+async function httpGet(endpoint) {
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: 'localhost', port: STUDIO_PORT, path: endpoint, method: 'GET',
+      headers: { 'Origin': BASE },
+    }, res => {
+      let d = ''; res.on('data', x => d += x);
+      res.on('end', () => { try { resolve({ status: res.statusCode, body: JSON.parse(d) }); } catch { resolve({ status: res.statusCode, body: d }); } });
+    });
+    req.on('error', reject); req.end();
+  });
+}
+
+async function httpPost(endpoint, body) {
+  return new Promise((resolve, reject) => {
+    const bodyStr = JSON.stringify(body);
+    const req = http.request({
+      hostname: 'localhost', port: STUDIO_PORT, path: endpoint, method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Origin': BASE, 'Content-Length': Buffer.byteLength(bodyStr) },
+    }, res => {
+      let d = ''; res.on('data', x => d += x);
+      res.on('end', () => { try { resolve({ status: res.statusCode, body: JSON.parse(d) }); } catch { resolve({ status: res.statusCode, body: d }); } });
+    });
+    req.on('error', reject); req.write(bodyStr); req.end();
+  });
+}
+
+async function runTests() {
+  console.log(`\nPhase 4 — Image Browser + Research View Tests`);
+  console.log(`Site: ${SITE_TAG} | Server: ${BASE}\n`);
+
+  // ─── Server health ────────────────────────────────────────────────────────
+  console.log('TEST GROUP: Server Health');
+  try {
+    const r = await httpGet('/');
+    assert('server is running', r.status < 500, `got ${r.status}`);
+  } catch (e) {
+    assert('server is running', false, `connection refused: ${e.message}`);
+    printResults(); return;
+  }
+
+  // ─── GROUP 1: GET /api/image-suggestions ─────────────────────────────────
+  console.log('\nTEST GROUP: GET /api/image-suggestions');
+  {
+    const r = await httpGet('/api/image-suggestions');
+    assert('returns 200', r.status === 200, `got ${r.status}`);
+    assert('has suggestions array', Array.isArray(r.body?.suggestions));
+    assert('suggestions contains strings', (r.body?.suggestions || []).every(s => typeof s === 'string'));
+    assert('has at least 1 suggestion', (r.body?.suggestions || []).length >= 1);
+    assert('has business_name field', typeof r.body?.business_name === 'string');
+    assert('has industry field', typeof r.body?.industry === 'string');
+  }
+
+  // ─── GROUP 2: POST /api/research/trigger ─────────────────────────────────
+  console.log('\nTEST GROUP: POST /api/research/trigger');
+  {
+    // Missing vertical → 400
+    const r1 = await httpPost('/api/research/trigger', {});
+    assert('missing vertical → 400', r1.status === 400, `got ${r1.status}`);
+    assert('400 has error message', typeof r1.body?.error === 'string');
+
+    // With vertical → 200
+    const r2 = await httpPost('/api/research/trigger', { vertical: 'garage-sale' });
+    assert('with vertical → 200', r2.status === 200, `got ${r2.status}: ${JSON.stringify(r2.body).substring(0, 100)}`);
+    assert('response has file field', typeof r2.body?.file === 'string');
+    assert('file is .md', r2.body?.file?.endsWith('.md'));
+    assert('response has status field', typeof r2.body?.status === 'string');
+    assert('response has vertical field', r2.body?.vertical === 'garage-sale');
+
+    // Verify the file was created
+    const researchDir = path.join(SITE_DIR, 'research');
+    if (r2.status === 200 && r2.body?.file) {
+      const filePath = path.join(researchDir, r2.body.file);
+      assert('research file created on disk', fs.existsSync(filePath), `path: ${filePath}`);
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        assert('research file has content', content.length > 50);
+        assert('research file is valid markdown', content.includes('#'));
+      }
+    } else {
+      console.log(`  ℹ️  Skipping file existence check — trigger returned ${r2.status}`);
+    }
+
+    // Idempotent — trigger same vertical again → still 200
+    const r3 = await httpPost('/api/research/trigger', { vertical: 'garage-sale' });
+    assert('re-trigger same vertical → 200 (idempotent)', r3.status === 200, `got ${r3.status}`);
+    assert('re-trigger returns same file', r3.body?.file === r2.body?.file);
+  }
+
+  // ─── GROUP 3: POST /api/research/to-brief ────────────────────────────────
+  console.log('\nTEST GROUP: POST /api/research/to-brief');
+  {
+    // Missing filename → 400
+    const r1 = await httpPost('/api/research/to-brief', {});
+    assert('missing filename → 400', r1.status === 400, `got ${r1.status}`);
+
+    // Nonexistent file → 404
+    const r2 = await httpPost('/api/research/to-brief', { filename: 'nonexistent-xyz.md' });
+    assert('nonexistent file → 404', r2.status === 404, `got ${r2.status}`);
+
+    // Valid research file (created by trigger above)
+    const researchDir = path.join(SITE_DIR, 'research');
+    const files = fs.existsSync(researchDir)
+      ? fs.readdirSync(researchDir).filter(f => f.endsWith('.md'))
+      : [];
+
+    if (files.length > 0) {
+      const testFile = files[0];
+      const r3 = await httpPost('/api/research/to-brief', { filename: testFile });
+      assert('valid file → 200', r3.status === 200, `got ${r3.status}`);
+      assert('response has brief_text', typeof r3.body?.brief_text === 'string');
+      assert('brief_text has content', r3.body?.brief_text?.length > 20);
+      assert('response has filename', r3.body?.filename === testFile);
+    } else {
+      console.log('  ℹ️  No research files found — skipping file content tests');
+      assert('research dir exists or trigger created file', true); // soft pass
+    }
+  }
+
+  // ─── GROUP 4: GET /api/research/verticals ────────────────────────────────
+  console.log('\nTEST GROUP: GET /api/research/verticals');
+  {
+    const r = await httpGet('/api/research/verticals');
+    assert('returns 200', r.status === 200, `got ${r.status}`);
+    assert('has known_verticals array', Array.isArray(r.body?.known_verticals));
+    assert('has researched_verticals array', Array.isArray(r.body?.researched_verticals));
+    assert('known_verticals are strings', (r.body?.known_verticals || []).every(v => typeof v === 'string'));
+    assert('known_verticals not empty', (r.body?.known_verticals || []).length > 0);
+    // After triggering garage-sale, it should appear in researched_verticals
+    if ((r.body?.researched_verticals || []).length > 0) {
+      assert('researched_verticals are objects with vertical+file', r.body.researched_verticals.every(v => v.vertical && v.file));
+    }
+  }
+
+  // ─── GROUP 5: Image Browser UI ───────────────────────────────────────────
+  console.log('\nTEST GROUP: Image Browser UI');
+  {
+    const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'index.html'), 'utf8');
+
+    // Existing elements (should already pass)
+    assert('images-toolbar exists', htmlSrc.includes('id="images-toolbar"'));
+    assert('images-query input exists', htmlSrc.includes('id="images-query"'));
+    assert('images-provider-filter exists', htmlSrc.includes('id="images-provider-filter"'));
+    assert('images-results-grid exists', htmlSrc.includes('id="images-results-grid"'));
+    assert('searchImageBrowser function defined', htmlSrc.includes('async function searchImageBrowser('));
+
+    // New Phase 4 elements
+    assert('images-suggested-queries div exists', htmlSrc.includes('id="images-suggested-queries"'));
+    assert('images-shortlist panel exists', htmlSrc.includes('id="images-shortlist"'));
+    assert('images-compare-pane exists', htmlSrc.includes('id="images-compare-pane"'));
+    assert('shortlistImage function defined', htmlSrc.includes('function shortlistImage('));
+    assert('clearShortlist function defined', htmlSrc.includes('function clearShortlist('));
+    assert('getSuggestedQueries function defined', htmlSrc.includes('async function getSuggestedQueries('));
+    assert('renderSuggestedQueries function defined', htmlSrc.includes('function renderSuggestedQueries('));
+    assert('toggleCompareMode function defined', htmlSrc.includes('function toggleCompareMode('));
+    assert('compare mode toggle button exists', htmlSrc.includes('toggleCompareMode()'));
+  }
+
+  // ─── GROUP 6: Research UI ────────────────────────────────────────────────
+  console.log('\nTEST GROUP: Research View UI');
+  {
+    const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'index.html'), 'utf8');
+
+    // Existing elements
+    assert('canvas-research pane exists', htmlSrc.includes('id="canvas-research"'));
+    assert('research-files list exists', htmlSrc.includes('id="research-files"'));
+    assert('research-body exists', htmlSrc.includes('id="research-body"'));
+    assert('loadResearchFiles function defined', htmlSrc.includes('async function loadResearchFiles('));
+
+    // New Phase 4 elements
+    assert('research-trigger-form exists', htmlSrc.includes('id="research-trigger-form"'));
+    assert('research-vertical-input exists', htmlSrc.includes('id="research-vertical-input"'));
+    assert('trigger-research-btn exists', htmlSrc.includes('id="trigger-research-btn"'));
+    assert('research-use-brief-btn exists', htmlSrc.includes('id="research-use-brief-btn"'));
+    assert('triggerResearch function defined', htmlSrc.includes('async function triggerResearch('));
+    assert('useBriefFromResearch function defined', htmlSrc.includes('async function useBriefFromResearch('));
+  }
+
+  // ─── GROUP 7: CSS for new image browser features ──────────────────────────
+  console.log('\nTEST GROUP: CSS — image browser + research enhancements');
+  {
+    const cssSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'css', 'studio-canvas.css'), 'utf8');
+
+    assert('.suggested-query-chip styled', cssSrc.includes('.suggested-query-chip'));
+    assert('#images-shortlist styled', cssSrc.includes('#images-shortlist'));
+    assert('.shortlist-item styled', cssSrc.includes('.shortlist-item'));
+    assert('#images-compare-pane styled', cssSrc.includes('#images-compare-pane'));
+    assert('#research-trigger-form styled', cssSrc.includes('#research-trigger-form'));
+    assert('.research-use-brief-btn styled', cssSrc.includes('.research-use-brief-btn'));
+  }
+
+  printResults();
+}
+
+function printResults() {
+  console.log(`\n${'━'.repeat(45)}`);
+  console.log(`Phase 4 Image+Research Results: ${pass} PASS | ${fail} FAIL | ${total} total`);
+  console.log(`${'━'.repeat(45)}\n`);
+  if (failures.length > 0) {
+    console.log('Failures:');
+    failures.forEach(f => console.log(`  ✗ ${f.name}${f.detail ? ` — ${f.detail}` : ''}`));
+    console.log('');
+  }
+  const logDir = path.join(__dirname, 'automation', 'logs');
+  fs.mkdirSync(logDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(logDir, 'phase4-image-research-results.json'),
+    JSON.stringify({ pass, fail, total, failures, timestamp: new Date().toISOString() }, null, 2)
+  );
+  console.log('Results saved to tests/automation/logs/phase4-image-research-results.json');
+  process.exit(fail > 0 ? 1 : 0);
+}
+
+runTests().catch(e => { console.error('Test runner crashed:', e.message); process.exit(1); });

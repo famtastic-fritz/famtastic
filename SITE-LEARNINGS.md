@@ -1926,3 +1926,59 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 - Codex CLI tab: `switchCliTab('codex')`, `#codex-input`, `#codex-output`, `sendCodexPrompt()`
 
 **Tests**: `tests/phase3-multi-agent-tests.js` — 75/75 PASS
+
+---
+
+## Studio v3 Engine — Phase 4 (2026-04-09)
+
+### Phase 4: Image Browser + Research View
+
+**Image suggestions** (`GET /api/image-suggestions`):
+- Reads `spec.design_brief` + `spec.site_name` + `spec.business_type` to generate up to 8 contextual search query suggestions
+- Returns `{ suggestions[], business_name, industry }` — no AI, deterministic
+- Called automatically when Images tab opens (`loadImageBrowserSlots()`)
+
+**Research trigger** (`POST /api/research/trigger`):
+- Takes `{ vertical }` body param (string)
+- Sanitizes vertical name to safe slug (lowercase, hyphens only)
+- Creates structured markdown research stub at `sites/<site-tag>/research/<vertical>-research.md`
+- Idempotent: re-trigger returns existing file without overwriting
+- Stub contains: overview, target audience, competitive landscape, website must-haves, recommended queries, key messages
+- Returns `{ file, status: 'stub' | 'existing', vertical }`
+
+**Research → brief extractor** (`POST /api/research/to-brief`):
+- Takes `{ filename }` body param — validates via allowlist (same security as GET /api/research/:filename)
+- Parses "Website Must-Haves" and "Key Messages" sections from markdown
+- Returns `{ brief_text, filename, vertical }` — brief_text pre-fills chat input when "Use as Brief" is clicked
+
+**Known verticals registry** (`GET /api/research/verticals`):
+- Returns 40+ pre-defined verticals in `known_verticals[]`
+- Returns per-site researched files as `researched_verticals[{ vertical, file, modified }]`
+- IMPORTANT: Route must be declared BEFORE `GET /api/research/:filename` in server.js to avoid Express route conflict
+
+**Image Browser UI enhancements**:
+- `#images-suggested-queries` — row of suggested query chips, auto-loaded on tab open
+- `#images-shortlist` sidebar — saves favorite images across searches, apply-to-slot from shortlist
+- `#images-compare-pane` — side-by-side A/B comparison slots, activated by Compare toggle button
+- `shortlistImage(result)` — adds to shortlist panel
+- `clearShortlist()` — empties shortlist panel
+- `getSuggestedQueries()` / `renderSuggestedQueries(suggestions)` — fetches and renders chips
+- `toggleCompareMode()` — activates compare mode; next two card clicks go to A and B slots
+- `selectForCompare(result, cardEl)` — places clicked card into compare slot A or B
+
+**Research UI enhancements**:
+- `#research-trigger-form` — vertical input + "Research Vertical" button below file list
+- `#research-use-brief-btn` — "Use as Brief →" button, visible when a research file is selected
+- `triggerResearch()` — calls `/api/research/trigger`, reloads file list on success
+- `useBriefFromResearch()` — calls `/api/research/to-brief`, pre-fills chat input with brief text
+- `activeResearchFile` — tracks currently selected research file for brief extraction
+
+**CSS additions** (in `studio-canvas.css`):
+- `.suggested-query-chip`, `.suggestions-label` — query suggestion chips
+- `#images-shortlist`, `.shortlist-item`, `.shortlist-apply-btn`, `.shortlist-remove-btn` — shortlist panel
+- `#images-compare-pane`, `.compare-slot`, `.compare-slot-badge` — compare mode
+- `.images-compare-toggle-btn` — compare toggle button in toolbar
+- `#research-trigger-form`, `.research-trigger-input`, `.research-trigger-btn` — research form
+- `#research-brief-bar`, `.research-use-brief-btn`, `.research-brief-filename` — brief bar
+
+**Tests**: `tests/phase4-image-research-tests.js` — 61/61 PASS (first run, no failures)

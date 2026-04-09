@@ -229,10 +229,28 @@
                 </select>
               </div>
               <button onclick="searchImageBrowser()" class="images-search-btn">Search</button>
+              <button onclick="toggleCompareMode()" id="images-compare-toggle" class="images-compare-toggle-btn" title="Compare two images side-by-side">Compare</button>
             </div>
-            <div id="images-results" class="flex-1 overflow-y-auto">
-              <div id="images-results-grid"></div>
-              <div id="images-empty-state" class="images-empty">Search for stock photos to fill image slots</div>
+            <!-- Suggested queries row -->
+            <div id="images-suggested-queries" class="images-suggestions-row"></div>
+            <!-- Main area: grid + shortlist -->
+            <div id="images-main-area">
+              <div id="images-results" class="flex-1 overflow-y-auto">
+                <div id="images-results-grid"></div>
+                <div id="images-compare-pane" class="hidden">
+                  <div id="compare-slot-a" class="compare-slot"><span class="compare-slot-label">Image A</span></div>
+                  <div id="compare-slot-b" class="compare-slot"><span class="compare-slot-label">Image B</span></div>
+                </div>
+                <div id="images-empty-state" class="images-empty">Search for stock photos to fill image slots</div>
+              </div>
+              <!-- Shortlist sidebar -->
+              <div id="images-shortlist" class="hidden">
+                <div class="shortlist-header">
+                  <span>Shortlist</span>
+                  <button onclick="clearShortlist()" class="shortlist-clear-btn">Clear</button>
+                </div>
+                <div id="shortlist-items"></div>
+              </div>
             </div>
           </div>
 
@@ -242,10 +260,20 @@
               <div id="research-file-list">
                 <div class="research-list-header">Research Files</div>
                 <div id="research-files"></div>
+                <!-- Trigger new research -->
+                <div id="research-trigger-form">
+                  <input id="research-vertical-input" type="text" placeholder="e.g. bakery, spa, gym..." class="research-trigger-input" onkeydown="if(event.key==='Enter')triggerResearch()">
+                  <button id="trigger-research-btn" onclick="triggerResearch()" class="research-trigger-btn">+ Research Vertical</button>
+                </div>
               </div>
               <div id="research-content">
-                <div id="research-empty" class="research-placeholder">Select a research file to view, or run research before building a site brief.</div>
+                <div id="research-empty" class="research-placeholder">Select a research file to view, or enter a vertical below to generate a research stub.</div>
                 <div id="research-body" class="hidden"></div>
+                <!-- Use as Brief button — appears when a file is selected -->
+                <div id="research-brief-bar" class="hidden">
+                  <button id="research-use-brief-btn" onclick="useBriefFromResearch()" class="research-use-brief-btn">Use as Brief →</button>
+                  <span id="research-brief-filename" class="research-brief-filename"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -5276,6 +5304,8 @@
         // Pre-select active slot if one is set
         if (currentSlotTarget) sel.value = currentSlotTarget.slotId || '';
       } catch(e) { console.error('[image-browser] Failed to load slots:', e); }
+      // Phase 4: load suggested queries alongside slots
+      getSuggestedQueries();
     }
 
     async function searchImageBrowser() {
@@ -5335,9 +5365,17 @@
           };
           card.appendChild(applyBtn);
         }
-        // Click card to preview full size
+        // Shortlist button (Phase 4)
+        const slBtn = document.createElement('button');
+        slBtn.className = 'shortlist-btn';
+        slBtn.textContent = '♡';
+        slBtn.title = 'Add to shortlist';
+        slBtn.onclick = (e) => { e.stopPropagation(); shortlistImage(r); slBtn.textContent = '♥'; };
+        card.appendChild(slBtn);
+        // Click card: compare mode or open
         card.onclick = () => {
-          window.open(r.url, '_blank');
+          if (compareMode) { selectForCompare(r, card); }
+          else { window.open(r.url, '_blank'); }
         };
         grid.appendChild(card);
       });
@@ -5368,6 +5406,136 @@
       } catch(e) {
         addMessage('error', 'Apply failed: ' + e.message);
       }
+    }
+
+    // --- Phase 4: Image Browser Enhancements ---
+
+    // Shortlist state
+    let imageShortlist = [];
+    let compareMode = false;
+    let compareCandidates = [null, null]; // [A, B]
+
+    async function getSuggestedQueries() {
+      try {
+        const res = await fetch('/api/image-suggestions');
+        const data = await res.json();
+        renderSuggestedQueries(data.suggestions || []);
+      } catch(e) { /* silent — suggestions are optional */ }
+    }
+
+    function renderSuggestedQueries(suggestions) {
+      const row = document.getElementById('images-suggested-queries');
+      if (!row) return;
+      row.textContent = '';
+      if (!suggestions.length) return;
+      const label = document.createElement('span');
+      label.className = 'suggestions-label';
+      label.textContent = 'Suggested:';
+      row.appendChild(label);
+      suggestions.forEach(q => {
+        const chip = document.createElement('button');
+        chip.className = 'suggested-query-chip';
+        chip.textContent = q;
+        chip.onclick = () => {
+          const input = document.getElementById('images-query');
+          if (input) { input.value = q; searchImageBrowser(); }
+        };
+        row.appendChild(chip);
+      });
+    }
+
+    function shortlistImage(result) {
+      if (imageShortlist.some(r => r.url === result.url)) return; // already in list
+      imageShortlist.push(result);
+      renderShortlist();
+      const panel = document.getElementById('images-shortlist');
+      if (panel) panel.classList.remove('hidden');
+    }
+
+    function clearShortlist() {
+      imageShortlist = [];
+      const panel = document.getElementById('images-shortlist');
+      if (panel) panel.classList.add('hidden');
+      renderShortlist();
+    }
+
+    function renderShortlist() {
+      const container = document.getElementById('shortlist-items');
+      if (!container) return;
+      container.textContent = '';
+      imageShortlist.forEach((r, i) => {
+        const item = document.createElement('div');
+        item.className = 'shortlist-item';
+        const img = document.createElement('img');
+        img.src = r.thumb || r.url;
+        img.alt = r.credit || '';
+        img.loading = 'lazy';
+        item.appendChild(img);
+        const info = document.createElement('div');
+        info.className = 'shortlist-item-info';
+        const credit = document.createElement('div');
+        credit.className = 'shortlist-item-credit';
+        credit.textContent = r.credit || r.provider || '';
+        info.appendChild(credit);
+        const actions = document.createElement('div');
+        actions.className = 'shortlist-item-actions';
+        const slotId = document.getElementById('images-slot-selector')?.value;
+        if (slotId) {
+          const applyBtn = document.createElement('button');
+          applyBtn.textContent = 'Apply';
+          applyBtn.className = 'shortlist-apply-btn';
+          applyBtn.onclick = () => applyImageToSlot(slotId, r);
+          actions.appendChild(applyBtn);
+        }
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '✕';
+        removeBtn.className = 'shortlist-remove-btn';
+        removeBtn.onclick = () => { imageShortlist.splice(i, 1); renderShortlist(); if (!imageShortlist.length) clearShortlist(); };
+        actions.appendChild(removeBtn);
+        info.appendChild(actions);
+        item.appendChild(info);
+        container.appendChild(item);
+      });
+    }
+
+    function toggleCompareMode() {
+      compareMode = !compareMode;
+      compareCandidates = [null, null];
+      const btn = document.getElementById('images-compare-toggle');
+      const pane = document.getElementById('images-compare-pane');
+      const grid = document.getElementById('images-results-grid');
+      if (compareMode) {
+        if (btn) btn.classList.add('active');
+        if (pane) pane.classList.remove('hidden');
+        if (grid) grid.style.opacity = '0.5';
+        addMessage('status', 'Compare mode on — click two images to compare');
+      } else {
+        if (btn) btn.classList.remove('active');
+        if (pane) pane.classList.add('hidden');
+        if (grid) grid.style.opacity = '1';
+        document.querySelectorAll('.image-result-card.compare-selected').forEach(c => c.classList.remove('compare-selected'));
+      }
+    }
+
+    function selectForCompare(result, cardEl) {
+      if (!compareMode) return;
+      const slot = compareCandidates[0] === null ? 0 : 1;
+      compareCandidates[slot] = result;
+      const pane = document.getElementById(slot === 0 ? 'compare-slot-a' : 'compare-slot-b');
+      if (pane) {
+        pane.textContent = '';
+        const img = document.createElement('img');
+        img.src = result.url;
+        img.alt = result.credit || '';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        const badge = document.createElement('div');
+        badge.className = 'compare-slot-badge';
+        badge.textContent = (slot === 0 ? 'A' : 'B') + ' — ' + (result.provider || 'stock');
+        pane.appendChild(img);
+        pane.appendChild(badge);
+      }
+      cardEl.classList.add('compare-selected');
+      if (slot === 1) compareCandidates = [null, null]; // reset after both selected
     }
 
     // --- Wave 2: Research View ---
@@ -5410,12 +5578,17 @@
       }
     }
 
+    let activeResearchFile = null;
+
     async function viewResearchFile(filename, itemEl) {
       // Highlight active file
       document.querySelectorAll('.research-file-item').forEach(el => el.classList.remove('active'));
       if (itemEl) itemEl.classList.add('active');
+      activeResearchFile = filename;
       const body = document.getElementById('research-body');
       const empty = document.getElementById('research-empty');
+      const briefBar = document.getElementById('research-brief-bar');
+      const briefFilename = document.getElementById('research-brief-filename');
       if (!body) return;
       body.classList.remove('hidden');
       if (empty) empty.classList.add('hidden');
@@ -5426,8 +5599,69 @@
         const data = await res.json();
         body.textContent = '';
         renderMarkdownSafe(data.content, body);
+        // Show "Use as Brief" bar
+        if (briefBar) briefBar.classList.remove('hidden');
+        if (briefFilename) briefFilename.textContent = filename.replace('.md', '');
       } catch(e) {
         body.textContent = 'Failed to load: ' + e.message;
+      }
+    }
+
+    // --- Phase 4: Research trigger + to-brief ---
+
+    async function triggerResearch() {
+      const input = document.getElementById('research-vertical-input');
+      const vertical = input?.value?.trim();
+      if (!vertical) { addMessage('error', 'Enter a vertical name (e.g. bakery, spa, gym)'); return; }
+      const btn = document.getElementById('trigger-research-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+      try {
+        const res = await fetch('/api/research/trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vertical }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          addMessage('status', `Research stub created: ${data.file} (${data.status})`);
+          if (input) input.value = '';
+          await loadResearchFiles();
+        } else {
+          addMessage('error', data.error || 'Research trigger failed');
+        }
+      } catch(e) {
+        addMessage('error', 'Research trigger error: ' + e.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '+ Research Vertical'; }
+      }
+    }
+
+    async function useBriefFromResearch() {
+      const filename = activeResearchFile;
+      if (!filename) { addMessage('error', 'No research file selected'); return; }
+      try {
+        const res = await fetch('/api/research/to-brief', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename }),
+        });
+        const data = await res.json();
+        if (res.ok && data.brief_text) {
+          // Pre-fill the chat input with the brief text
+          const chatInput = document.getElementById('chat-input') || document.getElementById('user-input') || document.querySelector('.chat-input textarea') || document.querySelector('#cli-bar-chat input');
+          if (chatInput) {
+            chatInput.value = data.brief_text;
+            chatInput.focus();
+            addMessage('status', `Brief loaded from ${filename} — review and hit Send`);
+          } else {
+            // Fallback: show in a prompt
+            addMessage('status', 'Brief text: ' + data.brief_text.substring(0, 100) + '...');
+          }
+        } else {
+          addMessage('error', data.error || 'Failed to extract brief');
+        }
+      } catch(e) {
+        addMessage('error', 'to-brief error: ' + e.message);
       }
     }
 

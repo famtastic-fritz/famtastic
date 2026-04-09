@@ -4761,6 +4761,38 @@ app.get('/api/research', (req, res) => {
   } catch { res.json({ files: [] }); }
 });
 
+// --- Known verticals registry (Phase 4 — must be before /:filename) ---
+const KNOWN_VERTICALS_LIST = [
+  'restaurant', 'bakery', 'cafe', 'food-truck', 'catering',
+  'retail', 'boutique', 'clothing', 'jewelry', 'antique', 'thrift', 'garage-sale',
+  'salon', 'spa', 'barbershop', 'tattoo', 'nail',
+  'gym', 'yoga', 'fitness', 'personal-trainer',
+  'real-estate', 'property-management', 'mortgage',
+  'law', 'accounting', 'financial-advisor', 'insurance',
+  'medical', 'dental', 'chiropractic', 'therapy', 'veterinary',
+  'plumbing', 'electrical', 'hvac', 'landscaping', 'cleaning', 'roofing',
+  'photography', 'videography', 'music', 'art', 'design',
+  'consulting', 'coaching', 'marketing', 'agency',
+  'automotive', 'mechanic', 'car-wash', 'detailing',
+  'church', 'nonprofit', 'community', 'event',
+  'daycare', 'tutoring', 'education',
+  'tech', 'software', 'saas', 'startup',
+];
+
+app.get('/api/research/verticals', (req, res) => {
+  const researchDir = path.join(SITE_DIR(), 'research');
+  let researched = [];
+  if (fs.existsSync(researchDir)) {
+    const files = fs.readdirSync(researchDir).filter(f => f.endsWith('.md'));
+    researched = files.map(f => ({
+      vertical: f.replace(/-research\.md$/, '').replace(/-/g, ' '),
+      file: f,
+      modified: fs.statSync(path.join(researchDir, f)).mtime.toISOString(),
+    }));
+  }
+  res.json({ known_verticals: KNOWN_VERTICALS_LIST, researched_verticals: researched });
+});
+
 // --- Research file content (Wave 2) ---
 app.get('/api/research/:filename', (req, res) => {
   const filename = req.params.filename;
@@ -4787,6 +4819,167 @@ app.get('/api/research/:filename', (req, res) => {
   const content = fs.readFileSync(filePath, 'utf8');
   res.json({ name: filename, content });
 });
+
+// ─── Phase 4: Image Browser + Research View ──────────────────────────────────
+
+// --- Image search query suggestions from spec.design_brief ---
+app.get('/api/image-suggestions', (req, res) => {
+  const spec = readSpec();
+  const brief = spec.design_brief || {};
+  const businessName = spec.site_name || brief.business_name || '';
+  const industry = spec.business_type || brief.industry || brief.category || '';
+  const palette = brief.color_palette || '';
+  const style = brief.style || brief.design_style || '';
+
+  const suggestions = [];
+  if (businessName && industry) suggestions.push(`${businessName} ${industry}`);
+  if (industry) {
+    suggestions.push(`${industry} professional`);
+    suggestions.push(`${industry} lifestyle`);
+    suggestions.push(`${industry} background`);
+    if (style) suggestions.push(`${industry} ${style}`);
+  }
+  if (businessName) suggestions.push(`${businessName} storefront`);
+  suggestions.push('hero background professional');
+  suggestions.push('modern business lifestyle');
+  suggestions.push('small business community');
+
+  const unique = [...new Set(suggestions.filter(Boolean))].slice(0, 8);
+  res.json({ suggestions: unique, business_name: businessName, industry });
+});
+
+// --- Research trigger — create stub research file for a vertical ---
+app.post('/api/research/trigger', (req, res) => {
+  const { vertical } = req.body;
+  if (!vertical || typeof vertical !== 'string') {
+    return res.status(400).json({ error: 'vertical (string) required' });
+  }
+
+  const safeVertical = vertical.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const filename = `${safeVertical}-research.md`;
+  const researchDir = path.join(SITE_DIR(), 'research');
+  fs.mkdirSync(researchDir, { recursive: true });
+  const filePath = path.join(researchDir, filename);
+
+  // Idempotent: if file already exists, return it
+  if (fs.existsSync(filePath)) {
+    return res.json({ file: filename, status: 'existing', vertical: safeVertical });
+  }
+
+  // Generate a structured research stub (no AI — immediate response)
+  const spec = readSpec();
+  const businessName = spec.site_name || spec.design_brief?.business_name || 'Business';
+  const now = new Date().toISOString().split('T')[0];
+
+  const stub = `# ${vertical} — Market Research
+*Generated: ${now} | Site: ${businessName}*
+
+## Business Category Overview
+Research stub for the **${vertical}** vertical. This file can be expanded with:
+- Competitive landscape analysis
+- Typical customer profiles and demographics
+- Key pain points and value propositions
+- Standard pricing and service models
+- Common website sections and CTAs
+
+## Target Audience
+*Who are the typical customers for this type of business?*
+- Primary demographic: TBD
+- Key motivations: TBD
+- Common objections: TBD
+
+## Competitive Landscape
+*What do leading businesses in this vertical do well?*
+- Common design patterns: TBD
+- Typical color palettes: TBD
+- Trust signals used: TBD
+
+## Website Must-Haves
+*What sections / features does every ${vertical} site need?*
+1. Hero with clear value proposition
+2. Services / Products section
+3. Social proof (reviews, testimonials)
+4. Contact / Booking
+5. About / Story
+
+## Recommended Search Queries (Stock Photos)
+- ${vertical} professional
+- ${vertical} lifestyle
+- ${vertical} customers
+- small business ${vertical}
+
+## Key Messages
+*What should the homepage communicate above the fold?*
+- TBD
+
+## Notes
+*Add research findings from competitor analysis, customer interviews, or industry reports here.*
+`;
+
+  fs.writeFileSync(filePath, stub);
+  console.log(`[research-trigger] Created stub: ${filename}`);
+
+  res.json({ file: filename, status: 'stub', vertical: safeVertical });
+});
+
+// --- Research → brief extractor ---
+app.post('/api/research/to-brief', (req, res) => {
+  const { filename } = req.body;
+  if (!filename || typeof filename !== 'string') {
+    return res.status(400).json({ error: 'filename required' });
+  }
+
+  const researchDir = path.join(SITE_DIR(), 'research');
+  if (!fs.existsSync(researchDir)) return res.status(404).json({ error: 'No research directory' });
+
+  const allowedFiles = fs.readdirSync(researchDir).filter(f => f.endsWith('.md'));
+  if (!allowedFiles.includes(filename)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+
+  const filePath = path.join(researchDir, filename);
+  const realFile = fs.realpathSync(filePath);
+  const realDir = fs.realpathSync(researchDir);
+  if (!realFile.startsWith(realDir + path.sep)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const content = fs.readFileSync(filePath, 'utf8');
+  const vertical = filename.replace(/-research\.md$/, '').replace(/-/g, ' ');
+
+  // Extract key sections to build a brief
+  const lines = content.split('\n');
+  const musthaves = [];
+  const messages = [];
+  let inMusthaves = false;
+  let inMessages = false;
+
+  for (const line of lines) {
+    if (line.includes('Website Must-Haves')) { inMusthaves = true; inMessages = false; continue; }
+    if (line.includes('Key Messages')) { inMessages = true; inMusthaves = false; continue; }
+    if (line.startsWith('#') && !line.includes('Must-Haves') && !line.includes('Key Messages')) {
+      inMusthaves = false; inMessages = false;
+    }
+    if (inMusthaves && line.match(/^\d+\./)) musthaves.push(line.replace(/^\d+\.\s*/, '').trim());
+    if (inMessages && line.startsWith('-') && !line.includes('TBD')) messages.push(line.replace(/^-\s*/, '').trim());
+  }
+
+  const spec = readSpec();
+  const businessName = spec.site_name || spec.design_brief?.business_name || 'the business';
+
+  let brief_text = `Build a website for ${businessName}, a ${vertical} business.\n\n`;
+  if (musthaves.length > 0) {
+    brief_text += `Key pages and sections needed: ${musthaves.slice(0, 5).join(', ')}.\n\n`;
+  }
+  if (messages.length > 0) {
+    brief_text += `Key messages: ${messages.join('. ')}.\n\n`;
+  }
+  brief_text += `Based on research from ${filename.replace('.md', '')}.`;
+
+  res.json({ brief_text, filename, vertical });
+});
+
+// (GET /api/research/verticals defined earlier, before /:filename to avoid route conflict)
 
 // --- Codex exec endpoint (Wave 3) ---
 app.post('/api/codex/exec', async (req, res) => {
