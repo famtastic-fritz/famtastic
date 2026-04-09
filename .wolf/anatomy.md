@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T03:38:06.382Z
-> Files: 361 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T03:48:17.768Z
+> Files: 365 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -36,14 +36,14 @@
 
 - `.gitignore` — Git ignore rules (~127 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~10070 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~10456 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10331 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~35561 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~36966 tok)
 
 ## .claude/
 
@@ -461,6 +461,12 @@
 
 - `run-log.md` — Beta Run 001 — Business Site Build (~264 tok)
 
+## lib/
+
+- `character-branding.js` — character-branding.js — FAMtastic character placement pipeline (~1868 tok)
+- `fam-motion.js` — fam-motion.js — FAMtastic scroll animation engine (~1426 tok)
+- `fam-shapes.css` — fam-shapes.css — FAMtastic shape library (~2268 tok)
+
 ## mcp-server/
 
 - `package.json` — Node.js package manifest (~81 tok)
@@ -529,7 +535,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~125972 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~128168 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/lib/
@@ -692,7 +698,8 @@
 
 - `classifier-regression.json` (~1363 tok)
 - `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
-- `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4020 tok)
+- `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4055 tok)
+- `session4-visual-tests.js` — Session 4 — Visual Quality Tests (~4620 tok)
 
 ## tests/automation/logs/
 
