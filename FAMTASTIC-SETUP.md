@@ -1,6 +1,6 @@
 # FAMtastic Studio — Setup and Configuration
 
-## Last Updated: 2026-04-09T15:41:52.000Z
+## Last Updated: 2026-04-09T16:06:02.000Z
 ## Machine: Fitzgeralds-MacBook-Pro.local
 
 > **Disaster recovery document.** If the machine dies, this is everything needed

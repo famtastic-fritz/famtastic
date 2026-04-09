@@ -2029,3 +2029,228 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 - `.intel-empty` — empty state message
 
 **Tests**: `tests/phase5-intelligence-loop-tests.js` — 71/71 PASS
+
+---
+
+## Session 7 — Phase 0: Multi-Agent Skeleton Fixes (2026-04-09)
+
+### `scripts/agents`
+
+- `export ORIG_PROMPT` before pipeline entry — was never exported, so adapters always received "unknown" for user turn
+- `HISTORY_FILE` support added — optional 3rd positional arg (`$3`) accepted; adapters use it to seed conversation history
+- `action_status()` function reads `agent-status.json` per site, prints table
+- `action_logs()` function reads `agent-calls.jsonl` per site, prints last 10 exchanges
+
+### `adapters/*/cj-get-convo-*` (all three: claude, gemini, codex)
+
+- `HUB_ROOT` path resolution fixed — all 3 adapters referenced an archived repo path (`~/famtastic-platform/`). Now resolve from `SCRIPT_DIR/../../` relative to the adapter file.
+- `HISTORY_FILE` support: if `$HISTORY_FILE` is set and file exists, its contents prepended to prompt
+- `ORIG_PROMPT` now available via parent export; used to populate the `user_turn` field in JSONL output
+
+### `scripts/fam-hub`
+
+- AGENTCMD dispatcher fixed: was `AGENT="${2:-}"`, `TAG="${3:-}"` — off-by-one. Now `AGENT="${3:-}"`, `TAG="${4:-}"` (CMD=$1, AGENTCMD=$2, AGENT=$3, TAG=$4)
+- `status` subcommand: `fam-hub agent status <tag>` → calls `scripts/agents status <tag>`
+- `logs` subcommand: `fam-hub agent logs <tag> [agent]` → calls `scripts/agents logs <tag> [agent]`
+- `research` subcommand added (see Phase 4)
+
+### `scripts/generate-latest-convo`
+
+New script. Generates real stats from JSONL sources: reads `agent-calls.jsonl` per site, writes `agents/latest-convo.json` with real timestamps, call counts, agent breakdown. Called by `scripts/cj-reconcile-convo` post-reconcile.
+
+### Deleted files
+
+- `agents/latest-convo.json` — was a static fake file with hardcoded Sept 2025 timestamps
+- `convos/canonical/latest-convo.json` — same
+
+**Tests**: `tests/session7-phase0-tests.js` — 66/66 PASS
+
+---
+
+## Session 7 — Phase 1: Universal Context File (2026-04-09)
+
+### `site-studio/lib/studio-events.js`
+
+Singleton EventEmitter with 8 namespaced event constants:
+
+```js
+STUDIO_EVENTS = {
+  SESSION_STARTED, SITE_SWITCHED, BUILD_STARTED, BUILD_COMPLETED,
+  EDIT_APPLIED, COMPONENT_INSERTED, DEPLOY_COMPLETED, BRAIN_SWITCHED
+}
+```
+
+`studioEvents.setMaxListeners(20)` — prevents Node warning with multiple listeners.
+Module exports: `{ STUDIO_EVENTS, studioEvents }`.
+
+### `site-studio/lib/studio-context-writer.js`
+
+`StudioContextWriter` class. Listens to all 8 studio events and regenerates `STUDIO-CONTEXT.md` in `sites/<tag>/` on any event.
+
+STUDIO-CONTEXT.md sections (in order):
+1. Title + timestamp
+2. Active site tag
+3. Event type that triggered regeneration
+4. Site brief (from spec.design_brief)
+5. Site state (spec.state, spec.domain, spec.deployed_url)
+6. Component library (library.json component count + names)
+7. Vertical research (Pinecone-first, falls back to listing research/*.md files)
+8. Intelligence findings (reads intelligence-promotions.json if present)
+9. Available tools (hardcoded capability list)
+10. Standing rules (hardcoded FAMtastic conventions)
+
+`new StudioContextWriter(tag)` — constructor takes TAG at server startup. `writer.initialize()` — registers all event listeners + writes initial context.
+
+### `site-studio/lib/brain-injector.js`
+
+`BrainInjector` class. Handles per-brain context file injection.
+
+- Claude: writes `@STUDIO-CONTEXT.md` `@-include` block in Claude system prompt (reads and prepends)
+- Gemini/Codex: writes sidecar file `sites/<tag>/STUDIO-CONTEXT-<brain>.md` alongside the adapter prompt
+
+`new BrainInjector(tag, brain)`. `injector.inject(brain)` — writes appropriate file for that brain's integration style.
+
+**Known gap:** When brain switches at runtime, sidecar files are not re-written. Injection only runs at server startup (`setBrain()` does not call `injector.inject()`).
+
+### `site-studio/server.js` — Phase 1 additions
+
+- `require('./lib/studio-events')` + `require('./lib/studio-context-writer')`
+- Init block after `server.listen()`: `new StudioContextWriter(TAG).initialize()`
+- `GET /api/context` — returns STUDIO-CONTEXT.md contents as `{ context, path, lastModified }`
+- `POST /api/context` — triggers manual context regeneration; returns `{ regenerated: true }`
+- 7 event emits wired: SESSION_STARTED (server.listen), SITE_SWITCHED (both /api/switch-site handlers), BUILD_COMPLETED (finishParallelBuild), EDIT_APPLIED (POST /api/content-field), DEPLOY_COMPLETED (runDeploy success), COMPONENT_INSERTED (POST /api/components/export), BRAIN_SWITCHED (setBrain)
+
+**Tests**: `tests/session7-phase1-tests.js` — 75/75 PASS
+
+---
+
+## Session 7 — Phase 2: Brain Router UI (2026-04-09)
+
+### `site-studio/public/css/studio-brain-selector.css`
+
+Pill bar UI with per-brain colors:
+- `#brain-selector-bar` — flex row above chat form
+- `.brain-pill` — base pill; `.brain-pill.active` — highlighted state
+- Per-brain active colors: Claude=indigo (`#4f46e5`), Codex=green (`#059669`), Gemini=yellow (`#d97706`)
+- `.brain-status-dot` — 8px circle: `.available`=green, `.rate-limited`=yellow, `.unavailable`=red
+- `.brain-cost-badge` — small grey pill with cost label
+- `.brain-msg-count` — session message count badge
+- `#brain-fallback-bar` — amber warning bar shown when auto-fallback fires
+
+### `site-studio/public/js/brain-selector.js`
+
+`BrainSelector` IIFE module:
+- `select(brain)` — sends `{ type: 'set-brain', brain }` over WebSocket
+- `handleServerMessage(msg)` — routes `brain-changed`, `brain-status`, `brain-fallback` messages; updates pill UI
+- `onWsOpen()` — calls `requestStatus()` after 400ms delay to get initial brain state
+- `requestStatus()` — sends `{ type: 'get-brain-status' }` over WebSocket
+- `getCurrentBrain()` — returns `currentBrain`
+- Window-level exports: `window.BrainSelector`, `window.selectBrain`
+
+### `site-studio/server.js` — Phase 2 additions
+
+**Brain state** (module-level vars):
+```js
+let currentBrain = 'claude';
+const BRAIN_LIMITS = {
+  claude:  { dailyLimit: null, currentUsage: 0, status: 'available' },
+  codex:   { dailyLimit: 40,   currentUsage: 0, status: 'available' },
+  gemini:  { dailyLimit: 1500, currentUsage: 0, status: 'available' },
+};
+const sessionBrainCounts = { claude: 0, codex: 0, gemini: 0 };
+```
+
+**`spawnBrainAdapter(brain, prompt)`** — spawns `adapters/{brain}/cj-get-convo-{brain}` with prompt via stdin using `spawnSync`. Returns `{ stdout, stderr, status }`.
+
+**`setBrain(brain, ws)`** — validates brain name, sets `currentBrain`, emits `BRAIN_SWITCHED` event, broadcasts `brain-changed` message to all WebSocket clients.
+
+**`routeToBrainForBrainstorm(prompt, brain)`** — increment `sessionBrainCounts[brain]`, check daily limit, if at limit: set `lim.status = 'rate-limited'`, find fallback (Claude → Codex → Gemini), broadcast `brain-fallback`. Routes to `spawnClaude()` for claude, `spawnBrainAdapter()` for others, with error fallback to claude.
+
+**REST endpoints:**
+- `GET /api/brain` — returns `{ currentBrain, limits: BRAIN_LIMITS, sessionCounts: sessionBrainCounts }`
+- `POST /api/brain` — validates brain name, calls `setBrain()`, returns new state
+
+**WebSocket handlers** (before chat handler):
+- `set-brain` → calls `setBrain(msg.brain, ws)`
+- `get-brain-status` → sends `brain-status` with current state
+
+**handleBrainstorm enhanced:**
+- Reads up to 80 lines of `sites/<tag>/STUDIO-CONTEXT.md` → `studioCtxSection`
+- Prepends `[STUDIO CONTEXT]\n${studioCtxSection}\n[/STUDIO CONTEXT]\n\n` to prompt
+- Routes via `routeToBrainForBrainstorm(prompt)` instead of hardcoded `spawnClaude()`
+
+**Known gap:** All build/content-edit paths still use `spawnClaude()` directly. Only brainstorm mode routes through the brain router.
+
+**Tests**: `tests/session7-phase2-tests.js` — 62/62 PASS
+
+---
+
+## Session 7 — Phase 3: Studio Config File (2026-04-09)
+
+### `FAMTASTIC-SETUP.md`
+
+Disaster recovery document at repo root. Sections:
+- **Quick Start (New Machine)** — 5-step bash commands to get running from scratch
+- **MCP Servers** — 7 servers with config path, status, purpose
+- **Claude Code Plugins** — 10 plugins with purpose
+- **Environment Variables** — 16 total with Set/Not set status column (auto-updated)
+- **Third-Party Accounts/Subscriptions** — 11 accounts with tier/cost info
+- **Pinecone Configuration** — index name, dimensions, metric, namespace convention
+- **Dependency Versions** — Node, Python, uv, Claude CLI (auto-updated)
+- **FAMtastic-Specific Configuration** — studio-config.json keys reference
+- **Known Setup Gotchas** — rembg Python API vs CLI, Claude CLI cwd, env var scope
+- **fam-hub Commands Reference** — all subcommands with usage examples
+- **Architecture Overview** — 1-page system diagram in ASCII
+
+### `scripts/update-setup-doc`
+
+Bash script (chmod +x). Updates FAMTASTIC-SETUP.md in place:
+- Replaces "Last Updated:" timestamp with current date
+- Replaces "Machine:" hostname with `$(hostname)`
+- Replaces Node/Python/uv/Claude version rows with live `$(node --version)` etc.
+- Replaces env var status column (Set/Not set) based on current shell environment
+- `--commit` flag: stages and commits the update automatically
+
+Run manually: `scripts/update-setup-doc` or `scripts/update-setup-doc --commit`
+
+**Known gap:** Does not auto-parse `claude mcp list` output to update MCP server table. Static table from document creation.
+
+**Tests**: `tests/session7-phase3-tests.js` — 49/49 PASS
+
+---
+
+## Session 7 — Phase 4: Research Intelligence System (2026-04-09)
+
+### `site-studio/lib/research-registry.js`
+
+4 sources in `RESEARCH_REGISTRY`. See Phase 4 report (`docs/session7-phase-4-report.md`) for full detail.
+
+Key facts:
+- `perplexity.status = 'disabled'` by default — requires explicit enable + `PERPLEXITY_API_KEY`
+- `build_patterns.status = 'active'` always — reads from `.local/` pattern cache
+- `gemini_loop.status` depends on `process.env.GEMINI_API_KEY` at module load time
+- Effectiveness scores written to `.local/research-effectiveness.json` (gitignored)
+
+### `site-studio/lib/research-router.js`
+
+`queryResearch(vertical, question, options)` — Pinecone-first with 0.85 threshold, 90-day staleness. Calls `logResearchCall()` and `saveEffectivenessScore()` on every query.
+
+**IMPORTANT:** Route ordering critical — `GET /api/research/sources` and `GET /api/research/effectiveness` must be registered BEFORE `GET /api/research/:filename` in server.js. If placed after, Express will route `/sources` and `/effectiveness` as filename lookups and return 404.
+
+### `scripts/seed-pinecone`
+
+Seeding script — safe to run, exits 0 with explanation if `PINECONE_API_KEY` unset. Seeds from `sites/*/spec.json` (design_decisions, site_brief) and `SITE-LEARNINGS.md` sections.
+
+**Tests**: `tests/session7-phase4-tests.js` — 76/76 PASS
+
+---
+
+## Session 7 — Known Gaps (opened 2026-04-09)
+
+- **Brain routing in build path** — `routeToBrainForBrainstorm()` only used in brainstorm mode. All build/content-edit paths call `spawnClaude()` directly. Extending to builds requires parsing HTML_UPDATE responses from non-Claude brains.
+- **Real Pinecone embeddings** — `seed-pinecone` uses placeholder zero-vectors. Real `text-embedding-3-small` embeddings required for semantic similarity to work.
+- **BRAIN_SWITCHED sidecar re-injection** — `brain-injector.js` runs at startup only. Runtime brain switches do not update sidecar files.
+- **Research effectiveness stars UI** — `POST /api/research/rate` exists; client-side rating prompt after build not wired.
+- **seed-pinecone manual run** — no automation hook. Must run manually when `PINECONE_API_KEY` is set.
+- **update-setup-doc MCP table** — static; does not auto-parse `claude mcp list` output.
+- **90-day staleness re-query** — detected but not automatically triggered; only re-queries if another `queryResearch()` call is made.

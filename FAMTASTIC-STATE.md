@@ -1,12 +1,12 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-07
+**Last updated:** 2026-04-09 (Session 7 — Universal Context, Brain Router, Research Intelligence)
 
 ---
 
 ## What FAMtastic Site Studio Is
 
-FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it runs entirely on localhost using the Claude CLI (no API keys, no SaaS dependency). The system is currently single-user and localhost-only, built and operated by Fritz Medine, a Drupal developer exploring AI-assisted site production for small business clients.
+FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it runs entirely on localhost using the Claude CLI (no API keys, no SaaS dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. The system is currently single-user and localhost-only, built and operated by Fritz Medine.
 
 ---
 
@@ -14,73 +14,61 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 
 | Layer | Technology | Role |
 |-------|-----------|------|
-| AI Engine | Claude CLI (`claude --print`) | Generates all HTML, SVG assets, design briefs, session summaries, and image prompts. Uses the Claude Code subscription — no separate API key. Default model: `claude-sonnet-4-5`. |
-| Backend | Node.js + Express 4.21 | HTTP server, REST API endpoints, WebSocket server for real-time chat and preview updates. Single file: `site-studio/server.js` (6,830 lines). |
-| Frontend | Single HTML file + Tailwind CDN + 8 CSS files | `site-studio/public/index.html` (~5,620 lines). VS Code-inspired layout: left sidebar (Explorer), tabbed canvas (Preview, Editable View, Images, Research, Compare), bottom CLI bar (Chat, Terminal, Codex), right sidebar (Studio State). 8 CSS component files in `public/css/`. No build step, no framework. |
-| CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties (`--color-primary`, `--color-accent`, `--color-bg`) map from spec colors. Shared styles extracted to external CSS by post-processor; page-specific styles stay inline via `<style data-page="true">`. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
-| WebSocket | `ws` 8.18 | Real-time bidirectional: chat messages, build progress, preview reload, panel updates. |
-| File Upload | `multer` 2.1 | Image upload with drag-drop, paste, file picker. 5MB limit, 100 files per site (configurable). SVG sanitization on upload. |
-| Email | `nodemailer` 8.0 | Share deployed sites via Gmail/Outlook/SendGrid SMTP. |
-| SMS | `twilio` 5.13, `@vonage/server-sdk` 3.26 | Server-side SMS providers configured but practical path uses macOS `sms:` URI scheme. |
-| Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy` handles all three. Netlify is tested and deployed in production. |
-| Testing | Vitest 4.1 | 56 unit tests across 11 function suites. No integration or smoke tests yet. |
-| Config | `~/.config/famtastic/studio-config.json` | Model selection, deploy target/team, brainstorm profile, email/SMS credentials, upload limits (default 100), version limits, analytics, stock photo API keys (Unsplash/Pexels/Pixabay), `hero_full_width` (default true). Editable via Settings UI in Studio. |
-| CLI | Bash (`scripts/fam-hub`) | Unified CLI dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest` subcommands. |
-| Conversation State | JSONL | Per-site `conversation.jsonl` with rolling window truncation (500 messages, trims at 600+). |
-| Site State | JSON | `spec.json` (design brief, decisions, media specs, slot_mappings, deploy info, last_verification) + `.studio.json` (session state, versions) + `blueprint.json` (per-page sections, components, layout notes). |
-| MCP | stdio JSON-RPC | `mcp-server/server.js` exposes site state to Claude Desktop/Code. 4 tools: `list_sites`, `get_site_state`, `get_session_summary`, `suggest_tech_stack`. |
+| AI Engine | Claude CLI (`claude --print`) | Generates all HTML, SVG assets, design briefs, session summaries, and image prompts. Default model: `claude-sonnet-4-5`. No separate API key — uses Claude Code subscription. |
+| Secondary Brains | Gemini CLI + Codex CLI | `adapters/{brain}/cj-get-convo-{brain}` shell adapters. Routed via `routeToBrainForBrainstorm()` in brainstorm mode. Rate-limit auto-fallback: Claude → Codex → Gemini. |
+| Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~11,570 lines). |
+| Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html` (~7,100 lines). VS Code-inspired layout: left sidebar, tabbed canvas (Preview, Editable View, Images, Research, Compare, Intel), bottom CLI bar (Chat, Terminal, Codex), right sidebar. CSS: `public/css/` (7 files). JS: `public/js/` (brain-selector.js + others). |
+| CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties map from spec colors. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
+| Event Bus | Node.js EventEmitter | `site-studio/lib/studio-events.js` singleton with 8 namespaced events. Drives STUDIO-CONTEXT.md regeneration. |
+| Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. Sections: title, timestamp, site, event, brief, state, components, vertical research, findings, tools, rules. |
+| Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. |
+| Research Registry | `site-studio/lib/research-registry.js` | 4 provider-agnostic research sources. Effectiveness scoring persisted to `.local/research-effectiveness.json`. |
+| Research Router | `site-studio/lib/research-router.js` | Pinecone-first caching (0.85 threshold), 90-day staleness, source selection, call logging. |
+| WebSocket | `ws` 8.18 | Real-time bidirectional: chat, build progress, preview reload, brain-changed, brain-status, brain-fallback. |
+| File Upload | `multer` 2.1 | Image upload with drag-drop, paste, file picker. 5MB limit. SVG sanitization. |
+| Email | `nodemailer` 8.0 | Share deployed sites via SMTP. |
+| SMS | `twilio` 5.13, `@vonage/server-sdk` 3.26 | Server-side providers. Practical path uses macOS `sms:` URI. |
+| Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy`. Netlify tested and deployed. |
+| Testing | Node.js scripts | 729 tests across 11 suites (401 v3 engine + 328 Session 7). |
+| Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`. |
+| CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research` subcommands. |
+| Conversation State | JSONL | Per-site `conversation.jsonl` with rolling window (500 msgs, trims at 600+). |
+| Site State | JSON | `spec.json` (design brief, decisions, media specs, slot_mappings, content fields) + `.studio.json` (session state) + `blueprint.json` (per-page sections). |
+| MCP | stdio JSON-RPC | `mcp-server/server.js`. 4 tools: `list_sites`, `get_site_state`, `get_session_summary`, `suggest_tech_stack`. |
 
 ---
 
 ## End-to-End Pipeline
 
-**Step 1 — Launch.** `fam-hub site new <tag>` starts `server.js` on port 3334, opens browser, creates `sites/<tag>/` with minimal `spec.json` and empty `dist/`.
+**Step 1 — Launch.** `fam-hub site new <tag>` starts `server.js` on port 3334, opens browser, creates `sites/<tag>/`, writes initial `STUDIO-CONTEXT.md`, registers all 8 event listeners.
 
-**Step 2 — Classification.** Message arrives over WebSocket. `classifyRequest()` checks for approved design brief. None → intent `new_site`.
+**Step 2 — Classification.** Message arrives over WebSocket. `classifyRequest()` checks for approved design brief. 12 `content_update` patterns checked first (highest precedence). Default fallback: `content_update`. Plan-gated intents: `layout_update`, `major_revision`, `restyle`, `build`, `restructure`.
 
-**Step 3 — Planning.** `handlePlanning()` calls `spawnClaude()` (3-min timeout). Claude returns a structured `DESIGN_BRIEF` block. Stored in `spec.json`. Studio UI renders brief card: Build From Brief / Edit Brief / Skip to Build.
+**Step 3 — Planning.** `handlePlanning()` calls `spawnClaude()` (3-min timeout). Claude returns `DESIGN_BRIEF` block. Stored in `spec.json`. Studio UI renders brief card: Build From Brief / Edit Brief / Skip to Build.
 
-**Step 4 — Build (Template-First).** User clicks "Build From Brief." `parallelBuild()` now uses a template-first architecture:
+**Step 4 — Build (Template-First).** User clicks "Build From Brief." `parallelBuild()`:
+1. **Template build:** `_template.html` — header, nav, footer, shared CSS.
+2. **Template extraction:** `writeTemplateArtifacts()` extracts `_partials/_nav.html`, `_partials/_footer.html`, `assets/styles.css`.
+3. **Parallel page builds:** ALL pages build in true parallel with template context.
+4. **Post-build:** `logAgentCall()`, emits `BUILD_COMPLETED` — STUDIO-CONTEXT.md regenerated.
 
-1. **Template build:** Builds `_template.html` first — header, nav, footer, and shared CSS (`<style data-template="shared">`) in a single Claude call via `buildTemplatePrompt()`. No page content.
-2. **Template artifact extraction:** `writeTemplateArtifacts()` extracts `_partials/_nav.html`, `_partials/_footer.html`, and `assets/styles.css` from the template.
-3. **Parallel page builds:** ALL pages (including index.html) build in true parallel. Each page receives the template context via `loadTemplateContext()` — the full `<head>`, header HTML, footer HTML, and shared CSS — and generates only its `<main>` content + `<style data-page="pagename">` block.
-4. **Fallback:** If template build fails (exit code 1 or 0 bytes), falls back to legacy build (no template context, `sharedRules` only). Sites predating the template system also use legacy path.
+**Step 5 — Post-build pipeline.** `runPostProcessing()`:
+1. `extractAndRegisterSlots()` — scan `data-slot-id`
+2. `reapplySlotMappings()` — re-apply saved images
+3. `updateBlueprint()` + `injectSeoMeta()`
+4. `reconcileSlotMappings()`
+5. `applyLogoV()`
+6. Layout path split (template-first vs legacy)
+7. `fixLayoutOverflow()` — STUDIO LAYOUT FOUNDATION
+8. `syncContentFieldsFromHtml(pages)` — populate `spec.content[page].fields[]`
 
-**Step 5 — Post-build pipeline.** `runPostProcessing()` runs 6 steps:
-1. `extractAndRegisterSlots()` — scan for `data-slot-id`, merge into `media_specs` (runs FIRST so slots exist before mappings)
-2. `reapplySlotMappings()` — re-apply saved `{ src, alt, provider, query, credit }` from `spec.slot_mappings`
-3. `updateBlueprint()` + `injectSeoMeta()` — metadata updates
-4. `reconcileSlotMappings()` — remove `slot_mappings` keys not found in any page HTML
-5. `applyLogoV()` — swap `[data-logo-v]` anchor content (img if logo file exists, site name text otherwise)
-6. **Layout path split:**
-   - **Template-first (full build with `_template.html`):** `applyTemplateToPages()` swaps inline `<style data-template="shared">` for `<link href="assets/styles.css">`
-   - **Legacy (full build without template):** `syncNavPartial()`, `syncFooterPartial()`, `ensureHeadDependencies()`, `syncHeadSection()`, `extractSharedCss()`
-   - **Single-page edit with template:** `applyTemplateToPages()`
-   - **Single-page edit without template:** `syncNavFromPage()`, `syncFooterFromPage()`, `ensureHeadDependencies()`
-7. `fixLayoutOverflow()` — injects STUDIO LAYOUT FOUNDATION CSS block (always runs, idempotent)
+**Step 6 — Build Verification.** `runBuildVerification(writtenPages)` — 5 zero-token file-based checks. Results in `spec.last_verification`.
 
-**Step 6 — Build Verification.** `runBuildVerification(writtenPages)` runs 5 zero-token file-based checks automatically inside `finishParallelBuild()`. Results stored in `spec.last_verification`, sent to client via `verification-result` WS message. Failures trigger amber chat notification (`verification-warning` WS message).
+**Step 7 — Images.** "Add images" → `fill_stock_photos` → `scripts/stock-photo` per slot.
 
-**Step 7 — Images.** "Add images" → `fill_stock_photos` intent. Reads all `empty` slots from `media_specs`. Contextual queries: `"${businessName} ${industry} ${role}"`. Calls `scripts/stock-photo` per slot.
+**Step 8 — Content Edit (Surgical).** `content_update` intent → `tryDeterministicHandler()` → cheerio replacement → `writeSpec()` → `mutations.jsonl` → emits `EDIT_APPLIED` — STUDIO-CONTEXT.md regenerated.
 
-**Step 8 — Deploy.** "Deploy" → `runDeploy()` → `scripts/site-deploy`. Netlify deploy --prod. Updates `spec.json` with `deployed_url`, `deployed_at`, `deploy_provider`, `state: "deployed"`.
-
----
-
-## Layout Containment System
-
-The build system enforces a **page-template layout model** (inspired by Drupal's template hierarchy):
-
-- **Page level:** `html, body { margin: 0; padding: 0; }` — reset only, no overflow-x hidden
-- **Header/Footer:** Full viewport width. Nav content inside `<div class="container">` (capped at 90rem)
-- **Main content:** `main { max-width: 90%; margin: 0 auto; }` — centered content area that can never push header/footer wider
-- **Hero breakout:** When `hero_full_width` setting is true (default), first section in main breaks to full viewport: `main > section:first-of-type { width: 100vw; position: relative; left: 50%; margin-left: -50vw; }`
-- **Container class:** `.container { max-width: 90rem; margin: 0 auto; padding: 0 1.5rem; }` — used inside header, footer, and every section
-
-`fixLayoutOverflow()` injects the **STUDIO LAYOUT FOUNDATION** CSS block into `assets/styles.css` on every build (idempotent — strips old block before prepending). Falls back to inline `<style>` injection when no `styles.css` exists.
-
-Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage()` prompts so Claude-generated pages follow the containment conventions at generation time.
+**Step 9 — Deploy.** `runDeploy()` → `scripts/site-deploy` → Netlify. Updates `spec.json`. Emits `DEPLOY_COMPLETED` — STUDIO-CONTEXT.md regenerated.
 
 ---
 
@@ -88,171 +76,144 @@ Layout rules are also injected into both `buildTemplatePrompt()` and `spawnPage(
 
 ### Core Engine
 
-**Request Classifier** — `classifyRequest(message, spec)`. 21 intent types with anchored patterns: `brief_edit`, `brand_health`, `brainstorm`, `rollback` (requires version/previous context near "restore"), `version_history` (requires "version" anchor), `summarize`, `data_model`, `tech_advice`, `template_import`, `page_switch`, `deploy`, `build`, `query`, `asset_import`, `fill_stock_photos`, `new_site`, `major_revision`, `restyle`, `layout_update`, `content_update`, `bug_fix`. Default fallback: `layout_update`.
+**Request Classifier** — `classifyRequest(message, spec)`. 21+ intent types. 12 `content_update` patterns (highest precedence). Default fallback: `content_update`. Plan-gated: `layout_update`, `major_revision`, `restyle`, `build`, `restructure`.
 
-**Planning Mode** — `handlePlanning()`. Produces `design_brief` in `spec.json`. Three-button UI: Build From Brief, Edit Brief, Skip to Build.
+**Content Data Layer** — `data-field-id` + `data-field-type` + `data-section-id` in all generated HTML. `spec.content[page].fields[]` populated by `syncContentFieldsFromHtml(pages)`. Surgical replacement via cheerio. `mutations.jsonl` logs every edit.
 
-**Design Decisions Log** — `extractDecisions()`. Memory spine for every stylistic/structural decision. Injected into every prompt.
+**Component Skills System** — `.claude/skills/components/<type>/SKILL.md` auto-created/updated on export via `syncSkillFromComponent()`. Version tracking (1.0 → 1.1 → 1.2). CSS variable portability on import.
 
-**Site Blueprint System** — `blueprint.json` per site. `updateBlueprint(writtenPages)` auto-extracts after every build. `buildBlueprintContext(page)` injects into prompts. Prevents rebuild regression. API: `GET/POST /api/blueprint`.
+**Multi-Agent Pipeline** — `logAgentCall()` writes to `agent-calls.jsonl`. `validateAgentHtml(html, page)` scores 0–100 (threshold 40). `POST /api/compare/generate-v2` Codex → Claude fallback.
 
-**Curated Prompt Builder** — `buildPromptContext()`. Returns `resolvedPage` and `templateContext`. Layered prompts: brief + all approved decisions (2000-char cap) + summaries + assets + blueprint + anti-cookie-cutter rules + slot ID preservation + layout rules + mode-specific instructions. Auto-page-switch matches both `about.html` and "the about page" patterns.
+**Intelligence Loop** — `generateIntelReport()` reads all log data → `findings[]` with category/severity/title/description/recommendation.
 
-**Claude CLI Integration** — `spawnClaude()`. Calls `claude --print --model <model> --tools ""` directly (no wrapper script). Pipes prompt via `child.stdin.write()`. Runs from `os.tmpdir()` as cwd to avoid reading `CLAUDE.md` project instructions. All `CLAUDE_*` env vars stripped to prevent nested-session detection. Timeouts: 5min (builds), 3min (planning/brainstorm/data-model), 2min (summaries/image-prompts).
+**Planning Mode** — `handlePlanning()` → `design_brief` in spec.json → three-button UI.
 
-**spec.json Write-Through Cache** — `readSpec()`/`writeSpec()`. All spec access goes through cache. Invalidated on site switch.
+**Design Decisions Log** — `extractDecisions()`. Injected into every prompt.
 
-### Template-First Build System (2026-03-25)
+**Site Blueprint System** — `blueprint.json`. `updateBlueprint(writtenPages)` auto-extracts after build.
 
-**Template Build** — `buildTemplatePrompt()` generates the prompt for `_template.html`. Contains header, nav, footer, shared CSS in `<style data-template="shared">`, no page content. Layout foundation CSS embedded in template. Logo instruction, nav links, color/font theming included.
+**Claude CLI Integration** — `spawnClaude()`. `claude --print --model <model> --tools ""`. Prompt via stdin. Runs from `os.tmpdir()`. All `CLAUDE_*` env vars stripped.
 
-**Template Extraction** — `extractTemplateComponents(templateHtml)` parses template into `{ headBlock, headerHtml, footerHtml, sharedCss, navHtml }` using `data-template` attribute anchors.
+### Universal Context System (Session 7 — Phase 1)
 
-**Template Artifacts** — `writeTemplateArtifacts()` writes `_partials/_nav.html`, `_partials/_footer.html`, and `assets/styles.css` from template components.
+**`studio-events.js`** — Singleton EventEmitter. 8 events: `session:started`, `site:switched`, `build:started`, `build:completed`, `edit:applied`, `component:inserted`, `deploy:completed`, `brain:switched`. All hooks wired in `server.js` (init block + 7 emits).
 
-**Template Context Loading** — `loadTemplateContext()` reads `_template.html`, strips `<title>` from headBlock (prevents duplicates), formats for prompt injection into parallel page builds.
+**`studio-context-writer.js`** — `StudioContextWriter` class. Listens to all 8 events, regenerates `STUDIO-CONTEXT.md` on any event. 10 sections: title, timestamp, active site, event type, site brief, site state, component library, vertical research (Pinecone-first), intelligence findings, available tools, standing rules.
 
-**Template-to-Page Application** — `applyTemplateToPages()` swaps inline `<style data-template="shared">` for `<link href="assets/styles.css">` with `fs.existsSync` guard. Tracks per-file `changed` flag and `updated` counter.
+**`brain-injector.js`** — `BrainInjector` class. Claude: `@-include` block. Gemini/Codex: sidecar file `STUDIO-CONTEXT-<brain>.md`. Runs at server startup. **Gap:** not re-run on runtime brain switch.
 
-**Guard Flags** — `templateSpawned` flag prevents double-build race between timeout handler and close handler.
+**`GET /api/context`** — returns STUDIO-CONTEXT.md contents.  
+**`POST /api/context`** — triggers manual regeneration.
 
-### Build Verification System (2026-03-30)
+### Brain Router System (Session 7 — Phase 2)
 
-**Phase 1 — File-Based (always-on, zero tokens).** Five functions run automatically inside `finishParallelBuild()` after every build:
+**Brain state** (server.js module-level):
+```
+currentBrain: 'claude'
+BRAIN_LIMITS: { claude: {dailyLimit: null}, codex: {dailyLimit: 40}, gemini: {dailyLimit: 1500} }
+sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
+```
 
-| Function | What it checks |
-|----------|----------------|
-| `verifySlotAttributes(pages)` | Every `<img>` has `data-slot-id`, `data-slot-status`, `data-slot-role` |
-| `verifyCssCoherence()` | `assets/styles.css` exists, ≥50 lines, STUDIO LAYOUT FOUNDATION present exactly once, `:root` with CSS vars, `main` with 90% max-width |
-| `verifyCrossPageConsistency(pages)` | Nav and footer HTML match across all pages; Google Fonts URL consistent |
-| `verifyHeadDependencies(pages)` | Tailwind CDN, `assets/styles.css` link, Google Fonts present in every page's `<head>` |
-| `verifyLogoAndLayout(pages)` | `data-logo-v` in nav, no legacy placeholder paths (`via.placeholder.com`, `placehold.it`), `<main>` exists on every page |
+**`spawnBrainAdapter(brain, prompt)`** — spawns `adapters/{brain}/cj-get-convo-{brain}` via stdin using spawnSync.
 
-`runBuildVerification(pages)` orchestrates all five, computes `overallStatus` (failed > warned > passed), stores in `spec.last_verification`, sends `verification-result` WS message. Failed builds also send `verification-warning` amber chat notification.
+**`setBrain(brain, ws)`** — updates `currentBrain`, emits `BRAIN_SWITCHED`, broadcasts `brain-changed` to all WS clients.
 
-**Phase 2 — Browser-Based (on-demand, costs tokens).** Five Claude Code agent definitions in `~/.claude/agents/`:
+**`routeToBrainForBrainstorm(prompt)`** — checks daily limit → rate-limit + auto-fallback if exceeded → routes to appropriate spawn function. Broadcasts `brain-fallback` with reason when fallback fires.
 
-| Agent | What it checks |
-|-------|----------------|
-| `famtastic-visual-layout.md` | Header/footer viewport width, hero visibility, content centering, overflow |
-| `famtastic-console-health.md` | JS console errors, 404 network failures |
-| `famtastic-mobile-responsive.md` | Layout at 375px / 768px / 1280px viewports |
-| `famtastic-accessibility.md` | Alt text, heading hierarchy, contrast, form labels |
-| `famtastic-performance.md` | Request count, render-blocking resources, asset sizes |
+**`handleBrainstorm` enhanced** — injects up to 80 lines of STUDIO-CONTEXT.md, routes via `routeToBrainForBrainstorm()`.
 
-Triggered manually — ask Claude Code to run a visual audit. Requires Chrome DevTools MCP. Deliberate cost gate: browser-based checks are most useful for pre-deploy final reviews, not every iterative edit.
+**WS events:** `set-brain` → `setBrain()`. `get-brain-status` → returns current state.
 
-**API Endpoints:**
-- `GET /api/verify` — returns `spec.last_verification` (or 404 if no verification yet)
-- `POST /api/verify` — triggers a manual `runBuildVerification(listPages())` and saves result
-- `POST /api/visual-verify` — returns agent readiness info (agent list, Chrome DevTools status)
+**REST endpoints:** `GET /api/brain`, `POST /api/brain`.
 
-**Studio UI:**
-- Verification pill in preview toolbar (green Verified / yellow Warnings / red N Issues / gray Unchecked). Clicking opens Verify tab.
-- Verify tab (8th sidebar tab) — overall status badge, collapsible check sections with pass/fail/warn counts, Run Verification button, View in Browser button (opens Phase 2 prompt-copy modal).
-- Amber chat notification on build failure with issue count.
+**Brain Selector UI** — `studio-brain-selector.css` + `brain-selector.js` (IIFE module). Pill bar with status dots, cost badges, session message counts, fallback warning bar.
 
-### Multi-Page Sites
+**Known gap:** Build/content-edit paths still use `spawnClaude()` directly. Only brainstorm uses the brain router.
 
-**Parallel Build** — All pages build in true parallel (no index-first serialization). Template-first path provides template context; legacy path provides `sharedRules`.
+### Setup Documentation (Session 7 — Phase 3)
 
-**Nav/Footer/Head Sync (Legacy)** — `syncNavPartial()`, `syncFooterPartial()`, `syncHeadSection()`. Only run on legacy (no-template) builds.
+**`FAMTASTIC-SETUP.md`** — Disaster recovery doc at repo root. Covers: Quick Start, MCP Servers (7), Plugins (10), Env Vars (16), Accounts (11), Pinecone config, dependency versions, known gotchas, fam-hub commands, architecture overview.
 
-**External CSS Extraction (Legacy)** — `extractSharedCss()`. Selectively strips only styles matching extracted content. Only runs on legacy builds.
+**`scripts/update-setup-doc`** — Auto-updates timestamp, hostname, Node/Python/uv/Claude versions, env var status. `--commit` flag for automated git commits.
 
-### Image System
+**`fam-hub research`** — New subcommand with 4 actions: `seed-from-sites`, `sources`, `effectiveness`, `query <vertical> "<question>"`.
 
-**Slot-Based Identity** — Every `<img>` carries `data-slot-id`, `data-slot-status` (`empty`/`stock`/`uploaded`/`final`), `data-slot-role` (`hero`/`testimonial`/`team`/`service`/`gallery`/`favicon`). Identity survives HTML regeneration.
+### Research Intelligence System (Session 7 — Phase 4)
 
-**Logo-V System** — Logo anchors carry `data-logo-v`. `applyLogoV(pages)` runs after every build and every logo upload. If `assets/logo.{ext}` exists → `<img>`. If not → site name as styled text.
+**`research-registry.js`** — `RESEARCH_REGISTRY` with 4 sources (gemini_loop, build_patterns, manual, perplexity). Effectiveness scoring persisted to `.local/research-effectiveness.json`. Exports: `RESEARCH_REGISTRY`, `saveEffectivenessScore`, `getEffectivenessReport`, `loadEffectivenessScores`.
 
-**media_specs** — Array in `spec.json`. Single source of truth for all image slots. Each entry: `{ slot_id, role, dimensions, status, page }`.
+**`research-router.js`** — `queryResearch(vertical, question, options)`: Pinecone-first (0.85 threshold), 90-day staleness, source selection, upsert, call logging. `rateResearch(source, vertical, score)`: validates 1–5. `selectSource(vertical, question, options)`: build_patterns → manual → gemini_loop → perplexity.
 
-**Slot Extraction** — `extractSlotsFromPage()` / `extractAndRegisterSlots(pages)`. Runs after every build AND every single-page edit. Preserves existing status (never regresses `stock` → `empty`).
+**`scripts/seed-pinecone`** — Seeds `famtastic-intelligence` Pinecone index from site specs and SITE-LEARNINGS.md. Exits 0 gracefully when `PINECONE_API_KEY` not set.
 
-**Slot Lifecycle Integrity** — `reconcileSlotMappings()` removes orphaned slot_mappings after every build. `POST /api/rescan` re-scans + reconciles on demand. Slot ID stability injection in all build prompts.
+**Research Sources Panel** (Intel tab) — `#research-sources-panel`, source cards with status/cost/bestFor, vertical dropdown, question input, query result display. `loadResearchSources()`, `runResearchQuery()`. Auto-loads when Intel tab opens.
 
-**Slot Mapping Persistence** — `spec.json → slot_mappings` stores `{ src, alt, provider, query, credit }` per slot. `reapplySlotMappings()` re-applies after every build.
+**Known gap:** All Pinecone vectors use placeholder zero-vectors. Real `text-embedding-3-small` embeddings required for semantic similarity.
 
-**Provider Abstraction** — `fetchFromProvider(provider, query, width, height, limit)`. Providers: `'unsplash'`, `'pexels'`, `'placeholder'` (styled SVG, zero dependencies).
+### Multi-Agent Pipeline (Session 7 — Phase 0 fixes)
 
-**Stock Photo Fill** — `scripts/stock-photo` (3-provider fallback: Unsplash → Pexels → Pixabay). Endpoints: `POST /api/stock-photo` (auto-apply), `GET /api/stock-search` (6-thumb grid), `POST /api/stock-apply` (user-selected).
+**ORIG_PROMPT export** — `scripts/agents` now exports `ORIG_PROMPT` before pipeline entry. All 3 adapters receive the original user prompt correctly.
 
-**Upload-to-Replace** — `POST /api/replace-slot`. Targets by slot ID.
+**HUB_ROOT path** — All 3 adapters (`adapters/claude/`, `adapters/gemini/`, `adapters/codex/`) now resolve `HUB_ROOT` from `SCRIPT_DIR/../../` (correct). Previously pointed to archived repo path.
 
-**Visual Slot Mode** — Slot inspector overlays (red=empty, yellow=stock, green=uploaded), hover tooltips, click → QSF panel.
+**fam-hub dispatcher fix** — `fam-hub agent run <agent> <tag>` now correctly assigns `AGENT=$3`, `TAG=$4` (was off by one).
 
-**Quick Slot Fill (QSF)** — Upload / Stock / AI buttons. Stock flow: editable query + 6-thumbnail provider grid.
+**fam-hub agent subcommands** — `status <tag>` and `logs <tag> [agent]` added.
 
-### Studio UI
+**`scripts/generate-latest-convo`** — Generates real stats from JSONL sources; replaces deleted static fake file.
 
-**Layout** — Three-panel: chat (left), live preview iframe (center), studio sidebar (right). Mobile responsive below 1024px.
+### Studio UI (VS Code Layout)
 
-**Preview Toolbar** — Page tabs, responsive preview toggle (Mobile 375px / Tablet 768px / Desktop), Slots toggle, Rescan button, verification pill indicator (green/yellow/red/gray).
+**Canvas Tabs (6):**
+1. **Preview** — live preview iframe with page tabs, responsive toggle, slots overlay
+2. **Editable View** — rendered page with click-to-edit on `data-field-id` elements → popup → direct REST `POST /api/content-field` → 600ms reload
+3. **Images** — image browser with suggested query chips, shortlist sidebar, A/B compare pane, provider filter, slot selector
+4. **Research** — file list + markdown viewer + vertical trigger form + "Use as Brief" button
+5. **Compare** — side-by-side Claude vs Codex renders with sync scroll
+6. **Intel** — intelligence loop findings + research sources panel (Session 7: brain-aware query routing, Pinecone-first results)
 
-**Studio Sidebar Tabs** — Eight tabs: Assets, Blueprint, Deploy, Design, History, Metrics, Verify, Server.
+**CLI Tabs (3):** Chat, Terminal, Codex
 
-**Brand Health Metrics Dashboard** — Slot coverage %, upload usage, orphaned mappings, empty slots, key slots, image sets, social/meta, font icons.
+**Right Sidebar Tabs (8):** Assets, Blueprint, Deploy, Design, History, Metrics, Verify, Server
 
-**Project Picker** — Header dropdown. `POST /api/switch-site` / `POST /api/new-site`. Both handlers are `async` with `await endSession()` before TAG change to prevent session summaries writing to the wrong site.
-
-**Settings Modal** — Model, deploy target/team, email/SMS, stock photo API keys, upload limits, version limits, analytics, hero_full_width toggle.
-
-**Upload Modal** — Drag-drop, clipboard paste, file picker. Role selector + slot targeting.
-
-**WebSocket Reconnect** — Exponential backoff (2s → 30s cap) + red banner.
-
-**WebSocket Message Guard** — Client-side `ws.onmessage` wraps `JSON.parse()` in try/catch — malformed messages are silently dropped rather than crashing the message loop.
-
-### Intelligence Features
-
-**Session Summaries** — Auto-generated via Claude on session end (3+ messages). Last 2-3 injected into every prompt.
-
-**Site Versioning** — `versionFile()` snapshots before every HTML write. Max 50 (configurable). `auto_version` toggle.
-
-**Rollback** — Chat or panel button. Saves pre-rollback state first.
-
-**Brainstorm Mode** — `handleBrainstorm()`. 3 profiles: deep/balanced/concise. "Build This" writes brainstorm to blueprint before triggering build.
-
-**Build Metrics** — `build-metrics.jsonl` per site. Studio Metrics tab.
-
-**Conversation History** — `loadRecentConversation(15)` injects last 15 messages into every prompt. Assistant HTML truncated to `CHANGES:` summary.
-
-**Data Model Planning** — `handleDataModelPlanning()`. Concept-phase only.
-
-**Tech Stack Analysis** — `analyzeTechStack()`. Classifies as static/CMS/dynamic.
-
-**AI Image Prompt Export** — `POST /api/generate-image-prompt`. Midjourney/DALL-E prompts.
-
-**Form Handling** — Netlify Forms template with honeypot spam protection.
-
-**CSS Custom Properties** — `:root { --color-primary; --color-accent; --color-bg; }` required.
-
-**Analytics** — `analytics_provider` (ga4/plausible) + `analytics_id` in settings.
-
-**SEO Validator** — Brand Health checks meta description, canonical URL, Schema.org JSON-LD, viewport, title, lang, alt text.
-
-### Deploy and Share
-
-**Per-Site Repos** — Each site gets its own repo at `~/famtastic-sites/<tag>/` with `dev`, `staging`, `main` branches. Auto-created on first build via `createSiteRepo()`. Scaffold files: CLAUDE.md (tweak instructions), SITE-LEARNINGS.md (design context), README.md. GitHub repo created via `gh repo create --private`.
-
-**Git Flow** — Push to Repo → dev branch. Deploy to Staging → merge dev→staging. Deploy to Production → merge staging→main. All merges use `--no-edit`. Failed merges auto-abort (`git merge --abort`). `syncSiteRepo()` handles the full branch-aware flow with concurrency guard.
-
-**Deploy** — `scripts/site-deploy` (209 lines). Netlify (tested), Cloudflare Pages, Vercel. Accepts `--env staging|production` flag. Separate Netlify sites per environment.
-
-**Hub Repo** — `~/famtastic/` is pure tooling (sites/ in .gitignore). "Push Studio Code" button in Server tab pushes tooling changes via `pushHubRepo()`.
-
-**Share** — `POST /api/share`. Email (nodemailer), Text (macOS `sms:` URI), Copy Link. `shareSite()` reads deployed URL from `deployInfoCache` (not from a DOM element).
-
-**Domain Helper** — `scripts/site-domain`. DNS record output for GoDaddy.
-
-### Infrastructure
-
-**Security** — CSRF, Path Traversal, Command Injection, ZIP Safety, SVG Sanitizer, Input Validation, Schema Validation, Conversation Truncation. API key redaction via `safeSettings()`.
-
-**MCP Server** — `mcp-server/server.js` (343 lines). 4 tools via stdio JSON-RPC.
-
-**Custom Claude Code Skills** — `/site-studio`, `/brainstorm`, `/export-site` in `.claude/skills/`.
+---
+
+## API Endpoints (Full)
+
+### v3 Engine Endpoints (Phases 0–5, 2026-04-09)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/sync-content-fields` | Scan HTML for data-field-id, populate spec.content[page].fields[] |
+| GET | `/api/content-fields/:page` | List all fields for a page |
+| POST | `/api/content-field` | Surgical field update (no AI), global cascade for phone/email/address/hours |
+| POST | `/api/components/export` | Export component with version bump + skill sync |
+| GET | `/api/image-suggestions` | Contextual query chips from spec.design_brief |
+| POST | `/api/research/trigger` | Create vertical research stub (idempotent) |
+| POST | `/api/research/to-brief` | Extract brief text from research file |
+| GET | `/api/research/verticals` | 40+ known verticals + per-site researched list |
+| POST | `/api/compare/generate-v2` | Codex→Claude fallback with HTML validation |
+| GET | `/api/agent/stats` | Aggregated agent-calls.jsonl metrics |
+| GET | `/api/agent/routing` | Intent→agent routing guide |
+| GET | `/api/intel/report` | Full intelligence report (findings + summary) |
+| GET | `/api/intel/findings` | Findings only with severity counts |
+| POST | `/api/intel/promote` | Promote finding to intelligence-promotions.json |
+| POST | `/api/intel/run-research` | Create dated research stub in docs/intelligence-reports/ |
+
+### Session 7 Endpoints (2026-04-09)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/context` | Return STUDIO-CONTEXT.md contents |
+| POST | `/api/context` | Trigger manual context regeneration |
+| GET | `/api/brain` | Current brain state (currentBrain, BRAIN_LIMITS, sessionCounts) |
+| POST | `/api/brain` | Set active brain; triggers setBrain() + WS broadcast |
+| GET | `/api/research/sources` | All research sources from RESEARCH_REGISTRY |
+| GET | `/api/research/effectiveness` | Effectiveness report sorted by avg score |
+| POST | `/api/research/query` | Query research via queryResearch(vertical, question) |
+| POST | `/api/research/rate` | Rate a research result (score 1–5) |
+
+**Route ordering rule:** `/api/research/sources` and `/api/research/effectiveness` must be declared BEFORE `/api/research/:filename`. Same applies to `/api/research/verticals` (v3 engine).
 
 ---
 
@@ -262,165 +223,37 @@ Triggered manually — ask Claude Code to run a visual audit. Requires Chrome De
 
 | Gap | Priority | Detail |
 |-----|----------|--------|
-| Revenue path (end-to-end) | Tier 1 | The full transaction flow: site build → client preview → payment (PayPal) → domain provisioning (GoDaddy reseller) → live recurring-revenue product. Studio runs on localhost — need client preview URL (Cloudflare Tunnel or Netlify draft) and lightweight approval flow. See FAMTASTIC-VISION.md for the empire model this serves. |
-| Template upload mode | Tier 2 | Future iteration: allow uploading pre-built templates (with CSS/rules included) where Studio's role shifts to tweaking/fine-tuning, not generating from scratch. Need to account for multiple upload types: full template (has own CSS/logic — don't apply STUDIO LAYOUT FOUNDATION) vs wireframe (no logic — Studio applies its rules). |
-| Asset generate → insert | Tier 2 | SVG generation (`asset-generate`) creates files but doesn't wire back to replace placeholders in HTML. |
-| Smoke / integration tests | Tier 2 | 56 unit tests exist (11 suites). No end-to-end pipeline tests, no API endpoint tests, no WebSocket message flow tests. |
-| design_decisions unbounded | Tier 3 | `spec.design_decisions` array has no cap — grows forever on disk. Needs a max (e.g., 100) with oldest pruning. |
-| uploaded_assets unbounded | Tier 3 | `spec.uploaded_assets` array has no cap — same issue. |
-| Brainstorm recommendation chips | Tier 3 | Cherry-picking individual brainstorm suggestions not yet supported. |
-| Blueprint cross-page relationships | Tier 3 | Blueprint auto-extract works per-page but doesn't track cross-page component relationships. |
-| SMS send path non-functional | Tier 3 | Twilio/Vonage configured but practical path uses macOS `sms:` URI. |
-| `final` slot status unused | Tier 4 | Defined but no automated flow transitions slots to it. |
-| `claude --print` is text-only | Tier 4 | Cannot pass uploaded images for vision analysis. |
-| Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. Required before the 10-site milestone per FAMTASTIC-VISION.md scaling checkpoints. |
-| Remaining code review items | Tier 2 | 12 high/medium/low issues from deep code review deferred — get their own session after verification system is confirmed working. |
+| Revenue path (end-to-end) | Tier 1 | Client preview URL + payment (PayPal) + domain provisioning + approval flow. Studio runs on localhost — bridge to real product. |
+| Brain routing in build path | Tier 2 | Only brainstorm mode uses `routeToBrainForBrainstorm()`. Build/content-edit paths call `spawnClaude()` directly. Extending requires parsing HTML_UPDATE from non-Claude brains. |
+| Real Pinecone embeddings | Tier 2 | `seed-pinecone` uses placeholder zero-vectors. `text-embedding-3-small` integration required for semantic similarity. |
+| Intelligence Loop — real Gemini research | Tier 2 | `POST /api/intel/run-research` creates stubs only. `scripts/gemini-cli` must be wired to populate them. |
+| Codex CLI non-functional | Tier 2 | `codex-cli` binary times out 100% of compare calls. `/api/compare/generate-v2` falls back to Claude every time. |
+| Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. Required before 10-site milestone. |
+| Template upload mode | Tier 2 | Uploading pre-built templates for Studio to tweak vs generate from scratch. |
+| BRAIN_SWITCHED sidecar re-injection | Tier 3 | `brain-injector.js` writes sidecar files at startup only. Runtime brain switch does not update them. |
+| Research effectiveness stars UI | Tier 3 | `POST /api/research/rate` endpoint exists. Client-side post-build rating prompt not wired. |
+| update-setup-doc MCP table | Tier 3 | Static MCP table in FAMTASTIC-SETUP.md. Does not auto-parse `claude mcp list`. |
+| 90-day staleness auto-re-query | Tier 3 | Staleness detected but re-query only triggered by next `queryResearch()` call. |
+| Asset generate → insert | Tier 3 | SVG generation creates files but doesn't wire back to HTML slots. |
+| design_decisions unbounded | Tier 3 | `spec.design_decisions` array has no cap. |
+| spec.json write not atomic | Tier 3 | Uses `fs.writeFileSync()` directly — no `.tmp` + rename. |
+| server.js decomposition | Tier 3 | ~11,570 lines. Plan: thin assembler + modules in lib/. |
+| library.json structure ambiguity | Tier 3 | Must read `.components` not root. Consider flattening. |
+| Brainstorm recommendation chips | Tier 4 | Cherry-picking individual brainstorm suggestions not supported. |
+| SMS send path non-functional | Tier 4 | Twilio/Vonage configured; practical path uses macOS `sms:` URI. |
 
-### Recently Closed (2026-03-30, Build Verification + Critical Bugs + OpenWolf Cleanup)
+### Closed This Session (2026-04-09 — Session 7)
 
-- **Build Verification System** — Phase 1 (5 file-based checks, always-on) + Phase 2 (5 browser-based Claude Code agents, on-demand). Verify tab (8th sidebar tab), toolbar pill indicator.
-- **Duplicate ws.on('close') handlers** — `activeClientCount` went negative after 2+ connect/disconnect cycles. Merged into single async handler.
-- **endSession() not awaited on site switch** — session summaries wrote to wrong site's directory. Both /api/switch-site and /api/new-site now async with await.
-- **ws.onmessage JSON.parse unguarded** — malformed server message crashed entire message loop. Wrapped in try/catch.
-- **shareSite() read from hidden DOM element** — always showed "not deployed." Now reads from deployInfoCache.
-- **OpenWolf CLAUDE.md overwrite** — OpenWolf had replaced ~/famtastic/CLAUDE.md with a 2-line redirect. Full FAMtastic rules restored with OpenWolf reference section at bottom.
-- **OpenWolf ephemeral git pollution** — 17 .wolf/ files were tracked that should be local-only. .gitignore updated; files untracked.
+- **Multi-agent pipeline non-functional** — ORIG_PROMPT export, adapter path resolution, fam-hub off-by-one dispatcher all fixed. `fam-hub agent run claude site-foo` now routes correctly.
+- **No universal context for brains** — STUDIO-CONTEXT.md generated on every studio event; injected into all brains at startup.
+- **Brain routing in brainstorm** — `routeToBrainForBrainstorm()` routes brainstorm mode through brain selector with rate-limit enforcement and fallback chain.
+- **No setup/disaster recovery doc** — `FAMTASTIC-SETUP.md` created with full environment reference.
+- **No research intelligence** — `research-registry.js` + `research-router.js` + `seed-pinecone` + Research Sources panel built.
+- **fam-hub agent status/logs missing** — `fam-hub agent status <tag>` and `fam-hub agent logs <tag>` subcommands added.
 
-### Recently Closed (2026-03-27, Per-Site Repo Architecture)
+### Previously Closed
 
-- **Per-site repos with branching** — dev/staging/main branches, auto-created on first build
-- **famtastic repo is pure tooling** — sites/ removed from tracking, .gitignore updated
-- **Deploy tab HTML nesting** — unclosed div caused 4 of 7 sidebar tabs to be invisible
-- **Studio State URLs** — Local/Staging/Prod URLs shown in header with clickable links
-- **Merge failure recovery** — git merge --abort prevents stuck MERGING state
-- **Checkout exit codes** — staging/main checkout failures detected, prevents wrong-branch push
-- **Hub repo cached** — execSync calls moved to startup, no more blocking per request
-- **Tab refresh** — all tabs refresh data on panel open + tab switch
-
-### Closed (2026-03-26, Layout Containment + spawnClaude Fix)
-
-- **Nav width shifting across pages** — `fixLayoutOverflow()` injects STUDIO LAYOUT FOUNDATION: `main { max-width: 90%; margin: 0 auto }` so content never pushes header/footer wider
-- **Hero images clipped** — Removed `overflow-x: hidden` from html/body; added hero breakout rule (`hero_full_width` setting, default true)
-- **spawnClaude 0-byte output** — Changed cwd from `HUB_ROOT` to `os.tmpdir()`; CLAUDE.md in `~/famtastic/` was causing Claude CLI to read OpenWolf instructions with `--tools ""` active, producing empty output
-- **claude-cli wrapper broken** — Bypassed `scripts/claude-cli` entirely; `spawnClaude()` now calls `claude --print` directly
-- **CLAUDE_* env var interference** — All `CLAUDE_*` and `CLAUDECODE` env vars stripped from subprocess env
-
-### Closed (2026-03-25, Template-First Build + Unified Overhaul)
-
-- Template-first architecture replaces index-as-CSS-seed approach
-- 7 of 11 post-processing steps eliminated when template exists
-- `templateSpawned` guard prevents double-build race
-- `applyTemplateToPages()` has `fs.existsSync` guard for styles.css
-- Duplicate `<title>` tags fixed (stripped from template headBlock)
-- Dead `hasSeedPage`/`innerPages` variables removed
-- `updated` counter fixed (was never incremented)
-- API key exposure redacted with `safeSettings()`
-- Arbitrary spec overwrite whitelisted
-- Post-processing pipeline reordered
-- syncHeadSection MD5 hash fingerprinting
-- extractSharedCss selective stripping
-- Classifier false positives anchored
-- buildPromptContext returns resolvedPage (no mutation)
-- Multi-tab session guard
-- Parallel build timeout race fix
-- buildInProgress deadlock prevention
-- 41 → 52 → 56 tests
-
-### Closed (2026-03-24, Lifecycle Integrity + Media Intelligence + Visual Slot Mode + Studio Hardening)
-
-- Slot extraction runs on every edit (isFullBuild guard removed)
-- Orphaned slot_mappings reconciliation
-- Upload limit raised to 100 (configurable)
-- Upload thumbnails path fixed
-- Stock photo contextual queries
-- 3-provider stock fallback
-- QSF stock preview grid
-- Visual Slot Mode + Logo-V system
-- Auto-placeholder removed
-- slot_mappings persistence
-- Blueprint system, external CSS extraction, brainstorm profiles, build metrics
-
-### Closed (2026-03-23, Gap Analysis Waves 1–5)
-
-All 34 findings closed: spec.json race condition, Claude CLI hang, security hardening (path traversal, CSRF, command injection, SVG, ZIP), data integrity, UX/accessibility, 41 unit tests, responsive preview, form handling, SEO validator, CSS custom properties, analytics.
-
----
-
-## Developer Environment
-
-### Global Settings (`~/.claude/settings.json`)
-
-```json
-{
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "GITHUB_PERSONAL_ACCESS_TOKEN": "<set>",
-    "GEMINI_API_KEY": "<set>"
-  },
-  "enabledPlugins": { "..." },
-  "extraKnownMarketplaces": { "..." }
-}
-```
-
-### OpenWolf
-
-`openwolf@1.0.4` — token-conscious session tracking. Initialized in `~/famtastic/`. Creates `.wolf/` directory. Protocol: check `anatomy.md` before reading files, update `cerebrum.md` on new learnings, log to `memory.md` after significant actions, log bugs to `buglog.json`.
-
-Three intelligence files are tracked in git: `anatomy.md`, `cerebrum.md`, `buglog.json`. Ephemeral files are excluded (added 2026-03-30): `token-ledger.json`, `memory.md`, `hooks/`, `config.json`, `*.log`.
-
-**Important:** OpenWolf had overwritten `~/famtastic/CLAUDE.md` with a 2-line redirect. Restored 2026-03-30 — now contains full FAMtastic rules with OpenWolf reference section at the bottom.
-
-### Agent Teams (Experimental)
-
-`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` enabled. Requires new session to activate.
-
----
-
-## Multi-Agent Integration
-
-~60% built, currently paused. CLI wiring exists (`fam-hub agent run`, `fam-hub convo reconcile`). 3 agent adapters (Claude/Gemini/Codex). Conversation pipeline: `cj-compose-convo`, `cj-reconcile-convo`, `cj-ingest`, `cj-promote`. Resumes after site factory is generating revenue.
-
----
-
-## What's Next
-
-> The full strategic vision lives in `FAMTASTIC-VISION.md`. This section tracks the tactical priorities that serve that vision. Read FAMTASTIC-VISION.md first if you are orienting to a new session.
-
-### Tier 1 — Revenue Path (Build This First)
-
-The near-term priority is establishing a complete revenue path: from site build to client preview to payment to domain provisioning to live recurring-revenue product. This is more specific than "client-facing access" — it is the end-to-end transaction flow that turns the factory into a business. Components needed: client preview URL (Cloudflare Tunnel or Netlify draft), payment collection (PayPal integration), domain provisioning (GoDaddy reseller API), and a lightweight client approval flow inside Studio.
-
-### Tier 2 — Portfolio Management (Needed at 10 Sites)
-
-The Platform Dashboard does not exist yet. Managing 10+ sites through the CLI alone is unsustainable. A dashboard that shows all deployed sites, their revenue status, their health scores from the verification system, and their next action is required before the first milestone of 10 sites is complete.
-
-### Tier 3 — Factory Quality (Ongoing)
-
-These items improve the quality and reliability of what the factory produces. Second deployed client site (validates anti-cookie-cutter mechanisms work across projects). Asset generate → insert pipeline (SVG generation wires back to HTML slots). Template upload system (full template vs wireframe modes). Smoke and integration tests (56 unit tests exist, no end-to-end pipeline tests yet).
-
-### Tier 4 — Factory Expansion (Needed at 50 Sites)
-
-The multi-tier website factory expands the product range. Current output: HTML+Tailwind static sites. Next tiers: React+Next.js for interactive applications, WordPress for content-heavy sites, Drupal for enterprise CMS clients. Implementation begins after the revenue path is proven and the first 10-site milestone is reached.
-
-### Tier 5 — Intelligence Loop (Build in Parallel)
-
-Weekly research script using Gemini CLI surfaces new tools, API changes, and opportunities relevant to FAMtastic. Output written to `~/famtastic/intelligence/` directory. Relevant findings promoted into this What's Next section automatically. Pattern analysis across deployed sites feeds learnings back into build prompts and verification system. This runs as a background capability alongside all other tiers.
-
-### Tier 6 — Multi-Agent Workflow (Resume at Revenue)
-
-The multi-agent workflow is ~60% built and paused. CLI wiring, 3 adapters (Claude/Gemini/Codex), and conversation reconciliation all work. Resumes after the revenue path is established and the factory is generating consistent income. At that point, routing tasks to the best-suited agent and reconciling outputs becomes a meaningful productivity multiplier.
-
-### Tier 7 — Platform Expansion (The Long Game)
-
-Mobile apps (iOS/Google Play), AI image generation products, AI video products, VR experiences, and games. Each is a new product type that the factory learns to build. The sequence follows the portfolio — new product types get added as the factory capacity and revenue base grow to support them.
-
----
-
-## Deployed Sites
-
-| Site | URL | Pages | Netlify ID | Deploy Date |
-|------|-----|-------|------------|-------------|
-| The Best Lawn Care | https://the-best-lawn-care.netlify.app | 7 (index, services, about, testimonials, gallery, why-choose-us, contact) | d58f9ba9-78eb-4329-89e7-710fac8480fa | 2026-03-20 |
+See CHANGELOG.md for sessions prior to 2026-04-09.
 
 ---
 
@@ -430,129 +263,196 @@ Mobile apps (iOS/Google Play), AI image generation products, AI video products, 
 
 | File | Purpose |
 |------|---------|
-| `FAMTASTIC-VISION.md` | North star — empire model, scaling milestones, revenue path, intelligence loop, innovation mandate |
-| `FAMTASTIC-STATE.md` | This file — canonical technical snapshot, feature map, file inventory, known gaps, 7-tier roadmap |
-| `FAMtastic-Web-Context.md` | Full context document for Claude Web sessions |
-| `SITE-LEARNINGS.md` | Authoritative technical reference — architecture notes, lessons learned, learnings log |
+| `FAMTASTIC-VISION.md` | North star — empire model, scaling milestones, revenue path |
+| `FAMTASTIC-STATE.md` | This file — canonical technical snapshot |
+| `FAMTASTIC-SETUP.md` | Disaster recovery — Quick Start, MCP servers, env vars, dependencies, gotchas |
+| `SITE-LEARNINGS.md` | Authoritative technical reference — architecture notes, all sessions |
 | `CHANGELOG.md` | Chronological session summaries |
 
 ### Core Application
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `site-studio/server.js` | ~6,830 | Main backend. Express + WebSocket. Request classifier, prompt builder (returns resolvedPage + templateContext), template-first build system, layout containment (fixLayoutOverflow), build verification system (5 file-based checks), blueprint system, CSS extraction, lifecycle integrity, multi-provider image system, post-build pipeline (6 steps + verification), safeSettings() redaction, multi-tab session guard, deadlock prevention. spawnClaude calls claude directly from os.tmpdir(). |
-| `site-studio/public/index.html` | ~5,620 | Single-file frontend. VS Code-inspired layout: left sidebar (Explorer with pages/sections/media), tabbed canvas (5 tabs: Preview, Editable View, Image Browser, Research View, Model Comparison), bottom CLI bar (3 tabs: Chat, Terminal, Codex), right sidebar (Studio State with mode selector + 8 tabs). Data-driven tab switching via querySelectorAll + data-hook attributes. Settings modal, upload modal, project picker, QSF panel. |
-| `site-studio/package.json` | 24 | Dependencies: express, ws, multer, nodemailer, twilio, @vonage/server-sdk. Dev: vitest. |
-| `site-studio/tests/unit.test.js` | ~458 | 56 unit tests: isValidPageName (4), sanitizeSvg (9), extractSlotsFromPage (4), classifyRequest (15+4 edge), extractBrandColors (3), labelToFilename (5), truncateAssistantMessage (5), ensureHeadDependencies (1), extractTemplateComponents (4). |
-| `site-studio/vitest.config.js` | 7 | Vitest ESM configuration. |
+| `site-studio/server.js` | ~11,570 | Main backend. Express + WebSocket. All classifier, content data layer, component skills, multi-agent, intel loop, brain router, universal context, research intelligence, image/research/deploy/compare endpoints. |
+| `site-studio/public/index.html` | ~7,100 | Single-file frontend. 6 canvas tabs. Brain selector pill bar. Research sources panel. All WS handlers. |
+| `site-studio/lib/studio-events.js` | — | Singleton EventEmitter + 8 event constants |
+| `site-studio/lib/studio-context-writer.js` | — | STUDIO-CONTEXT.md generator (event-driven, 10 sections) |
+| `site-studio/lib/brain-injector.js` | — | Per-brain context injection (Claude @-include, Gemini/Codex sidecar) |
+| `site-studio/lib/research-registry.js` | — | 4 research sources + effectiveness scoring |
+| `site-studio/lib/research-router.js` | — | Pinecone-first cache, source selection, call logging |
+| `site-studio/public/css/studio-base.css` | — | Resets, layout, typography |
+| `site-studio/public/css/studio-panels.css` | — | Three-panel layout, resizers |
+| `site-studio/public/css/studio-chat.css` | — | Chat panel, messages, plan cards |
+| `site-studio/public/css/studio-sidebar.css` | — | Tabs, mode selector, status bar |
+| `site-studio/public/css/studio-modals.css` | — | Settings, upload, all modal dialogs |
+| `site-studio/public/css/studio-terminal.css` | — | Terminal panel and toolbar |
+| `site-studio/public/css/studio-canvas.css` | — | Canvas panes: editable view, images, research, compare, intel |
+| `site-studio/public/css/studio-brain-selector.css` | — | Brain selector pill bar, status dots, cost badges, fallback bar |
+| `site-studio/public/js/brain-selector.js` | — | BrainSelector IIFE module (select, sync, fallback display) |
 | `mcp-server/server.js` | 343 | MCP server. 4 tools via stdio JSON-RPC. |
 
-### Key Functions (2026-03-30, Build Verification)
+### Test Suites
+
+**v3 Engine (401 tests):**
+
+| File | Tests | Phase |
+|------|-------|-------|
+| `tests/phase0-content-layer-tests.js` | 69 | Classifier, data-field-id, spec.content, mutations.jsonl |
+| `tests/phase1-component-skills-tests.js` | 64 | Component export/version, SKILL.md, CSS portability |
+| `tests/phase2-ui-shell-tests.js` | 61 | content-field endpoint, global cascade, mutation log |
+| `tests/phase3-multi-agent-tests.js` | 75 | logAgentCall, validateAgentHtml, agent stats, routing |
+| `tests/phase4-image-research-tests.js` | 61 | image-suggestions, research trigger/to-brief/verticals |
+| `tests/phase5-intelligence-loop-tests.js` | 71 | Intel report, findings, promote, run-research |
+
+**Session 7 (328 tests):**
+
+| File | Tests | Phase |
+|------|-------|-------|
+| `tests/session7-phase0-tests.js` | 66 | Multi-agent skeleton fixes |
+| `tests/session7-phase1-tests.js` | 75 | Universal Context File system |
+| `tests/session7-phase2-tests.js` | 62 | Brain Router UI |
+| `tests/session7-phase3-tests.js` | 49 | Studio Config File |
+| `tests/session7-phase4-tests.js` | 76 | Research Intelligence System |
+
+**Total: 729 tests, 729 passing.**
+
+### Key Functions
 
 | Function | File | Purpose |
 |----------|------|---------|
-| `verifySlotAttributes(pages)` | server.js | Checks all imgs for data-slot-id/status/role attrs |
-| `verifyCssCoherence()` | server.js | Validates styles.css: exists, ≥50 lines, STUDIO LAYOUT FOUNDATION once, :root CSS vars, main 90% |
-| `verifyCrossPageConsistency(pages)` | server.js | Nav/footer match across pages, Google Fonts URL consistent |
-| `verifyHeadDependencies(pages)` | server.js | Tailwind CDN, assets/styles.css link, Google Fonts present per page |
-| `verifyLogoAndLayout(pages)` | server.js | data-logo-v in nav, no legacy placeholder paths, main element exists |
-| `runBuildVerification(pages)` | server.js | Runs all 5 checks, returns { status, checks, issues, timestamp }, saves to spec.last_verification |
-
-### Key Functions (2026-03-27, Per-Site Repo)
-
-| Function | File | Purpose |
-|----------|------|---------|
-| `createSiteRepo(ws)` | server.js | Creates per-site repo with dev/staging/main branches, scaffold files, gh repo create |
-| `syncSiteRepo(ws, spec, branch, cb)` | server.js | Branch-aware sync: copies dist, commits dev, merges to target branch, pushes |
-| `pushHubRepo(ws)` | server.js | Pushes famtastic tooling repo (separate from site repos) |
-| `_tryGhRepoCreate(ws, spec, path, name)` | server.js | Helper: attempts gh repo create, saves site_repo to spec |
-
-### Key Functions (2026-03-26, Layout + spawnClaude)
-
-| Function | File | Purpose |
-|----------|------|---------|
-| `fixLayoutOverflow(ws)` | server.js | Injects STUDIO LAYOUT FOUNDATION CSS block (main 90% centered, hero breakout, box-sizing reset). Idempotent. |
-| `spawnClaude(prompt)` | server.js | Calls `claude --print` directly from `os.tmpdir()`, strips CLAUDE_* env vars |
-
-### Key Functions (2026-03-25, Template-First)
-
-| Function | File | Purpose |
-|----------|------|---------|
-| `extractTemplateComponents(html)` | server.js | Parses `_template.html` into headBlock, headerHtml, footerHtml, sharedCss, navHtml |
-| `buildTemplatePrompt()` | server.js | Generates Claude prompt for `_template.html` (chrome only, no page content) |
-| `writeTemplateArtifacts()` | server.js | Extracts _partials/_nav.html, _partials/_footer.html, assets/styles.css from template |
-| `loadTemplateContext()` | server.js | Reads template, strips title from headBlock, formats for prompt injection |
-| `applyTemplateToPages(ws, pages)` | server.js | Swaps inline template styles for `<link>` references |
-
-### Key Functions (2026-03-25, Overhaul)
-
-| Function | File | Purpose |
-|----------|------|---------|
-| `safeSettings()` | server.js | Redacts API keys, returns `_configured: true/false` |
-| `isTailwindClass(cls)` | server.js | Filters Tailwind utility classes in blueprint extraction |
-| `truncateAssistantMessage(msg)` | server.js | Truncates HTML to summary for conversation history |
-| `loadRecentConversation(count)` | server.js | Loads last N messages from conversation.jsonl |
+| `classifyRequest()` | server.js | 12 content_update patterns; default fallback content_update |
+| `syncContentFieldsFromHtml(pages)` | server.js | Scan data-field-id → spec.content[page].fields[] |
+| `tryDeterministicHandler()` | server.js | Surgical content edits, no AI, logs agent=none |
+| `syncSkillFromComponent()` | server.js | Auto-create/update SKILL.md on component export |
+| `logAgentCall()` | server.js | Append-only agent-calls.jsonl with cost estimate |
+| `validateAgentHtml()` | server.js | Score HTML 0–100; threshold 40 |
+| `generateIntelReport()` | server.js | Read log data → findings[] + summary |
+| `spawnClaude()` | server.js | Claude CLI spawn with stdin prompt, CLAUDE_* env stripped |
+| `spawnBrainAdapter()` | server.js | Spawn adapters/{brain}/cj-get-convo-{brain} via stdin |
+| `setBrain()` | server.js | Set currentBrain, emit BRAIN_SWITCHED, broadcast WS |
+| `routeToBrainForBrainstorm()` | server.js | Rate-limit check, fallback chain, brain dispatch |
+| `StudioContextWriter` | lib/studio-context-writer.js | Regenerate STUDIO-CONTEXT.md on every studio event |
+| `BrainInjector` | lib/brain-injector.js | Inject context for Claude (@-include) or Gemini/Codex (sidecar) |
+| `queryResearch()` | lib/research-router.js | Pinecone-first query, source selection, upsert, logging |
+| `saveEffectivenessScore()` | lib/research-registry.js | Persist research rating to .local/research-effectiveness.json |
+| `loadResearchSources()` | index.html | Fetch /api/research/sources → render source cards |
+| `runResearchQuery()` | index.html | POST /api/research/query → show result + cache badge |
+| `BrainSelector.select()` | js/brain-selector.js | WS send set-brain, update pill UI |
 
 ### Scripts
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `scripts/fam-hub` | 340 | Unified CLI dispatcher. |
-| `scripts/orchestrator-site` | 304 | Batch site generation. |
-| `scripts/asset-generate` | 269 | SVG asset pipeline via Claude CLI. |
-| `scripts/site-deploy` | 209 | Deploy to Netlify, Cloudflare, or Vercel. |
-| `scripts/site-brainstorm` | 186 | Terminal brainstorm loop. |
-| `scripts/lib/hub-common` | 161 | Shared bash library. |
-| `scripts/tts-cli` | 149 | Text-to-speech CLI wrapper. |
-| `scripts/site-export` | 101 | Export site as standalone project. |
-| `scripts/site-import` | 101 | Import existing HTML into Studio. |
-| `scripts/site-domain` | 84 | DNS record helper for GoDaddy. |
-| `scripts/stock-photo` | ~105 | 3-provider stock photo downloader (Unsplash → Pexels → Pixabay). |
-| `scripts/claude-cli` | 12 | Claude CLI wrapper (bypassed by spawnClaude — kept for manual use). |
-
-### Claude Code Agents (Phase 2 Visual Verification)
-
 | File | Purpose |
 |------|---------|
-| `~/.claude/agents/famtastic-visual-layout.md` | Visual layout verifier — header width, hero visibility, content centering, overflow |
-| `~/.claude/agents/famtastic-console-health.md` | Console errors + 404 checker |
-| `~/.claude/agents/famtastic-mobile-responsive.md` | Responsive layout at 375/768/1280px |
-| `~/.claude/agents/famtastic-accessibility.md` | Alt text, heading hierarchy, contrast, labels |
-| `~/.claude/agents/famtastic-performance.md` | Request count, blocking resources, asset sizes |
-
-### OpenWolf Files
-
-| File | Git | Purpose |
-|------|-----|---------|
-| `.wolf/anatomy.md` | tracked | Project file index with token estimates |
-| `.wolf/cerebrum.md` | tracked | Patterns, preferences, do-not-repeat rules |
-| `.wolf/buglog.json` | tracked | Bug tracking across sessions |
-| `.wolf/memory.md` | ignored | Per-session action log (ephemeral) |
-| `.wolf/token-ledger.json` | ignored | Token usage ledger (ephemeral) |
-| `.wolf/hooks/` | ignored | OpenWolf hooks (ephemeral) |
-| `.wolf/config.json` | ignored | OpenWolf configuration (local) |
+| `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research |
+| `scripts/orchestrator-site` | Batch site generation |
+| `scripts/gemini-cli` | Gemini API CLI |
+| `scripts/rembg-worker.py` | Background removal (Python API) |
+| `scripts/stock-photo` | 3-provider stock photo downloader |
+| `scripts/site-deploy` | Deploy to Netlify/Cloudflare/Vercel |
+| `scripts/asset-generate` | SVG asset pipeline |
+| `scripts/google-media-generate` | Imagen 4 / Veo 2 media generation |
+| `scripts/seed-pinecone` | Seed Pinecone index from site specs + SITE-LEARNINGS |
+| `scripts/update-setup-doc` | Auto-update FAMTASTIC-SETUP.md (versions, env vars) |
+| `scripts/generate-latest-convo` | Generate real agent stats from JSONL sources |
+| `adapters/claude/cj-get-convo-claude` | Claude multi-agent adapter |
+| `adapters/gemini/cj-get-convo-gemini` | Gemini multi-agent adapter |
+| `adapters/codex/cj-get-convo-codex` | Codex multi-agent adapter |
 
 ### Per-Site Files
 
 | File | Purpose |
 |------|---------|
-| `sites/<tag>/spec.json` | Site spec: `design_brief`, `design_decisions`, `media_specs`, `uploaded_assets`, `slot_mappings`, `last_verification`, `deployed_url`, `netlify_site_id`, `data_model`. |
-| `sites/<tag>/blueprint.json` | Per-page sections, components, layout notes. |
-| `sites/<tag>/build-metrics.jsonl` | One object per build. |
-| `sites/<tag>/.studio.json` | Session state, version metadata. |
-| `sites/<tag>/conversation.jsonl` | Chat history. |
-| `sites/<tag>/summaries/session-NNN.md` | AI-generated session summaries. |
-| `sites/<tag>/dist/_template.html` | Shared template (header, nav, footer, shared CSS). |
-| `sites/<tag>/dist/assets/styles.css` | Shared CSS (extracted from template or legacy extraction). |
-| `sites/<tag>/dist/assets/stock/` | Stock photos named `{slot-id}.jpg`. |
-| `sites/<tag>/dist/assets/uploads/` | User uploads. |
-| `sites/<tag>/dist/_partials/_nav.html` | Canonical nav partial. |
-| `sites/<tag>/dist/_partials/_footer.html` | Canonical footer partial. |
+| `sites/<tag>/STUDIO-CONTEXT.md` | Universal context file — regenerated on every studio event |
+| `sites/<tag>/agent-calls.jsonl` | Per-call agent telemetry |
+| `sites/<tag>/mutations.jsonl` | Field-level edit log |
+| `sites/<tag>/intelligence-promotions.json` | Promoted findings |
+| `sites/<tag>/research/<vertical>-research.md` | Per-vertical research stubs |
+| `sites/<tag>/spec.json` | Design brief, decisions, content fields, media specs, deploy info |
+| `.local/research-effectiveness.json` | Research source effectiveness scores (gitignored) |
+| `.local/research-calls.jsonl` | Research call log (gitignored) |
 
-### Claude Code Skills
+### OpenWolf Files
+
+| File | Git | Purpose |
+|------|-----|---------|
+| `.wolf/anatomy.md` | tracked | File index with token estimates |
+| `.wolf/cerebrum.md` | tracked | Patterns, preferences, do-not-repeat rules |
+| `.wolf/buglog.json` | tracked | Bug tracking across sessions |
+| `.wolf/memory.md` | ignored | Per-session action log (ephemeral) |
+
+### Session 7 Docs
 
 | File | Purpose |
 |------|---------|
-| `.claude/skills/export-site/SKILL.md` | `/export-site` |
-| `.claude/skills/brainstorm/SKILL.md` | `/brainstorm` |
-| `.claude/skills/site-studio/SKILL.md` | `/site-studio` |
+| `docs/session7-master-report.md` | Session 7 master report — all phases, test counts, file inventory |
+| `docs/session7-phase-0-report.md` | Phase 0: multi-agent skeleton fixes |
+| `docs/session7-phase-1-report.md` | Phase 1: universal context file |
+| `docs/session7-phase-2-report.md` | Phase 2: brain router UI |
+| `docs/session7-phase-3-report.md` | Phase 3: studio config file |
+| `docs/session7-phase-4-report.md` | Phase 4: research intelligence system |
+
+---
+
+## Developer Environment
+
+### Runtime
+
+- Server starts with `SITE_TAG=<tag> node site-studio/server.js`
+- Runtime site variable is `TAG` (mutable, changes on site switch) — NOT `process.env.SITE_TAG`
+- Any function reading current site must use `TAG`, `SITE_DIR()`, `DIST_DIR()`, etc. — never the env var directly
+- Express route ordering: static routes must be declared BEFORE parameterized routes of the same prefix
+  - `/api/research/sources` before `/api/research/:filename`
+  - `/api/research/verticals` before `/api/research/:filename`
+
+### Security Constraint
+
+- Pre-tool hook blocks shell-injection-prone child process APIs (execSync, shell-mode exec)
+- Use `spawnSync` with argument arrays for all child process calls in server.js and lib/ files
+- Never concatenate user input into shell strings
+
+### OpenWolf
+
+`openwolf@1.0.4`. Intelligence files tracked in git: `anatomy.md`, `cerebrum.md`, `buglog.json`.
+
+---
+
+## Deployed Sites
+
+| Site | URL | Pages | Deploy Date |
+|------|-----|-------|-------------|
+| The Best Lawn Care | https://the-best-lawn-care.netlify.app | 7 | 2026-03-20 |
+| Auntie Gale's Garage Sales | https://effortless-tiramisu-ed9345.netlify.app | 5 | 2026-04-08 |
+
+---
+
+## What's Next
+
+> Full strategic vision lives in `FAMTASTIC-VISION.md`.
+
+### Tier 1 — Revenue Path (Build This First)
+
+End-to-end transaction flow: site build → client preview URL → payment (PayPal) → domain provisioning (GoDaddy reseller) → live recurring-revenue product.
+
+### Tier 2 — Extend Brain Router to Build Path
+
+`routeToBrainForBrainstorm()` only covers brainstorm mode. Extend to full builds + content edits. Requires parsing HTML_UPDATE responses from Gemini and Codex adapters.
+
+### Tier 3 — Real Pinecone Embeddings
+
+Replace placeholder zero-vectors with `text-embedding-3-small` embeddings. Unlocks actual semantic similarity for research caching.
+
+### Tier 4 — Fix Codex CLI
+
+`codex-cli` times out 100% of compare calls. Investigate or replace with Codex API endpoint.
+
+### Tier 5 — Platform Dashboard
+
+No multi-site management UI beyond CLI. Required before 10-site milestone.
+
+### Tier 6 — Wire Intelligence Loop to Gemini
+
+`POST /api/intel/run-research` creates stubs only. Wire `scripts/gemini-cli` to populate them.
+
+### Tier 7 — Factory Expansion
+
+React+Next.js → WordPress → Drupal. After revenue path proven.
