@@ -2627,3 +2627,55 @@ Every SDK call path logs via `logSDKCall()` with a named `callSite` label:
 - **OpenAI OAuth not implemented** — CodexAdapter uses `OPENAI_API_KEY`. ChatGPT Plus OAuth requires browser interaction; not a server-side concern.
 - **CS9 (`routeToBrainForBrainstorm`) still uses spawnClaude** — brainstorm routing for the claude brain uses subprocess. Migration requires `BrainInterface` integration into the brainstorm WS handler.
 - **Phase 0 tests regress post-migration** — 12/40 Phase 0 tests now fail because they verified pre-migration `spawnClaude` patterns that were correctly removed. These tests are accurate records of the pre-migration state; they served their purpose.
+
+---
+
+## Session 9 Addendum — Codex Adversarial Review Corrections (2026-04-09)
+
+Six corrections applied after Codex adversarial review of the Session 9 implementation.
+
+### C1 — CodexAdapter: CLI Subprocess, Not OpenAI SDK
+
+`new OpenAI()` reads `OPENAI_API_KEY` — but ChatGPT Plus is a consumer subscription, entirely separate from the OpenAI API billing system. `CodexAdapter` rewritten to use `fam-convo-get-codex` CLI subprocess (same as `spawnBrainAdapter`). Capabilities updated to `multiTurn: false, streaming: false`. `openai` removed from `package.json`.
+
+### C2 — RECONCILED-CALL-SITES.md
+
+`docs/RECONCILED-CALL-SITES.md` created as the authoritative post-migration inventory. Each entry: CS number, function name, line, SDK method, max_tokens, callSite label, timeout, complexity rating (Simple/Moderate/Complex/Separate track), purpose.
+
+### C3 — Undefined Functions Now Defined
+
+**`lib/haiku-fallback.js`** — `fallbackToHaiku(messages, onChunk, ws, opts)` streams `claude-haiku-4-5-20251001` via SDK. Sends `{ fallback: true }` flag in WS chunks so UI can differentiate.
+
+**`lib/api-cost-tracker.js`** — `logAPICall(provider, model, usage, meta)` + `calculateCost(model, inputTokens, outputTokens)`. Simplified signature vs `api-telemetry.js`. Includes `codex-cli` at $0 (CLI has no token billing).
+
+**Per-WebSocket state** added to `wss.on('connection', (ws) => {`:
+```javascript
+ws.brainSession  = null           // BrainInterface instance, lazy-created
+ws.currentBrain  = currentBrain   // inherits global at connect time
+ws.currentMode   = 'chat'
+ws.currentSite   = TAG
+ws.currentPage   = currentPage
+ws.getBrainSession()              // lazy-creates BrainInterface for this connection
+ws.getOrCreateBrainSession(brain) // brain switch preserving history
+ws.resetBrainSession()            // clear on site switch
+```
+
+### C4 — Consistent Adapter Interface
+
+All adapters have `execute(message, options)` and `executeStreaming(message, options)`. `CodexAdapter.executeStreaming()` delegates to `execute()` and delivers the result as a single chunk (consistent with `streaming: false` capability). No adapter instantiates `OpenAI` SDK.
+
+### C5 — GeminiAdapter Real Auth Probe
+
+`brain-sessions.js` Gemini probe now calls `model.generateContent('ping')` instead of only checking env var presence. A bad key is caught immediately on startup rather than on first use.
+
+### C6 — Context Header Not Stored in History
+
+`BrainInterface.execute()` already had this correct (per Phase 1 review), confirmed by tests. History stores original `message` (no header); adapter receives `fullMessage` (header-prepended). History passed to adapter excludes the current turn (uses `slice(0, -1)`).
+
+`BrainInterface` now accepts `ws` in opts. `buildContextHeader()` reads `ws.currentSite`, `ws.currentPage`, `ws.currentMode` when ws is attached — context always live, never stale.
+
+### Tests
+
+**`tests/session9-addendum-tests.js`** — 47/47 PASS. Covers all 6 corrections including unit tests of context header behavior with mock adapters and ws integration tests.
+
+**Cumulative: 1,059 tests.**
