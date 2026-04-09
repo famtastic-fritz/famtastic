@@ -169,6 +169,8 @@ let currentPage = 'index.html';
 let currentMode = 'build'; // 'build' or 'brainstorm'
 let buildInProgress = false;
 let buildLockTimer = null;
+let buildOwnerWs = null;       // the WS connection that started the current build
+let currentBuildRunId = null;  // stable ID for the current build run
 const BUILD_LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 let sessionMessageCount = 0;
 let sessionStartedAt = new Date().toISOString();
@@ -191,15 +193,24 @@ const pendingPlans = new Map(); // planId → { userMessage, intent }
 const PLAN_REQUIRED_INTENTS = ['layout_update', 'major_revision', 'restyle', 'build', 'restructure'];
 
 // --- Build Lock Helper ---
-function setBuildInProgress(value) {
+// ownerWs: the WebSocket that initiated this build (required when value=true)
+function setBuildInProgress(value, ownerWs) {
   buildInProgress = value;
+
   if (value) {
+    // Record ownership so cancel and disconnect can target the right connection
+    buildOwnerWs = ownerWs || null;
+    currentBuildRunId = `build-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    console.log(`[studio] Build lock acquired — run=${currentBuildRunId}`);
+
     // Start 10-min auto-clear timeout
     if (buildLockTimer) clearTimeout(buildLockTimer);
     buildLockTimer = setTimeout(() => {
       if (buildInProgress) {
-        console.warn('[studio] BUILD_LOCK_TIMEOUT — build ran >10min, lock auto-cleared');
+        console.warn(`[studio] BUILD_LOCK_TIMEOUT — run=${currentBuildRunId} ran >10min, lock auto-cleared`);
         buildInProgress = false;
+        buildOwnerWs = null;
+        currentBuildRunId = null;
         buildLockTimer = null;
         try {
           const studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8'));
@@ -209,7 +220,11 @@ function setBuildInProgress(value) {
       }
     }, BUILD_LOCK_TIMEOUT_MS);
   } else {
+    const runId = currentBuildRunId;
+    buildOwnerWs = null;
+    currentBuildRunId = null;
     if (buildLockTimer) { clearTimeout(buildLockTimer); buildLockTimer = null; }
+    if (runId) console.log(`[studio] Build lock released — run=${runId}`);
     try {
       if (fs.existsSync(STUDIO_FILE())) {
         const studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8'));
@@ -217,6 +232,22 @@ function setBuildInProgress(value) {
         fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
       }
     } catch {}
+  }
+}
+
+/**
+ * Kill all active subprocesses owned by a WebSocket connection.
+ * Safe to call even if the ws has no children.
+ */
+function killBuildProcesses(ws) {
+  if (!ws) return;
+  if (ws.currentChild) {
+    try { ws.currentChild.kill('SIGTERM'); } catch {}
+    ws.currentChild = null;
+  }
+  if (ws.activeChildren && ws.activeChildren.length > 0) {
+    for (const c of ws.activeChildren) { try { c.kill('SIGTERM'); } catch {} }
+    ws.activeChildren = [];
   }
 }
 
@@ -4307,8 +4338,19 @@ app.post('/api/blueprint', (req, res) => {
 
 app.post('/api/build/cancel', (req, res) => {
   const wasInProgress = buildInProgress;
+  const cancelledRunId = currentBuildRunId;
+
+  // Kill the active build subprocesses BEFORE clearing the lock.
+  // This ensures the running Claude/page-build children are actually stopped,
+  // not just the lock flag cleared while work continues in the background.
+  if (wasInProgress && buildOwnerWs) {
+    killBuildProcesses(buildOwnerWs);
+    console.log(`[studio] Build subprocesses killed for run=${cancelledRunId}`);
+  }
+
   setBuildInProgress(false);
-  console.log(`[studio] Build cancelled via API at ${new Date().toISOString()}`);
+  console.log(`[studio] Build cancelled via API — run=${cancelledRunId} at ${new Date().toISOString()}`);
+
   // Broadcast cancellation to all connected WebSocket clients
   wss.clients.forEach(client => {
     if (client.readyState === 1) { // WebSocket.OPEN
@@ -4316,11 +4358,12 @@ app.post('/api/build/cancel', (req, res) => {
         type: 'build_cancelled',
         content: 'Build cancelled.',
         was_in_progress: wasInProgress,
+        cancelled_run_id: cancelledRunId,
         timestamp: new Date().toISOString()
       }));
     }
   });
-  res.json({ success: true, was_in_progress: wasInProgress });
+  res.json({ success: true, was_in_progress: wasInProgress, cancelled_run_id: cancelledRunId });
 });
 
 app.get('/api/build-metrics', (req, res) => {
@@ -5825,7 +5868,7 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
 // --- Parallel Multi-Page Build ---
 function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
-  setBuildInProgress(true);
+  setBuildInProgress(true, ws);
   const startTime = Date.now();
 
   // Detect logo file
@@ -7532,7 +7575,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
     }
   }
 
-  setBuildInProgress(true);
+  setBuildInProgress(true, ws);
 
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
@@ -8098,20 +8141,17 @@ wss.on('connection', (ws) => {
   ws.on('close', async () => {
     activeClientCount = Math.max(0, activeClientCount - 1);
     console.log(`[studio] Client disconnected (${activeClientCount} active)`);
-    // Kill any in-flight Claude subprocess to prevent zombie processes
-    if (ws.currentChild) {
-      try { ws.currentChild.kill(); } catch {}
-      ws.currentChild = null;
-    }
-    if (ws.activeChildren && ws.activeChildren.length > 0) {
-      for (const c of ws.activeChildren) { try { c.kill(); } catch {} }
-      ws.activeChildren = [];
-    }
-    // Reset build lock if client disconnects mid-build to prevent permanent deadlock
-    if (buildInProgress) {
-      console.warn('[studio] Client disconnected during build — releasing buildInProgress lock');
+
+    // Kill subprocesses owned by this connection
+    killBuildProcesses(ws);
+
+    // Only release the build lock if THIS connection owns the current build.
+    // A random tab closing/refreshing must NOT clear a lock owned by another session.
+    if (buildInProgress && buildOwnerWs === ws) {
+      console.warn(`[studio] Build owner disconnected — releasing lock for run=${currentBuildRunId}`);
       setBuildInProgress(false);
     }
+
     await endSession(ws);
   });
 
