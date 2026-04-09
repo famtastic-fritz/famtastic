@@ -693,33 +693,29 @@ SUMMARY:`;
       try { ws.send(JSON.stringify({ type: 'status', content: 'Generating session summary...' })); } catch {}
     }
 
-    const child = spawnClaude(prompt);
-    const summaryTimeout = setTimeout(() => { console.error('[summary] Timed out after 2 minutes'); child.kill(); }, 120000);
-
-    let response = '';
-    child.stdout.on('data', (chunk) => { response += chunk.toString(); });
-    child.stderr.on('data', (chunk) => { console.error('[summary]', chunk.toString()); });
-
-    child.on('close', (code) => {
-      clearTimeout(summaryTimeout);
-      if (code !== 0 || !response.trim()) {
-        console.error('[summary] Failed to generate session summary');
-        return resolve();
+    callSDK(prompt, { maxTokens: 4096, callSite: 'session-summary', timeoutMs: 120000 }).then((response) => {
+      if (!response.trim()) {
+        console.error('[summary] Empty response from SDK');
+        resolve();
+        return;
       }
 
       fs.mkdirSync(SUMMARIES_DIR(), { recursive: true });
       const sessionNum = (getStudioSessionCount() || 0).toString().padStart(3, '0');
       const summaryFile = path.join(SUMMARIES_DIR(), `session-${sessionNum}.md`);
       const header = `# Session ${sessionNum} — ${new Date().toISOString().split('T')[0]}\n\n`;
-      fs.writeFileSync(summaryFile, header + response.trim() + '\n');
-      console.log(`[summary] Wrote session summary: ${summaryFile}`);
-
-      // Also store in .studio.json
       try {
+        fs.writeFileSync(summaryFile, header + response.trim() + '\n');
+        console.log(`[summary] Wrote session summary: ${summaryFile}`);
         const studio = fs.existsSync(STUDIO_FILE()) ? JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')) : {};
         studio.conversation_summary = response.trim();
         fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
-      } catch {}
+      } catch (err) {
+        console.error('[summary] Write failed:', err.message);
+      }
+      resolve();
+    }).catch((err) => {
+      console.error('[summary] SDK error:', err.message);
       resolve();
     });
   });
