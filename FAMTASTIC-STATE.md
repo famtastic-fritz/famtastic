@@ -1,12 +1,12 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-09 (Session 7 — Universal Context, Brain Router, Research Intelligence)
+**Last updated:** 2026-04-09 (Session 8 — cj-* rename, research calibration, context completeness, SDK migration map)
 
 ---
 
 ## What FAMtastic Site Studio Is
 
-FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it runs entirely on localhost using the Claude CLI (no API keys, no SaaS dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. The system is currently single-user and localhost-only, built and operated by Fritz Medine.
+FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it runs entirely on localhost using the Claude CLI (no API keys, no SaaS dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. Session 8 renamed all cj-* scripts to fam-convo-*, implemented research calibration (threshold config, cache debounce, text-based Pinecone embeddings, effectiveness auto-scoring), fixed 7 known gaps (all-pages context, Pinecone embeddings, stale refresh, effectiveness bar UI, MCP auto-parse, brain reinject), and produced the spawnClaude() migration map for Session 9 SDK transition. The system is currently single-user and localhost-only, built and operated by Fritz Medine.
 
 ---
 
@@ -16,20 +16,21 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 |-------|-----------|------|
 | AI Engine | Claude CLI (`claude --print`) | Generates all HTML, SVG assets, design briefs, session summaries, and image prompts. Default model: `claude-sonnet-4-5`. No separate API key — uses Claude Code subscription. |
 | Secondary Brains | Gemini CLI + Codex CLI | `adapters/{brain}/fam-convo-get-{brain}` shell adapters. Routed via `routeToBrainForBrainstorm()` in brainstorm mode. Rate-limit auto-fallback: Claude → Codex → Gemini. |
-| Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~11,570 lines). |
+| Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~11,662 lines). |
 | Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html` (~7,100 lines). VS Code-inspired layout: left sidebar, tabbed canvas (Preview, Editable View, Images, Research, Compare, Intel), bottom CLI bar (Chat, Terminal, Codex), right sidebar. CSS: `public/css/` (7 files). JS: `public/js/` (brain-selector.js + others). |
 | CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties map from spec colors. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
-| Event Bus | Node.js EventEmitter | `site-studio/lib/studio-events.js` singleton with 8 namespaced events. Drives STUDIO-CONTEXT.md regeneration. |
-| Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. Sections: title, timestamp, site, event, brief, state, components, vertical research, findings, tools, rules. |
-| Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. |
-| Research Registry | `site-studio/lib/research-registry.js` | 4 provider-agnostic research sources. Effectiveness scoring persisted to `.local/research-effectiveness.json`. |
-| Research Router | `site-studio/lib/research-router.js` | Pinecone-first caching (0.85 threshold), 90-day staleness, source selection, call logging. |
+| Event Bus | Node.js EventEmitter | `site-studio/lib/studio-events.js` singleton with 9 namespaced events (added RESEARCH_UPDATED). Drives STUDIO-CONTEXT.md regeneration. |
+| Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. Sections: title, timestamp, site, event, brief, state, ALL PAGES (new), components, vertical research, findings, tools, rules. 30s Pinecone cache (CONTEXT_CACHE). |
+| Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. `reinject(brain, tag, hubRoot)` called on brain switch. |
+| History Formatter | `site-studio/lib/history-formatter.js` | Per-brain history format (claude=JSON messages, gemini=Human/Assistant transcript, codex=### Prior conversation). Summarization always uses Claude. |
+| Research Registry | `site-studio/lib/research-registry.js` | 4 provider-agnostic research sources. `computeEffectivenessFromBuild()` auto-scores from build metrics. Effectiveness scoring persisted to `.local/research-effectiveness.json`. |
+| Research Router | `site-studio/lib/research-router.js` | Pinecone-first caching (configurable threshold, default 0.75), text-based upsertRecords (fallback to zero-vectors), 90-day staleness with background refresh via setImmediate, source selection, similarity score logging. `getThreshold()` reads from studio-config.json. |
 | WebSocket | `ws` 8.18 | Real-time bidirectional: chat, build progress, preview reload, brain-changed, brain-status, brain-fallback. |
 | File Upload | `multer` 2.1 | Image upload with drag-drop, paste, file picker. 5MB limit. SVG sanitization. |
 | Email | `nodemailer` 8.0 | Share deployed sites via SMTP. |
 | SMS | `twilio` 5.13, `@vonage/server-sdk` 3.26 | Server-side providers. Practical path uses macOS `sms:` URI. |
 | Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy`. Netlify tested and deployed. |
-| Testing | Node.js scripts | 729 tests across 11 suites (401 v3 engine + 328 Session 7). |
+| Testing | Node.js scripts | 884 tests across 15 suites (401 v3 engine + 328 Session 7 + 155 Session 8). |
 | Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`. |
 | CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research` subcommands. |
 | Conversation State | JSONL | Per-site `conversation.jsonl` with rolling window (500 msgs, trims at 600+). |
@@ -96,11 +97,11 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 
 ### Universal Context System (Session 7 — Phase 1)
 
-**`studio-events.js`** — Singleton EventEmitter. 8 events: `session:started`, `site:switched`, `build:started`, `build:completed`, `edit:applied`, `component:inserted`, `deploy:completed`, `brain:switched`. All hooks wired in `server.js` (init block + 7 emits).
+**`studio-events.js`** — Singleton EventEmitter. 9 events: `session:started`, `site:switched`, `build:started`, `build:completed`, `edit:applied`, `component:inserted`, `deploy:completed`, `brain:switched`, `research:updated`. All hooks wired in `server.js`.
 
 **`studio-context-writer.js`** — `StudioContextWriter` class. Listens to all 8 events, regenerates `STUDIO-CONTEXT.md` on any event. 10 sections: title, timestamp, active site, event type, site brief, site state, component library, vertical research (Pinecone-first), intelligence findings, available tools, standing rules.
 
-**`brain-injector.js`** — `BrainInjector` class. Claude: `@-include` block. Gemini/Codex: sidecar file `STUDIO-CONTEXT-<brain>.md`. Runs at server startup. **Gap:** not re-run on runtime brain switch.
+**`brain-injector.js`** — `BrainInjector` class. Claude: `@-include` block. Gemini/Codex: sidecar file `STUDIO-CONTEXT-<brain>.md`. Runs at server startup. `reinject(brain, tag, hubRoot)` called on every `BRAIN_SWITCHED` event to update sidecar for the new active brain.
 
 **`GET /api/context`** — returns STUDIO-CONTEXT.md contents.  
 **`POST /api/context`** — triggers manual regeneration.
@@ -142,7 +143,7 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 
 **`research-registry.js`** — `RESEARCH_REGISTRY` with 4 sources (gemini_loop, build_patterns, manual, perplexity). Effectiveness scoring persisted to `.local/research-effectiveness.json`. Exports: `RESEARCH_REGISTRY`, `saveEffectivenessScore`, `getEffectivenessReport`, `loadEffectivenessScores`.
 
-**`research-router.js`** — `queryResearch(vertical, question, options)`: Pinecone-first (0.85 threshold), 90-day staleness, source selection, upsert, call logging. `rateResearch(source, vertical, score)`: validates 1–5. `selectSource(vertical, question, options)`: build_patterns → manual → gemini_loop → perplexity.
+**`research-router.js`** — `queryResearch(vertical, question, options)`: Pinecone-first (configurable threshold via `studio-config.json`, default 0.75), 90-day staleness with background auto-refresh via `setImmediate()`, text-based `upsertRecords()` (fallback to zero-vectors), source selection, similarity score logging. `rateResearch(source, vertical, score)`: validates 1–5. `selectSource(vertical, question, options)`: build_patterns → manual → gemini_loop → perplexity. `getThreshold()`: reads from `~/.config/famtastic/studio-config.json`.
 
 **`scripts/seed-pinecone`** — Seeds `famtastic-intelligence` Pinecone index from site specs and SITE-LEARNINGS.md. Exits 0 gracefully when `PINECONE_API_KEY` not set.
 
@@ -213,7 +214,14 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 | POST | `/api/research/query` | Query research via queryResearch(vertical, question) |
 | POST | `/api/research/rate` | Rate a research result (score 1–5) |
 
-**Route ordering rule:** `/api/research/sources` and `/api/research/effectiveness` must be declared BEFORE `/api/research/:filename`. Same applies to `/api/research/verticals` (v3 engine).
+### Session 8 Endpoints (2026-04-09)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/research/seed-status` | Returns Pinecone seed status (index name, vector count, last seeded) |
+| GET | `/api/research/threshold-analysis` | Returns current threshold, config key, calibration advice |
+
+**Route ordering rule:** `/api/research/sources`, `/api/research/effectiveness`, `/api/research/seed-status`, and `/api/research/threshold-analysis` must all be declared BEFORE `/api/research/:filename`. Same applies to `/api/research/verticals` (v3 engine).
 
 ---
 
@@ -225,24 +233,40 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 |-----|----------|--------|
 | Revenue path (end-to-end) | Tier 1 | Client preview URL + payment (PayPal) + domain provisioning + approval flow. Studio runs on localhost — bridge to real product. |
 | Brain routing in build path | Tier 2 | Only brainstorm mode uses `routeToBrainForBrainstorm()`. Build/content-edit paths call `spawnClaude()` directly. Extending requires parsing HTML_UPDATE from non-Claude brains. |
-| Real Pinecone embeddings | Tier 2 | `seed-pinecone` uses placeholder zero-vectors. `text-embedding-3-small` integration required for semantic similarity. |
+| SDK migration (spawnClaude → Anthropic SDK) | Tier 2 | Migration map documented at `docs/spawn-claude-migration-map.md`. 8 call sites. USE_SDK feature flag strategy defined. Session 9 work. |
 | Intelligence Loop — real Gemini research | Tier 2 | `POST /api/intel/run-research` creates stubs only. `scripts/gemini-cli` must be wired to populate them. |
 | Codex CLI non-functional | Tier 2 | `codex-cli` binary times out 100% of compare calls. `/api/compare/generate-v2` falls back to Claude every time. |
 | Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. Required before 10-site milestone. |
 | Template upload mode | Tier 2 | Uploading pre-built templates for Studio to tweak vs generate from scratch. |
-| BRAIN_SWITCHED sidecar re-injection | Tier 3 | `brain-injector.js` writes sidecar files at startup only. Runtime brain switch does not update them. |
-| Research effectiveness stars UI | Tier 3 | `POST /api/research/rate` endpoint exists. Client-side post-build rating prompt not wired. |
-| update-setup-doc MCP table | Tier 3 | Static MCP table in FAMTASTIC-SETUP.md. Does not auto-parse `claude mcp list`. |
-| 90-day staleness auto-re-query | Tier 3 | Staleness detected but re-query only triggered by next `queryResearch()` call. |
+| Haiku fallback inline spawn | Tier 3 | Line 8992 duplicates spawnClaude() inline for Haiku fallback. Should be extracted to `spawnClaudeModel(model, prompt)` before SDK migration. |
+| seed-pinecone --vertical flag | Tier 3 | `scripts/seed-pinecone` does not support `--vertical <name>`. Build-completion auto-seeding for specific verticals requires this. |
+| spawnBrainAdapter SDK migration | Tier 3 | Brain adapter spawning uses shell scripts, not claude --print. Separate migration track needed if non-claude brains switch to SDK APIs. |
 | Asset generate → insert | Tier 3 | SVG generation creates files but doesn't wire back to HTML slots. |
 | design_decisions unbounded | Tier 3 | `spec.design_decisions` array has no cap. |
 | spec.json write not atomic | Tier 3 | Uses `fs.writeFileSync()` directly — no `.tmp` + rename. |
-| server.js decomposition | Tier 3 | ~11,570 lines. Plan: thin assembler + modules in lib/. |
+| server.js decomposition | Tier 3 | ~11,662 lines. Plan: thin assembler + modules in lib/. |
 | library.json structure ambiguity | Tier 3 | Must read `.components` not root. Consider flattening. |
 | Brainstorm recommendation chips | Tier 4 | Cherry-picking individual brainstorm suggestions not supported. |
 | SMS send path non-functional | Tier 4 | Twilio/Vonage configured; practical path uses macOS `sms:` URI. |
 
-### Closed This Session (2026-04-09 — Session 7)
+### Closed This Session (2026-04-09 — Session 8)
+
+- **cj-* naming scheme** — All 8 `cj-*` scripts renamed to `fam-convo-*`. Old paths replaced with deprecation shims. `fam-hub` dispatcher updated. Session 7 tests updated.
+- **Multi-turn history not brain-aware** — `site-studio/lib/history-formatter.js` added with per-brain format functions (claude=JSON messages array, gemini=Human/Assistant transcript, codex=### Prior conversation). Summarization always uses Claude regardless of active brain.
+- **Pinecone seed-status no endpoint** — `GET /api/research/seed-status` endpoint added.
+- **Pinecone threshold hardcoded** — `GET /api/research/threshold-analysis` endpoint added; `getThreshold()` reads from `studio-config.json` (key: `research.pinecone_threshold`, default 0.75).
+- **Context writer Pinecone re-queries every call** — CONTEXT_CACHE (module-level, 30s TTL) added to `studio-context-writer.js`. Invalidated on SITE_SWITCHED and BUILD_COMPLETED.
+- **Real Pinecone embeddings** — `pineconeUpsert()` updated to `upsertRecords([{id, text, ...}])` (text-based integrated embedding); `pineconeQuery()` updated to `searchRecords()`. Fallback to zero-vectors if SDK doesn't support text-based methods.
+- **BRAIN_SWITCHED sidecar re-injection** — `reinject(brain, tag, hubRoot)` added to `brain-injector.js`; called in `setBrain()` after `BRAIN_SWITCHED` event.
+- **Research effectiveness auto-scoring** — `computeEffectivenessFromBuild(source, vertical, buildMetrics)` added to `research-registry.js`. Wired to `BUILD_COMPLETED` in `server.js`.
+- **Effectiveness UI shows stars** — Research source cards now render effectiveness bar (0-100% progress bar) instead of static star prompt. Scores fetched in parallel with sources.
+- **update-setup-doc MCP table** — Auto-parse section added to `scripts/update-setup-doc`: runs `claude mcp list`, parses connected/failed, updates Status column for known MCPs.
+- **All-pages context missing from STUDIO-CONTEXT.md** — `buildAllPages()` function added to `studio-context-writer.js`. Extracts H1, data-section-id count, img count, last-modified per dist HTML file. Active page marked.
+- **90-day staleness auto-re-query** — `backgroundRefresh()` added to `research-router.js` using `setImmediate()`. Stale results returned immediately; fresh query runs in background. `RESEARCH_UPDATED` event emitted on completion.
+- **fam-hub verify-quickstart missing** — `verify-quickstart` subcommand added to `fam-hub admin`.
+- **spawnClaude migration undocumented** — Complete migration map at `docs/spawn-claude-migration-map.md`. 8 call sites inventoried, SDK equivalents, risk levels, migration order, USE_SDK feature flag rollback plan.
+
+### Closed Previous Session (2026-04-09 — Session 7)
 
 - **Multi-agent pipeline non-functional** — ORIG_PROMPT export, adapter path resolution, fam-hub off-by-one dispatcher all fixed. `fam-hub agent run claude site-foo` now routes correctly.
 - **No universal context for brains** — STUDIO-CONTEXT.md generated on every studio event; injected into all brains at startup.
@@ -275,10 +299,11 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 |------|-------|---------|
 | `site-studio/server.js` | ~11,570 | Main backend. Express + WebSocket. All classifier, content data layer, component skills, multi-agent, intel loop, brain router, universal context, research intelligence, image/research/deploy/compare endpoints. |
 | `site-studio/public/index.html` | ~7,100 | Single-file frontend. 6 canvas tabs. Brain selector pill bar. Research sources panel. All WS handlers. |
-| `site-studio/lib/studio-events.js` | — | Singleton EventEmitter + 8 event constants |
+| `site-studio/lib/studio-events.js` | — | Singleton EventEmitter + 9 event constants |
 | `site-studio/lib/studio-context-writer.js` | — | STUDIO-CONTEXT.md generator (event-driven, 10 sections) |
-| `site-studio/lib/brain-injector.js` | — | Per-brain context injection (Claude @-include, Gemini/Codex sidecar) |
-| `site-studio/lib/research-registry.js` | — | 4 research sources + effectiveness scoring |
+| `site-studio/lib/brain-injector.js` | — | Per-brain context injection (Claude @-include, Gemini/Codex sidecar). `reinject()` on brain switch. |
+| `site-studio/lib/history-formatter.js` | — | Per-brain history format functions + Claude-based summarization (always Claude, regardless of active brain) |
+| `site-studio/lib/research-registry.js` | — | 4 research sources + effectiveness scoring. `computeEffectivenessFromBuild()` auto-scores from build metrics. |
 | `site-studio/lib/research-router.js` | — | Pinecone-first cache, source selection, call logging |
 | `site-studio/public/css/studio-base.css` | — | Resets, layout, typography |
 | `site-studio/public/css/studio-panels.css` | — | Three-panel layout, resizers |
@@ -314,7 +339,16 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `tests/session7-phase3-tests.js` | 49 | Studio Config File |
 | `tests/session7-phase4-tests.js` | 76 | Research Intelligence System |
 
-**Total: 729 tests, 729 passing.**
+**Session 8 (155 tests):**
+
+| File | Tests | Phase |
+|------|-------|-------|
+| `tests/session8-phase0-tests.js` | 75 | cj-* → fam-convo-* rename + deprecation shims |
+| `tests/session8-phase1-tests.js` | 31 | Research calibration (C1–C7) |
+| `tests/session8-phase2-tests.js` | 28 | Session 7 known gaps (G1–G7) |
+| `tests/session8-phase3-tests.js` | 21 | spawnClaude migration map |
+
+**Total: 884 tests, 884 passing.**
 
 ### Key Functions
 
@@ -353,7 +387,11 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `scripts/google-media-generate` | Imagen 4 / Veo 2 media generation |
 | `scripts/seed-pinecone` | Seed Pinecone index from site specs + SITE-LEARNINGS |
 | `scripts/update-setup-doc` | Auto-update FAMTASTIC-SETUP.md (versions, env vars) |
-| `scripts/generate-latest-convo` | Generate real agent stats from JSONL sources |
+| `scripts/fam-convo-compose` | Compose conversation (was cj-compose-convo — shim at old path) |
+| `scripts/fam-convo-reconcile` | Reconcile multi-agent conversation (was cj-reconcile-convo — shim at old path) |
+| `scripts/fam-convo-ingest` | Ingest conversation into JSONL (was cj-ingest — shim at old path) |
+| `scripts/fam-convo-promote` | Promote conversation to canonical (was cj-promote — shim at old path) |
+| `scripts/fam-convo-generate-latest` | Generate real agent stats from JSONL sources (was generate-latest-convo — shim at old path) |
 | `adapters/claude/fam-convo-get-claude` | Claude multi-agent adapter (cj-get-convo-claude is a deprecation shim) |
 | `adapters/gemini/fam-convo-get-gemini` | Gemini multi-agent adapter (cj-get-convo-gemini is a deprecation shim) |
 | `adapters/codex/fam-convo-get-codex` | Codex multi-agent adapter (cj-get-convo-codex is a deprecation shim) |
@@ -390,6 +428,17 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `docs/session7-phase-2-report.md` | Phase 2: brain router UI |
 | `docs/session7-phase-3-report.md` | Phase 3: studio config file |
 | `docs/session7-phase-4-report.md` | Phase 4: research intelligence system |
+
+### Session 8 Docs
+
+| File | Purpose |
+|------|---------|
+| `docs/session8-master-report.md` | Session 8 master report — all phases, test counts, file inventory |
+| `docs/session8-phase-0-report.md` | Phase 0: cj-* → fam-convo-* rename + deprecation shims |
+| `docs/session8-phase-1-report.md` | Phase 1: Codex adversarial findings (C1–C7) |
+| `docs/session8-phase-2-report.md` | Phase 2: Session 7 known gaps (G1–G7) |
+| `docs/session8-phase-3-report.md` | Phase 3: spawnClaude() migration map |
+| `docs/spawn-claude-migration-map.md` | Complete spawnClaude() → Anthropic SDK migration map (8 call sites, USE_SDK flag, migration order) |
 
 ---
 
@@ -433,13 +482,13 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 
 End-to-end transaction flow: site build → client preview URL → payment (PayPal) → domain provisioning (GoDaddy reseller) → live recurring-revenue product.
 
-### Tier 2 — Extend Brain Router to Build Path
+### Tier 2 — SDK Migration (Session 9)
+
+Migrate `spawnClaude()` to Anthropic SDK (`@anthropic-ai/sdk`). Migration map at `docs/spawn-claude-migration-map.md`. 8 call sites, ordered simplest-first (Scope Estimation → Image Prompt → Session Summary → Planning → Data Model → Template Build → Parallel Build → Chat Handler). USE_SDK feature flag for rollback. Extract Haiku fallback to shared function before migrating Call Site 8.
+
+### Tier 3 — Extend Brain Router to Build Path
 
 `routeToBrainForBrainstorm()` only covers brainstorm mode. Extend to full builds + content edits. Requires parsing HTML_UPDATE responses from Gemini and Codex adapters.
-
-### Tier 3 — Real Pinecone Embeddings
-
-Replace placeholder zero-vectors with `text-embedding-3-small` embeddings. Unlocks actual semantic similarity for research caching.
 
 ### Tier 4 — Fix Codex CLI
 
@@ -453,6 +502,10 @@ No multi-site management UI beyond CLI. Required before 10-site milestone.
 
 `POST /api/intel/run-research` creates stubs only. Wire `scripts/gemini-cli` to populate them.
 
-### Tier 7 — Factory Expansion
+### Tier 7 — seed-pinecone --vertical Flag
+
+Add `--vertical <name>` flag to `scripts/seed-pinecone` so `BUILD_COMPLETED` can auto-seed for the specific vertical just built. Currently the effectiveness score hook fires but full Pinecone auto-seed is not triggered per-vertical.
+
+### Tier 8 — Factory Expansion
 
 React+Next.js → WordPress → Drupal. After revenue path proven.

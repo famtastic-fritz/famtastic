@@ -2233,9 +2233,9 @@ Key facts:
 
 ### `site-studio/lib/research-router.js`
 
-`queryResearch(vertical, question, options)` — Pinecone-first with 0.85 threshold, 90-day staleness. Calls `logResearchCall()` and `saveEffectivenessScore()` on every query.
+`queryResearch(vertical, question, options)` — Pinecone-first with configurable threshold (default 0.75, reads from studio-config.json key `research.pinecone_threshold`), 90-day staleness with background auto-refresh. Calls `logResearchCall()` and `saveEffectivenessScore()` on every query.
 
-**IMPORTANT:** Route ordering critical — `GET /api/research/sources` and `GET /api/research/effectiveness` must be registered BEFORE `GET /api/research/:filename` in server.js. If placed after, Express will route `/sources` and `/effectiveness` as filename lookups and return 404.
+**IMPORTANT:** Route ordering critical — `GET /api/research/sources`, `GET /api/research/effectiveness`, `GET /api/research/seed-status`, and `GET /api/research/threshold-analysis` must ALL be registered BEFORE `GET /api/research/:filename` in server.js. If placed after, Express will route them as filename lookups and return 404.
 
 ### `scripts/seed-pinecone`
 
@@ -2245,12 +2245,184 @@ Seeding script — safe to run, exits 0 with explanation if `PINECONE_API_KEY` u
 
 ---
 
-## Session 7 — Known Gaps (opened 2026-04-09)
+## Session 7 — Known Gaps (opened 2026-04-09) — ALL CLOSED IN SESSION 8
 
-- **Brain routing in build path** — `routeToBrainForBrainstorm()` only used in brainstorm mode. All build/content-edit paths call `spawnClaude()` directly. Extending to builds requires parsing HTML_UPDATE responses from non-Claude brains.
-- **Real Pinecone embeddings** — `seed-pinecone` uses placeholder zero-vectors. Real `text-embedding-3-small` embeddings required for semantic similarity to work.
-- **BRAIN_SWITCHED sidecar re-injection** — `brain-injector.js` runs at startup only. Runtime brain switches do not update sidecar files.
-- **Research effectiveness stars UI** — `POST /api/research/rate` exists; client-side rating prompt after build not wired.
-- **seed-pinecone manual run** — no automation hook. Must run manually when `PINECONE_API_KEY` is set.
-- **update-setup-doc MCP table** — static; does not auto-parse `claude mcp list` output.
-- **90-day staleness re-query** — detected but not automatically triggered; only re-queries if another `queryResearch()` call is made.
+All 7 gaps below were closed in Session 8. See Session 8 entries below.
+
+- **Real Pinecone embeddings** — CLOSED S8: `upsertRecords([{id, text, ...}])` + `searchRecords()` with zero-vector fallback.
+- **BRAIN_SWITCHED sidecar re-injection** — CLOSED S8: `reinject(brain, tag, hubRoot)` called on every `BRAIN_SWITCHED` event.
+- **Research effectiveness stars UI** — CLOSED S8: effectiveness progress bar (0-100%) replaces star rating prompts.
+- **update-setup-doc MCP table** — CLOSED S8: MCP auto-parse block added to `scripts/update-setup-doc`.
+- **90-day staleness re-query** — CLOSED S8: `backgroundRefresh()` via `setImmediate()`, stale returned immediately, fresh runs in background, `RESEARCH_UPDATED` event emitted.
+- **All-pages context missing** — CLOSED S8: `buildAllPages()` added to context writer. Active page marked.
+- **Context writer Pinecone re-queries every call** — CLOSED S8: CONTEXT_CACHE (30s TTL) added.
+
+---
+
+## Session 8 — Phase 0: fam-convo-* Rename (2026-04-09)
+
+### Naming Convention
+
+All conversation pipeline scripts now use the `fam-convo-` prefix. Old `cj-*` names are deprecated — shims at old paths print WARNING to stderr and exec the new script.
+
+### Shim Pattern
+
+```bash
+#!/usr/bin/env bash
+echo "WARNING: <old-name> is deprecated. Use <new-name> instead." >&2
+exec "$(dirname "$0")/<new-name>" "$@"
+```
+
+All 8 old paths are shims. All 8 new paths are the real executables.
+
+### Internal Reference Updates Required on Rename
+
+When renaming scripts that call other scripts, check for internal self-references. Both `fam-convo-reconcile` and `fam-convo-ingest` had internal calls that needed updating:
+- `fam-convo-reconcile`: calls `fam-convo-compose` and `fam-convo-generate-latest` (was cj-compose-convo, generate-latest-convo)
+- `fam-convo-ingest`: calls `fam-convo-promote` (was cj-promote)
+
+### Summarization Always Uses Claude
+
+Documented in all 3 adapter scripts (`fam-convo-get-claude`, `fam-convo-get-gemini`, `fam-convo-get-codex`) as a comment:
+
+```bash
+# Summarization always uses Claude regardless of active brain.
+# When history > 20 turns, oldest 10 are summarized by Claude before formatting.
+```
+
+This is an architectural decision, not a bug. Claude is the only brain that reliably produces structured output needed for summarization. See cerebrum.md Key Learnings for full rationale.
+
+**Tests**: `tests/session8-phase0-tests.js` — 75/75 PASS
+
+---
+
+## Session 8 — Phase 1: Research Calibration (2026-04-09)
+
+### `site-studio/lib/history-formatter.js` (new)
+
+Per-brain conversation history formatting. Three exported format functions:
+
+```javascript
+HISTORY_FORMATS = {
+  claude:  (history) => JSON.stringify({ messages: [...] }),
+  gemini:  (history) => 'Human: ...\n\nAssistant: ...\n\nHuman:',
+  codex:   (history) => '### Prior conversation:\n...\n### Current request:',
+}
+```
+
+`formatHistoryForBrain(history, brain)` — selects format; defaults to claude if unknown brain.
+
+`summarizeHistory(history, threshold)` — when `history.length > threshold` (default 20), summarizes oldest 10 turns using Claude CLI. Runs from `os.tmpdir()` (mandatory — see cerebrum.md SPAWN_CLAUDE_CWD rule). Logs `source: 'summarization'`.
+
+### CONTEXT_CACHE in studio-context-writer.js
+
+Module-level cache object (not class-level):
+```javascript
+const CONTEXT_CACHE = {
+  pineconeResult: null,
+  lastVertical:   null,
+  lastQueried:    null,
+  TTL:            30 * 1000,
+};
+```
+Invalidated by:
+- `studioEvents.on(STUDIO_EVENTS.SITE_SWITCHED, () => { CONTEXT_CACHE.lastQueried = null; })`
+- `studioEvents.on(STUDIO_EVENTS.BUILD_COMPLETED, () => { CONTEXT_CACHE.lastQueried = null; })`
+
+### Configurable Pinecone Threshold
+
+`getThreshold()` in `research-router.js` reads `research.pinecone_threshold` from `~/.config/famtastic/studio-config.json`. Default: `0.75`. The threshold changed from 0.85 (hardcoded, Session 7) to 0.75 (configurable, Session 8) based on Codex adversarial review finding that 0.85 was too aggressive.
+
+### New API Endpoints (Session 8)
+
+Both must be declared BEFORE `GET /api/research/:filename` in server.js:
+- `GET /api/research/seed-status` — Pinecone seed status
+- `GET /api/research/threshold-analysis` — current threshold + calibration advice
+
+**Tests**: `tests/session8-phase1-tests.js` — 31/31 PASS
+
+---
+
+## Session 8 — Phase 2: Gap Closures (2026-04-09)
+
+### All-Pages Context Format
+
+`buildAllPages()` in `studio-context-writer.js` produces a section like:
+```
+## All Pages
+- index.html (active) — H1: "Welcome" — 5 sections, 3 images — modified 2026-04-09
+- about.html — H1: "About Us" — 3 sections, 1 image — modified 2026-04-09
+```
+
+Active page detection: compares filenames against the `activePage` parameter (passed from server.js state).
+
+### Background Research Refresh
+
+`backgroundRefresh(vertical, question, staleResult)` in `research-router.js`:
+- Called immediately after returning stale result to caller
+- Uses `setImmediate()` so it doesn't block the response
+- Emits `RESEARCH_UPDATED` event on completion with `{ vertical, question, result }`
+- Staleness threshold: 90 days (configurable via `STALE_DAYS` at top of research-router.js)
+
+### Pinecone Text-Based Embeddings
+
+New methods (require Pinecone serverless index with integrated embedding configured):
+```javascript
+await index.upsertRecords([{ id, text, ...metadata }]);
+await index.searchRecords({ query: { topK: 1, inputs: { text: question } } });
+```
+
+Legacy fallback (zero-vectors) still present for non-serverless indexes.
+
+### Effectiveness Bar CSS
+
+Added to `site-studio/public/css/studio-canvas.css`:
+```css
+.effectiveness-bar { height: 4px; background: #10b981; border-radius: 2px; transition: width 0.3s ease; }
+.effectiveness-score { font-size: 9px; color: #10b981; min-width: 24px; text-align: right; font-variant-numeric: tabular-nums; }
+```
+
+**Tests**: `tests/session8-phase2-tests.js` — 28/28 PASS
+
+---
+
+## Session 8 — Phase 3: spawnClaude() Migration Map (2026-04-09)
+
+### Key Architecture Facts for SDK Migration
+
+1. **CLAUDE_* env var stripping is a subprocess concern only.** The SDK uses the API — no subprocess, no nested-session detection. Strip logic can be removed entirely when migrating.
+
+2. **os.tmpdir() CWD is a subprocess concern only.** With SDK there is no CWD. This is the other half of the nested-session prevention.
+
+3. **AbortController replaces child.kill().** Every `ws.currentChild = child; setTimeout(() => child.kill(), ...)` becomes:
+   ```javascript
+   const controller = new AbortController();
+   setTimeout(() => controller.abort(), timeoutMs);
+   ```
+
+4. **Call Site 8 (Chat Handler) must be last.** It has a Haiku fallback via inline respawn at line 8992. The inline code should be extracted to `spawnClaudeModel(model, prompt)` before migrating — otherwise you'd migrate the same logic twice.
+
+5. **Parallel build (Call Site 6) changes architecture.** `ws.activeChildren[]` is replaced by `Promise.all()` with an array of AbortControllers. WS close cancels all via the shared array.
+
+6. **USE_SDK feature flag is the safety net.** `const USE_SDK = process.env.USE_SDK === 'true'`. All call sites route through a `callClaude()` wrapper that delegates based on the flag. `spawnClaude()` never deleted until all call sites are stable.
+
+### Migration Order (Simplest First)
+
+1. Scope Estimation (Call Site 4) — non-streaming, returns null on failure
+2. Image Prompt (Call Site 2) — non-streaming, HTTP response
+3. Session Summary (Call Site 1) — non-streaming, writes to disk
+4. Planning / Design Brief (Call Site 5) — streaming, partial JSON
+5. Data Model (Call Site 3) — streaming, firstChunk tracking
+6. Template Build (Call Site 7) — `templateSpawned` race guard
+7. Per-Page Parallel Build (Call Site 6) — concurrent streaming
+8. Chat Handler (Call Site 8) — concurrent streaming + Haiku fallback
+
+**Tests**: `tests/session8-phase3-tests.js` — 21/21 PASS
+
+---
+
+## Session 8 — Known Gaps (opened 2026-04-09)
+
+- **Haiku fallback inline at line 8992** — `handleChatMessage()` has an inline Claude spawn for Haiku fallback that is not a call to `spawnClaude()`. Should be extracted to `spawnClaudeModel(model, prompt)` before SDK migration to avoid migrating the same logic twice.
+- **seed-pinecone --vertical flag missing** — `scripts/seed-pinecone` does not support `--vertical <name>`. Build-completion auto-seeding for specific verticals requires this flag. Deferred to a future session.
+- **spawnBrainAdapter separate migration track** — `spawnBrainAdapter` spawns shell scripts, not claude --print. It has its own subprocess pattern and will need a separate migration strategy if non-claude brains ever switch to SDK-based APIs.

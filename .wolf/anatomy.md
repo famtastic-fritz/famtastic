@@ -1,12 +1,16 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T18:00:00.000Z
-> Files: 374 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T18:03:22.067Z
+> Files: 412 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
 - `CLAUDE.md` — FAMtastic Global Rules (~1766 tok)
 - `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~21700 tok)
+
+## ../../../tmp/
+
+- `session7-plan.md` — FAMtastic Site Studio — Session 7 Prompt (~3122 tok)
 
 ## ../.claude/
 
@@ -34,16 +38,17 @@
 
 ## ./
 
-- `.gitignore` — Git ignore rules (~127 tok)
+- `.gitignore` — Git ignore rules (~166 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~10712 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~12252 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~6584 tok)
+- `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~9180 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~37807 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~45670 tok)
 
 ## .claude/
 
@@ -298,15 +303,18 @@
 
 ## adapters/claude/
 
-- `cj-get-convo-claude` (~194 tok)
+- `cj-get-convo-claude` (~43 tok)
+- `fam-convo-get-claude` — Summarization always uses Claude regardless of active brain. (~422 tok)
 
 ## adapters/codex/
 
-- `cj-get-convo-codex` (~178 tok)
+- `cj-get-convo-codex` (~42 tok)
+- `fam-convo-get-codex` — Summarization always uses Claude regardless of active brain. (~426 tok)
 
 ## adapters/gemini/
 
-- `cj-get-convo-gemini` (~171 tok)
+- `cj-get-convo-gemini` (~43 tok)
+- `fam-convo-get-gemini` — Summarization always uses Claude regardless of active brain. (~420 tok)
 
 ## adapters/inkscape/
 
@@ -432,10 +440,6 @@
 - `latest-convo__20250923-1200.md` — FAMtastic Agent Hub Summary (~289 tok)
 - `site-fritz-fitness__20250923-1100.md` — Fritz Fitness Site Development Summary (~223 tok)
 
-## docs/intelligence-reports/
-
-- *(runtime — created by POST /api/intel/run-research; stub markdown files per research topic, named `intel-research-<slug>-<timestamp>.md`)*
-
 ## docs/
 
 - `adobe-mcp-integration.md` — Adobe MCP Integration (adb-mcp) (~1000 tok)
@@ -451,10 +455,25 @@
 - `PLATFORM_NOTES.md` — Cross‑platform notes (~81 tok)
 - `random-idea.draft.md` — Random Shower Thought (~120 tok)
 - `resume-amazon.md` — Resume Optimization for Amazon Position (~110 tok)
+- `session7-master-report.md` — Session 7 — Master Report (~2228 tok)
+- `session7-phase-0-report.md` — Session 7 Phase 0 Report — 2026-04-09 (~1383 tok)
+- `session7-phase-1-report.md` — Session 7 — Phase 1 Report: Universal Context File (~1319 tok)
+- `session7-phase-2-report.md` — Session 7 — Phase 2 Report: Brain Router UI (~1460 tok)
+- `session7-phase-3-report.md` — Session 7 — Phase 3 Report: Studio Config File (~974 tok)
+- `session7-phase-4-report.md` — Session 7 — Phase 4 Report: Research Intelligence System (~1362 tok)
+- `session8-master-report.md` — Session 8 Master Report — 2026-04-09 (~3233 tok)
+- `session8-phase-0-report.md` — Session 8 Phase 0 Report — 2026-04-09 (~791 tok)
+- `session8-phase-1-report.md` — Session 8 Phase 1 Report — 2026-04-09 (~969 tok)
+- `session8-phase-2-report.md` — Session 8 Phase 2 Report — 2026-04-09 (~993 tok)
+- `session8-phase-3-report.md` — Session 8 Phase 3 Report — 2026-04-09 (~551 tok)
+- `spawn-claude-migration-map.md` — spawnClaude() Migration Map (~3780 tok)
 - `studio-cli-handoff-pattern.md` — Studio → CLI Handoff Pattern (~1432 tok)
 - `test-manual.md` — Test Manual Promotion (~21 tok)
 - `test-notes.draft.md` — Draft Notes from ChatGPT (~112 tok)
 - `wrapper-test.draft.md` — Test Content from Wrapper (~70 tok)
+
+## docs/intelligence-reports/
+
 
 ## ideas/capture/20250924-1743_my-first-spark-idea/
 
@@ -488,22 +507,28 @@
 
 ## scripts/
 
-- `agents` — Declares yaml (~722 tok)
+- `agents` — Declares yaml (~1329 tok)
 - `asset-generate` (~2542 tok)
 - `build-catalog` (~122 tok)
-- `cj-compose-convo` (~387 tok)
-- `cj-ingest` (~450 tok)
-- `cj-promote` (~150 tok)
-- `cj-reconcile-convo` (~207 tok)
+- `cj-compose-convo` (~40 tok)
+- `cj-ingest` (~38 tok)
+- `cj-promote` (~39 tok)
+- `cj-reconcile-convo` (~42 tok)
 - `cj-secrets-presence` (~492 tok)
 - `claude-cli` (~100 tok)
 - `codex-cli` (~130 tok)
 - `config-claim` (~343 tok)
 - `doctor` — Declares f (~194 tok)
-- `fam-hub` — fam-hub — Unified CLI for FAMtastic (~2873 tok)
+- `fam-convo-compose` (~40 tok)
+- `fam-convo-generate-latest` (~46 tok)
+- `fam-convo-ingest` (~452 tok)
+- `fam-convo-promote` (~39 tok)
+- `fam-convo-reconcile` (~242 tok)
+- `fam-hub` — fam-hub — Unified CLI for FAMtastic (~3581 tok)
 - `firefly-batch-street-reunion.json` (~353 tok)
 - `firefly-generate` (~2062 tok)
 - `gemini-cli` (~195 tok)
+- `generate-latest-convo` (~40 tok) — deprecation shim → fam-convo-generate-latest
 - `generate-seo-files` — Standalone SEO file generator for existing sites (~411 tok)
 - `google-media-batch-auntie-gale.json` (~1391 tok)
 - `google-media-batch-street-reunion.json` (~1002 tok)
@@ -517,6 +542,7 @@
 - `orchestrator-site` — Declares fs (~2914 tok)
 - `precommit-security` (~91 tok)
 - `rembg-worker.py` (~334 tok)
+- `seed-pinecone` — seed-pinecone — Seeds Pinecone famtastic-intelligence index (~1320 tok)
 - `site-brainstorm` — site-brainstorm — Terminal brainstorm session for a site project (~1428 tok)
 - `site-chat` (~465 tok)
 - `site-deploy` (~2857 tok)
@@ -533,6 +559,7 @@
 - `studio-chat` — studio-chat — Send a message to Studio's WebSocket chat and collect the response. (~837 tok)
 - `studio-server` (~148 tok)
 - `tts-cli` (~1073 tok)
+- `update-setup-doc` — update-setup-doc — Refresh FAMTASTIC-SETUP.md with current system state (~1302 tok)
 - `verify` (~58 tok)
 
 ## scripts/lib/
@@ -543,21 +570,32 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~141734 tok)
+- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~145555 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/lib/
 
+- `brain-injector.js` — brain-injector.js — Injects STUDIO-CONTEXT.md into each brain's session (~1486 tok)
+- `history-formatter.js` — history-formatter.js — Per-brain conversation history formatting (~1136 tok)
 - `media-telemetry.js` — media-telemetry.js — Append-only telemetry log for all AI media operations. (~3084 tok)
+- `research-registry.js` — research-registry.js — Provider-agnostic research source registry (~3188 tok)
+- `research-router.js` — research-router.js — Routes research queries through the registry (~2609 tok)
+- `studio-context-writer.js` — studio-context-writer.js — Generates STUDIO-CONTEXT.md (~3039 tok)
+- `studio-events.js` — studio-events.js — Studio event bus (~396 tok)
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~79037 tok)
+- `index.html` — FAMtastic Site Studio (~81793 tok)
 
 ## site-studio/public/css/
 
+- `studio-brain-selector.css` — brain-selector-bar { (~910 tok)
 - `studio-canvas.css` — canvas-tab-bar { (~4175 tok)
 - `studio-cli.css` — cli-bar { (~886 tok)
+
+## site-studio/public/js/
+
+- `brain-selector.js` — brain-selector.js — Brain selector pill bar for FAMtastic Studio (~1186 tok)
 
 ## site-studio/tests/
 
@@ -613,6 +651,9 @@
 - `conversation.jsonl` (~1348 tok)
 - `spec.json` (~739 tok)
 
+## sites/<tag>/ — runtime files (per-site, created on first use)
+
+
 ## sites/auntie-gale-garage-sales/research/
 
 - `brief-inputs.md` — Auntie Gale's Garage Sales — Research Brief Inputs (~2243 tok)
@@ -620,12 +661,6 @@
 ## sites/poc-site/
 
 - `index.html` (~42 tok)
-
-## sites/<tag>/ — runtime files (per-site, created on first use)
-
-- `agent-calls.jsonl` — append-only log written by `logAgentCall()`; each line: `{agent, intent, elapsed_ms, cost_usd, valid, score, timestamp}`
-- `mutations.jsonl` — append-only log written on every HTML write; each line: `{page, intent, agent, timestamp}`
-- `intelligence-promotions.json` — JSON array written by `POST /api/intel/promote`; each entry: `{finding_id, finding, promoted_at, action_taken}`
 
 ## sites/site-auntie-gale-garage-sales/
 
@@ -721,6 +756,15 @@
 - `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
 - `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4055 tok)
 - `session4-visual-tests.js` — Session 4 — Visual Quality Tests (~4620 tok)
+- `session7-phase0-tests.js` — Session 7 — Phase 0: Multi-Agent Skeleton Fix Tests (~4007 tok)
+- `session7-phase1-tests.js` — Session 7 — Phase 1: Universal Context File Tests (~4298 tok)
+- `session7-phase2-tests.js` — Session 7 — Phase 2: Brain Router UI Tests (~3267 tok)
+- `session7-phase3-tests.js` — Session 7 — Phase 3: Studio Config File Tests (~2452 tok)
+- `session7-phase4-tests.js` — Session 7 — Phase 4: Research Intelligence System Tests (~3257 tok)
+- `session8-phase0-tests.js` — Session 8 — Phase 0: cj-* to fam-convo-* rename verification tests (~2337 tok)
+- `session8-phase1-tests.js` — Session 8 — Phase 1: Research Intelligence Calibration & Brain Context Tests (~2956 tok)
+- `session8-phase2-tests.js` — Session 8 — Phase 2: Session 7 Known Gaps Fix Tests (~2363 tok)
+- `session8-phase3-tests.js` — Session 8 — Phase 3: spawnClaude Migration Map Tests (~1758 tok)
 
 ## tests/automation/logs/
 
