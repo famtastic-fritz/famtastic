@@ -4391,6 +4391,95 @@ app.get('/api/build-metrics', (req, res) => {
   } catch { res.json([]); }
 });
 
+/**
+ * Sync a component schema to its .claude/skills/components/<type>/SKILL.md file.
+ * Auto-creates the skill directory and file if it doesn't exist.
+ * If it exists, updates usage count and adds/updates field/slot/CSS var listings.
+ * Fields already documented are NOT overwritten so hand-edited notes are preserved.
+ */
+function syncSkillFromComponent(component) {
+  const SKILLS_DIR = path.join(HUB_ROOT, '.claude', 'skills', 'components');
+  const compType = (component.type || component.component_id || 'generic').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+  const skillDir = path.join(SKILLS_DIR, compType);
+  const skillFile = path.join(skillDir, 'SKILL.md');
+
+  let existingSkill = '';
+  let usageCount = 0;
+  let usedInSites = [];
+  if (fs.existsSync(skillFile)) {
+    existingSkill = fs.readFileSync(skillFile, 'utf8');
+    const ucMatch = existingSkill.match(/Usage count:\s*(\d+)/);
+    if (ucMatch) usageCount = parseInt(ucMatch[1], 10);
+    const sitesMatch = existingSkill.match(/Used in:\s*(.+)/);
+    if (sitesMatch) usedInSites = sitesMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  usageCount++;
+  if (component.created_from && !usedInSites.includes(component.created_from)) {
+    usedInSites.push(component.created_from);
+  }
+
+  const fields = (component.content_fields || []).map(f =>
+    `- ${f.id} (type: ${f.type}) — ${f.default_value ? `default: "${f.default_value.substring(0, 60)}"` : 'no default'}`
+  ).join('\n');
+
+  const slots = (component.slots || []).map(s =>
+    `- ${s.slot_id} (role: ${s.role})`
+  ).join('\n');
+
+  const cssVars = Object.entries(component.css?.variables || {}).map(([k, v]) =>
+    `- ${k}: ${v}`
+  ).join('\n');
+
+  // Extract "lessons learned" from existing skill file if any
+  const lessonsMatch = existingSkill.match(/## Lessons Learned\n([\s\S]*?)(?=##|$)/);
+  const lessons = lessonsMatch ? lessonsMatch[1].trim() : '- No lessons recorded yet.';
+
+  // Extract "when to use" from existing skill file if any
+  const whenMatch = existingSkill.match(/## When to Use\n([\s\S]*?)(?=##|$)/);
+  const whenToUse = whenMatch ? whenMatch[1].trim() :
+    `Every site that needs a ${compType}. Use this component to ensure consistency and surgical editability.`;
+
+  const skillContent = `# ${component.name || compType} Component Skill
+
+## Identity
+- Component type: ${compType}
+- Component ID: ${component.component_id}
+- Current version: ${component.version || '1.0'}
+- Usage count: ${usageCount}
+- Used in: ${usedInSites.join(', ') || 'none'}
+- Last updated: ${component.updated_at || component.created_at || new Date().toISOString()}
+
+## Required Fields
+${fields || '- (no fields detected)'}
+
+## Required Slots
+${slots || '- (no image slots detected)'}
+
+## CSS Variables
+${cssVars || '- (no CSS variables detected)'}
+
+## HTML Template Structure
+\`\`\`html
+${(component.html_template || '<!-- template not captured -->').substring(0, 2000)}
+\`\`\`
+
+## When to Use
+${whenToUse}
+
+## Lessons Learned
+${lessons}
+`;
+
+  try {
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(skillFile, skillContent, 'utf8');
+    console.log(`[skills] Synced skill: ${skillFile} (usage #${usageCount})`);
+  } catch (e) {
+    console.warn(`[skills] Could not sync skill file: ${e.message}`);
+  }
+}
+
 // --- Component Library API ---
 
 // List all components in the library
@@ -4484,33 +4573,82 @@ app.post('/api/components/export', (req, res) => {
     tags: [],
   };
 
-  // Write component to filesystem
+  // ── Version tracking — bump version on re-export ────────────────────────
   const compDir = path.join(HUB_ROOT, 'components', component_id);
+  const compJsonPath = path.join(compDir, 'component.json');
+  let existingComp = null;
+  let version = '1.0';
+  if (fs.existsSync(compJsonPath)) {
+    try {
+      existingComp = JSON.parse(fs.readFileSync(compJsonPath, 'utf8'));
+      // Bump minor version: 1.0 → 1.1 → 1.2, etc.
+      const [major, minor] = (existingComp.version || '1.0').split('.').map(Number);
+      version = `${major}.${(minor || 0) + 1}`;
+      component.version = version;
+      component.usage_count = (existingComp.usage_count || 0) + 1;
+      component.created_at = existingComp.created_at; // preserve original creation date
+      component.updated_at = new Date().toISOString();
+      console.log(`[components] Re-exported "${component_id}" → version ${version}`);
+    } catch {}
+  } else {
+    component.updated_at = component.created_at;
+  }
+  component.version = version;
+
+  // ── Write component to filesystem ────────────────────────────────────────
   fs.mkdirSync(compDir, { recursive: true });
-  fs.writeFileSync(path.join(compDir, 'component.json'), JSON.stringify(component, null, 2));
+  fs.writeFileSync(compJsonPath, JSON.stringify(component, null, 2));
   fs.writeFileSync(path.join(compDir, `${component_id}.html`), sectionHtml);
 
-  // Update library index
+  // ── Update library index ──────────────────────────────────────────────────
   const libPath = path.join(HUB_ROOT, 'components', 'library.json');
   let lib = { version: '1.0', components: [] };
   if (fs.existsSync(libPath)) {
     try { lib = JSON.parse(fs.readFileSync(libPath, 'utf8')); } catch {}
   }
-  lib.components = lib.components.filter(c => c.component_id !== component_id);
+  const existingEntry = lib.components.find(c => (c.component_id || c.id) === component_id);
+  const usedIn = existingEntry?.used_in || [];
+  if (!usedIn.includes(TAG)) usedIn.push(TAG);
+
+  lib.components = lib.components.filter(c => (c.component_id || c.id) !== component_id);
   lib.components.push({
+    id: component_id,
     component_id,
     name: component.name,
     type: component.type,
-    version: '1.0',
-    created_from: TAG,
+    version,
+    created_from: component.created_from,
+    created_at: component.created_at,
+    updated_at: component.updated_at,
     field_count: fields.length,
     slot_count: slots.length,
+    css_variables: Object.keys(cssVariables),
+    used_in: usedIn,
+    path: component_id,
+    description: `${component.type} component with ${fields.length} editable fields`,
   });
   lib.last_updated = new Date().toISOString();
   fs.writeFileSync(libPath, JSON.stringify(lib, null, 2));
 
-  console.log(`[components] Exported "${component_id}" from ${page} (${fields.length} fields, ${slots.length} slots)`);
-  res.json({ success: true, component });
+  // ── Skill auto-sync — update .claude/skills/components/<type>/SKILL.md ───
+  syncSkillFromComponent(component);
+
+  // ── Spec ref — record component_ref in spec.content ─────────────────────
+  try {
+    const specNow = readSpec();
+    if (specNow.content && specNow.content[page]) {
+      if (!specNow.content[page].sections) specNow.content[page].sections = [];
+      const sectionId = section.attr('data-section-id') || component_id;
+      const sIdx = specNow.content[page].sections.findIndex(s => s.section_id === sectionId);
+      const sRef = { section_id: sectionId, component_ref: `${component_id}@${version}` };
+      if (sIdx >= 0) specNow.content[page].sections[sIdx] = { ...specNow.content[page].sections[sIdx], ...sRef };
+      else specNow.content[page].sections.push(sRef);
+      writeSpec(specNow);
+    }
+  } catch {}
+
+  console.log(`[components] Exported "${component_id}" v${version} from ${page} (${fields.length} fields, ${slots.length} slots, ${Object.keys(cssVariables).length} CSS vars)`);
+  res.json({ success: true, component, field_count: fields.length, slot_count: slots.length });
 });
 
 // Content fields API — used by editable page view (Phase 2)
@@ -8898,10 +9036,39 @@ wss.on('connection', (ws) => {
                       break;
                     }
 
+                    // ── CSS variable portability — inject missing vars into target site ──
+                    const compJsonForImport = path.join(path.dirname(path.join(compDir, templateFile)), 'component.json');
+                    if (fs.existsSync(compJsonForImport)) {
+                      try {
+                        const compDef = JSON.parse(fs.readFileSync(compJsonForImport, 'utf8'));
+                        const compVars = compDef.css?.variables || {};
+                        const siteCssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+                        if (Object.keys(compVars).length > 0 && fs.existsSync(siteCssPath)) {
+                          let siteCss = fs.readFileSync(siteCssPath, 'utf8');
+                          const missingVars = [];
+                          for (const [varName, defaultVal] of Object.entries(compVars)) {
+                            if (!siteCss.includes(varName)) {
+                              missingVars.push(`  ${varName}: ${defaultVal};`);
+                            }
+                          }
+                          if (missingVars.length > 0) {
+                            // Inject into :root block or create one
+                            if (siteCss.includes(':root {')) {
+                              siteCss = siteCss.replace(':root {', `:root {\n  /* Imported from ${compId} */\n${missingVars.join('\n')}`);
+                            } else {
+                              siteCss = `:root {\n  /* Imported from ${compId} */\n${missingVars.join('\n')}\n}\n\n` + siteCss;
+                            }
+                            fs.writeFileSync(siteCssPath, siteCss);
+                            console.log(`[components] Injected ${missingVars.length} CSS vars from ${compId}`);
+                          }
+                        }
+                      } catch {}
+                    }
+
                     // Insert before </main> or before </body> if no main
                     let pageHtml = fs.readFileSync(targetPagePath, 'utf8');
                     const insertBefore = pageHtml.includes('</main>') ? '</main>' : '</body>';
-                    const sectionHtml = `\n<!-- Component: ${compId} (from library) -->\n${componentHtml}\n`;
+                    const sectionHtml = `\n<!-- Component: ${compId} v${match.version || '1.0'} (imported from library) -->\n${componentHtml}\n`;
                     pageHtml = pageHtml.replace(insertBefore, sectionHtml + insertBefore);
                     fs.writeFileSync(targetPagePath, pageHtml);
 
@@ -8915,8 +9082,19 @@ wss.on('connection', (ws) => {
                       fs.writeFileSync(libPath, JSON.stringify(library, null, 2));
                     }
 
+                    // Record component_ref in spec.content for rebuild awareness
+                    try {
+                      const specForImport = readSpec();
+                      if (specForImport.content && specForImport.content[targetPage]) {
+                        if (!specForImport.content[targetPage].sections) specForImport.content[targetPage].sections = [];
+                        const importRef = { section_id: compId, component_ref: `${compId}@${match.version || '1.0'}`, imported: true };
+                        specForImport.content[targetPage].sections.push(importRef);
+                        writeSpec(specForImport);
+                      }
+                    } catch {}
+
                     ws.send(JSON.stringify({ type: 'reload-preview' }));
-                    ws.send(JSON.stringify({ type: 'assistant', content: `Inserted **${match.name || compId}** into \`${targetPage}\`.\n\nComponent from: ${match.extracted_from || match.created_from || 'library'}\nUsed in: ${(match.used_in || []).length} site(s)` }));
+                    ws.send(JSON.stringify({ type: 'assistant', content: `Inserted **${match.name || compId}** v${match.version || '1.0'} into \`${targetPage}\`.\n\nComponent from: ${match.created_from || 'library'}\nUsed in: ${(match.used_in || []).length} site(s)` }));
                   } else {
                     ws.send(JSON.stringify({ type: 'assistant', content: `Found "${match.name || compId}" but no HTML template available at ${compDir}` }));
                   }

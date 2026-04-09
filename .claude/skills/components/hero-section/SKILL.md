@@ -32,3 +32,9 @@
 
 ## When to Use
 Every site's home page needs a hero. Generate this as the first section of index.html. The hero image slot should be the first stock photo filled. Use data-field-id on all text elements for surgical editing.
+
+## Lessons Learned
+- Always output data-field-id on h1, h2, p, and a tags inside the hero for surgical editability
+- Hero image slot must have data-slot-id="hero-1" and data-slot-role="hero" for stock photo fill
+- CTA link should point to contact.html or shop.html depending on business type
+- Overlay div with CSS var(--hero-overlay-opacity) prevents text from washing out against image
