@@ -2506,3 +2506,65 @@ New script: `scripts/fam-convo-tag`. Applies content-pattern tags to assistant m
 - All three adapter scripts (`fam-convo-get-claude`, `fam-convo-get-gemini`, `fam-convo-get-codex`): jq output includes `tags:[]` so the field exists on every record from the start
 
 **Tests:** `tests/session8-addendum-tests.js` — 54/54 PASS. Cumulative: **938/938**.
+
+---
+
+## Session 9 Phase 2 — Anthropic SDK Migration (All 8 spawnClaude Call Sites)
+
+**Date:** 2026-04-09
+
+All 8 `spawnClaude()` call sites in `site-studio/server.js` have been migrated to the Anthropic SDK (`@anthropic-ai/sdk`). The `claude --print` subprocess path is retained as an emergency fallback only.
+
+### New Infrastructure (site-studio/server.js)
+
+**Imports added** (lines 15-17):
+```javascript
+const Anthropic = require('@anthropic-ai/sdk');
+const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
+const { getOrCreateBrainSession, resetSessions: resetBrainSessions } = require('./lib/brain-sessions');
+```
+
+**`getAnthropicClient()`** — lazy-init singleton Anthropic client. Avoids re-instantiation per call.
+
+**`callSDK(prompt, opts)`** — non-streaming SDK call with AbortController timeout, cost logging via `logSDKCall()`. Options: `maxTokens`, `callSite`, `timeoutMs`.
+
+**`spawnClaudeModel(model, prompt)`** — like `spawnClaude()` but accepts a model string. Added for CS8 Haiku extraction. `@deprecated`.
+
+**`spawnClaude()`** — updated default model to `claude-sonnet-4-6` (was `claude-sonnet-4-5`), added `@deprecated` JSDoc.
+
+### Migrated Call Sites
+
+| CS | Function | SDK Method | maxTokens | callSite label |
+|----|----------|-----------|-----------|----------------|
+| CS1 | `generateSessionSummary()` | `callSDK()` non-streaming | 4096 | `session-summary` |
+| CS2 | `POST /api/generate-image-prompt` | `callSDK()` non-streaming | 4096 | `image-prompt` |
+| CS3 | `handleDataModelPlanning()` | `callSDK()` non-streaming | 4096 | `data-model` |
+| CS4 | `generatePlan()` | `callSDK()` non-streaming | 2048 | `generate-plan` |
+| CS5 | `handlePlanning()` | `callSDK()` non-streaming | 8192 | `planning-brief` |
+| CS6 | `spawnOnePage()` (in `parallelBuild`) | `sdk.messages.stream()` per-page | 16384 | `page-build` |
+| CS7 | template build (in `parallelBuild`) | `sdk.messages.create()` | 16384 | `template-build` |
+| CS8 | `handleChatMessage()` | `sdk.messages.stream()` streaming | 16384 | `chat` |
+
+### Key Architecture Changes
+
+**`parallelBuild()`** is now `async`. Per-page builds use `Promise.allSettled()` so individual page failures don't abort the entire batch. Each page gets its own `AbortController` registered in `pageControllers[]`; the WS `close` event aborts all.
+
+**`handleChatMessage()`** is now `async`. All response processing logic previously in `onChildClose()` has been refactored into `onChatComplete(finalResponse, usage)`. This function handles: token tracking, cost logging, context window warning, multi-page parsing, HTML_UPDATE, SVG_ASSET, fallback response.
+
+**`runHaikuFallbackSDK()`** — new standalone async function called by `handleChatMessage()`'s silence timer when Sonnet produces no output after 30s. Uses SDK streaming with `claude-haiku-4-5-20251001`.
+
+**Cost logging:** all SDK paths call `logSDKCall({ provider, model, callSite, inputTokens, outputTokens, tag, hubRoot })` from `lib/api-telemetry.js`. Token counts come from `response.usage` (real data, not estimates).
+
+### New Endpoint: `GET /api/telemetry/sdk-cost-summary`
+
+Returns session-level cost aggregates plus last 50 SDK calls for the current site. Fields: `totalCostUsd`, `byProvider`, `bySite`, `byCallSite`, `generatedAt`, `recentCalls`.
+
+### Site Switch: `resetBrainSessions()` on TAG change
+
+`resetBrainSessions()` is now called inside `POST /api/switch-site` immediately after `TAG = newTag`, clearing conversation history for all brain sessions when the user switches sites.
+
+### Tests
+
+**`tests/session9-phase2-tests.js`** — 39/39 PASS. Structural checks only (no live API calls). Verifies: imports, callSDK, getAnthropicClient, spawnClaudeModel, @deprecated notice, default model, each of the 8 call sites migrated, telemetry endpoint, resetBrainSessions on switch.
+
+**Cumulative: 977/977 (938 prior + 39 new).**
