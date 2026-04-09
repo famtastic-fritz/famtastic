@@ -5881,12 +5881,23 @@
       if (!list) return;
       list.textContent = 'Loading...';
       try {
-        const res = await fetch('/api/research/sources');
-        const data = await res.json();
+        const [sourcesRes, effectivenessRes] = await Promise.all([
+          fetch('/api/research/sources'),
+          fetch('/api/research/effectiveness'),
+        ]);
+        const sourcesData = await sourcesRes.json();
+        const effectivenessData = await effectivenessRes.json();
+
+        // Build effectiveness score lookup: source key → overallAvgScore (0-100)
+        const effMap = {};
+        (effectivenessData.report || []).forEach(r => {
+          effMap[r.source] = r.overallAvgScore !== null ? parseFloat(r.overallAvgScore) : null;
+        });
+
         list.innerHTML = '';
-        (data.sources || []).forEach(src => {
+        (sourcesData.sources || []).forEach(src => {
           const card = document.createElement('div');
-          card.style.cssText = 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;';
+          card.style.cssText = 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;margin-bottom:6px;';
           const header = document.createElement('div');
           header.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
           const dot = document.createElement('span');
@@ -5902,9 +5913,34 @@
           header.appendChild(badge);
           card.appendChild(header);
           const note = document.createElement('div');
-          note.style.cssText = 'font-size:10px;color:#6b7280;';
+          note.style.cssText = 'font-size:10px;color:#6b7280;margin-bottom:5px;';
           note.textContent = src.note || src.bestFor?.join(', ') || '';
           card.appendChild(note);
+
+          // Effectiveness score bar (replaces star rating prompts)
+          const effScore = effMap[src.key] !== undefined ? effMap[src.key] : null;
+          const scoreWrap = document.createElement('div');
+          scoreWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+          const scoreLabel = document.createElement('span');
+          scoreLabel.style.cssText = 'font-size:9px;color:#6b7280;white-space:nowrap;';
+          scoreLabel.textContent = effScore !== null ? `Score: ${Math.round(effScore)}` : 'No data yet';
+          scoreWrap.appendChild(scoreLabel);
+          const barTrack = document.createElement('div');
+          barTrack.style.cssText = 'flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;';
+          const barFill = document.createElement('div');
+          const pct = effScore !== null ? Math.min(100, Math.max(0, effScore)) : 0;
+          barFill.className = 'effectiveness-bar';
+          barFill.style.cssText = `width:${pct}%;height:100%;background:#10b981;border-radius:2px;`;
+          barFill.title = 'Score based on: build health (50%), brief reuse (30%), iterations saved (20%)';
+          barTrack.appendChild(barFill);
+          scoreWrap.appendChild(barTrack);
+          const scoreNum = document.createElement('span');
+          scoreNum.className = 'effectiveness-score';
+          scoreNum.style.cssText = 'font-size:9px;color:#10b981;min-width:24px;text-align:right;';
+          scoreNum.textContent = effScore !== null ? `${Math.round(pct)}%` : '';
+          scoreWrap.appendChild(scoreNum);
+          card.appendChild(scoreWrap);
+
           list.appendChild(card);
         });
       } catch(e) {

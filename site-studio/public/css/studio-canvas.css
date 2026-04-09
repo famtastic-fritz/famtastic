@@ -440,3 +440,19 @@
 .intel-empty {
   padding: 40px 20px; text-align: center; color: #475569; font-size: 13px; font-style: italic;
 }
+
+
+/* Effectiveness score bar (G5 — replaces star rating prompts) */
+.effectiveness-bar {
+  height: 4px;
+  background: #10b981;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.effectiveness-score {
+  font-size: 9px;
+  color: #10b981;
+  min-width: 24px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

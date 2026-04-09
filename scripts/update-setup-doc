@@ -76,6 +76,35 @@ echo "[update-setup-doc] Machine:   ${MACHINE}"
 echo "[update-setup-doc] Node:      ${NODE_VERSION}"
 echo "[update-setup-doc] Claude:    ${CLAUDE_VERSION}"
 
+# ── Auto-parse MCP table from claude mcp list ────────────────────────────────
+if command -v claude &>/dev/null; then
+  MCP_LIST="$(claude mcp list 2>/dev/null || true)"
+  if [ -n "$MCP_LIST" ]; then
+    echo "[update-setup-doc] Updating MCP status from claude mcp list..."
+    # For each known MCP, update Status column in FAMTASTIC-SETUP.md
+    # Pattern: look for MCP name in output and determine connected/failed status
+    for mcp_name in magic "plugin:playwright:playwright" "plugin:github:github" "famtastic" "lighthouse-mcp" "ps-mcp" "pr-mcp"; do
+      short_name=$(echo "$mcp_name" | sed 's/plugin:[^:]*://g')
+      if echo "$MCP_LIST" | grep -qi "$short_name"; then
+        if echo "$MCP_LIST" | grep -i "$short_name" | grep -qi "connected\|running\|ok"; then
+          new_status="Connected"
+        elif echo "$MCP_LIST" | grep -i "$short_name" | grep -qi "fail\|error\|disconnect"; then
+          new_status="Failed"
+        else
+          new_status="Unknown"
+        fi
+        # Update the table row for this MCP (match on name column)
+        safe_name=$(echo "$mcp_name" | sed 's/[\/&]/\\&/g')
+        sed -i '' "s/| ${safe_name} | \(.*\) | \(.*\) | .* |/| ${safe_name} | \1 | \2 | ${new_status} |/" "$SETUP_FILE" 2>/dev/null || true
+      fi
+    done
+  else
+    echo "[update-setup-doc] WARNING: claude mcp list returned no output, skipping MCP status update"
+  fi
+else
+  echo "[update-setup-doc] WARNING: claude not found, skipping MCP status update"
+fi
+
 # ── Optional commit ────────────────────────────────────────────────────────────
 if [ "${1:-}" = "--commit" ]; then
   cd "$ROOT"

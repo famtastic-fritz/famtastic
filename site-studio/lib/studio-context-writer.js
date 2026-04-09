@@ -98,6 +98,46 @@ function buildComponentLibrary(hubRoot) {
   }
 }
 
+function buildAllPages(hubRoot, tag, activePage) {
+  const distDir = path.join(hubRoot, 'sites', tag, 'dist');
+  if (!fs.existsSync(distDir)) return '- No dist directory found.';
+
+  const htmlFiles = fs.readdirSync(distDir).filter(f => f.endsWith('.html')).sort();
+  if (!htmlFiles.length) return '- No HTML pages found.';
+
+  const lines = [];
+  for (const file of htmlFiles) {
+    const filePath = path.join(distDir, file);
+    const isActive = file === activePage || file === (activePage + '.html');
+    let h1 = '(no H1)';
+    let sectionCount = 0;
+    let imgCount = 0;
+    let lastEdited = '';
+
+    try {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const h1Match = content.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+      if (h1Match) h1 = h1Match[1].trim().slice(0, 60);
+      sectionCount = (content.match(/data-section-id/g) || []).length;
+      imgCount = (content.match(/<img\b/gi) || []).length;
+    } catch {}
+
+    try {
+      lastEdited = fs.statSync(filePath).mtime.toISOString().replace('T', ' ').slice(0, 16);
+    } catch {}
+
+    const header = isActive ? `### ${file} (active)` : `### ${file}`;
+    lines.push(header);
+    lines.push(`- H1: "${h1}"`);
+    lines.push(`- Sections: ${sectionCount} (data-section-id)`);
+    lines.push(`- Images: ${imgCount} slots`);
+    lines.push(`- Last edited: ${lastEdited}`);
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
 function buildIntelligenceFindings(hubRoot, tag) {
   const promoFile = path.join(hubRoot, 'sites', tag, 'intelligence-promotions.json');
   if (!fs.existsSync(promoFile)) return 'No promoted findings yet.';
@@ -182,6 +222,7 @@ async function generate(eventType, payload) {
     ? pineResult
     : `No Pinecone research available yet for vertical: "${vertical}". Run Phase 4 (fam-hub research seed-from-sites) to seed knowledge base.`;
 
+  const activePage = (payload && payload.page) ? payload.page : 'index.html';
   const sections = [
     `# FAMtastic Studio — Current Context`,
     `## Generated: ${new Date().toISOString()}`,
@@ -194,6 +235,8 @@ async function generate(eventType, payload) {
     `## Current Site State`,
     buildSiteState(spec),
     '',
+    `## All Pages`,
+    buildAllPages(hubRoot, tag, activePage),
     `## Component Library`,
     buildComponentLibrary(hubRoot),
     '',

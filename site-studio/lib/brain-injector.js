@@ -101,8 +101,38 @@ function getContextPathForBrain(brain, hubRoot) {
   return fs.existsSync(p) ? p : null;
 }
 
+/**
+ * Reinjects context when brain switches (G7).
+ * Reads current STUDIO-CONTEXT.md and writes a brain-specific sidecar.
+ * @param {'claude'|'gemini'|'codex'} brain
+ * @param {string} tag — active site tag
+ * @param {string} hubRoot — path to repo root
+ */
+function reinject(brain, tag, hubRoot) {
+  const contextFile = path.join(hubRoot, 'STUDIO-CONTEXT.md');
+  if (!fs.existsSync(contextFile)) {
+    console.log(`[brain-injector] BRAIN_CONTEXT_INJECTED — switched to ${brain}, sidecar skipped (no context file)`);
+    return { success: false, reason: 'STUDIO-CONTEXT.md not found' };
+  }
+
+  // Write brain-specific sidecar with current context
+  const sidecarPath = path.join(hubRoot, `sites`, tag, `STUDIO-CONTEXT-${brain}.md`);
+  try {
+    const dir = path.dirname(sidecarPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const content = fs.readFileSync(contextFile, 'utf8');
+    fs.writeFileSync(sidecarPath, content, 'utf8');
+    console.log(`[brain-injector] BRAIN_CONTEXT_INJECTED — switched to ${brain}, sidecar updated`);
+    return { success: true, sidecarPath };
+  } catch (err) {
+    console.error(`[brain-injector] reinject error:`, err.message);
+    return { success: false, reason: err.message };
+  }
+}
+
 module.exports = {
   inject,
+  reinject,
   readContext,
   getContextPathForBrain,
   CLAUDE_MD_INCLUDE_MARKER,

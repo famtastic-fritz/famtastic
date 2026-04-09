@@ -11257,6 +11257,8 @@ function setBrain(brain, ws) {
   currentBrain = brain;
   studioEvents.emit(STUDIO_EVENTS.BRAIN_SWITCHED, { brain, tag: TAG });
   console.log(`[brain] Switched to ${brain}`);
+  // Reinject context sidecar for the new brain (G7)
+  try { brainInjector.reinject(brain, TAG, HUB_ROOT); } catch {}
   // Broadcast to all connected clients
   const payload = JSON.stringify({ type: 'brain-changed', brain, limits: BRAIN_LIMITS, sessionCounts: sessionBrainCounts });
   wss.clients.forEach(client => {
