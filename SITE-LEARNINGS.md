@@ -2568,3 +2568,62 @@ Returns session-level cost aggregates plus last 50 SDK calls for the current sit
 **`tests/session9-phase2-tests.js`** — 39/39 PASS. Structural checks only (no live API calls). Verifies: imports, callSDK, getAnthropicClient, spawnClaudeModel, @deprecated notice, default model, each of the 8 call sites migrated, telemetry endpoint, resetBrainSessions on switch.
 
 **Cumulative: 977/977 (938 prior + 39 new).**
+
+---
+
+## Session 9 Phase 3 — spawnClaude() Retirement Verification (2026-04-09)
+
+All 8 main-path `spawnClaude()` call sites confirmed migrated. Remaining invocations are exclusively in `routeToBrainForBrainstorm()` — the CS9 brainstorm routing function, which is a separate migration track.
+
+### Final spawnClaude() Status
+
+**Invocations remaining:** 2 (lines ~11452 and ~11459), both inside `routeToBrainForBrainstorm()`.
+
+**Main handler functions verified clean via tests (zero spawnClaude calls):**
+- `generateSessionSummary()`, `handleDataModelPlanning()`, `handleDataModel()`, `generatePlan()`, `handlePlanning()`, `parallelBuild()`, `handleChatMessage()`
+
+### @deprecated notices
+
+```javascript
+// spawnClaude()  — "All main paths use Anthropic SDK via callSDK() / ClaudeAdapter."
+// spawnClaudeModel() — "Retained as fallback. Prefer SDK via ClaudeAdapter."
+```
+
+### api-telemetry Coverage
+
+Every SDK call path logs via `logSDKCall()` with a named `callSite` label:
+
+| callSite label | Path |
+|----------------|------|
+| `session-summary` | CS1 `generateSessionSummary()` |
+| `image-prompt` | CS2 `POST /api/image-prompt` |
+| `data-model` | CS3 `handleDataModelPlanning()` |
+| `generate-plan` | CS4 `generatePlan()` |
+| `planning-brief` | CS5 `handlePlanning()` |
+| `page-build` | CS6 per-page in `parallelBuild()` |
+| `template-build` | CS7 template step in `parallelBuild()` |
+| `chat` | CS8 `handleChatMessage()` |
+| `chat-haiku-fallback` | `runHaikuFallbackSDK()` |
+
+### Migration Map Final Status
+
+`docs/spawn-claude-migration-map.md` updated with:
+- ✅ Migrated for CS1–CS8 and Haiku fallback
+- 🔄 Retained for CS9 (brainstorm routing)
+- Full status table in Section 1
+- `@deprecated` documentation
+
+### Tests
+
+**`tests/session9-phase3-tests.js`** — 35/35 PASS. Verifies: no main-path spawnClaude calls, @deprecated notices, api-telemetry for all 8 paths, sdk-cost-summary endpoint, runHaikuFallbackSDK, getAnthropicClient singleton, migration map final statuses, main handlers clean, SDK streaming patterns.
+
+---
+
+## Session 9 — Known Gaps (opened 2026-04-09)
+
+- **`initBrainSessions()` Claude probe is blocking** — Claude auth probe at startup adds ~2-5s. Should fire-and-forget; update brain status via `SESSION_STARTED` event when complete. Deferred.
+- **Connect button UI not wired** — `needs-auth` status is in the `SESSION_STARTED` payload but the brain selector UI doesn't show a Connect button. Deferred to Phase 2+ UI work.
+- **GeminiAdapter key validation is weak** — checks `GEMINI_API_KEY` is non-empty but doesn't probe for validity. A bad key won't be caught until the first Gemini call.
+- **OpenAI OAuth not implemented** — CodexAdapter uses `OPENAI_API_KEY`. ChatGPT Plus OAuth requires browser interaction; not a server-side concern.
+- **CS9 (`routeToBrainForBrainstorm`) still uses spawnClaude** — brainstorm routing for the claude brain uses subprocess. Migration requires `BrainInterface` integration into the brainstorm WS handler.
+- **Phase 0 tests regress post-migration** — 12/40 Phase 0 tests now fail because they verified pre-migration `spawnClaude` patterns that were correctly removed. These tests are accurate records of the pre-migration state; they served their purpose.

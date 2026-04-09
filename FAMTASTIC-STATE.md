@@ -1,12 +1,12 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-09 (Session 8 Addendum — iterations_to_approval removed, REQUERY_QUEUE, check-tools rename, conversation tagging)
+**Last updated:** 2026-04-09 (Session 9 — Anthropic SDK migration complete, Brain Adapter Pattern, 1,012 cumulative tests)
 
 ---
 
 ## What FAMtastic Site Studio Is
 
-FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it runs entirely on localhost using the Claude CLI (no API keys, no SaaS dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. Session 8 renamed all cj-* scripts to fam-convo-*, implemented research calibration (threshold config, cache debounce, text-based Pinecone embeddings, effectiveness auto-scoring), fixed 7 known gaps (all-pages context, Pinecone embeddings, stale refresh, effectiveness bar UI, MCP auto-parse, brain reinject), and produced the spawnClaude() migration map for Session 9 SDK transition. Session 8 Addendum: removed `iterations_to_approval` from effectiveness scoring (rebalanced to 0.6/0.4), replaced bare `setImmediate(backgroundRefresh)` with a single-worker `REQUERY_QUEUE`, renamed `verify-quickstart` → `check-tools`, documented CLI multi-turn limitation in all adapters, and added `fam-convo-tag` for auto-tagging conversation messages. The system is currently single-user and localhost-only, built and operated by Fritz Medine.
+FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it generates all content via the Anthropic SDK (Session 9 migration complete — no more subprocess CLI dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. Session 8 renamed all cj-* scripts to fam-convo-*, implemented research calibration, fixed 7 known gaps, and produced the spawnClaude() migration map. Session 9 completed the Anthropic SDK migration: all 8 spawnClaude() call sites replaced with @anthropic-ai/sdk calls, Brain Adapter Pattern built (BrainInterface/ClaudeAdapter/GeminiAdapter/CodexAdapter/BrainAdapterFactory), api-telemetry module added for per-call cost tracking (writes to sites/<tag>/sdk-calls.jsonl), GET /api/telemetry/sdk-cost-summary endpoint added. spawnClaude() is now @deprecated — retained as emergency fallback in routeToBrainForBrainstorm() only (CS9). The system is currently single-user and localhost-only, built and operated by Fritz Medine.
 
 ---
 
@@ -14,12 +14,15 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 
 | Layer | Technology | Role |
 |-------|-----------|------|
-| AI Engine | Claude CLI (`claude --print`) | Generates all HTML, SVG assets, design briefs, session summaries, and image prompts. Default model: `claude-sonnet-4-5`. No separate API key — uses Claude Code subscription. |
-| Secondary Brains | Gemini CLI + Codex CLI | `adapters/{brain}/fam-convo-get-{brain}` shell adapters. Routed via `routeToBrainForBrainstorm()` in brainstorm mode. Rate-limit auto-fallback: Claude → Codex → Gemini. |
-| Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~11,662 lines). |
+| AI Engine | Anthropic SDK (`@anthropic-ai/sdk`) | All HTML generation, design briefs, session summaries, image prompts use SDK API. Default model: `claude-sonnet-4-6`. Requires `ANTHROPIC_API_KEY`. `callSDK()` for non-streaming; `sdk.messages.stream()` for streaming (CS6, CS8). `claude --print` subprocess retained as @deprecated emergency fallback only. |
+| Secondary Brains | Gemini CLI + Codex CLI + Brain Adapter Pattern | `adapters/{brain}/fam-convo-get-{brain}` shell adapters for brainstorm routing. Brain Adapter Pattern (`BrainInterface`, `ClaudeAdapter`, `GeminiAdapter`, `CodexAdapter`) provides SDK-level multi-brain for Studio chat. Rate-limit auto-fallback: Claude → Codex → Gemini. |
+| Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~11,817 lines). |
 | Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html` (~7,100 lines). VS Code-inspired layout: left sidebar, tabbed canvas (Preview, Editable View, Images, Research, Compare, Intel), bottom CLI bar (Chat, Terminal, Codex), right sidebar. CSS: `public/css/` (7 files). JS: `public/js/` (brain-selector.js + others). |
 | CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties map from spec colors. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
-| Event Bus | Node.js EventEmitter | `site-studio/lib/studio-events.js` singleton with 9 namespaced events (added RESEARCH_UPDATED). Drives STUDIO-CONTEXT.md regeneration. |
+| Event Bus | Node.js EventEmitter | `site-studio/lib/studio-events.js` singleton with 10 namespaced events (added RESEARCH_UPDATED in S7, MODE_CHANGED in S9). Drives STUDIO-CONTEXT.md regeneration. |
+| Brain Adapter Pattern | `site-studio/lib/brain-interface.js` + adapters | `BrainInterface` maintains conversation history, injects context headers `[MODE: X] [SITE: x] [PAGE: x]`, routes to `ClaudeAdapter`/`GeminiAdapter`/`CodexAdapter`. `BrainAdapterFactory.create(brain)` returns the right adapter. Adapters in `lib/adapters/`. |
+| API Telemetry | `site-studio/lib/api-telemetry.js` | Per-call SDK cost tracking. `logAPICall()` writes to `sites/<tag>/sdk-calls.jsonl`. `calculateCost()` with rates per million tokens. `getSessionSummary()` for endpoint. |
+| Brain Sessions | `site-studio/lib/brain-sessions.js` | `initBrainSessions()` auth probe at startup. `getOrCreateBrainSession()` for persistent multi-turn. `resetSessions()` on site switch. |
 | Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. Sections: title, timestamp, site, event, brief, state, ALL PAGES (new), components, vertical research, findings, tools, rules. 30s Pinecone cache (CONTEXT_CACHE). |
 | Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. `reinject(brain, tag, hubRoot)` called on brain switch. |
 | History Formatter | `site-studio/lib/history-formatter.js` | Per-brain history format (claude=JSON messages, gemini=Human/Assistant transcript, codex=### Prior conversation). Summarization always uses Claude. |
@@ -45,7 +48,7 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 
 **Step 2 — Classification.** Message arrives over WebSocket. `classifyRequest()` checks for approved design brief. 12 `content_update` patterns checked first (highest precedence). Default fallback: `content_update`. Plan-gated intents: `layout_update`, `major_revision`, `restyle`, `build`, `restructure`.
 
-**Step 3 — Planning.** `handlePlanning()` calls `spawnClaude()` (3-min timeout). Claude returns `DESIGN_BRIEF` block. Stored in `spec.json`. Studio UI renders brief card: Build From Brief / Edit Brief / Skip to Build.
+**Step 3 — Planning.** `handlePlanning()` calls `callSDK()` (3-min timeout, 8192 tokens, callSite=`planning-brief`). Claude returns `DESIGN_BRIEF` block. Stored in `spec.json`. Studio UI renders brief card: Build From Brief / Edit Brief / Skip to Build.
 
 **Step 4 — Build (Template-First).** User clicks "Build From Brief." `parallelBuild()`:
 1. **Template build:** `_template.html` — header, nav, footer, shared CSS.
@@ -232,15 +235,17 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 | Gap | Priority | Detail |
 |-----|----------|--------|
 | Revenue path (end-to-end) | Tier 1 | Client preview URL + payment (PayPal) + domain provisioning + approval flow. Studio runs on localhost — bridge to real product. |
-| Brain routing in build path | Tier 2 | Only brainstorm mode uses `routeToBrainForBrainstorm()`. Build/content-edit paths call `spawnClaude()` directly. Extending requires parsing HTML_UPDATE from non-Claude brains. |
-| SDK migration (spawnClaude → Anthropic SDK) | Tier 2 | Migration map documented at `docs/spawn-claude-migration-map.md`. 8 call sites. USE_SDK feature flag strategy defined. Session 9 work. |
+| Brain routing in build path | Tier 2 | Only brainstorm mode uses `routeToBrainForBrainstorm()`. Build/content-edit paths use Anthropic SDK (Claude only). Extending to non-Claude brains requires parsing HTML_UPDATE from GeminiAdapter/CodexAdapter. |
+| CS9 brainstorm routing still uses spawnClaude | Tier 2 | `routeToBrainForBrainstorm()` calls `spawnClaude()` for the claude brain path. Migrating requires `BrainInterface` integration into the brainstorm WS handler. |
+| initBrainSessions() probe is blocking | Tier 3 | Claude auth probe at Studio startup adds ~2-5s. Should fire-and-forget; update brain status via event when probe completes. |
 | Intelligence Loop — real Gemini research | Tier 2 | `POST /api/intel/run-research` creates stubs only. `scripts/gemini-cli` must be wired to populate them. |
 | Codex CLI non-functional | Tier 2 | `codex-cli` binary times out 100% of compare calls. `/api/compare/generate-v2` falls back to Claude every time. |
 | Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. Required before 10-site milestone. |
 | Template upload mode | Tier 2 | Uploading pre-built templates for Studio to tweak vs generate from scratch. |
-| Haiku fallback inline spawn | Tier 3 | Line 8992 duplicates spawnClaude() inline for Haiku fallback. Should be extracted to `spawnClaudeModel(model, prompt)` before SDK migration. |
+| Connect button UI not wired | Tier 3 | `needs-auth` status is in `SESSION_STARTED` payload but brain selector UI doesn't show a Connect button for unauthenticated brains. |
+| GeminiAdapter key validation weak | Tier 3 | Checks `GEMINI_API_KEY` non-empty but doesn't probe for validity. Bad key won't be caught until first Gemini call. |
 | seed-pinecone --vertical flag | Tier 3 | `scripts/seed-pinecone` does not support `--vertical <name>`. Build-completion auto-seeding for specific verticals requires this. |
-| spawnBrainAdapter SDK migration | Tier 3 | Brain adapter spawning uses shell scripts, not claude --print. Separate migration track needed if non-claude brains switch to SDK APIs. |
+| spawnBrainAdapter SDK migration | Tier 3 | Brain adapter spawning uses shell scripts (CS9 separate migration track). `GeminiAdapter` and `CodexAdapter` exist in `lib/adapters/` but brainstorm routing hasn't been wired to use them. |
 | Asset generate → insert | Tier 3 | SVG generation creates files but doesn't wire back to HTML slots. |
 | design_decisions unbounded | Tier 3 | `spec.design_decisions` array has no cap. |
 | spec.json write not atomic | Tier 3 | Uses `fs.writeFileSync()` directly — no `.tmp` + rename. |
@@ -265,6 +270,14 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 - **90-day staleness auto-re-query** — `backgroundRefresh()` added to `research-router.js` using `setImmediate()`. Stale results returned immediately; fresh query runs in background. `RESEARCH_UPDATED` event emitted on completion.
 - **fam-hub verify-quickstart naming confusion** — Renamed to `fam-hub admin check-tools`. Help text clarifies "Does not verify Studio starts correctly." `verify-quickstart` shim redirects with deprecation warning to stderr.
 - **spawnClaude migration undocumented** — Complete migration map at `docs/spawn-claude-migration-map.md`. 8 call sites inventoried, SDK equivalents, risk levels, migration order, USE_SDK feature flag rollback plan.
+
+### Closed This Session (2026-04-09 — Session 9)
+
+- **SDK migration (spawnClaude → Anthropic SDK)** — All 8 `spawnClaude()` main-path call sites migrated to `@anthropic-ai/sdk`. `callSDK()` for non-streaming (CS1–CS5); `sdk.messages.stream()` for streaming (CS6/CS8); `sdk.messages.create()` for CS7. `spawnClaude()` marked `@deprecated`.
+- **Haiku fallback inline spawn** — Extracted to `runHaikuFallbackSDK()` using SDK stream. No longer an inline `spawn()` call.
+- **Multi-turn CLI limitation** — `BrainInterface` + `ClaudeAdapter` provide real SDK multi-turn via `conversationHistory` array (not prepended plaintext). GeminiAdapter uses `startChat({history})`. CodexAdapter uses messages array.
+- **Migration map defects (M1–M7)** — All 7 defects corrected in `docs/spawn-claude-migration-map.md`.
+- **No cost tracking for AI calls** — `api-telemetry.js` added. All 8 SDK call paths log with named `callSite` labels. `GET /api/telemetry/sdk-cost-summary` endpoint.
 
 ### Closed This Session (2026-04-09 — Session 8 Addendum)
 
@@ -306,9 +319,16 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `site-studio/server.js` | ~11,570 | Main backend. Express + WebSocket. All classifier, content data layer, component skills, multi-agent, intel loop, brain router, universal context, research intelligence, image/research/deploy/compare endpoints. |
+| `site-studio/server.js` | ~11,817 | Main backend. Express + WebSocket. All classifier, content data layer, component skills, multi-agent, intel loop, brain router, universal context, research intelligence, image/research/deploy/compare endpoints. Anthropic SDK helpers: `getAnthropicClient()`, `callSDK()`, `runHaikuFallbackSDK()`. |
 | `site-studio/public/index.html` | ~7,100 | Single-file frontend. 6 canvas tabs. Brain selector pill bar. Research sources panel. All WS handlers. |
-| `site-studio/lib/studio-events.js` | — | Singleton EventEmitter + 9 event constants |
+| `site-studio/lib/studio-events.js` | — | Singleton EventEmitter + 10 event constants (incl. MODE_CHANGED) |
+| `site-studio/lib/brain-interface.js` | — | Universal Studio-to-Brain communication. Context header injection, conversation history, brain switching. |
+| `site-studio/lib/brain-adapter-factory.js` | — | `BrainAdapterFactory.create(brain)` → adapter instance. Unknown brain falls back to ClaudeAdapter. |
+| `site-studio/lib/adapters/claude-adapter.js` | — | Anthropic SDK. `execute()` + `executeStreaming()`. resetSilenceTimer per chunk. |
+| `site-studio/lib/adapters/gemini-adapter.js` | — | Google Generative AI. `startChat({history})`, `sendMessageStream()`. assistant→model role mapping. |
+| `site-studio/lib/adapters/codex-adapter.js` | — | OpenAI SDK. `gpt-4o`. messages array multi-turn. stream:true. |
+| `site-studio/lib/brain-sessions.js` | — | `initBrainSessions()` auth probe, `getOrCreateBrainSession()`, `resetSessions()`. |
+| `site-studio/lib/api-telemetry.js` | — | `logAPICall()`, `calculateCost()`, `getSessionSummary()`, `readSiteLog()`. Writes `sdk-calls.jsonl`. |
 | `site-studio/lib/studio-context-writer.js` | — | STUDIO-CONTEXT.md generator (event-driven, 10 sections) |
 | `site-studio/lib/brain-injector.js` | — | Per-brain context injection (Claude @-include, Gemini/Codex sidecar). `reinject()` on brain switch. |
 | `site-studio/lib/history-formatter.js` | — | Per-brain history format functions + Claude-based summarization (always Claude, regardless of active brain) |
@@ -363,7 +383,16 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 |------|-------|----------|
 | `tests/session8-addendum-tests.js` | 54 | C1 embeddings order, C2 multi-turn docs, C3 iterations_to_approval removal, C4 REQUERY_QUEUE, C5 check-tools rename, C6 migration map grep scope, conversation tagging (functional) |
 
-**Total: 938 tests, 938 passing.**
+**Session 9 (174 tests):**
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `tests/session9-phase0-tests.js` | 40 | Migration map defect fixes (M1–M7), CS9 separate track, silence timer pattern, max_tokens, cost analysis |
+| `tests/session9-phase1-tests.js` | 60 | BrainAdapterFactory, adapter capabilities, BrainInterface, context headers, history, brain-sessions, api-telemetry, studio-events, ws.send guards, file existence |
+| `tests/session9-phase2-tests.js` | 39 | CS1–CS8 SDK migrations, callSDK, getAnthropicClient, @deprecated, sdk-cost-summary endpoint, resetBrainSessions |
+| `tests/session9-phase3-tests.js` | 35 | spawnClaude retirement, @deprecated, api-telemetry coverage, sdk-cost-summary, runHaikuFallbackSDK, migration map final statuses |
+
+**Total: 1,012 tests, 1,012 passing.**
 
 ### Key Functions
 
@@ -376,7 +405,10 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `logAgentCall()` | server.js | Append-only agent-calls.jsonl with cost estimate |
 | `validateAgentHtml()` | server.js | Score HTML 0–100; threshold 40 |
 | `generateIntelReport()` | server.js | Read log data → findings[] + summary |
-| `spawnClaude()` | server.js | Claude CLI spawn with stdin prompt, CLAUDE_* env stripped |
+| `getAnthropicClient()` | server.js | Lazy singleton Anthropic SDK client. Auto-reads ANTHROPIC_API_KEY. |
+| `callSDK(prompt, opts)` | server.js | Non-streaming SDK call with AbortController timeout + api-telemetry logging. |
+| `runHaikuFallbackSDK(prompt, ws, ...)` | server.js | SDK streaming fallback using claude-haiku model. Replaces inline Haiku spawn. |
+| `spawnClaude()` | server.js | @deprecated. Claude CLI subprocess. Retained as CS9 emergency fallback only. |
 | `spawnBrainAdapter()` | server.js | Spawn adapters/{brain}/fam-convo-get-{brain} via stdin |
 | `setBrain()` | server.js | Set currentBrain, emit BRAIN_SWITCHED, broadcast WS |
 | `routeToBrainForBrainstorm()` | server.js | Rate-limit check, fallback chain, brain dispatch |
@@ -417,7 +449,8 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | File | Purpose |
 |------|---------|
 | `sites/<tag>/STUDIO-CONTEXT.md` | Universal context file — regenerated on every studio event |
-| `sites/<tag>/agent-calls.jsonl` | Per-call agent telemetry |
+| `sites/<tag>/agent-calls.jsonl` | Per-call agent telemetry (multi-agent workflow) |
+| `sites/<tag>/sdk-calls.jsonl` | Per-call Anthropic SDK cost log (written by api-telemetry.js) |
 | `sites/<tag>/mutations.jsonl` | Field-level edit log |
 | `sites/<tag>/intelligence-promotions.json` | Promoted findings |
 | `sites/<tag>/research/<vertical>-research.md` | Per-vertical research stubs |
@@ -454,7 +487,14 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `docs/session8-phase-1-report.md` | Phase 1: Codex adversarial findings (C1–C7) |
 | `docs/session8-phase-2-report.md` | Phase 2: Session 7 known gaps (G1–G7) |
 | `docs/session8-phase-3-report.md` | Phase 3: spawnClaude() migration map |
-| `docs/spawn-claude-migration-map.md` | Complete spawnClaude() → Anthropic SDK migration map (8 call sites, USE_SDK flag, migration order, search commands, manual review section) |
+| `docs/spawn-claude-migration-map.md` | spawnClaude() → Anthropic SDK migration map. Phase 0 corrected 7 defects. Phase 3 updated with final ✅/🔄/⚠️ statuses for all call sites. |
+
+### Session 9 Docs
+
+| File | Purpose |
+|------|---------|
+| `docs/session9-master-report.md` | Session 9 master report — all phases, test counts, architecture changes, gaps |
+| `docs/session9-phase-1-report.md` | Phase 1: Brain Adapter Pattern (60/60 tests) |
 
 ---
 
