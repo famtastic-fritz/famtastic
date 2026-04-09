@@ -8737,7 +8737,7 @@ function tryDeterministicHandler(ws, userMessage, currentPage) {
 }
 
 // --- Enhanced Chat Handler ---
-function handleChatMessage(ws, userMessage, requestType, spec) {
+async function handleChatMessage(ws, userMessage, requestType, spec) {
   // Concurrent build guard — prevent parallel Claude calls
   if (buildInProgress) {
     ws.send(JSON.stringify({ type: 'chat', content: 'A build is already in progress. Please wait for it to finish before sending another request.' }));
@@ -8957,113 +8957,60 @@ ${analyticsInstruction}`;
   }
 
   const buildStartTime = Date.now();
-  const currentModel = loadSettings().model || 'claude-sonnet-4-5';
-  let child = spawnClaude(prompt);
-  ws.currentChild = child;
+  const currentModel = loadSettings().model || 'claude-sonnet-4-6';
   let retriedWithHaiku = false;
-
-  // 30s silence timeout — if no output arrives, fall back to Haiku
-  let silenceTimeout = null;
-  function resetSilenceTimeout() {
-    if (silenceTimeout) clearTimeout(silenceTimeout);
-    if (retriedWithHaiku) return; // don't retry twice
-    silenceTimeout = setTimeout(() => {
-      // Only retry if we got zero output (subscription concurrency issue)
-      if (response.length === 0 && !retriedWithHaiku && currentModel !== 'claude-haiku-4-5-20251001') {
-        console.warn('[claude] No output after 30s — falling back to Haiku');
-        retriedWithHaiku = true;
-        child.kill();
-        try { ws.send(JSON.stringify({ type: 'status', content: 'Sonnet busy — retrying with Haiku...' })); } catch {}
-
-        // Respawn with Haiku
-        const env = { ...process.env };
-        for (const key of Object.keys(env)) { if (key.startsWith('CLAUDE_') || key === 'CLAUDECODE') delete env[key]; }
-        const claudeBin = process.env.CLAUDE_BIN || 'claude';
-        child = spawn(claudeBin, ['--print', '--model', 'claude-haiku-4-5-20251001', '--tools', ''], {
-          env, cwd: require('os').tmpdir(), stdio: ['pipe', 'pipe', 'pipe'],
-        });
-        ws.currentChild = child;
-        child.stdin.write(prompt);
-        child.stdin.end();
-        response = '';
-        firstChunk = true;
-
-        child.stdout.on('data', (chunk) => {
-          response += chunk.toString();
-          if (firstChunk) {
-            ws.send(JSON.stringify({ type: 'status', content: 'Haiku is generating...' }));
-            firstChunk = false;
-          }
-        });
-        child.on('close', onChildClose);
-        child.on('error', (err) => {
-          console.error('[claude-haiku-fallback] Error:', err.message);
-          setBuildInProgress(false);
-        });
-      }
-    }, 30000);
-  }
-  resetSilenceTimeout();
-
-  // 5-minute hard timeout — kill even Haiku if it hangs
-  const buildTimeout = setTimeout(() => {
-    console.error('[claude] Build timed out after 5 minutes, killing process');
-    child.kill();
-    setBuildInProgress(false);
-    if (silenceTimeout) clearTimeout(silenceTimeout);
-    try { ws.send(JSON.stringify({ type: 'error', content: 'Build timed out after 5 minutes. The Claude CLI may be unresponsive. Try again or check your network.' })); } catch {}
-  }, 300000);
-
   let response = '';
   let firstChunk = true;
   let pagesDetected = 0;
 
-  child.stdout.on('data', (chunk) => {
-    response += chunk.toString();
-    resetSilenceTimeout(); // got output, reset silence timer
-    if (firstChunk) {
-      ws.send(JSON.stringify({ type: 'status', content: 'Claude is generating...' }));
-      firstChunk = false;
-    }
+  // AbortController for WS close cancellation
+  const sdkController = new AbortController();
+  const wsCloseHandler = () => sdkController.abort();
+  ws.once('close', wsCloseHandler);
+  ws.currentAbortController = sdkController;
 
-    // Detect page delimiters in stream for real-time progress
-    const pageMatches = response.match(/^---\s*PAGE:\s*(\S+)\s*---\s*$/gm);
-    if (pageMatches && pageMatches.length > pagesDetected) {
-      const newPage = pageMatches[pageMatches.length - 1].match(/PAGE:\s*(\S+)/)[1];
-      pagesDetected = pageMatches.length;
-      ws.send(JSON.stringify({
-        type: 'status',
-        content: `Generating page ${pagesDetected}: ${newPage}...`
-      }));
-    }
+  // Silence timer — resets on every received chunk
+  let silenceTimer = null;
+  const SILENCE_MS = 30000;
+  const resetSilenceTimer = () => {
+    if (silenceTimer) clearTimeout(silenceTimer);
+    if (retriedWithHaiku) return;
+    silenceTimer = setTimeout(async () => {
+      if (response.length === 0 && !retriedWithHaiku && currentModel !== 'claude-haiku-4-5-20251001') {
+        console.warn('[claude] No output after 30s — falling back to Haiku');
+        retriedWithHaiku = true;
+        sdkController.abort();
+        try { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Sonnet busy — retrying with Haiku...' })); } catch {}
+        // Haiku fallback via SDK
+        await runHaikuFallbackSDK(prompt, ws, buildStartTime, requestType);
+      }
+    }, SILENCE_MS);
+  };
 
-    ws.send(JSON.stringify({ type: 'stream', content: chunk.toString() }));
-  });
-
-  let stderrOutput = '';
-  child.stderr.on('data', (chunk) => {
-    stderrOutput += chunk.toString();
-    console.error('[claude]', chunk.toString());
-  });
-
-  function onChildClose(code) {
-    clearTimeout(buildTimeout);
-    if (silenceTimeout) clearTimeout(silenceTimeout);
+  // Extract the response-processing logic into a reusable function callable from both paths
+  function onChatComplete(finalResponse, usage) {
     setBuildInProgress(false);
-    ws.currentChild = null;
+    ws.currentAbortController = null;
 
-    // Approximate token tracking (no usage data from --print text mode)
-    const inputEstimate = Math.round(prompt.length / 4);
-    const outputEstimate = Math.round(response.length / 4);
-    sessionInputTokens += inputEstimate;
-    sessionOutputTokens += outputEstimate;
+    // Real token tracking from SDK usage
+    const inputTokens = usage?.input_tokens || Math.round(prompt.length / 4);
+    const outputTokens = usage?.output_tokens || Math.round(finalResponse.length / 4);
+    sessionInputTokens += inputTokens;
+    sessionOutputTokens += outputTokens;
     broadcastSessionStatus(ws);
 
     // Update SQLite session tokens
     if (currentSessionId) {
-      const cost = calculateSessionCost(loadSettings().model || 'claude-sonnet-4-6', inputEstimate, outputEstimate);
-      try { db.updateSessionTokens(currentSessionId, inputEstimate, outputEstimate, cost); } catch {}
+      const cost = calculateSessionCost(loadSettings().model || 'claude-sonnet-4-6', inputTokens, outputTokens);
+      try { db.updateSessionTokens(currentSessionId, inputTokens, outputTokens, cost); } catch {}
     }
+
+    // Log to api-telemetry
+    logSDKCall({
+      provider: 'claude', model: currentModel, callSite: 'chat',
+      inputTokens, outputTokens,
+      tag: TAG, hubRoot: HUB_ROOT,
+    });
 
     // Context warning (once per session)
     if (!contextWarningShown) {
@@ -9073,20 +9020,19 @@ ${analyticsInstruction}`;
       if (used / windowSize >= 0.8) {
         contextWarningShown = true;
         try {
-          ws.send(JSON.stringify({ type: 'assistant', content: '⚠️ Context is getting full (80%+). Quality may start to degrade. Consider starting a fresh session, or ask me to summarize what we\'ve built so far to compress the context.' }));
+          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'assistant', content: '⚠️ Context is getting full (80%+). Quality may start to degrade. Consider starting a fresh session, or ask me to summarize what we\'ve built so far to compress the context.' }));
         } catch {}
       }
     }
 
-    if (code !== 0 || !response.trim()) {
-      console.error(`[claude] Build failed — exit code: ${code}, response length: ${response.length}, stderr: ${stderrOutput.substring(0, 500)}`);
+    if (!finalResponse.trim()) {
       const fallback = "I couldn't process that request right now. Try being more specific about what you'd like to change, or say 'build the site' to regenerate.";
-      ws.send(JSON.stringify({ type: 'assistant', content: fallback }));
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'assistant', content: fallback }));
       appendConvo({ role: 'assistant', content: fallback, at: new Date().toISOString() });
       return;
     }
 
-    response = response.trim();
+    response = finalResponse.trim();
 
     // Detect multi-page output — either explicit MULTI_UPDATE prefix or PAGE delimiters anywhere
     const hasMultiPrefix = response.startsWith('MULTI_UPDATE:');
@@ -9240,7 +9186,140 @@ ${analyticsInstruction}`;
       appendConvo({ role: 'assistant', content: response, at: new Date().toISOString() });
     }
   }
-  child.on('close', onChildClose);
+
+  // SDK streaming call
+  try {
+    const sdk = getAnthropicClient();
+    const stream = sdk.messages.stream({
+      model: currentModel,
+      max_tokens: 16384,
+      messages: [{ role: 'user', content: prompt }],
+    }, { signal: sdkController.signal });
+
+    resetSilenceTimer();
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        const text = event.delta.text;
+        response += text;
+        resetSilenceTimer();
+        if (firstChunk) {
+          if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: 'Claude is generating...' })); } catch {}
+          firstChunk = false;
+        }
+        // Detect page delimiters in stream for real-time progress
+        const pageMatches = response.match(/^---\s*PAGE:\s*(\S+)\s*---\s*$/gm);
+        if (pageMatches && pageMatches.length > pagesDetected) {
+          const newPage = pageMatches[pageMatches.length - 1].match(/PAGE:\s*(\S+)/)[1];
+          pagesDetected = pageMatches.length;
+          if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: `Generating page ${pagesDetected}: ${newPage}...` })); } catch {}
+        }
+        if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'stream', content: text })); } catch {}
+      }
+    }
+
+    if (silenceTimer) clearTimeout(silenceTimer);
+    ws.removeListener('close', wsCloseHandler);
+
+    if (retriedWithHaiku) return; // Haiku fallback handled completion
+
+    const finalMsg = await stream.finalMessage().catch(() => null);
+    onChatComplete(response, finalMsg?.usage);
+
+  } catch (err) {
+    if (silenceTimer) clearTimeout(silenceTimer);
+    ws.removeListener('close', wsCloseHandler);
+    if (err.name === 'AbortError' || err.name === 'APIUserAbortError') {
+      if (!retriedWithHaiku) setBuildInProgress(false);
+      return;
+    }
+    console.error('[chat-sdk] Error:', err.message);
+    setBuildInProgress(false);
+    if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'error', content: 'Generation failed. Please try again.' })); } catch {}
+  }
+}
+
+/**
+ * Haiku fallback for handleChatMessage() — called when Sonnet silence timer trips.
+ * Uses SDK streaming with the Haiku model.
+ */
+async function runHaikuFallbackSDK(prompt, ws, buildStartTime, requestType) {
+  const haikuModel = 'claude-haiku-4-5-20251001';
+  let haikuResponse = '';
+  let firstHaikuChunk = true;
+  let pagesDetected = 0;
+
+  const haikuController = new AbortController();
+  const wsCloseHaikuHandler = () => haikuController.abort();
+  ws.once('close', wsCloseHaikuHandler);
+
+  try {
+    const sdk = getAnthropicClient();
+    const stream = sdk.messages.stream({
+      model: haikuModel,
+      max_tokens: 16384,
+      messages: [{ role: 'user', content: prompt }],
+    }, { signal: haikuController.signal });
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        const text = event.delta.text;
+        haikuResponse += text;
+        if (firstHaikuChunk) {
+          if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: 'Haiku is generating...' })); } catch {}
+          firstHaikuChunk = false;
+        }
+        const pageMatches = haikuResponse.match(/^---\s*PAGE:\s*(\S+)\s*---\s*$/gm);
+        if (pageMatches && pageMatches.length > pagesDetected) {
+          const newPage = pageMatches[pageMatches.length - 1].match(/PAGE:\s*(\S+)/)[1];
+          pagesDetected = pageMatches.length;
+          if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: `Generating page ${pagesDetected}: ${newPage}...` })); } catch {}
+        }
+        if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'stream', content: text })); } catch {}
+      }
+    }
+
+    ws.removeListener('close', wsCloseHaikuHandler);
+    const finalMsg = await stream.finalMessage().catch(() => null);
+    logSDKCall({
+      provider: 'claude', model: haikuModel, callSite: 'chat-haiku-fallback',
+      inputTokens: finalMsg?.usage?.input_tokens || 0,
+      outputTokens: finalMsg?.usage?.output_tokens || 0,
+      tag: TAG, hubRoot: HUB_ROOT,
+    });
+
+    setBuildInProgress(false);
+
+    // Update SQLite session tokens
+    const inputTokens = finalMsg?.usage?.input_tokens || Math.round(prompt.length / 4);
+    const outputTokens = finalMsg?.usage?.output_tokens || Math.round(haikuResponse.length / 4);
+    sessionInputTokens += inputTokens;
+    sessionOutputTokens += outputTokens;
+    broadcastSessionStatus(ws);
+    if (currentSessionId) {
+      const cost = calculateSessionCost(haikuModel, inputTokens, outputTokens);
+      try { db.updateSessionTokens(currentSessionId, inputTokens, outputTokens, cost); } catch {}
+    }
+
+    if (!haikuResponse.trim()) {
+      const fallback = "I couldn't process that request right now. Try being more specific about what you'd like to change, or say 'build the site' to regenerate.";
+      if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'assistant', content: fallback })); } catch {}
+      appendConvo({ role: 'assistant', content: fallback, at: new Date().toISOString() });
+      return;
+    }
+
+    haikuResponse = haikuResponse.trim();
+    // Process the response using the same logic (simplified — send as assistant message)
+    if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'assistant', content: haikuResponse })); } catch {}
+    appendConvo({ role: 'assistant', content: haikuResponse, at: new Date().toISOString() });
+
+  } catch (err) {
+    ws.removeListener('close', wsCloseHaikuHandler);
+    if (err.name !== 'AbortError' && err.name !== 'APIUserAbortError') {
+      console.error('[chat-haiku-fallback] Error:', err.message);
+    }
+    setBuildInProgress(false);
+  }
 }
 
 // --- Design Decisions Extraction ---
