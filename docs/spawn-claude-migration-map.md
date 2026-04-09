@@ -2,7 +2,9 @@
 
 **Purpose:** Document all spawnClaude() call sites in server.js and define the SDK migration strategy for Session 9.
 
-**Last verified:** 2026-04-09 (Session 9 Phase 0 — line numbers confirmed, all 7 map defects fixed)
+**Last verified:** 2026-04-09 (Session 9 Phase 3 — all 8 CS migrated, final statuses confirmed)
+
+**Migration status legend:** ✅ Migrated to SDK | 🔄 Retained as fallback | ⚠️ Separate migration track
 
 ---
 
@@ -10,8 +12,25 @@
 
 There are **8 call sites** where `spawnClaude()` is invoked, plus 2 additional direct subprocess invocations that do NOT go through `spawnClaude()`:
 
-- **Haiku fallback** (line 8992): Inline `spawn()` call inside `handleChatMessage()` that respawns with `claude-haiku-4-5-20251001` after 30s silence
-- **`spawnBrainAdapter()`** (line 11229): Separate function that spawns shell adapter scripts (`fam-convo-get-claude/gemini/codex`) — NOT via claude --print
+- **Haiku fallback** (line 8992): Inline `spawn()` call inside `handleChatMessage()` that respawns with `claude-haiku-4-5-20251001` after 30s silence → ✅ **Migrated** — extracted to `runHaikuFallbackSDK()` using `sdk.messages.stream()`
+- **`spawnBrainAdapter()`** (line 11229): Separate function that spawns shell adapter scripts (`fam-convo-get-claude/gemini/codex`) — NOT via claude --print → ⚠️ **Separate migration track** (CS9)
+
+### Session 9 Phase 3 — Final Migration Status Summary
+
+| Call Site | Function | SDK Replacement | Status |
+|-----------|----------|-----------------|--------|
+| CS1 | `generateSessionSummary()` | `callSDK()` non-streaming | ✅ Migrated |
+| CS2 | `POST /api/image-prompt` | `callSDK()` non-streaming | ✅ Migrated |
+| CS3 | `handleDataModelPlanning()` | `callSDK()` non-streaming | ✅ Migrated |
+| CS4 | `generatePlan()` / `estimateScope()` | `callSDK()` non-streaming | ✅ Migrated |
+| CS5 | `handlePlanning()` | `callSDK()` non-streaming | ✅ Migrated |
+| CS6 | `spawnOnePage()` in `parallelBuild()` | `sdk.messages.stream()` | ✅ Migrated |
+| CS7 | Template build in `parallelBuild()` | `sdk.messages.create()` | ✅ Migrated |
+| CS8 | `handleChatMessage()` | `sdk.messages.stream()` + silence timer | ✅ Migrated |
+| Haiku | Inline silence fallback | `runHaikuFallbackSDK()` | ✅ Migrated |
+| CS9 | `routeToBrainForBrainstorm()` | `spawnClaude()` retained as fallback | 🔄 Retained |
+
+**`spawnClaude()` and `spawnClaudeModel()` status:** Both marked `@deprecated`. Retained for CS9 emergency fallback only. All primary Studio workflows (build, chat, deploy, data model, planning) now use the Anthropic SDK. The `@deprecated` notice reads: *"All main paths use Anthropic SDK via callSDK() / ClaudeAdapter."*
 
 ### Call Site 1 — Session Summary Generation
 - **Location:** server.js:693 ✅ verified
