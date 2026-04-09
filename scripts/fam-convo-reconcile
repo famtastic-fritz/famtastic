@@ -11,6 +11,9 @@ output=$("$(dirname "$0")/fam-convo-compose" "$tag")
 # Extract canonical JSON and write to file
 echo "$output" | awk '/---/{exit}1' > "$CJ_DATA_ROOT/convos/canonical/$tag.json"
 
+# Apply conversation tags (non-blocking — reconcile continues even if tagging fails)
+"$(dirname "$0")/fam-convo-tag" "$CJ_DATA_ROOT/convos/canonical/$tag.json" || true
+
 # Extract manifest and write to file
 echo "$output" | awk -v i=0 '/---/{i++} i==1' | tail -n +2 | sed '$d' > "$CJ_DATA_ROOT/convos/manifests/$tag.manifest.json"
 

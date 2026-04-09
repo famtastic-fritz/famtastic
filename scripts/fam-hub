@@ -347,8 +347,11 @@ IDEAHELP
         echo ""
         [ "$ERRORS" -eq 0 ] && echo "All checks passed." || echo "$ERRORS issue(s) found."
         ;;
-      verify-quickstart)
-        echo "=== FAMtastic Quick Start Verification ==="
+      check-tools)
+        echo "=== FAMtastic Tool Check ==="
+        echo "Checks that required CLI tools are installed and on PATH."
+        echo "Does not verify Studio starts correctly — run fam-hub site start for that."
+        echo ""
         for tool in node npm python3 claude netlify; do
           if command -v "$tool" &>/dev/null; then
             echo "  ✅ $tool: $(command -v $tool)"
@@ -357,14 +360,19 @@ IDEAHELP
           fi
         done
         ;;
+      verify-quickstart)
+        echo "WARNING: verify-quickstart is deprecated, use: fam-hub admin check-tools" >&2
+        exec "$0" admin check-tools "$@"
+        ;;
       *)
         cat <<'ADMINHELP'
 fam-hub admin — Health & Diagnostics
 
 Usage:
-  fam-hub admin doctor           Check tool dependencies
-  fam-hub admin verify           Verify repo structure
-  fam-hub admin verify-quickstart  Verify Quick Start tools are present
+  fam-hub admin doctor      Check tool dependencies
+  fam-hub admin verify      Verify repo structure
+  fam-hub admin check-tools Check required CLI tools are installed and on PATH.
+                             (verify-quickstart is a deprecated alias for this)
 
 ADMINHELP
         ;;

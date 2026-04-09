@@ -262,3 +262,127 @@ Risk classification with migration approach for each.
 ## Gaps Closed This Session
 
 All 7 Session 7 known gaps (G1–G7) and all 7 Codex adversarial findings (C1–C7) closed.
+
+---
+
+## Session 8 Addendum — 2026-04-09
+
+Second adversarial review identified 6 corrections and a new conversation tagging feature. All 54 addendum tests pass.
+
+### Correction 1 — Real Embeddings Before Calibration
+
+The Phase 1 implementation of Pinecone text-based embeddings was correct in principle but the legacy fallback in `pineconeQuery()` used `setImmediate(() => backgroundRefresh(...))` directly instead of going through the queue. The test for C1 was also incorrectly comparing character indices across different functions (cross-function index comparison is meaningless). Both fixed.
+
+**Files:** `site-studio/lib/research-router.js`
+
+### Correction 2 — Multi-turn Subprocess Limitation Documented
+
+Claude CLI subprocess invocations pass conversation history as prepended plain text — not a structured API. Multi-turn fidelity is best-effort only; real multi-turn requires the Anthropic SDK (Session 9). Documented in:
+- All three adapter scripts (`fam-convo-get-claude`, `fam-convo-get-gemini`, `fam-convo-get-codex`) with explicit comment
+- `.wolf/cerebrum.md` — `SUBPROCESS_CLI_MULTI_TURN` do-not-repeat entry referencing Session 9
+- `.wolf/cerebrum.md` — `SUMMARIZATION_ALWAYS_CLAUDE` do-not-repeat entry
+- `--input-format json` flag confirmed absent (it doesn't exist in Claude CLI)
+
+### Correction 3 — iterations_to_approval Removed
+
+`iterations_to_approval` required plan revision tracking infrastructure that doesn't exist. Removed from `computeEffectivenessFromBuild()`. Weights rebalanced:
+- `healthDelta` weight: **0.6** (was 0.5)
+- `briefReuseRate` weight: **0.4** (was 0.3)
+- `iterationsToApproval` weight: **removed** (was 0.2)
+
+Comment in source explains removal rationale. Score range 0–100 preserved.
+
+**Files:** `site-studio/lib/research-registry.js`
+
+### Correction 4 — Staleness Re-query Single-Worker Queue
+
+Phase 2's `backgroundRefresh` via bare `setImmediate()` allowed parallel floods when multiple stale verticals triggered simultaneously. Replaced with `REQUERY_QUEUE`:
+
+```javascript
+const REQUERY_QUEUE = {
+  pending:    new Set(),  // deduplicates by vertical+question
+  processing: false,      // at most 1 background call at a time
+};
+```
+
+- `enqueueRequery(vertical, question)` — adds to queue, starts worker if idle
+- `processRequeryQueue()` — single-worker async drain loop
+- Both `setImmediate(backgroundRefresh)` calls in `pineconeQuery()` replaced (primary + legacy fallback paths)
+
+**Files:** `site-studio/lib/research-router.js`
+
+### Correction 5 — verify-quickstart → check-tools
+
+`fam-hub admin verify-quickstart` renamed to `fam-hub admin check-tools`. The old name implied Studio startup verification (which it doesn't do). Help text now reads: *"Does not verify Studio starts correctly"*. Deprecation shim prints `WARNING: verify-quickstart is deprecated, use: fam-hub admin check-tools` to stderr and execs the new subcommand.
+
+**Files:** `scripts/fam-hub`
+
+### Correction 6 — Migration Map Grep Scope Expanded
+
+`docs/spawn-claude-migration-map.md` appended with:
+- **Search Commands Used** — 4 grep patterns for finding all call sites: `spawnClaude(`, `child_process`, `site-studio/lib/` references, `claude --print`
+- **Manual Review Required** — section with verification date `2026-04-09`
+
+### Conversation Tagging (New Feature)
+
+`scripts/fam-convo-tag` — bash script using `jq` to auto-classify assistant messages with content-pattern tags. 7 tag patterns:
+
+| Tag | Content Signal |
+|-----|----------------|
+| `component-discussion` | component, library, export, skill |
+| `build-related` | build, generate, html, template |
+| `gap-identified` | error, failed, broken, bug, fix |
+| `brainstorm` | idea, what if, consider, maybe, could we |
+| `deployment` | deploy, netlify, live, production |
+| `research-related` | research, vertical, market, industry |
+| `media` | image, photo, mascot, character, logo, svg |
+
+Behaviors:
+- Non-destructive: existing tags preserved, new ones appended, `unique` applied
+- Handles both `{ messages: [...] }` objects and bare arrays
+- Validates JSON before processing; exits 0 on invalid/missing file
+- `fam-convo-reconcile` calls it non-blocking (`|| true`) after writing canonical JSON
+
+Adapter updates — all three `fam-convo-get-*` scripts now include `tags:[]` in jq output:
+```bash
+'{agent:$a, at:$t, tags:[], messages:[...]}'
+```
+
+### Addendum Test Results
+
+**54/54 tests — all passing.**
+
+| Section | Tests |
+|---------|-------|
+| Correction 1 — Real Embeddings | 4 |
+| Correction 2 — Multi-turn Documentation | 8 |
+| Correction 3 — iterations_to_approval Removed | 6 |
+| Correction 4 — Staleness Queue | 7 |
+| Correction 5 — check-tools Rename | 7 |
+| Correction 6 — Migration Map | 6 |
+| Conversation Tagging | 16 |
+
+### Addendum Files
+
+| File | Change |
+|------|--------|
+| `scripts/fam-convo-tag` | New script |
+| `tests/session8-addendum-tests.js` | New test suite (54 tests) |
+| `site-studio/lib/research-router.js` | REQUERY_QUEUE + enqueueRequery + processRequeryQueue; second setImmediate removed |
+| `site-studio/lib/research-registry.js` | iterations_to_approval removed; weights 0.6/0.4 |
+| `scripts/fam-hub` | check-tools subcommand; verify-quickstart deprecation shim |
+| `adapters/claude/fam-convo-get-claude` | best-effort comment; tags:[] in jq output |
+| `adapters/gemini/fam-convo-get-gemini` | best-effort comment; tags:[] in jq output |
+| `adapters/codex/fam-convo-get-codex` | best-effort comment; tags:[] in jq output |
+| `scripts/fam-convo-reconcile` | fam-convo-tag call (non-blocking) |
+| `.wolf/cerebrum.md` | SUBPROCESS_CLI_MULTI_TURN + SUMMARIZATION_ALWAYS_CLAUDE entries |
+| `docs/spawn-claude-migration-map.md` | Search Commands + Manual Review Required sections |
+
+### Updated Test Count
+
+| Session | Tests Added | Running Total |
+|---------|------------|---------------|
+| v3 Engine (Phases 0–5) | 401 | 401 |
+| Session 7 | 328 | 729 |
+| Session 8 | 155 | 884 |
+| Session 8 Addendum | 54 | **938** |

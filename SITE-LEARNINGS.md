@@ -2426,3 +2426,83 @@ Added to `site-studio/public/css/studio-canvas.css`:
 - **Haiku fallback inline at line 8992** — `handleChatMessage()` has an inline Claude spawn for Haiku fallback that is not a call to `spawnClaude()`. Should be extracted to `spawnClaudeModel(model, prompt)` before SDK migration to avoid migrating the same logic twice.
 - **seed-pinecone --vertical flag missing** — `scripts/seed-pinecone` does not support `--vertical <name>`. Build-completion auto-seeding for specific verticals requires this flag. Deferred to a future session.
 - **spawnBrainAdapter separate migration track** — `spawnBrainAdapter` spawns shell scripts, not claude --print. It has its own subprocess pattern and will need a separate migration strategy if non-claude brains ever switch to SDK-based APIs.
+
+---
+
+## Session 8 Addendum — Corrections 1–6 + Conversation Tagging (2026-04-09)
+
+### Correction 1 — Embeddings Order Verified
+
+`pineconeUpsert()` and `pineconeQuery()` in `research-router.js` both use text-based APIs as the primary path with zero-vector legacy fallback. The order in source: text-based `try` block first, then `catch` falls through to legacy. Tests now verify the order within each function (not across functions — cross-function index comparison is meaningless).
+
+### Correction 2 — Multi-turn CLI Limitation
+
+Subprocess-based multi-turn conversation is **best-effort only**. History is prepended as plain text — no structured API. Claude CLI, Gemini CLI, and Codex CLI all receive history this way. Real multi-turn (via the Anthropic SDK messages API) is deferred to Session 9.
+
+**Do not use `--input-format json`** — this flag does not exist in Claude CLI.
+
+Decision entry in `.wolf/cerebrum.md`: `SUBPROCESS_CLI_MULTI_TURN` and `SUMMARIZATION_ALWAYS_CLAUDE`.
+
+### Correction 3 — computeEffectivenessFromBuild() Rebalanced
+
+`iterations_to_approval` removed from effectiveness scoring. It required plan revision tracking infrastructure that does not exist. Weights rebalanced to sum to 1.0:
+
+```javascript
+const score = (
+  Math.min(100, Math.max(0, healthDelta * 50 + 50)) * 0.6 +   // healthDelta weight: 0.6
+  (briefReuseRate * 100) * 0.4                                  // briefReuseRate weight: 0.4
+);
+```
+
+**File:** `site-studio/lib/research-registry.js` — `computeEffectivenessFromBuild(source, vertical, buildMetrics)`
+
+### Correction 4 — REQUERY_QUEUE (Single Worker)
+
+`setImmediate(() => backgroundRefresh(...))` replaced by `enqueueRequery(vertical, question)` in **both** paths inside `pineconeQuery()` (primary text-based path and legacy zero-vector fallback path).
+
+```javascript
+const REQUERY_QUEUE = {
+  pending:    new Set(),  // JSON-stringified {vertical, question} — Set deduplicates
+  processing: false,      // single-worker flag
+};
+```
+
+`enqueueRequery()` adds to queue, starts `processRequeryQueue()` if idle. Worker drains one entry at a time, scheduling the next with `setImmediate(processRequeryQueue)` if more remain.
+
+**File:** `site-studio/lib/research-router.js`
+
+### Correction 5 — check-tools Replaces verify-quickstart
+
+`fam-hub admin check-tools` — checks node, npm, python3, claude, netlify. Help text explicitly states "Does not verify Studio starts correctly" to prevent confusion. `verify-quickstart` shim redirects with deprecation warning to stderr.
+
+**File:** `scripts/fam-hub`
+
+### Correction 6 — Migration Map Search Commands
+
+`docs/spawn-claude-migration-map.md` now includes a **Search Commands Used** section with 4 grep patterns for finding all call sites, and a **Manual Review Required** section with last-verified date.
+
+### Conversation Tagging — fam-convo-tag
+
+New script: `scripts/fam-convo-tag`. Applies content-pattern tags to assistant messages in canonical conversation JSON files.
+
+**Invocation:** `fam-convo-tag <canonical-file>`
+
+**Tag patterns (7):**
+
+| Tag | Regex (case-insensitive) |
+|-----|--------------------------|
+| `component-discussion` | `component\|library\|export\|skill` |
+| `build-related` | `build\|generate\|html\|template` |
+| `gap-identified` | `error\|failed\|broken\|bug\|fix` |
+| `brainstorm` | `idea\|what if\|consider\|maybe\|could we` |
+| `deployment` | `deploy\|netlify\|live\|production` |
+| `research-related` | `research\|vertical\|market\|industry` |
+| `media` | `image\|photo\|mascot\|character\|logo\|svg` |
+
+**Non-destructive:** existing tags preserved, new tags appended, `unique` applied. Handles both `{ messages: [] }` object form and bare array form. Validates JSON first; exits 0 on invalid file.
+
+**Wire-up:**
+- `fam-convo-reconcile`: calls `fam-convo-tag "$CJ_DATA_ROOT/convos/canonical/$tag.json" || true` after writing canonical file (non-blocking)
+- All three adapter scripts (`fam-convo-get-claude`, `fam-convo-get-gemini`, `fam-convo-get-codex`): jq output includes `tags:[]` so the field exists on every record from the start
+
+**Tests:** `tests/session8-addendum-tests.js` — 54/54 PASS. Cumulative: **938/938**.

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Summarization always uses Claude regardless of active brain.
 # When history > 20 turns, oldest 10 are summarized by Claude before formatting.
+#
+# NOTE: Multi-turn conversation via subprocess CLIs is best-effort text formatting only.
+# History is prepended as plain text — not a structured API. Gemini CLI does not accept
+# a structured conversation format through stdin. Real multi-turn deferred to Session 9.
 set -euo pipefail
 
 TAG="${1:-latest-convo}"
@@ -42,6 +46,6 @@ RESP="$(printf "%s" "$PROMPT" | "$HUB_ROOT/scripts/gemini-cli")"
 TS="$(date -u +%FT%TZ)"
 printf '%s\n' "$(jq -c --null-input \
   --arg t "$TS" --arg p "$PROMPT" --arg r "$RESP" --arg a "gemini" \
-  '{agent:$a, at:$t, messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}]}')" >> "$OUT"
+  '{agent:$a, at:$t, tags:[], messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}]}')" >> "$OUT"
 
 echo "[gemini:get] $TAG → $OUT (+1)"

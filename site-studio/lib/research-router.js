@@ -54,6 +54,34 @@ function logResearchCall(source, vertical, question, result, fromCache) {
   } catch {}
 }
 
+// ── Staleness re-query queue (single worker, prevents parallel flood) ─────────
+// Correction 4 (Session 8 addendum): when multiple stale verticals are detected
+// in rapid succession, queue them rather than firing simultaneous background calls.
+const REQUERY_QUEUE = {
+  pending:    new Set(),  // verticals awaiting refresh (Set deduplicates)
+  processing: false,      // single-worker flag — at most 1 background call at a time
+};
+
+function enqueueRequery(vertical, question) {
+  REQUERY_QUEUE.pending.add(JSON.stringify({ vertical, question }));
+  console.log(`REQUERY_QUEUED — ${vertical} added to refresh queue (${REQUERY_QUEUE.pending.size} pending)`);
+  if (!REQUERY_QUEUE.processing) processRequeryQueue();
+}
+
+async function processRequeryQueue() {
+  if (REQUERY_QUEUE.processing || REQUERY_QUEUE.pending.size === 0) return;
+  REQUERY_QUEUE.processing = true;
+  const entry = REQUERY_QUEUE.pending.values().next().value;
+  REQUERY_QUEUE.pending.delete(entry);
+  try {
+    const { vertical, question } = JSON.parse(entry);
+    await backgroundRefresh(vertical, question, null);
+  } catch {}
+  REQUERY_QUEUE.processing = false;
+  // Continue processing remaining queue entries
+  if (REQUERY_QUEUE.pending.size > 0) setImmediate(processRequeryQueue);
+}
+
 // ── Pinecone query/upsert (graceful degradation) ──────────────────────────────
 
 async function pineconeQuery(vertical, question) {
@@ -86,8 +114,8 @@ async function pineconeQuery(vertical, question) {
         if (age > 90) {
           console.log(`STALE_RESEARCH — ${vertical} last updated ${Math.round(age)} days ago, refreshing in background`);
           const staleResult = { stale: true, answer: match.fields?.answer || match.metadata?.answer, source: match.metadata?.source, score };
-          // Background refresh (G4)
-          setImmediate(() => backgroundRefresh(vertical, question, staleResult));
+          // Queue background refresh (Correction 4: single-worker queue prevents flood)
+          enqueueRequery(vertical, question);
           return staleResult;
         }
       }
@@ -111,7 +139,8 @@ async function pineconeQuery(vertical, question) {
         if (age > 90) {
           console.log(`STALE_RESEARCH — ${vertical} last updated ${Math.round(age)} days ago, refreshing in background`);
           const staleResult = { stale: true, answer: match.metadata?.answer, source: match.metadata?.source };
-          setImmediate(() => backgroundRefresh(vertical, question, staleResult));
+          // Queue background refresh (Correction 4: single-worker queue prevents flood)
+          enqueueRequery(vertical, question);
           return staleResult;
         }
       }

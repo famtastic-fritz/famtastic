@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Summarization always uses Claude regardless of active brain.
 # When history > 20 turns, oldest 10 are summarized by Claude before formatting.
+#
+# NOTE: Multi-turn conversation via subprocess CLIs is best-effort text formatting only.
+# claude --print supports --input-format text and stream-json only — NOT a JSON messages array.
+# History is prepended as formatted text — not a structured API.
+# Real multi-turn is deferred to Session 9 Anthropic SDK migration.
 set -euo pipefail
 
 TAG="${1:-latest-convo}"
@@ -38,10 +43,10 @@ HUB_ROOT="${HUB_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 # Call native CLI
 RESP="$(printf "%s" "$PROMPT" | "$HUB_ROOT/scripts/claude-cli")"
 
-# Append JSONL record
+# Append JSONL record (tags: [] — empty array for conversation tagging system)
 TS="$(date -u +%FT%TZ)"
 printf '%s\n' "$(jq -c --null-input \
   --arg t "$TS" --arg p "$PROMPT" --arg r "$RESP" --arg agent "claude" \
-  '{agent:$agent, at:$t, messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}]}')" >> "$OUT"
+  '{agent:$agent, at:$t, tags:[], messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}]}')" >> "$OUT"
 
 echo "[claude:get] $TAG → $OUT (+1)"

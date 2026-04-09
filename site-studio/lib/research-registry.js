@@ -258,21 +258,23 @@ function getEffectivenessReport() {
 }
 
 /**
- * Compute effectiveness score from build metrics (C5).
+ * Compute effectiveness score from build metrics (C5 — rebalanced per Session 8 addendum).
+ * Two signals only — iterations_to_approval removed (requires plan revision tracking
+ * infrastructure that doesn't exist. Add in Session 9+ if needed).
+ *
  * @param {string} source — research source key
  * @param {string} vertical — business vertical
- * @param {object} buildMetrics — { healthDelta, briefReuseRate, iterationsToApproval }
- *   healthDelta: -1 to +1 (delta in site health score)
- *   briefReuseRate: 0 to 1 (fraction of brief sections reused)
- *   iterationsToApproval: integer (lower = better, max 5 counts as 0)
+ * @param {object} buildMetrics — { healthDelta, briefReuseRate }
+ *   healthDelta: -1 to +1 (delta in site health score; 0 = neutral, 1 = max improvement)
+ *   briefReuseRate: 0 to 1 (fraction of brief sections using research content)
  * @returns {number} score 0-100
  */
 function computeEffectivenessFromBuild(source, vertical, buildMetrics) {
-  const { healthDelta = 0, briefReuseRate = 0, iterationsToApproval = 5 } = buildMetrics || {};
+  const { healthDelta = 0, briefReuseRate = 0 } = buildMetrics || {};
+  // Weights sum to 1.0: build_health_delta (0.6) + brief_reuse_rate (0.4)
   const score = (
-    Math.min(100, Math.max(0, healthDelta * 50 + 50)) * 0.5 +
-    (briefReuseRate * 100) * 0.3 +
-    (Math.max(0, 5 - iterationsToApproval) / 5 * 100) * 0.2
+    Math.min(100, Math.max(0, healthDelta * 50 + 50)) * 0.6 +
+    (briefReuseRate * 100) * 0.4
   );
   const rounded = Math.round(score);
   saveEffectivenessScore(source, vertical, rounded);

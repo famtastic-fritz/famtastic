@@ -264,3 +264,41 @@ Add `@anthropic-ai/sdk` to `site-studio/package.json`. Initialize once at module
 const Anthropic = require('@anthropic-ai/sdk');
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 ```
+
+---
+
+## Search Commands Used
+
+**Session 8 addendum (Correction 6):** Run these grep commands before Session 9 to verify no undocumented call sites exist. The Section 1 inventory was built from these commands.
+
+```bash
+# All direct spawnClaude() calls in server.js
+grep -n "spawnClaude(" site-studio/server.js
+
+# All child_process / spawn / exec / execFile references in server.js
+grep -n "child_process\|\.spawn\b\|\.exec\b\|\.execFile\b" site-studio/server.js
+
+# Any spawnClaude or child_process in lib/ modules
+grep -rn "spawnClaude\|child_process" site-studio/lib/
+
+# Any direct claude --print or claude --model invocations anywhere
+grep -rn "claude --print\|claude --model" site-studio/
+```
+
+Any matches from these grep commands that are NOT in Section 1 of this document indicate an undocumented call site. Document before migrating.
+
+---
+
+## Manual Review Required
+
+This document must be read by someone who knows the server.js codebase **before Session 9 begins**.
+
+Structural tests (file exists, sections present, call site counts match) verify formatting only — not accuracy. A migration map with correct structure but wrong descriptions will cause Session 9 failures.
+
+**Before starting the SDK migration, confirm:**
+1. Every call site in Section 1 has been reviewed against current server.js line numbers (they shift as code is added)
+2. Section 2 special behaviors are still accurate (check spawnClaude() implementation for any changes since this was written)
+3. Section 4 complex call sites have been triaged — plan the streaming migration carefully
+4. Section 6 feature flag is in place and tested before migrating the first call site
+
+**Last verified:** 2026-04-09. Re-verify before Session 9.

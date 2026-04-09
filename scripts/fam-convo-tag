@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# fam-convo-tag — Apply classification tags to messages in a canonical conversation file.
+# Usage: fam-convo-tag <canonical-file>
+#
+# Auto-tags assistant messages based on content patterns.
+# Tags survive fam-convo-compose's flatten — jq preserves unknown fields.
+# Non-destructive: existing tags are preserved, new ones appended.
+# Exits 0 even on partial failure so fam-convo-reconcile always continues.
+
+set -euo pipefail
+
+CANONICAL_FILE="${1:-}"
+
+if [[ -z "$CANONICAL_FILE" ]]; then
+  echo "fam-convo-tag: usage: fam-convo-tag <canonical-file>" >&2
+  exit 1
+fi
+
+if [[ ! -f "$CANONICAL_FILE" ]]; then
+  echo "fam-convo-tag: file not found: $CANONICAL_FILE" >&2
+  exit 1
+fi
+
+# Validate it is parseable JSON before attempting tagging
+if ! jq empty "$CANONICAL_FILE" 2>/dev/null; then
+  echo "fam-convo-tag: invalid JSON in $CANONICAL_FILE — skipping" >&2
+  exit 0
+fi
+
+# Auto-tagging via jq — pattern match on assistant message content.
+# Each pattern maps to a tag. Multiple patterns can match a single message.
+jq '
+  def auto_tags(content):
+    [
+      if (content | test("component|library|export|skill"; "i")) then "component-discussion" else empty end,
+      if (content | test("build|generate|html|template"; "i")) then "build-related" else empty end,
+      if (content | test("error|failed|broken|bug|fix"; "i")) then "gap-identified" else empty end,
+      if (content | test("idea|what if|consider|maybe|could we"; "i")) then "brainstorm" else empty end,
+      if (content | test("deploy|netlify|live|production"; "i")) then "deployment" else empty end,
+      if (content | test("research|vertical|market|industry"; "i")) then "research-related" else empty end,
+      if (content | test("image|photo|mascot|character|logo|svg"; "i")) then "media" else empty end
+    ];
+
+  if type == "object" and has("messages") then
+    .messages |= map(
+      if .role == "assistant" then
+        . + { tags: ((.tags // []) + auto_tags(.content // "") | unique) }
+      else
+        .
+      end
+    )
+  elif type == "array" then
+    map(
+      if .role == "assistant" then
+        . + { tags: ((.tags // []) + auto_tags(.content // "") | unique) }
+      else
+        .
+      end
+    )
+  else
+    .
+  end
+' "$CANONICAL_FILE" > "${CANONICAL_FILE}.tmp" && mv "${CANONICAL_FILE}.tmp" "$CANONICAL_FILE"
+
+MSG_COUNT=$(jq 'if type == "object" then .messages | length elif type == "array" then length else 0 end' "$CANONICAL_FILE" 2>/dev/null || echo 0)
+echo "[fam-convo-tag] tagged ${MSG_COUNT} messages in $(basename "$CANONICAL_FILE")"

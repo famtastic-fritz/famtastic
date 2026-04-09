@@ -1,12 +1,12 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-09 (Session 8 — cj-* rename, research calibration, context completeness, SDK migration map)
+**Last updated:** 2026-04-09 (Session 8 Addendum — iterations_to_approval removed, REQUERY_QUEUE, check-tools rename, conversation tagging)
 
 ---
 
 ## What FAMtastic Site Studio Is
 
-FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it runs entirely on localhost using the Claude CLI (no API keys, no SaaS dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. Session 8 renamed all cj-* scripts to fam-convo-*, implemented research calibration (threshold config, cache debounce, text-based Pinecone embeddings, effectiveness auto-scoring), fixed 7 known gaps (all-pages context, Pinecone embeddings, stale refresh, effectiveness bar UI, MCP auto-parse, brain reinject), and produced the spawnClaude() migration map for Session 9 SDK transition. The system is currently single-user and localhost-only, built and operated by Fritz Medine.
+FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it runs entirely on localhost using the Claude CLI (no API keys, no SaaS dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. Session 8 renamed all cj-* scripts to fam-convo-*, implemented research calibration (threshold config, cache debounce, text-based Pinecone embeddings, effectiveness auto-scoring), fixed 7 known gaps (all-pages context, Pinecone embeddings, stale refresh, effectiveness bar UI, MCP auto-parse, brain reinject), and produced the spawnClaude() migration map for Session 9 SDK transition. Session 8 Addendum: removed `iterations_to_approval` from effectiveness scoring (rebalanced to 0.6/0.4), replaced bare `setImmediate(backgroundRefresh)` with a single-worker `REQUERY_QUEUE`, renamed `verify-quickstart` → `check-tools`, documented CLI multi-turn limitation in all adapters, and added `fam-convo-tag` for auto-tagging conversation messages. The system is currently single-user and localhost-only, built and operated by Fritz Medine.
 
 ---
 
@@ -143,7 +143,7 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 
 **`research-registry.js`** — `RESEARCH_REGISTRY` with 4 sources (gemini_loop, build_patterns, manual, perplexity). Effectiveness scoring persisted to `.local/research-effectiveness.json`. Exports: `RESEARCH_REGISTRY`, `saveEffectivenessScore`, `getEffectivenessReport`, `loadEffectivenessScores`.
 
-**`research-router.js`** — `queryResearch(vertical, question, options)`: Pinecone-first (configurable threshold via `studio-config.json`, default 0.75), 90-day staleness with background auto-refresh via `setImmediate()`, text-based `upsertRecords()` (fallback to zero-vectors), source selection, similarity score logging. `rateResearch(source, vertical, score)`: validates 1–5. `selectSource(vertical, question, options)`: build_patterns → manual → gemini_loop → perplexity. `getThreshold()`: reads from `~/.config/famtastic/studio-config.json`.
+**`research-router.js`** — `queryResearch(vertical, question, options)`: Pinecone-first (configurable threshold via `studio-config.json`, default 0.75), 90-day staleness with background auto-refresh via `REQUERY_QUEUE` (single-worker, deduplicates by Set), text-based `upsertRecords()` (fallback to zero-vectors), source selection, similarity score logging. `rateResearch(source, vertical, score)`: validates 1–5. `selectSource(vertical, question, options)`: build_patterns → manual → gemini_loop → perplexity. `getThreshold()`: reads from `~/.config/famtastic/studio-config.json`. `REQUERY_QUEUE`: `{ pending: new Set(), processing: false }` — `enqueueRequery()` / `processRequeryQueue()` prevent parallel flood of background refresh calls.
 
 **`scripts/seed-pinecone`** — Seeds `famtastic-intelligence` Pinecone index from site specs and SITE-LEARNINGS.md. Exits 0 gracefully when `PINECONE_API_KEY` not set.
 
@@ -263,8 +263,17 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 - **update-setup-doc MCP table** — Auto-parse section added to `scripts/update-setup-doc`: runs `claude mcp list`, parses connected/failed, updates Status column for known MCPs.
 - **All-pages context missing from STUDIO-CONTEXT.md** — `buildAllPages()` function added to `studio-context-writer.js`. Extracts H1, data-section-id count, img count, last-modified per dist HTML file. Active page marked.
 - **90-day staleness auto-re-query** — `backgroundRefresh()` added to `research-router.js` using `setImmediate()`. Stale results returned immediately; fresh query runs in background. `RESEARCH_UPDATED` event emitted on completion.
-- **fam-hub verify-quickstart missing** — `verify-quickstart` subcommand added to `fam-hub admin`.
+- **fam-hub verify-quickstart naming confusion** — Renamed to `fam-hub admin check-tools`. Help text clarifies "Does not verify Studio starts correctly." `verify-quickstart` shim redirects with deprecation warning to stderr.
 - **spawnClaude migration undocumented** — Complete migration map at `docs/spawn-claude-migration-map.md`. 8 call sites inventoried, SDK equivalents, risk levels, migration order, USE_SDK feature flag rollback plan.
+
+### Closed This Session (2026-04-09 — Session 8 Addendum)
+
+- **`iterations_to_approval` signal in effectiveness scoring** — Removed; requires plan revision tracking infrastructure that doesn't exist. Weights rebalanced: `healthDelta × 0.6 + briefReuseRate × 0.4`.
+- **Parallel staleness refresh flood** — `setImmediate(() => backgroundRefresh(...))` replaced by `REQUERY_QUEUE`. Single-worker; Set deduplication. Both primary and legacy fallback paths updated.
+- **`verify-quickstart` naming confusion** — Renamed to `check-tools`; help text clarified; deprecation shim added.
+- **Multi-turn CLI limitation undocumented** — All 3 adapters now document best-effort multi-turn in comment. `.wolf/cerebrum.md` has `SUBPROCESS_CLI_MULTI_TURN` and `SUMMARIZATION_ALWAYS_CLAUDE` do-not-repeat entries.
+- **Conversation tags absent from adapter output** — All 3 adapters now include `tags:[]` in jq output. `fam-convo-tag` auto-tags assistant messages on reconcile.
+- **Migration map grep scope incomplete** — Search commands section and Manual Review Required section added to `docs/spawn-claude-migration-map.md`.
 
 ### Closed Previous Session (2026-04-09 — Session 7)
 
@@ -348,7 +357,13 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `tests/session8-phase2-tests.js` | 28 | Session 7 known gaps (G1–G7) |
 | `tests/session8-phase3-tests.js` | 21 | spawnClaude migration map |
 
-**Total: 884 tests, 884 passing.**
+**Session 8 Addendum (54 tests):**
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `tests/session8-addendum-tests.js` | 54 | C1 embeddings order, C2 multi-turn docs, C3 iterations_to_approval removal, C4 REQUERY_QUEUE, C5 check-tools rename, C6 migration map grep scope, conversation tagging (functional) |
+
+**Total: 938 tests, 938 passing.**
 
 ### Key Functions
 
@@ -392,9 +407,10 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `scripts/fam-convo-ingest` | Ingest conversation into JSONL (was cj-ingest — shim at old path) |
 | `scripts/fam-convo-promote` | Promote conversation to canonical (was cj-promote — shim at old path) |
 | `scripts/fam-convo-generate-latest` | Generate real agent stats from JSONL sources (was generate-latest-convo — shim at old path) |
-| `adapters/claude/fam-convo-get-claude` | Claude multi-agent adapter (cj-get-convo-claude is a deprecation shim) |
-| `adapters/gemini/fam-convo-get-gemini` | Gemini multi-agent adapter (cj-get-convo-gemini is a deprecation shim) |
-| `adapters/codex/fam-convo-get-codex` | Codex multi-agent adapter (cj-get-convo-codex is a deprecation shim) |
+| `scripts/fam-convo-tag` | Auto-tag assistant messages in canonical conversation JSON (7 content-pattern tags via jq). Called non-blocking from fam-convo-reconcile. |
+| `adapters/claude/fam-convo-get-claude` | Claude multi-agent adapter (cj-get-convo-claude is a deprecation shim). Output includes `tags:[]`. |
+| `adapters/gemini/fam-convo-get-gemini` | Gemini multi-agent adapter (cj-get-convo-gemini is a deprecation shim). Output includes `tags:[]`. |
+| `adapters/codex/fam-convo-get-codex` | Codex multi-agent adapter (cj-get-convo-codex is a deprecation shim). Output includes `tags:[]`. |
 
 ### Per-Site Files
 
@@ -433,12 +449,12 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 
 | File | Purpose |
 |------|---------|
-| `docs/session8-master-report.md` | Session 8 master report — all phases, test counts, file inventory |
+| `docs/session8-master-report.md` | Session 8 master report — all phases + addendum, test counts, file inventory |
 | `docs/session8-phase-0-report.md` | Phase 0: cj-* → fam-convo-* rename + deprecation shims |
 | `docs/session8-phase-1-report.md` | Phase 1: Codex adversarial findings (C1–C7) |
 | `docs/session8-phase-2-report.md` | Phase 2: Session 7 known gaps (G1–G7) |
 | `docs/session8-phase-3-report.md` | Phase 3: spawnClaude() migration map |
-| `docs/spawn-claude-migration-map.md` | Complete spawnClaude() → Anthropic SDK migration map (8 call sites, USE_SDK flag, migration order) |
+| `docs/spawn-claude-migration-map.md` | Complete spawnClaude() → Anthropic SDK migration map (8 call sites, USE_SDK flag, migration order, search commands, manual review section) |
 
 ---
 
