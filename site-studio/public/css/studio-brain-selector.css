@@ -1,0 +1,157 @@
+/* studio-brain-selector.css — Brain selector pill bar for Studio chat panel */
+
+#brain-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--studio-panel, #1e2535);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
+.brain-selector-label {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+.brain-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.05);
+  color: #9ca3af;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.brain-pill:hover {
+  background: rgba(255,255,255,0.1);
+  color: #d1d5db;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.brain-pill.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.brain-pill.active[data-brain="claude"] {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.brain-pill.active[data-brain="codex"] {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.brain-pill.active[data-brain="gemini"] {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fcd34d;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+/* Status dot */
+.brain-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.brain-status-dot.available  { background: #10b981; }
+.brain-status-dot.rate-limited { background: #f59e0b; }
+.brain-status-dot.unavailable  { background: #ef4444; }
+
+/* Cost badge */
+.brain-cost-badge {
+  font-size: 9px;
+  color: #6b7280;
+  background: rgba(0,0,0,0.25);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 1px;
+}
+
+.brain-pill.active .brain-cost-badge {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* Message count */
+.brain-msg-count {
+  font-size: 9px;
+  color: #6b7280;
+  min-width: 14px;
+  text-align: center;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 0 4px;
+  display: none; /* hidden until non-zero */
+}
+
+.brain-pill.has-messages .brain-msg-count {
+  display: inline;
+}
+
+/* Fallback notification bar */
+#brain-fallback-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+  font-size: 11px;
+  color: #fcd34d;
+}
+
+#brain-fallback-bar.visible {
+  display: flex;
+}
+
+#brain-fallback-bar button {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(251, 191, 36, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fcd34d;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#brain-fallback-bar button:hover {
+  background: rgba(251, 191, 36, 0.35);
+}
+
+/* Auto-fallback toggle */
+.brain-auto-fallback-toggle {
+  margin-left: auto;
+  font-size: 10px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.brain-auto-fallback-toggle input {
+  cursor: pointer;
+}

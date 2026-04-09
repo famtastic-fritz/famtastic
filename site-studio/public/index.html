@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="css/studio-terminal.css">
   <link rel="stylesheet" href="css/studio-canvas.css">
   <link rel="stylesheet" href="css/studio-cli.css">
+  <link rel="stylesheet" href="css/studio-brain-selector.css">
 </head>
 <body class="bg-studio-bg text-studio-text h-screen flex flex-col overflow-hidden">
 
@@ -358,6 +359,36 @@
               <div class="text-studio-muted text-xs mt-1">PNG, JPG, GIF, SVG, WebP, HTML, ZIP — max 5MB</div>
             </div>
             <div id="upload-preview-bar" class="px-3 pb-2 flex gap-2 items-center overflow-x-auto hidden"></div>
+            <!-- Brain Selector Pill Bar -->
+            <div id="brain-fallback-bar">
+              <span>⚠️</span>
+              <span id="brain-fallback-msg"></span>
+              <button onclick="document.getElementById('brain-fallback-bar').classList.remove('visible')">✕</button>
+              <label class="brain-auto-fallback-toggle ml-auto">
+                <input type="checkbox" id="brain-auto-fallback" onchange="window._brainAutoFallback = this.checked"> Auto-fallback
+              </label>
+            </div>
+            <div id="brain-selector-bar">
+              <span class="brain-selector-label">Brain:</span>
+              <button class="brain-pill active" data-brain="claude" onclick="selectBrain('claude')" title="Claude Code — Subscription">
+                <span class="brain-status-dot available"></span>
+                <span>Claude</span>
+                <span class="brain-cost-badge">Sub</span>
+                <span class="brain-msg-count">0</span>
+              </button>
+              <button class="brain-pill" data-brain="codex" onclick="selectBrain('codex')" title="Codex — $0.016/msg, 40/day limit">
+                <span class="brain-status-dot available"></span>
+                <span>Codex</span>
+                <span class="brain-cost-badge">API</span>
+                <span class="brain-msg-count">0</span>
+              </button>
+              <button class="brain-pill" data-brain="gemini" onclick="selectBrain('gemini')" title="Gemini — API quota, 1500/day">
+                <span class="brain-status-dot available"></span>
+                <span>Gemini</span>
+                <span class="brain-cost-badge">API</span>
+                <span class="brain-msg-count">0</span>
+              </button>
+            </div>
             <div class="p-3 border-t border-gray-700 bg-studio-panel chat-input-area">
               <form id="chat-form" class="flex gap-2">
                 <textarea
@@ -963,6 +994,8 @@
         // Hide restart banner since we just restarted
         var restartBanner = document.getElementById('restart-banner');
         if (restartBanner) restartBanner.classList.add('hidden');
+        // Sync brain selector state
+        if (typeof BrainSelector !== 'undefined') BrainSelector.onWsOpen();
       };
       ws.onclose = () => {
         console.log('[ws] disconnected, reconnecting in ' + wsReconnectDelay + 'ms...');
@@ -1158,6 +1191,13 @@
             }
             break;
           }
+          case 'brain-changed':
+          case 'brain-status':
+            if (typeof BrainSelector !== 'undefined') BrainSelector.handleServerMessage(msg);
+            break;
+          case 'brain-fallback':
+            if (typeof BrainSelector !== 'undefined') BrainSelector.handleServerMessage(msg);
+            break;
         }
       };
     }
@@ -6102,5 +6142,6 @@
       <span id="status-duration">0 min</span>
     </div>
   </div>
+  <script src="js/brain-selector.js"></script>
 </body>
 </html>

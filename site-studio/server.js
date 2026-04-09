@@ -170,6 +170,13 @@ function isValidPageName(name) {
 // --- Multi-page state ---
 let currentPage = 'index.html';
 let currentMode = 'build'; // 'build' or 'brainstorm'
+let currentBrain = 'claude'; // active brain: 'claude' | 'codex' | 'gemini'
+const BRAIN_LIMITS = {
+  claude:  { dailyLimit: null, currentUsage: 0, status: 'available' },
+  codex:   { dailyLimit: 40,   currentUsage: 0, status: 'available' },
+  gemini:  { dailyLimit: 1500, currentUsage: 0, status: 'available' },
+};
+const sessionBrainCounts = { claude: 0, codex: 0, gemini: 0 };
 let buildInProgress = false;
 let buildLockTimer = null;
 let buildOwnerWs = null;       // the WS connection that started the current build
@@ -5221,6 +5228,20 @@ app.post('/api/context/refresh', (req, res) => {
     .catch(err => res.status(500).json({ error: err.message }));
 });
 
+// --- Brain router ---
+app.get('/api/brain', (req, res) => {
+  res.json({ currentBrain, limits: BRAIN_LIMITS, sessionCounts: sessionBrainCounts });
+});
+
+app.post('/api/brain', (req, res) => {
+  const { brain } = req.body || {};
+  if (!brain || !BRAIN_LIMITS[brain]) {
+    return res.status(400).json({ error: `Unknown brain: ${brain}. Valid: claude, codex, gemini` });
+  }
+  setBrain(brain);
+  res.json({ success: true, brain: currentBrain, limits: BRAIN_LIMITS });
+});
+
 // --- Intelligence report ---
 app.get('/api/intel/report', (req, res) => {
   try {
@@ -6811,6 +6832,13 @@ function handleBrainstorm(ws, userMessage, spec) {
     ? '\nRECENT CONVERSATION:\n' + recentConvo
     : '';
 
+  // Inject STUDIO-CONTEXT.md for full vertical/component awareness
+  const ctxFile = path.join(HUB_ROOT, studioContextWriter.OUTPUT_FILENAME);
+  const studioCtxContent = fs.existsSync(ctxFile) ? fs.readFileSync(ctxFile, 'utf8') : '';
+  const studioCtxSection = studioCtxContent
+    ? `\nSTUDIO CONTEXT (current state of this site and available resources):\n${studioCtxContent.split('\n').slice(0, 80).join('\n')}`
+    : '';
+
   const pages = listPages();
 
   // Profile-aware brainstorm style
@@ -6837,6 +6865,7 @@ CURRENT PROJECT STATE:
 - Active decisions: ${decisionsText}
 ${summaryContext}
 ${convoContext}
+${studioCtxSection}
 
 USER'S MESSAGE:
 "${userMessage}"
@@ -6848,7 +6877,8 @@ Respond following the STYLE guidance above:
 
 Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
-  const child = spawnClaude(prompt);
+  const child = routeToBrainForBrainstorm(prompt);
+  console.log(`[brainstorm] Routing to brain: ${currentBrain}`);
   ws.currentChild = child;
   const bsTimeout = setTimeout(() => { console.error('[brainstorm] Timed out'); child.kill(); }, 180000);
 
@@ -9181,6 +9211,21 @@ wss.on('connection', (ws) => {
 
     try {
 
+    if (msg.type === 'set-brain') {
+      const brain = msg.brain;
+      if (brain && BRAIN_LIMITS[brain]) {
+        setBrain(brain, ws);
+      } else {
+        try { ws.send(JSON.stringify({ type: 'error', content: `Unknown brain: ${brain}` })); } catch {}
+      }
+      return;
+    }
+
+    if (msg.type === 'get-brain-status') {
+      try { ws.send(JSON.stringify({ type: 'brain-status', currentBrain, limits: BRAIN_LIMITS, sessionCounts: sessionBrainCounts })); } catch {}
+      return;
+    }
+
     if (msg.type === 'chat') {
       const userMessage = msg.content;
 
@@ -11034,6 +11079,90 @@ function spawnClaude(prompt) {
     if (code !== 0) console.error(`[claude-spawn] Exited with code ${code}`);
   });
   return child;
+}
+
+// ── Brain Router ──────────────────────────────────────────────────────────────
+
+/**
+ * Spawns a brain adapter (claude/gemini/codex) with a prompt via stdin.
+ * Returns a child process with stdout/stderr/close events, matching the
+ * same interface as spawnClaude() so callers are interchangeable.
+ */
+function spawnBrainAdapter(brain, prompt) {
+  const adapterNames = { claude: 'cj-get-convo-claude', gemini: 'cj-get-convo-gemini', codex: 'cj-get-convo-codex' };
+  const scriptName = adapterNames[brain];
+  if (!scriptName) throw new Error(`Unknown brain: ${brain}`);
+  const adapterScript = path.join(HUB_ROOT, 'adapters', brain, scriptName);
+  if (!fs.existsSync(adapterScript)) {
+    BRAIN_LIMITS[brain].status = 'unavailable';
+    throw new Error(`Adapter not found: ${adapterScript}`);
+  }
+  const child = spawn(adapterScript, [TAG], {
+    env: { ...process.env, HUB_ROOT },
+    cwd: HUB_ROOT,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  child.stdin.write(prompt);
+  child.stdin.end();
+  child.on('error', (err) => {
+    console.error(`[brain-spawn:${brain}]`, err.message);
+  });
+  return child;
+}
+
+/**
+ * Sets the active brain, emits BRAIN_SWITCHED event, and broadcasts to all WS clients.
+ * Returns true if brain is valid.
+ */
+function setBrain(brain, ws) {
+  if (!BRAIN_LIMITS[brain]) return false;
+  currentBrain = brain;
+  studioEvents.emit(STUDIO_EVENTS.BRAIN_SWITCHED, { brain, tag: TAG });
+  console.log(`[brain] Switched to ${brain}`);
+  // Broadcast to all connected clients
+  const payload = JSON.stringify({ type: 'brain-changed', brain, limits: BRAIN_LIMITS, sessionCounts: sessionBrainCounts });
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) { try { client.send(payload); } catch {} }
+  });
+  return true;
+}
+
+/**
+ * Routes a brainstorm message to the selected brain.
+ * Falls back to spawnClaude if the adapter is not available.
+ * Returns a child process matching the spawnClaude interface.
+ */
+function routeToBrainForBrainstorm(prompt, brain) {
+  const activeBrain = brain || currentBrain;
+
+  // Increment session count
+  if (sessionBrainCounts[activeBrain] !== undefined) sessionBrainCounts[activeBrain]++;
+  if (BRAIN_LIMITS[activeBrain]) BRAIN_LIMITS[activeBrain].currentUsage++;
+
+  // Check usage limits
+  const lim = BRAIN_LIMITS[activeBrain];
+  if (lim && lim.dailyLimit && lim.currentUsage > lim.dailyLimit) {
+    lim.status = 'rate-limited';
+    // Auto-fallback: Claude → Codex → Gemini
+    const fallbackOrder = ['claude', 'codex', 'gemini'];
+    const nextBrain = fallbackOrder.find(b => b !== activeBrain && BRAIN_LIMITS[b]?.status === 'available');
+    if (nextBrain) {
+      const fbPayload = JSON.stringify({ type: 'brain-fallback', from: activeBrain, to: nextBrain, reason: 'rate-limited' });
+      wss.clients.forEach(c => { if (c.readyState === 1) { try { c.send(fbPayload); } catch {} } });
+      console.log(`[brain] ${activeBrain} rate-limited, falling back to ${nextBrain}`);
+      return routeToBrainForBrainstorm(prompt, nextBrain);
+    }
+  }
+
+  if (activeBrain === 'claude') return spawnClaude(prompt);
+
+  try {
+    return spawnBrainAdapter(activeBrain, prompt);
+  } catch (err) {
+    console.error(`[brain] ${activeBrain} unavailable (${err.message}), falling back to claude`);
+    BRAIN_LIMITS[activeBrain].status = 'unavailable';
+    return spawnClaude(prompt);
+  }
 }
 
 // --- Built-in Preview Server (dynamic, follows site switches) ---
