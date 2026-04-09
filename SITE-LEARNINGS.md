@@ -1778,7 +1778,58 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 
 ---
 
-### Known Gaps (updated 2026-04-08)
+---
+
+## Studio v3 Engine — Phase 0 + Phase 1 (2026-04-09)
+
+### Phase 0: Content Data Layer
+
+**Classifier upgrades** (`site-studio/server.js` → `classifyRequest()`):
+- Expanded `content_update` patterns from 7 to 12 (patterns 1–12 in code)
+- New patterns: hero headlines, "make it say", "our hours are now", "fix typo/spelling/wording", hero section text, natural ownership language ("the price is now")
+- **Default fallback changed**: `layout_update` → `content_update` (non-destructive). Closes Codex MEDIUM finding. `content_update` routes through `tryDeterministicHandler` before Claude; `layout_update` is plan-gated and can trigger rebuilds.
+- Precedence comment updated to match actual code order
+
+**Content field sync** (`syncContentFieldsFromHtml(pages)`):
+- Reads all `data-field-id` and `data-field-type` attributes from built HTML pages
+- Syncs into `spec.content[page].fields[]` — additive only (never overwrites user edits)
+- Also syncs `data-section-id` into `spec.content[page].sections[]`
+- Called automatically in `runPostProcessing()` after every full build
+- New API: `POST /api/sync-content-fields` — idempotent, on-demand sync for all pages
+- 167 fields synced across 5 pages for site-auntie-gale-garage-sales
+
+**Current data layer state** (as of 2026-04-09):
+- `data-field-id` + `data-section-id` attributes: in all generated HTML ✅
+- `spec.content[page].fields[]`: populated via post-build sync ✅
+- Surgical replacement via cheerio `$('[data-field-id]')` selector: in `tryDeterministicHandler()` ✅
+- tel:/mailto: href updates on phone/email field edits ✅
+- Cross-page edits ("change everywhere"): supported ✅
+- `mutations.jsonl` written per successful field edit ✅
+- Tests: `tests/phase0-content-layer-tests.js` — 69/69 PASS
+
+### Phase 1: Component Skills Foundation
+
+**Component export** (`POST /api/components/export`):
+- **Version tracking**: re-export bumps minor version (1.0 → 1.1 → 1.2); `usage_count` increments; `updated_at` timestamp set; original `created_at` preserved
+- **Skill auto-sync** (`syncSkillFromComponent(component)`): every export triggers auto-creation/update of `.claude/skills/components/<type>/SKILL.md`
+  - Preserves hand-edited sections (Lessons Learned, When to Use)
+  - Tracks usage count and which sites used the component
+  - Auto-generates: Required Fields, Required Slots, CSS Variables, HTML template (first 2000 chars)
+- **Spec ref**: writes `component_ref: "id@version"` into `spec.content[page].sections[]` so rebuild prompts can reference the component identity
+- **library.json** entries now include: `id`, `version`, `css_variables[]`, `used_in[]`, `path`, `description`, `created_at`, `updated_at`, `field_count`, `slot_count`
+
+**Component import** (WebSocket `component_import` handler):
+- **CSS variable portability**: reads `component.json` → finds vars missing in target site's styles.css → injects into `:root {}` block (or creates one) before inserting HTML
+- HTML comment now includes version: `<!-- Component: id v1.0 (imported from library) -->`
+- Records `component_ref` + `imported: true` in `spec.content[targetPage].sections[]` after insertion
+
+**Skill directory**: `.claude/skills/components/` — hero-section, contact-form, pricing-table, testimonial-grid (pre-existing), generic (auto-created on first export)
+
+**Tests**: `tests/phase1-component-skills-tests.js` — 64/64 PASS
+
+---
+
+### Known Gaps (updated 2026-04-09)
 
 - **Stock images in gallery + slideshow (street-family-reunion):** Gallery decade sections use placeholder stock photos. Replace with actual Street family content.
 - **Slideshow CSS conflict pattern:** `.slide { display:none }` in page CSS conflicts with slideshow.js crossfade. Always use `display:block !important` in slideshow.js injected styles.
