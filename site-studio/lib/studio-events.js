@@ -21,6 +21,7 @@ const STUDIO_EVENTS = {
   COMPONENT_INSERTED:   'component:inserted',    // component from library inserted
   DEPLOY_COMPLETED:     'deploy:completed',      // site deployed to Netlify
   BRAIN_SWITCHED:       'brain:switched',        // user selects different brain in UI
+  RESEARCH_UPDATED:     'research:updated',      // stale Pinecone result refreshed in background
 };
 
 // Singleton emitter shared across all server modules

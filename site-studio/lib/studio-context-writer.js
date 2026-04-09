@@ -24,6 +24,15 @@ const OUTPUT_FILENAME = 'STUDIO-CONTEXT.md';
 
 let _ctx = null; // injected dependencies
 
+// ── Pinecone result cache (30s TTL, invalidated on SITE_SWITCHED / BUILD_COMPLETED) ──
+
+const CONTEXT_CACHE = {
+  pineconeResult: null,
+  lastVertical:   null,
+  lastQueried:    null,
+  TTL:            30 * 1000, // 30 seconds
+};
+
 // ── Pinecone query (graceful degradation) ────────────────────────────────────
 
 async function queryPineconeVertical(vertical) {
@@ -153,8 +162,22 @@ async function generate(eventType, payload) {
     try { spec = getSpec() || {}; } catch {}
   }
 
-  const vertical       = spec.business_type || (spec.design_brief || {}).industry || 'general';
-  const pineResult     = await queryPineconeVertical(vertical);
+  const vertical = spec.business_type || (spec.design_brief || {}).industry || 'general';
+
+  // Pinecone cache check (30s TTL, invalidated on SITE_SWITCHED / BUILD_COMPLETED)
+  let pineResult = null;
+  const cacheAge = CONTEXT_CACHE.lastQueried ? Date.now() - CONTEXT_CACHE.lastQueried : Infinity;
+  if (CONTEXT_CACHE.lastQueried && cacheAge < CONTEXT_CACHE.TTL && CONTEXT_CACHE.lastVertical === vertical) {
+    console.log('[context-writer] Pinecone cache HIT');
+    pineResult = CONTEXT_CACHE.pineconeResult;
+  } else {
+    console.log('[context-writer] Pinecone cache MISS');
+    pineResult = await queryPineconeVertical(vertical);
+    CONTEXT_CACHE.pineconeResult = pineResult;
+    CONTEXT_CACHE.lastVertical   = vertical;
+    CONTEXT_CACHE.lastQueried    = Date.now();
+  }
+
   const researchSection = pineResult
     ? pineResult
     : `No Pinecone research available yet for vertical: "${vertical}". Run Phase 4 (fam-hub research seed-from-sites) to seed knowledge base.`;
@@ -200,6 +223,10 @@ async function generate(eventType, payload) {
 
 function init(ctx) {
   _ctx = ctx;
+
+  // Invalidate Pinecone cache on site switch or build completion
+  studioEvents.on(STUDIO_EVENTS.SITE_SWITCHED, () => { CONTEXT_CACHE.lastQueried = null; });
+  studioEvents.on(STUDIO_EVENTS.BUILD_COMPLETED, () => { CONTEXT_CACHE.lastQueried = null; });
 
   // Subscribe to all studio events — each fires an async context regeneration
   Object.values(STUDIO_EVENTS).forEach(eventName => {

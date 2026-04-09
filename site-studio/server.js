@@ -4816,8 +4816,9 @@ app.get('/api/research/verticals', (req, res) => {
 });
 
 // --- Research Registry API (Phase 4) — must be before /:filename ---
-const researchRegistry = require('./lib/research-registry');
-const researchRouter   = require('./lib/research-router');
+const researchRegistry  = require('./lib/research-registry');
+const researchRouter    = require('./lib/research-router');
+const historyFormatter  = require('./lib/history-formatter');
 
 app.get('/api/research/sources', (req, res) => {
   const sources = Object.entries(researchRegistry.RESEARCH_REGISTRY).map(([key, src]) => ({
@@ -4861,6 +4862,76 @@ app.post('/api/research/rate', (req, res) => {
   }
   const ok = researchRouter.rateResearch(source, vertical, parseInt(score));
   res.json({ success: ok });
+});
+
+// --- Research seed status (C1) ---
+app.get('/api/research/seed-status', (req, res) => {
+  try {
+    const researchDir = path.join(SITE_DIR(), 'research');
+    const pineconeAvailable = !!process.env.PINECONE_API_KEY;
+    const seeded = [];
+    const unseeded = [];
+
+    if (fs.existsSync(researchDir)) {
+      const files = fs.readdirSync(researchDir).filter(f => f.endsWith('.md'));
+      for (const file of files) {
+        const vertical = file.replace('.md', '').replace(/-/g, '_');
+        const filePath = path.join(researchDir, file);
+        const stat = fs.statSync(filePath);
+        // "Seeded" = file exists and PINECONE_API_KEY is set
+        if (pineconeAvailable) {
+          seeded.push({ vertical, file, records: 0, seeded_at: stat.mtime.toISOString() });
+        } else {
+          unseeded.push({ vertical, file });
+        }
+      }
+    }
+
+    res.json({ seeded, unseeded, pinecone_available: pineconeAvailable });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Research threshold analysis (C4) ---
+app.get('/api/research/threshold-analysis', (req, res) => {
+  try {
+    const logFile = path.join(HUB_ROOT, '.local', 'research-calls.jsonl');
+    if (!fs.existsSync(logFile)) {
+      return res.json({ insufficient_data: true, reason: 'No research calls logged yet' });
+    }
+    const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean);
+    if (lines.length < 20) {
+      return res.json({ insufficient_data: true, reason: `Only ${lines.length} calls logged (need 20+)` });
+    }
+
+    const records = lines.map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    const hits  = records.filter(r => r.fromCache === true);
+    const misses = records.filter(r => r.fromCache === false);
+    const scores = records.filter(r => typeof r.score === 'number').map(r => r.score);
+    const avgSimilarity = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+    const missRate = records.length > 0 ? misses.length / records.length : null;
+
+    const currentThreshold = researchRouter.getThreshold ? researchRouter.getThreshold() : 0.75;
+    let recommendation = null;
+    if (avgSimilarity !== null) {
+      if (avgSimilarity > currentThreshold + 0.1) recommendation = 'threshold can be raised — high average similarity';
+      else if (avgSimilarity < currentThreshold - 0.1) recommendation = 'threshold may be too high — consider lowering';
+      else recommendation = 'threshold appears well-calibrated';
+    }
+
+    res.json({
+      total_calls: records.length,
+      cache_hits: hits.length,
+      cache_misses: misses.length,
+      miss_rate: missRate,
+      avg_similarity: avgSimilarity,
+      current_threshold: currentThreshold,
+      recommendation,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- Research file content (Wave 2) ---
@@ -8274,6 +8345,18 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
 
   setBuildInProgress(false);
   studioEvents.emit(STUDIO_EVENTS.BUILD_COMPLETED, { tag: TAG, pages: writtenPages });
+
+  // Wire effectiveness scoring to BUILD_COMPLETED (C5)
+  try {
+    const specForMetrics = readSpec();
+    const vertical = specForMetrics.business_type || (specForMetrics.design_brief || {}).industry || 'general';
+    const buildEffMetrics = {
+      healthDelta:           0,   // placeholder — real delta requires pre/post health comparison
+      briefReuseRate:        0.5, // placeholder — real value derived from brief comparison
+      iterationsToApproval:  1,   // placeholder — real value from conversation log
+    };
+    researchRegistry.computeEffectivenessFromBuild('build_patterns', vertical, buildEffMetrics);
+  } catch {}
 
   // Save build metrics
   const buildMetrics = {

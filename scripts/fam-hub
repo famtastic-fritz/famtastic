@@ -250,7 +250,7 @@ IDEAHELP
 
   convo)
     case "$SUBCMD" in
-      reconcile) shift 2; scripts/cj-reconcile-convo "$@" ;;
+      reconcile) shift 2; scripts/fam-convo-reconcile "$@" ;;
       *) echo "Usage: fam-hub convo reconcile <tag>" ;;
     esac
     ;;
@@ -262,7 +262,7 @@ IDEAHELP
       exit 1
     fi
     shift 3
-    scripts/cj-ingest "$TAG" "$TYPE" "$@"
+    scripts/fam-convo-ingest "$TAG" "$TYPE" "$@"
     ;;
 
   promote)
@@ -272,7 +272,7 @@ IDEAHELP
       exit 1
     fi
     shift 2
-    scripts/cj-promote "$TAG" "$@"
+    scripts/fam-convo-promote "$TAG" "$@"
     ;;
 
   # --- Research ---
@@ -347,13 +347,24 @@ IDEAHELP
         echo ""
         [ "$ERRORS" -eq 0 ] && echo "All checks passed." || echo "$ERRORS issue(s) found."
         ;;
+      verify-quickstart)
+        echo "=== FAMtastic Quick Start Verification ==="
+        for tool in node npm python3 claude netlify; do
+          if command -v "$tool" &>/dev/null; then
+            echo "  ✅ $tool: $(command -v $tool)"
+          else
+            echo "  ✗ $tool: NOT FOUND"
+          fi
+        done
+        ;;
       *)
         cat <<'ADMINHELP'
 fam-hub admin — Health & Diagnostics
 
 Usage:
-  fam-hub admin doctor    Check tool dependencies
-  fam-hub admin verify    Verify repo structure
+  fam-hub admin doctor           Check tool dependencies
+  fam-hub admin verify           Verify repo structure
+  fam-hub admin verify-quickstart  Verify Quick Start tools are present
 
 ADMINHELP
         ;;

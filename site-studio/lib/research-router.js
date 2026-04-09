@@ -12,9 +12,26 @@
 
 const fs   = require('fs');
 const path = require('path');
+const os   = require('os');
 const { RESEARCH_REGISTRY, saveEffectivenessScore } = require('./research-registry');
+const { studioEvents, STUDIO_EVENTS } = require('./studio-events');
 
 const HUB_ROOT = path.resolve(__dirname, '..', '..');
+
+// ── Pinecone threshold (configurable, default 0.75) ──────────────────────────
+
+function getThreshold() {
+  try {
+    const configPath = path.join(os.homedir(), '.config', 'famtastic', 'studio-config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.research && typeof config.research.pinecone_threshold === 'number') {
+        return config.research.pinecone_threshold;
+      }
+    }
+  } catch {}
+  return 0.75; // default
+}
 
 // ── Research call log ─────────────────────────────────────────────────────────
 
@@ -45,26 +62,82 @@ async function pineconeQuery(vertical, question) {
     const { Pinecone } = require('@pinecone-database/pinecone');
     const pc    = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
     const index = pc.index('famtastic-intelligence');
-    const result = await index.namespace(vertical).query({
-      topK: 1,
-      includeMetadata: true,
-      vector: new Array(1536).fill(0.1),
-      filter: { question: { $eq: question.slice(0, 100) } },
-    });
-    const match = result.matches?.[0];
-    if (!match || match.score < 0.85) return null;
+    const threshold = getThreshold();
 
-    // Check staleness (90 days)
-    const ts = match.metadata?.timestamp;
-    if (ts) {
-      const age = (Date.now() - new Date(ts).getTime()) / (1000 * 60 * 60 * 24);
-      if (age > 90) {
-        console.log(`[research] Stale result (${Math.round(age)}d old) for ${vertical}`);
-        return { stale: true, answer: match.metadata?.answer, source: match.metadata?.source };
+    let result;
+    try {
+      // Attempt text-based search (integrated embeddings — Pinecone serverless)
+      result = await index.namespace(vertical).searchRecords({
+        query: { topK: 1, inputs: { text: question } },
+        filter: { source: { $ne: 'placeholder' } },
+      });
+      const hits = result.result?.hits || [];
+      const match = hits[0];
+      if (!match) return null;
+
+      const score = match._score || 0;
+      // Log actual similarity score
+      logSimilarityScore(vertical, question, score);
+      if (score < threshold) return null;
+
+      const ts = match.metadata?.timestamp;
+      if (ts) {
+        const age = (Date.now() - new Date(ts).getTime()) / (1000 * 60 * 60 * 24);
+        if (age > 90) {
+          console.log(`STALE_RESEARCH — ${vertical} last updated ${Math.round(age)} days ago, refreshing in background`);
+          const staleResult = { stale: true, answer: match.fields?.answer || match.metadata?.answer, source: match.metadata?.source, score };
+          // Background refresh (G4)
+          setImmediate(() => backgroundRefresh(vertical, question, staleResult));
+          return staleResult;
+        }
       }
+      return { answer: match.fields?.answer || match.metadata?.answer, source: match.metadata?.source, score };
+    } catch (_searchErr) {
+      // Fallback: legacy query with zero-vectors
+      result = await index.namespace(vertical).query({
+        topK: 1,
+        includeMetadata: true,
+        vector: new Array(1536).fill(0.1),
+        filter: { question: { $eq: question.slice(0, 100) } },
+      });
+      const match = result.matches?.[0];
+      if (!match || match.score < threshold) return null;
+
+      logSimilarityScore(vertical, question, match.score);
+
+      const ts = match.metadata?.timestamp;
+      if (ts) {
+        const age = (Date.now() - new Date(ts).getTime()) / (1000 * 60 * 60 * 24);
+        if (age > 90) {
+          console.log(`STALE_RESEARCH — ${vertical} last updated ${Math.round(age)} days ago, refreshing in background`);
+          const staleResult = { stale: true, answer: match.metadata?.answer, source: match.metadata?.source };
+          setImmediate(() => backgroundRefresh(vertical, question, staleResult));
+          return staleResult;
+        }
+      }
+      return { answer: match.metadata?.answer, source: match.metadata?.source, score: match.score };
     }
-    return { answer: match.metadata?.answer, source: match.metadata?.source, score: match.score };
   } catch { return null; }
+}
+
+function logSimilarityScore(vertical, question, score) {
+  try {
+    const entry = JSON.stringify({ ts: new Date().toISOString(), vertical, question: question.slice(0, 100), score });
+    const dir = path.dirname(RESEARCH_LOG_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(RESEARCH_LOG_FILE, entry + '\n', 'utf8');
+  } catch {}
+}
+
+async function backgroundRefresh(vertical, question, _staleResult) {
+  try {
+    const source = selectSource(vertical, question, {});
+    const freshResult = await RESEARCH_REGISTRY[source].query(vertical, question);
+    if (freshResult.answer) {
+      await pineconeUpsert(vertical, question, freshResult.answer, source);
+      studioEvents.emit(STUDIO_EVENTS.RESEARCH_UPDATED || 'research:updated', { vertical, question });
+    }
+  } catch {}
 }
 
 async function pineconeUpsert(vertical, question, answer, source) {
@@ -74,18 +147,34 @@ async function pineconeUpsert(vertical, question, answer, source) {
     const pc    = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
     const index = pc.index('famtastic-intelligence');
     const id = `${vertical}-${source}-${Date.now()}`;
-    await index.namespace(vertical).upsert([{
-      id,
-      values: new Array(1536).fill(0.1),
-      metadata: {
-        question: question.slice(0, 100),
-        answer: answer.slice(0, 1000),
+    const text = `${question} ${answer}`.slice(0, 1000);
+
+    try {
+      // Use integrated embedding — send text, Pinecone handles embedding via text-embedding-3-small
+      await index.namespace(vertical).upsertRecords([{
+        id,
+        text,
         source,
         vertical,
         timestamp: new Date().toISOString(),
-        cost: RESEARCH_REGISTRY[source]?.costPerQuery || 0,
-      },
-    }]);
+        question: question.slice(0, 100),
+        answer: answer.slice(0, 1000),
+      }]);
+    } catch (_upsertErr) {
+      // Fallback: legacy upsert with zero-vectors (graceful fallback if SDK version differs)
+      await index.namespace(vertical).upsert([{
+        id,
+        values: new Array(1536).fill(0.1),
+        metadata: {
+          question: question.slice(0, 100),
+          answer: answer.slice(0, 1000),
+          source,
+          vertical,
+          timestamp: new Date().toISOString(),
+          cost: RESEARCH_REGISTRY[source]?.costPerQuery || 0,
+        },
+      }]);
+    }
   } catch {}
 }
 
@@ -154,4 +243,4 @@ function rateResearch(source, vertical, score) {
   return true;
 }
 
-module.exports = { queryResearch, rateResearch, selectSource, logResearchCall };
+module.exports = { queryResearch, rateResearch, selectSource, logResearchCall, getThreshold };

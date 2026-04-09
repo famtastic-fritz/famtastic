@@ -37,6 +37,8 @@ registry before first use.
 
 ## Key Learnings
 
+- **Summarization always uses Claude:** When conversation history exceeds 20 turns, the oldest 10 turns are summarized using Claude regardless of the currently active brain. This is a standing decision. Do not change to the active brain. Logged with source: "summarization".
+
 - **Project:** famtastic
 - **Description:** Owns adapters, router/config, and installers for agents. Writes local sources to:
 - **Post-processing pipeline order matters:** extractAndRegisterSlots MUST run before reapplySlotMappings, otherwise renamed slots lose their images

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Summarization always uses Claude regardless of active brain.
+# When history > 20 turns, oldest 10 are summarized by Claude before formatting.
 set -euo pipefail
 
 TAG="${1:-latest-convo}"

@@ -257,9 +257,32 @@ function getEffectivenessReport() {
   });
 }
 
+/**
+ * Compute effectiveness score from build metrics (C5).
+ * @param {string} source — research source key
+ * @param {string} vertical — business vertical
+ * @param {object} buildMetrics — { healthDelta, briefReuseRate, iterationsToApproval }
+ *   healthDelta: -1 to +1 (delta in site health score)
+ *   briefReuseRate: 0 to 1 (fraction of brief sections reused)
+ *   iterationsToApproval: integer (lower = better, max 5 counts as 0)
+ * @returns {number} score 0-100
+ */
+function computeEffectivenessFromBuild(source, vertical, buildMetrics) {
+  const { healthDelta = 0, briefReuseRate = 0, iterationsToApproval = 5 } = buildMetrics || {};
+  const score = (
+    Math.min(100, Math.max(0, healthDelta * 50 + 50)) * 0.5 +
+    (briefReuseRate * 100) * 0.3 +
+    (Math.max(0, 5 - iterationsToApproval) / 5 * 100) * 0.2
+  );
+  const rounded = Math.round(score);
+  saveEffectivenessScore(source, vertical, rounded);
+  return rounded;
+}
+
 module.exports = {
   RESEARCH_REGISTRY,
   loadEffectivenessScores,
   saveEffectivenessScore,
   getEffectivenessReport,
+  computeEffectivenessFromBuild,
 };

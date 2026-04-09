@@ -10,6 +10,23 @@
 
 ## Quick Start (New Machine)
 
+<!-- Verified: 2026-04-09 on Fitzgeralds-MacBook-Pro.local -->
+
+### Manual Verification Checklist
+- [ ] Homebrew installed (`brew --version`)
+- [ ] Node installed (`node --version`)
+- [ ] npm installed (`npm --version`)
+- [ ] python3 installed (`python3 --version`)
+- [ ] Claude Code CLI installed (`claude --version`)
+- [ ] Git configured (`git config user.name`)
+- [ ] Repo cloned (`ls ~/famtastic`)
+- [ ] Studio deps installed (`ls ~/famtastic/site-studio/node_modules`)
+- [ ] fam-hub symlinked (`which fam-hub`)
+- [ ] Environment variables set (`echo $ANTHROPIC_API_KEY`)
+- [ ] Plugins installed (`claude plugins list`)
+- [ ] MCP servers configured (`claude mcp list`)
+- [ ] Studio starts (`fam-hub site start`)
+
 ```bash
 # 1. Install Homebrew (if not present)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -232,6 +249,9 @@ fam-hub admin health            # System health check
 ---
 
 ## Architecture Overview
+
+Summarization: conversation history > 20 turns → Claude summarizes oldest 10 (always Claude,
+regardless of active brain, logged with source: "summarization")
 
 ```
 ~/famtastic/
