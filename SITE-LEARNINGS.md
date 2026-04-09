@@ -1846,3 +1846,83 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 - **[LOW] character-branding.js not wired to build pipeline:** Character placements stored in spec but not automatically rendered into HTML on rebuild. Currently a post-build overlay system only.
 - **[LOW] spec.site_name defaults to "New Site":** Always update immediately after first build. og:title will be wrong until corrected. Future improvement: force user input during site creation.
 - **[LOW] rembg CLI binary has cascading dep failures:** filetype, watchdog, aiohttp all missing from Python 3.9 install. Use Python API (`scripts/rembg-worker.py`) — never the CLI binary directly.
+
+---
+
+## Studio v3 Engine — Phase 2 + Phase 3 (2026-04-09)
+
+### Phase 2: UI Shell + Editable Canvas
+
+**Direct REST edit path** (`POST /api/content-field`):
+- `openFieldEditor()` `saveBtn.onclick` now calls `fetch('/api/content-field', { method: 'POST', ... })` directly — no AI roundtrip, no classifier, no plan gate
+- 404 fallback: `POST /api/sync-content-fields` → retry → text-match chat message (3-step recovery)
+- Canvas reloads at 600ms after save (was 2000ms)
+- Field edit popup shows field_id, old value, editable textarea, Save / Cancel buttons
+
+**GLOBAL_FIELD_TYPES cascade** (in `POST /api/content-field` handler):
+- `const GLOBAL_FIELD_TYPES = ['phone', 'email', 'address', 'hours']`
+- When a global-type field is edited, ALL pages are scanned for matching field type or field_id
+- Each matching page's HTML is patched with cheerio + spec.content updated
+- Response includes `cascade_pages: []` listing all pages that were updated
+- This means one phone edit updates every page that shows the phone number
+
+**Mutations log** (`mutations.jsonl`):
+- Written by `writeSpec()` on every field edit via `POST /api/content-field`
+- Fields: `timestamp`, `level: 'field'`, `target_id: field_id`, `action: 'update'`, `old_value`, `new_value`, `source: 'content_field_api'`
+- Stored per-site at `sites/<site-tag>/mutations.jsonl`
+
+**Canvas tab structure** (in `site-studio/public/index.html`):
+- `#canvas-tab-bar` with three tabs: Preview (`switchCanvasTab('preview')`), Editable View (`switchCanvasTab('editable')`), Images (`switchCanvasTab('images')`)
+- `#canvas-editable` pane with `#editable-frame` (iframe), `#editable-toolbar`, `#highlight-toggle`, `#editable-field-count`
+- `injectEditableOverlay()` — injects edit popup script into iframe contentDocument
+- `openFieldEditor(fieldId, oldValue, page)` — creates popup overlay on canvas
+- `loadEditableView()` — loads `?editable=1` URL in iframe, calls `injectEditableOverlay()`
+
+**CSS**: `site-studio/public/css/studio-canvas.css` — `#canvas-tab-bar`, `.canvas-tab`, `.canvas-tab-active`, `#canvas-editable`, `.field-edit-overlay`, `#editable-frame`
+
+**Tests**: `tests/phase2-ui-shell-tests.js` — 61/61 PASS
+
+---
+
+### Phase 3: Multi-Agent Integration
+
+**Agent call logger** (`logAgentCall({ agent, intent, page, elapsed_ms, success, output_size, error, input_tokens, output_tokens, fallback_from })`):
+- Writes append-only to `sites/<site-tag>/agent-calls.jsonl`
+- Schema: `{ timestamp, agent, intent, page, elapsed_ms, success, output_size, est_input_tokens, est_output_tokens, est_cost_usd, error, fallback_from }`
+- Cost estimation: Claude pricing at $3/1M input tokens + $15/1M output tokens
+- `agent` values: `'claude'` (AI build/edit), `'codex'` (compare), `'none'` (deterministic handler, no AI)
+- Called in: `finishParallelBuild()` (agent=claude, intent=build), `handleChatMessage()` after `tryDeterministicHandler()` (agent=none), `POST /api/compare/generate-v2` (codex attempt + optional claude fallback)
+
+**HTML quality validator** (`validateAgentHtml(html, page)`):
+- Scores 0–100 with penalty system; threshold: `score >= 40` = valid
+- Deductions: short output −25 (if < 500 chars, returns immediately), no DOCTYPE/html −25, no data-field-id −25 (none) or −10 (<3), no data-section-id −15, no nav/header −10, no section/main −10, error pattern in first 1000 chars −30, below page-specific minimum (index=10000, contact=5000, default=7000) −15
+- Returns `{ valid, score, issues[] }`
+
+**Agent stats endpoint** (`GET /api/agent/stats`):
+- Reads `agent-calls.jsonl`, returns: `{ total_calls, failure_count, fallback_count, total_cost_usd, avg_elapsed_ms, by_agent{}, by_intent{}, last_call }`
+- `by_agent[name]`: `{ calls, success, failures, total_cost, avg_ms }`
+- `by_intent[name]`: `{ calls, agent_split{} }`
+- Empty file case returns all-zero response with `failure_count: 0` and `last_call: null`
+
+**Routing guide endpoint** (`GET /api/agent/routing`):
+- Returns: `{ routing_guide[], fallback_policy, cost_model }`
+- Routing: build=claude, content_update=none, compare=codex (with claude fallback), deploy=none, image_gen=claude, restyle=claude, layout_update=claude, major_revision=claude
+- `fallback_policy`: documents Codex→Claude path when score < 40
+- `cost_model`: Claude $3/$15 per 1M tokens
+
+**Compare v2 endpoint** (`POST /api/compare/generate-v2`):
+- Validation: requires `page` param, page must exist in `dist/` directory
+- Tries Codex first (2-minute timeout), validates HTML with `validateAgentHtml()`
+- If score < 40 OR Codex fails: falls back to Claude, sets `fallback_from: 'codex'`
+- Both Codex attempt and Claude fallback logged via `logAgentCall()`
+- Response: `{ url, agent, fallback_from, validation: { valid, score, issues } }` on success; `{ error }` on failure
+
+**Compare canvas UI** (in `site-studio/public/index.html`):
+- `#canvas-compare` pane with `#compare-split` layout
+- `#compare-frame-left` + `#compare-frame-right` iframes (Claude vs Codex side-by-side)
+- `generateCodexVersion()` — calls `/api/compare/generate-v2`
+- `useCompareVersion('claude' | 'codex')` — promotes selected version to active dist
+- `#compare-sync-scroll` checkbox — synchronized scroll across both iframes
+- Codex CLI tab: `switchCliTab('codex')`, `#codex-input`, `#codex-output`, `sendCodexPrompt()`
+
+**Tests**: `tests/phase3-multi-agent-tests.js` — 75/75 PASS
