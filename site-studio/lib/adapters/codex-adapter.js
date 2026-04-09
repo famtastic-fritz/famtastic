@@ -1,105 +1,121 @@
 'use strict';
 /**
- * CodexAdapter — wraps the openai package for the Brain Adapter Pattern.
- * Uses gpt-4o via OpenAI-compatible API (ChatGPT Plus OAuth or OPENAI_API_KEY).
+ * CodexAdapter — wraps the Codex CLI subprocess for the Brain Adapter Pattern.
  *
- * Multi-turn: true via messages array.
+ * Codex is authenticated via ChatGPT Plus subscription through the Codex CLI.
+ * It does NOT use the OpenAI API or OPENAI_API_KEY — they are separate billing systems.
+ *
+ * This adapter is best for: focused single-task execution, adversarial review,
+ * code generation. Best-effort multi-turn via text formatting (documented CLI limitation).
+ *
  * Note: Summarization always uses Claude regardless of active brain.
  * (cerebrum.md SUMMARIZATION_ALWAYS_CLAUDE)
  */
 
-const OpenAI = require('openai');
-
-const DEFAULT_MODEL = 'gpt-4o';
-
-// Lazy-initialize — allows require() without OPENAI_API_KEY set
-let _client = null;
-function getClient() {
-  if (!_client) _client = new OpenAI();
-  return _client;
-}
+const { spawn } = require('child_process');
+const path = require('path');
 
 class CodexAdapter {
   constructor() {
+    // CLI subprocess — ChatGPT Plus OAuth, no OPENAI_API_KEY needed
     this.capabilities = {
-      multiTurn:   true,
-      streaming:   true,
-      toolCalling: true,
-      vision:      true,
+      multiTurn:   false,       // subprocess, best-effort text formatting only
+      streaming:   false,       // single-shot response
+      toolCalling: false,       // not available via CLI
+      vision:      false,       // not available via CLI
       maxTokens:   16000,
+      bestFor:     ['focused-tasks', 'adversarial-review', 'code-generation'],
     };
   }
 
   /**
-   * Non-streaming call.
+   * Execute a prompt via fam-convo-get-codex CLI subprocess.
    * @param {string} message
-   * @param {object} opts  — { history, maxTokens, model }
+   * @param {object} opts  — { history, maxTokens }
    */
   async execute(message, opts = {}) {
-    const { history = [], maxTokens = 8192, model = DEFAULT_MODEL } = opts;
+    const { history = [], maxTokens = 8192 } = opts;
 
-    const messages = [
-      ...history.slice(-20).map(h => ({ role: h.role, content: h.content })),
-      { role: 'user', content: message },
-    ];
+    // Format history as best-effort text (documented CLI limitation — no structured API)
+    const formattedHistory = history.slice(-10)
+      .map(h => `${h.role === 'user' ? 'Human' : 'Assistant'}: ${h.content}`)
+      .join('\n\n');
 
-    const client   = getClient();
-    const response = await client.chat.completions.create({
-      model,
-      messages,
-      max_tokens: maxTokens,
+    const fullPrompt = formattedHistory
+      ? `### Prior conversation:\n${formattedHistory}\n\n### Current task:\n${message}`
+      : message;
+
+    // Resolve adapter path — HUB_ROOT may not be available in lib context
+    const hubRoot = process.env.HUB_ROOT || path.join(__dirname, '..', '..', '..');
+    const adapterPath = path.join(hubRoot, 'adapters', 'codex', 'fam-convo-get-codex');
+    const tag = process.env.SITE_TAG || 'default';
+
+    return new Promise((resolve, reject) => {
+      const child = spawn(adapterPath, [tag], {
+        env:   { ...process.env, HUB_ROOT: hubRoot },
+        cwd:   hubRoot,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      let output = '';
+      let errOutput = '';
+
+      child.stdout.on('data', d => { output += d.toString(); });
+      child.stderr.on('data', d => { errOutput += d.toString(); });
+
+      child.stdin.write(fullPrompt);
+      child.stdin.end();
+
+      child.on('error', err => {
+        reject(new Error(`Codex CLI spawn error: ${err.message}`));
+      });
+
+      child.on('close', code => {
+        if (code === 0 || output.trim()) {
+          // Try to extract content from JSONL output
+          try {
+            const lines = output.trim().split('\n').filter(Boolean);
+            // fam-convo-get-codex writes a status line; look for JSONL record
+            for (let i = lines.length - 1; i >= 0; i--) {
+              try {
+                const record = JSON.parse(lines[i]);
+                const assistantMsg = record.messages?.find(m => m.role === 'assistant');
+                if (assistantMsg) {
+                  resolve({ content: assistantMsg.content, usage: null });
+                  return;
+                }
+              } catch { /* skip non-JSON lines */ }
+            }
+          } catch { /* fall through */ }
+          resolve({ content: output.trim(), usage: null });
+        } else {
+          reject(new Error(`Codex CLI failed (exit ${code}): ${errOutput.slice(0, 200)}`));
+        }
+      });
     });
-
-    return {
-      content:    response.choices[0].message.content || '',
-      usage:      response.usage || null,
-      stopReason: response.choices[0].finish_reason,
-    };
   }
 
   /**
-   * Streaming call — iterates OpenAI stream chunks.
+   * Streaming not supported via CLI — delegates to execute() and streams the single chunk.
+   * The onChunk callback receives the complete response as one chunk on completion.
    */
   async executeStreaming(message, opts = {}) {
-    const {
-      history       = [],
-      maxTokens     = 8192,
-      model         = DEFAULT_MODEL,
-      onChunk       = null,
-      ws            = null,
-      wsMessageType = 'chunk',
-    } = opts;
-
+    const { onChunk = null, ws = null, wsMessageType = 'chunk' } = opts;
     const WebSocket = require('ws');
-    const messages = [
-      ...history.slice(-20).map(h => ({ role: h.role, content: h.content })),
-      { role: 'user', content: message },
-    ];
 
-    const client = getClient();
-    const stream = await client.chat.completions.create({
-      model,
-      messages,
-      max_tokens: maxTokens,
-      stream: true,
-    });
+    const result = await this.execute(message, opts);
+    const text = result.content || '';
 
-    let fullText = '';
-    for await (const chunk of stream) {
-      const text = chunk.choices[0]?.delta?.content || '';
-      if (text) {
-        fullText += text;
-        if (onChunk) onChunk(text);
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          try { ws.send(JSON.stringify({ type: wsMessageType, content: text })); } catch {}
-        }
-      }
+    // Deliver as single chunk
+    if (onChunk) onChunk(text);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try { ws.send(JSON.stringify({ type: wsMessageType, content: text })); } catch {}
     }
 
-    return { content: fullText, usage: null };
+    return result;
   }
 
-  get defaultModel() { return DEFAULT_MODEL; }
+  get defaultModel() { return 'codex-cli'; }
 }
 
-module.exports = { CodexAdapter, DEFAULT_MODEL };
+module.exports = { CodexAdapter };

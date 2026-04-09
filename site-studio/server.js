@@ -9378,6 +9378,39 @@ wss.on('connection', (ws) => {
   activeClientCount++;
   console.log(`[studio] Client connected (${activeClientCount} active)`);
 
+  // Per-connection brain state — isolated from all other connections.
+  // Prevents cross-tab contamination when multiple Studio tabs are open.
+  ws.brainSession  = null;            // BrainInterface instance, lazy-created
+  ws.currentBrain  = currentBrain;    // inherits global at connect time, then independent
+  ws.currentMode   = 'chat';          // Studio mode for this connection
+  ws.currentSite   = TAG;             // active site at connection time
+  ws.currentPage   = currentPage;     // active page in canvas
+
+  /** Get or lazy-create the BrainInterface for this connection */
+  ws.getBrainSession = function() {
+    if (!ws.brainSession) {
+      const { BrainInterface } = require('./lib/brain-interface');
+      ws.brainSession = new BrainInterface(ws.currentBrain, { ws });
+    }
+    return ws.brainSession;
+  };
+
+  /** Switch to a new brain — preserves conversation history across the switch */
+  ws.getOrCreateBrainSession = function(brain) {
+    if (!ws.brainSession || ws.brainSession.brain !== brain) {
+      const { BrainInterface } = require('./lib/brain-interface');
+      const previousHistory = ws.brainSession?.conversationHistory || [];
+      ws.brainSession = new BrainInterface(brain, { ws });
+      ws.brainSession.conversationHistory = previousHistory;
+    }
+    return ws.brainSession;
+  };
+
+  /** Clear the brain session — called on site switch */
+  ws.resetBrainSession = function() {
+    ws.brainSession = null;
+  };
+
   // Send persistence state on connect
   const studioState = loadStudio();
   const pages = listPages();

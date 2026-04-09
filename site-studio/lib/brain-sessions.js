@@ -59,15 +59,21 @@ async function initBrainSessions(studioEvents = null, STUDIO_EVENTS = {}, opts =
     }
   })();
 
-  // Gemini — check GEMINI_API_KEY
+  // Gemini — make a real test call to validate key (not just presence check)
   const geminiPromise = (async () => {
     try {
       const key = process.env.GEMINI_API_KEY;
       if (!key) return 'needs-auth';
-      // Key exists and is non-empty — mark authenticated without a test call
-      // (Gemini free tier has aggressive rate limits; avoid wasting quota on a probe)
+      // Make a minimal probe call — validates the key actually works
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+      await model.generateContent('ping');
+      clearTimeout(timer);
       return 'authenticated';
     } catch {
+      // AuthError = bad key; timeout = slow network; both = needs-auth
       return 'needs-auth';
     }
   })();

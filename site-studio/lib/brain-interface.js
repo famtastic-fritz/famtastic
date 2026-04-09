@@ -32,12 +32,16 @@ class BrainInterface {
   /**
    * @param {string} brain       — Initial brain: 'claude' | 'gemini' | 'codex'
    * @param {object} opts
-   *   tag      — Current site tag (TAG from server.js)
+   *   tag      — Current site tag (TAG from server.js). Falls back to ws.currentSite.
    *   hubRoot  — Path to FAMtastic hub root
-   *   page     — Current active page filename (optional)
+   *   page     — Current active page filename. Falls back to ws.currentPage.
+   *   ws       — WebSocket connection (optional). When provided, context header
+   *              reads site/page/mode from ws.currentSite, ws.currentPage, ws.currentMode
+   *              so context is always live without manual opts updates.
    */
   constructor(brain = 'claude', opts = {}) {
     this.brain   = brain;
+    this.ws      = opts.ws      || null;
     this.tag     = opts.tag     || null;
     this.hubRoot = opts.hubRoot || null;
     this.page    = opts.page    || null;
@@ -117,14 +121,23 @@ class BrainInterface {
   /**
    * Build the context header injected at the start of every message.
    * Tells any brain it's inside FAMtastic Studio and what state is active.
+   *
+   * When a ws connection is attached, reads live state from ws.currentMode,
+   * ws.currentSite, ws.currentPage — always current, never stale.
+   * Falls back to opts-provided tag/page for non-WS usage.
    */
   buildContextHeader(mode) {
-    const modeLabel = VALID_MODES.includes(mode)
-      ? `[MODE: ${mode.toUpperCase()}]`
+    // Prefer ws live state, fall back to opts-provided values
+    const effectiveMode = mode || this.ws?.currentMode || 'chat';
+    const effectiveSite = this.ws?.currentSite || this.tag;
+    const effectivePage = this.ws?.currentPage || this.page;
+
+    const modeLabel = VALID_MODES.includes(effectiveMode)
+      ? `[MODE: ${effectiveMode.toUpperCase()}]`
       : '[MODE: CHAT]';
 
-    const siteLabel = this.tag ? `[SITE: ${this.tag}]` : '[SITE: unknown]';
-    const pageLabel = this.page ? `[PAGE: ${this.page}]` : '';
+    const siteLabel = effectiveSite ? `[SITE: ${effectiveSite}]` : '[SITE: unknown]';
+    const pageLabel = effectivePage ? `[PAGE: ${effectivePage}]` : '';
 
     const parts = [modeLabel, siteLabel, pageLabel].filter(Boolean);
     return parts.join(' ') + '\n\n';
