@@ -6739,28 +6739,17 @@ estimated_scope must be one of: small, medium, large.
 Return ONLY the JSON object. No preamble, no explanation.`;
 
   try {
-    const child = spawnClaude(prompt);
-    let response = '';
-    child.stdout.on('data', (chunk) => { response += chunk.toString(); });
-
-    return new Promise((resolve) => {
-      const timeout = setTimeout(() => { child.kill(); resolve(null); }, 120000);
-      child.on('close', () => {
-        clearTimeout(timeout);
-        response = response.trim();
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) { resolve(null); return; }
-        try {
-          const plan = JSON.parse(jsonMatch[0]);
-          const planId = require('crypto').randomUUID();
-          pendingPlans.set(planId, { userMessage, intent });
-          ws.send(JSON.stringify({ type: 'build-plan', planId, plan, originalMessage: userMessage }));
-          resolve(planId);
-        } catch {
-          resolve(null);
-        }
-      });
-    });
+    const response = await callSDK(prompt, { maxTokens: 2048, callSite: 'generate-plan', timeoutMs: 120000 });
+    if (!response.trim()) return null;
+    const jsonMatch = response.trim().match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const plan = JSON.parse(jsonMatch[0]);
+    const planId = require('crypto').randomUUID();
+    pendingPlans.set(planId, { userMessage, intent });
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({ type: 'build-plan', planId, plan, originalMessage: userMessage }));
+    }
+    return planId;
   } catch {
     return null;
   }
