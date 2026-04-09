@@ -6787,7 +6787,7 @@ function routeToHandler(ws, requestType, userMessage, spec) {
   }
 }
 
-function handlePlanning(ws, userMessage, spec) {
+async function handlePlanning(ws, userMessage, spec) {
   // Concurrent build guard — prevent parallel planning calls when a build is in progress
   if (buildInProgress) {
     ws.send(JSON.stringify({ type: 'chat', content: 'A build is already in progress. Please wait for it to finish before starting a new plan.' }));
@@ -6830,30 +6830,22 @@ BRIEF:
 Be specific and opinionated. The avoid list is critical — name specific anti-patterns.
 Do not generate HTML. Do not be vague. Extract real intent from what the user said.`;
 
-  ws.send(JSON.stringify({ type: 'status', content: 'Creating design brief...' }));
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Creating design brief...' }));
+  ws.currentChild = null;
 
-  const child = spawnClaude(prompt);
-  ws.currentChild = child;
-  const planTimeout = setTimeout(() => { console.error('[planning] Timed out'); child.kill(); }, 180000);
+  let response;
+  try {
+    response = await callSDK(prompt, { maxTokens: 8192, callSite: 'planning-brief', timeoutMs: 180000 });
+  } catch {
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'Failed to create brief. Try describing your site again.' }));
+    return;
+  }
+  if (!response || !response.trim()) {
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'Failed to create brief. Try describing your site again.' }));
+    return;
+  }
 
-  let response = '';
-
-  child.stdout.on('data', (chunk) => {
-    response += chunk.toString();
-  });
-
-  child.stderr.on('data', (chunk) => {
-    console.error('[planning]', chunk.toString());
-  });
-
-  child.on('close', (code) => {
-    clearTimeout(planTimeout);
-    ws.currentChild = null;
-    if (code !== 0 || !response.trim()) {
-      ws.send(JSON.stringify({ type: 'error', content: 'Failed to create brief. Try describing your site again.' }));
-      return;
-    }
-
+  {
     response = response.trim();
 
     // Extract brief JSON from response
@@ -6895,10 +6887,10 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
       appendConvo({ role: 'assistant', content: `Design brief created`, brief: briefJson, at: new Date().toISOString() });
     } else {
       // Couldn't parse — send raw response as text
-      ws.send(JSON.stringify({ type: 'assistant', content: response }));
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'assistant', content: response }));
       appendConvo({ role: 'assistant', content: response, at: new Date().toISOString() });
     }
-  });
+  }
 }
 
 // --- Brainstorm Handler ---
