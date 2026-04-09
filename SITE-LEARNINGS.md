@@ -1982,3 +1982,50 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 - `#research-brief-bar`, `.research-use-brief-btn`, `.research-brief-filename` — brief bar
 
 **Tests**: `tests/phase4-image-research-tests.js` — 61/61 PASS (first run, no failures)
+
+---
+
+## Studio v3 Engine — Phase 5 (2026-04-09)
+
+### Phase 5: Intelligence Loop
+
+**Intelligence report generator** (`generateIntelReport()`):
+- Reads `agent-calls.jsonl`, `mutations.jsonl`, `build-metrics.jsonl`, `components/library.json` (`.components[]` array)
+- Produces structured `findings[]` with: `{ id, category, severity, title, description, recommendation, data }`
+- Categories: `agents`, `cost`, `mutations`, `performance`, `components`
+- Severities: `critical`, `major`, `minor`, `opportunity`
+- Finding IDs are deterministic slugs: `<category>-<slug>-<counter>`
+- Key findings generated: Codex fail rate (if ≥50%), high fallback count, Claude cost concentration, hot fields, API-only edits, mutation volume, high-usage components, cross-site components, unused components
+- IMPORTANT: `library.json` is `{ version, components[], last_updated }` — must read `.components`, not the root object
+
+**`GET /api/intel/report`** — full report with findings + summary + generated_at + site
+**`GET /api/intel/findings`** — findings only + severity counts (critical/major/minor/opportunity)
+**`POST /api/intel/promote`** — promotes a finding to `intelligence-promotions.json`:
+  - Requires `finding_id` → 400 if missing, 404 if not in current report
+  - Writes `{ finding_id, category, severity, title, recommendation, promoted_at, action_taken, status: 'pending' }` to `sites/<tag>/intelligence-promotions.json`
+  - Idempotent: re-promoting a finding replaces the existing entry
+**`POST /api/intel/run-research`** — creates a research stub at `docs/intelligence-reports/<YYYY-WWW-topic>.md`:
+  - Requires `topic` → 400 if missing
+  - Stub template includes: topic, research questions, findings placeholder, recommendation, priority checklist
+  - To populate with Gemini: `scripts/gemini-cli "<topic>" >> docs/intelligence-reports/<file>`
+
+**Intelligence Loop UI (canvas Intel tab)**:
+- `switchCanvasTab('intel')` tab button + `#canvas-intel` pane
+- `#intel-toolbar` — research input + Run Research button + Refresh button
+- `#intel-summary` — severity pill counts (🔴 Critical, 🟠 Major, 🟡 Minor, 💡 Opportunities)
+- `#intel-findings-list` — findings grouped by severity, each with title/description/recommendation/Promote button
+- `loadIntelReport()` — fetches `/api/intel/findings`, renders summary + findings
+- `renderIntelSummary(data, el)` — renders severity counts row
+- `renderIntelFindings(findings, el)` — groups by SEVERITY_ORDER, creates finding cards
+- `promoteIntelFinding(findingId, btnEl)` — calls `/api/intel/promote`, updates button state
+- `runIntelResearch()` — calls `/api/intel/run-research`, shows file path in chat
+
+**CSS** (in `studio-canvas.css`):
+- `#canvas-intel`, `#intel-toolbar`, `#intel-body`, `#intel-summary`
+- `.intel-summary-pill`, `.intel-sev-{severity}` — color-coded severity pills
+- `.intel-finding`, `.intel-severity-{severity}` — left-border color coded cards
+- `.intel-finding-title`, `.intel-finding-desc`, `.intel-finding-rec` — card typography
+- `.intel-promote-btn` — promote button with hover state
+- `.intel-empty` — empty state message
+
+**Tests**: `tests/phase5-intelligence-loop-tests.js` — 71/71 PASS

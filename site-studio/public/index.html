@@ -150,6 +150,7 @@
           <button onclick="switchCanvasTab('images')" id="canvas-tab-images" data-pane="canvas-images" data-hook="loadImageBrowserSlots" class="canvas-tab">Images</button>
           <button onclick="switchCanvasTab('research')" id="canvas-tab-research" data-pane="canvas-research" data-hook="loadResearchFiles" class="canvas-tab">Research</button>
           <button onclick="switchCanvasTab('compare')" id="canvas-tab-compare" data-pane="canvas-compare" data-hook="loadCompareView" class="canvas-tab">Compare</button>
+          <button onclick="switchCanvasTab('intel')" id="canvas-tab-intel" data-pane="canvas-intel" data-hook="loadIntelReport" class="canvas-tab">Intel</button>
         </div>
 
         <!-- Canvas content -->
@@ -303,6 +304,22 @@
                 </div>
                 <iframe id="compare-frame-right" src="about:blank" class="compare-frame"></iframe>
               </div>
+            </div>
+          </div>
+
+          <!-- Intelligence Loop tab -->
+          <div id="canvas-intel" class="canvas-tab-pane hidden">
+            <div id="intel-toolbar">
+              <span class="toolbar-label">Intelligence Loop</span>
+              <div class="toolbar-actions">
+                <input id="intel-research-input" type="text" placeholder="Research topic..." class="intel-research-input" onkeydown="if(event.key==='Enter')runIntelResearch()">
+                <button onclick="runIntelResearch()" class="intel-research-btn">Run Research</button>
+                <button onclick="loadIntelReport()" id="intel-run-btn" class="intel-refresh-btn">↻ Refresh</button>
+              </div>
+            </div>
+            <div id="intel-body">
+              <div id="intel-summary"></div>
+              <div id="intel-findings-list"></div>
             </div>
           </div>
 
@@ -5662,6 +5679,140 @@
         }
       } catch(e) {
         addMessage('error', 'to-brief error: ' + e.message);
+      }
+    }
+
+    // --- Phase 5: Intelligence Loop ---
+
+    const SEVERITY_ORDER = ['critical', 'major', 'minor', 'opportunity'];
+    const SEVERITY_LABELS = { critical: '🔴 Critical', major: '🟠 Major', minor: '🟡 Minor', opportunity: '💡 Opportunity' };
+
+    async function loadIntelReport() {
+      const summaryEl = document.getElementById('intel-summary');
+      const listEl = document.getElementById('intel-findings-list');
+      if (!summaryEl || !listEl) return;
+      summaryEl.textContent = '';
+      listEl.innerHTML = '<div style="padding:16px;color:#64748b;font-size:13px;">Analyzing logs...</div>';
+      try {
+        const res = await fetch('/api/intel/findings');
+        const data = await res.json();
+        renderIntelSummary(data, summaryEl);
+        renderIntelFindings(data.findings || [], listEl);
+      } catch(e) {
+        listEl.innerHTML = '<div style="padding:16px;color:#ef4444;font-size:13px;">Failed to load: ' + e.message + '</div>';
+      }
+    }
+
+    function renderIntelSummary(data, el) {
+      el.textContent = '';
+      const counts = [
+        { label: 'Critical', count: data.critical_count || 0, cls: 'critical' },
+        { label: 'Major', count: data.major_count || 0, cls: 'major' },
+        { label: 'Minor', count: data.minor_count || 0, cls: 'minor' },
+        { label: 'Opportunities', count: data.opportunity_count || 0, cls: 'opportunity' },
+      ];
+      const row = document.createElement('div');
+      row.className = 'intel-summary-row';
+      counts.forEach(c => {
+        const pill = document.createElement('div');
+        pill.className = `intel-summary-pill intel-sev-${c.cls}`;
+        pill.textContent = `${c.count} ${c.label}`;
+        row.appendChild(pill);
+      });
+      const ts = document.createElement('div');
+      ts.className = 'intel-generated-at';
+      ts.textContent = 'Generated: ' + new Date(data.generated_at || Date.now()).toLocaleTimeString();
+      row.appendChild(ts);
+      el.appendChild(row);
+    }
+
+    function renderIntelFindings(findings, el) {
+      el.textContent = '';
+      if (!findings.length) {
+        const empty = document.createElement('div');
+        empty.className = 'intel-empty';
+        empty.textContent = 'No findings — build more sites, make more edits, and come back.';
+        el.appendChild(empty);
+        return;
+      }
+      // Group by severity
+      SEVERITY_ORDER.forEach(sev => {
+        const group = findings.filter(f => f.severity === sev);
+        if (!group.length) return;
+        const header = document.createElement('div');
+        header.className = 'intel-group-header';
+        header.textContent = SEVERITY_LABELS[sev] || sev;
+        el.appendChild(header);
+        group.forEach(f => {
+          const card = document.createElement('div');
+          card.className = `intel-finding intel-severity-${sev}`;
+          const title = document.createElement('div');
+          title.className = 'intel-finding-title';
+          title.textContent = f.title;
+          card.appendChild(title);
+          const desc = document.createElement('div');
+          desc.className = 'intel-finding-desc';
+          desc.textContent = f.description;
+          card.appendChild(desc);
+          const rec = document.createElement('div');
+          rec.className = 'intel-finding-rec';
+          rec.textContent = '→ ' + f.recommendation;
+          card.appendChild(rec);
+          const promoteBtn = document.createElement('button');
+          promoteBtn.className = 'intel-promote-btn';
+          promoteBtn.textContent = 'Promote to Pipeline';
+          promoteBtn.onclick = () => promoteIntelFinding(f.id, promoteBtn);
+          card.appendChild(promoteBtn);
+          el.appendChild(card);
+        });
+      });
+    }
+
+    async function promoteIntelFinding(findingId, btnEl) {
+      if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Promoting...'; }
+      try {
+        const res = await fetch('/api/intel/promote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ finding_id: findingId }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          addMessage('status', `Finding promoted: ${data.action_taken}`);
+          if (btnEl) { btnEl.textContent = '✓ Promoted'; btnEl.style.background = '#059669'; }
+        } else {
+          addMessage('error', data.error || 'Promote failed');
+          if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Promote to Pipeline'; }
+        }
+      } catch(e) {
+        addMessage('error', 'Promote error: ' + e.message);
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Promote to Pipeline'; }
+      }
+    }
+
+    async function runIntelResearch() {
+      const input = document.getElementById('intel-research-input');
+      const topic = input?.value?.trim();
+      if (!topic) { addMessage('error', 'Enter a research topic'); return; }
+      const btn = document.querySelector('.intel-research-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
+      try {
+        const res = await fetch('/api/intel/run-research', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          addMessage('status', `Research stub created: docs/intelligence-reports/${data.file}`);
+          if (input) input.value = '';
+        } else {
+          addMessage('error', data.error || 'Research failed');
+        }
+      } catch(e) {
+        addMessage('error', 'Research error: ' + e.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Run Research'; }
       }
     }
 

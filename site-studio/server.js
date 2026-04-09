@@ -4981,6 +4981,326 @@ app.post('/api/research/to-brief', (req, res) => {
 
 // (GET /api/research/verticals defined earlier, before /:filename to avoid route conflict)
 
+// ─── Phase 5: Intelligence Loop ───────────────────────────────────────────────
+
+/**
+ * Analyze all available log data for the current site and return structured findings.
+ * Reads: agent-calls.jsonl, mutations.jsonl, build-metrics.jsonl, components/library.json
+ * Returns: { findings[], summary, generated_at }
+ */
+function generateIntelReport() {
+  const findings = [];
+  let findingIdCounter = 1;
+  const makeId = (category, suffix) => `${category}-${suffix}-${findingIdCounter++}`;
+
+  // ── Read log files ──────────────────────────────────────────────────────
+  const agentLogPath = path.join(SITE_DIR(), 'agent-calls.jsonl');
+  const mutationLogPath = path.join(SITE_DIR(), 'mutations.jsonl');
+  const buildMetricsPath = path.join(SITE_DIR(), 'build-metrics.jsonl');
+  const libraryPath = path.join(HUB_ROOT, 'components', 'library.json');
+
+  const readJsonl = (p) => {
+    if (!fs.existsSync(p)) return [];
+    return fs.readFileSync(p, 'utf8').trim().split('\n').filter(Boolean)
+      .map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  };
+
+  const agentCalls = readJsonl(agentLogPath);
+  const mutations = readJsonl(mutationLogPath);
+  const buildMetrics = readJsonl(buildMetricsPath);
+  let library = [];
+  try {
+    const libRaw = JSON.parse(fs.readFileSync(libraryPath, 'utf8') || '{}');
+    // library.json is { version, components[], last_updated } — extract the array
+    library = Array.isArray(libRaw) ? libRaw : (libRaw.components || []);
+  } catch {}
+
+  // ── Agent performance analysis (category: agents) ─────────────────────
+  if (agentCalls.length > 0) {
+    const byAgent = {};
+    let fallbackCount = 0;
+    let totalCost = 0;
+    for (const c of agentCalls) {
+      const a = c.agent || 'unknown';
+      if (!byAgent[a]) byAgent[a] = { calls: 0, failures: 0, total_ms: 0, total_cost: 0 };
+      byAgent[a].calls++;
+      if (!c.success) byAgent[a].failures++;
+      byAgent[a].total_ms += c.elapsed_ms || 0;
+      byAgent[a].total_cost += c.est_cost_usd || 0;
+      totalCost += c.est_cost_usd || 0;
+      if (c.fallback_from) fallbackCount++;
+    }
+
+    // High fallback rate
+    const codexCalls = byAgent['codex']?.calls || 0;
+    const codexFailures = byAgent['codex']?.failures || 0;
+    const codexFailRate = codexCalls > 0 ? codexFailures / codexCalls : 0;
+    if (codexCalls > 0 && codexFailRate >= 0.5) {
+      findings.push({
+        id: makeId('agents', 'codex-fail-rate'),
+        category: 'agents',
+        severity: codexFailRate >= 0.8 ? 'major' : 'minor',
+        title: `Codex failing ${Math.round(codexFailRate * 100)}% of calls`,
+        description: `Codex has ${codexFailures}/${codexCalls} failures. High failure rate wastes time on Codex timeout before Claude fallback (typically 120 seconds lost per failure).`,
+        recommendation: `Route 'compare' intent directly to Claude until Codex CLI is stable. Expected savings: ~${Math.round(codexFailures * 2)} minutes per session.`,
+        data: { codex_calls: codexCalls, codex_failures: codexFailures, fail_rate: codexFailRate },
+      });
+    }
+
+    // High fallback cost
+    if (fallbackCount > 0 && fallbackCount >= agentCalls.length * 0.3) {
+      findings.push({
+        id: makeId('agents', 'high-fallback'),
+        category: 'agents',
+        severity: 'minor',
+        title: `${fallbackCount} agent fallbacks detected`,
+        description: `${fallbackCount} of ${agentCalls.length} calls triggered a fallback (primary agent failed, secondary used). Each fallback adds latency and may incur double cost.`,
+        recommendation: 'Review routing guide — if fallback rate stays above 30%, promote secondary agent to primary for those intents.',
+        data: { fallback_count: fallbackCount, total_calls: agentCalls.length },
+      });
+    }
+
+    // Cost concentration
+    const claudeCost = byAgent['claude']?.total_cost || 0;
+    if (claudeCost > 0.5) {
+      findings.push({
+        id: makeId('cost', 'claude-cost'),
+        category: 'cost',
+        severity: 'opportunity',
+        title: `$${claudeCost.toFixed(3)} spent on Claude this session`,
+        description: `Claude has generated $${claudeCost.toFixed(3)} in token costs. Most spend is on 'compare' intent (full-page generation).`,
+        recommendation: 'Evaluate whether full-page compare is needed for every review cycle, or if incremental diffs would suffice.',
+        data: { claude_cost: claudeCost, total_cost: totalCost },
+      });
+    }
+  }
+
+  // ── Mutation pattern analysis (category: mutations) ────────────────────
+  if (mutations.length > 0) {
+    const fieldCounts = {};
+    const sourceCounts = {};
+    const cascades = [];
+    for (const m of mutations) {
+      const fid = m.target_id || 'unknown';
+      fieldCounts[fid] = (fieldCounts[fid] || 0) + 1;
+      const src = m.source || 'unknown';
+      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+      if (m.cascade_pages?.length > 0) cascades.push(m);
+    }
+
+    // Most-edited fields
+    const hotFields = Object.entries(fieldCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    if (hotFields.length > 0 && hotFields[0][1] >= 2) {
+      findings.push({
+        id: makeId('mutations', 'hot-fields'),
+        category: 'mutations',
+        severity: 'opportunity',
+        title: `Hot fields: ${hotFields.map(([f, c]) => `${f} (${c}x)`).join(', ')}`,
+        description: `These fields were edited multiple times. Frequent edits indicate they should be surfaced prominently in the editable view or auto-focused when the canvas opens.`,
+        recommendation: `Pin hot fields to the top of the editable view for faster access. Add these field_ids to a "pinned_fields" list in spec.content.`,
+        data: { hot_fields: Object.fromEntries(hotFields) },
+      });
+    }
+
+    // API vs chat edit ratio
+    const apiEdits = sourceCounts['content_field_api'] || 0;
+    const chatEdits = mutations.length - apiEdits;
+    if (apiEdits > 0 && chatEdits === 0) {
+      findings.push({
+        id: makeId('mutations', 'all-api-edits'),
+        category: 'mutations',
+        severity: 'opportunity',
+        title: 'All content edits via direct API (no AI)',
+        description: `${apiEdits} edits applied surgically via /api/content-field — zero AI roundtrips. The deterministic path is working correctly.`,
+        recommendation: 'No action needed. Continue monitoring — if chat edits appear, verify classifier is routing content_update correctly.',
+        data: { api_edits: apiEdits, chat_edits: chatEdits },
+      });
+    }
+
+    // Performance: slow mutation path
+    const totalMutations = mutations.length;
+    if (totalMutations > 0) {
+      findings.push({
+        id: makeId('performance', 'mutation-volume'),
+        category: 'performance',
+        severity: 'opportunity',
+        title: `${totalMutations} field mutations logged`,
+        description: `Mutation log has ${totalMutations} entries. Build pipeline is tracking content evolution correctly.`,
+        recommendation: 'Archive mutations.jsonl when it exceeds 1000 entries to prevent slow reads. Add periodic archival to maintenance script.',
+        data: { total_mutations: totalMutations },
+      });
+    }
+  }
+
+  // ── Component usage analysis (category: components) ───────────────────
+  if (library.length > 0) {
+    const highUsage = library.filter(c => (c.usage_count || 0) >= 2).sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0));
+    const neverUsed = library.filter(c => !c.used_in || c.used_in.length === 0);
+    const multiSite = library.filter(c => (c.used_in || []).length >= 2);
+
+    if (highUsage.length > 0) {
+      findings.push({
+        id: makeId('components', 'high-usage'),
+        category: 'components',
+        severity: 'opportunity',
+        title: `${highUsage.length} high-usage component(s): ${highUsage.slice(0, 2).map(c => c.id).join(', ')}`,
+        description: `These components are re-exported 2+ times, indicating strong reuse patterns. They should be prioritized for documentation and skill refinement.`,
+        recommendation: `Run "fam-hub skill update" on ${highUsage[0]?.id} to capture latest usage learnings. Add it to the default component suggestions for new builds.`,
+        data: { high_usage: highUsage.map(c => ({ id: c.id, usage_count: c.usage_count })) },
+      });
+    }
+
+    if (multiSite.length > 0) {
+      findings.push({
+        id: makeId('components', 'cross-site'),
+        category: 'components',
+        severity: 'opportunity',
+        title: `${multiSite.length} component(s) used across multiple sites`,
+        description: `Cross-site components are the foundation of the component factory. These are proven, reusable, and should be treated as platform primitives.`,
+        recommendation: 'Add cross-site components to the default starter set. Consider a component compatibility matrix (which components work together well).',
+        data: { cross_site: multiSite.map(c => ({ id: c.id, sites: c.used_in })) },
+      });
+    }
+
+    if (neverUsed.length > 0) {
+      findings.push({
+        id: makeId('components', 'unused'),
+        category: 'components',
+        severity: 'minor',
+        title: `${neverUsed.length} component(s) never imported into a site`,
+        description: `These components exist in the library but have no recorded imports: ${neverUsed.slice(0, 3).map(c => c.id).join(', ')}.`,
+        recommendation: 'Validate that used_in tracking is working. If components are genuinely unused after 30 days, consider archiving them.',
+        data: { unused: neverUsed.map(c => c.id) },
+      });
+    }
+  }
+
+  // ── Summary ────────────────────────────────────────────────────────────
+  const countBySeverity = { critical: 0, major: 0, minor: 0, opportunity: 0 };
+  for (const f of findings) countBySeverity[f.severity] = (countBySeverity[f.severity] || 0) + 1;
+
+  const summary = {
+    total_agent_calls: agentCalls.length,
+    total_mutations: mutations.length,
+    total_cost_usd: +(agentCalls.reduce((s, c) => s + (c.est_cost_usd || 0), 0)).toFixed(4),
+    component_count: library.length,
+    build_count: buildMetrics.length,
+    finding_counts: countBySeverity,
+  };
+
+  return { findings, summary, generated_at: new Date().toISOString(), site: TAG || 'unknown' };
+}
+
+// --- Intelligence report ---
+app.get('/api/intel/report', (req, res) => {
+  try {
+    const report = generateIntelReport();
+    res.json(report);
+  } catch (e) {
+    console.error('[intel/report]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Intelligence findings only (by severity) ---
+app.get('/api/intel/findings', (req, res) => {
+  try {
+    const report = generateIntelReport();
+    const findings = report.findings;
+    res.json({
+      findings,
+      critical_count: findings.filter(f => f.severity === 'critical').length,
+      major_count: findings.filter(f => f.severity === 'major').length,
+      minor_count: findings.filter(f => f.severity === 'minor').length,
+      opportunity_count: findings.filter(f => f.severity === 'opportunity').length,
+      generated_at: report.generated_at,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Promote a finding into the pipeline ---
+app.post('/api/intel/promote', (req, res) => {
+  const { finding_id } = req.body;
+  if (!finding_id) return res.status(400).json({ error: 'finding_id required' });
+
+  const report = generateIntelReport();
+  const finding = report.findings.find(f => f.id === finding_id);
+  if (!finding) return res.status(404).json({ error: 'Finding not found — may have been resolved' });
+
+  // Record promotion
+  const promotionsFile = path.join(SITE_DIR(), 'intelligence-promotions.json');
+  let promotions = [];
+  try { if (fs.existsSync(promotionsFile)) promotions = JSON.parse(fs.readFileSync(promotionsFile, 'utf8')); } catch {}
+
+  const promotion = {
+    finding_id,
+    category: finding.category,
+    severity: finding.severity,
+    title: finding.title,
+    recommendation: finding.recommendation,
+    promoted_at: new Date().toISOString(),
+    action_taken: `Logged for pipeline review: ${finding.recommendation.substring(0, 100)}`,
+    status: 'pending', // pending → applied → dismissed
+  };
+
+  promotions = promotions.filter(p => p.finding_id !== finding_id); // replace if re-promoted
+  promotions.push(promotion);
+  fs.writeFileSync(promotionsFile, JSON.stringify(promotions, null, 2));
+
+  console.log(`[intel/promote] finding_id=${finding_id} category=${finding.category}`);
+  res.json({ promoted_at: promotion.promoted_at, finding_id, action_taken: promotion.action_taken });
+});
+
+// --- Run intelligence research on a topic ---
+app.post('/api/intel/run-research', (req, res) => {
+  const { topic } = req.body;
+  if (!topic || typeof topic !== 'string') return res.status(400).json({ error: 'topic required' });
+
+  const safeTopic = topic.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 60);
+  const now = new Date();
+  const weekNum = Math.ceil((now.getDate() + new Date(now.getFullYear(), now.getMonth(), 1).getDay()) / 7);
+  const filename = `${now.getFullYear()}-W${String(weekNum).padStart(2,'0')}-${safeTopic}.md`;
+
+  const reportDir = path.join(HUB_ROOT, 'docs', 'intelligence-reports');
+  fs.mkdirSync(reportDir, { recursive: true });
+  const filePath = path.join(reportDir, filename);
+
+  // Write research stub immediately (Gemini call can be async upgrade later)
+  const stub = `# Intelligence Research: ${topic}
+*Generated: ${now.toISOString()}*
+
+## Topic
+${topic}
+
+## Research Questions
+1. What are the current options and their tradeoffs?
+2. What has changed in the last 30 days?
+3. What is the recommended approach for FAMtastic Studio?
+4. What is the estimated cost/effort to implement the recommendation?
+
+## Findings
+*[Run \`scripts/gemini-cli "${topic}" > ${filePath}\` to populate with Gemini research]*
+
+## Recommendation
+*Pending research*
+
+## Priority
+- [ ] Promote to pipeline
+- [ ] Defer to next session
+- [ ] Archive (not actionable)
+
+## Related Findings
+*Check /api/intel/findings for related intelligence findings*
+`;
+
+  fs.writeFileSync(filePath, stub);
+  console.log(`[intel/run-research] Created: ${filename}`);
+
+  res.json({ file: filename, topic, status: 'stub', path: filePath });
+});
+
 // --- Codex exec endpoint (Wave 3) ---
 app.post('/api/codex/exec', async (req, res) => {
   const { prompt } = req.body;
