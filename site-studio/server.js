@@ -9,6 +9,9 @@ const nodemailer = require('nodemailer');
 const cheerio = require('cheerio');
 const pty = require('node-pty');
 const db = require('./lib/db');
+const { studioEvents, STUDIO_EVENTS } = require('./lib/studio-events');
+const studioContextWriter = require('./lib/studio-context-writer');
+const brainInjector = require('./lib/brain-injector');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -832,6 +835,7 @@ function startSession() {
   // Track session in SQLite
   currentSessionId = require('crypto').randomUUID();
   try { db.createSession({ id: currentSessionId, siteTag: TAG, model: loadSettings().model || 'unknown' }); } catch {}
+  studioEvents.emit(STUDIO_EVENTS.SESSION_STARTED, { tag: TAG });
   return studio;
 }
 
@@ -3619,6 +3623,7 @@ app.post('/api/switch-site', async (req, res) => {
   // Load new site state
   const studio = loadStudio();
   startSession();
+  studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
 
   // Notify all connected clients
   const pages = listPages();
@@ -3669,6 +3674,7 @@ app.post('/api/new-site', async (req, res) => {
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
   startSession();
+  studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
 
   const pages = listPages();
   wss.clients.forEach(client => {
@@ -4647,6 +4653,7 @@ app.post('/api/components/export', (req, res) => {
     }
   } catch {}
 
+  studioEvents.emit(STUDIO_EVENTS.COMPONENT_INSERTED, { tag: TAG, component_id, version });
   console.log(`[components] Exported "${component_id}" v${version} from ${page} (${fields.length} fields, ${slots.length} slots, ${Object.keys(cssVariables).length} CSS vars)`);
   res.json({ success: true, component, field_count: fields.length, slot_count: slots.length });
 });
@@ -4742,6 +4749,7 @@ app.post('/api/content-field', (req, res) => {
     newValue: new_value,
   });
 
+  studioEvents.emit(STUDIO_EVENTS.EDIT_APPLIED, { tag: TAG, page, field_id, new_value });
   res.json({ success: true, field_id, old_value: oldValue, new_value, cascade_pages: cascadePages });
 });
 
@@ -5190,6 +5198,28 @@ function generateIntelReport() {
 
   return { findings, summary, generated_at: new Date().toISOString(), site: TAG || 'unknown' };
 }
+
+// --- Studio Context (Phase 1) ---
+app.get('/api/context', (req, res) => {
+  const ctxFile = path.join(HUB_ROOT, studioContextWriter.OUTPUT_FILENAME);
+  if (!fs.existsSync(ctxFile)) {
+    return res.json({ exists: false, content: '', active_site: TAG, generated_at: null });
+  }
+  const content = fs.readFileSync(ctxFile, 'utf8');
+  const genLine = content.split('\n').find(l => l.startsWith('## Generated:'));
+  const generated_at = genLine ? genLine.replace('## Generated:', '').trim() : null;
+  res.json({ exists: true, content, active_site: TAG, generated_at });
+});
+
+app.post('/api/context/refresh', (req, res) => {
+  const eventType = (req.body && req.body.event) || 'manual_refresh';
+  studioContextWriter.generate(eventType, { tag: TAG })
+    .then(() => {
+      const ctxFile = path.join(HUB_ROOT, studioContextWriter.OUTPUT_FILENAME);
+      res.json({ success: true, file: ctxFile });
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
 
 // --- Intelligence report ---
 app.get('/api/intel/report', (req, res) => {
@@ -8158,6 +8188,7 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   const seoResult = runSeoValidation(writtenPages);
 
   setBuildInProgress(false);
+  studioEvents.emit(STUDIO_EVENTS.BUILD_COMPLETED, { tag: TAG, pages: writtenPages });
 
   // Save build metrics
   const buildMetrics = {
@@ -10325,6 +10356,7 @@ function runDeploy(ws, env) {
       spec.state = 'deployed';
       writeSpec(spec);
 
+      studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });
       ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` }));
       // Notify client to refresh deploy info
       ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] }));
@@ -11342,5 +11374,20 @@ if (require.main === module) {
       console.log(`[site-studio] Pages: ${pages.join(', ')}`);
     }
     setupFileWatcher();
+
+    // Initialise universal context writer — fires STUDIO-CONTEXT.md generation on every event
+    studioContextWriter.init({
+      getTag:     () => TAG,
+      getSpec:    () => { try { return JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')); } catch { return {}; } },
+      getHubRoot: () => HUB_ROOT,
+    });
+
+    // Wire brain injector for all three brains on startup
+    const ctxFile = require('path').join(HUB_ROOT, studioContextWriter.OUTPUT_FILENAME);
+    brainInjector.inject('claude', ctxFile, { claudeMdPath: require('path').join(HUB_ROOT, 'CLAUDE.md') });
+    brainInjector.inject('gemini', ctxFile);
+    brainInjector.inject('codex',  ctxFile);
+
+    studioEvents.emit(STUDIO_EVENTS.SESSION_STARTED, { tag: TAG });
   });
 }
