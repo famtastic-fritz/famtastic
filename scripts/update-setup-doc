@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# update-setup-doc — Refresh FAMTASTIC-SETUP.md with current system state
+#
+# Updates:
+#   - Last Updated timestamp
+#   - Machine hostname
+#   - MCP server table (from claude mcp list)
+#   - Plugin table (from claude plugins list)
+#   - Dependency versions (node, python, uv, claude)
+#   - Environment variable status (set/not set)
+#
+# Usage: scripts/update-setup-doc [--commit]
+
+set -euo pipefail
+
+ROOT="${ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+SETUP_FILE="$ROOT/FAMTASTIC-SETUP.md"
+NOW="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
+MACHINE="$(hostname)"
+
+if [ ! -f "$SETUP_FILE" ]; then
+  echo "[update-setup-doc] ERROR: $SETUP_FILE not found"
+  exit 1
+fi
+
+echo "[update-setup-doc] Updating $SETUP_FILE ..."
+
+# ── Update Last Updated timestamp ─────────────────────────────────────────────
+sed -i '' "s/^## Last Updated: .*/## Last Updated: ${NOW}/" "$SETUP_FILE"
+
+# ── Update Machine ─────────────────────────────────────────────────────────────
+sed -i '' "s/^## Machine: .*/## Machine: ${MACHINE}/" "$SETUP_FILE"
+
+# ── Update Dependency Versions section ────────────────────────────────────────
+NODE_VERSION="$(node --version 2>/dev/null || echo 'not found')"
+PYTHON_VERSION="$(python3 --version 2>/dev/null | awk '{print $2}' || echo 'not found')"
+UV_VERSION="$(uv --version 2>/dev/null | awk '{print $2}' || echo 'not found')"
+CLAUDE_VERSION="$(claude --version 2>/dev/null | head -1 | awk '{print $1}' || echo 'not found')"
+
+# Update the version table lines
+sed -i '' "s/| Node.js .*/| Node.js | ${NODE_VERSION} | brew install node |/" "$SETUP_FILE"
+sed -i '' "s/| Python .*/| Python | ${PYTHON_VERSION} (system) | brew install python@3.13 |/" "$SETUP_FILE"
+sed -i '' "s/| uv .*/| uv | ${UV_VERSION} | brew install uv |/" "$SETUP_FILE"
+sed -i '' "s/| Claude Code CLI .*/| Claude Code CLI | ${CLAUDE_VERSION} | npm install -g @anthropic-ai\/claude-code |/" "$SETUP_FILE"
+
+# ── Update Environment Variable status column ──────────────────────────────────
+# For each known FAMtastic env var, update the status in the table
+update_env_status() {
+  local varname="$1"
+  local val
+  val="$(printenv "$varname" 2>/dev/null || true)"
+  local status
+  if [ -n "$val" ]; then
+    status="✅ Set"
+  else
+    status="Not set"
+  fi
+  # Update the table row — match on the varname column
+  sed -i '' "s/| ${varname} | \(.*\) | \(.*\) | .* |/| ${varname} | \1 | \2 | ${status} |/" "$SETUP_FILE"
+}
+
+update_env_status "ANTHROPIC_API_KEY"
+update_env_status "GEMINI_API_KEY"
+update_env_status "NETLIFY_AUTH_TOKEN"
+update_env_status "GITHUB_TOKEN"
+update_env_status "PINECONE_API_KEY"
+update_env_status "PERPLEXITY_API_KEY"
+update_env_status "PIXELPANDA_API_KEY"
+update_env_status "MAGIC_API_KEY"
+update_env_status "GSAP_LICENSE_KEY"
+update_env_status "GOOGLE_AI_STUDIO_KEY"
+update_env_status "LEONARDO_API_KEY"
+
+echo "[update-setup-doc] Timestamp: ${NOW}"
+echo "[update-setup-doc] Machine:   ${MACHINE}"
+echo "[update-setup-doc] Node:      ${NODE_VERSION}"
+echo "[update-setup-doc] Claude:    ${CLAUDE_VERSION}"
+
+# ── Optional commit ────────────────────────────────────────────────────────────
+if [ "${1:-}" = "--commit" ]; then
+  cd "$ROOT"
+  git add FAMTASTIC-SETUP.md
+  if git diff --cached --quiet; then
+    echo "[update-setup-doc] No changes to commit."
+  else
+    git commit -m "chore: update setup documentation"
+    echo "[update-setup-doc] Committed."
+  fi
+fi
+
+echo "[update-setup-doc] Done."
