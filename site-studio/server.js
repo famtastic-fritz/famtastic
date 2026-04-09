@@ -168,6 +168,8 @@ function isValidPageName(name) {
 let currentPage = 'index.html';
 let currentMode = 'build'; // 'build' or 'brainstorm'
 let buildInProgress = false;
+let buildLockTimer = null;
+const BUILD_LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 let sessionMessageCount = 0;
 let sessionStartedAt = new Date().toISOString();
 let sessionInputTokens = 0;
@@ -187,6 +189,36 @@ const MODEL_CONTEXT_WINDOWS = {
 // Plan approval state
 const pendingPlans = new Map(); // planId → { userMessage, intent }
 const PLAN_REQUIRED_INTENTS = ['layout_update', 'major_revision', 'restyle', 'build', 'restructure'];
+
+// --- Build Lock Helper ---
+function setBuildInProgress(value) {
+  buildInProgress = value;
+  if (value) {
+    // Start 10-min auto-clear timeout
+    if (buildLockTimer) clearTimeout(buildLockTimer);
+    buildLockTimer = setTimeout(() => {
+      if (buildInProgress) {
+        console.warn('[studio] BUILD_LOCK_TIMEOUT — build ran >10min, lock auto-cleared');
+        buildInProgress = false;
+        buildLockTimer = null;
+        try {
+          const studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8'));
+          studio.build_in_progress = false;
+          fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
+        } catch {}
+      }
+    }, BUILD_LOCK_TIMEOUT_MS);
+  } else {
+    if (buildLockTimer) { clearTimeout(buildLockTimer); buildLockTimer = null; }
+    try {
+      if (fs.existsSync(STUDIO_FILE())) {
+        const studio = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8'));
+        studio.build_in_progress = false;
+        fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
+      }
+    } catch {}
+  }
+}
 
 const ACCEPTED_TYPES = /\.(png|jpe?g|gif|svg|webp|html|zip)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -666,6 +698,17 @@ function loadStudio() {
       if (!fs.existsSync(path.join(DIST_DIR(), currentPage))) {
         currentPage = 'index.html';
       }
+      // Restore buildInProgress from disk
+      if (studio.build_in_progress === true) {
+        // Stale lock — no build is actually running on startup
+        console.warn('[studio] BUILD_LOCK_STALE — cleared on startup');
+        studio.build_in_progress = false;
+        buildInProgress = false;
+        // Write the cleared state back
+        try { fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2)); } catch {}
+      } else {
+        buildInProgress = false;
+      }
       return studio;
     } catch (e) {
       console.error('[studio] Failed to load .studio.json:', e.message);
@@ -690,6 +733,7 @@ function saveStudio() {
   }
   studio.updated_at = new Date().toISOString();
   studio.current_page = currentPage;
+  studio.build_in_progress = buildInProgress;
   fs.mkdirSync(SITE_DIR(), { recursive: true });
   fs.writeFileSync(STUDIO_FILE(), JSON.stringify(studio, null, 2));
   return studio;
@@ -3761,6 +3805,24 @@ app.post('/api/blueprint', (req, res) => {
   res.json(bp);
 });
 
+app.post('/api/build/cancel', (req, res) => {
+  const wasInProgress = buildInProgress;
+  setBuildInProgress(false);
+  console.log(`[studio] Build cancelled via API at ${new Date().toISOString()}`);
+  // Broadcast cancellation to all connected WebSocket clients
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) { // WebSocket.OPEN
+      client.send(JSON.stringify({
+        type: 'build_cancelled',
+        content: 'Build cancelled.',
+        was_in_progress: wasInProgress,
+        timestamp: new Date().toISOString()
+      }));
+    }
+  });
+  res.json({ success: true, was_in_progress: wasInProgress });
+});
+
 app.get('/api/build-metrics', (req, res) => {
   const metricsFile = path.join(SITE_DIR(), 'build-metrics.jsonl');
   if (!fs.existsSync(metricsFile)) return res.json([]);
@@ -4279,13 +4341,54 @@ function classifyRequest(message, spec) {
   const hasBrief = spec && spec.design_brief && spec.design_brief.approved;
   const hasHtml = fs.existsSync(path.join(DIST_DIR(), 'index.html'));
 
+  // --- STRONG BUILD SIGNALS (intent-dominant, override vocabulary) ---
+  // These fire before any vocabulary matching to prevent brief text from being misclassified
+  const strongBuildSignals = [
+    /\bi('m|\s+am)\s+(building|creating|making)\s+a\s+site\b/,
+    /\bi\s+want\s+(a|to\s+(?:build|create|make))\s+(a\s+)?(?:website|site|web\s+page)\b/,
+    /\bi\s+need\s+a\s+(?:website|site)\s+for\b/,
+    /\b(?:build|create|generate|make)\s+(?:a\s+|the\s+)?(?:full\s+)?(?:website|site)\s+(?:for|now|with|from)\b/,
+    /\bpages\s+needed\b/i,
+    /\bcolor\s+scheme\b.*\bfonts?\b/i,
+    /\bprimary\s+color\b.*\bsecondary\b/i,
+    /\bfont\s+stack\b/,
+    /\bmust.have.sections\b/i,
+  ];
+  const buildSignalHits = strongBuildSignals.filter(p => p.test(message) || p.test(lower));
+  if (buildSignalHits.length >= 1) {
+    console.log(`[classifier] intent=build confidence=HIGH signals=${buildSignalHits.length} (strong build pattern)`);
+    if (!hasBrief) return 'new_site';
+    return 'build';
+  }
+
+  // --- BRIEF DETECTION (vocabulary sanitization for technical attribute syntax) ---
+  // If message looks like a site brief (contains business description + pages + colors),
+  // treat it as new_site/build regardless of technical vocabulary present
+  const briefIndicators = [
+    /\bpages?\s+needed\b/i,
+    /\bcolor\s+(?:scheme|palette)\b/i,
+    /\bfont\s+(?:stack|choice|pairing)\b/i,
+    /\bdesign\s+requirements?\b/i,
+    /\bbrand\s+(?:character|voice|guide)\b/i,
+    /\bdata[-_]section[-_]id\b/i,
+    /\bdata[-_]field[-_]id\b/i,
+    /\bdata[-_]slot[-_]id\b/i,
+  ];
+  const briefHits = briefIndicators.filter(p => p.test(message));
+  if (briefHits.length >= 2) {
+    console.log(`[classifier] intent=${hasBrief ? 'build' : 'new_site'} confidence=HIGH signals=${briefHits.length} (brief indicators: ${briefHits.map(p => p.source.substring(0,30)).join(', ')})`);
+    return hasBrief ? 'build' : 'new_site';
+  }
+
   // Precedence: brainstorm > rollback > new_site > major_revision > restyle > layout_update > content_update > bug_fix > asset_import
 
   // Brief edit — update the design brief directly
   if (lower.match(/\b(edit\s+(?:the\s+)?brief|update\s+(?:the\s+)?brief|change\s+the\s+goal|fix\s+the\s+audience|modify\s+(?:the\s+)?brief)\b/)) return 'brief_edit';
 
   // Visual inspection — check rendered CSS, layout, images, responsive, console errors
-  if (lower.match(/\b(check|measure|inspect|examine)\s+(?:the\s+)?(nav|header|footer|hero|layout|width|height|spacing|font|color|section|images?|slots?|structure)/)) return 'visual_inspect';
+  if (lower.match(/\b(check|measure|inspect|examine)\s+(?:the\s+)?(nav|header|footer|hero|layout|width|height|spacing|font|color|section|images?|slots?|structure|data-\w+)/)) return 'visual_inspect';
+  // Inspect data attributes specifically (e.g. "inspect the data-field-id on the hero section")
+  if (lower.match(/\b(check|inspect|examine)\s+(?:the\s+)?data-[\w-]+\b/)) return 'visual_inspect';
   // Page-specific inspection: "check the about page", "inspect the services page"
   if (lower.match(/\b(check|inspect|examine|look\s+at)\s+(?:the\s+)?(\w+)\s+page\b/) && !lower.match(/\b(contact|quote|cta)\b.*\b(form|button)\b/)) return 'visual_inspect';
   if (lower.match(/\b(overflow\w*|responsive\s+check|mobile\s+check|tablet\s+check|screenshot|any\s+(?:js\s+)?errors?|console\s+errors?|broken\s+images?|check\s+(?:on\s+)?mobile|check\s+(?:on\s+)?tablet|how\s+(?:does\s+it\s+)?look\s+on\s+mobile)\b/)) return 'visual_inspect';
@@ -4350,7 +4453,10 @@ function classifyRequest(message, spec) {
       lower.match(/\bi\s+need\s+images?\b/)) return 'fill_stock_photos';
 
   // New site — no brief exists yet (HTML may exist from fallback template)
-  if (!hasBrief) return 'new_site';
+  if (!hasBrief) {
+    console.log(`[classifier] intent=new_site confidence=HIGH (no approved brief)`);
+    return 'new_site';
+  }
 
   // Brief approved but no HTML built yet — need to build first
   if (hasBrief && !hasHtml) return 'build';
@@ -4392,7 +4498,10 @@ function classifyRequest(message, spec) {
 
   // Component library — export/import (Fix #4 from Site 4 gap analysis)
   if (lower.match(/\b(export|save)\s+(?:the\s+|this\s+)?(?:\w+\s+)?(?:section|component|hero|card|form)\s+(?:to|as|into)\s+(?:the\s+)?(?:component\s+)?library\b/)) return 'component_export';
-  if (lower.match(/\b(import|use|get|load)\s+(?:the\s+|a\s+)?(?:\w+[\s-])?(?:component|hero|card|form)\s+(?:from|in)\s+(?:the\s+)?library\b/)) return 'component_import';
+  // Component import — support hyphenated IDs (display-stage, photo-slideshow, etc.)
+  if (lower.match(/\b(import|use|get|load)\s+(?:the\s+|a\s+)?(?:[\w][\w\s-]*?)\s+(?:component|hero|card|form)\s+(?:from|in)\s+(?:the\s+)?library\b/)) return 'component_import';
+  // Insert without "library" keyword: "use the display-stage component on the homepage"
+  if (lower.match(/\b(use|insert|add|place)\s+(?:the\s+)?(?:[\w][\w-]+)\s+component\b/)) return 'component_import';
   if (lower.match(/\bwhat\s+components?\s+(?:are\s+)?(?:in|available)\b/)) return 'component_import';
 
   // SVG pattern/icon generation — routes to asset_import (BLOCKER 3 fix)
@@ -4405,6 +4514,7 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(make\s+the\s+(header|footer|hero|nav|button|section)\s+\w+)\b/)) return 'layout_update';
 
   // Default: if classifier confidence is low, use least destructive path
+  console.log(`[classifier] intent=layout_update confidence=LOW (no pattern matched, defaulting)`);
   return 'layout_update';
 }
 
@@ -5016,6 +5126,11 @@ function routeToHandler(ws, requestType, userMessage, spec) {
 }
 
 function handlePlanning(ws, userMessage, spec) {
+  // Concurrent build guard — prevent parallel planning calls when a build is in progress
+  if (buildInProgress) {
+    ws.send(JSON.stringify({ type: 'chat', content: 'A build is already in progress. Please wait for it to finish before starting a new plan.' }));
+    return;
+  }
   ws.send(JSON.stringify({ type: 'status', content: 'Analyzing your vision...' }));
 
   const existingBrief = spec.design_brief ? JSON.stringify(spec.design_brief, null, 2) : 'none';
@@ -5210,7 +5325,7 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 
 // --- Parallel Multi-Page Build ---
 function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
-  buildInProgress = true;
+  setBuildInProgress(true);
   const startTime = Date.now();
 
   // Detect logo file
@@ -5461,7 +5576,7 @@ ${sharedRules}`;
 
         if (completed === total) {
           if (writtenPages.length === 0) {
-            buildInProgress = false;
+            setBuildInProgress(false);
             ws.send(JSON.stringify({ type: 'error', content: 'All pages failed to build. Try again.' }));
           } else {
             finishParallelBuild(ws, writtenPages, startTime, spec);
@@ -6518,7 +6633,7 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Post-processing...' }));
   runPostProcessing(ws, writtenPages, { isFullBuild: true });
 
-  buildInProgress = false;
+  setBuildInProgress(false);
 
   // Save build metrics
   const buildMetrics = {
@@ -6883,7 +6998,7 @@ function handleChatMessage(ws, userMessage, requestType, spec) {
     }
   }
 
-  buildInProgress = true;
+  setBuildInProgress(true);
 
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
@@ -7128,7 +7243,7 @@ ${analyticsInstruction}`;
         child.on('close', onChildClose);
         child.on('error', (err) => {
           console.error('[claude-haiku-fallback] Error:', err.message);
-          buildInProgress = false;
+          setBuildInProgress(false);
         });
       }
     }, 30000);
@@ -7139,7 +7254,7 @@ ${analyticsInstruction}`;
   const buildTimeout = setTimeout(() => {
     console.error('[claude] Build timed out after 5 minutes, killing process');
     child.kill();
-    buildInProgress = false;
+    setBuildInProgress(false);
     if (silenceTimeout) clearTimeout(silenceTimeout);
     try { ws.send(JSON.stringify({ type: 'error', content: 'Build timed out after 5 minutes. The Claude CLI may be unresponsive. Try again or check your network.' })); } catch {}
   }, 300000);
@@ -7179,7 +7294,7 @@ ${analyticsInstruction}`;
   function onChildClose(code) {
     clearTimeout(buildTimeout);
     if (silenceTimeout) clearTimeout(silenceTimeout);
-    buildInProgress = false;
+    setBuildInProgress(false);
     ws.currentChild = null;
 
     // Approximate token tracking (no usage data from --print text mode)
@@ -7461,7 +7576,7 @@ wss.on('connection', (ws) => {
     // Reset build lock if client disconnects mid-build to prevent permanent deadlock
     if (buildInProgress) {
       console.warn('[studio] Client disconnected during build — releasing buildInProgress lock');
-      buildInProgress = false;
+      setBuildInProgress(false);
     }
     await endSession(ws);
   });
@@ -8129,7 +8244,6 @@ wss.on('connection', (ws) => {
         }
 
         case 'component_import': {
-          // Fix #4 — import/list components from library (Codex review: fixed field name access)
           ws.send(JSON.stringify({ type: 'status', content: 'Checking component library...' }));
           try {
             const libPath = path.join(__dirname, '..', 'components', 'library.json');
@@ -8143,38 +8257,82 @@ wss.on('connection', (ws) => {
               ws.send(JSON.stringify({ type: 'assistant', content: 'Component library is empty. Export components first.' }));
               break;
             }
-            const importMatch = userMessage.toLowerCase().match(/(?:import|use|get|load)\s+(?:the\s+|a\s+)?(\w+[\s-]?\w*)\s+(?:component|hero|card|form)/);
-            const searchTerm = importMatch ? importMatch[1].trim().replace(/\s+/g, '-') : null;
-            if (searchTerm) {
-              // Search by id, component_id, or name (handle both old and new formats)
+
+            const msgLower = userMessage.toLowerCase();
+
+            // Detect insert intent: "use", "insert", "add ... from library", "place"
+            const isInsertIntent = msgLower.match(/\b(use|insert|add|place|put)\s+(?:the\s+)?(\w[\w\s-]*?)\s+(?:component|section|hero|card|form)\b/) ||
+                                   msgLower.match(/\b(use|insert|add)\s+(?:the\s+)?(\w[\w\s-]*?)\s+(?:on|in|into|onto)\s+(?:the\s+)?(\w+)\s*(?:page)?\b/);
+
+            // Extract component name and target page from message
+            const insertMatch = msgLower.match(/\b(?:use|insert|add|place)\s+(?:the\s+)?(\w[\w\s-]*?)\s+(?:component|section)?\s+(?:on|in|into|onto)\s+(?:the\s+)?(\w+)\s*(?:page)?\b/) ||
+                                msgLower.match(/\b(?:use|insert|add)\s+(?:the\s+)?(\w[\w\s-]*?)\s+(?:component|section)\b/);
+            const insertMatchOnPage = msgLower.match(/(?:on|in|into|onto)\s+(?:the\s+)?(\w+)\s*(?:page)?/);
+
+            const searchTerm = insertMatch ? insertMatch[1].trim().replace(/\s+/g, '-') : null;
+            const targetPageRaw = insertMatchOnPage ? insertMatchOnPage[1].toLowerCase() : null;
+            const targetPage = targetPageRaw === 'homepage' || targetPageRaw === 'home' ? 'index.html' :
+                               targetPageRaw ? targetPageRaw + (targetPageRaw.endsWith('.html') ? '' : '.html') : currentPage;
+
+            if (searchTerm && isInsertIntent) {
+              // Find the component
               const match = components.find(c => {
-                const cid = c.id || c.component_id || '';
+                const cid = (c.id || c.component_id || '').toLowerCase();
                 const cname = (c.name || '').toLowerCase();
-                return cid.includes(searchTerm) || cname.includes(searchTerm);
+                return cid.includes(searchTerm) || cname.includes(searchTerm) || searchTerm.includes(cid.replace('component-', ''));
               });
+
               if (match) {
                 const compId = match.id || match.component_id || searchTerm;
                 const compDir = path.join(__dirname, '..', 'components', match.path || compId);
                 try {
-                  const templateFile = fs.readdirSync(compDir).find(f => f.endsWith('.html'));
+                  const templateFile = fs.existsSync(compDir) ? fs.readdirSync(compDir).find(f => f.endsWith('.html')) : null;
                   if (templateFile) {
-                    ws.send(JSON.stringify({ type: 'assistant', content: `Found component: ${match.name || compId} (v${match.version || '1.0'})\nType: ${match.type || 'section'}\nFrom: ${match.extracted_from || match.created_from || 'unknown'}\n\nTo use it, say "Add the ${compId} to this page".` }));
+                    const componentHtml = fs.readFileSync(path.join(compDir, templateFile), 'utf8');
+                    const targetPagePath = path.join(DIST_DIR(), targetPage);
+
+                    if (!fs.existsSync(targetPagePath)) {
+                      ws.send(JSON.stringify({ type: 'assistant', content: `Target page "${targetPage}" not found. Available pages: ${listPages().join(', ')}` }));
+                      break;
+                    }
+
+                    // Insert before </main> or before </body> if no main
+                    let pageHtml = fs.readFileSync(targetPagePath, 'utf8');
+                    const insertBefore = pageHtml.includes('</main>') ? '</main>' : '</body>';
+                    const sectionHtml = `\n<!-- Component: ${compId} (from library) -->\n${componentHtml}\n`;
+                    pageHtml = pageHtml.replace(insertBefore, sectionHtml + insertBefore);
+                    fs.writeFileSync(targetPagePath, pageHtml);
+
+                    // Track usage in library.json
+                    if (!match.used_in) match.used_in = [];
+                    if (!match.used_in.includes(TAG)) {
+                      match.used_in.push(TAG);
+                      library.components = library.components.map(c =>
+                        (c.id || c.component_id) === compId ? match : c
+                      );
+                      fs.writeFileSync(libPath, JSON.stringify(library, null, 2));
+                    }
+
+                    ws.send(JSON.stringify({ type: 'reload-preview' }));
+                    ws.send(JSON.stringify({ type: 'assistant', content: `Inserted **${match.name || compId}** into \`${targetPage}\`.\n\nComponent from: ${match.extracted_from || match.created_from || 'library'}\nUsed in: ${(match.used_in || []).length} site(s)` }));
                   } else {
-                    ws.send(JSON.stringify({ type: 'assistant', content: `Found "${match.name || compId}" but no HTML template in ${compDir}` }));
+                    ws.send(JSON.stringify({ type: 'assistant', content: `Found "${match.name || compId}" but no HTML template available at ${compDir}` }));
                   }
                 } catch (dirErr) {
-                  ws.send(JSON.stringify({ type: 'assistant', content: `Component "${compId}" registered but directory not found at ${compDir}` }));
+                  ws.send(JSON.stringify({ type: 'assistant', content: `Error inserting component: ${dirErr.message}` }));
                 }
               } else {
                 const available = components.map(c => c.id || c.component_id || '?').join(', ');
-                ws.send(JSON.stringify({ type: 'assistant', content: `No component matching "${searchTerm}" in library.\nAvailable: ${available}` }));
+                ws.send(JSON.stringify({ type: 'assistant', content: `No component matching "${searchTerm}" found in library.\n\nAvailable components:\n${available}` }));
               }
             } else {
+              // List mode — show all components
               const list = components.map(c => {
                 const cid = c.id || c.component_id || '?';
-                return `- **${c.name || cid}** (${cid}) — ${c.description || c.type || ''}`;
+                const usedIn = c.used_in && c.used_in.length > 0 ? ` — used in ${c.used_in.length} site(s)` : '';
+                return `- **${c.name || cid}** (\`${cid}\`) — ${c.description || c.type || 'section'}${usedIn}`;
               }).join('\n');
-              ws.send(JSON.stringify({ type: 'assistant', content: `Component Library (${components.length} components):\n${list}` }));
+              ws.send(JSON.stringify({ type: 'assistant', content: `**Component Library** (${components.length} components):\n\n${list}\n\nTo insert a component: _"use the display-stage component on the homepage"_` }));
             }
           } catch (e) {
             ws.send(JSON.stringify({ type: 'assistant', content: `Library error: ${e.message}` }));
@@ -9234,7 +9392,7 @@ function spawnClaude(prompt) {
     // Reset build lock on spawn failure to prevent permanent deadlock
     if (buildInProgress) {
       console.warn('[claude-spawn] Resetting buildInProgress after spawn error');
-      buildInProgress = false;
+      setBuildInProgress(false);
     }
   });
   child.on('close', (code) => {

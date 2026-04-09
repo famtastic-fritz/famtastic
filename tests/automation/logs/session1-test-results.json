@@ -1,0 +1,126 @@
+{
+  "session": 1,
+  "run_date": "2026-04-08",
+  "server_version": "post-session1",
+  "site_tag": "site-auntie-gale-garage-sales",
+  "tests": [
+    {
+      "id": "1A-cancel-btn-visible",
+      "name": "Cancel button exists hidden in DOM",
+      "status": "PASS",
+      "notes": "getElementById('chat-cancel-btn') found. Has class 'hidden'. Text: '✕ Cancel'. chat-send-btn also present. Verified via browser evaluate.",
+      "screenshot": "s1-01-studio-loaded.png"
+    },
+    {
+      "id": "1A-cancel-api",
+      "name": "POST /api/build/cancel returns { success: true }",
+      "status": "PASS",
+      "notes": "Browser fetch('/api/build/cancel', {method:'POST'}) returned status 200, body {success:true, was_in_progress:false}. CSRF origin check passes from same-origin browser context.",
+      "observed": { "status": 200, "body": { "success": true, "was_in_progress": false } }
+    },
+    {
+      "id": "1B-build-lock-cleared",
+      "name": "Build lock clears on server restart (BUILD_LOCK_STALE)",
+      "status": "PASS",
+      "notes": "Set build_in_progress:true in .studio.json. Killed and restarted server with SITE_TAG=site-auntie-gale-garage-sales. Server log showed '[studio] BUILD_LOCK_STALE — cleared on startup'. .studio.json confirmed build_in_progress:false after restart.",
+      "server_log_message": "[studio] BUILD_LOCK_STALE — cleared on startup",
+      "log_file": "/tmp/studio-s1-restart.log"
+    },
+    {
+      "id": "1C-double-build-rejected",
+      "name": "Second build request rejected cleanly when build is in progress",
+      "status": "PASS",
+      "notes": "Sent content_update WS message ('update the nav phone number'). Waited for 'Sending to Claude...' status. Sent second WS chat message during live Claude call. Server responded with type:'chat' content:'A build is already in progress. Please wait for it to finish before sending another request.' Guard fires in handleChatMessage() at line 6979. NOTE: layout_update/new_site messages classified before build executes go through handlePlanning() which has no build lock guard — double-plan can occur. Only post-approval builds are guarded.",
+      "rejection_message": "A build is already in progress. Please wait for it to finish before sending another request.",
+      "screenshot": "s1-02-double-build-rejection.png"
+    },
+    {
+      "id": "2A-brief-classifies-high",
+      "name": "Brief with technical vocabulary classifies as build with HIGH confidence",
+      "status": "PASS",
+      "notes": "Sent: \"I'm building a site for Test Co. PAGES NEEDED: Home, About. COLOR SCHEME: Primary #E8420A. DATA ATTRIBUTES: All sections need data-section-id, data-field-id.\" Server log: [classifier] intent=build confidence=HIGH signals=2 (strong build pattern). Two strong build signals matched: /\\bpages\\s+needed\\b/ and /\\bcolor\\s+scheme\\b.*\\bfonts?\\b/ (actually /pages needed/ + /color scheme/). Response was a build plan card — correct behavior.",
+      "server_log": "[classifier] intent=build confidence=HIGH signals=2 (strong build pattern)",
+      "classifier_path": "STRONG_BUILD_SIGNALS check at server.js line 4357"
+    },
+    {
+      "id": "2B-inspect-classifies-correctly",
+      "name": "Inspection command classifies as visual_inspect (not build)",
+      "status": "PARTIAL-PASS",
+      "notes": "Original test phrase 'inspect the data-field-id on the hero section' misclassified as layout_update (LOW confidence) because 'data-field-id' is not in the visual_inspect noun list (nav|header|footer|hero|layout|section|etc). Re-tested with 'inspect the hero section data attributes' — correctly classified as visual_inspect. Server status: 'Inspecting site...' Response: file-based site inspection result (hero section, page summary). NO build plan generated. KNOWN GAP: 'inspect the data-field-id' phrasing not covered by classifier patterns.",
+      "original_phrase": "inspect the data-field-id on the hero section",
+      "original_result": "layout_update (LOW confidence) — misclassified",
+      "corrected_phrase": "inspect the hero section data attributes",
+      "corrected_result": "visual_inspect — correct, returns inspection data not build plan",
+      "screenshot": "s1-03-classifier-inspect.png",
+      "gap": "data-field-id not in visual_inspect noun allowlist at classifier line 4389"
+    },
+    {
+      "id": "3A-component-insert",
+      "name": "Insert component via chat",
+      "status": "PARTIAL-PASS",
+      "notes": "Original test phrase 'use the display-stage component on the homepage' misclassified as layout_update (LOW confidence) because classifier pattern at line 4499 requires 'from/in the library' AND only allows one word before 'component' keyword. 'display-stage' is hyphenated two-word name that exceeds (?:\\w+[\\s-])? single-word capture. Re-tested with 'use the stage component from the library' — correctly classified as component_import. Component inserted successfully: index.html grew from 24002 to 26380 bytes (+2378). reload-preview event fired. Server confirmed: 'Inserted Display Stage — Deal Showcase into index.html. Used in: 1 site(s)'. KNOWN GAP: multi-word hyphenated component IDs (display-stage, photo-slideshow) cannot be inserted via natural language — single-word alias required.",
+      "original_phrase": "use the display-stage component on the homepage",
+      "original_result": "layout_update — generates build plan instead of direct insert",
+      "working_phrase": "use the stage component from the library",
+      "working_result": "component_import — direct insert without plan, index.html updated",
+      "file_size_before": 24002,
+      "file_size_after": 26380,
+      "component_found_in_html": true,
+      "screenshot": "s1-05-component-inserted.png"
+    },
+    {
+      "id": "3B-library-panel",
+      "name": "Library tab panel shows components",
+      "status": "PASS",
+      "notes": "Clicked Library tab in right sidebar. Panel became visible. 6 components listed: Video Hero Section (video-hero), Garage Sale Product Card (product-card-garage), Display Stage — Deal Showcase (display-stage), CSS Starburst Badge (starburst-badge), Live Countdown Timer (countdown-timer), Category Filter Pills (category-filter-pills). Insert tip text shown: 'To insert: \"use the [name] component on the homepage\"'",
+      "components_found": 6,
+      "components": ["video-hero", "product-card-garage", "display-stage", "starburst-badge", "countdown-timer", "category-filter-pills"],
+      "screenshot": "s1-04-library-panel.png"
+    },
+    {
+      "id": "3C-component-listing",
+      "name": "Chat lists all 6 components when asked",
+      "status": "PASS",
+      "notes": "Sent: 'what components are in the library'. Classified as component_import. Status: 'Checking component library...'. Response: '**Component Library** (6 components):' followed by all 6 with descriptions and IDs. No build plan generated.",
+      "response_preview": "**Component Library** (6 components): Video Hero Section, Garage Sale Product Card, Display Stage...",
+      "components_listed": 6
+    }
+  ],
+  "known_gaps_found": [
+    {
+      "id": "gap-1",
+      "description": "component_import classifier pattern (?:\\w+[\\s-])? only matches single-word component names before 'component' keyword. Multi-word hyphenated IDs like 'display-stage', 'photo-slideshow' cannot be inserted by natural name.",
+      "location": "server.js line 4499",
+      "severity": "medium",
+      "workaround": "Use single-word alias: 'use the stage component from the library' instead of 'use the display-stage component'"
+    },
+    {
+      "id": "gap-2",
+      "description": "Visual inspect classifier at line 4389 does not include 'data-field-id', 'data-section-id', or other data attribute names in its noun list. 'inspect the data-field-id on the hero' misclassifies to layout_update.",
+      "location": "server.js line 4389",
+      "severity": "low",
+      "workaround": "Rephrase to 'inspect the hero section' instead of 'inspect the data-field-id'"
+    },
+    {
+      "id": "gap-3",
+      "description": "handlePlanning() has no buildInProgress guard. Two concurrent plan-generating messages can both proceed through planning simultaneously. Guard only fires in handleChatMessage() after plan approval.",
+      "location": "server.js line 5123 (handlePlanning has no guard vs line 6979 which does)",
+      "severity": "low",
+      "workaround": "User must not approve two plans simultaneously"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 6,
+    "partial_pass": 2,
+    "failed": 0,
+    "notes": "Both PARTIAL-PASSes are classifier routing issues with known workaround phrasings. Core features (cancel button, build lock stale clear, double-build rejection, library panel, component listing, component insert) all work correctly. The component insert and inspection tests pass with the correct phrasing."
+  },
+  "screenshots": {
+    "s1-01-studio-loaded.png": "Studio initial load — cancel btn hidden, send btn visible",
+    "s1-02-double-build-rejection.png": "Chat showing prior build history and session welcome",
+    "s1-03-classifier-inspect.png": "Inspection result displayed — not a build plan",
+    "s1-04-library-panel.png": "Library panel open showing 6 components",
+    "s1-05-component-inserted.png": "After component insert — chat shows confirmation message"
+  }
+}

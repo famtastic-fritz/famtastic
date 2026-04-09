@@ -1,0 +1,146 @@
+{
+  "version": "1.0",
+  "description": "Classifier regression test cases — 20 minimum",
+  "cases": [
+    {
+      "id": "CR-001",
+      "message": "I'm building a site for Auntie Gale's Garage Sales. COLOR SCHEME: Primary #E8420A. DATA ATTRIBUTES: All sections need data-section-id, data-section-type.",
+      "has_brief": false,
+      "expected": "new_site",
+      "notes": "Full build brief with technical vocabulary — must not misclassify as visual_inspect"
+    },
+    {
+      "id": "CR-002",
+      "message": "I'm building a site for Auntie Gale's Garage Sales. COLOR SCHEME: Primary #E8420A. DATA ATTRIBUTES: All sections need data-section-id, data-field-id, data-buddy-placement.",
+      "has_brief": true,
+      "expected": "build",
+      "notes": "Same brief with approved brief — should classify as build not inspect"
+    },
+    {
+      "id": "CR-003",
+      "message": "inspect the data-field-id on the hero section",
+      "has_brief": true,
+      "expected": "visual_inspect",
+      "notes": "Explicit inspection command with technical vocabulary"
+    },
+    {
+      "id": "CR-004",
+      "message": "build the site",
+      "has_brief": true,
+      "expected": "build",
+      "notes": "Simple explicit build command"
+    },
+    {
+      "id": "CR-005",
+      "message": "check the nav width on mobile",
+      "has_brief": true,
+      "expected": "visual_inspect",
+      "notes": "Explicit visual inspection"
+    },
+    {
+      "id": "CR-006",
+      "message": "change the phone number to (303) 555-1234",
+      "has_brief": true,
+      "expected": "content_update",
+      "notes": "Simple content update"
+    },
+    {
+      "id": "CR-007",
+      "message": "add a testimonials section to the homepage",
+      "has_brief": true,
+      "expected": "layout_update",
+      "notes": "Structural layout addition"
+    },
+    {
+      "id": "CR-008",
+      "message": "deploy",
+      "has_brief": true,
+      "expected": "deploy",
+      "notes": "Explicit deploy command"
+    },
+    {
+      "id": "CR-009",
+      "message": "rollback to the previous version",
+      "has_brief": true,
+      "expected": "rollback",
+      "notes": "Version rollback with version anchor"
+    },
+    {
+      "id": "CR-010",
+      "message": "brainstorm ideas for the hero section",
+      "has_brief": true,
+      "expected": "brainstorm",
+      "notes": "Brainstorm mode trigger"
+    },
+    {
+      "id": "CR-011",
+      "message": "I need a website for my restaurant called Bella Vista. Warm Mediterranean palette. Pages needed: Home, Menu, About, Reservations.",
+      "has_brief": false,
+      "expected": "new_site",
+      "notes": "Natural language brief with pages needed — strong build signal"
+    },
+    {
+      "id": "CR-012",
+      "message": "Pages needed: 1. Home 2. Shop 3. About 4. Contact. Color scheme: #FF6B35 primary, #FBBF24 accent.",
+      "has_brief": false,
+      "expected": "new_site",
+      "notes": "Brief with pages and color scheme but no explicit build command"
+    },
+    {
+      "id": "CR-013",
+      "message": "check the data-slot-id on all images",
+      "has_brief": true,
+      "expected": "visual_inspect",
+      "notes": "Inspect command with technical slot vocabulary"
+    },
+    {
+      "id": "CR-014",
+      "message": "export the hero section to the library",
+      "has_brief": true,
+      "expected": "component_export",
+      "notes": "Component export command"
+    },
+    {
+      "id": "CR-015",
+      "message": "use the display-stage component on the homepage",
+      "has_brief": true,
+      "expected": "component_import",
+      "notes": "Component import/insert command"
+    },
+    {
+      "id": "CR-016",
+      "message": "update the email address to gale@example.com",
+      "has_brief": true,
+      "expected": "content_update",
+      "notes": "Email content update"
+    },
+    {
+      "id": "CR-017",
+      "message": "make it more minimal and clean",
+      "has_brief": true,
+      "expected": "restyle",
+      "notes": "Restyle signal without structural vocabulary"
+    },
+    {
+      "id": "CR-018",
+      "message": "what components are in the library",
+      "has_brief": true,
+      "expected": "component_import",
+      "notes": "Library query"
+    },
+    {
+      "id": "CR-019",
+      "message": "the hero image is broken and not showing",
+      "has_brief": true,
+      "expected": "bug_fix",
+      "notes": "Bug report"
+    },
+    {
+      "id": "CR-020",
+      "message": "I want a site for my yoga studio called Breathe & Flow. PAGES NEEDED: 1. Home 2. Classes 3. About 4. Contact. COLOR SCHEME: sage green primary, warm white background. FONTS: Cormorant Garamond display, Source Sans body.",
+      "has_brief": false,
+      "expected": "new_site",
+      "notes": "Complete site brief with structured fields"
+    }
+  ]
+}

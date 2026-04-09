@@ -327,7 +327,8 @@
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" multiple class="hidden" onchange="handleFileSelect(this.files)">
                 </label>
-                <button type="submit" class="bg-studio-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition text-sm">Send</button>
+                <button type="submit" id="chat-send-btn" class="bg-studio-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition text-sm">Send</button>
+                <button type="button" id="chat-cancel-btn" onclick="cancelBuild()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition text-sm hidden" title="Cancel build in progress">&#x2715; Cancel</button>
               </form>
             </div>
           </div>
@@ -414,6 +415,7 @@
         <button onclick="switchStudioTab('verify')" id="studio-tab-verify" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Review</button>
         <button onclick="switchStudioTab('server')" id="studio-tab-server" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Hosting</button>
         <button onclick="switchStudioTab('terminal')" id="studio-tab-terminal" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Terminal</button>
+        <button onclick="switchStudioTab('library')" id="studio-tab-library" class="studio-tab text-xs px-3 py-1.5 rounded-t transition">Library</button>
       </div>
 
       <!-- Scrollable tab content -->
@@ -777,6 +779,20 @@
           </div>
         </div>
 
+        <!-- Library tab -->
+        <div id="studio-tab-content-library" class="studio-tab-content hidden">
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold text-studio-muted uppercase tracking-wider">Component Library</h3>
+              <button onclick="refreshLibraryPanel()" class="text-xs text-studio-accent hover:text-blue-400 transition">&#x21BA; Refresh</button>
+            </div>
+            <div id="library-panel-content" class="text-xs text-studio-muted">
+              <p class="text-center py-4">Loading...</p>
+            </div>
+            <p class="text-xs text-studio-muted mt-3">To insert: <em>"use the [name] component on the homepage"</em></p>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -976,6 +992,11 @@
           case 'server-restarting':
             addMessage('assistant', 'Server restarting... reconnecting automatically.');
             break;
+          case 'build_cancelled':
+            hideStepLog();
+            document.getElementById('chat-cancel-btn')?.classList.add('hidden');
+            addMessage('assistant', 'Build was cancelled.');
+            break;
           case 'deploy-updated':
             refreshDeployInfo();
             break;
@@ -1114,6 +1135,7 @@
       steps.push({ text, status: 'active' });
       if (!stepStart) stepStart = Date.now();
       renderStepLog();
+      document.getElementById('chat-cancel-btn')?.classList.remove('hidden');
       // Start timer if not running
       if (!stepTimer) {
         stepTimer = setInterval(() => renderStepLog(), 1000);
@@ -1150,6 +1172,18 @@
       if (el) el.remove();
       steps = [];
       stepStart = null;
+      document.getElementById('chat-cancel-btn')?.classList.add('hidden');
+    }
+
+    function cancelBuild() {
+      fetch('/api/build/cancel', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          hideStepLog();
+          document.getElementById('chat-cancel-btn').classList.add('hidden');
+          addMessage('assistant', 'Build cancelled.');
+        })
+        .catch(err => console.error('[cancel]', err));
     }
 
     // --- Chat ---
@@ -1579,7 +1613,7 @@
         serverUptimeInterval = null;
       }
       activeStudioTab = tab;
-      ['design', 'assets', 'deploy', 'history', 'blueprint', 'metrics', 'verify', 'server', 'terminal'].forEach(t => {
+      ['design', 'assets', 'deploy', 'history', 'blueprint', 'metrics', 'verify', 'server', 'terminal', 'library'].forEach(t => {
         const btn = document.getElementById(`studio-tab-${t}`);
         const content = document.getElementById(`studio-tab-content-${t}`);
         if (!btn || !content) return;
@@ -1602,6 +1636,7 @@
       if (tab === 'history') { refreshStudioPanel(); if (typeof loadMutations === 'function') loadMutations(1); }
       if (tab === 'terminal' && fitAddon) setTimeout(function() { fitAddon.fit(); }, 50);
       if (tab === 'assets') refreshStudioPanel();
+      if (tab === 'library') refreshLibraryPanel();
     }
 
     // --- Accordions ---
@@ -1833,6 +1868,52 @@
 
       } catch (e) {
         console.error('[studio-panel]', e);
+      }
+    }
+
+    // --- Library Panel ---
+    async function refreshLibraryPanel() {
+      const container = document.getElementById('library-panel-content');
+      if (!container) return;
+      try {
+        const lib = await (await fetch('/api/components')).json();
+        const components = lib.components || [];
+        if (components.length === 0) {
+          container.textContent = 'No components yet. Export sections to build your library.';
+          return;
+        }
+        while (container.firstChild) container.removeChild(container.firstChild);
+        components.forEach(c => {
+          const cid = c.id || c.component_id || '?';
+          const card = document.createElement('div');
+          card.className = 'border border-gray-700 rounded p-2 mb-2';
+          const nameEl = document.createElement('div');
+          nameEl.className = 'font-semibold text-studio-text';
+          nameEl.textContent = c.name || cid;
+          card.appendChild(nameEl);
+          const descEl = document.createElement('div');
+          descEl.className = 'text-studio-muted text-xs';
+          descEl.textContent = c.description || c.type || 'section';
+          card.appendChild(descEl);
+          const meta = document.createElement('div');
+          meta.className = 'flex items-center justify-between mt-1';
+          const usageEl = document.createElement('span');
+          usageEl.className = c.used_in && c.used_in.length > 0 ? 'text-green-400' : 'text-studio-muted';
+          usageEl.textContent = c.used_in && c.used_in.length > 0 ? `Used in ${c.used_in.length} site(s)` : 'Unused';
+          meta.appendChild(usageEl);
+          const idEl = document.createElement('code');
+          idEl.className = 'text-xs text-studio-muted';
+          idEl.textContent = cid;
+          meta.appendChild(idEl);
+          card.appendChild(meta);
+          container.appendChild(card);
+        });
+      } catch (e) {
+        const errEl = document.createElement('p');
+        errEl.className = 'text-red-400 text-xs p-2';
+        errEl.textContent = 'Failed to load library: ' + e.message;
+        container.textContent = '';
+        container.appendChild(errEl);
       }
     }
 
