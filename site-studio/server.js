@@ -4699,8 +4699,41 @@ app.post('/api/content-field', (req, res) => {
     return res.status(404).json({ error: `Value "${oldValue}" not found in HTML` });
   }
 
-  // Update spec
+  // Update spec for this page
   field.value = new_value;
+
+  // Global field propagation — phone/email/address/hours update across all pages
+  const GLOBAL_FIELD_TYPES = ['phone', 'email', 'address', 'hours'];
+  const cascadePages = [];
+  if (GLOBAL_FIELD_TYPES.includes(field.type) || field.scope === 'global') {
+    const allPages = listPages().filter(p => p !== page);
+    for (const otherPage of allPages) {
+      const otherFields = spec.content?.[otherPage]?.fields || [];
+      // Find matching field by type or field_id on other pages
+      const matchField = otherFields.find(f =>
+        f.type === field.type || f.field_id === field_id ||
+        (f.field_id.includes(field.type) && f.type === field.type)
+      );
+      if (!matchField) continue;
+      const otherPath = path.join(DIST_DIR(), otherPage);
+      if (!fs.existsSync(otherPath)) continue;
+      let otherHtml = fs.readFileSync(otherPath, 'utf8');
+      const $2 = cheerio.load(otherHtml);
+      const otherEl = $2(`[data-field-id="${matchField.field_id}"]`);
+      if (otherEl.length > 0) {
+        otherEl.text(new_value);
+        if (field.type === 'phone' && otherEl.attr('href')?.startsWith('tel:')) {
+          otherEl.attr('href', `tel:+1${new_value.replace(/\D/g, '')}`);
+        } else if (field.type === 'email' && otherEl.attr('href')?.startsWith('mailto:')) {
+          otherEl.attr('href', `mailto:${new_value}`);
+        }
+        fs.writeFileSync(otherPath, $2.html());
+        matchField.value = new_value;
+        cascadePages.push(otherPage);
+      }
+    }
+  }
+
   writeSpec(spec, {
     source: 'content_field_api',
     mutationLevel: 'field',
@@ -4709,7 +4742,7 @@ app.post('/api/content-field', (req, res) => {
     newValue: new_value,
   });
 
-  res.json({ success: true, field_id, old_value: oldValue, new_value });
+  res.json({ success: true, field_id, old_value: oldValue, new_value, cascade_pages: cascadePages });
 });
 
 // Research files API — serves research markdown for Phase 6 workspace

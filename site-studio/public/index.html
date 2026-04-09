@@ -5146,25 +5146,46 @@
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
         try {
-          // Send content update via chat (triggers surgical handler)
           const page = activePage || 'index.html';
-          const msg = 'Change the ' + fieldId + ' to: ' + newValue;
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'chat', content: msg }));
-            addMessage('user', msg, true);
+
+          // Phase 2: Direct REST call — no AI roundtrip, no classifier, no plan gate
+          const r = await fetch('/api/content-field', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page, field_id: fieldId, new_value: newValue }),
+          });
+
+          if (r.status === 404) {
+            // Field not in spec.content yet — sync first, then retry
+            await fetch('/api/sync-content-fields', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            const r2 = await fetch('/api/content-field', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ page, field_id: fieldId, new_value: newValue }),
+            });
+            if (!r2.ok) {
+              // Final fallback: send via chat surgical handler
+              const msg = 'replace "' + currentValue.substring(0, 60) + '" with "' + newValue + '"';
+              if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'chat', content: msg }));
+            }
+          } else if (!r.ok) {
+            throw new Error('HTTP ' + r.status);
           }
-          // Optimistic update in the iframe
+
+          // Optimistic update in iframe
           el.textContent = newValue;
           overlay.remove();
           el.classList.remove('field-editing');
-          // Reload after a short delay to get server-side update
+
+          // Reload both views after short delay
           setTimeout(() => {
             if (activeCanvasTab === 'editable') loadEditableView();
             reloadPreview();
-          }, 2000);
+          }, 600);
         } catch (e) {
-          saveBtn.textContent = 'Error';
-          setTimeout(() => { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }, 1500);
+          saveBtn.textContent = 'Error — ' + (e.message || 'try again');
+          saveBtn.style.background = '#dc2626';
+          setTimeout(() => { saveBtn.textContent = 'Save'; saveBtn.style.background = ''; saveBtn.disabled = false; }, 2000);
         }
       };
       actions.appendChild(saveBtn);
