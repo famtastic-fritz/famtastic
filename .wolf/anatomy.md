@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T16:25:19.800Z
-> Files: 334 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T02:38:25.246Z
+> Files: 359 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -36,14 +36,14 @@
 
 - `.gitignore` — Git ignore rules (~127 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~9722 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~10070 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10331 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~34353 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~35561 tok)
 
 ## .claude/
 
@@ -334,11 +334,26 @@
 
 ## components/
 
-- `library.json` (~123 tok)
+- `library.json` (~797 tok)
 
 ## components/animated-counter/
 
 - `component.json` (~465 tok)
+
+## components/category-filter-pills/
+
+- `component.json` (~282 tok)
+- `template.html` — from: filterCategory (~707 tok)
+
+## components/countdown-timer/
+
+- `component.json` — Declares to (~256 tok)
+- `template.html` — getTargetTime: update (~641 tok)
+
+## components/display-stage/
+
+- `component.json` (~489 tok)
+- `template.html` (~618 tok)
 
 ## components/parallax-section/
 
@@ -347,6 +362,16 @@
 ## components/photo-slideshow/
 
 - `component.json` (~512 tok)
+
+## components/product-card-garage/
+
+- `component.json` (~347 tok)
+- `template.html` (~481 tok)
+
+## components/starburst-badge/
+
+- `component.json` — Declares is (~392 tok)
+- `template.html` — Declares from (~367 tok)
 
 ## components/video-hero/
 
@@ -407,6 +432,7 @@
 
 - `adobe-mcp-integration.md` — Adobe MCP Integration (adb-mcp) (~1000 tok)
 - `capability-registry.md` — Studio Capability Registry (~1366 tok)
+- `classifier-intent-map.md` — Classifier Intent Map (~2537 tok)
 - `cli-test.md` — Test CLI Integration (~31 tok)
 - `cli-usage.md` — FAMtastic Hub CLI Usage Guide (~892 tok)
 - `CONFIG_OWNERSHIP.md` — Config Ownership — FAMtastic Agent‑Hub (~618 tok)
@@ -464,8 +490,10 @@
 - `firefly-batch-street-reunion.json` (~353 tok)
 - `firefly-generate` (~2062 tok)
 - `gemini-cli` (~195 tok)
+- `generate-seo-files` — Standalone SEO file generator for existing sites (~411 tok)
+- `google-media-batch-auntie-gale.json` (~1391 tok)
 - `google-media-batch-street-reunion.json` (~1002 tok)
-- `google-media-generate` (~3509 tok)
+- `google-media-generate` (~3510 tok)
 - `install-codex-cli` (~99 tok)
 - `install-completions` — Install bash and zsh completions for fam-hub CLI (~886 tok)
 - `install.sh` — Agent-centric installer: Claude (native), Gemini (native), Codex via LiteLLM code-free only (~994 tok)
@@ -500,7 +528,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~119715 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~124003 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/lib/
@@ -509,7 +537,7 @@
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~73032 tok)
+- `index.html` — FAMtastic Site Studio (~74146 tok)
 
 ## site-studio/public/css/
 
@@ -570,9 +598,29 @@
 - `conversation.jsonl` (~1348 tok)
 - `spec.json` (~739 tok)
 
+## sites/auntie-gale-garage-sales/research/
+
+- `brief-inputs.md` — Auntie Gale's Garage Sales — Research Brief Inputs (~2243 tok)
+
 ## sites/poc-site/
 
 - `index.html` (~42 tok)
+
+## sites/site-auntie-gale-garage-sales/
+
+- `spec.json` (~1367 tok)
+
+## sites/site-auntie-gale-garage-sales/dist/
+
+- `about.html` — About — Auntie Gale's Garage Sales (~3848 tok)
+- `contact.html` — Contact — Auntie Gale's Garage Sales (~4016 tok)
+- `deals.html` — Deals — Auntie Gale's Garage Sales (~4976 tok)
+- `index.html` — Auntie Gale's Garage Sales — New Deals Every Week! (~6115 tok)
+- `shop.html` — Shop — Auntie Gale's Garage Sales (~5852 tok)
+
+## sites/site-auntie-gale-garage-sales/dist/assets/css/
+
+- `main.css` — Styles: 57 rules, 7 vars (~3827 tok)
 
 ## sites/site-demo/
 
@@ -639,12 +687,19 @@
 - `session-117.md` — Session 117 — 2026-03-24 (~296 tok)
 - `session-131.md` — Session 131 — 2026-03-24 (~261 tok)
 
+## tests/
+
+- `classifier-regression.json` (~1363 tok)
+- `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
+
 ## tests/automation/logs/
 
 - `ai-media-comparison-report.md` — AI Media Tool Comparison — First Tests (~1720 tok)
+- `auntie-gale-exhaustive-test.json` (~4721 tok)
 - `cli-handoff-pattern.json` — Declares in (~3576 tok)
 - `firefly-image-set-test.json` (~487 tok)
 - `gap-fixes-codex-review.md` — Codex Adversarial Review — Full Session Changes (~571 tok)
+- `session1-test-results.json` (~2664 tok)
 - `street-family-reunion-build.json` (~2081 tok)
 - `veo-video-hero-test.json` (~387 tok)
 

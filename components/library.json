@@ -29,7 +29,10 @@
       "path": "display-stage/",
       "extracted_from": "site-auntie-gale-garage-sales",
       "description": "Bold-framed deal showcase stage with swappable content slot. Header bar, starburst corner badge, character breakout, image, price (with strikethrough), description, condition badge, and CTA. The 'frame is permanent, content is swappable' pattern.",
-      "usage_count": 1
+      "usage_count": 1,
+      "used_in": [
+        "site-auntie-gale-garage-sales"
+      ]
     },
     {
       "id": "starburst-badge",

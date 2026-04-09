@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+// Standalone SEO file generator for existing sites
+// Usage: node scripts/generate-seo-files site-auntie-gale-garage-sales
+const fs = require('fs');
+const path = require('path');
+const tag = process.argv[2] || 'site-demo';
+const distDir = path.join(__dirname, '..', 'sites', tag, 'dist');
+const specFile = path.join(__dirname, '..', 'sites', tag, 'spec.json');
+if (!fs.existsSync(distDir)) { console.error('No dist dir:', distDir); process.exit(1); }
+const spec = fs.existsSync(specFile) ? JSON.parse(fs.readFileSync(specFile, 'utf8')) : {};
+const pages = fs.readdirSync(distDir).filter(f => f.endsWith('.html') && !f.startsWith('_'));
+const deployedUrl = (spec.deployed_url || '').replace(/\/$/, '');
+const today = new Date().toISOString().split('T')[0];
+const urlEntries = pages.map(p => {
+  const loc = deployedUrl ? `${deployedUrl}/${p === 'index.html' ? '' : p}`.replace(/\/$/, '') : `/${p}`;
+  return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${today}</lastmod>\n    <priority>${p === 'index.html' ? '1.0' : '0.8'}</priority>\n  </url>`;
+}).join('\n');
+fs.writeFileSync(path.join(distDir, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlEntries}\n</urlset>`);
+const sitemapUrl = deployedUrl ? `${deployedUrl}/sitemap.xml` : '/sitemap.xml';
+fs.writeFileSync(path.join(distDir, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${sitemapUrl}\n`);
+console.log(`Generated sitemap.xml (${pages.length} pages) and robots.txt for ${tag}`);

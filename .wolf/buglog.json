@@ -7,7 +7,7 @@
       "error_message": "Significant refactor of ",
       "file": "../SITE-LEARNINGS.md",
       "root_cause": "11 lines replaced/restructured",
-      "fix": "Rewrote 28\u219244 lines (11 removed) | Also: \"hero-1\": { \"src\": \"assets/uploads/firefly_luxury-; \"gallery-3\": { \"src\": \"assets/stock/gallery-3.jpg\" | Also: ### Brand Health (Slot-Based); `scanBrandHealth()` in `server.js` reads directly ",
+      "fix": "Rewrote 28→44 lines (11 removed) | Also: \"hero-1\": { \"src\": \"assets/uploads/firefly_luxury-; \"gallery-3\": { \"src\": \"assets/stock/gallery-3.jpg\" | Also: ### Brand Health (Slot-Based); `scanBrandHealth()` in `server.js` reads directly ",
       "tags": [
         "auto-detected",
         "refactor",
@@ -23,7 +23,7 @@
       "error_message": "Significant refactor of ",
       "file": "FAMtastic-Web-Context.md",
       "root_cause": "6 lines replaced/restructured",
-      "fix": "Rewrote 8\u219212 lines (6 removed)",
+      "fix": "Rewrote 8→12 lines (6 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -39,7 +39,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "19 lines replaced/restructured",
-      "fix": "Rewrote 74\u2192152 lines (19 removed)",
+      "fix": "Rewrote 74→152 lines (19 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -71,7 +71,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 8\u219216 lines (3 removed)",
+      "fix": "Rewrote 8→16 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -102,7 +102,7 @@
       "timestamp": "2026-03-25T03:49:30.169Z",
       "error_message": "Missing error handling in truncateAssistantMessage",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -151,7 +151,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 15\u219223 lines (2 removed) | Also: if (pageRefMatch && requestType !== 'build' && req; const refPage = pageRefMatch[1].toLowerCase() + '. | Also: const decisions = (spec.design_decisions || []).fi; const decisionsText = decisions.length > 0 | Also: console.log(`[context] User references ${matchedPa; currentPage = matchedPageName; | Also: console.log('[studio] Client connected');; // Start a new session | Also: // Extract sections \u2014 look for <section> with id o; const sectionMatches = html.matchAll(/<section[^>]",
+      "fix": "Rewrote 15→23 lines (2 removed) | Also: if (pageRefMatch && requestType !== 'build' && req; const refPage = pageRefMatch[1].toLowerCase() + '. | Also: const decisions = (spec.design_decisions || []).fi; const decisionsText = decisions.length > 0 | Also: console.log(`[context] User references ${matchedPa; currentPage = matchedPageName; | Also: console.log('[studio] Client connected');; // Start a new session | Also: // Extract sections — look for <section> with id o; const sectionMatches = html.matchAll(/<section[^>]",
       "tags": [
         "auto-detected",
         "refactor",
@@ -182,7 +182,7 @@
       "timestamp": "2026-03-25T11:47:14.357Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/tests/unit.test.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -212,7 +212,7 @@
     {
       "id": "bug-013",
       "timestamp": "2026-03-25T07:42:00.000Z",
-      "error_message": "reapplySlotMappings runs before extractAndRegisterSlots \u2014 renamed slots lose images",
+      "error_message": "reapplySlotMappings runs before extractAndRegisterSlots — renamed slots lose images",
       "file": "site-studio/server.js",
       "root_cause": "Post-processing pipeline ordering: slot mappings were applied before slots were registered",
       "fix": "Moved extractAndRegisterSlots to run first in pipeline, before reapplySlotMappings",
@@ -232,7 +232,7 @@
       "error_message": "Parallel build timeout double-increments innerCompleted counter",
       "file": "site-studio/server.js",
       "root_cause": "Timeout handler incremented innerCompleted, then kill() triggered close event which also incremented",
-      "fix": "Removed increment from timeout handler \u2014 kill() triggers close event which handles it",
+      "fix": "Removed increment from timeout handler — kill() triggers close event which handles it",
       "tags": [
         "race-condition",
         "parallel-build",
@@ -261,7 +261,7 @@
     {
       "id": "bug-016",
       "timestamp": "2026-03-25T07:44:00.000Z",
-      "error_message": "gemini-cli stdin consumed twice \u2014 prompt always empty",
+      "error_message": "gemini-cli stdin consumed twice — prompt always empty",
       "file": "scripts/gemini-cli",
       "root_cause": "bash $(cat) consumed stdin, then Python os.read(0,...) got empty stdin",
       "fix": "Added printf pipe: printf '%s' \"$PROMPT\" | python3 -",
@@ -277,7 +277,7 @@
     {
       "id": "bug-017",
       "timestamp": "2026-03-25T07:44:00.000Z",
-      "error_message": "precommit-security unclosed single quote \u2014 security check silently disabled",
+      "error_message": "precommit-security unclosed single quote — security check silently disabled",
       "file": "scripts/precommit-security",
       "root_cause": "Missing closing single quote swallowed the pipe and second grep into the regex argument",
       "fix": "Closed the single quote before the pipe",
@@ -296,7 +296,7 @@
       "error_message": "Significant refactor of ",
       "file": "../SITE-LEARNINGS.md",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 12\u219220 lines (5 removed)",
+      "fix": "Rewrote 12→20 lines (5 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -328,7 +328,7 @@
       "error_message": "Significant refactor of ",
       "file": "FAMTASTIC-STATE.md",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 4\u21924 lines (3 removed)",
+      "fix": "Rewrote 4→4 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -360,7 +360,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 17\u219274 lines (4 removed) | Also: // Full build: sync everything from index.html; // Refresh nav partial from freshly built index.ht",
+      "fix": "Rewrote 17→74 lines (4 removed) | Also: // Full build: sync everything from index.html; // Refresh nav partial from freshly built index.ht",
       "tags": [
         "auto-detected",
         "refactor",
@@ -424,7 +424,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 7\u21928 lines (4 removed) | Also: HEAD BLOCK (copy this entire <head> block, then ad; ${components.headBlock}",
+      "fix": "Rewrote 7→8 lines (4 removed) | Also: HEAD BLOCK (copy this entire <head> block, then ad; ${components.headBlock}",
       "tags": [
         "auto-detected",
         "refactor",
@@ -440,7 +440,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 4\u21929 lines (2 removed)",
+      "fix": "Rewrote 4→9 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -472,7 +472,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "9 lines replaced/restructured",
-      "fix": "Rewrote 30\u219251 lines (9 removed) | Also: /* LAYOUT FOUNDATION \u2014 these rules MUST be present; html, body { overflow-x: hidden; max-width: 100%;  | Also: LAYOUT (non-negotiable):; - Tables must have width: 100% and word-wrap: brea",
+      "fix": "Rewrote 30→51 lines (9 removed) | Also: /* LAYOUT FOUNDATION — these rules MUST be present; html, body { overflow-x: hidden; max-width: 100%;  | Also: LAYOUT (non-negotiable):; - Tables must have width: 100% and word-wrap: brea",
       "tags": [
         "auto-detected",
         "refactor",
@@ -504,7 +504,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 6\u21925 lines (4 removed)",
+      "fix": "Rewrote 6→5 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -520,7 +520,7 @@
       "error_message": "Significant refactor of ",
       "file": "../SITE-LEARNINGS.md",
       "root_cause": "8 lines replaced/restructured",
-      "fix": "Rewrote 20\u219224 lines (8 removed)",
+      "fix": "Rewrote 20→24 lines (8 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -536,7 +536,7 @@
       "error_message": "Wrong reference: 162 should be 886",
       "file": "FAMtastic-Web-Context.md",
       "root_cause": "Used \"162\" instead of \"886\"",
-      "fix": "Changed 162 \u2192 886",
+      "fix": "Changed 162 → 886",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -552,7 +552,7 @@
       "error_message": "Significant refactor of ",
       "file": "FAMtastic-Web-Context.md",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 3\u21925 lines (2 removed) | Also: ### Multi-Page Sites; - Nav/footer/head partial sync across all pages af",
+      "fix": "Rewrote 3→5 lines (2 removed) | Also: ### Multi-Page Sites; - Nav/footer/head partial sync across all pages af",
       "tags": [
         "auto-detected",
         "refactor",
@@ -615,7 +615,7 @@
       "timestamp": "2026-03-26T22:24:31.180Z",
       "error_message": "Missing error handling in runGitPush",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -663,7 +663,7 @@
       "timestamp": "2026-03-26T22:31:48.861Z",
       "error_message": "Missing error handling in readLastSite",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -679,7 +679,7 @@
       "timestamp": "2026-03-26T22:46:14.019Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block | Also: // --- File change detection ---; // Watch server files for changes and notify clients when re",
       "tags": [
         "auto-detected",
@@ -696,7 +696,7 @@
       "error_message": "Wrong reference: div should be button",
       "file": "site-studio/public/index.html",
       "root_cause": "Used \"div\" instead of \"button\"",
-      "fix": "Changed div \u2192 button",
+      "fix": "Changed div → button",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -711,7 +711,7 @@
       "timestamp": "2026-03-26T22:48:37.555Z",
       "error_message": "Missing error handling in formatUptime",
       "file": "site-studio/public/index.html",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -759,7 +759,7 @@
       "timestamp": "2026-03-26T23:04:40.179Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/public/index.html",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -776,7 +776,7 @@
       "error_message": "Wrong reference: Server should be Studio",
       "file": "site-studio/public/index.html",
       "root_cause": "Used \"Server\" instead of \"Studio\"",
-      "fix": "Changed Server \u2192 Studio",
+      "fix": "Changed Server → Studio",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -840,7 +840,7 @@
       "error_message": "Significant refactor of ",
       "file": "scripts/site-deploy",
       "root_cause": "8 lines replaced/restructured",
-      "fix": "Rewrote 18\u219224 lines (8 removed)",
+      "fix": "Rewrote 18→24 lines (8 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -856,7 +856,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/public/index.html",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 8\u219234 lines (2 removed)",
+      "fix": "Rewrote 8→34 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -888,7 +888,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/public/index.html",
       "root_cause": "8 lines replaced/restructured",
-      "fix": "Rewrote 16\u21927 lines (8 removed) | Also: urlRow.className = 'truncate';; a.className = 'text-studio-accent hover:underline ",
+      "fix": "Rewrote 16→7 lines (8 removed) | Also: urlRow.className = 'truncate';; a.className = 'text-studio-accent hover:underline ",
       "tags": [
         "auto-detected",
         "refactor",
@@ -919,7 +919,7 @@
       "timestamp": "2026-03-27T00:03:41.358Z",
       "error_message": "Missing error handling in createProdRepo",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -951,7 +951,7 @@
       "timestamp": "2026-03-27T00:04:48.085Z",
       "error_message": "Missing error handling in createProdRepo",
       "file": "site-studio/public/index.html",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -968,7 +968,7 @@
       "error_message": "Wrong reference: null should be repo",
       "file": "site-studio/server.js",
       "root_cause": "Used \"null\" instead of \"repo\"",
-      "fix": "Changed null \u2192 repo",
+      "fix": "Changed null → repo",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -983,7 +983,7 @@
       "timestamp": "2026-03-27T00:11:29.385Z",
       "error_message": "Missing error handling in createProdRepo",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1000,7 +1000,7 @@
       "error_message": "Wrong reference: return should be prodRepoInProgress",
       "file": "site-studio/server.js",
       "root_cause": "Used \"return\" instead of \"prodRepoInProgress\"",
-      "fix": "Changed return \u2192 prodRepoInProgress",
+      "fix": "Changed return → prodRepoInProgress",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1080,7 +1080,7 @@
       "error_message": "Wrong reference: hasProdRepo should be info",
       "file": "site-studio/public/index.html",
       "root_cause": "Used \"hasProdRepo\" instead of \"info\"",
-      "fix": "Changed hasProdRepo \u2192 info",
+      "fix": "Changed hasProdRepo → info",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1096,7 +1096,7 @@
       "error_message": "Significant refactor of ",
       "file": "scripts/site-deploy",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 12\u219218 lines (2 removed)",
+      "fix": "Rewrote 12→18 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1128,7 +1128,7 @@
       "error_message": "Wrong reference: continue should be entry",
       "file": "site-studio/server.js",
       "root_cause": "Used \"continue\" instead of \"entry\"",
-      "fix": "Changed continue \u2192 entry",
+      "fix": "Changed continue → entry",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1144,7 +1144,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 4\u21929 lines (3 removed)",
+      "fix": "Rewrote 4→9 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1159,7 +1159,7 @@
       "timestamp": "2026-03-27T00:39:58.535Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block | Also: // Helper: try gh repo create on an existing local repo (use; function _tryGhRepoCreate(ws, spec, repoPath, siteName) { | Also: addChild.on('close', (addCode) => {; if (addCode !== 0) {",
       "tags": [
         "auto-detected",
@@ -1176,7 +1176,7 @@
       "error_message": "Wrong reference: pages should be pageNames",
       "file": "site-studio/server.js",
       "root_cause": "Used \"pages\" instead of \"pageNames\"",
-      "fix": "Changed pages \u2192 pageNames",
+      "fix": "Changed pages → pageNames",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1208,7 +1208,7 @@
       "error_message": "Significant refactor of ",
       "file": "scripts/site-deploy",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 25\u219255 lines (3 removed)",
+      "fix": "Rewrote 25→55 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1239,7 +1239,7 @@
       "timestamp": "2026-03-27T02:30:16.807Z",
       "error_message": "Incorrect value in code",
       "file": "scripts/site-deploy",
-      "root_cause": "Had \"[deploy] Created site $SITE_ID \u2014 deploying...\"",
+      "root_cause": "Had \"[deploy] Created site $SITE_ID — deploying...\"",
       "fix": "Changed to \"$SITE_ID\"",
       "tags": [
         "auto-detected",
@@ -1255,7 +1255,7 @@
       "timestamp": "2026-03-27T02:30:52.178Z",
       "error_message": "Missing error handling in runDeploy",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1272,7 +1272,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 8\u21926 lines (4 removed) | Also: if (!spec.environments) spec.environments = {};; if (!spec.environments.production) spec.environmen | Also: if (freshSpec.environments?.production?.repo?.path; syncProdRepo(ws, freshSpec); | Also: // Sync dist/ to production repo (called after pro; let syncProdRepoInProgress = false; | Also: app.put('/api/env-repo', (req, res) => {; const { env, repoPath, remote } = req.body;",
+      "fix": "Rewrote 8→6 lines (4 removed) | Also: if (!spec.environments) spec.environments = {};; if (!spec.environments.production) spec.environmen | Also: if (freshSpec.environments?.production?.repo?.path; syncProdRepo(ws, freshSpec); | Also: // Sync dist/ to production repo (called after pro; let syncProdRepoInProgress = false; | Also: app.put('/api/env-repo', (req, res) => {; const { env, repoPath, remote } = req.body;",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1288,7 +1288,7 @@
       "error_message": "Wrong reference: prodRepoInProgress should be siteRepoInProgress",
       "file": "site-studio/server.js",
       "root_cause": "Used \"prodRepoInProgress\" instead of \"siteRepoInProgress\"",
-      "fix": "Changed prodRepoInProgress \u2192 siteRepoInProgress",
+      "fix": "Changed prodRepoInProgress → siteRepoInProgress",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1336,7 +1336,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/public/index.html",
       "root_cause": "11 lines replaced/restructured",
-      "fix": "Rewrote 14\u219234 lines (11 removed) | Also: if (info.repo) {; var r1 = document.createElement('div');",
+      "fix": "Rewrote 14→34 lines (11 removed) | Also: if (info.repo) {; var r1 = document.createElement('div');",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1352,7 +1352,7 @@
       "error_message": "Wrong reference: Production should be Site",
       "file": "site-studio/public/index.html",
       "root_cause": "Used \"Production\" instead of \"Site\"",
-      "fix": "Changed Production \u2192 Site",
+      "fix": "Changed Production → Site",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1400,7 +1400,7 @@
       "error_message": "Significant refactor of ",
       "file": ".gitignore",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 9\u21929 lines (4 removed)",
+      "fix": "Rewrote 9→9 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1432,7 +1432,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 8\u219211 lines (3 removed)",
+      "fix": "Rewrote 8→11 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1447,7 +1447,7 @@
       "timestamp": "2026-03-27T05:57:14.086Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1464,7 +1464,7 @@
       "error_message": "Wrong reference: repo should be _hubRepoCache",
       "file": "site-studio/server.js",
       "root_cause": "Used \"repo\" instead of \"_hubRepoCache\"",
-      "fix": "Changed repo \u2192 _hubRepoCache",
+      "fix": "Changed repo → _hubRepoCache",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1480,7 +1480,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/public/index.html",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 8\u21928 lines (5 removed)",
+      "fix": "Rewrote 8→8 lines (5 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1496,7 +1496,7 @@
       "error_message": "Wrong reference: Actions should be DEPLOY",
       "file": "site-studio/public/index.html",
       "root_cause": "Used \"Actions\" instead of \"DEPLOY\"",
-      "fix": "Changed Actions \u2192 DEPLOY",
+      "fix": "Changed Actions → DEPLOY",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -1512,7 +1512,7 @@
       "error_message": "Significant refactor of ",
       "file": "FAMtastic-Web-Context.md",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 12\u219215 lines (2 removed)",
+      "fix": "Rewrote 12→15 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1527,8 +1527,8 @@
       "timestamp": "2026-03-30T22:06:25.331Z",
       "error_message": "Missing await",
       "file": "site-studio/server.js",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
-      "fix": "Added await to async call | Also: app.post('/api/switch-site', async (req, res) => {; // End current session \u2014 must await so summary writes to the | Also: app.post('/api/new-site', async (req, res) => {; // Switch to the new site \u2014 await so summary writes to the o",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: app.post('/api/switch-site', async (req, res) => {; // End current session — must await so summary writes to the | Also: app.post('/api/new-site', async (req, res) => {; // Switch to the new site — await so summary writes to the o",
       "tags": [
         "auto-detected",
         "async-fix",
@@ -1543,7 +1543,7 @@
       "timestamp": "2026-03-30T22:07:36.961Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/public/index.html",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1575,7 +1575,7 @@
       "timestamp": "2026-03-30T22:51:46.606Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block | Also: // --- Verification API ---; app.get('/api/verify', (req, res) => {",
       "tags": [
         "auto-detected",
@@ -1607,7 +1607,7 @@
       "timestamp": "2026-03-30T22:54:00.098Z",
       "error_message": "Missing error handling in updateVerifyIndicator",
       "file": "site-studio/public/index.html",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1623,7 +1623,7 @@
       "timestamp": "2026-03-30T23:06:53.859Z",
       "error_message": "Missing error handling in operations",
       "file": "../SITE-LEARNINGS.md",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1672,7 +1672,7 @@
       "error_message": "Significant refactor of ",
       "file": "CLAUDE.md",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 10\u219223 lines (3 removed)",
+      "fix": "Rewrote 10→23 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1688,7 +1688,7 @@
       "error_message": "Significant refactor of ",
       "file": "FAMTASTIC-STATE.md",
       "root_cause": "12 lines replaced/restructured",
-      "fix": "Rewrote 21\u219233 lines (12 removed)",
+      "fix": "Rewrote 21→33 lines (12 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1704,7 +1704,7 @@
       "error_message": "Significant refactor of ",
       "file": "FAMtastic-Web-Context.md",
       "root_cause": "14 lines replaced/restructured",
-      "fix": "Rewrote 23\u219223 lines (14 removed)",
+      "fix": "Rewrote 23→23 lines (14 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1720,7 +1720,7 @@
       "error_message": "Significant refactor of ",
       "file": "SITE-LEARNINGS.md",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 8\u219216 lines (7 removed)",
+      "fix": "Rewrote 8→16 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1767,7 +1767,7 @@
       "timestamp": "2026-03-31T02:43:35.359Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/tests/unit.test.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1784,7 +1784,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/vitest.config.js",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 10\u219210 lines (2 removed) | Also: // SITE_TAG must be set before server.js is import; process.env.SITE_TAG = process.env.SITE_TAG || 'si",
+      "fix": "Rewrote 10→10 lines (2 removed) | Also: // SITE_TAG must be set before server.js is import; process.env.SITE_TAG = process.env.SITE_TAG || 'si",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1831,7 +1831,7 @@
       "timestamp": "2026-03-31T03:28:59.477Z",
       "error_message": "Missing error handling in fileInspect",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block | Also: case 'visual_inspect': {; // Smart-routed inspection: file-based (cheerio) or browser ",
       "tags": [
         "auto-detected",
@@ -2008,7 +2008,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 15\u219228 lines (4 removed)",
+      "fix": "Rewrote 15→28 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2072,7 +2072,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 20\u219232 lines (3 removed)",
+      "fix": "Rewrote 20→32 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2168,7 +2168,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 21\u219232 lines (7 removed)",
+      "fix": "Rewrote 21→32 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2183,7 +2183,7 @@
       "timestamp": "2026-04-07T19:48:55.312Z",
       "error_message": "Missing error handling in function",
       "file": "site-studio/public/index.html",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block | Also: // --- Wave 5: Mutation Timeline ---; let mutationPage = 1;",
       "tags": [
         "auto-detected",
@@ -2199,7 +2199,7 @@
       "timestamp": "2026-04-07T19:49:45.820Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -2215,8 +2215,8 @@
       "timestamp": "2026-04-07T19:52:16.444Z",
       "error_message": "CSS fix: display",
       "file": "site-studio/public/css/studio-canvas.css",
-      "root_cause": "display: flex \u2192 none !important",
-      "fix": "Changed display: flex \u2192 none !important",
+      "root_cause": "display: flex → none !important",
+      "fix": "Changed display: flex → none !important",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -2232,7 +2232,7 @@
       "error_message": "Significant refactor of ",
       "file": "SITE-LEARNINGS.md",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 7\u219214 lines (7 removed)",
+      "fix": "Rewrote 7→14 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2248,7 +2248,7 @@
       "error_message": "Significant refactor of ",
       "file": "tests/media/three-provider-comparison.json",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 9\u219222 lines (3 removed)",
+      "fix": "Rewrote 9→22 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2296,7 +2296,7 @@
       "error_message": "Significant refactor of ",
       "file": "sites/site-readings-by-maria/dist/index.html",
       "root_cause": "12 lines replaced/restructured",
-      "fix": "Rewrote 17\u21928 lines (12 removed)",
+      "fix": "Rewrote 17→8 lines (12 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2312,7 +2312,7 @@
       "error_message": "Null/undefined access in ",
       "file": "site-studio/server.js",
       "root_cause": "Property access on potentially null/undefined value",
-      "fix": "Added null safety (optional chaining or null check) | Also: case 'verification': {; // Fix #3 from Site 4 gap analysis \u2014 \"run verification\" was ",
+      "fix": "Added null safety (optional chaining or null check) | Also: case 'verification': {; // Fix #3 from Site 4 gap analysis — \"run verification\" was ",
       "tags": [
         "auto-detected",
         "null-safety",
@@ -2328,7 +2328,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 9\u219212 lines (3 removed) | Also: const matchedPageName = pageRefMatch ? pageRefMatc; console.log(`[context] User references ${matchedPa",
+      "fix": "Rewrote 9→12 lines (3 removed) | Also: const matchedPageName = pageRefMatch ? pageRefMatc; console.log(`[context] User references ${matchedPa",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2359,7 +2359,7 @@
       "timestamp": "2026-04-08T11:58:38.670Z",
       "error_message": "Missing error handling in unknown",
       "file": "site-studio/server.js",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -2376,7 +2376,7 @@
       "error_message": "Wrong reference: currentPage should be resolvedPage",
       "file": "site-studio/server.js",
       "root_cause": "Used \"currentPage\" instead of \"resolvedPage\"",
-      "fix": "Changed currentPage \u2192 resolvedPage",
+      "fix": "Changed currentPage → resolvedPage",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -2392,7 +2392,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 3\u21924 lines (2 removed) | Also: const hexMatches = txt.matchAll(/(\\w[\\w\\s]*?)\\s*[\\; if (label.length < 30) colorHexes[label] = m[2];",
+      "fix": "Rewrote 3→4 lines (2 removed) | Also: const hexMatches = txt.matchAll(/(\\w[\\w\\s]*?)\\s*[\\; if (label.length < 30) colorHexes[label] = m[2];",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2440,7 +2440,7 @@
       "error_message": "Significant refactor of ",
       "file": "site-studio/server.js",
       "root_cause": "10 lines replaced/restructured",
-      "fix": "Rewrote 36\u219281 lines (10 removed)",
+      "fix": "Rewrote 36→81 lines (10 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2456,7 +2456,7 @@
       "error_message": "Significant refactor of ",
       "file": "sites/site-street-family-reunion/dist/gallery.html",
       "root_cause": "15 lines replaced/restructured",
-      "fix": "Rewrote 21\u21926 lines (15 removed)",
+      "fix": "Rewrote 21→6 lines (15 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2472,7 +2472,7 @@
       "error_message": "Significant refactor of ",
       "file": "sites/site-street-family-reunion/dist/index.html",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 5\u219213 lines (2 removed)",
+      "fix": "Rewrote 5→13 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2504,7 +2504,7 @@
       "error_message": "Significant refactor of ",
       "file": "docs/capability-registry.md",
       "root_cause": "15 lines replaced/restructured",
-      "fix": "Rewrote 21\u219227 lines (15 removed)",
+      "fix": "Rewrote 21→27 lines (15 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2536,7 +2536,7 @@
       "error_message": "Significant refactor of ",
       "file": "sites/site-street-family-reunion/dist/index.html",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 14\u219211 lines (7 removed)",
+      "fix": "Rewrote 14→11 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2552,7 +2552,7 @@
       "error_message": "Significant refactor of ",
       "file": "sites/site-street-family-reunion/dist/index.html",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 55\u219271 lines (5 removed)",
+      "fix": "Rewrote 55→71 lines (5 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2568,7 +2568,7 @@
       "error_message": "Significant refactor of ",
       "file": "SITE-LEARNINGS.md",
       "root_cause": "6 lines replaced/restructured",
-      "fix": "Rewrote 21\u219266 lines (6 removed)",
+      "fix": "Rewrote 21→66 lines (6 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2600,7 +2600,7 @@
       "error_message": "Wrong reference: $65 should be $55",
       "file": "sites/site-auntie-gale-garage-sales/dist/index.html",
       "root_cause": "Used \"$65\" instead of \"$55\"",
-      "fix": "Changed $65 \u2192 $55",
+      "fix": "Changed $65 → $55",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -2616,7 +2616,7 @@
       "error_message": "Wrong reference: $95 should be $79",
       "file": "sites/site-auntie-gale-garage-sales/dist/deals.html",
       "root_cause": "Used \"$95\" instead of \"$79\"",
-      "fix": "Changed $95 \u2192 $79",
+      "fix": "Changed $95 → $79",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -2648,7 +2648,7 @@
       "error_message": "Significant refactor of ",
       "file": "sites/site-auntie-gale-garage-sales/spec.json",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 3\u219224 lines (2 removed)",
+      "fix": "Rewrote 3→24 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2664,7 +2664,7 @@
       "error_message": "Significant refactor of ",
       "file": "SITE-LEARNINGS.md",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 6\u219275 lines (4 removed)",
+      "fix": "Rewrote 6→75 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2699,6 +2699,230 @@
         "classifier",
         "auntie-gale"
       ]
+    },
+    {
+      "id": "bug-170",
+      "timestamp": "2026-04-08T18:20:09.934Z",
+      "error_message": "CSS fix: right",
+      "file": "sites/site-auntie-gale-garage-sales/dist/assets/css/main.css",
+      "root_cause": "right: 220px → 300px",
+      "fix": "Changed right: 220px → 300px",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-08T18:20:18.680Z"
+    },
+    {
+      "id": "bug-171",
+      "timestamp": "2026-04-08T18:20:13.565Z",
+      "error_message": "Significant refactor of ",
+      "file": "sites/site-auntie-gale-garage-sales/dist/assets/css/main.css",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 9→10 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T18:20:13.565Z"
+    },
+    {
+      "id": "bug-172",
+      "timestamp": "2026-04-08T21:20:31.319Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // --- Build Lock Helper ---; function setBuildInProgress(value) {",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-08T21:20:47.160Z"
+    },
+    {
+      "id": "bug-173",
+      "timestamp": "2026-04-08T21:21:16.604Z",
+      "error_message": "Wrong reference: buildInProgress should be setBuildInProgress",
+      "file": "site-studio/server.js",
+      "root_cause": "Used \"buildInProgress\" instead of \"setBuildInProgress\"",
+      "fix": "Changed buildInProgress → setBuildInProgress",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T21:21:16.604Z"
+    },
+    {
+      "id": "bug-174",
+      "timestamp": "2026-04-08T21:22:05.797Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Had \"bg-studio-accent hover:bg-blue-600 text-white px-",
+      "fix": "Changed to \"chat-send-btn\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T21:22:05.797Z"
+    },
+    {
+      "id": "bug-175",
+      "timestamp": "2026-04-08T21:22:10.908Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: document.getElementById('chat-cancel-btn')?.classList.remove | Also: case 'build_cancelled':; hideStepLog();",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-08T21:22:27.170Z"
+    },
+    {
+      "id": "bug-176",
+      "timestamp": "2026-04-08T21:22:21.091Z",
+      "error_message": "Missing error handling in cancelBuild",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // --- Library Panel ---; async function refreshLibraryPanel() {",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-08T21:24:15.923Z"
+    },
+    {
+      "id": "bug-177",
+      "timestamp": "2026-04-08T21:22:47.258Z",
+      "error_message": "Missing guard clause",
+      "file": "site-studio/server.js",
+      "root_cause": "No early return/throw for edge case: buildSignalHits.length >= 1",
+      "fix": "Added guard clause: if (buildSignalHits.length >= 1)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T21:22:47.258Z"
+    },
+    {
+      "id": "bug-178",
+      "timestamp": "2026-04-08T21:22:54.809Z",
+      "error_message": "Incorrect value in code",
+      "file": "site-studio/server.js",
+      "root_cause": "Had 'layout_update'",
+      "fix": "Changed to `[classifier] intent=layout_update confidence=LOW ",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T21:22:54.809Z"
+    },
+    {
+      "id": "bug-179",
+      "timestamp": "2026-04-08T21:23:30.792Z",
+      "error_message": "Significant refactor of ",
+      "file": "site-studio/server.js",
+      "root_cause": "14 lines replaced/restructured",
+      "fix": "Rewrote 53→96 lines (14 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T21:23:30.792Z"
+    },
+    {
+      "id": "bug-180",
+      "timestamp": "2026-04-08T21:23:36.254Z",
+      "error_message": "Wrong reference: div should be button",
+      "file": "site-studio/public/index.html",
+      "root_cause": "Used \"div\" instead of \"button\"",
+      "fix": "Changed div → button",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T21:23:36.254Z"
+    },
+    {
+      "id": "bug-181",
+      "timestamp": "2026-04-09T02:33:53.421Z",
+      "error_message": "Missing import: ;\n  // Insert without ",
+      "file": "site-studio/server.js",
+      "root_cause": "Module(s) not imported: ;\n  // Insert without ",
+      "fix": "Added import(s) for ;\n  // Insert without ",
+      "tags": [
+        "auto-detected",
+        "missing-import",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T02:33:53.421Z"
+    },
+    {
+      "id": "bug-182",
+      "timestamp": "2026-04-09T02:37:19.715Z",
+      "error_message": "Missing error handling in generateSitemapAndRobots",
+      "file": "site-studio/server.js",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T02:37:19.715Z"
+    },
+    {
+      "id": "bug-183",
+      "timestamp": "2026-04-09T02:37:46.187Z",
+      "error_message": "Null/undefined access in ",
+      "file": "site-studio/server.js",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "js"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T02:37:46.187Z"
     }
   ]
 }

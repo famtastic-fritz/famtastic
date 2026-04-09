@@ -2779,6 +2779,18 @@ function injectSeoMeta(ws) {
     if (!html.match(/<meta[^>]*name=["']robots["']/i))
       metaTags.push(`    <meta name="robots" content="index, follow">`);
 
+    // og:url — use deployed URL if available, otherwise relative
+    const deployedUrl = spec.deployed_url || '';
+    const pageUrl = deployedUrl ? `${deployedUrl.replace(/\/$/, '')}/${page === 'index.html' ? '' : page}` : '';
+    if (pageUrl && !html.match(/<meta[^>]*property=["']og:url["']/i))
+      metaTags.push(`    <meta property="og:url" content="${pageUrl}">`);
+
+    // Canonical tag
+    if (!html.match(/<link[^>]*rel=["']canonical["']/i)) {
+      const canonicalHref = pageUrl || `./${page}`;
+      metaTags.push(`    <link rel="canonical" href="${canonicalHref}">`);
+    }
+
     // Inject as a block right after </title>
     if (metaTags.length > 0) {
       const metaBlock = '\n' + metaTags.join('\n');
@@ -2797,6 +2809,128 @@ function injectSeoMeta(ws) {
     ws.send(JSON.stringify({ type: 'status', content: `SEO meta tags added to ${injected} page(s)` }));
   }
   return { injected };
+}
+
+// --- Sitemap + Robots Generation (post-build) ---
+function generateSitemapAndRobots(ws) {
+  const distDir = DIST_DIR();
+  const pages = listPages();
+  const spec = readSpec();
+  const deployedUrl = (spec.deployed_url || '').replace(/\/$/, '');
+  const today = new Date().toISOString().split('T')[0];
+
+  // Generate sitemap.xml
+  const urlEntries = pages.map(page => {
+    const loc = deployedUrl
+      ? `${deployedUrl}/${page === 'index.html' ? '' : page}`.replace(/\/$/, deployedUrl ? '' : '/')
+      : `/${page}`;
+    const priority = page === 'index.html' ? '1.0' : '0.8';
+    return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${today}</lastmod>\n    <priority>${priority}</priority>\n  </url>`;
+  }).join('\n');
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlEntries}\n</urlset>`;
+
+  try {
+    fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemap);
+    console.log(`[seo] sitemap.xml generated with ${pages.length} URL(s)`);
+  } catch (e) {
+    console.error('[seo] sitemap.xml write failed:', e.message);
+  }
+
+  // Generate robots.txt
+  const sitemapUrl = deployedUrl ? `${deployedUrl}/sitemap.xml` : '/sitemap.xml';
+  const robots = `User-agent: *\nAllow: /\nSitemap: ${sitemapUrl}\n`;
+
+  try {
+    fs.writeFileSync(path.join(distDir, 'robots.txt'), robots);
+    console.log(`[seo] robots.txt generated`);
+  } catch (e) {
+    console.error('[seo] robots.txt write failed:', e.message);
+  }
+
+  if (ws) {
+    ws.send(JSON.stringify({ type: 'status', content: `SEO: sitemap.xml + robots.txt generated` }));
+  }
+  return { sitemap: true, robots: true, pages: pages.length };
+}
+
+// --- SEO Validation Gate (post-build) ---
+function runSeoValidation(pages) {
+  const distDir = DIST_DIR();
+  const warnings = [];
+  const summary = {
+    pages: pages.length,
+    titles_unique: true,
+    titles_count: 0,
+    descriptions_count: 0,
+    images_with_alt: 0,
+    images_total: 0,
+    h1_per_page: 0,
+    sitemap_exists: fs.existsSync(path.join(distDir, 'sitemap.xml')),
+    robots_exists: fs.existsSync(path.join(distDir, 'robots.txt')),
+  };
+
+  const titlesSeen = new Set();
+
+  for (const page of pages) {
+    const filePath = path.join(distDir, page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+
+    // Title check
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch) {
+      summary.titles_count++;
+      const titleText = titleMatch[1].trim();
+      if (titlesSeen.has(titleText)) {
+        summary.titles_unique = false;
+        warnings.push({ type: 'SEO_WARNING', page, check: 'title_duplicate', detail: `Duplicate title: "${titleText}"` });
+      }
+      titlesSeen.add(titleText);
+      if (titleText.length > 60) {
+        warnings.push({ type: 'SEO_WARNING', page, check: 'title_too_long', detail: `Title is ${titleText.length} chars (max 60): "${titleText.substring(0, 30)}..."` });
+      }
+    } else {
+      warnings.push({ type: 'SEO_WARNING', page, check: 'title_missing', detail: 'No <title> tag found' });
+    }
+
+    // Meta description check
+    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+    if (descMatch) {
+      summary.descriptions_count++;
+      const descLen = descMatch[1].length;
+      if (descLen < 50 || descLen > 160) {
+        warnings.push({ type: 'SEO_WARNING', page, check: 'description_length', detail: `Description is ${descLen} chars (ideal: 50-160)` });
+      }
+    } else {
+      warnings.push({ type: 'SEO_WARNING', page, check: 'description_missing', detail: 'No <meta name="description"> found' });
+    }
+
+    // H1 check
+    const h1Matches = html.match(/<h1[\s>]/gi) || [];
+    if (h1Matches.length === 1) {
+      summary.h1_per_page++;
+    } else if (h1Matches.length === 0) {
+      warnings.push({ type: 'SEO_WARNING', page, check: 'h1_missing', detail: 'No <h1> found' });
+    } else {
+      warnings.push({ type: 'SEO_WARNING', page, check: 'h1_multiple', detail: `${h1Matches.length} <h1> tags found (expected 1)` });
+    }
+
+    // Image alt check
+    const imgMatches = html.match(/<img[^>]+>/gi) || [];
+    summary.images_total += imgMatches.length;
+    for (const img of imgMatches) {
+      const hasAlt = /\balt=["'][^"']*["']/i.test(img);
+      const altEmpty = /\balt=["']\s*["']/i.test(img);
+      if (hasAlt && !altEmpty) {
+        summary.images_with_alt++;
+      } else {
+        warnings.push({ type: 'SEO_WARNING', page, check: 'alt_missing', detail: `Image missing alt: ${img.substring(0, 80)}...` });
+      }
+    }
+  }
+
+  return { warnings, summary };
 }
 
 // --- Auto Media Spec Scanner ---
@@ -6633,6 +6767,13 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Post-processing...' }));
   runPostProcessing(ws, writtenPages, { isFullBuild: true });
 
+  // Generate sitemap.xml and robots.txt
+  ws.send(JSON.stringify({ type: 'status', content: 'Generating sitemap + robots.txt...' }));
+  generateSitemapAndRobots(ws);
+
+  // SEO validation pass
+  const seoResult = runSeoValidation(writtenPages);
+
   setBuildInProgress(false);
 
   // Save build metrics
@@ -6674,6 +6815,19 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   } catch {}
   ws.send(JSON.stringify({ type: 'verification-result', ...verification }));
 
+  // Log SEO warnings to build log
+  if (seoResult && seoResult.warnings.length > 0) {
+    try {
+      const seoLogFile = path.join(SITE_DIR(), 'build-metrics.jsonl');
+      fs.appendFileSync(seoLogFile, JSON.stringify({
+        timestamp: new Date().toISOString(),
+        type: 'seo_validation',
+        warnings: seoResult.warnings,
+        summary: seoResult.summary,
+      }) + '\n');
+    } catch {}
+  }
+
   // Log build to .brain/site-log.jsonl (fire-and-forget)
   try { logSiteBuild(spec, verification); } catch {}
 
@@ -6701,7 +6855,21 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
     ws.send(JSON.stringify({ type: 'verification-warning', content: `Build complete — ${issueCount} verification issue${issueCount !== 1 ? 's' : ''} found. Check the Verify tab for details.` }));
   }
 
-  const msg = `Site built! ${writtenPages.length} pages in ${elapsed}s: ${writtenPages.join(', ')}`;
+  // Build SEO summary
+  const seoWarningCount = seoResult?.warnings?.length || 0;
+  const seoSummary = seoResult ? [
+    `\n\n**SEO Summary:**`,
+    `  Pages: ${seoResult.summary.pages}`,
+    `  Titles unique: ${seoResult.summary.titles_unique ? '✅' : '⚠️'}`,
+    `  Descriptions: ${seoResult.summary.descriptions_count}/${seoResult.summary.pages} ${seoResult.summary.descriptions_count === seoResult.summary.pages ? '✅' : '⚠️'}`,
+    `  Images with alt: ${seoResult.summary.images_with_alt}/${seoResult.summary.images_total} ${seoResult.summary.images_with_alt === seoResult.summary.images_total ? '✅' : '⚠️'}`,
+    `  H1 per page: ${seoResult.summary.h1_per_page}/${seoResult.summary.pages} ${seoResult.summary.h1_per_page === seoResult.summary.pages ? '✅' : '⚠️'}`,
+    `  sitemap.xml: ${seoResult.summary.sitemap_exists ? '✅' : '❌'}`,
+    `  robots.txt: ${seoResult.summary.robots_exists ? '✅' : '❌'}`,
+    seoWarningCount > 0 ? `  ⚠️ ${seoWarningCount} SEO warning(s) — see build log` : '',
+  ].filter(Boolean).join('\n') : '';
+
+  const msg = `Site built! ${writtenPages.length} pages in ${elapsed}s: ${writtenPages.join(', ')}${seoSummary}`;
   ws.send(JSON.stringify({ type: 'assistant', content: msg }));
   ws.send(JSON.stringify({ type: 'reload-preview' }));
   ws.send(JSON.stringify({ type: 'pages-updated', pages: writtenPages }));

@@ -1,0 +1,247 @@
+{
+  "session": 2,
+  "run_date": "2026-04-09",
+  "tests": [
+    {
+      "name": "about.html has <title>",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html title ≤60 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html has <title>",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html title ≤60 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html has <title>",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html title ≤60 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html has <title>",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html title ≤60 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html has <title>",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html title ≤60 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "All titles unique",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html has meta description",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html description 50-160 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html has meta description",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html description 50-160 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html has meta description",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html description 50-160 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html has meta description",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html description 50-160 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html has meta description",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html description 50-160 chars",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html has og:title",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html has og:description",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html has og:type",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html has canonical",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html has og:title",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html has og:description",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html has og:type",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html has canonical",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html has og:title",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html has og:description",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html has og:type",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html has canonical",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html has og:title",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html has og:description",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html has og:type",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html has canonical",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html has og:title",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html has og:description",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html has og:type",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html has canonical",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html has exactly 1 <h1>",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html has exactly 1 <h1>",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html has exactly 1 <h1>",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html has exactly 1 <h1>",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html has exactly 1 <h1>",
+      "status": "PASS"
+    },
+    {
+      "name": "about.html all images have alt",
+      "status": "PASS"
+    },
+    {
+      "name": "contact.html all images have alt",
+      "status": "PASS"
+    },
+    {
+      "name": "deals.html all images have alt",
+      "status": "PASS"
+    },
+    {
+      "name": "index.html all images have alt",
+      "status": "PASS"
+    },
+    {
+      "name": "shop.html all images have alt",
+      "status": "PASS"
+    },
+    {
+      "name": "sitemap.xml exists",
+      "status": "PASS"
+    },
+    {
+      "name": "sitemap.xml is valid XML",
+      "status": "PASS"
+    },
+    {
+      "name": "sitemap.xml has one URL per page",
+      "status": "PASS"
+    },
+    {
+      "name": "sitemap.xml has today lastmod",
+      "status": "PASS"
+    },
+    {
+      "name": "robots.txt exists",
+      "status": "PASS"
+    },
+    {
+      "name": "robots.txt has User-agent",
+      "status": "PASS"
+    },
+    {
+      "name": "robots.txt has Allow",
+      "status": "PASS"
+    },
+    {
+      "name": "robots.txt has Sitemap",
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "total": 59,
+    "passed": 59,
+    "failed": 0
+  }
+}
