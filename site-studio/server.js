@@ -3632,6 +3632,7 @@ app.post('/api/switch-site', async (req, res) => {
   currentMode = 'build';
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
+  resetBrainSessions();
 
   // Load new site state
   const studio = loadStudio();
@@ -5775,6 +5776,14 @@ app.get('/api/agent/routing', (req, res) => {
     fallback_policy: 'If Codex compare generation fails or output scores < 40/100 on validation, auto-retry with Claude and log the fallback.',
     cost_model: 'Claude: ~$3/$15 per 1M input/output tokens. Codex: CLI-based, no direct token cost.',
   });
+});
+
+// SDK cost summary endpoint — aggregates session telemetry from api-telemetry module
+app.get('/api/telemetry/sdk-cost-summary', (req, res) => {
+  const { getSessionSummary, readSiteLog } = require('./lib/api-telemetry');
+  const siteLog = readSiteLog(TAG, HUB_ROOT, 50);
+  const sessionSummary = getSessionSummary();
+  res.json({ ...sessionSummary, recentCalls: siteLog });
 });
 
 // Upgrade /api/compare/generate — add validation + Claude fallback
