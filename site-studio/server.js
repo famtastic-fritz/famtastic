@@ -1418,6 +1418,191 @@ app.post('/api/remove-background', async (req, res) => {
   });
 });
 
+// ─── Session 4: Visual Quality Endpoints ─────────────────────────────────────
+
+const characterBranding = require('../lib/character-branding');
+
+// ─── CDN Injection ───────────────────────────────────────────────────────────
+// POST /api/cdn-inject
+// Body: { url, type: 'script'|'style', pages: ['index.html', ...], position: 'head'|'body' }
+// Injects a CDN <script> or <link> tag into the specified pages. Idempotent.
+app.post('/api/cdn-inject', (req, res) => {
+  const { url, type, pages, position } = req.body;
+  if (!url || typeof url !== 'string') return res.status(400).json({ error: 'url is required' });
+  if (!['script', 'style'].includes(type)) return res.status(400).json({ error: 'type must be "script" or "style"' });
+
+  // Only allow http(s) CDN URLs — no local paths
+  if (!/^https?:\/\/.+/.test(url)) return res.status(400).json({ error: 'url must be a full https:// CDN URL' });
+
+  const targetPages = Array.isArray(pages) && pages.length > 0 ? pages : listPages();
+  const insertPosition = position === 'body' ? 'body' : 'head';
+  const tag = type === 'script'
+    ? `<script src="${url}"></script>`
+    : `<link rel="stylesheet" href="${url}">`;
+
+  const updated = [];
+  const skipped = [];
+
+  for (const page of targetPages) {
+    const pagePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(pagePath)) { skipped.push(page); continue; }
+    let html = fs.readFileSync(pagePath, 'utf8');
+    if (html.includes(url)) { skipped.push(page); continue; } // already injected
+
+    if (insertPosition === 'head') {
+      html = html.replace(/<\/head>/i, `  ${tag}\n</head>`);
+    } else {
+      html = html.replace(/<\/body>/i, `  ${tag}\n</body>`);
+    }
+    fs.writeFileSync(pagePath, html);
+    updated.push(page);
+  }
+
+  // Record in spec
+  const spec = readSpec();
+  if (!spec.cdn_injections) spec.cdn_injections = [];
+  const existing = spec.cdn_injections.find(c => c.url === url);
+  if (!existing) {
+    spec.cdn_injections.push({ url, type, position: insertPosition, injected_at: new Date().toISOString() });
+    writeSpec(spec);
+  }
+
+  console.log(`[cdn-inject] ${tag} → ${updated.length} pages updated, ${skipped.length} skipped`);
+  res.json({ success: true, tag, updated, skipped });
+});
+
+// DELETE /api/cdn-inject
+// Body: { url, pages: [...] } — removes the CDN tag from pages
+app.delete('/api/cdn-inject', (req, res) => {
+  const { url, pages } = req.body;
+  if (!url || typeof url !== 'string') return res.status(400).json({ error: 'url is required' });
+
+  const targetPages = Array.isArray(pages) && pages.length > 0 ? pages : listPages();
+  const updated = [];
+
+  for (const page of targetPages) {
+    const pagePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(pagePath)) continue;
+    let html = fs.readFileSync(pagePath, 'utf8');
+    // Remove any tag containing this URL
+    const before = html;
+    const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    html = html.replace(new RegExp(`<script[^>]*src=["'][^"']*?${escapedUrl}[^"']*["'][^>]*></script>\\n?`, 'gi'), '');
+    html = html.replace(new RegExp(`<link[^>]*href=["'][^"']*?${escapedUrl}[^"']*["'][^>]*\\/?>\\n?`, 'gi'), '');
+    if (html !== before) {
+      fs.writeFileSync(pagePath, html);
+      updated.push(page);
+    }
+  }
+
+  // Remove from spec
+  const spec = readSpec();
+  if (spec.cdn_injections) {
+    spec.cdn_injections = spec.cdn_injections.filter(c => c.url !== url);
+    writeSpec(spec);
+  }
+
+  res.json({ success: true, url, updated });
+});
+
+// GET /api/cdn-injections — list all CDN injections for current site
+app.get('/api/cdn-injections', (req, res) => {
+  const spec = readSpec();
+  res.json(spec.cdn_injections || []);
+});
+
+// ─── FAM Asset Injection ─────────────────────────────────────────────────────
+// POST /api/inject-fam-asset
+// Body: { asset: 'fam-motion'|'fam-shapes', pages: [...] }
+// Copies fam-motion.js or fam-shapes.css to site dist and injects the tag.
+app.post('/api/inject-fam-asset', (req, res) => {
+  const { asset, pages } = req.body;
+  const FAM_ASSETS = {
+    'fam-motion': { src: path.join(__dirname, '..', 'lib', 'fam-motion.js'), dest: 'assets/js/fam-motion.js', tag: '<script src="assets/js/fam-motion.js"></script>', position: 'body' },
+    'fam-shapes': { src: path.join(__dirname, '..', 'lib', 'fam-shapes.css'), dest: 'assets/css/fam-shapes.css', tag: '<link rel="stylesheet" href="assets/css/fam-shapes.css">', position: 'head' },
+  };
+  const cfg = FAM_ASSETS[asset];
+  if (!cfg) return res.status(400).json({ error: `Unknown asset: ${asset}. Valid: ${Object.keys(FAM_ASSETS).join(', ')}` });
+
+  const destPath = path.join(DIST_DIR(), cfg.dest);
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.copyFileSync(cfg.src, destPath);
+
+  const targetPages = Array.isArray(pages) && pages.length > 0 ? pages : listPages();
+  const updated = [];
+  const skipped = [];
+
+  for (const page of targetPages) {
+    const pagePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(pagePath)) { skipped.push(page); continue; }
+    let html = fs.readFileSync(pagePath, 'utf8');
+    if (html.includes(cfg.dest)) { skipped.push(page); continue; }
+    if (cfg.position === 'body') {
+      html = html.replace(/<\/body>/i, `  ${cfg.tag}\n</body>`);
+    } else {
+      html = html.replace(/<\/head>/i, `  ${cfg.tag}\n</head>`);
+    }
+    fs.writeFileSync(pagePath, html);
+    updated.push(page);
+  }
+
+  console.log(`[fam-asset] Injected ${asset} → ${updated.length} pages`);
+  res.json({ success: true, asset, dest: cfg.dest, updated, skipped });
+});
+
+// ─── Character Branding ───────────────────────────────────────────────────────
+// GET /api/character-branding — list all placements for current site
+app.get('/api/character-branding', (req, res) => {
+  const spec = readSpec();
+  res.json({
+    placements: spec.character_branding || {},
+    summary: characterBranding.characterSummary(spec),
+    position_presets: Object.keys(characterBranding.POSITION_PRESETS),
+  });
+});
+
+// POST /api/character-branding — add or update a character placement
+// Body: { page, character, pose, position, classes?, inline_style?, alt?, dark_section? }
+app.post('/api/character-branding', (req, res) => {
+  const { page, character, pose, position } = req.body;
+  if (!page || !character || !pose || !position) {
+    return res.status(400).json({ error: 'page, character, pose, and position are required' });
+  }
+  if (!/^[a-z0-9_\-]+\.html$/.test(page)) {
+    return res.status(400).json({ error: 'Invalid page name' });
+  }
+
+  const placement = {
+    character: character.toLowerCase(),
+    pose,
+    position,
+    classes: req.body.classes || characterBranding.POSITION_PRESETS[position]?.classes || '',
+    inline_style: req.body.inline_style || '',
+    alt: req.body.alt || `${character} character`,
+    dark_section: req.body.dark_section === true,
+    added_at: new Date().toISOString(),
+  };
+
+  let spec = readSpec();
+  spec = characterBranding.addPlacement(page, placement, spec);
+  writeSpec(spec);
+
+  const html = characterBranding.renderPlacement(placement, `assets/${character.toLowerCase()}`);
+  console.log(`[character-branding] Added ${character}/${pose} at ${position} on ${page}`);
+  res.json({ success: true, placement, rendered_html: html });
+});
+
+// DELETE /api/character-branding
+// Body: { page, position, character? }
+app.delete('/api/character-branding', (req, res) => {
+  const { page, position, character } = req.body;
+  if (!page || !position) return res.status(400).json({ error: 'page and position are required' });
+  let spec = readSpec();
+  spec = characterBranding.removePlacement(page, position, character, spec);
+  writeSpec(spec);
+  res.json({ success: true, page, position });
+});
+
 // Serve uploaded files (images only — never execute)
 app.use('/assets/uploads', express.static(UPLOADS_DIR(), {
   setHeaders: (res, filePath) => {

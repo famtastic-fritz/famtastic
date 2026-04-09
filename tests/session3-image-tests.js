@@ -42,6 +42,7 @@ function assert(name, condition, detail = '') {
 async function request(method, endpoint, body = null, headers = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(BASE + endpoint);
+    const bodyStr = body ? JSON.stringify(body) : null;
     const opts = {
       hostname: url.hostname,
       port: url.port,
@@ -50,6 +51,7 @@ async function request(method, endpoint, body = null, headers = {}) {
       headers: {
         'Content-Type': 'application/json',
         'Origin': `http://localhost:${STUDIO_PORT}`,
+        ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
         ...headers,
       },
     };
@@ -62,7 +64,7 @@ async function request(method, endpoint, body = null, headers = {}) {
       });
     });
     req.on('error', reject);
-    if (body) req.write(JSON.stringify(body));
+    if (bodyStr) req.write(bodyStr);
     req.end();
   });
 }

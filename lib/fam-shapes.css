@@ -1,0 +1,248 @@
+/**
+ * fam-shapes.css — FAMtastic shape library
+ *
+ * Starbursts, badges, wavy dividers, diagonal stripes, price tags.
+ * All shapes use pure CSS — no images required.
+ *
+ * Usage:
+ *   <div class="fam-starburst fam-starburst--md fam-starburst--yellow">SALE!</div>
+ *   <div class="fam-wave-divider fam-wave-divider--down"></div>
+ *   <span class="fam-badge fam-badge--red">NEW</span>
+ *   <div class="fam-price-tag">$9.99</div>
+ *   <section class="fam-diagonal-bg fam-diagonal-bg--light">...</section>
+ */
+
+/* ─── Starbursts ─────────────────────────────────────────────────────────── */
+
+.fam-starburst {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 800;
+  line-height: 1.1;
+  z-index: 1;
+  --star-color: #facc15;
+  --star-text: #1e1b4b;
+  color: var(--star-text);
+  background: var(--star-color);
+  /* 12-point starburst via clip-path */
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%,
+    79% 91%, 50% 70%, 21% 91%, 32% 57%,
+    2% 35%, 39% 35%
+  );
+}
+
+/* 16-point burst for larger sizes */
+.fam-starburst--sharp {
+  clip-path: polygon(
+    50% 0%, 54% 38%, 65% 15%, 60% 42%,
+    79% 28%, 66% 49%, 94% 48%, 72% 60%,
+    94% 72%, 68% 68%, 79% 88%, 60% 74%,
+    65% 97%, 54% 79%, 50% 100%, 46% 79%,
+    35% 97%, 40% 74%, 21% 88%, 32% 68%,
+    6% 72%, 28% 60%, 6% 48%, 34% 49%,
+    21% 28%, 40% 42%, 35% 15%, 46% 38%
+  );
+}
+
+/* Sizes */
+.fam-starburst--sm  { width: 64px;  height: 64px;  font-size: 0.6rem; }
+.fam-starburst--md  { width: 96px;  height: 96px;  font-size: 0.8rem; }
+.fam-starburst--lg  { width: 128px; height: 128px; font-size: 1rem;   }
+.fam-starburst--xl  { width: 180px; height: 180px; font-size: 1.25rem; }
+.fam-starburst--2xl { width: 240px; height: 240px; font-size: 1.5rem;  }
+
+/* Colors */
+.fam-starburst--yellow { --star-color: #facc15; --star-text: #1e1b4b; }
+.fam-starburst--red    { --star-color: #ef4444; --star-text: #ffffff; }
+.fam-starburst--orange { --star-color: #f97316; --star-text: #ffffff; }
+.fam-starburst--green  { --star-color: #22c55e; --star-text: #ffffff; }
+.fam-starburst--blue   { --star-color: #3b82f6; --star-text: #ffffff; }
+.fam-starburst--purple { --star-color: #a855f7; --star-text: #ffffff; }
+.fam-starburst--white  { --star-color: #ffffff; --star-text: #1e1b4b; }
+
+/* Animation — optional spin on hover */
+.fam-starburst--spin { transition: transform 0.4s ease; }
+.fam-starburst--spin:hover { transform: rotate(15deg) scale(1.05); }
+
+/* ─── Badges ─────────────────────────────────────────────────────────────── */
+
+.fam-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25em 0.75em;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+  --badge-bg: #facc15;
+  --badge-text: #1e1b4b;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+}
+
+.fam-badge--red    { --badge-bg: #ef4444; --badge-text: #fff; }
+.fam-badge--orange { --badge-bg: #f97316; --badge-text: #fff; }
+.fam-badge--green  { --badge-bg: #22c55e; --badge-text: #fff; }
+.fam-badge--blue   { --badge-bg: #3b82f6; --badge-text: #fff; }
+.fam-badge--purple { --badge-bg: #a855f7; --badge-text: #fff; }
+.fam-badge--yellow { --badge-bg: #facc15; --badge-text: #1e1b4b; }
+.fam-badge--dark   { --badge-bg: #1e293b; --badge-text: #fff; }
+
+.fam-badge--outline {
+  background: transparent;
+  border: 2px solid currentColor;
+}
+
+/* ─── Price Tags ─────────────────────────────────────────────────────────── */
+
+.fam-price-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4em 1.2em 0.4em 0.8em;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+  border-radius: 2px 0 0 2px;
+}
+
+.fam-price-tag--yellow {
+  background: #facc15;
+  color: #1e1b4b;
+  clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%);
+  border-radius: 0 2px 2px 0;
+  padding: 0.4em 0.8em 0.4em 1.2em;
+}
+
+/* ─── Wavy Dividers ──────────────────────────────────────────────────────── */
+
+.fam-wave-divider {
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+  display: block;
+  --wave-fill: #ffffff;
+}
+
+.fam-wave-divider svg {
+  display: block;
+  width: 100%;
+  height: 60px;
+}
+
+/* Usage: put <div class="fam-wave-divider"><svg ...wave svg here.../></div> */
+/* Or use the helper classes for background-based waves */
+
+.fam-wave-top {
+  position: relative;
+}
+.fam-wave-top::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%23ffffff' d='M0,30 C360,60 720,0 1080,30 C1260,45 1350,35 1440,30 L1440,0 L0,0 Z'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  pointer-events: none;
+}
+
+.fam-wave-bottom {
+  position: relative;
+}
+.fam-wave-bottom::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%23ffffff' d='M0,30 C360,0 720,60 1080,30 C1260,15 1350,25 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  pointer-events: none;
+}
+
+/* Wave color overrides */
+.fam-wave-top.fam-wave--gray::before    { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%23f3f4f6' d='M0,30 C360,60 720,0 1080,30 C1260,45 1350,35 1440,30 L1440,0 L0,0 Z'/%3E%3C/svg%3E"); }
+.fam-wave-bottom.fam-wave--gray::after  { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%23f3f4f6' d='M0,30 C360,0 720,60 1080,30 C1260,15 1350,25 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E"); }
+
+/* ─── Diagonal Stripe Backgrounds ───────────────────────────────────────── */
+
+.fam-diagonal-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.fam-diagonal-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  --stripe-color: rgba(0,0,0,0.04);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--stripe-color),
+    var(--stripe-color) 2px,
+    transparent 2px,
+    transparent 20px
+  );
+}
+
+.fam-diagonal-bg > * { position: relative; z-index: 1; }
+
+.fam-diagonal-bg--light  { --stripe-color: rgba(255,255,255,0.08); }
+.fam-diagonal-bg--dark   { --stripe-color: rgba(0,0,0,0.08); }
+.fam-diagonal-bg--bold   { --stripe-color: rgba(0,0,0,0.12); }
+.fam-diagonal-bg--yellow { --stripe-color: rgba(250,204,21,0.15); }
+
+/* ─── Ribbon / Corner Label ──────────────────────────────────────────────── */
+
+.fam-corner-ribbon {
+  position: absolute;
+  top: 16px;
+  right: -32px;
+  width: 120px;
+  padding: 4px 0;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(45deg);
+  transform-origin: center;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.fam-corner-ribbon--yellow { background: #facc15; color: #1e1b4b; }
+.fam-corner-ribbon--green  { background: #22c55e; color: #fff; }
+.fam-corner-ribbon--blue   { background: #3b82f6; color: #fff; }
+
+/* ─── Highlight Blobs ────────────────────────────────────────────────────── */
+
+.fam-blob {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  background: var(--blob-color, rgba(250,204,21,0.18));
+}
+
+.fam-blob--yellow  { --blob-color: rgba(250,204,21,0.22); }
+.fam-blob--red     { --blob-color: rgba(239,68,68,0.15); }
+.fam-blob--blue    { --blob-color: rgba(59,130,246,0.15); }
+.fam-blob--green   { --blob-color: rgba(34,197,94,0.15); }
+.fam-blob--purple  { --blob-color: rgba(168,85,247,0.15); }
