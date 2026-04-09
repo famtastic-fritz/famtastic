@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T02:38:25.246Z
-> Files: 359 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T03:38:06.382Z
+> Files: 361 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -502,6 +502,7 @@
 - `log-jsonl` (~299 tok)
 - `orchestrator-site` — Declares fs (~2914 tok)
 - `precommit-security` (~91 tok)
+- `rembg-worker.py` (~334 tok)
 - `site-brainstorm` — site-brainstorm — Terminal brainstorm session for a site project (~1428 tok)
 - `site-chat` (~465 tok)
 - `site-deploy` (~2857 tok)
@@ -528,7 +529,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~157 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~124003 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 14 more (~125972 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/lib/
@@ -691,6 +692,7 @@
 
 - `classifier-regression.json` (~1363 tok)
 - `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
+- `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4020 tok)
 
 ## tests/automation/logs/
 

@@ -2923,6 +2923,16 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-09T02:37:46.187Z"
+    },
+    {
+      "id": "bug-184",
+      "title": "UXP plugin silently rejected with 'invalid object' — PS developer mode needs restart",
+      "error_message": "Plugin rejected - com.mikechambers.adb-mcp.photoshop due to invalid object",
+      "root_cause": "Photoshop reads the 'developer mode' UXP preference at startup only. Enabling it in Preferences > Plugins while PS is already running has no effect — all developer plugin loads are silently rejected until PS is restarted. The UXP log gives no indication this is the cause.",
+      "fix": "Quit and relaunch Photoshop after enabling developer mode. Also fixed: (1) require('fs') removed from utils.js — Node.js fs not available in UXP runtime; (2) getMostRecentlyModifiedFile/fileExists rewritten using UXP fs.getEntryWithUrl/folder.getEntries; (3) manifest icon paths corrected to icons/dark.png and icons/light.png to match actual @1x/@2x files; (4) script tag moved from <head> to end of <body> in index.html to prevent null DOM reference crash; (5) permissions format corrected to requiredPermissions with localFileSystem:request and domains:['*'] array",
+      "tags": ["uxp", "photoshop", "adb-mcp", "plugin-load", "developer-mode"],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T22:58:00.000Z"
     }
   ]
 }

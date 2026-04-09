@@ -1237,6 +1237,187 @@ app.get('/api/uploads', (req, res) => {
   res.json(assets);
 });
 
+// ─── Image Pipeline: Background Removal via rembg ───────────────────────────
+
+// Path to the rembg Python worker script (uses Python API — no CLI deps needed)
+const REMBG_WORKER = path.join(__dirname, '..', 'scripts', 'rembg-worker.py');
+
+// Python interpreter — prefer python3 in PATH
+const PYTHON_BIN = (() => {
+  const candidates = ['/usr/bin/python3', '/usr/local/bin/python3', 'python3'];
+  for (const c of candidates) {
+    if (c === 'python3' || fs.existsSync(c)) return c;
+  }
+  return 'python3';
+})();
+
+/**
+ * Run background removal on a single image using the rembg Python API.
+ * Uses scripts/rembg-worker.py — avoids rembg CLI dependency issues.
+ * Returns a Promise resolving to the output path on success.
+ */
+function runRembg(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    if (!fs.existsSync(REMBG_WORKER)) {
+      return reject(new Error(`rembg worker not found at: ${REMBG_WORKER}`));
+    }
+    const proc = spawn(PYTHON_BIN, [REMBG_WORKER, inputPath, outputPath], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '', stderr = '';
+    proc.stdout.on('data', d => { stdout += d.toString(); });
+    proc.stderr.on('data', d => { stderr += d.toString(); });
+    proc.on('close', code => {
+      if (code !== 0) return reject(new Error(`rembg-worker exited ${code}: ${stderr.trim()}`));
+      if (!fs.existsSync(outputPath)) return reject(new Error('rembg-worker ran but output file missing'));
+      console.log(`[rembg-worker] ${stdout.trim()}`);
+      resolve(outputPath);
+    });
+    proc.on('error', err => reject(new Error(`python spawn error: ${err.message}`)));
+  });
+}
+
+/**
+ * Detect whether a filename is used inside a dark-background section in any dist page.
+ * Returns true if a dark context is found.
+ */
+function detectDarkSection(filename) {
+  const pages = listPages();
+  const darkPattern = /(?:bg-(?:gray-[89]|slate-[89]|zinc-[89]|neutral-[89]|stone-[89]|black|dark)|background[\s\S]{0,20}#[012][0-9a-fA-F]{5})/;
+  for (const page of pages) {
+    try {
+      const html = fs.readFileSync(path.join(DIST_DIR(), page), 'utf8');
+      if (!html.includes(filename)) continue;
+      const imgIdx = html.indexOf(filename);
+      if (imgIdx === -1) continue;
+      const context = html.slice(Math.max(0, imgIdx - 2000), imgIdx);
+      const lastSection = context.lastIndexOf('<section');
+      const lastDiv = context.lastIndexOf('<div');
+      const snippet = context.slice(Math.max(lastSection, lastDiv));
+      if (darkPattern.test(snippet)) return true;
+    } catch {}
+  }
+  return false;
+}
+
+/**
+ * Ensure a site CSS file contains the .fam-knockout utility class.
+ * Checks assets/styles.css (build-generated), then assets/css/main.css
+ * (hand-crafted), then creates assets/styles.css as a last resort.
+ * Idempotent — safe to call multiple times.
+ */
+function injectKnockoutCss() {
+  const distDir = DIST_DIR();
+  const block = `
+/* FAMtastic: transparent PNG utility */
+.fam-knockout { background: transparent; mix-blend-mode: normal; }
+.fam-knockout.shadow-on-dark { filter: drop-shadow(2px 4px 12px rgba(255,255,255,0.15)); }
+.fam-knockout.shadow-on-light { filter: drop-shadow(2px 4px 8px rgba(0,0,0,0.25)); }
+`;
+  // Priority: styles.css > assets/css/main.css > create styles.css
+  const candidates = [
+    path.join(distDir, 'assets', 'styles.css'),
+    path.join(distDir, 'assets', 'css', 'main.css'),
+  ];
+  for (const cssPath of candidates) {
+    if (fs.existsSync(cssPath)) {
+      const current = fs.readFileSync(cssPath, 'utf8');
+      if (current.includes('.fam-knockout')) return; // already present
+      fs.appendFileSync(cssPath, block);
+      console.log(`[rembg] Injected .fam-knockout CSS into ${path.relative(distDir, cssPath)}`);
+      return;
+    }
+  }
+  // Neither file exists — create styles.css
+  const fallback = path.join(distDir, 'assets', 'styles.css');
+  fs.mkdirSync(path.dirname(fallback), { recursive: true });
+  fs.writeFileSync(fallback, block);
+  console.log('[rembg] Created assets/styles.css with .fam-knockout CSS');
+}
+
+// POST /api/remove-background
+// Body: { filename } (single) or { filenames: [] } (batch)
+// Optional: { dark_section: true } forces dark-section shadow hint
+app.post('/api/remove-background', async (req, res) => {
+  const single = req.body.filename;
+  const batch = req.body.filenames;
+  const forceDark = req.body.dark_section === true;
+
+  const filenames = single ? [single] : Array.isArray(batch) ? batch : [];
+  if (filenames.length === 0) {
+    return res.status(400).json({ error: 'Provide filename or filenames[]' });
+  }
+
+  // Validate all filenames (alphanumeric, dots, hyphens, underscores only)
+  for (const fn of filenames) {
+    if (!/^[a-zA-Z0-9._\-]+$/.test(fn)) {
+      return res.status(400).json({ error: `Invalid filename: ${fn}` });
+    }
+  }
+
+  const results = [];
+  const errors = [];
+
+  for (const fn of filenames) {
+    const inputPath = path.join(UPLOADS_DIR(), fn);
+    if (!fs.existsSync(inputPath)) {
+      errors.push({ filename: fn, error: 'File not found in uploads' });
+      continue;
+    }
+    const ext = path.extname(fn).toLowerCase();
+    const base = path.basename(fn, ext);
+    const outputFilename = `${base}-knockout.png`;
+    const outputPath = path.join(UPLOADS_DIR(), outputFilename);
+
+    try {
+      await runRembg(inputPath, outputPath);
+      const isDark = forceDark || detectDarkSection(fn);
+      const shadowClass = isDark ? 'shadow-on-dark' : 'shadow-on-light';
+
+      try { injectKnockoutCss(); } catch (cssErr) {
+        console.warn('[rembg] Could not inject .fam-knockout CSS:', cssErr.message);
+      }
+
+      // Record knockout in spec
+      const spec = readSpec();
+      if (!spec.uploaded_assets) spec.uploaded_assets = [];
+      if (!spec.uploaded_assets.find(a => a.filename === outputFilename)) {
+        spec.uploaded_assets.push({
+          filename: outputFilename,
+          type: 'image',
+          role: 'knockout',
+          label: `${fn} (background removed)`,
+          notes: `rembg knockout from ${fn}. Classes: fam-knockout ${shadowClass}`,
+          uploaded_at: new Date().toISOString(),
+          source: fn,
+          dark_section: isDark,
+        });
+        writeSpec(spec);
+      }
+
+      results.push({
+        source: fn,
+        knockout: outputFilename,
+        path: `/assets/uploads/${outputFilename}`,
+        dark_section: isDark,
+        suggested_classes: `fam-knockout ${shadowClass}`,
+      });
+      console.log(`[rembg] Knocked out: ${fn} → ${outputFilename} (dark_section=${isDark})`);
+    } catch (err) {
+      console.error(`[rembg] Failed on ${fn}:`, err.message);
+      errors.push({ filename: fn, error: err.message });
+    }
+  }
+
+  const status = errors.length === 0 ? 200 : results.length === 0 ? 500 : 207;
+  res.status(status).json({
+    results,
+    errors,
+    knockout_css_class: 'fam-knockout',
+    rembg_worker: REMBG_WORKER,
+  });
+});
+
 // Serve uploaded files (images only — never execute)
 app.use('/assets/uploads', express.static(UPLOADS_DIR(), {
   setHeaders: (res, filePath) => {
