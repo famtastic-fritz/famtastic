@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TAG="$1"
+DRAFT="docs/${TAG}.draft.md"
+FINAL="docs/${TAG}.md"
+
+if [ ! -f "$DRAFT" ]; then
+  echo "[promote] no draft found for $TAG" >&2
+  exit 1
+fi
+
+mv "$DRAFT" "$FINAL"
+echo "[promote] promoted $DRAFT → $FINAL"
+
+# Log promotion
+LOGROOT="$HOME/.local/share/famtastic/agent-hub/sources/chatgpt"
+mkdir -p "$LOGROOT"
+UUID=$(uuidgen)
+TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "{\"id\":\"$UUID\",\"at\":\"$TS\",\"agent\":\"chatgpt\",\"tag\":\"$TAG\",\"action\":\"promotion\",\"file\":\"$FINAL\"}" >> "$LOGROOT/$TAG.jsonl"
+
+exit 0

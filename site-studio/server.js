@@ -11144,7 +11144,7 @@ function spawnClaude(prompt) {
  * same interface as spawnClaude() so callers are interchangeable.
  */
 function spawnBrainAdapter(brain, prompt) {
-  const adapterNames = { claude: 'cj-get-convo-claude', gemini: 'cj-get-convo-gemini', codex: 'cj-get-convo-codex' };
+  const adapterNames = { claude: 'fam-convo-get-claude', gemini: 'fam-convo-get-gemini', codex: 'fam-convo-get-codex' };
   const scriptName = adapterNames[brain];
   if (!scriptName) throw new Error(`Unknown brain: ${brain}`);
   const adapterScript = path.join(HUB_ROOT, 'adapters', brain, scriptName);

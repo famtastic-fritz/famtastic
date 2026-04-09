@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/lib/hub-common"
+
+tag="${1:?usage: cj-reconcile-convo <tag>}"
+lock_acquire "$tag"
+
+# Call composer to get canonical JSON, manifest and summary
+output=$("$(dirname "$0")/fam-convo-compose" "$tag")
+
+# Extract canonical JSON and write to file
+echo "$output" | awk '/---/{exit}1' > "$CJ_DATA_ROOT/convos/canonical/$tag.json"
+
+# Extract manifest and write to file
+echo "$output" | awk -v i=0 '/---/{i++} i==1' | tail -n +2 | sed '$d' > "$CJ_DATA_ROOT/convos/manifests/$tag.manifest.json"
+
+# Extract summary and write to file
+ts=$(date -u +"%Y%m%d-%H%M")
+echo "$output" | awk -v i=0 '/---/{i++} i==2' | tail -n +2 > "$CJ_DATA_ROOT/convos/summaries/${tag}__${ts}.md"
+
+echo "[reconcile] $tag → convos/"
+
+# Regenerate agents/latest-convo.json from real JSONL data (never static)
+"$(dirname "$0")/fam-convo-generate-latest" || true
+
+echo "[reconcile] done."

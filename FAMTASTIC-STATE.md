@@ -15,7 +15,7 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 | Layer | Technology | Role |
 |-------|-----------|------|
 | AI Engine | Claude CLI (`claude --print`) | Generates all HTML, SVG assets, design briefs, session summaries, and image prompts. Default model: `claude-sonnet-4-5`. No separate API key — uses Claude Code subscription. |
-| Secondary Brains | Gemini CLI + Codex CLI | `adapters/{brain}/cj-get-convo-{brain}` shell adapters. Routed via `routeToBrainForBrainstorm()` in brainstorm mode. Rate-limit auto-fallback: Claude → Codex → Gemini. |
+| Secondary Brains | Gemini CLI + Codex CLI | `adapters/{brain}/fam-convo-get-{brain}` shell adapters. Routed via `routeToBrainForBrainstorm()` in brainstorm mode. Rate-limit auto-fallback: Claude → Codex → Gemini. |
 | Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~11,570 lines). |
 | Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html` (~7,100 lines). VS Code-inspired layout: left sidebar, tabbed canvas (Preview, Editable View, Images, Research, Compare, Intel), bottom CLI bar (Chat, Terminal, Codex), right sidebar. CSS: `public/css/` (7 files). JS: `public/js/` (brain-selector.js + others). |
 | CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties map from spec colors. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
@@ -114,7 +114,7 @@ BRAIN_LIMITS: { claude: {dailyLimit: null}, codex: {dailyLimit: 40}, gemini: {da
 sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 ```
 
-**`spawnBrainAdapter(brain, prompt)`** — spawns `adapters/{brain}/cj-get-convo-{brain}` via stdin using spawnSync.
+**`spawnBrainAdapter(brain, prompt)`** — spawns `adapters/{brain}/fam-convo-get-{brain}` via stdin using spawnSync.
 
 **`setBrain(brain, ws)`** — updates `currentBrain`, emits `BRAIN_SWITCHED`, broadcasts `brain-changed` to all WS clients.
 
@@ -328,7 +328,7 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `validateAgentHtml()` | server.js | Score HTML 0–100; threshold 40 |
 | `generateIntelReport()` | server.js | Read log data → findings[] + summary |
 | `spawnClaude()` | server.js | Claude CLI spawn with stdin prompt, CLAUDE_* env stripped |
-| `spawnBrainAdapter()` | server.js | Spawn adapters/{brain}/cj-get-convo-{brain} via stdin |
+| `spawnBrainAdapter()` | server.js | Spawn adapters/{brain}/fam-convo-get-{brain} via stdin |
 | `setBrain()` | server.js | Set currentBrain, emit BRAIN_SWITCHED, broadcast WS |
 | `routeToBrainForBrainstorm()` | server.js | Rate-limit check, fallback chain, brain dispatch |
 | `StudioContextWriter` | lib/studio-context-writer.js | Regenerate STUDIO-CONTEXT.md on every studio event |
@@ -354,9 +354,9 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `scripts/seed-pinecone` | Seed Pinecone index from site specs + SITE-LEARNINGS |
 | `scripts/update-setup-doc` | Auto-update FAMTASTIC-SETUP.md (versions, env vars) |
 | `scripts/generate-latest-convo` | Generate real agent stats from JSONL sources |
-| `adapters/claude/cj-get-convo-claude` | Claude multi-agent adapter |
-| `adapters/gemini/cj-get-convo-gemini` | Gemini multi-agent adapter |
-| `adapters/codex/cj-get-convo-codex` | Codex multi-agent adapter |
+| `adapters/claude/fam-convo-get-claude` | Claude multi-agent adapter (cj-get-convo-claude is a deprecation shim) |
+| `adapters/gemini/fam-convo-get-gemini` | Gemini multi-agent adapter (cj-get-convo-gemini is a deprecation shim) |
+| `adapters/codex/fam-convo-get-codex` | Codex multi-agent adapter (cj-get-convo-codex is a deprecation shim) |
 
 ### Per-Site Files
 

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# generate-latest-convo — Generate agents/latest-convo.json from real JSONL source data.
+# Called automatically at the end of cj-reconcile-convo, or run standalone.
+# Does not require a tag argument — summarises all agents across all tags.
+set -euo pipefail
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+SOURCES_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources"
+OUT="$ROOT/agents/latest-convo.json"
+NOW="$(date -u +%FT%TZ)"
+VALID_AGENTS=("claude" "gemini" "codex")
+
+agents_json="[]"
+total_calls=0
+
+for agent in "${VALID_AGENTS[@]}"; do
+  agent_dir="$SOURCES_DIR/$agent"
+  call_count=0
+  last_at="null"
+  last_tag="null"
+  msg_count=0
+
+  if [ -d "$agent_dir" ]; then
+    # Aggregate across all tag files for this agent
+    for src in "$agent_dir"/*.jsonl; do
+      [ -f "$src" ] || continue
+      n=$(wc -l < "$src" | tr -d ' ')
+      call_count=$((call_count + n))
+      # Track last call timestamp and tag
+      file_last="$(tail -1 "$src" | jq -r '.at // ""' 2>/dev/null || true)"
+      if [ -n "$file_last" ] && [[ "$file_last" > "$last_at" || "$last_at" == "null" ]]; then
+        last_at="\"$file_last\""
+        last_tag="\"$(basename "$src" .jsonl)\""
+      fi
+      # Count messages
+      m=$(jq -r '.messages | length' "$src" 2>/dev/null | awk '{s+=$1} END {print s+0}')
+      msg_count=$((msg_count + m))
+    done
+  fi
+
+  total_calls=$((total_calls + call_count))
+  agents_json=$(echo "$agents_json" | jq \
+    --arg a "$agent" \
+    --argjson c "$call_count" \
+    --argjson l "$last_at" \
+    --argjson lt "$last_tag" \
+    --argjson m "$msg_count" \
+    '. + [{"name":$a,"call_count":$c,"message_count":$m,"last_call":$l,"last_tag":$lt}]')
+done
+
+jq -cn \
+  --arg now "$NOW" \
+  --argjson total "$total_calls" \
+  --argjson agents "$agents_json" \
+  '{generated_at:$now,total_calls:$total,agents:$agents}' > "$OUT"
+
+echo "[generate-latest-convo] $OUT written (total_calls: $total_calls)"

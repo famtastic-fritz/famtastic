@@ -158,7 +158,7 @@ console.log('\n── S7-0B: Multi-turn context ──────────�
   // Check all 3 adapters for correctness
   for (const adapter of ['claude', 'gemini', 'codex']) {
     const src = fs.readFileSync(
-      path.join(ROOT, 'adapters', adapter, `cj-get-convo-${adapter}`), 'utf8');
+      path.join(ROOT, 'adapters', adapter, `fam-convo-get-${adapter}`), 'utf8');
 
     assert(!src.includes('famtastic-agent-hub'),
       `${adapter} adapter: no old archived path reference`);
@@ -248,9 +248,9 @@ console.log('\n── S7-0C: fam-hub agent routing ─────────�
 console.log('\n── S7-0D: generate-latest-convo ──────────────────────────────────');
 
 {
-  const genScript = path.join(ROOT, 'scripts', 'generate-latest-convo');
-  assert(fs.existsSync(genScript), 'generate-latest-convo script exists');
-  assert(!!(fs.statSync(genScript).mode & 0o111), 'generate-latest-convo is executable');
+  const genScript = path.join(ROOT, 'scripts', 'fam-convo-generate-latest');
+  assert(fs.existsSync(genScript), 'fam-convo-generate-latest script exists');
+  assert(!!(fs.statSync(genScript).mode & 0o111), 'fam-convo-generate-latest is executable');
 
   const outFile = path.join(AGENTS_DIR, 'latest-convo.json');
 
@@ -274,8 +274,8 @@ console.log('\n── S7-0D: generate-latest-convo ─────────�
   try { fs.unlinkSync(outFile); } catch (_) {}
 
   try {
-    const genOut = sh('scripts/generate-latest-convo');
-    assert(genOut.includes('latest-convo.json'), 'generate-latest-convo reports output file path');
+    const genOut = sh('scripts/fam-convo-generate-latest');
+    assert(genOut.includes('latest-convo.json'), 'fam-convo-generate-latest reports output file path');
     assert(fs.existsSync(outFile), 'agents/latest-convo.json created after script runs');
 
     if (fs.existsSync(outFile)) {
@@ -312,11 +312,11 @@ console.log('\n── S7-0D: generate-latest-convo ─────────�
     cleanJsonl('claude', genTag);
   }
 
-  // Verify cj-reconcile-convo calls generate-latest-convo
-  const reconcileSrc = fs.readFileSync(path.join(ROOT, 'scripts', 'cj-reconcile-convo'), 'utf8');
+  // Verify fam-convo-reconcile calls fam-convo-generate-latest
+  const reconcileSrc = fs.readFileSync(path.join(ROOT, 'scripts', 'fam-convo-reconcile'), 'utf8');
   assert(
-    reconcileSrc.includes('generate-latest-convo'),
-    'cj-reconcile-convo calls generate-latest-convo at end'
+    reconcileSrc.includes('fam-convo-generate-latest'),
+    'fam-convo-reconcile calls fam-convo-generate-latest at end'
   );
 
   // Verify the static fake file is permanently gone (replaced by generated)

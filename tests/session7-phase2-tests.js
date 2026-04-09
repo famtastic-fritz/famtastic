@@ -76,11 +76,11 @@ console.log('\n── Brain router functions — server.js ───────
 {
   assert(serverSrc.includes('function spawnBrainAdapter(brain, prompt)'),
     'spawnBrainAdapter(brain, prompt) defined');
-  assert(serverSrc.includes("cj-get-convo-claude"),
+  assert(serverSrc.includes("fam-convo-get-claude"),
     'spawnBrainAdapter references claude adapter script');
-  assert(serverSrc.includes("cj-get-convo-gemini"),
+  assert(serverSrc.includes("fam-convo-get-gemini"),
     'spawnBrainAdapter references gemini adapter script');
-  assert(serverSrc.includes("cj-get-convo-codex"),
+  assert(serverSrc.includes("fam-convo-get-codex"),
     'spawnBrainAdapter references codex adapter script');
   assert(serverSrc.includes('function setBrain(brain'),
     'setBrain(brain) function defined');
