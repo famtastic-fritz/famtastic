@@ -3772,7 +3772,7 @@ app.post('/api/rescan', (req, res) => {
 });
 
 // --- AI Image Prompt Generator ---
-app.post('/api/generate-image-prompt', (req, res) => {
+app.post('/api/generate-image-prompt', async (req, res) => {
   const { slot, context } = req.body;
   const spec = readSpec();
   const brief = spec.design_brief || {};
@@ -3817,31 +3817,19 @@ OUTPUT FORMAT (respond with ONLY this JSON, no other text):
 
 Make the prompt specific, visual, and tailored to the brand. Include style keywords. Do NOT include text/words in the image prompt. Use the EXACT dimensions provided — do not default to 1920x1080.`;
 
-  const child = spawnClaude(prompt);
-  const imgTimeout = setTimeout(() => { console.error('[image-prompt] Timed out'); child.kill(); }, 120000);
-
-  let response = '';
-  child.stdout.on('data', (chunk) => { response += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { console.error('[image-prompt]', chunk.toString()); });
-
-  child.on('close', (code) => {
-    clearTimeout(imgTimeout);
-    if (code !== 0 || !response.trim()) {
-      return res.status(500).json({ error: 'Failed to generate image prompt' });
+  const response = await callSDK(prompt, { maxTokens: 4096, callSite: 'image-prompt', timeoutMs: 120000 });
+  if (!response.trim()) {
+    return res.status(500).json({ error: 'Failed to generate image prompt' });
+  }
+  try {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[0]);
+      result.suggested_dimensions = suggestedDims;
+      return res.json(result);
     }
-    // Try to parse JSON from response
-    try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const result = JSON.parse(jsonMatch[0]);
-        // Force-override dimensions — don't trust Claude's output for this
-        result.suggested_dimensions = suggestedDims;
-        return res.json(result);
-      }
-    } catch {}
-    // Fallback: return raw text as prompt
-    res.json({ prompt: response.trim(), suggested_dimensions: suggestedDims, format: 'jpg' });
-  });
+  } catch {}
+  res.json({ prompt: response.trim(), suggested_dimensions: suggestedDims, format: 'jpg' });
 });
 
 // --- Multi-provider stock photo fetcher ---
