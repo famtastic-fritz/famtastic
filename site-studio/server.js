@@ -6616,7 +6616,7 @@ function analyzeTechStack(brief) {
 }
 
 // --- Data Model Planner (Database-driven sites, concept phase) ---
-function handleDataModelPlanning(ws, userMessage, spec) {
+async function handleDataModelPlanning(ws, userMessage, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Analyzing data requirements...' }));
 
   const brief = spec.design_brief ? JSON.stringify(spec.design_brief, null, 2) : 'none';
@@ -6653,29 +6653,21 @@ DATA_MODEL:
 
 Be practical. If the site doesn't need a database, say so clearly. If it does, keep the model minimal — only include what's actually needed.`;
 
-  const child = spawnClaude(prompt);
-  ws.currentChild = child;
-  const dmTimeout = setTimeout(() => { console.error('[data-model] Timed out'); child.kill(); }, 180000);
+  ws.currentChild = null;
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Generating data model...' }));
+  let response;
+  try {
+    response = await callSDK(prompt, { maxTokens: 4096, callSite: 'data-model', timeoutMs: 180000 });
+  } catch {
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'Data model planning failed. Try describing your data needs.' }));
+    return;
+  }
+  if (!response || !response.trim()) {
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'Data model planning failed. Try describing your data needs.' }));
+    return;
+  }
 
-  let response = '';
-  let firstChunk = true;
-  child.stdout.on('data', (chunk) => {
-    response += chunk.toString();
-    if (firstChunk) {
-      ws.send(JSON.stringify({ type: 'status', content: 'Generating data model...' }));
-      firstChunk = false;
-    }
-  });
-  child.stderr.on('data', (chunk) => { console.error('[data-model]', chunk.toString()); });
-
-  child.on('close', (code) => {
-    clearTimeout(dmTimeout);
-    ws.currentChild = null;
-    if (code !== 0 || !response.trim()) {
-      ws.send(JSON.stringify({ type: 'error', content: 'Data model planning failed. Try describing your data needs.' }));
-      return;
-    }
-
+  {
     response = response.trim();
 
     // Try to extract JSON data model
@@ -6725,9 +6717,9 @@ Be practical. If the site doesn't need a database, say so clearly. If it does, k
     }
 
     // Fallback: show raw response
-    ws.send(JSON.stringify({ type: 'assistant', content: response }));
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'assistant', content: response }));
     appendConvo({ role: 'assistant', content: response, intent: 'data_model', at: new Date().toISOString() });
-  });
+  }
 }
 
 // --- Planning Handler ---
