@@ -12,6 +12,9 @@ const db = require('./lib/db');
 const { studioEvents, STUDIO_EVENTS } = require('./lib/studio-events');
 const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
+const Anthropic = require('@anthropic-ai/sdk');
+const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
+const { getOrCreateBrainSession, resetSessions: resetBrainSessions } = require('./lib/brain-sessions');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -11183,9 +11186,64 @@ function loadRecentConversation(count) {
   }
 }
 
+// --- Anthropic SDK helpers ---
+let _anthropicClient = null;
+function getAnthropicClient() {
+  if (!_anthropicClient) _anthropicClient = new Anthropic();
+  return _anthropicClient;
+}
+
+/**
+ * Non-streaming Anthropic SDK call with AbortController timeout.
+ * Replaces spawnClaude() for call sites that don't need streaming.
+ * Logs cost to api-telemetry.
+ *
+ * @param {string} prompt — the user prompt
+ * @param {object} opts
+ *   maxTokens  — per-call-site value (see migration map Section 3)
+ *   callSite   — label for cost tracking (e.g., 'brief-generation')
+ *   timeoutMs  — AbortController timeout (default 120000)
+ * @returns {Promise<string>} — response text, or '' on timeout/error
+ */
+async function callSDK(prompt, opts = {}) {
+  const { maxTokens = 8192, callSite = 'unknown', timeoutMs = 120000 } = opts;
+  const model = loadSettings().model || 'claude-sonnet-4-6';
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const sdk = getAnthropicClient();
+    const response = await sdk.messages.create({
+      model,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    }, { signal: controller.signal });
+    clearTimeout(timer);
+    logSDKCall({
+      provider: 'claude', model, callSite,
+      inputTokens: response.usage?.input_tokens || 0,
+      outputTokens: response.usage?.output_tokens || 0,
+      tag: TAG, hubRoot: HUB_ROOT,
+    });
+    return response.content[0]?.text || '';
+  } catch (err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError' || err.name === 'APIUserAbortError') {
+      console.warn(`[callSDK:${callSite}] Timed out after ${timeoutMs}ms`);
+      return '';
+    }
+    console.error(`[callSDK:${callSite}]`, err.message);
+    return '';
+  }
+}
+
 // Safe Claude CLI spawn — pipes prompt via stdin instead of shell embedding
+/**
+ * @deprecated spawnClaude() is retained as emergency fallback only.
+ * All main paths use Anthropic SDK via callSDK() / ClaudeAdapter.
+ * Remove in Session 10 after SDK paths are proven stable.
+ */
 function spawnClaude(prompt) {
-  const model = loadSettings().model || 'claude-sonnet-4-5';
+  const model = loadSettings().model || 'claude-sonnet-4-6';
   const env = { ...process.env };
   // Remove ALL Claude Code env vars to prevent nested-session detection.
   // Without this, `claude --print` refuses to run inside a Claude Code session.
@@ -11216,6 +11274,28 @@ function spawnClaude(prompt) {
   child.on('close', (code) => {
     if (code !== 0) console.error(`[claude-spawn] Exited with code ${code}`);
   });
+  return child;
+}
+
+/**
+ * spawnClaudeModel — like spawnClaude() but accepts a specific model string.
+ * Used for Haiku fallback inline spawn (line 8992) which is being extracted
+ * from inline code to a named function as a prerequisite for Call Site 8 migration.
+ * @deprecated Retained as fallback. Prefer SDK via ClaudeAdapter.
+ */
+function spawnClaudeModel(model, prompt) {
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('CLAUDE_') || key === 'CLAUDECODE') delete env[key];
+  }
+  const claudeBin = process.env.CLAUDE_BIN || 'claude';
+  const child = spawn(claudeBin, ['--print', '--model', model, '--tools', ''], {
+    env, cwd: require('os').tmpdir(), stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  child.stdin.write(prompt);
+  child.stdin.end();
+  child.on('error', (err) => { console.error(`[claude-spawn:${model}] Error:`, err.message); });
+  child.on('close', (code) => { if (code !== 0) console.error(`[claude-spawn:${model}] Exited ${code}`); });
   return child;
 }
 
