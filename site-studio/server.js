@@ -2255,6 +2255,21 @@ app.post('/api/bulk-generate-placeholders', (req, res) => {
 });
 
 // Extract nav from a page and sync to all others
+// Sync all data-field-id attributes from built HTML back into spec.content
+// Idempotent — only adds new fields, never overwrites spec (user edits are preserved)
+app.post('/api/sync-content-fields', (req, res) => {
+  try {
+    const pages = req.body.pages || null; // null = all pages
+    const totalFields = syncContentFieldsFromHtml(pages);
+    const spec = readSpec();
+    const registeredPages = Object.keys(spec.content || {});
+    res.json({ success: true, total_fields: totalFields, pages: registeredPages });
+  } catch (e) {
+    console.error('[sync-content-fields]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/sync-nav', (req, res) => {
   const sourcePage = req.body.page || 'index.html';
   try {
@@ -4923,7 +4938,8 @@ function classifyRequest(message, spec) {
     return hasBrief ? 'build' : 'new_site';
   }
 
-  // Precedence: brainstorm > rollback > new_site > major_revision > restyle > layout_update > content_update > bug_fix > asset_import
+  // Precedence: brainstorm > rollback > new_site > major_revision > restructure > content_update > restyle > bug_fix > layout_update > asset_import
+  // Default: content_update (non-destructive — uses surgical handler before Claude fallback)
 
   // Brief edit — update the design brief directly
   if (lower.match(/\b(edit\s+(?:the\s+)?brief|update\s+(?:the\s+)?brief|change\s+the\s+goal|fix\s+the\s+audience|modify\s+(?:the\s+)?brief)\b/)) return 'brief_edit';
@@ -5011,23 +5027,33 @@ function classifyRequest(message, spec) {
   // Restructure — convert to multi-page or change page structure
   if (lower.match(/\b(break\s+(\w+\s+)?into\s+(\d+\s+)?pages|separate\s+pages|split\s+(\w+\s+)?into\s+(\d+\s+)?pages|make\s+(this\s+|it\s+)?multi[- ]?page|restructure\s+the\s+site|change\s+(the\s+)?page\s+structure|convert\s+to\s+multi[- ]?page|want\s+separate\s+pages|need\s+separate\s+pages)\b/)) return 'restructure';
 
-  // Content update signals — text/copy changes without layout (HIGHER precedence than restyle/bug_fix/layout)
-  // Pattern 1: action verb + optional words + content field type (not structural add/remove)
-  if (lower.match(/\b(change|update|replace|edit|set|fix|correct|modify)\b.*?\b(phone|email|address|name|title|heading|paragraph|description|hours|price|number|text|label|tagline|slogan|testimonial|subtitle|motto|cta|date|location|time|schedule|venue)\b/) && !lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|grid)\b/)) return 'content_update';
-  // Pattern 2: "the X should be..." / "make the X say..." / "buttons to say"
-  if (lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|buttons?|date|location|time)\b.*?\b(should\s+be|to\s+be|to\s+say|say|read)\b/)) return 'content_update';
-  // Pattern 3: "X to Y" with field type present
-  if (lower.match(/\b(change|update|set)\b/) && lower.match(/\bto\b/) && lower.match(/\b(phone|email|address|hours|price|number|heading|title|name|button|date|location|time|venue)\b/)) return 'content_update';
-  // Pattern 4: "add the address/hours/phone" — adding a content VALUE (not a structural section)
+  // ── CONTENT UPDATE (high precedence — surgical edits bypass plan gate) ────────
+  // These must appear before restyle/layout_update/bug_fix to prevent accidental rebuilds.
+
+  // Pattern 1: action verb + content field noun (exclude structural add/remove)
+  if (lower.match(/\b(change|update|replace|edit|set|fix|correct|modify)\b.*?\b(phone|email|address|name|title|heading|headline|paragraph|description|hours|price|number|text|copy|label|tagline|slogan|testimonial|subtitle|motto|cta|date|location|time|schedule|venue|welcome|message|caption)\b/) && !lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|grid)\b/)) return 'content_update';
+  // Pattern 2: "X should be/say/read Y"
+  if (lower.match(/\b(phone|email|address|hours|price|number|heading|headline|title|name|buttons?|date|location|time|copy|text|cta|tagline|slogan)\b.*?\b(should\s+be|to\s+be|to\s+say|now\s+(?:reads?|says?)|say|read)\b/)) return 'content_update';
+  // Pattern 3: "change/update/set X to Y" with any content field
+  if (lower.match(/\b(change|update|set)\b/) && lower.match(/\bto\b/) && lower.match(/\b(phone|email|address|hours|price|number|heading|headline|title|name|button|date|location|time|venue|tagline|slogan|cta)\b/)) return 'content_update';
+  // Pattern 4: "add the address/hours/phone/email" — adding a content VALUE (not structural)
   if (lower.match(/\b(add)\s+(the\s+|my\s+|our\s+|a\s+)?(business\s+)?(address|hours|phone|email|number)\b/) && !lower.match(/\b(section|form|block|widget)\b/)) return 'content_update';
-  // Pattern 5: "the X to/is VALUE" — natural language content change (Fix #2 from Site 4)
-  // Codex review: exclude structural nouns near location/schedule to prevent false positives
-  if (lower.match(/\b(reunion|event|meeting)\s+(date|time|location)\b.*?\b(to|is|should\s+be|will\s+be)\b/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
-  if (lower.match(/\b(the\s+)?(email|phone|price|date)\s+(should\s+be|is|to)\s/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
-  // Pattern 6: "add the phrase/text/subtitle/tagline X" — adding TEXT content, not a structural section (HIGH 7 fix)
-  if (lower.match(/\b(add|include)\s+(?:the\s+)?(?:phrase|text|subtitle|tagline|motto|quote|slogan)\b/) && !lower.match(/\b(section|form|block|widget|page)\b/)) return 'content_update';
-  // Pattern 7: "change the tagline/motto/subtitle to X" — common rebrand content edit
-  if (lower.match(/\b(change|update|set)\s+(?:the\s+)?(main\s+)?(tagline|motto|subtitle|slogan|heading|title)\s+to\b/)) return 'content_update';
+  // Pattern 5: event/meeting field changes
+  if (lower.match(/\b(reunion|event|meeting|sale)\s+(date|time|location)\b.*?\b(to|is|should\s+be|will\s+be)\b/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
+  // Pattern 6: "the [field] is/should be/to [value]"
+  if (lower.match(/\b(the\s+)?(email|phone|price|date|hours)\s+(should\s+be|is|to)\s/) && !lower.match(/\b(section|grid|layout|button|column|row)\b/)) return 'content_update';
+  // Pattern 7: "add the phrase/text/subtitle/tagline X"
+  if (lower.match(/\b(add|include)\s+(?:the\s+)?(?:phrase|text|subtitle|tagline|motto|quote|slogan|copy)\b/) && !lower.match(/\b(section|form|block|widget|page)\b/)) return 'content_update';
+  // Pattern 8: "change the [any field] to"
+  if (lower.match(/\b(change|update|set)\s+(?:the\s+)?(main\s+|hero\s+|page\s+)?(tagline|motto|subtitle|slogan|heading|headline|title|cta|welcome\s+message|copy)\s+to\b/)) return 'content_update';
+  // Pattern 9: hero section text edits
+  if (lower.match(/\b(hero|main|page)\s+(text|title|headline|subtitle|copy|cta|button)\b/) && lower.match(/\b(change|update|set|edit|fix|replace|to\s+say|should\s+say)\b/)) return 'content_update';
+  // Pattern 10: "make it say X" / "have it read X"
+  if (lower.match(/\b(make\s+it|have\s+it|make\s+the\s+\w+)\s+(say|read|display|show)\b/)) return 'content_update';
+  // Pattern 11: "our hours/address/phone is/are now X"
+  if (lower.match(/\b(our|the)\s+(hours|address|phone|email|number|price|rate)\s+(is|are|changed|now|changed\s+to)\b/)) return 'content_update';
+  // Pattern 12: "fix the typo" / "fix the text" — minor text fixes are content, not layout
+  if (lower.match(/\bfix\s+(?:the\s+)?(?:typo|spelling|wording|copy|text|label)\b/)) return 'content_update';
 
   // Restyle signals — about overall vibe, not specific elements
   if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
@@ -5056,9 +5082,11 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|button|form|nav|header|footer|sidebar|testimonial|feature|grid)\b/)) return 'layout_update';
   if (lower.match(/\b(make\s+the\s+(header|footer|hero|nav|button|section)\s+\w+)\b/)) return 'layout_update';
 
-  // Default: if classifier confidence is low, use least destructive path
-  console.log(`[classifier] intent=layout_update confidence=LOW (no pattern matched, defaulting)`);
-  return 'layout_update';
+  // Default: use the least destructive path — content_update goes through surgical handler first
+  // before falling through to Claude, so it won't trigger a full layout rebuild.
+  // layout_update as default was a Codex MEDIUM finding — it forces plan-gate on ambiguous input.
+  console.log(`[classifier] intent=content_update confidence=LOW (no pattern matched, defaulting to non-destructive path)`);
+  return 'content_update';
 }
 
 /**
