@@ -6987,7 +6987,7 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
 }
 
 // --- Parallel Multi-Page Build ---
-function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
+async function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
   setBuildInProgress(true, ws);
   const startTime = Date.now();
 
@@ -7188,64 +7188,81 @@ ${siteContext}
 ${sharedRules}`;
     }
 
-    const child = spawnClaude(pagePrompt);
-    if (!ws.activeChildren) ws.activeChildren = [];
-    ws.activeChildren.push(child);
-    let pageResponse = '';
-    return { child, getResponse: () => pageResponse, appendResponse: (c) => { pageResponse += c; } };
+    // Return the page prompt so spawnAllPages can use it directly
+    return pagePrompt;
   }
 
-  function spawnAllPages(templateContext) {
+  async function spawnAllPages(templateContext) {
     if (pageFiles.length === 0) {
       finishParallelBuild(ws, writtenPages, startTime, spec);
       return;
     }
 
-    ws.send(JSON.stringify({ type: 'status', content: `Spawning all ${pageFiles.length} pages in parallel...` }));
-    let completed = 0;
-    const total = pageFiles.length;
-    const timedOutPages = new Set();
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Building all ${pageFiles.length} pages in parallel via SDK...` }));
 
-    for (const pageFile of pageFiles) {
-      const { child, getResponse, appendResponse } = spawnPage(pageFile, templateContext);
+    // AbortControllers per page — ws close aborts all
+    const pageControllers = [];
+    const wsClosePageHandler = () => pageControllers.forEach(c => c.abort());
+    ws.once('close', wsClosePageHandler);
 
-      const pageTimeout = setTimeout(() => {
-        console.error(`[parallel-build] ${pageFile} timed out after 5 minutes`);
-        timedOutPages.add(pageFile);
-        child.kill();
-        ws.send(JSON.stringify({ type: 'error', content: `Build timed out for ${pageFile} — continuing with other pages.` }));
-        // Don't increment here — the kill() will trigger the close event which handles completion
-      }, 300000);
+    const pageModel = loadSettings().model || 'claude-sonnet-4-6';
 
-      child.stdout.on('data', (chunk) => { appendResponse(chunk.toString()); });
-      child.stderr.on('data', (chunk) => { console.error(`[parallel-build:${pageFile}]`, chunk.toString()); });
+    const pageResults = await Promise.allSettled(
+      pageFiles.map(async (pageFile) => {
+        const pageController = new AbortController();
+        pageControllers.push(pageController);
+        const pagePrompt = spawnPage(pageFile, templateContext);
+        const sdk = getAnthropicClient();
+        const stream = sdk.messages.stream({
+          model: pageModel,
+          max_tokens: 16384,
+          messages: [{ role: 'user', content: pagePrompt }],
+        }, { signal: pageController.signal });
 
-      child.on('close', (code) => {
-        clearTimeout(pageTimeout);
-        ws.activeChildren = (ws.activeChildren || []).filter(c => c !== child);
-        completed++;
-        const response = getResponse().trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
-
-        if (code === 0 && response.length > 50) {
-          versionFile(pageFile, 'build');
-          fs.writeFileSync(path.join(DIST_DIR(), pageFile), response);
-          writtenPages.push(pageFile);
-          console.log(`[parallel-build] ${pageFile} done (${response.length} bytes)`);
-          ws.send(JSON.stringify({ type: 'status', content: `${pageFile} built (${completed}/${total} — ${Math.round((Date.now() - startTime) / 1000)}s)` }));
-        } else {
-          console.error(`[parallel-build] ${pageFile} failed (code ${code}, ${response.length} bytes)`);
-          ws.send(JSON.stringify({ type: 'status', content: `${pageFile} failed — will retry on next build` }));
-        }
-
-        if (completed === total) {
-          if (writtenPages.length === 0) {
-            setBuildInProgress(false);
-            ws.send(JSON.stringify({ type: 'error', content: 'All pages failed to build. Try again.' }));
-          } else {
-            finishParallelBuild(ws, writtenPages, startTime, spec);
+        let pageResponse = '';
+        for await (const event of stream) {
+          if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+            pageResponse += event.delta.text;
           }
         }
-      });
+        const finalMsg = await stream.finalMessage();
+        logSDKCall({
+          provider: 'claude', model: pageModel, callSite: 'page-build',
+          inputTokens: finalMsg.usage?.input_tokens || 0,
+          outputTokens: finalMsg.usage?.output_tokens || 0,
+          tag: TAG, hubRoot: HUB_ROOT,
+        });
+        return { page: pageFile, response: pageResponse };
+      })
+    );
+
+    ws.removeListener('close', wsClosePageHandler);
+
+    // Process results
+    let completed = 0;
+    const total = pageFiles.length;
+    for (const result of pageResults) {
+      completed++;
+      if (result.status === 'fulfilled' && result.value.response.trim().length > 50) {
+        const { page: pageFile, response: rawResponse } = result.value;
+        const response = rawResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+        versionFile(pageFile, 'build');
+        fs.writeFileSync(path.join(DIST_DIR(), pageFile), response);
+        writtenPages.push(pageFile);
+        console.log(`[parallel-build] ${pageFile} done (${response.length} bytes)`);
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} built (${completed}/${total} — ${Math.round((Date.now() - startTime) / 1000)}s)` }));
+      } else {
+        const pageFile = result.status === 'fulfilled' ? result.value.page : `page-${completed}`;
+        console.error(`[parallel-build] ${pageFile} failed:`, result.reason?.message || 'empty response');
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} failed — will retry on next build` }));
+      }
+    }
+
+    if (writtenPages.length === 0) {
+      setBuildInProgress(false);
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'All pages failed to build. Try again.' }));
+    } else {
+      finishParallelBuild(ws, writtenPages, startTime, spec);
     }
   }
 
@@ -7257,34 +7274,47 @@ ${sharedRules}`;
   ws.send(JSON.stringify({ type: 'status', content: 'Building design template (header, nav, footer, shared CSS)...' }));
 
   const templatePrompt = buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction);
-  const templateChild = spawnClaude(templatePrompt);
-  ws.currentChild = templateChild;
+  ws.currentChild = null;
+  let templateSpawned = false; // Guard: prevent double-spawn from abort+completion race
+  const templateController = new AbortController();
+  const templateAbortHandler = () => templateController.abort();
+  ws.once('close', templateAbortHandler);
+  const sdkModel = loadSettings().model || 'claude-sonnet-4-6';
   let templateResponse = '';
-  let templateSpawned = false; // Guard against double-spawn from timeout + close race
 
-  const templateTimeout = setTimeout(() => {
-    if (templateSpawned) return;
+  try {
+    const templateResult = await getAnthropicClient().messages.create({
+      model: sdkModel,
+      max_tokens: 16384,
+      messages: [{ role: 'user', content: templatePrompt }],
+    }, { signal: templateController.signal });
+    ws.removeListener('close', templateAbortHandler);
+    templateResponse = templateResult.content[0]?.text || '';
+    logSDKCall({
+      provider: 'claude', model: sdkModel, callSite: 'template-build',
+      inputTokens: templateResult.usage?.input_tokens || 0,
+      outputTokens: templateResult.usage?.output_tokens || 0,
+      tag: TAG, hubRoot: HUB_ROOT,
+    });
+  } catch (err) {
+    ws.removeListener('close', templateAbortHandler);
+    if (!templateSpawned) {
+      templateSpawned = true;
+      console.warn('[template-build] SDK failed — falling back to legacy build:', err.message);
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'Template failed — building pages without template (legacy mode).' }));
+      spawnAllPages('');
+    }
+    return;
+  }
+
+  if (!templateSpawned) {
     templateSpawned = true;
-    console.error('[parallel-build] Template timed out after 3 minutes — falling back to legacy build');
-    templateChild.kill();
-    ws.send(JSON.stringify({ type: 'error', content: 'Template timed out — building pages without template (legacy mode).' }));
-    spawnAllPages('');
-  }, 180000); // 3 minute timeout for template (simpler than a full page)
-
-  templateChild.stdout.on('data', (chunk) => { templateResponse += chunk.toString(); });
-  templateChild.stderr.on('data', (chunk) => { console.error('[parallel-build:template]', chunk.toString()); });
-
-  templateChild.on('close', (code) => {
-    if (templateSpawned) return; // timeout already handled this
-    templateSpawned = true;
-    clearTimeout(templateTimeout);
-    ws.currentChild = null;
     const templateHtml = templateResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
 
-    if (code === 0 && templateHtml.length > 50) {
+    if (templateHtml.length > 50) {
       // Write _template.html to dist
       fs.writeFileSync(path.join(DIST_DIR(), '_template.html'), templateHtml);
-      ws.send(JSON.stringify({ type: 'status', content: `Template built (${Math.round((Date.now() - startTime) / 1000)}s) — writing artifacts...` }));
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Template built (${Math.round((Date.now() - startTime) / 1000)}s) — writing artifacts...` }));
 
       // Extract components and write artifacts (styles.css, _partials/)
       const components = writeTemplateArtifacts(ws);
@@ -7292,19 +7322,19 @@ ${sharedRules}`;
       if (components && (components.headBlock || components.headerHtml)) {
         // Build template context string for page prompts
         const templateContext = loadTemplateContext();
-        ws.send(JSON.stringify({ type: 'status', content: `Template ready — launching all ${pageFiles.length} pages in parallel...` }));
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Template ready — launching all ${pageFiles.length} pages in parallel...` }));
         spawnAllPages(templateContext);
       } else {
         console.warn('[parallel-build] Template parsed but no usable components — falling back to legacy build');
-        ws.send(JSON.stringify({ type: 'status', content: 'Template incomplete — building pages without template.' }));
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Template incomplete — building pages without template.' }));
         spawnAllPages('');
       }
     } else {
-      console.error(`[parallel-build] Template failed (code ${code}, ${templateHtml.length} bytes) — falling back to legacy build`);
-      ws.send(JSON.stringify({ type: 'status', content: 'Template failed — building pages without template (legacy mode).' }));
+      console.warn('[template-build] Empty template response — falling back to legacy build');
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Template failed — building pages without template (legacy mode).' }));
       spawnAllPages('');
     }
-  });
+  }
 }
 
 // --- Unified Post-Processing Pipeline ---
