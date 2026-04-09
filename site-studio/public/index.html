@@ -321,6 +321,23 @@
             <div id="intel-body">
               <div id="intel-summary"></div>
               <div id="intel-findings-list"></div>
+              <!-- Research Sources Panel (Phase 4) -->
+              <div id="research-sources-panel" style="padding:12px 0 0 0;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                  <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">Research Sources</span>
+                  <button onclick="loadResearchSources()" style="font-size:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#9ca3af;border-radius:4px;padding:2px 8px;cursor:pointer;">↻</button>
+                  <select id="research-vertical-select" style="font-size:11px;background:#1e2535;border:1px solid rgba(255,255,255,.12);color:#9ca3af;border-radius:4px;padding:2px 6px;cursor:pointer;" onchange="">
+                    <option value="general">general</option>
+                    <option value="retail">retail</option>
+                    <option value="restaurant">restaurant</option>
+                    <option value="services">services</option>
+                  </select>
+                  <input id="research-question-input" type="text" placeholder="Ask a research question..." style="flex:1;font-size:11px;background:#1e2535;border:1px solid rgba(255,255,255,.12);color:#d1d5db;border-radius:4px;padding:3px 8px;" onkeydown="if(event.key==='Enter')runResearchQuery()">
+                  <button onclick="runResearchQuery()" style="font-size:10px;background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.4);color:#a5b4fc;border-radius:4px;padding:3px 10px;cursor:pointer;">Ask</button>
+                </div>
+                <div id="research-sources-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+                <div id="research-query-result" style="margin-top:8px;display:none;padding:10px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);border-radius:6px;font-size:11px;color:#d1d5db;"></div>
+              </div>
             </div>
           </div>
 
@@ -5855,6 +5872,87 @@
         if (btn) { btn.disabled = false; btn.textContent = 'Run Research'; }
       }
     }
+
+    // ── Research Sources Panel (Phase 4) ───────────────────────────────────────
+    const STATUS_COLORS = { active: '#10b981', disabled: '#6b7280', unavailable: '#ef4444' };
+
+    async function loadResearchSources() {
+      const list = document.getElementById('research-sources-list');
+      if (!list) return;
+      list.textContent = 'Loading...';
+      try {
+        const res = await fetch('/api/research/sources');
+        const data = await res.json();
+        list.innerHTML = '';
+        (data.sources || []).forEach(src => {
+          const card = document.createElement('div');
+          card.style.cssText = 'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;';
+          const header = document.createElement('div');
+          header.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
+          const dot = document.createElement('span');
+          dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${STATUS_COLORS[src.status] || '#6b7280'};flex-shrink:0;`;
+          header.appendChild(dot);
+          const name = document.createElement('span');
+          name.style.cssText = 'font-size:11px;font-weight:600;color:#d1d5db;';
+          name.textContent = src.name;
+          header.appendChild(name);
+          const badge = document.createElement('span');
+          badge.style.cssText = 'font-size:9px;color:#6b7280;background:rgba(0,0,0,.25);border-radius:3px;padding:1px 5px;margin-left:auto;';
+          badge.textContent = src.costPerQuery === 0 ? 'Free' : `$${src.costPerQuery}/q`;
+          header.appendChild(badge);
+          card.appendChild(header);
+          const note = document.createElement('div');
+          note.style.cssText = 'font-size:10px;color:#6b7280;';
+          note.textContent = src.note || src.bestFor?.join(', ') || '';
+          card.appendChild(note);
+          list.appendChild(card);
+        });
+      } catch(e) {
+        list.textContent = 'Error loading sources';
+      }
+    }
+
+    async function runResearchQuery() {
+      const vertEl = document.getElementById('research-vertical-select');
+      const qEl = document.getElementById('research-question-input');
+      const resultEl = document.getElementById('research-query-result');
+      const vertical = vertEl?.value || 'general';
+      const question = qEl?.value?.trim();
+      if (!question) return;
+      if (resultEl) { resultEl.style.display = 'block'; resultEl.textContent = 'Querying...'; }
+      try {
+        const res = await fetch('/api/research/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vertical, question }),
+        });
+        const data = await res.json();
+        if (resultEl) {
+          resultEl.style.display = 'block';
+          resultEl.textContent = '';
+          const src = document.createElement('div');
+          src.style.cssText = 'font-size:10px;color:#6b7280;margin-bottom:4px;';
+          src.textContent = `Source: ${data.source}${data.fromCache ? ' (cached)' : ''}${data.stale ? ' ⚠️ stale' : ''}`;
+          resultEl.appendChild(src);
+          const ans = document.createElement('div');
+          ans.textContent = data.answer || 'No answer returned.';
+          resultEl.appendChild(ans);
+        }
+      } catch(e) {
+        if (resultEl) resultEl.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    // Auto-load research sources when Intel tab opens
+    const origLoadIntelReport = typeof loadIntelReport !== 'undefined' ? loadIntelReport : null;
+    // Patch switchCanvasTab to load research sources when intel tab opens
+    (function() {
+      const orig = window.switchCanvasTab;
+      window.switchCanvasTab = function(tab) {
+        if (orig) orig(tab);
+        if (tab === 'intel') setTimeout(loadResearchSources, 200);
+      };
+    })();
 
     // Safe DOM-based markdown renderer (no innerHTML — Codex S3 fix)
     function renderMarkdownSafe(text, container) {

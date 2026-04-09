@@ -4808,6 +4808,54 @@ app.get('/api/research/verticals', (req, res) => {
   res.json({ known_verticals: KNOWN_VERTICALS_LIST, researched_verticals: researched });
 });
 
+// --- Research Registry API (Phase 4) — must be before /:filename ---
+const researchRegistry = require('./lib/research-registry');
+const researchRouter   = require('./lib/research-router');
+
+app.get('/api/research/sources', (req, res) => {
+  const sources = Object.entries(researchRegistry.RESEARCH_REGISTRY).map(([key, src]) => ({
+    key,
+    name: src.name,
+    type: src.type,
+    status: src.status,
+    costPerQuery: src.costPerQuery,
+    bestFor: src.bestFor,
+    note: src.note || '',
+  }));
+  res.json({ sources });
+});
+
+app.get('/api/research/effectiveness', (req, res) => {
+  try {
+    const report = researchRegistry.getEffectivenessReport();
+    res.json({ report });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/research/query', async (req, res) => {
+  const { vertical, question, forceSource, enablePerplexity } = req.body || {};
+  if (!vertical || !question) {
+    return res.status(400).json({ error: 'vertical and question required' });
+  }
+  try {
+    const result = await researchRouter.queryResearch(vertical, question, { forceSource, enablePerplexity });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/research/rate', (req, res) => {
+  const { source, vertical, score } = req.body || {};
+  if (!source || !vertical || !score) {
+    return res.status(400).json({ error: 'source, vertical, score required' });
+  }
+  const ok = researchRouter.rateResearch(source, vertical, parseInt(score));
+  res.json({ success: ok });
+});
+
 // --- Research file content (Wave 2) ---
 app.get('/api/research/:filename', (req, res) => {
   const filename = req.params.filename;

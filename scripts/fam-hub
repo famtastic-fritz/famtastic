@@ -275,6 +275,31 @@ IDEAHELP
     scripts/cj-promote "$TAG" "$@"
     ;;
 
+  # --- Research ---
+  research)
+    RESCMD="${2:-help}"
+    case "$RESCMD" in
+      seed-from-sites)
+        node "$ROOT/scripts/seed-pinecone" ;;
+      sources)
+        curl -s http://localhost:3334/api/research/sources | python3 -m json.tool 2>/dev/null || echo "Studio not running" ;;
+      effectiveness)
+        curl -s http://localhost:3334/api/research/effectiveness | python3 -m json.tool 2>/dev/null || echo "Studio not running" ;;
+      query)
+        VERTICAL="${3:-general}"; QUESTION="${4:-}"
+        if [ -z "$QUESTION" ]; then echo "Usage: fam-hub research query <vertical> \"<question>\""; exit 1; fi
+        curl -s -X POST http://localhost:3334/api/research/query \
+          -H 'Content-Type: application/json' \
+          -d "{\"vertical\":\"$VERTICAL\",\"question\":\"$QUESTION\"}" | python3 -m json.tool 2>/dev/null ;;
+      help|*)
+        echo "Usage: fam-hub research <command>"
+        echo "  seed-from-sites   Seed Pinecone from existing site specs"
+        echo "  sources           List research sources and status"
+        echo "  effectiveness     Show effectiveness scores by source"
+        echo "  query <v> \"q\"     Query research for a vertical" ;;
+    esac
+    ;;
+
   # --- Admin ---
   admin)
     ADMINCMD="${2:-help}"

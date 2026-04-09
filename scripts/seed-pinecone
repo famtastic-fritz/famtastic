@@ -1,0 +1,143 @@
+#!/usr/bin/env node
+/**
+ * seed-pinecone — Seeds Pinecone famtastic-intelligence index
+ * from existing site specs, design decisions, and SITE-LEARNINGS.md
+ *
+ * Usage:
+ *   node scripts/seed-pinecone
+ *   fam-hub research seed-from-sites
+ *
+ * Requires: PINECONE_API_KEY environment variable
+ */
+
+'use strict';
+
+const fs   = require('fs');
+const path = require('path');
+
+const ROOT      = path.resolve(__dirname, '..');
+const SITES_DIR = path.join(ROOT, 'sites');
+const LEARNINGS = path.join(ROOT, 'SITE-LEARNINGS.md');
+
+if (!process.env.PINECONE_API_KEY) {
+  console.error('[seed-pinecone] PINECONE_API_KEY not set. Skipping Pinecone seed.');
+  console.log('[seed-pinecone] To seed, set PINECONE_API_KEY and rerun.');
+  process.exit(0); // graceful exit — not an error
+}
+
+async function seed() {
+  let Pinecone;
+  try {
+    ({ Pinecone } = require('@pinecone-database/pinecone'));
+  } catch {
+    console.error('[seed-pinecone] @pinecone-database/pinecone not installed.');
+    console.log('[seed-pinecone] Run: cd site-studio && npm install @pinecone-database/pinecone');
+    process.exit(1);
+  }
+
+  const pc    = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+  const index = pc.index('famtastic-intelligence');
+  let seeded = 0;
+
+  // ── Seed from site specs ────────────────────────────────────────────────────
+  if (fs.existsSync(SITES_DIR)) {
+    const siteDirs = fs.readdirSync(SITES_DIR).filter(d => {
+      return fs.existsSync(path.join(SITES_DIR, d, 'spec.json'));
+    });
+
+    for (const siteDir of siteDirs) {
+      const specFile = path.join(SITES_DIR, siteDir, 'spec.json');
+      let spec;
+      try { spec = JSON.parse(fs.readFileSync(specFile, 'utf8')); } catch { continue; }
+
+      const vertical = (spec.business_type || spec.design_brief?.industry || 'general')
+        .toLowerCase().replace(/[\s/&]+/g, '-');
+      const siteName = spec.site_name || spec.tag || siteDir;
+
+      // Upsert brief summary
+      const brief = spec.design_brief || {};
+      const briefText = [
+        siteName,
+        brief.description || brief.one_liner || '',
+        brief.tagline || '',
+        `Industry: ${vertical}`,
+      ].filter(Boolean).join(' — ');
+
+      if (briefText.length > 20) {
+        const id = `brief-${siteDir}`;
+        await index.namespace(vertical).upsert([{
+          id,
+          values: new Array(1536).fill(0.1),
+          metadata: {
+            source: 'build_patterns',
+            question: `What sites have been built in the ${vertical} vertical?`,
+            answer: briefText,
+            vertical,
+            site: siteDir,
+            timestamp: new Date().toISOString(),
+            cost: 0,
+          },
+        }]);
+        seeded++;
+        console.log(`[seed-pinecone] ✓ ${siteDir} brief → namespace: ${vertical}`);
+      }
+
+      // Upsert approved design decisions
+      const decisions = (spec.design_decisions || []).filter(d => d.status === 'approved');
+      if (decisions.length > 0) {
+        const decText = decisions.map(d => `[${d.category}] ${d.decision}`).join('\n');
+        const id = `decisions-${siteDir}`;
+        await index.namespace(vertical).upsert([{
+          id,
+          values: new Array(1536).fill(0.1),
+          metadata: {
+            source: 'build_patterns',
+            question: `What design decisions worked for ${vertical} sites?`,
+            answer: `${siteName} decisions:\n${decText}`,
+            vertical,
+            site: siteDir,
+            timestamp: new Date().toISOString(),
+            cost: 0,
+          },
+        }]);
+        seeded++;
+        console.log(`[seed-pinecone] ✓ ${siteDir} decisions (${decisions.length}) → ${vertical}`);
+      }
+    }
+  }
+
+  // ── Seed from SITE-LEARNINGS.md ────────────────────────────────────────────
+  if (fs.existsSync(LEARNINGS)) {
+    const content = fs.readFileSync(LEARNINGS, 'utf8');
+    // Extract sections
+    const sections = content.split(/^## /m).filter(s => s.trim());
+    for (const section of sections.slice(0, 10)) {
+      const lines = section.split('\n');
+      const title = lines[0].trim();
+      const body  = lines.slice(1).join('\n').trim();
+      if (body.length < 50) continue;
+
+      await index.namespace('general').upsert([{
+        id: `learnings-${title.toLowerCase().replace(/\W+/g, '-').slice(0, 40)}`,
+        values: new Array(1536).fill(0.1),
+        metadata: {
+          source: 'build_patterns',
+          question: `What architecture learnings exist for FAMtastic?`,
+          answer: `${title}: ${body.slice(0, 500)}`,
+          vertical: 'general',
+          timestamp: new Date().toISOString(),
+          cost: 0,
+        },
+      }]);
+      seeded++;
+    }
+    console.log(`[seed-pinecone] ✓ SITE-LEARNINGS.md sections → namespace: general`);
+  }
+
+  console.log(`[seed-pinecone] Done. Seeded ${seeded} vectors into famtastic-intelligence.`);
+}
+
+seed().catch(err => {
+  console.error('[seed-pinecone] Fatal error:', err.message);
+  process.exit(1);
+});
