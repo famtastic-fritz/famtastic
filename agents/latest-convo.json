@@ -1,0 +1,1 @@
+{"generated_at":"2026-04-09T15:07:53Z","total_calls":1,"agents":[{"name":"claude","call_count":1,"message_count":2,"last_call":"2026-04-09T15:07:52.403Z","last_tag":"p0-gen-test"},{"name":"gemini","call_count":0,"message_count":0,"last_call":null,"last_tag":null},{"name":"codex","call_count":0,"message_count":0,"last_call":null,"last_tag":null}]}

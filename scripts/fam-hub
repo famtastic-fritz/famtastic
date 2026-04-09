@@ -209,13 +209,43 @@ IDEAHELP
 
   # --- Multi-Agent Workflow ---
   agent)
-    AGENT="${2:-}"; TAG="${3:-}"
-    if [[ -z "$AGENT" || -z "$TAG" ]]; then
-      echo "Usage: fam-hub agent run <agent> <tag> [prompt]"
-      exit 1
-    fi
-    shift 3
-    scripts/agents run "$AGENT" "$TAG" "$@"
+    AGENTCMD="${2:-help}"
+    case "$AGENTCMD" in
+      run)
+        AGENT="${3:-}"; TAG="${4:-}"
+        if [[ -z "$AGENT" || -z "$TAG" ]]; then
+          echo "Usage: fam-hub agent run <agent> <tag> [history-file] [prompt]"
+          echo "  Agents: claude, gemini, codex"
+          exit 1
+        fi
+        shift 4 || true
+        scripts/agents run "$AGENT" "$TAG" "$@"
+        ;;
+      status)
+        TAG="${3:-}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub agent status <tag>"
+          exit 1
+        fi
+        scripts/agents status "$TAG"
+        ;;
+      logs)
+        TAG="${3:-}"; LOGAGENT="${4:-claude}"
+        if [[ -z "$TAG" ]]; then
+          echo "Usage: fam-hub agent logs <tag> [agent]"
+          exit 1
+        fi
+        scripts/agents logs "$TAG" "$LOGAGENT"
+        ;;
+      help|*)
+        echo "Usage: fam-hub agent <command>"
+        echo "  run <agent> <tag> [history-file] [prompt]   Run an agent and log to JSONL"
+        echo "  status <tag>                                Show status for all agents"
+        echo "  logs <tag> [agent]                          Show last 10 conversation exchanges"
+        echo ""
+        echo "  Agents: claude, gemini, codex"
+        ;;
+    esac
     ;;
 
   convo)

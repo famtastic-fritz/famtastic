@@ -20,4 +20,7 @@ echo "$output" | awk -v i=0 '/---/{i++} i==2' | tail -n +2 > "$CJ_DATA_ROOT/conv
 
 echo "[reconcile] $tag → convos/"
 
+# Regenerate agents/latest-convo.json from real JSONL data (never static)
+"$(dirname "$0")/generate-latest-convo" || true
+
 echo "[reconcile] done."

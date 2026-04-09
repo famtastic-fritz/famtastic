@@ -57,25 +57,77 @@ PY
 }
 
 action_run(){
-  agent="${1:-}"; tag="${2:-latest-convo}"; shift 2 || true
+  agent="${1:-}"; tag="${2:-latest-convo}"; history_file="${3:-}"; shift 3 || true
   prompt="$*"; [ -n "$prompt" ] || prompt="$(cat)"
+
+  # Prepend conversation history if a valid JSON history file is provided
+  if [ -n "$history_file" ] && [ -f "$history_file" ]; then
+    CONTEXT="$(jq -r '.messages[] | "\(.role): \(.content)"' "$history_file" 2>/dev/null | tail -20 || true)"
+    if [ -n "$CONTEXT" ]; then
+      prompt="$(printf '%s\n\nuser: %s' "$CONTEXT" "$prompt")"
+    fi
+  fi
+
+  # Export ORIG_PROMPT so log-jsonl records the actual user turn (not "unknown")
+  export ORIG_PROMPT="$prompt"
+
   case "$agent" in
     claude)  printf "%s" "$prompt" | "$ROOT/scripts/claude-cli" | "$ROOT/scripts/log-jsonl" "claude" "$tag" ;;
     gemini)  printf "%s" "$prompt" | "$ROOT/scripts/gemini-cli" | "$ROOT/scripts/log-jsonl" "gemini" "$tag" ;;
     codex)   printf "%s" "$prompt" | "$ROOT/scripts/codex-cli"  | "$ROOT/scripts/log-jsonl" "codex"  "$tag" ;;
-    *) echo "usage: scripts/agents run {claude|gemini|codex} <tag> \"prompt…\""; exit 2;;
+    *) echo "usage: scripts/agents run {claude|gemini|codex} <tag> [history-file] \"prompt…\""; exit 2;;
   esac
+}
+
+action_status(){
+  tag="${1:-latest-convo}"
+  SOURCES_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources"
+  echo "Agent Status: $tag"
+  echo "=============================="
+  for agent in claude gemini codex; do
+    src="$SOURCES_DIR/$agent/$tag.jsonl"
+    if [ -f "$src" ] && [ -s "$src" ]; then
+      call_count=$(wc -l < "$src" | tr -d ' ')
+      last_at=$(tail -1 "$src" | jq -r '.at // "never"' 2>/dev/null || echo "never")
+      msg_count=$(jq -r '.messages | length' "$src" 2>/dev/null | awk '{s+=$1} END {print s+0}')
+      printf "  %-8s  calls: %-4s  messages: %-4s  last: %s\n" "$agent" "$call_count" "$msg_count" "$last_at"
+    else
+      printf "  %-8s  no calls recorded\n" "$agent"
+    fi
+  done
+}
+
+action_logs(){
+  tag="${1:-latest-convo}"; log_agent="${2:-claude}"
+  SOURCES_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources"
+  src="$SOURCES_DIR/$log_agent/$tag.jsonl"
+  if [ ! -f "$src" ] || [ ! -s "$src" ]; then
+    echo "No logs found for $log_agent / $tag"
+    exit 0
+  fi
+  echo "=== $log_agent conversation for: $tag (last 10 exchanges) ==="
+  echo ""
+  tail -10 "$src" | while IFS= read -r line; do
+    at="$(echo "$line" | jq -r '.at // "?"' 2>/dev/null)"
+    user_msg="$(echo "$line" | jq -r '.messages[0].content // ""' 2>/dev/null | head -c 120)"
+    asst_msg="$(echo "$line" | jq -r '.messages[1].content // ""' 2>/dev/null | head -c 120)"
+    printf '[%s]\n  user:  %s\n  %s:    %s\n\n' "$at" "$user_msg" "$log_agent" "$asst_msg"
+  done
 }
 
 case "$cmd" in
   repo-secrets) action_repo_secrets ;;
   rotate)       action_rotate "$@" ;;
   run)          action_run "$@" ;;
+  status)       action_status "$@" ;;
+  logs)         action_logs "$@" ;;
   *) cat <<USAGE
-Usage: scripts/agents {repo-secrets|rotate|run}
-  repo-secrets           Merge ANTHROPIC_API_KEY/GEMINI_API_KEY from env → encrypted secrets
-  rotate <KEY> <VALUE>   Set/rotate a single key into encrypted secrets
-  run <agent> <tag> "…"  Run native CLI and append JSONL in one go
+Usage: scripts/agents {repo-secrets|rotate|run|status|logs}
+  repo-secrets                         Merge API keys from env → encrypted secrets
+  rotate <KEY> <VALUE>                 Set/rotate a single key into encrypted secrets
+  run <agent> <tag> [history] "…"      Run native CLI and append JSONL in one go
+  status <tag>                         Show status for all agents on a tag
+  logs <tag> [agent]                   Show last 10 exchanges for an agent on a tag
 USAGE
      ;;
 esac

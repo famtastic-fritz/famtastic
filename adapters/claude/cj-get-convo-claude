@@ -1,17 +1,45 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 TAG="${1:-latest-convo}"
+# Second arg is optional history file (must be a readable .json file)
+HISTORY_FILE=""
+if [ $# -ge 2 ] && [ -f "${2:-}" ]; then
+  HISTORY_FILE="$2"
+  shift 2 || true
+else
+  shift 1 || true
+fi
+
 ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/claude"
 OUT="$ROOT/$TAG.jsonl"
 mkdir -p "$ROOT"
-# prompt comes from args or stdin
-if [ $# -gt 1 ]; then PROMPT="${*:2}"; else PROMPT="$(cat)"; fi
+
+# Prompt: remaining args or stdin
+if [ $# -gt 0 ]; then PROMPT="$*"; else PROMPT="$(cat)"; fi
 [ -n "${PROMPT:-}" ] || PROMPT="say ok"
-# call native CLI
-RESP="$(printf "%s" "$PROMPT" | "$HOME/famtastic-agent-hub/scripts/claude-cli")"
-# append JSONL record
+
+# Prepend conversation history (last 20 turns) if provided
+if [ -n "$HISTORY_FILE" ]; then
+  CONTEXT="$(jq -r '.messages[] | "\(.role): \(.content)"' "$HISTORY_FILE" 2>/dev/null | tail -20 || true)"
+  if [ -n "$CONTEXT" ]; then
+    PROMPT="$(printf '%s\n\nuser: %s' "$CONTEXT" "$PROMPT")"
+  fi
+fi
+
+# Set ORIG_PROMPT so log-jsonl can record the user turn correctly
+export ORIG_PROMPT="$PROMPT"
+
+# Resolve hub root (prefer env, fall back to relative path from this script)
+HUB_ROOT="${HUB_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
+
+# Call native CLI
+RESP="$(printf "%s" "$PROMPT" | "$HUB_ROOT/scripts/claude-cli")"
+
+# Append JSONL record
 TS="$(date -u +%FT%TZ)"
 printf '%s\n' "$(jq -c --null-input \
   --arg t "$TS" --arg p "$PROMPT" --arg r "$RESP" --arg agent "claude" \
-  '{agent:$agent, at:$t, messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}] }')" >> "$OUT"
+  '{agent:$agent, at:$t, messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}]}')" >> "$OUT"
+
 echo "[claude:get] $TAG → $OUT (+1)"
