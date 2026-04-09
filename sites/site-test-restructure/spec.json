@@ -1,0 +1,215 @@
+{
+  "site_name": "Photography Portfolio",
+  "tag": "site-test-restructure",
+  "business_type": "general",
+  "colors": {
+    "primary": "#1e40af",
+    "secondary": "#f59e0b",
+    "accent": "#10b981"
+  },
+  "pages": [
+    "home",
+    "gallery",
+    "about",
+    "contact"
+  ],
+  "features": [
+    "hero_banner",
+    "contact_form"
+  ],
+  "tone": "professional and clean",
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter"
+  },
+  "assets_needed": [],
+  "state": "prototype",
+  "version": 1,
+  "design_brief": {
+    "goal": "Showcase photography work as the primary focus with minimal distraction, making it easy for potential clients to view and contact the photographer",
+    "audience": "Prospective photography clients and art directors seeking to hire or commission work",
+    "tone": [
+      "minimal",
+      "elegant",
+      "sophisticated"
+    ],
+    "visual_direction": {
+      "layout": "Centered, grid-based gallery with generous margins and white space. Navigation pinned and subtle. Three-column or masonry grid for photos depending on format mix.",
+      "typography": "Single modern sans-serif (e.g., Inter, Grotesk). Limited hierarchy: small, restrained body text for navigation and captions; minimal hero text. Let images dominate vertical real estate.",
+      "color_usage": "Palette is too rich for minimal design. Use white/off-white as primary. Reserve the blue primary (#1e40af) only for interactive states (hover, links, contact button). Retire the secondary and accent colors entirely\u2014they compete with photos.",
+      "motion": "None, or extremely subtle (fade-in on scroll, no bounce/easing). Animations distract from photography. Keep interactions instant or imperceptibly smooth.",
+      "density": "Spacious. Every gallery item should breathe. Large vertical gaps between sections. Aim for 40-50% white space on desktop."
+    },
+    "content_priorities": [
+      "Gallery grid (the photography itself is the content)",
+      "Clear navigation and artist credibility (brief name/statement)",
+      "Contact/inquiry path (button or form)"
+    ],
+    "must_have_sections": [
+      "Hero (single strong image or minimal text intro with name/tagline)",
+      "Gallery grid with photo titles or series grouping",
+      "Contact page with simple form or email/social links",
+      "Navigation (top bar, minimal, always visible or sticky)"
+    ],
+    "avoid": [
+      "Carousels or sliders (static grids show more work at once)",
+      "Auto-playing media or sound",
+      "Multiple competing colors\u2014gallery competes with brand colors, brand colors lose",
+      "Large text blocks or artist biography on home page (link to separate About if needed)",
+      "Decorative graphics, shapes, or patterns\u2014they distract from photos",
+      "Stock photography that isn't part of the portfolio",
+      "Heavy shadows or gradients\u2014keep backgrounds pure white or off-white",
+      "Sidebar, complex navigation, or multi-column layouts"
+    ],
+    "open_questions": [],
+    "approved": true
+  },
+  "tech_recommendations": [
+    {
+      "category": "architecture",
+      "suggestion": "Static site with CMS",
+      "reason": "Content-heavy site benefits from a CMS for easy updates",
+      "stack": "Static HTML + headless CMS (or WordPress)"
+    },
+    {
+      "category": "hosting",
+      "suggestion": "Netlify",
+      "reason": "Already configured \u2014 free tier, CDN, instant deploys"
+    },
+    {
+      "category": "forms",
+      "suggestion": "Netlify Forms or Formspree",
+      "reason": "Contact forms on static sites need a form backend service"
+    }
+  ],
+  "media_specs": [
+    {
+      "slot_id": "gallery-1",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "index.html"
+    },
+    {
+      "slot_id": "gallery-2",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "index.html"
+    },
+    {
+      "slot_id": "gallery-3",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "index.html"
+    },
+    {
+      "slot_id": "gallery-4",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "gallery.html"
+    },
+    {
+      "slot_id": "gallery-5",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "gallery.html"
+    },
+    {
+      "slot_id": "gallery-6",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "gallery.html"
+    },
+    {
+      "slot_id": "gallery-7",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "gallery.html"
+    },
+    {
+      "slot_id": "gallery-8",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "gallery.html"
+    },
+    {
+      "slot_id": "gallery-9",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "gallery.html"
+    },
+    {
+      "slot_id": "hero-1",
+      "role": "hero",
+      "dimensions": "1920x1080",
+      "status": "empty",
+      "page": "index.html"
+    },
+    {
+      "slot_id": "contact-map",
+      "role": "gallery",
+      "dimensions": "800x600",
+      "status": "empty",
+      "page": "contact.html"
+    },
+    {
+      "slot_id": "team-1",
+      "role": "team",
+      "dimensions": "400x400",
+      "status": "empty",
+      "page": "about.html"
+    },
+    {
+      "slot_id": "team-2",
+      "role": "team",
+      "dimensions": "400x400",
+      "status": "empty",
+      "page": "about.html"
+    }
+  ],
+  "last_verification": {
+    "status": "warned",
+    "checks": [
+      {
+        "check": "slot-attributes",
+        "status": "passed",
+        "issues": [],
+        "slotsChecked": 13
+      },
+      {
+        "check": "css-coherence",
+        "status": "warned",
+        "issues": [
+          "--color-accent missing from :root"
+        ]
+      },
+      {
+        "check": "cross-page-consistency",
+        "status": "passed",
+        "issues": []
+      },
+      {
+        "check": "head-dependencies",
+        "status": "passed",
+        "issues": []
+      },
+      {
+        "check": "logo-and-layout",
+        "status": "passed",
+        "issues": []
+      }
+    ],
+    "issues": [
+      "--color-accent missing from :root"
+    ],
+    "timestamp": "2026-04-06T19:05:17.977Z"
+  }
+}

@@ -1,0 +1,404 @@
+{
+  "site_name": "Readings by Maria",
+  "tag": "site-readings-by-maria",
+  "business_type": "general",
+  "colors": {
+    "primary": "#1e40af",
+    "secondary": "#f59e0b",
+    "accent": "#10b981"
+  },
+  "pages": [
+    "home"
+  ],
+  "features": [
+    "hero_banner",
+    "contact_form"
+  ],
+  "tone": "professional and clean",
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter"
+  },
+  "assets_needed": [],
+  "state": "prototype",
+  "version": 1,
+  "design_brief": {
+    "goal": "Establish Readings by Maria as a credible, professional spiritual guide offering clarity and insight through intuitive services. Build trust through transparent pricing, authentic testimonials, and professional positioning that explicitly positions her as a wellness practitioner and guide\u2014not a fortune teller. Convert site visitors into booked sessions.",
+    "audience": "Wellness-minded individuals seeking spiritual guidance and clarity through tarot, chakra work, past-life exploration, and mediumship. They value professionalism, authenticity, and specificity over mystique. They are skeptical of stereotypical psychic imagery but drawn to credible, warm practitioners who frame intuitive work as guidance and insight, not prediction.",
+    "tone": [
+      "warm",
+      "professional",
+      "credible",
+      "contemplative",
+      "grounded"
+    ],
+    "visual_direction": {
+      "layout": "Dark, immersive luxury-wellness aesthetic. Full-screen atmospheric dark hero with breathing room and intentional silence. Ample negative space throughout\u2014spacious card layouts, generous padding, whitespace as a design element (not emptiness). Single-column on mobile, thoughtful grid on desktop. Calm visual hierarchy that guides the eye toward CTAs and key trust signals without noise.",
+      "typography": "Cormorant Garamond for all headings (elegant serif, conveys timelessness and ancient wisdom without clich\u00e9). Raleway for body text (modern, clean, highly readable sans-serif). Large, generous heading sizes. Substantial line-height on body copy (1.7\u20131.8) for luxury feel and readability. Clear H1\u2192H2\u2192H3 hierarchy. Use Moonstone and Pearl White for text, with strong contrast against dark backgrounds.",
+      "color_usage": "Obsidian Night (#0B0B14) as the dominant background color\u2014immersive, grounding. Midnight Plum (#1A1128) for card backgrounds and section containers. Dark Amethyst (#2A1F3D) for elevated interactive elements (buttons on hover, elevated cards). Mystic Gold (#C9A84C) exclusively for primary CTAs (\"Begin Your Journey,\" booking buttons, key highlights)\u2014every instance should feel intentional and drive action. Pearl White (#F5F1FA) for main headings, Moonstone (#E8E4F0) for body text. Violet Veil (#7B5EA7) for secondary links and subtle dividers. Dusty Rose (#9E4773) sparingly for testimonials or special callouts. Every color must earn its place\u2014no decorative color use.",
+      "motion": "Subtle, atmospheric only. Fade-ins on scroll, gentle parallax on hero image, smooth transitions on interactive elements (0.3\u20130.5s). Avoid flashy animations, autoplaying elements, or motion that distracts. Motion should enhance the contemplative, immersive feeling and support navigation\u2014nothing performative.",
+      "density": "Spacious and premium. Luxury-wellness framing demands breathing room. Significant whitespace around cards, sections, and text blocks. Generous padding (40\u201360px+). No cramped layouts. Content should feel curated, not exhaustive."
+    },
+    "content_priorities": [
+      "Trust and credibility signals first (transparent service pricing, professional credentials, specific testimonials with client first names and details, FAQ addressing what to expect, cancellation/prep policies)",
+      "Clear service offerings with pricing, session descriptions, and format options (in-person, video, phone)",
+      "Maria's positioning as a guide and wellness practitioner (warm origin story, philosophy, professional photos\u2014not mystical portraiture)",
+      "Seamless path to booking (prominent CTAs, booking form usability, session preparation info)"
+    ],
+    "must_have_sections": [
+      "Hero (full-screen, atmospheric dark background, brief warm intro to Maria, primary \"Begin Your Journey\" CTA)",
+      "Services (grid of service cards: each with name, price, duration, description, session format options\u2014in-person/video/phone)",
+      "About (Maria's origin story, philosophy, credentials, warm candlelit professional photos)",
+      "Featured Testimonial (on home, with client first name, specific detail about how guidance helped them)",
+      "Contact & Booking (booking form, contact info, session prep tips, cancellation policy, FAQ)",
+      "Footer (contact info, social links if applicable, brief trust statement)"
+    ],
+    "avoid": [
+      "Fortune-telling language: no \"predictions,\" \"destiny,\" \"fate,\" \"guaranteed results,\" or \"I will tell you your future.\" Frame everything as guidance, clarity, and insight.",
+      "Carnival/stereotypical mystical imagery: no crystal balls, fortune-teller hats, cosmic clich\u00e9s, or over-the-top esoteric symbolism.",
+      "Vague or generic testimonials: no fake names or quotes without specific details. All testimonials must include a real first name and specific description of what changed or shifted for them.",
+      "Bright or light color schemes: commit to the dark, immersive Midnight Oracle palette. Do not lighten it for \"accessibility\"\u2014this is a core brand positioning.",
+      "Ornamental clutter or decorative excess: every design element should serve clarity or trust, not aesthetics alone.",
+      "Language that positions Maria as all-knowing or magical: she's a skilled guide using intuitive tools, not a mystic with supernatural powers.",
+      "Mobile-unfriendly design: services, pricing, and booking must work seamlessly on phones.",
+      "Unclear session formats or hidden pricing: be explicit about in-person vs. video vs. phone, duration, and cost.",
+      "Overly trendy design: timeless luxury aesthetic over 2024\u20132025 visual fads."
+    ],
+    "open_questions": [],
+    "approved": true
+  },
+  "tech_recommendations": [
+    {
+      "category": "architecture",
+      "suggestion": "Custom web application",
+      "reason": "Dynamic features detected \u2014 needs server-side logic for booking",
+      "stack": "Next.js or Express + database"
+    },
+    {
+      "category": "hosting",
+      "suggestion": "Vercel or Railway",
+      "reason": "Needs server-side rendering or API routes"
+    }
+  ],
+  "media_specs": [
+    {
+      "slot_id": "hero-1",
+      "role": "hero",
+      "dimensions": "1920x1080",
+      "status": "stock",
+      "page": "index.html"
+    },
+    {
+      "slot_id": "about-1",
+      "role": "team",
+      "dimensions": "400x400",
+      "status": "stock",
+      "page": "about.html"
+    }
+  ],
+  "design_decisions": [
+    {
+      "timestamp": "2026-04-06T15:49:24.238Z",
+      "category": "structure",
+      "decision": "Added \"Who This Is For\" callout** (after hero) \u2014 Subtle boundary-setting signal that establishes Maria's selectivity and attracts the right audience",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T18:10:04.763Z",
+      "category": "structure",
+      "decision": "Preserved image slots and form exactly** \u2014 hero-1 on index.html, about-1 on about.html, booking form on contact.html all maintain original data-slot-id and Netlify form attributes.",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:27:55.744Z",
+      "category": "structure",
+      "decision": "Updated phone number from (212) 555-1234 to (555) 867-5309 in the FAQ \"Questions?\" section",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:27:55.744Z",
+      "category": "structure",
+      "decision": "Updated phone number in footer contact info to (555) 867-5309",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:27:55.744Z",
+      "category": "structure",
+      "decision": "Updated tel: links from `+12125551234` to `+15558675309` to maintain proper phone link formatting",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:33:36.901Z",
+      "category": "structure",
+      "decision": "Updated contact email from maria@readingsbymaria.com to hello@readingsbymaria.com in the FAQ section (Questions?)",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:33:36.901Z",
+      "category": "structure",
+      "decision": "Updated contact email from maria@readingsbymaria.com to hello@readingsbymaria.com in the footer contact info",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:33:36.901Z",
+      "category": "structure",
+      "decision": "Both email links now direct to the new address via mailto: and will propagate across all pages via the footer sync pipeline",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:38:46.311Z",
+      "category": "layout",
+      "decision": "Updated Tarot Reading 60-minute session price from $125 to $145, keeping all other service details and layout intact",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:44:13.995Z",
+      "category": "layout",
+      "decision": "Added \"Business Hours\" section in the right column info area, displaying Tuesday\u2013Saturday 10am\u20137pm, closed Sunday\u2013Monday",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:44:13.995Z",
+      "category": "structure",
+      "decision": "Updated Tarot Reading (60 min) price from $125 to $145 in the booking form to match the earlier services.html update",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:53:22.075Z",
+      "category": "content",
+      "decision": "Changed hero CTA button text from \"Begin Your Journey\" to \"Discover Your Path\"",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:53:22.075Z",
+      "category": "content",
+      "decision": "Changed secondary CTA button text from \"Book Now\" to \"Discover Your Path\"",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T19:53:22.075Z",
+      "category": "structure",
+      "decision": "Both buttons now use consistent, cohesive messaging that aligns with the spiritual guidance positioning",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T20:02:34.436Z",
+      "category": "content",
+      "decision": "Added new service card: **Astrology Birth Chart Reading** ($195, 90 minutes) with a professional description focused on understanding the natal chart as a blueprint for personality and life themes",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T20:02:34.436Z",
+      "category": "content",
+      "decision": "Updated meta description and keywords to include astrology",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-06T20:02:34.436Z",
+      "category": "layout",
+      "decision": "Positioned the new service at the end of the grid; it will wrap to a new row on desktop while maintaining responsive design",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:09:47.747Z",
+      "category": "layout",
+      "decision": "Removed the \"Past Life Regression\" service card ($150, 60 minutes) from the services grid",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:09:47.747Z",
+      "category": "structure",
+      "decision": "Updated footer Services list to remove \"Past Life Regression\" link, keeping Tarot Reading, Chakra Balancing, Mediumship, and Oracle Cards",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:09:47.747Z",
+      "category": "layout",
+      "decision": "Grid now displays 5 services total (3 in first row, 2 in second row on desktop; single column on mobile)",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:15:28.483Z",
+      "category": "color",
+      "decision": "Added a Mercury retrograde banner at the very top of the page (above the fixed nav) with dark background and Mystic Gold accent color",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:15:28.483Z",
+      "category": "structure",
+      "decision": "Banner includes the message and a linked CTA to the contact page that matches the site's luxury aesthetic",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:15:28.483Z",
+      "category": "structure",
+      "decision": "Navigation maintains fixed positioning above the banner visually while remaining in the DOM structure",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:21:05.102Z",
+      "category": "layout",
+      "decision": "Added \"Studio Address\" section to the right column info area with the full address: 742 Crescent Moon Lane, Suite 3, Port Saint Lucie, FL 34952",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:21:05.102Z",
+      "category": "structure",
+      "decision": "Positioned the address after Business Hours and before Cancellation Policy for logical contact information flow",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T14:21:05.102Z",
+      "category": "typography",
+      "decision": "Matches the existing styling and typography of other info sections",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T18:18:54.224Z",
+      "category": "color",
+      "decision": "Added Mercury retrograde banner at the very top of the page (before nav) with dark Obsidian background and Mystic Gold border accent",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T18:18:54.224Z",
+      "category": "structure",
+      "decision": "Banner includes the exact message \"Mercury is in retrograde \u2014 book before March 15th\" with a linked CTA to the contact page",
+      "status": "approved"
+    },
+    {
+      "timestamp": "2026-04-07T18:18:54.224Z",
+      "category": "content",
+      "decision": "Added data-section-id and data-section-type attributes to all sections for content management compliance",
+      "status": "approved"
+    }
+  ],
+  "slot_mappings": {
+    "hero-1": {
+      "src": "assets/stock/hero-1.jpg",
+      "alt": "hero 1",
+      "provider": "unsplash"
+    },
+    "about-1": {
+      "src": "assets/stock/about-1.jpg",
+      "alt": "about 1",
+      "provider": "unsplash"
+    }
+  },
+  "_revision": 10,
+  "_last_modified": "2026-04-07T23:15:14.538Z",
+  "content": {
+    "contact.html": {
+      "fields": []
+    },
+    "index.html": {
+      "fields": [
+        {
+          "field_id": "testimonial-1",
+          "type": "testimonial",
+          "value": "\"Maria helped me find clarity during the most confusing time of my life.\"",
+          "element": "p",
+          "editable": true,
+          "scope": "local"
+        },
+        {
+          "field_id": "footer-email",
+          "type": "email",
+          "value": "maria@readingsbymaria.com",
+          "element": "a",
+          "editable": true,
+          "scope": "global"
+        },
+        {
+          "field_id": "footer-phone",
+          "type": "phone",
+          "value": "(555) 867-5309",
+          "element": "a",
+          "editable": true,
+          "scope": "global"
+        }
+      ],
+      "sections": [
+        {
+          "section_id": "banner-mercury",
+          "section_type": "banner"
+        },
+        {
+          "section_id": "section-hero",
+          "section_type": "hero"
+        },
+        {
+          "section_id": "section-who-this-is-for",
+          "section_type": "callout"
+        },
+        {
+          "section_id": "section-testimonial",
+          "section_type": "testimonial"
+        },
+        {
+          "section_id": "section-cta",
+          "section_type": "cta"
+        },
+        {
+          "section_id": "section-footer",
+          "section_type": "footer"
+        }
+      ]
+    }
+  },
+  "brand_health": {
+    "slots": {
+      "total": 2,
+      "empty": 0,
+      "stock": 2,
+      "uploaded": 0,
+      "final": 0
+    },
+    "hero": {
+      "slot_id": "hero-1",
+      "status": "stock"
+    },
+    "logo": {
+      "status": "not_found"
+    },
+    "favicon": {
+      "status": "not_found"
+    },
+    "sets": {
+      "testimonials": {
+        "total": 0,
+        "filled": 0
+      },
+      "gallery": {
+        "total": 0,
+        "filled": 0
+      },
+      "services": {
+        "total": 0,
+        "filled": 0
+      },
+      "team": {
+        "total": 1,
+        "filled": 1
+      }
+    },
+    "font_icons": {
+      "using": false,
+      "provider": null,
+      "providers": []
+    },
+    "social_meta": {
+      "og_image": false,
+      "twitter_card": false
+    },
+    "seo": {
+      "meta_description": true,
+      "canonical_url": false,
+      "schema_org": false,
+      "viewport": true,
+      "title": true,
+      "lang_attr": true,
+      "images_without_alt": 0,
+      "total_images": 6
+    }
+  }
+}

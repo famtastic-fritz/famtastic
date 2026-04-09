@@ -3570,9 +3570,16 @@ app.get('/api/projects', (req, res) => {
       const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8'));
       const hasHtml = fs.existsSync(path.join(SITES_ROOT, d, 'dist', 'index.html'));
       const pageCount = hasHtml ? fs.readdirSync(path.join(SITES_ROOT, d, 'dist')).filter(f => f.endsWith('.html')).length : 0;
+      // Resolve display name: stored site_name → brief.business_name → tag slug
+      const storedName = spec.site_name;
+      const briefName  = spec.design_brief?.business_name;
+      const tagName    = d.replace(/^site-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const displayName = (storedName && storedName !== 'New Site') ? storedName
+                        : briefName ? briefName
+                        : tagName;
       return {
         tag: d,
-        name: spec.site_name || d,
+        name: displayName,
         state: spec.state || 'unknown',
         business_type: spec.business_type || null,
         has_html: hasHtml,
