@@ -1,3 +1,4 @@
 {"siteId":"site-the-best-lawn-care","niche":"lawn-care","businessType":"local-service","pages":7,"builtAt":"2026-03-20","deployedAt":"2026-03-20","deployedUrl":"https://the-best-lawn-care.netlify.app","lighthouseScore":null,"bounceRate":null,"monthlyRevenue":null,"lessons":["First end-to-end build validates full pipeline","Template-first approach required to fix nav drift"]}
 {"siteId":"site-test-restructure","siteName":"New Site","niche":"general","pages":4,"builtAt":"2026-04-06T18:54:03.949Z","verificationStatus":"failed","model":"claude-haiku-4-5-20251001"}
 {"siteId":"site-test-restructure","siteName":"New Site","niche":"general","pages":4,"builtAt":"2026-04-06T19:05:17.977Z","verificationStatus":"warned","model":"claude-haiku-4-5-20251001"}
+{"siteId":"site-drop-the-beat","siteName":"Drop The Beat Entertainment","niche":"mobile DJ entertainment","pages":4,"builtAt":"2026-04-10T16:23:48.179Z","verificationStatus":"failed","model":"claude-haiku-4-5-20251001"}

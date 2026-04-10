@@ -7158,10 +7158,16 @@ async function parallelBuild(ws, spec, specPages, userMessage, briefContext, dec
     ? `\nLOGO: A logo file exists at "${logoFile}". Use <a href="index.html" data-logo-v class="block"><img src="${logoFile}" alt="${spec.site_name || 'Logo'}" class="h-10 w-auto"></a> for the logo. Do NOT show site name text next to the logo image.\n`
     : `\nLOGO: No logo image file exists. Use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">${spec.site_name || ''}</a> as the logo. This element will automatically swap to an image when a logo is uploaded.\n`;
 
-  // Normalize page names
+  // Normalize page names — sanitize to safe filename (strip parens, slashes, special chars)
   const pageFiles = specPages.map(p => {
     if (p === 'home' || p === 'hero') return 'index.html';
-    return p.replace(/\s+/g, '-').toLowerCase().replace(/\.html$/, '') + '.html';
+    // Truncate long must_have_sections strings to a short keyword
+    const safe = p.replace(/\(.*?\)/g, '').replace(/[\/\\]/g, '-').replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+    const slug = safe.replace(/\s+/g, '-').toLowerCase().replace(/-+/g, '-').replace(/(^-|-$)/g, '').replace(/\.html$/, '');
+    // If slug is too long (>30 chars), it's likely a must_have_sections description — skip it
+    // by using a short keyword from the first word
+    const finalSlug = slug.length > 30 ? slug.split('-').slice(0, 2).join('-') : slug;
+    return finalSlug + '.html';
   });
   const allPageLinks = pageFiles.map(f => f).join(', ');
 
@@ -7177,13 +7183,9 @@ ${brainContext}
 ${conversationHistory}
 ${slotMappingContext || ''}
 ${(() => {
-  const pageContent = (spec.content || {})[page];
-  if (!pageContent || !pageContent.fields || pageContent.fields.length === 0) return '';
-  const lines = pageContent.fields.filter(f => f.editable !== false).map(f => {
-    const val = typeof f.value === 'string' ? f.value : JSON.stringify(f.value);
-    return `  - data-field-id="${f.field_id}" type="${f.type}" → ${val}`;
-  }).join('\n');
-  return `\nCONTENT FIELDS (preserve these exact values with data-field-id attributes):\n${lines}`;
+  // Note: siteContext is shared across all pages in a parallel build — page-specific content
+  // fields are injected per-page inside spawnPage(). Return empty here to avoid undefined var.
+  return '';
 })()}
 
 ${systemRules}
@@ -7357,6 +7359,51 @@ ${sharedRules}`;
       return;
     }
 
+    if (!hasAnthropicKey()) {
+      // No API key — fall back to sequential subprocess builds (Claude Code subscription auth)
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Building all ${pageFiles.length} pages sequentially via subprocess...` }));
+      const pageResults = [];
+      for (const pageFile of pageFiles) {
+        const pagePrompt = spawnPage(pageFile, templateContext);
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Building ${pageFile}...` }));
+        const pageResponse = await new Promise((resolve) => {
+          const child = spawnClaude(pagePrompt);
+          let output = '';
+          const t = setTimeout(() => { child.kill(); resolve(''); }, 300000);
+          child.stdout.on('data', d => { output += d.toString(); });
+          child.on('close', () => { clearTimeout(t); resolve(output.trim()); });
+          child.on('error', () => { clearTimeout(t); resolve(''); });
+        });
+        pageResults.push({ status: pageResponse.length > 50 ? 'fulfilled' : 'rejected', value: { page: pageFile, response: pageResponse }, reason: null });
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} complete (${pageResults.length}/${pageFiles.length})` }));
+      }
+      // Process subprocess results
+      let completedSub = 0;
+      const totalSub = pageFiles.length;
+      for (const result of pageResults) {
+        completedSub++;
+        if (result.status === 'fulfilled' && result.value.response.trim().length > 50) {
+          const { page: pageFileSub, response: rawResponseSub } = result.value;
+          const responseSub = rawResponseSub.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+          versionFile(pageFileSub, 'build');
+          fs.writeFileSync(path.join(DIST_DIR(), pageFileSub), responseSub);
+          writtenPages.push(pageFileSub);
+          console.log(`[parallel-build-sub] ${pageFileSub} done (${responseSub.length} bytes)`);
+        } else {
+          const failedPage = result.value ? result.value.page : `page-${completedSub}`;
+          console.error(`[parallel-build-sub] ${failedPage} failed`);
+          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${failedPage} failed — will retry on next build` }));
+        }
+      }
+      if (writtenPages.length === 0) {
+        setBuildInProgress(false);
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'All pages failed to build. Try again.' }));
+      } else {
+        finishParallelBuild(ws, writtenPages, startTime, spec);
+      }
+      return;
+    }
+
     if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Building all ${pageFiles.length} pages in parallel via SDK...` }));
 
     // AbortControllers per page — ws close aborts all
@@ -7442,19 +7489,33 @@ ${sharedRules}`;
   let templateResponse = '';
 
   try {
-    const templateResult = await getAnthropicClient().messages.create({
-      model: sdkModel,
-      max_tokens: 16384,
-      messages: [{ role: 'user', content: templatePrompt }],
-    }, { signal: templateController.signal });
-    ws.removeListener('close', templateAbortHandler);
-    templateResponse = templateResult.content[0]?.text || '';
-    logSDKCall({
-      provider: 'claude', model: sdkModel, callSite: 'template-build',
-      inputTokens: templateResult.usage?.input_tokens || 0,
-      outputTokens: templateResult.usage?.output_tokens || 0,
-      tag: TAG, hubRoot: HUB_ROOT,
-    });
+    if (!hasAnthropicKey()) {
+      // No API key — use subprocess for template build
+      console.log('[template-build] No API key — using subprocess for template');
+      ws.removeListener('close', templateAbortHandler);
+      templateResponse = await new Promise((resolve) => {
+        const child = spawnClaude(templatePrompt);
+        let output = '';
+        const t = setTimeout(() => { child.kill(); resolve(''); }, 300000);
+        child.stdout.on('data', d => { output += d.toString(); });
+        child.on('close', () => { clearTimeout(t); resolve(output.trim()); });
+        child.on('error', () => { clearTimeout(t); resolve(''); });
+      });
+    } else {
+      const templateResult = await getAnthropicClient().messages.create({
+        model: sdkModel,
+        max_tokens: 16384,
+        messages: [{ role: 'user', content: templatePrompt }],
+      }, { signal: templateController.signal });
+      ws.removeListener('close', templateAbortHandler);
+      templateResponse = templateResult.content[0]?.text || '';
+      logSDKCall({
+        provider: 'claude', model: sdkModel, callSite: 'template-build',
+        inputTokens: templateResult.usage?.input_tokens || 0,
+        outputTokens: templateResult.usage?.output_tokens || 0,
+        tag: TAG, hubRoot: HUB_ROOT,
+      });
+    }
   } catch (err) {
     ws.removeListener('close', templateAbortHandler);
     if (!templateSpawned) {
