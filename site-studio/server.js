@@ -174,13 +174,14 @@ function isValidPageName(name) {
 // --- Multi-page state ---
 let currentPage = 'index.html';
 let currentMode = 'build'; // 'build' or 'brainstorm'
-let currentBrain = 'claude'; // active brain: 'claude' | 'codex' | 'gemini'
+let currentBrain = 'claude'; // active brain: 'claude' | 'codex' | 'gemini' | 'openai'
 const BRAIN_LIMITS = {
   claude:  { dailyLimit: null, currentUsage: 0, status: 'available' },
   codex:   { dailyLimit: 40,   currentUsage: 0, status: 'available' },
   gemini:  { dailyLimit: 1500, currentUsage: 0, status: 'available' },
+  openai:  { dailyLimit: null, currentUsage: 0, status: 'available' },
 };
-const sessionBrainCounts = { claude: 0, codex: 0, gemini: 0 };
+const sessionBrainCounts = { claude: 0, codex: 0, gemini: 0, openai: 0 };
 let buildInProgress = false;
 let buildLockTimer = null;
 let buildOwnerWs = null;       // the WS connection that started the current build
@@ -9223,7 +9224,7 @@ ${analyticsInstruction}`;
       response += text;
       resetSilenceTimer();
       if (firstChunk) {
-        if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: 'Claude is generating...' })); } catch {}
+        if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: 'Claude (subscription fallback) is generating...' })); } catch {}
         firstChunk = false;
       }
       if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'stream', content: text })); } catch {}
@@ -9262,7 +9263,10 @@ ${analyticsInstruction}`;
         response += text;
         resetSilenceTimer();
         if (firstChunk) {
-          if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: 'Claude is generating...' })); } catch {}
+          const activeBrain = currentBrain || 'claude';
+          const activeModel = ws?.brainModels?.[activeBrain] || currentModel;
+          const brainLabel = activeBrain === 'claude' ? `Claude API (${activeModel.replace('claude-', '').replace('-20251001', '')})` : activeBrain === 'gemini' ? `Gemini API (${activeModel})` : `OpenAI API (${activeModel})`;
+          if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: `${brainLabel} is generating...` })); } catch {}
           firstChunk = false;
         }
         // Detect page delimiters in stream for real-time progress
@@ -9463,6 +9467,7 @@ wss.on('connection', (ws) => {
   ws.currentMode   = 'chat';          // Studio mode for this connection
   ws.currentSite   = TAG;             // active site at connection time
   ws.currentPage   = currentPage;     // active page in canvas
+  ws.brainModels   = { claude: 'claude-sonnet-4-6', gemini: 'gemini-2.5-flash', openai: 'gpt-4o' };
 
   /** Get or lazy-create the BrainInterface for this connection */
   ws.getBrainSession = function() {
@@ -9544,6 +9549,18 @@ wss.on('connection', (ws) => {
         setBrain(brain, ws);
       } else {
         try { ws.send(JSON.stringify({ type: 'error', content: `Unknown brain: ${brain}` })); } catch {}
+      }
+      return;
+    }
+
+    if (msg.type === 'set-brain-model') {
+      const { brain, model } = msg;
+      if (brain && model) {
+        // Store per-connection brain model preference
+        if (!ws.brainModels) ws.brainModels = { claude: 'claude-sonnet-4-6', gemini: 'gemini-2.5-flash', openai: 'gpt-4o' };
+        ws.brainModels[brain] = model;
+        console.log(`[brain-model] ${brain} → ${model}`);
+        try { ws.send(JSON.stringify({ type: 'brain-model-set', brain, model })); } catch {}
       }
       return;
     }
@@ -11601,6 +11618,27 @@ function routeToBrainForBrainstorm(prompt, brain) {
   }
 
   if (activeBrain === 'claude') return spawnClaude(prompt);
+
+  // OpenAI brain: use CodexAdapter (OpenAI SDK) via a child-process-like EventEmitter
+  if (activeBrain === 'openai') {
+    const EventEmitter = require('events');
+    const child = new EventEmitter();
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.stdin = { write: () => {}, end: () => {} };
+    child.kill = () => {};
+
+    const { BrainAdapterFactory } = require('./lib/brain-adapter-factory');
+    const adapter = BrainAdapterFactory.create('codex'); // CodexAdapter = OpenAI SDK
+    adapter.execute(prompt, { model: null }).then(result => {
+      child.stdout.emit('data', result.content || '');
+      child.emit('close', 0);
+    }).catch(err => {
+      console.error('[brain-route:openai]', err.message);
+      child.emit('close', 1);
+    });
+    return child;
+  }
 
   try {
     return spawnBrainAdapter(activeBrain, prompt);

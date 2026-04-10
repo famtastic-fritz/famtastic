@@ -22,6 +22,7 @@ const BrainAdapterFactory = {
       case 'claude': return new ClaudeAdapter();
       case 'gemini': return new GeminiAdapter();
       case 'codex':  return new CodexAdapter();
+      case 'openai': return new CodexAdapter(); // OpenAI brain uses the same SDK adapter
       default:
         console.warn(`[brain-adapter-factory] Unknown brain "${brain}" — falling back to ClaudeAdapter`);
         return new ClaudeAdapter();
@@ -29,7 +30,7 @@ const BrainAdapterFactory = {
   },
 
   /** List all supported brain names */
-  supportedBrains: ['claude', 'gemini', 'codex'],
+  supportedBrains: ['claude', 'gemini', 'codex', 'openai'],
 };
 
 module.exports = { BrainAdapterFactory };

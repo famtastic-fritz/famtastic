@@ -376,35 +376,100 @@
               <div class="text-studio-muted text-xs mt-1">PNG, JPG, GIF, SVG, WebP, HTML, ZIP — max 5MB</div>
             </div>
             <div id="upload-preview-bar" class="px-3 pb-2 flex gap-2 items-center overflow-x-auto hidden"></div>
-            <!-- Brain Selector Pill Bar -->
+            <!-- Brain Selector / Worker Split Panel -->
             <div id="brain-fallback-bar">
-              <span>⚠️</span>
+              <span>&#x26A0;&#xFE0F;</span>
               <span id="brain-fallback-msg"></span>
-              <button onclick="document.getElementById('brain-fallback-bar').classList.remove('visible')">✕</button>
-              <label class="brain-auto-fallback-toggle ml-auto">
-                <input type="checkbox" id="brain-auto-fallback" onchange="window._brainAutoFallback = this.checked"> Auto-fallback
-              </label>
+              <button onclick="document.getElementById('brain-fallback-bar').classList.remove('visible')">&#x2715;</button>
             </div>
-            <div id="brain-selector-bar">
-              <span class="brain-selector-label">Brain:</span>
-              <button class="brain-pill active" data-brain="claude" onclick="selectBrain('claude')" title="Claude Code — Subscription">
-                <span class="brain-status-dot available"></span>
-                <span>Claude</span>
-                <span class="brain-cost-badge">Sub</span>
-                <span class="brain-msg-count">0</span>
-              </button>
-              <button class="brain-pill" data-brain="codex" onclick="selectBrain('codex')" title="Codex — $0.016/msg, 40/day limit">
-                <span class="brain-status-dot available"></span>
-                <span>Codex</span>
-                <span class="brain-cost-badge">API</span>
-                <span class="brain-msg-count">0</span>
-              </button>
-              <button class="brain-pill" data-brain="gemini" onclick="selectBrain('gemini')" title="Gemini — API quota, 1500/day">
-                <span class="brain-status-dot available"></span>
-                <span>Gemini</span>
-                <span class="brain-cost-badge">API</span>
-                <span class="brain-msg-count">0</span>
-              </button>
+            <!-- Brain/Worker Split Panel -->
+            <div class="brain-worker-panel">
+              <!-- BRAIN section: API-backed, selectable -->
+              <div class="bw-section-label">Brain</div>
+              <div class="bw-pills-row">
+                <button class="brain-pill active" data-brain="claude"
+                        onclick="BrainSelector.select('claude')"
+                        title="Claude — Anthropic API">
+                  <span class="brain-status-dot pending" id="brain-dot-claude"></span>
+                  <span class="brain-name">Claude</span>
+                  <span class="brain-model-tag" id="brain-model-tag-claude">sonnet</span>
+                  <span class="brain-cost-badge">API</span>
+                  <!-- Model dropdown -->
+                  <div class="brain-model-selector" id="model-selector-claude" onclick="event.stopPropagation()">
+                    <div class="brain-model-option selected" data-model="claude-sonnet-4-6"
+                         onclick="BrainSelector.setModel('claude','claude-sonnet-4-6',this)">
+                      <span class="brain-model-name">claude-sonnet-4-6</span>
+                      <span class="brain-model-desc">Recommended — balanced</span>
+                    </div>
+                    <div class="brain-model-option" data-model="claude-opus-4-5"
+                         onclick="BrainSelector.setModel('claude','claude-opus-4-5',this)">
+                      <span class="brain-model-name">claude-opus-4-5</span>
+                      <span class="brain-model-desc">Highest quality, slower</span>
+                    </div>
+                    <div class="brain-model-option" data-model="claude-haiku-4-5-20251001"
+                         onclick="BrainSelector.setModel('claude','claude-haiku-4-5-20251001',this)">
+                      <span class="brain-model-name">claude-haiku-4-5</span>
+                      <span class="brain-model-desc">Fast &amp; cheap</span>
+                    </div>
+                  </div>
+                </button>
+
+                <button class="brain-pill" data-brain="gemini"
+                        onclick="BrainSelector.select('gemini')"
+                        title="Gemini — Google AI API">
+                  <span class="brain-status-dot pending" id="brain-dot-gemini"></span>
+                  <span class="brain-name">Gemini</span>
+                  <span class="brain-model-tag" id="brain-model-tag-gemini">2.5-flash</span>
+                  <span class="brain-cost-badge">API</span>
+                  <div class="brain-model-selector" id="model-selector-gemini" onclick="event.stopPropagation()">
+                    <div class="brain-model-option selected" data-model="gemini-2.5-flash"
+                         onclick="BrainSelector.setModel('gemini','gemini-2.5-flash',this)">
+                      <span class="brain-model-name">gemini-2.5-flash</span>
+                      <span class="brain-model-desc">Recommended — fast</span>
+                    </div>
+                    <div class="brain-model-option" data-model="gemini-2.5-pro"
+                         onclick="BrainSelector.setModel('gemini','gemini-2.5-pro',this)">
+                      <span class="brain-model-name">gemini-2.5-pro</span>
+                      <span class="brain-model-desc">Complex reasoning</span>
+                    </div>
+                  </div>
+                </button>
+
+                <button class="brain-pill" data-brain="openai"
+                        onclick="BrainSelector.select('openai')"
+                        title="OpenAI — GPT-4o API">
+                  <span class="brain-status-dot pending" id="brain-dot-openai"></span>
+                  <span class="brain-name">OpenAI</span>
+                  <span class="brain-model-tag" id="brain-model-tag-openai">gpt-4o</span>
+                  <span class="brain-cost-badge">API</span>
+                  <div class="brain-model-selector" id="model-selector-openai" onclick="event.stopPropagation()">
+                    <div class="brain-model-option selected" data-model="gpt-4o"
+                         onclick="BrainSelector.setModel('openai','gpt-4o',this)">
+                      <span class="brain-model-name">gpt-4o</span>
+                      <span class="brain-model-desc">Recommended — balanced</span>
+                    </div>
+                    <div class="brain-model-option" data-model="gpt-4o-mini"
+                         onclick="BrainSelector.setModel('openai','gpt-4o-mini',this)">
+                      <span class="brain-model-name">gpt-4o-mini</span>
+                      <span class="brain-model-desc">Fast &amp; cheap</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <!-- WORKER section: CLI-based, display-only -->
+              <div class="bw-section-label" style="margin-top:4px">Workers</div>
+              <div class="bw-pills-row">
+                <span class="worker-pill" title="Claude Code CLI — subscription auth. Best for: code generation, site builds">
+                  <span class="brain-status-dot connected"></span>claude-code
+                </span>
+                <span class="worker-pill" title="Codex CLI — OpenAI subscription. Best for: adversarial review, focused tasks">
+                  <span class="brain-status-dot connected"></span>codex-cli
+                </span>
+                <span class="worker-pill" title="Gemini CLI — API key. Best for: research, brainstorm synthesis">
+                  <span class="brain-status-dot connected"></span>gemini-cli
+                </span>
+              </div>
             </div>
             <div class="p-3 border-t border-gray-700 bg-studio-panel chat-input-area">
               <form id="chat-form" class="flex gap-2">
@@ -1011,8 +1076,8 @@
         // Hide restart banner since we just restarted
         var restartBanner = document.getElementById('restart-banner');
         if (restartBanner) restartBanner.classList.add('hidden');
-        // Sync brain selector state
-        if (typeof BrainSelector !== 'undefined') BrainSelector.onWsOpen();
+        // Sync brain selector state — init with socket ref for model selection
+        if (typeof BrainSelector !== 'undefined') BrainSelector.init(ws);
       };
       ws.onclose = () => {
         console.log('[ws] disconnected, reconnecting in ' + wsReconnectDelay + 'ms...');
@@ -1210,10 +1275,9 @@
           }
           case 'brain-changed':
           case 'brain-status':
-            if (typeof BrainSelector !== 'undefined') BrainSelector.handleServerMessage(msg);
-            break;
+          case 'brain-api-status':
           case 'brain-fallback':
-            if (typeof BrainSelector !== 'undefined') BrainSelector.handleServerMessage(msg);
+            if (typeof BrainSelector !== 'undefined') BrainSelector.handleMessage(msg);
             break;
         }
       };
