@@ -1,0 +1,323 @@
+/**
+ * fam-hero.css — FAMtastic multi-layer hero system
+ *
+ * Session 11 Fix 9. Provides a layered hero composition vocabulary that
+ * Claude can reach for during builds without re-inventing z-index stacks
+ * every time. Strictly additive: pairs cleanly with fam-shapes.css and
+ * fam-motion.js but does not require them.
+ *
+ * THE LAYER MODEL
+ *   .fam-hero               positioning shell, sets the stacking context
+ *   .fam-hero__bg           layer 0  — background color/image/gradient
+ *   .fam-hero__pattern      layer 1  — repeating pattern, dots, grid, noise
+ *   .fam-hero__shapes       layer 2  — decorative shapes (blobs, rings, etc.)
+ *   .fam-hero__media        layer 3  — main hero photo / illustration / video
+ *   .fam-hero__lights       layer 4  — colored radial light spots / spotlights
+ *   .fam-hero__sparkle      layer 5  — small twinkles + accents
+ *   .fam-hero__content      layer 6  — headline + CTA + UI (always on top)
+ *
+ * Children that need to live OUTSIDE the box can use the bleed utilities
+ * (.fam-bleed-*) to push past the hero edges without breaking layout.
+ *
+ * Usage:
+ *   <section class="fam-hero fam-hero--tall">
+ *     <div class="fam-hero__bg fam-hero__bg--gradient-sunset"></div>
+ *     <div class="fam-hero__pattern fam-hero__pattern--dots"></div>
+ *     <div class="fam-hero__lights">
+ *       <div class="fam-light fam-light--violet fam-light--tl"></div>
+ *       <div class="fam-light fam-light--cyan   fam-light--br"></div>
+ *     </div>
+ *     <div class="fam-hero__sparkle"></div>
+ *     <div class="fam-hero__media">
+ *       <img src="..." class="fam-bleed-r" alt="">
+ *     </div>
+ *     <div class="fam-hero__content">
+ *       <h1>Drop the Beat.</h1>
+ *       <a class="cta">Book a date</a>
+ *     </div>
+ *   </section>
+ */
+
+/* ─── Hero shell ─────────────────────────────────────────────────────── */
+
+.fam-hero {
+  position: relative;
+  isolation: isolate;            /* contain z-indexes from leaking out */
+  overflow: hidden;
+  width: 100%;
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  --fam-hero-pad-x: clamp(20px, 6vw, 96px);
+  --fam-hero-pad-y: clamp(48px, 9vw, 140px);
+  padding: var(--fam-hero-pad-y) var(--fam-hero-pad-x);
+}
+
+.fam-hero--short  { min-height: 50vh; }
+.fam-hero--tall   { min-height: 88vh; }
+.fam-hero--full   { min-height: 100vh; }
+
+/* Optional inset border feel — useful for "framed" hero variants */
+.fam-hero--framed::after {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 18px;
+  pointer-events: none;
+  z-index: 7;
+}
+
+/* ─── Layer base ─────────────────────────────────────────────────────── */
+
+.fam-hero__bg,
+.fam-hero__pattern,
+.fam-hero__shapes,
+.fam-hero__media,
+.fam-hero__lights,
+.fam-hero__sparkle {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fam-hero__bg       { z-index: 0; }
+.fam-hero__pattern  { z-index: 1; opacity: 0.35; mix-blend-mode: overlay; }
+.fam-hero__shapes   { z-index: 2; }
+.fam-hero__media    { z-index: 3; }
+.fam-hero__lights   { z-index: 4; mix-blend-mode: screen; }
+.fam-hero__sparkle  { z-index: 5; mix-blend-mode: screen; }
+
+.fam-hero__content {
+  position: relative;
+  z-index: 6;
+  max-width: 1200px;
+  width: 100%;
+  pointer-events: auto;
+}
+
+/* The main hero photo/video should fill the media layer by default */
+.fam-hero__media > img,
+.fam-hero__media > video,
+.fam-hero__media > picture > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Mask helpers — fade the media into the background */
+.fam-hero__media--fade-bottom > img,
+.fam-hero__media--fade-bottom > video {
+  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+}
+.fam-hero__media--fade-right > img,
+.fam-hero__media--fade-right > video {
+  mask-image: linear-gradient(to right, #000 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 60%, transparent 100%);
+}
+
+/* ─── Background presets ─────────────────────────────────────────────── */
+
+.fam-hero__bg--solid-dark    { background: #0b0b14; }
+.fam-hero__bg--solid-ink     { background: #11131c; }
+.fam-hero__bg--solid-cream   { background: #faf6ee; }
+
+.fam-hero__bg--gradient-sunset {
+  background: radial-gradient(120% 80% at 80% 20%, #f97316 0%, #db2777 35%, #4c1d95 75%, #0b0b14 100%);
+}
+.fam-hero__bg--gradient-neon {
+  background: radial-gradient(130% 90% at 20% 30%, #06b6d4 0%, #7c3aed 45%, #1e1b4b 100%);
+}
+.fam-hero__bg--gradient-dusk {
+  background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+}
+.fam-hero__bg--gradient-vinyl {
+  background: radial-gradient(80% 60% at 50% 50%, #1f1f24 0%, #0a0a0d 70%, #000 100%);
+}
+.fam-hero__bg--gradient-emerald {
+  background: linear-gradient(140deg, #022c22 0%, #064e3b 50%, #065f46 100%);
+}
+
+/* ─── Pattern presets ────────────────────────────────────────────────── */
+
+.fam-hero__pattern--dots {
+  background-image: radial-gradient(rgba(255,255,255,0.55) 1.5px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+.fam-hero__pattern--grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.fam-hero__pattern--diagonal {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.06) 0 12px,
+    transparent 12px 24px
+  );
+}
+.fam-hero__pattern--noise {
+  /* Subtle data-uri SVG noise — sub-1KB */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 160px 160px;
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+}
+.fam-hero__pattern--vinyl {
+  /* Concentric grooves — perfect for record-store / DJ verticals */
+  background-image: repeating-radial-gradient(
+    circle at 50% 50%,
+    rgba(255,255,255,0.05) 0 1px,
+    transparent 1px 6px
+  );
+}
+
+/* ─── Lights (colored radial spots) ──────────────────────────────────── */
+
+.fam-light {
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  max-width: 720px;
+  max-height: 720px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.fam-light--violet { background: #7c3aed; }
+.fam-light--cyan   { background: #06b6d4; }
+.fam-light--pink   { background: #ec4899; }
+.fam-light--orange { background: #f97316; }
+.fam-light--lime   { background: #84cc16; }
+.fam-light--gold   { background: #eab308; }
+.fam-light--red    { background: #ef4444; }
+
+/* Position helpers (edges + corners) */
+.fam-light--tl { top: -10%;  left: -10%; }
+.fam-light--tr { top: -10%;  right: -10%; }
+.fam-light--bl { bottom: -10%; left: -10%; }
+.fam-light--br { bottom: -10%; right: -10%; }
+.fam-light--cc { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+/* Slow ambient drift — opt-in, respects reduced motion */
+.fam-light--drift { animation: fam-light-drift 14s ease-in-out infinite alternate; }
+@keyframes fam-light-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(4%, -3%) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fam-light--drift { animation: none; }
+}
+
+/* ─── Sparkle layer ──────────────────────────────────────────────────── */
+
+.fam-hero__sparkle {
+  background-image:
+    radial-gradient(2px 2px at 12% 18%,  rgba(255,255,255,0.95) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 28% 72%, rgba(255,255,255,0.85) 50%, transparent 51%),
+    radial-gradient(2.5px 2.5px at 62% 22%, rgba(255,255,255,0.95) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 78% 64%, rgba(255,255,255,0.8) 50%, transparent 51%),
+    radial-gradient(2px 2px at 44% 46%,  rgba(255,255,255,0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 86% 12%,  rgba(255,255,255,0.8) 50%, transparent 51%),
+    radial-gradient(2px 2px at 8% 88%,   rgba(255,255,255,0.9) 50%, transparent 51%);
+  animation: fam-sparkle-twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes fam-sparkle-twinkle {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fam-hero__sparkle { animation: none; opacity: 0.7; }
+}
+
+/* Spotlight beam — single conic from a point */
+.fam-spotlight {
+  position: absolute;
+  top: -20%; left: 50%;
+  width: 80vw; height: 140vh;
+  transform: translateX(-50%) rotate(8deg);
+  background: conic-gradient(from 200deg at 50% 0%,
+    transparent 0deg,
+    rgba(255,255,255,0.18) 12deg,
+    transparent 24deg);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* ─── Decorative shape helpers (live in __shapes layer) ──────────────── */
+
+.fam-blob {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 42% 58% 63% 37% / 41% 38% 62% 59%;
+  background: rgba(255,255,255,0.06);
+  filter: blur(2px);
+}
+.fam-ring {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.18);
+}
+.fam-ring--thick { border-width: 6px; }
+.fam-ring--dashed { border-style: dashed; }
+
+/* ─── Bleed utilities (push children past the hero edges) ────────────── */
+
+.fam-bleed-l { margin-left:  calc(var(--fam-hero-pad-x) * -1); }
+.fam-bleed-r { margin-right: calc(var(--fam-hero-pad-x) * -1); }
+.fam-bleed-t { margin-top:    calc(var(--fam-hero-pad-y) * -1); }
+.fam-bleed-b { margin-bottom: calc(var(--fam-hero-pad-y) * -1); }
+.fam-bleed-x { margin-left:  calc(var(--fam-hero-pad-x) * -1); margin-right: calc(var(--fam-hero-pad-x) * -1); }
+.fam-bleed-y { margin-top:    calc(var(--fam-hero-pad-y) * -1); margin-bottom: calc(var(--fam-hero-pad-y) * -1); }
+.fam-bleed-all {
+  margin: calc(var(--fam-hero-pad-y) * -1) calc(var(--fam-hero-pad-x) * -1);
+}
+
+/* Common pattern: image bleeds off the right edge of a split hero */
+.fam-bleed-right-overflow {
+  position: relative;
+  width: calc(100% + var(--fam-hero-pad-x));
+  margin-right: calc(var(--fam-hero-pad-x) * -1);
+}
+
+/* ─── Content alignment helpers ─────────────────────────────────────── */
+
+.fam-hero--align-center  .fam-hero__content { text-align: center; }
+.fam-hero--align-left    .fam-hero__content { text-align: left;   justify-self: start; }
+.fam-hero--align-right   .fam-hero__content { text-align: right;  justify-self: end;   }
+
+/* Common 2-col split: content left, media right */
+.fam-hero--split {
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(24px, 4vw, 64px);
+  text-align: left;
+}
+.fam-hero--split .fam-hero__content { grid-column: 1; }
+.fam-hero--split .fam-hero__media   { position: relative; inset: auto; grid-column: 2; }
+
+@media (max-width: 768px) {
+  .fam-hero--split {
+    grid-template-columns: 1fr;
+  }
+  .fam-hero--split .fam-hero__media { display: none; }
+  .fam-light { width: 90vw; height: 90vw; filter: blur(60px); }
+}
+
+/* ─── Vignette overlay (subtle darken at edges) ─────────────────────── */
+
+.fam-hero--vignette::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 50% 50%, transparent 50%, rgba(0,0,0,0.55) 100%);
+  z-index: 5;
+  pointer-events: none;
+}
