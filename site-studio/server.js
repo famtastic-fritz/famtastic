@@ -8046,6 +8046,13 @@ function runPostProcessing(ws, writtenPages, options = {}) {
     if (fs.existsSync(templatePath)) {
       // Template-first path: simple and deterministic
       applyTemplateToPages(ws, writtenPages);
+      // Session 11 hotfix: head-guardrail also runs in template-first path
+      // so the FAMtastic DNA assets (fam-shapes.css, fam-motion.js,
+      // fam-scroll.js, fam-hero.css) get copied into dist/assets and
+      // linked into every page. Without this, builds shipped after the
+      // template-first migration silently lost the FAMtastic vocabulary
+      // even though Fix 2 and Fix 9 had wired the prompt + source files.
+      ensureHeadDependencies(ws);
     } else {
       // Legacy fallback (no template — old-style build): use sync-based post-processing
       const distDir = DIST_DIR();
