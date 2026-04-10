@@ -73,16 +73,26 @@ class BrainInterface {
       stream            = false,
       maxTokens         = 8192,
       mode              = 'chat',
-      tools             = [],
       skipContextHeader = false,
-      ws                = null,
       onChunk           = null,
       wsMessageType     = 'chunk',
       silenceTimeout    = 30000,
       onSilence         = null,
       abortControllers  = null,
-      model             = null,
     } = opts;
+
+    // C4: ws flows through options, never from this.ws directly
+    const ws = opts.ws || this.ws || null;
+
+    // C6: read model override from ws.brainModels[brain] if available
+    const selectedModel = ws?.brainModels?.[this.brain] || opts.model || null;
+
+    // C1: Tools only for Claude in build/brainstorm mode
+    // DECISION: Tool calling is Claude-only (Session 10). Do not pass to Gemini/Codex.
+    const tools = (this.brain === 'claude' &&
+      (mode === 'build' || mode === 'brainstorm'))
+      ? require('./studio-tools').STUDIO_TOOLS
+      : [];
 
     // Build context header and prepend to message
     const fullMessage = skipContextHeader
@@ -102,8 +112,8 @@ class BrainInterface {
       silenceTimeout,
       onSilence,
       abortControllers,
+      model:           selectedModel,
     };
-    if (model) adapterOpts.model = model;
 
     let result;
     if (stream) {

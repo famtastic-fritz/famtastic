@@ -7,10 +7,17 @@
  *
  * Multi-turn: true — history is passed as messages array to the SDK.
  * Summarization: always uses Claude regardless of active brain (see cerebrum.md SUMMARIZATION_ALWAYS_CLAUDE).
+ *
+ * Tool calling: CLAUDE-ONLY. STUDIO_TOOLS passed via opts.tools from BrainInterface.
+ * Do NOT pass STUDIO_TOOLS to GeminiAdapter or CodexAdapter.
+ * (DECISION: Tool calling is Claude-only, Session 10. Gemini/OpenAI deferred to Session 12.)
+ *
+ * ws flows through options only — NEVER stored as this.ws (C4).
  */
 
 const Anthropic = require('@anthropic-ai/sdk');
 const WebSocket = require('ws');
+const { handleToolCall } = require('../tool-handlers');
 
 // Lazy-initialize client so module can be required without ANTHROPIC_API_KEY set
 let _client = null;
@@ -20,8 +27,9 @@ function getClient() {
 }
 
 // Default model — read from loadSettings() at call time; this is a fallback only.
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
-const HAIKU_MODEL   = 'claude-haiku-4-5-20251001';
+const DEFAULT_MODEL  = 'claude-sonnet-4-6';
+const HAIKU_MODEL    = 'claude-haiku-4-5-20251001';
+const MAX_TOOL_DEPTH = 3; // recursion depth limit for _executeBlocking tool loops (C2)
 
 class ClaudeAdapter {
   constructor() {
@@ -36,23 +44,55 @@ class ClaudeAdapter {
 
   /**
    * Non-streaming call. Resolves with { content, usage, stopReason }.
+   * Supports tool calling with recursion depth limit (C2).
+   * ws flows through options only — never stored on instance (C4).
+   *
    * @param {string} message  — The user message (context header already prepended)
    * @param {object} opts
    *   history    — array of { role, content } prior turns (last 20 used)
    *   maxTokens  — per-call-site value (see migration map Section 3)
-   *   model      — override model string (defaults to DEFAULT_MODEL)
-   *   tools      — Anthropic tool definitions array
+   *   model      — override model string (C6: from ws.brainModels, falls back to DEFAULT_MODEL)
+   *   tools      — Anthropic tool definitions array (CLAUDE-ONLY — do not pass from Gemini/Codex)
+   *   ws         — WebSocket client (for tool notifications — NOT stored on this)
    *   signal     — AbortSignal for cancellation
    */
   async execute(message, opts = {}) {
-    const { history = [], maxTokens = 8192, model = DEFAULT_MODEL, tools = [], signal } = opts;
+    const { history = [], maxTokens = 8192, model = null, tools = [], ws = null, signal } = opts;
+
+    const resolvedModel = model || DEFAULT_MODEL;
 
     const messages = [
       ...history.slice(-20).map(h => ({ role: h.role, content: h.content })),
       { role: 'user', content: message },
     ];
 
-    const client = getClient();
+    return this._executeBlocking(messages, maxTokens, tools, 0, ws, resolvedModel, signal);
+  }
+
+  /**
+   * Internal blocking executor with tool loop and recursion depth guard (C2).
+   * ws flows through parameters only — never stored as this.ws (C4).
+   *
+   * @param {Array}   messages
+   * @param {number}  maxTokens
+   * @param {Array}   tools
+   * @param {number}  depth       — current recursion depth (starts at 0)
+   * @param {object}  ws          — WebSocket (optional, NOT stored on this)
+   * @param {string}  model       — resolved model string
+   * @param {object}  signal      — AbortSignal (optional)
+   */
+  async _executeBlocking(messages, maxTokens, tools, depth = 0, ws = null, model = DEFAULT_MODEL, signal = null) {
+    // Depth limit guard (C2) — prevents infinite loops on tool errors
+    if (depth >= MAX_TOOL_DEPTH) {
+      return {
+        content:           'I reached the maximum number of tool calls for this request.',
+        usage:             null,
+        stopReason:        'depth_limit_reached',
+        depth_limit_reached: true,
+      };
+    }
+
+    const client      = getClient();
     const requestOpts = signal ? { signal } : {};
 
     const response = await client.messages.create({
@@ -62,8 +102,38 @@ class ClaudeAdapter {
       tools: tools.length > 0 ? tools : undefined,
     }, requestOpts);
 
+    // Handle tool_use stop reason — execute tools and recurse
+    if (response.stop_reason === 'tool_use') {
+      const toolUseBlocks = response.content.filter(b => b.type === 'tool_use');
+      const toolResults   = [];
+
+      for (const block of toolUseBlocks) {
+        console.log(`TOOL_CALL [depth=${depth}] — ${block.name}`);
+        let result;
+        try {
+          result = await handleToolCall(block.name, block.input || {}, ws);
+        } catch (e) {
+          result = { error: `Tool execution error: ${e.message}` };
+        }
+        toolResults.push({
+          type:       'tool_result',
+          tool_use_id: block.id,
+          content:    JSON.stringify(result),
+        });
+      }
+
+      // Append assistant turn + tool results and recurse
+      const nextMessages = [
+        ...messages,
+        { role: 'assistant', content: response.content },
+        { role: 'user',      content: toolResults },
+      ];
+
+      return this._executeBlocking(nextMessages, maxTokens, tools, depth + 1, ws, model, signal);
+    }
+
     return {
-      content:    response.content[0]?.text || '',
+      content:    response.content.find(b => b.type === 'text')?.text || '',
       usage:      response.usage,
       stopReason: response.stop_reason,
     };
@@ -90,14 +160,16 @@ class ClaudeAdapter {
     const {
       history      = [],
       maxTokens    = 16384,
-      model        = DEFAULT_MODEL,
+      model        = null,         // C6: caller may pass ws.brainModels override
       onChunk      = null,
-      ws           = null,
+      ws           = null,         // C4: ws through options, never stored on this
       wsMessageType = 'chunk',
       silenceTimeout  = 30000,
       onSilence    = null,
       abortControllers = null,
     } = opts;
+
+    const resolvedModel = model || DEFAULT_MODEL;
 
     const controller = new AbortController();
     if (abortControllers) abortControllers.push(controller);
@@ -109,7 +181,7 @@ class ClaudeAdapter {
 
     const client = getClient();
     const stream = client.messages.stream({
-      model,
+      model: resolvedModel,
       max_tokens: maxTokens,
       messages,
     }, { signal: controller.signal });

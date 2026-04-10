@@ -197,3 +197,11 @@ registry before first use.
 - But proper commits with meaningful messages should go through CLI
 - Future: Studio should be able to manage its own code changes with commit message prompts, possibly a dedicated "Studio Updates" panel or integration with the existing git flow
 - The separation of site repo vs hub repo pushes needs clearer UX — users shouldn't have to think about which repo they're pushing to
+
+## Session 10 Decisions
+
+- **DECISION: Tool calling is Claude-only (Session 10).** Gemini and OpenAI tool format translation deferred to Session 12. Do not pass STUDIO_TOOLS to GeminiAdapter or CodexAdapter.
+- **SECURITY: read_file tool validates path is within SITE_DIR() before reading.** path.resolve() + startsWith(siteRoot) check prevents path traversal. Never remove this check.
+- **Tool recursion limit:** MAX_TOOL_DEPTH = 3 in ClaudeAdapter._executeBlocking(). Prevents infinite loops on tool errors.
+- **ws through options:** ws must flow through the options chain (execute(message, { ws })), never stored as this.ws on adapter instances. Adapters are potentially reused — storing ws on them creates stale reference bugs.
+- **getModel() override:** BrainInterface.execute() reads ws.brainModels[brain] and passes it as options.model. ClaudeAdapter uses passed model if present, falls back to DEFAULT_MODEL constant.

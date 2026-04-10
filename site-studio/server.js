@@ -16,6 +16,10 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
 const { getOrCreateBrainSession, resetSessions: resetBrainSessions } = require('./lib/brain-sessions');
 const { verifyAllAPIs, getBrainStatus } = require('./lib/brain-verifier');
+// DECISION: Tool calling is Claude-only (Session 10).
+// Gemini and OpenAI tool format translation deferred to Session 12.
+// Do not pass STUDIO_TOOLS to GeminiAdapter or CodexAdapter.
+const { handleToolCall, initToolHandlers } = require('./lib/tool-handlers');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -164,6 +168,16 @@ function invalidateSpecCache() {
   _specCache = null;
   _specCacheTag = null;
 }
+
+// Initialize tool handlers with server context
+// TAG and HUB_ROOT are defined above; getSiteDir returns the mutable current SITE_DIR()
+// so tool handlers always reference the active site even after a site switch.
+initToolHandlers({
+  getSiteDir: () => SITE_DIR(),
+  readSpec,
+  getTag:     () => TAG,
+  hubRoot:    HUB_ROOT,
+});
 
 // --- Path safety ---
 // Validates that a page name is safe (no traversal, alphanumeric + hyphens only)
@@ -4933,6 +4947,19 @@ app.get('/api/research/threshold-analysis', (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/worker-queue — pending worker tasks dispatched by brain tool calls
+app.get('/api/worker-queue', async (req, res) => {
+  try {
+    const queuePath = path.join(require('os').homedir(), 'famtastic', '.worker-queue.jsonl');
+    if (!fs.existsSync(queuePath)) return res.json({ tasks: [], count: 0 });
+    const lines = fs.readFileSync(queuePath, 'utf8').trim().split('\n').filter(Boolean);
+    const tasks = lines.map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    res.json({ tasks, count: tasks.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 

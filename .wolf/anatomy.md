@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T14:56:51.977Z
-> Files: 440 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T15:23:48.680Z
+> Files: 444 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -457,6 +457,7 @@
 - `RECONCILED-CALL-SITES.md` — RECONCILED-CALL-SITES.md (~1539 tok)
 - `resume-amazon.md` — Resume Optimization for Amazon Position (~110 tok)
 - `session10-phase1-report.md` — Session 10 Phase 1 Report — Brain/Worker Split Selector (~1265 tok)
+- `session10-phase2-report.md` — Session 10 — Phase 2 Report: Tool Calling Infrastructure (~867 tok)
 - `session7-master-report.md` — Session 7 — Master Report (~2228 tok)
 - `session7-phase-0-report.md` — Session 7 Phase 0 Report — 2026-04-09 (~1383 tok)
 - `session7-phase-1-report.md` — Session 7 — Phase 1 Report: Universal Context File (~1319 tok)
@@ -577,7 +578,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~220 tok)
-- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~150241 tok)
+- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~150590 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/lib/
@@ -586,7 +587,7 @@
 - `api-telemetry.js` — api-telemetry.js — Per-call SDK cost logging. (~1443 tok)
 - `brain-adapter-factory.js` — BrainAdapterFactory — creates the correct adapter for the active brain. (~366 tok)
 - `brain-injector.js` — brain-injector.js — Injects STUDIO-CONTEXT.md into each brain's session (~1486 tok)
-- `brain-interface.js` — BrainInterface — the universal Studio-to-Brain communication layer. (~2040 tok)
+- `brain-interface.js` — BrainInterface — the universal Studio-to-Brain communication layer. (~2173 tok)
 - `brain-sessions.js` — brain-sessions.js — Brain authentication and session management. (~1563 tok)
 - `haiku-fallback.js` — haiku-fallback.js — SDK-based Haiku fallback for silence timeouts. (~777 tok)
 - `history-formatter.js` — history-formatter.js — Per-brain conversation history formatting (~1136 tok)
@@ -596,10 +597,12 @@
 - `research-router.js` — research-router.js — Routes research queries through the registry (~2989 tok)
 - `studio-context-writer.js` — studio-context-writer.js — Generates STUDIO-CONTEXT.md (~3039 tok)
 - `studio-events.js` — studio-events.js — Studio event bus (~428 tok)
+- `studio-tools.js` — studio-tools.js — Anthropic-format tool definitions for ClaudeAdapter. (~769 tok)
+- `tool-handlers.js` — fs: initToolHandlers, handleToolCall, getSiteContext + 7 more (~2187 tok)
 
 ## site-studio/lib/adapters/
 
-- `claude-adapter.js` — ClaudeAdapter — wraps @anthropic-ai/sdk for the Brain Adapter Pattern. (~1643 tok)
+- `claude-adapter.js` — ClaudeAdapter — wraps @anthropic-ai/sdk for the Brain Adapter Pattern. (~2536 tok)
 - `codex-adapter.js` — CodexAdapter — wraps the Codex CLI subprocess for the Brain Adapter Pattern. (~1255 tok)
 - `gemini-adapter.js` — GeminiAdapter — wraps @google/generative-ai for the Brain Adapter Pattern. (~899 tok)
 
@@ -775,6 +778,7 @@
 - `phase5-intelligence-loop-tests.js` — Phase 5 — Intelligence Loop Tests (~3863 tok)
 - `session10-phase0-tests.js` — Session 10 Phase 0 Tests — OpenAI SDK Integration + Brain Verifier (~3111 tok)
 - `session10-phase1-tests.js` — session10-phase1-tests.js — Brain/Worker Split Selector (~1348 tok)
+- `session10-phase2-tests.js` — session10-phase2-tests.js — Phase 2 verification tests. (~2731 tok)
 - `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
 - `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4055 tok)
 - `session4-visual-tests.js` — Session 4 — Visual Quality Tests (~4620 tok)
