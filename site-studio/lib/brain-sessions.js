@@ -15,7 +15,7 @@
 
 const Anthropic   = require('@anthropic-ai/sdk');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const OpenAI      = require('openai');
+// Note: Codex probe uses only process.env.OPENAI_API_KEY — no OpenAI SDK needed.
 
 // Per-session BrainInterface instances — one per active brain.
 // Used by getBrainSession() / getOrCreateBrainSession() in server.js.

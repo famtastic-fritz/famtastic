@@ -9196,6 +9196,37 @@ ${analyticsInstruction}`;
     }
   }
 
+  // No API key — fall back to spawnClaude() subprocess (Claude Code subscription auth)
+  if (!hasAnthropicKey()) {
+    const child = spawnClaude(prompt);
+    ws.currentChild = child;
+    const subTimeout = setTimeout(() => { child.kill(); }, 300000);
+    child.stdout.on('data', chunk => {
+      const text = chunk.toString();
+      response += text;
+      resetSilenceTimer();
+      if (firstChunk) {
+        if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: 'Claude is generating...' })); } catch {}
+        firstChunk = false;
+      }
+      if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'stream', content: text })); } catch {}
+    });
+    child.on('close', () => {
+      clearTimeout(subTimeout);
+      if (silenceTimer) clearTimeout(silenceTimer);
+      ws.removeListener('close', wsCloseHandler);
+      onChatComplete(response, null);
+    });
+    child.on('error', (err) => {
+      clearTimeout(subTimeout);
+      if (silenceTimer) clearTimeout(silenceTimer);
+      ws.removeListener('close', wsCloseHandler);
+      console.error('[chat-subprocess] Error:', err.message);
+      setBuildInProgress(false);
+    });
+    return;
+  }
+
   // SDK streaming call
   try {
     const sdk = getAnthropicClient();
@@ -9257,6 +9288,32 @@ async function runHaikuFallbackSDK(prompt, ws, buildStartTime, requestType) {
   let haikuResponse = '';
   let firstHaikuChunk = true;
   let pagesDetected = 0;
+
+  // No API key — use spawnClaudeModel subprocess for Haiku fallback
+  if (!hasAnthropicKey()) {
+    const child = spawnClaudeModel(haikuModel, prompt);
+    ws.currentChild = child;
+    child.stdout.on('data', chunk => {
+      const text = chunk.toString();
+      haikuResponse += text;
+      if (firstHaikuChunk) {
+        if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'status', content: 'Haiku is generating...' })); } catch {}
+        firstHaikuChunk = false;
+      }
+      if (ws && ws.readyState === 1) try { ws.send(JSON.stringify({ type: 'stream', content: text })); } catch {}
+    });
+    child.on('close', () => {
+      const buildElapsed = Math.round((Date.now() - buildStartTime) / 1000);
+      const { onChatComplete } = (() => { /* resolved below via closure */ })() || {};
+      setBuildInProgress(false);
+      if (ws && ws.readyState === 1) {
+        const msg = haikuResponse ? `${currentPage} updated! (${buildElapsed}s)` : 'Haiku fallback produced no output.';
+        try { ws.send(JSON.stringify({ type: 'assistant', content: msg })); } catch {}
+        if (haikuResponse) try { ws.send(JSON.stringify({ type: 'reload-preview' })); } catch {}
+      }
+    });
+    return;
+  }
 
   const haikuController = new AbortController();
   const wsCloseHaikuHandler = () => haikuController.abort();
@@ -11302,6 +11359,16 @@ function getAnthropicClient() {
 }
 
 /**
+ * Returns true when ANTHROPIC_API_KEY is set and non-empty.
+ * When false, all SDK call sites fall back to spawnClaude() subprocess.
+ * spawnClaude() uses `claude --print` which authenticates via Claude Code
+ * subscription — no separate API key needed.
+ */
+function hasAnthropicKey() {
+  return !!(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim());
+}
+
+/**
  * Non-streaming Anthropic SDK call with AbortController timeout.
  * Replaces spawnClaude() for call sites that don't need streaming.
  * Logs cost to api-telemetry.
@@ -11316,6 +11383,19 @@ function getAnthropicClient() {
 async function callSDK(prompt, opts = {}) {
   const { maxTokens = 8192, callSite = 'unknown', timeoutMs = 120000 } = opts;
   const model = loadSettings().model || 'claude-sonnet-4-6';
+
+  // No API key — fall back to spawnClaude() subprocess (Claude Code subscription auth)
+  if (!hasAnthropicKey()) {
+    return new Promise((resolve) => {
+      const child = spawnClaude(prompt);
+      let output = '';
+      const timeout = setTimeout(() => { child.kill(); resolve(''); }, timeoutMs);
+      child.stdout.on('data', d => { output += d.toString(); });
+      child.on('close', () => { clearTimeout(timeout); resolve(output.trim()); });
+      child.on('error', () => { clearTimeout(timeout); resolve(''); });
+    });
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
