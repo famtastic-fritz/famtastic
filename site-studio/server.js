@@ -2829,6 +2829,33 @@ function ensureHeadDependencies(ws) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="${fontUrl}" rel="stylesheet">`;
 
+  // Session 11 Fix 2: FAMtastic DNA — always copy and link fam-shapes.css,
+  // fam-motion.js, fam-scroll.js on every build so Claude can use the full
+  // vocabulary (shape classes, data-fam-animate, data-fam-scroll) without
+  // needing a separate opt-in call.
+  const famAssets = [
+    { src: path.join(__dirname, '..', 'lib', 'fam-shapes.css'), dest: path.join(distDir, 'assets', 'css', 'fam-shapes.css'),
+      tag: '<link rel="stylesheet" href="assets/css/fam-shapes.css">', marker: 'assets/css/fam-shapes.css', position: 'head' },
+    { src: path.join(__dirname, '..', 'lib', 'fam-motion.js'),  dest: path.join(distDir, 'assets', 'js', 'fam-motion.js'),
+      tag: '<script src="assets/js/fam-motion.js" defer></script>', marker: 'assets/js/fam-motion.js', position: 'head' },
+    { src: path.join(__dirname, '..', 'lib', 'fam-scroll.js'),  dest: path.join(distDir, 'assets', 'js', 'fam-scroll.js'),
+      tag: '<script src="assets/js/fam-scroll.js" defer></script>', marker: 'assets/js/fam-scroll.js', position: 'head' },
+    { src: path.join(__dirname, 'public', 'css', 'fam-hero.css'), dest: path.join(distDir, 'assets', 'css', 'fam-hero.css'),
+      tag: '<link rel="stylesheet" href="assets/css/fam-hero.css">', marker: 'assets/css/fam-hero.css', position: 'head', optional: true },
+  ];
+  for (const asset of famAssets) {
+    try {
+      if (!fs.existsSync(asset.src)) {
+        if (!asset.optional) console.warn(`[head-guardrail] Missing FAMtastic asset: ${asset.src}`);
+        continue;
+      }
+      fs.mkdirSync(path.dirname(asset.dest), { recursive: true });
+      fs.copyFileSync(asset.src, asset.dest);
+    } catch (err) {
+      console.warn(`[head-guardrail] Failed to copy ${path.basename(asset.src)}: ${err.message}`);
+    }
+  }
+
   let fixed = 0;
   for (const page of pages) {
     const filePath = path.join(distDir, page);
@@ -2843,6 +2870,14 @@ function ensureHeadDependencies(ws) {
       html = html.replace(/<\/title>/i, `</title>\n    ${fontTags}`);
       changed = true;
     }
+    // Inject FAMtastic DNA tags (fam-shapes.css, fam-motion.js, fam-scroll.js, fam-hero.css)
+    for (const asset of famAssets) {
+      if (asset.optional && !fs.existsSync(asset.src)) continue;
+      if (!html.includes(asset.marker)) {
+        html = html.replace(/<\/head>/i, `  ${asset.tag}\n  </head>`);
+        changed = true;
+      }
+    }
 
     if (changed) {
       fs.writeFileSync(filePath, html);
@@ -2851,7 +2886,7 @@ function ensureHeadDependencies(ws) {
   }
 
   if (fixed > 0) {
-    console.log(`[head-guardrail] Injected missing Tailwind/Fonts into ${fixed} page(s)`);
+    console.log(`[head-guardrail] Injected missing Tailwind/Fonts/FAMtastic DNA into ${fixed} page(s)`);
     if (ws) ws.send(JSON.stringify({ type: 'status', content: `Head dependencies ensured in ${fixed} page(s)` }));
   }
   return { fixed };
@@ -3154,11 +3189,57 @@ FOOTER:
 DESIGN DIRECTION:
 ${assetsContext || 'No specific assets referenced.'}
 
+${FAMTASTIC_DNA_VOCAB}
+
 ${systemRules}
 
 OUTPUT: Respond with ONLY the complete HTML document. No explanation, no markdown fences.
 The <body> should contain ONLY the <header> and <footer> — no other elements.`;
 }
+
+// Session 11 Fix 2: FAMtastic DNA Vocabulary — injected into template and
+// per-page build prompts so Claude knows what classes and attributes are
+// available. The underlying assets (fam-shapes.css, fam-motion.js,
+// fam-scroll.js, fam-hero.css) are auto-linked by ensureHeadDependencies().
+const FAMTASTIC_DNA_VOCAB = `
+FAMTASTIC DNA — SHIP-READY VOCABULARY (always linked, use freely):
+
+1. fam-shapes.css — pure-CSS shapes and decorative elements:
+   • <div class="fam-starburst fam-starburst--md fam-starburst--yellow">SALE!</div>
+     sizes: sm, md, lg, xl    colors: yellow, red, blue, green, pink
+   • <span class="fam-badge fam-badge--red">NEW</span>
+   • <div class="fam-price-tag">$9.99</div>
+   • <div class="fam-wave-divider fam-wave-divider--down"></div>  (section separator)
+   • <section class="fam-diagonal-bg fam-diagonal-bg--light">...</section>
+   Use these liberally to add visual personality — don't paint everything grey.
+
+2. fam-motion.js — scroll-triggered "enter viewport once" animations:
+   Add data-fam-animate to ANY element that should animate in when scrolled into view.
+   • data-fam-animate="fade-up"     (most common — headers, cards)
+   • data-fam-animate="fade-in"     (backgrounds, quiet reveals)
+   • data-fam-animate="slide-left"  (from-right reveals)
+   • data-fam-animate="slide-right" (from-left reveals)
+   • data-fam-animate="zoom-in"     (featured imagery)
+   • data-fam-animate="bounce-in"   (CTAs, testimonial cards)
+   Optional tuning: data-fam-delay="200" data-fam-duration="600"
+   REQUIRED: Put animations on hero heading, every section heading, cards, CTAs,
+   testimonial tiles, and stats. Stagger delays (0, 100, 200, 300) for grids.
+
+3. fam-scroll.js — continuous scroll-linked effects:
+   • <div data-fam-scroll="parallax" data-fam-scroll-speed="0.4">...</div>
+   • <img data-fam-scroll="parallax-img" data-fam-scroll-speed="0.25" ...>
+   • <section data-fam-scroll="pin">...</section>   (sticky)
+   • <div data-fam-scroll="reveal" data-fam-scroll-direction="left">...</div>
+   • <div data-fam-scroll="sticky-rotate" data-fam-scroll-deg="15">...</div>
+   Use parallax on hero backgrounds and decorative images. Use reveal for
+   side-by-side content blocks. Use sticky-rotate on logo/badge decorations.
+
+4. fam-hero.css — optional multi-layer hero container system (see fam-hero
+   section in build rules if famtastic_mode is enabled).
+
+DO NOT omit these. The libraries are loaded on every page. A FAMtastic site
+without fam-shapes or data-fam-animate looks like a generic Tailwind template.
+`;
 
 // --- SEO Meta Injection (post-processing) ---
 function injectSeoMeta(ws) {
@@ -6691,7 +6772,9 @@ PARALLAX (when requested):
 SVG PATTERNS (when requested):
 - Reference SVG files from assets/patterns/ as background-image
 - Use background-repeat:repeat for tileable patterns
-- Use low opacity (0.05-0.15) for subtle texture backgrounds`;
+- Use low opacity (0.05-0.15) for subtle texture backgrounds
+
+${FAMTASTIC_DNA_VOCAB}`;
 
   // Blueprint context — prevents rebuild regression
   const blueprintContext = buildBlueprintContext(resolvedPage); // Codex review fix: use resolvedPage not currentPage
