@@ -160,3 +160,53 @@
 #brain-fallback-bar button:hover {
   background: rgba(251, 191, 36, 0.35);
 }
+
+/* ── Session 11 Fix 8: Worker queue visibility badge ── */
+.worker-queue-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: 10px;
+  cursor: help;
+  transition: background 0.15s, border-color 0.15s;
+}
+.worker-queue-badge.hidden {
+  display: none;
+}
+.worker-queue-badge:hover {
+  background: rgba(251, 191, 36, 0.22);
+  border-color: rgba(251, 191, 36, 0.5);
+}
+.worker-queue-badge .wqb-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fcd34d;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
+  animation: wqb-pulse 2s ease-in-out infinite;
+}
+.worker-queue-badge .wqb-label {
+  white-space: nowrap;
+}
+.worker-queue-badge .wqb-count {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 5px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background: rgba(251, 191, 36, 0.28);
+  border-radius: 8px;
+  color: #fde68a;
+}
+@keyframes wqb-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}

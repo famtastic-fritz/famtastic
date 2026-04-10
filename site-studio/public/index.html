@@ -470,6 +470,12 @@
                   <span class="brain-status-dot connected"></span>gemini-cli
                 </span>
               </div>
+              <!-- Session 11 Fix 8: worker queue visibility badge -->
+              <div id="worker-queue-badge" class="worker-queue-badge hidden" title="Tasks dispatched via dispatch_worker tool — no worker is currently polling the queue.">
+                <span class="wqb-dot"></span>
+                <span class="wqb-label">Pending manual execution</span>
+                <span class="wqb-count" id="worker-queue-count">0</span>
+              </div>
             </div>
             <div class="p-3 border-t border-gray-700 bg-studio-panel chat-input-area">
               <form id="chat-form" class="flex gap-2">
@@ -6341,5 +6347,6 @@
     </div>
   </div>
   <script src="js/brain-selector.js"></script>
+  <script src="js/worker-queue-badge.js"></script>
 </body>
 </html>

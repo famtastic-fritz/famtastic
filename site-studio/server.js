@@ -5255,13 +5255,58 @@ app.get('/api/research/threshold-analysis', (req, res) => {
 });
 
 // GET /api/worker-queue — pending worker tasks dispatched by brain tool calls
+//
+// Session 11 Fix 8: extended response schema so the Studio UI can show
+// a "Pending manual execution" badge with accurate counts. The queue
+// file is append-only JSONL at ~/famtastic/.worker-queue.jsonl; tasks
+// are created by the dispatch_worker tool and consumed externally (no
+// worker process is currently polling — see known gaps).
+//
+// Response shape:
+// {
+//   tasks:          [ ...task objects in JSONL order ],
+//   count:          total tasks in queue
+//   pending_count:  tasks with status !== 'completed' && !== 'cancelled'
+//   by_worker:      { claude_code: N, codex_cli: N, gemini_cli: N, ... }
+//   by_status:      { pending: N, running: N, completed: N, ... }
+//   oldest_pending: ISO timestamp of the oldest unfinished task (or null)
+//   queue_path:     absolute file path (for debugging)
+// }
 app.get('/api/worker-queue', async (req, res) => {
   try {
     const queuePath = path.join(require('os').homedir(), 'famtastic', '.worker-queue.jsonl');
-    if (!fs.existsSync(queuePath)) return res.json({ tasks: [], count: 0 });
+    const base = {
+      tasks: [], count: 0, pending_count: 0,
+      by_worker: {}, by_status: {},
+      oldest_pending: null,
+      queue_path: queuePath,
+    };
+    if (!fs.existsSync(queuePath)) return res.json(base);
     const lines = fs.readFileSync(queuePath, 'utf8').trim().split('\n').filter(Boolean);
     const tasks = lines.map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
-    res.json({ tasks, count: tasks.length });
+
+    const by_worker = {};
+    const by_status = {};
+    let pending_count = 0;
+    let oldest_pending = null;
+    for (const t of tasks) {
+      const worker = t.worker || t.agent || 'unknown';
+      const status = t.status || 'pending';
+      by_worker[worker] = (by_worker[worker] || 0) + 1;
+      by_status[status] = (by_status[status] || 0) + 1;
+      if (status !== 'completed' && status !== 'cancelled' && status !== 'failed') {
+        pending_count++;
+        const ts = t.queued_at || t.created_at || t.at || null;
+        if (ts && (!oldest_pending || ts < oldest_pending)) oldest_pending = ts;
+      }
+    }
+
+    res.json({
+      tasks, count: tasks.length,
+      pending_count, by_worker, by_status,
+      oldest_pending,
+      queue_path: queuePath,
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
