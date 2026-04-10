@@ -6307,9 +6307,68 @@ app.put('/api/settings', (req, res) => {
   res.json(current);
 });
 
+// --- Enhancement Pass Detector ---
+// Given a user message classified as 'enhancement_pass', returns a flag
+// object describing which of the six passes are enabled.
+//   { images, shapes, animations, icons, generated, famtasticMode }
+// famtasticMode implies all five other flags — used as a single mega-pass.
+// If no specific passes are mentioned, defaults to famtasticMode (the user
+// asked for "an enhancement pass" without being specific, so do everything).
+function detectEnhancementPasses(message) {
+  const lower = (message || '').toLowerCase();
+  const passes = {
+    images: false,
+    shapes: false,
+    animations: false,
+    icons: false,
+    generated: false,
+    famtasticMode: false,
+  };
+
+  // famtastic mode — mega-pass, implies all others
+  if (/\b(?:more\s+)?fam[- ]?tastic(?:\s+mode)?\b/.test(lower) || /\bgo\s+full\s+fam[- ]?tastic\b/.test(lower)) {
+    passes.famtasticMode = true;
+  }
+  if (/\b(?:enhancement|decoration|polish|glow[- ]?up)\s+pass\b/.test(lower) && !/\b(only|just)\b/.test(lower)) {
+    // "run an enhancement pass" with no qualifier → everything
+    passes.famtasticMode = true;
+  }
+
+  // Individual passes
+  if (/\b(image\s+slots?|picture\s+slots?|photo\s+slots?|more\s+images?|bulk\s+images?)\b/.test(lower)) passes.images = true;
+  if (/\b(shapes?|blobs?|waves?|decorative\s+shapes?|background\s+patterns?|fam[- ]?shapes?)\b/.test(lower)) passes.shapes = true;
+  if (/\b(motion|animations?|scroll\s+effects?|entry\s+animations?|parallax|fam[- ]?motion|fam[- ]?scroll)\b/.test(lower)) passes.animations = true;
+  if (/\b(lucide|icons?)\b/.test(lower)) passes.icons = true;
+  if (/\b(svg\s+(?:dividers?|separators?|patterns?|textures?)|dividers?|separators?|section\s+dividers?|textures?|generated\s+svgs?)\b/.test(lower)) passes.generated = true;
+
+  // If famtasticMode, turn on everything
+  if (passes.famtasticMode) {
+    passes.images = true;
+    passes.shapes = true;
+    passes.animations = true;
+    passes.icons = true;
+    passes.generated = true;
+  }
+
+  // If nothing was detected, default to famtasticMode (user asked for a pass
+  // without saying which — interpret as "the works")
+  const anyEnabled = passes.images || passes.shapes || passes.animations || passes.icons || passes.generated;
+  if (!anyEnabled) {
+    passes.famtasticMode = true;
+    passes.images = true;
+    passes.shapes = true;
+    passes.animations = true;
+    passes.icons = true;
+    passes.generated = true;
+  }
+
+  return passes;
+}
+
 // --- Request Classifier ---
 // Classifies user intent. Returns one of:
-// new_site, major_revision, restyle, layout_update, content_update, bug_fix, asset_import, build, deploy, query
+// new_site, major_revision, restyle, layout_update, content_update, bug_fix,
+// asset_import, build, deploy, query, enhancement_pass
 function classifyRequest(message, spec) {
   const lower = message.toLowerCase();
   const hasBrief = spec && spec.design_brief && spec.design_brief.approved;
@@ -6442,6 +6501,35 @@ function classifyRequest(message, spec) {
 
   // Restructure — convert to multi-page or change page structure
   if (lower.match(/\b(break\s+(\w+\s+)?into\s+(\d+\s+)?pages|separate\s+pages|split\s+(\w+\s+)?into\s+(\d+\s+)?pages|make\s+(this\s+|it\s+)?multi[- ]?page|restructure\s+the\s+site|change\s+(the\s+)?page\s+structure|convert\s+to\s+multi[- ]?page|want\s+separate\s+pages|need\s+separate\s+pages)\b/)) return 'restructure';
+
+  // ── ENHANCEMENT PASS — opt-in decorative passes that add FAMtastic DNA
+  //    without rewriting copy or restructuring layout. Six passes:
+  //      images, shapes, animations, icons, generated (svg), famtasticMode (all)
+  //    Detection is keyword-driven and runs BEFORE content_update so "add
+  //    animations" / "add shapes" are not mis-handled as content edits.
+  if (
+    // explicit "enhancement pass" / "decoration pass" language
+    lower.match(/\b(enhancement|decoration|polish|glow[- ]?up)\s+pass\b/) ||
+    lower.match(/\brun\s+(?:an?\s+)?(?:enhancement|decoration|polish)\s+pass\b/) ||
+    // "make it (more) famtastic" / famtastic mode
+    lower.match(/\b(?:make\s+(?:it|this)\s+)?(?:more\s+)?fam[- ]?tastic(?:\s+(?:mode|pass))?\b/) ||
+    lower.match(/\bgo\s+full\s+fam[- ]?tastic\b/) ||
+    // add shapes / add decorations / add blobs / add waves / add grids
+    lower.match(/\badd\s+(?:some\s+|more\s+)?(?:fam[- ]?)?(?:shapes?|blobs?|waves?|decorative\s+shapes?|decorations?|background\s+patterns?)\b/) ||
+    // add animations / motion / entry effects
+    lower.match(/\badd\s+(?:some\s+|more\s+)?(?:motion|animations?|scroll\s+effects?|entry\s+animations?|parallax)\b/) ||
+    // add icons
+    lower.match(/\badd\s+(?:some\s+|more\s+)?(?:lucide\s+)?icons?\b/) ||
+    // add image slots (bulk — different from single image slot edits)
+    lower.match(/\badd\s+(?:more\s+|additional\s+)?(?:image\s+slots?|picture\s+slots?|photo\s+slots?)\b/) ||
+    // generate SVG dividers / patterns / textures in place
+    lower.match(/\badd\s+(?:some\s+|a\s+)?(?:svg\s+)?(?:dividers?|separators?|section\s+dividers?|patterns?|textures?)\b/) ||
+    // "decorate" anything
+    lower.match(/\bdecorate\s+(?:the\s+|this\s+)?(?:site|page|hero|section)\b/)
+  ) {
+    console.log(`[classifier] intent=enhancement_pass confidence=HIGH (decorative/opt-in pass keywords)`);
+    return 'enhancement_pass';
+  }
 
   // ── CONTENT UPDATE (high precedence — surgical edits bypass plan gate) ────────
   // These must appear before restyle/layout_update/bug_fix to prevent accidental rebuilds.
@@ -9207,6 +9295,34 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
     case 'bug_fix':
       modeInstruction = `The user is reporting a BUG or visual issue on ${currentPage}. Fix only the specific problem. Do not change design direction or content.`;
       break;
+    case 'enhancement_pass': {
+      const passes = detectEnhancementPasses(userMessage);
+      const enabled = Object.keys(passes).filter(k => passes[k] && k !== 'famtasticMode');
+      ws.send(JSON.stringify({ type: 'status', content: `Enhancement pass — ${passes.famtasticMode ? 'FAMtastic mode (all)' : enabled.join(', ')}` }));
+
+      const passBlocks = [];
+      if (passes.images) {
+        passBlocks.push(`- IMAGES PASS: Scan every section that describes a person, place, product, service, or event and insert an image slot if one is not already present. Every new <img> MUST use the 1×1 transparent data URI src, and MUST carry data-slot-id (unique, role-based — e.g. "service-lighting", "testimonial-2", "venue-1"), data-slot-status="empty", and data-slot-role (hero|service|testimonial|team|gallery|venue|product). Do not remove or rename any existing slot IDs. Prefer side-by-side two-column layouts (text+image) over text-only walls.`);
+      }
+      if (passes.shapes) {
+        passBlocks.push(`- SHAPES PASS: Add FAMtastic decorative shape backgrounds to hero and accent sections using the fam-shapes.css vocabulary: wrap the existing section content in relative positioning and drop in absolutely-positioned <div class="fam-blob fam-blob-1"></div>, <div class="fam-wave-bg"></div>, <div class="fam-grid-bg"></div>, or <div class="fam-gradient-mesh"></div> as decorative layers with z-index -1 behind the content. Use the accent color from :root --color-accent. Do NOT modify fam-shapes.css — it is already linked via the post-processing pipeline.`);
+      }
+      if (passes.animations) {
+        passBlocks.push(`- ANIMATIONS PASS: Add data-fam-animate attributes to existing top-level content elements so they animate in on scroll. Valid values: "fade-up", "fade-in", "slide-left", "slide-right", "scale-in", "stagger". Add data-fam-delay="100"/"200"/"300" for sequenced reveals. Also add data-fam-scroll="parallax" data-fam-scroll-speed="0.3" to hero background layers for parallax. Do NOT modify fam-motion.js or fam-scroll.js — they auto-init on DOMContentLoaded.`);
+      }
+      if (passes.icons) {
+        passBlocks.push(`- ICONS PASS: Add Lucide icons (via the Lucide CDN <script src="https://unpkg.com/lucide@latest"></script> in <head>, then <script>lucide.createIcons()</script> at end of <body>) inline with feature bullets, CTAs, and section headings. Use <i data-lucide="check"></i>, <i data-lucide="sparkles"></i>, <i data-lucide="music"></i>, <i data-lucide="calendar"></i>, etc. — pick icons that match the content semantics.`);
+      }
+      if (passes.generated) {
+        passBlocks.push(`- GENERATED SVG PASS: Between sections where it improves visual rhythm, insert inline SVG section dividers (wave, slant, zigzag) using the accent color. Add subtle SVG texture overlays to hero backgrounds at 5–10% opacity. Use viewBox-based inline SVG so they scale cleanly.`);
+      }
+      if (passes.famtasticMode) {
+        passBlocks.push(`- FAMTASTIC MODE: Apply all of the above aggressively. Use bleed-to-edge hero sections (full-width, full-viewport-height). Add layered backgrounds (3+ z-index layers). Make headings large and confident (text-5xl to text-8xl on desktop). Push the design past "corporate safe" toward editorial/magazine — this is FAMtastic mode, be fearless.`);
+      }
+
+      modeInstruction = `The user asked for an ENHANCEMENT PASS on ${currentPage} — this is OPT-IN decorative polish. Do NOT rewrite any copy. Do NOT restructure sections or change the page hierarchy. Do NOT remove existing content. KEEP every word of the existing page exactly as written. Your job is to DECORATE the existing HTML by adding FAMtastic DNA (shapes, animations, icons, image slots, SVG dividers) as instructed below. Passes to run:\n${passBlocks.join('\n')}\n\nReturn the COMPLETE updated page as HTML_UPDATE: — not a diff.`;
+      break;
+    }
     // Note: 'restyle' is routed to handlePlanning() by the WS router upstream — it never reaches handleChatMessage
     case 'build':
       if (isMultiPage) {
@@ -10137,7 +10253,7 @@ wss.on('connection', (ws) => {
       if (currentBrain !== 'claude') {
         const nonBuildIntents = ['brainstorm', 'content_update', 'bug_fix'];
         const quickClassify = classifyRequest(userMessage, spec);
-        const isBuildIntent = ['build', 'layout_update', 'restyle', 'restructure', 'major_revision', 'new_site'].includes(quickClassify);
+        const isBuildIntent = ['build', 'layout_update', 'restyle', 'restructure', 'major_revision', 'new_site', 'enhancement_pass'].includes(quickClassify);
         if (!isBuildIntent) {
           console.log(`[brain-route] ${currentBrain} selected — routing "${userMessage.substring(0, 40)}..." to handleBrainstorm`);
           handleBrainstorm(ws, userMessage, spec);
@@ -12283,7 +12399,7 @@ function broadcastSessionStatus(ws) {
 
 // --- Exports for testing ---
 module.exports = {
-  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest, extractPagesFromBrief, syncContentFieldsFromHtml,
+  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest, detectEnhancementPasses, extractPagesFromBrief, syncContentFieldsFromHtml,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
@@ -12365,6 +12481,11 @@ if (require.main === module) {
     TAG = 'site-demo';
   }
   writeLastSite(TAG);
+
+  if (process.env.STUDIO_NO_LISTEN === '1') {
+    // Test mode: module loaded for classifier/helper access — do not open a port.
+    return;
+  }
 
   server.listen(PORT, () => {
     console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
