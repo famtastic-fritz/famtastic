@@ -15,6 +15,7 @@ const brainInjector = require('./lib/brain-injector');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
 const { getOrCreateBrainSession, resetSessions: resetBrainSessions } = require('./lib/brain-sessions');
+const { verifyAllAPIs, getBrainStatus } = require('./lib/brain-verifier');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -4755,6 +4756,18 @@ app.post('/api/content-field', (req, res) => {
   res.json({ success: true, field_id, old_value: oldValue, new_value, cascade_pages: cascadePages });
 });
 
+// GET /api/brain-status — current API connection status for all three brains + Codex
+app.get('/api/brain-status', (req, res) => {
+  const status = getBrainStatus();
+  res.json({
+    claude:  status.claude  || { status: 'pending' },
+    gemini:  status.gemini  || { status: 'pending' },
+    openai:  status.openai  || { status: 'pending' },
+    codex:   status.codex   || { status: 'pending' },
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Research files API — serves research markdown for Phase 6 workspace
 app.get('/api/research', (req, res) => {
   const researchDir = path.join(SITE_DIR(), 'research');
@@ -9196,8 +9209,12 @@ ${analyticsInstruction}`;
     }
   }
 
+  // Log definitively which path we're taking
+  console.log(`[chat-path] hasAnthropicKey=${hasAnthropicKey()} → ${hasAnthropicKey() ? '✅ SDK (API billing)' : '🔄 subprocess (subscription)'}`);
+
   // No API key — fall back to spawnClaude() subprocess (Claude Code subscription auth)
   if (!hasAnthropicKey()) {
+    console.log('[chat-path] Taking SUBPROCESS path — no ANTHROPIC_API_KEY in process.env');
     const child = spawnClaude(prompt);
     ws.currentChild = child;
     const subTimeout = setTimeout(() => { child.kill(); }, 300000);
@@ -9228,6 +9245,7 @@ ${analyticsInstruction}`;
   }
 
   // SDK streaming call
+  console.log(`[chat-path] Taking SDK path — model: ${currentModel}`);
   try {
     const sdk = getAnthropicClient();
     const stream = sdk.messages.stream({
@@ -9264,6 +9282,9 @@ ${analyticsInstruction}`;
     if (retriedWithHaiku) return; // Haiku fallback handled completion
 
     const finalMsg = await stream.finalMessage().catch(() => null);
+    if (finalMsg?.usage) {
+      console.log(`[chat-path] ✅ SDK complete — input:${finalMsg.usage.input_tokens} output:${finalMsg.usage.output_tokens} tokens (API BILLED)`);
+    }
     onChatComplete(response, finalMsg?.usage);
 
   } catch (err) {
@@ -11943,5 +11964,8 @@ if (require.main === module) {
     brainInjector.inject('codex',  ctxFile);
 
     studioEvents.emit(STUDIO_EVENTS.SESSION_STARTED, { tag: TAG });
+
+    // Verify all API connections on startup
+    verifyAllAPIs().catch(e => console.error('[brain-verifier] Startup verification failed:', e.message));
   });
 }

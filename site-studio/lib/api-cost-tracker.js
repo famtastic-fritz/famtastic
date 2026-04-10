@@ -21,6 +21,7 @@ const COST_PER_MILLION = {
   'claude-haiku-4-5':          { input: 0.25,  output: 1.25  },
   'gemini-2.0-flash':          { input: 0.10,  output: 0.40  },
   'gpt-4o':                    { input: 2.50,  output: 10.00 },
+  'gpt-4o-mini':               { input: 0.15,  output: 0.60  },
   'codex-cli':                 { input: 0.00,  output: 0.00  }, // CLI — no token billing
 };
 
