@@ -3791,12 +3791,17 @@ app.post('/api/new-site', async (req, res) => {
   const distDir = path.join(newSiteDir, 'dist');
   fs.mkdirSync(distDir, { recursive: true });
 
+  // Session 11 Fix 4: flag new sites for auto-interview on next studio open
+  // unless the admin has disabled auto_interview in studio-config.json.
+  const autoInterviewEnabled = loadSettings().auto_interview !== false;
   const spec = {
     tag: newTag,
     site_name: req.body.name || newTag.replace('site-', '').replace(/-/g, ' '),
     business_type: req.body.business_type || '',
     state: 'new',
     created_at: new Date().toISOString(),
+    interview_pending: autoInterviewEnabled === true,
+    interview_completed: false,
   };
   fs.writeFileSync(path.join(newSiteDir, 'spec.json'), JSON.stringify(spec, null, 2));
 
@@ -3859,6 +3864,7 @@ app.post('/api/interview/start', (req, res) => {
   if (mode === 'skip') {
     spec.interview_state = state;
     spec.interview_completed = true;
+    spec.interview_pending = false;
     spec.client_brief = {};
     writeSpec(spec);
     return res.json({ completed: true, client_brief: {}, message: 'Interview skipped' });
@@ -3903,6 +3909,7 @@ app.post('/api/interview/answer', (req, res) => {
 
   if (result.completed) {
     spec.interview_completed = true;
+    spec.interview_pending = false;
     spec.client_brief = result.client_brief;
     writeSpec(spec);
     return res.json({ completed: true, client_brief: result.client_brief });
@@ -3927,6 +3934,41 @@ app.get('/api/interview/status', (req, res) => {
     mode: spec.interview_state?.mode || null,
     current_index: spec.interview_state?.current_index ?? null,
     total: spec.interview_state?.questions?.length ?? null,
+  });
+});
+
+/**
+ * GET /api/interview/health
+ * Session 11 Fix 4: single endpoint that tells the Studio UI whether
+ * it should automatically prompt the user to start an interview. It
+ * combines the admin-level `auto_interview` setting, the per-site
+ * `interview_pending` flag, and the `shouldInterview()` helper so
+ * clients don't have to replicate the policy.
+ */
+app.get('/api/interview/health', (req, res) => {
+  const spec = readSpec();
+  const settings = loadSettings();
+  const auto = settings.auto_interview !== false;
+  if (!spec) {
+    return res.json({
+      auto_interview_enabled: auto,
+      should_prompt: false,
+      reason: 'no_active_site',
+    });
+  }
+  const pending = spec.interview_pending === true;
+  const needed = shouldInterview(spec);
+  const shouldPrompt = auto && pending && needed;
+  res.json({
+    auto_interview_enabled: auto,
+    interview_pending: pending,
+    interview_completed: !!spec.interview_completed,
+    should_prompt: shouldPrompt,
+    reason: !auto ? 'auto_disabled_by_admin'
+      : !pending ? 'not_flagged_pending'
+      : !needed ? 'already_built_or_completed'
+      : 'ready_to_prompt',
+    site_tag: spec.tag || null,
   });
 });
 
@@ -4545,6 +4587,7 @@ function loadSettings() {
     max_uploads_per_site: 100,
     auto_summary: true,
     auto_version: true,
+    auto_interview: true,
     max_versions: 50,
     hero_full_width: true,
     prod_sites_base: path.join(require('os').homedir(), 'famtastic-sites'),
