@@ -1,12 +1,16 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-09 (Session 9 — Anthropic SDK migration complete, Brain Adapter Pattern, 1,012 cumulative tests)
+**Last updated:** 2026-04-10 (Session 10 — OpenAI SDK, Brain Verifier, Tool Calling, Client Interview, Site #6, 1,183 cumulative tests)
 
 ---
 
 ## What FAMtastic Site Studio Is
 
-FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat. It differs from page builders like Squarespace or Wix in three ways: it produces standalone HTML files with no platform lock-in, it uses an AI-powered design brief and decision memory system that prevents cookie-cutter output across turns, and it generates all content via the Anthropic SDK (Session 9 migration complete — no more subprocess CLI dependency). Session 7 added multi-brain routing (Claude, Codex, Gemini), a universal context file (STUDIO-CONTEXT.md) injected into every brain at startup, and a modular research intelligence system with Pinecone-first caching. Session 8 renamed all cj-* scripts to fam-convo-*, implemented research calibration, fixed 7 known gaps, and produced the spawnClaude() migration map. Session 9 completed the Anthropic SDK migration: all 8 spawnClaude() call sites replaced with @anthropic-ai/sdk calls, Brain Adapter Pattern built (BrainInterface/ClaudeAdapter/GeminiAdapter/CodexAdapter/BrainAdapterFactory), api-telemetry module added for per-call cost tracking (writes to sites/<tag>/sdk-calls.jsonl), GET /api/telemetry/sdk-cost-summary endpoint added. spawnClaude() is now @deprecated — retained as emergency fallback in routeToBrainForBrainstorm() only (CS9). The system is currently single-user and localhost-only, built and operated by Fritz Medine.
+FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat.
+
+**Session 10 additions:** All three AI APIs verified live at startup (Claude, Gemini, OpenAI). CodexAdapter migrated from CLI subprocess to OpenAI SDK. Tool calling added to Claude (5 tools, `MAX_TOOL_DEPTH=3`). Client interview system captures brand intent before first build. Brain/Worker split UI with per-brain model selector. Site #6 built (Drop The Beat Entertainment).
+
+The system is currently single-user and localhost-only, built and operated by Fritz Medine.
 
 ---
 
@@ -14,49 +18,51 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 
 | Layer | Technology | Role |
 |-------|-----------|------|
-| AI Engine | Anthropic SDK (`@anthropic-ai/sdk`) | All HTML generation, design briefs, session summaries, image prompts use SDK API. Default model: `claude-sonnet-4-6`. Requires `ANTHROPIC_API_KEY`. `callSDK()` for non-streaming; `sdk.messages.stream()` for streaming (CS6, CS8). `claude --print` subprocess retained as @deprecated emergency fallback only. |
-| Secondary Brains | Gemini CLI + Codex CLI + Brain Adapter Pattern | `adapters/{brain}/fam-convo-get-{brain}` shell adapters for brainstorm routing. Brain Adapter Pattern (`BrainInterface`, `ClaudeAdapter`, `GeminiAdapter`, `CodexAdapter`) provides SDK-level multi-brain for Studio chat. Rate-limit auto-fallback: Claude → Codex → Gemini. |
-| Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~11,817 lines). |
-| Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html` (~7,100 lines). VS Code-inspired layout: left sidebar, tabbed canvas (Preview, Editable View, Images, Research, Compare, Intel), bottom CLI bar (Chat, Terminal, Codex), right sidebar. CSS: `public/css/` (7 files). JS: `public/js/` (brain-selector.js + others). |
-| CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties map from spec colors. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
-| Event Bus | Node.js EventEmitter | `site-studio/lib/studio-events.js` singleton with 10 namespaced events (added RESEARCH_UPDATED in S7, MODE_CHANGED in S9). Drives STUDIO-CONTEXT.md regeneration. |
-| Brain Adapter Pattern | `site-studio/lib/brain-interface.js` + adapters | `BrainInterface` maintains conversation history, injects context headers `[MODE: X] [SITE: x] [PAGE: x]`, routes to `ClaudeAdapter`/`GeminiAdapter`/`CodexAdapter`. `BrainAdapterFactory.create(brain)` returns the right adapter. Adapters in `lib/adapters/`. |
-| API Telemetry | `site-studio/lib/api-telemetry.js` | Per-call SDK cost tracking. `logAPICall()` writes to `sites/<tag>/sdk-calls.jsonl`. `calculateCost()` with rates per million tokens. `getSessionSummary()` for endpoint. |
+| AI Engine (Primary) | Anthropic SDK (`@anthropic-ai/sdk`) | All HTML generation, design briefs, session summaries, image prompts. Default model: `claude-sonnet-4-6`. `callSDK()` non-streaming; `sdk.messages.stream()` for streaming. `spawnClaude()` @deprecated — emergency fallback only. |
+| AI Engine (Secondary) | OpenAI SDK (`openai@^4`) via CodexAdapter | Chat + code tasks via `gpt-4o`. Multi-turn, streaming, tool calling. Requires `OPENAI_API_KEY`. |
+| AI Engine (Tertiary) | Google Generative AI (`@google/generative-ai`) via GeminiAdapter | Brainstorm and research. `gemini-2.5-flash`. Requires `GEMINI_API_KEY`. |
+| Brain Adapter Pattern | `BrainInterface` + adapters | Unified interface for Claude/Gemini/OpenAI. History, context headers, model override via `ws.brainModels`. Tool calling is Claude-only (Session 10 decision). |
+| Tool Calling | `lib/studio-tools.js` + `lib/tool-handlers.js` | 5 Anthropic-format tools for Claude: get_site_context, get_component_library, get_research, dispatch_worker, read_file. `MAX_TOOL_DEPTH=3`. read_file sandboxed to SITE_DIR. |
+| Client Interview | `lib/client-interview.js` | Pre-build Q&A: quick (5q) / detailed (10q) / skip. Persists `interview_state` → `client_brief` to spec.json. |
+| Brain Verifier | `lib/brain-verifier.js` | Startup API probes for all 3 APIs + Codex CLI. Results cached, served via `/api/brain-status`. |
+| Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~12,200 lines). |
+| Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html`. VS Code-inspired layout. Brain/Worker split panel. CSS: `public/css/` (8 files). JS: `public/js/` (brain-selector.js + others). |
+| CSS (generated sites) | Tailwind CSS via CDN + `assets/styles.css` | Zero build step. CSS custom properties from spec colors. STUDIO LAYOUT FOUNDATION block injected by post-processor. |
+| Event Bus | Node.js EventEmitter | `site-studio/lib/studio-events.js` singleton with 10 namespaced events. Drives STUDIO-CONTEXT.md regeneration. |
+| API Telemetry | `site-studio/lib/api-telemetry.js` | Per-call SDK cost tracking. `logAPICall()` writes to `sites/<tag>/sdk-calls.jsonl`. |
+| Cost Tracker | `site-studio/lib/api-cost-tracker.js` | `calculateCost(model, inputTokens, outputTokens)`. Rates for claude-sonnet, claude-haiku, gpt-4o, gpt-4o-mini, gemini-2.5-flash. `codex-cli` at $0. |
 | Brain Sessions | `site-studio/lib/brain-sessions.js` | `initBrainSessions()` auth probe at startup. `getOrCreateBrainSession()` for persistent multi-turn. `resetSessions()` on site switch. |
-| Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. Sections: title, timestamp, site, event, brief, state, ALL PAGES (new), components, vertical research, findings, tools, rules. 30s Pinecone cache (CONTEXT_CACHE). |
-| Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. `reinject(brain, tag, hubRoot)` called on brain switch. |
-| History Formatter | `site-studio/lib/history-formatter.js` | Per-brain history format (claude=JSON messages, gemini=Human/Assistant transcript, codex=### Prior conversation). Summarization always uses Claude. |
-| Research Registry | `site-studio/lib/research-registry.js` | 4 provider-agnostic research sources. `computeEffectivenessFromBuild()` auto-scores from build metrics. Effectiveness scoring persisted to `.local/research-effectiveness.json`. |
-| Research Router | `site-studio/lib/research-router.js` | Pinecone-first caching (configurable threshold, default 0.75), text-based upsertRecords (fallback to zero-vectors), 90-day staleness with background refresh via setImmediate, source selection, similarity score logging. `getThreshold()` reads from studio-config.json. |
-| WebSocket | `ws` 8.18 | Real-time bidirectional: chat, build progress, preview reload, brain-changed, brain-status, brain-fallback. |
-| File Upload | `multer` 2.1 | Image upload with drag-drop, paste, file picker. 5MB limit. SVG sanitization. |
-| Email | `nodemailer` 8.0 | Share deployed sites via SMTP. |
-| SMS | `twilio` 5.13, `@vonage/server-sdk` 3.26 | Server-side providers. Practical path uses macOS `sms:` URI. |
-| Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy`. Netlify tested and deployed. |
-| Testing | Node.js scripts | 884 tests across 15 suites (401 v3 engine + 328 Session 7 + 155 Session 8). |
+| Model Config | `site-studio/lib/model-config.json` | Canonical model registry: claude (provider + models map), gemini (model), openai (model + fallback). |
+| Worker Queue | `.worker-queue.jsonl` | `dispatch_worker` tool writes task entries. No consumer yet (Session 11). |
+| Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. 10 sections. |
+| Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. `reinject()` on brain switch. |
+| Research Registry | `site-studio/lib/research-registry.js` | 4 provider-agnostic research sources. Auto-effectiveness scoring from build metrics. |
+| Research Router | `site-studio/lib/research-router.js` | Pinecone-first caching, 90-day staleness, background refresh via `REQUERY_QUEUE`, source selection. |
+| WebSocket | `ws` 8.18 | Real-time: chat, build progress, preview reload, brain-changed, brain-status, brain-fallback, set-brain-model. |
+| Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy`. |
+| Testing | Node.js scripts | 1,183 tests across 19 suites. |
 | Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`. |
 | CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research` subcommands. |
-| Conversation State | JSONL | Per-site `conversation.jsonl` with rolling window (500 msgs, trims at 600+). |
-| Site State | JSON | `spec.json` (design brief, decisions, media specs, slot_mappings, content fields) + `.studio.json` (session state) + `blueprint.json` (per-page sections). |
-| MCP | stdio JSON-RPC | `mcp-server/server.js`. 4 tools: `list_sites`, `get_site_state`, `get_session_summary`, `suggest_tech_stack`. |
 
 ---
 
 ## End-to-End Pipeline
 
-**Step 1 — Launch.** `fam-hub site new <tag>` starts `server.js` on port 3334, opens browser, creates `sites/<tag>/`, writes initial `STUDIO-CONTEXT.md`, registers all 8 event listeners.
+**Step 1 — Launch.** `fam-hub site new <tag>` starts `server.js`, opens browser, creates `sites/<tag>/`, writes initial `STUDIO-CONTEXT.md`, probes all 3 APIs via `verifyAllAPIs()`.
 
-**Step 2 — Classification.** Message arrives over WebSocket. `classifyRequest()` checks for approved design brief. 12 `content_update` patterns checked first (highest precedence). Default fallback: `content_update`. Plan-gated intents: `layout_update`, `major_revision`, `restyle`, `build`, `restructure`.
+**Step 2 — (Optional) Client Interview.** `POST /api/interview/start` → Q&A session → `client_brief` stored in spec.json. Skippable. `shouldInterview()` returns false if site already built or interview completed.
 
-**Step 3 — Planning.** `handlePlanning()` calls `callSDK()` (3-min timeout, 8192 tokens, callSite=`planning-brief`). Claude returns `DESIGN_BRIEF` block. Stored in `spec.json`. Studio UI renders brief card: Build From Brief / Edit Brief / Skip to Build.
+**Step 3 — Classification.** Message arrives over WebSocket. Brain routing gate: if `currentBrain !== 'claude'` and non-build intent → `handleBrainstorm()`. Otherwise → `classifyRequest()`. 12 `content_update` patterns checked first. Default fallback: `content_update`. Plan-gated: `layout_update`, `major_revision`, `restyle`, `build`, `restructure`.
 
-**Step 4 — Build (Template-First).** User clicks "Build From Brief." `parallelBuild()`:
-1. **Template build:** `_template.html` — header, nav, footer, shared CSS.
-2. **Template extraction:** `writeTemplateArtifacts()` extracts `_partials/_nav.html`, `_partials/_footer.html`, `assets/styles.css`.
-3. **Parallel page builds:** ALL pages build in true parallel with template context.
-4. **Post-build:** `logAgentCall()`, emits `BUILD_COMPLETED` — STUDIO-CONTEXT.md regenerated.
+**Step 4 — Planning.** `handlePlanning()` → `callSDK()` (3-min timeout, 8192 tokens). Claude returns `DESIGN_BRIEF` block → `spec.json`. Studio UI renders brief card: Build From Brief / Edit Brief / Skip to Build.
 
-**Step 5 — Post-build pipeline.** `runPostProcessing()`:
+**Step 5 — Build (Template-First).** `parallelBuild()`:
+1. Template build: `_template.html` — header, nav, footer, shared CSS.
+2. Template extraction: `writeTemplateArtifacts()` → `_partials/_nav.html`, `_partials/_footer.html`, `assets/styles.css`.
+3. Parallel page builds (SDK) or sequential subprocess fallback when `ANTHROPIC_API_KEY` absent.
+4. Post-build: `logAgentCall()`, emits `BUILD_COMPLETED`.
+
+**Step 6 — Post-build pipeline.** `runPostProcessing()`:
 1. `extractAndRegisterSlots()` — scan `data-slot-id`
 2. `reapplySlotMappings()` — re-apply saved images
 3. `updateBlueprint()` + `injectSeoMeta()`
@@ -64,15 +70,15 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 5. `applyLogoV()`
 6. Layout path split (template-first vs legacy)
 7. `fixLayoutOverflow()` — STUDIO LAYOUT FOUNDATION
-8. `syncContentFieldsFromHtml(pages)` — populate `spec.content[page].fields[]`
+8. `syncContentFieldsFromHtml(pages)`
 
-**Step 6 — Build Verification.** `runBuildVerification(writtenPages)` — 5 zero-token file-based checks. Results in `spec.last_verification`.
+**Step 7 — Build Verification.** `runBuildVerification(writtenPages)` — 5 zero-token file-based checks.
 
-**Step 7 — Images.** "Add images" → `fill_stock_photos` → `scripts/stock-photo` per slot.
+**Step 8 — Images.** "Add images" → `fill_stock_photos` → `scripts/stock-photo` per slot.
 
-**Step 8 — Content Edit (Surgical).** `content_update` intent → `tryDeterministicHandler()` → cheerio replacement → `writeSpec()` → `mutations.jsonl` → emits `EDIT_APPLIED` — STUDIO-CONTEXT.md regenerated.
+**Step 9 — Content Edit (Surgical).** `content_update` intent → `tryDeterministicHandler()` → cheerio replacement → `writeSpec()` → `mutations.jsonl`.
 
-**Step 9 — Deploy.** `runDeploy()` → `scripts/site-deploy` → Netlify. Updates `spec.json`. Emits `DEPLOY_COMPLETED` — STUDIO-CONTEXT.md regenerated.
+**Step 10 — Deploy.** `runDeploy()` → `scripts/site-deploy` → Netlify.
 
 ---
 
@@ -80,117 +86,59 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 
 ### Core Engine
 
-**Request Classifier** — `classifyRequest(message, spec)`. 21+ intent types. 12 `content_update` patterns (highest precedence). Default fallback: `content_update`. Plan-gated: `layout_update`, `major_revision`, `restyle`, `build`, `restructure`.
+**Request Classifier** — `classifyRequest(message, spec)`. 12 `content_update` patterns (highest precedence). Default fallback: `content_update`. Plan-gated: `layout_update`, `major_revision`, `restyle`, `build`, `restructure`.
 
-**Content Data Layer** — `data-field-id` + `data-field-type` + `data-section-id` in all generated HTML. `spec.content[page].fields[]` populated by `syncContentFieldsFromHtml(pages)`. Surgical replacement via cheerio. `mutations.jsonl` logs every edit.
+**Brain Routing Gate** — Before classifier: when `currentBrain !== 'claude'` and non-build intent → `handleBrainstorm()` which routes to the selected brain. Fixes the "asked Gemini, got Claude" bug.
 
-**Component Skills System** — `.claude/skills/components/<type>/SKILL.md` auto-created/updated on export via `syncSkillFromComponent()`. Version tracking (1.0 → 1.1 → 1.2). CSS variable portability on import.
+**Content Data Layer** — `data-field-id` + `data-field-type` + `data-section-id` in all generated HTML. Surgical replacement via cheerio. `mutations.jsonl` logs every edit.
 
-**Multi-Agent Pipeline** — `logAgentCall()` writes to `agent-calls.jsonl`. `validateAgentHtml(html, page)` scores 0–100 (threshold 40). `POST /api/compare/generate-v2` Codex → Claude fallback.
+**Tool Calling (Claude-only)** — `ClaudeAdapter._executeBlocking()` handles `stop_reason === 'tool_use'` with recursive tool loop. `MAX_TOOL_DEPTH=3`. Tools: `get_site_context`, `get_component_library`, `get_research`, `dispatch_worker`, `read_file`. Gemini/OpenAI never receive tools.
 
-**Intelligence Loop** — `generateIntelReport()` reads all log data → `findings[]` with category/severity/title/description/recommendation.
+**Client Interview** — `lib/client-interview.js`. Quick (5q) / detailed (10q) / skip. State machine: strict question ordering. Persists to `spec.json`. `shouldInterview(spec)` gate. 3 API endpoints.
 
-**Planning Mode** — `handlePlanning()` → `design_brief` in spec.json → three-button UI.
+**Component Skills System** — `.claude/skills/components/<type>/SKILL.md` auto-created/updated on export. Version tracking.
 
-**Design Decisions Log** — `extractDecisions()`. Injected into every prompt.
+**Multi-Agent Pipeline** — `logAgentCall()` writes to `agent-calls.jsonl`. `validateAgentHtml()` scores 0–100. `POST /api/compare/generate-v2` Codex→Claude fallback.
 
-**Site Blueprint System** — `blueprint.json`. `updateBlueprint(writtenPages)` auto-extracts after build.
+**Intelligence Loop** — `generateIntelReport()` reads log data → `findings[]` with category/severity/title/recommendation.
 
-**Claude CLI Integration** — `spawnClaude()`. `claude --print --model <model> --tools ""`. Prompt via stdin. Runs from `os.tmpdir()`. All `CLAUDE_*` env vars stripped.
+### Three-Brain Ecosystem (Session 10)
 
-### Universal Context System (Session 7 — Phase 1)
+**Brain Verifier** — `lib/brain-verifier.js`. Probes all 3 APIs at startup. `verifyAllAPIs()` runs Claude/Gemini/OpenAI probes concurrently. Results cached. `GET /api/brain-status` serves cached state.
 
-**`studio-events.js`** — Singleton EventEmitter. 9 events: `session:started`, `site:switched`, `build:started`, `build:completed`, `edit:applied`, `component:inserted`, `deploy:completed`, `brain:switched`, `research:updated`. All hooks wired in `server.js`.
+**Brain/Worker Panel** — Two zones in sidebar:
+- **Brains** (API-backed, clickable): Claude / Gemini / OpenAI with provider colors (purple/blue/green). Per-brain model selector dropdown.
+- **Workers** (CLI-backed, display-only): claude-code / codex-cli / gemini-cli as `<span>` pills.
 
-**`studio-context-writer.js`** — `StudioContextWriter` class. Listens to all 8 events, regenerates `STUDIO-CONTEXT.md` on any event. 10 sections: title, timestamp, active site, event type, site brief, site state, component library, vertical research (Pinecone-first), intelligence findings, available tools, standing rules.
+**`ws.brainModels`** — Per-connection model overrides `{ claude, gemini, openai }`. Updated via `set-brain-model` WS message. `ClaudeAdapter._executeBlocking()` respects `ws.brainModels.claude` override.
 
-**`brain-injector.js`** — `BrainInjector` class. Claude: `@-include` block. Gemini/Codex: sidecar file `STUDIO-CONTEXT-<brain>.md`. Runs at server startup. `reinject(brain, tag, hubRoot)` called on every `BRAIN_SWITCHED` event to update sidecar for the new active brain.
+**`lib/model-config.json`** — Canonical model registry. `claude.models.site_generation: 'claude-sonnet-4-6'`, `gemini.model: 'gemini-2.5-flash'`, `openai.model: 'gpt-4o'`.
 
-**`GET /api/context`** — returns STUDIO-CONTEXT.md contents.  
-**`POST /api/context`** — triggers manual regeneration.
+### Universal Context System
 
-### Brain Router System (Session 7 — Phase 2)
+**`studio-events.js`** — Singleton EventEmitter. 10 events: `session:started`, `site:switched`, `build:started`, `build:completed`, `edit:applied`, `component:inserted`, `deploy:completed`, `brain:switched`, `research:updated`, `mode:changed`.
 
-**Brain state** (server.js module-level):
-```
-currentBrain: 'claude'
-BRAIN_LIMITS: { claude: {dailyLimit: null}, codex: {dailyLimit: 40}, gemini: {dailyLimit: 1500} }
-sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
-```
+**`studio-context-writer.js`** — Regenerates `STUDIO-CONTEXT.md` on any event. 10 sections including all-pages inventory.
 
-**`spawnBrainAdapter(brain, prompt)`** — spawns `adapters/{brain}/fam-convo-get-{brain}` via stdin using spawnSync.
+**`brain-injector.js`** — Claude: `@-include` block. Gemini/Codex: sidecar file. `reinject()` on brain switch.
 
-**`setBrain(brain, ws)`** — updates `currentBrain`, emits `BRAIN_SWITCHED`, broadcasts `brain-changed` to all WS clients.
+### Research Intelligence System
 
-**`routeToBrainForBrainstorm(prompt)`** — checks daily limit → rate-limit + auto-fallback if exceeded → routes to appropriate spawn function. Broadcasts `brain-fallback` with reason when fallback fires.
+**`research-registry.js`** — 4 sources (gemini_loop, build_patterns, manual, perplexity). Effectiveness scoring persisted to `.local/research-effectiveness.json`.
 
-**`handleBrainstorm` enhanced** — injects up to 80 lines of STUDIO-CONTEXT.md, routes via `routeToBrainForBrainstorm()`.
-
-**WS events:** `set-brain` → `setBrain()`. `get-brain-status` → returns current state.
-
-**REST endpoints:** `GET /api/brain`, `POST /api/brain`.
-
-**Brain Selector UI** — `studio-brain-selector.css` + `brain-selector.js` (IIFE module). Pill bar with status dots, cost badges, session message counts, fallback warning bar.
-
-**Known gap:** Build/content-edit paths still use `spawnClaude()` directly. Only brainstorm uses the brain router.
-
-### Setup Documentation (Session 7 — Phase 3)
-
-**`FAMTASTIC-SETUP.md`** — Disaster recovery doc at repo root. Covers: Quick Start, MCP Servers (7), Plugins (10), Env Vars (16), Accounts (11), Pinecone config, dependency versions, known gotchas, fam-hub commands, architecture overview.
-
-**`scripts/update-setup-doc`** — Auto-updates timestamp, hostname, Node/Python/uv/Claude versions, env var status. `--commit` flag for automated git commits.
-
-**`fam-hub research`** — New subcommand with 4 actions: `seed-from-sites`, `sources`, `effectiveness`, `query <vertical> "<question>"`.
-
-### Research Intelligence System (Session 7 — Phase 4)
-
-**`research-registry.js`** — `RESEARCH_REGISTRY` with 4 sources (gemini_loop, build_patterns, manual, perplexity). Effectiveness scoring persisted to `.local/research-effectiveness.json`. Exports: `RESEARCH_REGISTRY`, `saveEffectivenessScore`, `getEffectivenessReport`, `loadEffectivenessScores`.
-
-**`research-router.js`** — `queryResearch(vertical, question, options)`: Pinecone-first (configurable threshold via `studio-config.json`, default 0.75), 90-day staleness with background auto-refresh via `REQUERY_QUEUE` (single-worker, deduplicates by Set), text-based `upsertRecords()` (fallback to zero-vectors), source selection, similarity score logging. `rateResearch(source, vertical, score)`: validates 1–5. `selectSource(vertical, question, options)`: build_patterns → manual → gemini_loop → perplexity. `getThreshold()`: reads from `~/.config/famtastic/studio-config.json`. `REQUERY_QUEUE`: `{ pending: new Set(), processing: false }` — `enqueueRequery()` / `processRequeryQueue()` prevent parallel flood of background refresh calls.
-
-**`scripts/seed-pinecone`** — Seeds `famtastic-intelligence` Pinecone index from site specs and SITE-LEARNINGS.md. Exits 0 gracefully when `PINECONE_API_KEY` not set.
-
-**Research Sources Panel** (Intel tab) — `#research-sources-panel`, source cards with status/cost/bestFor, vertical dropdown, question input, query result display. `loadResearchSources()`, `runResearchQuery()`. Auto-loads when Intel tab opens.
-
-**Known gap:** All Pinecone vectors use placeholder zero-vectors. Real `text-embedding-3-small` embeddings required for semantic similarity.
-
-### Multi-Agent Pipeline (Session 7 — Phase 0 fixes)
-
-**ORIG_PROMPT export** — `scripts/agents` now exports `ORIG_PROMPT` before pipeline entry. All 3 adapters receive the original user prompt correctly.
-
-**HUB_ROOT path** — All 3 adapters (`adapters/claude/`, `adapters/gemini/`, `adapters/codex/`) now resolve `HUB_ROOT` from `SCRIPT_DIR/../../` (correct). Previously pointed to archived repo path.
-
-**fam-hub dispatcher fix** — `fam-hub agent run <agent> <tag>` now correctly assigns `AGENT=$3`, `TAG=$4` (was off by one).
-
-**fam-hub agent subcommands** — `status <tag>` and `logs <tag> [agent]` added.
-
-**`scripts/generate-latest-convo`** — Generates real stats from JSONL sources; replaces deleted static fake file.
-
-### Studio UI (VS Code Layout)
-
-**Canvas Tabs (6):**
-1. **Preview** — live preview iframe with page tabs, responsive toggle, slots overlay
-2. **Editable View** — rendered page with click-to-edit on `data-field-id` elements → popup → direct REST `POST /api/content-field` → 600ms reload
-3. **Images** — image browser with suggested query chips, shortlist sidebar, A/B compare pane, provider filter, slot selector
-4. **Research** — file list + markdown viewer + vertical trigger form + "Use as Brief" button
-5. **Compare** — side-by-side Claude vs Codex renders with sync scroll
-6. **Intel** — intelligence loop findings + research sources panel (Session 7: brain-aware query routing, Pinecone-first results)
-
-**CLI Tabs (3):** Chat, Terminal, Codex
-
-**Right Sidebar Tabs (8):** Assets, Blueprint, Deploy, Design, History, Metrics, Verify, Server
+**`research-router.js`** — Pinecone-first (configurable threshold, default 0.75), 90-day staleness with background refresh via `REQUERY_QUEUE` (single-worker, Set deduplication), text-based `upsertRecords()`.
 
 ---
 
 ## API Endpoints (Full)
 
-### v3 Engine Endpoints (Phases 0–5, 2026-04-09)
+### v3 Engine Endpoints
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| POST | `/api/sync-content-fields` | Scan HTML for data-field-id, populate spec.content[page].fields[] |
+| POST | `/api/sync-content-fields` | Scan HTML for data-field-id → spec.content[page].fields[] |
 | GET | `/api/content-fields/:page` | List all fields for a page |
-| POST | `/api/content-field` | Surgical field update (no AI), global cascade for phone/email/address/hours |
+| POST | `/api/content-field` | Surgical field update (no AI), global cascade |
 | POST | `/api/components/export` | Export component with version bump + skill sync |
 | GET | `/api/image-suggestions` | Contextual query chips from spec.design_brief |
 | POST | `/api/research/trigger` | Create vertical research stub (idempotent) |
@@ -199,32 +147,48 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 | POST | `/api/compare/generate-v2` | Codex→Claude fallback with HTML validation |
 | GET | `/api/agent/stats` | Aggregated agent-calls.jsonl metrics |
 | GET | `/api/agent/routing` | Intent→agent routing guide |
-| GET | `/api/intel/report` | Full intelligence report (findings + summary) |
+| GET | `/api/intel/report` | Full intelligence report |
 | GET | `/api/intel/findings` | Findings only with severity counts |
 | POST | `/api/intel/promote` | Promote finding to intelligence-promotions.json |
-| POST | `/api/intel/run-research` | Create dated research stub in docs/intelligence-reports/ |
+| POST | `/api/intel/run-research` | Create dated research stub |
 
-### Session 7 Endpoints (2026-04-09)
+### Session 7 Endpoints
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | GET | `/api/context` | Return STUDIO-CONTEXT.md contents |
 | POST | `/api/context` | Trigger manual context regeneration |
-| GET | `/api/brain` | Current brain state (currentBrain, BRAIN_LIMITS, sessionCounts) |
-| POST | `/api/brain` | Set active brain; triggers setBrain() + WS broadcast |
-| GET | `/api/research/sources` | All research sources from RESEARCH_REGISTRY |
-| GET | `/api/research/effectiveness` | Effectiveness report sorted by avg score |
-| POST | `/api/research/query` | Query research via queryResearch(vertical, question) |
-| POST | `/api/research/rate` | Rate a research result (score 1–5) |
+| GET | `/api/brain` | Current brain state |
+| POST | `/api/brain` | Set active brain |
+| GET | `/api/research/sources` | All research sources |
+| GET | `/api/research/effectiveness` | Effectiveness report |
+| POST | `/api/research/query` | Query research |
+| POST | `/api/research/rate` | Rate a research result |
 
-### Session 8 Endpoints (2026-04-09)
+### Session 8 Endpoints
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| GET | `/api/research/seed-status` | Returns Pinecone seed status (index name, vector count, last seeded) |
-| GET | `/api/research/threshold-analysis` | Returns current threshold, config key, calibration advice |
+| GET | `/api/research/seed-status` | Pinecone seed status |
+| GET | `/api/research/threshold-analysis` | Threshold calibration |
 
-**Route ordering rule:** `/api/research/sources`, `/api/research/effectiveness`, `/api/research/seed-status`, and `/api/research/threshold-analysis` must all be declared BEFORE `/api/research/:filename`. Same applies to `/api/research/verticals` (v3 engine).
+### Session 9 Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/telemetry/sdk-cost-summary` | SDK call cost summary per session |
+
+### Session 10 Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/brain-status` | Live API verification state for all 3 brains + Codex |
+| GET | `/api/worker-queue` | Current `.worker-queue.jsonl` entries |
+| POST | `/api/interview/start` | Start or resume client interview (mode: quick/detailed/skip) |
+| POST | `/api/interview/answer` | Submit answer, get next question or completion + client_brief |
+| GET | `/api/interview/status` | Current interview state snapshot |
+
+**Route ordering rule:** Static routes must be declared BEFORE parameterized routes of the same prefix. Specifically: `/api/research/sources`, `/api/research/verticals`, `/api/research/effectiveness`, `/api/research/seed-status`, `/api/research/threshold-analysis` must all appear before `/api/research/:filename`. Same for `/api/worker-queue` before any parameterized route.
 
 ---
 
@@ -235,71 +199,34 @@ sessionBrainCounts: { claude: 0, codex: 0, gemini: 0 }
 | Gap | Priority | Detail |
 |-----|----------|--------|
 | Revenue path (end-to-end) | Tier 1 | Client preview URL + payment (PayPal) + domain provisioning + approval flow. Studio runs on localhost — bridge to real product. |
-| Brain routing in build path | Tier 2 | Only brainstorm mode uses `routeToBrainForBrainstorm()`. Build/content-edit paths use Anthropic SDK (Claude only). Extending to non-Claude brains requires parsing HTML_UPDATE from GeminiAdapter/CodexAdapter. |
-| CS9 brainstorm routing still uses spawnClaude | Tier 2 | `routeToBrainForBrainstorm()` calls `spawnClaude()` for the claude brain path. Migrating requires `BrainInterface` integration into the brainstorm WS handler. |
-| initBrainSessions() probe is blocking | Tier 3 | Claude auth probe at Studio startup adds ~2-5s. Should fire-and-forget; update brain status via event when probe completes. |
-| Intelligence Loop — real Gemini research | Tier 2 | `POST /api/intel/run-research` creates stubs only. `scripts/gemini-cli` must be wired to populate them. |
-| Codex CLI non-functional | Tier 2 | `codex-cli` binary times out 100% of compare calls. `/api/compare/generate-v2` falls back to Claude every time. |
+| `client_brief` injection into build prompts | Tier 2 | Interview captures brief but it's not yet injected into planning or build prompts. Session 11. |
+| Worker queue consumer | Tier 2 | `.worker-queue.jsonl` has no process polling it. `dispatch_worker` tool queues tasks but nothing executes them. Session 11. |
+| Interview auto-trigger on `fam-hub site new` | Tier 2 | Interview module exists and works via API, but CLI doesn't prompt for interview on site creation. |
+| Detailed interview mode UI | Tier 3 | 10-question detailed mode works via API only — no UI exposure. |
+| Brain routing in build path | Tier 2 | Build/content-edit paths use Anthropic SDK (Claude only). Non-Claude brains only work for chat/brainstorm. |
+| initBrainSessions() probe is blocking | Tier 3 | Claude auth probe at startup adds ~2–5s. Should fire-and-forget. |
+| Intelligence Loop — real Gemini research | Tier 2 | `POST /api/intel/run-research` creates stubs only. `scripts/gemini-cli` not yet wired to populate them. |
 | Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. Required before 10-site milestone. |
 | Template upload mode | Tier 2 | Uploading pre-built templates for Studio to tweak vs generate from scratch. |
-| Connect button UI not wired | Tier 3 | `needs-auth` status is in `SESSION_STARTED` payload but brain selector UI doesn't show a Connect button for unauthenticated brains. |
-| GeminiAdapter key validation weak | Tier 3 | Checks `GEMINI_API_KEY` non-empty but doesn't probe for validity. Bad key won't be caught until first Gemini call. |
-| seed-pinecone --vertical flag | Tier 3 | `scripts/seed-pinecone` does not support `--vertical <name>`. Build-completion auto-seeding for specific verticals requires this. |
-| spawnBrainAdapter SDK migration | Tier 3 | Brain adapter spawning uses shell scripts (CS9 separate migration track). `GeminiAdapter` and `CodexAdapter` exist in `lib/adapters/` but brainstorm routing hasn't been wired to use them. |
-| Asset generate → insert | Tier 3 | SVG generation creates files but doesn't wire back to HTML slots. |
-| design_decisions unbounded | Tier 3 | `spec.design_decisions` array has no cap. |
+| Connect button UI not wired | Tier 3 | `needs-auth` status not surfaced in brain selector Connect button. |
+| Pinecone zero-vectors | Tier 3 | All Pinecone vectors use placeholder zero-vectors. Real `text-embedding-3-small` embeddings required for semantic similarity. |
+| seed-pinecone --vertical flag | Tier 3 | Add `--vertical <name>` to `scripts/seed-pinecone` for per-build auto-seeding. |
 | spec.json write not atomic | Tier 3 | Uses `fs.writeFileSync()` directly — no `.tmp` + rename. |
-| server.js decomposition | Tier 3 | ~11,662 lines. Plan: thin assembler + modules in lib/. |
-| library.json structure ambiguity | Tier 3 | Must read `.components` not root. Consider flattening. |
+| server.js decomposition | Tier 3 | ~12,200 lines. Plan: thin assembler + modules in lib/. |
 | Brainstorm recommendation chips | Tier 4 | Cherry-picking individual brainstorm suggestions not supported. |
-| SMS send path non-functional | Tier 4 | Twilio/Vonage configured; practical path uses macOS `sms:` URI. |
 
-### Closed This Session (2026-04-09 — Session 8)
+### Closed This Session (2026-04-10 — Session 10)
 
-- **cj-* naming scheme** — All 8 `cj-*` scripts renamed to `fam-convo-*`. Old paths replaced with deprecation shims. `fam-hub` dispatcher updated. Session 7 tests updated.
-- **Multi-turn history not brain-aware** — `site-studio/lib/history-formatter.js` added with per-brain format functions (claude=JSON messages array, gemini=Human/Assistant transcript, codex=### Prior conversation). Summarization always uses Claude regardless of active brain.
-- **Pinecone seed-status no endpoint** — `GET /api/research/seed-status` endpoint added.
-- **Pinecone threshold hardcoded** — `GET /api/research/threshold-analysis` endpoint added; `getThreshold()` reads from `studio-config.json` (key: `research.pinecone_threshold`, default 0.75).
-- **Context writer Pinecone re-queries every call** — CONTEXT_CACHE (module-level, 30s TTL) added to `studio-context-writer.js`. Invalidated on SITE_SWITCHED and BUILD_COMPLETED.
-- **Real Pinecone embeddings** — `pineconeUpsert()` updated to `upsertRecords([{id, text, ...}])` (text-based integrated embedding); `pineconeQuery()` updated to `searchRecords()`. Fallback to zero-vectors if SDK doesn't support text-based methods.
-- **BRAIN_SWITCHED sidecar re-injection** — `reinject(brain, tag, hubRoot)` added to `brain-injector.js`; called in `setBrain()` after `BRAIN_SWITCHED` event.
-- **Research effectiveness auto-scoring** — `computeEffectivenessFromBuild(source, vertical, buildMetrics)` added to `research-registry.js`. Wired to `BUILD_COMPLETED` in `server.js`.
-- **Effectiveness UI shows stars** — Research source cards now render effectiveness bar (0-100% progress bar) instead of static star prompt. Scores fetched in parallel with sources.
-- **update-setup-doc MCP table** — Auto-parse section added to `scripts/update-setup-doc`: runs `claude mcp list`, parses connected/failed, updates Status column for known MCPs.
-- **All-pages context missing from STUDIO-CONTEXT.md** — `buildAllPages()` function added to `studio-context-writer.js`. Extracts H1, data-section-id count, img count, last-modified per dist HTML file. Active page marked.
-- **90-day staleness auto-re-query** — `backgroundRefresh()` added to `research-router.js` using `setImmediate()`. Stale results returned immediately; fresh query runs in background. `RESEARCH_UPDATED` event emitted on completion.
-- **fam-hub verify-quickstart naming confusion** — Renamed to `fam-hub admin check-tools`. Help text clarifies "Does not verify Studio starts correctly." `verify-quickstart` shim redirects with deprecation warning to stderr.
-- **spawnClaude migration undocumented** — Complete migration map at `docs/spawn-claude-migration-map.md`. 8 call sites inventoried, SDK equivalents, risk levels, migration order, USE_SDK feature flag rollback plan.
-
-### Closed This Session (2026-04-09 — Session 9)
-
-- **SDK migration (spawnClaude → Anthropic SDK)** — All 8 `spawnClaude()` main-path call sites migrated to `@anthropic-ai/sdk`. `callSDK()` for non-streaming (CS1–CS5); `sdk.messages.stream()` for streaming (CS6/CS8); `sdk.messages.create()` for CS7. `spawnClaude()` marked `@deprecated`.
-- **Haiku fallback inline spawn** — Extracted to `runHaikuFallbackSDK()` using SDK stream. No longer an inline `spawn()` call.
-- **Multi-turn CLI limitation** — `BrainInterface` + `ClaudeAdapter` provide real SDK multi-turn via `conversationHistory` array (not prepended plaintext). GeminiAdapter uses `startChat({history})`. CodexAdapter uses messages array.
-- **Migration map defects (M1–M7)** — All 7 defects corrected in `docs/spawn-claude-migration-map.md`.
-- **No cost tracking for AI calls** — `api-telemetry.js` added. All 8 SDK call paths log with named `callSite` labels. `GET /api/telemetry/sdk-cost-summary` endpoint.
-
-### Closed This Session (2026-04-09 — Session 8 Addendum)
-
-- **`iterations_to_approval` signal in effectiveness scoring** — Removed; requires plan revision tracking infrastructure that doesn't exist. Weights rebalanced: `healthDelta × 0.6 + briefReuseRate × 0.4`.
-- **Parallel staleness refresh flood** — `setImmediate(() => backgroundRefresh(...))` replaced by `REQUERY_QUEUE`. Single-worker; Set deduplication. Both primary and legacy fallback paths updated.
-- **`verify-quickstart` naming confusion** — Renamed to `check-tools`; help text clarified; deprecation shim added.
-- **Multi-turn CLI limitation undocumented** — All 3 adapters now document best-effort multi-turn in comment. `.wolf/cerebrum.md` has `SUBPROCESS_CLI_MULTI_TURN` and `SUMMARIZATION_ALWAYS_CLAUDE` do-not-repeat entries.
-- **Conversation tags absent from adapter output** — All 3 adapters now include `tags:[]` in jq output. `fam-convo-tag` auto-tags assistant messages on reconcile.
-- **Migration map grep scope incomplete** — Search commands section and Manual Review Required section added to `docs/spawn-claude-migration-map.md`.
-
-### Closed Previous Session (2026-04-09 — Session 7)
-
-- **Multi-agent pipeline non-functional** — ORIG_PROMPT export, adapter path resolution, fam-hub off-by-one dispatcher all fixed. `fam-hub agent run claude site-foo` now routes correctly.
-- **No universal context for brains** — STUDIO-CONTEXT.md generated on every studio event; injected into all brains at startup.
-- **Brain routing in brainstorm** — `routeToBrainForBrainstorm()` routes brainstorm mode through brain selector with rate-limit enforcement and fallback chain.
-- **No setup/disaster recovery doc** — `FAMTASTIC-SETUP.md` created with full environment reference.
-- **No research intelligence** — `research-registry.js` + `research-router.js` + `seed-pinecone` + Research Sources panel built.
-- **fam-hub agent status/logs missing** — `fam-hub agent status <tag>` and `fam-hub agent logs <tag>` subcommands added.
+- **Codex CLI non-functional** — `CodexAdapter` fully rewrote from CLI subprocess to OpenAI SDK (`gpt-4o`). Multi-turn, streaming, tool calling enabled.
+- **CS9 brainstorm routing still subprocess** — Brain routing gate added: non-Claude brains now route to `handleBrainstorm()` for all non-build chat messages.
+- **GeminiAdapter key validation weak** — `brain-verifier.js` makes live API probe at startup; bad key caught immediately.
+- **Brain routing not extended to chat** — routing gate checks `currentBrain` before classifier for all non-build messages.
+- **No startup API health check** — `verifyAllAPIs()` now called at server start; `GET /api/brain-status` exposes results.
+- **No model-per-brain selection** — `ws.brainModels` per-connection state + per-brain model selector dropdown + `set-brain-model` WS handler.
 
 ### Previously Closed
 
-See CHANGELOG.md for sessions prior to 2026-04-09.
+See CHANGELOG.md for sessions prior to 2026-04-10.
 
 ---
 
@@ -311,7 +238,7 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 |------|---------|
 | `FAMTASTIC-VISION.md` | North star — empire model, scaling milestones, revenue path |
 | `FAMTASTIC-STATE.md` | This file — canonical technical snapshot |
-| `FAMTASTIC-SETUP.md` | Disaster recovery — Quick Start, MCP servers, env vars, dependencies, gotchas |
+| `FAMTASTIC-SETUP.md` | Disaster recovery — Quick Start, MCP servers, env vars, dependencies |
 | `SITE-LEARNINGS.md` | Authoritative technical reference — architecture notes, all sessions |
 | `CHANGELOG.md` | Chronological session summaries |
 
@@ -319,21 +246,27 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `site-studio/server.js` | ~11,817 | Main backend. Express + WebSocket. All classifier, content data layer, component skills, multi-agent, intel loop, brain router, universal context, research intelligence, image/research/deploy/compare endpoints. Anthropic SDK helpers: `getAnthropicClient()`, `callSDK()`, `runHaikuFallbackSDK()`. |
-| `site-studio/public/index.html` | ~7,100 | Single-file frontend. 6 canvas tabs. Brain selector pill bar. Research sources panel. All WS handlers. |
-| `site-studio/lib/studio-events.js` | — | Singleton EventEmitter + 10 event constants (incl. MODE_CHANGED) |
-| `site-studio/lib/brain-interface.js` | — | Universal Studio-to-Brain communication. Context header injection, conversation history, brain switching. |
-| `site-studio/lib/brain-adapter-factory.js` | — | `BrainAdapterFactory.create(brain)` → adapter instance. Unknown brain falls back to ClaudeAdapter. |
-| `site-studio/lib/adapters/claude-adapter.js` | — | Anthropic SDK. `execute()` + `executeStreaming()`. resetSilenceTimer per chunk. |
-| `site-studio/lib/adapters/gemini-adapter.js` | — | Google Generative AI. `startChat({history})`, `sendMessageStream()`. assistant→model role mapping. |
-| `site-studio/lib/adapters/codex-adapter.js` | — | OpenAI SDK. `gpt-4o`. messages array multi-turn. stream:true. |
+| `site-studio/server.js` | ~12,200 | Main backend. Express + WebSocket. Classifier, content layer, build, brain routing, tool calling, interview endpoints, universal context, research intelligence. |
+| `site-studio/public/index.html` | ~7,200 | Single-file frontend. Brain/Worker split panel. 6 canvas tabs. All WS handlers. |
+| `site-studio/lib/brain-verifier.js` | — | Startup API verification for Claude/Gemini/OpenAI/Codex. `verifyAllAPIs()`, `getBrainStatus()`. |
+| `site-studio/lib/model-config.json` | — | Canonical model registry: claude, gemini, openai. |
+| `site-studio/lib/studio-tools.js` | — | 5 Anthropic-format tools (Claude-only): get_site_context, get_component_library, get_research, dispatch_worker, read_file. |
+| `site-studio/lib/tool-handlers.js` | — | Tool dispatch + dependency injection + path traversal sandbox. `initToolHandlers()`, `handleToolCall()`. |
+| `site-studio/lib/client-interview.js` | — | Client interview engine. `startInterview()`, `recordAnswer()`, `getCurrentQuestion()`, `shouldInterview()`. |
+| `site-studio/lib/studio-events.js` | — | Singleton EventEmitter + 10 event constants. |
+| `site-studio/lib/brain-interface.js` | — | Universal Studio-to-Brain communication. Context headers, history, model override via `ws.brainModels`, tools Claude-only. |
+| `site-studio/lib/brain-adapter-factory.js` | — | `BrainAdapterFactory.create(brain)` → adapter. claude→ClaudeAdapter, gemini→GeminiAdapter, openai→CodexAdapter. |
+| `site-studio/lib/adapters/claude-adapter.js` | — | Anthropic SDK. Tool loop with `MAX_TOOL_DEPTH=3`. `execute()` + `executeStreaming()`. ws through params only. |
+| `site-studio/lib/adapters/gemini-adapter.js` | — | Google Generative AI. `startChat({history})`, `sendMessageStream()`. |
+| `site-studio/lib/adapters/codex-adapter.js` | — | OpenAI SDK. `gpt-4o`. messages array multi-turn. Real streaming with `include_usage`. |
 | `site-studio/lib/brain-sessions.js` | — | `initBrainSessions()` auth probe, `getOrCreateBrainSession()`, `resetSessions()`. |
-| `site-studio/lib/api-telemetry.js` | — | `logAPICall()`, `calculateCost()`, `getSessionSummary()`, `readSiteLog()`. Writes `sdk-calls.jsonl`. |
-| `site-studio/lib/studio-context-writer.js` | — | STUDIO-CONTEXT.md generator (event-driven, 10 sections) |
-| `site-studio/lib/brain-injector.js` | — | Per-brain context injection (Claude @-include, Gemini/Codex sidecar). `reinject()` on brain switch. |
-| `site-studio/lib/history-formatter.js` | — | Per-brain history format functions + Claude-based summarization (always Claude, regardless of active brain) |
-| `site-studio/lib/research-registry.js` | — | 4 research sources + effectiveness scoring. `computeEffectivenessFromBuild()` auto-scores from build metrics. |
-| `site-studio/lib/research-router.js` | — | Pinecone-first cache, source selection, call logging |
+| `site-studio/lib/api-telemetry.js` | — | `logAPICall()`, `calculateCost()`, `getSessionSummary()`. Writes `sdk-calls.jsonl`. |
+| `site-studio/lib/api-cost-tracker.js` | — | `logAPICall(provider, model, usage)`, `calculateCost(model, in, out)`. Rates for claude/gpt-4o/gpt-4o-mini/gemini/codex-cli. |
+| `site-studio/lib/studio-context-writer.js` | — | STUDIO-CONTEXT.md generator (event-driven, 10 sections). CONTEXT_CACHE 30s TTL. |
+| `site-studio/lib/brain-injector.js` | — | Per-brain context injection. `reinject()` on brain switch. |
+| `site-studio/lib/history-formatter.js` | — | Per-brain history format functions + Claude-based summarization. |
+| `site-studio/lib/research-registry.js` | — | 4 research sources + effectiveness scoring. |
+| `site-studio/lib/research-router.js` | — | Pinecone-first cache, source selection, REQUERY_QUEUE. |
 | `site-studio/public/css/studio-base.css` | — | Resets, layout, typography |
 | `site-studio/public/css/studio-panels.css` | — | Three-panel layout, resizers |
 | `site-studio/public/css/studio-chat.css` | — | Chat panel, messages, plan cards |
@@ -341,8 +274,8 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `site-studio/public/css/studio-modals.css` | — | Settings, upload, all modal dialogs |
 | `site-studio/public/css/studio-terminal.css` | — | Terminal panel and toolbar |
 | `site-studio/public/css/studio-canvas.css` | — | Canvas panes: editable view, images, research, compare, intel |
-| `site-studio/public/css/studio-brain-selector.css` | — | Brain selector pill bar, status dots, cost badges, fallback bar |
-| `site-studio/public/js/brain-selector.js` | — | BrainSelector IIFE module (select, sync, fallback display) |
+| `site-studio/public/css/studio-brain-selector.css` | — | Brain/Worker panel, provider colors, model selector, worker pills |
+| `site-studio/public/js/brain-selector.js` | — | `BrainSelector` IIFE: `init(ws)`, `select()`, `setModel()`, status polling |
 | `mcp-server/server.js` | 343 | MCP server. 4 tools via stdio JSON-RPC. |
 
 ### Test Suites
@@ -381,82 +314,111 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 
 | File | Tests | Coverage |
 |------|-------|----------|
-| `tests/session8-addendum-tests.js` | 54 | C1 embeddings order, C2 multi-turn docs, C3 iterations_to_approval removal, C4 REQUERY_QUEUE, C5 check-tools rename, C6 migration map grep scope, conversation tagging (functional) |
+| `tests/session8-addendum-tests.js` | 54 | Embeddings order, REQUERY_QUEUE, check-tools rename, conversation tagging |
 
 **Session 9 (174 tests):**
 
 | File | Tests | Coverage |
 |------|-------|----------|
-| `tests/session9-phase0-tests.js` | 40 | Migration map defect fixes (M1–M7), CS9 separate track, silence timer pattern, max_tokens, cost analysis |
-| `tests/session9-phase1-tests.js` | 60 | BrainAdapterFactory, adapter capabilities, BrainInterface, context headers, history, brain-sessions, api-telemetry, studio-events, ws.send guards, file existence |
-| `tests/session9-phase2-tests.js` | 39 | CS1–CS8 SDK migrations, callSDK, getAnthropicClient, @deprecated, sdk-cost-summary endpoint, resetBrainSessions |
-| `tests/session9-phase3-tests.js` | 35 | spawnClaude retirement, @deprecated, api-telemetry coverage, sdk-cost-summary, runHaikuFallbackSDK, migration map final statuses |
+| `tests/session9-phase0-tests.js` | 40 | Migration map defect fixes (M1–M7) |
+| `tests/session9-phase1-tests.js` | 60 | Brain Adapter Pattern, adapters, brain-sessions, api-telemetry |
+| `tests/session9-phase2-tests.js` | 39 | CS1–CS8 SDK migrations, sdk-cost-summary |
+| `tests/session9-phase3-tests.js` | 35 | spawnClaude retirement, @deprecated, final migration statuses |
 
-**Total: 1,012 tests, 1,012 passing.**
+**Session 9 Addendum (47 tests):**
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `tests/session9-addendum-tests.js` | 47 | Per-WS state, context header live reads, api-cost-tracker, adapter interface consistency |
+
+**Session 10 (124 tests):**
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `tests/session10-phase0-tests.js` | 33 | brain-verifier exports, API verification, CodexAdapter SDK, model-config, api-cost-tracker OpenAI rates |
+| `tests/session10-phase1-tests.js` | 12 | Brain/Worker UI HTML, CSS, brain routing gate, model selector, ws.brainModels |
+| `tests/session10-phase2-tests.js` | 31 | studio-tools definitions, tool-handlers injection, read_file sandbox, dispatch_worker queue |
+| `tests/session10-phase3-tests.js` | 48 | client-interview logic, modes, Q&A state machine, shouldInterview, API endpoints in server.js |
+
+**Total: 1,183 tests, 1,183 passing.**
 
 ### Key Functions
 
 | Function | File | Purpose |
 |----------|------|---------|
 | `classifyRequest()` | server.js | 12 content_update patterns; default fallback content_update |
-| `syncContentFieldsFromHtml(pages)` | server.js | Scan data-field-id → spec.content[page].fields[] |
-| `tryDeterministicHandler()` | server.js | Surgical content edits, no AI, logs agent=none |
-| `syncSkillFromComponent()` | server.js | Auto-create/update SKILL.md on component export |
-| `logAgentCall()` | server.js | Append-only agent-calls.jsonl with cost estimate |
-| `validateAgentHtml()` | server.js | Score HTML 0–100; threshold 40 |
-| `generateIntelReport()` | server.js | Read log data → findings[] + summary |
-| `getAnthropicClient()` | server.js | Lazy singleton Anthropic SDK client. Auto-reads ANTHROPIC_API_KEY. |
-| `callSDK(prompt, opts)` | server.js | Non-streaming SDK call with AbortController timeout + api-telemetry logging. |
-| `runHaikuFallbackSDK(prompt, ws, ...)` | server.js | SDK streaming fallback using claude-haiku model. Replaces inline Haiku spawn. |
-| `spawnClaude()` | server.js | @deprecated. Claude CLI subprocess. Retained as CS9 emergency fallback only. |
-| `spawnBrainAdapter()` | server.js | Spawn adapters/{brain}/fam-convo-get-{brain} via stdin |
-| `setBrain()` | server.js | Set currentBrain, emit BRAIN_SWITCHED, broadcast WS |
-| `routeToBrainForBrainstorm()` | server.js | Rate-limit check, fallback chain, brain dispatch |
+| `handleChatMessage()` | server.js | Primary SDK streaming handler. Brain routing gate checks currentBrain first. |
+| `handleBrainstorm()` | server.js | Routes to selected brain via `routeToBrainForBrainstorm()` |
+| `routeToBrainForBrainstorm()` | server.js | Rate-limit check, fallback chain, brain dispatch. Handles openai via EventEmitter-wrapped CodexAdapter. |
+| `parallelBuild()` | server.js | SDK parallel page builds + subprocess fallback + slug sanitizer + siteContext guard |
+| `verifyAllAPIs()` | lib/brain-verifier.js | Concurrent probe of all 3 APIs at startup |
+| `getBrainStatus()` | lib/brain-verifier.js | Returns cached verification results |
+| `startInterview()` | lib/client-interview.js | Initialize Q&A state (quick/detailed/skip) |
+| `recordAnswer()` | lib/client-interview.js | Validate, record, advance state machine |
+| `shouldInterview()` | lib/client-interview.js | Gate: false if completed/built/deployed/null spec |
+| `initToolHandlers()` | lib/tool-handlers.js | Inject server context (getSiteDir, readSpec, getTag, hubRoot) |
+| `handleToolCall()` | lib/tool-handlers.js | Dispatch tool invocation, enforce read_file sandbox |
+| `BrainInterface.execute()` | lib/brain-interface.js | Inject tools (Claude only), model from ws.brainModels, ws through options |
+| `ClaudeAdapter._executeBlocking()` | lib/adapters/claude-adapter.js | Tool loop with MAX_TOOL_DEPTH=3 recursion, ws through params |
+| `CodexAdapter.execute()` | lib/adapters/codex-adapter.js | OpenAI SDK chat.completions.create, streaming with include_usage |
+| `callSDK()` | server.js | Non-streaming SDK call with AbortController timeout + api-telemetry |
+| `runHaikuFallbackSDK()` | server.js | SDK streaming fallback with claude-haiku model |
+| `spawnClaude()` | server.js | @deprecated. Emergency fallback subprocess only. |
 | `StudioContextWriter` | lib/studio-context-writer.js | Regenerate STUDIO-CONTEXT.md on every studio event |
-| `BrainInjector` | lib/brain-injector.js | Inject context for Claude (@-include) or Gemini/Codex (sidecar) |
-| `queryResearch()` | lib/research-router.js | Pinecone-first query, source selection, upsert, logging |
-| `saveEffectivenessScore()` | lib/research-registry.js | Persist research rating to .local/research-effectiveness.json |
-| `loadResearchSources()` | index.html | Fetch /api/research/sources → render source cards |
-| `runResearchQuery()` | index.html | POST /api/research/query → show result + cache badge |
-| `BrainSelector.select()` | js/brain-selector.js | WS send set-brain, update pill UI |
+| `queryResearch()` | lib/research-router.js | Pinecone-first query, source selection |
+| `generateIntelReport()` | server.js | Read log data → findings[] + summary |
+| `getAnthropicClient()` | server.js | Lazy singleton Anthropic SDK client |
+| `hasAnthropicKey()` | server.js | `!!(process.env.ANTHROPIC_API_KEY && trim())` — truthy check only |
+| `syncContentFieldsFromHtml()` | server.js | Scan data-field-id → spec.content[page].fields[] |
+| `tryDeterministicHandler()` | server.js | Surgical content edits, no AI, logs agent=none |
 
 ### Scripts
 
 | File | Purpose |
 |------|---------|
 | `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research |
+| `scripts/gemini-cli` | Gemini API CLI (Node.js, calls gemini-generate.mjs, default gemini-2.5-flash) |
+| `scripts/lib/gemini-generate.mjs` | ESM: read stdin → Gemini API → stdout (avoids bash heredoc/pipe conflict) |
 | `scripts/orchestrator-site` | Batch site generation |
-| `scripts/gemini-cli` | Gemini API CLI |
-| `scripts/rembg-worker.py` | Background removal (Python API) |
 | `scripts/stock-photo` | 3-provider stock photo downloader |
 | `scripts/site-deploy` | Deploy to Netlify/Cloudflare/Vercel |
 | `scripts/asset-generate` | SVG asset pipeline |
 | `scripts/google-media-generate` | Imagen 4 / Veo 2 media generation |
 | `scripts/seed-pinecone` | Seed Pinecone index from site specs + SITE-LEARNINGS |
-| `scripts/update-setup-doc` | Auto-update FAMTASTIC-SETUP.md (versions, env vars) |
-| `scripts/fam-convo-compose` | Compose conversation (was cj-compose-convo — shim at old path) |
-| `scripts/fam-convo-reconcile` | Reconcile multi-agent conversation (was cj-reconcile-convo — shim at old path) |
-| `scripts/fam-convo-ingest` | Ingest conversation into JSONL (was cj-ingest — shim at old path) |
-| `scripts/fam-convo-promote` | Promote conversation to canonical (was cj-promote — shim at old path) |
-| `scripts/fam-convo-generate-latest` | Generate real agent stats from JSONL sources (was generate-latest-convo — shim at old path) |
-| `scripts/fam-convo-tag` | Auto-tag assistant messages in canonical conversation JSON (7 content-pattern tags via jq). Called non-blocking from fam-convo-reconcile. |
-| `adapters/claude/fam-convo-get-claude` | Claude multi-agent adapter (cj-get-convo-claude is a deprecation shim). Output includes `tags:[]`. |
-| `adapters/gemini/fam-convo-get-gemini` | Gemini multi-agent adapter (cj-get-convo-gemini is a deprecation shim). Output includes `tags:[]`. |
-| `adapters/codex/fam-convo-get-codex` | Codex multi-agent adapter (cj-get-convo-codex is a deprecation shim). Output includes `tags:[]`. |
+| `scripts/update-setup-doc` | Auto-update FAMTASTIC-SETUP.md |
+| `scripts/fam-convo-compose` | Compose conversation |
+| `scripts/fam-convo-reconcile` | Reconcile multi-agent conversation |
+| `scripts/fam-convo-ingest` | Ingest conversation into JSONL |
+| `scripts/fam-convo-promote` | Promote conversation to canonical |
+| `scripts/fam-convo-generate-latest` | Generate real agent stats from JSONL sources |
+| `scripts/fam-convo-tag` | Auto-tag assistant messages (7 content-pattern tags via jq) |
+| `adapters/claude/fam-convo-get-claude` | Claude multi-agent adapter |
+| `adapters/gemini/fam-convo-get-gemini` | Gemini multi-agent adapter (stdout fixed, log→stderr) |
+| `adapters/codex/fam-convo-get-codex` | Codex multi-agent adapter |
 
 ### Per-Site Files
 
 | File | Purpose |
 |------|---------|
 | `sites/<tag>/STUDIO-CONTEXT.md` | Universal context file — regenerated on every studio event |
-| `sites/<tag>/agent-calls.jsonl` | Per-call agent telemetry (multi-agent workflow) |
-| `sites/<tag>/sdk-calls.jsonl` | Per-call Anthropic SDK cost log (written by api-telemetry.js) |
+| `sites/<tag>/spec.json` | Design brief, decisions, content fields, media specs, deploy info, `client_brief`, `interview_state`, `interview_completed` |
+| `sites/<tag>/agent-calls.jsonl` | Per-call agent telemetry |
+| `sites/<tag>/sdk-calls.jsonl` | Per-call Anthropic SDK cost log |
 | `sites/<tag>/mutations.jsonl` | Field-level edit log |
 | `sites/<tag>/intelligence-promotions.json` | Promoted findings |
 | `sites/<tag>/research/<vertical>-research.md` | Per-vertical research stubs |
-| `sites/<tag>/spec.json` | Design brief, decisions, content fields, media specs, deploy info |
-| `.local/research-effectiveness.json` | Research source effectiveness scores (gitignored) |
-| `.local/research-calls.jsonl` | Research call log (gitignored) |
+| `.worker-queue.jsonl` | Worker dispatch queue (root of repo, shared across all sites) |
+| `.local/research-effectiveness.json` | Research source effectiveness scores |
+
+### Session 10 Docs
+
+| File | Purpose |
+|------|---------|
+| `docs/session10-master-report.md` | Session 10 master report — all phases, test counts, architecture changes, gaps |
+| `docs/session10-phase0-report.md` | Phase 0: API verification, CodexAdapter SDK, model-config |
+| `docs/session10-phase1-report.md` | Phase 1: Brain/Worker split UI, model selector |
+| `docs/session10-phase2-report.md` | Phase 2: Tool calling foundation |
+| `docs/session10-phase3-report.md` | Phase 3: Client interview system |
 
 ### OpenWolf Files
 
@@ -467,53 +429,31 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 | `.wolf/buglog.json` | tracked | Bug tracking across sessions |
 | `.wolf/memory.md` | ignored | Per-session action log (ephemeral) |
 
-### Session 7 Docs
-
-| File | Purpose |
-|------|---------|
-| `docs/session7-master-report.md` | Session 7 master report — all phases, test counts, file inventory |
-| `docs/session7-phase-0-report.md` | Phase 0: multi-agent skeleton fixes |
-| `docs/session7-phase-1-report.md` | Phase 1: universal context file |
-| `docs/session7-phase-2-report.md` | Phase 2: brain router UI |
-| `docs/session7-phase-3-report.md` | Phase 3: studio config file |
-| `docs/session7-phase-4-report.md` | Phase 4: research intelligence system |
-
-### Session 8 Docs
-
-| File | Purpose |
-|------|---------|
-| `docs/session8-master-report.md` | Session 8 master report — all phases + addendum, test counts, file inventory |
-| `docs/session8-phase-0-report.md` | Phase 0: cj-* → fam-convo-* rename + deprecation shims |
-| `docs/session8-phase-1-report.md` | Phase 1: Codex adversarial findings (C1–C7) |
-| `docs/session8-phase-2-report.md` | Phase 2: Session 7 known gaps (G1–G7) |
-| `docs/session8-phase-3-report.md` | Phase 3: spawnClaude() migration map |
-| `docs/spawn-claude-migration-map.md` | spawnClaude() → Anthropic SDK migration map. Phase 0 corrected 7 defects. Phase 3 updated with final ✅/🔄/⚠️ statuses for all call sites. |
-
-### Session 9 Docs
-
-| File | Purpose |
-|------|---------|
-| `docs/session9-master-report.md` | Session 9 master report — all phases, test counts, architecture changes, gaps |
-| `docs/session9-phase-1-report.md` | Phase 1: Brain Adapter Pattern (60/60 tests) |
-
 ---
 
 ## Developer Environment
 
 ### Runtime
 
-- Server starts with `SITE_TAG=<tag> node site-studio/server.js`
+- Server starts with `source ~/.zshrc && node site-studio/server.js` (keys must be in env)
 - Runtime site variable is `TAG` (mutable, changes on site switch) — NOT `process.env.SITE_TAG`
-- Any function reading current site must use `TAG`, `SITE_DIR()`, `DIST_DIR()`, etc. — never the env var directly
-- Express route ordering: static routes must be declared BEFORE parameterized routes of the same prefix
-  - `/api/research/sources` before `/api/research/:filename`
-  - `/api/research/verticals` before `/api/research/:filename`
+- Any function reading current site must use `TAG`, `SITE_DIR()`, `DIST_DIR()`, etc.
+- Express route ordering: static routes BEFORE parameterized routes of same prefix
+- Brain routing gate fires before classifier — check `currentBrain` before any intent logic
 
-### Security Constraint
+### Security Constraints
 
-- Pre-tool hook blocks shell-injection-prone child process APIs (execSync, shell-mode exec)
-- Use `spawnSync` with argument arrays for all child process calls in server.js and lib/ files
+- Pre-tool hook blocks shell-injection-prone child process APIs
+- Use `spawnSync` with argument arrays for all child process calls
+- `read_file` tool: path.resolve + startsWith(siteRoot + sep) check — mandatory
 - Never concatenate user input into shell strings
+
+### Tool Calling Constraints (Session 10)
+
+- Tools are Claude-only. `BrainInterface.execute()` passes empty `[]` for Gemini/OpenAI
+- `MAX_TOOL_DEPTH = 3` — hard limit; returns error message if exceeded
+- `ws` parameter flows through the call chain (never `this.ws = ws`)
+- `model` override from `ws.brainModels` respected in `ClaudeAdapter._executeBlocking()`
 
 ### OpenWolf
 
@@ -527,6 +467,7 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 |------|-----|-------|-------------|
 | The Best Lawn Care | https://the-best-lawn-care.netlify.app | 7 | 2026-03-20 |
 | Auntie Gale's Garage Sales | https://effortless-tiramisu-ed9345.netlify.app | 5 | 2026-04-08 |
+| Drop The Beat Entertainment | built, not deployed | 3 | 2026-04-10 |
 
 ---
 
@@ -534,33 +475,33 @@ See CHANGELOG.md for sessions prior to 2026-04-09.
 
 > Full strategic vision lives in `FAMTASTIC-VISION.md`.
 
-### Tier 1 — Revenue Path (Build This First)
+### Tier 1 — Revenue Path
 
-End-to-end transaction flow: site build → client preview URL → payment (PayPal) → domain provisioning (GoDaddy reseller) → live recurring-revenue product.
+End-to-end transaction: site build → client preview URL → payment → domain provisioning → live product.
 
-### Tier 2 — SDK Migration (Session 9)
+### Tier 2 — Wire client_brief into Build Prompts (Session 11)
 
-Migrate `spawnClaude()` to Anthropic SDK (`@anthropic-ai/sdk`). Migration map at `docs/spawn-claude-migration-map.md`. 8 call sites, ordered simplest-first (Scope Estimation → Image Prompt → Session Summary → Planning → Data Model → Template Build → Parallel Build → Chat Handler). USE_SDK feature flag for rollback. Extract Haiku fallback to shared function before migrating Call Site 8.
+`spec.json.client_brief` is captured but not injected into planning or build prompts. Wire it in `handlePlanning()` and `parallelBuild()`. Also: interview auto-trigger on `fam-hub site new`.
 
-### Tier 3 — Extend Brain Router to Build Path
+### Tier 3 — Worker Queue Consumer (Session 11)
 
-`routeToBrainForBrainstorm()` only covers brainstorm mode. Extend to full builds + content edits. Requires parsing HTML_UPDATE responses from Gemini and Codex adapters.
+`dispatch_worker` writes to `.worker-queue.jsonl` but nothing processes it. Build a polling worker that reads entries and executes them (e.g., via Claude Code subprocess or Codex API).
 
-### Tier 4 — Fix Codex CLI
+### Tier 4 — Extend Brain Router to Build Path
 
-`codex-cli` times out 100% of compare calls. Investigate or replace with Codex API endpoint.
+Build/content-edit paths currently Claude-only. Extending to Gemini/OpenAI requires parsing HTML_UPDATE from those adapters.
 
 ### Tier 5 — Platform Dashboard
 
 No multi-site management UI beyond CLI. Required before 10-site milestone.
 
-### Tier 6 — Wire Intelligence Loop to Gemini
+### Tier 6 — Real Gemini Research
 
 `POST /api/intel/run-research` creates stubs only. Wire `scripts/gemini-cli` to populate them.
 
 ### Tier 7 — seed-pinecone --vertical Flag
 
-Add `--vertical <name>` flag to `scripts/seed-pinecone` so `BUILD_COMPLETED` can auto-seed for the specific vertical just built. Currently the effectiveness score hook fires but full Pinecone auto-seed is not triggered per-vertical.
+Add `--vertical <name>` to `scripts/seed-pinecone` for per-build auto-seeding of the specific vertical just built.
 
 ### Tier 8 — Factory Expansion
 

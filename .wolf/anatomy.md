@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T15:23:48.680Z
-> Files: 444 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T16:37:40.264Z
+> Files: 452 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -11,6 +11,9 @@
 ## ../../../tmp/
 
 - `session7-plan.md` — FAMtastic Site Studio — Session 7 Prompt (~3122 tok)
+- `ws-build.js` — Declares WebSocket (~1028 tok)
+- `ws-build2.js` — WebSocket: sendBuildMessage (~1476 tok)
+- `ws-build3.js` — WebSocket: finish (~1185 tok)
 
 ## ../.claude/
 
@@ -43,7 +46,7 @@
 - `CHANGELOG.md` — FAMtastic Changelog (~12766 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~11043 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~8320 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
@@ -456,8 +459,10 @@
 - `random-idea.draft.md` — Random Shower Thought (~120 tok)
 - `RECONCILED-CALL-SITES.md` — RECONCILED-CALL-SITES.md (~1539 tok)
 - `resume-amazon.md` — Resume Optimization for Amazon Position (~110 tok)
+- `session10-master-report.md` — Session 10 Master Report (~3411 tok)
 - `session10-phase1-report.md` — Session 10 Phase 1 Report — Brain/Worker Split Selector (~1265 tok)
 - `session10-phase2-report.md` — Session 10 — Phase 2 Report: Tool Calling Infrastructure (~867 tok)
+- `session10-phase3-report.md` — Session 10 Phase 3 — Client Interview System MVP (~1251 tok)
 - `session7-master-report.md` — Session 7 — Master Report (~2228 tok)
 - `session7-phase-0-report.md` — Session 7 Phase 0 Report — 2026-04-09 (~1383 tok)
 - `session7-phase-1-report.md` — Session 7 — Phase 1 Report: Universal Context File (~1319 tok)
@@ -578,7 +583,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~220 tok)
-- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~150590 tok)
+- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~152610 tok)
 - `vitest.config.js` (~33 tok)
 
 ## site-studio/lib/
@@ -589,6 +594,7 @@
 - `brain-injector.js` — brain-injector.js — Injects STUDIO-CONTEXT.md into each brain's session (~1486 tok)
 - `brain-interface.js` — BrainInterface — the universal Studio-to-Brain communication layer. (~2173 tok)
 - `brain-sessions.js` — brain-sessions.js — Brain authentication and session management. (~1563 tok)
+- `client-interview.js` — Client Interview System — Phase 3 (~1907 tok)
 - `haiku-fallback.js` — haiku-fallback.js — SDK-based Haiku fallback for silence timeouts. (~777 tok)
 - `history-formatter.js` — history-formatter.js — Per-brain conversation history formatting (~1136 tok)
 - `media-telemetry.js` — media-telemetry.js — Append-only telemetry log for all AI media operations. (~3084 tok)
@@ -705,6 +711,10 @@
 
 - `.studio.json` (~416 tok)
 
+## sites/site-drop-the-beat/
+
+- `spec.json` (~1232 tok)
+
 ## sites/site-lawn-company/
 
 - `.studio.json` (~152 tok)
@@ -779,6 +789,7 @@
 - `session10-phase0-tests.js` — Session 10 Phase 0 Tests — OpenAI SDK Integration + Brain Verifier (~3111 tok)
 - `session10-phase1-tests.js` — session10-phase1-tests.js — Brain/Worker Split Selector (~1348 tok)
 - `session10-phase2-tests.js` — session10-phase2-tests.js — Phase 2 verification tests. (~2731 tok)
+- `session10-phase3-tests.js` — Session 10 Phase 3 Tests — Client Interview System MVP (~2703 tok)
 - `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
 - `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4055 tok)
 - `session4-visual-tests.js` — Session 4 — Visual Quality Tests (~4620 tok)

@@ -2679,3 +2679,347 @@ All adapters have `execute(message, options)` and `executeStreaming(message, opt
 **`tests/session9-addendum-tests.js`** — 47/47 PASS. Covers all 6 corrections including unit tests of context header behavior with mock adapters and ws integration tests.
 
 **Cumulative: 1,059 tests.**
+
+---
+
+## Session 10 (2026-04-10) — OpenAI SDK + Brain Verifier + Tool Calling + Client Interview
+
+### Overview
+
+Session 10 completed three infrastructure tracks and added a product feature:
+1. Three-brain SDK ecosystem verified live at startup (`brain-verifier.js`)
+2. Tool calling foundation for Claude (5 tools, `MAX_TOOL_DEPTH=3`)
+3. Client interview system (captures brand intent before first build)
+4. Site #6 built: Drop The Beat Entertainment (South Florida mobile DJ)
+
+**Cumulative tests: 1,183 (1,059 prior + 124 this session)**
+
+---
+
+### Phase 0 — API Verification + OpenAI SDK Migration
+
+#### `lib/brain-verifier.js`
+
+Probes all three APIs concurrently at server startup. Results cached in `_results`.
+
+```javascript
+// Exports
+verifyAllAPIs()   // → { claude, gemini, openai, codex } — each { status, model, error }
+getBrainStatus()  // → same cached object (no re-probe)
+verifyClaudeAPI() // individual probe (Anthropic SDK messages.create)
+verifyGeminiAPI() // individual probe (generateContent('ping'))
+verifyOpenAIAPI() // individual probe (chat.completions.create)
+verifyCodexCLI()  // checks OPENAI_API_KEY presence + SDK instantiation
+```
+
+Called at startup: `verifyAllAPIs().then(r => console.log('[brain-verifier] ...'))`.  
+Returns within 5–10 seconds; non-blocking.
+
+#### `GET /api/brain-status`
+
+Returns cached verification state. Used by `brain-selector.js` polling every 30s.
+
+```json
+{
+  "claude":  { "status": "connected", "model": "claude-sonnet-4-6", "error": null },
+  "gemini":  { "status": "connected", "model": "gemini-2.5-flash",  "error": null },
+  "openai":  { "status": "connected", "model": "gpt-4o",            "error": null },
+  "codex":   { "status": "connected", "model": "gpt-4o",            "note": "OpenAI SDK", "error": null },
+  "timestamp": "2026-04-10T..."
+}
+```
+
+#### `lib/model-config.json`
+
+Canonical model registry. Keys: `claude`, `gemini`, `openai`. Each has `provider` and `model`.
+
+```json
+{
+  "claude": { "provider": "anthropic", "models": { "site_generation": "claude-sonnet-4-6", "chat": "claude-haiku-4-5-20251001" } },
+  "gemini": { "provider": "google",    "model": "gemini-2.5-flash" },
+  "openai": { "provider": "openai",    "model": "gpt-4o", "fallback": "gpt-4o-mini" }
+}
+```
+
+#### CodexAdapter — CLI → OpenAI SDK
+
+Full rewrite. No subprocess. Requires `OPENAI_API_KEY`.
+
+```javascript
+const CodexAdapter = class {
+  // this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  // capabilities: { multiTurn:true, streaming:true, toolCalling:true, vision:true, maxTokens:16000 }
+  // execute(message, opts) — uses chat.completions.create
+  // _executeStreaming() — stream_options: { include_usage: true } for logAPICall
+}
+module.exports = { CodexAdapter };
+```
+
+`brain-adapter-factory.js` maps `'openai'` → `CodexAdapter`.
+
+#### Brain routing gate
+
+Before the classifier in the WebSocket `message` handler:
+
+```javascript
+// When non-Claude brain is active and intent is not build/plan-gated,
+// route to brainstorm handler (which uses the selected brain)
+if (currentBrain !== 'claude' && intent !== 'build') {
+  return handleBrainstorm(ws, message, ...);
+}
+```
+
+This was the root cause of the "asked was this Gemini, it answered Claude" bug. Fixed.
+
+#### `ws.brainModels`
+
+Per-connection model selection state, initialized on WS connect:
+
+```javascript
+ws.brainModels = { claude: 'claude-sonnet-4-6', gemini: 'gemini-2.5-flash', openai: 'gpt-4o' };
+```
+
+Updated via `set-brain-model` WS message: `{ type: 'set-brain-model', brain: 'claude', model: 'claude-haiku-4-5-20251001' }`.
+
+#### gemini-cli rewrite
+
+Rewrote from Python to Node.js:
+- `scripts/gemini-cli` — bash script that calls `scripts/lib/gemini-generate.mjs` via `node`
+- `scripts/lib/gemini-generate.mjs` — ESM module: reads stdin via readline, calls `@google/generative-ai`, writes to stdout
+
+Why ESM? Avoids bash heredoc + `echo` pipe conflict with stdin. Node readline properly reads piped data.
+
+`fam-convo-get-gemini` fix: added `printf '%s\n' "$RESP"` before JSONL append; moved `[gemini:get]` log to stderr.
+
+---
+
+### Phase 1 — Brain/Worker Split UI
+
+#### `.brain-worker-panel` HTML structure
+
+```html
+<div class="brain-worker-panel">
+  <div class="brain-section">
+    <button class="brain-btn active" data-brain="claude">Claude</button>
+    <button class="brain-btn" data-brain="gemini">Gemini</button>
+    <button class="brain-btn" data-brain="openai">OpenAI</button>
+  </div>
+  <div class="worker-section">
+    <span class="worker-pill">claude-code</span>
+    <span class="worker-pill">codex-cli</span>
+    <span class="worker-pill">gemini-cli</span>
+  </div>
+</div>
+```
+
+Brain buttons are clickable and send `set-brain` WS message.  
+Worker spans are display-only — show CLI tools available, not selectable.
+
+#### Per-brain model selector
+
+Each brain button has a sibling `<select class="brain-model-selector">`. When user picks a model, JS sends:
+`{ type: 'set-brain-model', brain: 'claude', model: 'claude-haiku-4-5-20251001' }`.
+
+Server updates `ws.brainModels[brain]` for that connection.
+
+#### `brain-selector.js` IIFE
+
+```javascript
+const BrainSelector = (() => {
+  function init(ws)             // attach to WS, fetch initial status
+  function select(brain)        // WS send set-brain, update pill UI
+  function setModel(brain, model, el) // WS send set-brain-model
+  function getBrainModels()     // return current ws.brainModels snapshot
+  function _fetchAPIStatus()    // GET /api/brain-status → update status dots
+})();
+```
+
+---
+
+### Phase 2 — Tool Calling Foundation
+
+**DECISION:** Tool calling is Claude-only (Session 10). Gemini/OpenAI tool format translation deferred to Session 12. Do not pass `STUDIO_TOOLS` to `GeminiAdapter` or `CodexAdapter`.
+
+#### `lib/studio-tools.js`
+
+5 tools in Anthropic input_schema format:
+
+| Tool | What it returns |
+|------|----------------|
+| `get_site_context` | tag, site_name, business_type, page count, spec state, current page |
+| `get_component_library` | array of `{ name, description, category }` |
+| `get_research` | markdown content of research file for active vertical |
+| `dispatch_worker` | queues task to `.worker-queue.jsonl`, returns `{ status: 'queued', worker, task_id }` |
+| `read_file` | reads file from SITE_DIR (sandboxed), truncates at 50KB |
+
+```javascript
+const { STUDIO_TOOLS } = require('./studio-tools');
+// STUDIO_TOOLS is an array of Anthropic-format tool definitions
+```
+
+#### `lib/tool-handlers.js`
+
+```javascript
+// Dependency injection (called from server.js at startup)
+initToolHandlers({ getSiteDir, readSpec, getTag, hubRoot })
+
+// Dispatch
+handleToolCall(toolName, toolInput, ws)   // → result object
+
+// Internals
+readSiteFile(filePath)         // path traversal prevention
+dispatchToClaudeCode(task, context)  // append to .worker-queue.jsonl
+```
+
+**Path traversal prevention in `read_file`:**
+```javascript
+const siteRoot = path.resolve(_getSiteDir());
+const requestedPath = path.resolve(siteRoot, filePath);
+if (!requestedPath.startsWith(siteRoot + path.sep)) {
+  return { error: 'Access denied — path must be within the current site directory' };
+}
+```
+
+#### `.worker-queue.jsonl`
+
+Worker dispatch queue at `~/famtastic/.worker-queue.jsonl`. Each entry:
+```json
+{ "timestamp": "...", "worker": "claude-code", "task": "...", "context": {}, "task_id": "...", "status": "queued" }
+```
+
+No worker process is polling this file yet — deferred to Session 11.
+
+#### ClaudeAdapter tool loop
+
+`_executeBlocking(messages, maxTokens, tools, depth=0, ws=null, model=null)`:
+
+```javascript
+const MAX_TOOL_DEPTH = 3; // circuit breaker
+if (depth >= MAX_TOOL_DEPTH) return { content: 'I reached the maximum number of tool calls...', depth_limit_reached: true };
+
+// After API call:
+if (response.stop_reason === 'tool_use') {
+  const toolResults = [];
+  for (const block of response.content) {
+    if (block.type === 'tool_use') {
+      const result = await handleToolCall(block.name, block.input, ws); // ws through params only
+      toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) });
+    }
+  }
+  // Recurse with depth+1
+  return this._executeBlocking(
+    [...messages, {role:'assistant',content:response.content}, {role:'user',content:toolResults}],
+    maxTokens, tools, depth+1, ws, model
+  );
+}
+```
+
+**Critical:** `ws` flows through parameter chain. Never `this.ws = ws`.
+
+#### BrainInterface tools gate
+
+```javascript
+const tools = (this.brain === 'claude' && (options.mode === 'build' || options.mode === 'brainstorm'))
+  ? require('../studio-tools').STUDIO_TOOLS
+  : [];
+// Gemini/OpenAI always get empty tools array
+```
+
+---
+
+### Phase 3 — Client Interview System
+
+#### `lib/client-interview.js`
+
+```javascript
+startInterview(mode)         // 'quick' | 'detailed' | 'skip'
+recordAnswer(state, qId, answer)  // returns { state, nextQuestion, completed, client_brief }
+getCurrentQuestion(state)    // resume support — doesn't advance
+shouldInterview(spec)        // false if completed, built, deployed, or null
+buildClientBrief(state, questions)  // synthesizes answers → brief object
+QUICK_QUESTIONS              // 5 question definitions
+DETAILED_QUESTIONS           // 10 question definitions (extends quick)
+```
+
+**Question state machine:**
+- State machine is strict: `recordAnswer()` validates `questionId === state.questions[state.current_index]`
+- Wrong question ID throws `Error('Question mismatch: expected "X", got "Y"')`
+- State persisted to `spec.interview_state` after every answer
+
+#### spec.json fields
+
+```json
+{
+  "interview_state": {
+    "mode": "quick",
+    "started_at": "...",
+    "completed_at": null,
+    "questions": ["q_business", "q_customer", "q_differentiator", "q_cta", "q_style"],
+    "answers": { "q_business": "..." },
+    "current_index": 1,
+    "completed": false
+  },
+  "interview_completed": true,
+  "client_brief": {
+    "generated_at": "...",
+    "interview_mode": "quick",
+    "business_description": "...",
+    "ideal_customer": "...",
+    "differentiator": "...",
+    "primary_cta": "...",
+    "style_notes": "..."
+  }
+}
+```
+
+#### API Endpoints
+
+```
+POST /api/interview/start    { mode? }  → { question, mode } or { completed, client_brief }
+POST /api/interview/answer   { question_id, answer }  → { question } or { completed, client_brief }
+GET  /api/interview/status   → { interview_completed, client_brief, in_progress, mode, current_index, total }
+```
+
+Resume behavior: if `spec.interview_state` exists and is not completed, `/start` returns `{ resumed: true, question, mode }` without resetting state.
+
+---
+
+### Phase 4B — parallelBuild fixes
+
+Three bugs found during Site #6 build:
+
+**Bug 1: Slug sanitizer for `must_have_sections` page names**
+
+`must_have_sections` strings like "Contact/Booking Form" contain `/` and `()`. Without sanitization, `fs.writeFileSync(path.join(DIST_DIR(), 'contact/booking-form.html'))` tries to write into a non-existent subdirectory.
+
+Fix:
+```javascript
+const safe = p.replace(/\(.*?\)/g, '').replace(/[\/\\]/g, '-').replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+const slug = safe.replace(/\s+/g, '-').toLowerCase().replace(/-+/g, '-').replace(/(^-|-$)/g, '');
+const finalSlug = slug.length > 30 ? slug.split('-').slice(0, 2).join('-') : slug;
+return finalSlug + '.html';
+```
+
+**Bug 2: parallelBuild subprocess fallback missing**
+
+`parallelBuild()` only had the `hasAnthropicKey()` SDK path. No fallback when key absent. Added sequential subprocess build loop (same pattern as single-page path) that iterates `pageFiles`, calls `spawnClaude(pagePrompt)`, collects results, then calls `finishParallelBuild()`.
+
+**Bug 3: siteContext IIFE undefined variable**
+
+`siteContext` template literal (shared across all pages) contained an IIFE referencing `page` — a variable only defined per-page inside `spawnPage()`. Fixed by returning empty string from the shared template; per-page content fields are injected inside `spawnPage()` where `page` is defined.
+
+---
+
+### Known Gaps Updated
+
+**Closed:**
+- Codex CLI non-functional → replaced with OpenAI SDK (`gpt-4o`)
+- CS9 brainstorm routing subprocess → brain routing gate sends non-Claude brains to `handleBrainstorm()`
+- GeminiAdapter key validation weak → live API probe at startup via `brain-verifier.js`
+- Brain routing not extended to chat → routing gate checks `currentBrain` before classifier
+
+**Opened:**
+- `client_brief` not yet injected into build prompts
+- Interview not auto-triggered on `fam-hub site new`
+- `.worker-queue.jsonl` has no consumer (worker process not yet running)
+- Detailed interview mode (10 questions) is API-only (no UI)
