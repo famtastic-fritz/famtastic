@@ -21,6 +21,7 @@ const { verifyAllAPIs, getBrainStatus } = require('./lib/brain-verifier');
 // Do not pass STUDIO_TOOLS to GeminiAdapter or CodexAdapter.
 const { handleToolCall, initToolHandlers } = require('./lib/tool-handlers');
 const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = require('./lib/client-interview');
+const fontRegistry = require('./lib/font-registry');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -2820,9 +2821,31 @@ function ensureHeadDependencies(ws) {
   const distDir = DIST_DIR();
   const pages = listPages();
   const spec = readSpec();
-  const fontSerif = spec.fonts?.heading || 'Playfair Display';
-  const fontSans = spec.fonts?.body || 'Inter';
-  const fontUrl = `https://fonts.googleapis.com/css2?family=${fontSerif.replace(/\s+/g, '+').replace(/&/g, '&amp;')}:wght@400;500;600;700&family=${fontSans.replace(/\s+/g, '+').replace(/&/g, '&amp;')}:wght@300;400;500;600;700&display=swap`;
+
+  // Session 11 Fix 3: resolve font pair from registry (vertical-aware).
+  // Explicit spec.fonts.heading/body always win over the registry pick.
+  let fontSerif = spec.fonts?.heading;
+  let fontSans  = spec.fonts?.body;
+  let fontUrl;
+  if (!fontSerif || !fontSans) {
+    try {
+      const pair = spec.fonts?.pairing
+        ? fontRegistry.getPairing(spec.fonts.pairing)
+        : fontRegistry.pickPairingForVertical(spec.business_type || '');
+      if (pair) {
+        fontSerif = fontSerif || pair.heading;
+        fontSans  = fontSans  || pair.body;
+        fontUrl   = fontRegistry.buildGoogleFontsUrl(pair);
+      }
+    } catch (err) {
+      console.warn('[head-guardrail] font-registry pick failed:', err.message);
+    }
+  }
+  fontSerif = fontSerif || 'Playfair Display';
+  fontSans  = fontSans  || 'Inter';
+  if (!fontUrl) {
+    fontUrl = `https://fonts.googleapis.com/css2?family=${fontSerif.replace(/\s+/g, '+').replace(/&/g, '&amp;')}:wght@400;500;600;700&family=${fontSans.replace(/\s+/g, '+').replace(/&/g, '&amp;')}:wght@300;400;500;600;700&display=swap`;
+  }
 
   const tailwindTag = '<script src="https://cdn.tailwindcss.com"></script>';
   const fontTags = `<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6670,6 +6693,23 @@ function buildPromptContext(requestType, spec, userMessage) {
   }
   // Append visual requirements to briefContext
   briefContext += visualRequirements;
+
+  // Session 11 Fix 3: Font pairing from registry (vertical-aware).
+  // Resolves a curated pairing for the business vertical and appends
+  // explicit typography instructions so Claude uses the right fonts
+  // and Google Fonts link tag. spec.fonts.pairing overrides auto-pick.
+  try {
+    const pairingId = spec.fonts?.pairing || null;
+    const pair = pairingId
+      ? fontRegistry.getPairing(pairingId)
+      : fontRegistry.pickPairingForVertical(spec.business_type || brief?.visual_direction?.vertical || '');
+    if (pair) {
+      const enriched = pair.googleUrl ? pair : { ...pair, googleUrl: fontRegistry.buildGoogleFontsUrl(pair) };
+      briefContext += '\n' + fontRegistry.buildFontPromptContext(enriched);
+    }
+  } catch (err) {
+    console.warn('[font-registry] failed to resolve pairing:', err.message);
+  }
 
   // Build decisions context
   let decisionsContext = '';
