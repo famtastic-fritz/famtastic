@@ -4,14 +4,14 @@ set -euo pipefail
 GK="$(secret_get GEMINI_API_KEY || true)"
 [ -n "$GK" ] || { echo "ERR: GEMINI_API_KEY not set (use repo SOPS)"; exit 1; }
 export GEMINI_API_KEY="$GK"
-DEFAULT_MODEL="$(yq -r .gemini.model config/agents/defaults.yaml 2>/dev/null || echo gemini-2.5-pro)"
+DEFAULT_MODEL="$(yq -r .gemini.model config/agents/defaults.yaml 2>/dev/null || echo gemini-2.5-flash)"
 MODEL="${MODEL:-$DEFAULT_MODEL}"
 if [ $# -gt 0 ]; then PROMPT="$*"; else PROMPT="$(cat)"; fi
-printf '%s' "$PROMPT" | python3 - "$MODEL" <<'PY'
-import sys, os, google.generativeai as genai
-model=sys.argv[1]
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-m = genai.GenerativeModel(model)
-r = m.generate_content(os.read(0,10_000_000).decode())
-print((getattr(r,"text",None) or "").strip())
-PY
+
+# Use Node.js with @google/generative-ai (installed in site-studio/node_modules)
+HUB_ROOT="${HUB_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+STUDIO_DIR="$HUB_ROOT/site-studio"
+NODE_PATH="$STUDIO_DIR/node_modules"
+SCRIPT="$HUB_ROOT/scripts/lib/gemini-generate.mjs"
+
+printf '%s' "$PROMPT" | node "$SCRIPT" "$MODEL" "$NODE_PATH"

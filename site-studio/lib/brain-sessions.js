@@ -66,7 +66,7 @@ async function initBrainSessions(studioEvents = null, STUDIO_EVENTS = {}, opts =
       if (!key) return 'needs-auth';
       // Make a minimal probe call — validates the key actually works
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeout);
       await model.generateContent('ping');

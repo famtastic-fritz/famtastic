@@ -42,10 +42,13 @@ HUB_ROOT="${HUB_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 # Call native CLI
 RESP="$(printf "%s" "$PROMPT" | "$HUB_ROOT/scripts/gemini-cli")"
 
+# Output response to stdout (read by spawnBrainAdapter in server.js)
+printf '%s\n' "$RESP"
+
 # Append JSONL record
 TS="$(date -u +%FT%TZ)"
 printf '%s\n' "$(jq -c --null-input \
   --arg t "$TS" --arg p "$PROMPT" --arg r "$RESP" --arg a "gemini" \
   '{agent:$a, at:$t, tags:[], messages:[{"role":"user","content":$p},{"role":"assistant","content":$r}]}')" >> "$OUT"
 
-echo "[gemini:get] $TAG → $OUT (+1)"
+echo "[gemini:get] $TAG → $OUT (+1)" >&2
