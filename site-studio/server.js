@@ -20,6 +20,7 @@ const { verifyAllAPIs, getBrainStatus } = require('./lib/brain-verifier');
 // Gemini and OpenAI tool format translation deferred to Session 12.
 // Do not pass STUDIO_TOOLS to GeminiAdapter or CodexAdapter.
 const { handleToolCall, initToolHandlers } = require('./lib/tool-handlers');
+const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = require('./lib/client-interview');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -3715,6 +3716,114 @@ app.post('/api/new-site', async (req, res) => {
 
   console.log(`[studio] Created and switched to new site: ${TAG}`);
   res.json({ success: true, tag: TAG });
+});
+
+// --- Client Interview API ---
+/**
+ * POST /api/interview/start
+ * Body: { mode?: 'quick' | 'detailed' | 'skip' }
+ * Starts or resumes a client interview for the active site.
+ * Returns first question (or completion if skip/already done).
+ */
+app.post('/api/interview/start', (req, res) => {
+  const spec = readSpec();
+  if (!spec) return res.status(400).json({ error: 'No active site — create a site first' });
+
+  // If already completed, return immediately
+  if (spec.interview_completed) {
+    return res.json({
+      completed: true,
+      client_brief: spec.client_brief || {},
+      message: 'Interview already completed for this site',
+    });
+  }
+
+  // Resume partial interview if one exists
+  if (spec.interview_state && !spec.interview_state.completed) {
+    const currentQ = getCurrentQuestion(spec.interview_state);
+    return res.json({
+      resumed: true,
+      question: currentQ,
+      mode: spec.interview_state.mode,
+    });
+  }
+
+  const mode = req.body?.mode || 'quick';
+  const { state, firstQuestion } = startInterview(mode);
+
+  // Handle skip mode — write brief immediately
+  if (mode === 'skip') {
+    spec.interview_state = state;
+    spec.interview_completed = true;
+    spec.client_brief = {};
+    writeSpec(spec);
+    return res.json({ completed: true, client_brief: {}, message: 'Interview skipped' });
+  }
+
+  // Persist initial state
+  spec.interview_state = state;
+  writeSpec(spec);
+
+  res.json({ question: firstQuestion, mode });
+});
+
+/**
+ * POST /api/interview/answer
+ * Body: { question_id: string, answer: string }
+ * Records the answer and returns the next question or completion.
+ */
+app.post('/api/interview/answer', (req, res) => {
+  const spec = readSpec();
+  if (!spec) return res.status(400).json({ error: 'No active site' });
+
+  if (spec.interview_completed) {
+    return res.json({ completed: true, client_brief: spec.client_brief || {} });
+  }
+
+  if (!spec.interview_state) {
+    return res.status(400).json({ error: 'No interview in progress — call /api/interview/start first' });
+  }
+
+  const { question_id, answer } = req.body || {};
+  if (!question_id) return res.status(400).json({ error: 'question_id is required' });
+
+  let result;
+  try {
+    result = recordAnswer(spec.interview_state, question_id, answer || '');
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+
+  // Persist updated state
+  spec.interview_state = result.state;
+
+  if (result.completed) {
+    spec.interview_completed = true;
+    spec.client_brief = result.client_brief;
+    writeSpec(spec);
+    return res.json({ completed: true, client_brief: result.client_brief });
+  }
+
+  writeSpec(spec);
+  res.json({ question: result.nextQuestion });
+});
+
+/**
+ * GET /api/interview/status
+ * Returns current interview state for the active site.
+ */
+app.get('/api/interview/status', (req, res) => {
+  const spec = readSpec();
+  if (!spec) return res.status(400).json({ error: 'No active site' });
+
+  res.json({
+    interview_completed: !!spec.interview_completed,
+    client_brief: spec.client_brief || null,
+    in_progress: !!(spec.interview_state && !spec.interview_state?.completed),
+    mode: spec.interview_state?.mode || null,
+    current_index: spec.interview_state?.current_index ?? null,
+    total: spec.interview_state?.questions?.length ?? null,
+  });
 });
 
 // --- Media Specs API ---
