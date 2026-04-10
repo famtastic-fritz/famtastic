@@ -9705,6 +9705,23 @@ wss.on('connection', (ws) => {
         }
       }
 
+      // Non-Claude brain: route all conversational messages through the selected brain adapter.
+      // HTML build intents (build/layout_update/content_update/bug_fix/restyle/restructure/major_revision)
+      // still require Claude for HTML generation — but conversational queries go to the selected brain.
+      if (currentBrain !== 'claude') {
+        const nonBuildIntents = ['brainstorm', 'content_update', 'bug_fix'];
+        const quickClassify = classifyRequest(userMessage, spec);
+        const isBuildIntent = ['build', 'layout_update', 'restyle', 'restructure', 'major_revision', 'new_site'].includes(quickClassify);
+        if (!isBuildIntent) {
+          console.log(`[brain-route] ${currentBrain} selected — routing "${userMessage.substring(0, 40)}..." to handleBrainstorm`);
+          handleBrainstorm(ws, userMessage, spec);
+          return;
+        }
+        // Build intents: inform user then fall through to Claude
+        console.log(`[brain-route] ${currentBrain} selected but build intent detected — using Claude for HTML generation`);
+        ws.send(JSON.stringify({ type: 'status', content: `Using Claude for HTML generation (${currentBrain} handles brainstorm only)` }));
+      }
+
       // Classify request
       ws.send(JSON.stringify({ type: 'status', content: 'Classifying request...' }));
       const requestType = classifyRequest(userMessage, spec);
