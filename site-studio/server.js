@@ -336,6 +336,53 @@ function sanitizeSvg(svgContent) {
   return clean;
 }
 
+// --- Multi-Part SVG Extractor (Session 11 Fix 7) ---
+//
+// Claude can emit a single SVG_ASSET response that carries multiple
+// logo variants delimited by HTML comments:
+//
+//   <!-- LOGO_FULL -->
+//   <svg ...>...</svg>
+//   <!-- LOGO_ICON -->
+//   <svg ...>...</svg>
+//   <!-- LOGO_WORDMARK -->
+//   <svg ...>...</svg>
+//
+// This helper parses those delimiters and returns an object keyed by
+// variant id. Supported ids: LOGO_FULL, LOGO_ICON, LOGO_WORDMARK.
+// If no delimiters are present, returns null so the caller can fall
+// back to the single-file path.
+function extractMultiPartSvg(body) {
+  if (typeof body !== 'string' || !body) return null;
+  const DELIMITERS = ['LOGO_FULL', 'LOGO_ICON', 'LOGO_WORDMARK'];
+  // Fast reject — must contain at least one delimiter
+  const hasAny = DELIMITERS.some(d => body.includes(`<!-- ${d} -->`));
+  if (!hasAny) return null;
+
+  const parts = {};
+  // Split on delimiter comments, keeping the delimiter names
+  const re = /<!--\s*(LOGO_FULL|LOGO_ICON|LOGO_WORDMARK)\s*-->/g;
+  const indices = [];
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    indices.push({ name: m[1], start: m.index, after: m.index + m[0].length });
+  }
+  if (indices.length === 0) return null;
+
+  for (let i = 0; i < indices.length; i++) {
+    const cur = indices[i];
+    const next = indices[i + 1];
+    const chunk = body.substring(cur.after, next ? next.start : body.length);
+    // Extract the first <svg>...</svg> inside the chunk
+    const svgMatch = chunk.match(/<svg[\s\S]*?<\/svg>/i);
+    if (svgMatch) {
+      parts[cur.name] = sanitizeSvg(svgMatch[0].trim());
+    }
+  }
+
+  return Object.keys(parts).length > 0 ? parts : null;
+}
+
 // --- Site Versioning ---
 function versionFile(page, reason) {
   if (!loadSettings().auto_version) return null;
@@ -9354,12 +9401,66 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
   }
 
   // Detect logo for main prompt
-  const _logoSvg = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.svg'));
-  const _logoPng = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.png'));
-  const _logoFile = _logoSvg ? 'assets/logo.svg' : _logoPng ? 'assets/logo.png' : null;
-  const _logoInstruction = _logoFile
-    ? `\nLOGO: A logo file exists at "${_logoFile}". Use <a href="index.html" data-logo-v class="block"><img src="${_logoFile}" alt="${spec.site_name || 'Logo'}" class="h-10 w-auto"></a> for the logo. Do NOT show site name text next to the logo image.\n`
-    : `\nLOGO: No logo image file exists. Use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">${spec.site_name || ''}</a> as the logo. This element will automatically swap to an image when a logo is uploaded.\n`;
+  const _logoSvg       = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.svg'));
+  const _logoPng       = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.png'));
+  const _logoIconSvg   = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo-icon.svg'));
+  const _logoWordSvg   = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo-wordmark.svg'));
+  const _logoFile      = _logoSvg ? 'assets/logo.svg' : _logoPng ? 'assets/logo.png' : null;
+
+  let _logoInstruction;
+  if (_logoFile && (_logoIconSvg || _logoWordSvg)) {
+    // Multi-part logo set exists — tell Claude which variant to use where
+    const variantList = [
+      `  assets/logo.svg         — full mark (icon + wordmark together) — use in hero / large contexts`,
+      _logoIconSvg ? `  assets/logo-icon.svg    — icon-only — use in favicon / tight spaces / social avatars` : null,
+      _logoWordSvg ? `  assets/logo-wordmark.svg — wordmark-only — use in nav / footer / print` : null,
+    ].filter(Boolean).join('\n');
+    _logoInstruction = `
+LOGO (multi-part set available):
+${variantList}
+- Nav: use <a href="index.html" data-logo-v class="block"><img src="${_logoWordSvg ? 'assets/logo-wordmark.svg' : 'assets/logo.svg'}" alt="${spec.site_name || 'Logo'}" class="h-10 w-auto"></a>
+- Hero: use the full mark (assets/logo.svg) if the layout variant is logo_dominant or layered — inline SVG or <img>.
+- Do NOT show site name text next to the logo image.
+`;
+  } else if (_logoFile) {
+    _logoInstruction = `\nLOGO: A logo file exists at "${_logoFile}". Use <a href="index.html" data-logo-v class="block"><img src="${_logoFile}" alt="${spec.site_name || 'Logo'}" class="h-10 w-auto"></a> for the logo. Do NOT show site name text next to the logo image.\n`;
+  } else {
+    _logoInstruction = `\nLOGO: No logo image file exists. Use <a href="index.html" data-logo-v class="font-playfair text-2xl font-bold text-inherit hover:opacity-80 transition">${spec.site_name || ''}</a> as the logo. This element will automatically swap to an image when a logo is uploaded.\n`;
+  }
+
+  // Session 11 Fix 7: FAMtastic logo mode. When spec.famtastic_mode is
+  // enabled, prepend a block telling Claude to emit a multi-part SVG
+  // response (LOGO_FULL / LOGO_ICON / LOGO_WORDMARK) so the extractor
+  // can write three separate files at once. Only triggered when there
+  // is no existing logo file AND the user is building or asking for a
+  // new site / logo.
+  if (spec.famtastic_mode === true && !_logoFile && ['build', 'new_site'].includes(requestType)) {
+    _logoInstruction += `
+
+FAMTASTIC LOGO MODE (spec.famtastic_mode = true, no logo file yet):
+In addition to generating the page HTML, emit a SECOND response immediately
+after the HTML_UPDATE/MULTI_UPDATE block using this exact format:
+
+SVG_ASSET:logo.svg
+<!-- LOGO_FULL -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140">
+  ...icon on the left, wordmark on the right, both using var(--color-primary) and var(--color-accent)...
+</svg>
+<!-- LOGO_ICON -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140">
+  ...icon only, square, usable as favicon...
+</svg>
+<!-- LOGO_WORDMARK -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80">
+  ...wordmark only, all-caps, tight tracking, for nav/footer use...
+</svg>
+
+The server will automatically extract each part as logo.svg, logo-icon.svg,
+and logo-wordmark.svg in the assets folder. Use the site's primary and
+accent colors (from CSS vars), simple geometric shapes, and the business
+name from the site spec. Keep each SVG under 2 KB.
+`;
+  }
 
   // Slot ID stability — inject current page's slot IDs to prevent drift on rebuilds
   const _currentPageSlots = (spec.media_specs || []).filter(s => s.page === currentPage);
@@ -9528,6 +9629,55 @@ ${analyticsInstruction}`;
     }, SILENCE_MS);
   };
 
+  // Session 11 Fix 7: process a trailing SVG_ASSET block that appears
+  // after an HTML_UPDATE or MULTI_UPDATE response. Used when famtastic
+  // logo mode asks Claude to emit HTML + a multi-part logo in one call.
+  function processTrailingSvgAsset(fullResponse) {
+    const idx = fullResponse.indexOf('\nSVG_ASSET:');
+    if (idx === -1) return;
+    const svgBlock = fullResponse.substring(idx + 1);
+    const nl = svgBlock.indexOf('\n');
+    if (nl === -1) return;
+    const header = svgBlock.substring(0, nl);
+    const filename = header.replace('SVG_ASSET:', '').trim() || 'logo.svg';
+    let svgBody = svgBlock.substring(nl + 1).replace(/^```(?:svg|xml)?\s*/i, '').replace(/\s*```\s*$/, '');
+    fs.mkdirSync(path.join(DIST_DIR(), 'assets'), { recursive: true });
+
+    const parts = extractMultiPartSvg(svgBody);
+    if (parts && Object.keys(parts).length > 0) {
+      const nameMap = {
+        LOGO_FULL:     'logo.svg',
+        LOGO_ICON:     'logo-icon.svg',
+        LOGO_WORDMARK: 'logo-wordmark.svg',
+      };
+      const written = [];
+      for (const [k, svgText] of Object.entries(parts)) {
+        const outName = nameMap[k] || `${k.toLowerCase()}.svg`;
+        fs.writeFileSync(path.join(DIST_DIR(), 'assets', outName), svgText);
+        written.push(outName);
+        ws.send(JSON.stringify({ type: 'asset-created', filename: outName, path: `/assets/${outName}` }));
+      }
+      try {
+        const logoSpec = readSpec();
+        logoSpec.logo = Object.assign({}, logoSpec.logo || {}, {
+          full:     parts.LOGO_FULL     ? 'assets/logo.svg'          : logoSpec.logo?.full,
+          icon:     parts.LOGO_ICON     ? 'assets/logo-icon.svg'     : logoSpec.logo?.icon,
+          wordmark: parts.LOGO_WORDMARK ? 'assets/logo-wordmark.svg' : logoSpec.logo?.wordmark,
+          generated_at: new Date().toISOString(),
+        });
+        writeSpec(logoSpec);
+      } catch (err) {
+        console.warn('[svg-extract] trailing: failed to record logo variants:', err.message);
+      }
+      ws.send(JSON.stringify({ type: 'assistant', content: `Logo variants generated: ${written.join(', ')}` }));
+    } else {
+      const svg = sanitizeSvg(svgBody);
+      fs.writeFileSync(path.join(DIST_DIR(), 'assets', filename), svg);
+      ws.send(JSON.stringify({ type: 'asset-created', filename, path: `/assets/${filename}` }));
+      ws.send(JSON.stringify({ type: 'assistant', content: `Created asset: ${filename}` }));
+    }
+  }
+
   // Extract the response-processing logic into a reusable function callable from both paths
   function onChatComplete(finalResponse, usage) {
     setBuildInProgress(false);
@@ -9628,6 +9778,9 @@ ${analyticsInstruction}`;
         // Unified post-processing
         ws.send(JSON.stringify({ type: 'status', content: 'Post-processing...' }));
         runPostProcessing(ws, writtenPages, { isFullBuild: true });
+        // Session 11 Fix 7: also process any trailing SVG_ASSET block
+        // (famtastic logo mode emits HTML + multi-part logo in one response)
+        try { processTrailingSvgAsset(response); } catch (err) { console.warn('[svg-extract] trailing failed:', err.message); }
         const slotMsg = '';
 
         const msg = changeSummary
@@ -9665,6 +9818,10 @@ ${analyticsInstruction}`;
       if (changesIdx !== -1) {
         html = afterPrefix.substring(0, changesIdx).trim();
         changeSummary = afterPrefix.substring(changesIdx + 8).trim();
+        // If a trailing SVG_ASSET block follows the CHANGES list, trim it
+        // out of the summary (processTrailingSvgAsset picks it up from `response`).
+        const svgIdx = changeSummary.indexOf('\nSVG_ASSET:');
+        if (svgIdx !== -1) changeSummary = changeSummary.substring(0, svgIdx).trim();
       }
 
       // Strip markdown fences if present
@@ -9676,6 +9833,9 @@ ${analyticsInstruction}`;
 
       // Unified post-processing — single-page edit mode
       runPostProcessing(ws, [currentPage], { sourcePage: currentPage });
+
+      // Session 11 Fix 7: also process any trailing SVG_ASSET block
+      try { processTrailingSvgAsset(response); } catch (err) { console.warn('[svg-extract] trailing failed:', err.message); }
 
       // Auto-tag any images missing slot attributes (dynamic CRUD)
       autoTagMissingSlots([currentPage]);
@@ -9711,17 +9871,59 @@ ${analyticsInstruction}`;
       const firstNewline = response.indexOf('\n');
       const header = response.substring(0, firstNewline);
       const filename = header.replace('SVG_ASSET:', '').trim();
-      let svg = response.substring(firstNewline + 1);
+      let svgBody = response.substring(firstNewline + 1);
       // Strip markdown fences if present
-      svg = svg.replace(/^```(?:svg|xml)?\s*/i, '').replace(/\s*```\s*$/, '');
+      svgBody = svgBody.replace(/^```(?:svg|xml)?\s*/i, '').replace(/\s*```\s*$/, '');
 
-      const assetPath = path.join(DIST_DIR(), 'assets', filename);
       fs.mkdirSync(path.join(DIST_DIR(), 'assets'), { recursive: true });
-      fs.writeFileSync(assetPath, svg);
-      ws.send(JSON.stringify({ type: 'assistant', content: `Created asset: ${filename}` }));
-      ws.send(JSON.stringify({ type: 'asset-created', filename, path: `/assets/${filename}` }));
-      ws.send(JSON.stringify({ type: 'reload-preview' }));
-      appendConvo({ role: 'assistant', content: `Created SVG asset: ${filename}`, at: new Date().toISOString() });
+
+      // Session 11 Fix 7: multi-part SVG extraction. If the response body
+      // contains <!-- LOGO_FULL / LOGO_ICON / LOGO_WORDMARK --> delimiters,
+      // write each as a separate file: logo.svg, logo-icon.svg, logo-wordmark.svg.
+      const parts = extractMultiPartSvg(svgBody);
+      if (parts && Object.keys(parts).length > 0) {
+        const writtenFiles = [];
+        const nameMap = {
+          LOGO_FULL:     'logo.svg',
+          LOGO_ICON:     'logo-icon.svg',
+          LOGO_WORDMARK: 'logo-wordmark.svg',
+        };
+        for (const [key, svgText] of Object.entries(parts)) {
+          const outName = nameMap[key] || `${key.toLowerCase()}.svg`;
+          const outPath = path.join(DIST_DIR(), 'assets', outName);
+          fs.writeFileSync(outPath, svgText);
+          writtenFiles.push(outName);
+          ws.send(JSON.stringify({ type: 'asset-created', filename: outName, path: `/assets/${outName}` }));
+        }
+
+        // Record variants in spec.logo so the rest of the pipeline can
+        // reference the right file per context (hero vs nav vs favicon).
+        try {
+          const logoSpec = readSpec();
+          logoSpec.logo = Object.assign({}, logoSpec.logo || {}, {
+            full:     parts.LOGO_FULL     ? 'assets/logo.svg'          : logoSpec.logo?.full,
+            icon:     parts.LOGO_ICON     ? 'assets/logo-icon.svg'     : logoSpec.logo?.icon,
+            wordmark: parts.LOGO_WORDMARK ? 'assets/logo-wordmark.svg' : logoSpec.logo?.wordmark,
+            generated_at: new Date().toISOString(),
+          });
+          writeSpec(logoSpec);
+        } catch (err) {
+          console.warn('[svg-extract] failed to record logo variants in spec:', err.message);
+        }
+
+        ws.send(JSON.stringify({ type: 'assistant', content: `Created ${writtenFiles.length} logo variant(s): ${writtenFiles.join(', ')}` }));
+        ws.send(JSON.stringify({ type: 'reload-preview' }));
+        appendConvo({ role: 'assistant', content: `Created SVG logo variants: ${writtenFiles.join(', ')}`, at: new Date().toISOString() });
+      } else {
+        // Single-file SVG asset — sanitize and write
+        const svg = sanitizeSvg(svgBody);
+        const assetPath = path.join(DIST_DIR(), 'assets', filename);
+        fs.writeFileSync(assetPath, svg);
+        ws.send(JSON.stringify({ type: 'assistant', content: `Created asset: ${filename}` }));
+        ws.send(JSON.stringify({ type: 'asset-created', filename, path: `/assets/${filename}` }));
+        ws.send(JSON.stringify({ type: 'reload-preview' }));
+        appendConvo({ role: 'assistant', content: `Created SVG asset: ${filename}`, at: new Date().toISOString() });
+      }
     } else {
       ws.send(JSON.stringify({ type: 'assistant', content: response }));
       appendConvo({ role: 'assistant', content: response, at: new Date().toISOString() });
@@ -12413,7 +12615,7 @@ function broadcastSessionStatus(ws) {
 
 // --- Exports for testing ---
 module.exports = {
-  sanitizeSvg, isValidPageName, extractSlotsFromPage, classifyRequest, detectEnhancementPasses, extractPagesFromBrief, syncContentFieldsFromHtml,
+  sanitizeSvg, extractMultiPartSvg, isValidPageName, extractSlotsFromPage, classifyRequest, detectEnhancementPasses, extractPagesFromBrief, syncContentFieldsFromHtml,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
