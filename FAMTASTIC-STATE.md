@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-10 (Session 10 — OpenAI SDK, Brain Verifier, Tool Calling, Client Interview, Site #6, 1,183 cumulative tests)
+**Last updated:** 2026-04-10 (Session 11 — Build Pipeline Intelligence Pass: 9 fixes + hotfix, 1,414 cumulative tests)
 
 ---
 
@@ -9,6 +9,21 @@
 FAMtastic Site Studio is a chat-driven website factory that generates production-ready HTML+Tailwind CSS websites from natural language conversation. A user opens a browser-based chat interface, describes the site they want, and the system generates multi-page HTML, provides a live preview, and deploys to Netlify — all without the user writing code or leaving the chat.
 
 **Session 10 additions:** All three AI APIs verified live at startup (Claude, Gemini, OpenAI). CodexAdapter migrated from CLI subprocess to OpenAI SDK. Tool calling added to Claude (5 tools, `MAX_TOOL_DEPTH=3`). Client interview system captures brand intent before first build. Brain/Worker split UI with per-brain model selector. Site #6 built (Drop The Beat Entertainment).
+
+**Session 11 additions (build pipeline intelligence pass):** Nine fixes wiring real intelligence into the build prompt + post-processing pipeline.
+1. `client_brief` from the intake interview now injects into `buildPromptContext()`.
+2. FAMtastic DNA (`fam-shapes.css`, `fam-motion.js`, `fam-scroll.js`, `fam-hero.css`) auto-copied + linked into every build via the head-guardrail.
+3. New `lib/font-registry.js` with 5 vertical-aware font pairings.
+4. Interview auto-triggered on new sites (admin-controllable via `auto_interview` in `studio-config.json`); new `GET /api/interview/health` endpoint.
+5. New `enhancement_pass` classifier intent with six opt-in passes (images, shapes, animations, icons, generated SVG, famtastic mode).
+6. New `lib/layout-registry.js` with 5 layout variants and a vertical map; injected into the build prompt.
+7. FAMtastic logo mode (`spec.famtastic_mode = true`) plus `extractMultiPartSvg()` that splits delimited LOGO_FULL/LOGO_ICON/LOGO_WORDMARK responses into separate SVG files.
+8. `GET /api/worker-queue` extended with `pending_count`/`by_worker`/`by_status`/`oldest_pending`; new amber pulsing "Pending manual execution" badge in the brain panel polled every 15s.
+9. New `site-studio/public/css/fam-hero.css` defining a 7-layer hero composition vocabulary (`fam-shapes.css` explicitly NOT modified).
+
+**Session 11 hotfix:** the template-first build path was silently skipping `ensureHeadDependencies()`, so the FAMtastic DNA assets had been absent from every build since the session-10 template-first migration. Single-line fix in `runPostProcessing()`. Verified end-to-end with a fresh Groove Theory build that now ships all four DNA assets in `dist/assets/`.
+
+**Session 11 known gap:** Claude does not yet aggressively reach for the new `fam-hero__*` vocabulary or the multi-part SVG logo on the first prompt — infrastructure is in place and tested, but the build prompt language needs to be more imperative.
 
 The system is currently single-user and localhost-only, built and operated by Fritz Medine.
 
@@ -33,7 +48,11 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Cost Tracker | `site-studio/lib/api-cost-tracker.js` | `calculateCost(model, inputTokens, outputTokens)`. Rates for claude-sonnet, claude-haiku, gpt-4o, gpt-4o-mini, gemini-2.5-flash. `codex-cli` at $0. |
 | Brain Sessions | `site-studio/lib/brain-sessions.js` | `initBrainSessions()` auth probe at startup. `getOrCreateBrainSession()` for persistent multi-turn. `resetSessions()` on site switch. |
 | Model Config | `site-studio/lib/model-config.json` | Canonical model registry: claude (provider + models map), gemini (model), openai (model + fallback). |
-| Worker Queue | `.worker-queue.jsonl` | `dispatch_worker` tool writes task entries. No consumer yet (Session 11). |
+| Worker Queue | `.worker-queue.jsonl` | `dispatch_worker` tool writes task entries. Still no consumer process — Session 11 added a visibility badge that surfaces the backlog. |
+| Font Registry | `site-studio/lib/font-registry.js` | 5 hand-tuned font pairings + vertical→pairing map. Injected into `briefContext`. |
+| Layout Registry | `site-studio/lib/layout-registry.js` | 5 layout variants (`standard`, `centered_hero`, `logo_dominant`, `layered`, `split_screen`) + vertical map. Injected into `briefContext`. |
+| Multi-Layer Hero CSS | `site-studio/public/css/fam-hero.css` | 7-layer hero composition vocabulary (bg/pattern/shapes/media/lights/sparkle/content) with bleed utilities. Auto-linked by head-guardrail. |
+| Worker Queue Badge | `site-studio/public/js/worker-queue-badge.js` | Polls `/api/worker-queue` every 15s and shows a pulsing amber badge when `pending_count > 0`. |
 | Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. 10 sections. |
 | Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. `reinject()` on brain switch. |
 | Research Registry | `site-studio/lib/research-registry.js` | 4 provider-agnostic research sources. Auto-effectiveness scoring from build metrics. |
@@ -199,9 +218,8 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Gap | Priority | Detail |
 |-----|----------|--------|
 | Revenue path (end-to-end) | Tier 1 | Client preview URL + payment (PayPal) + domain provisioning + approval flow. Studio runs on localhost — bridge to real product. |
-| `client_brief` injection into build prompts | Tier 2 | Interview captures brief but it's not yet injected into planning or build prompts. Session 11. |
-| Worker queue consumer | Tier 2 | `.worker-queue.jsonl` has no process polling it. `dispatch_worker` tool queues tasks but nothing executes them. Session 11. |
-| Interview auto-trigger on `fam-hub site new` | Tier 2 | Interview module exists and works via API, but CLI doesn't prompt for interview on site creation. |
+| Prompt fidelity for new vocabulary | Tier 1 | Session 11 Fixes 7 + 9 added FAMtastic logo mode and the `fam-hero__*` 7-layer vocabulary. Infrastructure is in place and tested, but on the first prompt of a fresh build Claude does not consistently reach for them — the prompt language describes the new vocabulary but doesn't yet mandate its use. Highest-leverage next fix. |
+| Worker queue consumer | Tier 2 | `.worker-queue.jsonl` has no process polling it. Session 11 added a visibility badge (`/api/worker-queue` aggregation + `worker-queue-badge.js` polling every 15s) that surfaces the backlog, but `dispatch_worker` still queues tasks that nothing executes. |
 | Detailed interview mode UI | Tier 3 | 10-question detailed mode works via API only — no UI exposure. |
 | Brain routing in build path | Tier 2 | Build/content-edit paths use Anthropic SDK (Claude only). Non-Claude brains only work for chat/brainstorm. |
 | initBrainSessions() probe is blocking | Tier 3 | Claude auth probe at startup adds ~2–5s. Should fire-and-forget. |

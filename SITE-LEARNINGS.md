@@ -3023,3 +3023,232 @@ return finalSlug + '.html';
 - Interview not auto-triggered on `fam-hub site new`
 - `.worker-queue.jsonl` has no consumer (worker process not yet running)
 - Detailed interview mode (10 questions) is API-only (no UI)
+
+---
+
+## Session 11 — Build Pipeline Intelligence Pass (2026-04-10)
+
+Nine discrete fixes to close the highest-impact gaps in how the build
+pipeline turns site briefs into actual HTML. Each fix shipped one-at-a-time
+with restore-baseline → tests → commit discipline. **Total: 231 new
+test assertions across 6 suites; one infrastructure hotfix discovered
+during end-to-end verification.**
+
+### Fix 1 — `client_brief` injection
+- File: `site-studio/server.js` → `buildPromptContext()`
+- Behavior: when `spec.client_brief` is non-empty, a `CLIENT BRIEF` block
+  is appended to `briefContext` containing `business_name`, `tagline`,
+  `elevator_pitch`, `founder_voice`, `services`, `ctas`, `tone_words`,
+  `personality_traits`, `brand_promise`, `target_audience`, and `locations`.
+- Before: build prompts only saw vertical + design brief. The
+  `lib/client-interview.js` flow was running but its output was orphaned.
+- After: a real intake interview drives every full build.
+
+### Fix 2 — FAMtastic DNA auto-wired in head-guardrail
+- File: `site-studio/server.js` → `ensureHeadDependencies()`
+- Behavior: `famAssets` array copies and links `lib/fam-shapes.css`,
+  `lib/fam-motion.js`, `lib/fam-scroll.js`, and (optional)
+  `site-studio/public/css/fam-hero.css` into `dist/assets/css/` and
+  `dist/assets/js/` on every full build, then injects matching
+  `<link>`/`<script>` tags into every page.
+- Before: only Tailwind and Google Fonts were head-guarded.
+- After: every built page has the full FAMtastic vocabulary available.
+- **NOTE:** the head-guardrail was only being called from the legacy
+  fallback path in `runPostProcessing()`. The template-first path
+  silently skipped it. See "hotfix" below.
+
+### Fix 3 — Vertical-aware font pairing
+- New file: `site-studio/lib/font-registry.js`
+- Exports: `FONT_PAIRINGS` (5 hand-tuned), `pickFontPairingForVertical(v)`,
+  `pickFontPairingForSpec(spec)`, `buildFontPromptContext(pairing)`
+- Five pairings: editorial (Playfair + Inter), display (Bebas + DM Sans),
+  geometric (Space Grotesk + Inter), retro (Fraunces + Manrope),
+  classic-serif fallback.
+- Vertical map: writer/wedding/luxury → editorial; dj/music/nightclub →
+  display; saas/tech → geometric; vinyl/boutique → retro; default → classic.
+- Injected into `briefContext` at the same site as `layout-registry`.
+
+### Fix 4 — Interview auto-trigger + admin control
+- Files: `site-studio/server.js` → `POST /api/new-site`,
+  `GET /api/interview/health`; admin reads from `studio-config.json`.
+- Behavior:
+  - `POST /api/new-site` sets `spec.interview_pending = true` whenever
+    `loadSettings().auto_interview !== false` (default ON).
+  - `GET /api/interview/health` returns
+    `{ auto_interview_enabled, interview_pending, interview_completed, should_prompt, reason }`
+    so the Studio UI can decide whether to open the modal on load.
+  - Skipping the interview clears `interview_pending` and sets
+    `interview_completed = true`.
+- Test: `tests/session11-fix4-tests.js` (36 assertions, spawns server).
+
+### Fix 5 — `enhancement_pass` classifier intent
+- File: `site-studio/server.js` → classifier + `handleChatMessage`.
+- New helpers: `detectEnhancementPasses(message)` returns
+  `{ images, shapes, animations, icons, generatedSvg, famtasticMode }`.
+- Classifier matches phrases like "add some shapes", "give it more
+  motion", "famtastic it up", "do an images pass", etc.
+- Six recognized passes. `famtasticMode = true` implies all five.
+- Dispatch: new `case 'enhancement_pass'` in `handleChatMessage` switch
+  builds a per-pass instruction block (IMAGES PASS, SHAPES PASS,
+  ANIMATIONS PASS, ICONS PASS, GENERATED SVG PASS, FAMTASTIC MODE)
+  and runs through the standard build pipeline so post-processing,
+  CHANGES extraction, and verification all apply.
+- Added to `isBuildIntent` whitelist.
+- Test: `tests/session11-fix5-tests.js` (36 assertions).
+
+### Fix 6 — Layout variation vocabulary
+- New file: `site-studio/lib/layout-registry.js`
+- Exports: `LAYOUT_VARIANTS` (5), `VERTICAL_LAYOUT_MAP`,
+  `pickLayoutVariantForVertical(v)`, `pickLayoutVariantForSpec(spec)`,
+  `buildLayoutPromptContext(variant)`
+- Five variants:
+  - `standard` — centered hero, logo in nav (default)
+  - `centered_hero` — large centered headline + symmetrical decor
+  - `logo_dominant` — oversized brand mark anchors hero
+  - `layered` — multi-z-index stack (used with fam-hero.css)
+  - `split_screen` — content left, media right
+- Each variant carries `id`, `name`, `description`, `hero_shape`,
+  `grid`, `logo_role`, `best_for`, and a prompt-ready `skeleton`.
+- Vertical map: vinyl/record/jewelry/boutique → `logo_dominant`;
+  dj/music/nightclub/entertainment → `layered`;
+  writer/wedding/luxury → `centered_hero`;
+  real estate/saas/spa → `split_screen`; law/medical → `standard`.
+- `pickLayoutVariantForSpec()` honors explicit `spec.layout.variant`
+  override, falls back to vertical mapping.
+- Injected into `briefContext` in `buildPromptContext()` after font pairing.
+- Test: `tests/session11-fix6-tests.js` (57 assertions).
+
+### Fix 7 — FAMtastic logo mode + multi-part SVG extraction
+- File: `site-studio/server.js`
+- New helper `extractMultiPartSvg(body)`:
+  - Returns `null` if no `<!-- LOGO_FULL/LOGO_ICON/LOGO_WORDMARK -->` delimiters.
+  - Otherwise returns `{ LOGO_FULL?, LOGO_ICON?, LOGO_WORDMARK? }` with
+    each part run through the existing `sanitizeSvg()`.
+  - Tolerates partial responses (any subset of the three).
+- New helper `processTrailingSvgAsset(fullResponse)` so HTML_UPDATE and
+  MULTI_UPDATE branches can extract a trailing SVG_ASSET block from a
+  single Claude response (page + logo in one shot).
+- HTML_UPDATE branch truncates `changeSummary` at `\nSVG_ASSET:` and
+  routes the SVG part through `processTrailingSvgAsset`.
+- SVG_ASSET branch checks `extractMultiPartSvg` first; if multi-part,
+  writes `LOGO_FULL → assets/logo.svg`, `LOGO_ICON → assets/logo-icon.svg`,
+  `LOGO_WORDMARK → assets/logo-wordmark.svg`.
+- New flag: `spec.famtastic_mode === true`. When set with no logo file,
+  the build prompt's `_logoInstruction` injects a **FAMTASTIC LOGO MODE**
+  block instructing Claude to emit a multi-part SVG response.
+- Exports: `extractMultiPartSvg`, `sanitizeSvg`, `detectEnhancementPasses`.
+- Test: `tests/session11-fix7-tests.js` (26 assertions).
+
+### Fix 8 — Worker queue visibility endpoint + UI badge
+- File: `site-studio/server.js` → `GET /api/worker-queue` extended.
+- Old shape: `{ tasks, count }`.
+- New shape: `{ tasks, count, pending_count, by_worker, by_status, oldest_pending, queue_path }`
+  - `pending_count` excludes `completed`/`cancelled`/`failed`.
+  - `by_worker` aggregates `t.worker || t.agent || 'unknown'`.
+  - `by_status` aggregates `t.status || 'pending'`.
+  - `oldest_pending` is the earliest `queued_at`/`created_at`/`at`
+    among unfinished tasks (or `null`).
+  - `queue_path` is the absolute path for debugging.
+- New file: `site-studio/public/js/worker-queue-badge.js`
+  - Polls `GET /api/worker-queue` every 15 s.
+  - Shows/hides `#worker-queue-badge` based on `pending_count`.
+  - Builds tooltip with per-worker breakdown + age of oldest pending.
+  - Exposes `window.WorkerQueueBadge.refresh()` for other modules.
+- New CSS in `site-studio/public/css/studio-brain-selector.css`:
+  `.worker-queue-badge`, `.wqb-dot`, `.wqb-label`, `.wqb-count`, plus
+  `@keyframes wqb-pulse`. Amber color scheme matching `#brain-fallback-bar`.
+- New markup in `site-studio/public/index.html` after the workers section,
+  plus `<script src="js/worker-queue-badge.js"></script>` at the bottom of body.
+- Test: `tests/session11-fix8-tests.js` (31 assertions, spawns server).
+- **Why it matters:** the badge surfaces the silent gap that tasks
+  dispatched via the `dispatch_worker` tool have no consumer process
+  polling the queue. Users can now see the queue is backing up at a
+  glance instead of discovering it via log diving.
+
+### Fix 9 — Multi-layer hero CSS (`fam-hero.css`)
+- New file: `site-studio/public/css/fam-hero.css`
+- **Critical constraint:** `lib/fam-shapes.css` was NOT modified — verified
+  by `git diff --name-only HEAD -- lib/fam-shapes.css` returning empty.
+- Defines a 7-layer hero composition vocabulary with explicit z-index 0–6:
+  | Class | z-index | Role |
+  |---|---|---|
+  | `.fam-hero__bg` | 0 | background color/gradient |
+  | `.fam-hero__pattern` | 1 | repeating pattern (overlay blend) |
+  | `.fam-hero__shapes` | 2 | decorative blobs/rings |
+  | `.fam-hero__media` | 3 | main hero photo/illustration/video |
+  | `.fam-hero__lights` | 4 | colored radial light spots (screen blend) |
+  | `.fam-hero__sparkle` | 5 | twinkles (screen blend) |
+  | `.fam-hero__content` | 6 | headline + CTA + UI |
+- 5 background gradients: sunset, neon, dusk, vinyl, emerald.
+- 5 patterns: dots, grid, diagonal, noise (data-uri SVG), vinyl grooves.
+- 7 light colors with corner positioning + drift animation.
+- Spotlight beam, blob, ring decorative shapes.
+- Bleed utilities (`.fam-bleed-l/r/t/b/x/y/all`) so children can push past
+  hero edges via negative margins on the CSS-var-driven padding.
+- `.fam-hero--split` 2-col variant with mobile collapse.
+- `.fam-hero--vignette` and `.fam-hero--framed` modifiers.
+- `prefers-reduced-motion` guards on every animated layer.
+- Auto-wired into the head-guardrail by Fix 2 (`optional: true`).
+- Test: `tests/session11-fix9-tests.js` (45 assertions including a git
+  diff check that `lib/fam-shapes.css` is unchanged).
+
+### Hotfix — Head-guardrail in template-first builds
+- File: `site-studio/server.js` → `runPostProcessing()`, `isFullBuild` branch.
+- Discovered when the first end-to-end Groove Theory build shipped with
+  only `assets/styles.css` in `dist/assets/` — none of the FAMtastic DNA.
+- Root cause: the template-first build path (added in session 10) routes
+  through `applyTemplateToPages()`, which only swaps the inline template
+  `<style>` block for a `<link>` to `assets/styles.css`. It never called
+  `ensureHeadDependencies()`, so the `famAssets` copy + inject step was
+  silently skipped on every build since the template-first migration.
+- **Net effect:** Fix 2 and Fix 9 had wired everything correctly into the
+  head-guardrail and the source files were on disk, but the build pipeline
+  just never invoked the head-guardrail in the active code path.
+- Fix: added one line — `ensureHeadDependencies(ws);` immediately after
+  `applyTemplateToPages(ws, writtenPages);` in the `isFullBuild` branch.
+- Verified: Groove Theory rebuild now ships
+  `assets/css/fam-hero.css`, `assets/css/fam-shapes.css`,
+  `assets/js/fam-motion.js`, `assets/js/fam-scroll.js`, `assets/styles.css`,
+  and all three pages contain seven FAMtastic asset references each.
+
+### Fresh build verification: Groove Theory
+- Tag: `site-groove-theory`. Vertical: vinyl record shop.
+- `spec.famtastic_mode = true`, `spec.layout.variant = "logo_dominant"`.
+- Pages: `index.html`, `services.html`, `contact.html`. Build time: 85s.
+- All four FAMtastic DNA assets shipped and linked.
+- Layout variant injection produced a `.logo-hero` oversized brand mark.
+- `client_brief` injection produced real services, real founder voice,
+  real Echo Park address.
+
+### Known Gaps Updated
+
+**Closed:**
+- `client_brief` not yet injected into build prompts → Fix 1 ships it.
+- Interview not auto-triggered on `fam-hub site new` → Fix 4 ships it.
+- FAMtastic DNA not in builds → Fix 2 + hotfix ship all four assets.
+- No font intelligence (always Inter) → Fix 3 ships vertical-aware pairing.
+- Always centered-hero layout → Fix 6 ships 5 variants with vertical map.
+- No enhancement pass intent → Fix 5 ships six opt-in passes.
+- No layered hero vocabulary → Fix 9 ships `fam-hero.css`.
+- No way to see worker-queue backlog → Fix 8 ships endpoint + badge.
+- Multi-part SVG logo not supported → Fix 7 ships extraction + delim mode.
+
+**Opened:**
+- **Prompt fidelity gap:** Claude does not yet reach for `fam-hero__*`
+  vocabulary or emit a multi-part SVG logo on the first prompt of a fresh
+  build, even though `famtastic_mode=true` and the layered variant are set.
+  Infrastructure is in place and tested; the build prompt language needs
+  to be more imperative (mandate the new vocabulary instead of just
+  describing it). This is the highest-leverage next fix.
+- `.worker-queue.jsonl` still has no consumer process. The new badge
+  makes the gap visible but doesn't close it — `dispatch_worker` queues
+  tasks that no worker pulls. The `dispatch_worker` tool should either
+  be marked deprecated until a consumer ships, or a minimal worker
+  process needs to be built.
+- Detailed (10-question) interview mode is still API-only. Studio UI
+  modal not built.
+- Groove Theory not deployed to Netlify in this session — production
+  repo creation kicked off but the deploy path requires manual steps.
+- Two verification warnings (1 SEO + 1 other) on the last build, not
+  investigated.
+- Gemini API key reported as leaked; Gemini brain unavailable.
