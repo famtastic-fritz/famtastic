@@ -22,6 +22,7 @@ const { verifyAllAPIs, getBrainStatus } = require('./lib/brain-verifier');
 const { handleToolCall, initToolHandlers } = require('./lib/tool-handlers');
 const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = require('./lib/client-interview');
 const fontRegistry = require('./lib/font-registry');
+const layoutRegistry = require('./lib/layout-registry');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -6840,6 +6841,19 @@ function buildPromptContext(requestType, spec, userMessage) {
     }
   } catch (err) {
     console.warn('[font-registry] failed to resolve pairing:', err.message);
+  }
+
+  // Session 11 Fix 6: Layout variant from registry (vertical-aware).
+  // Picks one of five hero/page skeletons so each site gets a
+  // differentiated layout instead of the same centered hero every time.
+  // spec.layout.variant overrides the auto-pick.
+  try {
+    const variant = layoutRegistry.pickLayoutVariantForSpec(spec);
+    if (variant) {
+      briefContext += '\n\n' + layoutRegistry.buildLayoutPromptContext(variant);
+    }
+  } catch (err) {
+    console.warn('[layout-registry] failed to resolve variant:', err.message);
   }
 
   // Build decisions context
