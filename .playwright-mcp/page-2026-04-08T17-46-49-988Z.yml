@@ -1,0 +1,183 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Auntie Gale's" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Shop" [ref=e7] [cursor=pointer]:
+          - /url: shop.html
+        - link "Deals" [ref=e8] [cursor=pointer]:
+          - /url: deals.html
+        - link "About" [ref=e9] [cursor=pointer]:
+          - /url: about.html
+        - link "Contact" [ref=e10] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e11]: 📞 (303) 555-0192
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]: Browse & Buy
+        - heading "All Items" [level=1] [ref=e17]
+        - paragraph [ref=e18]: 32 items available right now
+      - img "Buddy popping up" [ref=e19]
+    - generic [ref=e20]:
+      - searchbox "Search items" [ref=e21]
+      - button "Search" [ref=e22] [cursor=pointer]: 🔍 Search
+  - generic [ref=e24]:
+    - text: ALL
+    - text: PRICED
+  - generic [ref=e27]:
+    - generic [ref=e28]:
+      - generic [ref=e29]: "Filter:"
+      - button "All Items" [ref=e30] [cursor=pointer]
+      - button "Furniture" [ref=e31] [cursor=pointer]
+      - button "Electronics" [ref=e32] [cursor=pointer]
+      - button "Clothing" [ref=e33] [cursor=pointer]
+      - button "Collectibles" [ref=e34] [cursor=pointer]
+      - button "Kitchen" [ref=e35] [cursor=pointer]
+      - button "Art & Decor" [ref=e36] [cursor=pointer]
+      - button "Tools" [ref=e37] [cursor=pointer]
+      - button "Books & Media" [ref=e38] [cursor=pointer]
+    - generic [ref=e39]:
+      - paragraph [ref=e40]: Showing 16 items
+      - generic [ref=e41]:
+        - combobox [ref=e42]:
+          - option "Newest First" [selected]
+          - 'option "Price: Low to High"'
+          - 'option "Price: High to Low"'
+          - option "Buddy's Picks First"
+        - button "⊞" [ref=e43] [cursor=pointer]
+        - button "☰" [ref=e44] [cursor=pointer]
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - img "Buddy's Pick!" [ref=e47]
+        - generic [ref=e48]: ⌚
+        - generic [ref=e49]:
+          - generic [ref=e50]: Available
+          - heading "Vintage Seiko Watch" [level=3] [ref=e51]
+          - paragraph [ref=e52]: 1970s automatic, fully working
+          - generic [ref=e53]: $65
+      - generic [ref=e54]:
+        - generic [ref=e55]: 📷
+        - generic [ref=e56]:
+          - generic [ref=e57]: Available
+          - heading "Canon AE-1 Film Camera" [level=3] [ref=e58]
+          - paragraph [ref=e59]: 50mm lens, tested working
+          - generic [ref=e60]: $95
+      - generic [ref=e61]:
+        - generic [ref=e62]: 🏺
+        - generic [ref=e63]:
+          - generic [ref=e64]: Available
+          - heading "Hand-Thrown Pottery Set" [level=3] [ref=e65]
+          - paragraph [ref=e66]: 4-piece mug set, local artisan
+          - generic [ref=e67]: $40
+      - generic [ref=e68]:
+        - img "Buddy's Pick!" [ref=e69]
+        - generic [ref=e70]: 📻
+        - generic [ref=e71]:
+          - generic [ref=e72]: Available
+          - heading "1950s Tube Radio" [level=3] [ref=e73]
+          - paragraph [ref=e74]: Restored, plays beautifully
+          - generic [ref=e75]: $150
+      - generic [ref=e76]:
+        - generic [ref=e77]: 🪑
+        - generic [ref=e78]:
+          - generic [ref=e79]: Available
+          - heading "Pair of Dining Chairs" [level=3] [ref=e80]
+          - paragraph [ref=e81]: Cushioned seats, solid wood frame
+          - generic [ref=e82]: $60
+      - generic [ref=e83]:
+        - generic [ref=e84]: 🍳
+        - generic [ref=e85]:
+          - generic [ref=e86]: Available
+          - heading "Cast Iron Skillet Set" [level=3] [ref=e87]
+          - paragraph [ref=e88]: 3 sizes, pre-seasoned, heavy duty
+          - generic [ref=e89]: $22
+      - generic [ref=e90]:
+        - generic [ref=e91]: 🎨
+        - generic [ref=e92]:
+          - generic [ref=e93]: Available
+          - heading "Framed Oil Painting" [level=3] [ref=e94]
+          - paragraph [ref=e95]: Mountain scene, 24"x18"
+          - generic [ref=e96]: $120
+      - generic [ref=e97]:
+        - generic [ref=e98]: 📚
+        - generic [ref=e99]:
+          - generic [ref=e100]: Available
+          - heading "Box of 50 Vinyl Records" [level=3] [ref=e101]
+          - paragraph [ref=e102]: Mixed genres, 60s–80s
+          - generic [ref=e103]: $45
+      - generic [ref=e104]:
+        - generic [ref=e105]: 🎸
+        - generic [ref=e106]:
+          - generic [ref=e107]: Available
+          - heading "Vintage Acoustic Guitar" [level=3] [ref=e108]
+          - paragraph [ref=e109]: Plays great, minor cosmetic wear
+          - generic [ref=e110]: $85
+      - generic [ref=e111]:
+        - generic [ref=e112]: 🪞
+        - generic [ref=e113]:
+          - generic [ref=e114]: Available
+          - heading "Ornate Wall Mirror" [level=3] [ref=e115]
+          - paragraph [ref=e116]: Gold frame, 30"x20"
+          - generic [ref=e117]: $55
+      - generic [ref=e118]:
+        - generic [ref=e119]: 👗
+        - generic [ref=e120]:
+          - generic [ref=e121]: Available
+          - heading "Vintage Wool Blazer" [level=3] [ref=e122]
+          - paragraph [ref=e123]: Women's size M, tweed pattern
+          - generic [ref=e124]: $28
+      - generic [ref=e125]:
+        - generic [ref=e126]: 🔨
+        - generic [ref=e127]:
+          - generic [ref=e128]: Available
+          - heading "Stanley Tool Set" [level=3] [ref=e129]
+          - paragraph [ref=e130]: 32 pieces, original case
+          - generic [ref=e131]: $35
+      - generic [ref=e132]:
+        - generic [ref=e133]: 💡
+        - generic [ref=e134]:
+          - generic [ref=e135]: Available
+          - heading "Art Deco Table Lamp" [level=3] [ref=e136]
+          - paragraph [ref=e137]: Purple glass shade, works great
+          - generic [ref=e138]: $45
+      - generic [ref=e139]:
+        - generic [ref=e140]: ☕
+        - generic [ref=e141]:
+          - generic [ref=e142]: SOLD
+          - heading "Vintage Percolator Coffee Set" [level=3] [ref=e143]
+          - paragraph [ref=e144]: Chrome, 6-cup, original box
+          - generic [ref=e145]: $30
+      - generic [ref=e146]:
+        - generic [ref=e147]: 📖
+        - generic [ref=e148]:
+          - generic [ref=e149]: Available
+          - heading "National Geographic Collection" [level=3] [ref=e150]
+          - paragraph [ref=e151]: 1970–1985, 147 issues, clean
+          - generic [ref=e152]: $25
+      - generic [ref=e153]:
+        - generic [ref=e154]: 🎲
+        - generic [ref=e155]:
+          - generic [ref=e156]: Available
+          - heading "Vintage Board Game Lot" [level=3] [ref=e157]
+          - paragraph [ref=e158]: 8 games, 60s–70s, all complete
+          - generic [ref=e159]: $50
+    - button "Load More Items →" [ref=e161] [cursor=pointer]
+  - contentinfo [ref=e162]:
+    - generic [ref=e163]:
+      - link "Auntie Gale's" [ref=e164] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e165]:
+        - link "Home" [ref=e166] [cursor=pointer]:
+          - /url: index.html
+        - link "Deals" [ref=e167] [cursor=pointer]:
+          - /url: deals.html
+        - link "About" [ref=e168] [cursor=pointer]:
+          - /url: about.html
+        - link "Contact" [ref=e169] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e170]: 📞 (303) 555-0192
+    - paragraph [ref=e172]: © 2026 Auntie Gale's Garage Sales. All rights reserved.

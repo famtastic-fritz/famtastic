@@ -1,0 +1,24 @@
+{
+  "build_patterns": {
+    "test-vertical": {
+      "total": 8,
+      "count": 2,
+      "calls": 2
+    },
+    "retail": {
+      "total": 8,
+      "count": 2,
+      "calls": 2
+    },
+    "test_vertical": {
+      "total": 296,
+      "count": 4,
+      "calls": 4
+    },
+    "test": {
+      "total": 154,
+      "count": 2,
+      "calls": 2
+    }
+  }
+}

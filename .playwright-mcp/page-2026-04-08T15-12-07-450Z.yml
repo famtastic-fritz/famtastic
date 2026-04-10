@@ -1,0 +1,112 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "The Street Family Reunion" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Our Story" [ref=e7] [cursor=pointer]:
+          - /url: our-story.html
+        - link "Reunion 2026" [ref=e8] [cursor=pointer]:
+          - /url: event-details.html
+        - link "Connect" [ref=e9] [cursor=pointer]:
+          - /url: connect.html
+        - link "Gallery" [ref=e10] [cursor=pointer]:
+          - /url: gallery.html
+  - generic [ref=e13]:
+    - heading "Our Story" [level=1] [ref=e14]
+    - paragraph [ref=e15]: A Legacy of Love, Connection & Heritage
+  - generic [ref=e17]:
+    - heading "Where It All Began" [level=2] [ref=e18]
+    - paragraph [ref=e20]: The Street family's story spans generations, rooted in tradition, resilience, and an unwavering commitment to keeping loved ones close. From humble beginnings to thriving communities, our family has built a legacy of character, warmth, and enduring bonds. This website honors that heritage and celebrates the remarkable individuals who came before us and those who carry our name forward.
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - heading "Our Heritage" [level=3] [ref=e23]
+        - paragraph [ref=e24]: Deep roots connect us to ancestors who built homes, raised families, and contributed to their communities with pride and purpose. We honor their memory by staying connected and preserving their stories for generations to come.
+      - generic [ref=e25]:
+        - heading "Our Values" [level=3] [ref=e26]
+        - paragraph [ref=e27]: Family first. Integrity always. Connection everywhere. These principles guide us as we celebrate reunions, preserve genealogy, and create new memories while honoring the wisdom of our ancestors.
+  - generic [ref=e29]:
+    - heading "Generational Milestones" [level=2] [ref=e30]
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - heading "The Founding Generation (1920s–1960s)" [level=3] [ref=e34]
+        - paragraph [ref=e35]: Our ancestors arrived with determination and built the foundation of family values that persist today. They established homes, created businesses, and nurtured tight-knit communities rooted in faith and hard work.
+      - generic [ref=e36]:
+        - heading "The Bridge Generation (1960s–1990s)" [level=3] [ref=e37]
+        - paragraph [ref=e38]: Growing up in a changing world, this generation honored traditions while embracing new opportunities. They raised families with pride, pursued education and careers, and expanded the Street family network across cities and states.
+      - generic [ref=e39]:
+        - heading "Today's Generation (1990s–present)" [level=3] [ref=e40]
+        - paragraph [ref=e41]: We are connected by technology and passion for family history. Through reunions, genealogy research, and shared memories, we celebrate our heritage while building new traditions for the next generation.
+  - generic [ref=e43]:
+    - heading "Our Legacy in Numbers" [level=2] [ref=e44]
+    - generic [ref=e46]:
+      - generic [ref=e47]:
+        - paragraph [ref=e48]: "0"
+        - paragraph [ref=e49]: Family Members
+      - generic [ref=e50]:
+        - paragraph [ref=e51]: "0"
+        - paragraph [ref=e52]: Generations
+      - generic [ref=e53]:
+        - paragraph [ref=e54]: "0"
+        - paragraph [ref=e55]: States Represented
+      - generic [ref=e56]:
+        - paragraph [ref=e57]: "0"
+        - paragraph [ref=e58]: United Family
+  - generic [ref=e60]:
+    - heading "The Street Family Tree" [level=2] [ref=e61]
+    - generic [ref=e63]:
+      - paragraph [ref=e64]: Our family tree extends across generations, connecting roots to branches to future growth. Below is a visual representation of major family lines and key ancestors who shaped our legacy.
+      - img [ref=e66]:
+        - generic [ref=e68]: Patriarch/Matriarch
+        - generic [ref=e70]: Child 1
+        - generic [ref=e72]: Child 2
+        - generic [ref=e74]: Child 3
+        - generic [ref=e78]: ● Patriarch/Matriarch ● Generations 1-2 ● Generations 3+
+      - paragraph [ref=e79]: Interested in your branch? Purchase our comprehensive bloodline book below to explore your family line in detail.
+  - generic [ref=e81]:
+    - heading "The Street Family Bloodline Book" [level=2] [ref=e82]
+    - generic [ref=e84]:
+      - img "Street Family Bloodline Book Cover" [ref=e86]
+      - generic [ref=e87]:
+        - heading "Discover Your Roots" [level=3] [ref=e88]
+        - paragraph [ref=e89]: This comprehensive 200+ page guide traces the Street family's genealogy from founding ancestors through today. Featuring detailed family trees, historical photos, ancestral biographies, and documented timelines, this book is an essential resource for anyone seeking to understand and honor their family heritage.
+        - generic [ref=e90]:
+          - paragraph [ref=e91]:
+            - generic [ref=e92]: ✓
+            - generic [ref=e93]: 200+ pages of family history & genealogy
+          - paragraph [ref=e94]:
+            - generic [ref=e95]: ✓
+            - generic [ref=e96]: Detailed family trees across 4 generations
+          - paragraph [ref=e97]:
+            - generic [ref=e98]: ✓
+            - generic [ref=e99]: Historical photos & ancestral stories
+          - paragraph [ref=e100]:
+            - generic [ref=e101]: ✓
+            - generic [ref=e102]: Instant PDF download after purchase
+        - generic [ref=e103]:
+          - paragraph [ref=e104]: $19.99 on the our-story page
+          - paragraph [ref=e105]: Digital PDF (instant delivery)
+        - button "Purchase Now" [ref=e107] [cursor=pointer]
+        - paragraph [ref=e108]: Secure payment via PayPal. Proceeds support future reunions & genealogy research.
+  - generic [ref=e110]:
+    - heading "What Family Members Say" [level=2] [ref=e111]
+    - generic [ref=e113]:
+      - generic [ref=e114]:
+        - paragraph [ref=e115]: "\"This book brought our family together in ways I never expected. Seeing our ancestors' stories compiled so beautifully made me proud to be a Street.\""
+        - paragraph [ref=e116]: — Margaret S., Philadelphia, PA
+      - generic [ref=e117]:
+        - paragraph [ref=e118]: "\"I finally understand where my family comes from. Every page is filled with love and careful research. Worth every penny!\""
+        - paragraph [ref=e119]: — James T., Atlanta, GA
+      - generic [ref=e120]:
+        - paragraph [ref=e121]: "\"Sharing this with my children opened their eyes to our heritage. They're now asking about their great-great grandparents!\""
+        - paragraph [ref=e122]: — Patricia W., Chicago, IL
+  - contentinfo [ref=e123]:
+    - generic [ref=e124]:
+      - paragraph [ref=e125]: © 2026 The Street Family Reunion. All rights reserved.
+      - paragraph [ref=e126]:
+        - text: Questions? Email
+        - link "hello@streetfamilyreunion.com" [ref=e127] [cursor=pointer]:
+          - /url: mailto:hello@streetfamilyreunion.com
+  - button "Scroll to top": ⬆

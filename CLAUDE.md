@@ -185,3 +185,6 @@ architectural investigations. Violating them means repeating work that has
 already been done and mistakes that have already been fixed.
 
 See `.wolf/OPENWOLF.md` for the full operating protocol.
+
+<!-- studio-context-include -->
+@STUDIO-CONTEXT.md

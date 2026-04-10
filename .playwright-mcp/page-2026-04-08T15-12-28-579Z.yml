@@ -1,0 +1,69 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "The Street Family Reunion" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Our Story" [ref=e7] [cursor=pointer]:
+          - /url: our-story.html
+        - link "Reunion 2026" [ref=e8] [cursor=pointer]:
+          - /url: event-details.html
+        - link "Connect" [ref=e9] [cursor=pointer]:
+          - /url: connect.html
+        - link "Gallery" [ref=e10] [cursor=pointer]:
+          - /url: gallery.html
+  - generic [ref=e12]:
+    - heading "Family Photo Gallery" [level=1] [ref=e13]
+    - paragraph [ref=e14]: A Century of Memories & Moments
+  - generic [ref=e16]:
+    - heading "Featured Photos" [level=2] [ref=e17]
+    - generic [ref=e19]:
+      - img "Family photo 1" [ref=e21]
+      - generic [ref=e22] [cursor=pointer]: ❮
+      - generic [ref=e23] [cursor=pointer]: ❯
+    - generic [ref=e24]:
+      - generic "Go to slide 1" [ref=e25] [cursor=pointer]
+      - generic "Go to slide 2" [ref=e26] [cursor=pointer]
+      - generic "Go to slide 3" [ref=e27] [cursor=pointer]
+    - paragraph [ref=e29]: Click the arrows to browse featured family moments. Help us grow this collection by uploading your photos!
+  - generic [ref=e31]:
+    - heading "Gallery by Decade" [level=2] [ref=e32]
+    - generic [ref=e34]:
+      - 'heading "1950s-1960s: Building Our Foundation" [level=3] [ref=e35]'
+      - generic [ref=e36]:
+        - img "Photo 1950s" [ref=e38] [cursor=pointer]
+        - img "Photo 1950s" [ref=e40] [cursor=pointer]
+        - img "Photo 1950s" [ref=e42] [cursor=pointer]
+    - generic [ref=e43]:
+      - 'heading "1970s-1980s: Growing Together" [level=3] [ref=e44]'
+      - generic [ref=e45]:
+        - img "Photo 1970s" [ref=e47] [cursor=pointer]
+        - img "Photo 1970s" [ref=e49] [cursor=pointer]
+        - img "Photo 1970s" [ref=e51] [cursor=pointer]
+    - generic [ref=e52]:
+      - 'heading "1990s-2000s: Expanding the Circle" [level=3] [ref=e53]'
+      - generic [ref=e54]:
+        - img "Photo 1990s" [ref=e56] [cursor=pointer]
+        - img "Photo 1990s" [ref=e58] [cursor=pointer]
+        - img "Photo 1990s" [ref=e60] [cursor=pointer]
+    - generic [ref=e61]:
+      - 'heading "2010s-Present: Living Our Legacy" [level=3] [ref=e62]'
+      - generic [ref=e63]:
+        - img "Photo 2010s" [ref=e65] [cursor=pointer]
+        - img "Photo 2010s" [ref=e67] [cursor=pointer]
+        - img "Photo 2010s" [ref=e69] [cursor=pointer]
+  - generic [ref=e71]:
+    - heading "Share Your Memories" [level=2] [ref=e72]
+    - paragraph [ref=e74]: Do you have family photos we haven't seen? Help us preserve our heritage by uploading photos from any era. Include captions with dates and names when possible — these details matter for future generations.
+    - link "Upload Your Photos" [ref=e75] [cursor=pointer]:
+      - /url: connect.html
+  - contentinfo [ref=e76]:
+    - generic [ref=e77]:
+      - paragraph [ref=e78]: © 2026 The Street Family Reunion. All rights reserved.
+      - paragraph [ref=e79]:
+        - text: Questions? Email
+        - link "hello@streetfamilyreunion.com" [ref=e80] [cursor=pointer]:
+          - /url: mailto:hello@streetfamilyreunion.com
+  - button "Scroll to top": ⬆

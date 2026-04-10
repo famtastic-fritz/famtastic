@@ -1,0 +1,25 @@
+[      93ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     309ms] [LOG] [ws] connected @ http://localhost:3334/:883
+[     332ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[   56677ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[   57621ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[   57650ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[   63497ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[   64313ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[   64335ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[  292564ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/health:0
+[  300868ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/build-from-brief:0
+[  547192ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/status:0
+[  547193ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/build-status:0
+[  547195ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/state:0
+[  547196ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/session:0
+[  886579ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  887015ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  887059ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[  887228ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 1259811ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[ 1395271ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[ 1474620ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[ 1542955ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[ 1598298ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.
+[ 1652577ms] Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:3334" from accessing a cross-origin frame.

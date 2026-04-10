@@ -3,8 +3,16 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-HUB_ROOT="$SCRIPT_DIR/.."
+# Resolve symlinks so SCRIPT_DIR always points to the real scripts/ directory,
+# not the symlink location (e.g. ~/.famtastic-bin/).
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+HUB_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$HUB_ROOT"
 
 CMD="${1:-help}"
@@ -25,7 +33,7 @@ case "$CMD" in
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
         shift 3 || true
-        scripts/site-chat "$TAG" "$@"
+        "$SCRIPT_DIR/site-chat" "$TAG" "$@"
         ;;
       chat)
         TAG="${3:-}"
@@ -35,7 +43,7 @@ case "$CMD" in
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
         shift 3 || true
-        scripts/site-chat "$TAG" "$@"
+        "$SCRIPT_DIR/site-chat" "$TAG" "$@"
         ;;
       brainstorm)
         TAG="${3:-}"
@@ -46,7 +54,7 @@ case "$CMD" in
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
         shift 3 || true
-        scripts/site-brainstorm "$TAG" "$@"
+        "$SCRIPT_DIR/site-brainstorm" "$TAG" "$@"
         ;;
       preview)
         TAG="${3:-}"
@@ -56,7 +64,7 @@ case "$CMD" in
           exit 1
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
-        scripts/site-preview "$TAG" "$PORT"
+        "$SCRIPT_DIR/site-preview" "$TAG" "$PORT"
         ;;
       build)
         TAG="${3:-}"
@@ -66,7 +74,7 @@ case "$CMD" in
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
         shift 3 || true
-        scripts/orchestrator-site "$TAG" "$@"
+        "$SCRIPT_DIR/orchestrator-site" "$TAG" "$@"
         ;;
       list|status)
         TAG="${3:-}"
@@ -123,7 +131,7 @@ case "$CMD" in
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
         shift 3 || true
-        scripts/site-deploy "$TAG" "$@"
+        "$SCRIPT_DIR/site-deploy" "$TAG" "$@"
         ;;
       export)
         TAG="${3:-}"
@@ -134,7 +142,7 @@ case "$CMD" in
           exit 1
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
-        scripts/site-export "$TAG" "$TARGET"
+        "$SCRIPT_DIR/site-export" "$TAG" "$TARGET"
         ;;
       import)
         SOURCE="${3:-}"
@@ -144,7 +152,7 @@ case "$CMD" in
           echo "  Imports existing HTML files into Studio"
           exit 1
         fi
-        scripts/site-import "$SOURCE" "$TAG"
+        "$SCRIPT_DIR/site-import" "$SOURCE" "$TAG"
         ;;
       domain)
         TAG="${3:-}"
@@ -154,7 +162,7 @@ case "$CMD" in
           exit 1
         fi
         [[ "$TAG" == site-* ]] || TAG="site-$TAG"
-        scripts/site-domain "$TAG" "$DOMAIN"
+        "$SCRIPT_DIR/site-domain" "$TAG" "$DOMAIN"
         ;;
       *)
         cat <<'SITEHELP'
@@ -182,13 +190,13 @@ SITEHELP
     IDEACMD="${2:-help}"
     shift 2 || true
     case "$IDEACMD" in
-      capture)   python3 cli/idea/capture.py "$@" ;;
-      triage)    python3 cli/idea/triage.py "$@" ;;
-      blueprint) python3 cli/idea/blueprint.py "$@" ;;
-      proto|prototype) python3 cli/idea/prototype.py "$@" ;;
-      validate)  python3 cli/idea/validate.py "$@" ;;
-      learn)     python3 cli/idea/learn.py "$@" ;;
-      digest)    python3 cli/idea/digest.py "$@" ;;
+      capture)   python3 "$HUB_ROOT/cli/idea/capture.py" "$@" ;;
+      triage)    python3 "$HUB_ROOT/cli/idea/triage.py" "$@" ;;
+      blueprint) python3 "$HUB_ROOT/cli/idea/blueprint.py" "$@" ;;
+      proto|prototype) python3 "$HUB_ROOT/cli/idea/prototype.py" "$@" ;;
+      validate)  python3 "$HUB_ROOT/cli/idea/validate.py" "$@" ;;
+      learn)     python3 "$HUB_ROOT/cli/idea/learn.py" "$@" ;;
+      digest)    python3 "$HUB_ROOT/cli/idea/digest.py" "$@" ;;
       *)
         cat <<'IDEAHELP'
 fam-hub idea — Idea Capture & Lifecycle
@@ -219,7 +227,7 @@ IDEAHELP
           exit 1
         fi
         shift 4 || true
-        scripts/agents run "$AGENT" "$TAG" "$@"
+        "$SCRIPT_DIR/agents" run "$AGENT" "$TAG" "$@"
         ;;
       status)
         TAG="${3:-}"
@@ -227,7 +235,7 @@ IDEAHELP
           echo "Usage: fam-hub agent status <tag>"
           exit 1
         fi
-        scripts/agents status "$TAG"
+        "$SCRIPT_DIR/agents" status "$TAG"
         ;;
       logs)
         TAG="${3:-}"; LOGAGENT="${4:-claude}"
@@ -235,7 +243,7 @@ IDEAHELP
           echo "Usage: fam-hub agent logs <tag> [agent]"
           exit 1
         fi
-        scripts/agents logs "$TAG" "$LOGAGENT"
+        "$SCRIPT_DIR/agents" logs "$TAG" "$LOGAGENT"
         ;;
       help|*)
         echo "Usage: fam-hub agent <command>"
@@ -250,7 +258,7 @@ IDEAHELP
 
   convo)
     case "$SUBCMD" in
-      reconcile) shift 2; scripts/fam-convo-reconcile "$@" ;;
+      reconcile) shift 2; "$SCRIPT_DIR/fam-convo-reconcile" "$@" ;;
       *) echo "Usage: fam-hub convo reconcile <tag>" ;;
     esac
     ;;
@@ -262,7 +270,7 @@ IDEAHELP
       exit 1
     fi
     shift 3
-    scripts/fam-convo-ingest "$TAG" "$TYPE" "$@"
+    "$SCRIPT_DIR/fam-convo-ingest" "$TAG" "$TYPE" "$@"
     ;;
 
   promote)
@@ -272,7 +280,7 @@ IDEAHELP
       exit 1
     fi
     shift 2
-    scripts/fam-convo-promote "$TAG" "$@"
+    "$SCRIPT_DIR/fam-convo-promote" "$TAG" "$@"
     ;;
 
   # --- Research ---
@@ -280,7 +288,7 @@ IDEAHELP
     RESCMD="${2:-help}"
     case "$RESCMD" in
       seed-from-sites)
-        node "$ROOT/scripts/seed-pinecone" ;;
+        node "$SCRIPT_DIR/seed-pinecone" ;;
       sources)
         curl -s http://localhost:3334/api/research/sources | python3 -m json.tool 2>/dev/null || echo "Studio not running" ;;
       effectiveness)

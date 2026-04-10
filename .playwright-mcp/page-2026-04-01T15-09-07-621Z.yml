@@ -1,0 +1,216 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "the best lawn care" [ref=e5] [cursor=pointer]:
+        - /url: index.html
+        - img "the best lawn care" [ref=e6]
+      - navigation [ref=e7]:
+        - link "Home" [ref=e8] [cursor=pointer]:
+          - /url: index.html
+        - link "Services" [ref=e9] [cursor=pointer]:
+          - /url: services.html
+        - link "About" [ref=e10] [cursor=pointer]:
+          - /url: about.html
+        - link "Gallery" [ref=e11] [cursor=pointer]:
+          - /url: gallery.html
+        - link "Why Choose Us" [ref=e12] [cursor=pointer]:
+          - /url: why-choose-us.html
+        - link "Testimonials" [ref=e13] [cursor=pointer]:
+          - /url: testimonials.html
+        - link "Get a Quote" [ref=e14] [cursor=pointer]:
+          - /url: contact.html
+  - main [ref=e15]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - img "hero 1" [ref=e20]
+          - generic [ref=e22]:
+            - heading "Your Lawn, Perfectly Maintained" [level=1] [ref=e23]
+            - paragraph [ref=e24]: Professional lawn care from homeowners who understand quality
+            - link "Get Your Free Assessment" [ref=e25] [cursor=pointer]:
+              - /url: contact.html
+        - generic [ref=e26]:
+          - img "hero 2" [ref=e27]
+          - generic [ref=e29]:
+            - heading "Aeration & Soil Health" [level=1] [ref=e30]
+            - paragraph [ref=e31]: Transform your lawn from the ground up with expert aeration
+            - link "Explore Services" [ref=e32] [cursor=pointer]:
+              - /url: services.html
+        - generic [ref=e33]:
+          - img "hero 3" [ref=e34]
+          - generic [ref=e36]:
+            - heading "Results You Can See" [level=1] [ref=e37]
+            - paragraph [ref=e38]: Consistent care. Visible results. Complete satisfaction.
+            - link "View Our Work" [ref=e39] [cursor=pointer]:
+              - /url: gallery.html
+      - button "‹" [ref=e40] [cursor=pointer]
+      - button "›" [ref=e41] [cursor=pointer]
+    - generic [ref=e47]:
+      - generic [ref=e48]:
+        - heading "Why Choose the best lawn care" [level=2] [ref=e49]
+        - paragraph [ref=e50]: We combine local expertise with professional standards for results that last
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - heading "Licensed & Insured" [level=3] [ref=e53]
+          - paragraph [ref=e54]: Full coverage for your peace of mind. Every service backed by comprehensive insurance and local licensing.
+        - generic [ref=e55]:
+          - heading "Locally Owned" [level=3] [ref=e56]
+          - paragraph [ref=e57]: Your neighbors' trusted choice since 2015. We're invested in making our community the most beautiful.
+        - generic [ref=e58]:
+          - heading "Guaranteed Results" [level=3] [ref=e59]
+          - paragraph [ref=e60]: Not satisfied? We'll make it right. Our satisfaction guarantee means you're covered every time.
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - heading "What We Offer" [level=2] [ref=e64]
+        - paragraph [ref=e65]: Everything your lawn needs for year-round beauty and health
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - img "service aeration" [ref=e68]
+          - heading "Aeration" [level=3] [ref=e69]
+          - paragraph [ref=e70]: Loosen compacted soil and improve water penetration for healthier, denser grass growth.
+        - generic [ref=e71]:
+          - img "service mowing" [ref=e72]
+          - heading "Mowing & Maintenance" [level=3] [ref=e73]
+          - paragraph [ref=e74]: Weekly or bi-weekly cuts with professional equipment, edging, and cleanup included.
+        - generic [ref=e75]:
+          - img "service design" [ref=e76]
+          - heading "Lawn Design" [level=3] [ref=e77]
+          - paragraph [ref=e78]: Custom landscaping and design services to transform your outdoor space into a showcase.
+      - link "View All Services" [ref=e80] [cursor=pointer]:
+        - /url: services.html
+    - generic [ref=e82]:
+      - generic [ref=e83]:
+        - heading "Recent Projects" [level=2] [ref=e84]
+        - paragraph [ref=e85]: See the transformations we've created for our customers
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - img "gallery 1" [ref=e88]
+          - paragraph [ref=e90]: Lush Lawn Transformation
+        - generic [ref=e91]:
+          - img "gallery 2" [ref=e92]
+          - paragraph [ref=e94]: Professional Aeration
+        - generic [ref=e95]:
+          - img "gallery 3" [ref=e96]
+          - paragraph [ref=e98]: Premium Maintenance
+        - generic [ref=e99]:
+          - img "gallery 4" [ref=e100]
+          - paragraph [ref=e102]: Spring Renewal
+        - generic [ref=e103]:
+          - img "gallery 5" [ref=e104]
+          - paragraph [ref=e106]: Landscape Design
+        - generic [ref=e107]:
+          - img "gallery 6" [ref=e108]
+          - paragraph [ref=e110]: Summer Showcase
+      - link "View Full Gallery" [ref=e112] [cursor=pointer]:
+        - /url: gallery.html
+    - generic [ref=e114]:
+      - generic [ref=e115]:
+        - heading "What Our Customers Say" [level=2] [ref=e116]
+        - paragraph [ref=e117]: Real reviews from happy homeowners
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - img "testimonial 1" [ref=e120]
+          - paragraph [ref=e121]: "\"The transformation of our lawn was incredible. From patchy and brown to thick and healthy. Highly recommend!\""
+          - paragraph [ref=e122]: Sarah Mitchell
+          - paragraph [ref=e123]: Homeowner, Downtown Area
+        - generic [ref=e124]:
+          - img "testimonial 2" [ref=e125]
+          - paragraph [ref=e126]: "\"Professional, reliable, and they actually show up on time. Worth every penny. Best service in town.\""
+          - paragraph [ref=e127]: James Rodriguez
+          - paragraph [ref=e128]: Homeowner, Westside
+        - generic [ref=e129]:
+          - img "testimonial 3" [ref=e130]
+          - paragraph [ref=e131]: "\"My neighbors asked who I use. That's the best compliment I can give. They're fantastic!\""
+          - paragraph [ref=e132]: Linda Chen
+          - paragraph [ref=e133]: Homeowner, Northridge
+      - link "Read More Reviews" [ref=e135] [cursor=pointer]:
+        - /url: testimonials.html
+    - generic [ref=e138]:
+      - heading "Get in Touch" [level=2] [ref=e139]
+      - paragraph [ref=e140]: Questions about our services? Fill out the form below and we'll be in touch within 24 hours.
+      - generic [ref=e141]:
+        - generic [ref=e142]:
+          - generic [ref=e143]: Name
+          - textbox "Name" [ref=e144]
+        - generic [ref=e145]:
+          - generic [ref=e146]: Email
+          - textbox "Email" [ref=e147]
+        - generic [ref=e148]:
+          - generic [ref=e149]: Phone (optional)
+          - textbox "Phone (optional)" [ref=e150]
+        - generic [ref=e151]:
+          - generic [ref=e152]: Interested In
+          - combobox "Interested In" [ref=e153]:
+            - option "Select a service" [selected]
+            - option "Aeration"
+            - option "Mowing & Maintenance"
+            - option "Lawn Design"
+            - option "Other"
+        - generic [ref=e154]:
+          - generic [ref=e155]: Message
+          - textbox "Message" [ref=e156]
+        - button "Send Message" [ref=e157] [cursor=pointer]
+    - generic [ref=e160]:
+      - generic [ref=e161]:
+        - heading "Why Homeowners Trust Us" [level=2] [ref=e162]
+        - list [ref=e163]:
+          - listitem [ref=e164]: ✓ Licensed & fully insured lawn care professionals
+          - listitem [ref=e165]: ✓ Locally owned and operated since 2015
+          - listitem [ref=e166]: ✓ Same crew every visit for consistency
+          - listitem [ref=e167]: ✓ 100% satisfaction guarantee on all work
+          - listitem [ref=e168]: ✓ Fast, free quote within 24 hours
+        - link "Get a Free Quote Today" [ref=e169] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - generic [ref=e172]: 9+
+          - generic [ref=e173]: Years of Excellence
+        - generic [ref=e174]:
+          - generic [ref=e175]: 400+
+          - generic [ref=e176]: Happy Customers
+        - generic [ref=e177]:
+          - generic [ref=e178]: 4.9★
+          - generic [ref=e179]: Average Rating
+        - generic [ref=e180]:
+          - generic [ref=e181]: 100%
+          - generic [ref=e182]: Satisfaction
+  - contentinfo [ref=e183]:
+    - generic [ref=e184]:
+      - generic [ref=e185]:
+        - generic [ref=e186]:
+          - heading "the best lawn care" [level=3] [ref=e187]
+          - paragraph [ref=e188]: Premium lawn care services for homeowners who demand excellence and reliability.
+        - generic [ref=e189]:
+          - heading "Quick Links" [level=4] [ref=e190]
+          - list [ref=e191]:
+            - listitem [ref=e192]:
+              - link "Home" [ref=e193] [cursor=pointer]:
+                - /url: index.html
+            - listitem [ref=e194]:
+              - link "Services" [ref=e195] [cursor=pointer]:
+                - /url: services.html
+            - listitem [ref=e196]:
+              - link "About Us" [ref=e197] [cursor=pointer]:
+                - /url: about.html
+            - listitem [ref=e198]:
+              - link "Gallery" [ref=e199] [cursor=pointer]:
+                - /url: gallery.html
+        - generic [ref=e200]:
+          - heading "More" [level=4] [ref=e201]
+          - list [ref=e202]:
+            - listitem [ref=e203]:
+              - link "Why Choose Us" [ref=e204] [cursor=pointer]:
+                - /url: why-choose-us.html
+            - listitem [ref=e205]:
+              - link "Testimonials" [ref=e206] [cursor=pointer]:
+                - /url: testimonials.html
+            - listitem [ref=e207]:
+              - link "Contact" [ref=e208] [cursor=pointer]:
+                - /url: contact.html
+        - generic [ref=e209]:
+          - heading "Contact" [level=4] [ref=e210]
+          - list [ref=e211]:
+            - listitem [ref=e212]: 📞 (555) 123-4567
+            - listitem [ref=e213]: 📧 info@bestlawncare.com
+            - listitem [ref=e214]: 📍 Locally Owned & Insured
+      - paragraph [ref=e216]: © 2026 the best lawn care. All rights reserved.

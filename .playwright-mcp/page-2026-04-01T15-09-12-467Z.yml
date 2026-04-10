@@ -1,0 +1,280 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - heading "FAMtastic Site Studio" [level=1] [ref=e4]
+      - button "site-the-best-lawn-care ▾" [ref=e6] [cursor=pointer]
+    - generic [ref=e7]:
+      - button "Rebuild" [ref=e8] [cursor=pointer]
+      - button "Studio" [ref=e9] [cursor=pointer]
+      - button "Toggle Preview" [ref=e10] [cursor=pointer]
+      - button "Settings" [ref=e11] [cursor=pointer]:
+        - img [ref=e12]
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e18]:
+        - text: Welcome to Site Studio! Describe the website you want to build, and I'll create a design brief before generating anything.
+        - text: "Try:"
+        - emphasis [ref=e19]: "\"I'm building a site for my landscaping company called GreenScape Pro. We do lawn care, tree trimming, and garden design. I want it to feel premium and modern.\""
+      - generic [ref=e21]:
+        - textbox "Describe what you want..." [ref=e22]
+        - generic "Upload image" [ref=e23] [cursor=pointer]:
+          - img [ref=e24]
+        - button "Send" [ref=e26] [cursor=pointer]
+    - generic [ref=e29]:
+      - generic [ref=e31]:
+        - generic [ref=e32]: Live Preview
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - button "Mobile preview" [ref=e35] [cursor=pointer]:
+              - img [ref=e36]
+            - button "Tablet preview" [ref=e38] [cursor=pointer]:
+              - img [ref=e39]
+            - button "Desktop preview" [ref=e41] [cursor=pointer]:
+              - img [ref=e42]
+          - generic [ref=e44]: connecting...
+          - button "Slots" [ref=e45] [cursor=pointer]
+          - button "Rescan" [ref=e46] [cursor=pointer]
+          - generic "Build verification status — click to view details" [ref=e47] [cursor=pointer]:
+            - generic [ref=e49]: Not Reviewed Yet
+          - button "Refresh preview" [ref=e50] [cursor=pointer]: Refresh
+      - iframe [ref=e52]:
+        - generic [active] [ref=f1e1]:
+          - banner [ref=f1e2]:
+            - generic [ref=f1e4]:
+              - link "the best lawn care" [ref=f1e5] [cursor=pointer]:
+                - /url: index.html
+                - img "the best lawn care" [ref=f1e6]
+              - generic [ref=f1e7] [cursor=pointer]: ☰
+          - main [ref=f1e8]:
+            - generic [ref=f1e10]:
+              - generic [ref=f1e11]:
+                - generic [ref=f1e12]:
+                  - img "hero 1" [ref=f1e13]
+                  - generic [ref=f1e15]:
+                    - heading "Your Lawn, Perfectly Maintained" [level=1] [ref=f1e16]
+                    - paragraph [ref=f1e17]: Professional lawn care from homeowners who understand quality
+                    - link "Get Your Free Assessment" [ref=f1e18] [cursor=pointer]:
+                      - /url: contact.html
+                - generic [ref=f1e19]:
+                  - img "hero 2" [ref=f1e20]
+                  - generic [ref=f1e22]:
+                    - heading "Aeration & Soil Health" [level=1] [ref=f1e23]
+                    - paragraph [ref=f1e24]: Transform your lawn from the ground up with expert aeration
+                    - link "Explore Services" [ref=f1e25] [cursor=pointer]:
+                      - /url: services.html
+                - generic [ref=f1e26]:
+                  - img "hero 3" [ref=f1e27]
+                  - generic [ref=f1e29]:
+                    - heading "Results You Can See" [level=1] [ref=f1e30]
+                    - paragraph [ref=f1e31]: Consistent care. Visible results. Complete satisfaction.
+                    - link "View Our Work" [ref=f1e32] [cursor=pointer]:
+                      - /url: gallery.html
+              - button "‹" [ref=f1e33] [cursor=pointer]
+              - button "›" [ref=f1e34] [cursor=pointer]
+            - generic [ref=f1e40]:
+              - generic [ref=f1e41]:
+                - heading "Why Choose the best lawn care" [level=2] [ref=f1e42]
+                - paragraph [ref=f1e43]: We combine local expertise with professional standards for results that last
+              - generic [ref=f1e44]:
+                - generic [ref=f1e45]:
+                  - heading "Licensed & Insured" [level=3] [ref=f1e46]
+                  - paragraph [ref=f1e47]: Full coverage for your peace of mind. Every service backed by comprehensive insurance and local licensing.
+                - generic [ref=f1e48]:
+                  - heading "Locally Owned" [level=3] [ref=f1e49]
+                  - paragraph [ref=f1e50]: Your neighbors' trusted choice since 2015. We're invested in making our community the most beautiful.
+                - generic [ref=f1e51]:
+                  - heading "Guaranteed Results" [level=3] [ref=f1e52]
+                  - paragraph [ref=f1e53]: Not satisfied? We'll make it right. Our satisfaction guarantee means you're covered every time.
+            - generic [ref=f1e55]:
+              - generic [ref=f1e56]:
+                - heading "What We Offer" [level=2] [ref=f1e57]
+                - paragraph [ref=f1e58]: Everything your lawn needs for year-round beauty and health
+              - generic [ref=f1e59]:
+                - generic [ref=f1e60]:
+                  - img "service aeration" [ref=f1e61]
+                  - heading "Aeration" [level=3] [ref=f1e62]
+                  - paragraph [ref=f1e63]: Loosen compacted soil and improve water penetration for healthier, denser grass growth.
+                - generic [ref=f1e64]:
+                  - img "service mowing" [ref=f1e65]
+                  - heading "Mowing & Maintenance" [level=3] [ref=f1e66]
+                  - paragraph [ref=f1e67]: Weekly or bi-weekly cuts with professional equipment, edging, and cleanup included.
+                - generic [ref=f1e68]:
+                  - img "service design" [ref=f1e69]
+                  - heading "Lawn Design" [level=3] [ref=f1e70]
+                  - paragraph [ref=f1e71]: Custom landscaping and design services to transform your outdoor space into a showcase.
+              - link "View All Services" [ref=f1e73] [cursor=pointer]:
+                - /url: services.html
+            - generic [ref=f1e75]:
+              - generic [ref=f1e76]:
+                - heading "Recent Projects" [level=2] [ref=f1e77]
+                - paragraph [ref=f1e78]: See the transformations we've created for our customers
+              - generic [ref=f1e79]:
+                - generic [ref=f1e80]:
+                  - img "gallery 1" [ref=f1e81]
+                  - paragraph [ref=f1e83]: Lush Lawn Transformation
+                - generic [ref=f1e84]:
+                  - img "gallery 2" [ref=f1e85]
+                  - paragraph [ref=f1e87]: Professional Aeration
+                - generic [ref=f1e88]:
+                  - img "gallery 3" [ref=f1e89]
+                  - paragraph [ref=f1e91]: Premium Maintenance
+                - generic [ref=f1e92]:
+                  - img "gallery 4" [ref=f1e93]
+                  - paragraph [ref=f1e95]: Spring Renewal
+                - generic [ref=f1e96]:
+                  - img "gallery 5" [ref=f1e97]
+                  - paragraph [ref=f1e99]: Landscape Design
+                - generic [ref=f1e100]:
+                  - img "gallery 6" [ref=f1e101]
+                  - paragraph [ref=f1e103]: Summer Showcase
+              - link "View Full Gallery" [ref=f1e105] [cursor=pointer]:
+                - /url: gallery.html
+            - generic [ref=f1e107]:
+              - generic [ref=f1e108]:
+                - heading "What Our Customers Say" [level=2] [ref=f1e109]
+                - paragraph [ref=f1e110]: Real reviews from happy homeowners
+              - generic [ref=f1e111]:
+                - generic [ref=f1e112]:
+                  - img "testimonial 1" [ref=f1e113]
+                  - paragraph [ref=f1e114]: "\"The transformation of our lawn was incredible. From patchy and brown to thick and healthy. Highly recommend!\""
+                  - paragraph [ref=f1e115]: Sarah Mitchell
+                  - paragraph [ref=f1e116]: Homeowner, Downtown Area
+                - generic [ref=f1e117]:
+                  - img "testimonial 2" [ref=f1e118]
+                  - paragraph [ref=f1e119]: "\"Professional, reliable, and they actually show up on time. Worth every penny. Best service in town.\""
+                  - paragraph [ref=f1e120]: James Rodriguez
+                  - paragraph [ref=f1e121]: Homeowner, Westside
+                - generic [ref=f1e122]:
+                  - img "testimonial 3" [ref=f1e123]
+                  - paragraph [ref=f1e124]: "\"My neighbors asked who I use. That's the best compliment I can give. They're fantastic!\""
+                  - paragraph [ref=f1e125]: Linda Chen
+                  - paragraph [ref=f1e126]: Homeowner, Northridge
+              - link "Read More Reviews" [ref=f1e128] [cursor=pointer]:
+                - /url: testimonials.html
+            - generic [ref=f1e131]:
+              - heading "Get in Touch" [level=2] [ref=f1e132]
+              - paragraph [ref=f1e133]: Questions about our services? Fill out the form below and we'll be in touch within 24 hours.
+              - generic [ref=f1e134]:
+                - generic [ref=f1e135]:
+                  - generic [ref=f1e136]: Name
+                  - textbox "Name" [ref=f1e137]
+                - generic [ref=f1e138]:
+                  - generic [ref=f1e139]: Email
+                  - textbox "Email" [ref=f1e140]
+                - generic [ref=f1e141]:
+                  - generic [ref=f1e142]: Phone (optional)
+                  - textbox "Phone (optional)" [ref=f1e143]
+                - generic [ref=f1e144]:
+                  - generic [ref=f1e145]: Interested In
+                  - combobox "Interested In" [ref=f1e146]:
+                    - option "Select a service" [selected]
+                    - option "Aeration"
+                    - option "Mowing & Maintenance"
+                    - option "Lawn Design"
+                    - option "Other"
+                - generic [ref=f1e147]:
+                  - generic [ref=f1e148]: Message
+                  - textbox "Message" [ref=f1e149]
+                - button "Send Message" [ref=f1e150] [cursor=pointer]
+            - generic [ref=f1e153]:
+              - generic [ref=f1e154]:
+                - heading "Why Homeowners Trust Us" [level=2] [ref=f1e155]
+                - list [ref=f1e156]:
+                  - listitem [ref=f1e157]: ✓ Licensed & fully insured lawn care professionals
+                  - listitem [ref=f1e158]: ✓ Locally owned and operated since 2015
+                  - listitem [ref=f1e159]: ✓ Same crew every visit for consistency
+                  - listitem [ref=f1e160]: ✓ 100% satisfaction guarantee on all work
+                  - listitem [ref=f1e161]: ✓ Fast, free quote within 24 hours
+                - link "Get a Free Quote Today" [ref=f1e162] [cursor=pointer]:
+                  - /url: contact.html
+              - generic [ref=f1e163]:
+                - generic [ref=f1e164]:
+                  - generic [ref=f1e165]: 9+
+                  - generic [ref=f1e166]: Years of Excellence
+                - generic [ref=f1e167]:
+                  - generic [ref=f1e168]: 400+
+                  - generic [ref=f1e169]: Happy Customers
+                - generic [ref=f1e170]:
+                  - generic [ref=f1e171]: 4.9★
+                  - generic [ref=f1e172]: Average Rating
+                - generic [ref=f1e173]:
+                  - generic [ref=f1e174]: 100%
+                  - generic [ref=f1e175]: Satisfaction
+          - contentinfo [ref=f1e176]:
+            - generic [ref=f1e177]:
+              - generic [ref=f1e178]:
+                - generic [ref=f1e179]:
+                  - heading "the best lawn care" [level=3] [ref=f1e180]
+                  - paragraph [ref=f1e181]: Premium lawn care services for homeowners who demand excellence and reliability.
+                - generic [ref=f1e182]:
+                  - heading "Quick Links" [level=4] [ref=f1e183]
+                  - list [ref=f1e184]:
+                    - listitem [ref=f1e185]:
+                      - link "Home" [ref=f1e186] [cursor=pointer]:
+                        - /url: index.html
+                    - listitem [ref=f1e187]:
+                      - link "Services" [ref=f1e188] [cursor=pointer]:
+                        - /url: services.html
+                    - listitem [ref=f1e189]:
+                      - link "About Us" [ref=f1e190] [cursor=pointer]:
+                        - /url: about.html
+                    - listitem [ref=f1e191]:
+                      - link "Gallery" [ref=f1e192] [cursor=pointer]:
+                        - /url: gallery.html
+                - generic [ref=f1e193]:
+                  - heading "More" [level=4] [ref=f1e194]
+                  - list [ref=f1e195]:
+                    - listitem [ref=f1e196]:
+                      - link "Why Choose Us" [ref=f1e197] [cursor=pointer]:
+                        - /url: why-choose-us.html
+                    - listitem [ref=f1e198]:
+                      - link "Testimonials" [ref=f1e199] [cursor=pointer]:
+                        - /url: testimonials.html
+                    - listitem [ref=f1e200]:
+                      - link "Contact" [ref=f1e201] [cursor=pointer]:
+                        - /url: contact.html
+                - generic [ref=f1e202]:
+                  - heading "Contact" [level=4] [ref=f1e203]
+                  - list [ref=f1e204]:
+                    - listitem [ref=f1e205]: 📞 (555) 123-4567
+                    - listitem [ref=f1e206]: 📧 info@bestlawncare.com
+                    - listitem [ref=f1e207]: 📍 Locally Owned & Insured
+              - paragraph [ref=f1e209]: © 2026 the best lawn care. All rights reserved.
+    - generic [ref=e53]:
+      - heading "Studio State" [level=2] [ref=e55]
+      - generic [ref=e56]:
+        - button "Create" [ref=e57] [cursor=pointer]:
+          - img [ref=e58]
+          - generic [ref=e61]: Create
+        - button "Ship" [ref=e62] [cursor=pointer]:
+          - img [ref=e63]
+          - generic [ref=e68]: Ship
+        - button "Grow" [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e73]: Grow
+      - generic [ref=e74]:
+        - button "Media" [ref=e75] [cursor=pointer]
+        - button "Structure" [ref=e76] [cursor=pointer]
+        - button "Style" [ref=e77] [cursor=pointer]
+        - button "Terminal" [ref=e78] [cursor=pointer]
+      - generic [ref=e80]:
+        - generic [ref=e82] [cursor=pointer]:
+          - generic [ref=e83]: ▸
+          - heading "Site Health" [level=3] [ref=e84]
+        - generic [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]: ▸
+          - heading "File Tree" [level=3] [ref=e88]
+        - generic [ref=e90] [cursor=pointer]:
+          - generic [ref=e91]: ▸
+          - heading "Media Specs" [level=3] [ref=e92]
+        - generic [ref=e94] [cursor=pointer]:
+          - generic [ref=e95]: ▸
+          - heading "Uploaded Assets" [level=3] [ref=e96]
+  - generic [ref=e97]:
+    - generic [ref=e99]:
+      - generic [ref=e100]: "Context:"
+      - generic [ref=e102]: 0%
+    - generic [ref=e103]:
+      - generic [ref=e104]: $0.00
+      - generic [ref=e105]: ·
+      - generic [ref=e106]: 0 min

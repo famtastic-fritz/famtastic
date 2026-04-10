@@ -1,0 +1,185 @@
+[     110ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     376ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[     400ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  460479ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  566458ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[  566459ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[  566997ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  568470ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[  568520ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 1934982ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 1961260ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 1962339ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 2040782ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 2041904ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 2044981ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 2066158ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 2137580ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3418370ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[ 3418373ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[ 3418781ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3420285ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3420400ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3420400ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:922
+[ 3422541ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3424403ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3424403ms] [LOG] [ws] disconnected, reconnecting in 8000ms... @ http://localhost:3334/:922
+[ 3425919ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3430984ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3432405ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3432405ms] [LOG] [ws] disconnected, reconnecting in 16000ms... @ http://localhost:3334/:922
+[ 3438584ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3448410ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3448410ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 3449978ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3467070ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3478415ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3478415ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 3492706ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3508420ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3508420ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 3522712ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3538431ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3538431ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 3552718ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3568436ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3568436ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 3582724ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3598438ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3598438ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 3612730ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 3628440ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 3628440ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 3642798ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3655985ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3658046ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3658448ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[ 3658464ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4399515ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[ 4399516ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[ 4399998ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4401553ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4401585ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[ 4401610ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4407725ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4413779ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4414831ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4419897ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4426972ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4736207ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[ 4736208ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[ 4736775ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4738218ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 4738218ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:922
+[ 4738281ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4740532ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4742220ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 4742220ms] [LOG] [ws] disconnected, reconnecting in 8000ms... @ http://localhost:3334/:922
+[ 4743912ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4748977ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4750222ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 4750222ms] [LOG] [ws] disconnected, reconnecting in 16000ms... @ http://localhost:3334/:922
+[ 4756575ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4766226ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 4766226ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:922
+[ 4767968ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4785056ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 4796236ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[ 4796298ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4808496ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4847854ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[ 4847855ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[ 4849857ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[ 4849877ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4854986ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8759791ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[ 8759793ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[ 8760609ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 8761832ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[ 8761875ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8778108ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8784198ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8785263ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8791330ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8797393ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8804506ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8884920ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8899687ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8899987ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-test-input-knockout.png:0
+[ 8899988ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-a-knockout.png:0
+[ 8899988ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-b-knockout.png:0
+[ 8900001ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-dark-test-knockout.png:0
+[ 8902540ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8912631ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8912912ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-a-knockout.png:0
+[ 8912913ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-b-knockout.png:0
+[ 8912913ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-test-input-knockout.png:0
+[ 8912913ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-dark-test-knockout.png:0
+[ 9696619ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[ 9696620ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[ 9698634ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[ 9698663ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 9712378ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[ 9712378ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[ 9712829ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 9714332ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 9714391ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[ 9714391ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:922
+[ 9716599ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 9718423ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[ 9718438ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[10053477ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[10053477ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[10054245ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[10055483ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[10055522ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[10377094ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[10377095ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[10377278ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[10378807ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[10379143ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[10379183ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[10386289ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[10407457ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[10921277ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[10921278ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[10922107ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[10923280ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[10923280ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:922
+[10923610ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[10925861ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[10927285ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[10927337ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[11142155ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[11142156ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[11142565ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[11144089ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[11144177ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[11144193ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[12799658ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[12799658ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[12799943ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[12801580ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[12801661ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[12801682ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[12875545ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[12875545ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[12876096ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[12877553ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[12877595ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[13281649ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[13281649ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[13281812ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[13283322ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[13283651ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[13283663ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[13382256ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[13382257ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[13383154ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[13384264ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[13384301ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[13821672ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[13821672ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[13822446ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[13823677ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[13823705ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63

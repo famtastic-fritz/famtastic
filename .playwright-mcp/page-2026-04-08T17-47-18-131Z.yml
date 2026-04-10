@@ -1,0 +1,107 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Auntie Gale's" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Shop" [ref=e7] [cursor=pointer]:
+          - /url: shop.html
+        - link "Deals" [ref=e8] [cursor=pointer]:
+          - /url: deals.html
+        - link "About" [ref=e9] [cursor=pointer]:
+          - /url: about.html
+        - link "Contact" [ref=e10] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e11]: 📞 (303) 555-0192
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e15]: The Story Behind the Sales
+      - heading "Meet Auntie Gale" [level=1] [ref=e16]
+      - paragraph [ref=e17]: Denver's most trusted garage sale curator. 15 years of finding hidden treasure so you don't have to.
+    - img "Buddy the woodpecker mascot, full body" [ref=e18]
+  - generic [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]: 15+
+      - text: Years Selling
+    - generic [ref=e23]:
+      - generic [ref=e24]: 2,400+
+      - text: Happy Customers
+    - generic [ref=e25]:
+      - generic [ref=e26]: 18,000+
+      - text: Items Sold
+    - generic [ref=e27]:
+      - generic [ref=e28]: 4.9★
+      - text: Avg Rating
+  - generic [ref=e31]:
+    - generic [ref=e32]:
+      - generic [ref=e33]: In Her Own Words
+      - heading "How It All Started" [level=2] [ref=e34]
+      - generic [ref=e35]:
+        - paragraph [ref=e36]: "\"I started going to estate sales with my mother when I was seven years old. She had this gift — she could walk into a crowded, chaotic sale and immediately spot the one thing worth buying. I thought it was magic."
+        - paragraph [ref=e37]: Turns out it's not magic. It's 40 years of knowing what things are worth, what they're made of, and whether they'll hold up. I've been doing this professionally since 2010, and I still feel that same little thrill every Saturday morning when I open the doors."
+        - paragraph [ref=e38]: Everything I sell is personally inspected. If it's marked Available, it works. If it's marked as-is, I'll tell you exactly what's wrong. I don't sell junk — I sell the good stuff that other people didn't know was good.
+      - generic [ref=e39]: — Auntie Gale
+    - generic [ref=e41]:
+      - heading "The Auntie Gale Promise" [level=3] [ref=e42]
+      - generic [ref=e43]:
+        - generic [ref=e44]: ✓
+        - generic [ref=e45]:
+          - heading "Everything Is Tested" [level=4] [ref=e46]
+          - paragraph [ref=e47]: Electronics are plugged in. Mechanical items are operated. If it doesn't work, it's labeled that way.
+      - generic [ref=e48]:
+        - generic [ref=e49]: $
+        - generic [ref=e50]:
+          - heading "Fair Prices, No Games" [level=4] [ref=e51]
+          - paragraph [ref=e52]: Every item is priced based on fair market value. No "make an offer" run-arounds — the price is the price.
+      - generic [ref=e53]:
+        - generic [ref=e54]: 📸
+        - generic [ref=e55]:
+          - heading "Real Photos Always" [level=4] [ref=e56]
+          - paragraph [ref=e57]: Every photo on this site is of the actual item for sale. No stock photos. No "similar item" bait-and-switch.
+      - generic [ref=e58]:
+        - generic [ref=e59]: 📍
+        - generic [ref=e60]:
+          - heading "Local & Accountable" [level=4] [ref=e61]
+          - paragraph [ref=e62]: You know where I am. You can call me. I'll remember your name. That's how this works.
+  - generic [ref=e65]:
+    - img "Buddy the woodpecker mascot, full body" [ref=e66]
+    - generic [ref=e67]:
+      - generic [ref=e68]: The Official Mascot
+      - heading "Meet Buddy" [level=2] [ref=e69]
+      - paragraph [ref=e70]: Buddy the woodpecker showed up at my first garage sale in 2010 — a real one. He was hammering away at the oak tree in the backyard the whole day, and every time a customer made a great find, he'd let out this enormous knock-knock-knock like he was celebrating with us.
+      - paragraph [ref=e71]: My niece drew him on a piece of cardboard as a sign that day. He's been our mascot ever since. Enthusiastic, persistent, and absolutely certain that the best stuff is always worth a little more effort to find.
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - img "Buddy thumbs up" [ref=e74]
+          - paragraph [ref=e75]: Buddy's Pick
+        - generic [ref=e76]:
+          - img "Buddy peeking" [ref=e77]
+          - paragraph [ref=e78]: Great Find!
+        - generic [ref=e79]:
+          - img "Buddy waving" [ref=e80]
+          - paragraph [ref=e81]: See You Saturday
+  - generic [ref=e83]:
+    - heading "Come Find Your Treasure" [level=2] [ref=e84]
+    - paragraph [ref=e85]: Open every Saturday and Sunday, 7am to 2pm. The good stuff goes early.
+    - generic [ref=e86]:
+      - link "Browse This Week's Items" [ref=e87] [cursor=pointer]:
+        - /url: shop.html
+      - link "Get Directions →" [ref=e88] [cursor=pointer]:
+        - /url: contact.html
+  - contentinfo [ref=e89]:
+    - generic [ref=e90]:
+      - link "Auntie Gale's" [ref=e91] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e92]:
+        - link "Home" [ref=e93] [cursor=pointer]:
+          - /url: index.html
+        - link "Shop" [ref=e94] [cursor=pointer]:
+          - /url: shop.html
+        - link "Deals" [ref=e95] [cursor=pointer]:
+          - /url: deals.html
+        - link "Contact" [ref=e96] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e97]: 📞 (303) 555-0192
+    - paragraph [ref=e99]: © 2026 Auntie Gale's Garage Sales. All rights reserved.

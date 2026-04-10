@@ -1,0 +1,213 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Auntie Gale's" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Shop" [ref=e7] [cursor=pointer]:
+          - /url: shop.html
+        - link "Deals" [ref=e8] [cursor=pointer]:
+          - /url: deals.html
+        - link "About" [ref=e9] [cursor=pointer]:
+          - /url: about.html
+        - link "Contact" [ref=e10] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e11]: 📞 (303) 555-0192
+  - generic [ref=e12]:
+    - generic [ref=e16]:
+      - text: OPEN
+      - text: SAT &
+      - text: SUN
+    - generic [ref=e20]:
+      - text: FREE
+      - text: ENTRY
+    - generic [ref=e23]:
+      - text: NEW
+      - text: ITEMS
+    - generic [ref=e25]:
+      - generic [ref=e26]: Curated Estate & Garage Finds
+      - heading "DEALS SO GOOD IT FEELS LIKE STEALING" [level=1] [ref=e27]:
+        - text: DEALS SO GOOD
+        - text: IT FEELS LIKE
+        - text: STEALING
+      - paragraph [ref=e28]: New treasures every weekend — Denver Metro Area
+      - link "Shop This Weekend's Deals →" [ref=e29] [cursor=pointer]:
+        - /url: shop.html
+    - img "Buddy the woodpecker mascot peeking in"
+    - generic [ref=e30]: New treasures every weekend!
+  - img [ref=e32]
+  - generic [ref=e35]:
+    - generic [ref=e36]:
+      - generic [ref=e37]: Fresh This Week
+      - heading "Featured Finds" [level=2] [ref=e38]
+      - paragraph [ref=e39]: "Last updated: April 8, 2026"
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - group "1 / 5" [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]: 🎸
+            - generic [ref=e45]:
+              - generic [ref=e46]: Available
+              - heading "Vintage Fender Acoustic Guitar" [level=3] [ref=e47]
+              - generic [ref=e48]:
+                - generic [ref=e49]: $85
+                - generic [ref=e50]: $150
+              - generic [ref=e52]: Estate Find
+        - group "2 / 5" [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: 💡
+            - generic [ref=e56]:
+              - generic [ref=e57]: Available
+              - heading "Mid-Century Ceramic Table Lamp" [level=3] [ref=e58]
+              - generic [ref=e60]: $35
+              - generic [ref=e62]: Vintage
+        - group "3 / 5" [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e65]: 📚
+            - generic [ref=e66]:
+              - generic [ref=e67]: Available
+              - heading "Box of 50 Vinyl Records — Mixed" [level=3] [ref=e68]
+              - generic [ref=e69]:
+                - generic [ref=e70]: $45
+                - generic [ref=e71]: $80
+              - generic [ref=e73]: Lot Deal
+        - group "4 / 5" [ref=e74]:
+          - generic [ref=e75]:
+            - generic [ref=e76]: 🪑
+            - generic [ref=e77]:
+              - generic [ref=e78]: Available
+              - heading "Pair of Cushioned Dining Chairs" [level=3] [ref=e79]
+              - generic [ref=e81]: $60
+              - generic [ref=e83]: Furniture
+        - group "5 / 5" [ref=e84]:
+          - generic [ref=e85]:
+            - generic [ref=e86]: 🎨
+            - generic [ref=e87]:
+              - generic [ref=e88]: Available
+              - heading "Framed Oil Painting — Mountain Scene" [level=3] [ref=e89]
+              - generic [ref=e90]:
+                - generic [ref=e91]: $120
+                - generic [ref=e92]: $200
+              - generic [ref=e94]: Art
+      - generic [ref=e95]:
+        - button "Go to slide 1" [ref=e96] [cursor=pointer]
+        - button "Go to slide 2" [ref=e97] [cursor=pointer]
+        - button "Go to slide 3" [ref=e98] [cursor=pointer]
+        - button "Go to slide 4" [ref=e99] [cursor=pointer]
+        - button "Go to slide 5" [ref=e100] [cursor=pointer]
+      - button "Previous slide" [ref=e101] [cursor=pointer]:
+        - img
+      - button "Next slide" [ref=e102] [cursor=pointer]:
+        - img
+    - link "See All Items →" [ref=e104] [cursor=pointer]:
+      - /url: shop.html
+  - img [ref=e106]
+  - generic [ref=e109]:
+    - generic [ref=e110]:
+      - img "Buddy giving thumbs up" [ref=e111]
+      - generic [ref=e112]:
+        - generic [ref=e113]: Buddy Approved
+        - heading "Buddy's Picks" [level=2] [ref=e114]
+        - paragraph [ref=e115]: Hand-selected deals Buddy personally vouches for
+    - generic [ref=e116]:
+      - generic [ref=e117]:
+        - img "Buddy's Pick!" [ref=e118]
+        - generic [ref=e119]: ⌚
+        - generic [ref=e120]:
+          - generic [ref=e121]: Available
+          - heading "Vintage Seiko Watch" [level=3] [ref=e122]
+          - paragraph [ref=e123]: 1970s automatic wind, fully functional
+          - generic [ref=e124]: $55
+      - generic [ref=e125]:
+        - img "Buddy's Pick!" [ref=e126]
+        - generic [ref=e127]: 📷
+        - generic [ref=e128]:
+          - generic [ref=e129]: Available
+          - heading "Canon AE-1 Film Camera" [level=3] [ref=e130]
+          - paragraph [ref=e131]: With 50mm lens, tested and working
+          - generic [ref=e132]: $95
+      - generic [ref=e133]:
+        - img "Buddy's Pick!" [ref=e134]
+        - generic [ref=e135]: 🏺
+        - generic [ref=e136]:
+          - generic [ref=e137]: Available
+          - heading "Hand-Thrown Pottery Set" [level=3] [ref=e138]
+          - paragraph [ref=e139]: 4-piece mug set, local artisan
+          - generic [ref=e140]: $40
+      - generic [ref=e141]:
+        - img "Buddy's Pick!" [ref=e142]
+        - generic [ref=e143]: 📻
+        - generic [ref=e144]:
+          - generic [ref=e145]: Available
+          - heading "1950s Tube Radio" [level=3] [ref=e146]
+          - paragraph [ref=e147]: Restored, plays beautifully
+          - generic [ref=e148]: $150
+    - link "Shop All Buddy's Picks →" [ref=e150] [cursor=pointer]:
+      - /url: shop.html
+  - generic [ref=e152]:
+    - generic [ref=e153]:
+      - generic [ref=e154]: Today Only
+      - heading "Daily Deal" [level=2] [ref=e155]
+    - generic [ref=e156]:
+      - img "Buddy holding sale sign" [ref=e157]
+      - generic [ref=e159]:
+        - text: TODAY
+        - text: ONLY
+      - generic [ref=e160]:
+        - heading "Singer Featherweight Sewing Machine" [level=2] [ref=e161]
+        - generic [ref=e162]: Estate Sale
+      - generic [ref=e163]:
+        - generic [ref=e165]: 🧵
+        - generic [ref=e166]:
+          - generic [ref=e167]: Was $220
+          - generic [ref=e168]: $95
+          - paragraph [ref=e169]: 1950s Singer Featherweight 221, recently serviced and oiled. Comes with original case and 12 bobbins. A collector's dream.
+          - generic [ref=e170]: Available
+          - link "Claim This Deal →" [ref=e171] [cursor=pointer]:
+            - /url: contact.html
+  - generic [ref=e173]:
+    - generic [ref=e174]:
+      - generic [ref=e175]: Happy Customers
+      - heading "Real People, Real Deals" [level=2] [ref=e176]
+    - generic [ref=e177]:
+      - generic [ref=e178]:
+        - text: "\""
+        - generic [ref=e179]: ★★★★★
+        - paragraph [ref=e180]: "\"Found a set of cast iron pans for $12. My daughter thought I was crazy stopping — I proved her wrong the moment we got home!\""
+        - generic [ref=e181]: — Maureen T., Lakewood
+      - generic [ref=e182]:
+        - text: "\""
+        - generic [ref=e183]: ★★★★★
+        - paragraph [ref=e184]: "\"Gale knows her stuff! She told me the lamp I was eyeing was a genuine McCoy piece. Got it for $18. Listed for $140 at the antique mall.\""
+        - generic [ref=e185]: — Dennis R., Denver
+      - generic [ref=e186]:
+        - text: "\""
+        - generic [ref=e187]: ★★★★★
+        - paragraph [ref=e188]: "\"I've been shopping with Auntie Gale for 3 years. She tests everything before selling it. You know exactly what you're getting.\""
+        - generic [ref=e189]: — Sarah K., Aurora
+  - generic [ref=e191]:
+    - generic [ref=e192]: Get First Dibs
+    - heading "New Items Every Week" [level=2] [ref=e193]
+    - paragraph [ref=e194]: Sign up and I'll email you before I post publicly. The good stuff goes fast.
+    - generic [ref=e195]:
+      - textbox "Email address" [ref=e196]:
+        - /placeholder: your@email.com
+      - button "Sign Me Up!" [ref=e197] [cursor=pointer]
+    - paragraph [ref=e198]: No spam. Just deals. Unsubscribe anytime.
+  - contentinfo [ref=e199]:
+    - generic [ref=e200]:
+      - link "Auntie Gale's" [ref=e201] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e202]:
+        - link "Home" [ref=e203] [cursor=pointer]:
+          - /url: index.html
+        - link "Shop" [ref=e204] [cursor=pointer]:
+          - /url: shop.html
+        - link "Deals" [ref=e205] [cursor=pointer]:
+          - /url: deals.html
+        - link "About" [ref=e206] [cursor=pointer]:
+          - /url: about.html
+      - generic [ref=e207]: 📞 (303) 555-0192
+    - paragraph [ref=e209]: © 2026 Auntie Gale's Garage Sales. All rights reserved.

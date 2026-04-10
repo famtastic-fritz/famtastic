@@ -8,6 +8,12 @@ sites/
 # Local Netlify folder
 .netlify
 
+# Claude Code worktrees — ephemeral, never tracked
+.claude/worktrees/
+
+# Local tools (adb-mcp bridge etc) — machine-specific, not tracked
+tools/
+
 # OpenWolf — ephemeral/local files (anatomy.md, cerebrum.md, buglog.json are tracked)
 .wolf/token-ledger.json
 .wolf/memory.md

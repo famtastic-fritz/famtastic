@@ -1,0 +1,15 @@
+[      89ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     343ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[     374ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[   46351ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:897
+[   46351ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:922
+[   46661ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[   48164ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[   48356ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[   48356ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:922
+[   50417ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[   52358ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:897
+[   52358ms] [LOG] [ws] disconnected, reconnecting in 8000ms... @ http://localhost:3334/:922
+[   53829ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[   60363ms] [LOG] [ws] connected @ http://localhost:3334/:899
+[   60378ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63

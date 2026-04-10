@@ -1,0 +1,160 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Auntie Gale's" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Shop" [ref=e7] [cursor=pointer]:
+          - /url: shop.html
+        - link "Deals" [ref=e8] [cursor=pointer]:
+          - /url: deals.html
+        - link "About" [ref=e9] [cursor=pointer]:
+          - /url: about.html
+        - link "Contact" [ref=e10] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e11]: 📞 (303) 555-0192
+  - generic [ref=e12]:
+    - generic [ref=e14]:
+      - text: HOT
+      - text: DEALS
+    - generic [ref=e17]:
+      - text: SAVE
+      - text: BIG
+    - generic [ref=e20]:
+      - text: TODAY
+      - text: ONLY
+    - generic [ref=e22]:
+      - generic [ref=e23]: Limited Time
+      - heading "TODAY'S DEALS" [level=1] [ref=e24]
+      - paragraph [ref=e25]: Prices change every weekend. These prices are good until Sunday close.
+  - generic [ref=e27]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]: The Main Event
+        - heading "Deal of the Day" [level=2] [ref=e31]
+      - generic [ref=e32]:
+        - img "Buddy holding SALE sign" [ref=e33]
+        - generic [ref=e35]:
+          - text: DEAL
+          - text: OF
+          - text: DAY
+        - heading "Singer Featherweight 221 Sewing Machine" [level=2] [ref=e37]
+        - generic [ref=e38]:
+          - generic [ref=e40]: 🧵
+          - generic [ref=e41]:
+            - generic [ref=e42]: Estate Sale
+            - generic [ref=e43]: Was $220
+            - generic [ref=e44]: $95
+            - paragraph [ref=e45]: 1950s Singer Featherweight 221 in immaculate condition. Recently serviced and oiled by a local sewing machine repair shop. Comes with original carrying case, 12 bobbins, assorted feet, and the original manual. These machines are legendary for a reason — they sew like a dream.
+            - generic [ref=e46]: Available Now
+            - generic [ref=e47]:
+              - paragraph [ref=e48]: "Deal expires in:"
+              - generic [ref=e49]:
+                - generic [ref=e50]:
+                  - generic [ref=e51]: "96"
+                  - generic [ref=e52]: Hours
+                - generic [ref=e53]: ":"
+                - generic [ref=e54]:
+                  - generic [ref=e55]: "12"
+                  - generic [ref=e56]: Mins
+                - generic [ref=e57]: ":"
+                - generic [ref=e58]:
+                  - generic [ref=e59]: "55"
+                  - generic [ref=e60]: Secs
+            - link "Claim This Deal →" [ref=e61] [cursor=pointer]:
+              - /url: contact.html
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - generic [ref=e64]: Limited Quantities
+        - heading "Flash Sales" [level=2] [ref=e65]
+        - paragraph [ref=e66]: These prices are slashed for this weekend only
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]: Flash Sale
+          - generic [ref=e70]:
+            - generic [ref=e71]: 📷
+            - generic [ref=e72]:
+              - heading "Canon AE-1 Film Camera" [level=3] [ref=e73]
+              - generic [ref=e74]:
+                - generic [ref=e75]: $95
+                - generic [ref=e76]: $140
+              - generic [ref=e78]: Available
+          - paragraph [ref=e80]: Ends Sunday 2pm
+        - generic [ref=e81]:
+          - generic [ref=e82]: Flash Sale
+          - generic [ref=e83]:
+            - generic [ref=e84]: 📻
+            - generic [ref=e85]:
+              - heading "1950s Tube Radio" [level=3] [ref=e86]
+              - generic [ref=e87]:
+                - generic [ref=e88]: $150
+                - generic [ref=e89]: $200
+              - generic [ref=e91]: Available
+          - paragraph [ref=e93]: Ends Sunday 2pm
+        - generic [ref=e94]:
+          - generic [ref=e95]: Flash Sale
+          - generic [ref=e96]:
+            - generic [ref=e97]: 🎸
+            - generic [ref=e98]:
+              - heading "Vintage Acoustic Guitar" [level=3] [ref=e99]
+              - generic [ref=e100]:
+                - generic [ref=e101]: $85
+                - generic [ref=e102]: $150
+              - generic [ref=e104]: Available
+          - paragraph [ref=e106]: Ends Sunday 2pm
+        - generic [ref=e107]:
+          - generic [ref=e108]: Flash Sale
+          - generic [ref=e109]:
+            - generic [ref=e110]: 🎨
+            - generic [ref=e111]:
+              - heading "Mountain Oil Painting" [level=3] [ref=e112]
+              - generic [ref=e113]:
+                - generic [ref=e114]: $120
+                - generic [ref=e115]: $200
+              - generic [ref=e117]: Available
+          - paragraph [ref=e119]: Ends Sunday 2pm
+        - generic [ref=e120]:
+          - generic [ref=e121]: Flash Sale
+          - generic [ref=e122]:
+            - generic [ref=e123]: 📚
+            - generic [ref=e124]:
+              - heading "Vinyl Records Box (50)" [level=3] [ref=e125]
+              - generic [ref=e126]:
+                - generic [ref=e127]: $45
+                - generic [ref=e128]: $80
+              - generic [ref=e130]: Available
+          - paragraph [ref=e132]: Ends Sunday 2pm
+        - generic [ref=e133]:
+          - generic [ref=e134]: Flash Sale
+          - generic [ref=e135]:
+            - generic [ref=e136]: ⌚
+            - generic [ref=e137]:
+              - heading "Vintage Seiko Watch" [level=3] [ref=e138]
+              - generic [ref=e139]:
+                - generic [ref=e140]: $65
+                - generic [ref=e141]: $100
+              - generic [ref=e143]: Available
+          - paragraph [ref=e145]: Ends Sunday 2pm
+    - generic [ref=e146]:
+      - img "Buddy running with a box" [ref=e147]
+      - heading "More Deals Dropping Saturday" [level=3] [ref=e148]
+      - paragraph [ref=e149]: Buddy is literally running to bring you the next batch of deals. Check back Saturday morning!
+      - link "Get Notified →" [ref=e150] [cursor=pointer]:
+        - /url: index.html#newsletter
+  - contentinfo [ref=e151]:
+    - generic [ref=e152]:
+      - link "Auntie Gale's" [ref=e153] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e154]:
+        - link "Home" [ref=e155] [cursor=pointer]:
+          - /url: index.html
+        - link "Shop" [ref=e156] [cursor=pointer]:
+          - /url: shop.html
+        - link "About" [ref=e157] [cursor=pointer]:
+          - /url: about.html
+        - link "Contact" [ref=e158] [cursor=pointer]:
+          - /url: contact.html
+      - generic [ref=e159]: 📞 (303) 555-0192
+    - paragraph [ref=e161]: © 2026 Auntie Gale's Garage Sales. All rights reserved.

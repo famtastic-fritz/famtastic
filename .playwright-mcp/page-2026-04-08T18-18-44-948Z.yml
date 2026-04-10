@@ -1,0 +1,357 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - heading "FAMtastic Site Studio" [level=1] [ref=e4]
+      - button "site-auntie-gale-garage-sales ▾" [ref=e6] [cursor=pointer]
+    - generic [ref=e7]:
+      - button "Rebuild" [ref=e8] [cursor=pointer]
+      - button "Toggle Explorer" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+      - button "Toggle Panel" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+      - button "Settings" [ref=e15] [cursor=pointer]:
+        - img [ref=e16]
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: Explorer
+        - button "×" [ref=e23] [cursor=pointer]
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: ▸
+            - generic [ref=e28]: Pages
+          - generic [ref=e30]:
+            - generic [ref=e358] [cursor=pointer]:
+              - img [ref=e359]
+              - generic [ref=e361]: Home
+            - generic [ref=e362] [cursor=pointer]:
+              - img [ref=e363]
+              - generic [ref=e365]: About
+            - generic [ref=e366] [cursor=pointer]:
+              - img [ref=e367]
+              - generic [ref=e369]: Contact
+            - generic [ref=e370] [cursor=pointer]:
+              - img [ref=e371]
+              - generic [ref=e373]: Deals
+            - generic [ref=e374] [cursor=pointer]:
+              - img [ref=e375]
+              - generic [ref=e377]: Shop
+        - generic [ref=e51]:
+          - generic [ref=e52] [cursor=pointer]:
+            - generic [ref=e53]: ▸
+            - generic [ref=e54]: Sections
+          - generic [ref=e56]:
+            - generic [ref=e378] [cursor=pointer]:
+              - generic [ref=e379]: ▸
+              - generic [ref=e380]: page
+            - 'generic "text: 📞 (303) 555-0192" [ref=e381] [cursor=pointer]':
+              - generic [ref=e382]: T
+              - generic [ref=e383]: nav-phone
+            - 'generic "text: Get In Touch" [ref=e384] [cursor=pointer]':
+              - generic [ref=e385]: T
+              - generic [ref=e386]: contact-headline
+            - 'generic "text: Questions? Want to reserve an item? Just say hi? W" [ref=e387] [cursor=pointer]':
+              - generic [ref=e388]: T
+              - generic [ref=e389]: contact-subheadline
+            - 'generic "text: Find Us" [ref=e390] [cursor=pointer]':
+              - generic [ref=e391]: T
+              - generic [ref=e392]: info-title
+            - 'generic "text: 4821 Belleview Ave Denver, CO 8024" [ref=e393] [cursor=pointer]':
+              - generic [ref=e394]: T
+              - generic [ref=e395]: address
+            - 'generic "text: (303) 555-0192 Text or call — I re" [ref=e396] [cursor=pointer]':
+              - generic [ref=e397]: T
+              - generic [ref=e398]: phone
+            - 'generic "text: gale@auntiegalesales.com I check e" [ref=e399] [cursor=pointer]':
+              - generic [ref=e400]: T
+              - generic [ref=e401]: email
+            - 'generic "text: @AuntieGalesGarageSales I post new" [ref=e402] [cursor=pointer]':
+              - generic [ref=e403]: T
+              - generic [ref=e404]: facebook
+            - 'generic "text: Sale Hours" [ref=e405] [cursor=pointer]':
+              - generic [ref=e406]: T
+              - generic [ref=e407]: hours-title
+            - 'generic "text: Saturday 🎉" [ref=e408] [cursor=pointer]':
+              - generic [ref=e409]: T
+              - generic [ref=e410]: sat-label
+            - 'generic "text: 8am – 3pm" [ref=e411] [cursor=pointer]':
+              - generic [ref=e412]: T
+              - generic [ref=e413]: sat-hours
+            - 'generic "text: Sunday 🎉" [ref=e414] [cursor=pointer]':
+              - generic [ref=e415]: T
+              - generic [ref=e416]: sun-label
+            - 'generic "text: 8am – 3pm" [ref=e417] [cursor=pointer]':
+              - generic [ref=e418]: T
+              - generic [ref=e419]: sun-hours
+            - 'generic "text: 💡 Pro tip: Come early! The best finds go in the f" [ref=e420] [cursor=pointer]':
+              - generic [ref=e421]: T
+              - generic [ref=e422]: hours-note
+            - 'generic "text: Send a Message" [ref=e423] [cursor=pointer]':
+              - generic [ref=e424]: T
+              - generic [ref=e425]: form-title
+            - 'generic "text: Questions about an item, directions, or just want" [ref=e426] [cursor=pointer]':
+              - generic [ref=e427]: T
+              - generic [ref=e428]: form-subtitle
+            - 'generic "text: I''ll make sure Gale gets your message!" [ref=e429] [cursor=pointer]':
+              - generic [ref=e430]: T
+              - generic [ref=e431]: buddy-form-msg
+            - 'generic "text: Send Message →" [ref=e432] [cursor=pointer]':
+              - generic [ref=e433]: T
+              - generic [ref=e434]: form-submit
+            - 'generic "text: 📍 4821 Belleview Ave, Denver, CO 80246" [ref=e435] [cursor=pointer]':
+              - generic [ref=e436]: T
+              - generic [ref=e437]: map-title
+            - 'generic "text: Interactive map coming soon" [ref=e438] [cursor=pointer]':
+              - generic [ref=e439]: T
+              - generic [ref=e440]: map-placeholder
+        - generic [ref=e59] [cursor=pointer]:
+          - generic [ref=e60]: ▸
+          - generic [ref=e61]: Media
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - button "Preview" [ref=e66] [cursor=pointer]
+          - button "Editable View" [ref=e67] [cursor=pointer]
+          - button "Images" [ref=e68] [cursor=pointer]
+          - button "Research" [ref=e69] [cursor=pointer]
+          - button "Compare" [ref=e70] [cursor=pointer]
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]: Live Preview
+              - generic [ref=e76]:
+                - generic [ref=e77]:
+                  - button "Mobile preview" [ref=e78] [cursor=pointer]:
+                    - img [ref=e79]
+                  - button "Tablet preview" [ref=e81] [cursor=pointer]:
+                    - img [ref=e82]
+                  - button "Desktop preview" [ref=e84] [cursor=pointer]:
+                    - img [ref=e85]
+                - generic [ref=e87]: localhost:3333
+                - button "Slots" [ref=e88] [cursor=pointer]
+                - button "Rescan" [ref=e89] [cursor=pointer]
+                - generic "Build verification status — click to view details" [ref=e90] [cursor=pointer]:
+                  - generic [ref=e92]: Not Reviewed Yet
+                - button "Refresh preview" [ref=e93] [cursor=pointer]: Refresh
+            - generic [ref=e94]:
+              - button "home" [ref=e441] [cursor=pointer]
+              - button "about" [ref=e442] [cursor=pointer]
+              - button "contact" [ref=e443] [cursor=pointer]
+              - button "deals" [ref=e444] [cursor=pointer]
+              - button "shop" [ref=e445] [cursor=pointer]
+          - iframe [ref=e101]:
+            - generic [active] [ref=f9e1]:
+              - navigation [ref=f9e2]:
+                - generic [ref=f9e3]:
+                  - link "Auntie Gale's" [ref=f9e4] [cursor=pointer]:
+                    - /url: index.html
+                  - generic [ref=f9e5]:
+                    - link "Home" [ref=f9e6] [cursor=pointer]:
+                      - /url: index.html
+                    - link "Shop" [ref=f9e7] [cursor=pointer]:
+                      - /url: shop.html
+                    - link "Deals" [ref=f9e8] [cursor=pointer]:
+                      - /url: deals.html
+                    - link "About" [ref=f9e9] [cursor=pointer]:
+                      - /url: about.html
+                    - link "Contact" [ref=f9e10] [cursor=pointer]:
+                      - /url: contact.html
+                  - generic [ref=f9e11]: 📞 (303) 555-0192
+              - generic [ref=f9e12]:
+                - generic [ref=f9e14]:
+                  - text: OPEN
+                  - text: WEEKends
+                - generic [ref=f9e16]:
+                  - generic [ref=f9e17]: Find Us
+                  - heading "Get In Touch" [level=1] [ref=f9e18]
+                  - paragraph [ref=f9e19]: Questions? Want to reserve an item? Just say hi? We'd love to hear from you.
+              - generic [ref=f9e22]:
+                - generic [ref=f9e23]:
+                  - generic [ref=f9e24]:
+                    - heading "Find Us" [level=2] [ref=f9e25]
+                    - generic [ref=f9e26]:
+                      - generic [ref=f9e27]: 📍
+                      - generic [ref=f9e28]:
+                        - heading "Location" [level=4] [ref=f9e29]
+                        - paragraph [ref=f9e30]:
+                          - text: 4821 Belleview Ave
+                          - text: Denver, CO 80246
+                          - text: (South Denver, near Cherry Creek)
+                    - generic [ref=f9e31]:
+                      - generic [ref=f9e32]: 📞
+                      - generic [ref=f9e33]:
+                        - heading "Phone" [level=4] [ref=f9e34]
+                        - paragraph [ref=f9e35]:
+                          - link "(303) 555-0192" [ref=f9e36] [cursor=pointer]:
+                            - /url: tel:+13035550192
+                          - text: Text or call — I respond same day
+                    - generic [ref=f9e37]:
+                      - generic [ref=f9e38]: ✉
+                      - generic [ref=f9e39]:
+                        - heading "Email" [level=4] [ref=f9e40]
+                        - paragraph [ref=f9e41]:
+                          - link "gale@auntiegalesales.com" [ref=f9e42] [cursor=pointer]:
+                            - /url: mailto:gale@auntiegalesales.com
+                          - text: I check email daily
+                    - generic [ref=f9e43]:
+                      - generic [ref=f9e44]: 📘
+                      - generic [ref=f9e45]:
+                        - heading "Facebook" [level=4] [ref=f9e46]
+                        - paragraph [ref=f9e47]:
+                          - text: "@AuntieGalesGarageSales"
+                          - text: I post new items here first!
+                  - generic [ref=f9e48]:
+                    - heading "Sale Hours" [level=2] [ref=f9e49]
+                    - generic [ref=f9e50]:
+                      - generic [ref=f9e51]: Monday
+                      - generic [ref=f9e52]: Closed
+                    - generic [ref=f9e53]:
+                      - generic [ref=f9e54]: Tuesday
+                      - generic [ref=f9e55]: Closed
+                    - generic [ref=f9e56]:
+                      - generic [ref=f9e57]: Wednesday
+                      - generic [ref=f9e58]: Closed
+                    - generic [ref=f9e59]:
+                      - generic [ref=f9e60]: Thursday
+                      - generic [ref=f9e61]: Closed
+                    - generic [ref=f9e62]:
+                      - generic [ref=f9e63]: Friday
+                      - generic [ref=f9e64]: Closed
+                    - generic [ref=f9e65]:
+                      - generic [ref=f9e66]: Saturday 🎉
+                      - generic [ref=f9e67]: 8am – 3pm
+                    - generic [ref=f9e68]:
+                      - generic [ref=f9e69]: Sunday 🎉
+                      - generic [ref=f9e70]: 8am – 3pm
+                    - paragraph [ref=f9e72]: "💡 Pro tip: Come early! The best finds go in the first hour."
+                - generic [ref=f9e74]:
+                  - heading "Send a Message" [level=2] [ref=f9e75]
+                  - paragraph [ref=f9e76]: Questions about an item, directions, or just want to say hi — I read every message.
+                  - generic [ref=f9e77]:
+                    - img "Buddy peeking" [ref=f9e78]
+                    - generic [ref=f9e79]: I'll make sure Gale gets your message!
+                  - generic [ref=f9e80]:
+                    - generic [ref=f9e81]:
+                      - generic [ref=f9e82]:
+                        - generic [ref=f9e83]: First Name
+                        - textbox "First Name" [ref=f9e84]:
+                          - /placeholder: Rita
+                      - generic [ref=f9e85]:
+                        - generic [ref=f9e86]: Last Name
+                        - textbox "Last Name" [ref=f9e87]:
+                          - /placeholder: Gonzalez
+                    - generic [ref=f9e88]:
+                      - generic [ref=f9e89]: Email
+                      - textbox "Email" [ref=f9e90]:
+                        - /placeholder: you@example.com
+                    - generic [ref=f9e91]:
+                      - generic [ref=f9e92]: Phone (optional)
+                      - textbox "Phone (optional)" [ref=f9e93]:
+                        - /placeholder: (303) 555-0000
+                    - generic [ref=f9e94]:
+                      - generic [ref=f9e95]: What's it about?
+                      - combobox "What's it about?" [ref=f9e96]:
+                        - option "Question about an item" [selected]
+                        - option "Directions / location"
+                        - option "Reserve / hold an item"
+                        - option "Selling my own items"
+                        - option "Just saying hi!"
+                    - generic [ref=f9e97]:
+                      - generic [ref=f9e98]: Message
+                      - textbox "Message" [ref=f9e99]:
+                        - /placeholder: Tell me what's on your mind...
+                    - button "Send Message →" [ref=f9e100] [cursor=pointer]
+              - generic [ref=f9e103]:
+                - heading "📍 4821 Belleview Ave, Denver, CO 80246" [level=3] [ref=f9e105]
+                - generic [ref=f9e106]:
+                  - generic [ref=f9e107]: 🗺️
+                  - paragraph [ref=f9e108]: Interactive map coming soon
+                  - link "Open in Google Maps →" [ref=f9e109] [cursor=pointer]:
+                    - /url: https://maps.google.com/?q=4821+Belleview+Ave+Denver+CO
+              - contentinfo [ref=f9e110]:
+                - generic [ref=f9e111]:
+                  - link "Auntie Gale's" [ref=f9e112] [cursor=pointer]:
+                    - /url: index.html
+                  - generic [ref=f9e113]:
+                    - link "Home" [ref=f9e114] [cursor=pointer]:
+                      - /url: index.html
+                    - link "Shop" [ref=f9e115] [cursor=pointer]:
+                      - /url: shop.html
+                    - link "Deals" [ref=f9e116] [cursor=pointer]:
+                      - /url: deals.html
+                    - link "About" [ref=f9e117] [cursor=pointer]:
+                      - /url: about.html
+                  - generic [ref=f9e118]: 📞 (303) 555-0192
+                - paragraph [ref=f9e120]: © 2026 Auntie Gale's Garage Sales. All rights reserved.
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - button "Chat" [ref=e105] [cursor=pointer]
+          - button "Terminal" [active] [ref=e106] [cursor=pointer]
+          - button "Codex" [ref=e107] [cursor=pointer]
+          - button "▲" [ref=e109] [cursor=pointer]
+        - generic [ref=e446]:
+          - generic [ref=e447]:
+            - generic [ref=e448]: Session active
+            - generic [ref=e449]:
+              - button "Start Claude" [ref=e450] [cursor=pointer]
+              - button "+ New" [ref=e451] [cursor=pointer]
+              - button "Clear" [ref=e452] [cursor=pointer]
+          - generic [ref=e456]:
+            - textbox "Terminal input" [ref=e457]
+            - generic:
+              - generic:
+                - generic: famtasticfritz@Fitzgeralds-MacBook-Pro famtastic %
+    - generic [ref=e129]:
+      - generic [ref=e130]:
+        - heading "Studio State" [level=2] [ref=e131]
+        - generic [ref=e209]: "Tag: site-auntie-gale-garage-sales"
+        - generic [ref=e210]: Built · 4/8/2026, 1:09:13 PM
+        - generic [ref=e211]:
+          - generic [ref=e458]:
+            - generic [ref=e459]: Local
+            - link "http://localhost:3333" [ref=e460] [cursor=pointer]:
+              - /url: http://localhost:3333
+          - generic [ref=e461]:
+            - generic [ref=e462]: Staging
+            - generic [ref=e463]: not deployed
+          - generic [ref=e464]:
+            - generic [ref=e465]: Prod
+            - generic [ref=e466]: not deployed
+      - generic [ref=e132]:
+        - button "Create" [ref=e133] [cursor=pointer]:
+          - img [ref=e134]
+          - generic [ref=e137]: Create
+        - button "Ship" [ref=e138] [cursor=pointer]:
+          - img [ref=e139]
+          - generic [ref=e144]: Ship
+        - button "Grow" [ref=e145] [cursor=pointer]:
+          - img [ref=e146]
+          - generic [ref=e149]: Grow
+      - generic [ref=e150]:
+        - button "Media" [ref=e151] [cursor=pointer]
+        - button "Structure" [ref=e152] [cursor=pointer]
+        - button "Style" [ref=e153] [cursor=pointer]
+        - button "Terminal" [ref=e154] [cursor=pointer]
+      - generic [ref=e156]:
+        - generic [ref=e158] [cursor=pointer]:
+          - generic [ref=e159]: ▸
+          - heading "Site Health" [level=3] [ref=e160]
+        - generic [ref=e162] [cursor=pointer]:
+          - generic [ref=e163]: ▸
+          - heading "File Tree" [level=3] [ref=e164]
+        - generic [ref=e166] [cursor=pointer]:
+          - generic [ref=e167]: ▸
+          - heading "Media Specs" [level=3] [ref=e168]
+        - generic [ref=e170] [cursor=pointer]:
+          - generic [ref=e171]: ▸
+          - heading "Uploaded Assets" [level=3] [ref=e172]
+  - generic [ref=e173]:
+    - generic [ref=e174]: Haiku
+    - generic [ref=e175]:
+      - generic [ref=e176]: "Context:"
+      - generic [ref=e178]: 6%
+    - generic [ref=e179]:
+      - generic [ref=e180]: $0.02
+      - generic [ref=e181]: ·
+      - generic [ref=e182]: 67 min

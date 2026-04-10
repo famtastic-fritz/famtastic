@@ -1,0 +1,106 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "The Street Family Reunion" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Our Story" [ref=e7] [cursor=pointer]:
+          - /url: our-story.html
+        - link "Reunion 2026" [ref=e8] [cursor=pointer]:
+          - /url: event-details.html
+        - link "Connect" [ref=e9] [cursor=pointer]:
+          - /url: connect.html
+        - link "Gallery" [ref=e10] [cursor=pointer]:
+          - /url: gallery.html
+  - generic [ref=e14]:
+    - heading "Welcome Home" [level=1] [ref=e15]
+    - paragraph [ref=e16]: Connect, Celebrate & Preserve the Street Family Legacy
+    - link "RSVP for Reunion 2026" [ref=e17] [cursor=pointer]:
+      - /url: event-details.html
+  - generic [ref=e19]:
+    - heading "One Family, One Legacy, One Future" [level=2] [ref=e20]
+    - paragraph [ref=e22]: The Street family spans generations and continents. We're reunited here to celebrate our heritage, preserve our history, and strengthen the bonds that connect us. Whether you're exploring your family tree, sharing precious memories, or planning to attend Reunion 2026, this is your digital home.
+  - generic [ref=e24]:
+    - heading "Get Involved" [level=2] [ref=e25]
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - heading "Explore Our Story" [level=3] [ref=e29]
+        - paragraph [ref=e30]: Discover our family timeline, generational milestones, and the ancestors who shaped our legacy.
+        - link "Learn More →" [ref=e31] [cursor=pointer]:
+          - /url: our-story.html
+      - generic [ref=e32]:
+        - heading "Browse the Gallery" [level=3] [ref=e33]
+        - paragraph [ref=e34]: View historical photos organized by decade and upload your own family photos to share with relatives.
+        - link "View Gallery →" [ref=e35] [cursor=pointer]:
+          - /url: gallery.html
+      - generic [ref=e36]:
+        - heading "Find Family Members" [level=3] [ref=e37]
+        - paragraph [ref=e38]: Search our family directory, reconnect with relatives, and share your contact information securely.
+        - link "Connect →" [ref=e39] [cursor=pointer]:
+          - /url: connect.html
+      - generic [ref=e40]:
+        - heading "Buy the Bloodline Book" [level=3] [ref=e41]
+        - paragraph [ref=e42]: Get our comprehensive genealogy guide with detailed family trees, ancestral stories, and historical photos.
+        - link "Learn More →" [ref=e43] [cursor=pointer]:
+          - /url: our-story.html
+      - generic [ref=e44]:
+        - heading "Plan Your Stay" [level=3] [ref=e45]
+        - paragraph [ref=e46]: View the Reunion 2026 schedule, check accommodations, and explore the event location and activities.
+        - link "Event Details →" [ref=e47] [cursor=pointer]:
+          - /url: event-details.html
+      - generic [ref=e48]:
+        - heading "Contribute Research" [level=3] [ref=e49]
+        - paragraph [ref=e50]: Share ancestral documents, photos, stories, and genealogy research to help us build a complete family archive.
+        - link "Submit Research →" [ref=e51] [cursor=pointer]:
+          - /url: connect.html
+  - generic [ref=e53]:
+    - heading "The Street Family Bloodline Book" [level=2] [ref=e54]
+    - generic [ref=e56]:
+      - img "Street Family Bloodline Book Cover" [ref=e58]
+      - generic [ref=e59]:
+        - heading "Discover Your Roots" [level=3] [ref=e60]
+        - paragraph [ref=e61]: Our comprehensive 200+ page genealogy guide traces the Street family from founding ancestors to today. Featuring detailed family trees, historical photos, ancestral biographies, and documented timelines.
+        - generic [ref=e62]:
+          - paragraph [ref=e63]:
+            - generic [ref=e64]: ✓
+            - generic [ref=e65]: 200+ pages of family history
+          - paragraph [ref=e66]:
+            - generic [ref=e67]: ✓
+            - generic [ref=e68]: Detailed family trees across 4 generations
+          - paragraph [ref=e69]:
+            - generic [ref=e70]: ✓
+            - generic [ref=e71]: Historical photos & ancestral stories
+          - paragraph [ref=e72]:
+            - generic [ref=e73]: ✓
+            - generic [ref=e74]: Instant PDF download after purchase
+        - paragraph [ref=e75]: $24.99
+        - link "Purchase Now" [ref=e76] [cursor=pointer]:
+          - /url: our-story.html
+        - paragraph [ref=e77]: Secure payment via PayPal. Proceeds support future reunions & genealogy research.
+  - generic [ref=e79]:
+    - 'heading "Reunion 2026: Save the Date" [level=2] [ref=e80]'
+    - paragraph [ref=e82]: Join us for a weekend of celebration, reconnection, and cherished memories. Meet relatives from across the country, participate in special events, and strengthen the bonds that connect our family.
+    - link "View Full Event Details" [ref=e83] [cursor=pointer]:
+      - /url: event-details.html
+  - generic [ref=e85]:
+    - heading "What Family Members Say" [level=2] [ref=e86]
+    - generic [ref=e88]:
+      - generic [ref=e89]:
+        - paragraph [ref=e90]: "\"This book brought our family together in ways I never expected. Seeing our ancestors' stories compiled so beautifully made me proud to be a Street.\""
+        - paragraph [ref=e91]: — Margaret S., Philadelphia, PA
+      - generic [ref=e92]:
+        - paragraph [ref=e93]: "\"I finally understand where my family comes from. Every page is filled with love and careful research. Worth every penny!\""
+        - paragraph [ref=e94]: — James T., Atlanta, GA
+      - generic [ref=e95]:
+        - paragraph [ref=e96]: "\"Sharing this with my children opened their eyes to our heritage. They're now asking about their great-great grandparents!\""
+        - paragraph [ref=e97]: — Patricia W., Chicago, IL
+  - contentinfo [ref=e98]:
+    - generic [ref=e99]:
+      - paragraph [ref=e100]: © 2026 The Street Family Reunion. All rights reserved.
+      - paragraph [ref=e101]:
+        - text: Questions? Email
+        - link "hello@streetfamilyreunion.com" [ref=e102] [cursor=pointer]:
+          - /url: mailto:hello@streetfamilyreunion.com
+  - button "Scroll to top": ⬆

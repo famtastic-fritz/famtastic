@@ -1,0 +1,17 @@
+[      72ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     323ms] [LOG] [ws] connected @ http://localhost:3334/:992
+[     355ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     450ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-test-input-knockout.png:0
+[     450ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-a-knockout.png:0
+[     450ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-b-knockout.png:0
+[     450ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-dark-test-knockout.png:0
+[  689851ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:990
+[  689858ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1017
+[  690680ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  691905ms] [LOG] [ws] connected @ http://localhost:3334/:992
+[  692029ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  973694ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed:  @ http://localhost:3334/:990
+[  973695ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1017
+[  974586ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  975701ms] [LOG] [ws] connected @ http://localhost:3334/:992
+[  975770ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
