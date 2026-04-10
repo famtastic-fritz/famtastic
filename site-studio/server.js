@@ -6495,6 +6495,31 @@ function buildPromptContext(requestType, spec, userMessage) {
 - AVOID: ${(brief.avoid || []).join('; ') || 'none specified'}`;
   }
 
+  // Session 11 Fix 1: Inject client_brief from the intake interview.
+  // These answers come directly from the owner and must dominate any generic
+  // assumptions — use them verbatim for business description, audience,
+  // differentiator, CTA language, and style direction.
+  const clientBrief = spec.client_brief || null;
+  if (clientBrief) {
+    const cb = clientBrief;
+    const fields = [];
+    if (cb.business_description) fields.push(`- Business (owner's own words): ${cb.business_description}`);
+    if (cb.ideal_customer)       fields.push(`- Ideal customer: ${cb.ideal_customer}`);
+    if (cb.differentiator)       fields.push(`- Differentiator / unfair advantage: ${cb.differentiator}`);
+    if (cb.primary_cta)          fields.push(`- Primary CTA (use this language): ${cb.primary_cta}`);
+    if (cb.style_notes)          fields.push(`- Style notes: ${cb.style_notes}`);
+    if (cb.services)             fields.push(`- Services / offerings: ${cb.services}`);
+    if (cb.social_proof)         fields.push(`- Social proof / credibility: ${cb.social_proof}`);
+    if (cb.geography)            fields.push(`- Geography / service area: ${cb.geography}`);
+    if (cb.urgency_hook)         fields.push(`- Urgency hook: ${cb.urgency_hook}`);
+    if (cb.contact_methods)      fields.push(`- Contact methods: ${cb.contact_methods}`);
+    if (fields.length > 0) {
+      briefContext += `\n\nCLIENT BRIEF (from intake interview — these are the owner's own answers, treat as authoritative):\n` +
+        fields.join('\n') +
+        `\nUse these answers for real copy. Do not substitute generic placeholder text when the client has given you real content here.`;
+    }
+  }
+
   // Extract mandatory visual requirements from brief + decisions (Fix #1 from Site 4 gap analysis)
   let visualRequirements = '';
   {
