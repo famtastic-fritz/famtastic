@@ -6667,6 +6667,14 @@ function classifyRequest(message, spec) {
   // Precedence: brainstorm > rollback > new_site > major_revision > restructure > content_update > restyle > bug_fix > layout_update > asset_import
   // Default: content_update (non-destructive — uses surgical handler before Claude fallback)
 
+  // Session 12 Phase 2 (W3): worker queue commands — "run worker tasks",
+  // "process the queue", "show worker queue", "clear worker queue". This
+  // intent is handled deterministically (no Claude call) and honestly
+  // reports that there is no live consumer process.
+  if (lower.match(/\b(run|process|execute|drain)\s+(?:the\s+)?(worker\s+(?:queue|tasks?)|pending\s+(?:worker\s+)?tasks?|queued\s+tasks?)\b/)) return 'run_worker_task';
+  if (lower.match(/\b(show|list|view|what.?s\s+in)\s+(?:the\s+)?worker\s+queue\b/)) return 'run_worker_task';
+  if (lower.match(/\b(clear|clean|purge|empty)\s+(?:the\s+)?worker\s+queue\b/)) return 'run_worker_task';
+
   // Brief edit — update the design brief directly
   if (lower.match(/\b(edit\s+(?:the\s+)?brief|update\s+(?:the\s+)?brief|change\s+the\s+goal|fix\s+the\s+audience|modify\s+(?:the\s+)?brief)\b/)) return 'brief_edit';
 
@@ -11099,6 +11107,77 @@ wss.on('connection', (ws) => {
           handleBrainstorm(ws, userMessage, spec);
           break;
 
+        case 'run_worker_task': {
+          // Session 12 Phase 2 (W3): deterministic handler — no Claude call.
+          // The worker queue at ~/famtastic/.worker-queue.jsonl is a ledger
+          // written by the dispatch_worker tool. There is NO live consumer
+          // process reading it. Be honest about that to the user instead of
+          // pretending tasks are being executed in the background.
+          const lowerMsg = userMessage.toLowerCase();
+          const isClear = /\b(clear|clean|purge|empty)\b/.test(lowerMsg);
+          const queuePath = path.join(require('os').homedir(), 'famtastic', '.worker-queue.jsonl');
+
+          if (isClear) {
+            try {
+              fs.writeFileSync(queuePath, '');
+              const msg = `Worker queue cleared (${queuePath}).\n\n` +
+                `Note: the queue is a dispatch ledger — no live worker process consumes it. ` +
+                `Tasks are appended by the \`dispatch_worker\` tool for external execution, and ` +
+                `Studio auto-purges completed/cancelled/failed entries and anything older than 7 days on startup.`;
+              ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+              appendConvo({ role: 'assistant', content: 'Worker queue cleared', at: new Date().toISOString() });
+            } catch (err) {
+              ws.send(JSON.stringify({ type: 'error', content: `Failed to clear worker queue: ${err.message}` }));
+            }
+            break;
+          }
+
+          // Otherwise: show honest queue status.
+          try {
+            let tasks = [];
+            if (fs.existsSync(queuePath)) {
+              const raw = fs.readFileSync(queuePath, 'utf8').trim();
+              tasks = raw ? raw.split('\n').filter(Boolean).map(l => {
+                try { return JSON.parse(l); } catch { return null; }
+              }).filter(Boolean) : [];
+            }
+
+            const by_worker = {};
+            const by_status = {};
+            let oldest_pending = null;
+            for (const t of tasks) {
+              const w = t.worker || t.agent || 'unknown';
+              const s = t.status || 'pending';
+              by_worker[w] = (by_worker[w] || 0) + 1;
+              by_status[s] = (by_status[s] || 0) + 1;
+              if (s !== 'completed' && s !== 'cancelled' && s !== 'failed') {
+                const ts = t.queued_at || t.created_at || t.at || null;
+                if (ts && (!oldest_pending || ts < oldest_pending)) oldest_pending = ts;
+              }
+            }
+
+            let report = `**Worker Queue Status**\n\n`;
+            report += `- File: \`${queuePath}\`\n`;
+            report += `- Total entries: ${tasks.length}\n`;
+            if (tasks.length > 0) {
+              report += `- By worker: ${Object.entries(by_worker).map(([k, v]) => `${k}=${v}`).join(', ')}\n`;
+              report += `- By status: ${Object.entries(by_status).map(([k, v]) => `${k}=${v}`).join(', ')}\n`;
+              if (oldest_pending) report += `- Oldest pending: ${oldest_pending}\n`;
+            }
+            report += `\n**Reality check:** The worker queue is a dispatch ledger. ` +
+              `There is **no live worker process** consuming this file. Tasks are appended ` +
+              `by the \`dispatch_worker\` tool call for external execution, and Studio auto-purges ` +
+              `completed/cancelled/failed entries plus anything older than 7 days on startup.\n\n` +
+              `To clear the queue manually, say "clear the worker queue".`;
+
+            ws.send(JSON.stringify({ type: 'assistant', content: report }));
+            appendConvo({ role: 'assistant', content: 'Worker queue status reported', at: new Date().toISOString() });
+          } catch (err) {
+            ws.send(JSON.stringify({ type: 'error', content: `Worker queue read failed: ${err.message}` }));
+          }
+          break;
+        }
+
         case 'rollback': {
           // Find the most recent version of the current page to roll back to
           const versions = getVersions(currentPage);
@@ -12971,6 +13050,72 @@ function setupFileWatcher() {
   }
 }
 
+// Session 12 Phase 2 (W1, W2): worker queue startup cleanup.
+// The worker queue at ~/famtastic/.worker-queue.jsonl has no live consumer
+// — tasks are appended by the dispatch_worker tool and sit there. Over
+// time the badge accumulates phantom entries (completed, cancelled, or
+// just stale from builds weeks ago) and stops being meaningful. On every
+// Studio startup, drop entries older than 7 days AND any that already
+// reached a terminal status (completed / cancelled / failed), then
+// rewrite the file with `>`-style full rewrite instead of append.
+function cleanWorkerQueueOnStartup() {
+  try {
+    const queuePath = path.join(require('os').homedir(), 'famtastic', '.worker-queue.jsonl');
+    if (!fs.existsSync(queuePath)) return { kept: 0, dropped: 0, file: queuePath };
+
+    const raw = fs.readFileSync(queuePath, 'utf8');
+    const lines = raw.trim().split('\n').filter(Boolean);
+    const now = Date.now();
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+    const kept = [];
+    let droppedStale = 0;
+    let droppedTerminal = 0;
+
+    for (const line of lines) {
+      let task;
+      try { task = JSON.parse(line); } catch { continue; }
+      if (!task) continue;
+
+      const status = task.status || 'pending';
+      if (status === 'completed' || status === 'cancelled' || status === 'failed') {
+        droppedTerminal++;
+        continue;
+      }
+
+      const ts = task.queued_at || task.created_at || task.at || null;
+      if (ts) {
+        const age = now - new Date(ts).getTime();
+        if (age > SEVEN_DAYS_MS) {
+          droppedStale++;
+          continue;
+        }
+      }
+
+      kept.push(JSON.stringify(task));
+    }
+
+    // Full rewrite — the `>` semantics the prompt called for. Previously the
+    // queue was append-only via fs.appendFile, so the only way to purge was
+    // to overwrite the whole file.
+    const newContent = kept.length > 0 ? kept.join('\n') + '\n' : '';
+    fs.writeFileSync(queuePath, newContent);
+
+    const total = droppedStale + droppedTerminal;
+    if (total > 0) {
+      console.log(`[worker-queue] Startup cleanup: kept ${kept.length}, dropped ${total} ` +
+        `(${droppedTerminal} terminal, ${droppedStale} older than 7 days)`);
+    } else {
+      console.log(`[worker-queue] Startup cleanup: ${kept.length} entries, no purges`);
+    }
+
+    return { kept: kept.length, dropped: total, file: queuePath };
+  } catch (err) {
+    console.warn('[cleanWorkerQueueOnStartup] failed:', err.message);
+    return null;
+  }
+}
+
 // Session 12 Phase 1 (I3): expose intel helpers so scripts/intelligence-loop
 // can drive them without opening a Studio port. Only functions that are
 // safe to call outside a live session should go here.
@@ -12979,6 +13124,7 @@ module.exports = {
   getPromotedIntelligence,
   writePendingReview,
   checkPendingReview,
+  cleanWorkerQueueOnStartup,
 };
 
 // Start servers only when run directly (not when imported by tests)
@@ -13029,5 +13175,9 @@ if (require.main === module) {
 
     // Session 12 Phase 1 (I2): surface pending intelligence review on startup
     try { checkPendingReview(); } catch {}
+
+    // Session 12 Phase 2 (W1, W2): purge stale / terminal worker queue entries
+    // so the pending badge reflects real work instead of phantoms from weeks ago.
+    try { cleanWorkerQueueOnStartup(); } catch {}
   });
 }
