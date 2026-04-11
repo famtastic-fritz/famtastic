@@ -1,0 +1,100 @@
+#!/usr/bin/env node
+/*
+ * intelligence-loop
+ *
+ * Iterates every site in ~/famtastic/sites/ and generates a fresh
+ * ~/PENDING-REVIEW.md summarising major findings and pending
+ * promotions across the whole factory. Designed to run on a cron
+ * (3x/week) and manually via `fam-hub admin research`.
+ *
+ * This is the loop-close step for Session 12 Phase 1 — we already
+ * HAVE intelligence generation (generateIntelReport) and promotion
+ * (intelligence-promotions.json); what was missing was a single
+ * cross-site aggregator that runs without the Studio server open
+ * and writes the result to a known, stable location.
+ *
+ * The Studio server ALSO writes ~/PENDING-REVIEW.md after every
+ * build. This script is the out-of-Studio version for cron.
+ */
+
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+const REPO = path.resolve(__dirname, '..');
+const SITES_ROOT = path.join(REPO, 'sites');
+const REVIEW_FILE = path.join(os.homedir(), 'PENDING-REVIEW.md');
+
+// We load the Studio server in test mode so generateIntelReport +
+// getPromotedIntelligence are available without opening a port.
+process.env.STUDIO_NO_LISTEN = '1';
+process.env.SITE_TAG = process.env.SITE_TAG || 'site-demo';
+
+let studio;
+try {
+  studio = require(path.join(REPO, 'site-studio', 'server.js'));
+} catch (err) {
+  console.error('[intel-loop] failed to load Studio server module:', err.message);
+  process.exit(1);
+}
+
+const { generateIntelReport, getPromotedIntelligence, writePendingReview } = studio;
+
+if (typeof writePendingReview === 'function') {
+  // Preferred path: the Studio server exports writePendingReview directly.
+  const result = writePendingReview();
+  if (result) {
+    console.log(`[intel-loop] ${result.file} — ${result.totalMajor} major, ${result.totalPendingPromotions} pending`);
+    process.exit(0);
+  }
+  process.exit(2);
+}
+
+// Fallback: rebuild the report inline (should not normally fire).
+if (typeof generateIntelReport !== 'function' || typeof getPromotedIntelligence !== 'function') {
+  console.error('[intel-loop] Studio server does not export intel helpers — cannot run.');
+  process.exit(3);
+}
+
+const allTags = fs.existsSync(SITES_ROOT)
+  ? fs.readdirSync(SITES_ROOT).filter(n => fs.statSync(path.join(SITES_ROOT, n)).isDirectory())
+  : [];
+
+const lines = [];
+lines.push('# FAMtastic — Pending Review');
+lines.push('');
+lines.push(`Generated: ${new Date().toISOString()} (via scripts/intelligence-loop)`);
+lines.push('');
+
+let totalMajor = 0;
+let totalPending = 0;
+
+for (const tag of allTags) {
+  let report;
+  try { report = generateIntelReport(tag); } catch { continue; }
+  const major = (report.findings || []).filter(f => f.severity === 'major' || f.severity === 'critical');
+  const promos = getPromotedIntelligence(tag).filter(p => p.status !== 'applied');
+  if (major.length === 0 && promos.length === 0) continue;
+
+  lines.push(`## ${tag}`);
+  lines.push('');
+  for (const f of major) {
+    lines.push(`- **[${f.category}]** ${f.title}`);
+    lines.push(`  - Recommendation: ${f.recommendation}`);
+  }
+  for (const p of promos) {
+    lines.push(`- **[promoted / ${p.severity}]** ${p.title} (${p.status})`);
+    lines.push(`  - Action: ${p.recommendation}`);
+  }
+  lines.push('');
+  totalMajor += major.length;
+  totalPending += promos.length;
+}
+
+lines.push('---');
+lines.push(`Totals: ${totalMajor} major finding(s), ${totalPending} pending promotion(s).`);
+
+fs.writeFileSync(REVIEW_FILE, lines.join('\n'));
+console.log(`[intel-loop] ${REVIEW_FILE} — ${totalMajor} major, ${totalPending} pending`);

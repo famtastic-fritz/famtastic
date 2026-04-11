@@ -18,6 +18,11 @@ sites/
 # Local tools (adb-mcp bridge etc) — machine-specific, not tracked
 tools/
 
+# Session 12 Phase 1 safety net: PENDING-REVIEW.md is supposed to live at
+# ~/PENDING-REVIEW.md (outside the repo). This entry catches the case where
+# someone accidentally drops it inside the repo — never commit intel output.
+PENDING-REVIEW.md
+
 # OpenWolf — ephemeral/local files (anatomy.md, cerebrum.md, buglog.json are tracked)
 .wolf/token-ledger.json
 .wolf/memory.md

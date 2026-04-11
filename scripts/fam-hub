@@ -299,12 +299,16 @@ IDEAHELP
         curl -s -X POST http://localhost:3334/api/research/query \
           -H 'Content-Type: application/json' \
           -d "{\"vertical\":\"$VERTICAL\",\"question\":\"$QUESTION\"}" | python3 -m json.tool 2>/dev/null ;;
+      intel-loop|loop|pending-review)
+        node "$SCRIPT_DIR/intelligence-loop" ;;
       help|*)
         echo "Usage: fam-hub research <command>"
         echo "  seed-from-sites   Seed Pinecone from existing site specs"
         echo "  sources           List research sources and status"
         echo "  effectiveness     Show effectiveness scores by source"
-        echo "  query <v> \"q\"     Query research for a vertical" ;;
+        echo "  query <v> \"q\"     Query research for a vertical"
+        echo "  intel-loop        Run intelligence loop across all sites"
+        echo "                    → ~/PENDING-REVIEW.md" ;;
     esac
     ;;
 

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# install-intel-loop-cron
+#
+# Installs a crontab entry that runs the FAMtastic intelligence loop
+# three times a week (Mon/Wed/Fri at 09:00). Idempotent — running this
+# script twice will not double-up the entry.
+#
+# The job writes ~/PENDING-REVIEW.md, which the Studio server detects
+# at startup via checkPendingReview() and surfaces as a banner.
+
+set -euo pipefail
+
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+LOOP_SCRIPT="$REPO/scripts/intelligence-loop"
+LOG_FILE="$HOME/.famtastic-intel-loop.log"
+
+if [ ! -x "$LOOP_SCRIPT" ]; then
+  echo "error: $LOOP_SCRIPT not found or not executable" >&2
+  exit 1
+fi
+
+# 09:00 Mon/Wed/Fri — 3x/week per Session 12 Phase 1 (I4)
+CRON_LINE="0 9 * * 1,3,5 /usr/bin/env node '$LOOP_SCRIPT' >> '$LOG_FILE' 2>&1"
+
+EXISTING="$(crontab -l 2>/dev/null || true)"
+
+if echo "$EXISTING" | grep -Fq "intelligence-loop"; then
+  echo "intelligence-loop cron already installed — leaving alone"
+  echo "$EXISTING" | grep -F "intelligence-loop"
+  exit 0
+fi
+
+{
+  if [ -n "$EXISTING" ]; then echo "$EXISTING"; fi
+  echo "# FAMtastic intelligence loop — Session 12 Phase 1 (I4)"
+  echo "$CRON_LINE"
+} | crontab -
+
+echo "installed: $CRON_LINE"
+echo "log:       $LOG_FILE"
+echo "uninstall: crontab -e  (remove the intelligence-loop line)"

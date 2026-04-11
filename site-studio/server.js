@@ -5520,15 +5520,21 @@ app.post('/api/research/to-brief', (req, res) => {
  * Reads: agent-calls.jsonl, mutations.jsonl, build-metrics.jsonl, components/library.json
  * Returns: { findings[], summary, generated_at }
  */
-function generateIntelReport() {
+function generateIntelReport(tagOverride = null) {
   const findings = [];
   let findingIdCounter = 1;
   const makeId = (category, suffix) => `${category}-${suffix}-${findingIdCounter++}`;
 
+  // Session 12 Phase 1: allow caller to pass an explicit tag so the
+  // intelligence loop can iterate over every site in the repo instead
+  // of only reporting on whichever site TAG currently points at.
+  const tag = tagOverride || TAG;
+  const siteDir = path.join(SITES_ROOT, tag);
+
   // ── Read log files ──────────────────────────────────────────────────────
-  const agentLogPath = path.join(SITE_DIR(), 'agent-calls.jsonl');
-  const mutationLogPath = path.join(SITE_DIR(), 'mutations.jsonl');
-  const buildMetricsPath = path.join(SITE_DIR(), 'build-metrics.jsonl');
+  const agentLogPath = path.join(siteDir, 'agent-calls.jsonl');
+  const mutationLogPath = path.join(siteDir, 'mutations.jsonl');
+  const buildMetricsPath = path.join(siteDir, 'build-metrics.jsonl');
   const libraryPath = path.join(HUB_ROOT, 'components', 'library.json');
 
   const readJsonl = (p) => {
@@ -5720,7 +5726,146 @@ function generateIntelReport() {
     finding_counts: countBySeverity,
   };
 
-  return { findings, summary, generated_at: new Date().toISOString(), site: TAG || 'unknown' };
+  return { findings, summary, generated_at: new Date().toISOString(), site: tag || 'unknown' };
+}
+
+// Session 12 Phase 1 (I1): getPromotedIntelligence()
+// Reads intelligence-promotions.json for the given tag and returns
+// high-signal, non-dismissed promotions that the build prompt should
+// know about. The intelligence loop promotes findings; this is the
+// loop-close step where a promotion actually alters the next build.
+function getPromotedIntelligence(tagOverride = null) {
+  try {
+    const tag = tagOverride || TAG;
+    const siteDir = path.join(SITES_ROOT, tag);
+    const promoFile = path.join(siteDir, 'intelligence-promotions.json');
+    if (!fs.existsSync(promoFile)) return [];
+    const raw = JSON.parse(fs.readFileSync(promoFile, 'utf8'));
+    if (!Array.isArray(raw)) return [];
+    // Keep major severity promotions plus opportunities that the user
+    // has explicitly promoted. Dismiss anything marked dismissed.
+    return raw.filter(p => {
+      if (!p || p.status === 'dismissed') return false;
+      return p.severity === 'major' || p.severity === 'opportunity';
+    });
+  } catch (err) {
+    console.warn('[getPromotedIntelligence] failed:', err.message);
+    return [];
+  }
+}
+
+// Session 12 Phase 1 (I2): writePendingReview()
+// After a build, render a PENDING-REVIEW.md file to the user's home
+// directory (outside the repo on purpose — we do not want to push intel
+// reports to GitHub). Used on startup so the user always knows what
+// findings are waiting for human review.
+function writePendingReview() {
+  try {
+    const os = require('os');
+    const reviewFile = path.join(os.homedir(), 'PENDING-REVIEW.md');
+
+    // Iterate every site the repo knows about
+    const sitesDir = SITES_ROOT;
+    const allTags = fs.existsSync(sitesDir)
+      ? fs.readdirSync(sitesDir).filter(n => fs.statSync(path.join(sitesDir, n)).isDirectory())
+      : [];
+
+    const lines = [];
+    lines.push('# FAMtastic — Pending Review');
+    lines.push('');
+    lines.push(`Generated: ${new Date().toISOString()}`);
+    lines.push(`Active site: ${TAG}`);
+    lines.push('');
+    lines.push('This file lives at ~/PENDING-REVIEW.md (outside the repo) and is regenerated');
+    lines.push('after every build and by the `scripts/intelligence-loop` cron. It aggregates');
+    lines.push('major findings and pending promotions across every site in the factory.');
+    lines.push('');
+
+    let totalMajor = 0;
+    let totalPendingPromotions = 0;
+
+    for (const tag of allTags) {
+      let report;
+      try { report = generateIntelReport(tag); } catch { continue; }
+      const major = (report.findings || []).filter(f => f.severity === 'major' || f.severity === 'critical');
+      const promos = getPromotedIntelligence(tag).filter(p => p.status !== 'applied');
+      if (major.length === 0 && promos.length === 0) continue;
+
+      lines.push(`## ${tag}`);
+      lines.push('');
+
+      if (major.length > 0) {
+        lines.push(`### Major findings (${major.length})`);
+        for (const f of major) {
+          lines.push(`- **[${f.category}]** ${f.title}`);
+          lines.push(`  - ${f.description}`);
+          lines.push(`  - Recommendation: ${f.recommendation}`);
+        }
+        lines.push('');
+        totalMajor += major.length;
+      }
+
+      if (promos.length > 0) {
+        lines.push(`### Pending promotions (${promos.length})`);
+        for (const p of promos) {
+          lines.push(`- **[${p.category} / ${p.severity}]** ${p.title}`);
+          lines.push(`  - Promoted at: ${p.promoted_at}`);
+          lines.push(`  - Action: ${p.recommendation}`);
+          lines.push(`  - Status: ${p.status}`);
+        }
+        lines.push('');
+        totalPendingPromotions += promos.length;
+      }
+    }
+
+    if (totalMajor === 0 && totalPendingPromotions === 0) {
+      lines.push('_No major findings or pending promotions across any site._');
+      lines.push('');
+    }
+
+    lines.push('---');
+    lines.push(`Totals: ${totalMajor} major finding(s), ${totalPendingPromotions} pending promotion(s).`);
+
+    fs.writeFileSync(reviewFile, lines.join('\n'));
+    console.log(`[intel-loop] Wrote ${reviewFile} — ${totalMajor} major, ${totalPendingPromotions} pending`);
+    return { file: reviewFile, totalMajor, totalPendingPromotions };
+  } catch (err) {
+    console.error('[writePendingReview] failed:', err.message);
+    return null;
+  }
+}
+
+// Session 12 Phase 1 (I2): checkPendingReview()
+// Called once at server startup — if ~/PENDING-REVIEW.md exists and has
+// non-trivial content, log a clear banner so the developer knows there
+// is something waiting. Does NOT interrupt startup or fail.
+function checkPendingReview() {
+  try {
+    const os = require('os');
+    const reviewFile = path.join(os.homedir(), 'PENDING-REVIEW.md');
+    if (!fs.existsSync(reviewFile)) {
+      console.log('[intel-loop] No ~/PENDING-REVIEW.md yet — will be generated after next build.');
+      return;
+    }
+    const content = fs.readFileSync(reviewFile, 'utf8');
+    const majorMatch = content.match(/(\d+)\s+major finding/);
+    const promoMatch = content.match(/(\d+)\s+pending promotion/);
+    const major = majorMatch ? parseInt(majorMatch[1], 10) : 0;
+    const promo = promoMatch ? parseInt(promoMatch[1], 10) : 0;
+    if (major === 0 && promo === 0) {
+      console.log('[intel-loop] ~/PENDING-REVIEW.md is clean (0 major, 0 pending).');
+      return;
+    }
+    console.log('');
+    console.log('════════════════════════════════════════════════════════════');
+    console.log('  📋  PENDING REVIEW');
+    console.log(`     ${major} major finding(s), ${promo} pending promotion(s)`);
+    console.log(`     See: ${reviewFile}`);
+    console.log('════════════════════════════════════════════════════════════');
+    console.log('');
+  } catch (err) {
+    console.warn('[checkPendingReview] failed:', err.message);
+  }
 }
 
 // --- Studio Context (Phase 1) ---
@@ -7096,7 +7241,23 @@ ${FAMTASTIC_DNA_VOCAB}`;
   const logoSkeletonTemplate = spec.famtastic_mode ? famSkeletons.LOGO_SKELETON_TEMPLATE : '';
   const logoNotePage = spec.famtastic_mode ? famSkeletons.LOGO_NOTE_PAGE : '';
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, dividerSkeleton, inlineStyleProhibition, logoSkeletonTemplate, logoNotePage };
+  // Session 12 Phase 1 (I1): close the intelligence loop by injecting
+  // promoted findings back into the build prompt. If the user has
+  // promoted a finding like "Hot fields: phone (4x)", the next build
+  // should know about it and act accordingly. Anything dismissed is
+  // filtered out upstream in getPromotedIntelligence().
+  let promotedIntelContext = '';
+  const promotedIntel = getPromotedIntelligence();
+  if (promotedIntel.length > 0) {
+    const lines = promotedIntel.map(p => {
+      return `- [${p.category} / ${p.severity}] ${p.title}\n  Recommendation: ${p.recommendation}`;
+    }).join('\n');
+    promotedIntelContext = `\nPROMOTED INTELLIGENCE (acted on findings — honor these in this build):\n${lines}\nThese are high-signal observations the user has promoted from past builds. Apply them to how you structure content, pick components, and order sections.`;
+  }
+  // Append to briefContext so it travels with every prompt that uses the brief.
+  briefContext += promotedIntelContext;
+
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, dividerSkeleton, inlineStyleProhibition, logoSkeletonTemplate, logoNotePage, promotedIntelContext };
 }
 
 function summarizeHtml(html) {
@@ -9005,6 +9166,21 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
 
   setBuildInProgress(false);
   studioEvents.emit(STUDIO_EVENTS.BUILD_COMPLETED, { tag: TAG, pages: writtenPages });
+
+  // Session 12 Phase 1 (I2): auto-run intelligence report after every build
+  // and refresh ~/PENDING-REVIEW.md so major findings surface without the
+  // user having to remember to run the intel loop manually.
+  try {
+    const review = writePendingReview();
+    if (review && (review.totalMajor > 0 || review.totalPendingPromotions > 0)) {
+      ws.send(JSON.stringify({
+        type: 'status',
+        content: `Intel loop: ${review.totalMajor} major finding(s), ${review.totalPendingPromotions} pending promotion(s) — see ~/PENDING-REVIEW.md`,
+      }));
+    }
+  } catch (err) {
+    console.warn('[intel-loop] post-build write failed:', err.message);
+  }
 
   // Wire effectiveness scoring to BUILD_COMPLETED (C5)
   try {
@@ -12795,6 +12971,16 @@ function setupFileWatcher() {
   }
 }
 
+// Session 12 Phase 1 (I3): expose intel helpers so scripts/intelligence-loop
+// can drive them without opening a Studio port. Only functions that are
+// safe to call outside a live session should go here.
+module.exports = {
+  generateIntelReport,
+  getPromotedIntelligence,
+  writePendingReview,
+  checkPendingReview,
+};
+
 // Start servers only when run directly (not when imported by tests)
 if (require.main === module) {
   previewServer.listen(PREVIEW_PORT, () => {
@@ -12840,5 +13026,8 @@ if (require.main === module) {
 
     // Verify all API connections on startup
     verifyAllAPIs().catch(e => console.error('[brain-verifier] Startup verification failed:', e.message));
+
+    // Session 12 Phase 1 (I2): surface pending intelligence review on startup
+    try { checkPendingReview(); } catch {}
   });
 }
