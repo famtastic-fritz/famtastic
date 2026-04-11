@@ -186,5 +186,8 @@ already been done and mistakes that have already been fixed.
 
 See `.wolf/OPENWOLF.md` for the full operating protocol.
 
+<!-- famtastic-dna-include (Session 12 Phase 3) — persistent build knowledge -->
+@famtastic-dna.md
+
 <!-- studio-context-include -->
 @STUDIO-CONTEXT.md

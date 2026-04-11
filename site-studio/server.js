@@ -5868,6 +5868,87 @@ function checkPendingReview() {
   }
 }
 
+// Session 12 Phase 3: updateFamtasticDna()
+// Append a terse build entry to ~/famtastic/famtastic-dna.md between the
+// <!-- DNA-AUTO-BEGIN --> and <!-- DNA-AUTO-END --> markers after every
+// successful build. The manual content above the markers is preserved.
+// If the file exceeds DNA_SIZE_BUDGET bytes (40KB), the oldest auto-entries
+// are condensed into a single summary block so the file doesn't grow
+// unbounded and blow the CLAUDE.md include budget.
+const DNA_FILE_PATH = path.join(HUB_ROOT, 'famtastic-dna.md');
+const DNA_BEGIN_MARKER = '<!-- DNA-AUTO-BEGIN -->';
+const DNA_END_MARKER = '<!-- DNA-AUTO-END -->';
+const DNA_SIZE_BUDGET = 40 * 1024; // 40KB — keep CLAUDE.md include affordable
+
+function updateFamtasticDna(entry) {
+  try {
+    if (!fs.existsSync(DNA_FILE_PATH)) {
+      console.warn('[dna] famtastic-dna.md missing — skip update');
+      return null;
+    }
+
+    let content = fs.readFileSync(DNA_FILE_PATH, 'utf8');
+    const beginIdx = content.indexOf(DNA_BEGIN_MARKER);
+    const endIdx = content.indexOf(DNA_END_MARKER);
+    if (beginIdx === -1 || endIdx === -1 || endIdx < beginIdx) {
+      console.warn('[dna] markers missing — skip update');
+      return null;
+    }
+
+    const before = content.slice(0, beginIdx + DNA_BEGIN_MARKER.length);
+    const after = content.slice(endIdx);
+    let autoBody = content.slice(beginIdx + DNA_BEGIN_MARKER.length, endIdx);
+
+    // Render the new entry as a dated markdown block. Always lead and
+    // trail with a newline so repeated appends produce clean markdown
+    // and the end marker stays on its own line.
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const bodyLines = [
+      `### ${dateStr} — ${entry.tag || 'unknown'} build`,
+      '',
+      `- Pages: ${(entry.pages || []).join(', ') || '(none)'}`,
+      `- Intent: ${entry.intent || 'build'}`,
+      `- Duration: ${entry.elapsed_seconds != null ? entry.elapsed_seconds + 's' : 'n/a'}`,
+      entry.checklist_score ? `- Checklist: ${entry.checklist_score}` : null,
+      entry.note ? `- Note: ${entry.note}` : null,
+    ].filter(Boolean);
+    const block = '\n\n' + bodyLines.join('\n') + '\n';
+
+    // Strip any trailing whitespace from the existing auto body so we
+    // always start a fresh entry on its own line.
+    autoBody = autoBody.replace(/\s+$/, '');
+    autoBody = autoBody + block;
+
+    // Size guard — if the whole file would exceed the budget, condense the
+    // oldest auto-entries into a summary paragraph and drop them. We keep
+    // the most recent 10 entries verbatim.
+    let newContent = before + autoBody + after;
+    if (Buffer.byteLength(newContent, 'utf8') > DNA_SIZE_BUDGET) {
+      const entryRegex = /\n### \d{4}-\d{2}-\d{2} — [^\n]+\n[\s\S]*?(?=\n### \d{4}-\d{2}-\d{2} — |\n$)/g;
+      const entries = autoBody.match(entryRegex) || [];
+      if (entries.length > 10) {
+        const toCondense = entries.slice(0, entries.length - 10);
+        const kept = entries.slice(entries.length - 10).join('');
+        const firstDate = (toCondense[0].match(/\d{4}-\d{2}-\d{2}/) || [])[0] || '?';
+        const lastDate = (toCondense[toCondense.length - 1].match(/\d{4}-\d{2}-\d{2}/) || [])[0] || '?';
+        const summary = `\n### ${firstDate} → ${lastDate} — condensed (${toCondense.length} builds)\n\n` +
+          `_This range of build entries was automatically condensed to stay under the ` +
+          `${Math.round(DNA_SIZE_BUDGET / 1024)}KB dna budget. The detailed entries are ` +
+          `available in git history._\n`;
+        autoBody = summary + kept;
+        newContent = before + autoBody + after;
+      }
+    }
+
+    fs.writeFileSync(DNA_FILE_PATH, newContent);
+    console.log(`[dna] appended build entry for ${entry.tag} (${Buffer.byteLength(newContent, 'utf8')} bytes)`);
+    return { bytes: Buffer.byteLength(newContent, 'utf8') };
+  } catch (err) {
+    console.warn('[updateFamtasticDna] failed:', err.message);
+    return null;
+  }
+}
+
 // --- Studio Context (Phase 1) ---
 app.get('/api/context', (req, res) => {
   const ctxFile = path.join(HUB_ROOT, studioContextWriter.OUTPUT_FILENAME);
@@ -9188,6 +9269,21 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
     }
   } catch (err) {
     console.warn('[intel-loop] post-build write failed:', err.message);
+  }
+
+  // Session 12 Phase 3: append a terse build entry to famtastic-dna.md so
+  // the persistent knowledge file accumulates real build history for Claude
+  // to consume via the @famtastic-dna.md include in CLAUDE.md.
+  try {
+    updateFamtasticDna({
+      tag: TAG,
+      pages: writtenPages,
+      intent: 'build',
+      elapsed_seconds: elapsed,
+      note: `parallel build — ${writtenPages.length} page(s)`,
+    });
+  } catch (err) {
+    console.warn('[dna] post-build update failed:', err.message);
   }
 
   // Wire effectiveness scoring to BUILD_COMPLETED (C5)
@@ -13125,6 +13221,7 @@ module.exports = {
   writePendingReview,
   checkPendingReview,
   cleanWorkerQueueOnStartup,
+  updateFamtasticDna,
 };
 
 // Start servers only when run directly (not when imported by tests)
