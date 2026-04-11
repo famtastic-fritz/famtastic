@@ -23,6 +23,7 @@ const { handleToolCall, initToolHandlers } = require('./lib/tool-handlers');
 const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = require('./lib/client-interview');
 const fontRegistry = require('./lib/font-registry');
 const layoutRegistry = require('./lib/layout-registry');
+const famSkeletons = require('./lib/famtastic-skeletons');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -481,9 +482,17 @@ function applyLogoV(pages) {
     const spec = readSpec();
     const siteName = spec.site_name || spec.design_brief?.business_name || '';
 
+    // Session 12 Phase 0: prefer the FAMtastic multi-part logo output
+    // (assets/logo-full.svg) when it exists — the template-call SVG extractor
+    // writes it for famtastic_mode builds. Fall back to the legacy single-file
+    // logo.svg / logo.png for older sites.
+    const logoFullSvg = fs.existsSync(path.join(distDir, 'assets', 'logo-full.svg'));
     const logoSvg = fs.existsSync(path.join(distDir, 'assets', 'logo.svg'));
     const logoPng = fs.existsSync(path.join(distDir, 'assets', 'logo.png'));
-    const logoFile = logoSvg ? 'assets/logo.svg' : logoPng ? 'assets/logo.png' : null;
+    const logoFile = logoFullSvg ? 'assets/logo-full.svg'
+                   : logoSvg ? 'assets/logo.svg'
+                   : logoPng ? 'assets/logo.png'
+                   : null;
 
     const newContent = logoFile
       ? `<img src="${logoFile}" alt="${siteName}" class="h-10 w-auto">`
@@ -3264,7 +3273,11 @@ ${FAMTASTIC_DNA_VOCAB}
 
 ${systemRules}
 
-OUTPUT: Respond with ONLY the complete HTML document. No explanation, no markdown fences.
+${spec.famtastic_mode ? famSkeletons.LOGO_SKELETON_TEMPLATE : ''}
+
+OUTPUT: ${spec.famtastic_mode
+  ? 'First output the three <!-- LOGO_FULL -->, <!-- LOGO_ICON -->, <!-- LOGO_WORDMARK --> SVG blocks exactly as specified above. Then output the complete HTML document. No explanation, no markdown fences.'
+  : 'Respond with ONLY the complete HTML document. No explanation, no markdown fences.'}
 The <body> should contain ONLY the <header> and <footer> — no other elements.`;
 }
 
@@ -7072,7 +7085,18 @@ ${FAMTASTIC_DNA_VOCAB}`;
   // Load template context for single-page edits (so Claude copies chrome from template)
   const templateContext = loadTemplateContext();
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage };
+  // Session 12 Phase 0: mandatory FAMtastic skeletons.
+  // These are static strings — returning them makes them testable and lets
+  // the build prompt paths concatenate them without re-importing the module.
+  // Hero/divider/inline-prohibition go on per-page builds; logo skeleton is
+  // template-call only (see buildTemplatePrompt + parallelBuild).
+  const heroSkeleton = famSkeletons.HERO_SKELETON;
+  const dividerSkeleton = famSkeletons.DIVIDER_SKELETON;
+  const inlineStyleProhibition = famSkeletons.INLINE_STYLE_PROHIBITION;
+  const logoSkeletonTemplate = spec.famtastic_mode ? famSkeletons.LOGO_SKELETON_TEMPLATE : '';
+  const logoNotePage = spec.famtastic_mode ? famSkeletons.LOGO_NOTE_PAGE : '';
+
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, dividerSkeleton, inlineStyleProhibition, logoSkeletonTemplate, logoNotePage };
 }
 
 function summarizeHtml(html) {
@@ -7665,6 +7689,20 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
         currentPageSlots.map(s => `  ${s.slot_id} (${s.role})`).join('\n') + '\n';
     }
 
+    // Session 12 Phase 0: mandatory FAMtastic skeletons on every per-page build.
+    // These are structures Claude fills in, not suggestions. Hero skeleton mandates
+    // exact BEM class names that match fam-hero.css; divider skeleton mandates
+    // .fam-wave-divider between sections; inline-prohibition blocks reinventing
+    // the stylesheet rules inline; logoNotePage tells parallel pages NOT to
+    // re-emit the SVG blocks (those were generated in the template call).
+    const isHeroPage = pageFile === 'index.html';
+    const famSkeletonBlock = [
+      isHeroPage ? famSkeletons.HERO_SKELETON : '',
+      famSkeletons.DIVIDER_SKELETON,
+      famSkeletons.INLINE_STYLE_PROHIBITION,
+      spec.famtastic_mode ? famSkeletons.LOGO_NOTE_PAGE : '',
+    ].filter(Boolean).join('\n\n');
+
     let pagePrompt;
     if (templateContext) {
       // Template-first build: page receives template components to copy verbatim
@@ -7675,6 +7713,7 @@ PAGE CONTENT: ${content}
 All pages in this site: ${allPageLinks}
 ${buildBlueprintContext(pageFile)}
 ${slotStabilityBlock}
+${famSkeletonBlock}
 ${templateContext}
 
 YOUR OUTPUT STRUCTURE:
@@ -7729,6 +7768,7 @@ PAGE CONTENT: ${content}
 All pages in this site: ${allPageLinks}
 ${buildBlueprintContext(pageFile)}
 ${slotStabilityBlock}
+${famSkeletonBlock}
 DESIGN CONSISTENCY: All pages share identical nav, footer, CSS custom properties, and layout style.
 ${siteContext}
 ${sharedRules}`;
@@ -7914,7 +7954,25 @@ ${sharedRules}`;
 
   if (!templateSpawned) {
     templateSpawned = true;
-    const templateHtml = templateResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+    let templateHtml = templateResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+
+    // Session 12 Phase 0: extract multi-part SVG logo blocks from template response.
+    // When famtastic_mode is on, Claude emits <!-- LOGO_FULL -->, <!-- LOGO_ICON -->,
+    // <!-- LOGO_WORDMARK --> SVG blocks BEFORE the HTML. extractLogoSVGs() writes
+    // them to dist/assets/logo-{full,icon,wordmark}.svg and strips them from the
+    // HTML so _template.html doesn't start with <svg>.
+    if (spec.famtastic_mode) {
+      try {
+        const { results: logoResults, cleanedHtml } = famSkeletons.extractLogoSVGs(templateHtml, DIST_DIR());
+        templateHtml = cleanedHtml;
+        const extractedCount = Object.keys(logoResults).length;
+        if (ws && ws.readyState === 1) {
+          ws.send(JSON.stringify({ type: 'status', content: `Logo SVGs extracted: ${extractedCount}/3` }));
+        }
+      } catch (err) {
+        console.error('[logo-extract] failed:', err.message);
+      }
+    }
 
     if (templateHtml.length > 50) {
       // Write _template.html to dist

@@ -321,3 +321,122 @@
   z-index: 5;
   pointer-events: none;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Session 12 Phase 0 — Layered Hero Vocabulary
+   ─────────────────────────────────────────────────────────────────────
+
+   Adds the .fam-hero-layered / .fam-hero-layer / .fam-hero-layer--* BEM
+   vocabulary that the build prompts MANDATE. This sits alongside the
+   original .fam-hero / .fam-hero__bg vocabulary above — both work. The
+   layered vocabulary is the one Claude is required to emit on every
+   build; the classic vocabulary is kept for hand-authored layouts.
+
+   Layer ordering (z-index matches the classic system so layers can mix):
+     --bg        z: 0   background (gradient / solid / image)
+     --fx        z: 4   lights, sparkle, glow
+     --character z: 3   hero photo, illustration, video
+     --content   z: 6   headline, CTAs, UI (always on top)
+   ─────────────────────────────────────────────────────────────────── */
+
+.fam-hero-layered {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 80vh;
+  display: grid;
+  place-items: center;
+  --fam-hero-pad-x: clamp(20px, 6vw, 96px);
+  --fam-hero-pad-y: clamp(48px, 9vw, 140px);
+  padding: var(--fam-hero-pad-y) var(--fam-hero-pad-x);
+}
+
+.fam-hero-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fam-hero-layer--bg        { z-index: 0; }
+.fam-hero-layer--character { z-index: 3; }
+.fam-hero-layer--fx        { z-index: 4; }
+.fam-hero-layer--content   {
+  z-index: 6;
+  position: relative;
+  inset: auto;
+  pointer-events: auto;
+  width: 100%;
+  max-width: 80rem;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.75rem);
+  text-align: center;
+  align-items: center;
+}
+
+.fam-hero-layer--character img {
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+/* ─── fam-fx-lights — animated radial spots for the --fx layer ─────── */
+
+.fam-fx-lights {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,120,160,0.35), transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(120,200,255,0.30), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(255,220,120,0.25), transparent 50%);
+  mix-blend-mode: screen;
+  filter: blur(30px);
+  animation: fam-fx-lights-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes fam-fx-lights-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(2%, -1%, 0) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fam-fx-lights { animation: none; }
+}
+
+/* ─── fam-bleed-bottom — image utility used by --character layer ───── */
+
+.fam-bleed-bottom {
+  display: block;
+  margin-bottom: calc(-1 * var(--fam-hero-pad-y, 80px));
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Session 12 Phase 0 — Section Dividers (self-drawn, no inline SVG)
+   ─────────────────────────────────────────────────────────────────────
+
+   fam-shapes.css ships a .fam-wave-divider that REQUIRES an inline SVG
+   child. The Session 12 skeleton mandates an empty <div> — which would
+   render nothing. We add self-drawn variants here that work with an
+   empty element, so the mandated skeleton actually produces visible
+   dividers without modifying fam-shapes.css.
+   ─────────────────────────────────────────────────────────────────── */
+
+.fam-wave-divider:empty {
+  display: block;
+  width: 100%;
+  height: 60px;
+  background: currentColor;
+  color: var(--color-bg, #ffffff);
+  -webkit-mask: radial-gradient(24px at 50% 32px, #000 98%, transparent 100%) 50% 0/48px 100% repeat-x;
+          mask: radial-gradient(24px at 50% 32px, #000 98%, transparent 100%) 50% 0/48px 100% repeat-x;
+}
+
+.fam-diagonal {
+  display: block;
+  width: 100%;
+  height: 60px;
+  background: currentColor;
+  color: var(--color-bg, #ffffff);
+  clip-path: polygon(0 0, 100% 60%, 100% 100%, 0 100%);
+}
