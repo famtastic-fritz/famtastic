@@ -11,6 +11,10 @@ sites/
 # Claude Code worktrees — ephemeral, never tracked
 .claude/worktrees/
 
+# Claude Code local settings — captures approved Bash commands verbatim,
+# which can include inline env-var API keys. Never tracked.
+.claude/settings.local.json
+
 # Local tools (adb-mcp bridge etc) — machine-specific, not tracked
 tools/
 
