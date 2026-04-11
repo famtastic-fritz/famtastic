@@ -38,9 +38,16 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Start site-studio (includes built-in preview server)
+#
+# IMPORTANT: launch via `zsh -l -c` so ~/.zshrc is sourced and every API
+# key exported there (ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY,
+# PINECONE_API_KEY, NETLIFY_AUTH_TOKEN, etc.) is in the server's env.
+# Without the login shell, studios started from non-interactive contexts
+# (cron, nohup, background scripts) inherit a stripped env and the brain
+# verifier reports the keys as missing. The login shell is the default —
+# no manual trick required.
 echo "[chat] Starting Site Studio on port $STUDIO_PORT (preview on $PREVIEW_PORT)..."
-SITE_TAG="$TAG" STUDIO_PORT="$STUDIO_PORT" PREVIEW_PORT="$PREVIEW_PORT" \
-  node site-studio/server.js &
+zsh -l -c "[ -f ~/.zshrc ] && source ~/.zshrc; SITE_TAG='$TAG' STUDIO_PORT='$STUDIO_PORT' PREVIEW_PORT='$PREVIEW_PORT' exec node '$SCRIPT_DIR/../site-studio/server.js'" &
 PIDS+=($!)
 sleep 1
 
