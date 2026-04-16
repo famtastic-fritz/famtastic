@@ -5229,6 +5229,12 @@ function classifyShayShayTier0(lower) {
     return { intent: 'show_me' };
   if (/\b(what['']?s?\s+broken|are\s+all\s+apis\s+working|check\s+the\s+system|system\s+status)\b/.test(lower))
     return { intent: 'system_status' };
+  // Uncertainty / brainstorm signals — detect before AI call
+  if (/\b(i\s+don['']?t\s+know\s+how\s+i\s+feel|not\s+sure\s+(about|if)|i['']?m\s+not\s+sure|i\s+can['']?t\s+decide|help\s+me\s+think|let['']?s\s+brainstorm|should\s+we\s+brainstorm|i['']?m\s+unsure)\b/.test(lower))
+    return { intent: 'suggest_brainstorm' };
+  // Gap capture — "we need X", "I can't do X", "we're missing X"
+  if (/\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower))
+    return { intent: 'capture_gap' };
   return null;
 }
 
@@ -5272,6 +5278,37 @@ function handleShayShayTier0(tier0, message, context, manifest) {
     return {
       response: statusLines.join('\n'),
       action: null,
+    };
+  }
+
+  if (tier0.intent === 'suggest_brainstorm') {
+    // Extract what they're uncertain about
+    const topicMatch = message.match(/(?:about|feel about|sure about|decide on)\s+(?:the\s+)?(.+?)[\.\?!]?\s*$/i);
+    const topic = topicMatch ? topicMatch[1].trim() : 'this';
+    return {
+      response: `Sounds like you're at a decision point on the ${topic}. Want to switch Studio to brainstorm mode? I can help you think through options before committing to a direction — no build until you're ready.`,
+      action: 'suggest_brainstorm',
+      topic,
+    };
+  }
+
+  if (tier0.intent === 'capture_gap') {
+    // Extract what's needed
+    const needMatch = message.match(/(?:we\s+need\s+(?:a\s+|an\s+|the\s+)?|we['']?re\s+missing\s+|i\s+can['']?t\s+do\s+|there['']?s\s+no\s+way\s+to\s+)(.+?)[\.\?!]?\s*$/i);
+    const capability = needMatch ? needMatch[1].trim() : message.slice(0, 80);
+
+    // Log the gap
+    try {
+      gapLogger.logGap(TAG, message, gapLogger.GAP_CATEGORIES.NOT_BUILT, {
+        capability_id: capability.toLowerCase().replace(/\s+/g, '_').slice(0, 50),
+      });
+    } catch {}
+
+    return {
+      response: `I've logged "${capability}" as a missing capability. This is the first time you've mentioned it — if it comes up a couple more times I'll surface it as a priority. Want me to add it to the build backlog now?`,
+      action: 'gap_captured',
+      capability,
+      gap_category: 'not_built',
     };
   }
 
