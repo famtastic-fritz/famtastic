@@ -75,9 +75,8 @@
   }
 
   function switchToSite(tag) {
-    // Use the existing site switcher in the header
-    const picker = document.getElementById('site-tag');
-    if (picker) picker.click();
+    // Call switchSite directly — don't rely on clicking a button
+    if (window.switchSite) window.switchSite(tag);
   }
 
   // --- Tab System ---

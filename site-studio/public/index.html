@@ -859,11 +859,6 @@
     function toggleProjectPicker() {
       var picker = document.getElementById('project-picker');
       if (!picker) return;
-      // Reposition picker under the top-bar site button
-      var btn = document.getElementById('top-bar-site-btn');
-      if (btn && picker.parentElement !== btn.parentElement) {
-        btn.parentElement.appendChild(picker);
-      }
       if (picker.style.display === 'none' || !picker.style.display) {
         picker.style.display = 'flex';
         loadProjects();
@@ -1044,8 +1039,11 @@
     function handleSiteSwitch(tag, pages, currentPage) {
       config.tag = tag;
       document.title = 'Site Studio \u2014 ' + tag;
-      var siteTagEl = document.getElementById('top-bar-site-btn') || document.getElementById('site-tag');
-      if (siteTagEl) siteTagEl.textContent = tag + ' \u25be';
+      // Update both top-bar button and sidebar button
+      var topBtn = document.getElementById('top-bar-site-btn');
+      if (topBtn) topBtn.textContent = tag + ' \u25be';
+      var sideBtn = document.getElementById('site-tag');
+      if (sideBtn) sideBtn.textContent = tag + ' \u25be';
       var ctxSite = document.getElementById('ctx-site-tag');
       if (ctxSite) ctxSite.textContent = tag;
       if (pages) updatePageTabs(pages, currentPage);
@@ -1561,8 +1559,11 @@
       } catch(e) {
         config = { tag: 'unknown', previewPort: 3333, studioPort: 3334 };
       }
-      var siteTagEl = document.getElementById('top-bar-site-btn') || document.getElementById('site-tag');
-      if (siteTagEl) siteTagEl.textContent = (config.tag || 'loading') + ' \u25be';
+      var _tag = config.tag || 'loading';
+      var _topBtn = document.getElementById('top-bar-site-btn');
+      if (_topBtn) _topBtn.textContent = _tag + ' \u25be';
+      var _sideBtn = document.getElementById('site-tag');
+      if (_sideBtn) _sideBtn.textContent = _tag + ' \u25be';
       document.title = 'Site Studio \u2014 ' + (config.tag || '...');
       var ctxSite = document.getElementById('ctx-site-tag');
       if (ctxSite) ctxSite.textContent = config.tag || '\u2014';
