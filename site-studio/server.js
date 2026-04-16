@@ -6831,7 +6831,10 @@ const VALIDATION_PLAN_PATH = path.join(__dirname, 'validation-plan.json');
 app.get('/api/validation-plan', (req, res) => {
   if (fs.existsSync(VALIDATION_PLAN_PATH)) {
     try {
-      res.json(JSON.parse(fs.readFileSync(VALIDATION_PLAN_PATH, 'utf8')));
+      const plan = JSON.parse(fs.readFileSync(VALIDATION_PLAN_PATH, 'utf8'));
+      // Override title to reflect the active site, not the site it was created for
+      plan.title = `Studio UI Validation — ${TAG}`;
+      res.json(plan);
     } catch (e) {
       res.status(500).json({ error: 'Failed to read validation plan' });
     }
