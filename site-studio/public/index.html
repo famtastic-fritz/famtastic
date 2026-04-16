@@ -1092,6 +1092,7 @@
         if (restartBanner) restartBanner.classList.add('hidden');
         if (typeof BrainSelector !== 'undefined') BrainSelector.init(ws);
         if (typeof WorkerQueueBadge !== 'undefined') WorkerQueueBadge.refresh();
+        window.dispatchEvent(new CustomEvent('pip:session-started'));
       };
       ws.onclose = function() {
         console.log('[ws] disconnected, reconnecting in ' + wsReconnectDelay + 'ms...');

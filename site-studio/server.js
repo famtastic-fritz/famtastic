@@ -6573,6 +6573,104 @@ app.get('/api/media/usage/:provider', (req, res) => {
 });
 
 // --- Verification API ---
+// --- Validation Plan (Session 15) ---
+
+const VALIDATION_PLAN_PATH = path.join(__dirname, 'validation-plan.json');
+
+app.get('/api/validation-plan', (req, res) => {
+  if (fs.existsSync(VALIDATION_PLAN_PATH)) {
+    try {
+      res.json(JSON.parse(fs.readFileSync(VALIDATION_PLAN_PATH, 'utf8')));
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to read validation plan' });
+    }
+  } else {
+    res.json({ status: 'no_plan' });
+  }
+});
+
+app.post('/api/validation-plan/step/:id', (req, res) => {
+  if (!fs.existsSync(VALIDATION_PLAN_PATH)) return res.status(404).json({ error: 'No validation plan found' });
+  const stepId = parseInt(req.params.id, 10);
+  if (isNaN(stepId)) return res.status(400).json({ error: 'Invalid step id' });
+  const status = req.body.status;
+  if (!['passed', 'failed', 'skipped'].includes(status)) return res.status(400).json({ error: 'status must be passed|failed|skipped' });
+  try {
+    const plan = JSON.parse(fs.readFileSync(VALIDATION_PLAN_PATH, 'utf8'));
+    const step = plan.steps.find(s => s.id === stepId);
+    if (!step) return res.status(404).json({ error: `Step ${stepId} not found` });
+    step.status = status;
+    step.data_collected = req.body.data || {};
+    step.completed_at = new Date().toISOString();
+    // Advance current_step to the next pending step
+    const nextPending = plan.steps.find(s => s.id > stepId && s.status === 'pending');
+    plan.current_step = nextPending ? plan.steps.indexOf(nextPending) : plan.steps.length;
+    // Update plan-level status
+    const allDone = plan.steps.every(s => s.status !== 'pending');
+    if (allDone) plan.status = 'complete';
+    else plan.status = 'in_progress';
+    fs.writeFileSync(VALIDATION_PLAN_PATH, JSON.stringify(plan, null, 2));
+    res.json({ ok: true, next_step: plan.current_step, plan_status: plan.status });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update validation plan: ' + e.message });
+  }
+});
+
+app.post('/api/validation-plan/report', (req, res) => {
+  if (!fs.existsSync(VALIDATION_PLAN_PATH)) return res.status(404).json({ error: 'No validation plan found' });
+  try {
+    const plan = JSON.parse(fs.readFileSync(VALIDATION_PLAN_PATH, 'utf8'));
+    const passed  = plan.steps.filter(s => s.status === 'passed');
+    const failed  = plan.steps.filter(s => s.status === 'failed');
+    const skipped = plan.steps.filter(s => s.status === 'skipped');
+    const pending = plan.steps.filter(s => s.status === 'pending');
+
+    const report = [
+      '# Studio Validation Gap Report',
+      `## Date: ${new Date().toISOString().split('T')[0]}`,
+      `## Plan: ${plan.title}`,
+      '',
+      '## Results',
+      `- Passed:  ${passed.length}/${plan.steps.length}`,
+      `- Failed:  ${failed.length}/${plan.steps.length}`,
+      `- Skipped: ${skipped.length}/${plan.steps.length}`,
+      `- Pending: ${pending.length}/${plan.steps.length}`,
+      '',
+      '## Passed Steps',
+      passed.length ? passed.map(s => `- ✓ Step ${s.id}: ${s.title}`).join('\n') : '_(none)_',
+      '',
+      '## Failed Steps (Gaps to Fix)',
+      failed.length ? failed.map(s => [
+        `### Gap: Step ${s.id} — ${s.title}`,
+        `**Description:** ${s.description}`,
+        `**Expected:** ${s.expected}`,
+        `**Show Me target:** \`${s.show_me_target}\``,
+        `**Data collected:** ${JSON.stringify(s.data_collected || {})}`,
+        `**Completed at:** ${s.completed_at || 'n/a'}`,
+      ].join('\n')).join('\n\n') : '_(none)_',
+      '',
+      '## Skipped Steps',
+      skipped.length ? skipped.map(s => `- ⊘ Step ${s.id}: ${s.title}`).join('\n') : '_(none)_',
+      '',
+      '## Pending Steps (Not yet validated)',
+      pending.length ? pending.map(s => `- ○ Step ${s.id}: ${s.title}`).join('\n') : '_(none)_',
+      '',
+      '## Recommended Fixes for Session 16',
+      failed.length
+        ? failed.map((s, i) => `${i + 1}. Fix Step ${s.id}: ${s.title}`).join('\n')
+        : '_(No gaps — all steps passed or skipped)_',
+    ].join('\n');
+
+    const reportDir = path.join(__dirname, '../../docs');
+    if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
+    const reportPath = path.join(reportDir, 'session15-validation-report.md');
+    fs.writeFileSync(reportPath, report);
+    res.json({ ok: true, path: reportPath, passed: passed.length, failed: failed.length, skipped: skipped.length });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to generate report: ' + e.message });
+  }
+});
+
 app.get('/api/verify', (req, res) => {
   const spec = readSpec();
   res.json(spec.last_verification || null);

@@ -357,16 +357,155 @@
     }
   }
 
+  // ── Validation Mode ───────────────────────────────────────────────────────
+  var validationPlan = null;
+
+  function checkValidationPlan() {
+    fetch('/api/validation-plan')
+      .then(function (r) { return r.json(); })
+      .then(function (plan) {
+        if (!plan || plan.status === 'no_plan') return;
+        validationPlan = plan;
+
+        var currentStep = plan.steps[plan.current_step];
+        if (!currentStep || currentStep.status !== 'pending') {
+          if (plan.status === 'complete') {
+            showValidationComplete(plan);
+          }
+          return;
+        }
+
+        // Show welcome on first step
+        if (plan.current_step === 0 && plan.status === 'not_started') {
+          showValidationWelcome(plan);
+        } else {
+          showStepPrompt(currentStep, plan);
+        }
+      })
+      .catch(function () { /* no plan or server not running — silent */ });
+  }
+
+  function showValidationWelcome(plan) {
+    showMessage(
+      'Welcome back, Fritz. Let\'s validate the new Studio together. I have a ' + plan.steps.length + '-step plan. I\'ll guide you through each one, show you what to look for, and collect data as we go. Ready to start?',
+      [
+        { label: 'Let\'s go \u2192', action: function () { startValidationStep(plan.steps[0]); } },
+        { label: 'Show me the plan', action: function () { showFullPlan(plan); } },
+        { label: 'Not now', action: closeCallout, secondary: true },
+      ]
+    );
+  }
+
+  function startValidationStep(step) {
+    closeCallout();
+    setTimeout(function () { showStepPrompt(step, validationPlan); }, 300);
+  }
+
+  function showStepPrompt(step, plan) {
+    var total = plan.steps.length;
+    showMessage(
+      'Step ' + step.id + ' of ' + total + ': ' + step.title + '\n\n' + step.description,
+      [
+        { label: '\uD83D\uDC46 Show Me', action: function () { triggerShowMe(step); } },
+        { label: '\u2713 Passed', action: function () { markValidationStep(step.id, 'passed'); } },
+        { label: '\u2717 Failed', action: function () { markValidationStep(step.id, 'failed'); } },
+        { label: 'Skip', action: function () { markValidationStep(step.id, 'skipped'); }, secondary: true },
+      ]
+    );
+  }
+
+  function triggerShowMe(step) {
+    var target = document.querySelector(step.show_me_target);
+    if (target) {
+      showMeElement(step.show_me_target, step.show_me_instruction, [
+        { label: '\u2713 Passed', action: function () { clearHighlight(); markValidationStep(step.id, 'passed'); } },
+        { label: '\u2717 Failed', action: function () { clearHighlight(); markValidationStep(step.id, 'failed'); } },
+      ]);
+    } else {
+      showMessage(
+        'Can\'t find \'' + step.show_me_target + '\' on the current screen. This is likely a gap.\n\nStep ' + step.id + ': ' + step.title,
+        [
+          { label: '\u2717 Mark failed', action: function () { markValidationStep(step.id, 'failed', { gap: 'element_not_found', selector: step.show_me_target }); } },
+          { label: 'Skip', action: function () { markValidationStep(step.id, 'skipped'); }, secondary: true },
+        ]
+      );
+    }
+  }
+
+  function markValidationStep(stepId, status, extraData) {
+    var data = extraData || {};
+    data.marked_at = new Date().toISOString();
+    fetch('/api/validation-plan/step/' + stepId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: status, data: data }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (result) {
+        if (!result.ok) { console.error('[validation] step update failed', result); return; }
+        // Reload plan and advance to next step
+        return fetch('/api/validation-plan').then(function (r) { return r.json(); });
+      })
+      .then(function (plan) {
+        if (!plan) return;
+        validationPlan = plan;
+        var nextStep = plan.steps[plan.current_step];
+        if (plan.status === 'complete' || !nextStep) {
+          showValidationComplete(plan);
+        } else {
+          showStepPrompt(nextStep, plan);
+        }
+      })
+      .catch(function (e) { console.error('[validation] error:', e); });
+  }
+
+  function showFullPlan(plan) {
+    var summary = plan.steps.map(function (s, i) {
+      var icon = s.status === 'passed' ? '\u2713' : s.status === 'failed' ? '\u2717' : s.status === 'skipped' ? '\u29B8' : String(i + 1) + '.';
+      return icon + ' ' + s.title;
+    }).join('\n');
+    showMessage('Validation Plan: ' + plan.title + '\n\n' + summary, [
+      { label: 'Start step 1', action: function () { startValidationStep(plan.steps[0]); } },
+      { label: 'Close', action: closeCallout, secondary: true },
+    ]);
+  }
+
+  function showValidationComplete(plan) {
+    var passed  = plan.steps.filter(function (s) { return s.status === 'passed'; }).length;
+    var failed  = plan.steps.filter(function (s) { return s.status === 'failed'; }).length;
+    var skipped = plan.steps.filter(function (s) { return s.status === 'skipped'; }).length;
+
+    showMessage(
+      'Validation complete! ' + passed + ' passed, ' + failed + ' failed, ' + skipped + ' skipped.\n\nGenerating gap report now\u2026',
+      [
+        { label: 'View report', action: function () {
+          fetch('/api/validation-plan/report', { method: 'POST' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              closeCallout();
+              if (window.addMessage) addMessage('assistant', 'Gap report written to docs/session15-validation-report.md. ' + data.passed + ' passed, ' + data.failed + ' failed.');
+            });
+        }},
+        { label: 'Close', action: closeCallout, secondary: true },
+      ]
+    );
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
   window.PipOrb = {
-    show:    showMessage,
-    flash:   flashCallout,
-    setBadge: setBadge,
-    close:   closeCallout,
-    showMe:  showMeElement,
-    doIt:    doIt,
-    dismiss: dismiss,
-    send:    sendToChat,
+    show:       showMessage,
+    flash:      flashCallout,
+    setBadge:   setBadge,
+    close:      closeCallout,
+    showMe:     showMeElement,
+    doIt:       doIt,
+    dismiss:    dismiss,
+    send:       sendToChat,
+    validation: {
+      check:    checkValidationPlan,
+      markStep: markValidationStep,
+      showPlan: function () { if (validationPlan) showFullPlan(validationPlan); },
+    },
     get mode() { return pipMode; },
   };
 
@@ -376,4 +515,11 @@
   } else {
     init();
   }
+
+  // ── Check for active validation plan after WS connects ───────────────────
+  // Fires 3s after session start so the WS welcome message lands first.
+  // If a validation plan exists, it takes over from the standard welcome.
+  window.addEventListener('pip:session-started', function () {
+    setTimeout(checkValidationPlan, 3000);
+  });
 })();

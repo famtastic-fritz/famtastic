@@ -1,0 +1,141 @@
+{
+  "plan_id": "studio-v2-validation",
+  "title": "Studio UI Validation — street-family-reunion",
+  "created": "2026-04-16",
+  "status": "not_started",
+  "current_step": 0,
+  "steps": [
+    {
+      "id": 1,
+      "title": "Studio loads correctly",
+      "description": "Open Studio in browser. Verify the new shell renders — activity rail, sidebar, workspace, tab bar, status bar all visible.",
+      "check_type": "visual",
+      "show_me_target": "#activity-rail",
+      "show_me_instruction": "This is the activity rail — your navigation spine. Each icon opens a different view. The red indicator shows which is active.",
+      "expected": "New VS Code-style layout renders without errors",
+      "data_to_collect": ["load_time_ms", "console_errors", "layout_ok"],
+      "status": "pending"
+    },
+    {
+      "id": 2,
+      "title": "New site creation launches brief interview",
+      "description": "Click '+ new site'. Verify the brief interview tab opens with the step indicator showing Name → Revenue → Purpose → Edge → CTA → Style.",
+      "check_type": "interaction",
+      "show_me_target": "#new-project-tag",
+      "show_me_instruction": "Type a new site tag here and click Create. The brief interview should open as a new workspace tab — not a modal dialog.",
+      "expected": "Brief interview tab opens with step indicator",
+      "data_to_collect": ["tab_opened", "step_indicator_visible", "interview_rendered"],
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "title": "Revenue model question appears",
+      "description": "After answering the business question, verify the revenue model question appears as step 2 with suggestion chips (Not sure yet, Reservations, Lead generation, Rank and rent, Affiliate, E-commerce).",
+      "check_type": "interaction",
+      "show_me_target": ".brief-chip",
+      "show_me_instruction": "These chips let you pick a revenue model without typing. The answer seeds the build architecture — a rank-and-rent site gets a lead form and call tracking slot automatically.",
+      "expected": "Revenue model question appears as step 2 with suggestion chips",
+      "data_to_collect": ["question_appeared", "chips_rendered", "selected_model"],
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "title": "Brief panel builds in real time",
+      "description": "As you answer interview questions, verify the brief panel on the right updates in real time. Completion bar should advance toward 100%.",
+      "check_type": "visual",
+      "show_me_target": "#brief-panel-col",
+      "show_me_instruction": "Watch this panel as you answer questions. Each answer populates a field here. This is your site spec being built live. At 60% completion the Build button activates.",
+      "expected": "Brief panel updates with each answer, progress bar advances",
+      "data_to_collect": ["fields_populated", "progress_bar_value", "build_btn_state"],
+      "status": "pending"
+    },
+    {
+      "id": 5,
+      "title": "Build triggers from brief and shows phase card",
+      "description": "Click 'Build this site →'. Verify the build pipeline fires, the UI switches to the chat tab, and a phase card renders showing pipeline steps.",
+      "check_type": "interaction",
+      "show_me_target": "#brief-build-btn",
+      "show_me_instruction": "Clicking this sends 'Build from brief' to the chat, switches to the chat tab, and starts the build pipeline. A phase card should appear in the chat thread tracking progress.",
+      "expected": "Build fires, chat tab activates, phase card appears",
+      "data_to_collect": ["build_fired", "tab_switched", "phase_card_rendered"],
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "title": "Phase updates emit and render",
+      "description": "While the build runs, verify the phase_update WebSocket messages are received and the step log updates. Status bar shows Sonnet model and token count.",
+      "check_type": "visual",
+      "show_me_target": "#step-log",
+      "show_me_instruction": "This is the live build log in the chat thread. Each status message appends a step. Watch the status bar at the bottom — it shows context window usage as the build runs.",
+      "expected": "Step log updates as build progresses, status bar reflects session state",
+      "data_to_collect": ["steps_updating", "status_bar_updating", "phase_card_present"],
+      "status": "pending"
+    },
+    {
+      "id": 7,
+      "title": "Preview tab shows built site",
+      "description": "After build completes, click the Preview tab. Verify the site loads in the iframe and page tabs appear for each built page.",
+      "check_type": "visual",
+      "show_me_target": "#tab-pane-preview",
+      "show_me_instruction": "The preview tab shows your site live. Page tabs at the top let you switch between pages. Device toggle lets you check mobile. The verify indicator dot in the topbar shows build health.",
+      "expected": "Preview iframe loads site, page tabs render, verify dot is green",
+      "data_to_collect": ["iframe_loaded", "page_tabs_present", "verify_indicator_color"],
+      "status": "pending"
+    },
+    {
+      "id": 8,
+      "title": "Chat edit fires and updates preview",
+      "description": "Send a content edit in chat (e.g. 'change the headline to FAMtastic Family Reunion'). Verify the response routes correctly and the preview reloads.",
+      "check_type": "interaction",
+      "show_me_target": "#chat-input",
+      "show_me_instruction": "Type a content edit here and press Enter. The classifier should route it as content_update (surgical edit, no rebuild). Preview should reload within seconds.",
+      "expected": "Edit routes as content_update, preview reloads, no full rebuild triggered",
+      "data_to_collect": ["intent_routed", "response_received", "preview_reloaded"],
+      "status": "pending"
+    },
+    {
+      "id": 9,
+      "title": "Assets tab loads component tree",
+      "description": "Click the Assets icon in the activity rail (picture frame icon). Verify the three-panel layout loads: component tree left, detail center, media library right.",
+      "check_type": "navigation",
+      "show_me_target": "[data-rail=\"assets\"]",
+      "show_me_instruction": "The assets rail opens the component tree view. Drill from the site level down to pages, sections, and components. Media needs cards show what images each component requires.",
+      "expected": "Three-panel assets view renders with component tree",
+      "data_to_collect": ["three_panel_rendered", "tree_loaded", "media_library_present"],
+      "status": "pending"
+    },
+    {
+      "id": 10,
+      "title": "Intelligence sidebar shows findings",
+      "description": "Click the intelligence icon (waveform icon) in the activity rail. Verify the sidebar loads intel findings and the 'View Mission Control' button is present.",
+      "check_type": "navigation",
+      "show_me_target": "[data-rail=\"intelligence\"]",
+      "show_me_instruction": "Intelligence shows findings from the build analysis loop. Click 'View Mission Control' to open the full portfolio dashboard in a new workspace tab.",
+      "expected": "Intel sidebar renders with findings or empty state, Mission Control button present",
+      "data_to_collect": ["intel_feed_rendered", "mc_button_present", "findings_count"],
+      "status": "pending"
+    },
+    {
+      "id": 11,
+      "title": "Settings opens with four-tier nav",
+      "description": "Click the settings icon (gear icon) at the bottom of the activity rail. Verify the settings modal opens with four tier tabs: Platform, Workspace, Site, Assistant.",
+      "check_type": "navigation",
+      "show_me_target": "[data-rail=\"settings\"]",
+      "show_me_instruction": "Settings has four tiers. Platform = API keys (never committed). Workspace = build conventions. Site = this specific site's config. Assistant = Pip preferences.",
+      "expected": "Settings modal opens with four tier navigation",
+      "data_to_collect": ["modal_opened", "four_tiers_present", "site_config_loaded"],
+      "status": "pending"
+    },
+    {
+      "id": 12,
+      "title": "Deploy tab shows pre-flight and history",
+      "description": "Click the Deploy tab in the workspace tab bar. Verify the three-panel deploy screen renders: pre-flight left, pipeline center, history right.",
+      "check_type": "navigation",
+      "show_me_target": "[data-tab-id=\"deploy\"]",
+      "show_me_instruction": "Pre-flight runs automatically. Green = can deploy. Yellow = deploy with warnings. Red = blocked. History shows every past deploy with rollback buttons.",
+      "expected": "Deploy screen renders with pre-flight checks and deploy history",
+      "data_to_collect": ["preflight_rendered", "pipeline_rendered", "history_rendered"],
+      "status": "pending"
+    }
+  ]
+}
