@@ -233,18 +233,22 @@
   }
 
   function closeCallout() {
+    // Hide floating callout (used for Show Me mode)
     const callout = document.getElementById('pip-callout');
     if (callout) callout.classList.add('hidden');
     const orb = document.getElementById('pip-orb');
-    if (orb && !orb.classList.contains('pip-active')) {
-      orb.classList.remove('pip-active');
-      orb.classList.add('pip-idle');
-    }
-    // Clear message content so next open shows fresh content
+    if (orb) { orb.classList.remove('pip-active'); orb.classList.add('pip-idle'); }
     const msgEl    = document.getElementById('pip-callout-msg');
     const actionsEl = document.getElementById('pip-callout-actions');
-    if (msgEl)     msgEl.textContent = '';
-    if (actionsEl) actionsEl.innerHTML = '';
+    if (msgEl) msgEl.textContent = '';
+    if (actionsEl) while (actionsEl.firstChild) actionsEl.removeChild(actionsEl.firstChild);
+
+    // Also clear the column response area — showMessage() was overridden to route
+    // messages to the column, so dismiss must clear the column too
+    const colArea = document.getElementById('pip-response-area');
+    const colRow  = document.getElementById('pip-action-row');
+    if (colArea) { while (colArea.firstChild) colArea.removeChild(colArea.firstChild); colArea.className = ''; }
+    if (colRow)  { while (colRow.firstChild) colRow.removeChild(colRow.firstChild); colRow.style.display = 'none'; }
   }
 
   // ── Notification badge ───────────────────────────────────────────────────
