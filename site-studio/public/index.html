@@ -970,14 +970,35 @@
         }).catch(function() {});
     }
 
-    function initPreviewSplit() {
-      // Set preview to 60% of available canvas height on first load
+    function getCanvasConstraints() {
+      // Chat always gets at least 45% of canvas — preview gets the rest
       var canvas = document.getElementById('canvas-area');
+      var canvasH = canvas ? canvas.offsetHeight : 500;
+      var chatMin = Math.max(100, Math.round(canvasH * 0.40)); // 40% min for chat
+      var previewMax = canvasH - chatMin - 5; // 5px for resizer
+      var previewDefault = Math.min(previewMax, Math.round(canvasH * 0.55)); // 55% default
+      return { canvasH: canvasH, chatMin: chatMin, previewMax: previewMax, previewDefault: previewDefault };
+    }
+
+    function initPreviewSplit() {
       var preview = document.getElementById('canvas-live-preview');
-      if (!canvas || !preview) return;
-      var canvasH = canvas.offsetHeight;
-      if (canvasH > 100) {
-        preview.style.height = Math.round(canvasH * 0.60) + 'px';
+      if (!preview) return;
+      var c = getCanvasConstraints();
+      if (c.canvasH > 100) {
+        preview.style.height = Math.max(80, c.previewDefault) + 'px';
+      }
+    }
+
+    function expandPreviewIfHidden() {
+      var preview = document.getElementById('canvas-live-preview');
+      if (!preview) return;
+      if (preview.offsetHeight < 20) {
+        var c = getCanvasConstraints();
+        preview.style.height = Math.max(80, c.previewDefault) + 'px';
+        var resizer = document.getElementById('canvas-preview-resizer');
+        var btn = document.getElementById('preview-toggle-btn');
+        if (resizer) resizer.style.display = '';
+        if (btn) btn.textContent = 'Hide \u25b2';
       }
     }
 
@@ -988,10 +1009,8 @@
       if (!preview) return;
       var collapsed = preview.style.height === '0px' || preview.offsetHeight < 20;
       if (collapsed) {
-        // Restore to 60% of canvas
-        var canvas = document.getElementById('canvas-area');
-        var h = canvas ? Math.round(canvas.offsetHeight * 0.60) : 300;
-        preview.style.height = h + 'px';
+        var c = getCanvasConstraints();
+        preview.style.height = Math.max(80, c.previewDefault) + 'px';
         if (resizer) resizer.style.display = '';
         if (btn) btn.textContent = 'Hide \u25b2';
       } else {
@@ -1065,6 +1084,8 @@
       loadPages();
       // Update environment bar with deploy URLs
       fetch('/api/studio-state').then(function(r) { return r.json(); }).then(updateEnvironmentBar).catch(function() {});
+      // Broadcast site change so all components can reset
+      window.dispatchEvent(new CustomEvent('studio:site-changed', { detail: { tag: tag, pages: pages } }));
       // If this site has a pending interview, auto-open the Brief tab
       fetch('/api/interview/status')
         .then(function (r) { return r.json(); })
@@ -1325,6 +1346,7 @@
             break;
           case 'reload-preview':
             hasUnsavedWork = false;
+            expandPreviewIfHidden(); // show preview after build
             reloadPreview();
             refreshStudioPanel();
             break;

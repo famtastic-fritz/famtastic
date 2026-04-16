@@ -278,12 +278,20 @@
     // Eagerly load the site tree so "Recent sites" populates without requiring
     // the user to click the Sites rail button first
     loadSiteTree();
+
+    // Re-sync sidebar and dynamic area when site changes
+    window.addEventListener('studio:site-changed', () => {
+      loadSiteTree();
+      syncSidebarNavActive();
+    });
+
     // Keyboard shortcut: Cmd/Ctrl+B toggles sidebar
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); toggleSidebar(); }
     });
 
     // Drag-resize: canvas-preview-resizer adjusts the live preview strip height
+    // Chat always gets at least 40% — preview gets at most 55%
     const resizer = document.getElementById('canvas-preview-resizer');
     const preview = document.getElementById('canvas-live-preview');
     if (resizer && preview) {
@@ -293,8 +301,12 @@
         startH = preview.offsetHeight;
         document.body.style.userSelect = 'none';
         const onMove = mv => {
+          const canvas = document.getElementById('canvas-area');
+          const canvasH = canvas ? canvas.offsetHeight : 500;
+          const chatMin = Math.max(100, Math.round(canvasH * 0.40));
+          const previewMax = canvasH - chatMin - 5;
           const delta = startY - mv.clientY; // drag up = bigger preview
-          preview.style.height = Math.max(80, Math.min(600, startH + delta)) + 'px';
+          preview.style.height = Math.max(80, Math.min(previewMax, startH + delta)) + 'px';
         };
         const onUp = () => {
           document.body.style.userSelect = '';

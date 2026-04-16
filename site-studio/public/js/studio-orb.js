@@ -760,6 +760,27 @@
   // Clicking a step in the todo list surfaces the step prompt in the response column.
   // window.addEventListener('pip:session-started', ...) removed intentionally.
 
+  // ── Site changed — reset all Shay-Shay components for the new site ────────
+  window.addEventListener('studio:site-changed', function (e) {
+    var newTag = e.detail && e.detail.tag;
+
+    // Clear response column
+    var area = document.getElementById('pip-response-area');
+    var row  = document.getElementById('pip-action-row');
+    if (area) { while (area.firstChild) area.removeChild(area.firstChild); area.className = ''; }
+    if (row)  { while (row.firstChild) row.removeChild(row.firstChild); row.style.display = 'none'; }
+
+    // Reset badge
+    setBadge(0);
+
+    // Clear localStorage dismiss keys for build_warn so new site shows fresh
+    localStorage.removeItem('pip-dismiss:pip-t-build-warn');
+    localStorage.removeItem('pip-dismiss:pip-t-briefed-idle');
+
+    // Reload dynamic area for new site's validation plan
+    setTimeout(loadDynamicArea, 400);
+  });
+
   // ── Mode awareness — dynamic area adapts when mode changes ───────────────
   window.addEventListener('pip:mode-changed', function (e) {
     var mode = e.detail && e.detail.mode;
