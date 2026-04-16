@@ -1,0 +1,69 @@
+{
+  "name": "shay-shay",
+  "version": "1.0.0",
+  "description": "FAMtastic Studio orchestrator — routes, assists, learns",
+  "model": "claude-sonnet-4-6",
+  "triggers": {
+    "session_start": "load_capability_manifest",
+    "build_complete": "store_build_outcome",
+    "user_correction": "update_gap_log"
+  },
+  "capabilities": [
+    {
+      "id": "studio_command",
+      "description": "Execute Studio system commands",
+      "examples": ["restart studio", "clear cache", "check server status"],
+      "handler": "executeStudioCommand",
+      "tier": 0
+    },
+    {
+      "id": "route_to_chat",
+      "description": "Send a message to Studio chat",
+      "examples": ["tell chat to rebuild the hero", "send this to studio"],
+      "handler": "routeToChat",
+      "tier": 0
+    },
+    {
+      "id": "show_me",
+      "description": "Activate guided Show Me mode",
+      "examples": ["show me how to deploy", "show me where the brief is"],
+      "handler": "activateShowMe",
+      "tier": 0
+    },
+    {
+      "id": "brainstorm",
+      "description": "Switch Studio to brainstorm mode",
+      "examples": ["let's brainstorm", "I'm not sure about", "help me think through"],
+      "handler": "activateBrainstorm",
+      "tier": 1
+    },
+    {
+      "id": "system_status",
+      "description": "Report on Studio and system health",
+      "examples": ["what's broken", "are all APIs working", "check the system"],
+      "handler": "reportSystemStatus",
+      "tier": 1
+    },
+    {
+      "id": "capture_gap",
+      "description": "Log a missing capability",
+      "examples": ["this doesn't work", "I can't do X", "we need this"],
+      "handler": "captureGap",
+      "tier": 0
+    },
+    {
+      "id": "intelligence_query",
+      "description": "Query the intelligence store",
+      "examples": ["what have we learned about restaurants", "what worked on the last build"],
+      "handler": "queryIntelligence",
+      "tier": 2
+    },
+    {
+      "id": "general_reasoning",
+      "description": "Think through anything with Fritz",
+      "examples": ["what do you think about", "should I", "is this a good idea"],
+      "handler": "generalReasoning",
+      "tier": 3
+    }
+  ]
+}

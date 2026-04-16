@@ -1,7 +1,12 @@
 {
-  "pass": 69,
-  "fail": 0,
-  "total": 69,
-  "failures": [],
-  "timestamp": "2026-04-09T05:06:54.233Z"
+  "pass": 70,
+  "fail": 1,
+  "total": 71,
+  "failures": [
+    {
+      "name": "sync found at least 1 field",
+      "detail": "total_fields: 0"
+    }
+  ],
+  "timestamp": "2026-04-16T19:47:41.654Z"
 }

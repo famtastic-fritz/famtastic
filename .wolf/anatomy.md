@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T16:37:40.264Z
-> Files: 452 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T19:51:16.880Z
+> Files: 471 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -46,7 +46,7 @@
 - `CHANGELOG.md` — FAMtastic Changelog (~12766 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~8320 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~9861 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
@@ -451,10 +451,12 @@
 - `cli-test.md` — Test CLI Integration (~31 tok)
 - `cli-usage.md` — FAMtastic Hub CLI Usage Guide (~892 tok)
 - `CONFIG_OWNERSHIP.md` — Config Ownership — FAMtastic Agent‑Hub (~618 tok)
+- `cross-system-architecture.md` — Cross-System Architecture (~10609 tok)
 - `dev-log-20250923.draft.md` — Daily Dev Log — 2025-09-23 (~51 tok)
 - `latest-convo.draft.md` — Default Tag Test (~20 tok)
 - `meeting-discovery.md` — Meeting Notes - Client Discovery (~68 tok)
 - `meeting-team.md` — Team Standup Meeting - Sept 23 (~126 tok)
+- `mini-validation-report.md` — FAMtastic Site Studio — Mini Validation Report (~1915 tok)
 - `PLATFORM_NOTES.md` — Cross‑platform notes (~81 tok)
 - `random-idea.draft.md` — Random Shower Thought (~120 tok)
 - `RECONCILED-CALL-SITES.md` — RECONCILED-CALL-SITES.md (~1539 tok)
@@ -478,6 +480,7 @@
 - `session9-phase-0-report.md` — Session 9 Phase 0 Report — 2026-04-09 (~1478 tok)
 - `session9-phase-1-report.md` — Session 9 Phase 1 Report — 2026-04-09 (~1858 tok)
 - `session9-phase-2-report.md` — Session 9 Phase 2 Report — Anthropic SDK Migration (~1813 tok)
+- `shay-shay-architecture.md` — Shay-Shay Architecture (~8680 tok)
 - `spawn-claude-migration-map.md` — spawnClaude() Migration Map (~6729 tok)
 - `studio-cli-handoff-pattern.md` — Studio → CLI Handoff Pattern (~1432 tok)
 - `test-manual.md` — Test Manual Promotion (~21 tok)
@@ -583,8 +586,15 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~220 tok)
-- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~152610 tok)
+- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~173838 tok)
+- `validation-plan.json` (~2510 tok)
 - `vitest.config.js` (~33 tok)
+
+## site-studio/agent-cards/
+
+- `claude.agent-card.json` (~134 tok)
+- `codex.agent-card.json` (~112 tok)
+- `gemini.agent-card.json` (~114 tok)
 
 ## site-studio/lib/
 
@@ -594,7 +604,10 @@
 - `brain-injector.js` — brain-injector.js — Injects STUDIO-CONTEXT.md into each brain's session (~1486 tok)
 - `brain-interface.js` — BrainInterface — the universal Studio-to-Brain communication layer. (~2173 tok)
 - `brain-sessions.js` — brain-sessions.js — Brain authentication and session management. (~1563 tok)
+- `brand-tracker.js` — brand-tracker.js — Extract and persist brand tokens after every build. (~923 tok)
+- `capability-manifest.js` — fs: checkAnthropicKey, checkGeminiKey, checkNetlify + 3 more (~705 tok)
 - `client-interview.js` — Client Interview System — Phase 3 (~1907 tok)
+- `gap-logger.js` — fs: ensureDir, loadGaps, logGap + 4 more (~962 tok)
 - `haiku-fallback.js` — haiku-fallback.js — SDK-based Haiku fallback for silence timeouts. (~777 tok)
 - `history-formatter.js` — history-formatter.js — Per-brain conversation history formatting (~1136 tok)
 - `media-telemetry.js` — media-telemetry.js — Append-only telemetry log for all AI media operations. (~3084 tok)
@@ -604,6 +617,7 @@
 - `studio-context-writer.js` — studio-context-writer.js — Generates STUDIO-CONTEXT.md (~3039 tok)
 - `studio-events.js` — studio-events.js — Studio event bus (~428 tok)
 - `studio-tools.js` — studio-tools.js — Anthropic-format tool definitions for ClaudeAdapter. (~769 tok)
+- `suggestion-logger.js` — fs: ensureDir, loadSuggestions, logSuggestion + 4 more (~1020 tok)
 - `tool-handlers.js` — fs: initToolHandlers, handleToolCall, getSiteContext + 7 more (~2187 tok)
 
 ## site-studio/lib/adapters/
@@ -614,17 +628,25 @@
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~82910 tok)
+- `index.html` — FAMtastic Site Studio (~19450 tok)
 
 ## site-studio/public/css/
 
 - `studio-brain-selector.css` — Styles: 33 rules, 3 vars (~1229 tok)
 - `studio-canvas.css` — canvas-tab-bar { (~4175 tok)
 - `studio-cli.css` — cli-bar { (~886 tok)
+- `studio-orb.css` — Styles: 63 rules (~3030 tok)
+- `studio-shell.css` — Styles: 64 rules, 37 vars (~4840 tok)
 
 ## site-studio/public/js/
 
 - `brain-selector.js` — brain-selector.js — Brain/Worker split selector for FAMtastic Studio. (~1314 tok)
+- `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~8184 tok)
+
+## site-studio/shay-shay/
+
+- `instructions.md` — Shay-Shay — FAMtastic Studio Orchestrator (~612 tok)
+- `skill.json` (~621 tok)
 
 ## site-studio/tests/
 
@@ -782,14 +804,17 @@
 - `codex-high-fixes-tests.js` — Codex Adversarial Review — HIGH severity fix verification (~2447 tok)
 - `phase0-content-layer-tests.js` — Phase 0 — Content Data Layer Tests (~4782 tok)
 - `phase1-component-skills-tests.js` — Phase 1 — Component Skills Foundation Tests (~4470 tok)
-- `phase2-ui-shell-tests.js` — Phase 2 — UI Shell + Editable Canvas Tests (~4379 tok)
+- `phase2-ui-shell-tests.js` — Phase 2 — UI Shell + Editable Canvas Tests (~4209 tok)
 - `phase3-multi-agent-tests.js` — Phase 3 — Multi-Agent Integration Tests (~4028 tok)
-- `phase4-image-research-tests.js` — Phase 4 — Image Browser + Research View Tests (~3555 tok)
-- `phase5-intelligence-loop-tests.js` — Phase 5 — Intelligence Loop Tests (~3863 tok)
+- `phase4-image-research-tests.js` — Phase 4 — Image Browser + Research View Tests (~3463 tok)
+- `phase5-intelligence-loop-tests.js` — Phase 5 — Intelligence Loop Tests (~4091 tok)
 - `session10-phase0-tests.js` — Session 10 Phase 0 Tests — OpenAI SDK Integration + Brain Verifier (~3111 tok)
 - `session10-phase1-tests.js` — session10-phase1-tests.js — Brain/Worker Split Selector (~1348 tok)
 - `session10-phase2-tests.js` — session10-phase2-tests.js — Phase 2 verification tests. (~2731 tok)
 - `session10-phase3-tests.js` — Session 10 Phase 3 Tests — Client Interview System MVP (~2703 tok)
+- `session14-smoke-tests.js` — Session 14 — Studio UI Rebuild Smoke Tests (~4159 tok)
+- `session15-phase1-tests.js` — Session 15 Phase 1 — Validation plan + orb integration (~1817 tok)
+- `session16-tests.js` — Session 16 Tests — Surgical Editor, Layer 0 Data Sources, Shay-Shay Seed (~2870 tok)
 - `session2-seo-tests.js` — Session 2 — SEO Pipeline Tests (~1570 tok)
 - `session3-image-tests.js` — Session 3 — Image Pipeline Tests (~4055 tok)
 - `session4-visual-tests.js` — Session 4 — Visual Quality Tests (~4620 tok)

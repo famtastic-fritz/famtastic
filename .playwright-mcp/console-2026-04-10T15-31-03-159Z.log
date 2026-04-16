@@ -1,0 +1,101 @@
+[     117ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     402ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/favicon.ico:0
+[     408ms] [LOG] [ws] connected @ http://localhost:3334/:1057
+[     452ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/brain-status:0
+[     470ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     593ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-a-knockout.png:0
+[     594ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-b-knockout.png:0
+[     594ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-dark-test-knockout.png:0
+[     594ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-test-input-knockout.png:0
+[  142634ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  142915ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-test-input-knockout.png:0
+[  142915ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-a-knockout.png:0
+[  142916ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-batch-b-knockout.png:0
+[  142919ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/site-assets/uploads/fam-dark-test-knockout.png:0
+[  388913ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1082
+[  389760ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  390916ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[  390916ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:1082
+[  391263ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  393544ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  394919ms] [LOG] [ws] connected @ http://localhost:3334/:1057
+[  394939ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  405100ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1082
+[  406029ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  407102ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[  407102ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:1082
+[  407531ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  409784ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[  411104ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[  411104ms] [LOG] [ws] disconnected, reconnecting in 8000ms... @ http://localhost:3334/:1082
+[  413173ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  419107ms] [LOG] [ws] connected @ http://localhost:3334/:1057
+[  419144ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 1864494ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1082
+[ 1865336ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1866497ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 1866497ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:1082
+[ 1866839ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1869092ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1870500ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 1870500ms] [LOG] [ws] disconnected, reconnecting in 8000ms... @ http://localhost:3334/:1082
+[ 1872470ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1877535ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1878503ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 1878503ms] [LOG] [ws] disconnected, reconnecting in 16000ms... @ http://localhost:3334/:1082
+[ 1885131ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1894507ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 1894507ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:1082
+[ 1896523ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1913611ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1924511ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 1924511ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:1082
+[ 1939244ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1954515ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 1954516ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:1082
+[ 1969248ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 1984527ms] [LOG] [ws] connected @ http://localhost:3334/:1057
+[ 2004119ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1082
+[ 2004441ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2005943ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2006122ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2006122ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:1082
+[ 2008196ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2010127ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2010127ms] [LOG] [ws] disconnected, reconnecting in 8000ms... @ http://localhost:3334/:1082
+[ 2011573ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2016638ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2018130ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2018130ms] [LOG] [ws] disconnected, reconnecting in 16000ms... @ http://localhost:3334/:1082
+[ 2024234ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2034135ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2034135ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:1082
+[ 2035627ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2052716ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2064142ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2064142ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:1082
+[ 2094157ms] [LOG] [ws] connected @ http://localhost:3334/:1057
+[ 2264010ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1082
+[ 2264884ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2266013ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2266013ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:1082
+[ 2270017ms] [LOG] [ws] connected @ http://localhost:3334/:1057
+[ 2715192ms] [LOG] [ws] disconnected, reconnecting in 2000ms... @ http://localhost:3334/:1082
+[ 2716168ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2717204ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2717204ms] [LOG] [ws] disconnected, reconnecting in 4000ms... @ http://localhost:3334/:1082
+[ 2717671ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2719925ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2721206ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2721207ms] [LOG] [ws] disconnected, reconnecting in 8000ms... @ http://localhost:3334/:1082
+[ 2723303ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2728369ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2729209ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2729209ms] [LOG] [ws] disconnected, reconnecting in 16000ms... @ http://localhost:3334/:1082
+[ 2735963ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2745211ms] [ERROR] WebSocket connection to 'ws://localhost:3334/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3334/:1055
+[ 2745211ms] [LOG] [ws] disconnected, reconnecting in 30000ms... @ http://localhost:3334/:1082
+[ 2747358ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2764445ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3333/__reload:0
+[ 2775222ms] [LOG] [ws] connected @ http://localhost:3334/:1057
+[ 3166015ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63

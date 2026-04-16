@@ -1,0 +1,211 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Drop The Beat Entertainment" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - navigation [ref=e5]:
+        - link "HOME" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "SERVICES" [ref=e7] [cursor=pointer]:
+          - /url: services.html
+        - link "BOOK NOW" [ref=e8] [cursor=pointer]:
+          - /url: contact.html
+  - main [ref=e9]:
+    - generic [ref=e13]:
+      - heading "Premium Mobile DJ Entertainment for South Florida" [level=1] [ref=e14]:
+        - text: Premium Mobile DJ
+        - text: Entertainment for South Florida
+      - paragraph [ref=e15]: Bilingual MC • Professional Lighting Included • 500+ Events with Zero No-Shows
+      - generic [ref=e16]:
+        - link "Book Your Free Consultation" [ref=e17] [cursor=pointer]:
+          - /url: contact.html
+        - link "Explore Our Services" [ref=e18] [cursor=pointer]:
+          - /url: services.html
+      - img "Premium DJ Entertainment Setup" [ref=e20]
+    - generic [ref=e22]:
+      - heading "Why Choose Drop The Beat?" [level=2] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e28]: 
+          - heading "Bilingual Entertainment" [level=3] [ref=e29]
+          - paragraph [ref=e30]: Our live bilingual MC brings energy in both English and Spanish, connecting with every guest at your event and setting the perfect tone for celebration.
+        - generic [ref=e31]:
+          - generic [ref=e33]: 
+          - heading "Professional Lighting Included" [level=3] [ref=e34]
+          - paragraph [ref=e35]: Every package includes professional lighting design, transforming your venue and creating an immersive nightclub-quality atmosphere.
+        - generic [ref=e36]:
+          - generic [ref=e38]: 
+          - heading "100% Reliability Guarantee" [level=3] [ref=e39]
+          - paragraph [ref=e40]: 500+ successful events with zero no-shows in 10 years. Your date is locked in. Your event is covered. Period.
+    - generic [ref=e42]:
+      - heading "Serving South Florida's Best Events" [level=2] [ref=e44]
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Our Service Areas" [level=3] [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - generic [ref=e50]: 200+
+              - generic [ref=e51]: Weddings
+            - generic [ref=e52]:
+              - generic [ref=e53]: 150+
+              - generic [ref=e54]: Quinceañeras
+            - generic [ref=e55]:
+              - generic [ref=e56]: 100+
+              - generic [ref=e57]: Corporate Events
+            - generic [ref=e58]:
+              - generic [ref=e59]: 50+
+              - generic [ref=e60]: Private Parties
+        - img "Professional DJ Setup at Event" [ref=e62]
+      - generic [ref=e64]:
+        - heading "Client Love" [level=2] [ref=e66]
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - generic [ref=e69]: ★★★★★
+            - paragraph [ref=e70]: "\"Drop The Beat made our wedding reception unforgettable. The bilingual MC kept everyone engaged, and the lighting was absolutely stunning. Couldn't have asked for better!\""
+            - generic [ref=e71]: Maria & Carlos
+            - generic [ref=e72]: Wedding, Miami-Dade
+          - generic [ref=e73]:
+            - generic [ref=e74]: ★★★★★
+            - paragraph [ref=e75]: "\"We trusted Drop The Beat with our daughter's quinceañera, and they delivered beyond expectations. Professional, energetic, and the sound system was perfect for our venue.\""
+            - generic [ref=e76]: The Ruiz Family
+            - generic [ref=e77]: Quinceañera, Broward
+          - generic [ref=e78]:
+            - generic [ref=e79]: ★★★★★
+            - paragraph [ref=e80]: "\"As a corporate event planner, I've booked Drop The Beat multiple times. They're reliable, professional, and always deliver high-energy entertainment that impresses clients.\""
+            - generic [ref=e81]: James P.
+            - generic [ref=e82]: Corporate Event, Palm Beach
+    - generic [ref=e84]:
+      - heading "Our Promise to You" [level=2] [ref=e86]
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - generic [ref=e90]: 
+          - heading "Satisfaction Guarantee" [level=3] [ref=e91]
+          - paragraph [ref=e92]: If you're not completely satisfied with your event, we'll make it right. Your happiness is our top priority.
+        - generic [ref=e93]:
+          - generic [ref=e95]: 
+          - heading "Locked-In Dates" [level=3] [ref=e96]
+          - paragraph [ref=e97]: Your event date is protected. No last-minute cancellations. Ever. 10 years of perfect attendance.
+        - generic [ref=e98]:
+          - generic [ref=e100]: 
+          - heading "Expert Support" [level=3] [ref=e101]
+          - paragraph [ref=e102]: From booking to event day, our team is available to answer questions and handle any special requests.
+        - generic [ref=e103]:
+          - generic [ref=e105]: 
+          - heading "South Florida Experts" [level=3] [ref=e106]
+          - paragraph [ref=e107]: We know Miami-Dade, Broward, and Palm Beach like the back of our hand. Trusted by event planners and couples alike.
+    - generic [ref=e110]:
+      - heading "Ready to Elevate Your Event?" [level=2] [ref=e111]
+      - paragraph [ref=e112]: Book a free consultation with our team. We'll discuss your event, check availability, and show you how Drop The Beat can make your celebration unforgettable.
+      - generic [ref=e113]:
+        - link "Book Your Free Consultation" [ref=e114] [cursor=pointer]:
+          - /url: contact.html
+        - link "Call Us Now" [ref=e115] [cursor=pointer]:
+          - /url: tel:+15615551234
+    - generic [ref=e117]:
+      - heading "Our Service Packages" [level=2] [ref=e119]
+      - paragraph [ref=e120]: Choose the package that fits your event. All include bilingual MC and professional lighting design.
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - heading "Starter" [level=3] [ref=e123]
+          - paragraph [ref=e124]: $499
+          - paragraph [ref=e125]: Perfect for intimate gatherings and private parties
+          - list [ref=e126]:
+            - listitem [ref=e127]:
+              - generic [ref=e128]: 
+              - text: 4 Hours of Service
+            - listitem [ref=e129]:
+              - generic [ref=e130]: 
+              - text: Bilingual MC
+            - listitem [ref=e131]:
+              - generic [ref=e132]: 
+              - text: Basic Lighting
+          - link "Learn More" [ref=e133] [cursor=pointer]:
+            - /url: contact.html
+        - generic [ref=e134]:
+          - generic [ref=e135]: Most Popular
+          - heading "Professional" [level=3] [ref=e136]
+          - paragraph [ref=e137]: $799
+          - paragraph [ref=e138]: Ideal for weddings and mid-size celebrations
+          - list [ref=e139]:
+            - listitem [ref=e140]:
+              - generic [ref=e141]: 
+              - text: 6 Hours of Service
+            - listitem [ref=e142]:
+              - generic [ref=e143]: 
+              - text: Bilingual MC + Emcee
+            - listitem [ref=e144]:
+              - generic [ref=e145]: 
+              - text: Professional Lighting
+          - link "Book Now" [ref=e146] [cursor=pointer]:
+            - /url: contact.html
+        - generic [ref=e147]:
+          - heading "Elite" [level=3] [ref=e148]
+          - paragraph [ref=e149]: $1,299
+          - paragraph [ref=e150]: Premium experience for large events and quinceañeras
+          - list [ref=e151]:
+            - listitem [ref=e152]:
+              - generic [ref=e153]: 
+              - text: 8+ Hours of Service
+            - listitem [ref=e154]:
+              - generic [ref=e155]: 
+              - text: Full MC Experience
+            - listitem [ref=e156]:
+              - generic [ref=e157]: 
+              - text: Premium Lighting + Effects
+          - link "Learn More" [ref=e158] [cursor=pointer]:
+            - /url: contact.html
+      - generic [ref=e159]:
+        - paragraph [ref=e160]: Custom packages available for corporate events and special requests.
+        - link "View All Services & Pricing" [ref=e161] [cursor=pointer]:
+          - /url: services.html
+  - contentinfo [ref=e162]:
+    - generic [ref=e163]:
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - heading "Drop The Beat" [level=3] [ref=e166]
+          - paragraph [ref=e167]: Premium mobile DJ entertainment for South Florida's most memorable events. 500+ successful events with zero no-shows in 10 years.
+        - generic [ref=e168]:
+          - heading "Quick Links" [level=4] [ref=e169]
+          - list [ref=e170]:
+            - listitem [ref=e171]:
+              - link "Home" [ref=e172] [cursor=pointer]:
+                - /url: index.html
+            - listitem [ref=e173]:
+              - link "Services & Pricing" [ref=e174] [cursor=pointer]:
+                - /url: services.html
+            - listitem [ref=e175]:
+              - link "Book a Consultation" [ref=e176] [cursor=pointer]:
+                - /url: contact.html
+        - generic [ref=e177]:
+          - heading "Services" [level=4] [ref=e178]
+          - list [ref=e179]:
+            - listitem [ref=e180]: Weddings
+            - listitem [ref=e181]: Quinceañeras
+            - listitem [ref=e182]: Corporate Events
+            - listitem [ref=e183]: Private Parties
+        - generic [ref=e184]:
+          - heading "Get In Touch" [level=4] [ref=e185]
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - paragraph [ref=e188]: Phone
+              - link "+1 (561) 555-1234" [ref=e189] [cursor=pointer]:
+                - /url: tel:+15615551234
+            - generic [ref=e190]:
+              - paragraph [ref=e191]: Email
+              - link "hello@dropthebeat.com" [ref=e192] [cursor=pointer]:
+                - /url: mailto:hello@dropthebeat.com
+            - generic [ref=e193]:
+              - paragraph [ref=e194]: Service Area
+              - paragraph [ref=e195]: Miami-Dade, Broward & Palm Beach Counties
+      - generic [ref=e197]:
+        - paragraph [ref=e198]: © 2025 Drop The Beat Entertainment. All rights reserved.
+        - generic [ref=e199]:
+          - link "Facebook" [ref=e200] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e201]: 
+          - link "Instagram" [ref=e202] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e203]: 
+          - link "TikTok" [ref=e204] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e205]: 

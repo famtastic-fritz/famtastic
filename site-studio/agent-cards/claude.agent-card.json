@@ -1,0 +1,22 @@
+{
+  "id": "claude",
+  "name": "Claude Sonnet",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "tier": 3,
+  "best_for": [
+    "architecture",
+    "adversarial_review",
+    "brief_creation",
+    "complex_debugging",
+    "site_builds",
+    "surgical_edits",
+    "content_updates",
+    "layout_updates"
+  ],
+  "cost_per_call_estimate": 0.10,
+  "daily_limit": null,
+  "status": "available",
+  "requires": ["ANTHROPIC_API_KEY"],
+  "latency_target_ms": 3000
+}

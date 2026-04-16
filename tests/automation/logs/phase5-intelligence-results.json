@@ -1,7 +1,12 @@
 {
-  "pass": 71,
-  "fail": 0,
+  "pass": 70,
+  "fail": 1,
   "total": 71,
-  "failures": [],
-  "timestamp": "2026-04-09T06:15:17.550Z"
+  "failures": [
+    {
+      "name": "promoted finding appears in file",
+      "detail": ""
+    }
+  ],
+  "timestamp": "2026-04-16T18:08:02.062Z"
 }

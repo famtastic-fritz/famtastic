@@ -1,51 +1,28 @@
 # FAMtastic Studio — Current Context
-## Generated: 2026-04-10T16:23:48.184Z
-## Active Site: site-drop-the-beat
-## Event: build:completed
+## Generated: 2026-04-16T18:21:20.824Z
+## Active Site: site-altitude
+## Event: session:started
 
 ## Current Site Brief
-Drop The Beat Entertainment — Industry: mobile DJ entertainment
+Altitude — Industry: rooftop bar
 
 ## Current Site State
-- Pages: home, services, contact
+- Pages: home, experience, reserve
 - Deployed URL: not deployed
 - Last build: unknown
 - Build status: briefed
 
 ## All Pages
-### _template.html
-- H1: "(no H1)"
-- Sections: 5 (data-section-id)
-- Images: 0 slots
-- Last edited: 2026-04-10 16:18
-
-### contact.html
-- H1: "Get In Touch"
-- Sections: 13 (data-section-id)
-- Images: 0 slots
-- Last edited: 2026-04-10 16:23
-
-### index.html (active)
-- H1: "Drop The Beat. Transform Your Event."
-- Sections: 26 (data-section-id)
-- Images: 1 slots
-- Last edited: 2026-04-10 16:23
-
-### services.html
-- H1: "Our Premium DJ Services"
-- Sections: 21 (data-section-id)
-- Images: 3 slots
-- Last edited: 2026-04-10 16:23
-
+- No HTML pages found.
 ## Component Library
 - Total components: 6
 - Recently updated: Video Hero Section, Garage Sale Product Card, Display Stage — Deal Showcase, CSS Starburst Badge, Live Countdown Timer
 
-## What We Know About This Vertical (mobile DJ entertainment)
-No Pinecone research available yet for vertical: "mobile DJ entertainment". Run Phase 4 (fam-hub research seed-from-sites) to seed knowledge base.
+## What We Know About This Vertical (rooftop bar)
+No Pinecone research available yet for vertical: "rooftop bar". Run Phase 4 (fam-hub research seed-from-sites) to seed knowledge base.
 
 ## Intelligence Findings
-No promoted findings yet.
+- [components] 5 component(s) never imported into a site
 
 ## Available Tools (This Session)
 - Claude Code CLI: active (subscription)

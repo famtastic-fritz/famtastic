@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-16 (Session 13 — Trust Debt Fixes + Surgical Editor + Revenue-First Brief: 53 new tests, ~1,236 cumulative)
+**Last updated:** 2026-04-16 (Session 16 — Layer 0 Foundation + Shay-Shay Seed: 71 new tests, ~1,307 cumulative)
 
 ---
 
@@ -13,12 +13,24 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 **Session 12 additions:** Phase 0 — mandatory HTML skeletons force vocabulary fidelity (`HERO_SKELETON_TEMPLATE`, `LOGO_SKELETON_TEMPLATE` in `famtastic-skeletons.js`; 30 tests). Phase 2 — worker queue terminal-status purge, 7-day cleanup, honest handler. Phase 3 — `famtastic-dna.md` auto-update via `updateFamtasticDna()` after every build; intelligence loop closed.
 
 **Session 13 additions (2026-04-16):**
-1. **`conversational_ack` intent** — short affirmations ("ok", "looks good", "thanks") now return a zero-cost canned response via `getAckResponse(spec)`. No Claude API call fires. Added `ACK_PATTERNS` regex in `classifyRequest()`; both routing locations updated.
-2. **Atomic `spec.json` writes** — `writeSpec()` now writes to `.tmp` then `fs.renameSync()` (POSIX atomic). New site creation path also atomic.
-3. **Restyle intent routing fixed** — `restyle` was routing to `handlePlanning()` (dead code branch). Now routes to `handleChatMessage(ws, userMessage, 'restyle', spec)` in both routing locations. Silent no-op → working feature.
-4. **`lib/surgical-editor.js`** — DOM-aware surgical editor. `buildStructuralIndex()`, `extractSection()`, `surgicalEdit()`, `trySurgicalEdit()`. Structural index built after every build (Step 7 of `runPostProcessing()`), stored in `spec.structural_index[page]`. Enables ~90% token reduction on content edits when routing is wired.
-5. **Revenue-first brief interview** — `q_revenue` question added as second question in client interview. `REVENUE_MODEL_OPTIONS` (7 canonical models). `getRevenueBuildHints(model)` injects `REVENUE ARCHITECTURE` block into every build prompt. `formatQuestion()` passes through `suggestion_chips` and `follow_up_map`.
-6. **`fam-hub site deal-memo <tag>`** — generates a rank-and-rent deal memo at `sites/<tag>/deal-memo.md`.
+1. **`conversational_ack` intent** — zero-cost canned response via `getAckResponse(spec)`. `ACK_PATTERNS` regex in `classifyRequest()`.
+2. **Atomic `spec.json` writes** — `writeSpec()` writes to `.tmp` then `fs.renameSync()`.
+3. **Restyle intent routing fixed** — routes to `handleChatMessage()` in both locations.
+4. **`lib/surgical-editor.js`** — DOM-aware surgical editor. `buildStructuralIndex()`, `extractSection()`, `surgicalEdit()`, `trySurgicalEdit()`. Structural index in Step 7 of `runPostProcessing()`.
+5. **Revenue-first brief interview** — `q_revenue` second question. `getRevenueBuildHints(model)` injects `REVENUE ARCHITECTURE` block. `suggestion_chips` + `follow_up_map`.
+6. **`fam-hub site deal-memo <tag>`** — rank-and-rent deal memo at `sites/<tag>/deal-memo.md`.
+
+**Session 16 additions (2026-04-16):**
+1. **Surgical editor wired** — `tryDeterministicHandler()` now has a STRUCTURAL_HINTS block. "change the hero headline to X" resolved without Claude when structural index exists. ~90% token reduction on matched content edits.
+2. **Gap Logger** — `lib/gap-logger.js`. `logGap()` → `~/.local/share/famtastic/gaps.jsonl`. Auto-promotes at frequency ≥ 3 to `intelligence-promotions.json`. Three categories: `NOT_BUILT`, `NOT_CONNECTED`, `BROKEN`.
+3. **Suggestion Logger** — `lib/suggestion-logger.js`. `logSuggestion()` + `logOutcome()`. Outcome scores: SHIPPED=1.5, ACCEPTED=1.0, EDITED=0.7, DISMISSED=0.3, IGNORED=0.1. Auto-promotes high-score patterns. Wired to plan card + interview corrections.
+4. **Brand Tracker** — `lib/brand-tracker.js`. Step 8 of `runPostProcessing()`. Extracts color/font tokens → `sites/<tag>/brand.json`. Detects drift between builds.
+5. **Deploy History** — `spec.deploy_history[]` pushed in `runDeploy()` on success. Fields: version, deployed_at, environment, url, fam_score, lighthouse, pages.
+6. **Agent Cards** — `site-studio/agent-cards/`. claude/codex/gemini `.agent-card.json` files. Config: id, name, provider, model, tier, best_for[], cost_per_call_estimate, daily_limit, status, requires[].
+7. **Brief Corrections** — Interview completion diffs previous vs submitted brief → `sites/<tag>/brief-corrections.jsonl`. Corrections logged as suggestions with weight 2.0.
+8. **Capability Manifest** — `lib/capability-manifest.js`. `buildCapabilityManifest()` checks all env vars + CLI. Runs on startup. `GET /api/capability-manifest`. `diffStateVsManifest()`.
+9. **Shay-Shay Seed** — `site-studio/shay-shay/skill.json` + `instructions.md`. `POST /api/shay-shay` (tier 0 deterministic + tiers 1-3 AI). `POST /api/shay-shay/gap` + `/outcome`. Studio UI "Ask Shay-Shay" input now routes to `/api/shay-shay` not Studio WebSocket.
+10. **`callSDK()` enhanced** — accepts `opts.model` override and `opts.systemPrompt` for Shay-Shay model routing.
 
 The system is currently single-user and localhost-only, built and operated by Fritz Medine.
 
@@ -112,7 +124,18 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Content Data Layer** — `data-field-id` + `data-field-type` + `data-section-id` in all generated HTML. Surgical replacement via cheerio. `mutations.jsonl` logs every edit.
 
-**DOM-aware Surgical Editor** — `lib/surgical-editor.js`. `buildStructuralIndex()` runs after every build. `extractSection()` + `surgicalEdit()` enable targeted section editing at ~80–150 tokens vs 600–1200 for full page. *(routing into content_update path is Phase 1 continuation work)*
+**DOM-aware Surgical Editor** — `lib/surgical-editor.js`. `buildStructuralIndex()` runs after every build (Step 7 of `runPostProcessing()`). `extractSection()` + `surgicalEdit()` enable targeted section editing. **Session 16: wired.** `tryDeterministicHandler()` STRUCTURAL_HINTS block matches heading/tagline/cta/subtitle/desc/welcome keywords → field lookup in `spec.structural_index[page].fields` → cheerio swap → zero Claude tokens.
+
+**Layer 0 Data Sources** (Session 16):
+- **Gap Logger** — `lib/gap-logger.js`. `logGap(tag, message, category)` → `~/.local/share/famtastic/gaps.jsonl`. Auto-promotes at frequency ≥ 3.
+- **Suggestion Logger** — `lib/suggestion-logger.js`. `logSuggestion()` + `logOutcome()`. Outcome scoring + pattern promotion.
+- **Brand Tracker** — `lib/brand-tracker.js`. Extracts brand tokens from CSS after every build → `brand.json`. Drift detection.
+- **Deploy History** — `spec.deploy_history[]` in spec.json per deploy.
+- **Agent Cards** — `site-studio/agent-cards/` — claude/codex/gemini config files.
+- **Brief Corrections** — `brief-corrections.jsonl` per site, wired to interview completion.
+- **Capability Manifest** — `lib/capability-manifest.js`. `GET /api/capability-manifest`. Runs on startup.
+
+**Shay-Shay Seed** (Session 16) — `site-studio/shay-shay/`. `POST /api/shay-shay` orchestrator endpoint. Tier 0: deterministic routing (studio commands, chat routing, show me, status). Tiers 1-3: AI via `callSDK()` with model/systemPrompt overrides. Studio "Ask Shay-Shay" input wired to `/api/shay-shay`.
 
 **Tool Calling (Claude-only)** — `ClaudeAdapter._executeBlocking()` handles tool loop. `MAX_TOOL_DEPTH=3`. Tools: `get_site_context`, `get_component_library`, `get_research`, `dispatch_worker`, `read_file`. Gemini/OpenAI never receive tools.
 
@@ -187,6 +210,10 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | GET | `/api/interview/status` | Current interview state snapshot |
 | GET | `/api/interview/health` | Interview system health check |
 | GET | `/api/brain-status` | Brain verification results |
+| GET | `/api/capability-manifest` | Live capability state (env checks + CLI availability) *(Session 16)* |
+| POST | `/api/shay-shay` | Shay-Shay orchestrator — tier 0 deterministic + tiers 1-3 AI *(Session 16)* |
+| POST | `/api/shay-shay/gap` | Explicit gap capture endpoint *(Session 16)* |
+| POST | `/api/shay-shay/outcome` | Suggestion outcome scoring *(Session 16)* |
 
 **Route ordering rule:** Static routes must be declared BEFORE parameterized routes of the same prefix.
 
@@ -199,7 +226,10 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Gap | Priority | Detail |
 |-----|----------|--------|
 | Revenue path (end-to-end) | Tier 1 | Client preview URL + payment (PayPal) + domain provisioning + approval flow. |
-| Surgical editor routing not wired | Tier 1 | `lib/surgical-editor.js` is built, structural index is populated, but `content_update` path in `handleChatMessage` still sends full HTML to Claude. Phase 1 continuation: use `extractSection` + `surgicalEdit` when a matching section is found in `spec.structural_index`. |
+| Shay-Shay Mem0/Kuzu integration | Tier 1 | Persistent memory layer not yet wired. Episodic/semantic/procedural memory schemas defined but not connected to Mem0 MCP. Session 17 "Grow" phase. |
+| Brand drift intelligence promotion | Tier 2 | Brand tracker logs drift to console. Not yet promoted as intelligence finding to intelligence-promotions.json. |
+| Agent cards not loaded by brain router | Tier 2 | Agent card files exist but brain router still uses hardcoded config. Adoption requires updating brain router to load from agent-cards/ directory. |
+| Shay-Shay session init not wired to WS | Tier 2 | Capability manifest not diffed and surfaced as callout on Studio WS connect. |
 | Prompt fidelity for FAMtastic vocabulary | Tier 1 | Claude does not consistently reach for `fam-hero__*` vocabulary or multi-part SVG logo on first prompt of fresh build. Infrastructure is in place; prompt language needs to be more imperative. |
 | Revenue model suggestion chips not in UI | Tier 2 | `REVENUE_MODEL_OPTIONS` and `suggestion_chips` are exported from `client-interview.js` but the Studio chat UI doesn't render them yet. |
 | Worker queue consumer | Tier 2 | `.worker-queue.jsonl` has no process polling it. `dispatch_worker` queues tasks that nothing executes. |
@@ -212,6 +242,10 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | seed-pinecone --vertical flag | Tier 3 | Add `--vertical <name>` to `scripts/seed-pinecone` for per-build auto-seeding. |
 | server.js decomposition | Tier 3 | ~12,300 lines. Plan: thin assembler + modules in lib/. Do not split until specific pain demands it. |
 | deal-memo geography fallback | Tier 4 | Defaults to `[AREA]` placeholder when interview was skipped. Should pull from `spec.design_brief` as fallback. |
+
+### Closed in Session 16 (2026-04-16)
+
+- **Surgical editor routing not wired** — `tryDeterministicHandler()` STRUCTURAL_HINTS block now resolves heading/tagline/cta content edits via structural index lookup. Zero Claude tokens for matched patterns.
 
 ### Closed in Session 13 (2026-04-16)
 
@@ -246,7 +280,14 @@ See CHANGELOG.md for full session history.
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `site-studio/server.js` | ~12,300 | Main backend. Express + WebSocket. Classifier (with conversational_ack), revenue architecture injection, atomic writeSpec(), restyle routing fixed, structural index in runPostProcessing. |
+| `site-studio/server.js` | ~12,600 | Main backend. Express + WebSocket. Classifier, revenue architecture, atomic writeSpec(), restyle routing fixed, structural index + brand tracker in runPostProcessing. Surgical STRUCTURAL_HINTS block in tryDeterministicHandler. Shay-Shay endpoints. callSDK() model/systemPrompt overrides. |
+| `site-studio/lib/gap-logger.js` | ~90 | Gap event logger. `logGap()`, `resolveGap()`, `loadGaps()`. Auto-promotes at frequency ≥ 3 to intelligence-promotions.json. *(Session 16)* |
+| `site-studio/lib/suggestion-logger.js` | ~90 | Suggestion outcome logger. `logSuggestion()`, `logOutcome()`, `loadPendingSuggestions()`. Pattern promotion. *(Session 16)* |
+| `site-studio/lib/brand-tracker.js` | ~80 | Brand token extractor. `extractAndSaveBrand()`, `detectDrift()`. Runs in Step 8 of runPostProcessing(). *(Session 16)* |
+| `site-studio/lib/capability-manifest.js` | ~70 | Live capability checker. `buildCapabilityManifest()`, `diffStateVsManifest()`. Runs on startup. *(Session 16)* |
+| `site-studio/agent-cards/` | — | claude/codex/gemini .agent-card.json files. *(Session 16)* |
+| `site-studio/shay-shay/skill.json` | — | Shay-Shay capability vocabulary — 8 capabilities, tier 0-3. *(Session 16)* |
+| `site-studio/shay-shay/instructions.md` | — | Shay-Shay behavioral contract — routing logic, limitation handling, response format. *(Session 16)* |
 | `site-studio/public/index.html` | ~7,200 | Single-file frontend. Brain/Worker split panel. 6 canvas tabs. All WS handlers. |
 | `site-studio/lib/surgical-editor.js` | ~200 | DOM-aware surgical editor. `buildStructuralIndex()`, `extractSection()`, `surgicalEdit()`, `trySurgicalEdit()`. Pure, no side effects. *(Session 13)* |
 | `site-studio/lib/famtastic-skeletons.js` | — | `HERO_SKELETON_TEMPLATE`, `LOGO_SKELETON_TEMPLATE`, `LOGO_NOTE_PAGE`. BEM double-dash vocabulary enforcement. *(Session 12)* |
@@ -309,7 +350,9 @@ See CHANGELOG.md for full session history.
 | `tests/phase5-intelligence-loop-tests.js` | 71 | Intel report, findings, promote |
 | Sessions 7–9 | 709 | Full session suite history |
 
-**Total: ~1,236 tests across 22 suites.**
+| `tests/session16-tests.js` | 71 | Surgical editor wiring, Layer 0 data sources, Shay-Shay seed *(Session 16)* |
+
+**Total: ~1,307 tests across 23 suites.**
 
 ### Key Functions
 

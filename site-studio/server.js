@@ -13,6 +13,10 @@ const { studioEvents, STUDIO_EVENTS } = require('./lib/studio-events');
 const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
 const surgicalEditor = require('./lib/surgical-editor');
+const gapLogger = require('./lib/gap-logger');
+const suggestionLogger = require('./lib/suggestion-logger');
+const brandTracker = require('./lib/brand-tracker');
+const { buildCapabilityManifest, loadManifest } = require('./lib/capability-manifest');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
 const { getOrCreateBrainSession, resetSessions: resetBrainSessions } = require('./lib/brain-sessions');
@@ -3974,10 +3978,29 @@ app.post('/api/interview/answer', (req, res) => {
   spec.interview_state = result.state;
 
   if (result.completed) {
+    const previousBrief = spec.client_brief || {};
     spec.interview_completed = true;
     spec.interview_pending = false;
     spec.client_brief = result.client_brief;
     writeSpec(spec);
+
+    // Capture brief corrections — compare previous auto-populated brief vs submitted
+    try {
+      const corrections = [];
+      for (const [key, value] of Object.entries(result.client_brief)) {
+        if (previousBrief[key] !== undefined && previousBrief[key] !== value) {
+          corrections.push({ field: key, original: previousBrief[key], corrected: value, at: new Date().toISOString() });
+        }
+      }
+      if (corrections.length > 0) {
+        const corrPath = path.join(SITE_DIR(), 'brief-corrections.jsonl');
+        fs.appendFileSync(corrPath, JSON.stringify({ tag: TAG, corrections, at: new Date().toISOString() }) + '\n');
+        corrections.forEach(c => suggestionLogger.logSuggestion(`brief-correction:${c.field}`, {
+          active_site: TAG, intent: 'brief_correction', source: 'interview', weight: 2.0
+        }));
+      }
+    } catch {}
+
     return res.json({ completed: true, client_brief: result.client_brief });
   }
 
@@ -5104,6 +5127,156 @@ app.get('/api/brain-status', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Capability manifest — live state of what's working vs unavailable/broken
+app.get('/api/capability-manifest', async (req, res) => {
+  try {
+    const manifest = await buildCapabilityManifest();
+    res.json(manifest);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Shay-Shay orchestrator endpoint — separate from Studio chat WebSocket
+app.post('/api/shay-shay', async (req, res) => {
+  try {
+    const { message, context = {} } = req.body;
+    if (!message) return res.status(400).json({ error: 'message required' });
+
+    // Load her knowledge package
+    const manifest = await buildCapabilityManifest();
+    const instructionsPath = path.join(__dirname, 'shay-shay', 'instructions.md');
+    const instructions = fs.existsSync(instructionsPath)
+      ? fs.readFileSync(instructionsPath, 'utf8') : '';
+
+    // Tier 0: deterministic commands — no AI needed
+    const lower = message.toLowerCase().trim();
+    const tier0 = classifyShayShayTier0(lower);
+    if (tier0) {
+      const result = handleShayShayTier0(tier0, message, context, manifest);
+      suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });
+      return res.json(result);
+    }
+
+    // Tiers 1-3: AI reasoning
+    const tier = lower.match(/\b(should\s+i|what\s+do\s+you\s+think|compare|architecture|strategy)\b/) ? 3
+      : lower.match(/\b(what\s+have\s+we\s+learned|intelligence|history|last\s+build)\b/) ? 2
+      : 1;
+
+    const model = tier === 3 ? 'claude-opus-4-7' : 'claude-sonnet-4-6';
+
+    const systemPrompt = `${instructions}
+
+## Current Capability Manifest (live state)
+${JSON.stringify(manifest.capabilities, null, 2)}
+
+## Active Site: ${context.active_site || TAG || 'none'}
+Current page: ${context.active_page || 'unknown'}
+`;
+
+    const response = await callSDK(
+      `USER: ${message}`,
+      { model, maxTokens: 1024, callSite: 'shay-shay', systemPrompt, timeoutMs: 30000 }
+    );
+
+    // Log suggestion for outcome tracking
+    const suggestionId = suggestionLogger.logSuggestion(message, {
+      active_site: TAG, intent: 'shay_shay_response', source: 'shay-shay', tier, model
+    });
+
+    res.json({ response, tier, model, suggestion_id: suggestionId });
+  } catch (e) {
+    console.error('[shay-shay] error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Shay-Shay gap capture — explicit gap logging endpoint
+app.post('/api/shay-shay/gap', (req, res) => {
+  try {
+    const { message, category, capability_id } = req.body;
+    const entry = gapLogger.logGap(
+      TAG, message || 'unknown',
+      category || gapLogger.GAP_CATEGORIES.NOT_BUILT,
+      capability_id ? { capability_id } : {}
+    );
+    res.json({ logged: true, entry });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Shay-Shay suggestion outcome — called when Fritz accepts/dismisses
+app.post('/api/shay-shay/outcome', (req, res) => {
+  try {
+    const { suggestion_id, outcome } = req.body;
+    suggestionLogger.logOutcome(suggestion_id, outcome);
+    res.json({ logged: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+function classifyShayShayTier0(lower) {
+  if (/\b(restart\s+studio|reboot\s+studio|reset\s+server)\b/.test(lower))
+    return { intent: 'studio_command', command: 'restart' };
+  if (/\b(clear\s+cache|purge\s+cache)\b/.test(lower))
+    return { intent: 'studio_command', command: 'clear_cache' };
+  if (/\b(send\s+(?:this\s+)?to\s+(?:studio\s+)?chat|tell\s+(?:studio\s+)?chat\s+to|route\s+to\s+chat)\b/.test(lower))
+    return { intent: 'route_to_chat' };
+  if (/\b(show\s+me\s+how|show\s+me\s+where)\b/.test(lower))
+    return { intent: 'show_me' };
+  if (/\b(what['']?s?\s+broken|are\s+all\s+apis\s+working|check\s+the\s+system|system\s+status)\b/.test(lower))
+    return { intent: 'system_status' };
+  return null;
+}
+
+function handleShayShayTier0(tier0, message, context, manifest) {
+  const lower = message.toLowerCase();
+
+  if (tier0.intent === 'studio_command') {
+    return {
+      response: `Running ${tier0.command} for you.`,
+      action: 'system_command',
+      command: tier0.command,
+    };
+  }
+
+  if (tier0.intent === 'route_to_chat') {
+    // Extract the message to route — text after "chat to", "tell chat to", etc.
+    const routeMatch = message.match(/(?:chat\s+to|tell\s+(?:chat|studio)\s+to|send\s+(?:this\s+)?to\s+(?:studio\s+)?chat[:\s]+)\s*(.+)/i);
+    const routed = routeMatch ? routeMatch[1].trim() : message;
+    return {
+      response: `Routing to Studio chat: "${routed}"`,
+      action: 'route_to_chat',
+      message: routed,
+    };
+  }
+
+  if (tier0.intent === 'show_me') {
+    const targetMatch = message.match(/show\s+me\s+(?:how\s+to\s+|where\s+(?:the\s+)?)?(.+)/i);
+    return {
+      response: `Opening Show Me mode for: ${targetMatch ? targetMatch[1].trim() : message}`,
+      action: 'show_me',
+      target: targetMatch ? targetMatch[1].trim() : message,
+    };
+  }
+
+  if (tier0.intent === 'system_status') {
+    const { broken, unavailable, available } = require('./lib/capability-manifest').diffStateVsManifest(manifest);
+    const statusLines = [];
+    if (broken.length) statusLines.push(`Broken: ${broken.join(', ')}`);
+    if (unavailable.length) statusLines.push(`Unavailable (missing API key or CLI): ${unavailable.join(', ')}`);
+    statusLines.push(`Working: ${available.join(', ')}`);
+    return {
+      response: statusLines.join('\n'),
+      action: null,
+    };
+  }
+
+  return { response: 'Command noted.', action: null };
+}
 
 // Research files API — serves research markdown for Phase 6 workspace
 app.get('/api/research', (req, res) => {
@@ -7853,6 +8026,14 @@ Do not generate HTML. Do not be vague. Extract real intent from what the user sa
 
       ws.send(JSON.stringify({ type: 'brief', brief: briefJson, techRecommendations }));
       appendConvo({ role: 'assistant', content: `Design brief created`, brief: briefJson, at: new Date().toISOString() });
+
+      // Log plan card as a suggestion — outcome scored when Fritz approves/dismisses
+      try {
+        suggestionLogger.logSuggestion(
+          `Design brief: ${briefJson.goal || 'site build'}`,
+          { active_site: TAG, intent: 'brief_shown', source: 'handlePlanning', weight: 1.5 }
+        );
+      } catch {}
     } else {
       // Couldn't parse — send raw response as text
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'assistant', content: response }));
@@ -8576,6 +8757,17 @@ function runPostProcessing(ws, writtenPages, options = {}) {
     writeSpec(spec, { source: 'runPostProcessing:structural_index' });
   } catch (e) {
     console.warn('[surgical-editor] structural index update failed (non-fatal):', e.message);
+  }
+
+  // Step 8: Extract and persist brand tokens — detect color/font drift across builds.
+  try {
+    const spec = readSpec();
+    const { tokens, drifts } = brandTracker.extractAndSaveBrand(SITE_DIR(), DIST_DIR(), spec);
+    if (drifts.length > 0) {
+      drifts.forEach(d => console.warn(`[brand-tracker] drift: ${d.field} ${d.from} → ${d.to}`));
+    }
+  } catch (e) {
+    console.warn('[brand-tracker] extraction failed (non-fatal):', e.message);
   }
 }
 
@@ -9853,8 +10045,66 @@ function tryDeterministicHandler(ws, userMessage, currentPage) {
     }
   }
 
+  // --- Structural index surgical edit — heading, tagline, CTA, subtitle, etc.
+  // Uses spec.structural_index[page].fields built by buildStructuralIndex() after every full build.
+  // Covers field types not in FIELD_KEYWORDS (phone/email/address/hours/price/testimonial).
+  if (!handled) {
+    const STRUCTURAL_HINTS = {
+      head:     /\b(heading|headline|h1|main\s+title)\b/,
+      tagline:  /\b(tagline|slogan|motto)\b/,
+      subtitle: /\b(subtitle|subheading|subhead)\b/,
+      cta:      /\b(cta|call.to.action|button\s+text|button\s+label)\b/,
+      desc:     /\b(description|intro|paragraph)\b/,
+      welcome:  /\b(welcome|greeting)\b/,
+    };
+
+    let hintKey = null;
+    for (const [key, re] of Object.entries(STRUCTURAL_HINTS)) {
+      if (re.test(lower)) { hintKey = key; break; }
+    }
+
+    const surgicalNewValMatch =
+      userMessage.match(/\bto\s+["'](.+?)["']\s*$/i) ||
+      userMessage.match(/\bto\s+(.+?)\s*$/i) ||
+      userMessage.match(/\bsay\s+["']?(.+?)["']?\s*$/i) ||
+      userMessage.match(/\bshould\s+be\s+["']?(.+?)["']?\s*$/i);
+
+    if (hintKey && surgicalNewValMatch) {
+      const newText = surgicalNewValMatch[1].trim().replace(/^["']|["']$/g, '');
+      const specSI = readSpec();
+      const siFields = specSI.structural_index?.[currentPage]?.fields || [];
+      const hit = siFields.find(f => f.field_id.includes(hintKey));
+
+      if (hit) {
+        const pagePath = path.join(DIST_DIR(), currentPage);
+        if (fs.existsSync(pagePath)) {
+          const html = fs.readFileSync(pagePath, 'utf8');
+          const edited = surgicalEditor.trySurgicalEdit(html, hit.selector, newText);
+          if (edited) {
+            fs.writeFileSync(pagePath, edited);
+            specSI.structural_index[currentPage] = surgicalEditor.buildStructuralIndex(edited, currentPage);
+            writeSpec(specSI, { source: 'surgical_index', mutationLevel: 'field', mutationTarget: hit.field_id, newValue: newText });
+            description = `Surgical edit: ${hit.field_id} → "${newText}"`;
+            handled = true;
+            try {
+              fs.appendFileSync(path.join(SITE_DIR(), 'mutations.jsonl'), JSON.stringify({
+                timestamp: new Date().toISOString(),
+                level: 'field',
+                target_id: hit.field_id,
+                action: 'surgical_edit',
+                new_value: newText,
+                source: 'surgical_index',
+                pages_affected: [currentPage],
+              }) + '\n');
+            } catch {}
+          }
+        }
+      }
+    }
+  }
+
   if (handled) {
-    if (description && !description.includes('Replaced') && !description.includes('Updated')) {
+    if (description && !description.includes('Replaced') && !description.includes('Updated') && !description.includes('Surgical')) {
       // CSS change — write it back
       fs.writeFileSync(cssPath, css);
     }
@@ -12130,6 +12380,19 @@ function runDeploy(ws, env) {
       spec.deployed_url = urlMatch[0];
       spec.deployed_at = spec.environments[env].deployed_at;
       spec.state = 'deployed';
+
+      // Persist deploy history — seed of Mission Control data model
+      spec.deploy_history = spec.deploy_history || [];
+      spec.deploy_history.push({
+        version: spec.deploy_history.length + 1,
+        deployed_at: spec.environments[env].deployed_at,
+        environment: env,
+        url: urlMatch[0],
+        fam_score: spec.fam_score || null,
+        lighthouse: spec.lighthouse_score || null,
+        pages: (listPages() || []).length,
+      });
+
       writeSpec(spec);
 
       studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });
@@ -12806,8 +13069,8 @@ function hasAnthropicKey() {
  * @returns {Promise<string>} — response text, or '' on timeout/error
  */
 async function callSDK(prompt, opts = {}) {
-  const { maxTokens = 8192, callSite = 'unknown', timeoutMs = 120000 } = opts;
-  const model = loadSettings().model || 'claude-sonnet-4-6';
+  const { maxTokens = 8192, callSite = 'unknown', timeoutMs = 120000, systemPrompt = null } = opts;
+  const model = opts.model || loadSettings().model || 'claude-sonnet-4-6';
 
   // No API key — fall back to spawnClaude() subprocess (Claude Code subscription auth)
   if (!hasAnthropicKey()) {
@@ -12825,11 +13088,13 @@ async function callSDK(prompt, opts = {}) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const sdk = getAnthropicClient();
-    const response = await sdk.messages.create({
+    const msgPayload = {
       model,
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
-    }, { signal: controller.signal });
+    };
+    if (systemPrompt) msgPayload.system = systemPrompt;
+    const response = await sdk.messages.create(msgPayload, { signal: controller.signal });
     clearTimeout(timer);
     logSDKCall({
       provider: 'claude', model, callSite,
@@ -13465,5 +13730,15 @@ if (require.main === module) {
     // Session 12 Phase 2 (W1, W2): purge stale / terminal worker queue entries
     // so the pending badge reflects real work instead of phantoms from weeks ago.
     try { cleanWorkerQueueOnStartup(); } catch {}
+
+    // Session 16: build capability manifest on startup so Shay-Shay knows what's working
+    buildCapabilityManifest().then(manifest => {
+      const unavailable = Object.entries(manifest.capabilities)
+        .filter(([, v]) => v === 'unavailable')
+        .map(([k]) => k);
+      if (unavailable.length > 0) {
+        console.log(`[capability-manifest] unavailable: ${unavailable.join(', ')}`);
+      }
+    }).catch(e => console.warn('[capability-manifest] startup check failed:', e.message));
   });
 }

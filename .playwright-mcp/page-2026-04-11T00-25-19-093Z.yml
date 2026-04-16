@@ -1,0 +1,127 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Groove Theory" [ref=e4] [cursor=pointer]:
+        - /url: index.html
+      - navigation [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: index.html
+        - link "Services" [ref=e7] [cursor=pointer]:
+          - /url: services.html
+        - link "Visit & Contact" [ref=e8] [cursor=pointer]:
+          - /url: contact.html
+  - main [ref=e9]:
+    - generic [ref=e11]:
+      - img "Groove Theory Logo" [ref=e13]
+      - heading "Where Vinyl Comes Alive" [level=1] [ref=e14]
+      - paragraph [ref=e15]: Hand-curated records, listening stations, and a community of music lovers. Experience the warmth of analog in Melody City.
+      - link "Visit Us Today" [ref=e16] [cursor=pointer]:
+        - /url: contact.html
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: 🎵
+        - heading "Hand-Curated Bins" [level=3] [ref=e21]
+        - paragraph [ref=e22]: Every record is carefully selected. From classic soul to rare pressings, dig through collections thoughtfully organized by era and genre.
+      - generic [ref=e23]:
+        - generic [ref=e24]: 🎧
+        - heading "Listening Stations" [level=3] [ref=e25]
+        - paragraph [ref=e26]: Take your time. Our private listening stations let you hear before you buy on vintage turntables and hi-fi audio.
+      - generic [ref=e27]:
+        - generic [ref=e28]: 💿
+        - heading "Trade-In Program" [level=3] [ref=e29]
+        - paragraph [ref=e30]: Refresh your collection. Fair prices on trades. Sell us your records and use store credit toward new finds.
+      - generic [ref=e31]:
+        - generic [ref=e32]: 🎤
+        - heading "DJ Nights & Events" [level=3] [ref=e33]
+        - paragraph [ref=e34]: Live the culture. Monthly DJ nights, album listening parties, and vinyl spinning sessions. Join the community.
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - heading "Explore What We Offer" [level=2] [ref=e38]
+        - paragraph [ref=e39]: From discovery to community, Groove Theory is built around the vinyl experience you're looking for.
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - img "Curated Record Collections" [ref=e42]
+          - generic [ref=e43]:
+            - heading "Curated Record Collections" [level=3] [ref=e44]
+            - paragraph [ref=e45]: Discover vinyl organized by era, genre, and mood. Each bin reflects our passion for sonic history and cultural moments.
+            - link "Learn More →" [ref=e46] [cursor=pointer]:
+              - /url: services.html
+        - generic [ref=e47]:
+          - img "Premium Listening Stations" [ref=e48]
+          - generic [ref=e49]:
+            - heading "Premium Listening Stations" [level=3] [ref=e50]
+            - paragraph [ref=e51]: Book a listening session. Test-drive records on our vintage turntables and professional audio before you commit.
+            - link "Learn More →" [ref=e52] [cursor=pointer]:
+              - /url: services.html
+        - generic [ref=e53]:
+          - img "Trade-In Counter" [ref=e54]
+          - generic [ref=e55]:
+            - heading "Trade-In Counter" [level=3] [ref=e56]
+            - paragraph [ref=e57]: Sell or trade your records. Fair valuations, instant decisions, and store credit toward your next discovery.
+            - link "Learn More →" [ref=e58] [cursor=pointer]:
+              - /url: services.html
+        - generic [ref=e59]:
+          - img "DJ Nights & Events" [ref=e60]
+          - generic [ref=e61]:
+            - heading "DJ Nights & Events" [level=3] [ref=e62]
+            - paragraph [ref=e63]: Join the scene. Monthly DJ nights, listening parties, and vinyl culture events. Music, community, and vinyl.
+            - link "Learn More →" [ref=e64] [cursor=pointer]:
+              - /url: services.html
+    - generic [ref=e66]:
+      - heading "Why Groove Theory" [level=2] [ref=e67]
+      - generic [ref=e68]:
+        - generic [ref=e69]:
+          - heading "15+ Years" [level=4] [ref=e70]
+          - paragraph [ref=e71]: Serving collectors and music lovers across three decades of vinyl revival. Our passion is your discovery.
+        - generic [ref=e72]:
+          - heading "Expert Curation" [level=4] [ref=e73]
+          - paragraph [ref=e74]: Every selection reflects deep music knowledge and respect for the artists. We know vinyl. We know taste.
+        - generic [ref=e75]:
+          - heading "Community Hub" [level=4] [ref=e76]
+          - paragraph [ref=e77]: More than a shop. A gathering place for collectors, musicians, and culture makers. Your scene starts here.
+    - generic [ref=e79]:
+      - heading "Ready to Dig In?" [level=2] [ref=e80]
+      - paragraph [ref=e81]: Stop by Groove Theory and explore our hand-curated collection. We're open seven days a week. Let's find your next favorite record.
+      - generic [ref=e82]:
+        - link "Visit Us" [ref=e83] [cursor=pointer]:
+          - /url: contact.html
+        - link "Get in Touch" [ref=e84] [cursor=pointer]:
+          - /url: contact.html
+  - contentinfo [ref=e85]:
+    - generic [ref=e86]:
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - heading "About" [level=3] [ref=e89]
+          - paragraph [ref=e90]: Groove Theory is your destination for hand-curated vinyl, listening sessions, and community. We believe in the warmth of analog and the art of curation.
+        - generic [ref=e91]:
+          - heading "Quick Links" [level=3] [ref=e92]
+          - generic [ref=e93]:
+            - link "Home" [ref=e94] [cursor=pointer]:
+              - /url: index.html
+            - link "Services" [ref=e95] [cursor=pointer]:
+              - /url: services.html
+            - link "Visit & Contact" [ref=e96] [cursor=pointer]:
+              - /url: contact.html
+        - generic [ref=e97]:
+          - heading "Get in Touch" [level=3] [ref=e98]
+          - paragraph [ref=e99]:
+            - link "(555) 123-4567" [ref=e100] [cursor=pointer]:
+              - /url: tel:+15551234567
+          - paragraph [ref=e101]:
+            - link "hello@groovetheory.com" [ref=e102] [cursor=pointer]:
+              - /url: mailto:hello@groovetheory.com
+          - paragraph [ref=e103]:
+            - text: 123 Vinyl Lane
+            - text: Melody City, MC 12345
+      - generic [ref=e105]:
+        - paragraph [ref=e106]: © 2026 Groove Theory. All rights reserved.
+        - generic [ref=e107]:
+          - link "Instagram" [ref=e108] [cursor=pointer]:
+            - /url: https://instagram.com/groovetheory
+            - generic [ref=e109]: "@"
+          - link "Facebook" [ref=e110] [cursor=pointer]:
+            - /url: https://facebook.com/groovetheory
+            - generic [ref=e111]: f
+          - link "TikTok" [ref=e112] [cursor=pointer]:
+            - /url: https://tiktok.com/@groovetheory
+            - generic [ref=e113]: ♪

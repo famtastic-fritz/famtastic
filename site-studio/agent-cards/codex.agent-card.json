@@ -1,0 +1,19 @@
+{
+  "id": "codex",
+  "name": "Codex (GPT-5.4)",
+  "provider": "openai",
+  "model": "gpt-4o",
+  "tier": 2,
+  "best_for": [
+    "html_generation",
+    "first_pass_builds",
+    "component_editing",
+    "adversarial_review",
+    "code_critique"
+  ],
+  "cost_per_call_estimate": 0.02,
+  "daily_limit": 40,
+  "status": "available",
+  "requires": ["OPENAI_API_KEY"],
+  "latency_target_ms": 2000
+}

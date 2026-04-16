@@ -3335,3 +3335,110 @@ during end-to-end verification.**
 - Revenue model `suggestion_chips` not yet rendered in Studio UI (requires UI upgrade)
 - `deal-memo` geography field defaults to `[AREA]` placeholder when interview was skipped
 
+
+---
+
+## Session 16 — Layer 0 Foundation + Shay-Shay Seed (2026-04-16)
+
+### Phase 0: Surgical Editor Wired
+
+**What changed:** `tryDeterministicHandler()` in `server.js` now has a third block
+("Structural index surgical edit") that fires after the CSS and field-type blocks.
+
+**How it works:**
+1. STRUCTURAL_HINTS map matches user message keywords (heading, tagline, cta, subtitle, desc, welcome)
+2. Extracts new value from "to X", "say X", "should be X" patterns
+3. Looks up matching `field_id` in `spec.structural_index[currentPage].fields`
+4. Calls `surgicalEditor.trySurgicalEdit(html, hit.selector, newText)` for DOM swap
+5. Rewrites the page file, updates the structural index, logs to mutations.jsonl
+6. Returns true — zero Claude API calls for supported patterns
+
+**Acceptance:** "change the hero headline to X" handled without Claude when structural index exists.
+
+**buildStructuralIndex:** Already wired in Step 7 of `runPostProcessing()` since Session 13.
+Results stored at `spec.structural_index[page]`.
+
+### Phase 1: Layer 0 Data Sources
+
+**A. Gap Logger** — `site-studio/lib/gap-logger.js`
+- `logGap(tag, message, category, details)` — appends to `~/.local/share/famtastic/gaps.jsonl`
+- Three categories: `NOT_BUILT`, `NOT_CONNECTED`, `BROKEN`
+- Auto-promotes at frequency ≥ 3 to `~/.local/share/famtastic/intelligence-promotions.json`
+- `resolveGap(capabilityId)` — marks gap resolved when capability ships
+- Exports: `logGap`, `resolveGap`, `loadGaps`, `GAP_CATEGORIES`
+
+**B. Suggestion Logger** — `site-studio/lib/suggestion-logger.js`
+- `logSuggestion(suggestion, context)` — appends to `~/.local/share/famtastic/suggestions.jsonl`
+- `logOutcome(id, outcomeKey)` — updates suggestion with score (SHIPPED=1.5, ACCEPTED=1.0, EDITED=0.7, DISMISSED=0.3, IGNORED=0.1)
+- Auto-promotes high-score patterns (≥3 matches) to `suggestion-promotions.jsonl`
+- Wired: plan card shown (source: handlePlanning), interview corrections (source: interview)
+- Exports: `logSuggestion`, `logOutcome`, `loadPendingSuggestions`, `OUTCOMES`
+
+**C. Brand Tracker** — `site-studio/lib/brand-tracker.js`
+- Runs as Step 8 of `runPostProcessing()` after every full build
+- Extracts: primary_color, accent_color, bg_color, heading_font, body_font from assets/styles.css
+- Persists to `sites/<tag>/brand.json`
+- `detectDrift(previous, current)` — returns array of changed fields
+- Exports: `extractAndSaveBrand`, `loadBrandTokens`, `extractBrandTokens`, `detectDrift`
+
+**D. Deploy History** — wired in `runDeploy()` success handler
+- `spec.deploy_history[]` array in spec.json, pushed on every successful deploy
+- Fields: version, deployed_at, environment, url, fam_score, lighthouse, pages
+
+**E. Agent Cards** — `site-studio/agent-cards/`
+- `claude.agent-card.json` — tier 3, best_for: architecture/builds/surgical edits
+- `codex.agent-card.json` — tier 2, best_for: html_generation/adversarial_review
+- `gemini.agent-card.json` — tier 1, best_for: classification/research/brainstorm
+- Structure: id, name, provider, model, tier, best_for[], cost_per_call_estimate, daily_limit, status, requires[]
+
+**F. Brief Corrections** — wired in `POST /api/interview/answer` completion handler
+- On interview completion, diffs previous `spec.client_brief` vs submitted answers
+- Writes corrections to `sites/<tag>/brief-corrections.jsonl`
+- Logs each correction as a suggestion with `weight: 2.0`
+
+**G. Capability Manifest** — `site-studio/lib/capability-manifest.js`
+- `buildCapabilityManifest()` — async, checks env vars + CLI availability
+- Runs on server startup and saves to `~/.local/share/famtastic/capability-manifest.json`
+- Exposed via `GET /api/capability-manifest`
+- `diffStateVsManifest(manifest)` — returns `{broken[], unavailable[], available[]}`
+- Exports: `buildCapabilityManifest`, `loadManifest`, `diffStateVsManifest`
+
+### Phase 2: Shay-Shay Seed Layer
+
+**Skill definition:** `site-studio/shay-shay/skill.json` + `site-studio/shay-shay/instructions.md`
+- 8 capabilities: studio_command, route_to_chat, show_me, brainstorm, system_status, capture_gap, intelligence_query, general_reasoning
+- Tier 0: deterministic (no AI) — studio commands, routing, show me, status
+- Tier 1-3: AI reasoning with appropriate model (Haiku → Sonnet → Opus)
+
+**Server endpoints:**
+- `POST /api/shay-shay` — main orchestrator. Tier 0 deterministic, Tiers 1-3 via callSDK
+- `POST /api/shay-shay/gap` — explicit gap capture endpoint
+- `POST /api/shay-shay/outcome` — suggestion outcome scoring
+
+**`classifyShayShayTier0(lower)`** — regex classifier for instant-response commands
+**`handleShayShayTier0(tier0, message, context, manifest)`** — deterministic handler
+
+**Studio UI wiring:** `studio-orb.js` `sendDirect()` now calls `sendToShayShay()`:
+- Routes to `POST /api/shay-shay` (not Studio WebSocket)
+- Handles `route_to_chat` action: routes message to Studio WS chat
+- Handles `system_command` action: executes command
+- Handles `show_me` action: opens Show Me mode
+- Falls through to display conversational response
+
+**callSDK enhancement:**
+- Now accepts `opts.model` to override the settings.json model (for Shay-Shay model routing)
+- Now accepts `opts.systemPrompt` for system-level instructions
+- Both are backward compatible — existing callers unaffected
+
+### Known Gaps Updated (Session 16)
+
+**Closed:**
+- Surgical editor routing not wired — now wired via STRUCTURAL_HINTS block in tryDeterministicHandler
+
+**Opened:**
+- Shay-Shay `intelligence_query` and `general_reasoning` tier 2/3 capabilities not yet connected to intelligence store (requires Mem0 integration — Session 17 "Grow" phase)
+- Brand drift not yet surfaced as intelligence finding (brand-tracker logs to console only)
+- Agent cards not yet loaded by brain router — hardcoded config still in place
+- `deploy_history` not yet surfaced in Mission Control UI
+- Brief corrections `IGNORED` outcome not yet auto-scored at session end
+- Shay-Shay session init (loadFamtasticState, diffStateVsManifest on WS connect) not yet wired

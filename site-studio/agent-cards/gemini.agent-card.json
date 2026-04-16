@@ -1,0 +1,20 @@
+{
+  "id": "gemini",
+  "name": "Gemini Flash",
+  "provider": "google",
+  "model": "gemini-2.5-flash",
+  "tier": 1,
+  "best_for": [
+    "classification",
+    "summarization",
+    "research",
+    "validation",
+    "brainstorm",
+    "market_analysis"
+  ],
+  "cost_per_call_estimate": 0.001,
+  "daily_limit": 1500,
+  "status": "available",
+  "requires": ["GEMINI_API_KEY"],
+  "latency_target_ms": 500
+}

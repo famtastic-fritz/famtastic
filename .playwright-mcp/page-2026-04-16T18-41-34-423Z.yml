@@ -1,0 +1,113 @@
+- generic [ref=e1]:
+  - button "✕" [ref=e3] [cursor=pointer]
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - button "Sites" [ref=e6] [cursor=pointer]:
+        - img [ref=e7]
+      - button "Components" [ref=e10] [cursor=pointer]:
+        - img [ref=e11]
+      - button "Assets" [ref=e16] [cursor=pointer]:
+        - img [ref=e17]
+      - button "Intelligence" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "Deploy" [ref=e24] [cursor=pointer]:
+        - img [ref=e25]
+      - button "Settings" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+    - generic [ref=e33]:
+      - generic [ref=e34]: Sites
+      - button "site-altitude ▾" [ref=e37] [cursor=pointer]
+      - generic [ref=e38]: Pages
+      - generic [ref=e39]: Recent sites
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - button "Build" [ref=e43] [cursor=pointer]
+          - button "Review" [ref=e44] [cursor=pointer]
+          - button "Brainstorm" [ref=e45] [cursor=pointer]
+        - generic [ref=e46]:
+          - generic "Build verification" [ref=e47]
+          - button "Rebuild" [ref=e48] [cursor=pointer]
+      - generic [ref=e49]:
+        - button "Chat" [ref=e50] [cursor=pointer]
+        - button "Preview" [ref=e51] [cursor=pointer]
+        - button "Brief" [ref=e52] [cursor=pointer]
+        - button "Assets" [ref=e53] [cursor=pointer]
+        - button "Deploy" [ref=e54] [cursor=pointer]
+        - button "+" [ref=e55] [cursor=pointer]
+      - generic [ref=e56]:
+        - generic [ref=e58]:
+          - generic [ref=e59]: ok I thought I was supposed to get a breif?
+          - generic [ref=e60]: "Welcome back! Session #9 for site-altitude. Design brief: approved"
+          - generic [ref=e143]: hello
+          - generic [ref=e144]:
+            - generic [ref=e145]: ✓ Processing...
+            - generic [ref=e146]: ✓ Using Claude for HTML generation (gemini handles brainstorm only)
+            - generic [ref=e147]: ✓ Classifying request...
+            - generic [ref=e148]:
+              - generic [ref=e149]: ●
+              - text: Generating plan...
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - text: "📋 Here's what I'll do:"
+              - generic [ref=e152]: small
+            - paragraph [ref=e153]: No build changes required for a simple greeting request.
+            - textbox "Edit your request..." [ref=e154]: hello
+            - generic [ref=e155]:
+              - button "✓ Looks good, build it" [ref=e156] [cursor=pointer]
+              - button "✕ Cancel" [ref=e157] [cursor=pointer]
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]: localhost:3333
+            - button "Desktop" [ref=e64] [cursor=pointer]
+            - button "Mobile" [ref=e65] [cursor=pointer]
+            - button "Slots" [ref=e66] [cursor=pointer]
+          - iframe [ref=e68]:
+            - generic [ref=f1e2]:
+              - heading "No pages yet" [level=2] [ref=f1e3]
+              - paragraph [ref=f1e4]: Describe your site in the chat to get started.
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]: site-altitude
+          - generic [ref=e72]: /
+          - generic [ref=e73]: index.html
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - button "Assets" [ref=e76] [cursor=pointer]
+            - button "Brief" [ref=e77] [cursor=pointer]
+            - button "Preview" [ref=e78] [cursor=pointer]
+            - button "↺ Rebuild" [ref=e79] [cursor=pointer]
+          - generic [ref=e80]:
+            - generic [ref=e81]: Haiku
+            - generic "Auto-accept plans without confirmation" [ref=e82] [cursor=pointer]:
+              - checkbox "Auto" [ref=e83]
+              - text: Auto
+        - generic [ref=e85]:
+          - textbox "Describe what you want to build..." [active] [ref=e86]
+          - generic "Upload image" [ref=e87] [cursor=pointer]:
+            - img [ref=e88]
+          - button "Send" [ref=e92] [cursor=pointer]
+          - button "✕ Cancel" [ref=e158] [cursor=pointer]
+    - generic [ref=e93]:
+      - generic [ref=e95]:
+        - generic [ref=e96]: ✶
+        - generic [ref=e97]: What can I help with? Tell me what to build or ask me anything about the active site.
+      - generic [ref=e98]:
+        - generic [ref=e140]: 4 tasks pending in the worker queue. No worker is running — these need manual execution.
+        - generic [ref=e101]:
+          - button "View queue" [ref=e141] [cursor=pointer]
+          - button "Dismiss" [ref=e142] [cursor=pointer]
+        - generic [ref=e104]:
+          - textbox "Ask Shay-Shay…" [ref=e105]
+          - button "↑" [ref=e106] [cursor=pointer]
+  - generic [ref=e108]:
+    - generic [ref=e109]: Haiku
+    - generic [ref=e111]: 0%
+    - generic [ref=e113]: $0.00
+    - generic [ref=e114]: 20 min
+    - generic [ref=e115]: FAMtastic Site Studio
+  - generic "Shay-Shay (right-click for modes)" [ref=e116] [cursor=pointer]:
+    - img [ref=e117]:
+      - generic [ref=e121]: FAM
+      - generic [ref=e122]: tastic
+    - generic: "4"

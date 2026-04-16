@@ -1,0 +1,9 @@
+[     129ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[     215ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/validation-plan:0
+[     219ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/favicon.ico:0
+[     242ms] [LOG] [ws] connected @ http://localhost:3334/:1105
+[    3248ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/validation-plan:0
+[   11855ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3334/api/sites:0
+[  186954ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3334/:0
+[  186954ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3334/:0
+[  186954ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3334/:0

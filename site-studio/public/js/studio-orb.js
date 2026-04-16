@@ -373,20 +373,50 @@
       if (!text) return;
       input.value = '';
       showColumnResponse(null, true); // show typing indicator
-      // If connected to WS, send as chat message
-      if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-        if (window.addMessage) window.addMessage('user', text);
-        window.ws.send(JSON.stringify({ type: 'chat', content: text }));
-        if (window.steps !== undefined) {
-          window.steps = [];
-          window.stepStart = null;
-          if (window.addStep) window.addStep('Processing...');
-        }
-        // Hide typing after a beat — real response will come via WS
-        setTimeout(function () { hideTyping(); }, 800);
-      } else {
-        showColumnResponse('Not connected — try refreshing.', false);
-      }
+      sendToShayShay(text);
+    }
+
+    function getShayShayContext() {
+      return {
+        active_site: window.currentTag || null,
+        active_page: window.currentPage || null,
+        active_tab: null,
+        fam_score: null,
+      };
+    }
+
+    function sendToShayShay(message) {
+      var context = getShayShayContext();
+      fetch('/api/shay-shay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, context: context }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          hideTyping();
+          if (data.action === 'route_to_chat') {
+            // Route message to Studio chat — Shay-Shay is delegating
+            if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+              if (window.addMessage) window.addMessage('user', data.message || message);
+              window.ws.send(JSON.stringify({ type: 'chat', content: data.message || message }));
+            }
+            showColumnResponse('Sent to Studio: "' + (data.message || message) + '"', false);
+          } else if (data.action === 'system_command') {
+            showColumnResponse(data.response || 'Running command\u2026', false);
+            if (data.command === 'restart' && window.ws) {
+              window.ws.send(JSON.stringify({ type: 'chat', content: 'restart studio' }));
+            }
+          } else if (data.action === 'show_me') {
+            showColumnResponse(data.response || 'Opening Show Me\u2026', false);
+          } else {
+            showColumnResponse(data.response || data.error || 'No response.', false);
+          }
+        })
+        .catch(function (err) {
+          hideTyping();
+          showColumnResponse('Error reaching Shay-Shay: ' + err.message, false);
+        });
     }
 
     input.addEventListener('keydown', function (e) {
