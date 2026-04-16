@@ -1,137 +1,284 @@
-/* Studio Chat — chat panel, message bubbles, plan cards, brainstorm mode */
+/* Studio Chat — message thread, plan cards, brief cards, brainstorm mode */
 
-/* Plan Card */
-.plan-card {
-  margin: 8px 16px; padding: 12px 16px; border-radius: 8px;
-  background: #161625; border-left: 3px solid #3b82f6;
-  font-size: 13px; color: #d1d5db;
+/* ── Chat message thread ──────────────────────────────────────────────────── */
+
+#chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  overflow-y: auto;
 }
-.plan-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.plan-icon { font-size: 16px; }
-.plan-summary { color: #e5e7eb; margin-bottom: 8px; }
-.plan-scope { font-size: 10px; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
-.scope-small { background: #065f46; color: #a7f3d0; }
-.scope-medium { background: #78350f; color: #fde68a; }
-.scope-large { background: #7f1d1d; color: #fecaca; }
-.plan-changes { margin-bottom: 8px; }
-.plan-change { display: flex; gap: 6px; font-size: 12px; padding: 2px 0; color: #9ca3af; }
-.plan-area { color: #60a5fa; font-weight: 500; }
-.plan-arrow { color: #4b5563; }
-.plan-edit { width: 100%; background: #0f0f1a; border: 1px solid #2a2a3a; border-radius: 6px;
-  padding: 6px 8px; color: #e5e7eb; font-size: 12px; resize: vertical; margin-bottom: 8px; }
-.plan-footer { display: flex; gap: 8px; }
-.plan-approve { flex: 1; background: #1d4ed8; color: white; border: none; padding: 6px 12px;
-  border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
-.plan-approve:hover { background: #2563eb; }
-.plan-cancel { background: #374151; color: #9ca3af; border: none; padding: 6px 12px;
-  border-radius: 6px; cursor: pointer; font-size: 12px; }
-.plan-cancel:hover { background: #4b5563; }
 
-/* Brainstorm mode */
-.brainstorm-active { border-color: #8b5cf6 !important; }
-.brainstorm-banner {
-  background: #4c1d95; color: #c4b5fd; padding: 8px 16px;
-  display: flex; align-items: center; justify-content: space-between;
+/* All message bubbles share base */
+#chat-messages > div,
+#chat-messages > .plan-card,
+#chat-messages > .phase-card,
+#chat-messages > .msg-brief {
+  border-radius: 10px;
+  padding: 10px 14px;
   font-size: 13px;
-}
-.brainstorm-banner button {
-  background: #6d28d9; color: white; border: none; border-radius: 6px;
-  padding: 4px 12px; cursor: pointer; font-size: 12px;
-}
-.brainstorm-banner button:hover { background: #7c3aed; }
-
-body.brainstorm-mode header {
-  background: #1c1917 !important;
-  border-color: #44403c !important;
-}
-body.brainstorm-mode #chat-panel {
-  border-color: #44403c !important;
-  background: #1c1917 !important;
-}
-body.brainstorm-mode #chat-messages {
-  background: radial-gradient(ellipse at 50% 0%, #2c1810 0%, #1c1917 70%) !important;
-}
-body.brainstorm-mode #chat-input {
-  background: #292524 !important;
-  border-color: #78716c !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 15px !important;
-  letter-spacing: 0.01em;
-}
-body.brainstorm-mode #chat-input::placeholder { color: #a8a29e !important; }
-body.brainstorm-mode .chat-input-area {
-  background: #1c1917 !important;
-  border-color: #44403c !important;
-}
-.msg-brainstorm {
-  background: linear-gradient(135deg, #44403c, #3a2f28) !important;
-  color: #e7e5e4 !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 15px !important;
-  line-height: 1.7 !important;
-  border-left: 3px solid #d97706 !important;
-  border-radius: 4px 12px 12px 4px !important;
-}
-body.brainstorm-mode .msg-user { background: #b45309 !important; }
-
-.brainstorm-banner-v2 {
-  background: linear-gradient(90deg, #451a03, #1c1917);
-  color: #fbbf24; padding: 10px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
-  letter-spacing: 0.02em; border-bottom: 1px solid #78350f;
-}
-.brainstorm-banner-v2 .banner-label { display: flex; align-items: center; gap: 10px; }
-.brainstorm-banner-v2 .banner-dot {
-  width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
-  animation: brainstorm-pulse 2s ease-in-out infinite;
-}
-@keyframes brainstorm-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
-}
-.brainstorm-banner-v2 button {
-  background: #78350f; color: #fbbf24; border: 1px solid #92400e;
-  border-radius: 6px; padding: 4px 14px; cursor: pointer;
-  font-size: 12px; font-family: 'DM Sans', sans-serif; transition: background 0.2s;
-}
-.brainstorm-banner-v2 button:hover { background: #92400e; }
-
-body.brainstorm-mode::after {
-  content: ''; position: fixed; top: -20%; left: 30%; width: 60%; height: 60%;
-  background: radial-gradient(circle, rgba(217, 119, 6, 0.06) 0%, transparent 70%);
-  pointer-events: none; z-index: 0;
-  animation: ambient-drift 20s ease-in-out infinite alternate;
-}
-@keyframes ambient-drift {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-10%, 15%) scale(1.2); }
+  line-height: 1.55;
+  max-width: 88%;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
-.mode-transition-overlay {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.3);
-  z-index: 9999; pointer-events: none; opacity: 0;
-  animation: mode-breath 0.5s ease-in-out;
+/* User message — right-aligned, red tint */
+.msg-user {
+  margin-left: auto !important;
+  border-bottom-right-radius: 3px !important;
 }
-@keyframes mode-breath { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Assistant message — left-aligned, dark bg */
+.msg-assistant {
+  margin-right: auto;
+  border-bottom-left-radius: 3px !important;
+}
+
+/* Status — slim, dimmer */
+.msg-status {
+  padding: 5px 10px !important;
+  font-size: 11px !important;
+  max-width: 80% !important;
+}
+
+/* ── Plan card ────────────────────────────────────────────────────────────── */
+
+.plan-card {
+  background: var(--fam-bg-3);
+  border: 1px solid var(--fam-border);
+  border-left: 3px solid var(--fam-red);
+  border-radius: 10px !important;
+  padding: 14px 16px;
+  max-width: 95% !important;
+  align-self: flex-start;
+}
+
+.plan-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fam-text);
+}
+
+.plan-icon { font-size: 16px; }
+
+.plan-scope {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.scope-small  { background: rgba(29,158,117,0.15); color: var(--fam-green); }
+.scope-medium { background: rgba(245,196,0,0.15);  color: var(--fam-gold); }
+.scope-large  { background: rgba(232,53,42,0.15);  color: var(--fam-red); }
+
+.plan-summary {
+  font-size: 12px;
+  color: var(--fam-text-2);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.plan-changes { margin-bottom: 10px; }
+
+.plan-change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 3px 0;
+  color: var(--fam-text-2);
+}
+
+.plan-area  { color: var(--fam-red); font-weight: 600; font-size: 10px; }
+.plan-arrow { color: var(--fam-text-3); }
+
+.plan-edit {
+  width: 100%;
+  background: var(--fam-bg);
+  border: 1px solid var(--fam-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--fam-text);
+  font-size: 12px;
+  resize: vertical;
+  margin-bottom: 10px;
+  outline: none;
+  font-family: inherit;
+}
+
+.plan-edit:focus { border-color: rgba(232,53,42,0.5); }
+
+.plan-footer { display: flex; gap: 6px; }
+
+.plan-approve {
+  flex: 1;
+  background: var(--fam-red);
+  color: white;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.plan-approve:hover { background: #c42d23; }
+
+.plan-cancel {
+  background: var(--fam-bg);
+  color: var(--fam-text-2);
+  border: 1px solid var(--fam-border);
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+.plan-cancel:hover { background: rgba(255,255,255,0.05); }
+
+/* ── Brief card ───────────────────────────────────────────────────────────── */
+
+.msg-brief {
+  background: var(--fam-bg-3);
+  border: 1px solid rgba(232, 53, 42, 0.25);
+  border-top: 3px solid var(--fam-red);
+  border-radius: 10px !important;
+  padding: 16px !important;
+  max-width: 95% !important;
+  align-self: flex-start !important;
+}
+
+/* ── Changes summary card ─────────────────────────────────────────────────── */
+
+.msg-changes {
+  border-radius: 8px !important;
+  border-left: 3px solid var(--fam-green) !important;
+  padding: 10px 14px !important;
+}
+
+/* ── Verification warning ─────────────────────────────────────────────────── */
+
+.verify-warning {
+  margin: 4px 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-left: 3px solid var(--fam-gold);
+  background: rgba(245,196,0,0.06);
+  border-radius: 3px;
+  color: #fbbf24;
+  align-self: flex-start;
+  max-width: 88%;
+}
+
+/* ── Step log ─────────────────────────────────────────────────────────────── */
+
+#step-log {
+  background: var(--fam-bg-3) !important;
+  border: 1px solid var(--fam-border) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  max-width: 88% !important;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Brainstorm mode ──────────────────────────────────────────────────────── */
+
+body.mode-brainstorm #chat-messages {
+  background: radial-gradient(ellipse at 50% 0%, rgba(26,21,16,0.8) 0%, transparent 70%);
+}
+
+body.mode-brainstorm #chat-input {
+  border-color: rgba(245,196,0,0.3) !important;
+}
+
+body.mode-brainstorm #chat-input:focus {
+  border-color: rgba(245,196,0,0.6) !important;
+  box-shadow: 0 0 0 2px rgba(245,196,0,0.1) !important;
+}
 
 .brainstorm-actions {
-  display: flex; gap: 10px; padding: 12px 16px; max-width: 90%;
-  animation: fadeSlideUp 0.3s ease-out;
+  display: flex;
+  gap: 6px;
+  padding: 6px 0;
+  max-width: 88%;
+  align-self: flex-start;
+  flex-wrap: wrap;
 }
-@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
 .brainstorm-actions button {
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
-  padding: 8px 18px; border-radius: 8px; cursor: pointer;
-  transition: all 0.2s; border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  background: rgba(245,196,0,0.12);
+  color: var(--fam-gold);
+  border-color: rgba(245,196,0,0.25);
 }
-.brainstorm-actions .btn-approve {
-  background: linear-gradient(135deg, #d97706, #b45309);
-  color: white; border-color: #f59e0b;
+
+.brainstorm-actions button:hover {
+  background: rgba(245,196,0,0.2);
+  box-shadow: 0 0 8px rgba(245,196,0,0.15);
 }
-.brainstorm-actions .btn-approve:hover {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+
+/* ── Intelligence tab inline content ──────────────────────────────────────── */
+
+.intel-card {
+  background: var(--fam-bg-3);
+  border: 1px solid var(--fam-border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
 }
-.brainstorm-actions .btn-continue { background: #44403c; color: #d6d3d1; border-color: #57534e; }
-.brainstorm-actions .btn-continue:hover { background: #57534e; }
+
+.intel-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+.intel-badge.critical { background: rgba(232,53,42,0.15); color: var(--fam-red); }
+.intel-badge.high     { background: rgba(245,196,0,0.15);  color: var(--fam-gold); }
+.intel-badge.opportunity { background: rgba(29,158,117,0.15); color: var(--fam-green); }
+.intel-badge.info     { background: rgba(255,255,255,0.06); color: var(--fam-text-3); }
+
+/* ── Session banner ───────────────────────────────────────────────────────── */
+
+.session-banner {
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 11px;
+  margin: 4px 0;
+  align-self: flex-start;
+  max-width: 88%;
+}
+
+/* ── Scroll to bottom fade ────────────────────────────────────────────────── */
+
+.scroll-fade-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: linear-gradient(to bottom, transparent, var(--fam-bg));
+  pointer-events: none;
+}

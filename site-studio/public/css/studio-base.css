@@ -1,29 +1,193 @@
-/* Studio Base — resets, layout foundations, typography */
+/* Studio Base — message classes, utilities, health dots, upload zone */
+/* NOTE: CSS custom properties (--fam-*) are defined in studio-shell.css :root */
 
-.msg-assistant { background: #334155; color: #e2e8f0; }
-.msg-status { background: transparent; color: #cbd5e1; font-style: italic; border: 1px dashed #475569; }
-.msg-error { background: #7f1d1d; color: #fca5a5; }
-.msg-brief { background: #1e293b; border: 1px solid #3b82f6; color: #e2e8f0; }
-.msg-changes { background: #1a2332; border-left: 3px solid #22c55e; color: #e2e8f0; }
-.step-done { color: #22c55e; }
-.step-active { color: #3b82f6; }
-.step-dot { animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-.upload-zone { border: 2px dashed #475569; transition: all 0.2s; }
-.upload-zone.drag-over { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+/* ── Message bubble classes ───────────────────────────────────────────────── */
+
+.msg-user {
+  background: color-mix(in srgb, var(--fam-red) 14%, var(--fam-bg-3));
+  color: var(--fam-text);
+  border: 1px solid rgba(232, 53, 42, 0.2);
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.msg-assistant {
+  background: var(--fam-bg-3);
+  color: var(--fam-text);
+  border: 1px solid var(--fam-border);
+  align-self: flex-start;
+}
+
+.msg-status {
+  background: transparent;
+  color: var(--fam-text-3);
+  font-style: italic;
+  font-size: 11px;
+  border: 1px dashed var(--fam-border);
+  align-self: flex-start;
+}
+
+.msg-error {
+  background: rgba(232, 53, 42, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(232, 53, 42, 0.4);
+  align-self: flex-start;
+}
+
+.msg-brief {
+  background: var(--fam-bg-3);
+  border: 1px solid rgba(232, 53, 42, 0.3);
+  color: var(--fam-text);
+  align-self: flex-start;
+  width: 95%;
+}
+
+.msg-changes {
+  background: var(--fam-bg-3);
+  border-left: 3px solid var(--fam-green);
+  color: var(--fam-text);
+  align-self: flex-start;
+}
+
+.msg-brainstorm {
+  background: linear-gradient(135deg, #1a1510, #151210);
+  color: var(--fam-text);
+  border-left: 3px solid var(--fam-gold);
+  border-radius: 4px 10px 10px 4px !important;
+  align-self: flex-start;
+}
+
+/* ── Step log ─────────────────────────────────────────────────────────────── */
+
+.step-done  { color: var(--fam-green); }
+.step-active { color: var(--fam-text); }
+.step-dot   { animation: pulse 1.2s ease-in-out infinite; display: inline-block; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Build phase card ─────────────────────────────────────────────────────── */
+
+.phase-card {
+  background: var(--fam-bg-3);
+  border: 1px solid var(--fam-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  max-width: 95%;
+  align-self: flex-start;
+}
+
+.phase-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fam-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.phase-card-header .phase-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fam-green);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.phase-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.phase-row .phase-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.phase-icon.done    { background: rgba(29,158,117,0.2); color: var(--fam-green); }
+.phase-icon.active  { background: rgba(232,53,42,0.2);  color: var(--fam-red); animation: pulse 1s ease-in-out infinite; }
+.phase-icon.pending { background: rgba(255,255,255,0.05); color: var(--fam-text-3); }
+.phase-icon.failed  { background: rgba(232,53,42,0.3);  color: #fca5a5; }
+
+.phase-label {
+  flex: 1;
+  color: var(--fam-text-2);
+}
+.phase-label.active  { color: var(--fam-text); }
+.phase-label.done    { color: var(--fam-text-3); }
+
+.phase-duration {
+  font-size: 10px;
+  color: var(--fam-text-3);
+  margin-left: auto;
+}
+
+.phase-progress-bar {
+  height: 2px;
+  background: var(--fam-border);
+  border-radius: 1px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.phase-progress-fill {
+  height: 100%;
+  background: var(--fam-red);
+  border-radius: 1px;
+  transition: width 0.4s ease;
+}
+
+/* ── Health dots ──────────────────────────────────────────────────────────── */
+
+.health-dot   { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.health-green { background: var(--fam-green); }
+.health-yellow{ background: var(--fam-gold); }
+.health-red   { background: var(--fam-red); }
+.health-gray  { background: var(--fam-text-3); }
+.health-blue  { background: var(--fam-purple); }
+
+/* ── Upload zone ──────────────────────────────────────────────────────────── */
+
+.upload-zone { border: 2px dashed var(--fam-border); transition: all 0.2s; border-radius: 6px; }
+.upload-zone.drag-over { border-color: var(--fam-red); background: rgba(232,53,42,0.06); }
 .upload-thumb { position: relative; }
 .upload-thumb img { object-fit: cover; }
-.role-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; }
-.role-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: flex; align-items: center; justify-content: center; }
-.health-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.health-green { background: #22c55e; }
-.health-yellow { background: #eab308; }
-.health-red { background: #ef4444; }
-.health-gray { background: #6b7280; }
-.health-blue { background: #3b82f6; }
-.session-banner { background: #1e3a5f; border: 1px solid #3b82f6; color: #93c5fd; }
-.inline-edit-form input, .inline-edit-form textarea, .inline-edit-form select {
-  background: #0f172a; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11px; color: #e2e8f0; width: 100%;
+
+/* ── Inline edit form (used in studio panel) ──────────────────────────────── */
+
+.inline-edit-form input,
+.inline-edit-form textarea,
+.inline-edit-form select {
+  background: var(--fam-bg);
+  border: 1px solid var(--fam-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--fam-text);
+  width: 100%;
+  outline: none;
 }
 .inline-edit-form textarea { resize: vertical; min-height: 40px; }
-.inline-edit-form input:focus, .inline-edit-form textarea:focus, .inline-edit-form select:focus { outline: none; border-color: #3b82f6; }
+.inline-edit-form input:focus,
+.inline-edit-form textarea:focus,
+.inline-edit-form select:focus { border-color: rgba(232,53,42,0.5); }
+
+/* ── Misc ─────────────────────────────────────────────────────────────────── */
+
+.role-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; }
+.role-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.session-banner { background: rgba(232,53,42,0.08); border: 1px solid rgba(232,53,42,0.2); color: var(--fam-text-2); }

@@ -35,6 +35,9 @@
 
     var pending = (data && typeof data.pending_count === 'number') ? data.pending_count : 0;
 
+    // Notify Pip orb of queue changes
+    window.dispatchEvent(new CustomEvent('pip:worker-queue-updated', { detail: { count: pending } }));
+
     if (pending === 0) {
       badge.classList.add('hidden');
       return;

@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="css/studio-shell.css">
   <link rel="stylesheet" href="css/studio-base.css">
   <link rel="stylesheet" href="css/studio-chat.css">
+  <link rel="stylesheet" href="css/studio-orb.css">
   <link rel="stylesheet" href="css/studio-modals.css">
   <link rel="stylesheet" href="css/studio-terminal.css">
   <link rel="stylesheet" href="css/studio-brain-selector.css">
@@ -405,6 +406,7 @@
   <script src="js/studio-shell.js"></script>
   <script src="js/brain-selector.js"></script>
   <script src="js/worker-queue-badge.js"></script>
+  <script src="js/studio-orb.js"></script>
 
   <!-- Core logic (will move to studio-core.js in Phase 1) -->
   <script>
@@ -913,6 +915,13 @@
     var lastVerifyResult = null;
 
     function updateVerifyIndicator(msg) {
+      // Notify Pip orb about build quality
+      var checks = msg.checks || {};
+      var vals = Object.values(checks);
+      if (vals.length) {
+        var passing = vals.filter(function(v) { return v === true || (v && v.passed); }).length;
+        window.dispatchEvent(new CustomEvent('pip:build-complete', { detail: { score: passing, total: vals.length } }));
+      }
       lastVerifyResult = msg;
       var indicator = document.getElementById('verify-indicator');
       if (!indicator) return;
