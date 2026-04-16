@@ -90,9 +90,14 @@
                 <div id="project-empty" style="display:none;font-size:11px;color:var(--fam-text-3);text-align:center;padding:12px;">No matches</div>
               </div>
               <div style="padding:6px 8px;border-top:1px solid var(--fam-border);">
-                <div style="display:flex;gap:4px;">
-                  <input id="new-project-tag" type="text" placeholder="new-site-tag" style="flex:1;font-size:11px;background:var(--fam-bg);border:1px solid var(--fam-border);border-radius:4px;padding:5px 8px;color:var(--fam-text);outline:none;">
-                  <button onclick="createNewProject()" style="font-size:11px;background:var(--fam-red);color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;">Create</button>
+                <button id="new-site-btn" onclick="showNewSiteDialog()" style="width:100%;font-size:12px;font-weight:600;background:var(--fam-red);color:white;border:none;border-radius:5px;padding:7px 0;cursor:pointer;letter-spacing:0.02em;">+ New Site</button>
+                <!-- Hidden tag input shown when creating -->
+                <div id="new-site-form" style="display:none;margin-top:6px;display:none;">
+                  <input id="new-project-tag" type="text" placeholder="site-tag (e.g. altitude-bar)" style="width:100%;box-sizing:border-box;font-size:11px;background:var(--fam-bg);border:1px solid var(--fam-border);border-radius:4px;padding:5px 8px;color:var(--fam-text);outline:none;margin-bottom:4px;">
+                  <div style="display:flex;gap:4px;">
+                    <button onclick="createNewProject()" style="flex:1;font-size:11px;background:var(--fam-red);color:white;border:none;border-radius:4px;padding:5px 0;cursor:pointer;font-weight:600;">Create</button>
+                    <button onclick="hideNewSiteDialog()" style="font-size:11px;background:none;border:1px solid var(--fam-border);color:var(--fam-text-3);border-radius:4px;padding:5px 8px;cursor:pointer;">✕</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -864,15 +869,30 @@
       }));
     }
 
+    function showNewSiteDialog() {
+      var form = document.getElementById('new-site-form');
+      var btn = document.getElementById('new-site-btn');
+      if (form) form.style.display = 'block';
+      if (btn) btn.style.display = 'none';
+      var input = document.getElementById('new-project-tag');
+      if (input) { input.value = ''; input.focus(); }
+    }
+
+    function hideNewSiteDialog() {
+      var form = document.getElementById('new-site-form');
+      var btn = document.getElementById('new-site-btn');
+      if (form) form.style.display = 'none';
+      if (btn) btn.style.display = 'block';
+    }
+
     function createNewProject() {
       var input = document.getElementById('new-project-tag');
       var tag = input ? input.value.trim() : '';
-      if (!tag) return;
-      if (tag.indexOf('site-') !== 0) tag = 'site-' + tag;
-      fetch('/api/sites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tag: tag }) })
+      if (!tag) { if (input) input.focus(); return; }
+      fetch('/api/new-site', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Origin': window.location.origin }, body: JSON.stringify({ tag: tag }) })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          if (data.tag) { switchSite(data.tag); if (input) input.value = ''; }
+          if (data.tag) { hideNewSiteDialog(); switchSite(data.tag); }
           else addMessage('error', data.error || 'Create failed');
         }).catch(function(e) { addMessage('error', 'Error: ' + e.message); });
     }

@@ -3784,6 +3784,47 @@ app.get('/api/projects', (req, res) => {
   res.json(projects);
 });
 
+// POST alias — createNewProject() in index.html POSTs here; delegates to /api/new-site logic
+app.post('/api/sites', async (req, res) => {
+  // Forward to /api/new-site by making an internal HTTP call
+  const http = require('http');
+  const body = JSON.stringify(req.body || {});
+  const opts = { hostname: 'localhost', port: PORT, path: '/api/new-site', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'Origin': `http://localhost:${PORT}` } };
+  const upstream = http.request(opts, upRes => {
+    let data = '';
+    upRes.on('data', chunk => { data += chunk; });
+    upRes.on('end', () => {
+      try { res.status(upRes.statusCode).json(JSON.parse(data)); }
+      catch { res.status(upRes.statusCode).send(data); }
+    });
+  });
+  upstream.on('error', e => res.status(500).json({ error: e.message }));
+  upstream.write(body);
+  upstream.end();
+});
+
+// Alias used by sidebar loadSiteTree() in studio-shell.js
+app.get('/api/sites', (req, res) => {
+  if (!fs.existsSync(SITES_ROOT)) return res.json([]);
+  const dirs = fs.readdirSync(SITES_ROOT).filter(d => {
+    if (d.startsWith('.')) return false;
+    const dir = path.join(SITES_ROOT, d);
+    return fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'spec.json'));
+  });
+  const sites = dirs.map(d => {
+    try {
+      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8'));
+      const tagName = d.replace(/^site-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const displayName = (spec.site_name && spec.site_name !== 'New Site') ? spec.site_name
+                        : spec.design_brief?.business_name || tagName;
+      return { tag: d, site_name: displayName, state: spec.state || 'unknown', deployed_url: spec.deployed_url || null, is_current: d === TAG };
+    } catch {
+      return { tag: d, site_name: d, state: 'error', is_current: d === TAG };
+    }
+  }).sort((a, b) => (b.is_current ? 1 : 0) - (a.is_current ? 1 : 0));
+  res.json({ sites });
+});
+
 app.delete('/api/projects/:tag', (req, res) => {
   const tag = req.params.tag;
   if (!tag || tag === TAG) {

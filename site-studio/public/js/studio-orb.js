@@ -636,8 +636,20 @@
         { label: '\u2713 Passed', action: function () { markValidationStep(step.id, 'passed'); } },
         { label: '\u2717 Failed', action: function () { markValidationStep(step.id, 'failed'); } },
         { label: 'Skip', action: function () { markValidationStep(step.id, 'skipped'); }, secondary: true },
+        { label: '\u00d7 Dismiss', action: function () { dismissStepPrompt(); }, secondary: true },
       ]
     );
+  }
+
+  function dismissStepPrompt() {
+    // Hide column response + actions without marking any step outcome.
+    // Step stays pending — next Studio load will re-show the prompt.
+    var area = document.getElementById('pip-response-area');
+    var row = document.getElementById('pip-action-row');
+    if (area) { while (area.firstChild) area.removeChild(area.firstChild); area.className = ''; }
+    if (row) { while (row.firstChild) row.removeChild(row.firstChild); row.style.display = 'none'; }
+    var orb = document.getElementById('pip-orb');
+    if (orb) { orb.classList.remove('pip-active'); orb.classList.add('pip-idle'); }
   }
 
   function triggerShowMe(step) {
