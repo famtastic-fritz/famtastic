@@ -343,6 +343,33 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ASSISTANT COLUMN — Shay-Shay's permanent right home
+         ═══════════════════════════════════════════════════════ -->
+    <div id="assistant-col">
+      <!-- Dynamic content area (todo list / placeholder) -->
+      <div id="pip-dynamic-area">
+        <!-- Populated by studio-orb.js: loadTodoItems() or showPlaceholder() -->
+        <div class="pip-placeholder">
+          <div class="pip-placeholder-icon">✦</div>
+          <div class="pip-placeholder-text">Loading&hellip;</div>
+        </div>
+      </div>
+
+      <!-- Response + input area -->
+      <div id="pip-chat-area">
+        <div id="pip-response-area"></div>
+        <div id="pip-action-row" class="pip-action-row" style="display:none;"></div>
+        <div id="pip-input-row">
+          <input id="pip-direct-input" type="text" placeholder="Ask Shay-Shay&hellip;" autocomplete="off">
+          <button id="pip-send-btn" title="Send (Enter)">&#x2191;</button>
+        </div>
+      </div>
+
+      <!-- Orb anchor — reserves visual space for the fixed-position orb -->
+      <div id="pip-orb-slot"></div>
+    </div>
   </div>
 
   <!-- Status bar -->
@@ -359,26 +386,31 @@
     <span style="margin-left:auto;color:var(--fam-text-3);">FAMtastic Site Studio</span>
   </div>
 
-  <!-- Pip Orb -->
-  <div id="pip-orb" title="FAMtastic Assistant (right-click for options)">
-    <svg class="pip-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-      <!-- Outer starburst (red) - 12 points -->
-      <polygon points="24,2 26.5,10 31,4.5 29.5,13 35,9.5 30,17 37,15.5 30,22 37.5,22.5 29.5,27.5 36,29 27.5,32 33,35.5 24,36 15,35.5 20.5,32 12,29 18.5,27.5 10.5,22.5 18,22 11,15.5 18,17 13,9.5 19,13 17.5,4.5 22,10 24,2" fill="#e8352a" opacity="0.9"/>
-      <!-- Inner starburst (gold) - 8 points -->
-      <polygon points="24,10 26,16 32,14 28,19 34,22 28,25 32,30 26,28 24,34 22,28 16,30 20,25 14,22 20,19 16,14 22,16 24,10" fill="#f5c400" opacity="0.85"/>
+  <!-- Pip Orb — position:fixed, aligns to column bottom.
+       The callout is now the column chat area; this pip-callout div is
+       kept for Show Me floating callouts only. -->
+  <div id="pip-orb" title="Shay-Shay (right-click for modes)">
+    <svg class="pip-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer starburst (red) — 16 thicker spikes at 64px scale -->
+      <polygon points="32,2 34.8,13 40,5 39.2,17 46,10 42.5,22 51,17 45,28 55,25 47,34 57,34 47.5,41 57,44 46.5,48.5 54,54 43,55 48,63 37,61 39,71 30,66 28,76 24,66 14,72 17,61 6,65 11,55 0,56 7,47 -2,44 8.5,39.5 -2,34 9,33 2,23 12,26 7,15 16,20 12,9 19,14 18,2 25,9 26,0 32,8 32,2"
+            fill="#e8352a" opacity="0.9"
+            transform="translate(3,2) scale(0.9)"/>
+      <!-- Inner starburst (gold) — 12 points -->
+      <polygon points="32,12 34.5,21 41,18 37.5,25.5 45,25 39.5,31 45,37 37.5,36.5 41,44 34.5,41 32,50 29.5,41 23,44 26.5,36.5 19,37 24.5,31 19,25 26.5,25.5 23,18 29.5,21 32,12"
+               fill="#f5c400" opacity="0.88"/>
       <!-- Center circle -->
-      <circle cx="24" cy="22" r="10" fill="#0f0a0a"/>
-      <!-- FAM text -->
-      <text x="24" y="21" text-anchor="middle" fill="#e8352a" font-size="7" font-weight="700" font-family="Inter,system-ui,sans-serif">FAM</text>
-      <!-- tastic text -->
-      <text x="24" y="29" text-anchor="middle" fill="#f5c400" font-size="5" font-weight="600" font-family="Inter,system-ui,sans-serif">tastic</text>
+      <circle cx="32" cy="31" r="13" fill="#0f0a0a"/>
+      <!-- FAM -->
+      <text x="32" y="29" text-anchor="middle" fill="#e8352a" font-size="9" font-weight="700" font-family="Inter,system-ui,sans-serif">FAM</text>
+      <!-- tastic -->
+      <text x="32" y="39" text-anchor="middle" fill="#f5c400" font-size="7" font-weight="600" font-family="Inter,system-ui,sans-serif">tastic</text>
     </svg>
     <span class="pip-badge hidden" id="pip-badge">0</span>
-    <!-- Callout -->
+    <!-- Show Me floating callout -->
     <div class="pip-callout hidden" id="pip-callout">
       <div class="pip-callout-header">
         <span class="pip-live-dot"></span>
-        <span>FAMtastic Assistant</span>
+        <span>Shay-Shay</span>
         <button id="pip-callout-close" style="margin-left:auto;background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:14px;line-height:1;">&#x00D7;</button>
       </div>
       <div class="pip-callout-msg" id="pip-callout-msg"></div>
@@ -1108,6 +1140,8 @@
           case 'assistant':
             flushStream();
             addMessage('assistant', msg.content);
+            // Mirror last AI response to Shay-Shay column
+            if (typeof PipOrb !== 'undefined' && PipOrb.showColumnResponse) PipOrb.showColumnResponse(msg.content, false);
             break;
           case 'status':
             addStep(msg.content);

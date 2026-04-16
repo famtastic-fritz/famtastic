@@ -21,7 +21,7 @@
     const orb = document.getElementById('pip-orb');
     if (!orb) return;
 
-    // Left-click → toggle callout
+    // Left-click orb → toggle floating callout (Show Me mode only now)
     orb.addEventListener('click', (e) => {
       if (e.button !== 0) return;
       e.stopPropagation();
@@ -34,11 +34,10 @@
       showModePopup();
     });
 
-    // Close callout on backdrop click
+    // Close floating callout on backdrop click
     document.addEventListener('click', (e) => {
       const orbEl = document.getElementById('pip-orb');
       if (!orbEl || !orbEl.contains(e.target)) {
-        closeCallout();
         closeModePopup();
       }
     });
@@ -51,6 +50,12 @@
         closeCallout();
       });
     }
+
+    // Wire direct input in column
+    initDirectInput();
+
+    // Load todo items into dynamic area
+    loadDynamicArea();
 
     // Start idle pulse animation
     orb.classList.add('pip-idle');
@@ -357,6 +362,197 @@
     }
   }
 
+  // ── Column: direct input wiring ─────────────────────────────────────────
+  function initDirectInput() {
+    var input = document.getElementById('pip-direct-input');
+    var sendBtn = document.getElementById('pip-send-btn');
+    if (!input) return;
+
+    function sendDirect() {
+      var text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      showColumnResponse(null, true); // show typing indicator
+      // If connected to WS, send as chat message
+      if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+        if (window.addMessage) window.addMessage('user', text);
+        window.ws.send(JSON.stringify({ type: 'chat', content: text }));
+        if (window.steps !== undefined) {
+          window.steps = [];
+          window.stepStart = null;
+          if (window.addStep) window.addStep('Processing...');
+        }
+        // Hide typing after a beat — real response will come via WS
+        setTimeout(function () { hideTyping(); }, 800);
+      } else {
+        showColumnResponse('Not connected — try refreshing.', false);
+      }
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDirect(); }
+    });
+
+    if (sendBtn) sendBtn.addEventListener('click', sendDirect);
+  }
+
+  // ── Column: response area ───────────────────────────────────────────────
+  function showColumnResponse(text, isTyping) {
+    var area = document.getElementById('pip-response-area');
+    if (!area) return;
+    area.innerHTML = '';
+
+    if (isTyping) {
+      var typing = document.createElement('div');
+      typing.className = 'pip-typing';
+      typing.id = 'pip-typing';
+      for (var i = 0; i < 3; i++) { var dot = document.createElement('span'); typing.appendChild(dot); }
+      area.appendChild(typing);
+      area.className = 'has-content';
+      return;
+    }
+
+    if (text) {
+      var bubble = document.createElement('div');
+      bubble.className = 'pip-response-bubble';
+      bubble.textContent = text;
+      area.appendChild(bubble);
+      area.className = 'has-content';
+    } else {
+      area.className = '';
+    }
+  }
+
+  function hideTyping() {
+    var typing = document.getElementById('pip-typing');
+    if (typing) typing.remove();
+    var area = document.getElementById('pip-response-area');
+    if (area && !area.querySelector('.pip-response-bubble')) area.className = '';
+  }
+
+  function showColumnActions(actions) {
+    var row = document.getElementById('pip-action-row');
+    if (!row) return;
+    row.innerHTML = '';
+    if (!actions || !actions.length) { row.style.display = 'none'; return; }
+    actions.forEach(function (a) {
+      var btn = document.createElement('button');
+      btn.className = 'pip-action-btn ' + (a.secondary ? 'secondary' : 'primary');
+      btn.textContent = a.label;
+      btn.addEventListener('click', function (e) { e.stopPropagation(); if (a.action) a.action(); });
+      row.appendChild(btn);
+    });
+    row.style.display = 'flex';
+  }
+
+  // ── Column: showMessage now targets the column, not floating callout ─────
+  // Override: messages go to column response area, actions to action row
+  var _origShowMessage = null; // capture original if needed
+
+  // ── Column: dynamic area (todo / placeholder) ────────────────────────────
+  function loadDynamicArea() {
+    var area = document.getElementById('pip-dynamic-area');
+    if (!area) return;
+
+    fetch('/api/validation-plan')
+      .then(function (r) { return r.json(); })
+      .then(function (plan) {
+        if (!plan || plan.status === 'no_plan') {
+          showPlaceholder(area);
+          return;
+        }
+        renderTodoList(area, plan);
+      })
+      .catch(function () { showPlaceholder(area); });
+  }
+
+  function showPlaceholder(area) {
+    area.innerHTML = '';
+    var wrap = document.createElement('div');
+    wrap.className = 'pip-placeholder';
+    var icon = document.createElement('div');
+    icon.className = 'pip-placeholder-icon';
+    icon.textContent = '\u2736'; // ✶
+    wrap.appendChild(icon);
+    var text = document.createElement('div');
+    text.className = 'pip-placeholder-text';
+    text.textContent = 'What can I help with?\n\nTell me what to build or ask me anything about the active site.';
+    wrap.appendChild(text);
+    area.appendChild(wrap);
+  }
+
+  function renderTodoList(area, plan) {
+    area.innerHTML = '';
+
+    var header = document.createElement('div');
+    header.className = 'pip-dynamic-header';
+    var total = plan.steps.length;
+    var done  = plan.steps.filter(function (s) { return s.status !== 'pending'; }).length;
+    header.textContent = plan.title || 'Validation';
+    area.appendChild(header);
+
+    // Progress bar
+    var pct = total ? Math.round(done / total * 100) : 0;
+    var progressWrap = document.createElement('div');
+    progressWrap.className = 'pip-todo-progress';
+    var fill = document.createElement('div');
+    fill.className = 'pip-todo-progress-fill';
+    fill.style.width = pct + '%';
+    progressWrap.appendChild(fill);
+    area.appendChild(progressWrap);
+
+    var pctLabel = document.createElement('div');
+    pctLabel.style.cssText = 'font-size:10px;color:var(--fam-text-3);padding:2px 4px 8px;';
+    pctLabel.textContent = done + '/' + total + ' steps complete';
+    area.appendChild(pctLabel);
+
+    plan.steps.forEach(function (step) {
+      var isCurrent = (step.id - 1 === plan.current_step && step.status === 'pending');
+      var item = document.createElement('div');
+      item.className = 'pip-todo-item' +
+        (isCurrent ? ' active' : '') +
+        (step.status === 'passed' || step.status === 'skipped' ? ' done' : '') +
+        (step.status === 'failed' ? ' failed' : '');
+
+      var num = document.createElement('div');
+      num.className = 'pip-todo-num';
+      if (step.status === 'passed') num.textContent = '\u2713';
+      else if (step.status === 'failed') num.textContent = '\u2717';
+      else if (step.status === 'skipped') num.textContent = '\u29B8';
+      else num.textContent = String(step.id);
+      item.appendChild(num);
+
+      var label = document.createElement('span');
+      label.textContent = step.title;
+      item.appendChild(label);
+
+      // Clicking a pending/current item prompts it in the column
+      if (step.status === 'pending') {
+        item.addEventListener('click', function () {
+          showColumnResponse(step.description, false);
+          showColumnActions([
+            { label: '\uD83D\uDC46 Show Me', action: function () { triggerShowMe(step); } },
+            { label: '\u2713 Passed', action: function () { markValidationStep(step.id, 'passed'); loadDynamicArea(); } },
+            { label: '\u2717 Failed',  action: function () { markValidationStep(step.id, 'failed'); loadDynamicArea(); } },
+          ]);
+        });
+      }
+
+      area.appendChild(item);
+    });
+  }
+
+  // ── Override showMessage to target column (not floating callout) ─────────
+  // The original showMessage showed a floating callout near the orb.
+  // Now messages go to the column response area so they're always visible.
+  function showMessage(msg, actions) {
+    showColumnResponse(msg, false);
+    showColumnActions(actions || []);
+    // Also ensure the orb is in active state
+    var orb = document.getElementById('pip-orb');
+    if (orb) { orb.classList.add('pip-active'); orb.classList.remove('pip-idle'); }
+  }
+
   // ── Validation Mode ───────────────────────────────────────────────────────
   var validationPlan = null;
 
@@ -493,14 +689,17 @@
 
   // ── Public API ────────────────────────────────────────────────────────────
   window.PipOrb = {
-    show:       showMessage,
-    flash:      flashCallout,
-    setBadge:   setBadge,
-    close:      closeCallout,
-    showMe:     showMeElement,
-    doIt:       doIt,
-    dismiss:    dismiss,
-    send:       sendToChat,
+    show:               showMessage,
+    flash:              flashCallout,
+    setBadge:           setBadge,
+    close:              closeCallout,
+    showMe:             showMeElement,
+    doIt:               doIt,
+    dismiss:            dismiss,
+    send:               sendToChat,
+    showColumnResponse: showColumnResponse,
+    showColumnActions:  showColumnActions,
+    reloadTodos:        loadDynamicArea,
     validation: {
       check:    checkValidationPlan,
       markStep: markValidationStep,

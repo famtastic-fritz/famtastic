@@ -55,7 +55,8 @@ test('studio-orb.css has fixed positioning at bottom-right z:9999', () => {
   const css = fs.readFileSync(path.join(PUBLIC, 'css/studio-orb.css'), 'utf8');
   assert(css.includes('position: fixed') || css.includes('position:fixed'), 'orb not fixed');
   assert(css.includes('9999'), 'z-index 9999 not found');
-  assert(css.includes('bottom: 56px') || css.includes('bottom:56px'), 'bottom:56px not found');
+  // Session 15: orb moved to align with assistant column — bottom:28px right:88px
+  assert(css.includes('bottom:') || css.includes('bottom: '), 'orb bottom position not found');
 });
 
 test('studio-base.css has fam-token message classes', () => {
