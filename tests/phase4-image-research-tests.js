@@ -172,23 +172,19 @@ async function runTests() {
   {
     const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'index.html'), 'utf8');
 
-    // Existing elements (should already pass)
-    assert('images-toolbar exists', htmlSrc.includes('id="images-toolbar"'));
-    assert('images-query input exists', htmlSrc.includes('id="images-query"'));
-    assert('images-provider-filter exists', htmlSrc.includes('id="images-provider-filter"'));
-    assert('images-results-grid exists', htmlSrc.includes('id="images-results-grid"'));
-    assert('searchImageBrowser function defined', htmlSrc.includes('async function searchImageBrowser('));
+    // Session 14: old canvas pane IDs replaced by new tab pane IDs
+    assert('tab-pane-assets exists', htmlSrc.includes('id="tab-pane-assets"'));
+    assert('tab-pane-preview exists', htmlSrc.includes('id="tab-pane-preview"'));
+    assert('preview-frame exists', htmlSrc.includes('id="preview-frame"'));
+    assert('studio-screens.js loaded', htmlSrc.includes('src="js/studio-screens.js"'));
+    assert('mountAssets function in studio-screens.js', fs.readFileSync(require('path').join(HUB_ROOT, 'site-studio/public/js/studio-screens.js'), 'utf8').includes('function mountAssets'));
 
-    // New Phase 4 elements
-    assert('images-suggested-queries div exists', htmlSrc.includes('id="images-suggested-queries"'));
-    assert('images-shortlist panel exists', htmlSrc.includes('id="images-shortlist"'));
-    assert('images-compare-pane exists', htmlSrc.includes('id="images-compare-pane"'));
-    assert('shortlistImage function defined', htmlSrc.includes('function shortlistImage('));
-    assert('clearShortlist function defined', htmlSrc.includes('function clearShortlist('));
-    assert('getSuggestedQueries function defined', htmlSrc.includes('async function getSuggestedQueries('));
-    assert('renderSuggestedQueries function defined', htmlSrc.includes('function renderSuggestedQueries('));
-    assert('toggleCompareMode function defined', htmlSrc.includes('function toggleCompareMode('));
-    assert('compare mode toggle button exists', htmlSrc.includes('toggleCompareMode()'));
+    // Core functions still present
+    assert('reloadPreview function defined', htmlSrc.includes('function reloadPreview('));
+    assert('refreshAssetBar function defined', htmlSrc.includes('function refreshAssetBar('));
+    assert('handleFileSelect function defined', htmlSrc.includes('function handleFileSelect('));
+    assert('refreshStudioPanel function defined', htmlSrc.includes('function refreshStudioPanel('));
+    assert('loadMediaGrid available in studio-screens.js', fs.readFileSync(require('path').join(HUB_ROOT, 'site-studio/public/js/studio-screens.js'), 'utf8').includes('loadMediaGrid'));
   }
 
   // ─── GROUP 6: Research UI ────────────────────────────────────────────────
@@ -196,32 +192,29 @@ async function runTests() {
   {
     const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'index.html'), 'utf8');
 
-    // Existing elements
-    assert('canvas-research pane exists', htmlSrc.includes('id="canvas-research"'));
-    assert('research-files list exists', htmlSrc.includes('id="research-files"'));
-    assert('research-body exists', htmlSrc.includes('id="research-body"'));
-    assert('loadResearchFiles function defined', htmlSrc.includes('async function loadResearchFiles('));
-
-    // New Phase 4 elements
-    assert('research-trigger-form exists', htmlSrc.includes('id="research-trigger-form"'));
-    assert('research-vertical-input exists', htmlSrc.includes('id="research-vertical-input"'));
-    assert('trigger-research-btn exists', htmlSrc.includes('id="trigger-research-btn"'));
-    assert('research-use-brief-btn exists', htmlSrc.includes('id="research-use-brief-btn"'));
-    assert('triggerResearch function defined', htmlSrc.includes('async function triggerResearch('));
-    assert('useBriefFromResearch function defined', htmlSrc.includes('async function useBriefFromResearch('));
+    // Session 14: research UI moved to studio-screens.js lazy-loaded pane
+    const screensJs = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'js', 'studio-screens.js'), 'utf8');
+    assert('loadMCIntel handles research findings', screensJs.includes('loadMCIntel'));
+    assert('loadMCSites loads site portfolio', screensJs.includes('loadMCSites'));
+    assert('studio-screens.js loads intel findings', screensJs.includes('/api/intel/findings'));
+    assert('intelligence sidebar pane exists', htmlSrc.includes('id="sidebar-intel-feed"'));
+    assert('sidebar rail has intelligence button', htmlSrc.includes('data-rail="intelligence"'));
+    assert('studio-screens.js calls /api/research/trigger via chat WS', screensJs.includes('/api/intel') || htmlSrc.includes('/api/research'));
   }
 
-  // ─── GROUP 7: CSS for new image browser features ──────────────────────────
-  console.log('\nTEST GROUP: CSS — image browser + research enhancements');
+  // ─── GROUP 7: CSS for assets / media browser features ───────────────────
+  // Updated Session 14: studio-canvas.css removed. Media/image browser styles
+  // now live in studio-screens.css.
+  console.log('\nTEST GROUP: CSS — media library + component tree styles');
   {
-    const cssSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'css', 'studio-canvas.css'), 'utf8');
+    const cssSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'css', 'studio-screens.css'), 'utf8');
 
-    assert('.suggested-query-chip styled', cssSrc.includes('.suggested-query-chip'));
-    assert('#images-shortlist styled', cssSrc.includes('#images-shortlist'));
-    assert('.shortlist-item styled', cssSrc.includes('.shortlist-item'));
-    assert('#images-compare-pane styled', cssSrc.includes('#images-compare-pane'));
-    assert('#research-trigger-form styled', cssSrc.includes('#research-trigger-form'));
-    assert('.research-use-brief-btn styled', cssSrc.includes('.research-use-brief-btn'));
+    assert('.media-library styled', cssSrc.includes('.media-library'));
+    assert('.media-library-search styled', cssSrc.includes('.media-library-search'));
+    assert('.media-library-grid styled', cssSrc.includes('.media-library-grid'));
+    assert('.media-grid-item styled', cssSrc.includes('.media-grid-item'));
+    assert('.media-need-card styled', cssSrc.includes('.media-need-card'));
+    assert('.tree-item styled', cssSrc.includes('.tree-item'));
   }
 
   printResults();

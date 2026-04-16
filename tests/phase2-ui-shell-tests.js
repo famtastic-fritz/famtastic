@@ -219,68 +219,56 @@ async function runTests() {
     }
   }
 
-  // ─── GROUP 6: Canvas tab HTML structure ──────────────────────────────────
-  console.log('\nTEST GROUP: Canvas tab HTML structure');
+  // ─── GROUP 6: Canvas / workspace HTML structure (Session 14 new shell) ───
+  // Updated Session 14: old canvas-tab-bar/canvas-editable IDs replaced by
+  // #canvas-area + .ws-tab-pane pattern in the new three-column shell.
+  console.log('\nTEST GROUP: Canvas / workspace HTML structure');
   {
     const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'index.html'), 'utf8');
 
-    assert('canvas-tab-bar div exists', htmlSrc.includes('id="canvas-tab-bar"'));
-    assert('Preview tab exists', htmlSrc.includes("switchCanvasTab('preview')"));
-    assert('Editable View tab exists', htmlSrc.includes("switchCanvasTab('editable')"));
-    assert('Images tab exists', htmlSrc.includes("switchCanvasTab('images')"));
-    assert('canvas-editable pane exists', htmlSrc.includes('id="canvas-editable"'));
-    assert('editable-frame iframe exists', htmlSrc.includes('id="editable-frame"'));
-    assert('editable-toolbar div exists', htmlSrc.includes('id="editable-toolbar"'));
-    assert('highlight-toggle button exists', htmlSrc.includes('id="highlight-toggle"'));
-    assert('editable-field-count span exists', htmlSrc.includes('id="editable-field-count"'));
+    assert('#canvas-area exists', htmlSrc.includes('id="canvas-area"'));
+    assert('#tab-bar exists', htmlSrc.includes('id="tab-bar"'));
+    assert('tab-pane-chat exists', htmlSrc.includes('id="tab-pane-chat"'));
+    assert('tab-pane-preview exists', htmlSrc.includes('id="tab-pane-preview"'));
+    assert('tab-pane-assets exists', htmlSrc.includes('id="tab-pane-assets"'));
+    assert('preview-frame iframe exists', htmlSrc.includes('id="preview-frame"'));
+    assert('#toolbar exists', htmlSrc.includes('id="toolbar"'));
+    assert('#workspace exists', htmlSrc.includes('id="workspace"'));
+    assert('#activity-rail exists', htmlSrc.includes('id="activity-rail"'));
   }
 
-  // ─── GROUP 7: Editable view JS uses fetch, not WebSocket ─────────────────
-  console.log('\nTEST GROUP: Editable view save uses REST (fetch), not WebSocket');
+  // ─── GROUP 7: Studio JS modules loaded (Session 14 new module structure) ─
+  // Updated Session 14: functions moved from inline script to module JS files.
+  console.log('\nTEST GROUP: Studio JS modules and key functions');
   {
     const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio', 'public', 'index.html'), 'utf8');
 
-    assert('saveBtn calls fetch /api/content-field',
-      htmlSrc.includes("fetch('/api/content-field'"));
-    assert('fetch uses POST method',
-      htmlSrc.includes("method: 'POST'") && htmlSrc.includes('/api/content-field'));
-    assert('fetch sends field_id and new_value in body',
-      htmlSrc.includes('field_id: fieldId') && htmlSrc.includes('new_value: newValue'));
-    assert('fallback to sync-content-fields on 404',
-      htmlSrc.includes("fetch('/api/sync-content-fields'") || htmlSrc.includes('/api/sync-content-fields'));
-    assert('save does NOT send chat WebSocket for normal edits',
-      (() => {
-        // Extract the saveBtn.onclick function body
-        const saveBtnIdx = htmlSrc.indexOf('saveBtn.onclick = async');
-        const closingIdx = htmlSrc.indexOf('};', saveBtnIdx + 100);
-        const saveFn = htmlSrc.substring(saveBtnIdx, closingIdx + 2);
-        // The main path should not have ws.send(JSON.stringify({type:'chat'...
-        // (the fallback for text match does — that's ok — we check the primary path uses fetch)
-        return saveFn.includes("fetch('/api/content-field'");
-      })(), 'save button does not use fetch for /api/content-field');
-    assert('injectEditableOverlay function defined',
-      htmlSrc.includes('function injectEditableOverlay('));
-    assert('openFieldEditor function defined',
-      htmlSrc.includes('function openFieldEditor('));
-    assert('loadEditableView function defined',
-      htmlSrc.includes('async function loadEditableView('));
-    assert('reload is 600ms after save (not 2000ms)',
-      htmlSrc.includes('600'));
+    assert('studio-shell.js loaded', htmlSrc.includes('src="js/studio-shell.js"'));
+    assert('studio-orb.js loaded', htmlSrc.includes('src="js/studio-orb.js"'));
+    assert('studio-brief.js loaded', htmlSrc.includes('src="js/studio-brief.js"'));
+    assert('studio-screens.js loaded', htmlSrc.includes('src="js/studio-screens.js"'));
+    assert('brain-selector.js loaded', htmlSrc.includes('src="js/brain-selector.js"'));
+    assert('worker-queue-badge.js loaded', htmlSrc.includes('src="js/worker-queue-badge.js"'));
+    assert('addMessage function defined', htmlSrc.includes('function addMessage('));
+    assert('cancelBuild function defined', htmlSrc.includes('function cancelBuild('));
+    assert('rebuildSite function defined', htmlSrc.includes('function rebuildSite('));
+    assert('chat sends content key (not message)', htmlSrc.includes("type: 'chat', content:"));
   }
 
-  // ─── GROUP 8: studio-canvas.css exists and has editable styles ───────────
-  console.log('\nTEST GROUP: studio-canvas.css styles');
+  // ─── GROUP 8: studio-shell.css exists and has new canvas/tab styles ───────
+  // Updated Session 14: studio-canvas.css removed. Canvas/tab styles are now
+  // in studio-shell.css.
+  console.log('\nTEST GROUP: studio-shell.css canvas + tab styles');
   {
-    const cssPath = path.join(HUB_ROOT, 'site-studio', 'public', 'css', 'studio-canvas.css');
-    assert('studio-canvas.css exists', fs.existsSync(cssPath));
+    const cssPath = path.join(HUB_ROOT, 'site-studio', 'public', 'css', 'studio-shell.css');
+    assert('studio-shell.css exists', fs.existsSync(cssPath));
     if (fs.existsSync(cssPath)) {
       const css = fs.readFileSync(cssPath, 'utf8');
-      assert('canvas-tab-bar styled', css.includes('#canvas-tab-bar'));
-      assert('.canvas-tab styled', css.includes('.canvas-tab'));
-      assert('.canvas-tab-active styled', css.includes('.canvas-tab-active'));
-      assert('#canvas-editable styled', css.includes('#canvas-editable'));
-      assert('.field-edit-overlay styled', css.includes('.field-edit-overlay'));
-      assert('#editable-frame styled', css.includes('#editable-frame'));
+      assert('#canvas-area styled', css.includes('#canvas-area'));
+      assert('.ws-tab styled', css.includes('.ws-tab'));
+      assert('.ws-tab.active styled', css.includes('.ws-tab.active'));
+      assert('.ws-tab-pane styled', css.includes('.ws-tab-pane'));
+      assert('.ws-tab-pane.hidden styled', css.includes('.ws-tab-pane.hidden'));
     }
   }
 
