@@ -12,6 +12,7 @@ const db = require('./lib/db');
 const { studioEvents, STUDIO_EVENTS } = require('./lib/studio-events');
 const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
+const surgicalEditor = require('./lib/surgical-editor');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
 const { getOrCreateBrainSession, resetSessions: resetBrainSessions } = require('./lib/brain-sessions');
@@ -8433,6 +8434,24 @@ function runPostProcessing(ws, writtenPages, options = {}) {
 
   // Step 6: Fix layout overflow — ensures nav/footer stay viewport-width on all pages
   fixLayoutOverflow(ws);
+
+  // Step 7: Build structural index for surgical editor (zero-token, file-scan only)
+  // Stored in spec.structural_index[page] — used to route content_update intents
+  // without loading full HTML files, reducing surgical edit token cost ~90%.
+  try {
+    const spec = readSpec();
+    if (!spec.structural_index) spec.structural_index = {};
+    for (const page of writtenPages) {
+      const htmlPath = path.join(DIST_DIR(), page);
+      if (fs.existsSync(htmlPath)) {
+        const html = fs.readFileSync(htmlPath, 'utf8');
+        spec.structural_index[page] = surgicalEditor.buildStructuralIndex(html, page);
+      }
+    }
+    writeSpec(spec, { source: 'runPostProcessing:structural_index' });
+  } catch (e) {
+    console.warn('[surgical-editor] structural index update failed (non-fatal):', e.message);
+  }
 }
 
 // --- Build Verification System (Phase 1) ---
