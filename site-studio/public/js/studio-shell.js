@@ -83,9 +83,9 @@
   // --- Tab System ---
   function initTabs() {
     // Default tabs
+    // Preview tab removed — live preview is now a persistent strip below the canvas.
     tabs = [
       { id: 'chat',    label: 'Chat',    paneId: 'tab-pane-chat',    closeable: false },
-      { id: 'preview', label: 'Preview', paneId: 'tab-pane-preview', closeable: false },
       { id: 'brief',   label: 'Brief',   paneId: 'tab-pane-brief',   closeable: false },
       { id: 'assets',  label: 'Assets',  paneId: 'tab-pane-assets',  closeable: false },
       { id: 'deploy',  label: 'Deploy',  paneId: 'tab-pane-deploy',  closeable: false },
@@ -126,14 +126,13 @@
     if (!tab) return;
     // Update tab button active state
     document.querySelectorAll('.ws-tab').forEach(b => b.classList.toggle('active', b.dataset.tabId === tabId));
-    // Show/hide panes
-    document.querySelectorAll('.ws-tab-pane').forEach(p => p.classList.add('hidden'));
+    // Show/hide panes — only target panes inside canvas-tabs-area (live preview is outside)
+    const tabsArea = document.getElementById('canvas-tabs-area');
+    if (tabsArea) tabsArea.querySelectorAll('.ws-tab-pane').forEach(p => p.classList.add('hidden'));
     const pane = document.getElementById(tab.paneId);
     if (pane) pane.classList.remove('hidden');
     // Focus chat input when switching to chat tab
     if (tabId === 'chat') setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
-    // Trigger load hooks
-    if (tabId === 'preview') window.reloadPreview && window.reloadPreview();
     localStorage.setItem('active-tab', tabId);
   }
 
@@ -255,5 +254,28 @@
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); toggleSidebar(); }
     });
+
+    // Drag-resize: canvas-preview-resizer adjusts the live preview strip height
+    const resizer = document.getElementById('canvas-preview-resizer');
+    const preview = document.getElementById('canvas-live-preview');
+    if (resizer && preview) {
+      let startY = 0, startH = 0;
+      resizer.addEventListener('mousedown', e => {
+        startY = e.clientY;
+        startH = preview.offsetHeight;
+        document.body.style.userSelect = 'none';
+        const onMove = mv => {
+          const delta = startY - mv.clientY; // drag up = bigger preview
+          preview.style.height = Math.max(80, Math.min(600, startH + delta)) + 'px';
+        };
+        const onUp = () => {
+          document.body.style.userSelect = '';
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    }
   });
 })();

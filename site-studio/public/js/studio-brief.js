@@ -10,26 +10,63 @@
   var currentQuestion = null;
   var answers = {};
   var selectedChip = null;
+  var freshMode = false; // true when running a new-site interview disconnected from active site
+
+  // Static question definitions for fresh-mode (no server dependency)
+  var FRESH_QUESTIONS = [
+    {
+      question_id: 'q_business', current: 1, total: 6, required: true,
+      text: 'What is this site for? Describe the business in one sentence.',
+      suggestion_chips: [],
+    },
+    {
+      question_id: 'q_revenue', current: 2, total: 6, required: false,
+      text: 'How will this site make money?',
+      suggestion_chips: [
+        { label: 'Not sure yet', value: 'not_sure' },
+        { label: 'Registration / ticket fees', value: 'registration' },
+        { label: 'Lead generation', value: 'lead_generation' },
+        { label: 'Rank and rent', value: 'rank_and_rent' },
+        { label: 'Affiliate / ad revenue', value: 'affiliate' },
+        { label: 'E-commerce', value: 'ecommerce' },
+        { label: "I'll add monetization later", value: 'later' },
+      ],
+    },
+    {
+      question_id: 'q_customer', current: 3, total: 6, required: false,
+      text: 'Who is the ideal customer or visitor?',
+      suggestion_chips: [],
+    },
+    {
+      question_id: 'q_differentiator', current: 4, total: 6, required: false,
+      text: 'What sets this apart from competitors?',
+      suggestion_chips: [],
+    },
+    {
+      question_id: 'q_cta', current: 5, total: 6, required: false,
+      text: 'What is the one action you want visitors to take?',
+      suggestion_chips: [],
+    },
+    {
+      question_id: 'q_style', current: 6, total: 6, required: false,
+      text: 'Describe the visual style and tone. Reference anything — brands, places, feelings.',
+      suggestion_chips: [],
+    },
+  ];
 
   function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
-  function mount() {
-    var pane = document.getElementById('tab-pane-brief');
-    if (!pane) return;
-    fetch('/api/interview/status')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.completed) {
-          renderCompletedBrief(pane, data);
-        } else {
-          renderInterviewShell(pane);
-          startInterview();
-        }
-      })
-      .catch(function () { renderInterviewShell(pane); startInterview(); });
-  }
+  // mount() defined later (after mountFresh) to avoid hoisting conflicts
 
   function startInterview() {
+    if (freshMode) {
+      // Fresh mode: use local question set, no server dependency
+      var q = FRESH_QUESTIONS[0];
+      currentQuestion = q;
+      renderQuestion(q, 0);
+      updateBriefPanel();
+      return;
+    }
     fetch('/api/interview/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -45,7 +82,25 @@
 
   function submitAnswer(questionId, answer) {
     answers[questionId] = answer || '';
+    selectedChip = null;
     updateBriefPanel();
+
+    if (freshMode) {
+      // Advance locally through FRESH_QUESTIONS
+      var current = FRESH_QUESTIONS.find(function (q) { return q.question_id === questionId; });
+      var nextIdx = current ? FRESH_QUESTIONS.indexOf(current) + 1 : -1;
+      if (nextIdx >= 0 && nextIdx < FRESH_QUESTIONS.length) {
+        var next = FRESH_QUESTIONS[nextIdx];
+        currentQuestion = next;
+        renderQuestion(next, nextIdx);
+        updateBriefPanel();
+      } else {
+        // All questions answered — show completion in-pane (build button already visible)
+        updateBriefPanel();
+      }
+      return;
+    }
+
     fetch('/api/interview/answer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,7 +108,6 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        selectedChip = null;
         var q = data.nextQuestion || data.firstQuestion;
         if (q) { currentQuestion = q; renderQuestion(q, q.current - 1); updateBriefPanel(); }
         else if (data.completed || data.client_brief) { renderCompletedBrief(document.getElementById('tab-pane-brief'), data); }
@@ -304,7 +358,18 @@
     pane.appendChild(buildBtn);
   }
 
-  function buildFromBrief() {
+  function generateTagFromBusiness(text) {
+    var words = (text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .split(/\s+/)
+      .filter(function (w) { return w.length > 2; })
+      .slice(0, 3)
+      .join('-');
+    return 'site-' + (words || Date.now().toString(36));
+  }
+
+  function fireBuildMessage() {
     if (window.ws && window.ws.readyState === WebSocket.OPEN) {
       if (window.addMessage) window.addMessage('user', 'Build from brief');
       window.ws.send(JSON.stringify({ type: 'chat', content: 'Build from brief' }));
@@ -314,7 +379,79 @@
     }
   }
 
-  window.StudioBrief = { mount: mount };
+  function buildFromBrief() {
+    var currentTag = window.config && window.config.tag;
+    var isNewSiteContext = !currentTag || currentTag === '' || currentTag === 'undefined';
+
+    if (isNewSiteContext) {
+      // No site yet — auto-generate a slug and create the site first
+      var businessAnswer = answers['q_business'] || '';
+      var tag = generateTagFromBusiness(businessAnswer);
+
+      // Pass collected brief answers so server can pre-populate spec.client_brief
+      var clientBrief = {
+        business_description: answers['q_business'] || '',
+        revenue_model: answers['q_revenue'] || '',
+        ideal_customer: answers['q_customer'] || '',
+        differentiator: answers['q_differentiator'] || '',
+        primary_cta: answers['q_cta'] || '',
+        style_notes: answers['q_style'] || '',
+      };
+
+      fetch('/api/new-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Origin': window.location.origin },
+        body: JSON.stringify({ tag: tag, name: businessAnswer.slice(0, 60), client_brief: clientBrief }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.tag) {
+            if (window.switchSite) window.switchSite(data.tag);
+            setTimeout(fireBuildMessage, 1200); // wait for site switch to propagate
+          } else {
+            if (window.addMessage) window.addMessage('error', data.error || 'Could not create site');
+          }
+        })
+        .catch(function (e) { if (window.addMessage) window.addMessage('error', 'Error: ' + e.message); });
+      return;
+    }
+
+    fireBuildMessage();
+  }
+
+  function mountFresh() {
+    // Reset state for a brand-new interview (called when + New Site is clicked)
+    // Uses local FRESH_QUESTIONS — no server dependency, no active site needed
+    answers = {};
+    selectedChip = null;
+    interviewState = null;
+    currentQuestion = null;
+    freshMode = true;
+    var pane = document.getElementById('tab-pane-brief');
+    if (!pane) return;
+    renderInterviewShell(pane);
+    startInterview();
+  }
+
+  function mount() {
+    // Regular mount — tied to active site's interview state
+    freshMode = false;
+    var pane = document.getElementById('tab-pane-brief');
+    if (!pane) return;
+    fetch('/api/interview/status')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.completed) {
+          renderCompletedBrief(pane, data);
+        } else {
+          renderInterviewShell(pane);
+          startInterview();
+        }
+      })
+      .catch(function () { renderInterviewShell(pane); startInterview(); });
+  }
+
+  window.StudioBrief = { mount: mount, mountFresh: mountFresh };
 
   document.addEventListener('DOMContentLoaded', function () {
     // Mount brief tab on first click

@@ -3909,8 +3909,10 @@ app.post('/api/new-site', async (req, res) => {
     business_type: req.body.business_type || '',
     state: 'new',
     created_at: new Date().toISOString(),
-    interview_pending: autoInterviewEnabled === true,
-    interview_completed: false,
+    interview_pending: req.body.client_brief ? false : (autoInterviewEnabled === true),
+    interview_completed: req.body.client_brief ? true : false,
+    // If brief data provided at creation time (from Brief tab flow), pre-load it
+    ...(req.body.client_brief ? { client_brief: req.body.client_brief } : {}),
   };
   const _newSpecPath = path.join(newSiteDir, 'spec.json');
   fs.writeFileSync(_newSpecPath + '.tmp', JSON.stringify(spec, null, 2));

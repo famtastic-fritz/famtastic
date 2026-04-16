@@ -169,13 +169,13 @@
     }
   }
 
-  // ── Session-permanent dismiss ────────────────────────────────────────────
+  // ── Persistent dismiss (localStorage — survives page refresh) ─────────────
   function isDismissed(key) {
-    return !!sessionStorage.getItem(key);
+    return !!localStorage.getItem('pip-dismiss:' + key);
   }
 
   function dismiss(key) {
-    if (key) sessionStorage.setItem(key, '1');
+    if (key) localStorage.setItem('pip-dismiss:' + key, '1');
     closeCallout();
   }
 
