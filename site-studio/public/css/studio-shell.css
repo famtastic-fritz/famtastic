@@ -361,7 +361,7 @@ body {
 }
 
 .ws-tab-pane.hidden {
-  display: none;
+  display: none !important; /* overrides inline display:flex on chat/preview panes */
 }
 
 /* ============================================================

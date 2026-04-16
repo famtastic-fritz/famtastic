@@ -248,6 +248,9 @@
     if (savedMode) switchMode(savedMode);
     const savedTab = localStorage.getItem('active-tab');
     if (savedTab && tabs.find(t => t.id === savedTab)) switchTab(savedTab);
+    // Eagerly load the site tree so "Recent sites" populates without requiring
+    // the user to click the Sites rail button first
+    loadSiteTree();
     // Keyboard shortcut: Cmd/Ctrl+B toggles sidebar
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); toggleSidebar(); }
