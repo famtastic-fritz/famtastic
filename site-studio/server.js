@@ -149,7 +149,9 @@ function writeSpec(spec, options = {}) {
   _specCache = spec;
   _specCacheTag = TAG;
   fs.mkdirSync(SITE_DIR(), { recursive: true });
-  fs.writeFileSync(SPEC_FILE(), JSON.stringify(spec, null, 2));
+  const _specTmp = SPEC_FILE() + '.tmp';
+  fs.writeFileSync(_specTmp, JSON.stringify(spec, null, 2));
+  fs.renameSync(_specTmp, SPEC_FILE()); // atomic on POSIX — all-or-nothing, no corrupt mid-writes
 
   // Append to mutation log if mutation details provided
   if (mutationLevel && mutationTarget) {
@@ -3864,7 +3866,9 @@ app.post('/api/new-site', async (req, res) => {
     interview_pending: autoInterviewEnabled === true,
     interview_completed: false,
   };
-  fs.writeFileSync(path.join(newSiteDir, 'spec.json'), JSON.stringify(spec, null, 2));
+  const _newSpecPath = path.join(newSiteDir, 'spec.json');
+  fs.writeFileSync(_newSpecPath + '.tmp', JSON.stringify(spec, null, 2));
+  fs.renameSync(_newSpecPath + '.tmp', _newSpecPath); // atomic write
 
   // Switch to the new site — await so summary writes to the old site directory
   await endSession();
@@ -6697,6 +6701,20 @@ function detectEnhancementPasses(message) {
   return passes;
 }
 
+// --- Conversational Ack Response ---
+// Returns a contextual acknowledgment without any Claude API call.
+function getAckResponse(spec) {
+  const siteName = spec && spec.site_name ? spec.site_name : 'the site';
+  const hasBrief = !!(spec && spec.design_brief);
+  const pages = (spec && spec.pages) || [];
+  const suggestions = [];
+  if (!hasBrief) suggestions.push('start with a brief ("build a site for..."');
+  else if (pages.length === 0) suggestions.push('kick off the first build');
+  else suggestions.push(`refine ${siteName}`, 'add a page', 'deploy when ready');
+  const pick = suggestions[Math.floor(Math.random() * suggestions.length)];
+  return `Got it. Want to ${pick}?`;
+}
+
 // --- Request Classifier ---
 // Classifies user intent. Returns one of:
 // new_site, major_revision, restyle, layout_update, content_update, bug_fix,
@@ -6925,6 +6943,15 @@ function classifyRequest(message, spec) {
   // Layout update — structural changes to specific elements
   if (lower.match(/\b(add|remove|move|swap|rearrange|reorder)\s+(a\s+|the\s+)?(section|column|row|card|button|form|nav|header|footer|sidebar|testimonial|feature|grid)\b/)) return 'layout_update';
   if (lower.match(/\b(make\s+the\s+(header|footer|hero|nav|button|section)\s+\w+)\b/)) return 'layout_update';
+
+  // Conversational acknowledgment — zero-cost, no API call.
+  // Matches short affirmations that have no build intent. Must come before default fallback
+  // to prevent these from burning tokens on a full Claude generation call.
+  const ACK_PATTERNS = /^(ok|okay|yes|yep|sure|great|thanks|thank\s+you|looks\s+good|perfect|awesome|nice|got\s+it|sounds\s+good|agreed|cool|good|excellent|wonderful|fantastic|amazing|alright|sounds\s+great|that\s+works|love\s+it|keep\s+going|continue|proceed)[\s!.]*$/i;
+  if (ACK_PATTERNS.test(message.trim())) {
+    console.log(`[classifier] intent=conversational_ack (no API call)`);
+    return 'conversational_ack';
+  }
 
   // Default: use the least destructive path — content_update goes through surgical handler first
   // before falling through to Claude, so it won't trigger a full layout rebuild.
@@ -7575,6 +7602,10 @@ Return ONLY the JSON object. No preamble, no explanation.`;
 
 function routeToHandler(ws, requestType, userMessage, spec) {
   switch (requestType) {
+    case 'conversational_ack':
+      ws.send(JSON.stringify({ type: 'chat', role: 'assistant', message: getAckResponse(spec) }));
+      appendConvo({ role: 'assistant', content: '[ack]', intent: 'conversational_ack', at: new Date().toISOString() });
+      return;
     case 'layout_update':
     case 'content_update':
     case 'bug_fix':
@@ -7582,8 +7613,12 @@ function routeToHandler(ws, requestType, userMessage, spec) {
       break;
     case 'new_site':
     case 'major_revision':
-    case 'restyle':
       handlePlanning(ws, userMessage, spec);
+      break;
+    case 'restyle':
+      // Route restyle to handleChatMessage — the restyle mode instruction lives there.
+      // Previously routed to handlePlanning() (dead code branch) causing silent no-ops.
+      handleChatMessage(ws, userMessage, 'restyle', spec);
       break;
     case 'restructure':
     case 'build': {
@@ -9774,7 +9809,6 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
       modeInstruction = `The user asked for an ENHANCEMENT PASS on ${currentPage} — this is OPT-IN decorative polish. Do NOT rewrite any copy. Do NOT restructure sections or change the page hierarchy. Do NOT remove existing content. KEEP every word of the existing page exactly as written. Your job is to DECORATE the existing HTML by adding FAMtastic DNA (shapes, animations, icons, image slots, SVG dividers) as instructed below. Passes to run:\n${passBlocks.join('\n')}\n\nReturn the COMPLETE updated page as HTML_UPDATE: — not a diff.`;
       break;
     }
-    // Note: 'restyle' is routed to handlePlanning() by the WS router upstream — it never reaches handleChatMessage
     case 'build':
       if (isMultiPage) {
         // Parallel build — handled separately
@@ -11196,6 +11230,11 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'conversational_ack':
+          ws.send(JSON.stringify({ type: 'chat', role: 'assistant', message: getAckResponse(spec) }));
+          appendConvo({ role: 'assistant', content: '[ack]', intent: 'conversational_ack', at: new Date().toISOString() });
+          break;
+
         case 'brainstorm':
           currentMode = 'brainstorm';
           console.log(`[mode] Entered brainstorm mode`);
@@ -11343,8 +11382,10 @@ wss.on('connection', (ws) => {
 
         case 'new_site':
         case 'major_revision':
-        case 'restyle':
           handlePlanning(ws, userMessage, spec);
+          break;
+        case 'restyle':
+          handleChatMessage(ws, userMessage, 'restyle', spec);
           break;
 
         case 'deploy': {
