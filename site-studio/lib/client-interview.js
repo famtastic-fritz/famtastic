@@ -12,12 +12,36 @@
  *   skip     — immediate completion, empty brief
  */
 
+// Revenue model options surfaced as suggestion chips in the Studio UI
+const REVENUE_MODEL_OPTIONS = [
+  { value: 'not_sure', label: "Not sure yet" },
+  { value: 'reservations', label: "Reservations / ticket fees" },
+  { value: 'lead_gen', label: "Lead generation for a business" },
+  { value: 'rank_and_rent', label: "Rank and rent (lease to local business)" },
+  { value: 'affiliate', label: "Affiliate / ad revenue" },
+  { value: 'ecommerce', label: "E-commerce / products" },
+  { value: 'stub', label: "I'll add monetization later" },
+];
+
 const QUICK_QUESTIONS = [
   {
     id: 'q_business',
     text: 'In one or two sentences, what does your business do and who do you serve?',
     field: 'business_description',
     required: true,
+  },
+  {
+    id: 'q_revenue',
+    text: "How do you want this site to make money? (It's fine if you don't know yet — pick the closest option or describe it)",
+    field: 'revenue_model',
+    required: false,
+    suggestion_chips: REVENUE_MODEL_OPTIONS,
+    follow_up_map: {
+      rank_and_rent: 'What area and niche? (e.g. "plumber in Phoenix") — we will add a call tracking slot and lead form.',
+      reservations: 'What platform do you use for reservations? (OpenTable, Eventbrite, custom, etc.) — we will add the right integration slot.',
+      lead_gen: 'What business will receive these leads? What service? — we will wire the form to route leads to them.',
+      ecommerce: 'What are you selling and what is your price range? — we will add the right cart/checkout integration.',
+    },
   },
   {
     id: 'q_customer',
@@ -189,20 +213,108 @@ function buildClientBrief(state, questions) {
     }
   }
 
+  // Normalize revenue_model: default to 'stub' if not answered
+  if (!brief.revenue_model) {
+    brief.revenue_model = 'stub';
+    brief.revenue_ready = true; // architecture seeded, model not yet chosen
+  } else {
+    const model = brief.revenue_model.toLowerCase();
+    // Map common natural language to canonical values
+    if (model.includes('not sure') || model.includes('later') || model === 'stub') {
+      brief.revenue_model = 'stub';
+      brief.revenue_ready = true;
+    } else {
+      brief.revenue_ready = true;
+    }
+  }
+
   return brief;
+}
+
+/**
+ * Derive build-time additions based on the revenue model.
+ * Returns component hints and template instructions to inject into the build prompt.
+ *
+ * @param {string} revenueModel - canonical revenue model value
+ * @returns {{ components: string[], prompt_additions: string[], schema_hints: string[] }}
+ */
+function getRevenueBuildHints(revenueModel) {
+  const model = (revenueModel || 'stub').toLowerCase();
+
+  if (model === 'rank_and_rent' || model === 'lead_gen') {
+    return {
+      components: ['lead-capture-form', 'call-tracking-slot'],
+      prompt_additions: [
+        'Include a prominent lead capture form with fields: name, phone, service needed.',
+        'Add a call tracking number placeholder: <span class="call-tracking-number" data-field-id="cta-phone">[PHONE_NUMBER]</span>',
+        'Include LocalBusiness schema markup in the <head> with placeholders for name, address, phone, and service area.',
+        'CTA hierarchy: phone call > form submission > email. Put the phone number in the hero.',
+      ],
+      schema_hints: ['LocalBusiness', 'Service', 'ContactPoint'],
+    };
+  }
+
+  if (model === 'reservations') {
+    return {
+      components: ['reservation-widget-slot', 'event-inquiry-form'],
+      prompt_additions: [
+        'Include a reservation/booking widget slot: <div class="reservation-widget" data-field-id="booking-widget">[BOOKING_WIDGET]</div>',
+        'Add a private events inquiry form with fields: name, email, event date, party size, notes.',
+        'Include Event schema markup where applicable.',
+      ],
+      schema_hints: ['FoodEstablishment', 'Event', 'Reservation'],
+    };
+  }
+
+  if (model === 'ecommerce') {
+    return {
+      components: ['product-grid', 'cart-slot'],
+      prompt_additions: [
+        'Include a product showcase section with grid layout for products.',
+        'Add a cart/checkout integration slot: <div class="cart-widget" data-field-id="checkout-widget">[CART_WIDGET]</div>',
+        'Include Product schema markup with placeholders.',
+      ],
+      schema_hints: ['Product', 'Offer', 'ItemList'],
+    };
+  }
+
+  if (model === 'affiliate') {
+    return {
+      components: ['comparison-table', 'review-section'],
+      prompt_additions: [
+        'Include a clear comparison or review section to support affiliate content.',
+        'Add structured FAQ section for SEO visibility.',
+        'Include AEO-optimized content structure: clear headings, FAQ schema.',
+      ],
+      schema_hints: ['FAQPage', 'Review', 'ItemList'],
+    };
+  }
+
+  // stub / not_sure — seed the architecture without activating
+  return {
+    components: ['contact-form'],
+    prompt_additions: [
+      'Include a simple contact form (name, email, message) as the primary conversion point.',
+      'Structure the site for easy monetization upgrade later — use data-field-id on all CTAs.',
+    ],
+    schema_hints: ['Organization', 'WebSite'],
+  };
 }
 
 /**
  * Format a question definition for API response.
  */
 function formatQuestion(q, index, total) {
-  return {
+  const formatted = {
     question_id: q.id,
     text: q.text,
     required: q.required,
     current: index + 1,
     total,
   };
+  if (q.suggestion_chips) formatted.suggestion_chips = q.suggestion_chips;
+  if (q.follow_up_map) formatted.follow_up_map = q.follow_up_map;
+  return formatted;
 }
 
 /**
@@ -234,6 +346,8 @@ function shouldInterview(spec) {
 module.exports = {
   startInterview,
   recordAnswer,
+  getRevenueBuildHints,
+  REVENUE_MODEL_OPTIONS,
   buildClientBrief,
   getCurrentQuestion,
   shouldInterview,

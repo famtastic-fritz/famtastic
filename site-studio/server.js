@@ -7116,10 +7116,25 @@ function buildPromptContext(requestType, spec, userMessage) {
     if (cb.geography)            fields.push(`- Geography / service area: ${cb.geography}`);
     if (cb.urgency_hook)         fields.push(`- Urgency hook: ${cb.urgency_hook}`);
     if (cb.contact_methods)      fields.push(`- Contact methods: ${cb.contact_methods}`);
+    if (cb.revenue_model) fields.push(`- Revenue model: ${cb.revenue_model}`);
     if (fields.length > 0) {
       briefContext += `\n\nCLIENT BRIEF (from intake interview — these are the owner's own answers, treat as authoritative):\n` +
         fields.join('\n') +
         `\nUse these answers for real copy. Do not substitute generic placeholder text when the client has given you real content here.`;
+    }
+
+    // Revenue model build hints — inject architecture instructions based on monetization intent
+    const revenueModel = cb.revenue_model || spec.revenue_model || 'stub';
+    if (revenueModel && revenueModel !== 'stub') {
+      const { getRevenueBuildHints } = require('./lib/client-interview');
+      const hints = getRevenueBuildHints(revenueModel);
+      if (hints.prompt_additions && hints.prompt_additions.length > 0) {
+        briefContext += `\n\nREVENUE ARCHITECTURE (${revenueModel} model — build these in from the start):\n` +
+          hints.prompt_additions.map(h => `- ${h}`).join('\n');
+      }
+      if (hints.schema_hints && hints.schema_hints.length > 0) {
+        briefContext += `\n- Required schema markup types: ${hints.schema_hints.join(', ')}`;
+      }
     }
   }
 
