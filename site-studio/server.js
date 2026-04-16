@@ -7046,7 +7046,7 @@ function classifyRequest(message, spec) {
   // Conversational acknowledgment — zero-cost, no API call.
   // Matches short affirmations that have no build intent. Must come before default fallback
   // to prevent these from burning tokens on a full Claude generation call.
-  const ACK_PATTERNS = /^(ok|okay|yes|yep|sure|great|thanks|thank\s+you|looks\s+good|perfect|awesome|nice|got\s+it|sounds\s+good|agreed|cool|good|excellent|wonderful|fantastic|amazing|alright|sounds\s+great|that\s+works|love\s+it|keep\s+going|continue|proceed)[\s!.]*$/i;
+  const ACK_PATTERNS = /^(hello|hi|hey|howdy|hiya|greetings|sup|yo|ok|okay|yes|yep|sure|great|thanks|thank\s+you|looks\s+good|perfect|awesome|nice|got\s+it|sounds\s+good|agreed|cool|good|excellent|wonderful|fantastic|amazing|alright|sounds\s+great|that\s+works|love\s+it|keep\s+going|continue|proceed)[\s!.]*$/i;
   if (ACK_PATTERNS.test(message.trim())) {
     console.log(`[classifier] intent=conversational_ack (no API call)`);
     return 'conversational_ack';

@@ -11,8 +11,7 @@
 #assistant-col {
   width: 240px;
   min-width: 240px;
-  background: var(--fam-bg-2);
-  border-left: 1px solid var(--fam-border);
+  background: var(--fam-bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -135,11 +134,11 @@
 /* ── Chat / response area ───────────────────────────────────────────────── */
 
 #pip-chat-area {
-  border-top: 1px solid var(--fam-border);
+  border-top: 1px solid var(--fam-border-2);
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: var(--fam-bg-2);
+  background: var(--fam-bg);
 }
 
 #pip-response-area {

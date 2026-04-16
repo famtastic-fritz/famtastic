@@ -36,9 +36,9 @@
 <body>
   <!-- Banners (fixed, above layout) -->
   <div id="ws-disconnect-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:#fca5a5;text-align:center;padding:6px;font-size:11px;z-index:9100;">Disconnected from server &#x2014; reconnecting...</div>
-  <div id="restart-banner" class="hidden" style="position:fixed;top:0;left:0;right:0;background:#1c1917;color:#d6d3d1;text-align:center;padding:6px 12px;font-size:11px;z-index:9000;display:flex;align-items:center;justify-content:center;gap:8px;">
+  <div id="restart-banner" class="hidden" style="position:fixed;top:0;left:0;right:0;background:#1c1917;color:#d6d3d1;text-align:center;padding:6px 12px;font-size:11px;z-index:9000;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none;">
     <span id="restart-banner-msg"></span>
-    <button onclick="this.parentElement.classList.add('hidden')" style="margin-left:8px;opacity:0.6;background:none;border:none;color:inherit;cursor:pointer;">&#x2715;</button>
+    <button onclick="var b=this.parentElement;b.classList.add('hidden');b.style.pointerEvents='none';" style="margin-left:8px;opacity:0.6;background:none;border:none;color:inherit;cursor:pointer;">&#x2715;</button>
   </div>
   <div id="brain-fallback-bar" style="display:none;position:fixed;top:30px;left:50%;transform:translateX(-50%);background:var(--fam-bg-3);border:1px solid var(--fam-gold);border-radius:8px;padding:8px 14px;font-size:11px;color:var(--fam-gold);align-items:center;gap:8px;z-index:8998;">
     <span>&#x26A0;&#xFE0F;</span>
@@ -1196,6 +1196,7 @@
               var fileLabel = msg.file === 'index.html' ? 'Studio UI' : msg.file === 'server.js' ? 'Studio backend' : (msg.file || 'A Studio file');
               rMsg.textContent = fileLabel + ' changed \u2014 restart recommended';
               rBanner.classList.remove('hidden');
+              rBanner.style.pointerEvents = 'auto';
             }
             break;
           }

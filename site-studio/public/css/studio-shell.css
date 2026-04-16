@@ -785,10 +785,12 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  pointer-events: auto;
 }
 
 #restart-banner.hidden {
   display: none;
+  pointer-events: none;
 }
 
 #brain-fallback-bar {
