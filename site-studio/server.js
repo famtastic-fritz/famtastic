@@ -7663,6 +7663,7 @@ async function handlePlanning(ws, userMessage, spec) {
     return;
   }
   ws.send(JSON.stringify({ type: 'status', content: 'Analyzing your vision...' }));
+  emitPhase(ws, 'planning', 'active', 5);
 
   const existingBrief = spec.design_brief ? JSON.stringify(spec.design_brief, null, 2) : 'none';
 
@@ -7853,6 +7854,16 @@ Do NOT output any HTML or suggest code changes. This is pure ideation.`;
     ws.send(JSON.stringify({ type: 'brainstorm-actions' }));
     appendConvo({ role: 'assistant', content: response.trim(), intent: 'brainstorm', at: new Date().toISOString() });
   });
+}
+
+// --- Phase Update Emitter (Session 14) ---
+// Emits build pipeline phase progress to the new Studio UI.
+// Clients render this as a build phase card inline in the chat thread.
+function emitPhase(ws, phase, status, progress) {
+  if (!ws || ws.readyState !== 1) return;
+  try {
+    ws.send(JSON.stringify({ type: 'phase_update', phase, status, progress: progress || 0 }));
+  } catch (e) { /* non-fatal */ }
 }
 
 // --- Parallel Multi-Page Build ---
@@ -8204,6 +8215,7 @@ ${sharedRules}`;
   // Step 3 — Build ALL pages in true parallel, each receiving the template as context.
   // Fallback — If template build fails, fall back to legacy no-seed parallel build.
   ws.send(JSON.stringify({ type: 'status', content: 'Building design template (header, nav, footer, shared CSS)...' }));
+  emitPhase(ws, 'generating', 'active', 10);
 
   const templatePrompt = buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction);
   ws.currentChild = null;
@@ -9312,8 +9324,11 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   const elapsed = Math.round((Date.now() - startTime) / 1000);
 
   // Post-processing
+  emitPhase(ws, 'generating', 'done', 70);
   ws.send(JSON.stringify({ type: 'status', content: 'Post-processing...' }));
+  emitPhase(ws, 'post_processing', 'active', 75);
   runPostProcessing(ws, writtenPages, { isFullBuild: true });
+  emitPhase(ws, 'post_processing', 'done', 85);
 
   // Generate sitemap.xml and robots.txt
   ws.send(JSON.stringify({ type: 'status', content: 'Generating sitemap + robots.txt...' }));
@@ -9395,6 +9410,7 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   });
 
   // Run build verification
+  emitPhase(ws, 'verifying', 'active', 90);
   ws.send(JSON.stringify({ type: 'status', content: 'Verifying build...' }));
   let verification = runBuildVerification(writtenPages);
 
