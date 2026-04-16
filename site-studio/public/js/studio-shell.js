@@ -83,13 +83,15 @@
   // --- Tab System ---
   function initTabs() {
     // Default tabs
-    // Preview tab removed — live preview is now a persistent strip below the canvas.
+    // Brief/Assets/Deploy moved to sidebar nav — tab bar now only shows Chat.
     tabs = [
       { id: 'chat',    label: 'Chat',    paneId: 'tab-pane-chat',    closeable: false },
       { id: 'brief',   label: 'Brief',   paneId: 'tab-pane-brief',   closeable: false },
       { id: 'assets',  label: 'Assets',  paneId: 'tab-pane-assets',  closeable: false },
       { id: 'deploy',  label: 'Deploy',  paneId: 'tab-pane-deploy',  closeable: false },
     ];
+    // But only render Chat in the tab bar — others are accessible via sidebar
+    // (renderTabs is overridden below to skip non-chat tabs)
     renderTabs();
     switchTab('chat');
 
@@ -103,7 +105,10 @@
     const addBtn = document.getElementById('tab-add');
     // Remove all tab buttons (keep add button)
     bar.querySelectorAll('.ws-tab').forEach(b => b.remove());
-    tabs.forEach(tab => {
+    // Only render Chat + closeable dynamic tabs in the tab bar.
+    // Brief/Assets/Deploy are accessible via sidebar nav items.
+    const tabBarTabs = tabs.filter(t => t.id === 'chat' || t.closeable);
+    tabBarTabs.forEach(tab => {
       const btn = document.createElement('button');
       btn.className = 'ws-tab' + (tab.id === activeTabId ? ' active' : '');
       btn.dataset.tabId = tab.id;
@@ -117,6 +122,14 @@
       }
       btn.addEventListener('click', () => switchTab(tab.id));
       bar.insertBefore(btn, addBtn);
+    });
+    // Sync sidebar nav item active states
+    syncSidebarNavActive();
+  }
+
+  function syncSidebarNavActive() {
+    document.querySelectorAll('.sidebar-nav-item[data-tab]').forEach(el => {
+      el.classList.toggle('active', el.dataset.tab === activeTabId);
     });
   }
 
@@ -134,6 +147,7 @@
     // Focus chat input when switching to chat tab
     if (tabId === 'chat') setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
     localStorage.setItem('active-tab', tabId);
+    syncSidebarNavActive();
   }
 
   function addTab(label, paneId, options) {

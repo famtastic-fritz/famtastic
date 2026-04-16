@@ -73,7 +73,7 @@
 
     <!-- Sidebar -->
     <div id="sidebar">
-      <!-- Site pane -->
+      <!-- Site pane — always the primary sidebar view -->
       <div class="sidebar-pane" data-pane="site">
         <div class="sidebar-header">Sites</div>
         <!-- Site switcher -->
@@ -91,22 +91,40 @@
               </div>
               <div style="padding:6px 8px;border-top:1px solid var(--fam-border);">
                 <button id="new-site-btn" onclick="showNewSiteDialog()" style="width:100%;font-size:12px;font-weight:600;background:var(--fam-red);color:white;border:none;border-radius:5px;padding:7px 0;cursor:pointer;letter-spacing:0.02em;">+ New Site</button>
-                <!-- Hidden tag input shown when creating -->
-                <div id="new-site-form" style="display:none;margin-top:6px;display:none;">
-                  <input id="new-project-tag" type="text" placeholder="site-tag (e.g. altitude-bar)" style="width:100%;box-sizing:border-box;font-size:11px;background:var(--fam-bg);border:1px solid var(--fam-border);border-radius:4px;padding:5px 8px;color:var(--fam-text);outline:none;margin-bottom:4px;">
-                  <div style="display:flex;gap:4px;">
-                    <button onclick="createNewProject()" style="flex:1;font-size:11px;background:var(--fam-red);color:white;border:none;border-radius:4px;padding:5px 0;cursor:pointer;font-weight:600;">Create</button>
-                    <button onclick="hideNewSiteDialog()" style="font-size:11px;background:none;border:1px solid var(--fam-border);color:var(--fam-text-3);border-radius:4px;padding:5px 8px;cursor:pointer;">✕</button>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Pages -->
         <div class="sidebar-section-label">Pages</div>
         <div id="sidebar-pages-list"></div>
+
+        <!-- Navigation: Brief / Assets / Deploy / Settings -->
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">Workspace</div>
+
+        <div class="sidebar-nav-item" data-tab="brief" onclick="StudioShell.switchTab('brief')">
+          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><line x1="5" y1="5.5" x2="11" y2="5.5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="10.5" x2="8" y2="10.5"/></svg>
+          Brief
+        </div>
+        <div class="sidebar-nav-item" data-tab="assets" onclick="StudioShell.switchTab('assets')">
+          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1"/><polyline points="14 10 10.5 6.5 3 14"/></svg>
+          Assets
+        </div>
+        <div class="sidebar-nav-item" data-tab="deploy" onclick="StudioShell.switchTab('deploy')">
+          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="11 11 8 8 5 11"/><line x1="8" y1="8" x2="8" y2="14"/><path d="M13.5 12.5A5 5 0 002 10h-1a6 6 0 0012 2.5"/></svg>
+          Deploy
+        </div>
+        <div class="sidebar-nav-item" onclick="openSettings()">
+          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.5 3.5l1 1M11.5 11.5l1 1M3.5 12.5l1-1M11.5 4.5l1-1"/></svg>
+          Settings
+        </div>
+
+        <!-- Recent sites -->
+        <div class="sidebar-divider"></div>
         <div class="sidebar-section-label">Recent sites</div>
-        <div id="sidebar-site-list"></div>
+        <div id="sidebar-site-list" style="flex:1;overflow-y:auto;"></div>
       </div>
       <!-- Components pane -->
       <div class="sidebar-pane hidden" data-pane="components">
@@ -296,11 +314,27 @@
             <button onclick="setPreviewDevice('desktop')" id="preview-device-desktop" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;" class="active">Desktop</button>
             <button onclick="setPreviewDevice('mobile')" id="preview-device-mobile" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;">Mobile</button>
             <button onclick="toggleSlotMode()" id="slot-mode-btn" style="background:rgba(232,53,42,0.1);border:1px solid rgba(232,53,42,0.2);border-radius:4px;color:var(--fam-red);cursor:pointer;font-size:10px;padding:2px 6px;">Slots</button>
+            <button id="preview-toggle-btn" onclick="togglePreviewStrip()" style="background:none;border:1px solid var(--fam-border);border-radius:3px;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;margin-left:2px;" title="Toggle preview">Hide ▲</button>
           </div>
           <div style="flex:1;overflow:hidden;position:relative;">
             <iframe id="preview-frame" style="width:100%;height:100%;border:none;background:white;" title="Site preview"></iframe>
           </div>
         </div>
+      </div>
+
+      <!-- Environment bar — Local / Staging / Production -->
+      <div id="environment-bar">
+        <a id="env-local" class="env-item" href="http://localhost:3333" target="_blank" title="Open local preview">
+          <span class="env-dot env-local"></span>&#x1F310; Local &mdash; localhost:3333
+        </a>
+        <span class="env-sep">|</span>
+        <span id="env-staging" class="env-item" style="cursor:default;" title="Staging environment">
+          <span class="env-dot"></span>&#x1F4CB; Staging &mdash; not deployed
+        </span>
+        <span class="env-sep">|</span>
+        <span id="env-production" class="env-item" style="cursor:default;" title="Production environment">
+          <span class="env-dot"></span>&#x1F680; Production &mdash; not deployed
+        </span>
       </div>
 
       <!-- Toolbar (chat input area) -->
@@ -917,6 +951,72 @@
         }).catch(function() {});
     }
 
+    function togglePreviewStrip() {
+      var preview = document.getElementById('canvas-live-preview');
+      var resizer = document.getElementById('canvas-preview-resizer');
+      var btn = document.getElementById('preview-toggle-btn');
+      if (!preview) return;
+      var collapsed = preview.style.height === '0px' || preview.offsetHeight < 20;
+      if (collapsed) {
+        preview.style.height = '220px';
+        if (resizer) resizer.style.display = '';
+        if (btn) btn.textContent = 'Hide \u25b2';
+      } else {
+        preview.style.height = '0px';
+        if (resizer) resizer.style.display = 'none';
+        if (btn) btn.textContent = 'Show \u25bc';
+      }
+    }
+
+    function updateEnvironmentBar(spec) {
+      if (!spec) return;
+      var envs = spec.environments || {};
+
+      var stagingEl = document.getElementById('env-staging');
+      if (stagingEl) {
+        var stagingUrl = envs.staging && envs.staging.url;
+        while (stagingEl.firstChild) stagingEl.removeChild(stagingEl.firstChild);
+        var dot = document.createElement('span');
+        dot.className = 'env-dot' + (stagingUrl ? ' env-staging' : '');
+        stagingEl.appendChild(dot);
+        var label = document.createTextNode('\uD83D\uDCCB Staging \u2014 ');
+        stagingEl.appendChild(label);
+        if (stagingUrl) {
+          var a = document.createElement('a');
+          a.href = stagingUrl;
+          a.target = '_blank';
+          a.style.cssText = 'color:var(--fam-gold);text-decoration:none;';
+          a.textContent = stagingUrl.replace('https://', '');
+          stagingEl.appendChild(a);
+          stagingEl.style.cursor = 'default';
+        } else {
+          stagingEl.appendChild(document.createTextNode('not deployed'));
+        }
+      }
+
+      var prodEl = document.getElementById('env-production');
+      if (prodEl) {
+        var prodUrl = (envs.production && envs.production.url) || spec.deployed_url;
+        while (prodEl.firstChild) prodEl.removeChild(prodEl.firstChild);
+        var dot2 = document.createElement('span');
+        dot2.className = 'env-dot' + (prodUrl ? ' env-live' : '');
+        prodEl.appendChild(dot2);
+        prodEl.appendChild(document.createTextNode('\uD83D\uDE80 Production \u2014 '));
+        if (prodUrl) {
+          var a2 = document.createElement('a');
+          a2.href = prodUrl;
+          a2.target = '_blank';
+          a2.style.cssText = 'color:var(--fam-green);text-decoration:none;';
+          a2.textContent = prodUrl.replace('https://', '');
+          prodEl.appendChild(a2);
+          prodEl.classList.add('env-active');
+        } else {
+          prodEl.appendChild(document.createTextNode('not deployed'));
+          prodEl.classList.remove('env-active');
+        }
+      }
+    }
+
     function handleSiteSwitch(tag, pages, currentPage) {
       config.tag = tag;
       document.title = 'Site Studio \u2014 ' + tag;
@@ -927,6 +1027,8 @@
       if (pages) updatePageTabs(pages, currentPage);
       reloadPreview();
       loadPages();
+      // Update environment bar with deploy URLs
+      fetch('/api/studio-state').then(function(r) { return r.json(); }).then(updateEnvironmentBar).catch(function() {});
       // If this site has a pending interview, auto-open the Brief tab
       fetch('/api/interview/status')
         .then(function (r) { return r.json(); })
@@ -1462,6 +1564,8 @@
       // Load assets + pages
       refreshAssetBar();
       loadPages();
+      // Load environment bar URLs
+      fetch('/api/studio-state').then(function(r) { return r.json(); }).then(updateEnvironmentBar).catch(function() {});
 
       // Connect WebSocket
       connectWS();

@@ -170,6 +170,9 @@
   }
 
   // ── Persistent dismiss (localStorage — survives page refresh) ─────────────
+  var _suppressMessages = false;
+  var _suppressTimer = null;
+
   function isDismissed(key) {
     return !!localStorage.getItem('pip-dismiss:' + key);
   }
@@ -177,6 +180,12 @@
   function dismiss(key) {
     if (key) localStorage.setItem('pip-dismiss:' + key, '1');
     closeCallout();
+    // Suppress any follow-on message for 2 seconds (prevents validation
+    // plan or other triggers from immediately re-populating the column)
+    _suppressMessages = true;
+    if (_suppressTimer) clearTimeout(_suppressTimer);
+    _suppressTimer = setTimeout(function () { _suppressMessages = false; }, 2000);
+    console.log('[shay-shay] dismissed:', key, '— messages suppressed for 2s');
   }
 
   // ── Callout ──────────────────────────────────────────────────────────────
@@ -580,6 +589,7 @@
   // The original showMessage showed a floating callout near the orb.
   // Now messages go to the column response area so they're always visible.
   function showMessage(msg, actions) {
+    if (_suppressMessages) return; // suppress follow-on messages after dismiss
     showColumnResponse(msg, false);
     showColumnActions(actions || []);
     // Also ensure the orb is in active state
