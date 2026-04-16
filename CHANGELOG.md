@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-16 — Session 13: Trust debt fixes, surgical editor, revenue-first brief
+
+Three immediate trust debt fixes: `conversational_ack` classifier intent (short affirmations no longer burn API tokens), atomic `spec.json` writes via `.tmp` + `renameSync` (eliminates corruption risk at scale), and restyle intent routing corrected from dead code `handlePlanning()` to live `handleChatMessage()`. New `lib/surgical-editor.js` module (cheerio-based DOM surgery) builds a structural index after every build and enables ~90% token reduction on content edits when fully wired. Revenue model question added as second question in the client interview (before customer question), with `getRevenueBuildHints()` injecting revenue architecture instructions into every build prompt and `fam-hub site deal-memo <tag>` generating rank-and-rent deal memos. Phase 3 (FAMtastic.com build) deferred to an interactive Studio session. 53 new tests, ~1,236 cumulative.
+
 ## 2026-04-09 — Session 9 Phase 2: Anthropic SDK migration (all 8 spawnClaude call sites)
 
 Migrated all 8 `spawnClaude()` call sites in `site-studio/server.js` to the Anthropic SDK: CS1 `generateSessionSummary`, CS2 `POST /api/generate-image-prompt`, CS3 `handleDataModelPlanning`, CS4 `generatePlan`, CS5 `handlePlanning`, CS6 per-page parallel build, CS7 template build, CS8 `handleChatMessage` (streaming). Added `callSDK()` helper, `getAnthropicClient()` singleton, `spawnClaudeModel()` fallback, `runHaikuFallbackSDK()` silence-timer fallback, and `GET /api/telemetry/sdk-cost-summary` endpoint. `parallelBuild()` and `handleChatMessage()` are now `async`; per-page builds use `Promise.allSettled()`; each streaming path has AbortController + WS-close cancellation. `resetBrainSessions()` is now called on site switch. `spawnClaude()` is @deprecated and retained as emergency fallback only. 39/39 tests passing; cumulative 977/977.

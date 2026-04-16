@@ -3252,3 +3252,86 @@ during end-to-end verification.**
 - Two verification warnings (1 SEO + 1 other) on the last build, not
   investigated.
 - Gemini API key reported as leaked; Gemini brain unavailable.
+
+---
+
+## Session 13 — Trust Debt Fixes + Surgical Editor + Revenue-First Brief (2026-04-16)
+
+### Phase 0 — Three Trust Debt Fixes
+
+**conversational_ack intent:**
+- File: `site-studio/server.js` → `classifyRequest()`, `routeToHandler()`, main WS switch
+- Added `ACK_PATTERNS` regex matching short affirmations ("ok", "looks good", "thanks", etc.)
+- Returns `conversational_ack` intent — zero Claude API call, instant canned response
+- `getAckResponse(spec)` helper returns a contextual next-step suggestion
+- Both routing locations updated (routeToHandler + main WS switch)
+- **Standing rule:** Never route conversational affirmations to Claude. They are zero-value spend.
+
+**Atomic spec.json writes:**
+- File: `site-studio/server.js` → `writeSpec()`, new site creation path
+- `writeSpec()` now uses `.tmp` + `fs.renameSync()` (atomic on POSIX — all-or-nothing)
+- New site creation path also atomic
+- **Standing rule:** All state file writes must be atomic before scaling past 10 sites.
+
+**Restyle intent routing:**
+- File: `site-studio/server.js` → `routeToHandler()`, main WS switch (lines ~7618, ~11388)
+- Was: `case 'restyle': handlePlanning(ws, ...)` — silent no-op (dead code)
+- Now: `case 'restyle': handleChatMessage(ws, userMessage, 'restyle', spec)` — live
+- Stale dead-code comment removed
+- **Standing rule:** Silent failures destroy trust faster than error messages. Fix dead code paths before shipping new features in the same area.
+
+### Phase 1 — DOM-aware Surgical Editor
+
+**New module:** `site-studio/lib/surgical-editor.js`
+- `buildStructuralIndex(html, page)` → `{ page, sections[], fields[], slots[], built_at }`
+  - Scans `data-section-id`, `data-fam-section`, `data-field-id`, `data-slot-id` nodes
+  - Stored in `spec.structural_index[page]` after every build
+- `extractSection(html, selector)` → outer HTML of targeted node only (~80–150 tokens vs 600–1200 for full page)
+- `surgicalEdit(html, selector, newContent)` → full HTML with only targeted node replaced (cheerio DOM surgery)
+- `trySurgicalEdit(html, selector, newContent)` → null on selector miss (safe fallback)
+- All functions are pure — no side effects, no file I/O
+
+**Server wiring:**
+- `runPostProcessing()` Step 7 (new): calls `surgicalEditor.buildStructuralIndex()` after every build
+- Non-fatal (wrapped in try/catch) — structural index failure never blocks a build
+- Stored in `spec.structural_index[page]` — available for surgical edit routing
+
+**Known gap (Phase 1 continuation):**
+- `content_update` in `handleChatMessage` still sends full HTML to Claude. The wiring to use `extractSection` + `surgicalEdit` for matching sections is not yet done. The infrastructure is in place; the routing logic needs to be added.
+
+### Phase 2 — Revenue-first Brief Interview
+
+**client-interview.js changes:**
+- New `REVENUE_MODEL_OPTIONS` array (7 canonical models) exported
+- `q_revenue` question added as second question in quick and detailed modes (after `q_business`, before `q_customer`)
+  - Has `suggestion_chips` (rendered in Studio UI when UI upgrade ships)
+  - Has `follow_up_map` for model-specific follow-up questions
+- `formatQuestion()` now passes through `suggestion_chips` and `follow_up_map`
+- `buildClientBrief()` captures `revenue_model`, normalizes "not sure" → `stub`, sets `revenue_ready: true`
+- New `getRevenueBuildHints(model)` returns `{ components[], prompt_additions[], schema_hints[] }`
+  - `rank_and_rent` / `lead_gen`: lead form + call tracking slot + LocalBusiness schema
+  - `reservations`: booking widget + Event schema
+  - `ecommerce`: product grid + cart slot + Product schema
+  - `affiliate`: comparison table + FAQ + AEO structure
+  - `stub`: basic contact form
+
+**server.js changes:**
+- `buildPromptContext()` injects `REVENUE ARCHITECTURE` block into briefContext for non-stub models
+- Every build with a known revenue model gets architecture instructions from the start
+
+**fam-hub:**
+- `fam-hub site deal-memo <tag>` → generates `sites/<tag>/deal-memo.md`
+  - Contains: site info, revenue model, estimated lead volume, proposed monthly fee, basic terms
+
+### Known Gaps Updated (Session 13)
+
+**Closed:**
+- `conversational_ack` — short affirmations no longer trigger Claude API calls
+- `restyle` routing dead code — restyle intent now reaches its handler
+- `writeSpec()` non-atomic — spec.json writes are now atomic
+
+**Opened:**
+- Surgical editor routing not wired into `content_update` path yet (Phase 1 continuation)
+- Revenue model `suggestion_chips` not yet rendered in Studio UI (requires UI upgrade)
+- `deal-memo` geography field defaults to `[AREA]` placeholder when interview was skipped
+
