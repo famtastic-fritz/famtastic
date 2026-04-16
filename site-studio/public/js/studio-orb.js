@@ -60,18 +60,8 @@
     // Start idle pulse animation
     orb.classList.add('pip-idle');
 
-    // Trigger 1: welcome message on first session connect (fires once per session)
-    if (!isDismissed(TRIGGERS.welcome)) {
-      setTimeout(() => {
-        showMessage(
-          'Ready. I have context from your previous sessions on this site.',
-          [
-            { label: 'Show brief', action: () => { StudioShell?.switchTab('brief'); closeCallout(); } },
-            { label: 'Got it',  action: () => { dismiss(TRIGGERS.welcome); }, secondary: true },
-          ]
-        );
-      }, 2500);
-    }
+    // Trigger 1: welcome message — now only shows in the dynamic area placeholder,
+    // not auto-populating the response column. Column stays clean on load.
 
     // Trigger 4: idle + unsaved work (5 min)
     document.addEventListener('keydown', resetIdleTimer);
@@ -105,18 +95,12 @@
   }
 
   // ── Trigger: worker queue pending ───────────────────────────────────────
+  // Only updates the badge — does NOT auto-populate the column.
+  // Column is reserved for validation plan, Show Me, and explicit Shay-Shay responses.
   function onWorkerQueueUpdate(e) {
     const count = (e.detail && e.detail.count) || 0;
     setBadge(count);
-    if (count > 0 && !isDismissed(TRIGGERS.worker_queue)) {
-      showMessage(
-        count + ' task' + (count > 1 ? 's' : '') + ' pending in the worker queue. No worker is running — these need manual execution.',
-        [
-          { label: 'View queue', action: () => { window.StudioShell && StudioShell.switchRailItem('intelligence'); closeCallout(); } },
-          { label: 'Dismiss', action: () => dismiss(TRIGGERS.worker_queue), secondary: true },
-        ]
-      );
-    }
+    // No showMessage() — badge count communicates pending tasks without interrupting the column
   }
 
   // ── Trigger: build complete with low score ───────────────────────────────
@@ -771,10 +755,38 @@
     init();
   }
 
-  // ── Check for active validation plan after WS connects ───────────────────
-  // Fires 3s after session start so the WS welcome message lands first.
-  // If a validation plan exists, it takes over from the standard welcome.
-  window.addEventListener('pip:session-started', function () {
-    setTimeout(checkValidationPlan, 3000);
+  // ── Validation plan is shown in the dynamic area (todo list) via loadDynamicArea().
+  // The response column stays clean on load — no auto-prompt.
+  // Clicking a step in the todo list surfaces the step prompt in the response column.
+  // window.addEventListener('pip:session-started', ...) removed intentionally.
+
+  // ── Mode awareness — column adapts when Studio mode changes ──────────────
+  window.addEventListener('pip:mode-changed', function (e) {
+    var mode = e.detail && e.detail.mode;
+    if (!mode) return;
+    // Clear current column content before showing mode-specific content
+    var area = document.getElementById('pip-response-area');
+    var row  = document.getElementById('pip-action-row');
+    if (area) { while (area.firstChild) area.removeChild(area.firstChild); area.className = ''; }
+    if (row)  { while (row.firstChild) row.removeChild(row.firstChild); row.style.display = 'none'; }
+
+    if (mode === 'brainstorm') {
+      showMessage(
+        'Brainstorm mode. Describe what you\'re thinking and I\'ll help develop it.',
+        [{ label: 'Switch back to Build', action: function () {
+          if (window.StudioShell) StudioShell.switchMode('build');
+          closeCallout();
+        }, secondary: true }]
+      );
+    } else if (mode === 'review') {
+      showMessage(
+        'Review mode. I\'ll help you check this build and deploy when ready.',
+        [
+          { label: 'Run verify', action: function () { if (window.refreshVerification) refreshVerification(); closeCallout(); } },
+          { label: 'Deploy staging', action: function () { if (window.deployToStaging) deployToStaging(); closeCallout(); } },
+        ]
+      );
+    }
+    // Build mode — stay quiet, column shows placeholder
   });
 })();

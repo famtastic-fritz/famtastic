@@ -146,6 +146,12 @@
     if (pane) pane.classList.remove('hidden');
     // Focus chat input when switching to chat tab
     if (tabId === 'chat') setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
+    // Mount brief interview when switching to brief tab
+    if (tabId === 'brief') {
+      setTimeout(() => {
+        if (window.StudioBrief) StudioBrief.mount();
+      }, 60);
+    }
     localStorage.setItem('active-tab', tabId);
     syncSidebarNavActive();
   }
@@ -194,6 +200,7 @@
     document.body.className = document.body.className.replace(/mode-\w+/g, '').trim();
     document.body.classList.add('mode-' + mode);
     localStorage.setItem('active-mode', mode);
+    window.dispatchEvent(new CustomEvent('pip:mode-changed', { detail: { mode } }));
   }
 
   // --- Intelligence Feed ---

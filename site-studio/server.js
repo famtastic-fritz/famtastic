@@ -5278,6 +5278,13 @@ function classifyShayShayTier0(lower) {
   // Gap capture — "we need X", "I can't do X", "we're missing X"
   if (/\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower))
     return { intent: 'capture_gap' };
+  // Build request — "build me a site for X", "create a site for X", flexible word order
+  if (/\bbuild\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
+      /\bcreate\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
+      /\bmake\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
+      /\b(i\s+want|i\s+need)\b.{0,20}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
+      /\bnew\s+site\s+for\b/.test(lower))
+    return { intent: 'build_request' };
   return null;
 }
 
@@ -5332,6 +5339,16 @@ function handleShayShayTier0(tier0, message, context, manifest) {
       response: `Sounds like you're at a decision point on the ${topic}. Want to switch Studio to brainstorm mode? I can help you think through options before committing to a direction — no build until you're ready.`,
       action: 'suggest_brainstorm',
       topic,
+    };
+  }
+
+  if (tier0.intent === 'build_request') {
+    // Route the entire build request directly to Studio chat — the classifier
+    // will pick it up as new_site or build intent and handle the brief + build
+    return {
+      response: `Routing your build request to Studio. The brief interview will start automatically.`,
+      action: 'route_to_chat',
+      message: message, // full original message goes to Studio
     };
   }
 

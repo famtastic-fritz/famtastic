@@ -46,6 +46,19 @@
     <button onclick="document.getElementById('brain-fallback-bar').style.display='none'" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.6;">&#x2715;</button>
   </div>
 
+  <!-- Persistent Top Bar — site switcher, new site, restart -->
+  <div id="top-bar">
+    <div id="top-bar-logo">
+      <span class="logo-fam">FAM</span><span class="logo-tastic">tastic</span>
+    </div>
+    <div id="top-bar-site">
+      <button id="top-bar-site-btn" onclick="toggleProjectPicker()">loading&#x2026; &#x25BE;</button>
+      <!-- Project picker dropdown — shared with sidebar site switcher -->
+    </div>
+    <button class="top-bar-btn primary" onclick="showNewSiteDialog()">+ New Site</button>
+    <button class="top-bar-btn" onclick="restartServer()" title="Restart Studio server">&#x27F3; Restart</button>
+  </div>
+
   <!-- Studio App -->
   <div id="studio-app">
     <!-- Activity Rail -->
@@ -837,9 +850,20 @@
     // --- Site switcher ---
     var allProjects = [];
 
+    function restartServer() {
+      fetch('/api/restart', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Origin': window.location.origin } })
+        .then(function() { addMessage('assistant', 'Server restarting\u2026'); })
+        .catch(function() {});
+    }
+
     function toggleProjectPicker() {
       var picker = document.getElementById('project-picker');
       if (!picker) return;
+      // Reposition picker under the top-bar site button
+      var btn = document.getElementById('top-bar-site-btn');
+      if (btn && picker.parentElement !== btn.parentElement) {
+        btn.parentElement.appendChild(picker);
+      }
       if (picker.style.display === 'none' || !picker.style.display) {
         picker.style.display = 'flex';
         loadProjects();
@@ -1020,7 +1044,7 @@
     function handleSiteSwitch(tag, pages, currentPage) {
       config.tag = tag;
       document.title = 'Site Studio \u2014 ' + tag;
-      var siteTagEl = document.getElementById('site-tag');
+      var siteTagEl = document.getElementById('top-bar-site-btn') || document.getElementById('site-tag');
       if (siteTagEl) siteTagEl.textContent = tag + ' \u25be';
       var ctxSite = document.getElementById('ctx-site-tag');
       if (ctxSite) ctxSite.textContent = tag;
@@ -1537,7 +1561,7 @@
       } catch(e) {
         config = { tag: 'unknown', previewPort: 3333, studioPort: 3334 };
       }
-      var siteTagEl = document.getElementById('site-tag');
+      var siteTagEl = document.getElementById('top-bar-site-btn') || document.getElementById('site-tag');
       if (siteTagEl) siteTagEl.textContent = (config.tag || 'loading') + ' \u25be';
       document.title = 'Site Studio \u2014 ' + (config.tag || '...');
       var ctxSite = document.getElementById('ctx-site-tag');
