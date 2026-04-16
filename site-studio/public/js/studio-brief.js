@@ -125,21 +125,21 @@
     renderStepBar(stepBar, 0);
     pane.appendChild(stepBar);
 
+    // Full-width questions column — brief panel moved to Shay-Shay dynamic area
     var body = document.createElement('div');
-    body.className = 'brief-screen';
+    body.className = 'brief-screen brief-screen-fullwidth';
+    body.style.cssText = 'flex:1;overflow-y:auto;padding:24px;';
 
     var qCol = document.createElement('div');
     qCol.id = 'brief-questions-col';
     qCol.className = 'brief-questions';
+    qCol.style.cssText = 'max-width:560px;margin:0 auto;';
     body.appendChild(qCol);
 
-    var panel = document.createElement('div');
-    panel.id = 'brief-panel-col';
-    panel.className = 'brief-panel';
-    renderBriefPanel(panel);
-    body.appendChild(panel);
-
     pane.appendChild(body);
+
+    // Push initial brief state to Shay-Shay dynamic area
+    dispatchBriefUpdate();
   }
 
   function renderStepBar(container, activeIndex) {
@@ -211,8 +211,15 @@
   }
 
   function updateBriefPanel() {
-    var panel = document.getElementById('brief-panel-col');
-    if (panel) renderBriefPanel(panel);
+    // Brief panel is now in Shay-Shay dynamic area — dispatch event instead
+    dispatchBriefUpdate();
+  }
+
+  function dispatchBriefUpdate() {
+    var completionPct = Math.min(100, Math.round((Object.keys(answers).length / 6) * 100));
+    window.dispatchEvent(new CustomEvent('pip:brief-updated', {
+      detail: { answers: answers, completionPct: completionPct, freshMode: freshMode }
+    }));
   }
 
   function renderQuestion(q, stepIndex) {
@@ -451,7 +458,7 @@
       .catch(function () { renderInterviewShell(pane); startInterview(); });
   }
 
-  window.StudioBrief = { mount: mount, mountFresh: mountFresh };
+  window.StudioBrief = { mount: mount, mountFresh: mountFresh, getAnswers: function() { return answers; } };
 
   document.addEventListener('DOMContentLoaded', function () {
     // Mount brief tab on first click

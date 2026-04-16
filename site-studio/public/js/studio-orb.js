@@ -760,33 +760,122 @@
   // Clicking a step in the todo list surfaces the step prompt in the response column.
   // window.addEventListener('pip:session-started', ...) removed intentionally.
 
-  // ── Mode awareness — column adapts when Studio mode changes ──────────────
+  // ── Mode awareness — dynamic area adapts when mode changes ───────────────
   window.addEventListener('pip:mode-changed', function (e) {
     var mode = e.detail && e.detail.mode;
     if (!mode) return;
-    // Clear current column content before showing mode-specific content
-    var area = document.getElementById('pip-response-area');
-    var row  = document.getElementById('pip-action-row');
-    if (area) { while (area.firstChild) area.removeChild(area.firstChild); area.className = ''; }
-    if (row)  { while (row.firstChild) row.removeChild(row.firstChild); row.style.display = 'none'; }
+    if (mode === 'brainstorm') {
+      renderDynamicModeContent('brainstorm');
+    } else if (mode === 'review') {
+      renderDynamicModeContent('review');
+    } else {
+      // Build mode — return to default (validation plan or placeholder)
+      loadDynamicArea();
+    }
+  });
+
+  // ── Brief progress in dynamic area ───────────────────────────────────────
+  window.addEventListener('pip:brief-updated', function (e) {
+    var detail = e.detail || {};
+    renderBriefInDynamic(detail.answers || {}, detail.completionPct || 0);
+  });
+
+  function renderBriefInDynamic(answers, pct) {
+    var area = document.getElementById('pip-dynamic-area');
+    if (!area) return;
+    while (area.firstChild) area.removeChild(area.firstChild);
+
+    // Header
+    var hdr = document.createElement('div');
+    hdr.className = 'pip-dynamic-header';
+    hdr.textContent = 'Brief';
+    area.appendChild(hdr);
+
+    // Progress bar
+    var wrap = document.createElement('div');
+    wrap.className = 'pip-todo-progress';
+    var fill = document.createElement('div');
+    fill.className = 'pip-todo-progress-fill';
+    fill.style.width = pct + '%';
+    wrap.appendChild(fill);
+    area.appendChild(wrap);
+
+    var pctLbl = document.createElement('div');
+    pctLbl.style.cssText = 'font-size:10px;color:var(--fam-text-3);padding:2px 4px 8px;';
+    pctLbl.textContent = pct + '% complete';
+    area.appendChild(pctLbl);
+
+    // Answered fields
+    var fieldMap = { q_business: 'Business', q_revenue: 'Revenue', q_customer: 'Audience', q_differentiator: 'Edge', q_cta: 'CTA', q_style: 'Style' };
+    Object.keys(fieldMap).forEach(function (qId) {
+      var val = answers[qId];
+      if (!val) return;
+      var row = document.createElement('div');
+      row.style.cssText = 'padding:4px 6px;border-bottom:1px solid var(--fam-border-2);';
+      var lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--fam-text-3);';
+      lbl.textContent = fieldMap[qId];
+      row.appendChild(lbl);
+      var vEl = document.createElement('div');
+      vEl.style.cssText = 'font-size:11px;color:var(--fam-text);line-height:1.4;margin-top:1px;';
+      vEl.textContent = val.length > 60 ? val.slice(0, 60) + '\u2026' : val;
+      row.appendChild(vEl);
+      area.appendChild(row);
+    });
+
+    // Build button (unlocked at 60%)
+    if (pct >= 60) {
+      var buildBtn = document.createElement('button');
+      buildBtn.style.cssText = 'margin-top:10px;width:100%;padding:9px;background:var(--fam-red);color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;';
+      buildBtn.textContent = 'Build this site \u2192';
+      buildBtn.addEventListener('click', function () {
+        if (window.StudioBrief && StudioBrief.getAnswers) {
+          // Trigger build via brief module
+          var el = document.getElementById('brief-build-btn');
+          if (el) el.click();
+          else if (window.StudioShell) StudioShell.switchTab('brief');
+        }
+      });
+      area.appendChild(buildBtn);
+    }
+  }
+
+  function renderDynamicModeContent(mode) {
+    var area = document.getElementById('pip-dynamic-area');
+    if (!area) return;
+    while (area.firstChild) area.removeChild(area.firstChild);
+
+    var hdr = document.createElement('div');
+    hdr.className = 'pip-dynamic-header';
 
     if (mode === 'brainstorm') {
-      showMessage(
-        'Brainstorm mode. Describe what you\'re thinking and I\'ll help develop it.',
-        [{ label: 'Switch back to Build', action: function () {
-          if (window.StudioShell) StudioShell.switchMode('build');
-          closeCallout();
-        }, secondary: true }]
-      );
+      hdr.textContent = 'Brainstorm';
+      area.appendChild(hdr);
+      var hint = document.createElement('div');
+      hint.style.cssText = 'padding:8px 6px;font-size:11px;color:var(--fam-text-2);line-height:1.5;';
+      hint.textContent = 'Describe what you\'re thinking. Ideas are saved here as you go.';
+      area.appendChild(hint);
     } else if (mode === 'review') {
-      showMessage(
-        'Review mode. I\'ll help you check this build and deploy when ready.',
-        [
-          { label: 'Run verify', action: function () { if (window.refreshVerification) refreshVerification(); closeCallout(); } },
-          { label: 'Deploy staging', action: function () { if (window.deployToStaging) deployToStaging(); closeCallout(); } },
-        ]
-      );
+      hdr.textContent = 'Review';
+      area.appendChild(hdr);
+      // Load verification score
+      fetch('/api/verify').then(function (r) { return r.json(); }).then(function (data) {
+        var checks = data.checks || {};
+        var vals = Object.values(checks);
+        var passing = vals.filter(function (v) { return v === true || (v && v.passed); }).length;
+        var score = document.createElement('div');
+        score.style.cssText = 'padding:8px 6px;font-size:12px;color:var(--fam-text);';
+        score.textContent = 'FAMtastic Score: ' + passing + '/' + vals.length;
+        area.appendChild(score);
+        Object.entries(checks).forEach(function (pair) {
+          var name = pair[0], val = pair[1];
+          var row = document.createElement('div');
+          var ok = val === true || (val && val.passed);
+          row.style.cssText = 'padding:3px 6px;font-size:11px;color:' + (ok ? 'var(--fam-green)' : 'var(--fam-red)') + ';';
+          row.textContent = (ok ? '\u2713 ' : '\u2717 ') + name.replace(/_/g, ' ');
+          area.appendChild(row);
+        });
+      }).catch(function () {});
     }
-    // Build mode — stay quiet, column shows placeholder
-  });
+  }
 })();

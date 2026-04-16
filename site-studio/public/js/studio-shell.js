@@ -148,7 +148,15 @@
     // Mount brief interview when switching to brief tab
     if (tabId === 'brief') {
       setTimeout(() => {
-        if (window.StudioBrief) StudioBrief.mount();
+        if (window.StudioBrief) {
+          StudioBrief.mount();
+          // Sync current brief answers to Shay-Shay dynamic area
+          if (StudioBrief.getAnswers) {
+            const a = StudioBrief.getAnswers();
+            const pct = Math.min(100, Math.round((Object.keys(a).length / 6) * 100));
+            window.dispatchEvent(new CustomEvent('pip:brief-updated', { detail: { answers: a, completionPct: pct } }));
+          }
+        }
       }, 60);
     }
     localStorage.setItem('active-tab', tabId);

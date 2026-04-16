@@ -970,6 +970,17 @@
         }).catch(function() {});
     }
 
+    function initPreviewSplit() {
+      // Set preview to 60% of available canvas height on first load
+      var canvas = document.getElementById('canvas-area');
+      var preview = document.getElementById('canvas-live-preview');
+      if (!canvas || !preview) return;
+      var canvasH = canvas.offsetHeight;
+      if (canvasH > 100) {
+        preview.style.height = Math.round(canvasH * 0.60) + 'px';
+      }
+    }
+
     function togglePreviewStrip() {
       var preview = document.getElementById('canvas-live-preview');
       var resizer = document.getElementById('canvas-preview-resizer');
@@ -977,7 +988,10 @@
       if (!preview) return;
       var collapsed = preview.style.height === '0px' || preview.offsetHeight < 20;
       if (collapsed) {
-        preview.style.height = '220px';
+        // Restore to 60% of canvas
+        var canvas = document.getElementById('canvas-area');
+        var h = canvas ? Math.round(canvas.offsetHeight * 0.60) : 300;
+        preview.style.height = h + 'px';
         if (resizer) resizer.style.display = '';
         if (btn) btn.textContent = 'Hide \u25b2';
       } else {
@@ -1594,6 +1608,9 @@
 
       // Connect WebSocket
       connectWS();
+
+      // Set preview to 60% of canvas height after layout settles
+      setTimeout(initPreviewSplit, 200);
     }
 
     window.addEventListener('beforeunload', function(e) { if (hasUnsavedWork) e.preventDefault(); });

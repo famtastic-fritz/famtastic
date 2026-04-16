@@ -191,3 +191,235 @@
 .role-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; }
 .role-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; }
 .session-banner { background: rgba(232,53,42,0.08); border: 1px solid rgba(232,53,42,0.2); color: var(--fam-text-2); }
+
+/* ── Global Typography + Spacing Improvements ───────────────────────────── */
+
+/* Base font size increase for readability */
+body {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+/* Chat messages — more breathing room */
+#chat-messages {
+  padding: 16px !important;
+  gap: 12px !important;
+}
+
+.msg-user,
+.msg-assistant,
+.msg-status,
+.msg-error,
+.msg-brief,
+.msg-brainstorm,
+.msg-changes {
+  padding: 14px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  border-radius: 10px !important;
+}
+
+/* Sidebar — more vertical breathing room */
+.sidebar-item {
+  padding: 7px 14px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.sidebar-section-label {
+  padding: 14px 14px 5px !important;
+  font-size: 10px !important;
+  color: #666 !important;
+}
+
+.sidebar-nav-item {
+  padding: 9px 14px !important;
+  font-size: 13px !important;
+}
+
+/* Sidebar nav icons — bigger, better contrast */
+.sidebar-nav-icon {
+  width: 18px !important;
+  height: 18px !important;
+  opacity: 0.75 !important;
+}
+
+.sidebar-nav-item:hover .sidebar-nav-icon,
+.sidebar-nav-item.active .sidebar-nav-icon {
+  opacity: 1 !important;
+}
+
+/* Activity rail icons */
+.rail-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.rail-btn {
+  width: 40px !important;
+  height: 40px !important;
+  color: #888 !important;
+}
+
+.rail-btn:hover {
+  color: #ccc !important;
+}
+
+.rail-btn.active {
+  color: var(--fam-red) !important;
+}
+
+/* Workspace topbar */
+.mode-btn {
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+}
+
+/* Tool buttons */
+.tool-btn {
+  padding: 5px 12px !important;
+  font-size: 12px !important;
+}
+
+/* Chat input */
+#chat-input {
+  font-size: 14px !important;
+  padding: 10px 14px !important;
+  min-height: 42px !important;
+}
+
+#chat-send-btn {
+  font-size: 13px !important;
+  padding: 10px 18px !important;
+}
+
+/* Shay-Shay column — more padding */
+#pip-chat-area {
+  padding: 0 !important;
+}
+
+#pip-response-area {
+  padding: 12px !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+
+.pip-response-bubble {
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+
+#pip-dynamic-area {
+  padding: 0 !important;
+  font-size: 13px !important;
+}
+
+.pip-dynamic-header {
+  padding: 12px 14px 6px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #666 !important;
+}
+
+.pip-todo-item {
+  padding: 8px 14px !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  gap: 10px !important;
+}
+
+.pip-placeholder-text {
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: #555 !important;
+}
+
+/* Step bar — brief interview */
+.brief-step-indicator {
+  padding: 12px 16px !important;
+  gap: 6px !important;
+}
+
+.brief-step {
+  font-size: 12px !important;
+}
+
+/* Env bar */
+.env-item {
+  font-size: 11px !important;
+}
+
+/* Tab bar text */
+.ws-tab {
+  font-size: 13px !important;
+  padding: 8px 16px !important;
+}
+
+/* Context bar */
+#context-bar {
+  font-size: 12px !important;
+}
+
+/* Status bar */
+#status-bar {
+  font-size: 11px !important;
+}
+
+/* Section headers */
+.sidebar-header {
+  font-size: 10px !important;
+  padding: 12px 14px 8px !important;
+  color: #666 !important;
+}
+
+/* Top bar */
+#top-bar-logo {
+  font-size: 14px !important;
+}
+
+#top-bar-site-btn {
+  font-size: 12px !important;
+  padding: 5px 10px !important;
+}
+
+.top-bar-btn {
+  font-size: 12px !important;
+  padding: 5px 12px !important;
+}
+
+/* Color contrast improvements */
+.brief-question-text {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  color: var(--fam-text) !important;
+}
+
+.brief-question-num {
+  font-size: 12px !important;
+  color: #888 !important;
+  margin-bottom: 8px !important;
+}
+
+.brief-answer-input {
+  font-size: 14px !important;
+  padding: 12px 14px !important;
+  margin-top: 12px !important;
+}
+
+.brief-next-btn,
+.brief-skip-btn {
+  font-size: 13px !important;
+  padding: 10px 20px !important;
+}
+
+.brief-step.active {
+  color: var(--fam-red) !important;
+  font-weight: 700 !important;
+}
+
+.brief-step.done {
+  color: var(--fam-green) !important;
+}
