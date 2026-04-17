@@ -53,7 +53,19 @@
     </div>
     <div id="top-bar-site">
       <button id="top-bar-site-btn" onclick="toggleProjectPicker()">loading&#x2026; &#x25BE;</button>
-      <!-- Project picker dropdown — shared with sidebar site switcher -->
+      <!-- Project picker dropdown — positioned under this button -->
+      <div id="project-picker" style="display:none;position:absolute;top:36px;left:0;background:var(--fam-bg-2);border:1px solid var(--fam-border);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.8);z-index:9999;width:280px;max-height:400px;flex-direction:column;">
+        <div style="padding:8px;border-bottom:1px solid var(--fam-border);">
+          <input id="project-search" type="text" placeholder="Search sites..." oninput="filterProjects()" style="width:100%;font-size:12px;background:var(--fam-bg);border:1px solid var(--fam-border);border-radius:4px;padding:6px 8px;color:var(--fam-text);outline:none;">
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:6px;">
+          <div id="project-list"></div>
+          <div id="project-empty" style="display:none;font-size:11px;color:var(--fam-text-3);text-align:center;padding:12px;">No matches</div>
+        </div>
+        <div style="padding:6px 8px;border-top:1px solid var(--fam-border);">
+          <button id="new-site-btn" onclick="showNewSiteDialog()" style="width:100%;font-size:12px;font-weight:600;background:var(--fam-red);color:white;border:none;border-radius:5px;padding:7px 0;cursor:pointer;letter-spacing:0.02em;">+ New Site</button>
+        </div>
+      </div>
     </div>
     <button class="top-bar-btn primary" onclick="showNewSiteDialog()">+ New Site</button>
     <button class="top-bar-btn" onclick="restartServer()" title="Restart Studio server">&#x27F3; Restart</button>
@@ -89,24 +101,9 @@
       <!-- Site pane — always the primary sidebar view -->
       <div class="sidebar-pane" data-pane="site">
         <div class="sidebar-header">Sites</div>
-        <!-- Site switcher -->
+        <!-- Current site display (picker lives in top bar) -->
         <div style="padding:6px 8px;">
-          <div style="position:relative;">
-            <button onclick="toggleProjectPicker()" id="site-tag" style="width:100%;text-align:left;padding:5px 8px;font-size:11px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:5px;color:var(--fam-text);cursor:pointer;">loading... &#x25BE;</button>
-            <!-- Project picker dropdown -->
-            <div id="project-picker" style="display:none;position:absolute;top:100%;left:0;margin-top:2px;background:var(--fam-bg-2);border:1px solid var(--fam-border);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:200;width:260px;max-height:320px;flex-direction:column;">
-              <div style="padding:8px;border-bottom:1px solid var(--fam-border);">
-                <input id="project-search" type="text" placeholder="Search projects..." oninput="filterProjects()" style="width:100%;font-size:11px;background:var(--fam-bg);border:1px solid var(--fam-border);border-radius:4px;padding:5px 8px;color:var(--fam-text);outline:none;">
-              </div>
-              <div style="flex:1;overflow-y:auto;padding:6px;">
-                <div id="project-list"></div>
-                <div id="project-empty" style="display:none;font-size:11px;color:var(--fam-text-3);text-align:center;padding:12px;">No matches</div>
-              </div>
-              <div style="padding:6px 8px;border-top:1px solid var(--fam-border);">
-                <button id="new-site-btn" onclick="showNewSiteDialog()" style="width:100%;font-size:12px;font-weight:600;background:var(--fam-red);color:white;border:none;border-radius:5px;padding:7px 0;cursor:pointer;letter-spacing:0.02em;">+ New Site</button>
-              </div>
-            </div>
-          </div>
+          <button onclick="toggleProjectPicker()" id="site-tag" style="width:100%;text-align:left;padding:5px 8px;font-size:11px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:5px;color:var(--fam-text);cursor:pointer;">loading&#x2026; &#x25BE;</button>
         </div>
 
         <!-- Pages -->

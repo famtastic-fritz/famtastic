@@ -969,7 +969,8 @@ body {
   gap: 8px;
   flex-shrink: 0;
   z-index: 500;
-  overflow: hidden;
+  /* overflow must NOT be hidden — dropdown picker needs to extend below */
+  overflow: visible;
 }
 
 #top-bar-logo {
@@ -987,6 +988,7 @@ body {
   position: relative;
   flex: 1;
   min-width: 0;
+  z-index: 600; /* ensure dropdown clears other elements */
 }
 
 #top-bar-site-btn {
