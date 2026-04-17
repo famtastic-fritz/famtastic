@@ -6,12 +6,21 @@ const { execFileSync } = require('child_process');
 
 const MANIFEST_PATH = path.join(process.env.HOME, '.local', 'share', 'famtastic', 'capability-manifest.json');
 
-async function checkAnthropicKey() {
-  return !!(process.env.ANTHROPIC_API_KEY);
-}
-
-async function checkGeminiKey() {
-  return !!(process.env.GEMINI_API_KEY);
+// Resolve live API health from brain-verifier when it has probed already.
+// Env-var presence alone is misleading — a leaked/revoked key still has the
+// env var set but every call fails. Prefer real probe results.
+function resolveApiStatus(brainKey, envKey) {
+  try {
+    const verifier = require('./brain-verifier');
+    if (verifier && typeof verifier.getBrainStatus === 'function') {
+      const statuses = verifier.getBrainStatus();
+      const s = statuses && statuses[brainKey];
+      if (s && s.status === 'connected') return 'available';
+      if (s && s.status === 'failed') return 'broken';
+      // status === 'pending' — verifier hasn't run yet; fall through to env check
+    }
+  } catch { /* brain-verifier not loaded — fall through */ }
+  return process.env[envKey] ? 'available' : 'unavailable';
 }
 
 async function checkNetlify() {
@@ -22,21 +31,23 @@ async function checkNetlify() {
 }
 
 async function buildCapabilityManifest() {
-  const [anthropicKey, geminiKey, netlify] = await Promise.all([
-    checkAnthropicKey(),
-    checkGeminiKey(),
-    checkNetlify(),
-  ]);
+  const netlify = await checkNetlify();
+
+  const claudeStatus = resolveApiStatus('claude', 'ANTHROPIC_API_KEY');
+  const geminiStatus = resolveApiStatus('gemini', 'GEMINI_API_KEY');
+  const openaiStatus = resolveApiStatus('openai', 'OPENAI_API_KEY');
 
   const manifest = {
     version: '1.0',
     generated_at: new Date().toISOString(),
     capabilities: {
-      claude_api: anthropicKey ? 'available' : 'unavailable',
-      gemini_api: geminiKey ? 'available' : 'unavailable',
-      openai_api: process.env.OPENAI_API_KEY ? 'available' : 'unavailable',
+      claude_api: claudeStatus,
+      gemini_api: geminiStatus,
+      openai_api: openaiStatus,
       netlify: netlify ? 'available' : 'unavailable',
-      imagen: geminiKey ? 'available' : 'unavailable',
+      // Imagen piggybacks on the Gemini API — inherit its health so a leaked
+      // Gemini key doesn't falsely advertise imagen as working.
+      imagen: geminiStatus,
       pinecone: process.env.PINECONE_API_KEY ? 'available' : 'unavailable',
       surgical_editor: 'available',
       revenue_brief: 'available',

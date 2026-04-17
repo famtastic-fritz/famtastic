@@ -62,9 +62,6 @@
           <div id="project-list"></div>
           <div id="project-empty" style="display:none;font-size:11px;color:var(--fam-text-3);text-align:center;padding:12px;">No matches</div>
         </div>
-        <div style="padding:6px 8px;border-top:1px solid var(--fam-border);">
-          <button id="new-site-btn" onclick="showNewSiteDialog()" style="width:100%;font-size:12px;font-weight:600;background:var(--fam-red);color:white;border:none;border-radius:5px;padding:7px 0;cursor:pointer;letter-spacing:0.02em;">+ New Site</button>
-        </div>
       </div>
     </div>
     <button class="top-bar-btn primary" onclick="showNewSiteDialog()">+ New Site</button>
@@ -269,8 +266,6 @@
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
           <!-- Verify indicator -->
           <div id="verify-indicator" style="width:8px;height:8px;border-radius:50%;background:var(--fam-text-3);" title="Build verification"></div>
-          <!-- Rebuild button -->
-          <button onclick="rebuildSite()" style="font-size:11px;background:rgba(232,53,42,0.15);border:1px solid rgba(232,53,42,0.3);border-radius:5px;padding:4px 10px;color:var(--fam-red);cursor:pointer;">Rebuild</button>
         </div>
       </div>
 
@@ -336,8 +331,6 @@
           </div>
           <div id="tools-row">
             <div class="tools-group" data-mode="build">
-              <button class="tool-btn" onclick="StudioShell.switchTab('assets')">Assets</button>
-              <button class="tool-btn" onclick="StudioShell.switchTab('brief')">Brief</button>
               <button class="tool-btn primary" onclick="rebuildSite()">&#x21BA; Rebuild</button>
             </div>
             <div class="tools-group hidden" data-mode="review">
@@ -985,9 +978,14 @@
       // No-op — toggle approach, no splitting needed
     }
 
-    function expandPreviewIfHidden() {
-      // After a build completes, switch to preview mode to show the result
-      setViewMode('preview');
+    function expandPreviewIfHidden(opts) {
+      // Only auto-switch to preview after a full build completes. Chat edits
+      // reload the iframe via reloadPreview() but must not hijack the view —
+      // that was disrupting the chat flow on every surgical edit.
+      var forceBuild = opts && opts.isBuild;
+      if (forceBuild && _currentViewMode !== 'preview') {
+        setViewMode('preview');
+      }
     }
 
     function togglePreviewStrip() {
@@ -1189,11 +1187,207 @@
       }).catch(function() {});
     }
 
-    function refreshDeployInfo() {}
+    function refreshDeployInfo() {
+      var area = document.getElementById('deploy-status-area');
+      if (!area) return;
+      area.textContent = 'Loading deploy status\u2026';
+
+      var verifyP = fetch('/api/verify').then(function(r){ return r.json(); }).catch(function(){ return null; });
+      var stateP  = fetch('/api/studio-state').then(function(r){ return r.json(); }).catch(function(){ return null; });
+
+      Promise.all([verifyP, stateP]).then(function(results) {
+        var verify = results[0];
+        var state  = results[1];
+        var spec   = (state && state.spec) || {};
+        renderDeployPane(area, verify, spec);
+      });
+    }
+
+    function renderDeployPane(area, verify, spec) {
+      while (area.firstChild) area.removeChild(area.firstChild);
+
+      // --- FAMtastic Score + Pre-flight checks ---
+      var scoreWrap = document.createElement('div');
+      scoreWrap.style.cssText = 'margin-bottom:16px;padding:12px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:8px;';
+      var scoreTitle = document.createElement('div');
+      scoreTitle.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--fam-text-3);margin-bottom:8px;';
+      scoreTitle.textContent = 'FAMtastic Score';
+      scoreWrap.appendChild(scoreTitle);
+
+      var checks = (verify && Array.isArray(verify.checks)) ? verify.checks : [];
+      var passed = checks.filter(function(c){ return c.status === 'passed'; }).length;
+      var warned = checks.filter(function(c){ return c.status === 'warned'; }).length;
+      var failed = checks.filter(function(c){ return c.status === 'failed'; }).length;
+      var total = checks.length;
+
+      var scoreLine = document.createElement('div');
+      scoreLine.style.cssText = 'display:flex;align-items:baseline;gap:10px;margin-bottom:10px;';
+      var big = document.createElement('span');
+      big.style.cssText = 'font-size:24px;font-weight:700;color:' + (failed ? 'var(--fam-red)' : warned ? 'var(--fam-gold)' : 'var(--fam-green)') + ';';
+      big.textContent = total ? (passed + '/' + total) : '\u2014';
+      scoreLine.appendChild(big);
+      var sub = document.createElement('span');
+      sub.style.cssText = 'font-size:11px;color:var(--fam-text-3);';
+      sub.textContent = total ? (passed + ' passed, ' + warned + ' warned, ' + failed + ' failed') : 'Run a build to generate verification';
+      scoreLine.appendChild(sub);
+      scoreWrap.appendChild(scoreLine);
+
+      if (total) {
+        checks.forEach(function(c) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:12px;';
+          var icon = document.createElement('span');
+          var color = c.status === 'passed' ? 'var(--fam-green)'
+                    : c.status === 'warned' ? 'var(--fam-gold)'
+                    : c.status === 'failed' ? 'var(--fam-red)'
+                    : 'var(--fam-text-3)';
+          icon.style.cssText = 'color:' + color + ';font-weight:700;width:14px;flex-shrink:0;';
+          icon.textContent = c.status === 'passed' ? '\u2713'
+                           : c.status === 'warned' ? '\u26A0'
+                           : c.status === 'failed' ? '\u2717'
+                           : '\u2022';
+          row.appendChild(icon);
+          var name = document.createElement('span');
+          name.style.cssText = 'color:var(--fam-text);flex:1;';
+          name.textContent = (c.check || '').replace(/_/g, ' ').replace(/-/g, ' ');
+          row.appendChild(name);
+          if (c.issues && c.issues.length) {
+            var count = document.createElement('span');
+            count.style.cssText = 'font-size:10px;color:' + color + ';';
+            count.textContent = c.issues.length + ' issue' + (c.issues.length > 1 ? 's' : '');
+            row.appendChild(count);
+          }
+          scoreWrap.appendChild(row);
+
+          if (c.issues && c.issues.length && c.status !== 'passed') {
+            c.issues.forEach(function(issue) {
+              var detail = document.createElement('div');
+              detail.style.cssText = 'padding:2px 0 2px 22px;font-size:11px;color:var(--fam-text-2);line-height:1.4;';
+              detail.textContent = '\u2014 ' + issue;
+              scoreWrap.appendChild(detail);
+            });
+          }
+        });
+      }
+
+      var refreshBtn = document.createElement('button');
+      refreshBtn.style.cssText = 'margin-top:10px;font-size:11px;padding:4px 10px;background:var(--fam-bg);border:1px solid var(--fam-border);border-radius:4px;color:var(--fam-text-2);cursor:pointer;';
+      refreshBtn.textContent = '\u21BB Re-verify';
+      refreshBtn.addEventListener('click', function() {
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = 'Verifying\u2026';
+        fetch('/api/verify', { method: 'POST' }).then(function(r){ return r.json(); }).then(function() {
+          refreshDeployInfo();
+        }).catch(function() {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = '\u21BB Re-verify';
+        });
+      });
+      scoreWrap.appendChild(refreshBtn);
+      area.appendChild(scoreWrap);
+
+      // --- Environments ---
+      var envs = (spec && spec.environments) || {};
+      var envWrap = document.createElement('div');
+      envWrap.style.cssText = 'margin-bottom:16px;padding:12px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:8px;';
+      var envTitle = document.createElement('div');
+      envTitle.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--fam-text-3);margin-bottom:8px;';
+      envTitle.textContent = 'Environments';
+      envWrap.appendChild(envTitle);
+
+      [
+        { key: 'local', label: 'Local', url: 'http://localhost:3333', color: 'var(--fam-text-2)' },
+        { key: 'staging', label: 'Staging', url: (envs.staging && envs.staging.url) || null, color: 'var(--fam-gold)' },
+        { key: 'production', label: 'Production', url: (envs.production && envs.production.url) || spec.deployed_url || null, color: 'var(--fam-green)' },
+      ].forEach(function(env) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:4px 0;font-size:12px;';
+        var dot = document.createElement('span');
+        dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' + (env.url ? env.color : 'var(--fam-text-3)') + ';flex-shrink:0;';
+        row.appendChild(dot);
+        var label = document.createElement('span');
+        label.style.cssText = 'width:92px;color:var(--fam-text);';
+        label.textContent = env.label;
+        row.appendChild(label);
+        if (env.url) {
+          var a = document.createElement('a');
+          a.href = env.url; a.target = '_blank';
+          a.style.cssText = 'color:' + env.color + ';text-decoration:none;';
+          a.textContent = env.url.replace(/^https?:\/\//, '');
+          row.appendChild(a);
+        } else {
+          var placeholder = document.createElement('span');
+          placeholder.style.cssText = 'color:var(--fam-text-3);';
+          placeholder.textContent = 'not deployed';
+          row.appendChild(placeholder);
+        }
+        envWrap.appendChild(row);
+      });
+      area.appendChild(envWrap);
+
+      // --- Deploy actions ---
+      var actionsWrap = document.createElement('div');
+      actionsWrap.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;';
+      var stagingBtn = document.createElement('button');
+      stagingBtn.style.cssText = 'flex:1;padding:8px;font-size:12px;font-weight:600;background:rgba(127,119,221,0.15);border:1px solid rgba(127,119,221,0.3);border-radius:5px;color:var(--fam-purple);cursor:pointer;';
+      stagingBtn.textContent = '\u2192 Staging';
+      stagingBtn.addEventListener('click', deployToStaging);
+      actionsWrap.appendChild(stagingBtn);
+      var prodBtn = document.createElement('button');
+      prodBtn.style.cssText = 'flex:1;padding:8px;font-size:12px;font-weight:600;background:rgba(232,53,42,0.15);border:1px solid rgba(232,53,42,0.3);border-radius:5px;color:var(--fam-red);cursor:pointer;';
+      prodBtn.textContent = '\u2192 Production';
+      prodBtn.addEventListener('click', deployToProduction);
+      actionsWrap.appendChild(prodBtn);
+      area.appendChild(actionsWrap);
+
+      // --- Deploy history ---
+      var history = Array.isArray(spec.deploy_history) ? spec.deploy_history.slice().reverse().slice(0, 5) : [];
+      var histWrap = document.createElement('div');
+      histWrap.style.cssText = 'padding:12px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:8px;';
+      var histTitle = document.createElement('div');
+      histTitle.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--fam-text-3);margin-bottom:8px;';
+      histTitle.textContent = 'Recent deploys';
+      histWrap.appendChild(histTitle);
+      if (!history.length) {
+        var emptyHist = document.createElement('div');
+        emptyHist.style.cssText = 'font-size:12px;color:var(--fam-text-3);';
+        emptyHist.textContent = 'No deploys yet.';
+        histWrap.appendChild(emptyHist);
+      } else {
+        history.forEach(function(d) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:baseline;gap:8px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--fam-border-2);';
+          var when = document.createElement('span');
+          when.style.cssText = 'color:var(--fam-text-3);font-family:var(--font-mono, monospace);';
+          when.textContent = (d.deployed_at || '').replace('T', ' ').slice(0, 16);
+          row.appendChild(when);
+          var env = document.createElement('span');
+          env.style.cssText = 'color:var(--fam-text-2);text-transform:uppercase;letter-spacing:0.04em;width:64px;';
+          env.textContent = d.environment || '';
+          row.appendChild(env);
+          if (d.fam_score != null) {
+            var score = document.createElement('span');
+            score.style.cssText = 'color:var(--fam-text);';
+            score.textContent = 'score ' + d.fam_score;
+            row.appendChild(score);
+          }
+          if (d.url) {
+            var a = document.createElement('a');
+            a.href = d.url; a.target = '_blank';
+            a.style.cssText = 'color:var(--fam-green);text-decoration:none;margin-left:auto;';
+            a.textContent = d.url.replace(/^https?:\/\//, '').slice(0, 30);
+            row.appendChild(a);
+          }
+          histWrap.appendChild(row);
+        });
+      }
+      area.appendChild(histWrap);
+    }
+
     function refreshBlueprint() {}
     function refreshMetrics() {}
     function refreshServerInfo() {}
-    function renderVerifyResults(msg) { updateVerifyIndicator(msg); }
+    function renderVerifyResults(msg) { updateVerifyIndicator(msg); refreshDeployInfo(); }
 
     // --- Deploy ---
     function deployToStaging() {
@@ -1320,7 +1514,9 @@
             break;
           case 'reload-preview':
             hasUnsavedWork = false;
-            expandPreviewIfHidden(); // show preview after build
+            // Only force-show preview when the server tags the reload as a
+            // full build — surgical edits reload the iframe silently.
+            expandPreviewIfHidden({ isBuild: msg.isBuild === true });
             reloadPreview();
             refreshStudioPanel();
             break;

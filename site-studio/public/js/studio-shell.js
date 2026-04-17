@@ -159,6 +159,11 @@
         }
       }, 60);
     }
+    // Refresh deploy pane when switching to deploy tab — the static markup
+    // used to show all ✗ because nothing populated live check results.
+    if (tabId === 'deploy' && typeof window.refreshDeployInfo === 'function') {
+      setTimeout(window.refreshDeployInfo, 60);
+    }
     localStorage.setItem('active-tab', tabId);
     syncSidebarNavActive();
   }

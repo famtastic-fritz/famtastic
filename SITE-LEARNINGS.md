@@ -1,5 +1,62 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Platform audit fixes (2026-04-17)
+
+13 audit findings from `docs/platform-audit-report.md` closed in one sweep.
+See CHANGELOG.md entry for the full inventory. Notable takeaways:
+
+**C-01 — "fresh mode" detection must key off intent, not loaded state.**
+`buildFromBrief()` previously derived *is new-site context?* from
+`window.config.tag`, but `config.tag` is set on every page load regardless of
+whether the user is starting a new site or continuing one. The correct signal
+is the explicit `freshMode` closure flag that `mountFresh()` raises. Rule: any
+UI flow that forks on "new vs existing" must rely on an explicit state flag
+that the triggering action set — never on the presence of ambient load-time
+values.
+
+**C-02 — always install uncaughtException + unhandledRejection handlers on
+long-running Node servers.** One leaked promise rejection in a WS handler had
+been taking the whole Studio down. Handlers live in `server.js` just after
+the SIGINT/SIGTERM registrations so they're active before any route code
+executes.
+
+**H-04 — post-processing steps must be try/catched individually.** A throw
+in `extractAndRegisterSlots()` cascaded into skipping every downstream
+step, leaving `spec.media_specs` silently empty. Fix: wrap each step in
+`runPostProcessing()` so a single failure is logged and isolated. Pattern
+applies to every pipeline that runs multiple independent side-effects.
+
+**H-01/H-02 — stub functions are worse than missing ones.** `refreshDeployInfo()`
+was `function refreshDeployInfo() {}` — a silent no-op that let the deploy pane
+render static ✗ marks. Live functions fetch `/api/verify` + `/api/studio-state`
+and render real ✓/⚠/✗ per-check status, environment URLs, and deploy history.
+Rule: delete the stub or implement it; don't ship the empty function.
+
+**L-02 — env var presence is not API health.** `capability-manifest.js` used
+to report `gemini_api: 'available'` whenever `GEMINI_API_KEY` was set — even
+when the key was revoked and every call returned 403. Now the manifest asks
+`brain-verifier.getBrainStatus()` first and only falls back to env-var
+presence when the verifier hasn't probed yet. Startup also awaits
+`verifyAllAPIs()` before building the manifest so the first snapshot reflects
+real-world probe results.
+
+**M-06 — dedupe before injecting.** `ensureHeadDependencies()` now strips
+bare root-level `fam-motion.js` / `fam-scroll.js` references Claude
+occasionally emits, then injects the canonical `assets/js/…` versions. The
+two 404s per page load they produced had been a persistent console-noise
+issue for weeks.
+
+**Pre-existing test debt observed (not fixed by this audit):** phase2 UI
+shell (tab-pane-preview expectations, missing patch endpoints — 5 failures),
+phase3 multi-agent (sync scroll checkbox + others — 13 failures), phase4
+image-research (same tab-pane-preview assertions — 5 failures),
+session10-phase0 (file has a literal syntax error — unterminated string at
+line 50), session10-phase3 (interview state — 12 failures). These all
+pre-date the audit; verified via pre-fix test run. Out of scope but worth
+triaging in a dedicated pass.
+
+---
+
 ## Consolidation (2026-03-12)
 
 4 repos merged to 1: `~/famtastic/` (renamed from famtastic-agent-hub). Dead code deleted (~40%). Think-Tank CLIs and Platform's useful bits absorbed as `fam-hub idea` and `fam-hub admin` subcommands. Three repos archived: famtastic-platform, famtastic-think-tank, famtastic-dev-setup.

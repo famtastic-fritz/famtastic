@@ -2957,6 +2957,17 @@ function ensureHeadDependencies(ws) {
       html = html.replace(/<\/title>/i, `</title>\n    ${fontTags}`);
       changed = true;
     }
+
+    // Strip duplicate root-level script tags that Claude sometimes emits
+    // alongside our assets/js/ version — they 404 on every page load.
+    // Matches <script ... src="fam-motion.js"></script> (and fam-scroll.js)
+    // but leaves the correct assets/js/… reference intact.
+    const baredRe = /<script\b[^>]*\bsrc=["'](?:\.\/)?(fam-motion\.js|fam-scroll\.js)["'][^>]*><\/script>\s*/gi;
+    if (baredRe.test(html)) {
+      html = html.replace(baredRe, '');
+      changed = true;
+    }
+
     // Inject FAMtastic DNA tags (fam-shapes.css, fam-motion.js, fam-scroll.js, fam-hero.css)
     for (const asset of famAssets) {
       if (asset.optional && !fs.existsSync(asset.src)) continue;
@@ -3583,17 +3594,22 @@ function extractAndRegisterSlots(pages) {
   // Collect all slots from provided pages (or all pages if none specified)
   const pagesToScan = pages && pages.length > 0 ? pages : listPages();
   const allSlots = [];
+  let scannedCount = 0;
+  let missingCount = 0;
   for (const page of pagesToScan) {
     const filePath = path.join(distDir, page);
-    if (!fs.existsSync(filePath)) continue;
+    if (!fs.existsSync(filePath)) { missingCount++; continue; }
+    scannedCount++;
     const html = fs.readFileSync(filePath, 'utf8');
-    allSlots.push(...extractSlotsFromPage(html, page));
+    const pageSlots = extractSlotsFromPage(html, page);
+    allSlots.push(...pageSlots);
   }
 
   // Merge into media_specs — preserve status of existing slots (don't regress stock→empty)
   if (!spec.media_specs) spec.media_specs = [];
   const existingBySlotId = new Map(spec.media_specs.map(s => [s.slot_id, s]));
 
+  let addedCount = 0;
   for (const slot of allSlots) {
     const existing = existingBySlotId.get(slot.slot_id);
     if (existing) {
@@ -3605,18 +3621,26 @@ function extractAndRegisterSlots(pages) {
     } else {
       spec.media_specs.push(slot);
       existingBySlotId.set(slot.slot_id, slot);
+      addedCount++;
     }
   }
 
   // Remove specs for slots no longer in HTML (across scanned pages only)
   const scannedPages = new Set(pagesToScan);
   const currentSlotIds = new Set(allSlots.map(s => s.slot_id));
+  const before = spec.media_specs.length;
   spec.media_specs = spec.media_specs.filter(s =>
     !scannedPages.has(s.page) || currentSlotIds.has(s.slot_id)
   );
+  const removedCount = before - spec.media_specs.length;
 
   writeSpec(spec);
-  console.log(`[slots] Registered ${allSlots.length} slot(s) across ${pagesToScan.length} page(s)`);
+  console.log(`[slots] Registered ${allSlots.length} slot(s) across ${scannedCount} page(s) ` +
+    `(added=${addedCount}, removed=${removedCount}, missing_files=${missingCount}, total_specs=${spec.media_specs.length})`);
+  if (allSlots.length === 0 && scannedCount > 0) {
+    console.warn(`[slots] No slots found in ${scannedCount} scanned page(s). ` +
+      `Check that <img> tags emit data-slot-id/data-slot-role/data-slot-status.`);
+  }
   return allSlots.length;
 }
 
@@ -8769,11 +8793,21 @@ ${FOUNDATION_END}
 function runPostProcessing(ws, writtenPages, options = {}) {
   const { isFullBuild = false, sourcePage = null } = options;
 
-  // Step 1: Extract and register slots FIRST so mappings know about all slot IDs
-  extractAndRegisterSlots(writtenPages);
+  // Step 1: Extract and register slots FIRST so mappings know about all slot IDs.
+  // Wrapped defensively so a cheerio/FS hiccup can't silently skip every step
+  // downstream — the audit caught media_specs staying empty after a build.
+  try {
+    extractAndRegisterSlots(writtenPages);
+  } catch (e) {
+    console.error('[post-process] extractAndRegisterSlots failed:', e && e.stack || e);
+  }
 
   // Step 2: Reapply saved slot mappings (images survive rebuilds)
-  reapplySlotMappings(writtenPages);
+  try {
+    reapplySlotMappings(writtenPages);
+  } catch (e) {
+    console.error('[post-process] reapplySlotMappings failed:', e && e.stack || e);
+  }
 
   // Step 2.5: Sync content fields from generated HTML to spec (new fields only — spec is authoritative)
   syncContentFieldsFromHtml(writtenPages);
@@ -9881,7 +9915,7 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
 
   const msg = `Site built! ${writtenPages.length} pages in ${elapsed}s: ${writtenPages.join(', ')}${seoSummary}`;
   ws.send(JSON.stringify({ type: 'assistant', content: msg }));
-  ws.send(JSON.stringify({ type: 'reload-preview' }));
+  ws.send(JSON.stringify({ type: 'reload-preview', isBuild: true }));
   ws.send(JSON.stringify({ type: 'pages-updated', pages: writtenPages }));
   appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
   saveStudio();
@@ -13591,6 +13625,17 @@ async function gracefulShutdown() {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
+// Keep the server alive through unexpected errors. WebSocket handlers and
+// async chat/build flows occasionally surface rejections that would otherwise
+// crash the process — log loudly, never exit. Real crashes still produce a
+// stack trace so we can diagnose them from the console.
+process.on('uncaughtException', (err) => {
+  console.error('[fatal] uncaughtException:', err && err.stack || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[fatal] unhandledRejection:', reason && reason.stack || reason);
+});
+
 // --- Session cost & context tracking ---
 function calculateSessionCost(model, inputTokens, outputTokens) {
   const rates = {
@@ -13822,8 +13867,6 @@ if (require.main === module) {
     studioEvents.emit(STUDIO_EVENTS.SESSION_STARTED, { tag: TAG });
 
     // Verify all API connections on startup
-    verifyAllAPIs().catch(e => console.error('[brain-verifier] Startup verification failed:', e.message));
-
     // Session 12 Phase 1 (I2): surface pending intelligence review on startup
     try { checkPendingReview(); } catch {}
 
@@ -13831,14 +13874,20 @@ if (require.main === module) {
     // so the pending badge reflects real work instead of phantoms from weeks ago.
     try { cleanWorkerQueueOnStartup(); } catch {}
 
-    // Session 16: build capability manifest on startup so Shay-Shay knows what's working
-    buildCapabilityManifest().then(manifest => {
-      const unavailable = Object.entries(manifest.capabilities)
-        .filter(([, v]) => v === 'unavailable')
-        .map(([k]) => k);
-      if (unavailable.length > 0) {
-        console.log(`[capability-manifest] unavailable: ${unavailable.join(', ')}`);
-      }
-    }).catch(e => console.warn('[capability-manifest] startup check failed:', e.message));
+    // Verify brains first, THEN build the capability manifest so it reflects
+    // real API health instead of mere env-var presence — a leaked/revoked key
+    // used to show as "Working" in Shay-Shay's system-status reply.
+    verifyAllAPIs()
+      .catch(e => { console.error('[brain-verifier] Startup verification failed:', e.message); })
+      .then(() => {
+        buildCapabilityManifest().then(manifest => {
+          const broken = Object.entries(manifest.capabilities)
+            .filter(([, v]) => v === 'broken').map(([k]) => k);
+          const unavailable = Object.entries(manifest.capabilities)
+            .filter(([, v]) => v === 'unavailable').map(([k]) => k);
+          if (broken.length > 0) console.log(`[capability-manifest] broken: ${broken.join(', ')}`);
+          if (unavailable.length > 0) console.log(`[capability-manifest] unavailable: ${unavailable.join(', ')}`);
+        }).catch(e => console.warn('[capability-manifest] startup check failed:', e.message));
+      });
   });
 }

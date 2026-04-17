@@ -136,10 +136,44 @@
     qCol.style.cssText = 'max-width:560px;margin:0 auto;';
     body.appendChild(qCol);
 
+    // Canvas-side build zone — mirrors the Shay-Shay build affordance so the
+    // user doesn't have to hunt for the button in the right column. Appears
+    // once the brief reaches 60% completion.
+    var buildZone = document.createElement('div');
+    buildZone.id = 'brief-canvas-build-zone';
+    buildZone.style.cssText = 'max-width:560px;margin:16px auto 0;display:none;';
+    var buildBtn = document.createElement('button');
+    buildBtn.id = 'brief-canvas-build-btn';
+    buildBtn.type = 'button';
+    buildBtn.className = 'brief-build-btn';
+    buildBtn.textContent = 'Build this site \u2192';
+    buildBtn.addEventListener('click', buildFromBrief);
+    buildZone.appendChild(buildBtn);
+    var buildHint = document.createElement('div');
+    buildHint.id = 'brief-canvas-build-hint';
+    buildHint.style.cssText = 'margin-top:6px;font-size:11px;color:var(--fam-text-3);text-align:center;';
+    buildHint.textContent = '';
+    buildZone.appendChild(buildHint);
+    body.appendChild(buildZone);
+
     pane.appendChild(body);
 
     // Push initial brief state to Shay-Shay dynamic area
     dispatchBriefUpdate();
+    updateCanvasBuildZone();
+  }
+
+  function updateCanvasBuildZone() {
+    var zone = document.getElementById('brief-canvas-build-zone');
+    if (!zone) return;
+    var completionPct = Math.min(100, Math.round((Object.keys(answers).length / 6) * 100));
+    if (completionPct >= 60) {
+      zone.style.display = 'block';
+      var hint = document.getElementById('brief-canvas-build-hint');
+      if (hint) hint.textContent = completionPct + '% complete — ready to build';
+    } else {
+      zone.style.display = 'none';
+    }
   }
 
   function renderStepBar(container, activeIndex) {
@@ -213,6 +247,8 @@
   function updateBriefPanel() {
     // Brief panel is now in Shay-Shay dynamic area — dispatch event instead
     dispatchBriefUpdate();
+    // Canvas-side build zone mirrors completion state
+    updateCanvasBuildZone();
   }
 
   function dispatchBriefUpdate() {
@@ -258,7 +294,13 @@
           btn.classList.add('selected');
           selectedChip = chip.value;
           var inp = block.querySelector('.brief-answer-input');
-          if (inp) inp.value = chip.label;
+          if (inp) {
+            inp.value = chip.label;
+            // Programmatic .value assignment doesn't fire input/change events.
+            // Dispatch manually so any dependent listeners pick up the change
+            // and automation can drive the flow reliably.
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+          }
         });
         chips.appendChild(btn);
       });
@@ -387,8 +429,10 @@
   }
 
   function buildFromBrief() {
-    var currentTag = window.config && window.config.tag;
-    var isNewSiteContext = !currentTag || currentTag === '' || currentTag === 'undefined';
+    // Fresh mode = building a brand-new site from the brief, even when another
+    // site is currently active. Without this, config.tag is always truthy for
+    // any loaded page, so new-site builds would fire at the active site.
+    var isNewSiteContext = freshMode;
 
     if (isNewSiteContext) {
       // No site yet — auto-generate a slug and create the site first
@@ -458,7 +502,23 @@
       .catch(function () { renderInterviewShell(pane); startInterview(); });
   }
 
-  window.StudioBrief = { mount: mount, mountFresh: mountFresh, getAnswers: function() { return answers; } };
+  function resetState() {
+    answers = {};
+    selectedChip = null;
+    interviewState = null;
+    currentQuestion = null;
+    freshMode = false;
+  }
+
+  window.StudioBrief = { mount: mount, mountFresh: mountFresh, getAnswers: function() { return answers; }, reset: resetState };
+
+  // Switching sites must fully reset the brief: previously Mario's Pizza
+  // answers leaked across into another site because the closure held state.
+  window.addEventListener('studio:site-changed', function () {
+    resetState();
+    var pane = document.getElementById('tab-pane-brief');
+    if (pane) clearEl(pane);
+  });
 
   document.addEventListener('DOMContentLoaded', function () {
     // Mount brief tab on first click
