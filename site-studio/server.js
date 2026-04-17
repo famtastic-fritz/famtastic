@@ -208,6 +208,7 @@ const BRAIN_LIMITS = {
 };
 const sessionBrainCounts = { claude: 0, codex: 0, gemini: 0, openai: 0 };
 let buildInProgress = false;
+let autonomousBuildActive = false; // bypass plan gate for Shay-Shay autonomous builds
 let buildLockTimer = null;
 let buildOwnerWs = null;       // the WS connection that started the current build
 let currentBuildRunId = null;  // stable ID for the current build run
@@ -5219,8 +5220,18 @@ app.post('/api/shay-shay', async (req, res) => {
 
     // Tier 0: deterministic commands — no AI needed
     const lower = message.toLowerCase().trim();
-    const tier0 = classifyShayShayTier0(lower);
+    const tier0 = classifyShayShayTier0(lower, context);
     if (tier0) {
+      // autonomous_build is async — handle separately
+      if (tier0.intent === 'autonomous_build') {
+        suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'autonomous_build', source: 'shay-shay-t0' });
+        const buildResult = await runAutonomousBuild(message, context);
+        return res.json({
+          action: 'autonomous_build',
+          response: buildResult.message || (buildResult.error ? `Build failed: ${buildResult.error}` : 'Build initiated'),
+          ...buildResult,
+        });
+      }
       const result = handleShayShayTier0(tier0, message, context, manifest);
       suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });
       return res.json(result);
@@ -5285,7 +5296,7 @@ app.post('/api/shay-shay/outcome', (req, res) => {
   }
 });
 
-function classifyShayShayTier0(lower) {
+function classifyShayShayTier0(lower, context = {}) {
   if (/\b(restart\s+studio|reboot\s+studio|reset\s+server)\b/.test(lower))
     return { intent: 'studio_command', command: 'restart' };
   if (/\b(clear\s+cache|purge\s+cache)\b/.test(lower))
@@ -5302,6 +5313,10 @@ function classifyShayShayTier0(lower) {
   // Gap capture — "we need X", "I can't do X", "we're missing X"
   if (/\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower))
     return { intent: 'capture_gap' };
+  // Autonomous build — explicitly requests full autonomous pipeline
+  if (/\b(autonomous|auto.?build|build\s+autonomously|shay.?shay\s+build)\b/.test(lower) ||
+      (context && context.autonomous === true))
+    return { intent: 'autonomous_build' };
   // Build request — "build me a site for X", "create a site for X", flexible word order
   if (/\bbuild\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
       /\bcreate\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
@@ -5398,6 +5413,351 @@ function handleShayShayTier0(tier0, message, context, manifest) {
 
   return { response: 'Command noted.', action: null };
 }
+
+// ── Autonomous Build Pipeline ─────────────────────────────────────────────
+// Shay-Shay can drive a complete site build from brief text, without the browser.
+// Fritz watches via the UI; Shay-Shay drives via the API and WS broadcast.
+
+function extractBriefPatternBased(text) {
+  const lower = text.toLowerCase();
+
+  // Business name — multiple strategies, most specific first
+  let businessName = '';
+  // "called Mario's Pizza"
+  const calledMatch = text.match(/called\s+["']?([A-Z][^"',.\n]{2,50})["']?/i);
+  if (calledMatch) businessName = calledMatch[1].trim().replace(/[,.].*$/, '').trim();
+  // Quoted name
+  if (!businessName) {
+    const quotedMatch = text.match(/["']([A-Z][^"']{3,50})["']/);
+    if (quotedMatch) businessName = quotedMatch[1].trim();
+  }
+  // "for X" where X is a proper noun sequence (1-3 capitalized words before lowercase)
+  if (!businessName) {
+    const forMatch = text.match(/\bfor\s+(?:a\s+)?([A-Z][a-zA-Z']+(?:\s+[A-Z][a-zA-Z']+){0,3})/);
+    if (forMatch) {
+      // Trim trailing connectors and lowercase context words
+      businessName = forMatch[1].trim()
+        .replace(/\s+(?:in|at|near|a\s|an\s|the\s).*/i, '')
+        .replace(/[,.].*$/, '')
+        .trim();
+    }
+  }
+
+  // Revenue model
+  let revenueModel = 'lead_generation';
+  if (/rank.?and.?rent/i.test(lower)) revenueModel = 'rank_and_rent';
+  else if (/appointment|booking|schedule/i.test(lower)) revenueModel = 'appointment_booking';
+  else if (/ecommerce|e-commerce|shop|store/i.test(lower)) revenueModel = 'ecommerce';
+  else if (/affiliate/i.test(lower)) revenueModel = 'affiliate';
+  else if (/ticket|event|registration/i.test(lower)) revenueModel = 'registration';
+
+  // Location
+  const locationMatch = text.match(/\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)\b/);
+  const location = locationMatch ? locationMatch[1] : '';
+
+  // Tone/style words
+  const toneMap = { bold: 'bold', warm: 'warm', friendly: 'friendly', professional: 'professional',
+    urban: 'urban', luxury: 'premium', premium: 'premium', authentic: 'authentic',
+    modern: 'modern', clean: 'clean', vibrant: 'vibrant', elegant: 'elegant' };
+  const tone = Object.keys(toneMap).filter(w => lower.includes(w)).map(w => toneMap[w]);
+
+  // Differentiator: "since YEAR", "family", "award"
+  let differentiator = '';
+  const sinceMatch = text.match(/since\s+(\d{4})/i);
+  if (sinceMatch) differentiator = `Established since ${sinceMatch[1]}`;
+  else if (/family/i.test(lower)) differentiator = 'Family-owned and operated';
+  else if (/award/i.test(lower)) differentiator = 'Award-winning';
+
+  // CTA
+  let cta = 'Contact Us';
+  if (/appointment|booking/i.test(lower)) cta = 'Book Now';
+  else if (/order/i.test(lower)) cta = 'Order Now';
+  else if (/quote/i.test(lower)) cta = 'Get a Quote';
+  else if (/lead/i.test(lower)) cta = 'Get a Free Quote';
+
+  // Pages by vertical
+  let pages = ['home', 'about', 'contact'];
+  if (/restaurant|pizza|food|cafe|bakery|catering/i.test(lower)) pages = ['home', 'menu', 'about', 'contact'];
+  else if (/barber|salon|spa|beauty|nail/i.test(lower)) pages = ['home', 'services', 'gallery', 'contact'];
+  else if (/law|legal|attorney|lawyer/i.test(lower)) pages = ['home', 'practice-areas', 'about', 'contact'];
+  else if (/plumb|hvac|electric|contractor|roofer/i.test(lower)) pages = ['home', 'services', 'about', 'contact'];
+  else if (/dental|doctor|medical|clinic/i.test(lower)) pages = ['home', 'services', 'about', 'contact'];
+
+  // Generate safe tag
+  const tag = 'site-' + (businessName || 'new-site')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 40);
+
+  return {
+    business_name: businessName || 'New Business',
+    tag,
+    revenue_model: revenueModel,
+    business_description: text.slice(0, 300),
+    location,
+    differentiator,
+    cta,
+    tone: tone.length ? tone : ['professional', 'clean'],
+    pages,
+  };
+}
+
+async function extractBriefFromMessage(text) {
+  // Use Claude if available, with explicit instruction to use business name in tag
+  try {
+    const extracted = await callSDK(
+      `Extract a structured site brief from this request. Return ONLY valid JSON, no markdown:\n\n"${text}"\n\nRules:\n- business_name: the actual business name (e.g. "Mario's Pizza")\n- tag: "site-" + business name slugified (e.g. "site-marios-pizza") — NEVER use a generic category word\n- revenue_model: one of lead_generation|rank_and_rent|ecommerce|appointment_booking\n\n{"business_name":"","tag":"site-","revenue_model":"lead_generation","business_description":"","location":"","differentiator":"","cta":"Contact Us","tone":["professional"],"pages":["home","about","contact"]}`,
+      { maxTokens: 400, callSite: 'brief-extraction', timeoutMs: 8000 }
+    );
+    const clean = extracted.replace(/```(?:json)?\n?|```\n?/g, '').trim();
+    const parsed = JSON.parse(clean);
+    // Validate tag isn't a generic word
+    const genericTags = ['restaurant', 'business', 'site', 'pizza', 'shop', 'store', 'company'];
+    const tagSlug = (parsed.tag || '').replace(/^site-/, '');
+    if (parsed.business_name && parsed.tag && !genericTags.includes(tagSlug)) return parsed;
+    // Tag was generic — regenerate from business name
+    if (parsed.business_name) {
+      parsed.tag = 'site-' + parsed.business_name.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 35);
+      return parsed;
+    }
+  } catch { /* fall through to pattern matching */ }
+  return extractBriefPatternBased(text);
+}
+
+async function runAutonomousBuild(message, context = {}) {
+  const t0 = Date.now();
+  const log = [];
+  const step = (msg, data = {}) => {
+    const entry = { ms: Date.now() - t0, step: msg, ...data };
+    log.push(entry);
+    console.log(`[auto-build] +${entry.ms}ms ${msg}`, Object.keys(data).length ? JSON.stringify(data) : '');
+  };
+
+  try {
+    // Step 1: Extract brief
+    step('Extracting brief');
+    const brief = await extractBriefFromMessage(message);
+    step('Brief extracted', { tag: brief.tag, name: brief.business_name, revenue: brief.revenue_model });
+
+    // Step 2: Create site (with brief pre-loaded)
+    step('Creating site', { tag: brief.tag });
+    const existingDir = path.join(SITES_ROOT, brief.tag);
+    if (fs.existsSync(existingDir)) {
+      // Site exists — update the brief and switch to it
+      const existSpec = JSON.parse(fs.readFileSync(path.join(existingDir, 'spec.json'), 'utf8'));
+      existSpec.client_brief = {
+        business_description: brief.business_description,
+        revenue_model: brief.revenue_model,
+        ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
+        differentiator: brief.differentiator || 'Quality service',
+        primary_cta: brief.cta,
+        style_notes: brief.tone.join(', '),
+      };
+      existSpec.interview_completed = true;
+      existSpec.interview_pending = false;
+      if (brief.pages) existSpec.pages = brief.pages;
+      const tmpPath = path.join(existingDir, 'spec.json.tmp');
+      fs.writeFileSync(tmpPath, JSON.stringify(existSpec, null, 2));
+      fs.renameSync(tmpPath, path.join(existingDir, 'spec.json'));
+      step('Site exists — brief updated');
+    } else {
+      // Create fresh
+      const distDir = path.join(existingDir, 'dist');
+      fs.mkdirSync(distDir, { recursive: true });
+      const newSpec = {
+        tag: brief.tag,
+        site_name: brief.business_name,
+        business_type: brief.business_description.split(' ').slice(0, 3).join(' '),
+        state: 'new',
+        created_at: new Date().toISOString(),
+        interview_completed: true,
+        interview_pending: false,
+        pages: brief.pages,
+        client_brief: {
+          business_description: brief.business_description,
+          revenue_model: brief.revenue_model,
+          ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
+          differentiator: brief.differentiator || 'Quality service',
+          primary_cta: brief.cta,
+          style_notes: brief.tone.join(', '),
+        },
+      };
+      const newSpecPath = path.join(existingDir, 'spec.json');
+      fs.writeFileSync(newSpecPath + '.tmp', JSON.stringify(newSpec, null, 2));
+      fs.renameSync(newSpecPath + '.tmp', newSpecPath);
+      step('Site created');
+    }
+
+    // Step 2b: Synthesize design_brief from client_brief so classifier routes
+    // to 'build' intent (not 'new_site' → handlePlanning which needs approval)
+    step('Synthesizing design_brief for build routing');
+    const specToUpdate = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, brief.tag, 'spec.json'), 'utf8'));
+    if (!specToUpdate.design_brief) {
+      const cb = specToUpdate.client_brief || {};
+      specToUpdate.design_brief = {
+        goal: cb.business_description || brief.business_description,
+        audience: cb.ideal_customer || 'Local customers',
+        tone: brief.tone,
+        visual_direction: {
+          layout: 'standard',
+          typography: 'clean and professional',
+          color_usage: 'brand colors throughout',
+          motion: 'subtle',
+          density: 'balanced',
+        },
+        content_priorities: [brief.cta || 'Lead generation', 'Brand credibility'],
+        must_have_sections: brief.pages,
+        avoid: ['clutter', 'stock-photo feel'],
+        open_questions: [],
+      };
+      specToUpdate.pages = brief.pages;
+      specToUpdate.state = 'briefed';
+      const tmpP = path.join(SITES_ROOT, brief.tag, 'spec.json.tmp');
+      fs.writeFileSync(tmpP, JSON.stringify(specToUpdate, null, 2));
+      fs.renameSync(tmpP, path.join(SITES_ROOT, brief.tag, 'spec.json'));
+      step('design_brief synthesized');
+    }
+
+    // Step 3: Switch to the new site
+    step('Switching to site', { tag: brief.tag });
+    await endSession();
+    TAG = brief.tag;
+    writeLastSite(TAG);
+    invalidateSpecCache();
+    currentPage = 'index.html';
+    sessionMessageCount = 0;
+    sessionStartedAt = new Date().toISOString();
+    startSession();
+    studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
+
+    // Notify all WS clients of the switch
+    const spec = readSpec();
+    const pages = listPages();
+    wss.clients.forEach(client => {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
+        client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+      }
+    });
+    step('Site switched, clients notified');
+
+    // Step 4: Trigger build directly via routeToHandler with a mock WS.
+    // IMPORTANT: Cannot call handleChatMessage twice — it self-blocks via buildInProgress.
+    // routeToHandler(ws, 'build', ...) calls handleChatMessage once with the right message,
+    // which then sets buildInProgress + calls parallelBuild. This is the correct entry point.
+    step('Triggering build (direct routeToHandler)');
+
+    // Mock WS — mirrors all build events to real browser clients so Fritz watches live
+    const mockWs = {
+      readyState: 1,
+      buildRunId: null,
+      currentBrain: 'claude',
+      brainModels: {},
+      activeChildren: [],
+      currentChild: null,
+      autoAccept: false,
+      send: (data) => {
+        try {
+          wss.clients.forEach(client => {
+            if (client.readyState === 1) {
+              try { client.send(data); } catch {}
+            }
+          });
+        } catch {}
+      },
+      // parallelBuild uses ws.once/removeListener/on for close-event guards.
+      // The mock WS never fires events so these are safe no-ops.
+      once: () => {},
+      removeListener: () => {},
+      on: () => {},
+    };
+
+    // Call routeToHandler directly — it calls handleChatMessage once with correct params.
+    // handleChatMessage sets buildInProgress=true, then calls parallelBuild.
+    const builtSpec = readSpec();
+    const buildMsg = `Build this site based on the design brief. Site name: ${builtSpec.site_name || brief.business_name}. Pages to generate: ${(builtSpec.pages || brief.pages).join(', ')}.`;
+    // routeToHandler case 'build' calls handleChatMessage(ws, buildMsg, 'build', spec)
+    // → buildInProgress=true → parallelBuild fires
+    try {
+      routeToHandler(mockWs, 'build', buildMsg, builtSpec);
+      step('Build dispatched via routeToHandler');
+    } catch (routeErr) {
+      step('routeToHandler error', { error: routeErr.message });
+    }
+
+    const wsClients = [...wss.clients].filter(c => c.readyState === 1).length;
+
+    if (wsClients === 0) {
+      step('No active WS clients — build cannot be triggered until browser connects');
+      return {
+        success: false,
+        tag: brief.tag,
+        brief,
+        log,
+        message: `Site ${brief.business_name} created. Open Studio to trigger build — no browser connected.`,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+
+    step('Build triggered', { ws_clients: wsClients });
+
+    return {
+      success: true,
+      tag: brief.tag,
+      brief,
+      log,
+      message: `🚀 ${brief.business_name} build started. Watch Studio for progress.`,
+      preview_url: `http://localhost:${PREVIEW_PORT}`,
+      ws_clients_notified: wsClients,
+      elapsed_ms: Date.now() - t0,
+    };
+
+  } catch (err) {
+    step('ERROR', { error: err.message, stack: err.stack?.slice(0, 200) });
+    return { success: false, error: err.message, log, elapsed_ms: Date.now() - t0 };
+  }
+}
+
+// POST /api/autonomous-build — Shay-Shay's autonomous site build endpoint
+app.post('/api/autonomous-build', async (req, res) => {
+  const { message, context } = req.body;
+  if (!message) return res.status(400).json({ error: 'message required' });
+  const result = await runAutonomousBuild(message, context || {});
+  res.json(result);
+});
+
+// GET /api/build-status/:tag — polling endpoint for build completion
+app.get('/api/build-status/:tag', (req, res) => {
+  const tagParam = req.params.tag;
+  if (!tagParam || !/^[a-z0-9][a-z0-9-]*$/.test(tagParam)) {
+    return res.status(400).json({ error: 'invalid tag' });
+  }
+  const specPath = path.join(SITES_ROOT, tagParam, 'spec.json');
+  if (!fs.existsSync(specPath)) return res.status(404).json({ error: 'site not found' });
+  try {
+    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+    const distDir = path.join(SITES_ROOT, tagParam, 'dist');
+    const htmlFiles = fs.existsSync(distDir)
+      ? fs.readdirSync(distDir).filter(f => f.endsWith('.html') && !f.startsWith('_'))
+      : [];
+    res.json({
+      tag: tagParam,
+      state: spec.state || 'unknown',
+      building: buildInProgress && TAG === tagParam,
+      pages_built: htmlFiles.length,
+      pages: htmlFiles,
+      has_brief: !!(spec.client_brief || spec.design_brief),
+      fam_score: spec.fam_score || null,
+      deployed_url: spec.deployed_url || null,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // Research files API — serves research markdown for Phase 6 workspace
 app.get('/api/research', (req, res) => {
@@ -11442,8 +11802,9 @@ wss.on('connection', (ws) => {
       console.log(`[classify] "${userMessage.substring(0, 60)}..." → ${requestType}`);
 
       // Plan gate: for heavy intents, show a plan card first (if plan_mode enabled)
+      // autonomousBuildActive bypasses the gate so Shay-Shay can build without UI approval
       const planMode = loadSettings().plan_mode !== false;
-      if (planMode && PLAN_REQUIRED_INTENTS.includes(requestType)) {
+      if (planMode && PLAN_REQUIRED_INTENTS.includes(requestType) && !autonomousBuildActive) {
         ws.send(JSON.stringify({ type: 'status', content: 'Generating plan...' }));
         generatePlan(ws, userMessage, requestType, readSpec())
           .then(planId => {
@@ -11454,6 +11815,12 @@ wss.on('connection', (ws) => {
             // Otherwise wait for 'execute-plan' from client
           })
           .catch(() => routeToHandler(ws, requestType, userMessage, readSpec()));
+        return;
+      }
+
+      // Plan-gated intent with gate bypassed (autonomous mode) — route directly to handler
+      if (PLAN_REQUIRED_INTENTS.includes(requestType)) {
+        routeToHandler(ws, requestType, userMessage, readSpec());
         return;
       }
 

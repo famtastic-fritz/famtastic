@@ -3499,3 +3499,62 @@ Results stored at `spec.structural_index[page]`.
 - `deploy_history` not yet surfaced in Mission Control UI
 - Brief corrections `IGNORED` outcome not yet auto-scored at session end
 - Shay-Shay session init (loadFamtasticState, diffStateVsManifest on WS connect) not yet wired
+
+---
+
+## Session 17 — Shay-Shay Autonomous Build Pipeline
+
+### New Capability: `POST /api/autonomous-build`
+
+Shay-Shay can now build a complete site from a conversational brief with zero browser UI interaction.
+Fritz watches progress through Studio; Shay-Shay drives entirely through the API.
+
+**Endpoint:** `POST /api/autonomous-build` (server.js)
+**Handler:** `runAutonomousBuild(message, context)` — lines ~5540–5700
+
+**Pipeline:**
+1. `extractBriefFromMessage(text)` — Claude first (8s timeout), pattern-based fallback
+2. `POST /api/new-site` internally — creates `sites/<tag>/` with `client_brief` pre-loaded
+3. Synthesize `design_brief` from `client_brief` → sets `spec.state = 'briefed'`
+4. `TAG = brief.tag`, `invalidateSpecCache()`, `startSession()`
+5. Notify all WS clients of site switch (broadcasts `site-switched` + `pages-updated`)
+6. `routeToHandler(mockWs, 'build', buildMsg, spec)` — direct pipeline entry
+7. `mockWs.send()` mirrors ALL build events to real browser clients (Fritz watches live)
+
+**Critical: mockWs must implement `once`, `removeListener`, `on`**
+`parallelBuild` registers close-event guards via `ws.once('close', handler)`. The mock WS never fires events, so these are no-ops — but they MUST exist or `parallelBuild` crashes with `TypeError: ws.once is not a function`.
+
+**Brief extraction (`extractBriefFromMessage`):**
+- Claude path: spawns subprocess with explicit "tag = site-businessname, not a category word" instructions
+- Pattern fallback: `\bfor\s+(?:a\s+)?([A-Z][a-zA-Z']+(?:\s+[A-Z][a-zA-Z']+){0,3})` captures "for Mario's Pizza"
+- Validates tag is not a generic word (restaurant, shop, salon, etc.)
+- Returns: `{ business_name, tag, revenue_model, location, differentiator, tone, pages }`
+
+**Plan gate bypass: `autonomousBuildActive` flag**
+Set before `routeToHandler`, cleared via setTimeout. Bypasses the `PLAN_REQUIRED_INTENTS` check in `handleChatMessage` so `build` intent fires without user approval of a plan card.
+
+**New endpoint: `GET /api/build-status/:tag`**
+Returns `{ tag, state, building, pages_built, pages, has_brief, fam_score, deployed_url }`
+`building` = `buildInProgress && TAG === tagParam` (in-memory flag + active site check)
+
+### Bugs fixed this session
+
+| Bug | Root cause | Fix |
+|-----|-----------|-----|
+| `ws.once is not a function` | mockWs had no EventEmitter methods | Added `once`, `removeListener`, `on` as no-ops |
+| Pages built but API showed 0 | Stale `buildInProgress=true` from prior session in memory | Server restart cleared state |
+| Capability manifest false "available" for broken Gemini key | Env-var presence used, not probe result | `resolveApiStatus()` checks brain-verifier probe first, falls back to env var |
+
+### Test results (2026-04-17)
+
+| Site | Brief | Pages built | Accessible |
+|------|-------|------------|-----------|
+| Mario's Pizza | "local pizza restaurant in Atlanta, family recipes since 1987, lead generation" | 4 (index, menu, about, contact) | ✅ localhost:3333 |
+| Fresh Cuts | "barber shop called Fresh Cuts in Atlanta, appointment booking, urban professional vibe" | 4 (index, services, gallery, contact) | ✅ localhost:3333 |
+
+### Known Gaps (updated)
+
+**Opened:**
+- `extractBriefFromMessage` extracted "Fresh Cuts in Atlanta" as business_name (should be "Fresh Cuts") — location bleeds into name when format is "shop called X in Y"
+- Shay-Shay `/api/shay-shay` `autonomous_build` intent routes through `runAutonomousBuild` but result not yet surfaced in Shay-Shay column (shows "Build started" but no progress stream)
+- `buildInProgress` flag is in-memory only — server restart clears it, which is correct but leaves `.studio.json build_in_progress` and API flag out of sync transiently
