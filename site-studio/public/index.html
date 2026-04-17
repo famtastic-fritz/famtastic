@@ -283,53 +283,100 @@
         <button id="tab-add" class="ws-tab-add" title="Add tab">+</button>
       </div>
 
-      <!-- Canvas area — vertical split: tab panes (top) + persistent live preview (bottom) -->
-      <div id="canvas-area" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+      <!-- Canvas area — horizontal two-column: left (chat) | right (preview) -->
+      <div id="canvas-area">
 
-        <!-- Upper: tab panes (chat, brief, assets, deploy) -->
-        <div id="canvas-tabs-area" style="flex:1;min-height:0;overflow:hidden;position:relative;">
-          <!-- Chat pane (default) -->
-          <div id="tab-pane-chat" class="ws-tab-pane" style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
-            <div id="chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;"></div>
-          </div>
+        <!-- LEFT: tab panes + toolbar anchored at bottom -->
+        <div id="canvas-left">
+          <!-- Tab pane content area -->
+          <div id="canvas-tabs-area">
+            <!-- Chat pane (default) -->
+            <div id="tab-pane-chat" class="ws-tab-pane" style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+              <div id="chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
 
-          <!-- Brief pane -->
-          <div id="tab-pane-brief" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;">
-          </div>
+            <!-- Brief pane -->
+            <div id="tab-pane-brief" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;">
+            </div>
 
-          <!-- Assets pane -->
-          <div id="tab-pane-assets" class="ws-tab-pane hidden" style="padding:12px;overflow-y:auto;height:100%;">
-            <div id="assets-content" style="font-size:12px;color:var(--fam-text-2);">
-              <p style="color:var(--fam-text-3);">No assets yet.</p>
+            <!-- Assets pane -->
+            <div id="tab-pane-assets" class="ws-tab-pane hidden" style="padding:12px;overflow-y:auto;height:100%;">
+              <div id="assets-content" style="font-size:12px;color:var(--fam-text-2);">
+                <p style="color:var(--fam-text-3);">No assets yet.</p>
+              </div>
+            </div>
+
+            <!-- Deploy pane -->
+            <div id="tab-pane-deploy" class="ws-tab-pane hidden" style="padding:16px;overflow-y:auto;height:100%;">
+              <div style="max-width:560px;margin:0 auto;" id="deploy-content">
+                <h2 style="font-size:14px;font-weight:600;color:var(--fam-text);margin-bottom:12px;">Deploy</h2>
+                <div id="deploy-status-area"></div>
+              </div>
             </div>
           </div>
 
-          <!-- Deploy pane -->
-          <div id="tab-pane-deploy" class="ws-tab-pane hidden" style="padding:16px;overflow-y:auto;height:100%;">
-            <div style="max-width:600px;margin:0 auto;" id="deploy-content">
-              <h2 style="font-size:14px;font-weight:600;color:var(--fam-text);margin-bottom:12px;">Deploy</h2>
-              <div id="deploy-status-area"></div>
+          <!-- Toolbar anchored at bottom of left column -->
+          <div id="toolbar">
+            <div id="context-bar">
+              <span id="ctx-site-tag" class="ctx-site-tag">&#x2014;</span>
+              <span class="ctx-sep">/</span>
+              <span id="ctx-active-page" class="ctx-page">index.html</span>
+              <span id="ctx-job-count" class="ctx-badge" style="display:none;"></span>
+              <span id="ctx-diff-count" class="ctx-badge" style="display:none;margin-left:auto;"></span>
+            </div>
+            <div id="tools-row">
+              <div class="tools-group" data-mode="build">
+                <button class="tool-btn" onclick="StudioShell.switchTab('assets')">Assets</button>
+                <button class="tool-btn" onclick="StudioShell.switchTab('brief')">Brief</button>
+                <button class="tool-btn primary" onclick="rebuildSite()">&#x21BA; Rebuild</button>
+              </div>
+              <div class="tools-group hidden" data-mode="review">
+                <button class="tool-btn" onclick="refreshVerification()">Verify</button>
+                <button class="tool-btn primary" onclick="deployToStaging()">&#x2192; Staging</button>
+                <button class="tool-btn primary" style="background:rgba(232,53,42,0.2);border-color:rgba(232,53,42,0.4);" onclick="deployToProduction()">&#x2192; Production</button>
+              </div>
+              <div class="tools-group hidden" data-mode="brainstorm">
+                <button class="tool-btn" onclick="StudioShell.switchRailItem('intelligence')">Intelligence</button>
+              </div>
+              <div id="tools-right">
+                <div id="model-pill">Sonnet</div>
+                <label class="auto-accept-label" title="Auto-accept plans without confirmation">
+                  <input type="checkbox" id="auto-accept-toggle" onchange="toggleAutoAccept(this.checked)">
+                  Auto
+                </label>
+              </div>
+            </div>
+            <div id="chat-input-row">
+              <form id="chat-form" style="display:flex;gap:8px;flex:1;align-items:flex-end;">
+                <textarea id="chat-input" rows="1" placeholder="Describe what you want to build..." autocomplete="off"></textarea>
+                <label style="background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:8px;padding:8px;cursor:pointer;display:flex;align-items:center;" title="Upload image">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" multiple style="display:none;" onchange="handleFileSelect(this.files)">
+                </label>
+                <button type="submit" id="chat-send-btn">Send</button>
+                <button type="button" id="chat-cancel-btn" onclick="cancelBuild()" style="display:none;">&#x2715; Cancel</button>
+              </form>
             </div>
           </div>
         </div>
 
-        <!-- Drag handle for resizing -->
-        <div id="canvas-preview-resizer" style="height:5px;background:var(--fam-border);cursor:row-resize;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-          <span style="width:32px;height:2px;border-radius:1px;background:var(--fam-text-3);opacity:0.4;"></span>
+        <!-- RESIZER: horizontal drag handle -->
+        <div id="canvas-col-resizer">
+          <span style="width:2px;height:32px;border-radius:1px;background:var(--fam-text-3);opacity:0.4;"></span>
         </div>
 
-        <!-- Lower: persistent live preview — always visible -->
-        <div id="canvas-live-preview" style="height:220px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:#fff;">
-          <div style="height:28px;min-height:28px;background:var(--fam-bg-2);border-bottom:1px solid var(--fam-border);display:flex;align-items:center;padding:0 8px;gap:6px;font-size:11px;color:var(--fam-text-2);flex-shrink:0;">
-            <span style="font-size:10px;font-weight:600;color:var(--fam-text-3);letter-spacing:0.04em;margin-right:4px;">PREVIEW</span>
-            <div id="preview-page-tabs" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
-            <span id="preview-status" style="font-size:10px;color:var(--fam-text-3);"></span>
-            <button onclick="setPreviewDevice('desktop')" id="preview-device-desktop" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;" class="active">Desktop</button>
-            <button onclick="setPreviewDevice('mobile')" id="preview-device-mobile" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;">Mobile</button>
-            <button onclick="toggleSlotMode()" id="slot-mode-btn" style="background:rgba(232,53,42,0.1);border:1px solid rgba(232,53,42,0.2);border-radius:4px;color:var(--fam-red);cursor:pointer;font-size:10px;padding:2px 6px;">Slots</button>
-            <button id="preview-toggle-btn" onclick="togglePreviewStrip()" style="background:none;border:1px solid var(--fam-border);border-radius:3px;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;margin-left:2px;" title="Toggle preview">Hide ▲</button>
+        <!-- RIGHT: live preview (collapsible) -->
+        <div id="canvas-right">
+          <div id="canvas-preview-header">
+            <span style="font-size:10px;font-weight:600;color:var(--fam-text-3);letter-spacing:0.04em;flex-shrink:0;">PREVIEW</span>
+            <div id="preview-page-tabs" style="display:flex;gap:4px;flex:1;overflow-x:auto;min-width:0;"></div>
+            <span id="preview-status" style="font-size:10px;color:var(--fam-text-3);flex-shrink:0;"></span>
+            <button onclick="setPreviewDevice('desktop')" id="preview-device-desktop" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 5px;flex-shrink:0;" class="active">Desktop</button>
+            <button onclick="setPreviewDevice('mobile')" id="preview-device-mobile" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 5px;flex-shrink:0;">Mobile</button>
+            <button onclick="toggleSlotMode()" id="slot-mode-btn" style="background:rgba(232,53,42,0.1);border:1px solid rgba(232,53,42,0.2);border-radius:4px;color:var(--fam-red);cursor:pointer;font-size:10px;padding:2px 5px;flex-shrink:0;">Slots</button>
+            <button id="preview-toggle-btn" onclick="togglePreviewStrip()" style="background:none;border:1px solid var(--fam-border);border-radius:3px;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;flex-shrink:0;margin-left:2px;" title="Toggle preview">Hide &#x25b6;</button>
           </div>
-          <div style="flex:1;overflow:hidden;position:relative;">
+          <div id="canvas-preview-iframe">
             <iframe id="preview-frame" style="width:100%;height:100%;border:none;background:white;" title="Site preview"></iframe>
           </div>
         </div>
@@ -348,54 +395,6 @@
         <span id="env-production" class="env-item" style="cursor:default;" title="Production environment">
           <span class="env-dot"></span>&#x1F680; Production &mdash; not deployed
         </span>
-      </div>
-
-      <!-- Toolbar (chat input area) -->
-      <div id="toolbar">
-        <!-- Context bar -->
-        <div id="context-bar">
-          <span id="ctx-site-tag" class="ctx-site-tag">&#x2014;</span>
-          <span class="ctx-sep">/</span>
-          <span id="ctx-active-page" class="ctx-page">index.html</span>
-          <span id="ctx-job-count" class="ctx-badge" style="display:none;"></span>
-          <span id="ctx-diff-count" class="ctx-badge" style="display:none;margin-left:auto;"></span>
-        </div>
-        <!-- Tools row -->
-        <div id="tools-row">
-          <div class="tools-group" data-mode="build">
-            <button class="tool-btn" onclick="StudioShell.switchTab('assets')">Assets</button>
-            <button class="tool-btn" onclick="StudioShell.switchTab('brief')">Brief</button>
-            <button class="tool-btn" onclick="StudioShell.switchTab('preview')">Preview</button>
-            <button class="tool-btn primary" onclick="rebuildSite()">&#x21BA; Rebuild</button>
-          </div>
-          <div class="tools-group hidden" data-mode="review">
-            <button class="tool-btn" onclick="refreshVerification()">Verify</button>
-            <button class="tool-btn primary" onclick="deployToStaging()">&#x2192; Staging</button>
-            <button class="tool-btn primary" style="background:rgba(232,53,42,0.2);border-color:rgba(232,53,42,0.4);" onclick="deployToProduction()">&#x2192; Production</button>
-          </div>
-          <div class="tools-group hidden" data-mode="brainstorm">
-            <button class="tool-btn" onclick="StudioShell.switchRailItem('intelligence')">Intelligence</button>
-          </div>
-          <div id="tools-right">
-            <div id="model-pill">Sonnet</div>
-            <label class="auto-accept-label" title="Auto-accept plans without confirmation">
-              <input type="checkbox" id="auto-accept-toggle" onchange="toggleAutoAccept(this.checked)">
-              Auto
-            </label>
-          </div>
-        </div>
-        <!-- Chat input row -->
-        <div id="chat-input-row">
-          <form id="chat-form" style="display:flex;gap:8px;flex:1;align-items:flex-end;">
-            <textarea id="chat-input" rows="1" placeholder="Describe what you want to build..." autocomplete="off"></textarea>
-            <label style="background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:8px;padding:8px;cursor:pointer;display:flex;align-items:center;" title="Upload image">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" multiple style="display:none;" onchange="handleFileSelect(this.files)">
-            </label>
-            <button type="submit" id="chat-send-btn">Send</button>
-            <button type="button" id="chat-cancel-btn" onclick="cancelBuild()" style="display:none;">&#x2715; Cancel</button>
-          </form>
-        </div>
       </div>
     </div>
 
@@ -970,53 +969,36 @@
         }).catch(function() {});
     }
 
-    function getCanvasConstraints() {
-      // Chat always gets at least 45% of canvas — preview gets the rest
-      var canvas = document.getElementById('canvas-area');
-      var canvasH = canvas ? canvas.offsetHeight : 500;
-      var chatMin = Math.max(100, Math.round(canvasH * 0.40)); // 40% min for chat
-      var previewMax = canvasH - chatMin - 5; // 5px for resizer
-      var previewDefault = Math.min(previewMax, Math.round(canvasH * 0.55)); // 55% default
-      return { canvasH: canvasH, chatMin: chatMin, previewMax: previewMax, previewDefault: previewDefault };
-    }
-
     function initPreviewSplit() {
-      var preview = document.getElementById('canvas-live-preview');
-      if (!preview) return;
-      var c = getCanvasConstraints();
-      if (c.canvasH > 100) {
-        preview.style.height = Math.max(80, c.previewDefault) + 'px';
-      }
+      // No-op — horizontal layout handles sizing via CSS flex
     }
 
     function expandPreviewIfHidden() {
-      var preview = document.getElementById('canvas-live-preview');
-      if (!preview) return;
-      if (preview.offsetHeight < 20) {
-        var c = getCanvasConstraints();
-        preview.style.height = Math.max(80, c.previewDefault) + 'px';
-        var resizer = document.getElementById('canvas-preview-resizer');
-        var btn = document.getElementById('preview-toggle-btn');
+      var right = document.getElementById('canvas-right');
+      var resizer = document.getElementById('canvas-col-resizer');
+      var btn = document.getElementById('preview-toggle-btn');
+      if (!right) return;
+      if (right.classList.contains('collapsed')) {
+        right.classList.remove('collapsed');
         if (resizer) resizer.style.display = '';
-        if (btn) btn.textContent = 'Hide \u25b2';
+        if (btn) btn.textContent = 'Hide \u25b6';
       }
     }
 
     function togglePreviewStrip() {
-      var preview = document.getElementById('canvas-live-preview');
-      var resizer = document.getElementById('canvas-preview-resizer');
+      var right = document.getElementById('canvas-right');
+      var resizer = document.getElementById('canvas-col-resizer');
       var btn = document.getElementById('preview-toggle-btn');
-      if (!preview) return;
-      var collapsed = preview.style.height === '0px' || preview.offsetHeight < 20;
+      if (!right) return;
+      var collapsed = right.classList.contains('collapsed');
       if (collapsed) {
-        var c = getCanvasConstraints();
-        preview.style.height = Math.max(80, c.previewDefault) + 'px';
+        right.classList.remove('collapsed');
         if (resizer) resizer.style.display = '';
-        if (btn) btn.textContent = 'Hide \u25b2';
+        if (btn) btn.textContent = 'Hide \u25b6';
       } else {
-        preview.style.height = '0px';
+        right.classList.add('collapsed');
         if (resizer) resizer.style.display = 'none';
-        if (btn) btn.textContent = 'Show \u25bc';
+        if (btn) btn.textContent = 'Show Preview \u25c0';
       }
     }
 

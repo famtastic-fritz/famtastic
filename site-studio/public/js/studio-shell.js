@@ -290,23 +290,24 @@
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); toggleSidebar(); }
     });
 
-    // Drag-resize: canvas-preview-resizer adjusts the live preview strip height
-    // Chat always gets at least 40% — preview gets at most 55%
-    const resizer = document.getElementById('canvas-preview-resizer');
-    const preview = document.getElementById('canvas-live-preview');
-    if (resizer && preview) {
-      let startY = 0, startH = 0;
+    // Horizontal drag-resize: adjusts left/right column widths
+    const resizer = document.getElementById('canvas-col-resizer');
+    const canvasLeft = document.getElementById('canvas-left');
+    const canvasRight = document.getElementById('canvas-right');
+    if (resizer && canvasLeft && canvasRight) {
+      let startX = 0, startW = 0;
       resizer.addEventListener('mousedown', e => {
-        startY = e.clientY;
-        startH = preview.offsetHeight;
+        startX = e.clientX;
+        startW = canvasLeft.offsetWidth;
         document.body.style.userSelect = 'none';
         const onMove = mv => {
           const canvas = document.getElementById('canvas-area');
-          const canvasH = canvas ? canvas.offsetHeight : 500;
-          const chatMin = Math.max(100, Math.round(canvasH * 0.40));
-          const previewMax = canvasH - chatMin - 5;
-          const delta = startY - mv.clientY; // drag up = bigger preview
-          preview.style.height = Math.max(80, Math.min(previewMax, startH + delta)) + 'px';
+          const totalW = canvas ? canvas.offsetWidth : 800;
+          const minLeft = Math.round(totalW * 0.30);
+          const maxLeft = Math.round(totalW * 0.75);
+          const newW = Math.max(minLeft, Math.min(maxLeft, startW + (mv.clientX - startX)));
+          canvasLeft.style.flex = 'none';
+          canvasLeft.style.width = newW + 'px';
         };
         const onUp = () => {
           document.body.style.userSelect = '';
