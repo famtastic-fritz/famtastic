@@ -290,33 +290,6 @@
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); toggleSidebar(); }
     });
 
-    // Horizontal drag-resize: adjusts left/right column widths
-    const resizer = document.getElementById('canvas-col-resizer');
-    const canvasLeft = document.getElementById('canvas-left');
-    const canvasRight = document.getElementById('canvas-right');
-    if (resizer && canvasLeft && canvasRight) {
-      let startX = 0, startW = 0;
-      resizer.addEventListener('mousedown', e => {
-        startX = e.clientX;
-        startW = canvasLeft.offsetWidth;
-        document.body.style.userSelect = 'none';
-        const onMove = mv => {
-          const canvas = document.getElementById('canvas-area');
-          const totalW = canvas ? canvas.offsetWidth : 800;
-          const minLeft = Math.round(totalW * 0.30);
-          const maxLeft = Math.round(totalW * 0.75);
-          const newW = Math.max(minLeft, Math.min(maxLeft, startW + (mv.clientX - startX)));
-          canvasLeft.style.flex = 'none';
-          canvasLeft.style.width = newW + 'px';
-        };
-        const onUp = () => {
-          document.body.style.userSelect = '';
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-      });
-    }
+    // No drag resizer needed — toggle layout switches full views
   });
 })();

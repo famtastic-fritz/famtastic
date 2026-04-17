@@ -346,58 +346,16 @@ body {
 }
 
 /* ============================================================
-   CANVAS AREA — horizontal two-column layout
+   CANVAS AREA — single column with chat/preview toggle
    ============================================================ */
 #canvas-area {
   flex: 1;
   min-height: 0;
   overflow: hidden;
   display: flex;
-  flex-direction: row;
-}
-
-/* Left column: chat/tabs + input toolbar */
-#canvas-left {
-  display: flex;
   flex-direction: column;
-  flex: 0 0 55%;
-  min-width: 240px;
-  overflow: hidden;
-  border-right: 1px solid var(--fam-border);
 }
 
-/* Horizontal drag resizer */
-#canvas-col-resizer {
-  width: 5px;
-  flex-shrink: 0;
-  background: var(--fam-border);
-  cursor: col-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background var(--transition-fast);
-}
-
-#canvas-col-resizer:hover { background: var(--fam-red); }
-
-/* Right column: live preview */
-#canvas-right {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  background: #fff;
-  transition: flex var(--transition-slow);
-}
-
-#canvas-right.collapsed {
-  flex: 0 0 0;
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* Tab pane area inside left column */
 #canvas-tabs-area {
   flex: 1;
   min-height: 0;
@@ -412,29 +370,7 @@ body {
 }
 
 .ws-tab-pane.hidden {
-  display: none !important; /* overrides inline display:flex on chat/preview panes */
-}
-
-/* Preview header in right column */
-#canvas-preview-header {
-  height: 28px;
-  min-height: 28px;
-  background: var(--fam-bg-2);
-  border-bottom: 1px solid var(--fam-border);
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--fam-text-2);
-  flex-shrink: 0;
-}
-
-/* Preview iframe wrapper */
-#canvas-preview-iframe {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
+  display: none !important;
 }
 
 /* ============================================================

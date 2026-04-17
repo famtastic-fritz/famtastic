@@ -54,8 +54,8 @@
     // Wire direct input in column
     initDirectInput();
 
-    // Load todo items into dynamic area
-    loadDynamicArea();
+    // Dynamic area starts with placeholder — validation mode activates only on explicit trigger
+    showPlaceholder(document.getElementById('pip-dynamic-area'));
 
     // Start idle pulse animation
     orb.classList.add('pip-idle');
@@ -777,8 +777,8 @@
     localStorage.removeItem('pip-dismiss:pip-t-build-warn');
     localStorage.removeItem('pip-dismiss:pip-t-briefed-idle');
 
-    // Reload dynamic area for new site's validation plan
-    setTimeout(loadDynamicArea, 400);
+    // Show placeholder — validation mode only activates on explicit /validate command
+    showPlaceholder(document.getElementById('pip-dynamic-area'));
   });
 
   // ── Mode awareness — dynamic area adapts when mode changes ───────────────
