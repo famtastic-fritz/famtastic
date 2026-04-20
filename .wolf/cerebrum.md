@@ -207,3 +207,16 @@ registry before first use.
 - **Tool recursion limit:** MAX_TOOL_DEPTH = 3 in ClaudeAdapter._executeBlocking(). Prevents infinite loops on tool errors.
 - **ws through options:** ws must flow through the options chain (execute(message, { ws })), never stored as this.ws on adapter instances. Adapters are potentially reused — storing ws on them creates stale reference bugs.
 - **getModel() override:** BrainInterface.execute() reads ws.brainModels[brain] and passes it as options.model. ClaudeAdapter uses passed model if present, falls back to DEFAULT_MODEL constant.
+
+## Session 17 Do-Not-Repeat Rules
+
+### ORB_STATE_MACHINE (2026-04-20)
+- `#pip-dynamic-area` transitions go through `setOrbState(state, data)` ONLY — never write to the area directly from event listeners
+- Four valid states: `IDLE`, `BRIEF_PROGRESS`, `BRAINSTORM_ACTIVE`, `REVIEW_ACTIVE`
+- `currentOrbState` is the single source of truth (module-level var in `studio-orb.js`)
+- When adding a new dynamic-area renderer, add a new state constant and route it through `setOrbState` — do not bypass
+
+### TEST_RETURN_SHAPE_ASSERTIONS (2026-04-20)
+- `tests/session12-phase0-tests.js` asserts the exact return-object shape of `buildPromptContext()` as a substring match
+- When adding new return values to `buildPromptContext()`, update the test assertion at line 154 to match the new full shape
+- Current shape: `'heroSkeleton, dividerSkeleton, navSkeleton, inlineStyleProhibition'` (+ more fields after)

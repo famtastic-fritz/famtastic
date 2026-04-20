@@ -3776,3 +3776,36 @@ let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
 - MAJOR/CRITICAL "Run diagnostic" renders brain connection status regardless of finding category — a more targeted diagnostic per category (e.g., cost → cost summary, agents → agent stats) is deferred
 - `.wolf/build-backlog.json` has no read-back UI yet — created and populated but not surfaced in any panel
 - Mission Control tab (`studio-screens.js` `loadMCIntel`) still uses the old static card rendering — not updated with action buttons this wave
+
+## Session 17 — Wave C: Orb State Machine (2026-04-20)
+
+**What was built:** Explicit four-state machine for `#pip-dynamic-area` in `site-studio/public/js/studio-orb.js`.
+
+**States:**
+- `IDLE` — loads validation plan (todo list) or placeholder; driven by startup, `studio:site-changed`, and build-mode `pip:mode-changed`
+- `BRIEF_PROGRESS` — brief completion bar + answered fields + build button at 60%; driven by `pip:brief-updated`
+- `BRAINSTORM_ACTIVE` — brainstorm mode hint text; driven by `pip:mode-changed { mode: 'brainstorm' }`
+- `REVIEW_ACTIVE` — FAMtastic score + per-check list from `/api/verify`; driven by `pip:mode-changed { mode: 'review' }`
+
+**Transition function:** `setOrbState(state, data)` at line ~613 in `studio-orb.js`.
+- Single source of truth: `currentOrbState` module-level variable
+- Pre-clears `#pip-dynamic-area` before delegating to existing renderers
+- Called from: `init()`, three event listeners, two todo-item click handlers, `PipOrb.reloadTodos()`
+
+**All existing renderers preserved** — `loadDynamicArea()`, `showPlaceholder()`, `renderTodoList()`, `renderBriefInDynamic()`, `renderDynamicModeContent()` — state machine is a routing layer over them, not a replacement.
+
+**Codex changes confirmed preserved:**
+- `getShayShayContext()`: reads `(window.config && window.config.tag) || null` — NOT `window.currentTag`
+- `suggest_brainstorm` action handler routes to `StudioShell.switchMode('brainstorm')`
+
+**Public API additions:**
+- `PipOrb.setOrbState(state, data)` — direct state transition from external code
+- `PipOrb.orbState` getter — read current state for debugging (`PipOrb.orbState` in console)
+
+**Test fix:** `tests/session12-phase0-tests.js` line 154 — assertion updated from `'heroSkeleton, dividerSkeleton, inlineStyleProhibition'` to `'heroSkeleton, dividerSkeleton, navSkeleton, inlineStyleProhibition'` (stale after Wave A inserted `navSkeleton` into the return object). All 30 tests pass.
+
+### Known Gaps (Wave C)
+
+- No visual state indicator in the orb UI itself (e.g., color ring, label) showing which state is active — purely logical for now
+- `REVIEW_ACTIVE` state fetches `/api/verify` on every transition to review mode, even if the build hasn't changed since last check — no cache/debounce
+- Research tab remains deferred: two blockers — (1) `/api/research/verticals` returns HTML instead of JSON when route order is wrong; (2) Pinecone query schema differs between the main and research code paths

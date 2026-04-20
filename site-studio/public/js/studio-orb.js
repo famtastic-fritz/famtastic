@@ -15,6 +15,7 @@
   let badgeCount = 0;
   let idleTimer = null;
   let highlightEl = null;
+  let currentOrbState = 'IDLE'; // IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE
 
   // ── Init ────────────────────────────────────────────────────────────────
   function init() {
@@ -54,8 +55,8 @@
     // Wire direct input in column
     initDirectInput();
 
-    // Dynamic area starts with placeholder — validation mode activates only on explicit trigger
-    showPlaceholder(document.getElementById('pip-dynamic-area'));
+    // Dynamic area starts in IDLE state — loads validation plan or placeholder
+    setOrbState('IDLE');
 
     // Start idle pulse animation
     orb.classList.add('pip-idle');
@@ -374,11 +375,18 @@
     }
 
     function getShayShayContext() {
+      var ctxPage = window.activePage || (document.getElementById('ctx-active-page') && document.getElementById('ctx-active-page').textContent) || null;
+      var ctxTab = window.StudioShell && window.StudioShell.activeTabId ? window.StudioShell.activeTabId : null;
+      var famScore = null;
+      if (window.cachedStudioState) {
+        if (window.cachedStudioState.fam_score != null) famScore = window.cachedStudioState.fam_score;
+        else if (window.cachedStudioState.spec && window.cachedStudioState.spec.fam_score != null) famScore = window.cachedStudioState.spec.fam_score;
+      }
       return {
-        active_site: window.currentTag || null,
-        active_page: window.currentPage || null,
-        active_tab: null,
-        fam_score: null,
+        active_site: (window.config && window.config.tag) || null,
+        active_page: ctxPage,
+        active_tab: ctxTab,
+        fam_score: famScore,
       };
     }
 
@@ -406,8 +414,27 @@
             }
           } else if (data.action === 'show_me') {
             showColumnResponse(data.response || 'Opening Show Me\u2026', false);
+          } else if (data.action === 'suggest_brainstorm') {
+            showColumnResponse(data.response || 'Want to switch to brainstorm mode?', false);
+            showColumnActions([
+              {
+                label: 'Switch to Brainstorm',
+                action: function () {
+                  if (window.StudioShell && typeof StudioShell.switchMode === 'function') {
+                    StudioShell.switchMode('brainstorm');
+                  }
+                  showColumnActions([]);
+                }
+              },
+              {
+                label: 'Stay Here',
+                action: function () { showColumnActions([]); },
+                secondary: true
+              }
+            ]);
           } else {
             showColumnResponse(data.response || data.error || 'No response.', false);
+            showColumnActions([]);
           }
         })
         .catch(function (err) {
@@ -559,8 +586,8 @@
           showColumnResponse(step.description, false);
           showColumnActions([
             { label: '\uD83D\uDC46 Show Me', action: function () { triggerShowMe(step); } },
-            { label: '\u2713 Passed', action: function () { markValidationStep(step.id, 'passed'); loadDynamicArea(); } },
-            { label: '\u2717 Failed',  action: function () { markValidationStep(step.id, 'failed'); loadDynamicArea(); } },
+            { label: '\u2713 Passed', action: function () { markValidationStep(step.id, 'passed'); setOrbState('IDLE'); } },
+            { label: '\u2717 Failed',  action: function () { markValidationStep(step.id, 'failed'); setOrbState('IDLE'); } },
           ]);
         });
       }
@@ -579,6 +606,25 @@
     // Also ensure the orb is in active state
     var orb = document.getElementById('pip-orb');
     if (orb) { orb.classList.add('pip-active'); orb.classList.remove('pip-idle'); }
+  }
+
+  // ── Orb state machine ─────────────────────────────────────────────────────
+  // Single transition point for #pip-dynamic-area. All callers go through here.
+  function setOrbState(state, data) {
+    currentOrbState = state;
+    var area = document.getElementById('pip-dynamic-area');
+    if (!area) return;
+    // Pre-clear so each renderer starts clean
+    while (area.firstChild) area.removeChild(area.firstChild);
+    if (state === 'IDLE') {
+      loadDynamicArea();
+    } else if (state === 'BRIEF_PROGRESS') {
+      renderBriefInDynamic((data && data.answers) || {}, (data && data.pct) || 0);
+    } else if (state === 'BRAINSTORM_ACTIVE') {
+      renderDynamicModeContent('brainstorm');
+    } else if (state === 'REVIEW_ACTIVE') {
+      renderDynamicModeContent('review');
+    }
   }
 
   // ── Validation Mode ───────────────────────────────────────────────────────
@@ -739,13 +785,15 @@
     send:               sendToChat,
     showColumnResponse: showColumnResponse,
     showColumnActions:  showColumnActions,
-    reloadTodos:        loadDynamicArea,
+    reloadTodos:        function () { setOrbState('IDLE'); },
+    setOrbState:        setOrbState,
     validation: {
       check:    checkValidationPlan,
       markStep: markValidationStep,
       showPlan: function () { if (validationPlan) showFullPlan(validationPlan); },
     },
     get mode() { return pipMode; },
+    get orbState() { return currentOrbState; },
   };
 
   // ── Init on DOM ready ─────────────────────────────────────────────────────
@@ -760,45 +808,38 @@
   // Clicking a step in the todo list surfaces the step prompt in the response column.
   // window.addEventListener('pip:session-started', ...) removed intentionally.
 
-  // ── Site changed — reset all Shay-Shay components for the new site ────────
-  window.addEventListener('studio:site-changed', function (e) {
-    var newTag = e.detail && e.detail.tag;
-
+  // ── Site changed → IDLE ───────────────────────────────────────────────────
+  window.addEventListener('studio:site-changed', function () {
     // Clear response column
     var area = document.getElementById('pip-response-area');
     var row  = document.getElementById('pip-action-row');
     if (area) { while (area.firstChild) area.removeChild(area.firstChild); area.className = ''; }
     if (row)  { while (row.firstChild) row.removeChild(row.firstChild); row.style.display = 'none'; }
 
-    // Reset badge
     setBadge(0);
-
-    // Clear localStorage dismiss keys for build_warn so new site shows fresh
     localStorage.removeItem('pip-dismiss:pip-t-build-warn');
     localStorage.removeItem('pip-dismiss:pip-t-briefed-idle');
 
-    // Show placeholder — validation mode only activates on explicit /validate command
-    showPlaceholder(document.getElementById('pip-dynamic-area'));
+    setOrbState('IDLE');
   });
 
-  // ── Mode awareness — dynamic area adapts when mode changes ───────────────
+  // ── Mode changed → state machine transition ───────────────────────────────
   window.addEventListener('pip:mode-changed', function (e) {
     var mode = e.detail && e.detail.mode;
     if (!mode) return;
     if (mode === 'brainstorm') {
-      renderDynamicModeContent('brainstorm');
+      setOrbState('BRAINSTORM_ACTIVE');
     } else if (mode === 'review') {
-      renderDynamicModeContent('review');
+      setOrbState('REVIEW_ACTIVE');
     } else {
-      // Build mode — return to default (validation plan or placeholder)
-      loadDynamicArea();
+      setOrbState('IDLE');
     }
   });
 
-  // ── Brief progress in dynamic area ───────────────────────────────────────
+  // ── Brief updated → BRIEF_PROGRESS ───────────────────────────────────────
   window.addEventListener('pip:brief-updated', function (e) {
     var detail = e.detail || {};
-    renderBriefInDynamic(detail.answers || {}, detail.completionPct || 0);
+    setOrbState('BRIEF_PROGRESS', { answers: detail.answers || {}, pct: detail.completionPct || 0 });
   });
 
   function renderBriefInDynamic(answers, pct) {

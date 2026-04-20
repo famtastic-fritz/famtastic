@@ -5260,9 +5260,9 @@ app.post('/api/shay-shay', async (req, res) => {
 
     // Load her knowledge package
     const manifest = await buildCapabilityManifest();
-    const instructionsPath = path.join(__dirname, 'shay-shay', 'instructions.md');
-    const instructions = fs.existsSync(instructionsPath)
-      ? fs.readFileSync(instructionsPath, 'utf8') : '';
+    const instructions = loadShayShayInstructions();
+    const agentCards = loadShayShayAgentCards();
+    const siteSnapshot = buildShayShaySiteSnapshot(context);
 
     // Tier 0: deterministic commands — no AI needed
     const lower = message.toLowerCase().trim();
@@ -5283,33 +5283,90 @@ app.post('/api/shay-shay', async (req, res) => {
       return res.json(result);
     }
 
-    // Tiers 1-3: AI reasoning
-    const tier = lower.match(/\b(should\s+i|what\s+do\s+you\s+think|compare|architecture|strategy)\b/) ? 3
-      : lower.match(/\b(what\s+have\s+we\s+learned|intelligence|history|last\s+build)\b/) ? 2
-      : 1;
+    const direct = answerShayShayDirect(lower, siteSnapshot, manifest);
+    if (direct) {
+      const suggestionId = suggestionLogger.logSuggestion(message, {
+        active_site: TAG,
+        intent: direct.intent || 'shay_shay_direct',
+        source: 'shay-shay-direct',
+      });
+      return res.json({
+        response: direct.response,
+        action: direct.action || null,
+        source: 'shay-shay-direct',
+        suggestion_id: suggestionId,
+      });
+    }
 
-    const model = tier === 3 ? 'claude-opus-4-7' : 'claude-sonnet-4-6';
+    // Tiers 1-3: routed reasoning with persistent per-brain sessions
+    const reasoning = classifyShayShayReasoning(lower);
+    const selection = selectShayShayBrain(reasoning, manifest, agentCards);
 
-    const systemPrompt = `${instructions}
+    let usedBrain = selection.brain;
+    let usedModel = selection.model;
+    let responseText = '';
 
-## Current Capability Manifest (live state)
-${JSON.stringify(manifest.capabilities, null, 2)}
+    try {
+      responseText = await executeShayShayBrainCall({
+        brain: selection.brain,
+        model: selection.model,
+        message,
+        context,
+        manifest,
+        instructions,
+        agentCards,
+        siteSnapshot,
+        reasoning,
+      });
+    } catch (err) {
+      if (selection.fallbackBrain && selection.fallbackBrain !== selection.brain) {
+        usedBrain = selection.fallbackBrain;
+        usedModel = selection.fallbackModel;
+        responseText = await executeShayShayBrainCall({
+          brain: selection.fallbackBrain,
+          model: selection.fallbackModel,
+          message,
+          context,
+          manifest,
+          instructions,
+          agentCards,
+          siteSnapshot,
+          reasoning,
+        });
+      } else {
+        throw err;
+      }
+    }
 
-## Active Site: ${context.active_site || TAG || 'none'}
-Current page: ${context.active_page || 'unknown'}
-`;
+    const normalized = normalizeShayShayResponse(responseText, {
+      response: responseText || 'I do not have a good answer yet.',
+      action: null,
+    });
 
-    const response = await callSDK(
-      `USER: ${message}`,
-      { model, maxTokens: 1024, callSite: 'shay-shay', systemPrompt, timeoutMs: 30000 }
-    );
+    if (selection.note) {
+      normalized.response = `${selection.note} ${normalized.response}`.trim();
+    }
 
     // Log suggestion for outcome tracking
     const suggestionId = suggestionLogger.logSuggestion(message, {
-      active_site: TAG, intent: 'shay_shay_response', source: 'shay-shay', tier, model
+      active_site: TAG,
+      intent: `shay_shay_${reasoning.kind}`,
+      source: 'shay-shay',
+      tier: reasoning.tier,
+      brain: usedBrain,
+      model: usedModel,
     });
 
-    res.json({ response, tier, model, suggestion_id: suggestionId });
+    res.json({
+      response: normalized.response,
+      action: normalized.action || null,
+      message: normalized.message,
+      tier: reasoning.tier,
+      reasoning: reasoning.kind,
+      brain: usedBrain,
+      model: usedModel,
+      suggestion_id: suggestionId,
+    });
   } catch (e) {
     console.error('[shay-shay] error:', e.message);
     res.status(500).json({ error: e.message });
@@ -5341,6 +5398,326 @@ app.post('/api/shay-shay/outcome', (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+function loadShayShayInstructions() {
+  const instructionsPath = path.join(__dirname, 'shay-shay', 'instructions.md');
+  return fs.existsSync(instructionsPath)
+    ? fs.readFileSync(instructionsPath, 'utf8')
+    : '';
+}
+
+function loadShayShayAgentCards() {
+  const cardsDir = path.join(__dirname, 'agent-cards');
+  if (!fs.existsSync(cardsDir)) return {};
+  return fs.readdirSync(cardsDir)
+    .filter(file => file.endsWith('.agent-card.json'))
+    .reduce((acc, file) => {
+      try {
+        const card = JSON.parse(fs.readFileSync(path.join(cardsDir, file), 'utf8'));
+        if (card && card.id) acc[card.id] = card;
+      } catch {}
+      return acc;
+    }, {});
+}
+
+function buildShayShaySiteSnapshot(context = {}) {
+  const spec = readSpec();
+  const pages = listPages();
+  const mediaSpecs = Array.isArray(spec.media_specs) ? spec.media_specs : [];
+  const emptySlots = mediaSpecs.filter(slot => slot.status === 'empty').length;
+  const deployHistory = Array.isArray(spec.deploy_history) ? spec.deploy_history : [];
+  const lastDeploy = deployHistory.length > 0 ? deployHistory[deployHistory.length - 1] : null;
+  const approvedDecisions = Array.isArray(spec.design_decisions)
+    ? spec.design_decisions.filter(d => d && d.status === 'approved').length
+    : 0;
+
+  return {
+    site_tag: context.active_site || TAG || null,
+    site_name: spec.site_name || null,
+    business_type: spec.business_type || null,
+    active_page: context.active_page || currentPage || 'index.html',
+    active_tab: context.active_tab || null,
+    fam_score: context.fam_score != null ? context.fam_score : (spec.fam_score != null ? spec.fam_score : null),
+    page_count: pages.length,
+    pages,
+    media_slots_total: mediaSpecs.length,
+    media_slots_empty: emptySlots,
+    approved_decisions: approvedDecisions,
+    deployed_url: (spec.environments && spec.environments.production && spec.environments.production.url) || spec.deployed_url || null,
+    last_deploy_status: lastDeploy && lastDeploy.status ? lastDeploy.status : null,
+    brief_summary: summarizeDesignBrief(spec.design_brief),
+  };
+}
+
+function summarizeDesignBrief(brief) {
+  if (!brief || typeof brief !== 'object') return 'No design brief yet.';
+  const parts = [
+    brief.business_name,
+    brief.industry,
+    brief.style,
+    brief.target_audience,
+    brief.primary_goal,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(' | ') : 'Design brief exists but core summary fields are sparse.';
+}
+
+function answerShayShayDirect(lower, siteSnapshot, manifest) {
+  if (/\b(active\s+site|what\s+site|which\s+site|current\s+site)\b/.test(lower)) {
+    const siteLabel = siteSnapshot.site_name
+      ? `${siteSnapshot.site_name} (${siteSnapshot.site_tag})`
+      : (siteSnapshot.site_tag || 'no active site');
+    return { intent: 'active_site', response: `The active site is ${siteLabel}.` };
+  }
+
+  if (/\b(active\s+page|current\s+page|what\s+page|which\s+page)\b/.test(lower)) {
+    return { intent: 'active_page', response: `The active page is ${siteSnapshot.active_page || 'unknown'}.` };
+  }
+
+  if (/\bfam\s+score\b/.test(lower)) {
+    if (siteSnapshot.fam_score == null) {
+      return { intent: 'fam_score', response: 'This site does not have a FAM score recorded yet.' };
+    }
+    return { intent: 'fam_score', response: `The current FAM score is ${siteSnapshot.fam_score}.` };
+  }
+
+  if (/\b(how\s+many|what)\s+pages\b/.test(lower)) {
+    if (!siteSnapshot.page_count) {
+      return { intent: 'page_count', response: 'There are no built pages in dist yet.' };
+    }
+    return {
+      intent: 'page_count',
+      response: `This site currently has ${siteSnapshot.page_count} page${siteSnapshot.page_count === 1 ? '' : 's'}: ${siteSnapshot.pages.join(', ')}.`
+    };
+  }
+
+  if (/\bwhat\s+can\s+you\s+do\b|\bhow\s+can\s+you\s+help\b/.test(lower)) {
+    const available = Object.entries((manifest && manifest.capabilities) || {})
+      .filter(([, value]) => value === 'available')
+      .map(([key]) => key);
+    return {
+      intent: 'capability_help',
+      response: `I can orient you inside Studio, route build requests, check live capability status, suggest brainstorm mode, capture gaps, and answer questions about the active site. Live capabilities available right now: ${available.join(', ')}.`
+    };
+  }
+
+  if (/\bwhat\s+do\s+you\s+know\s+about\s+(this\s+site|the\s+site)\b/.test(lower)) {
+    return {
+      intent: 'site_summary',
+      response: `This is ${siteSnapshot.site_name || siteSnapshot.site_tag || 'the active site'}. Business type: ${siteSnapshot.business_type || 'not set'}. Pages: ${siteSnapshot.page_count || 0}. Empty media slots: ${siteSnapshot.media_slots_empty}/${siteSnapshot.media_slots_total}. Brief summary: ${siteSnapshot.brief_summary}`
+    };
+  }
+
+  return null;
+}
+
+function classifyShayShayReasoning(lower) {
+  if (/\b(should\s+i|what\s+do\s+you\s+think|compare|architecture|strategy|roadmap|trade-?off)\b/.test(lower)) {
+    return { kind: 'strategy', tier: 3 };
+  }
+  if (/\b(research|market|competitor|vertical|trend|audience|positioning|offer)\b/.test(lower)) {
+    return { kind: 'research', tier: 2 };
+  }
+  if (/\b(review|audit|debug|broken|bug|critique|harsh|adversarial|regression|error|failing)\b/.test(lower)) {
+    return { kind: 'review', tier: 2 };
+  }
+  if (/\b(brainstorm|idea|concept|direction|name|theme|mascot|uncertain|unsure)\b/.test(lower)) {
+    return { kind: 'brainstorm', tier: 2 };
+  }
+  if (/\b(build|site|page|layout|copy|brief|design|edit|studio)\b/.test(lower)) {
+    return { kind: 'studio', tier: 1 };
+  }
+  return { kind: 'general', tier: 1 };
+}
+
+function selectShayShayBrain(reasoning, manifest, agentCards) {
+  const capabilities = (manifest && manifest.capabilities) || {};
+  const availability = {
+    claude: capabilities.claude_api === 'available',
+    gemini: capabilities.gemini_api === 'available',
+    codex: capabilities.openai_api === 'available',
+  };
+
+  const preferenceByKind = {
+    brainstorm: ['gemini', 'claude', 'codex'],
+    research: ['gemini', 'claude', 'codex'],
+    review: ['codex', 'claude', 'gemini'],
+    strategy: ['claude', 'codex', 'gemini'],
+    studio: ['claude', 'codex', 'gemini'],
+    general: ['claude', 'gemini', 'codex'],
+  };
+
+  const preferred = preferenceByKind[reasoning.kind] || preferenceByKind.general;
+  const chosen = preferred.find(brain => availability[brain]) || 'claude';
+  const chosenCard = agentCards[chosen] || {};
+  const preferredCard = agentCards[preferred[0]] || {};
+  const note = chosen !== preferred[0]
+    ? `${preferredCard.name || preferred[0]} is not available right now, so I’m using ${chosenCard.name || chosen}.`
+    : '';
+
+  return {
+    brain: chosen,
+    model: chosenCard.model || null,
+    fallbackBrain: preferred.find(brain => brain !== chosen && availability[brain]) || null,
+    fallbackModel: (agentCards[preferred.find(brain => brain !== chosen && availability[brain]) || ''] || {}).model || null,
+    note,
+  };
+}
+
+async function executeShayShayBrainCall(opts) {
+  const {
+    brain,
+    model,
+    message,
+    context,
+    manifest,
+    instructions,
+    agentCards,
+    siteSnapshot,
+    reasoning,
+  } = opts;
+
+  const session = getOrCreateBrainSession(brain, {
+    tag: siteSnapshot.site_tag || TAG,
+    hubRoot: HUB_ROOT,
+    page: siteSnapshot.active_page || currentPage,
+  });
+
+  const firstTurn = session.historyLength === 0;
+  const prompt = buildShayShayPrompt({
+    message,
+    context,
+    manifest,
+    instructions,
+    agentCards,
+    siteSnapshot,
+    reasoning,
+    studioContext: session.readStudioContext(),
+    includePrimer: firstTurn,
+    selectedBrain: brain,
+  });
+
+  const result = await session.execute(prompt, {
+    maxTokens: reasoning.tier === 3 ? 2048 : 1400,
+    mode: reasoning.kind === 'brainstorm' ? 'brainstorm' : 'chat',
+    model,
+  });
+
+  return result && result.content ? result.content : '';
+}
+
+function buildShayShayPrompt(opts) {
+  const {
+    message,
+    manifest,
+    instructions,
+    agentCards,
+    siteSnapshot,
+    reasoning,
+    studioContext,
+    includePrimer,
+    selectedBrain,
+  } = opts;
+
+  const capabilityText = JSON.stringify((manifest && manifest.capabilities) || {}, null, 2);
+  const agentCardText = Object.values(agentCards || {}).map(card => {
+    return `- ${card.id}: ${card.name} | model=${card.model} | best_for=${(card.best_for || []).join(', ')}`;
+  }).join('\n');
+  const cerebrumPath = path.join(HUB_ROOT, '.wolf', 'cerebrum.md');
+  const cerebrumExcerpt = readShayShayExcerpt(cerebrumPath, 40);
+  const studioContextExcerpt = truncateShayShayContext(studioContext, 50);
+  const snapshotText = JSON.stringify(siteSnapshot, null, 2);
+
+  const primer = includePrimer ? [
+    instructions,
+    '',
+    'You are responding inside FAMtastic Site Studio.',
+    'Return strict JSON only. No markdown fences. No commentary outside the JSON object.',
+    'Allowed actions: null, route_to_chat, system_command, show_me, suggest_brainstorm.',
+    'Prefer action:null unless routing or UI behavior is genuinely needed.',
+    '',
+    'LIVE CAPABILITY MANIFEST:',
+    capabilityText,
+    '',
+    'AVAILABLE BRAIN AGENTS:',
+    agentCardText || '- none loaded',
+    '',
+    'FAMTASTIC MEMORY EXCERPT:',
+    cerebrumExcerpt || 'No cerebrum memory available.',
+    '',
+    'STUDIO CONTEXT EXCERPT:',
+    studioContextExcerpt || 'No STUDIO-CONTEXT.md available yet.',
+    '',
+  ].join('\n') : '';
+
+  return [
+    primer,
+    `CURRENT ROUTING MODE: ${reasoning.kind}`,
+    `SELECTED BRAIN: ${selectedBrain}`,
+    'ACTIVE SITE SNAPSHOT:',
+    snapshotText,
+    '',
+    'USER MESSAGE:',
+    message,
+    '',
+    'Return JSON in this shape:',
+    '{"response":"...", "action":null, "message":null}',
+  ].filter(Boolean).join('\n');
+}
+
+function readShayShayExcerpt(filePath, maxLines) {
+  if (!fs.existsSync(filePath)) return '';
+  try {
+    return fs.readFileSync(filePath, 'utf8')
+      .split('\n')
+      .slice(0, maxLines || 40)
+      .join('\n')
+      .trim();
+  } catch {
+    return '';
+  }
+}
+
+function truncateShayShayContext(text, maxLines) {
+  if (!text) return '';
+  return String(text).split('\n').slice(0, maxLines || 50).join('\n').trim();
+}
+
+function normalizeShayShayResponse(raw, fallback = {}) {
+  const text = String(raw || '').trim();
+  if (!text) return { response: fallback.response || 'No response.', action: fallback.action || null };
+
+  const stripped = text
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+
+  const candidates = [stripped];
+  const firstBrace = stripped.indexOf('{');
+  const lastBrace = stripped.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    candidates.push(stripped.slice(firstBrace, lastBrace + 1));
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          response: parsed.response || fallback.response || text,
+          action: parsed.action || null,
+          message: parsed.message || null,
+        };
+      }
+    } catch {}
+  }
+
+  return {
+    response: text,
+    action: fallback.action || null,
+    message: fallback.message || null,
+  };
+}
 
 function classifyShayShayTier0(lower, context = {}) {
   if (/\b(restart\s+studio|reboot\s+studio|reset\s+server)\b/.test(lower))
@@ -14393,6 +14770,7 @@ module.exports = {
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
+  classifyShayShayReasoning, selectShayShayBrain, normalizeShayShayResponse, answerShayShayDirect,
   extractTemplateComponents, loadTemplateContext, applyTemplateToPages, writeTemplateArtifacts,
   // Verification + auto-fix
   verifySlotAttributes, verifyCssCoherence, verifyCrossPageConsistency,
@@ -14528,14 +14906,14 @@ function cleanWorkerQueueOnStartup() {
 // Session 12 Phase 1 (I3): expose intel helpers so scripts/intelligence-loop
 // can drive them without opening a Studio port. Only functions that are
 // safe to call outside a live session should go here.
-module.exports = {
+Object.assign(module.exports, {
   generateIntelReport,
   getPromotedIntelligence,
   writePendingReview,
   checkPendingReview,
   cleanWorkerQueueOnStartup,
   updateFamtasticDna,
-};
+});
 
 // Start servers only when run directly (not when imported by tests)
 if (require.main === module) {

@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-16 (Session 16 — Layer 0 Foundation + Shay-Shay Seed: 71 new tests, ~1,307 cumulative)
+**Last updated:** 2026-04-20 (Session 17 — Nav Contract + Intel Actions + Orb State Machine: 30 tests passing)
 
 ---
 
@@ -19,6 +19,14 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 4. **`lib/surgical-editor.js`** — DOM-aware surgical editor. `buildStructuralIndex()`, `extractSection()`, `surgicalEdit()`, `trySurgicalEdit()`. Structural index in Step 7 of `runPostProcessing()`.
 5. **Revenue-first brief interview** — `q_revenue` second question. `getRevenueBuildHints(model)` injects `REVENUE ARCHITECTURE` block. `suggestion_chips` + `follow_up_map`.
 6. **`fam-hub site deal-memo <tag>`** — rank-and-rent deal memo at `sites/<tag>/deal-memo.md`.
+
+**Session 17 additions (2026-04-20):**
+1. **`NAV_SKELETON`** — added to `lib/famtastic-skeletons.js`. Mandates exact nav class names (`.nav-links`, `.nav-cta`, `.nav-toggle-label`, `.nav-mobile-menu`, `#nav-toggle`) — injected into both template build prompt and parallel page `famSkeletonBlock`. Closes the systemic risk behind the double-nav bug in `site-the-daily-grind-in-atlanta`.
+2. **Preview server query string fix** — `previewServer` now strips `?t=...` cache-busters via `req.url.split('?')[0]` before filesystem lookup. Previously all `navigateToPage()` calls (page tabs, build completions, site switches) silently returned 404.
+3. **Actionable intelligence cards** — `loadIntelligenceFeed()` in `studio-shell.js` upgraded with severity-keyed action buttons: MAJOR/CRITICAL → "Run diagnostic" (brain status) + "Log to backlog"; OPPORTUNITY → "View details" (inline expand) + "Dismiss"; MINOR → "Dismiss" only.
+4. **Site-scoped dismiss** — `POST /api/intel/dismiss` persists dismiss keys to `site-studio/.dismissed-findings.json` keyed by `${siteTag}-${severity}-${slugify(title)}`. `GET /api/intel/findings` filters dismissed findings before returning.
+5. **Build backlog** — `POST /api/intel/backlog` appends entries to `.wolf/build-backlog.json` (append-only, full schema: id, logged_at, source, severity, site_tag, category, title, description, status, session).
+6. **Orb state machine** — `#pip-dynamic-area` now transitions via `setOrbState(state, data)` in `studio-orb.js`. Four states: `IDLE` (validation plan or placeholder), `BRIEF_PROGRESS` (brief completion), `BRAINSTORM_ACTIVE`, `REVIEW_ACTIVE`. Single source of truth: `currentOrbState` module-level variable. All three event listeners updated (`studio:site-changed` → IDLE, `pip:mode-changed` → state by mode, `pip:brief-updated` → BRIEF_PROGRESS). Exposed via `PipOrb.setOrbState()` and `PipOrb.orbState` getter.
 
 **Session 16 additions (2026-04-16):**
 1. **Surgical editor wired** — `tryDeterministicHandler()` now has a STRUCTURAL_HINTS block. "change the hero headline to X" resolved without Claude when structural index exists. ~90% token reduction on matched content edits.
@@ -143,7 +151,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Revenue Architecture** — `buildPromptContext()` injects `REVENUE ARCHITECTURE` block for non-stub models. Rank-and-rent builds include: lead capture form, call tracking slot, LocalBusiness schema. Reservations: booking widget slot. E-commerce: product grid, cart slot.
 
-**HTML Skeletons** — `lib/famtastic-skeletons.js`. `HERO_SKELETON_TEMPLATE` enforces BEM double-dash vocabulary (`--bg`, `--fx`, `--character`, `--content`). `LOGO_SKELETON_TEMPLATE` enforces SVG nav logo wiring. `LOGO_NOTE_PAGE` prevents parallel page logo re-emission.
+**HTML Skeletons** — `lib/famtastic-skeletons.js`. `HERO_SKELETON_TEMPLATE` enforces BEM double-dash vocabulary (`--bg`, `--fx`, `--character`, `--content`). `LOGO_SKELETON_TEMPLATE` enforces SVG nav logo wiring. `LOGO_NOTE_PAGE` prevents parallel page logo re-emission. `NAV_SKELETON` mandates nav class vocabulary (`.nav-links`, `.nav-cta`, `.nav-toggle-label`, `.nav-mobile-menu`, `#nav-toggle`) — injected into template and parallel page prompts. *(NAV_SKELETON added Session 17)*
 
 **Build DNA** — `famtastic-dna.md` auto-updated by `updateFamtasticDna()` after every build. Session 12 Phase 3. Injected into every Claude session via `@famtastic-dna.md` in CLAUDE.md.
 
@@ -191,6 +199,8 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | GET | `/api/intel/report` | Full intelligence report |
 | GET | `/api/intel/findings` | Findings only with severity counts |
 | POST | `/api/intel/promote` | Promote finding to intelligence-promotions.json |
+| POST | `/api/intel/dismiss` | Site-scoped dismiss — persists to `.dismissed-findings.json` keyed by `${tag}-${severity}-${slug}` *(Session 17)* |
+| POST | `/api/intel/backlog` | Append finding to `.wolf/build-backlog.json` *(Session 17)* |
 | POST | `/api/intel/run-research` | Create dated research stub |
 | GET | `/api/context` | Return STUDIO-CONTEXT.md contents |
 | POST | `/api/context` | Trigger manual context regeneration |
@@ -242,6 +252,13 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | seed-pinecone --vertical flag | Tier 3 | Add `--vertical <name>` to `scripts/seed-pinecone` for per-build auto-seeding. |
 | server.js decomposition | Tier 3 | ~12,300 lines. Plan: thin assembler + modules in lib/. Do not split until specific pain demands it. |
 | deal-memo geography fallback | Tier 4 | Defaults to `[AREA]` placeholder when interview was skipped. Should pull from `spec.design_brief` as fallback. |
+
+### Closed in Session 17 (2026-04-20)
+
+- **Preview server returning 404 for cache-busted URLs** — `req.url` included query string; `path.join(dist, '/index.html?t=123')` resolved to a non-existent path. Fixed: `req.url.split('?')[0]` before lookup.
+- **Intelligence cards display-only** — upgraded with severity-keyed action buttons; dismiss is site-scoped and persists across reloads.
+- **Nav class vocabulary not enforced** — `NAV_SKELETON` constant now injected into both template and parallel page prompts, closing the root cause of the double-nav bug.
+- **Orb dynamic area scattered DOM writes** — consolidated into `setOrbState(state, data)` explicit state machine with single clear-before-render path.
 
 ### Closed in Session 16 (2026-04-16)
 
@@ -322,6 +339,10 @@ See CHANGELOG.md for full session history.
 | `site-studio/public/css/studio-brain-selector.css` | — | Brain/Worker panel, provider colors |
 | `site-studio/public/js/brain-selector.js` | — | `BrainSelector` IIFE: `init(ws)`, `select()`, `setModel()`, status polling |
 | `site-studio/public/js/worker-queue-badge.js` | — | Polls `/api/worker-queue` every 15s, pulsing amber badge |
+| `site-studio/public/js/studio-orb.js` | ~950 | Pip assistant orb. `setOrbState(state, data)` state machine for `#pip-dynamic-area`. Four states: IDLE, BRIEF_PROGRESS, BRAINSTORM_ACTIVE, REVIEW_ACTIVE. Shay-Shay column, callout, badge, mode popup. `PipOrb` public API. *(State machine added Session 17)* |
+| `site-studio/public/js/studio-shell.js` | — | Shell init, intel feed, site switcher, sidebar tab wiring. `loadIntelligenceFeed()` has severity-keyed action buttons + site-scoped dismiss. *(Actions added Session 17)* |
+| `site-studio/.dismissed-findings.json` | — | Site-scoped intelligence dismiss store. Schema: `{ siteTag: { key: { dismissed_at, category, summary } } }`. *(Added Session 17)* |
+| `.wolf/build-backlog.json` | — | Append-only build backlog. Entry schema: `{ id, logged_at, source, severity, site_tag, category, title, description, status, session }`. *(Added Session 17)* |
 | `mcp-server/server.js` | 343 | MCP server. 4 tools via stdio JSON-RPC. |
 
 ### Test Suites
@@ -448,6 +469,9 @@ See CHANGELOG.md for full session history.
 - BEM double-dash vocabulary (`--bg` not `-bg`) — enforced by skeletons and tests
 - Inline styles prohibited in generated site HTML
 - Parallel page spawns must NOT emit logo SVGs — only the template call emits them
+- Nav class names must match `NAV_SKELETON` vocabulary — enforced by skeletons injection in both template and page prompts *(Session 17)*
+- `#pip-dynamic-area` transitions go through `setOrbState(state, data)` only — never direct DOM writes from event listeners *(Session 17)*
+- Preview server must strip query string (`req.url.split('?')[0]`) before filesystem lookup *(Session 17)*
 
 ---
 

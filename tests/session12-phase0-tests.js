@@ -151,8 +151,8 @@ test('server.js requires famtastic-skeletons', () => {
   assert.ok(serverSrc.includes("require('./lib/famtastic-skeletons')"));
 });
 
-test('buildPromptContext return includes heroSkeleton', () => {
-  assert.ok(serverSrc.includes('heroSkeleton, dividerSkeleton, inlineStyleProhibition'));
+test('buildPromptContext return includes heroSkeleton and navSkeleton', () => {
+  assert.ok(serverSrc.includes('heroSkeleton, dividerSkeleton, navSkeleton, inlineStyleProhibition'));
 });
 
 test('buildTemplatePrompt injects LOGO_SKELETON_TEMPLATE when famtastic_mode', () => {
