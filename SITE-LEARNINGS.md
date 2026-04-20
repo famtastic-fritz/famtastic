@@ -4192,3 +4192,61 @@ Exports:
 - `recallGlobal()` is queried on every Shay-Shay call even when there are no global memories — adds one SQLite read per call (negligible but worth noting)
 - Memory search (`/api/memory?entity_type=...`) has no text search endpoint — only exact field filters; `/api/memory` with no params returns all recent entries, not site-filtered
 - No UI to browse/edit/delete memories yet; `/api/memory` GET is the only read surface
+
+---
+
+## Phase 6 — Revenue Path + GoDaddy DNS + Reunion Validation (2026-04-20)
+
+### Files Modified
+- `site-studio/server.js` — 3 new endpoints, `verifyRevenueAndState()` check added to `runBuildVerification`
+- `site-studio/public/js/studio-screens.js` — Deploy right panel redesigned, revenue/DNS/approve functions, Settings Site tab additions
+- `site-studio/public/css/studio-screens.css` — revenue card, DNS card, approve button styles
+
+### Server API Additions
+
+**`PATCH /api/patch-spec`** — update safe spec fields
+- Allowed fields: `monthly_rate`, `client_name`, `client_email`, `custom_domain`, `paypal_handle`
+- Guards: PATCHABLE_SPEC_FIELDS set; unknown fields silently ignored; 400 if no valid fields
+
+**`POST /api/approve-site`** — mark site as client_approved
+- Sets `spec.state = 'client_approved'`, `spec.approved_at = ISO timestamp`
+- Accepts optional body: `{ monthly_rate, client_name }`
+- Returns `{ ok, state, approved_at, paypal_link }` — paypal_link is `https://www.paypal.com/paypalme/{paypal_handle}/{monthly_rate}` or null
+
+**`GET /api/revenue-card`** — PayPal + rate card data
+- Returns `{ monthly_rate, paypal_link, paypal_handle, state, approved_at, client_name, deployed_url, custom_domain }`
+- `paypal_handle` defaults to `famtasticfritz` unless `spec.paypal_handle` is set
+
+**`verifyRevenueAndState()`** — added as 6th check in `runBuildVerification()`
+- Warns if site is `client_approved` but no `monthly_rate` set
+- Warns if `revenue_model === 'rank_and_rent'` and no `monthly_rate`
+- For reunion sites (tag contains "reunion" OR `business_type === 'family_reunion'`):
+  - Checks `event-details.html` and `gallery.html` exist in dist
+  - Checks `index.html` contains "paypal" or "PayPal"
+  - Checks `index.html` contains "rsvp" or "RSVP"
+
+### Deploy Screen Changes (studio-screens.js)
+
+Deploy right panel now has 3 sections:
+1. **Revenue card** (`#deploy-revenue-card`, `loadRevenueCard()`):
+   - No rate set: shows input + Save Rate button → PATCH /api/patch-spec
+   - Rate set: shows `$X / month` label + PayPal link + Copy button
+   - Approved: shows green "✓ Client Approved" badge + approval date
+2. **DNS card** (`#deploy-dns-card`, `loadDnsCard()`):
+   - Shown when `deployed_url` is set
+   - 6-step GoDaddy DNS setup instructions with CNAME + A record values filled from `deployed_url`
+   - Shows target `custom_domain` if set
+3. **History** (unchanged)
+
+Deploy center additions:
+- **"Mark as Client Approved" button** (`#approve-site-btn`, `approveSite()`): POSTs to `/api/approve-site`, disables self + adds green "✓ Approved" state on success
+- `syncApproveSiteBtn()` called at mount to pre-disable if already approved
+
+Settings → Site tab new fields: `Custom domain`, `Monthly rate ($)`, `Client name`, `PayPal handle`
+
+### Known Gaps (Phase 6)
+- Settings Site tab renders monthly_rate etc. as display-only `renderTextField` — values are not wired to PATCH /api/patch-spec on save (use the Deploy revenue card input or direct API call)
+- `paypal_link` uses PayPal.me personal link format — for proper invoicing, a PayPal Subscriptions API integration would be needed
+- GoDaddy DNS card shows Netlify's load balancer IP (75.2.60.5) which is correct for Netlify but may change; should be fetched from Netlify API for accuracy
+- `verifyRevenueAndState()` reunion detection uses simple tag/business_type check — won't catch reunion sites with non-standard naming
+- No server-side validation that `monthly_rate` is a positive number — could store negative values via direct API call

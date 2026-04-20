@@ -8135,6 +8135,54 @@ app.post('/api/validation-plan/report', (req, res) => {
   }
 });
 
+// ─── Revenue Path API (Phase 6) ──────────────────────────────────────────────
+
+// PATCH /api/patch-spec — update safe spec fields (monthly_rate, client_name, etc.)
+const PATCHABLE_SPEC_FIELDS = new Set(['monthly_rate', 'client_name', 'client_email', 'custom_domain', 'paypal_handle']);
+app.patch('/api/patch-spec', (req, res) => {
+  if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'JSON body required' });
+  const spec = readSpec();
+  let updated = 0;
+  for (const [k, v] of Object.entries(req.body)) {
+    if (PATCHABLE_SPEC_FIELDS.has(k)) { spec[k] = v; updated++; }
+  }
+  if (!updated) return res.status(400).json({ error: 'No patchable fields in request' });
+  writeSpec(spec);
+  res.json({ ok: true, fields_updated: updated });
+});
+
+// POST /api/approve-site — mark site as client_approved
+app.post('/api/approve-site', (req, res) => {
+  const spec = readSpec();
+  spec.state = 'client_approved';
+  spec.approved_at = new Date().toISOString();
+  if (req.body && req.body.monthly_rate) spec.monthly_rate = req.body.monthly_rate;
+  if (req.body && req.body.client_name)  spec.client_name  = req.body.client_name;
+  writeSpec(spec);
+  const paypalHandle = spec.paypal_handle || 'famtasticfritz';
+  const rate = spec.monthly_rate;
+  const paypalLink = rate ? `https://www.paypal.com/paypalme/${paypalHandle}/${rate}` : null;
+  res.json({ ok: true, state: 'client_approved', approved_at: spec.approved_at, paypal_link: paypalLink });
+});
+
+// GET /api/revenue-card — PayPal + monthly rate card data
+app.get('/api/revenue-card', (req, res) => {
+  const spec = readSpec();
+  const paypalHandle = spec.paypal_handle || 'famtasticfritz';
+  const rate = spec.monthly_rate;
+  res.json({
+    monthly_rate: rate || null,
+    paypal_link: rate ? `https://www.paypal.com/paypalme/${paypalHandle}/${rate}` : null,
+    paypal_handle: paypalHandle,
+    state: spec.state || 'unknown',
+    approved_at: spec.approved_at || null,
+    client_name: spec.client_name || null,
+    deployed_url: spec.deployed_url || null,
+    custom_domain: spec.custom_domain || null,
+  });
+});
+
+// GET /api/verify
 app.get('/api/verify', (req, res) => {
   const spec = readSpec();
   res.json(spec.last_verification || null);
@@ -10505,13 +10553,51 @@ function verifyLogoAndLayout(pages) {
   return { check: 'logo-and-layout', status, issues };
 }
 
+function verifyRevenueAndState() {
+  const spec = readSpec();
+  const issues = [];
+  if (spec.state === 'client_approved' && !spec.monthly_rate) {
+    issues.push('Site is client_approved but monthly_rate is not set — add a rate before sending payment link');
+  }
+  if (spec.revenue_model === 'rank_and_rent' && !spec.monthly_rate) {
+    issues.push('Rank-and-rent site has no monthly_rate set — set it in Settings → Site');
+  }
+  const isReunion = /reunion|family.event/.test(TAG) || spec.business_type === 'family_reunion';
+  if (isReunion) {
+    const distDir = DIST_DIR();
+    const requiredPages = ['event-details.html', 'gallery.html'];
+    for (const p of requiredPages) {
+      if (!fs.existsSync(path.join(distDir, p))) {
+        issues.push(`Reunion site missing required page: ${p}`);
+      }
+    }
+    const indexPath = path.join(distDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      const html = fs.readFileSync(indexPath, 'utf8');
+      if (!html.includes('paypal') && !html.includes('PayPal')) {
+        issues.push('Reunion site index.html has no PayPal button — required for book/ticket sales');
+      }
+      if (!html.includes('rsvp') && !html.includes('RSVP')) {
+        issues.push('Reunion site index.html has no RSVP mention — required per brief');
+      }
+    }
+  }
+  return {
+    check: 'revenue_and_state',
+    status: issues.length ? 'warned' : 'passed',
+    issues,
+    passed: issues.length === 0,
+  };
+}
+
 function runBuildVerification(pages) {
   const checks = [
     verifySlotAttributes(pages),
     verifyCssCoherence(),
     verifyCrossPageConsistency(pages),
     verifyHeadDependencies(pages),
-    verifyLogoAndLayout(pages)
+    verifyLogoAndLayout(pages),
+    verifyRevenueAndState(),
   ];
 
   const overallStatus = checks.some(c => c.status === 'failed') ? 'failed'

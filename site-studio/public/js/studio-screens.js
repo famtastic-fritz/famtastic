@@ -26,152 +26,558 @@
     fn();
   }
 
-  // ── ASSETS TAB: Component tree + media library ───────────────────────────
+  // ── ASSETS TAB: slot-aware media workspace ───────────────────────────────
+  var assetsState = {
+    siteTag: null,
+    slots: [],
+    uploads: [],
+    selectedSlotId: null,
+    selectedAssetFilename: null,
+    search: '',
+    roleFilter: 'all'
+  };
+
+  var assetsRefs = {};
+
   function mountAssets() {
     var pane = document.getElementById('tab-pane-assets');
     if (!pane) return;
     clearEl(pane);
     pane.style.cssText = 'display:flex;flex-direction:column;height:100%;overflow:hidden;';
 
-    var view = mkEl('div', { className: 'screen-three-panel' });
+    var shell = mkEl('div', { className: 'assets-shell' });
+
+    var topbar = mkEl('div', { className: 'assets-topbar' });
+    var intro = mkEl('div', { className: 'assets-topbar-copy' });
+    intro.appendChild(mkEl('div', { className: 'assets-topbar-title', text: 'Media Workspace' }));
+    intro.appendChild(mkEl('div', {
+      className: 'assets-topbar-sub',
+      text: 'Pick a slot, choose or upload an image, and apply it without leaving Studio.'
+    }));
+    topbar.appendChild(intro);
+
+    var toolbar = mkEl('div', { className: 'assets-topbar-actions' });
+    var uploadBtn = mkEl('button', { className: 'media-action-btn primary', text: 'Upload Media' });
+    var refreshBtn = mkEl('button', { className: 'media-action-btn', text: 'Refresh' });
+    var fileInput = mkEl('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*,.svg';
+    fileInput.style.display = 'none';
+    uploadBtn.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files && fileInput.files[0]) handleAssetUpload(fileInput.files[0]);
+      fileInput.value = '';
+    });
+    refreshBtn.addEventListener('click', refreshAssetsWorkspace);
+    toolbar.appendChild(uploadBtn);
+    toolbar.appendChild(refreshBtn);
+    toolbar.appendChild(fileInput);
+    topbar.appendChild(toolbar);
+    shell.appendChild(topbar);
+
+    var view = mkEl('div', { className: 'screen-three-panel assets-workspace' });
     view.style.flex = '1';
 
-    // Left: component tree
-    var left = mkEl('div', { className: 'screen-left' });
-    left.appendChild(mkEl('div', { className: 'screen-header', text: 'Components' }));
-    var tree = mkEl('div');
-    tree.id = 'component-tree';
-    tree.style.cssText = 'flex:1;overflow-y:auto;';
-    left.appendChild(tree);
+    var left = mkEl('div', { className: 'screen-left assets-workspace-left' });
+    left.appendChild(mkEl('div', { className: 'screen-header', text: 'Site Media Needs' }));
+    var summary = mkEl('div', { className: 'assets-slot-summary' });
+    var slotList = mkEl('div', { className: 'assets-slot-list' });
+    left.appendChild(summary);
+    left.appendChild(slotList);
     view.appendChild(left);
 
-    // Center: component detail
-    var center = mkEl('div', { className: 'screen-center' });
-    var detail = mkEl('div', { className: 'component-detail' });
-    detail.id = 'component-detail';
-    var placeholder = mkEl('div', { style: 'color:var(--fam-text-3);font-size:12px;padding:20px 0;text-align:center;', text: 'Select a component from the tree' });
-    detail.appendChild(placeholder);
+    var center = mkEl('div', { className: 'screen-center assets-workspace-center' });
+    var feedback = mkEl('div', { className: 'assets-feedback hidden' });
+    var detail = mkEl('div', { className: 'assets-workspace-detail' });
+    center.appendChild(feedback);
     center.appendChild(detail);
     view.appendChild(center);
 
-    // Right: media library
-    var right = mkEl('div', { className: 'screen-right' });
-    right.appendChild(mkEl('div', { className: 'screen-header', text: 'Media Library' }));
+    var right = mkEl('div', { className: 'screen-right assets-workspace-right' });
+    right.appendChild(mkEl('div', { className: 'screen-header', text: 'Library' }));
     var lib = mkEl('div', { className: 'media-library' });
-    lib.id = 'media-library';
     var search = mkEl('input', { className: 'media-library-search' });
-    search.placeholder = 'Search assets...';
+    search.placeholder = 'Search filename, label, role...';
     search.type = 'text';
+    search.addEventListener('input', function () {
+      assetsState.search = search.value || '';
+      renderMediaLibrary();
+    });
     lib.appendChild(search);
+
+    var filterRow = mkEl('div', { className: 'media-filter-row' });
+    ['all', 'logo', 'content', 'character'].forEach(function (role) {
+      var btn = mkEl('button', {
+        className: 'media-filter-btn' + (role === 'all' ? ' active' : ''),
+        text: role === 'all' ? 'All' : role
+      });
+      btn.dataset.role = role;
+      btn.addEventListener('click', function () {
+        assetsState.roleFilter = role;
+        filterRow.querySelectorAll('.media-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        renderMediaLibrary();
+      });
+      filterRow.appendChild(btn);
+    });
+    lib.appendChild(filterRow);
+
     var grid = mkEl('div', { className: 'media-library-grid' });
-    grid.id = 'media-grid';
     lib.appendChild(grid);
     right.appendChild(lib);
     view.appendChild(right);
 
-    pane.appendChild(view);
+    shell.appendChild(view);
+    pane.appendChild(shell);
 
-    loadComponentTree(tree);
-    loadMediaGrid(grid);
+    assetsRefs = {
+      pane: pane,
+      summary: summary,
+      slotList: slotList,
+      detail: detail,
+      feedback: feedback,
+      grid: grid,
+      search: search
+    };
+
+    refreshAssetsWorkspace();
   }
 
-  function loadComponentTree(container) {
-    fetch('/api/components')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        clearEl(container);
-        var components = (data && data.components) || data || [];
-        if (!components.length) {
-          container.appendChild(mkEl('div', { style: 'padding:12px;font-size:11px;color:var(--fam-text-3);', text: 'No components yet.' }));
-          return;
-        }
-        components.forEach(function (comp) {
-          var item = mkEl('div', { className: 'tree-item depth-1' });
-          var dot = mkEl('span', { className: 'tree-status-dot' });
-          dot.style.background = 'var(--fam-green)';
-          item.appendChild(dot);
-          item.appendChild(mkEl('span', { text: comp.name || comp.id || 'Component' }));
-          item.addEventListener('click', function () {
-            container.querySelectorAll('.tree-item').forEach(function (i) { i.classList.remove('active'); });
-            item.classList.add('active');
-            loadComponentDetail(comp);
-          });
-          container.appendChild(item);
-        });
-      })
-      .catch(function () {
-        container.appendChild(mkEl('div', { style: 'padding:12px;font-size:11px;color:var(--fam-text-3);', text: 'Could not load components.' }));
+  function refreshAssetsWorkspace() {
+    if (!assetsRefs.pane) return;
+    Promise.all([
+      fetch('/api/studio-state').then(function (r) { return r.json(); }),
+      fetch('/api/uploads').then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      var studio = results[0] || {};
+      var uploadsRaw = results[1] || [];
+      var spec = studio.spec || {};
+      var mappings = spec.slot_mappings || {};
+
+      assetsState.siteTag = studio.tag || null;
+      assetsState.slots = (spec.media_specs || []).map(function (slot) {
+        return {
+          slot_id: slot.slot_id,
+          role: slot.role || 'image',
+          status: slot.status || 'empty',
+          page: slot.page || 'index.html',
+          dimensions: slot.dimensions || '',
+          alt: slot.alt || '',
+          mapping: mappings[slot.slot_id] || null
+        };
       });
+      assetsState.uploads = (uploadsRaw.uploads || uploadsRaw || []).map(function (asset) {
+        return {
+          filename: asset.filename,
+          role: asset.role || 'content',
+          type: asset.type || 'image',
+          label: asset.label || '',
+          notes: asset.notes || '',
+          uploaded_at: asset.uploaded_at || '',
+          exists: asset.exists !== false,
+          src: asset.filename ? `assets/uploads/${asset.filename}` : (asset.url || asset.path || ''),
+          url: asset.url || asset.path || ''
+        };
+      });
+
+      if (!findSlotById(assetsState.selectedSlotId)) {
+        var firstEmpty = assetsState.slots.find(function (slot) { return slot.status === 'empty'; });
+        assetsState.selectedSlotId = firstEmpty ? firstEmpty.slot_id : (assetsState.slots[0] && assetsState.slots[0].slot_id) || null;
+      }
+      if (!findAssetByFilename(assetsState.selectedAssetFilename)) {
+        assetsState.selectedAssetFilename = assetsState.uploads[0] ? assetsState.uploads[0].filename : null;
+      }
+
+      renderAssetsWorkspace();
+    }).catch(function () {
+      showAssetsFeedback('Could not load media workspace data.', 'error');
+    });
   }
 
-  function loadComponentDetail(comp) {
-    var detail = document.getElementById('component-detail');
+  function renderAssetsWorkspace() {
+    renderSlotSummary();
+    renderSlotList();
+    renderWorkspaceDetail();
+    renderMediaLibrary();
+  }
+
+  function renderSlotSummary() {
+    var summary = assetsRefs.summary;
+    if (!summary) return;
+    clearEl(summary);
+
+    var slots = assetsState.slots || [];
+    var counts = {
+      total: slots.length,
+      empty: slots.filter(function (slot) { return slot.status === 'empty'; }).length,
+      filled: slots.filter(function (slot) { return slot.status !== 'empty'; }).length
+    };
+
+    var siteLine = mkEl('div', { className: 'assets-summary-site', text: assetsState.siteTag || 'No active site' });
+    summary.appendChild(siteLine);
+
+    var cards = mkEl('div', { className: 'assets-summary-cards' });
+    [
+      { label: 'Total slots', value: String(counts.total) },
+      { label: 'Need media', value: String(counts.empty) },
+      { label: 'Filled', value: String(counts.filled) }
+    ].forEach(function (item) {
+      var card = mkEl('div', { className: 'assets-summary-card' });
+      card.appendChild(mkEl('div', { className: 'assets-summary-value', text: item.value }));
+      card.appendChild(mkEl('div', { className: 'assets-summary-label', text: item.label }));
+      cards.appendChild(card);
+    });
+    summary.appendChild(cards);
+  }
+
+  function renderSlotList() {
+    var list = assetsRefs.slotList;
+    if (!list) return;
+    clearEl(list);
+
+    var slots = (assetsState.slots || []).slice().sort(function (a, b) {
+      if (a.status === b.status) return formatSlotName(a).localeCompare(formatSlotName(b));
+      if (a.status === 'empty') return -1;
+      if (b.status === 'empty') return 1;
+      return 0;
+    });
+
+    if (!slots.length) {
+      list.appendChild(mkEl('div', {
+        className: 'assets-empty-note',
+        text: 'No image slots are registered on this site yet. Build or re-scan the site first.'
+      }));
+      return;
+    }
+
+    slots.forEach(function (slot) {
+      var item = mkEl('button', {
+        className: 'assets-slot-item' + (slot.slot_id === assetsState.selectedSlotId ? ' active' : '')
+      });
+      item.type = 'button';
+
+      var top = mkEl('div', { className: 'assets-slot-item-top' });
+      top.appendChild(mkEl('div', { className: 'assets-slot-item-name', text: formatSlotName(slot) }));
+      top.appendChild(mkEl('span', {
+        className: 'media-tag ' + (slot.status === 'empty' ? 'empty' : 'filled'),
+        text: slot.status
+      }));
+      item.appendChild(top);
+
+      var meta = mkEl('div', {
+        className: 'assets-slot-item-meta',
+        text: [slot.page || 'index.html', slot.role || 'image', slot.dimensions || ''].filter(Boolean).join(' · ')
+      });
+      item.appendChild(meta);
+
+      if (slot.mapping && slot.mapping.src) {
+        item.appendChild(mkEl('div', {
+          className: 'assets-slot-item-foot',
+          text: slot.mapping.provider === 'stock' ? 'Using stock image' : 'Using uploaded asset'
+        }));
+      }
+
+      item.addEventListener('click', function () {
+        assetsState.selectedSlotId = slot.slot_id;
+        renderAssetsWorkspace();
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function renderWorkspaceDetail() {
+    var detail = assetsRefs.detail;
     if (!detail) return;
     clearEl(detail);
 
-    var name = mkEl('div', { style: 'font-size:14px;font-weight:600;color:var(--fam-text);margin-bottom:4px;', text: comp.name || comp.id });
-    detail.appendChild(name);
+    var slot = findSlotById(assetsState.selectedSlotId);
+    var asset = findAssetByFilename(assetsState.selectedAssetFilename);
 
-    var meta = mkEl('div', { style: 'font-size:11px;color:var(--fam-text-3);margin-bottom:14px;', text: 'Type: ' + (comp.type || 'component') + ' · Version: ' + (comp.version || '1.0') });
-    detail.appendChild(meta);
-
-    if (comp.html_template) {
-      var preview = mkEl('div', { className: 'component-preview-strip' });
-      var prev = mkEl('div', { style: 'font-size:11px;color:var(--fam-text-3);text-align:center;padding:20px;', text: 'Preview available when Studio is running' });
-      preview.appendChild(prev);
-      detail.appendChild(preview);
+    if (!slot) {
+      detail.appendChild(buildAssetsWelcome());
+      return;
     }
 
-    var slots = comp.image_slots || [];
-    if (slots.length) {
-      detail.appendChild(mkEl('div', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;color:var(--fam-text-3);letter-spacing:0.06em;margin-bottom:8px;', text: 'Media Needs' }));
-      slots.forEach(function (slot) {
-        var card = mkEl('div', { className: 'media-need-card' });
-        var thumb = mkEl('div', { className: 'media-need-thumb', text: '\uD83D\uDDBC\uFE0F' });
-        card.appendChild(thumb);
-        var info = mkEl('div', { className: 'media-need-info' });
-        info.appendChild(mkEl('div', { className: 'media-need-name', text: slot.alt || slot.slot_id || 'Image slot' }));
-        var tags = mkEl('div', { className: 'media-need-tags' });
-        var roleTag = mkEl('span', { className: 'media-tag', text: slot.role || 'image' });
-        tags.appendChild(roleTag);
-        var statusTag = mkEl('span', { className: 'media-tag ' + (slot.status === 'empty' ? 'empty' : 'filled'), text: slot.status || 'empty' });
-        tags.appendChild(statusTag);
-        info.appendChild(tags);
-        var actions = mkEl('div', { className: 'media-need-actions' });
-        var genBtn = mkEl('button', { className: 'media-action-btn primary', text: 'Generate' });
-        actions.appendChild(genBtn);
-        var swapBtn = mkEl('button', { className: 'media-action-btn', text: 'Swap' });
-        actions.appendChild(swapBtn);
-        info.appendChild(actions);
-        card.appendChild(info);
-        detail.appendChild(card);
-      });
+    var hero = mkEl('div', { className: 'assets-detail-hero' });
+    hero.appendChild(mkEl('div', { className: 'assets-detail-eyebrow', text: 'Selected slot' }));
+    hero.appendChild(mkEl('div', { className: 'assets-detail-title', text: formatSlotName(slot) }));
+    hero.appendChild(mkEl('div', {
+      className: 'assets-detail-meta',
+      text: [slot.slot_id, slot.page, slot.role, slot.dimensions].filter(Boolean).join(' · ')
+    }));
+    detail.appendChild(hero);
+
+    var workflow = mkEl('div', { className: 'assets-workflow-note' });
+    workflow.textContent = '1. Pick a slot. 2. Select or upload an asset. 3. Apply it to the selected slot.';
+    detail.appendChild(workflow);
+
+    var preview = mkEl('div', { className: 'assets-current-preview' });
+    var previewTitle = mkEl('div', { className: 'assets-section-label', text: 'Current media' });
+    preview.appendChild(previewTitle);
+    if (slot.mapping && slot.mapping.src) {
+      preview.appendChild(buildMediaThumb(resolveSiteAssetUrl(slot.mapping.src), formatSlotName(slot), 'assets-current-image'));
+      preview.appendChild(mkEl('div', {
+        className: 'assets-current-caption',
+        text: slot.mapping.provider === 'stock'
+          ? 'Current source: stock photo'
+          : 'Current source: uploaded asset'
+      }));
+    } else {
+      preview.appendChild(mkEl('div', {
+        className: 'assets-empty-preview',
+        text: 'This slot is empty. Upload media or pick an existing asset to fill it.'
+      }));
     }
+    detail.appendChild(preview);
+
+    var actionCard = mkEl('div', { className: 'assets-action-card' });
+    actionCard.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Apply uploaded asset' }));
+    if (asset) {
+      var selection = mkEl('div', { className: 'assets-selected-asset' });
+      selection.appendChild(buildMediaThumb(resolveSiteAssetUrl(asset.src), asset.label || asset.filename, 'assets-selected-image'));
+      var info = mkEl('div', { className: 'assets-selected-copy' });
+      info.appendChild(mkEl('div', { className: 'assets-selected-name', text: asset.label || asset.filename }));
+      info.appendChild(mkEl('div', {
+        className: 'assets-selected-meta',
+        text: [asset.role || 'content', asset.type || 'image'].join(' · ')
+      }));
+      selection.appendChild(info);
+      actionCard.appendChild(selection);
+    } else {
+      actionCard.appendChild(mkEl('div', {
+        className: 'assets-empty-note',
+        text: 'No uploaded media selected yet.'
+      }));
+    }
+    var assignRow = mkEl('div', { className: 'assets-action-row' });
+    var assignBtn = mkEl('button', {
+      className: 'media-action-btn primary',
+      text: asset ? 'Use selected asset' : 'Select an asset first'
+    });
+    assignBtn.disabled = !asset;
+    assignBtn.addEventListener('click', function () {
+      if (asset) assignAssetToSlot(slot, asset);
+    });
+    assignRow.appendChild(assignBtn);
+    var clearBtn = mkEl('button', { className: 'media-action-btn', text: 'Clear slot' });
+    clearBtn.disabled = !slot.mapping;
+    clearBtn.addEventListener('click', function () { clearSlot(slot); });
+    assignRow.appendChild(clearBtn);
+    actionCard.appendChild(assignRow);
+    detail.appendChild(actionCard);
+
+    var stockCard = mkEl('div', { className: 'assets-action-card' });
+    stockCard.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Generate stock image' }));
+    var stockHelp = mkEl('div', {
+      className: 'assets-help-text',
+      text: 'Use the slot role as a starting point, then add product, scene, or mood details.'
+    });
+    stockCard.appendChild(stockHelp);
+    var stockInput = mkEl('input', { className: 'assets-stock-input' });
+    stockInput.type = 'text';
+    stockInput.value = defaultStockQuery(slot);
+    stockInput.placeholder = 'Describe the image to generate...';
+    stockCard.appendChild(stockInput);
+    var stockRow = mkEl('div', { className: 'assets-action-row' });
+    var stockBtn = mkEl('button', { className: 'media-action-btn primary', text: 'Generate for this slot' });
+    stockBtn.addEventListener('click', function () {
+      generateStockForSlot(slot, stockInput.value);
+    });
+    stockRow.appendChild(stockBtn);
+    stockCard.appendChild(stockRow);
+    detail.appendChild(stockCard);
   }
 
-  function loadMediaGrid(grid) {
-    fetch('/api/uploads')
+  function renderMediaLibrary() {
+    var grid = assetsRefs.grid;
+    if (!grid) return;
+    clearEl(grid);
+
+    var slot = findSlotById(assetsState.selectedSlotId);
+    var uploads = (assetsState.uploads || []).filter(function (asset) {
+      var hay = [asset.filename, asset.label, asset.role, asset.notes].join(' ').toLowerCase();
+      var matchesSearch = !assetsState.search || hay.indexOf((assetsState.search || '').toLowerCase()) !== -1;
+      var matchesRole = assetsState.roleFilter === 'all' || asset.role === assetsState.roleFilter;
+      return matchesSearch && matchesRole;
+    });
+
+    if (!uploads.length) {
+      grid.appendChild(mkEl('div', {
+        className: 'assets-empty-note',
+        text: 'No uploads match this filter yet. Upload media to start building your library.'
+      }));
+      return;
+    }
+
+    uploads.forEach(function (asset) {
+      var item = mkEl('button', {
+        className: 'media-grid-item' +
+          (asset.filename === assetsState.selectedAssetFilename ? ' selected' : '') +
+          (slot && asset.role === slot.role ? ' match' : '')
+      });
+      item.type = 'button';
+      item.title = asset.label || asset.filename || 'Asset';
+      item.appendChild(buildMediaThumb(resolveSiteAssetUrl(asset.src), asset.label || asset.filename, 'media-grid-thumb'));
+
+      var footer = mkEl('div', { className: 'media-grid-footer' });
+      footer.appendChild(mkEl('div', { className: 'media-grid-name', text: asset.label || asset.filename }));
+      footer.appendChild(mkEl('div', { className: 'media-grid-meta', text: asset.role || 'content' }));
+      item.appendChild(footer);
+
+      item.addEventListener('click', function () {
+        assetsState.selectedAssetFilename = asset.filename;
+        renderAssetsWorkspace();
+      });
+      item.addEventListener('dblclick', function () {
+        if (slot) assignAssetToSlot(slot, asset);
+      });
+      grid.appendChild(item);
+    });
+  }
+
+  function buildAssetsWelcome() {
+    var wrap = mkEl('div', { className: 'assets-welcome-card' });
+    wrap.appendChild(mkEl('div', { className: 'assets-detail-title', text: 'Media workflow, finally in one place' }));
+    wrap.appendChild(mkEl('div', {
+      className: 'assets-help-text',
+      text: 'Choose a site slot on the left, select a library item on the right, then apply it here. You can also upload new media or generate a stock image for the selected slot.'
+    }));
+    return wrap;
+  }
+
+  function handleAssetUpload(file) {
+    var formData = new FormData();
+    formData.append('file', file);
+    formData.append('role', 'content');
+    formData.append('label', file.name);
+
+    showAssetsFeedback('Uploading ' + file.name + '...', 'info');
+    fetch('/api/upload', { method: 'POST', body: formData })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        clearEl(grid);
-        var uploads = (data && data.uploads) || data || [];
-        uploads.forEach(function (u) {
-          var item = mkEl('div', { className: 'media-grid-item' });
-          if (u.url || u.path) {
-            var img = document.createElement('img');
-            img.src = u.url || ('/sites/current/dist/assets/uploaded/' + u.filename);
-            img.alt = u.filename || '';
-            item.appendChild(img);
-          } else {
-            item.appendChild(mkEl('div', { style: 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--fam-text-3);font-size:18px;', text: '\uD83D\uDDBC\uFE0F' }));
-          }
-          grid.appendChild(item);
-        });
-        if (!uploads.length) {
-          grid.parentElement.appendChild(mkEl('div', { style: 'font-size:11px;color:var(--fam-text-3);text-align:center;padding:12px;', text: 'No uploads yet.' }));
+        if (data && data.error) throw new Error(data.error);
+        if (data && data.asset && data.asset.filename) {
+          assetsState.selectedAssetFilename = data.asset.filename;
         }
+        showAssetsFeedback('Uploaded ' + file.name + '.', 'success');
+        refreshAssetsWorkspace();
+        if (window.refreshAssetBar) window.refreshAssetBar();
       })
-      .catch(function () {});
+      .catch(function (err) {
+        showAssetsFeedback('Upload failed: ' + err.message, 'error');
+      });
+  }
+
+  function assignAssetToSlot(slot, asset) {
+    if (!slot || !asset) return;
+    showAssetsFeedback('Applying ' + (asset.label || asset.filename) + ' to ' + formatSlotName(slot) + '...', 'info');
+    fetch('/api/replace-slot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_id: slot.slot_id, newSrc: asset.src })
+    }).then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || data.success !== true) throw new Error((data && data.error) || 'Slot update failed');
+        showAssetsFeedback('Applied asset to ' + formatSlotName(slot) + '.', 'success');
+        refreshAssetsWorkspace();
+      })
+      .catch(function (err) {
+        showAssetsFeedback('Could not apply asset: ' + err.message, 'error');
+      });
+  }
+
+  function clearSlot(slot) {
+    if (!slot) return;
+    showAssetsFeedback('Clearing ' + formatSlotName(slot) + '...', 'info');
+    fetch('/api/clear-slot-mapping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_id: slot.slot_id })
+    }).then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || data.success !== true) throw new Error((data && data.error) || 'Clear failed');
+        showAssetsFeedback('Cleared ' + formatSlotName(slot) + '.', 'success');
+        refreshAssetsWorkspace();
+      })
+      .catch(function (err) {
+        showAssetsFeedback('Could not clear slot: ' + err.message, 'error');
+      });
+  }
+
+  function generateStockForSlot(slot, query) {
+    if (!slot) return;
+    var finalQuery = (query || '').trim() || defaultStockQuery(slot);
+    showAssetsFeedback('Generating stock image for ' + formatSlotName(slot) + '...', 'info');
+    fetch('/api/stock-photo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_id: slot.slot_id, query: finalQuery })
+    }).then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || data.success !== true) throw new Error((data && data.error) || 'Stock generation failed');
+        showAssetsFeedback('Generated stock image for ' + formatSlotName(slot) + '.', 'success');
+        refreshAssetsWorkspace();
+      })
+      .catch(function (err) {
+        showAssetsFeedback('Could not generate stock image: ' + err.message, 'error');
+      });
+  }
+
+  function showAssetsFeedback(text, type) {
+    var feedback = assetsRefs.feedback;
+    if (!feedback) return;
+    feedback.textContent = text;
+    feedback.className = 'assets-feedback ' + (type || 'info');
+    feedback.classList.remove('hidden');
+  }
+
+  function findSlotById(slotId) {
+    return (assetsState.slots || []).find(function (slot) { return slot.slot_id === slotId; }) || null;
+  }
+
+  function findAssetByFilename(filename) {
+    return (assetsState.uploads || []).find(function (asset) { return asset.filename === filename; }) || null;
+  }
+
+  function resolveSiteAssetUrl(src) {
+    if (!src) return '';
+    if (/^https?:\/\//i.test(src)) return src;
+    var base = 'http://localhost:' + (((window.config || {}).previewPort) || 3333);
+    if (src.indexOf('/assets/') === 0) return base + src;
+    if (src.indexOf('assets/') === 0) return base + '/' + src;
+    return src;
+  }
+
+  function buildMediaThumb(src, alt, className) {
+    var wrap = mkEl('div', { className: className || '' });
+    if (src) {
+      var img = document.createElement('img');
+      img.src = src;
+      img.alt = alt || '';
+      wrap.appendChild(img);
+    } else {
+      wrap.appendChild(mkEl('div', {
+        className: 'assets-thumb-empty',
+        text: '\uD83D\uDDBC\uFE0F'
+      }));
+    }
+    return wrap;
+  }
+
+  function formatSlotName(slot) {
+    if (!slot) return 'Image slot';
+    if (slot.alt) return slot.alt;
+    return String(slot.slot_id || 'image-slot')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+  }
+
+  function defaultStockQuery(slot) {
+    if (!slot) return '';
+    if (slot.mapping && slot.mapping.query) return slot.mapping.query;
+    return [assetsState.siteTag ? assetsState.siteTag.replace(/^site-/, '').replace(/-/g, ' ') : '', slot.role || '', formatSlotName(slot)]
+      .join(' ')
+      .trim();
   }
 
   // ── SETTINGS TAB ────────────────────────────────────────────────────────
@@ -248,6 +654,10 @@
         renderTextField(container, 'Business type', settings.business_type || '');
         renderTextField(container, 'Netlify Site ID', (settings.netlify && settings.netlify.site_id) || '');
         renderTextField(container, 'Deployed URL', settings.deployed_url || '');
+        renderTextField(container, 'Custom domain', settings.custom_domain || '');
+        renderTextField(container, 'Monthly rate ($)', settings.monthly_rate ? String(settings.monthly_rate) : '');
+        renderTextField(container, 'Client name', settings.client_name || '');
+        renderTextField(container, 'PayPal handle', settings.paypal_handle || 'famtasticfritz');
       } else if (tier === 'assistant') {
         renderToggleField(container, 'Proactive suggestions', true);
         renderToggleField(container, 'Show Me mode available', true);
@@ -528,9 +938,27 @@
 
     body.appendChild(center);
 
-    // Right: deploy history
+    // Center: Approve Site button
+    var approveBtn = mkEl('button', { className: 'approve-site-btn', text: 'Mark as Client Approved' });
+    approveBtn.id = 'approve-site-btn';
+    approveBtn.addEventListener('click', function () { approveSite(approveBtn); });
+    center.appendChild(approveBtn);
+
+    body.appendChild(center);
+
+    // Right: revenue card + DNS card + deploy history
     var right = mkEl('div', { className: 'screen-right' });
-    right.appendChild(mkEl('div', { className: 'screen-header', text: 'History' }));
+    right.appendChild(mkEl('div', { className: 'screen-header', text: 'Revenue & DNS' }));
+
+    var revenueCard = mkEl('div', { className: 'revenue-card' });
+    revenueCard.id = 'deploy-revenue-card';
+    right.appendChild(revenueCard);
+
+    var dnsCard = mkEl('div', { className: 'dns-card' });
+    dnsCard.id = 'deploy-dns-card';
+    right.appendChild(dnsCard);
+
+    right.appendChild(mkEl('div', { className: 'screen-header', text: 'History', style: 'margin-top:12px;' }));
     var history = mkEl('div');
     history.id = 'deploy-history';
     history.appendChild(mkEl('div', { style: 'padding:10px 12px;font-size:11px;color:var(--fam-text-3);', text: 'No deploys yet.' }));
@@ -542,6 +970,149 @@
     loadPreflightChecks(checks);
     loadDeployPipeline(pipeline);
     loadDeployHistory(history);
+    loadRevenueCard(revenueCard);
+    loadDnsCard(dnsCard);
+    syncApproveSiteBtn(approveBtn);
+  }
+
+  function loadRevenueCard(container) {
+    clearEl(container);
+    fetch('/api/revenue-card').then(function (r) { return r.json(); }).then(function (data) {
+      clearEl(container);
+      if (!data.monthly_rate && data.state !== 'client_approved') {
+        var hint = mkEl('div', { className: 'revenue-hint' });
+        hint.textContent = 'Set a monthly rate to generate a PayPal payment link.';
+
+        var rateRow = mkEl('div', { className: 'revenue-rate-row' });
+        var rateInput = mkEl('input', { className: 'revenue-rate-input' });
+        rateInput.type = 'number';
+        rateInput.placeholder = '$0 / mo';
+        rateInput.min = '0';
+        rateRow.appendChild(rateInput);
+
+        var saveBtn = mkEl('button', { className: 'revenue-save-btn', text: 'Save Rate' });
+        saveBtn.addEventListener('click', function () {
+          var val = parseFloat(rateInput.value);
+          if (!val || val <= 0) return;
+          fetch('/api/patch-spec', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ monthly_rate: val }) })
+            .then(function () { loadRevenueCard(container); })
+            .catch(function () {});
+        });
+        rateRow.appendChild(saveBtn);
+
+        container.appendChild(hint);
+        container.appendChild(rateRow);
+        return;
+      }
+
+      if (data.monthly_rate) {
+        var rateLabel = mkEl('div', { className: 'revenue-rate-label' });
+        rateLabel.textContent = '$' + data.monthly_rate + ' / month';
+        container.appendChild(rateLabel);
+      }
+
+      if (data.paypal_link) {
+        var linkWrap = mkEl('div', { className: 'revenue-paypal-wrap' });
+        var linkLabel = mkEl('div', { className: 'revenue-paypal-label', text: 'Payment Link' });
+        var link = mkEl('a', { className: 'revenue-paypal-link' });
+        link.href = data.paypal_link;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = data.paypal_link;
+        var copyBtn = mkEl('button', { className: 'revenue-copy-btn', text: 'Copy' });
+        copyBtn.addEventListener('click', function () {
+          navigator.clipboard.writeText(data.paypal_link).then(function () {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1500);
+          }).catch(function () {});
+        });
+        linkWrap.appendChild(linkLabel);
+        linkWrap.appendChild(link);
+        linkWrap.appendChild(copyBtn);
+        container.appendChild(linkWrap);
+      }
+
+      if (data.state === 'client_approved') {
+        var approvedBadge = mkEl('div', { className: 'revenue-approved-badge', text: '\u2713 Client Approved' });
+        if (data.approved_at) {
+          var ts = mkEl('div', { className: 'revenue-approved-ts', text: new Date(data.approved_at).toLocaleDateString() });
+          container.appendChild(ts);
+        }
+        container.appendChild(approvedBadge);
+      }
+    }).catch(function () {
+      container.appendChild(mkEl('div', { style: 'font-size:11px;color:var(--fam-text-3);padding:8px;', text: 'Revenue data unavailable.' }));
+    });
+  }
+
+  function loadDnsCard(container) {
+    clearEl(container);
+    fetch('/api/studio-state').then(function (r) { return r.json(); }).then(function (data) {
+      var deployedUrl = (data && data.spec && data.spec.deployed_url) || null;
+      var customDomain = (data && data.spec && data.spec.custom_domain) || null;
+      if (!deployedUrl) return;
+
+      var netlifyHost = deployedUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+      var card = mkEl('div', { className: 'dns-card-inner' });
+      card.appendChild(mkEl('div', { className: 'dns-card-title', text: 'GoDaddy DNS Setup' }));
+
+      var steps = [
+        'Log into GoDaddy \u2192 My Products \u2192 Domains',
+        'Select your domain \u2192 DNS',
+        'Add CNAME: Name=www, Value=' + netlifyHost,
+        'Add A record: Name=@, Value=75.2.60.5',
+        customDomain ? 'Add domain in Netlify: Site Settings \u2192 Domain' : 'Add custom domain in Netlify Site Settings',
+        'Wait 24\u201348h for DNS propagation',
+      ];
+
+      var list = mkEl('ol', { className: 'dns-steps' });
+      steps.forEach(function (s) {
+        var li = document.createElement('li');
+        li.textContent = s;
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+
+      if (customDomain) {
+        var domainNote = mkEl('div', { className: 'dns-domain-note', text: 'Target domain: ' + customDomain });
+        card.appendChild(domainNote);
+      }
+
+      container.appendChild(card);
+    }).catch(function () {});
+  }
+
+  function syncApproveSiteBtn(btn) {
+    fetch('/api/revenue-card').then(function (r) { return r.json(); }).then(function (data) {
+      if (data.state === 'client_approved') {
+        btn.textContent = '\u2713 Approved';
+        btn.disabled = true;
+        btn.classList.add('approved');
+      }
+    }).catch(function () {});
+  }
+
+  function approveSite(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Approving\u2026';
+    fetch('/api/approve-site', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) {
+          btn.textContent = '\u2713 Approved';
+          btn.classList.add('approved');
+          var card = document.getElementById('deploy-revenue-card');
+          if (card) loadRevenueCard(card);
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Mark as Client Approved';
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Mark as Client Approved';
+      });
   }
 
   function loadPreflightChecks(container) {
@@ -624,7 +1195,10 @@
       var wrapped = StudioShell.switchTab;
       StudioShell.switchTab = function (tabId) {
         wrapped(tabId);
-        if (tabId === 'assets') mountOnce('assets', mountAssets);
+        if (tabId === 'assets') {
+          mountOnce('assets', mountAssets);
+          setTimeout(refreshAssetsWorkspace, 40);
+        }
         if (tabId === 'deploy') mountOnce('deploy', mountDeploy);
       };
     }
@@ -634,8 +1208,15 @@
       var btn = e.target.closest && e.target.closest('.ws-tab');
       if (!btn) return;
       var tabId = btn.dataset.tabId;
-      if (tabId === 'assets') setTimeout(function () { mountOnce('assets', mountAssets); }, 80);
+      if (tabId === 'assets') setTimeout(function () {
+        mountOnce('assets', mountAssets);
+        refreshAssetsWorkspace();
+      }, 80);
       if (tabId === 'deploy') setTimeout(function () { mountOnce('deploy', mountDeploy); }, 80);
+    });
+
+    window.addEventListener('studio:site-changed', function () {
+      if (mounted.assets) setTimeout(refreshAssetsWorkspace, 80);
     });
 
     // Open settings modal with new content

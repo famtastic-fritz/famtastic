@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Phase 6: Revenue path, GoDaddy DNS card, Reunion validation
+
+Added `monthly_rate`, `client_name`, `custom_domain`, `paypal_handle` spec fields patchable via `PATCH /api/patch-spec`. `POST /api/approve-site` transitions site to `client_approved` state and returns a PayPal.me payment link. Deploy screen right panel now has a revenue card (monthly rate + PayPal link + copy button), a GoDaddy DNS setup card (auto-populated from deployed_url), and a "Mark as Client Approved" button. `verifyRevenueAndState()` added as 6th pre-flight check — warns on missing monthly_rate and validates reunion sites for PayPal button + RSVP text + required pages.
+
 ## 2026-04-20 — Phase 5: SHAY_THINKING orb state + cross-session memory
 
 Added SHAY_THINKING as the 5th orb state — purple glow pulse, dot animation in the dynamic area, 800ms minimum display enforced via `afterThinking()` so the orb never flickers for fast API responses. Created `lib/memory.js` (Mem0-style interface) backed by two new SQLite tables: `memories` (entity-keyed facts with importance scores) and `memory_links` (Kuzu-style graph relations). Shay-Shay now receives a `CROSS-SESSION MEMORY` block in its primer and extracts durable facts async via Haiku after each non-tier-0 interaction. Added `GET/POST /api/memory` endpoints.
