@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Wave B: actionable intelligence cards with site-scoped dismiss
+
+Added action buttons to the Intelligence sidebar panel keyed by severity: MAJOR/CRITICAL cards get "Run diagnostic" (calls `/api/brain-status`, renders inline) and "Log to backlog" (appends to `.wolf/build-backlog.json`); OPPORTUNITY cards get "View details" (expands description, recommendation, and computed data inline) and "Dismiss"; MINOR cards get "Dismiss" only. Dismiss is site-scoped — persisted to `site-studio/.dismissed-findings.json` with key `${siteTag}-${severity}-${slugify(title)}` and filtered from all future `GET /api/intel/findings` responses for that site. New endpoints: `POST /api/intel/dismiss`, `POST /api/intel/backlog`. Backlog entries written to `.wolf/build-backlog.json` with full schema (id, logged_at, source, severity, site_tag, category, title, description, status, session). Verified: dismiss persists across panel reloads, opportunity card expands with live data, minor card shows only Dismiss.
+
 ## 2026-04-20 — Wave A completion: nav skeleton + preview server query string fix
 
 Fixed a preview server bug where any URL with a `?t=...` cache-bust parameter returned "Not found" because `req.url` was used directly for filesystem path lookup instead of stripping the query string first. This silently broke all `navigateToPage()` calls (page tabs, build completions, site switches). Added `NAV_SKELETON` constant to `famtastic-skeletons.js` mandating exact class names (`.nav-links`, `.nav-cta`, `.nav-toggle-label`, `.nav-mobile-menu`, `#nav-toggle`) — injected into both the template build prompt and parallel page `famSkeletonBlock`, closing the systemic risk that produced the double-nav bug in `site-the-daily-grind-in-atlanta`. Verified nav rendering at 1280x900 and 390x844 on both daily grind sites.

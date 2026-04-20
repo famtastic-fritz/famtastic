@@ -3743,3 +3743,36 @@ let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
 - Preview "Not found" on site switch (`navigateToPage` replaces `reloadPreview` in `handleSiteSwitch`)
 - Preview server not stripping query strings before file lookup (all `?t=...` cache-busted URLs returned 404)
 - Nav class name mismatch systemic risk closed by `NAV_SKELETON` constant in `famtastic-skeletons.js`, injected into both template and parallel page build prompts
+
+## Session 17 — Wave B: Actionable Intelligence Cards (2026-04-20)
+
+### What was built
+
+**Site-scoped dismiss system** (`site-studio/.dismissed-findings.json`):
+- Key format: `${siteTag}-${severity}-${slugify(title)}` — stable across regenerations because title is deterministic for fixed data
+- Schema: `{ "site-tag": { "key": { dismissed_at, category, summary } } }`
+- `POST /api/intel/dismiss` — writes to dismissed file, returns `{ dismissed, key }`
+- `GET /api/intel/findings` now filters dismissed findings before returning; also accepts optional `?tag=` query param
+
+**Build backlog** (`.wolf/build-backlog.json`):
+- Append-only JSON array at `HUB_ROOT/.wolf/build-backlog.json`
+- Entry schema: `{ id, logged_at, source:"intel", severity, site_tag, category, title, description, status:"open", session }`
+- `POST /api/intel/backlog` — appends entry, reads session count from `SITE_DIR()/.studio.json`
+
+**Action buttons per severity** (in `studio-shell.js` `loadIntelligenceFeed()`):
+- CRITICAL / MAJOR: "Run diagnostic" (fetches `/api/brain-status`, renders inline monospace box) + "Log to backlog"
+- OPPORTUNITY: "View details" (toggles inline description + recommendation + data) + "Dismiss"
+- MINOR: "Dismiss" only
+
+**Helper functions inside studio-shell.js IIFE:**
+- `makeIntelBtn(label, bg, color)` — creates styled button
+- `dismissFinding(item, f)` — fade + remove card, POST to dismiss endpoint
+- `logFindingToBacklog(btn, f)` — POST to backlog, mutate button to "Logged ✓"
+- `runIntelDiagnostic(item, f)` — fetch brain-status, render inline; toggle on re-click
+- `toggleFindingDetail(item, f, btn)` — expand/collapse description+recommendation+data; toggle button text
+
+### Known Gaps (Wave B)
+
+- MAJOR/CRITICAL "Run diagnostic" renders brain connection status regardless of finding category — a more targeted diagnostic per category (e.g., cost → cost summary, agents → agent stats) is deferred
+- `.wolf/build-backlog.json` has no read-back UI yet — created and populated but not surfaced in any panel
+- Mission Control tab (`studio-screens.js` `loadMCIntel`) still uses the old static card rendering — not updated with action buttons this wave

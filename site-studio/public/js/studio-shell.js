@@ -216,6 +216,97 @@
   }
 
   // --- Intelligence Feed ---
+  const INTEL_SEVERITY_COLOR = {
+    critical: 'var(--fam-red)',
+    major: 'var(--fam-gold)',
+    minor: 'var(--fam-text-3)',
+    opportunity: 'var(--fam-green)',
+  };
+
+  function makeIntelBtn(label, bg, color) {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.style.cssText = 'font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:' + bg + ';color:' + color + ';cursor:pointer;white-space:nowrap;';
+    return btn;
+  }
+
+  function dismissFinding(item, f) {
+    fetch('/api/intel/dismiss', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ severity: f.severity, title: f.title, category: f.category }),
+    }).then(() => {
+      item.style.transition = 'opacity 0.2s';
+      item.style.opacity = '0';
+      setTimeout(() => { if (item.parentNode) item.parentNode.removeChild(item); }, 220);
+    }).catch(() => {});
+  }
+
+  function logFindingToBacklog(btn, f) {
+    btn.textContent = '...';
+    btn.disabled = true;
+    fetch('/api/intel/backlog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ severity: f.severity, title: f.title, description: f.description, category: f.category }),
+    }).then(r => r.json()).then(() => {
+      btn.textContent = 'Logged \u2713';
+      btn.style.color = 'var(--fam-green)';
+    }).catch(() => {
+      btn.textContent = 'Failed';
+      btn.disabled = false;
+    });
+  }
+
+  function runIntelDiagnostic(item, f) {
+    const existing = item.querySelector('.intel-diag');
+    if (existing) { existing.style.display = existing.style.display === 'none' ? '' : 'none'; return; }
+    const box = document.createElement('div');
+    box.className = 'intel-diag';
+    box.style.cssText = 'margin-top:5px;padding:5px 7px;background:rgba(0,0,0,0.35);border-radius:4px;font-size:10px;color:var(--fam-text-3);font-family:monospace;white-space:pre;';
+    box.textContent = 'Running\u2026';
+    item.appendChild(box);
+    fetch('/api/brain-status').then(r => r.json()).then(d => {
+      const lines = ['claude','gemini','openai','codex'].filter(k => d[k]).map(k =>
+        (d[k].status === 'connected' ? '\u2705' : '\u274C') + ' ' + k + ': ' + (d[k].model || d[k].status)
+      );
+      box.textContent = lines.join('\n') || 'No data';
+    }).catch(() => { box.textContent = 'Diagnostic failed'; });
+  }
+
+  function toggleFindingDetail(item, f, btn) {
+    const existing = item.querySelector('.intel-detail');
+    if (existing) {
+      const hidden = existing.style.display === 'none';
+      existing.style.display = hidden ? '' : 'none';
+      btn.textContent = hidden ? 'Hide details' : 'View details';
+      return;
+    }
+    const box = document.createElement('div');
+    box.className = 'intel-detail';
+    box.style.cssText = 'margin-top:5px;padding:6px 8px;background:rgba(0,0,0,0.2);border-radius:4px;font-size:10px;color:var(--fam-text-2);line-height:1.5;';
+    if (f.description) {
+      const d = document.createElement('div');
+      d.style.marginBottom = '4px';
+      d.textContent = f.description;
+      box.appendChild(d);
+    }
+    if (f.recommendation) {
+      const r = document.createElement('div');
+      r.style.color = 'var(--fam-green)';
+      r.textContent = '\u2192 ' + f.recommendation;
+      box.appendChild(r);
+    }
+    if (f.data && Object.keys(f.data).length) {
+      const dEl = document.createElement('div');
+      dEl.style.cssText = 'margin-top:4px;font-family:monospace;color:var(--fam-text-3);font-size:9px;word-break:break-all;';
+      dEl.textContent = JSON.stringify(f.data, null, 2);
+      box.appendChild(dEl);
+    }
+    item.appendChild(box);
+    btn.textContent = 'Hide details';
+  }
+
   function loadIntelligenceFeed() {
     const feed = document.getElementById('sidebar-intel-feed');
     if (!feed) return;
@@ -224,24 +315,58 @@
       while (feed.firstChild) feed.removeChild(feed.firstChild);
       const findings = data.findings || [];
       if (!findings.length) {
-        feed.textContent = 'No findings yet.';
-        feed.style.cssText = 'padding:8px 12px;font-size:11px;color:var(--fam-text-3);';
+        const msg = document.createElement('div');
+        msg.style.cssText = 'padding:8px 12px;font-size:11px;color:var(--fam-text-3);';
+        msg.textContent = 'No findings.';
+        feed.appendChild(msg);
         return;
       }
-      const colors = { critical:'var(--fam-red)', high:'var(--fam-gold)', opportunity:'var(--fam-green)', info:'var(--fam-text-3)' };
-      findings.slice(0, 10).forEach(function(f) {
+      findings.slice(0, 10).forEach(f => {
         const item = document.createElement('div');
-        item.style.cssText = 'padding:6px 12px;border-bottom:1px solid var(--fam-border-2);cursor:pointer;';
-        item.onmouseenter = () => item.style.background = 'rgba(255,255,255,0.03)';
-        item.onmouseleave = () => item.style.background = '';
+        item.style.cssText = 'padding:6px 12px 8px;border-bottom:1px solid var(--fam-border-2);';
+
+        // Severity badge
         const badge = document.createElement('span');
-        badge.style.cssText = 'font-size:9px;font-weight:700;color:' + (colors[f.severity] || 'var(--fam-text-3)') + ';text-transform:uppercase;';
+        badge.style.cssText = 'font-size:9px;font-weight:700;color:' + (INTEL_SEVERITY_COLOR[f.severity] || 'var(--fam-text-3)') + ';text-transform:uppercase;display:block;margin-bottom:2px;';
         badge.textContent = f.severity || '';
         item.appendChild(badge);
-        const msgEl = document.createElement('div');
-        msgEl.style.cssText = 'font-size:11px;color:var(--fam-text-2);margin-top:2px;line-height:1.4;';
-        msgEl.textContent = f.title || f.message || '';
-        item.appendChild(msgEl);
+
+        // Title
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:11px;color:var(--fam-text-2);margin-bottom:5px;line-height:1.4;';
+        title.textContent = f.title || '';
+        item.appendChild(title);
+
+        // Action buttons
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;';
+        const sev = f.severity;
+
+        if (sev === 'critical' || sev === 'major') {
+          const diagBtn = makeIntelBtn('Run diagnostic', 'rgba(127,119,221,0.12)', 'var(--fam-purple)');
+          diagBtn.addEventListener('click', () => runIntelDiagnostic(item, f));
+          actions.appendChild(diagBtn);
+          const backlogBtn = makeIntelBtn('Log to backlog', 'rgba(255,193,53,0.1)', 'var(--fam-gold)');
+          backlogBtn.addEventListener('click', () => logFindingToBacklog(backlogBtn, f));
+          actions.appendChild(backlogBtn);
+        }
+
+        if (sev === 'opportunity') {
+          const detailBtn = makeIntelBtn('View details', 'rgba(255,255,255,0.05)', 'var(--fam-text-2)');
+          detailBtn.addEventListener('click', () => toggleFindingDetail(item, f, detailBtn));
+          actions.appendChild(detailBtn);
+          const dismissBtn = makeIntelBtn('Dismiss', 'rgba(255,255,255,0.03)', 'var(--fam-text-3)');
+          dismissBtn.addEventListener('click', () => dismissFinding(item, f));
+          actions.appendChild(dismissBtn);
+        }
+
+        if (sev === 'minor') {
+          const dismissBtn = makeIntelBtn('Dismiss', 'rgba(255,255,255,0.03)', 'var(--fam-text-3)');
+          dismissBtn.addEventListener('click', () => dismissFinding(item, f));
+          actions.appendChild(dismissBtn);
+        }
+
+        item.appendChild(actions);
         feed.appendChild(item);
       });
     }).catch(() => { if (feed) feed.textContent = ''; });

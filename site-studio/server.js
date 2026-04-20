@@ -6225,6 +6225,24 @@ app.post('/api/research/to-brief', (req, res) => {
  * Reads: agent-calls.jsonl, mutations.jsonl, build-metrics.jsonl, components/library.json
  * Returns: { findings[], summary, generated_at }
  */
+
+// --- Intel helpers (dismiss system + backlog) ---
+const DISMISSED_FINDINGS_PATH = path.join(__dirname, '.dismissed-findings.json');
+const BUILD_BACKLOG_PATH = path.join(HUB_ROOT, '.wolf', 'build-backlog.json');
+
+function slugifyFinding(text) {
+  return String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
+}
+
+function loadDismissed() {
+  try { if (fs.existsSync(DISMISSED_FINDINGS_PATH)) return JSON.parse(fs.readFileSync(DISMISSED_FINDINGS_PATH, 'utf8')); } catch {}
+  return {};
+}
+
+function saveDismissed(data) {
+  fs.writeFileSync(DISMISSED_FINDINGS_PATH, JSON.stringify(data, null, 2));
+}
+
 function generateIntelReport(tagOverride = null) {
   const findings = [];
   let findingIdCounter = 1;
@@ -6701,11 +6719,17 @@ app.get('/api/intel/report', (req, res) => {
   }
 });
 
-// --- Intelligence findings only (by severity) ---
+// --- Intelligence findings only (by severity, filtered by dismissed) ---
 app.get('/api/intel/findings', (req, res) => {
   try {
-    const report = generateIntelReport();
-    const findings = report.findings;
+    const siteTag = req.query.tag || TAG;
+    const report = generateIntelReport(siteTag);
+    const dismissed = loadDismissed();
+    const siteDismissed = dismissed[siteTag] || {};
+    const findings = report.findings.filter(f => {
+      const key = `${siteTag}-${f.severity}-${slugifyFinding(f.title)}`;
+      return !siteDismissed[key];
+    });
     res.json({
       findings,
       critical_count: findings.filter(f => f.severity === 'critical').length,
@@ -6713,6 +6737,7 @@ app.get('/api/intel/findings', (req, res) => {
       minor_count: findings.filter(f => f.severity === 'minor').length,
       opportunity_count: findings.filter(f => f.severity === 'opportunity').length,
       generated_at: report.generated_at,
+      site: siteTag,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -6750,6 +6775,51 @@ app.post('/api/intel/promote', (req, res) => {
 
   console.log(`[intel/promote] finding_id=${finding_id} category=${finding.category}`);
   res.json({ promoted_at: promotion.promoted_at, finding_id, action_taken: promotion.action_taken });
+});
+
+// --- Dismiss a finding (site-scoped, persists across sessions) ---
+app.post('/api/intel/dismiss', (req, res) => {
+  const { severity, title, category } = req.body;
+  if (!severity || !title) return res.status(400).json({ error: 'severity and title required' });
+  const siteTag = TAG;
+  const key = `${siteTag}-${severity}-${slugifyFinding(title)}`;
+  const dismissed = loadDismissed();
+  if (!dismissed[siteTag]) dismissed[siteTag] = {};
+  dismissed[siteTag][key] = {
+    dismissed_at: new Date().toISOString(),
+    category: category || 'unknown',
+    summary: String(title).substring(0, 120),
+  };
+  saveDismissed(dismissed);
+  console.log(`[intel/dismiss] ${siteTag} — ${key}`);
+  res.json({ dismissed: true, key });
+});
+
+// --- Log a finding to the build backlog ---
+app.post('/api/intel/backlog', (req, res) => {
+  const { severity, title, description, category } = req.body;
+  if (!title) return res.status(400).json({ error: 'title required' });
+  let backlog = [];
+  try { if (fs.existsSync(BUILD_BACKLOG_PATH)) backlog = JSON.parse(fs.readFileSync(BUILD_BACKLOG_PATH, 'utf8')); } catch {}
+  if (!Array.isArray(backlog)) backlog = [];
+  let session = 0;
+  try { session = JSON.parse(fs.readFileSync(STUDIO_FILE(), 'utf8')).session_count || 0; } catch {}
+  const entry = {
+    id: `backlog-${Date.now()}`,
+    logged_at: new Date().toISOString(),
+    source: 'intel',
+    severity: severity || 'unknown',
+    site_tag: TAG,
+    category: category || 'unknown',
+    title: String(title).substring(0, 200),
+    description: String(description || '').substring(0, 500),
+    status: 'open',
+    session,
+  };
+  backlog.push(entry);
+  fs.writeFileSync(BUILD_BACKLOG_PATH, JSON.stringify(backlog, null, 2));
+  console.log(`[intel/backlog] logged: ${entry.id} — ${entry.title}`);
+  res.json({ logged: true, id: entry.id });
 });
 
 // --- Run intelligence research on a topic ---
