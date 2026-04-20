@@ -24,9 +24,15 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
+const http = require('http');
 
 const HUB_ROOT = path.resolve(__dirname, '..');
 const SITES_DIR = path.join(HUB_ROOT, 'sites');
+
+// Shared execution layer — SQLite job queue + gap logger
+const studioActions = require('../site-studio/lib/studio-actions');
+
+const STUDIO_PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
 
 // --- MCP Protocol ---
 
@@ -162,9 +168,32 @@ function analyzeTechStack(brief) {
   return recommendations;
 }
 
+// --- Studio HTTP helper ---
+
+function studioPost(path, body) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body);
+    const req = http.request(
+      { hostname: 'localhost', port: STUDIO_PORT, path, method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } },
+      (res) => {
+        let raw = '';
+        res.on('data', c => raw += c);
+        res.on('end', () => {
+          try { resolve({ status: res.statusCode, body: JSON.parse(raw) }); }
+          catch { resolve({ status: res.statusCode, body: raw }); }
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
 // --- MCP Message Handler ---
 
-function handleMessage(msg) {
+async function handleMessage(msg) {
   const { id, method, params } = msg;
 
   switch (method) {
@@ -279,6 +308,73 @@ function handleMessage(msg) {
               required: ['tag'],
             },
           },
+          {
+            name: 'trigger_build',
+            description: 'Trigger an autonomous build for a site in the running Studio server',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                tag:     { type: 'string', description: 'Site tag to build' },
+                message: { type: 'string', description: 'Build instruction or intent message' },
+              },
+              required: ['tag', 'message'],
+            },
+          },
+          {
+            name: 'create_job',
+            description: 'Create a job in the FAMtastic SQLite job queue',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                type:          { type: 'string', description: 'Job type (e.g. build, deploy, research)' },
+                site_tag:      { type: 'string', description: 'Site tag this job belongs to' },
+                payload:       { type: 'object', description: 'Arbitrary job payload' },
+                dependencies:  { type: 'array', items: { type: 'string' }, description: 'Job IDs this job depends on' },
+                cost_estimate: { type: 'number', description: 'Estimated cost in USD' },
+              },
+              required: ['type'],
+            },
+          },
+          {
+            name: 'approve_job',
+            description: 'Approve a pending job (pending → approved)',
+            inputSchema: {
+              type: 'object',
+              properties: { id: { type: 'string', description: 'Job ID' } },
+              required: ['id'],
+            },
+          },
+          {
+            name: 'park_job',
+            description: 'Park a pending or blocked job (conscious deferral)',
+            inputSchema: {
+              type: 'object',
+              properties: { id: { type: 'string', description: 'Job ID' } },
+              required: ['id'],
+            },
+          },
+          {
+            name: 'get_pending_jobs',
+            description: 'List pending jobs, optionally filtered by site tag',
+            inputSchema: {
+              type: 'object',
+              properties: { site_tag: { type: 'string', description: 'Optional site tag filter' } },
+            },
+          },
+          {
+            name: 'log_gap',
+            description: 'Log a known gap or missing capability to the FAMtastic gap ledger',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                tag:      { type: 'string', description: 'Site tag' },
+                message:  { type: 'string', description: 'Gap description' },
+                category: { type: 'string', description: 'Gap category (NOT_BUILT, NOT_CONNECTED, BROKEN)' },
+                details:  { type: 'object', description: 'Optional details object' },
+              },
+              required: ['message', 'category'],
+            },
+          },
         ],
       });
       break;
@@ -321,6 +417,72 @@ function handleMessage(msg) {
           } else {
             const recs = analyzeTechStack(state.spec.design_brief);
             sendResult(id, { content: [{ type: 'text', text: JSON.stringify(recs, null, 2) }] });
+          }
+          break;
+        }
+
+        case 'trigger_build': {
+          try {
+            const resp = await studioPost('/api/autonomous-build', { message: args.message, context: { site_tag: args.tag } });
+            sendResult(id, { content: [{ type: 'text', text: JSON.stringify(resp.body, null, 2) }] });
+          } catch (e) {
+            sendResult(id, { content: [{ type: 'text', text: `Studio server unreachable: ${e.message}` }], isError: true });
+          }
+          break;
+        }
+
+        case 'create_job': {
+          try {
+            const job = studioActions.createJob({
+              type:          args.type,
+              site_tag:      args.site_tag,
+              payload:       args.payload,
+              dependencies:  args.dependencies,
+              cost_estimate: args.cost_estimate,
+            });
+            sendResult(id, { content: [{ type: 'text', text: JSON.stringify(job, null, 2) }] });
+          } catch (e) {
+            sendResult(id, { content: [{ type: 'text', text: e.message }], isError: true });
+          }
+          break;
+        }
+
+        case 'approve_job': {
+          try {
+            const job = studioActions.approveJob(args.id);
+            sendResult(id, { content: [{ type: 'text', text: JSON.stringify(job, null, 2) }] });
+          } catch (e) {
+            sendResult(id, { content: [{ type: 'text', text: e.message }], isError: true });
+          }
+          break;
+        }
+
+        case 'park_job': {
+          try {
+            const job = studioActions.parkJob(args.id);
+            sendResult(id, { content: [{ type: 'text', text: JSON.stringify(job, null, 2) }] });
+          } catch (e) {
+            sendResult(id, { content: [{ type: 'text', text: e.message }], isError: true });
+          }
+          break;
+        }
+
+        case 'get_pending_jobs': {
+          try {
+            const jobs = studioActions.getPendingJobs(args.site_tag);
+            sendResult(id, { content: [{ type: 'text', text: JSON.stringify({ jobs, count: jobs.length }, null, 2) }] });
+          } catch (e) {
+            sendResult(id, { content: [{ type: 'text', text: e.message }], isError: true });
+          }
+          break;
+        }
+
+        case 'log_gap': {
+          try {
+            studioActions.logGap(args.tag, args.message, args.category, args.details || {});
+            sendResult(id, { content: [{ type: 'text', text: 'Gap logged.' }] });
+          } catch (e) {
+            sendResult(id, { content: [{ type: 'text', text: e.message }], isError: true });
           }
           break;
         }

@@ -3997,3 +3997,50 @@ After `cleanWorkerQueueOnStartup()` at server start:
 - `running` and `approved` statuses are set by external runners only — no Studio UI triggers these transitions yet
 - `cost_actual` field is write-only from `completeJob()` — no aggregation or reporting UI
 - JSONL entries without an `id` field get a new UUID each migration run; if the server is restarted before the JSONL is cleared, those entries could be re-migrated with new IDs (low risk since JSONL cleanup removes completed entries on startup before migration runs)
+
+---
+
+## Session 4-B — MCP Server Extension + Shared studio-actions.js (2026-04-20)
+
+### Files Created/Modified
+- `site-studio/lib/studio-actions.js` — NEW: shared execution layer (job queue + gap logging)
+- `mcp-server/server.js` — 6 new tools added; `handleMessage` made async; `studioPost` HTTP helper added
+- `site-studio/lib/tool-handlers.js` — imports studio-actions; 5 new tool cases; dispatch functions mirror jobs to SQLite
+
+### studio-actions.js — Shared Layer
+Path: `site-studio/lib/studio-actions.js`
+
+Imported by both `mcp-server/server.js` and `site-studio/lib/tool-handlers.js`. All operations are file-system/SQLite only — no HTTP, no IPC. Thin facade over `job-queue.js`, `db.js`, and `gap-logger.js`.
+
+Exports:
+- `createJob(opts)` → delegates to `jobQueue.createJob(opts)`
+- `approveJob(id)` → delegates to `jobQueue.approveJob(id)`
+- `parkJob(id)` → delegates to `jobQueue.parkJob(id)`
+- `getPendingJobs(siteTag?)` → `db.listJobs({ status: 'pending', site_tag, limit: 50 })`
+- `logGap(tag, message, category, details)` → delegates to `gapLogger.logGap()`
+
+### MCP Server — New Tools (mcp-server/server.js)
+
+`handleMessage` is now `async` to support `trigger_build` which awaits HTTP.
+
+New `studioPost(path, body)` helper: makes HTTP POST to Studio server at `localhost:${STUDIO_PORT}` (default 3334, overridable via env `STUDIO_PORT`). Returns `{ status, body }`.
+
+6 new tools:
+| Tool | What it does |
+|------|-------------|
+| `trigger_build` | POST `/api/autonomous-build` to running Studio server; requires `tag` + `message` |
+| `create_job` | Calls `studioActions.createJob()` — creates SQLite job record |
+| `approve_job` | Calls `studioActions.approveJob(id)` — pending → approved |
+| `park_job` | Calls `studioActions.parkJob(id)` — pending/blocked → parked |
+| `get_pending_jobs` | Calls `studioActions.getPendingJobs(site_tag?)` — returns `{ jobs, count }` |
+| `log_gap` | Calls `studioActions.logGap()` — writes to `~/.local/share/famtastic/gaps.jsonl` |
+
+### tool-handlers.js Updates
+- Imports `studioActions = require('./studio-actions')` at top
+- `handleToolCall` switch now handles: `create_job`, `approve_job`, `park_job`, `get_pending_jobs`, `log_gap`
+- `dispatchToClaudeCode()` and `dispatchToPlaywright()` both call `studioActions.createJob()` after JSONL append (SQLite mirrors JSONL dispatch ledger; errors are silently swallowed to preserve existing behavior)
+
+### Known Gaps (Session 4-B)
+- `trigger_build` MCP tool requires Studio server to be running at STUDIO_PORT — fails gracefully with error text if unreachable, but no retry or polling
+- MCP server resolves `better-sqlite3` via `../site-studio/node_modules/` — if site-studio dependencies are not installed, MCP server will fail to start
+- Job Plan card UI (Shay-Shay multi-job plan creation, approve/park buttons in conversation panel) deferred to Session 4-C

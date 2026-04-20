@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Session 4-B: MCP Server Extension + Shared studio-actions.js
+
+Created `lib/studio-actions.js` as the shared execution layer between the MCP server and tool-handlers — thin facade over job-queue, db, and gap-logger with no HTTP or IPC dependencies. Extended `mcp-server/server.js` with 6 new tools: `trigger_build` (HTTP POST to Studio), `create_job`, `approve_job`, `park_job`, `get_pending_jobs`, `log_gap`. Made `handleMessage` async to support the trigger_build await. Updated `tool-handlers.js` to import studio-actions and wire 5 new tool cases; dispatch functions now mirror queued entries into SQLite alongside the existing JSONL ledger. Job Plan card UI deferred to Session 4-C.
+
 ## 2026-04-20 — Session 4-A: SQLite Job Queue
 
 Added a `jobs` table to `~/.config/famtastic/studio.db` (via `lib/db.js` `_initSchema()`) with a 7-status state machine: `pending`, `approved`, `running`, `done`, `blocked`, `failed`, `parked`. Created `lib/job-queue.js` with the full state machine — `blocked` auto-transitions to `pending` when all dependency jobs reach `done` via `_unblockDependents()`. Added `GET /api/jobs`, `POST /api/jobs/approve/:id`, and `POST /api/jobs/park/:id` endpoints to `server.js`. On startup, `jobQueue.migrateJsonlQueue()` idempotently imports existing `.worker-queue.jsonl` entries into SQLite. No UI yet — Job Plan card UI is deferred to Session 4-C.

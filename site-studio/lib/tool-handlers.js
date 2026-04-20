@@ -3,6 +3,7 @@ const fs     = require('fs').promises;
 const fsSync = require('fs');
 const path   = require('path');
 const WebSocket = require('ws');
+const studioActions = require('./studio-actions');
 
 // These will be injected by server.js when this module is initialized
 let _getSiteDir = null;
@@ -24,6 +25,11 @@ async function handleToolCall(toolName, toolInput, ws) {
     case 'get_research':           return queryResearch(toolInput.vertical, toolInput.question, ws);
     case 'dispatch_worker':        return dispatchWorker(toolInput.worker, toolInput.task, toolInput.context || {}, ws);
     case 'read_file':              return readSiteFile(toolInput.path);
+    case 'create_job':             return handleCreateJob(toolInput);
+    case 'approve_job':            return handleApproveJob(toolInput.id);
+    case 'park_job':               return handleParkJob(toolInput.id);
+    case 'get_pending_jobs':       return handleGetPendingJobs(toolInput.site_tag);
+    case 'log_gap':                return handleLogGap(toolInput);
     default:                       return { error: `Unknown tool: ${toolName}` };
   }
 }
@@ -134,7 +140,6 @@ async function dispatchWorker(worker, task, context, ws) {
 }
 
 async function dispatchToClaudeCode(task, context) {
-  // SESSION 12: Replace with actual Claude Code CLI dispatch
   console.log(`WORKER_CLAUDE_CODE — task queued: ${task.substring(0, 100)}`);
   const queuePath = path.join(process.env.HOME || '', 'famtastic', '.worker-queue.jsonl');
   try {
@@ -144,16 +149,17 @@ async function dispatchToClaudeCode(task, context) {
       { flag: 'a' }
     );
   } catch {}
+  try {
+    studioActions.createJob({ type: 'claude-code', site_tag: context?.site_tag || _TAG?.(), payload: { task, context } });
+  } catch {}
   return {
     status: 'queued',
     message: 'Task queued for Claude Code worker',
     task_preview: task.substring(0, 100),
-    note: 'Autonomous dispatch available in Session 12',
   };
 }
 
 async function dispatchToPlaywright(task, context) {
-  // SESSION 12: Replace with actual Playwright MCP dispatch
   console.log(`WORKER_PLAYWRIGHT — task queued: ${task.substring(0, 100)}`);
   const queuePath = path.join(process.env.HOME || '', 'famtastic', '.worker-queue.jsonl');
   try {
@@ -162,6 +168,9 @@ async function dispatchToPlaywright(task, context) {
       JSON.stringify({ worker: 'playwright', task, context, queued_at: new Date().toISOString(), status: 'pending' }) + '\n',
       { flag: 'a' }
     );
+  } catch {}
+  try {
+    studioActions.createJob({ type: 'playwright', site_tag: context?.site_tag || _TAG?.(), payload: { task, context } });
   } catch {}
   return {
     status: 'queued',
@@ -204,6 +213,60 @@ async function readSiteFile(filePath) {
     };
   } catch (e) {
     return { error: `File not found: ${filePath}` };
+  }
+}
+
+// ─── Job Queue + Gap Logging (via studio-actions) ────────────────────────────
+
+async function handleCreateJob(input) {
+  try {
+    const job = studioActions.createJob({
+      type:         input.type,
+      site_tag:     input.site_tag,
+      payload:      input.payload,
+      dependencies: input.dependencies,
+      cost_estimate: input.cost_estimate,
+      status:       input.status,
+    });
+    return { ok: true, job };
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+async function handleApproveJob(id) {
+  try {
+    const job = studioActions.approveJob(id);
+    return { ok: true, job };
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+async function handleParkJob(id) {
+  try {
+    const job = studioActions.parkJob(id);
+    return { ok: true, job };
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+async function handleGetPendingJobs(siteTag) {
+  try {
+    const jobs = studioActions.getPendingJobs(siteTag);
+    return { jobs, count: jobs.length };
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+async function handleLogGap(input) {
+  try {
+    studioActions.logGap(input.tag || _TAG?.(), input.message, input.category, input.details || {});
+    return { ok: true };
+  } catch (e) {
+    return { error: e.message };
   }
 }
 
