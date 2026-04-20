@@ -12,6 +12,7 @@ const pty = require('node-pty');
 const db = require('./lib/db');
 const jobQueue = require('./lib/job-queue');
 const studioActions = require('./lib/studio-actions');
+const memory = require('./lib/memory');
 const { studioEvents, STUDIO_EVENTS } = require('./lib/studio-events');
 const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
@@ -5376,6 +5377,9 @@ app.post('/api/shay-shay', async (req, res) => {
       model: usedModel,
       suggestion_id: suggestionId,
     });
+
+    // Async memory extraction — non-blocking, best-effort
+    extractAndStoreMemory(message, normalized.response, { siteTag: TAG, source: 'shay-shay' }).catch(() => {});
   } catch (e) {
     console.error('[shay-shay] error:', e.message);
     res.status(500).json({ error: e.message });
@@ -5592,6 +5596,7 @@ async function executeShayShayBrainCall(opts) {
   });
 
   const firstTurn = session.historyLength === 0;
+  const memoryContext = memory.buildShayShayContext(siteSnapshot.site_tag || TAG);
   const prompt = buildShayShayPrompt({
     message,
     context,
@@ -5603,6 +5608,7 @@ async function executeShayShayBrainCall(opts) {
     studioContext: session.readStudioContext(),
     includePrimer: firstTurn,
     selectedBrain: brain,
+    memoryContext,
   });
 
   const result = await session.execute(prompt, {
@@ -5652,6 +5658,9 @@ function buildShayShayPrompt(opts) {
     '',
     'FAMTASTIC MEMORY EXCERPT:',
     cerebrumExcerpt || 'No cerebrum memory available.',
+    '',
+    'CROSS-SESSION MEMORY:',
+    (opts.memoryContext || 'No prior memories.'),
     '',
     'STUDIO CONTEXT EXCERPT:',
     studioContextExcerpt || 'No STUDIO-CONTEXT.md available yet.',
@@ -5847,6 +5856,47 @@ function handleShayShayTier0(tier0, message, context, manifest) {
   }
 
   return { response: 'Command noted.', action: null };
+}
+
+// ── Memory Extraction (async, Haiku) ─────────────────────────────────────────
+
+async function extractAndStoreMemory(userMsg, shayResponse, { siteTag, source } = {}) {
+  try {
+    const Anthropic = require('@anthropic-ai/sdk');
+    const client = new Anthropic();
+    const prompt = `You extract a single factual memory from a conversation exchange for a cross-session memory store. Return ONLY a JSON object, no markdown.
+
+Exchange:
+User: ${userMsg.slice(0, 300)}
+Shay-Shay: ${shayResponse.slice(0, 300)}
+
+Return: {"should_store": true|false, "entity_type": "site"|"user"|"global", "entity_id": "<site_tag_or_user_or_global>", "content": "<one sentence fact>", "category": "preference"|"decision"|"fact"|"feedback"|"goal"|"general", "importance": 1-10}
+
+Only store if the exchange contains a clear, durable fact (decision made, preference expressed, goal stated, feedback given). Set should_store=false for greetings, status checks, or transient info.`;
+
+    const resp = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const raw = resp.content?.[0]?.text || '';
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return;
+    const parsed = JSON.parse(match[0]);
+    if (!parsed.should_store || !parsed.content) return;
+
+    const entityId = parsed.entity_id === '<site_tag_or_user_or_global>'
+      ? (parsed.entity_type === 'site' ? (siteTag || 'unknown') : parsed.entity_type)
+      : parsed.entity_id;
+
+    memory.remember(
+      parsed.entity_type || 'global',
+      entityId,
+      parsed.content,
+      { category: parsed.category || 'general', source: source || 'shay-shay', importance: parsed.importance || 5 }
+    );
+  } catch { /* best-effort */ }
 }
 
 // ── Job Plan Builder ─────────────────────────────────────────────────────────
@@ -6545,6 +6595,38 @@ app.get('/api/worker-queue', async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Memory API (Session 5-B) ────────────────────────────────────────────────
+
+// GET /api/memory — recall memories for current site or global
+app.get('/api/memory', (req, res) => {
+  try {
+    const { entity_type, entity_id, category, limit } = req.query;
+    const rows = db.getMemories({
+      entity_type: entity_type || undefined,
+      entity_id:   entity_id   || undefined,
+      category:    category    || undefined,
+      limit:       limit ? parseInt(limit) : 20,
+    });
+    res.json({ memories: rows, count: rows.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/memory — manually add a memory
+app.post('/api/memory', (req, res) => {
+  try {
+    const { entity_type, entity_id, content, category, importance } = req.body;
+    if (!entity_type || !entity_id || !content) {
+      return res.status(400).json({ error: 'entity_type, entity_id, content required' });
+    }
+    const id = memory.remember(entity_type, entity_id, content, { category, importance, source: 'manual' });
+    res.json({ ok: true, id });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
   }
 });
 

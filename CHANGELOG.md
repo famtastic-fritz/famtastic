@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Phase 5: SHAY_THINKING orb state + cross-session memory
+
+Added SHAY_THINKING as the 5th orb state — purple glow pulse, dot animation in the dynamic area, 800ms minimum display enforced via `afterThinking()` so the orb never flickers for fast API responses. Created `lib/memory.js` (Mem0-style interface) backed by two new SQLite tables: `memories` (entity-keyed facts with importance scores) and `memory_links` (Kuzu-style graph relations). Shay-Shay now receives a `CROSS-SESSION MEMORY` block in its primer and extracts durable facts async via Haiku after each non-tier-0 interaction. Added `GET/POST /api/memory` endpoints.
+
 ## 2026-04-20 — Session 4-C: Shay-Shay Job Plan UI
 
 Added job plan creation to Shay-Shay — phrases like "plan jobs for [site]" or "create a job plan" trigger `buildShayShayJobPlan()` in server.js, which creates a 3-job research → build → deploy SQLite pipeline via studio-actions. The Shay-Shay column response now renders a `.job-plan-card` with per-job Approve and Park buttons wired to the Phase 4-A API endpoints. Approve transitions pending → approved; Park transitions pending/blocked → parked. Status badges update in-place without page reload. CSS added to studio-orb.css. Job plan template is fixed (3 jobs); AI-driven dynamic planning deferred.

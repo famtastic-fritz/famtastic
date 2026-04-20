@@ -15,7 +15,7 @@
   let badgeCount = 0;
   let idleTimer = null;
   let highlightEl = null;
-  let currentOrbState = 'IDLE'; // IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE
+  let currentOrbState = 'IDLE'; // IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE | SHAY_THINKING
 
   // ── Init ────────────────────────────────────────────────────────────────
   function init() {
@@ -371,6 +371,7 @@
       if (!text) return;
       input.value = '';
       showColumnResponse(null, true); // show typing indicator
+      setOrbState('SHAY_THINKING');
       sendToShayShay(text);
     }
 
@@ -390,8 +391,28 @@
       };
     }
 
+    var THINKING_MIN_MS = 800;
+
     function sendToShayShay(message) {
       var context = getShayShayContext();
+      var thinkStart = Date.now();
+
+      function afterThinking(fn) {
+        var elapsed = Date.now() - thinkStart;
+        var remaining = THINKING_MIN_MS - elapsed;
+        if (remaining > 0) {
+          setTimeout(fn, remaining);
+        } else {
+          fn();
+        }
+      }
+
+      function exitThinking() {
+        var orb = document.getElementById('pip-orb');
+        if (orb) { orb.classList.remove('pip-thinking'); orb.classList.add('pip-idle'); }
+        setOrbState('IDLE');
+      }
+
       fetch('/api/shay-shay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -399,7 +420,9 @@
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
+          afterThinking(function () {
           hideTyping();
+          exitThinking();
           if (data.action === 'route_to_chat') {
             // Route message to Studio chat — Shay-Shay is delegating
             if (window.ws && window.ws.readyState === WebSocket.OPEN) {
@@ -439,10 +462,14 @@
             showColumnResponse(data.response || data.error || 'No response.', false);
             showColumnActions([]);
           }
+          }); // afterThinking
         })
         .catch(function (err) {
-          hideTyping();
-          showColumnResponse('Error reaching Shay-Shay: ' + err.message, false);
+          afterThinking(function () {
+            hideTyping();
+            exitThinking();
+            showColumnResponse('Error reaching Shay-Shay: ' + err.message, false);
+          });
         });
     }
 
@@ -714,7 +741,28 @@
       renderDynamicModeContent('brainstorm');
     } else if (state === 'REVIEW_ACTIVE') {
       renderDynamicModeContent('review');
+    } else if (state === 'SHAY_THINKING') {
+      renderShayThinking();
     }
+  }
+
+  function renderShayThinking() {
+    var area = document.getElementById('pip-dynamic-area');
+    if (!area) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'pip-shay-thinking';
+    var dots = document.createElement('div');
+    dots.className = 'shay-thinking-dots';
+    for (var i = 0; i < 3; i++) { var d = document.createElement('span'); dots.appendChild(d); }
+    var label = document.createElement('div');
+    label.className = 'shay-thinking-label';
+    label.textContent = 'Shay is thinking\u2026';
+    wrap.appendChild(dots);
+    wrap.appendChild(label);
+    area.appendChild(wrap);
+
+    var orb = document.getElementById('pip-orb');
+    if (orb) { orb.classList.remove('pip-idle', 'pip-active'); orb.classList.add('pip-thinking'); }
   }
 
   // ── Validation Mode ───────────────────────────────────────────────────────

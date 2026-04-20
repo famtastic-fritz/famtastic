@@ -4105,3 +4105,90 @@ Status badge color scheme:
 - No polling/live-update when a running job completes — badge only updates on user button click
 - Shay-Shay trigger phrases are limited to explicit job-plan language — natural language like "let's plan out what needs to happen" won't match
 - The approved Research and Deploy jobs have no runner — only Build has a real execution path via the autonomous build pipeline
+
+---
+
+## Session 5-A — SHAY_THINKING 5th Orb State (2026-04-20)
+
+### Files Modified
+- `site-studio/public/js/studio-orb.js` — added SHAY_THINKING to state enum, `renderShayThinking()`, `setOrbState` branch, 800ms minimum in `sendToShayShay`
+- `site-studio/public/css/studio-orb.css` — `pip-thinking` orb class + `.pip-shay-thinking` indicator styles
+
+### SHAY_THINKING State
+
+`currentOrbState` comment now includes: `IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE | SHAY_THINKING`
+
+**`sendDirect()` flow:**
+1. User submits input → `setOrbState('SHAY_THINKING')` called immediately (records `thinkStart = Date.now()`)
+2. `showColumnResponse(null, true)` shows typing dots
+3. Fetch to `/api/shay-shay` sent
+4. On response: `afterThinking(fn)` enforces 800ms min — if `Date.now() - thinkStart < 800`, waits the remainder
+5. After min elapsed: `hideTyping()`, `exitThinking()` (removes `pip-thinking` class, restores `pip-idle`), renders response
+6. On error: same `afterThinking` wrapper before showing error message
+
+**`renderShayThinking()`**: Renders `.pip-shay-thinking` in `#pip-dynamic-area` with 3 animated purple dots + "Shay is thinking…" label.
+
+**Orb visual**: `pip-thinking` class = purple glow pulsing at 1s interval (different from red idle pulse and strong red active glow).
+
+### CSS
+`.pip-thinking .pip-svg`: purple `drop-shadow` pulsing via `orb-thinking-pulse` keyframe.
+`.pip-shay-thinking`: centered column, dots in `shay-thinking-dots`, label in `shay-thinking-label`.
+Color: `rgb(139, 92, 246)` (indigo/purple — distinct from FAMtastic red active and gold idle).
+
+---
+
+## Session 5-B — Cross-Session Memory: SQLite Mem0 + Kuzu Style (2026-04-20)
+
+### Files Created/Modified
+- `site-studio/lib/db.js` — added `memories` + `memory_links` tables to `_initSchema()` + 5 CRUD functions + exports
+- `site-studio/lib/memory.js` — NEW: Mem0-style memory interface + Kuzu-style graph links
+- `site-studio/server.js` — memory import, `extractAndStoreMemory()`, memory injection into Shay-Shay prompt, `GET/POST /api/memory`
+
+### db.js Schema Additions
+
+**`memories` table** (Mem0 semantics):
+```
+id, entity_type TEXT, entity_id TEXT, content TEXT, category TEXT DEFAULT 'general',
+source TEXT, importance INTEGER DEFAULT 5, created_at TEXT, last_accessed TEXT, access_count INTEGER
+```
+Indexes: `idx_memories_entity(entity_type, entity_id)`, `idx_memories_cat(category)`
+
+**`memory_links` table** (Kuzu/graph semantics):
+```
+id, from_type TEXT, from_id TEXT, to_type TEXT, to_id TEXT, relation TEXT, created_at TEXT
+```
+Indexes: `idx_memory_links_from`, `idx_memory_links_to`
+
+**New db.js functions**: `addMemory`, `getMemories` (reads bump `access_count`), `searchMemories` (LIKE query), `addMemoryLink`, `getMemoryLinks`
+
+### memory.js Interface
+
+Entity types: `site`, `user`, `session`, `vertical`, `global`
+Categories: `preference`, `decision`, `fact`, `feedback`, `goal`, `general`
+Importance: 1 (ephemeral) → 10 (critical)
+
+Exports:
+- `remember(entityType, entityId, content, { category, source, importance })` → memory id
+- `recall(entityType, entityId, { category, limit })` → memory rows (bumps access_count)
+- `recallGlobal({ category, limit })` → global memories
+- `search(query, limit)` → LIKE search across all content
+- `link(fromType, fromId, toType, toId, relation)` → creates memory_link
+- `getLinks({ fromType, fromId, toType, toId, relation })` → relationship query
+- `buildShayShayContext(siteTag)` → formatted string for prompt injection (global + site memories + links)
+
+### Shay-Shay Integration
+
+**Prompt injection**: `buildShayShayPrompt()` now accepts `opts.memoryContext`. `executeShayShayBrainCall()` calls `memory.buildShayShayContext(siteTag)` and passes result as `memoryContext`. Injected as `CROSS-SESSION MEMORY:` block in the primer (only on first turn, since `includePrimer` guards the block).
+
+**Async memory extraction**: After each non-tier-0 Shay-Shay response, `extractAndStoreMemory(userMsg, response, { siteTag, source })` runs non-blocking. Uses Claude Haiku (`claude-haiku-4-5-20251001`) to classify the exchange and extract a durable fact. Only stores when `should_store: true`. Silently swallows errors.
+
+### API Endpoints
+- `GET /api/memory` — recall memories; supports `?entity_type=`, `?entity_id=`, `?category=`, `?limit=`; returns `{ memories, count }`
+- `POST /api/memory` — manually store a memory; requires `entity_type`, `entity_id`, `content`
+
+### Known Gaps (Session 5)
+- `CROSS-SESSION MEMORY` block is only injected on the first turn of a brain session (`includePrimer` guard) — subsequent turns in same session don't get memory updates
+- Memory extraction is fire-and-forget with Haiku; if API quota is exhausted, no memories are stored (no fallback)
+- `recallGlobal()` is queried on every Shay-Shay call even when there are no global memories — adds one SQLite read per call (negligible but worth noting)
+- Memory search (`/api/memory?entity_type=...`) has no text search endpoint — only exact field filters; `/api/memory` with no params returns all recent entries, not site-filtered
+- No UI to browse/edit/delete memories yet; `/api/memory` GET is the only read surface

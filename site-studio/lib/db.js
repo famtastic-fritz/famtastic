@@ -74,11 +74,38 @@ function _initSchema(db) {
       result        TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS memories (
+      id              TEXT PRIMARY KEY,
+      entity_type     TEXT NOT NULL,
+      entity_id       TEXT NOT NULL,
+      content         TEXT NOT NULL,
+      category        TEXT NOT NULL DEFAULT 'general',
+      source          TEXT,
+      importance      INTEGER NOT NULL DEFAULT 5,
+      created_at      TEXT NOT NULL,
+      last_accessed   TEXT,
+      access_count    INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS memory_links (
+      id          TEXT PRIMARY KEY,
+      from_type   TEXT NOT NULL,
+      from_id     TEXT NOT NULL,
+      to_type     TEXT NOT NULL,
+      to_id       TEXT NOT NULL,
+      relation    TEXT NOT NULL,
+      created_at  TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sessions_tag  ON sessions(site_tag);
     CREATE INDEX IF NOT EXISTS idx_builds_tag    ON builds(site_tag);
     CREATE INDEX IF NOT EXISTS idx_builds_sess   ON builds(session_id);
     CREATE INDEX IF NOT EXISTS idx_jobs_status   ON jobs(status);
     CREATE INDEX IF NOT EXISTS idx_jobs_site_tag ON jobs(site_tag);
+    CREATE INDEX IF NOT EXISTS idx_memories_entity ON memories(entity_type, entity_id);
+    CREATE INDEX IF NOT EXISTS idx_memories_cat    ON memories(category);
+    CREATE INDEX IF NOT EXISTS idx_memory_links_from ON memory_links(from_type, from_id);
+    CREATE INDEX IF NOT EXISTS idx_memory_links_to   ON memory_links(to_type, to_id);
   `);
 }
 
@@ -202,6 +229,58 @@ function updateJobStatus(id, status, extra = {}) {
   getDb().prepare(`UPDATE jobs SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
 }
 
+function addMemory({ id, entity_type, entity_id, content, category = 'general', source, importance = 5 }) {
+  getDb().prepare(`
+    INSERT INTO memories (id, entity_type, entity_id, content, category, source, importance, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, entity_type, entity_id, content, category, source || null, importance, new Date().toISOString());
+}
+
+function getMemories({ entity_type, entity_id, category, limit = 20 } = {}) {
+  let q = 'SELECT * FROM memories';
+  const params = [];
+  const wheres = [];
+  if (entity_type) { wheres.push('entity_type = ?'); params.push(entity_type); }
+  if (entity_id)   { wheres.push('entity_id = ?');   params.push(entity_id); }
+  if (category)    { wheres.push('category = ?');     params.push(category); }
+  if (wheres.length) q += ' WHERE ' + wheres.join(' AND ');
+  q += ' ORDER BY importance DESC, last_accessed DESC, created_at DESC LIMIT ?';
+  params.push(limit);
+  const rows = getDb().prepare(q).all(...params);
+  const now = new Date().toISOString();
+  for (const row of rows) {
+    getDb().prepare('UPDATE memories SET last_accessed = ?, access_count = access_count + 1 WHERE id = ?').run(now, row.id);
+  }
+  return rows;
+}
+
+function searchMemories(query, limit = 10) {
+  const term = '%' + query + '%';
+  return getDb().prepare(
+    'SELECT * FROM memories WHERE content LIKE ? ORDER BY importance DESC, access_count DESC LIMIT ?'
+  ).all(term, limit);
+}
+
+function addMemoryLink({ id, from_type, from_id, to_type, to_id, relation }) {
+  getDb().prepare(`
+    INSERT OR IGNORE INTO memory_links (id, from_type, from_id, to_type, to_id, relation, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, from_type, from_id, to_type, to_id, relation, new Date().toISOString());
+}
+
+function getMemoryLinks({ from_type, from_id, to_type, to_id, relation } = {}) {
+  let q = 'SELECT * FROM memory_links';
+  const params = [];
+  const wheres = [];
+  if (from_type) { wheres.push('from_type = ?'); params.push(from_type); }
+  if (from_id)   { wheres.push('from_id = ?');   params.push(from_id); }
+  if (to_type)   { wheres.push('to_type = ?');   params.push(to_type); }
+  if (to_id)     { wheres.push('to_id = ?');     params.push(to_id); }
+  if (relation)  { wheres.push('relation = ?');  params.push(relation); }
+  if (wheres.length) q += ' WHERE ' + wheres.join(' AND ');
+  return getDb().prepare(q).all(...params);
+}
+
 function _createTestDb() {
   const db = new Database(':memory:');
   db.pragma('foreign_keys = ON');
@@ -218,5 +297,6 @@ module.exports = {
   createSession, updateSessionTokens, endSession,
   logBuild, getSessionHistory, getPortfolioStats,
   createJob, getJob, listJobs, updateJobStatus,
+  addMemory, getMemories, searchMemories, addMemoryLink, getMemoryLinks,
   _createTestDb, _closeDb,
 };
