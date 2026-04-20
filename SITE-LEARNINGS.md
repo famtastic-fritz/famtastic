@@ -57,6 +57,34 @@ triaging in a dedicated pass.
 
 ---
 
+## CSS variable alias normalization (2026-04-20)
+
+**Root cause:** Template builds and parallel page builds are separate Claude calls.
+The template emits a `<style data-template="shared">` block with a `:root {}`
+that uses one naming convention (e.g. `--color-text-light`). A different build
+run (or a different model's output) may produce a `:root {}` with a different
+convention (`--color-text-muted`). `writeTemplateArtifacts()` writes whatever
+is in the template's shared style block to `assets/styles.css`. If the page CSS
+uses `--color-text-light` but styles.css only defines `--color-text-muted`, the
+variable silently falls through to the browser default.
+
+**Fix:** `normalizeCssAliases(stylesPath)` — reads the `:root {}` block, builds
+a set of defined variable names, then injects any missing aliases as
+`--alias: var(--source);` entries. Bidirectional pairs covered:
+- `--color-text-light` ↔ `--color-text-muted`
+- `--color-bg-light` ↔ `--color-surface` (→ `--color-bg`)
+- `--color-accent-hover` ↔ `--color-accent-light`
+- `--color-text-dark` → `--color-text`
+
+Called from `writeTemplateArtifacts()` (template-first path) and
+`extractSharedCss()` (legacy path) immediately after `styles.css` is written.
+
+Rule: never define only one side of a CSS variable alias pair. When adding a
+variable name convention to a build prompt, also add the alternate name or
+add it to the `normalizeCssAliases` alias table.
+
+---
+
 ## Build model + auto image fill (2026-04-20)
 
 **Default model changed to Sonnet**

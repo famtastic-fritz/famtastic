@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — CSS variable alias normalization
+
+Added `normalizeCssAliases()` to prevent CSS custom property mismatches between the template build and page builds. Root cause: the template's shared CSS block may use `--color-text-muted` while parallel page CSS uses `--color-text-light` — the same concept, different names from different build calls. The function reads the `:root {}` block in `styles.css`, identifies defined variable names, and injects missing bidirectional aliases (`--color-text-light: var(--color-text-muted)` and vice versa, plus `color-bg-light/surface`, `color-accent-hover/light`, `color-text-dark/text`). Called from both `writeTemplateArtifacts()` and `extractSharedCss()` immediately after writing. Existing Daily Grind `styles.css` patched directly — all 12 referenced variables now resolve.
+
 ## 2026-04-20 — Sonnet default model + Step 10 auto image fill
 
 Changed default build model from Haiku to Sonnet in both `loadSettings()` and the live settings file — all HTML generation (template, parallel pages, chat edits, subprocess path) now uses `claude-sonnet-4-6` by default. Added `fillImageSlotsAfterBuild()` as Step 10 in `runPostProcessing()`, firing fire-and-forget on full builds only: tries Imagen 4 via `scripts/google-media-generate`, falls back to Unsplash download if Imagen fails (403 on leaked key handled cleanly), patches `<img>` src attributes in-place via `patchSlotImg()`, updates `spec.slot_mappings` + slot status, and sends WS reload-preview when any slot is filled. Unsplash download path confirmed working (159KB image). Imagen path confirmed to fail gracefully when key is revoked, with clean fallback and warning logging.

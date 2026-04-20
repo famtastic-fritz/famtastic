@@ -3017,7 +3017,9 @@ function extractSharedCss(ws) {
   const cssContent = styleBlocks.join('\n\n');
   const assetsDir = path.join(distDir, 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
-  fs.writeFileSync(path.join(assetsDir, 'styles.css'), cssContent);
+  const sharedStylesPath = path.join(assetsDir, 'styles.css');
+  fs.writeFileSync(sharedStylesPath, cssContent);
+  normalizeCssAliases(sharedStylesPath);
 
   const linkTag = '<link rel="stylesheet" href="assets/styles.css">';
   const pages = listPages();
@@ -3077,6 +3079,44 @@ function extractTemplateComponents(templateHtml) {
   };
 }
 
+function normalizeCssAliases(stylesPath) {
+  if (!fs.existsSync(stylesPath)) return;
+  let css = fs.readFileSync(stylesPath, 'utf8');
+
+  const rootMatch = css.match(/:root\s*\{([^}]*)\}/);
+  if (!rootMatch) return;
+
+  const rootBody = rootMatch[1];
+  const defined = new Set();
+  const varRe = /--([\w-]+)\s*:/g;
+  let m;
+  while ((m = varRe.exec(rootBody)) !== null) defined.add(m[1]);
+
+  const aliases = [
+    ['color-text-light',   'color-text-muted'],
+    ['color-text-muted',   'color-text-light'],
+    ['color-bg-light',     'color-surface'],
+    ['color-surface',      'color-bg'],
+    ['color-accent-hover', 'color-accent-light'],
+    ['color-text-dark',    'color-text'],
+  ];
+
+  const toAdd = [];
+  for (const [alias, source] of aliases) {
+    if (!defined.has(alias) && defined.has(source)) {
+      toAdd.push(`  --${alias}: var(--${source});`);
+      defined.add(alias);
+    }
+  }
+
+  if (toAdd.length === 0) return;
+  css = css.replace(/:root\s*\{([^}]*)\}/, (match, body) =>
+    `:root {${body}${toAdd.join('\n')}\n}`
+  );
+  fs.writeFileSync(stylesPath, css);
+  console.log(`[css-root] Added ${toAdd.length} alias(es) to :root in styles.css`);
+}
+
 function writeTemplateArtifacts(ws) {
   const distDir = DIST_DIR();
   const templatePath = path.join(distDir, '_template.html');
@@ -3103,7 +3143,9 @@ function writeTemplateArtifacts(ws) {
   if (components.sharedCss) {
     const assetsDir = path.join(distDir, 'assets');
     fs.mkdirSync(assetsDir, { recursive: true });
-    fs.writeFileSync(path.join(assetsDir, 'styles.css'), components.sharedCss.trim());
+    const stylesPath = path.join(assetsDir, 'styles.css');
+    fs.writeFileSync(stylesPath, components.sharedCss.trim());
+    normalizeCssAliases(stylesPath);
     if (ws) ws.send(JSON.stringify({ type: 'status', content: 'Wrote shared CSS from template to assets/styles.css' }));
   }
 
