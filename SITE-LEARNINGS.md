@@ -3872,3 +3872,53 @@ let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
 - `POST /api/intel/run-research` Pinecone upsert is a direct inline call (not via `researchRouter.pineconeUpsert`) to avoid exporting the internal function — if the upsert logic changes in research-router.js it must be updated here too; refactor to a shared utility in Session 4+
 - `manual-ingest` does not check for duplicates before storing in Pinecone — identical content ingested twice will create two records with different IDs
 - Research Tab UI (Session 3-B) is deferred: endpoints exist but there is no Studio tab yet for browsing/triggering research
+
+## Session 3-B — Research Tab UI (2026-04-20)
+
+### What was built
+
+**Research rail button** (`site-studio/public/index.html`)
+- 7th rail item, between Intelligence and the spacer/Deploy group
+- Icon: magnifying glass with + (search + add) — distinct from the Intelligence pulse icon
+- `data-rail="research"` — wired to the standard rail click handler in `studio-shell.js`
+
+**Research sidebar pane** (`site-studio/public/index.html`)
+- `data-pane="research"` — matches the standard `switchRailItem` DOM pattern
+- Three sections: Run Research, Recent Findings feed, Manual Ingest
+
+**Run Research section:**
+- `<select id="research-source-select">` — Gemini Loop / Build Patterns / Manual
+- `<textarea id="research-question-input">` — optional question override
+- `<button id="research-run-btn">` — calls `ResearchPane.runResearch()`
+- `<div id="research-run-status">` — shows loading, ✓ title, or error
+
+**Recent Findings section:**
+- `<div id="research-feed-list">` — rendered by `loadResearchFeed()` in studio-shell.js
+- Loaded automatically when Research rail is clicked (via `switchRailItem` hook)
+- Category color map: trends=purple, conversion=green, ux=gold, seo=blue, trust=text-2, general=text-3
+- Each card: category badge + title + recommendation (10px muted)
+- Empty state: "No research yet — run research above."
+- Error/fallback state: "Error loading feed."
+
+**Manual Ingest section:**
+- `<textarea id="research-ingest-content">` — raw content to classify and store
+- `<button>Ingest</button>` — calls `ResearchPane.manualIngest()`
+- `<div id="research-ingest-status">` — shows ingesting, ✓ category — title, or error
+
+**`loadResearchFeed()` in `studio-shell.js`:**
+- Reads `window.currentSiteConfig.business_type` for vertical-filtered query
+- Fetches `GET /api/research/feed?vertical=...&limit=8`
+- Renders findings with category color badges — follows same DOM-build pattern as `loadIntelligenceFeed()`
+- Registered in `switchRailItem` hook: `if (item === 'research') loadResearchFeed()`
+
+**`window.ResearchPane` in `studio-shell.js`:**
+- `runResearch()` — POST /api/intel/run-research with source + optional question; refreshes feed on success
+- `manualIngest()` — POST /api/research/manual-ingest with content; clears textarea + refreshes feed on success
+- Both defined inside the IIFE and exposed on `window` for onclick handlers
+
+### Known Gaps (Session 3-B)
+
+- Server restart required for `/api/research/feed`, `/api/research/manual-ingest`, and the upgraded `/api/intel/run-research` to be active (Session 3-A changes land after restart)
+- The source selector does not show live availability status (e.g., Gemini Loop greyed out if GEMINI_API_KEY not set) — deferred
+- `loadResearchFeed` uses `window.currentSiteConfig.business_type` for the vertical filter, but `currentSiteConfig` is not always populated on cold page load — vertical may silently default to blank (shows all general findings)
+- Run Research results are not paginated or filterable in the UI — full feed refresh on each run

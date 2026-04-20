@@ -30,6 +30,7 @@
     // Trigger pane load hooks
     if (item === 'site') loadSiteTree();
     if (item === 'intelligence') loadIntelligenceFeed();
+    if (item === 'research') loadResearchFeed();
   }
 
   // --- Sidebar ---
@@ -371,6 +372,134 @@
       });
     }).catch(() => { if (feed) feed.textContent = ''; });
   }
+
+  // --- Research Feed ---
+
+  const RESEARCH_CAT_COLOR = {
+    trends:     'var(--fam-purple)',
+    conversion: 'var(--fam-green)',
+    ux:         'var(--fam-gold)',
+    seo:        '#5ba3f5',
+    trust:      'var(--fam-text-2)',
+    general:    'var(--fam-text-3)',
+  };
+
+  function loadResearchFeed() {
+    const list = document.getElementById('research-feed-list');
+    if (!list) return;
+    list.textContent = 'Loading\u2026';
+
+    const cfg = window.currentSiteConfig || {};
+    const vertical = cfg.business_type || '';
+    const qs = vertical ? `?vertical=${encodeURIComponent(vertical)}&limit=8` : '?limit=8';
+
+    fetch('/api/research/feed' + qs).then(r => r.json()).then(data => {
+      while (list.firstChild) list.removeChild(list.firstChild);
+      const findings = data.findings || [];
+      if (!findings.length) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'padding:6px 12px;font-size:11px;color:var(--fam-text-3);';
+        msg.textContent = 'No research yet \u2014 run research above.';
+        list.appendChild(msg);
+        return;
+      }
+      findings.forEach(f => {
+        const item = document.createElement('div');
+        item.style.cssText = 'padding:5px 12px 6px;border-bottom:1px solid var(--fam-border-2);';
+
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-size:9px;font-weight:700;color:' + (RESEARCH_CAT_COLOR[f.category] || 'var(--fam-text-3)') + ';text-transform:uppercase;display:block;margin-bottom:2px;letter-spacing:.04em;';
+        badge.textContent = f.category || f.source || '';
+        item.appendChild(badge);
+
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:11px;color:var(--fam-text-2);line-height:1.4;margin-bottom:2px;';
+        title.textContent = f.title || f.question || '';
+        item.appendChild(title);
+
+        if (f.recommendation) {
+          const rec = document.createElement('div');
+          rec.style.cssText = 'font-size:10px;color:var(--fam-text-3);line-height:1.4;';
+          rec.textContent = f.recommendation;
+          item.appendChild(rec);
+        }
+        list.appendChild(item);
+      });
+    }).catch(() => {
+      if (list) {
+        while (list.firstChild) list.removeChild(list.firstChild);
+        const msg = document.createElement('div');
+        msg.style.cssText = 'padding:6px 12px;font-size:11px;color:var(--fam-text-3);';
+        msg.textContent = 'Error loading feed.';
+        list.appendChild(msg);
+      }
+    });
+  }
+
+  // ResearchPane: button handlers for the research sidebar pane
+  window.ResearchPane = {
+    runResearch: function() {
+      const source = document.getElementById('research-source-select')?.value || 'gemini_loop';
+      const question = (document.getElementById('research-question-input')?.value || '').trim();
+      const btn = document.getElementById('research-run-btn');
+      const status = document.getElementById('research-run-status');
+      if (!status) return;
+      if (btn) btn.disabled = true;
+      status.textContent = 'Running\u2026';
+      status.style.color = 'var(--fam-text-3)';
+      fetch('/api/intel/run-research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source, question: question || undefined }),
+      }).then(r => r.json()).then(data => {
+        if (btn) btn.disabled = false;
+        if (data.status === 'ok') {
+          status.textContent = '\u2713 ' + (data.title || 'Done');
+          status.style.color = 'var(--fam-green)';
+          loadResearchFeed();
+        } else if (data.status === 'no_answer') {
+          status.textContent = 'No answer: ' + (data.reason || 'source returned nothing');
+          status.style.color = 'var(--fam-gold)';
+        } else {
+          status.textContent = data.error || 'Error';
+          status.style.color = 'var(--fam-red)';
+        }
+      }).catch(() => {
+        if (btn) btn.disabled = false;
+        if (status) { status.textContent = 'Request failed'; status.style.color = 'var(--fam-red)'; }
+      });
+    },
+
+    manualIngest: function() {
+      const content = (document.getElementById('research-ingest-content')?.value || '').trim();
+      const status = document.getElementById('research-ingest-status');
+      if (!content) {
+        if (status) { status.textContent = 'Content required'; status.style.color = 'var(--fam-red)'; }
+        return;
+      }
+      if (status) { status.textContent = 'Ingesting\u2026'; status.style.color = 'var(--fam-text-3)'; }
+      fetch('/api/research/manual-ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      }).then(r => r.json()).then(data => {
+        if (data.status === 'ok') {
+          const cls = data.classification || {};
+          if (status) {
+            status.textContent = '\u2713 ' + (cls.category || '') + (cls.title ? ' \u2014 ' + cls.title : '');
+            status.style.color = 'var(--fam-green)';
+          }
+          const inp = document.getElementById('research-ingest-content');
+          if (inp) inp.value = '';
+          loadResearchFeed();
+        } else {
+          if (status) { status.textContent = data.error || 'Error'; status.style.color = 'var(--fam-red)'; }
+        }
+      }).catch(() => {
+        if (status) { status.textContent = 'Request failed'; status.style.color = 'var(--fam-red)'; }
+      });
+    },
+  };
 
   // --- Context Bar Updates ---
   function updateContextBar(cfg, activePage) {

@@ -84,6 +84,9 @@
       <button class="rail-btn" data-rail="intelligence" title="Intelligence">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       </button>
+      <button class="rail-btn" data-rail="research" title="Research">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/><line x1="10" y1="7" x2="10" y2="13"/><line x1="7" y1="10" x2="13" y2="10"/></svg>
+      </button>
       <div class="rail-spacer"></div>
       <button class="rail-btn" data-rail="deploy" title="Deploy">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
@@ -147,6 +150,36 @@
       <div class="sidebar-pane hidden" data-pane="intelligence">
         <div class="sidebar-header">Intelligence</div>
         <div id="sidebar-intel-feed"></div>
+      </div>
+      <!-- Research pane -->
+      <div class="sidebar-pane hidden" data-pane="research">
+        <div class="sidebar-header">Research</div>
+        <!-- Run Research -->
+        <div style="padding:6px 8px 4px;">
+          <div style="font-size:10px;font-weight:600;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Run Research</div>
+          <select id="research-source-select" style="width:100%;font-size:11px;padding:4px 6px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:4px;color:var(--fam-text);margin-bottom:4px;box-sizing:border-box;">
+            <option value="gemini_loop">Gemini Loop</option>
+            <option value="build_patterns">Build Patterns</option>
+            <option value="manual">Manual</option>
+          </select>
+          <textarea id="research-question-input" rows="3" placeholder="What should we know about this vertical?" style="width:100%;font-size:11px;padding:4px 6px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:4px;color:var(--fam-text);resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+          <button id="research-run-btn" onclick="ResearchPane.runResearch()" style="width:100%;margin-top:4px;padding:5px;font-size:11px;background:rgba(127,119,221,0.15);border:1px solid rgba(127,119,221,0.3);border-radius:4px;color:var(--fam-purple);cursor:pointer;">Run Research</button>
+          <div id="research-run-status" style="font-size:10px;color:var(--fam-text-3);padding:3px 0 0;min-height:14px;line-height:1.4;"></div>
+        </div>
+        <div style="height:1px;background:var(--fam-border);margin:4px 0;"></div>
+        <!-- Recent Findings feed -->
+        <div style="padding:4px 8px 2px;">
+          <div style="font-size:10px;font-weight:600;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.05em;">Recent Findings</div>
+        </div>
+        <div id="research-feed-list" style="max-height:260px;overflow-y:auto;"></div>
+        <div style="height:1px;background:var(--fam-border);margin:4px 0;"></div>
+        <!-- Manual Ingest -->
+        <div style="padding:4px 8px 8px;">
+          <div style="font-size:10px;font-weight:600;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Manual Ingest</div>
+          <textarea id="research-ingest-content" rows="4" placeholder="Paste research content to classify and store..." style="width:100%;font-size:11px;padding:4px 6px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:4px;color:var(--fam-text);resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+          <button onclick="ResearchPane.manualIngest()" style="width:100%;margin-top:4px;padding:5px;font-size:11px;background:rgba(255,193,53,0.1);border:1px solid rgba(255,193,53,0.3);border-radius:4px;color:var(--fam-gold);cursor:pointer;">Ingest</button>
+          <div id="research-ingest-status" style="font-size:10px;color:var(--fam-text-3);padding:3px 0 0;min-height:14px;line-height:1.4;"></div>
+        </div>
       </div>
       <!-- Deploy pane -->
       <div class="sidebar-pane hidden" data-pane="deploy">
