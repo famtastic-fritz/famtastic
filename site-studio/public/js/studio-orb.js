@@ -432,6 +432,9 @@
                 secondary: true
               }
             ]);
+          } else if (data.action === 'job_plan') {
+            showJobPlanCard(data.jobs || [], data.response || 'Job plan created.');
+            showColumnActions([]);
           } else {
             showColumnResponse(data.response || data.error || 'No response.', false);
             showColumnActions([]);
@@ -497,6 +500,93 @@
       row.appendChild(btn);
     });
     row.style.display = 'flex';
+  }
+
+  // ── Job Plan Card ────────────────────────────────────────────────────────
+  var STATUS_LABEL = { pending: 'Pending', blocked: 'Blocked', approved: 'Approved', parked: 'Parked', running: 'Running', done: 'Done', failed: 'Failed' };
+
+  function showJobPlanCard(jobs, introText) {
+    var area = document.getElementById('pip-response-area');
+    if (!area) return;
+    while (area.firstChild) area.removeChild(area.firstChild);
+    area.className = 'has-content';
+
+    if (introText) {
+      var intro = document.createElement('div');
+      intro.className = 'pip-response-bubble';
+      intro.textContent = introText;
+      area.appendChild(intro);
+    }
+
+    var card = document.createElement('div');
+    card.className = 'job-plan-card';
+
+    jobs.forEach(function (job, idx) {
+      var row = document.createElement('div');
+      row.className = 'job-plan-row';
+      row.id = 'job-row-' + job.id;
+
+      var meta = document.createElement('div');
+      meta.className = 'job-plan-meta';
+
+      var label = document.createElement('span');
+      label.className = 'job-plan-label';
+      label.textContent = (idx + 1) + '. ' + (job.payload && job.payload.description ? job.payload.description : job.type);
+      meta.appendChild(label);
+
+      var badge = document.createElement('span');
+      badge.className = 'job-plan-status job-status-' + (job.status || 'pending');
+      badge.textContent = STATUS_LABEL[job.status] || job.status;
+      badge.id = 'job-badge-' + job.id;
+      meta.appendChild(badge);
+
+      row.appendChild(meta);
+
+      var btns = document.createElement('div');
+      btns.className = 'job-plan-btns';
+      btns.id = 'job-btns-' + job.id;
+
+      var approveBtn = document.createElement('button');
+      approveBtn.className = 'job-btn job-btn-approve';
+      approveBtn.textContent = 'Approve';
+      approveBtn.disabled = job.status !== 'pending';
+      approveBtn.addEventListener('click', function () { jobAction('approve', job.id); });
+
+      var parkBtn = document.createElement('button');
+      parkBtn.className = 'job-btn job-btn-park';
+      parkBtn.textContent = 'Park';
+      parkBtn.disabled = job.status !== 'pending' && job.status !== 'blocked';
+      parkBtn.addEventListener('click', function () { jobAction('park', job.id); });
+
+      btns.appendChild(approveBtn);
+      btns.appendChild(parkBtn);
+      row.appendChild(btns);
+      card.appendChild(row);
+    });
+
+    area.appendChild(card);
+  }
+
+  function jobAction(action, jobId) {
+    fetch('/api/jobs/' + action + '/' + jobId, { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.job) {
+          var badge = document.getElementById('job-badge-' + jobId);
+          if (badge) {
+            badge.textContent = STATUS_LABEL[data.job.status] || data.job.status;
+            badge.className = 'job-plan-status job-status-' + data.job.status;
+          }
+          var btns = document.getElementById('job-btns-' + jobId);
+          if (btns) {
+            var approveBtn = btns.querySelector('.job-btn-approve');
+            var parkBtn = btns.querySelector('.job-btn-park');
+            if (approveBtn) approveBtn.disabled = data.job.status !== 'pending';
+            if (parkBtn) parkBtn.disabled = data.job.status !== 'pending' && data.job.status !== 'blocked';
+          }
+        }
+      })
+      .catch(function (e) { console.error('[job-plan] action failed:', e.message); });
   }
 
   // ── Column: showMessage now targets the column, not floating callout ─────

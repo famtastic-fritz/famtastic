@@ -11,6 +11,7 @@ const cheerio = require('cheerio');
 const pty = require('node-pty');
 const db = require('./lib/db');
 const jobQueue = require('./lib/job-queue');
+const studioActions = require('./lib/studio-actions');
 const { studioEvents, STUDIO_EVENTS } = require('./lib/studio-events');
 const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
@@ -5271,6 +5272,11 @@ app.post('/api/shay-shay', async (req, res) => {
     const lower = message.toLowerCase().trim();
     const tier0 = classifyShayShayTier0(lower, context);
     if (tier0) {
+      // job plan creation — create SQLite jobs, return structured plan
+      if (tier0.intent === 'create_job_plan') {
+        const planResult = buildShayShayJobPlan(message, context);
+        return res.json(planResult);
+      }
       // autonomous_build is async — handle separately
       if (tier0.intent === 'autonomous_build') {
         suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'autonomous_build', source: 'shay-shay-t0' });
@@ -5739,6 +5745,9 @@ function classifyShayShayTier0(lower, context = {}) {
   // Gap capture — "we need X", "I can't do X", "we're missing X"
   if (/\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower))
     return { intent: 'capture_gap' };
+  // Job plan creation — "plan jobs for...", "create a job plan", "schedule tasks"
+  if (/\b(plan\s+(the\s+)?jobs?\s+for|create\s+a?\s+job\s+plan|schedule\s+(the\s+)?tasks?\s+for|build\s+(a\s+)?job\s+plan|queue\s+(up\s+)?jobs?\s+for)\b/.test(lower))
+    return { intent: 'create_job_plan' };
   // Autonomous build — explicitly requests full autonomous pipeline
   if (/\b(autonomous|auto.?build|build\s+autonomously|shay.?shay\s+build)\b/.test(lower) ||
       (context && context.autonomous === true))
@@ -5838,6 +5847,48 @@ function handleShayShayTier0(tier0, message, context, manifest) {
   }
 
   return { response: 'Command noted.', action: null };
+}
+
+// ── Job Plan Builder ─────────────────────────────────────────────────────────
+
+function buildShayShayJobPlan(message, context = {}) {
+  const siteTag = context.site_tag || TAG;
+  const siteName = siteTag.replace(/^site-/, '').replace(/-/g, ' ');
+
+  const jobs = [];
+  try {
+    const research = studioActions.createJob({
+      type: 'research',
+      site_tag: siteTag,
+      payload: { description: `Gather vertical research for ${siteName}`, source: 'shay-shay-plan' },
+    });
+    jobs.push(research);
+
+    const build = studioActions.createJob({
+      type: 'build',
+      site_tag: siteTag,
+      payload: { description: `Full site build for ${siteName}`, source: 'shay-shay-plan' },
+      dependencies: [research.id],
+    });
+    jobs.push(build);
+
+    const deploy = studioActions.createJob({
+      type: 'deploy',
+      site_tag: siteTag,
+      payload: { description: `Netlify deploy for ${siteName}`, source: 'shay-shay-plan' },
+      dependencies: [build.id],
+    });
+    jobs.push(deploy);
+  } catch (e) {
+    return { action: null, response: `Job plan failed: ${e.message}` };
+  }
+
+  return {
+    action: 'job_plan',
+    response: `Here's a 3-job pipeline for ${siteName} — research first, then build, then deploy. Approve each job to let it run, or park any you want to defer.`,
+    jobs,
+    site_tag: siteTag,
+  };
 }
 
 // ── Autonomous Build Pipeline ─────────────────────────────────────────────

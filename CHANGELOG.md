@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Session 4-C: Shay-Shay Job Plan UI
+
+Added job plan creation to Shay-Shay — phrases like "plan jobs for [site]" or "create a job plan" trigger `buildShayShayJobPlan()` in server.js, which creates a 3-job research → build → deploy SQLite pipeline via studio-actions. The Shay-Shay column response now renders a `.job-plan-card` with per-job Approve and Park buttons wired to the Phase 4-A API endpoints. Approve transitions pending → approved; Park transitions pending/blocked → parked. Status badges update in-place without page reload. CSS added to studio-orb.css. Job plan template is fixed (3 jobs); AI-driven dynamic planning deferred.
+
 ## 2026-04-20 — Session 4-B: MCP Server Extension + Shared studio-actions.js
 
 Created `lib/studio-actions.js` as the shared execution layer between the MCP server and tool-handlers — thin facade over job-queue, db, and gap-logger with no HTTP or IPC dependencies. Extended `mcp-server/server.js` with 6 new tools: `trigger_build` (HTTP POST to Studio), `create_job`, `approve_job`, `park_job`, `get_pending_jobs`, `log_gap`. Made `handleMessage` async to support the trigger_build await. Updated `tool-handlers.js` to import studio-actions and wire 5 new tool cases; dispatch functions now mirror queued entries into SQLite alongside the existing JSONL ledger. Job Plan card UI deferred to Session 4-C.

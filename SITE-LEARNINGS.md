@@ -4044,3 +4044,64 @@ New `studioPost(path, body)` helper: makes HTTP POST to Studio server at `localh
 - `trigger_build` MCP tool requires Studio server to be running at STUDIO_PORT — fails gracefully with error text if unreachable, but no retry or polling
 - MCP server resolves `better-sqlite3` via `../site-studio/node_modules/` — if site-studio dependencies are not installed, MCP server will fail to start
 - Job Plan card UI (Shay-Shay multi-job plan creation, approve/park buttons in conversation panel) deferred to Session 4-C
+
+---
+
+## Session 4-C — Shay-Shay Job Plan UI (2026-04-20)
+
+### Files Modified
+- `site-studio/server.js` — added `studioActions` import, `create_job_plan` tier-0 detection, `buildShayShayJobPlan()` function
+- `site-studio/public/js/studio-orb.js` — added `job_plan` action handler, `showJobPlanCard()`, `jobAction()` functions
+- `site-studio/public/css/studio-orb.css` — added job plan card styles
+
+### Shay-Shay Job Plan Flow
+
+**Trigger phrase detection** (`classifyShayShayTier0`):
+Regex: `/\b(plan\s+(the\s+)?jobs?\s+for|create\s+a?\s+job\s+plan|schedule\s+(the\s+)?tasks?\s+for|build\s+(a\s+)?job\s+plan|queue\s+(up\s+)?jobs?\s+for)\b/`
+Returns `{ intent: 'create_job_plan' }`
+
+**`buildShayShayJobPlan(message, context)`** in `server.js`:
+Creates a standard 3-job research → build → deploy pipeline via `studioActions.createJob()`:
+1. `research` — pending (no deps), site_tag set to context.site_tag or current TAG
+2. `build` — blocked (depends on research job ID)
+3. `deploy` — blocked (depends on build job ID)
+
+Returns `{ action: 'job_plan', response: '...', jobs: [job1, job2, job3], site_tag }`.
+On creation failure, returns `{ action: null, response: 'Job plan failed: ...' }`.
+
+**`/api/shay-shay` endpoint**: `create_job_plan` is handled before the generic tier-0 dispatch — `buildShayShayJobPlan()` is called synchronously (SQLite writes are sync) and the result is returned directly.
+
+### Job Plan Card UI (studio-orb.js)
+
+`showJobPlanCard(jobs, introText)`:
+- Clears `#pip-response-area` (no innerHTML, uses `removeChild` loop)
+- Renders intro text as `.pip-response-bubble`
+- Renders `.job-plan-card` containing one `.job-plan-row` per job
+- Each row: job description label + status badge + Approve/Park buttons
+- Approve button: enabled only for `pending` jobs
+- Park button: enabled for `pending` and `blocked` jobs
+
+`jobAction(action, jobId)`:
+- POSTs to `/api/jobs/{approve|park}/{jobId}`
+- On success, updates the job's status badge class and text in-place
+- Re-evaluates button disabled states from returned `data.job.status`
+- Errors logged to console only (no user-visible error state in v1)
+
+### CSS (studio-orb.css)
+New classes: `.job-plan-card`, `.job-plan-row`, `.job-plan-meta`, `.job-plan-label`, `.job-plan-status`, `.job-status-{pending|blocked|approved|parked|running|done|failed}`, `.job-plan-btns`, `.job-btn`, `.job-btn-approve`, `.job-btn-park`.
+
+Status badge color scheme:
+- pending → gold (`--fam-gold`)
+- blocked → muted text
+- approved → green (`--fam-green`)
+- parked → dim text
+- running → blue
+- done → green (muted)
+- failed → red
+
+### Known Gaps (Session 4-C)
+- Job plan creation always creates the same 3-job (research → build → deploy) pipeline — no AI-driven planning yet
+- `jobAction` errors are console-only; no user-visible error state in the UI
+- No polling/live-update when a running job completes — badge only updates on user button click
+- Shay-Shay trigger phrases are limited to explicit job-plan language — natural language like "let's plan out what needs to happen" won't match
+- The approved Research and Deploy jobs have no runner — only Build has a real execution path via the autonomous build pipeline
