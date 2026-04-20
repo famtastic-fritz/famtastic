@@ -3922,3 +3922,78 @@ let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
 - The source selector does not show live availability status (e.g., Gemini Loop greyed out if GEMINI_API_KEY not set) — deferred
 - `loadResearchFeed` uses `window.currentSiteConfig.business_type` for the vertical filter, but `currentSiteConfig` is not always populated on cold page load — vertical may silently default to blank (shows all general findings)
 - Run Research results are not paginated or filterable in the UI — full feed refresh on each run
+
+---
+
+## Session 4-A — SQLite Job Queue (2026-04-20)
+
+### Files Modified
+- `site-studio/lib/db.js` — added `jobs` table to `_initSchema()` + 4 CRUD functions
+- `site-studio/server.js` — added `jobQueue` import, 3 endpoints, startup JSONL migration
+- `site-studio/lib/job-queue.js` — NEW: full state machine, JSONL migration, exports
+
+### Jobs Table Schema
+Added to `_initSchema()` alongside existing tables:
+```sql
+CREATE TABLE IF NOT EXISTS jobs (
+  id            TEXT PRIMARY KEY,
+  type          TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'pending',
+  site_tag      TEXT,
+  payload       TEXT,          -- JSON
+  dependencies  TEXT,          -- JSON array of job IDs
+  cost_estimate REAL DEFAULT 0,
+  cost_actual   REAL DEFAULT 0,
+  created_at    TEXT NOT NULL,
+  approved_at   TEXT,
+  approved_by   TEXT,
+  completed_at  TEXT,
+  result        TEXT           -- JSON
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_status   ON jobs(status);
+CREATE INDEX IF NOT EXISTS idx_jobs_site_tag ON jobs(site_tag);
+```
+
+DB path: `~/.config/famtastic/studio.db` (same file as sessions/builds/compaction_events)
+
+### db.js CRUD Functions
+- `_parseJob(row)` — parses JSON fields: `payload`, `dependencies`, `result`
+- `createJob({ id, type, status, site_tag, payload, dependencies, cost_estimate })` — INSERT
+- `getJob(id)` — SELECT by PK, returns parsed job or null
+- `listJobs({ status, site_tag, limit=50 })` — filtered SELECT, newest-first
+- `updateJobStatus(id, status, extra)` — writes `approved_at`/`approved_by` on `approved`; `completed_at` + optional `result`/`cost_actual` on `done`/`failed`
+
+### job-queue.js State Machine
+Status enum: `pending`, `approved`, `running`, `done`, `blocked`, `failed`, `parked`
+
+**Key semantics:**
+- `parked` ≠ `pending` — parked is conscious deferral, not waiting for deps
+- `blocked` → `pending` (automatic via `_unblockDependents()` when all deps reach `done`)
+- `pending` → `approved` (via `approveJob()`)
+- `pending` / `blocked` → `parked` (via `parkJob()`)
+- `approved` → `running` → `done` / `failed` (external runner sets these)
+
+**Exported functions:**
+- `createJob({ type, site_tag, payload, dependencies, cost_estimate, status })` — status auto-set to `blocked` if `dependencies.length > 0`, else `pending`
+- `approveJob(id)` — validates `status === 'pending'`, calls `updateJobStatus`
+- `parkJob(id)` — validates `status in [pending, blocked]`, calls `updateJobStatus`
+- `completeJob(id, { result, cost_actual })` — transitions to `done`, calls `_unblockDependents`
+- `failJob(id, { result })` — transitions to `failed`
+- `migrateJsonlQueue()` — reads `~/famtastic/.worker-queue.jsonl`, INSERT OR IGNORE (idempotent), status map: `pending→pending`, `completed→done`, `cancelled→parked`, `failed→failed`; returns `{ migrated, skipped }`
+- `listPending()` — convenience wrapper for `db.listJobs({ status: 'pending' })`
+
+### API Endpoints (server.js)
+Registered BEFORE `/api/research/:filename` parameterized route (see Route Rule 9):
+- `GET /api/jobs` — list jobs; supports `?status=`, `?site_tag=`, `?limit=` query params; returns `{ jobs, count }`
+- `POST /api/jobs/approve/:id` — pending → approved; returns `{ ok, job }` or 400 with error
+- `POST /api/jobs/park/:id` — pending|blocked → parked; returns `{ ok, job }` or 400 with error
+
+### Startup Behavior
+After `cleanWorkerQueueOnStartup()` at server start:
+- `jobQueue.migrateJsonlQueue()` runs idempotently — any JSONL entries not already in SQLite are inserted; already-migrated entries are skipped via `INSERT OR IGNORE` (UUIDs serve as dedup keys only if present in JSONL; otherwise new UUIDs are generated per migration run)
+
+### Known Gaps (Session 4-A)
+- No UI for job queue yet — approve/park require direct API calls; Job Plan card UI is deferred to Session 4-C
+- `running` and `approved` statuses are set by external runners only — no Studio UI triggers these transitions yet
+- `cost_actual` field is write-only from `completeJob()` — no aggregation or reporting UI
+- JSONL entries without an `id` field get a new UUID each migration run; if the server is restarted before the JSONL is cleared, those entries could be re-migrated with new IDs (low risk since JSONL cleanup removes completed entries on startup before migration runs)

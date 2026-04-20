@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const cheerio = require('cheerio');
 const pty = require('node-pty');
 const db = require('./lib/db');
+const jobQueue = require('./lib/job-queue');
 const { studioEvents, STUDIO_EVENTS } = require('./lib/studio-events');
 const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
@@ -6493,6 +6494,39 @@ app.get('/api/worker-queue', async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Job Queue API (Session 4-A) ─────────────────────────────────────────────
+
+// GET /api/jobs — list jobs, optional ?status= and ?site_tag= filters
+app.get('/api/jobs', (req, res) => {
+  try {
+    const { status, site_tag, limit } = req.query;
+    const jobs = db.listJobs({ status, site_tag, limit: limit ? parseInt(limit) : 50 });
+    res.json({ jobs, count: jobs.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/jobs/approve/:id — transition pending → approved
+app.post('/api/jobs/approve/:id', (req, res) => {
+  try {
+    const job = jobQueue.approveJob(req.params.id);
+    res.json({ ok: true, job });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// POST /api/jobs/park/:id — transition pending|blocked → parked
+app.post('/api/jobs/park/:id', (req, res) => {
+  try {
+    const job = jobQueue.parkJob(req.params.id);
+    res.json({ ok: true, job });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
   }
 });
 
@@ -15133,6 +15167,12 @@ if (require.main === module) {
     // Session 12 Phase 2 (W1, W2): purge stale / terminal worker queue entries
     // so the pending badge reflects real work instead of phantoms from weeks ago.
     try { cleanWorkerQueueOnStartup(); } catch {}
+    try {
+      const migResult = jobQueue.migrateJsonlQueue();
+      if (migResult.migrated > 0) {
+        console.log(`[job-queue] Migrated ${migResult.migrated} entries from JSONL (${migResult.skipped} skipped)`);
+      }
+    } catch (e) { console.warn('[job-queue] Migration failed:', e.message); }
 
     // Verify brains first, THEN build the capability manifest so it reflects
     // real API health instead of mere env-var presence — a leaked/revoked key

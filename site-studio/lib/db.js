@@ -58,9 +58,27 @@ function _initSchema(db) {
       occurred_at    TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS jobs (
+      id            TEXT PRIMARY KEY,
+      type          TEXT NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'pending',
+      site_tag      TEXT,
+      payload       TEXT,
+      dependencies  TEXT,
+      cost_estimate REAL DEFAULT 0,
+      cost_actual   REAL DEFAULT 0,
+      created_at    TEXT NOT NULL,
+      approved_at   TEXT,
+      approved_by   TEXT,
+      completed_at  TEXT,
+      result        TEXT
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sessions_tag  ON sessions(site_tag);
     CREATE INDEX IF NOT EXISTS idx_builds_tag    ON builds(site_tag);
     CREATE INDEX IF NOT EXISTS idx_builds_sess   ON builds(session_id);
+    CREATE INDEX IF NOT EXISTS idx_jobs_status   ON jobs(status);
+    CREATE INDEX IF NOT EXISTS idx_jobs_site_tag ON jobs(site_tag);
   `);
 }
 
@@ -121,6 +139,69 @@ function getPortfolioStats() {
   };
 }
 
+function _parseJob(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    payload:      row.payload      ? JSON.parse(row.payload)      : null,
+    dependencies: row.dependencies ? JSON.parse(row.dependencies) : [],
+    result:       row.result       ? JSON.parse(row.result)       : null,
+  };
+}
+
+function createJob({ id, type, status = 'pending', site_tag, payload, dependencies, cost_estimate = 0 }) {
+  getDb().prepare(`
+    INSERT INTO jobs (id, type, status, site_tag, payload, dependencies, cost_estimate, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, type, status, site_tag || null,
+    payload      ? JSON.stringify(payload)      : null,
+    dependencies ? JSON.stringify(dependencies) : '[]',
+    cost_estimate,
+    new Date().toISOString()
+  );
+}
+
+function getJob(id) {
+  return _parseJob(getDb().prepare('SELECT * FROM jobs WHERE id = ?').get(id));
+}
+
+function listJobs({ status, site_tag, limit = 50 } = {}) {
+  let q = 'SELECT * FROM jobs';
+  const params = [];
+  const wheres = [];
+  if (status)   { wheres.push('status = ?');   params.push(status); }
+  if (site_tag) { wheres.push('site_tag = ?'); params.push(site_tag); }
+  if (wheres.length) q += ' WHERE ' + wheres.join(' AND ');
+  q += ' ORDER BY created_at DESC LIMIT ?';
+  params.push(limit);
+  return getDb().prepare(q).all(...params).map(_parseJob);
+}
+
+function updateJobStatus(id, status, extra = {}) {
+  const now = new Date().toISOString();
+  const sets = ['status = ?'];
+  const vals = [status];
+  if (status === 'approved') {
+    sets.push('approved_at = ?', 'approved_by = ?');
+    vals.push(now, extra.approved_by || 'user');
+  }
+  if (status === 'done' || status === 'failed') {
+    sets.push('completed_at = ?');
+    vals.push(now);
+    if (extra.result != null) {
+      sets.push('result = ?');
+      vals.push(JSON.stringify(extra.result));
+    }
+    if (extra.cost_actual != null) {
+      sets.push('cost_actual = ?');
+      vals.push(extra.cost_actual);
+    }
+  }
+  vals.push(id);
+  getDb().prepare(`UPDATE jobs SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+}
+
 function _createTestDb() {
   const db = new Database(':memory:');
   db.pragma('foreign_keys = ON');
@@ -136,5 +217,6 @@ function _closeDb() {
 module.exports = {
   createSession, updateSessionTokens, endSession,
   logBuild, getSessionHistory, getPortfolioStats,
+  createJob, getJob, listJobs, updateJobStatus,
   _createTestDb, _closeDb,
 };

@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Session 4-A: SQLite Job Queue
+
+Added a `jobs` table to `~/.config/famtastic/studio.db` (via `lib/db.js` `_initSchema()`) with a 7-status state machine: `pending`, `approved`, `running`, `done`, `blocked`, `failed`, `parked`. Created `lib/job-queue.js` with the full state machine — `blocked` auto-transitions to `pending` when all dependency jobs reach `done` via `_unblockDependents()`. Added `GET /api/jobs`, `POST /api/jobs/approve/:id`, and `POST /api/jobs/park/:id` endpoints to `server.js`. On startup, `jobQueue.migrateJsonlQueue()` idempotently imports existing `.worker-queue.jsonl` entries into SQLite. No UI yet — Job Plan card UI is deferred to Session 4-C.
+
 ## 2026-04-20 — Session 3-B: Research Tab UI
 
 Added the Research rail item (7th rail button, between Intelligence and Deploy) and the full research sidebar pane to `site-studio/public/index.html`. Pane has three sections: Run Research (source selector, question textarea, button with status), Recent Findings (auto-loaded feed from `/api/research/feed`, category color-coded), and Manual Ingest (textarea + button). Wired `loadResearchFeed()` into `studio-shell.js` `switchRailItem` hook and implemented `window.ResearchPane` object (`runResearch`, `manualIngest`) inside the IIFE — exposed on `window` for onclick handlers. Feed auto-filters by `window.currentSiteConfig.business_type` for the active site's vertical. Server restart needed to activate the Session 3-A API routes; frontend renders correctly with graceful empty state in the interim.
