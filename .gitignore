@@ -1,6 +1,10 @@
 node_modules/
 .DS_Store
 
+# Environment files — never commit secrets
+.env
+site-studio/.env
+
 # Site working directories — local only, not committed to hub repo
 # Each site gets its own repo at ~/famtastic-sites/<tag>/
 sites/
