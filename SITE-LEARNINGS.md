@@ -57,6 +57,50 @@ triaging in a dedicated pass.
 
 ---
 
+## Autonomous build pipeline fixes (2026-04-20)
+
+Investigation and fixes for two bugs that caused the `/api/autonomous-build`
+path to silently stop before full completion.
+
+**Bug 1 — subprocess page silently dropped (spawnAllPages retry)**
+The subprocess path (used when `ANTHROPIC_API_KEY` is not set) builds pages
+sequentially via `spawnClaude()`. Under rate pressure or transient failure,
+the third sequential call could return an empty response — and the original
+code had no retry. Fix: `spawnAllPages()` now runs a single retry pass for
+any page that returned fewer than 50 characters on first attempt. Log message:
+`[parallel-build-sub] N page(s) failed first pass — retrying: ...`
+
+**Bug 2 — spec.state never transitions to 'built' (finishParallelBuild)**
+`finishParallelBuild()` did all post-processing, SEO, intelligence, and DNA
+updates — but never wrote `spec.state = 'built'`. Every downstream system
+(build-status API, Studio UI) that checks `spec.state === 'built'` would see
+`'briefed'` forever. Fix: after `setBuildInProgress(false)`, read and rewrite
+the spec with `state: 'built'`.
+
+**Bug 3 — double build lock (parallelBuild guard)**
+`handleChatMessage()` calls `setBuildInProgress(true, ws)` at line 10684,
+then calls `parallelBuild()` which also calls `setBuildInProgress(true, ws)`
+at line 8634. Two lock acquisitions 2ms apart triggered two run IDs and
+could kill the template subprocess via SIGTERM. Fix: `parallelBuild()` now
+guards with `if (!buildInProgress) setBuildInProgress(true, ws)` so it only
+acquires the lock when the caller (brainstorm rebuild path) hasn't already.
+
+**WS warning for empty media_specs after build**
+`extractAndRegisterSlots()` had a `console.warn` for empty slots but sent no
+WebSocket notification. `finishParallelBuild()` now also sends a `type: status`
+WS message when `media_specs` is empty after post-processing.
+
+**Partial build warning**
+`finishParallelBuild()` compares `writtenPages.length` against expected page
+count and emits both a console warning and a WS status message when pages
+are missing: `Build incomplete: N/M pages built — X page(s) failed.`
+
+Rule: `spec.state` progresses `new` → `briefed` → `built` → `deployed`.
+The `'built'` transition must be written by `finishParallelBuild()` — no
+other code path ensures it.
+
+---
+
 ## Consolidation (2026-03-12)
 
 4 repos merged to 1: `~/famtastic/` (renamed from famtastic-agent-hub). Dead code deleted (~40%). Think-Tank CLIs and Platform's useful bits absorbed as `fam-hub idea` and `fam-hub admin` subcommands. Three repos archived: famtastic-platform, famtastic-think-tank, famtastic-dev-setup.

@@ -8631,7 +8631,7 @@ function emitPhase(ws, phase, status, progress) {
 
 // --- Parallel Multi-Page Build ---
 async function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
-  setBuildInProgress(true, ws);
+  if (!buildInProgress) setBuildInProgress(true, ws);
   const startTime = Date.now();
 
   // Detect logo file
@@ -8877,6 +8877,30 @@ ${sharedRules}`;
         pageResults.push({ status: pageResponse.length > 50 ? 'fulfilled' : 'rejected', value: { page: pageFile, response: pageResponse }, reason: null });
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} complete (${pageResults.length}/${pageFiles.length})` }));
       }
+      // One retry pass for any pages that returned empty from subprocess
+      const failedForRetry = pageFiles.filter((pf, i) => pageResults[i] && pageResults[i].status === 'rejected');
+      if (failedForRetry.length > 0) {
+        console.log(`[parallel-build-sub] ${failedForRetry.length} page(s) failed first pass — retrying: ${failedForRetry.join(', ')}`);
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Retrying ${failedForRetry.length} page(s): ${failedForRetry.join(', ')}` }));
+        for (const retryFile of failedForRetry) {
+          const retryPrompt = spawnPage(retryFile, templateContext);
+          const retryResponse = await new Promise((resolve) => {
+            const child = spawnClaude(retryPrompt);
+            let out = '';
+            const t = setTimeout(() => { child.kill(); resolve(''); }, 300000);
+            child.stdout.on('data', d => { out += d.toString(); });
+            child.on('close', () => { clearTimeout(t); resolve(out.trim()); });
+            child.on('error', () => { clearTimeout(t); resolve(''); });
+          });
+          const ri = pageResults.findIndex(r => r.value && r.value.page === retryFile);
+          if (retryResponse.length > 50) {
+            pageResults[ri] = { status: 'fulfilled', value: { page: retryFile, response: retryResponse }, reason: null };
+            if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Retry succeeded: ${retryFile}` }));
+          } else {
+            console.error(`[parallel-build-sub] ${retryFile} retry also failed — empty response`);
+          }
+        }
+      }
       // Process subprocess results
       let completedSub = 0;
       const totalSub = pageFiles.length;
@@ -8891,8 +8915,8 @@ ${sharedRules}`;
           console.log(`[parallel-build-sub] ${pageFileSub} done (${responseSub.length} bytes)`);
         } else {
           const failedPage = result.value ? result.value.page : `page-${completedSub}`;
-          console.error(`[parallel-build-sub] ${failedPage} failed`);
-          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${failedPage} failed — will retry on next build` }));
+          console.error(`[parallel-build-sub] ${failedPage} failed after retry`);
+          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `⚠️ ${failedPage} failed after retry — re-run build` }));
         }
       }
       if (writtenPages.length === 0) {
@@ -10107,12 +10131,31 @@ async function inspectSite(question, page) {
 function finishParallelBuild(ws, writtenPages, startTime, spec) {
   const elapsed = Math.round((Date.now() - startTime) / 1000);
 
+  // Warn if fewer pages were built than the spec called for
+  const expectedPageCount = (spec.pages || spec.design_brief?.must_have_sections || []).length;
+  if (expectedPageCount > 0 && writtenPages.length < expectedPageCount) {
+    const missing = expectedPageCount - writtenPages.length;
+    const warnMsg = `Build incomplete: ${writtenPages.length}/${expectedPageCount} pages built — ${missing} page(s) failed. Re-run build to retry.`;
+    console.warn(`[build] ${warnMsg}`);
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `⚠️ ${warnMsg}` }));
+  }
+
   // Post-processing
   emitPhase(ws, 'generating', 'done', 70);
   ws.send(JSON.stringify({ type: 'status', content: 'Post-processing...' }));
   emitPhase(ws, 'post_processing', 'active', 75);
   runPostProcessing(ws, writtenPages, { isFullBuild: true });
   emitPhase(ws, 'post_processing', 'done', 85);
+
+  // Warn via WS if no image slots were registered (media_specs empty after full build)
+  try {
+    const postSpec = readSpec();
+    if (!postSpec.media_specs || postSpec.media_specs.length === 0) {
+      const reason = `${writtenPages.length} page(s) built but no <img data-slot-id="..."> tags found`;
+      console.warn(`[slots] WARNING: media_specs is empty after build — ${reason}`);
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `⚠️ No image slots registered after build — ${reason}` }));
+    }
+  } catch {}
 
   // Generate sitemap.xml and robots.txt
   ws.send(JSON.stringify({ type: 'status', content: 'Generating sitemap + robots.txt...' }));
@@ -10122,6 +10165,14 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   const seoResult = runSeoValidation(writtenPages);
 
   setBuildInProgress(false);
+  // Transition spec state from 'briefed' → 'built' now that pages are on disk
+  try {
+    const builtSpec = readSpec();
+    builtSpec.state = 'built';
+    writeSpec(builtSpec, { source: 'finishParallelBuild' });
+  } catch (e) {
+    console.warn('[build] Failed to update spec state to built:', e.message);
+  }
   studioEvents.emit(STUDIO_EVENTS.BUILD_COMPLETED, { tag: TAG, pages: writtenPages });
 
   // Session 12 Phase 1 (I2): auto-run intelligence report after every build

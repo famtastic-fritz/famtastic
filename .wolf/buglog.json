@@ -2975,6 +2975,33 @@
         "subprocess-fallback",
         "api-key"
       ]
+    },
+    {
+      "id": "bug-autonomous-001",
+      "timestamp": "2026-04-20T12:52:19.226753Z",
+      "error_message": "spec.state never transitions from briefed to built after autonomous build",
+      "file": "site-studio/server.js",
+      "root_cause": "finishParallelBuild() runs post-processing, verification, and DNA updates but never writes spec.state = \"built\". The only state transitions in the codebase were new/briefed/deployed \u2014 built was missing.",
+      "fix": "Added spec.state = \"built\" write in finishParallelBuild() after setBuildInProgress(false), using readSpec/writeSpec pattern with try/catch",
+      "tags": [
+        "autonomous-build",
+        "spec-state",
+        "finishParallelBuild"
+      ]
+    },
+    {
+      "id": "bug-autonomous-002",
+      "timestamp": "2026-04-20T12:52:19.226839Z",
+      "error_message": "Third sequential subprocess page (contact.html) silently dropped \u2014 returned empty response",
+      "file": "site-studio/server.js",
+      "root_cause": "spawnAllPages() subprocess path runs pages sequentially via spawnClaude(). After 2 successful calls, the third claude --print subprocess returned empty output (likely rate limiting or transient failure). The empty response was silently marked rejected and finishParallelBuild was called with only 2/3 pages. No retry logic existed.",
+      "fix": "Added one retry pass after the initial sequential loop: collects all failed pages (response.length <= 50), re-spawns each once, updates pageResults[i] on success before processing phase.",
+      "tags": [
+        "autonomous-build",
+        "subprocess",
+        "subprocess-retry",
+        "spawnAllPages"
+      ]
     }
   ]
 }
