@@ -974,15 +974,21 @@ body {
 }
 
 #top-bar-logo {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
   flex-shrink: 0;
   margin-right: 4px;
+  display: flex;
+  align-items: center;
 }
 
-#top-bar-logo .logo-fam   { color: var(--fam-red); }
-#top-bar-logo .logo-tastic { color: var(--fam-gold); }
+.top-bar-logo-img {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+/* Fallback for old text spans if SVG fails */
+#top-bar-logo .logo-fam   { color: var(--fam-red); font-size: 13px; font-weight: 700; }
+#top-bar-logo .logo-tastic { color: var(--fam-gold); font-size: 13px; font-weight: 700; }
 
 #top-bar-site {
   position: relative;

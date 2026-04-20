@@ -4250,3 +4250,52 @@ Settings → Site tab new fields: `Custom domain`, `Monthly rate ($)`, `Client n
 - GoDaddy DNS card shows Netlify's load balancer IP (75.2.60.5) which is correct for Netlify but may change; should be fetched from Netlify API for accuracy
 - `verifyRevenueAndState()` reunion detection uses simple tag/business_type check — won't catch reunion sites with non-standard naming
 - No server-side validation that `monthly_rate` is a positive number — could store negative values via direct API call
+
+---
+
+## Phase 7 — FAMtastic Logo + FAMtastic.com Site (2026-04-20)
+
+### Files Created/Modified
+- `site-studio/public/img/famtastic-logo.svg` — NEW: brand logo SVG (starburst icon + FAM/tastic wordmark)
+- `site-studio/public/index.html` — top-bar-logo updated from text spans to `<img>` tag
+- `site-studio/public/css/studio-shell.css` — `.top-bar-logo-img` sizing added, text span fallback kept
+- `sites/site-famtastic-com/spec.json` — NEW: FAMtastic.com site spec with full approved brief
+- `sites/site-famtastic-com/dist/index.html` — NEW: FAMtastic.com landing page HTML
+- `sites/site-famtastic-com/dist/assets/styles.css` — NEW: FAMtastic.com brand stylesheet
+
+### FAMtastic Logo SVG
+
+File: `site-studio/public/img/famtastic-logo.svg`
+- ViewBox: 200x40
+- Icon: 8-point star (red `#e8352a`) + gold center circle (`#fbbf24`)
+- Wordmark: "FAM" in bold red + "tastic" in regular gold — font-weight 800/400 Inter/system-ui
+- Used in Studio top bar via `<img src="/img/famtastic-logo.svg" class="top-bar-logo-img">`, height: 22px
+
+The SVG replaces the previous `<span class="logo-fam">FAM</span><span class="logo-tastic">tastic</span>` text spans. The text span CSS is preserved as a fallback.
+
+### FAMtastic.com Site
+
+Tag: `site-famtastic-com`
+State: `draft` (ready to build in Studio)
+Spec brief: platform marketing site — hero, how-it-works, portfolio proof, pricing, CTA, footer
+
+`dist/index.html`: Full semantic HTML with all 6 required sections:
+- Hero with `.fam-hero-layered` BEM layers + animated SVG starburst (CSS rotation)
+- How it works (3 steps)
+- Portfolio grid (3 placeholder cards)
+- Pricing (3 tiers: Starter $297, Growth $497, Rank & Rent custom)
+- CTA → mailto:fritz.medine@gmail.com
+- Footer
+
+`dist/assets/styles.css`: Complete brand stylesheet
+- Palette: bg #0a0a0f, red #e8352a, gold #fbbf24
+- Nav fixed with backdrop-filter blur + mobile hamburger (pure CSS `#nav-toggle` checkbox)
+- Hero: min-height 100vh with starburst SVG animation (40s slow spin)
+- Section separators: CSS `clip-path: polygon()` diagonal dividers
+- Full responsive: grid→single-column at 768px
+
+### Known Gaps (Phase 7)
+- Portfolio cards in FAMtastic.com are placeholders (colored div backgrounds, no screenshots) — need real site screenshots captured via Playwright
+- Logo SVG text uses system fonts — logo rendering may vary slightly across browsers; a future pass should convert text to paths for pixel-perfect consistency
+- `site-famtastic-com` is in `draft` state and has never been built through the Studio pipeline — `fam_score` is null, no post-processing has run (no logo extraction, no divider injection)
+- CTA links to mailto: — should eventually link to a Calendly or booking page

@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Phase 7: FAMtastic logo + FAMtastic.com site
+
+Created the FAMtastic brand logo SVG (8-point starburst icon + red/gold wordmark) and replaced the plain text in the Studio top bar with the SVG image. Built the `site-famtastic-com` site: spec.json with approved brief (platform marketing — hero, how-it-works, portfolio proof, pricing, CTA, footer), full HTML with `.fam-hero-layered` BEM layers and animated starburst, complete brand stylesheet with diagonal divider clip-paths and pure-CSS mobile nav. Site is in `draft` state ready for Studio build pipeline. Portfolio cards are placeholder-colored divs — real screenshots deferred.
+
 ## 2026-04-20 — Phase 6: Revenue path, GoDaddy DNS card, Reunion validation
 
 Added `monthly_rate`, `client_name`, `custom_domain`, `paypal_handle` spec fields patchable via `PATCH /api/patch-spec`. `POST /api/approve-site` transitions site to `client_approved` state and returns a PayPal.me payment link. Deploy screen right panel now has a revenue card (monthly rate + PayPal link + copy button), a GoDaddy DNS setup card (auto-populated from deployed_url), and a "Mark as Client Approved" button. `verifyRevenueAndState()` added as 6th pre-flight check — warns on missing monthly_rate and validates reunion sites for PayPal button + RSVP text + required pages.
