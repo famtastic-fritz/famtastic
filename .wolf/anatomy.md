@@ -1,10 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T19:51:16.880Z
-> Files: 471 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T17:41:52.178Z
+> Files: 480 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
+- `.zshrc` (~122 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~1766 tok)
 - `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~21700 tok)
 
@@ -39,19 +40,24 @@
 - `MEMORY.md` — Memory Index (~175 tok)
 - `project_template_upload_future.md` — Declares names (~444 tok)
 
+## ../.config/famtastic/
+
+- `studio-config.json` (~264 tok)
+
 ## ./
 
-- `.gitignore` — Git ignore rules (~166 tok)
+- `.gitignore` — Git ignore rules (~292 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~12766 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~17595 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
+- `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~9861 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~47669 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~62897 tok)
 
 ## .claude/
 
@@ -446,6 +452,7 @@
 ## docs/
 
 - `adobe-mcp-integration.md` — Adobe MCP Integration (adb-mcp) (~1000 tok)
+- `autonomous-build-report.md` — Shay-Shay Autonomous Build Report (~2098 tok)
 - `capability-registry.md` — Studio Capability Registry (~1366 tok)
 - `classifier-intent-map.md` — Classifier Intent Map (~2537 tok)
 - `cli-test.md` — Test CLI Integration (~31 tok)
@@ -586,7 +593,7 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~220 tok)
-- `server.js` — Kill all active subprocesses owned by a WebSocket connection. (~173838 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 12 more (~184473 tok)
 - `validation-plan.json` (~2510 tok)
 - `vitest.config.js` (~33 tok)
 
@@ -605,14 +612,16 @@
 - `brain-interface.js` — BrainInterface — the universal Studio-to-Brain communication layer. (~2173 tok)
 - `brain-sessions.js` — brain-sessions.js — Brain authentication and session management. (~1563 tok)
 - `brand-tracker.js` — brand-tracker.js — Extract and persist brand tokens after every build. (~923 tok)
-- `capability-manifest.js` — fs: checkAnthropicKey, checkGeminiKey, checkNetlify + 3 more (~705 tok)
+- `capability-manifest.js` — fs: resolveApiStatus, checkNetlify, buildCapabilityManifest, loadManifest, diffStateVsManifest (~928 tok)
 - `client-interview.js` — Client Interview System — Phase 3 (~1907 tok)
+- `cost-monitor.js` — PRICE_IN_PER_M: getSpendLimit, calcCost, setBroadcast + 10 more (~1653 tok)
+- `famtastic-skeletons.js` — Extract the three FAMtastic logo SVG blocks from a Claude template response. (~2752 tok)
 - `gap-logger.js` — fs: ensureDir, loadGaps, logGap + 4 more (~962 tok)
 - `haiku-fallback.js` — haiku-fallback.js — SDK-based Haiku fallback for silence timeouts. (~777 tok)
 - `history-formatter.js` — history-formatter.js — Per-brain conversation history formatting (~1136 tok)
 - `media-telemetry.js` — media-telemetry.js — Append-only telemetry log for all AI media operations. (~3084 tok)
 - `model-config.json` (~147 tok)
-- `research-registry.js` — research-registry.js — Provider-agnostic research source registry (~3227 tok)
+- `research-registry.js` — research-registry.js — Provider-agnostic research source registry (~3240 tok)
 - `research-router.js` — research-router.js — Routes research queries through the registry (~2989 tok)
 - `studio-context-writer.js` — studio-context-writer.js — Generates STUDIO-CONTEXT.md (~3039 tok)
 - `studio-events.js` — studio-events.js — Studio event bus (~428 tok)
@@ -628,7 +637,7 @@
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~19450 tok)
+- `index.html` — FAMtastic Site Studio (~24822 tok)
 
 ## site-studio/public/css/
 
@@ -636,12 +645,14 @@
 - `studio-canvas.css` — canvas-tab-bar { (~4175 tok)
 - `studio-cli.css` — cli-bar { (~886 tok)
 - `studio-orb.css` — Styles: 63 rules (~3030 tok)
-- `studio-shell.css` — Styles: 64 rules, 37 vars (~4840 tok)
+- `studio-shell.css` — Styles: 63 rules, 37 vars (~6062 tok)
 
 ## site-studio/public/js/
 
 - `brain-selector.js` — brain-selector.js — Brain/Worker split selector for FAMtastic Studio. (~1314 tok)
-- `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~8184 tok)
+- `studio-brief.js` — studio-brief.js — Revenue-first brief interview screen (~6057 tok)
+- `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~10277 tok)
+- `studio-shell.js` — studio-shell.js — Activity rail, sidebar, tab system, mode switching (~3393 tok)
 
 ## site-studio/shay-shay/
 
@@ -797,6 +808,10 @@
 - `session-111.md` — Session 111 — 2026-03-24 (~246 tok)
 - `session-117.md` — Session 117 — 2026-03-24 (~296 tok)
 - `session-131.md` — Session 131 — 2026-03-24 (~261 tok)
+
+## sites/site-the-daily-grind-in-atlanta/dist/assets/
+
+- `styles.css` — Styles: 1 rules, 12 vars (~4904 tok)
 
 ## tests/
 

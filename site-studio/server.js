@@ -3323,6 +3323,8 @@ NAVIGATION:
 - Mobile menu should use a CSS-only toggle or minimal inline JS
 - Active page highlighting will be handled per-page
 
+${famSkeletons.NAV_SKELETON}
+
 FOOTER:
 - Business name and tagline
 - Quick links to all pages
@@ -8173,6 +8175,7 @@ ${FAMTASTIC_DNA_VOCAB}`;
   // template-call only (see buildTemplatePrompt + parallelBuild).
   const heroSkeleton = famSkeletons.HERO_SKELETON;
   const dividerSkeleton = famSkeletons.DIVIDER_SKELETON;
+  const navSkeleton = famSkeletons.NAV_SKELETON;
   const inlineStyleProhibition = famSkeletons.INLINE_STYLE_PROHIBITION;
   const logoSkeletonTemplate = spec.famtastic_mode ? famSkeletons.LOGO_SKELETON_TEMPLATE : '';
   const logoNotePage = spec.famtastic_mode ? famSkeletons.LOGO_NOTE_PAGE : '';
@@ -8193,7 +8196,7 @@ ${FAMTASTIC_DNA_VOCAB}`;
   // Append to briefContext so it travels with every prompt that uses the brief.
   briefContext += promotedIntelContext;
 
-  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, dividerSkeleton, inlineStyleProhibition, logoSkeletonTemplate, logoNotePage, promotedIntelContext };
+  return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, dividerSkeleton, navSkeleton, inlineStyleProhibition, logoSkeletonTemplate, logoNotePage, promotedIntelContext };
 }
 
 function summarizeHtml(html) {
@@ -8823,6 +8826,7 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
     const famSkeletonBlock = [
       isHeroPage ? famSkeletons.HERO_SKELETON : '',
       famSkeletons.DIVIDER_SKELETON,
+      famSkeletons.NAV_SKELETON,
       famSkeletons.INLINE_STYLE_PROHIBITION,
       spec.famtastic_mode ? famSkeletons.LOGO_NOTE_PAGE : '',
     ].filter(Boolean).join('\n\n');
@@ -14114,7 +14118,8 @@ const previewServer = http.createServer((req, res) => {
   }
 
   const dist = DIST_DIR();
-  let filePath = path.join(dist, req.url === '/' ? 'index.html' : req.url);
+  const urlPath = req.url.split('?')[0];
+  let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
   if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) filePath += '.html';
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) filePath = path.join(filePath, 'index.html');
 

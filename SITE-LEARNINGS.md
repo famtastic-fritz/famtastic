@@ -3668,3 +3668,78 @@ Returns `{ tag, state, building, pages_built, pages, has_brief, fam_score, deplo
 - `extractBriefFromMessage` extracted "Fresh Cuts in Atlanta" as business_name (should be "Fresh Cuts") — location bleeds into name when format is "shop called X in Y"
 - Shay-Shay `/api/shay-shay` `autonomous_build` intent routes through `runAutonomousBuild` but result not yet surfaced in Shay-Shay column (shows "Build started" but no progress stream)
 - `buildInProgress` flag is in-memory only — server restart clears it, which is correct but leaves `.studio.json build_in_progress` and API flag out of sync transiently
+
+---
+
+## Session 17 — Nav class name mismatch + preview site-switch fix (2026-04-20)
+
+### Nav class name mismatch — root cause and fix
+
+**Pattern:** Template CSS uses `.desktop-nav` / `.mobile-nav`. Parallel page builds sometimes generate HTML with `.nav-desktop` / `.nav-mobile` and `#mobile-menu-checkbox` instead. These class names don't match, so no CSS rules apply to the actual HTML elements — both navs render as visible block elements and the bare checkbox input appears on screen.
+
+**Root cause:** The template's `<style data-template="shared">` block defines `.desktop-nav` / `.mobile-nav`. When parallel page spawns run independently, Claude generates its own nav HTML which may differ. The pages and template CSS are generated in different Claude calls with no enforced vocabulary constraint on class names.
+
+**Fix applied:** Appended a nav-visibility block to `assets/styles.css` for `site-the-daily-grind-in-atlanta` targeting the alternate class names used in the built pages:
+- `header[data-template="header"]` — sticky positioning, flex layout, background
+- `header[data-template="header"] .container` — `display: flex; align-items: center; height: 4.5rem; gap: 1rem`
+- `#mobile-menu-checkbox { display: none; }` — always hidden
+- `.nav-desktop { display: flex; margin-left: auto; }` — desktop visible
+- `.nav-mobile { display: none; position: absolute; top: 100%; }` — hidden on desktop
+- `.menu-toggle { display: none; }` — hamburger hidden on desktop
+- `@media (max-width: 768px)`: hide `.nav-desktop`, show `.menu-toggle`, toggle `.nav-mobile` via `#mobile-menu-checkbox:checked ~ .nav-mobile { display: flex; }`
+
+**Systemic lesson:** Nav class names must be enforced in the template skeleton or the post-processing layer. The `famtastic-skeletons.js` template should include the nav HTML with explicit class names baked in, preventing Claude from generating alternate naming conventions. This is the same class-of-bug as the `fam-hero--bg` vs `fam-hero-bg` regression (solved by baking explicit HTML skeletons into the prompts).
+
+**Other sites checked:** `site-the-daily-grind` (original), `site-marios-pizza`, `site-fresh-cuts-in-atlanta`, and `site-altitude` all had nav CSS in their `styles.css` files matching their HTML class names — no fix needed.
+
+### Preview "Not Found" on site switch — root cause and fix
+
+**Symptom:** After switching sites, the preview iframe showed "Not found" instead of the new site's home page.
+
+**Root cause:** `handleSiteSwitch()` in `public/index.html` called `reloadPreview()`, which reuses `frame.src.split('?')[0]` — the current iframe URL with its path intact. If the current page was `/menu.html` for Site A and Site B doesn't have a `menu.html`, the preview server correctly returns 404 "Not found".
+
+**Fix:** Changed `reloadPreview()` to `navigateToPage(currentPage || 'index.html')` in `handleSiteSwitch()`. The server already sends `currentPage = 'index.html'` in every `site-switched` WS message, so this always navigates to the correct starting page of the newly switched-to site.
+
+**File:** `site-studio/public/index.html`, `handleSiteSwitch()` function.
+
+### Preview server query string bug — root cause and fix
+
+**Symptom:** Any URL with a cache-busting query string (e.g., `?t=1234`) returned "Not found" from the preview server, even though the file existed on disk.
+
+**Root cause:** `previewServer` in `server.js` used `req.url` directly for the filesystem path lookup: `path.join(dist, req.url)`. On Node.js, `req.url` includes the full query string, so `/index.html?t=123` produces the path `dist/index.html?t=123` — a file that doesn't exist.
+
+This was always broken but went unnoticed because the RELOAD_SCRIPT inside served pages polls `/__reload` and calls `location.reload()` on change detection. That reload uses the cached page URL without a query string, so live-reload worked. But all `navigateToPage()` calls (page tab clicks, build completions, site switches) were silently returning "Not found".
+
+**Fix:** Strip the query string before file path lookup (`server.js` line 14117):
+```javascript
+const urlPath = req.url.split('?')[0];
+let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
+```
+
+**File:** `site-studio/server.js`, `previewServer` handler.
+
+### Nav skeleton — systemic fix
+
+**What was built:** `NAV_SKELETON` constant added to `site-studio/lib/famtastic-skeletons.js`. Mandates exact class names:
+- `.nav-links` — desktop nav `<ul>`
+- `.nav-cta` — desktop CTA button
+- `.nav-toggle-label` — hamburger toggle (hidden on desktop)
+- `.nav-mobile-menu` — mobile dropdown panel
+- `#nav-toggle` — hidden checkbox driving pure-CSS toggle
+
+**Where injected:**
+1. `buildTemplatePrompt()` at line ~3320 — inside the NAVIGATION section, ensuring the template call uses consistent class names in both CSS and HTML
+2. `famSkeletonBlock` in parallel page builds — ensures page spawns know the mandated class names even if they deviate from the template header
+
+**File:** `site-studio/lib/famtastic-skeletons.js` (constant + export), `site-studio/server.js` (two injection points).
+
+### Known Gaps (updated 2026-04-20 Wave A completion)
+
+**Opened:**
+- `builds_this_session` counter in `cost-monitor.js` stays 0 — the streaming parallel build path does not flow through `callSDK()` so `trackUsage()` is not called with `isBuild=true`. Cost tracking for output tokens is correct but build count is not.
+
+**Closed this session:**
+- Double nav rendering in `site-the-daily-grind-in-atlanta` (nav CSS block appended to `assets/styles.css`)
+- Preview "Not found" on site switch (`navigateToPage` replaces `reloadPreview` in `handleSiteSwitch`)
+- Preview server not stripping query strings before file lookup (all `?t=...` cache-busted URLs returned 404)
+- Nav class name mismatch systemic risk closed by `NAV_SKELETON` constant in `famtastic-skeletons.js`, injected into both template and parallel page build prompts

@@ -1052,7 +1052,7 @@
       var ctxSite = document.getElementById('ctx-site-tag');
       if (ctxSite) ctxSite.textContent = tag;
       if (pages) updatePageTabs(pages, currentPage);
-      reloadPreview();
+      navigateToPage(currentPage || 'index.html');
       loadPages();
       // Update environment bar with deploy URLs
       fetch('/api/studio-state').then(function(r) { return r.json(); }).then(updateEnvironmentBar).catch(function() {});

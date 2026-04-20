@@ -132,6 +132,41 @@ and assets/logo-wordmark.svg. Reference the full logo in the nav via:
 <a href="index.html" data-logo-v class="block"><img src="assets/logo-full.svg" alt="[BRAND_NAME]" class="h-10 w-auto"></a>
 `.trim();
 
+const NAV_SKELETON = `
+MANDATORY NAV CLASS NAMES — DO NOT INVENT ALTERNATIVES:
+
+The shared stylesheet uses these EXACT class names to control desktop/mobile
+nav visibility. Using ANY other names means the CSS selectors will not match
+and both navs will render simultaneously on screen.
+
+REQUIRED class names (copy these exactly — no variants, no kebab-case swaps):
+  .nav-links         — the <ul> containing desktop navigation links
+  .nav-cta           — the desktop call-to-action button
+  .nav-toggle-label  — the hamburger toggle button (visible only on mobile)
+  .nav-mobile-menu   — the dropdown panel (visible only on mobile)
+  #nav-toggle        — the hidden checkbox that drives the CSS-only toggle
+
+REQUIRED CSS pattern in the shared <style> block:
+  #nav-toggle { display: none; }
+  .nav-toggle-label { display: none; }
+  .nav-links { display: flex; }
+  .nav-mobile-menu { display: none; }
+
+  @media (max-width: 768px) {
+    .nav-toggle-label { display: flex; }
+    .nav-links, .nav-cta { display: none; }
+    #nav-toggle:checked ~ header .nav-mobile-menu { display: flex; }
+  }
+
+CRITICAL RULES:
+- Do NOT use: desktop-nav, mobile-nav, nav-desktop, nav-mobile, hamburger,
+  menu-toggle, mobile-menu-toggle, or any variant not listed above.
+- #nav-toggle (type="checkbox") MUST have display:none — a visible checkbox
+  on screen is a regression.
+- Both .nav-links (desktop) and .nav-mobile-menu (mobile) must be present in
+  the HTML. Do NOT merge them into a single collapsible element.
+`.trim();
+
 const INLINE_STYLE_PROHIBITION = `
 INLINE STYLE PROHIBITION:
 
@@ -205,6 +240,7 @@ module.exports = {
   DIVIDER_SKELETON,
   LOGO_SKELETON_TEMPLATE,
   LOGO_NOTE_PAGE,
+  NAV_SKELETON,
   INLINE_STYLE_PROHIBITION,
   extractLogoSVGs,
 };

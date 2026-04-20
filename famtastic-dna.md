@@ -135,6 +135,25 @@ Otherwise the parameterized route shadows the static one and returns 404.
 `.components` — never treat the root as an array. Session 9's library-render
 bug came from this exact mistake.
 
+### 11. Nav uses the `NAV_SKELETON` class vocabulary
+
+Every site nav — regardless of vertical — must use these exact class names.
+They are enforced by `NAV_SKELETON` in `famtastic-skeletons.js`:
+
+- `.nav-links`        — desktop `<ul>` of nav links
+- `.nav-cta`          — desktop call-to-action button
+- `.nav-toggle-label` — hamburger toggle (hidden on desktop, shown on mobile)
+- `.nav-mobile-menu`  — mobile dropdown panel (hidden on desktop, shown on mobile)
+- `#nav-toggle`       — hidden checkbox driving pure-CSS mobile toggle
+
+**Do NOT use:** `desktop-nav`, `mobile-nav`, `nav-desktop`, `nav-mobile`,
+`hamburger`, `menu-toggle`, `mobile-menu-checkbox`, or any variant.
+
+`NAV_SKELETON` is injected into both the template build prompt (so the
+template CSS and HTML use matching names) and the parallel page `famSkeletonBlock`
+(so page spawns know the mandated names). This is the same pattern as
+`HERO_SKELETON` for BEM double-dash enforcement.
+
 ---
 
 ## Intelligence loop
@@ -243,4 +262,58 @@ repeat list enforces this.
 > preserved.
 
 <!-- DNA-AUTO-BEGIN -->
+
+### 2026-04-16 — site-altitude build
+- Pages: index.html, experience.html, reserve.html
+- Intent: build
+- Duration: 410s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-17 — site-auntie-gale-garage-sales build
+- Pages: index.html, shop.html, about.html, contact.html
+- Intent: build
+- Duration: 551s
+- Note: parallel build — 4 page(s)
+
+### 2026-04-17 — site-marios-pizza build
+- Pages: index.html, menu.html, about.html, contact.html
+- Intent: build
+- Duration: 442s
+- Note: parallel build — 4 page(s)
+
+### 2026-04-17 — site-fresh-cuts-in-atlanta build
+- Pages: index.html, services.html, gallery.html, contact.html
+- Intent: build
+- Duration: 411s
+- Note: parallel build — 4 page(s)
+
+### 2026-04-20 — site-the-daily-grind-in-atlanta build
+- Pages: index.html, about.html
+- Intent: build
+- Duration: 342s
+- Note: parallel build — 2 page(s)
+
+### 2026-04-20 — site-the-daily-grind-in-atlanta build
+- Pages: index.html, about.html, contact.html
+- Intent: build
+- Duration: 400s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-20 — site-the-daily-grind-in-atlanta build
+- Pages: contact.html
+- Intent: build
+- Duration: 1611s
+- Note: parallel build — 1 page(s)
+
+### 2026-04-20 — site-unknown build
+- Pages: index.html, about.html, contact.html
+- Intent: build
+- Duration: 225s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-20 — site-the-daily-grind build
+- Pages: index.html, menu.html, about.html, contact.html
+- Intent: build
+- Duration: 289s
+- Note: parallel build — 4 page(s)
 <!-- DNA-AUTO-END -->
