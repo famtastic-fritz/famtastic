@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Full credential activation + cost monitor
+
+Completed a full credential audit and activation pass. Discovered ANTHROPIC_API_KEY was commented out in `.zshrc` and `.env` didn't exist — all AI calls were silently running through the `claude --print` subprocess path. Created `site-studio/.env` with all four keys (Anthropic, Gemini, Pinecone, Perplexity), added dotenv with `override: true` so `.env` always wins over shell environment (fixes the old revoked GEMINI key in `.zshrc` shadowing the new one). Added `lib/cost-monitor.js`: session-level token/spend tracking, `AI_FALLBACK_CHAIN` and `IMAGE_FALLBACK_CHAIN` exported from one place, credential status banner on every server start, soft spend-limit warnings at 80%/100% via WebSocket. Perplexity in `research-registry.js` now conditionally activates when key is present. Startup now confirms `✅ Claude API`, `✅ Gemini API`, `✅ OpenAI API` on every launch. Known gap: build-path streaming calls don't flow through `callSDK()` so `builds_this_session` doesn't increment — full cost coverage for the build streaming path is deferred.
+
 ## 2026-04-20 — CSS variable alias normalization
 
 Added `normalizeCssAliases()` to prevent CSS custom property mismatches between the template build and page builds. Root cause: the template's shared CSS block may use `--color-text-muted` while parallel page CSS uses `--color-text-light` — the same concept, different names from different build calls. The function reads the `:root {}` block in `styles.css`, identifies defined variable names, and injects missing bidirectional aliases (`--color-text-light: var(--color-text-muted)` and vice versa, plus `color-bg-light/surface`, `color-accent-hover/light`, `color-text-dark/text`). Called from both `writeTemplateArtifacts()` and `extractSharedCss()` immediately after writing. Existing Daily Grind `styles.css` patched directly — all 12 referenced variables now resolve.
