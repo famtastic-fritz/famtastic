@@ -3809,3 +3809,66 @@ let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
 - No visual state indicator in the orb UI itself (e.g., color ring, label) showing which state is active — purely logical for now
 - `REVIEW_ACTIVE` state fetches `/api/verify` on every transition to review mode, even if the build hasn't changed since last check — no cache/debounce
 - Research tab remains deferred: two blockers — (1) `/api/research/verticals` returns HTML instead of JSON when route order is wrong; (2) Pinecone query schema differs between the main and research code paths
+
+## Session 3-A — Research Feed Infrastructure + fam_score (2026-04-20)
+
+### What was built
+
+**`POST /api/intel/run-research` (replaced stub)**
+- Accepts `{ source, vertical, question, topic }` (backward-compat: `topic` maps to `question`)
+- Calls `RESEARCH_REGISTRY[source].query(vertical, question)` directly for a fresh (cache-bypassing) response
+- Stores result in Pinecone via integrated embedding API: `idx.namespace(vertical).upsertRecords([{ id, text, source, vertical, timestamp, question, answer }])`
+- Runs claude-haiku-4-5-20251001 extraction: JSON output `{ title, category, recommendation, confidence }` extracted via regex from the response text
+- Appends full entry to `research-feed-index.json` and lightweight entry to `research-run-history.json`
+- Returns `{ status: 'ok', id, timestamp, vertical, question, answer, source, title, category, recommendation, confidence }`
+
+**Research feed index** (`site-studio/intelligence/research-feed-index.json`)
+- Append-only JSON array, newest-first, capped at 500 entries
+- Written by `appendToFeedIndex(entry)` in `research-router.js`
+- Required because Pinecone cannot do timestamp-sorted list queries — this is the chronological feed layer
+
+**Research run history** (`site-studio/intelligence/research-run-history.json`)
+- Lightweight audit trail (no `answer` field, capped at 200 entries)
+- Written by `appendToRunHistory(entry)` in `research-router.js`
+
+**New exports on `research-router.js`**
+- `appendToFeedIndex(entry)` — writes to feed index
+- `appendToRunHistory(entry)` — writes to run history
+- `listFindings({ vertical, source, limit })` — reads feed index, filters by vertical OR 'general', capped at 50
+
+**`skipCache` + `forceSource` behavior in `queryResearch()`**
+- `options.skipCache` or `options.forceSource` both bypass the Pinecone cache check
+- `fallbackAnswer` initialized to `null` before the conditional block, assigned inside it
+
+**`GET /api/research/feed`**
+- Query params: `vertical`, `source`, `limit` (max 50)
+- Returns `{ findings: [...], count: N }`
+- Reads from local `research-feed-index.json` via `researchRouter.listFindings()`
+
+**`POST /api/research/manual-ingest`**
+- Accepts `{ content, vertical, source_url, title }`
+- Claude SDK classification: same 5-category JSON extraction as run-research
+- Categories: `trends`, `conversion`, `ux`, `seo`, `trust`
+- Stores in Pinecone via `upsertRecords`, appends to feed index
+- Returns `{ status: 'ok', classification: { title, category, recommendation, confidence }, id }`
+
+**Numeric `score` in `runBuildVerification()`**
+- `statusScores = { passed: 100, warned: 70, failed: 40 }`
+- Score = average across all checks, rounded integer
+- Added to return object alongside `status`, `checks`, `issues`, `timestamp`
+
+**`spec.fam_score` in `finishParallelBuild()`**
+- Written in the `last_verification` block: `if (verification.score != null) vSpec.fam_score = verification.score`
+- Survives spec reads across sessions — queryable by UI and analytics
+
+**Research findings in `buildPromptContext()`**
+- Calls `researchRouter.listFindings({ vertical: spec.business_type, limit: 3 })` (synchronous file read)
+- Appends `VERTICAL RESEARCH` block to `briefContext` with category, title, and recommendation per finding
+- No-op when feed index is empty or vertical not set
+
+### Known Gaps (Session 3-A)
+
+- `listFindings()` also matches `vertical === 'general'` entries — if a vertical has no specific entries, general ones appear. This is by design for cold-start, but may surface irrelevant findings once the feed grows large; add a scoring/relevance layer in Session 3-B or later
+- `POST /api/intel/run-research` Pinecone upsert is a direct inline call (not via `researchRouter.pineconeUpsert`) to avoid exporting the internal function — if the upsert logic changes in research-router.js it must be updated here too; refactor to a shared utility in Session 4+
+- `manual-ingest` does not check for duplicates before storing in Pinecone — identical content ingested twice will create two records with different IDs
+- Research Tab UI (Session 3-B) is deferred: endpoints exist but there is no Studio tab yet for browsing/triggering research

@@ -3331,6 +3331,8 @@ FOOTER:
 - Contact information (phone, email, address if in brief)
 - Copyright line: © ${new Date().getFullYear()} ${spec.site_name || 'Business Name'}
 
+${famSkeletons.FOOTER_SKELETON}
+
 DESIGN DIRECTION:
 ${assetsContext || 'No specific assets referenced.'}
 
@@ -6279,6 +6281,93 @@ app.post('/api/research/rate', (req, res) => {
   res.json({ success: ok });
 });
 
+// --- Research feed (chronological index of all run-research + manual-ingest results) ---
+app.get('/api/research/feed', (req, res) => {
+  const { vertical, source, limit } = req.query;
+  const findings = researchRouter.listFindings({
+    vertical: vertical || undefined,
+    source: source || undefined,
+    limit: limit ? Math.min(parseInt(limit) || 20, 50) : 20,
+  });
+  res.json({ findings, count: findings.length });
+});
+
+// --- Manual research ingest (Task 7: classify + store external findings) ---
+app.post('/api/research/manual-ingest', async (req, res) => {
+  const { content, vertical, source_url, title } = req.body;
+  if (!content || typeof content !== 'string') {
+    return res.status(400).json({ error: 'content required' });
+  }
+  const spec = readSpec();
+  const effectiveVertical = vertical || spec?.business_type || 'general';
+
+  // Classify content via Claude SDK into 5 categories
+  let structured = {
+    title: title || 'Manual research entry',
+    category: 'general',
+    recommendation: content.slice(0, 200),
+    confidence: 'medium',
+  };
+  try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const classification = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 250,
+      messages: [{
+        role: 'user',
+        content: `Classify this research content. Respond with JSON only — no prose.\n\nContent: "${content.slice(0, 800)}"\n\n{"title":"short descriptive title (max 60 chars)","category":"one of: trends|conversion|ux|seo|trust","recommendation":"one actionable sentence for a web designer","confidence":"high|medium|low"}`,
+      }],
+    });
+    const text = classification.content[0]?.text || '';
+    const match = text.match(/\{[\s\S]*?\}/);
+    if (match) {
+      const parsed = JSON.parse(match[0]);
+      Object.assign(structured, parsed);
+    }
+  } catch (e) {
+    console.warn('[manual-ingest] classification failed:', e.message);
+  }
+
+  // Store in Pinecone
+  try {
+    if (process.env.PINECONE_API_KEY) {
+      const { Pinecone } = require('@pinecone-database/pinecone');
+      const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+      const idx = pc.index('famtastic-intelligence');
+      const id = `manual-${effectiveVertical}-${Date.now()}`;
+      await idx.namespace(effectiveVertical).upsertRecords([{
+        id,
+        text: `${structured.title} ${content}`.slice(0, 1000),
+        source: 'manual',
+        vertical: effectiveVertical,
+        timestamp: new Date().toISOString(),
+        question: structured.title.slice(0, 100),
+        answer: content.slice(0, 1000),
+      }]);
+    }
+  } catch (e) {
+    console.warn('[manual-ingest] Pinecone upsert failed:', e.message);
+  }
+
+  const feedEntry = {
+    id: `manual-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    vertical: effectiveVertical,
+    question: structured.title,
+    answer: content,
+    source: 'manual',
+    source_url: source_url || null,
+    title: structured.title,
+    category: structured.category,
+    recommendation: structured.recommendation,
+    confidence: structured.confidence,
+  };
+
+  researchRouter.appendToFeedIndex(feedEntry);
+  console.log(`[manual-ingest] stored — ${feedEntry.title} [${feedEntry.category}]`);
+  res.json({ status: 'ok', classification: { title: feedEntry.title, category: feedEntry.category, recommendation: feedEntry.recommendation, confidence: feedEntry.confidence }, id: feedEntry.id });
+});
+
 // --- Research seed status (C1) ---
 app.get('/api/research/seed-status', (req, res) => {
   try {
@@ -7199,52 +7288,105 @@ app.post('/api/intel/backlog', (req, res) => {
   res.json({ logged: true, id: entry.id });
 });
 
-// --- Run intelligence research on a topic ---
-app.post('/api/intel/run-research', (req, res) => {
-  const { topic } = req.body;
-  if (!topic || typeof topic !== 'string') return res.status(400).json({ error: 'topic required' });
+// --- Run intelligence research (real Gemini + Claude extraction) ---
+app.post('/api/intel/run-research', async (req, res) => {
+  const { source = 'gemini_loop', vertical, question, topic } = req.body;
+  const spec = readSpec();
+  const effectiveVertical = vertical || spec?.business_type || 'general';
+  const effectiveQuestion = question || topic ||
+    `What are key best practices, conversion patterns, and current trends for ${effectiveVertical} businesses?`;
 
-  const safeTopic = topic.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 60);
-  const now = new Date();
-  const weekNum = Math.ceil((now.getDate() + new Date(now.getFullYear(), now.getMonth(), 1).getDay()) / 7);
-  const filename = `${now.getFullYear()}-W${String(weekNum).padStart(2,'0')}-${safeTopic}.md`;
+  const { RESEARCH_REGISTRY } = require('./lib/research-registry');
+  if (!RESEARCH_REGISTRY[source]) {
+    return res.status(400).json({ error: `Unknown source: ${source}. Valid: ${Object.keys(RESEARCH_REGISTRY).join(', ')}` });
+  }
 
-  const reportDir = path.join(HUB_ROOT, 'docs', 'intelligence-reports');
-  fs.mkdirSync(reportDir, { recursive: true });
-  const filePath = path.join(reportDir, filename);
+  try {
+    console.log(`[run-research] source=${source} vertical=${effectiveVertical}`);
+    const rawResult = await RESEARCH_REGISTRY[source].query(effectiveVertical, effectiveQuestion);
 
-  // Write research stub immediately (Gemini call can be async upgrade later)
-  const stub = `# Intelligence Research: ${topic}
-*Generated: ${now.toISOString()}*
+    if (!rawResult.answer) {
+      return res.json({ status: 'no_answer', source, vertical: effectiveVertical, question: effectiveQuestion, reason: rawResult.meta?.reason || 'source returned no answer' });
+    }
 
-## Topic
-${topic}
+    // Store in Pinecone via integrated embedding path
+    try {
+      const { Pinecone } = require('@pinecone-database/pinecone');
+      if (process.env.PINECONE_API_KEY) {
+        const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+        const idx = pc.index('famtastic-intelligence');
+        const id = `${source}-${effectiveVertical}-${Date.now()}`;
+        await idx.namespace(effectiveVertical).upsertRecords([{
+          id,
+          text: `${effectiveQuestion} ${rawResult.answer}`.slice(0, 1000),
+          source,
+          vertical: effectiveVertical,
+          timestamp: new Date().toISOString(),
+          question: effectiveQuestion.slice(0, 100),
+          answer: rawResult.answer.slice(0, 1000),
+        }]);
+      }
+    } catch (e) {
+      console.warn('[run-research] Pinecone upsert failed:', e.message);
+    }
 
-## Research Questions
-1. What are the current options and their tradeoffs?
-2. What has changed in the last 30 days?
-3. What is the recommended approach for FAMtastic Studio?
-4. What is the estimated cost/effort to implement the recommendation?
+    // Claude SDK extraction: structure raw text into actionable finding
+    let structured = {
+      title: effectiveQuestion.slice(0, 60),
+      category: 'general',
+      recommendation: rawResult.answer.slice(0, 200),
+      confidence: 'medium',
+    };
+    try {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const extraction = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 250,
+        messages: [{
+          role: 'user',
+          content: `Extract a structured finding from this research text. Respond with JSON only — no prose, no markdown fences.\n\nResearch: "${rawResult.answer.slice(0, 800)}"\n\n{"title":"short descriptive title (max 60 chars)","category":"one of: trends|conversion|ux|seo|trust","recommendation":"one actionable sentence for a web designer","confidence":"high|medium|low"}`,
+        }],
+      });
+      const text = extraction.content[0]?.text || '';
+      const match = text.match(/\{[\s\S]*?\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        Object.assign(structured, parsed);
+      }
+    } catch (e) {
+      console.warn('[run-research] extraction failed:', e.message);
+    }
 
-## Findings
-*[Run \`scripts/gemini-cli "${topic}" > ${filePath}\` to populate with Gemini research]*
+    const feedEntry = {
+      id: `${source}-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      vertical: effectiveVertical,
+      question: effectiveQuestion,
+      answer: rawResult.answer,
+      source,
+      title: structured.title,
+      category: structured.category,
+      recommendation: structured.recommendation,
+      confidence: structured.confidence,
+    };
 
-## Recommendation
-*Pending research*
+    researchRouter.appendToFeedIndex(feedEntry);
+    researchRouter.appendToRunHistory({
+      id: feedEntry.id,
+      timestamp: feedEntry.timestamp,
+      vertical: feedEntry.vertical,
+      source: feedEntry.source,
+      question: feedEntry.question.slice(0, 120),
+      title: feedEntry.title,
+      category: feedEntry.category,
+    });
 
-## Priority
-- [ ] Promote to pipeline
-- [ ] Defer to next session
-- [ ] Archive (not actionable)
-
-## Related Findings
-*Check /api/intel/findings for related intelligence findings*
-`;
-
-  fs.writeFileSync(filePath, stub);
-  console.log(`[intel/run-research] Created: ${filename}`);
-
-  res.json({ file: filename, topic, status: 'stub', path: filePath });
+    console.log(`[run-research] done — ${feedEntry.title}`);
+    res.json({ status: 'ok', ...feedEntry });
+  } catch (err) {
+    console.error('[run-research] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- Codex exec endpoint (Wave 3) ---
@@ -8642,6 +8784,20 @@ ${FAMTASTIC_DNA_VOCAB}`;
   }
   // Append to briefContext so it travels with every prompt that uses the brief.
   briefContext += promotedIntelContext;
+
+  // Session 3-A Task 6: inject vertical research findings from feed index
+  try {
+    const researchVertical = spec.business_type || brief?.visual_direction?.vertical || '';
+    if (researchVertical) {
+      const findings = researchRouter.listFindings({ vertical: researchVertical, limit: 3 });
+      if (findings.length > 0) {
+        const lines = findings.map(f =>
+          `- [${f.category || 'general'}] ${f.title || f.question}: ${f.recommendation || (f.answer || '').slice(0, 200)}`
+        ).join('\n');
+        briefContext += `\n\nVERTICAL RESEARCH (intelligence feed — apply these insights to this build):\n${lines}`;
+      }
+    }
+  } catch {}
 
   return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, dividerSkeleton, navSkeleton, inlineStyleProhibition, logoSkeletonTemplate, logoNotePage, promotedIntelContext };
 }
@@ -10197,7 +10353,12 @@ function runBuildVerification(pages) {
 
   const allIssues = checks.flatMap(c => c.issues);
 
-  return { status: overallStatus, checks, issues: allIssues, timestamp: new Date().toISOString() };
+  const statusScores = { passed: 100, warned: 70, failed: 40 };
+  const score = checks.length > 0
+    ? Math.round(checks.reduce((sum, c) => sum + (statusScores[c.status] || 50), 0) / checks.length)
+    : (overallStatus === 'passed' ? 100 : overallStatus === 'warned' ? 70 : 40);
+
+  return { status: overallStatus, checks, issues: allIssues, timestamp: new Date().toISOString(), score };
 }
 
 // --- Studio Visual Intelligence ---
@@ -10939,6 +11100,7 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   try {
     const vSpec = readSpec();
     vSpec.last_verification = verification;
+    if (verification.score != null) vSpec.fam_score = verification.score;
     writeSpec(vSpec);
   } catch {}
   ws.send(JSON.stringify({ type: 'verification-result', ...verification }));

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T17:41:52.178Z
-> Files: 480 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T19:57:20.266Z
+> Files: 481 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -48,11 +48,11 @@
 
 - `.gitignore` — Git ignore rules (~292 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~17595 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~18532 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
 - `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~9861 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10946 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
@@ -593,7 +593,12 @@
 
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~220 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 12 more (~184473 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 12 more (~192000 tok)
+
+## site-studio/intelligence/
+
+- `research-feed-index.json` — Append-only chronological feed of all research runs and manual ingests (newest first, 500-entry cap) — Session 3-A
+- `research-run-history.json` — Lightweight audit trail of run-research calls (no answer field, 200-entry cap) — Session 3-A
 - `validation-plan.json` (~2510 tok)
 - `vitest.config.js` (~33 tok)
 
@@ -622,7 +627,7 @@
 - `media-telemetry.js` — media-telemetry.js — Append-only telemetry log for all AI media operations. (~3084 tok)
 - `model-config.json` (~147 tok)
 - `research-registry.js` — research-registry.js — Provider-agnostic research source registry (~3240 tok)
-- `research-router.js` — research-router.js — Routes research queries through the registry (~2989 tok)
+- `research-router.js` — research-router.js — Routes research queries; exports appendToFeedIndex, appendToRunHistory, listFindings (Session 3-A) (~4200 tok)
 - `studio-context-writer.js` — studio-context-writer.js — Generates STUDIO-CONTEXT.md (~3039 tok)
 - `studio-events.js` — studio-events.js — Studio event bus (~428 tok)
 - `studio-tools.js` — studio-tools.js — Anthropic-format tool definitions for ClaudeAdapter. (~769 tok)
@@ -651,8 +656,8 @@
 
 - `brain-selector.js` — brain-selector.js — Brain/Worker split selector for FAMtastic Studio. (~1314 tok)
 - `studio-brief.js` — studio-brief.js — Revenue-first brief interview screen (~6057 tok)
-- `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~10277 tok)
-- `studio-shell.js` — studio-shell.js — Activity rail, sidebar, tab system, mode switching (~3393 tok)
+- `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~10837 tok)
+- `studio-shell.js` — studio-shell.js — Activity rail, sidebar, tab system, mode switching (~4860 tok)
 
 ## site-studio/shay-shay/
 
@@ -827,6 +832,7 @@
 - `session10-phase1-tests.js` — session10-phase1-tests.js — Brain/Worker Split Selector (~1348 tok)
 - `session10-phase2-tests.js` — session10-phase2-tests.js — Phase 2 verification tests. (~2731 tok)
 - `session10-phase3-tests.js` — Session 10 Phase 3 Tests — Client Interview System MVP (~2703 tok)
+- `session12-phase0-tests.js` — fs: test (~2502 tok)
 - `session14-smoke-tests.js` — Session 14 — Studio UI Rebuild Smoke Tests (~4159 tok)
 - `session15-phase1-tests.js` — Session 15 Phase 1 — Validation plan + orb integration (~1817 tok)
 - `session16-tests.js` — Session 16 Tests — Surgical Editor, Layer 0 Data Sources, Shay-Shay Seed (~2870 tok)

@@ -36,6 +36,8 @@ function getThreshold() {
 // ── Research call log ─────────────────────────────────────────────────────────
 
 const RESEARCH_LOG_FILE = path.join(HUB_ROOT, '.local', 'research-calls.jsonl');
+const FEED_INDEX_PATH   = path.join(__dirname, '..', 'intelligence', 'research-feed-index.json');
+const RUN_HISTORY_PATH  = path.join(__dirname, '..', 'intelligence', 'research-run-history.json');
 
 function logResearchCall(source, vertical, question, result, fromCache) {
   try {
@@ -207,6 +209,50 @@ async function pineconeUpsert(vertical, question, answer, source) {
   } catch {}
 }
 
+// ── Research feed index ───────────────────────────────────────────────────────
+
+function appendToFeedIndex(entry) {
+  try {
+    const dir = path.dirname(FEED_INDEX_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    let index = [];
+    if (fs.existsSync(FEED_INDEX_PATH)) {
+      try { index = JSON.parse(fs.readFileSync(FEED_INDEX_PATH, 'utf8')); } catch {}
+    }
+    if (!Array.isArray(index)) index = [];
+    index.unshift(entry);
+    if (index.length > 500) index = index.slice(0, 500);
+    fs.writeFileSync(FEED_INDEX_PATH, JSON.stringify(index, null, 2));
+  } catch {}
+}
+
+function appendToRunHistory(entry) {
+  try {
+    const dir = path.dirname(RUN_HISTORY_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    let history = [];
+    if (fs.existsSync(RUN_HISTORY_PATH)) {
+      try { history = JSON.parse(fs.readFileSync(RUN_HISTORY_PATH, 'utf8')); } catch {}
+    }
+    if (!Array.isArray(history)) history = [];
+    history.unshift(entry);
+    if (history.length > 200) history = history.slice(0, 200);
+    fs.writeFileSync(RUN_HISTORY_PATH, JSON.stringify(history, null, 2));
+  } catch {}
+}
+
+function listFindings(options = {}) {
+  const { vertical, source, limit = 20 } = options;
+  try {
+    if (!fs.existsSync(FEED_INDEX_PATH)) return [];
+    let index = JSON.parse(fs.readFileSync(FEED_INDEX_PATH, 'utf8'));
+    if (!Array.isArray(index)) return [];
+    if (vertical) index = index.filter(e => e.vertical === vertical || e.vertical === 'general');
+    if (source) index = index.filter(e => e.source === source);
+    return index.slice(0, Math.min(limit, 50));
+  } catch { return []; }
+}
+
 // ── Source selection ──────────────────────────────────────────────────────────
 
 function selectSource(vertical, _question, options = {}) {
@@ -224,15 +270,16 @@ function selectSource(vertical, _question, options = {}) {
 // ── Main query function ───────────────────────────────────────────────────────
 
 async function queryResearch(vertical, question, options = {}) {
-  // 1. Pinecone cache check
-  const cached = await pineconeQuery(vertical, question);
-  if (cached && !cached.stale) {
-    logResearchCall(cached.source || 'pinecone_cache', vertical, question, { answer: cached.answer }, true);
-    return { answer: cached.answer, source: cached.source || 'pinecone_cache', fromCache: true };
+  // 1. Pinecone cache check (skip when forceSource or skipCache)
+  let fallbackAnswer = null;
+  if (!options.skipCache && !options.forceSource) {
+    const cached = await pineconeQuery(vertical, question);
+    if (cached && !cached.stale) {
+      logResearchCall(cached.source || 'pinecone_cache', vertical, question, { answer: cached.answer }, true);
+      return { answer: cached.answer, source: cached.source || 'pinecone_cache', fromCache: true };
+    }
+    fallbackAnswer = cached?.answer || null;
   }
-
-  // If stale, we'll re-query but still have a fallback
-  const fallbackAnswer = cached?.answer || null;
 
   // 2. Select source
   const source = selectSource(vertical, question, options);
@@ -272,4 +319,4 @@ function rateResearch(source, vertical, score) {
   return true;
 }
 
-module.exports = { queryResearch, rateResearch, selectSource, logResearchCall, getThreshold };
+module.exports = { queryResearch, rateResearch, selectSource, logResearchCall, getThreshold, appendToFeedIndex, appendToRunHistory, listFindings };

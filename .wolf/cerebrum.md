@@ -220,3 +220,18 @@ registry before first use.
 - `tests/session12-phase0-tests.js` asserts the exact return-object shape of `buildPromptContext()` as a substring match
 - When adding new return values to `buildPromptContext()`, update the test assertion at line 154 to match the new full shape
 - Current shape: `'heroSkeleton, dividerSkeleton, navSkeleton, inlineStyleProhibition'` (+ more fields after)
+
+## Session 3-A Do-Not-Repeat Rules
+
+### RESEARCH_FEED_INDEX (2026-04-20)
+- Pinecone cannot return results sorted by timestamp — `site-studio/intelligence/research-feed-index.json` is the local chronological index
+- All new research storage paths must call `researchRouter.appendToFeedIndex(entry)` after successful Pinecone upsert
+- `listFindings()` reads from the local file, NOT from Pinecone — do not call Pinecone for feed listing
+
+### FAM_SCORE (2026-04-20)
+- `runBuildVerification()` now returns a `score` field (0–100, integer) — do not remove it; `finishParallelBuild` reads it to write `spec.fam_score`
+- Write `spec.fam_score` in the `last_verification` block in `finishParallelBuild` — NOT inside `runBuildVerification` itself (that function is also called by read-only `/api/verify`)
+
+### RESEARCH_ROUTER_SKIP_CACHE (2026-04-20)
+- `queryResearch(vertical, question, { skipCache: true })` or `{ forceSource: 'gemini_loop' }` both bypass Pinecone cache
+- `forceSource` was already in the code; `skipCache` was added in Session 3-A — use `skipCache: true` when you need a fresh result without constraining the source
