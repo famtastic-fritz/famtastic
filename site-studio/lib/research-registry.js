@@ -197,7 +197,7 @@ const RESEARCH_REGISTRY = {
   perplexity: {
     name: 'Perplexity',
     type: 'api',
-    status: 'disabled',
+    status: process.env.PERPLEXITY_API_KEY ? 'active' : 'disabled',
     model: 'sonar',
     costPerQuery: 0.001,
     query: queryPerplexity,

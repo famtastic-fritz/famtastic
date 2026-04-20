@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '.env'), override: true });
 const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
@@ -18,6 +18,7 @@ const gapLogger = require('./lib/gap-logger');
 const suggestionLogger = require('./lib/suggestion-logger');
 const brandTracker = require('./lib/brand-tracker');
 const { buildCapabilityManifest, loadManifest } = require('./lib/capability-manifest');
+const costMonitor = require('./lib/cost-monitor');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
 const { getOrCreateBrainSession, resetSessions: resetBrainSessions } = require('./lib/brain-sessions');
@@ -7109,6 +7110,11 @@ app.get('/api/agent/routing', (req, res) => {
   });
 });
 
+// Session cost tracker — live spend for the current server process
+app.get('/api/cost/session', (req, res) => {
+  res.json(costMonitor.getSessionStats());
+});
+
 // SDK cost summary endpoint — aggregates session telemetry from api-telemetry module
 app.get('/api/telemetry/sdk-cost-summary', (req, res) => {
   const { getSessionSummary, readSiteLog } = require('./lib/api-telemetry');
@@ -11591,6 +11597,7 @@ ${analyticsInstruction}`;
     const finalMsg = await stream.finalMessage().catch(() => null);
     if (finalMsg?.usage) {
       console.log(`[chat-path] ✅ SDK complete — input:${finalMsg.usage.input_tokens} output:${finalMsg.usage.output_tokens} tokens (API BILLED)`);
+      costMonitor.trackUsage(finalMsg.usage.input_tokens || 0, finalMsg.usage.output_tokens || 0);
     }
     onChatComplete(response, finalMsg?.usage);
 
@@ -13864,12 +13871,10 @@ async function callSDK(prompt, opts = {}) {
     if (systemPrompt) msgPayload.system = systemPrompt;
     const response = await sdk.messages.create(msgPayload, { signal: controller.signal });
     clearTimeout(timer);
-    logSDKCall({
-      provider: 'claude', model, callSite,
-      inputTokens: response.usage?.input_tokens || 0,
-      outputTokens: response.usage?.output_tokens || 0,
-      tag: TAG, hubRoot: HUB_ROOT,
-    });
+    const inputTokens  = response.usage?.input_tokens  || 0;
+    const outputTokens = response.usage?.output_tokens || 0;
+    logSDKCall({ provider: 'claude', model, callSite, inputTokens, outputTokens, tag: TAG, hubRoot: HUB_ROOT });
+    costMonitor.trackUsage(inputTokens, outputTokens);
     return response.content[0]?.text || '';
   } catch (err) {
     clearTimeout(timer);
@@ -14475,6 +14480,11 @@ if (require.main === module) {
     return;
   }
 
+  // Wire cost-monitor broadcast to all connected WS clients
+  costMonitor.setBroadcast(msg => {
+    wss.clients.forEach(c => { if (c.readyState === 1) try { c.send(JSON.stringify(msg)); } catch {} });
+  });
+
   server.listen(PORT, () => {
     console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
     console.log(`[site-studio] Site tag: ${TAG}`);
@@ -14483,6 +14493,7 @@ if (require.main === module) {
     if (pages.length > 0) {
       console.log(`[site-studio] Pages: ${pages.join(', ')}`);
     }
+    costMonitor.logStartupStatus();
     setupFileWatcher();
 
     // Initialise universal context writer — fires STUDIO-CONTEXT.md generation on every event
