@@ -57,6 +57,44 @@ triaging in a dedicated pass.
 
 ---
 
+## Build model + auto image fill (2026-04-20)
+
+**Default model changed to Sonnet**
+`loadSettings()` in `server.js` previously defaulted to `claude-haiku-4-5-20251001`.
+All build paths (`parallelBuild`, `spawnAllPages`, `callSDK`, `spawnClaude`,
+`handleChatMessage`) read from `loadSettings().model`, so the single default
+controlled every HTML generation call. Changed to `claude-sonnet-4-6`. Also
+updated `~/.config/famtastic/studio-config.json` (the live settings file) so
+the change takes effect immediately without a settings reset. Haiku is still
+referenced in the cost table and as the named fallback model — not removed.
+
+**Step 10 — `fillImageSlotsAfterBuild()`**
+Added as the final step in `runPostProcessing()`, fired only on `isFullBuild: true`
+(parallel builds — not single-page edits). The function:
+1. Reads `spec.media_specs` for any slot where `status` is not `filled`,
+   `stock`, `uploaded`, or `generated`. Skips `logo` and `favicon` roles.
+2. Tries Imagen 4 via `scripts/google-media-generate` Python script with a
+   role-aware prompt (hero, gallery, team, testimonial, service, or generic).
+   Saves to `dist/assets/<slot_id>.jpg`.
+3. Falls back to Unsplash if Imagen fails: calls `fetchFromProvider('unsplash', ...)`
+   then downloads the imgix-resized URL to the same path.
+4. On each success: calls `patchSlotImg()` across all written pages, updates
+   `spec.slot_mappings` and `slot.status`, and sends a WS status message.
+5. Logs a console warning with the slot ID if both providers fail; sends a WS
+   `⚠️` message.
+6. Calls `writeSpec()` once after all slots are processed.
+7. Sends `reload-preview` + `spec-updated` WS messages when at least one slot
+   was filled so the browser updates instantly.
+
+Fire-and-forget pattern: `fillImageSlotsAfterBuild` is async but called with
+`.catch()` from the synchronous `runPostProcessing`. Post-processing completes
+immediately; images appear in the preview as they are filled, one by one.
+
+Known: Imagen 4 requires a paid Google Cloud key with Imagen access — not just
+a standard API Studio key. The Unsplash fallback handles 403s cleanly.
+
+---
+
 ## Autonomous build pipeline fixes (2026-04-20)
 
 Investigation and fixes for two bugs that caused the `/api/autonomous-build`

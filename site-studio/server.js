@@ -4734,7 +4734,7 @@ function logSiteBuild(spec, verificationResult) {
 
 function loadSettings() {
   const defaults = {
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-sonnet-4-6',
     deploy_target: 'netlify',
     deploy_team: 'fritz-medine',
     brainstorm_profile: 'balanced',
@@ -9174,6 +9174,171 @@ ${FOUNDATION_END}
   }
 }
 
+// Step 10 — Auto-fill image slots with Imagen 4 (primary) or Unsplash (fallback).
+// Fire-and-forget: called without await from runPostProcessing so the synchronous
+// post-processing pipeline isn't blocked. WS messages keep the user informed.
+async function fillImageSlotsAfterBuild(ws, writtenPages) {
+  const spec = readSpec();
+  const emptySlots = (spec.media_specs || []).filter(s =>
+    s.status !== 'filled' && s.status !== 'stock' && s.status !== 'uploaded' && s.status !== 'generated'
+    && s.role !== 'logo' && s.role !== 'favicon'
+  );
+  if (emptySlots.length === 0) return;
+
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const settings = loadSettings();
+  const sp = settings.stock_photo || {};
+  const hasUnsplash = !!sp.unsplash_api_key;
+
+  if (!geminiKey && !hasUnsplash) {
+    console.warn('[image-gen] No GEMINI_API_KEY and no Unsplash key configured — skipping auto image fill');
+    return;
+  }
+
+  const brief = spec.design_brief || {};
+  const businessName = spec.site_name || 'professional business';
+  const industry = spec.business_type || (brief.goal || '').split(' ').slice(0, 4).join(' ') || 'professional';
+  const tone = Array.isArray(brief.tone) ? brief.tone.join(', ') : (brief.tone || 'professional, clean');
+
+  let brandColors = '';
+  try {
+    const brandPath = path.join(SITE_DIR(), 'brand.json');
+    if (fs.existsSync(brandPath)) {
+      const brand = JSON.parse(fs.readFileSync(brandPath, 'utf8'));
+      brandColors = Object.values(brand.colors || {}).slice(0, 2).join(', ');
+    }
+  } catch {}
+
+  const assetsDir = path.join(DIST_DIR(), 'assets');
+  fs.mkdirSync(assetsDir, { recursive: true });
+
+  const pages = writtenPages.length > 0 ? writtenPages : listPages();
+  let filled = 0;
+  let errors = 0;
+
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Auto-filling ${emptySlots.length} image slot(s)...` }));
+
+  for (const slot of emptySlots) {
+    const outputFile = path.join(assetsDir, `${slot.slot_id}.jpg`);
+    const relSrc = `assets/${slot.slot_id}.jpg`;
+    let usedProvider = null;
+
+    const rolePromptMap = {
+      hero:        `Hero banner photograph for ${businessName}, ${industry} business, ${tone} aesthetic, wide cinematic composition, photorealistic, no text${brandColors ? `, colors inspired by ${brandColors}` : ''}`,
+      gallery:     `${industry} showcase photograph, ${tone} style, high quality, professional photography`,
+      team:        `Professional business portrait headshot, ${tone}, clean neutral background, friendly smile`,
+      testimonial: `Friendly professional portrait, ${tone} aesthetic, natural lighting`,
+      service:     `${slot.slot_id.replace(/^service-/, '').replace(/-/g, ' ')} service photograph for ${industry} business, ${tone}`,
+    };
+    const imagePrompt = rolePromptMap[slot.role] || `${industry} ${slot.role} photograph, ${tone} style, photorealistic`;
+
+    const dims = (slot.dimensions || '').split('x').map(Number);
+    const [w, h] = dims.length === 2 && dims[0] && dims[1] ? dims : [1200, 800];
+    const aspectRatio = w > h * 1.3 ? '16:9' : w < h * 0.8 ? '9:16' : '1:1';
+
+    // Try Imagen 4 first
+    if (geminiKey) {
+      try {
+        const scriptPath = path.join(__dirname, '..', 'scripts', 'google-media-generate');
+        await new Promise((resolve, reject) => {
+          const { execFile } = require('child_process');
+          execFile(scriptPath, ['--prompt', imagePrompt, '--output', outputFile, '--aspect-ratio', aspectRatio],
+            { env: { ...process.env }, timeout: 90000 },
+            (err) => { if (err) reject(err); else resolve(); }
+          );
+        });
+        if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 1000) {
+          usedProvider = 'imagen4';
+        }
+      } catch (e) {
+        console.warn(`[image-gen] Imagen 4 failed for ${slot.slot_id}: ${e.message}`);
+      }
+    }
+
+    // Fall back to Unsplash — download the image
+    if (!usedProvider && hasUnsplash) {
+      try {
+        const queryMap = {
+          hero:        `${industry} ${tone} banner`,
+          gallery:     `${industry} showcase`,
+          team:        'professional portrait headshot',
+          testimonial: 'professional portrait friendly',
+          service:     `${industry} ${slot.slot_id.replace(/^service-/, '').replace(/-/g, ' ')}`,
+        };
+        const query = queryMap[slot.role] || `${industry} ${slot.role}`;
+        const results = await fetchFromProvider('unsplash', query, w, h, 1);
+        if (results.length > 0) {
+          const imageUrl = results[0].url;
+          const imageBuffer = await new Promise((resolve, reject) => {
+            const mod = imageUrl.startsWith('https') ? require('https') : require('http');
+            mod.get(imageUrl, (res) => {
+              if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                const rmod = res.headers.location.startsWith('https') ? require('https') : require('http');
+                rmod.get(res.headers.location, (r2) => {
+                  const chunks = [];
+                  r2.on('data', c => chunks.push(c));
+                  r2.on('end', () => resolve(Buffer.concat(chunks)));
+                  r2.on('error', reject);
+                }).on('error', reject);
+              } else {
+                const chunks = [];
+                res.on('data', c => chunks.push(c));
+                res.on('end', () => resolve(Buffer.concat(chunks)));
+                res.on('error', reject);
+              }
+            }).on('error', reject);
+          });
+          fs.writeFileSync(outputFile, imageBuffer);
+          usedProvider = 'unsplash';
+        }
+      } catch (e) {
+        console.warn(`[image-gen] Unsplash fallback failed for ${slot.slot_id}: ${e.message}`);
+      }
+    }
+
+    if (!usedProvider) {
+      console.warn(`[image-gen] WARNING: slot ${slot.slot_id} could not be filled — Imagen and Unsplash both failed`);
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `⚠️ Could not fill image slot ${slot.slot_id}` }));
+      errors++;
+      continue;
+    }
+
+    // Patch HTML in all pages
+    const slotStatus = usedProvider === 'imagen4' ? 'generated' : 'stock';
+    for (const page of pages) {
+      const filePath = path.join(DIST_DIR(), page);
+      if (!fs.existsSync(filePath)) continue;
+      let html = fs.readFileSync(filePath, 'utf8');
+      const escapedId = slot.slot_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const patched = patchSlotImg(html, escapedId, { src: relSrc, status: slotStatus });
+      if (patched.changed) fs.writeFileSync(filePath, patched.html);
+    }
+
+    // Update spec in-memory (we flush once after the loop)
+    slot.status = slotStatus;
+    slot.src = relSrc;
+    if (!spec.slot_mappings) spec.slot_mappings = {};
+    spec.slot_mappings[slot.slot_id] = {
+      src: relSrc,
+      alt: slot.alt || slot.slot_id.replace(/-/g, ' '),
+      provider: usedProvider,
+    };
+
+    filled++;
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `✓ ${slot.slot_id} filled via ${usedProvider}` }));
+    console.log(`[image-gen] ${slot.slot_id} filled via ${usedProvider} → ${relSrc}`);
+  }
+
+  writeSpec(spec, { source: 'fillImageSlotsAfterBuild' });
+
+  if (filled > 0 && ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({ type: 'reload-preview' }));
+    ws.send(JSON.stringify({ type: 'spec-updated' }));
+    ws.send(JSON.stringify({ type: 'status', content: `Auto-filled ${filled} image slot(s).${errors > 0 ? ` ${errors} could not be filled.` : ''}` }));
+  }
+  if (errors > 0) console.warn(`[image-gen] ${errors} slot(s) failed after all retries`);
+}
+
 function runPostProcessing(ws, writtenPages, options = {}) {
   const { isFullBuild = false, sourcePage = null } = options;
 
@@ -9286,6 +9451,14 @@ function runPostProcessing(ws, writtenPages, options = {}) {
     }
   } catch (e) {
     console.warn('[brand-tracker] extraction failed (non-fatal):', e.message);
+  }
+
+  // Step 10: Auto-fill image slots — Imagen 4 primary, Unsplash fallback.
+  // Only fires on full builds, not single-page edits, to avoid repeated generation on content edits.
+  if (isFullBuild) {
+    fillImageSlotsAfterBuild(ws, writtenPages).catch(e =>
+      console.error('[image-gen] Unexpected error in fillImageSlotsAfterBuild:', e.message)
+    );
   }
 }
 

@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-04-20 — Sonnet default model + Step 10 auto image fill
+
+Changed default build model from Haiku to Sonnet in both `loadSettings()` and the live settings file — all HTML generation (template, parallel pages, chat edits, subprocess path) now uses `claude-sonnet-4-6` by default. Added `fillImageSlotsAfterBuild()` as Step 10 in `runPostProcessing()`, firing fire-and-forget on full builds only: tries Imagen 4 via `scripts/google-media-generate`, falls back to Unsplash download if Imagen fails (403 on leaked key handled cleanly), patches `<img>` src attributes in-place via `patchSlotImg()`, updates `spec.slot_mappings` + slot status, and sends WS reload-preview when any slot is filled. Unsplash download path confirmed working (159KB image). Imagen path confirmed to fail gracefully when key is revoked, with clean fallback and warning logging.
+
 ## 2026-04-20 — Autonomous build pipeline: three silent-failure bugs fixed
 
 Diagnosed and fixed three bugs that caused `/api/autonomous-build` to silently stop short of a full build. Bug 1: the subprocess sequential build path (`spawnAllPages`) had no retry — a transient empty response on the third `claude --print` call dropped `contact.html` silently; fixed with a single retry pass. Bug 2: `finishParallelBuild()` never wrote `spec.state = 'built'` — the site state stayed at `'briefed'` forever; fixed by adding the write after `setBuildInProgress(false)`. Bug 3: `parallelBuild()` called `setBuildInProgress(true, ws)` unconditionally at entry even though `handleChatMessage()` already acquired the lock before calling it — the double acquisition 2ms apart produced two run IDs and SIGTERMed the template subprocess; fixed with a guard `if (!buildInProgress)`. Also added WS notifications for empty media_specs and partial-page builds. Verified with a full Daily Grind rebuild: all three pages in dist/, state: built, 4 slots registered.
