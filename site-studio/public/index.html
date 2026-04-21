@@ -78,14 +78,20 @@
       <button class="rail-btn" data-rail="components" title="Components">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
       </button>
-      <button class="rail-btn" data-rail="assets" title="Assets">
+      <button class="rail-btn" data-rail="assets" title="Media Studio">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </button>
+      <button class="rail-btn" data-rail="mission-control" title="Mission Control">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16"/><path d="M5 16l4-5 3 3 6-8"/><circle cx="9" cy="11" r="1"/><circle cx="12" cy="14" r="1"/><circle cx="18" cy="6" r="1"/></svg>
       </button>
       <button class="rail-btn" data-rail="intelligence" title="Intelligence">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       </button>
       <button class="rail-btn" data-rail="research" title="Research">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/><line x1="10" y1="7" x2="10" y2="13"/><line x1="7" y1="10" x2="13" y2="10"/></svg>
+      </button>
+      <button class="rail-btn" data-rail="shay" title="Shay-Shay Desk">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.5L12 15.8 7.2 18l.9-5.5-3.9-3.8 5.4-.8L12 3z"/><circle cx="12" cy="12" r="2.5"/></svg>
       </button>
       <div class="rail-spacer"></div>
       <button class="rail-btn" data-rail="deploy" title="Deploy">
@@ -120,7 +126,15 @@
         </div>
         <div class="sidebar-nav-item" data-tab="assets" onclick="StudioShell.switchTab('assets')">
           <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="5.5" r="1"/><polyline points="14 10 10.5 6.5 3 14"/></svg>
-          Assets
+          Media
+        </div>
+        <div class="sidebar-nav-item" data-tab="mc" onclick="StudioShell.switchTab('mc')">
+          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13.5h12"/><path d="M3 11l3-4 2.2 2.2L13 3"/></svg>
+          Mission Control
+        </div>
+        <div class="sidebar-nav-item" data-tab="shay" onclick="StudioShell.switchTab('shay')">
+          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l1.7 3.4 3.8.6-2.7 2.7.6 3.9L8 10.5 4.6 12l.6-3.9L2.5 5.5l3.8-.6L8 1.5z"/><circle cx="8" cy="8" r="1.5"/></svg>
+          Shay
         </div>
         <div class="sidebar-nav-item" data-tab="deploy" onclick="StudioShell.switchTab('deploy')">
           <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="11 11 8 8 5 11"/><line x1="8" y1="8" x2="8" y2="14"/><path d="M13.5 12.5A5 5 0 002 10h-1a6 6 0 0012 2.5"/></svg>
@@ -139,12 +153,22 @@
       <!-- Components pane -->
       <div class="sidebar-pane hidden" data-pane="components">
         <div class="sidebar-header">Components</div>
-        <div style="padding:8px 12px;font-size:11px;color:var(--fam-text-3);">Component library coming in Phase 3.</div>
+        <div id="sidebar-components-list" style="padding:6px 0;"></div>
       </div>
       <!-- Assets pane -->
       <div class="sidebar-pane hidden" data-pane="assets">
-        <div class="sidebar-header">Assets</div>
+        <div class="sidebar-header">Media Studio</div>
         <div id="sidebar-assets-list" style="padding:6px 0;"></div>
+      </div>
+      <!-- Mission Control pane -->
+      <div class="sidebar-pane hidden" data-pane="mission-control">
+        <div class="sidebar-header">Mission Control</div>
+        <div style="padding:10px 12px 0;font-size:11px;color:var(--fam-text-2);line-height:1.5;">
+          Portfolio overview, jobs, alerts, and intelligence rollups live here. Intelligence remains the feed for individual findings.
+        </div>
+        <div style="padding:10px 12px;">
+          <button onclick="StudioShell.switchTab('mc')" style="width:100%;padding:8px 10px;background:rgba(232,53,42,0.12);border:1px solid rgba(232,53,42,0.25);border-radius:6px;color:var(--fam-red);cursor:pointer;font-size:11px;">Open Mission Control</button>
+        </div>
       </div>
       <!-- Intelligence pane -->
       <div class="sidebar-pane hidden" data-pane="intelligence">
@@ -179,6 +203,16 @@
           <textarea id="research-ingest-content" rows="4" placeholder="Paste research content to classify and store..." style="width:100%;font-size:11px;padding:4px 6px;background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:4px;color:var(--fam-text);resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
           <button onclick="ResearchPane.manualIngest()" style="width:100%;margin-top:4px;padding:5px;font-size:11px;background:rgba(255,193,53,0.1);border:1px solid rgba(255,193,53,0.3);border-radius:4px;color:var(--fam-gold);cursor:pointer;">Ingest</button>
           <div id="research-ingest-status" style="font-size:10px;color:var(--fam-text-3);padding:3px 0 0;min-height:14px;line-height:1.4;"></div>
+        </div>
+      </div>
+      <!-- Shay pane -->
+      <div class="sidebar-pane hidden" data-pane="shay">
+        <div class="sidebar-header">Shay-Shay Desk</div>
+        <div style="padding:10px 12px 0;font-size:11px;color:var(--fam-text-2);line-height:1.5;">
+          Full assistant workspace for planning, strategy, jobs, and deeper back-and-forth. Use the orb for lightweight nudges and quick reminders.
+        </div>
+        <div style="padding:10px 12px;">
+          <button onclick="StudioShell.switchTab('shay')" style="width:100%;padding:8px 10px;background:rgba(245,196,0,0.12);border:1px solid rgba(245,196,0,0.25);border-radius:6px;color:var(--fam-gold);cursor:pointer;font-size:11px;">Open Shay Desk</button>
         </div>
       </div>
       <!-- Deploy pane -->
@@ -296,6 +330,12 @@
           <button class="mode-btn" data-mode="review">Review</button>
           <button class="mode-btn" data-mode="brainstorm">Brainstorm</button>
         </div>
+        <div id="layout-preset-group">
+          <button class="layout-preset-btn active" data-layout="compose">Compose</button>
+          <button class="layout-preset-btn" data-layout="inspect">Inspect</button>
+          <button class="layout-preset-btn" data-layout="dual">Dual</button>
+          <button class="layout-preset-btn" data-layout="focus">Focus</button>
+        </div>
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
           <!-- Verify indicator -->
           <div id="verify-indicator" style="width:8px;height:8px;border-radius:50%;background:var(--fam-text-3);" title="Build verification"></div>
@@ -313,43 +353,82 @@
         </div>
       </div>
 
+      <div id="workspace-main">
       <!-- Canvas area — single column, toggles between Chat view and Preview view -->
       <div id="canvas-area" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
-
-        <!-- CHAT VIEW: tab panes (chat, brief, assets, deploy) -->
-        <div id="canvas-tabs-area" style="flex:1;min-height:0;overflow:hidden;position:relative;">
-          <!-- Chat pane -->
-          <div id="tab-pane-chat" class="ws-tab-pane" style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
-            <div id="chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;"></div>
-          </div>
-          <!-- Brief pane -->
-          <div id="tab-pane-brief" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;"></div>
-          <!-- Assets pane -->
-          <div id="tab-pane-assets" class="ws-tab-pane hidden" style="padding:12px;overflow-y:auto;height:100%;">
-            <div id="assets-content" style="font-size:12px;color:var(--fam-text-2);"><p style="color:var(--fam-text-3);">No assets yet.</p></div>
-          </div>
-          <!-- Deploy pane -->
-          <div id="tab-pane-deploy" class="ws-tab-pane hidden" style="padding:16px;overflow-y:auto;height:100%;">
-            <div style="max-width:560px;margin:0 auto;" id="deploy-content">
-              <h2 style="font-size:14px;font-weight:600;color:var(--fam-text);margin-bottom:12px;">Deploy</h2>
-              <div id="deploy-status-area"></div>
+        <div id="canvas-stage">
+          <!-- CHAT VIEW: tab panes (chat, brief, assets, deploy) -->
+          <div id="canvas-tabs-area" style="flex:1;min-height:0;overflow:hidden;position:relative;">
+            <!-- Chat pane -->
+            <div id="tab-pane-chat" class="ws-tab-pane" style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+              <div id="chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
+            <!-- Brief pane -->
+            <div id="tab-pane-brief" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;"></div>
+            <!-- Components pane -->
+            <div id="tab-pane-components" class="ws-tab-pane hidden" style="padding:12px;overflow-y:auto;height:100%;">
+              <div id="components-content" style="font-size:12px;color:var(--fam-text-2);"><p style="color:var(--fam-text-3);">No components yet.</p></div>
+            </div>
+            <!-- Assets pane -->
+            <div id="tab-pane-assets" class="ws-tab-pane hidden" style="padding:12px;overflow-y:auto;height:100%;">
+              <div id="assets-content" style="font-size:12px;color:var(--fam-text-2);"><p style="color:var(--fam-text-3);">No assets yet.</p></div>
+            </div>
+            <!-- Mission Control pane -->
+            <div id="tab-pane-mc" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;"></div>
+            <!-- Shay pane -->
+            <div id="tab-pane-shay" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;">
+              <div id="shay-desk-shell" style="display:flex;flex-direction:column;height:100%;min-height:0;">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--fam-border);background:linear-gradient(180deg, rgba(245,196,0,0.08), rgba(245,196,0,0));">
+                  <div style="font-size:18px;font-weight:700;color:var(--fam-text);">Shay-Shay Desk</div>
+                  <div style="font-size:12px;color:var(--fam-text-2);margin-top:4px;max-width:720px;line-height:1.5;">
+                    Desk is the deeper collaboration surface. Lite stays separate for quick asks, contextual nudges, and fast Show Me help.
+                  </div>
+                </div>
+                <div id="shay-session-init" style="display:none;padding:10px 16px;border-bottom:1px solid var(--fam-border);background:rgba(255,255,255,0.015);"></div>
+                <div style="padding:18px 16px 20px;display:grid;gap:14px;overflow:auto;">
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+                    <div style="padding:14px;border:1px solid var(--fam-border);border-radius:12px;background:rgba(255,255,255,0.02);">
+                      <div style="font-size:11px;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.08em;">Lite</div>
+                      <div style="font-size:16px;color:var(--fam-text);font-weight:600;margin-top:6px;">Quick Ask</div>
+                      <div style="font-size:12px;color:var(--fam-text-2);line-height:1.5;margin-top:6px;">Open the floating Lite surface for immediate questions, light event reactions, and selection-aware nudges.</div>
+                      <button type="button" onclick="window.PipOrb && window.PipOrb.openLitePanel && window.PipOrb.openLitePanel({focusInput:true})" style="margin-top:12px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,196,0,0.25);background:rgba(245,196,0,0.12);color:var(--fam-gold);cursor:pointer;">Open Shay Lite</button>
+                    </div>
+                    <div style="padding:14px;border:1px solid var(--fam-border);border-radius:12px;background:rgba(255,255,255,0.02);">
+                      <div style="font-size:11px;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.08em;">Desk</div>
+                      <div style="font-size:16px;color:var(--fam-text);font-weight:600;margin-top:6px;">Longer Collaboration</div>
+                      <div style="font-size:12px;color:var(--fam-text-2);line-height:1.5;margin-top:6px;">Keep build chat for execution. Use Desk as the place to frame multi-step thinking and move between workspaces intentionally.</div>
+                      <button type="button" onclick="StudioShell.switchTab('chat')" style="margin-top:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Go To Build Chat</button>
+                    </div>
+                  </div>
+                  <div id="shay-desk-mode-summary" style="padding:14px;border:1px solid var(--fam-border);border-radius:12px;background:linear-gradient(180deg, rgba(245,196,0,0.06), rgba(255,255,255,0.02));font-size:13px;color:var(--fam-text-2);line-height:1.6;">
+                    Shay Lite can run as Character Default, Classic Orb, or Mini Panel. Change it from the Lite surface itself or under Assistant settings.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Deploy pane -->
+            <div id="tab-pane-deploy" class="ws-tab-pane hidden" style="padding:16px;overflow-y:auto;height:100%;">
+              <div style="max-width:560px;margin:0 auto;" id="deploy-content">
+                <h2 style="font-size:14px;font-weight:600;color:var(--fam-text);margin-bottom:12px;">Deploy</h2>
+                <div id="deploy-status-area"></div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- PREVIEW VIEW: full-width preview (hidden in chat mode) -->
-        <div id="canvas-preview-section" style="display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;">
-          <!-- Preview header: page tabs + controls -->
-          <div id="canvas-preview-header" style="height:32px;min-height:32px;background:var(--fam-bg-2);border-bottom:1px solid var(--fam-border);display:flex;align-items:center;padding:0 10px;gap:6px;font-size:11px;flex-shrink:0;">
-            <div id="preview-page-tabs" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
-            <span id="preview-status" style="font-size:10px;color:var(--fam-text-3);"></span>
-            <button onclick="setPreviewDevice('desktop')" id="preview-device-desktop" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;" class="active">Desktop</button>
-            <button onclick="setPreviewDevice('mobile')" id="preview-device-mobile" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;">Mobile</button>
-            <button onclick="toggleSlotMode()" id="slot-mode-btn" style="background:rgba(232,53,42,0.1);border:1px solid rgba(232,53,42,0.2);border-radius:4px;color:var(--fam-red);cursor:pointer;font-size:10px;padding:2px 6px;">Slots</button>
-          </div>
-          <!-- Preview iframe -->
-          <div style="flex:1;overflow:hidden;position:relative;">
-            <iframe id="preview-frame" style="width:100%;height:100%;border:none;background:white;" title="Site preview"></iframe>
+          <!-- PREVIEW VIEW: full-width preview (hidden in chat mode) -->
+          <div id="canvas-preview-section" style="display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;">
+            <!-- Preview header: page tabs + controls -->
+            <div id="canvas-preview-header" style="height:32px;min-height:32px;background:var(--fam-bg-2);border-bottom:1px solid var(--fam-border);display:flex;align-items:center;padding:0 10px;gap:6px;font-size:11px;flex-shrink:0;">
+              <div id="preview-page-tabs" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
+              <span id="preview-status" style="font-size:10px;color:var(--fam-text-3);"></span>
+              <button onclick="setPreviewDevice('desktop')" id="preview-device-desktop" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;" class="active">Desktop</button>
+              <button onclick="setPreviewDevice('mobile')" id="preview-device-mobile" style="background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:10px;padding:2px 6px;">Mobile</button>
+              <button onclick="toggleSlotMode()" id="slot-mode-btn" style="background:rgba(232,53,42,0.1);border:1px solid rgba(232,53,42,0.2);border-radius:4px;color:var(--fam-red);cursor:pointer;font-size:10px;padding:2px 6px;">Slots</button>
+            </div>
+            <!-- Preview iframe -->
+            <div style="flex:1;overflow:hidden;position:relative;">
+              <iframe id="preview-frame" style="width:100%;height:100%;border:none;background:white;" title="Site preview"></iframe>
+            </div>
           </div>
         </div>
 
@@ -365,6 +444,11 @@
           <div id="tools-row">
             <div class="tools-group" data-mode="build">
               <button class="tool-btn primary" onclick="rebuildSite()">&#x21BA; Rebuild</button>
+              <button class="tool-btn" onclick="refreshVerification()">Verify</button>
+              <button class="tool-btn" onclick="openMediaGenerate()">Media Generate</button>
+              <button class="tool-btn" onclick="generateIconAsset()">Generate Icon</button>
+              <button class="tool-btn" onclick="applySubtleMotionPass()">Subtle Motion</button>
+              <button class="tool-btn" onclick="openTemplateUpload()">Template Upload</button>
             </div>
             <div class="tools-group hidden" data-mode="review">
               <button class="tool-btn" onclick="refreshVerification()">Verify</button>
@@ -374,69 +458,74 @@
             <div class="tools-group hidden" data-mode="brainstorm">
               <button class="tool-btn" onclick="StudioShell.switchRailItem('intelligence')">Intelligence</button>
             </div>
-            <div id="tools-right">
-              <div id="model-pill">Sonnet</div>
-              <label class="auto-accept-label" title="Auto-accept plans without confirmation">
-                <input type="checkbox" id="auto-accept-toggle" onchange="toggleAutoAccept(this.checked)">
-                Auto
-              </label>
-            </div>
           </div>
           <div id="chat-input-row">
-            <form id="chat-form" style="display:flex;gap:8px;flex:1;align-items:flex-end;">
-              <textarea id="chat-input" rows="1" placeholder="Describe what you want to build..." autocomplete="off"></textarea>
-              <label style="background:var(--fam-bg-3);border:1px solid var(--fam-border);border-radius:8px;padding:8px;cursor:pointer;display:flex;align-items:center;" title="Upload image">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" multiple style="display:none;" onchange="handleFileSelect(this.files)">
-              </label>
-              <button type="submit" id="chat-send-btn">Send</button>
-              <button type="button" id="chat-cancel-btn" onclick="cancelBuild()" style="display:none;">&#x2715; Cancel</button>
+            <form id="chat-form">
+              <div id="composer-shell">
+                <div id="composer-meta">
+                  <button type="button" id="model-pill" onclick="StudioShell.toggleModelMenu(event)">Sonnet</button>
+                  <div id="model-menu" class="hidden">
+                    <button type="button" class="model-menu-option active" data-model="claude-sonnet-4-6" onclick="StudioShell.setComposerModel('claude-sonnet-4-6', event)">Sonnet</button>
+                    <button type="button" class="model-menu-option" data-model="claude-opus-4-5" onclick="StudioShell.setComposerModel('claude-opus-4-5', event)">Opus</button>
+                    <button type="button" class="model-menu-option" data-model="claude-haiku-4-5-20251001" onclick="StudioShell.setComposerModel('claude-haiku-4-5-20251001', event)">Haiku</button>
+                  </div>
+                  <label class="auto-accept-label" title="Auto-accept plans without confirmation">
+                    <input type="checkbox" id="auto-accept-toggle" onchange="toggleAutoAccept(this.checked)">
+                    Auto-accept
+                  </label>
+                  <button type="button" id="composer-shay-btn" class="composer-ghost-btn" onclick="StudioShell.switchTab('shay')">Open Shay Desk</button>
+                </div>
+                <div id="composer-main">
+                  <textarea id="chat-input" rows="1" placeholder="Describe what you want to build..." autocomplete="off"></textarea>
+                  <div id="composer-actions">
+                    <label id="chat-upload-btn" title="Upload image">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      <input id="file-input" type="file" accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.html,.zip" style="display:none;" onchange="handleFileSelect(this.files)">
+                    </label>
+                    <input id="template-file-input" type="file" accept=".html,.zip" style="display:none;" onchange="handleFileSelect(this.files, 'template')">
+                    <button type="submit" id="chat-send-btn">Send</button>
+                    <button type="button" id="chat-cancel-btn" onclick="cancelBuild()" style="display:none;">&#x2715; Cancel</button>
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
         </div>
-      </div>
 
-      <!-- Environment bar — Local / Staging / Production -->
-      <div id="environment-bar">
-        <a id="env-local" class="env-item" href="http://localhost:3333" target="_blank" title="Open local preview">
-          <span class="env-dot env-local"></span>&#x1F310; Local &mdash; localhost:3333
-        </a>
-        <span class="env-sep">|</span>
-        <span id="env-staging" class="env-item" style="cursor:default;" title="Staging environment">
-          <span class="env-dot"></span>&#x1F4CB; Staging &mdash; not deployed
-        </span>
-        <span class="env-sep">|</span>
-        <span id="env-production" class="env-item" style="cursor:default;" title="Production environment">
-          <span class="env-dot"></span>&#x1F680; Production &mdash; not deployed
-        </span>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════
-         ASSISTANT COLUMN — Shay-Shay's permanent right home
-         ═══════════════════════════════════════════════════════ -->
-    <div id="assistant-col">
-      <!-- Dynamic content area (todo list / placeholder) -->
-      <div id="pip-dynamic-area">
-        <!-- Populated by studio-orb.js: loadTodoItems() or showPlaceholder() -->
-        <div class="pip-placeholder">
-          <div class="pip-placeholder-icon">✦</div>
-          <div class="pip-placeholder-text">Loading&hellip;</div>
+        <!-- Environment bar — Local / Staging / Production -->
+        <div id="environment-bar">
+          <a id="env-local" class="env-item" href="http://localhost:3333" target="_blank" title="Open local preview">
+            <span class="env-dot env-local"></span>&#x1F310; Local &mdash; localhost:3333
+          </a>
+          <span class="env-sep">|</span>
+          <span id="env-staging" class="env-item" style="cursor:default;" title="Staging environment">
+            <span class="env-dot"></span>&#x1F4CB; Staging &mdash; not deployed
+          </span>
+          <span class="env-sep">|</span>
+          <span id="env-production" class="env-item" style="cursor:default;" title="Production environment">
+            <span class="env-dot"></span>&#x1F680; Production &mdash; not deployed
+          </span>
         </div>
+
       </div>
 
-      <!-- Response + input area -->
-      <div id="pip-chat-area">
-        <div id="pip-response-area"></div>
-        <div id="pip-action-row" class="pip-action-row" style="display:none;"></div>
-        <div id="pip-input-row">
-          <input id="pip-direct-input" type="text" placeholder="Ask Shay-Shay&hellip;" autocomplete="off">
-          <button id="pip-send-btn" title="Send (Enter)">&#x2191;</button>
+      <div id="inspector-resizer" aria-hidden="true"></div>
+      <aside id="inspector-panel" class="collapsed">
+        <div id="inspector-header">
+          <div>
+            <div id="inspector-eyebrow">Inspector</div>
+            <div id="inspector-title">Nothing selected</div>
+          </div>
+          <button id="inspector-close-btn" title="Close inspector">&#x2715;</button>
         </div>
+        <div id="inspector-body">
+          <div class="inspector-empty">
+            <div class="inspector-empty-title">Selection-aware editing</div>
+            <div class="inspector-empty-copy">Click a page, section, component, field, or image to inspect and edit it here.</div>
+          </div>
+        </div>
+      </aside>
       </div>
-
-      <!-- Orb anchor — reserves visual space for the fixed-position orb -->
-      <div id="pip-orb-slot"></div>
     </div>
   </div>
 
@@ -457,32 +546,75 @@
   <!-- Pip Orb — position:fixed, aligns to column bottom.
        The callout is now the column chat area; this pip-callout div is
        kept for Show Me floating callouts only. -->
-  <div id="pip-orb" title="Shay-Shay (right-click for modes)">
-    <svg class="pip-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <!-- Outer starburst (red) — 16 thicker spikes at 64px scale -->
-      <polygon points="32,2 34.8,13 40,5 39.2,17 46,10 42.5,22 51,17 45,28 55,25 47,34 57,34 47.5,41 57,44 46.5,48.5 54,54 43,55 48,63 37,61 39,71 30,66 28,76 24,66 14,72 17,61 6,65 11,55 0,56 7,47 -2,44 8.5,39.5 -2,34 9,33 2,23 12,26 7,15 16,20 12,9 19,14 18,2 25,9 26,0 32,8 32,2"
-            fill="#e8352a" opacity="0.9"
-            transform="translate(3,2) scale(0.9)"/>
-      <!-- Inner starburst (gold) — 12 points -->
-      <polygon points="32,12 34.5,21 41,18 37.5,25.5 45,25 39.5,31 45,37 37.5,36.5 41,44 34.5,41 32,50 29.5,41 23,44 26.5,36.5 19,37 24.5,31 19,25 26.5,25.5 23,18 29.5,21 32,12"
-               fill="#f5c400" opacity="0.88"/>
-      <!-- Center circle -->
-      <circle cx="32" cy="31" r="13" fill="#0f0a0a"/>
-      <!-- FAM -->
-      <text x="32" y="29" text-anchor="middle" fill="#e8352a" font-size="9" font-weight="700" font-family="Inter,system-ui,sans-serif">FAM</text>
-      <!-- tastic -->
-      <text x="32" y="39" text-anchor="middle" fill="#f5c400" font-size="7" font-weight="600" font-family="Inter,system-ui,sans-serif">tastic</text>
-    </svg>
-    <span class="pip-badge hidden" id="pip-badge">0</span>
-    <!-- Show Me floating callout -->
-    <div class="pip-callout hidden" id="pip-callout">
-      <div class="pip-callout-header">
-        <span class="pip-live-dot"></span>
-        <span>Shay-Shay</span>
-        <button id="pip-callout-close" style="margin-left:auto;background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:14px;line-height:1;">&#x00D7;</button>
+  <div id="shay-lite-shell" data-identity="character" data-panel-open="false">
+    <div id="pip-orb" title="Shay Lite (click for Quick Ask, right-click for modes)">
+      <div class="pip-character-shell" aria-hidden="true">
+        <div class="pip-character-halo"></div>
+        <div class="pip-character-card">
+          <div class="pip-character-face">
+            <span class="pip-character-eye left"></span>
+            <span class="pip-character-eye right"></span>
+            <span class="pip-character-mouth"></span>
+          </div>
+          <div class="pip-character-body"></div>
+        </div>
       </div>
-      <div class="pip-callout-msg" id="pip-callout-msg"></div>
-      <div class="pip-callout-actions" id="pip-callout-actions"></div>
+      <div class="pip-orb-shell" aria-hidden="true">
+        <div class="pip-orb-aura"></div>
+        <div class="pip-orb-ripple pip-orb-ripple-one"></div>
+        <div class="pip-orb-ripple pip-orb-ripple-two"></div>
+        <div class="pip-orb-ring pip-orb-ring-outer"></div>
+        <div class="pip-orb-ring pip-orb-ring-inner"></div>
+        <div class="pip-orb-orbit pip-orb-orbit-one">
+          <span class="pip-orb-particle"></span>
+        </div>
+        <div class="pip-orb-orbit pip-orb-orbit-two">
+          <span class="pip-orb-particle"></span>
+        </div>
+        <div class="pip-orb-core">
+          <span class="pip-orb-glow"></span>
+          <span class="pip-orb-spec"></span>
+          <span class="pip-orb-glyph">S</span>
+        </div>
+      </div>
+      <span class="pip-badge hidden" id="pip-badge">0</span>
+      <!-- Show Me floating callout -->
+      <div class="pip-callout hidden" id="pip-callout">
+        <div class="pip-callout-header">
+          <span class="pip-live-dot"></span>
+          <span>Shay-Shay</span>
+          <button id="pip-callout-close" style="margin-left:auto;background:none;border:none;color:var(--fam-text-3);cursor:pointer;font-size:14px;line-height:1;">&#x00D7;</button>
+        </div>
+        <div class="pip-callout-msg" id="pip-callout-msg"></div>
+        <div class="pip-callout-actions" id="pip-callout-actions"></div>
+      </div>
+    </div>
+    <div id="shay-lite-panel" class="shay-lite-panel" aria-live="polite">
+      <div class="shay-lite-panel-header">
+        <div>
+          <div class="shay-lite-eyebrow">Shay Lite</div>
+          <div class="shay-lite-title">Quick Ask</div>
+        </div>
+        <div class="shay-lite-panel-actions">
+          <button type="button" class="shay-lite-header-btn" onclick="window.PipOrb && window.PipOrb.quickShowMe && window.PipOrb.quickShowMe()">Show Me</button>
+          <button type="button" class="shay-lite-header-btn" onclick="StudioShell.switchTab('shay')">Desk</button>
+        </div>
+      </div>
+      <div id="shay-lite-mode-switch" class="shay-lite-mode-switch"></div>
+      <div id="pip-dynamic-area">
+        <div class="pip-placeholder">
+          <div class="pip-placeholder-icon">✦</div>
+          <div class="pip-placeholder-text">Loading&hellip;</div>
+        </div>
+      </div>
+      <div id="pip-chat-area">
+        <div id="pip-response-area"></div>
+        <div id="pip-action-row" class="pip-action-row" style="display:none;"></div>
+        <div id="pip-input-row">
+          <input id="pip-direct-input" type="text" placeholder="Ask Shay Lite…" autocomplete="off">
+          <button id="pip-send-btn" title="Send (Enter)">&#x2191;</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -534,6 +666,7 @@
     var allMutations = [];
     var shownMutations = 10;
     var sitePages = [];
+    var pendingUploadRole = null;
 
     function escapeHtml(str) {
       if (str == null) return '';
@@ -770,21 +903,32 @@
     }
 
     // --- Preview ---
+    function buildPreviewUrl(page) {
+      var targetPage = page || activePage || 'index.html';
+      var cacheBust = '?t=' + Date.now();
+      if (slotModeActive) return '/slot-preview/' + targetPage + cacheBust;
+      return 'http://localhost:' + config.previewPort + '/' + targetPage + cacheBust;
+    }
+
     function reloadPreview() {
       var frame = document.getElementById('preview-frame');
       if (!frame) return;
-      var base = frame.src.split('?')[0];
-      frame.src = base + '?t=' + Date.now();
+      frame.src = buildPreviewUrl(activePage);
       refreshStudioPanel();
     }
 
-    function navigateToPage(page) {
+    function navigateToPage(page, opts) {
+      opts = opts || {};
       var frame = document.getElementById('preview-frame');
       if (!frame || !config.previewPort) return;
-      frame.src = 'http://localhost:' + config.previewPort + '/' + page + '?t=' + Date.now();
+      frame.src = buildPreviewUrl(page);
       activePage = page;
       var pageEl = document.getElementById('ctx-active-page');
       if (pageEl) pageEl.textContent = page;
+      renderPageTabs();
+      if (window.updatePageTabs) updatePageTabs(sitePages, page);
+      if (opts.switchToPreview !== false) setViewMode('preview');
+      window.dispatchEvent(new CustomEvent('studio:page-selected', { detail: { page: page, source: opts.source || 'navigation' } }));
     }
 
     function setPreviewDevice(device) {
@@ -809,10 +953,7 @@
       slotModeActive = !slotModeActive;
       var btn = document.getElementById('slot-mode-btn');
       if (btn) btn.style.background = slotModeActive ? 'rgba(232,53,42,0.3)' : 'rgba(232,53,42,0.1)';
-      var frame = document.getElementById('preview-frame');
-      if (frame && frame.contentWindow) {
-        frame.contentWindow.postMessage({ type: slotModeActive ? 'enable-slot-mode' : 'disable-slot-mode' }, '*');
-      }
+      reloadPreview();
     }
 
     function renderPageTabs() {
@@ -827,7 +968,11 @@
         var p = page;
         btn.onclick = function() {
           if (ws) ws.send(JSON.stringify({ type: 'set-page', page: p }));
-          navigateToPage(p);
+          if (window.StudioShell && typeof StudioShell.selectContext === 'function') {
+            StudioShell.selectContext({ type: 'page', page: p }, { source: 'preview-tabs' });
+          } else {
+            navigateToPage(p);
+          }
         };
         container.appendChild(btn);
       });
@@ -847,11 +992,18 @@
           var p = page;
           item.onclick = function() {
             if (ws) ws.send(JSON.stringify({ type: 'set-page', page: p }));
-            navigateToPage(p);
+            if (window.StudioShell && typeof StudioShell.selectContext === 'function') {
+              StudioShell.selectContext({ type: 'page', page: p }, { source: 'sidebar-pages' });
+            } else {
+              navigateToPage(p, { source: 'sidebar-pages' });
+            }
           };
           sidebarList.appendChild(item);
         });
       }
+      window.dispatchEvent(new CustomEvent('studio:pages-updated', {
+        detail: { pages: sitePages.slice(), currentPage: activePage }
+      }));
     }
 
     function loadPages() {
@@ -1005,6 +1157,9 @@
         if (previewBtn) { previewBtn.style.background = 'var(--fam-bg-3)'; previewBtn.style.color = 'var(--fam-text-2)'; previewBtn.style.fontWeight = '500'; }
         setTimeout(function() { var ci = document.getElementById('chat-input'); if (ci) ci.focus(); }, 50);
       }
+      if (window.StudioShell && typeof StudioShell.applyWorkspaceLayout === 'function') {
+        StudioShell.applyWorkspaceLayout();
+      }
     }
 
     function initPreviewSplit() {
@@ -1089,6 +1244,7 @@
       loadPages();
       // Update environment bar with deploy URLs
       fetch('/api/studio-state').then(function(r) { return r.json(); }).then(updateEnvironmentBar).catch(function() {});
+      loadShaySessionInit();
       // Broadcast site change so all components can reset
       window.dispatchEvent(new CustomEvent('studio:site-changed', { detail: { tag: tag, pages: pages } }));
       // If this site has a pending interview, auto-open the Brief tab
@@ -1202,6 +1358,7 @@
     function refreshStudioPanel() {
       fetch('/api/studio-state').then(function(r) { return r.json(); }).then(function(data) {
         cachedStudioState = data;
+        window.dispatchEvent(new CustomEvent('studio:state-refreshed', { detail: data }));
         if (data.design_brief) {
           var briefContent = document.getElementById('brief-content');
           if (briefContent) {
@@ -1219,6 +1376,91 @@
         }
       }).catch(function() {});
     }
+
+    function getPreviewState() {
+      var frame = document.getElementById('preview-frame');
+      var desktopBtn = document.getElementById('preview-device-desktop');
+      var mobileBtn = document.getElementById('preview-device-mobile');
+      var previewSection = document.getElementById('canvas-preview-section');
+      return {
+        active_page: activePage || 'index.html',
+        current_view_mode: _currentViewMode,
+        slot_mode_active: !!slotModeActive,
+        current_slot_target: currentSlotTarget || null,
+        preview_src: frame ? frame.src : null,
+        preview_visible: !!(previewSection && previewSection.style.display !== 'none'),
+        device_mode: mobileBtn && mobileBtn.style.color === 'var(--fam-text)' ? 'mobile' : 'desktop',
+        preview_port: config.previewPort || null
+      };
+    }
+
+    function getLiveUiState() {
+      var pipBadge = document.getElementById('pip-badge');
+      var workerBadge = document.getElementById('worker-queue-badge');
+      var workerCount = document.getElementById('worker-queue-count');
+      var ctxJobCount = document.getElementById('ctx-job-count');
+      var ctxDiffCount = document.getElementById('ctx-diff-count');
+      var stepLog = document.getElementById('step-log');
+      var intelFeed = document.getElementById('sidebar-intel-feed');
+      var researchFeed = document.getElementById('research-feed-list');
+      var activeDismissKeys = [];
+      try {
+        Object.keys(localStorage).forEach(function (key) {
+          if (key.indexOf('pip-dismiss:') === 0 && localStorage.getItem(key)) activeDismissKeys.push(key.replace(/^pip-dismiss:/, ''));
+        });
+      } catch (e) {}
+      return {
+        pip_badge_count: pipBadge && !pipBadge.classList.contains('hidden') ? (Number.parseInt(pipBadge.textContent, 10) || 0) : 0,
+        worker_queue_pending_count: workerBadge && !workerBadge.classList.contains('hidden') ? (Number.parseInt(workerCount && workerCount.textContent, 10) || 0) : 0,
+        worker_queue_badge_visible: !!(workerBadge && !workerBadge.classList.contains('hidden')),
+        context_job_count: ctxJobCount && ctxJobCount.style.display !== 'none' ? (ctxJobCount.textContent || null) : null,
+        context_diff_count: ctxDiffCount && ctxDiffCount.style.display !== 'none' ? (ctxDiffCount.textContent || null) : null,
+        step_log_visible: !!stepLog,
+        step_log_items: Array.isArray(steps) ? steps.map(function (step) {
+          return { text: step.text, status: step.status };
+        }) : [],
+        intelligence_finding_cards_visible: intelFeed ? intelFeed.querySelectorAll('button').length : 0,
+        research_items_visible: researchFeed ? researchFeed.children.length : 0,
+        dismissed_prompt_keys: activeDismissKeys
+      };
+    }
+
+    function buildShayShayClientSnapshot() {
+      var workspaceState = window.StudioShell && typeof window.StudioShell.getWorkspaceState === 'function'
+        ? window.StudioShell.getWorkspaceState()
+        : null;
+      var screenState = window.StudioScreens && typeof window.StudioScreens.getWorkspaceState === 'function'
+        ? window.StudioScreens.getWorkspaceState()
+        : null;
+      var orbState = window.PipOrb && typeof window.PipOrb.getState === 'function'
+        ? window.PipOrb.getState()
+        : null;
+      var briefState = window.StudioBrief && typeof window.StudioBrief.getAnswers === 'function'
+        ? {
+            answers: window.StudioBrief.getAnswers(),
+            completion_pct: Math.min(100, Math.round((Object.keys(window.StudioBrief.getAnswers() || {}).length / 6) * 100))
+          }
+        : null;
+
+      return {
+        ui_state: Object.assign({}, getLiveUiState(), orbState ? {
+          shay_mode: orbState.mode,
+          shay_orb_state: orbState.orb_state,
+          shay_desk_has_transcript: orbState.has_transcript,
+          validation: orbState.validation || null
+        } : {}),
+        workspace_state: workspaceState,
+        component_state: {
+          selected_context: workspaceState ? workspaceState.selected_context : null,
+          return_stack: workspaceState ? workspaceState.return_stack : [],
+          media_workspace: screenState ? screenState.assets : null,
+          brief_workspace: briefState,
+        },
+        preview_state: getPreviewState()
+      };
+    }
+
+    window.buildShayShayClientSnapshot = buildShayShayClientSnapshot;
 
     function refreshDeployInfo() {
       var area = document.getElementById('deploy-status-area');
@@ -1446,13 +1688,87 @@
     function shareSite() {}
     function rollbackVersion() {}
 
+    function openMediaGenerate() {
+      if (window.StudioShell) StudioShell.switchTab('assets');
+      setTimeout(function () {
+        if (window.StudioScreens && typeof StudioScreens.openMediaGenerateWithPreset === 'function') {
+          StudioScreens.openMediaGenerateWithPreset({ assetType: 'slot-image' });
+        }
+      }, 80);
+    }
+
+    function generateIconAsset() {
+      if (window.StudioShell) StudioShell.switchTab('assets');
+      setTimeout(function () {
+        if (window.StudioScreens && typeof StudioScreens.openMediaGenerateWithPreset === 'function') {
+          StudioScreens.openMediaGenerateWithPreset({
+            assetType: 'icon',
+            prompt: 'Create a bold, clean SVG icon system starter for this brand. Geometric, scalable, sharp silhouette, web-ready.'
+          });
+        }
+      }, 80);
+    }
+
+    function applySubtleMotionPass() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      var prompt = 'Add subtle, premium motion to the current page: gentle reveal transitions, restrained hover lift, and one tasteful accent animation. Keep motion minimal, fast, and non-gimmicky.';
+      addMessage('user', prompt);
+      ws.send(JSON.stringify({ type: 'chat', content: prompt }));
+      if (window.StudioShell) StudioShell.switchTab('chat');
+      steps = []; stepStart = null;
+      addStep('Applying subtle motion pass...');
+    }
+
+    function openTemplateUpload() {
+      var input = document.getElementById('template-file-input');
+      if (input) input.click();
+    }
+
+    function loadShaySessionInit() {
+      fetch('/api/shay-shay/session-init').then(function(r) { return r.json(); }).then(renderShaySessionInit).catch(function() {});
+    }
+
+    function renderShaySessionInit(data) {
+      var el = document.getElementById('shay-session-init');
+      if (!el || !data || data.error) return;
+      var diff = data.diff || {};
+      var cards = data.agent_cards || {};
+      var developerMode = data.developer_mode || {};
+      var available = (diff.available || []).slice(0, 5);
+      var broken = diff.broken || [];
+      var unavailable = diff.unavailable || [];
+      var cardNames = Object.keys(cards).map(function(key) {
+        var card = cards[key] || {};
+        return card.name || key;
+      });
+      el.style.display = '';
+      el.innerHTML = ''
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+        + '<span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fam-text-3);">Session Init</span>'
+        + '<span style="font-size:10px;padding:2px 6px;border-radius:999px;background:' + (developerMode.enabled ? 'rgba(245,196,0,0.12);color:var(--fam-gold);' : 'rgba(255,255,255,0.06);color:var(--fam-text-3);') + '">Developer Mode: ' + escapeHtml(developerMode.enabled ? (developerMode.trust_mode_label || developerMode.trust_mode || 'On') : 'Off') + '</span>'
+        + (broken.length ? '<span style="font-size:10px;padding:2px 6px;border-radius:999px;background:rgba(232,53,42,0.14);color:var(--fam-red);">Broken: ' + escapeHtml(broken.join(', ')) + '</span>' : '')
+        + (!broken.length && unavailable.length ? '<span style="font-size:10px;padding:2px 6px;border-radius:999px;background:rgba(245,196,0,0.12);color:var(--fam-gold);">Unavailable: ' + escapeHtml(unavailable.join(', ')) + '</span>' : '')
+        + (!broken.length && !unavailable.length ? '<span style="font-size:10px;padding:2px 6px;border-radius:999px;background:rgba(29,158,117,0.14);color:var(--fam-green);">Capabilities synced</span>' : '')
+        + '</div>'
+        + '<div style="font-size:11px;color:var(--fam-text-2);margin-top:6px;line-height:1.5;">'
+        + 'Cards: ' + escapeHtml(cardNames.join(', ') || 'none')
+        + (available.length ? ' · Working: ' + escapeHtml(available.join(', ')) : '')
+        + ' · Approved paths: ' + escapeHtml(String(developerMode.approved_scope_count || 0))
+        + '</div>';
+    }
+
     // --- File upload ---
-    function handleFileSelect(files) {
+    function handleFileSelect(files, roleOverride) {
       if (!files || !files.length) return;
+      var list = Array.from(files);
+      var firstFile = list[0];
       var bar = document.getElementById('upload-preview-bar');
-      if (bar) { bar.style.display = ''; bar.textContent = 'Uploading ' + files.length + ' file(s)...'; }
+      if (bar) { bar.style.display = ''; bar.textContent = 'Uploading ' + firstFile.name + '...'; }
       var formData = new FormData();
-      Array.from(files).forEach(function(f) { formData.append('file', f); });
+      var finalRole = roleOverride || pendingUploadRole || null;
+      formData.append('file', firstFile);
+      if (finalRole) formData.append('role', finalRole);
+      pendingUploadRole = null;
       fetch('/api/upload', { method: 'POST', body: formData })
         .then(function(r) { return r.json(); }).then(function(data) {
           if (bar) bar.style.display = 'none';
@@ -1495,6 +1811,7 @@
         wsReconnectDelay = 2000;
         wsConnected = true;
         showConnectionBanner(false);
+        loadShaySessionInit();
         fetch('/api/pages').then(function(r) { return r.json(); }).then(function(data) {
           if (data.pages) updatePageTabs(data.pages, data.currentPage);
         }).catch(function() {});
@@ -1700,6 +2017,11 @@
               modelEl.className = 'status-pill ' + (isHaiku ? 'pill-green' : isOpus ? 'pill-purple' : 'pill-blue');
               var pill = document.getElementById('model-pill');
               if (pill) pill.textContent = isHaiku ? 'Haiku' : isOpus ? 'Opus' : 'Sonnet';
+              if (window.StudioShell && typeof StudioShell.setComposerModel === 'function') {
+                var currentModel = isHaiku ? 'claude-haiku-4-5-20251001' : isOpus ? 'claude-opus-4-5' : 'claude-sonnet-4-6';
+                var options = document.querySelectorAll('.model-menu-option');
+                options.forEach(function(opt) { opt.classList.toggle('active', opt.dataset.model === currentModel); });
+              }
             }
             var used = (msg.inputTokens || 0) + (msg.outputTokens || 0);
             var ctxSize = msg.contextWindowSize || 200000;

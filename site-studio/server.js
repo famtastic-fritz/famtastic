@@ -2606,6 +2606,149 @@ function buildSlotInspectorScript(safeSlotMetaJson) {
 <\/script>`;
 }
 
+function buildPreviewSelectionBridgeScript() {
+  return `<script id="studio-preview-selection-bridge">
+(function() {
+  var STYLE_ID = 'studio-preview-selection-style';
+  var ACTIVE_CLASS = 'studio-preview-selected';
+
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID)) return;
+    var style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = ''
+      + '[data-section-id],[data-component-id],[data-component-ref],[data-field-id],[data-slot-id]{cursor:pointer;}'
+      + '.' + ACTIVE_CLASS + '{outline:3px solid rgba(245,196,0,.95)!important;outline-offset:2px!important;box-shadow:0 0 0 9999px rgba(245,196,0,.08) inset!important;}';
+    document.head.appendChild(style);
+  }
+
+  function textPreview(el) {
+    return String((el && (el.innerText || el.textContent)) || '').replace(/\\s+/g, ' ').trim().slice(0, 120);
+  }
+
+  function pageName() {
+    var parts = location.pathname.split('/');
+    return parts[parts.length - 1] || 'index.html';
+  }
+
+  function buildSelection(target) {
+    var slotEl = target.closest('[data-slot-id]');
+    if (slotEl) {
+      return {
+        type: 'media',
+        page: pageName(),
+        slot_id: slotEl.getAttribute('data-slot-id'),
+        role: slotEl.getAttribute('data-slot-role') || 'image',
+        status: slotEl.getAttribute('data-slot-status') || 'empty',
+        label: slotEl.getAttribute('data-slot-id'),
+      };
+    }
+
+    var fieldEl = target.closest('[data-field-id]');
+    if (fieldEl) {
+      var fieldComponent = fieldEl.closest('[data-component-id],[data-component-ref]');
+      var fieldSection = fieldEl.closest('[data-section-id]');
+      return {
+        type: 'field',
+        page: pageName(),
+        field_id: fieldEl.getAttribute('data-field-id'),
+        field_type: fieldEl.getAttribute('data-field-type') || 'text',
+        value: textPreview(fieldEl),
+        label: fieldEl.getAttribute('data-field-id'),
+        section_id: fieldSection && fieldSection.getAttribute('data-section-id'),
+        component_id: fieldComponent && (fieldComponent.getAttribute('data-component-id') || fieldComponent.getAttribute('data-component-ref')),
+        component_ref: fieldComponent && fieldComponent.getAttribute('data-component-ref'),
+      };
+    }
+
+    var componentEl = target.closest('[data-component-id],[data-component-ref]');
+    if (componentEl) {
+      var componentSection = componentEl.closest('[data-section-id]');
+      return {
+        type: 'component',
+        page: pageName(),
+        component_id: componentEl.getAttribute('data-component-id') || componentEl.getAttribute('data-component-ref'),
+        component_ref: componentEl.getAttribute('data-component-ref') || componentEl.getAttribute('data-component-id'),
+        section_id: componentSection && componentSection.getAttribute('data-section-id'),
+        label: componentEl.getAttribute('data-component-id') || componentEl.getAttribute('data-component-ref') || 'component',
+      };
+    }
+
+    var sectionEl = target.closest('[data-section-id]');
+    if (sectionEl) {
+      return {
+        type: 'section',
+        page: pageName(),
+        section_id: sectionEl.getAttribute('data-section-id'),
+        section_type: sectionEl.getAttribute('data-section-type') || 'section',
+        component_id: sectionEl.getAttribute('data-component-id') || null,
+        component_ref: sectionEl.getAttribute('data-component-ref') || null,
+        label: sectionEl.getAttribute('data-section-id'),
+      };
+    }
+
+    return { type: 'page', page: pageName() };
+  }
+
+  function selectorFor(selection) {
+    if (!selection) return null;
+    if (selection.slot_id) return '[data-slot-id="' + selection.slot_id + '"]';
+    if (selection.field_id) return '[data-field-id="' + selection.field_id + '"]';
+    if (selection.component_id) return '[data-component-id="' + selection.component_id + '"]';
+    if (selection.component_ref) return '[data-component-ref="' + selection.component_ref + '"]';
+    if (selection.section_id) return '[data-section-id="' + selection.section_id + '"]';
+    return null;
+  }
+
+  function clearActive() {
+    document.querySelectorAll('.' + ACTIVE_CLASS).forEach(function(el) {
+      el.classList.remove(ACTIVE_CLASS);
+    });
+  }
+
+  function applyActive(selection) {
+    clearActive();
+    var selector = selectorFor(selection);
+    if (!selector) return;
+    var el = document.querySelector(selector);
+    if (!el) return;
+    el.classList.add(ACTIVE_CLASS);
+    try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (_) {}
+  }
+
+  document.addEventListener('click', function(e) {
+    var target = e.target;
+    if (!target || !target.closest) return;
+    var match = target.closest('[data-slot-id],[data-field-id],[data-component-id],[data-component-ref],[data-section-id]');
+    if (!match) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var selection = buildSelection(match);
+    applyActive(selection);
+    window.parent.postMessage({ type: 'preview-select', selection: selection, source: 'preview-canvas' }, '*');
+  }, true);
+
+  window.addEventListener('message', function(event) {
+    var data = event && event.data;
+    if (!data || typeof data !== 'object') return;
+    if (data.type === 'studio-selection-sync') applyActive(data.selection);
+  });
+
+  ensureStyle();
+  window.parent.postMessage({
+    type: 'preview-ready',
+    page: pageName(),
+    anchors: {
+      sections: document.querySelectorAll('[data-section-id]').length,
+      components: document.querySelectorAll('[data-component-id],[data-component-ref]').length,
+      fields: document.querySelectorAll('[data-field-id]').length,
+      slots: document.querySelectorAll('[data-slot-id]').length
+    }
+  }, '*');
+})();
+</script>`;
+}
+
 app.get('/slot-preview/:page', (req, res) => {
   const page = req.params.page;
   if (!isValidPageName(page)) return res.status(400).send('Invalid page name');
@@ -2638,7 +2781,7 @@ app.get('/slot-preview/:page', (req, res) => {
 
   // Inject slot inspector before </body>
   html = html.replace(/<\/body>/i,
-    buildSlotInspectorScript(JSON.stringify(slotMeta)) + '\n</body>');
+    buildPreviewSelectionBridgeScript() + '\n' + buildSlotInspectorScript(JSON.stringify(slotMeta)) + '\n</body>');
 
   res.set('Content-Type', 'text/html');
   res.set('Cache-Control', 'no-store');
@@ -3768,13 +3911,23 @@ function syncContentFieldsFromHtml(pages) {
     $('[data-section-id]').each((_, el) => {
       const sectionId = $(el).attr('data-section-id');
       const sectionType = $(el).attr('data-section-type') || 'generic';
+      const componentRef = $(el).attr('data-component-ref') || '';
+      const componentId = $(el).attr('data-component-id') || '';
       if (!spec.content[page].sections) spec.content[page].sections = [];
       const existingSections = new Set(spec.content[page].sections.map(s => s.section_id));
       if (!existingSections.has(sectionId)) {
         spec.content[page].sections.push({
           section_id: sectionId,
           section_type: sectionType,
+          component_ref: componentRef || undefined,
+          component_id: componentId || undefined,
         });
+      } else if (componentRef || componentId) {
+        const section = spec.content[page].sections.find(s => s.section_id === sectionId);
+        if (section) {
+          if (componentRef) section.component_ref = componentRef;
+          if (componentId) section.component_id = componentId;
+        }
       }
     });
   }
@@ -3782,6 +3935,50 @@ function syncContentFieldsFromHtml(pages) {
   writeSpec(spec);
   console.log(`[content] Synced ${totalFields} field(s) across ${pagesToScan.length} page(s) (${newFields} new)`);
   return totalFields;
+}
+
+function ensureComponentAnchors(pages) {
+  const spec = readSpec();
+  const pagesToUpdate = pages || listPages();
+  let updatedPages = 0;
+
+  for (const page of pagesToUpdate) {
+    const filePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+    const $ = cheerio.load(html);
+    const sections = spec.content?.[page]?.sections || [];
+    let modified = false;
+
+    sections.forEach((section, index) => {
+      if (!section || !section.section_id) return;
+      const el = $(`[data-section-id="${section.section_id}"]`).first();
+      if (!el.length) return;
+      const componentRef = section.component_ref || el.attr('data-component-ref') || '';
+      const componentId = componentRef
+        ? String(componentRef).split('@')[0]
+        : (section.component_id || el.attr('data-component-id') || `local-${section.section_id || index + 1}`);
+
+      if (!el.attr('data-component-id')) {
+        el.attr('data-component-id', componentId);
+        modified = true;
+      }
+      if (componentRef && !el.attr('data-component-ref')) {
+        el.attr('data-component-ref', componentRef);
+        modified = true;
+      }
+    });
+
+    if (modified) {
+      fs.writeFileSync(filePath, $.html());
+      updatedPages++;
+    }
+  }
+
+  if (updatedPages > 0) {
+    console.log(`[anchors] Ensured component anchors on ${updatedPages} page(s)`);
+  }
+  return updatedPages;
 }
 
 // Legacy wrapper — kept for backward compatibility during transition
@@ -4751,7 +4948,10 @@ app.post('/api/summarize', (req, res) => {
 });
 
 // --- Settings API ---
-const SETTINGS_FILE = path.join(process.env.HOME || '~', '.config', 'famtastic', 'studio-config.json');
+const SETTINGS_DIR = path.join(process.env.HOME || '~', '.config', 'famtastic');
+const SETTINGS_FILE = path.join(SETTINGS_DIR, 'studio-config.json');
+const SHAY_DEVELOPER_AUDIT_FILE = path.join(SETTINGS_DIR, 'shay-developer-mode-audit.jsonl');
+const SHAY_DEVELOPER_TRUST_MODES = ['observe_only', 'propose_changes', 'apply_with_approval', 'trusted_auto_apply'];
 
 function loadBrainContext() {
   const indexPath = path.join(HUB_ROOT, '.brain', 'INDEX.md');
@@ -4799,19 +4999,220 @@ function loadSettings() {
     max_versions: 50,
     hero_full_width: true,
     prod_sites_base: path.join(require('os').homedir(), 'famtastic-sites'),
+    developer_mode: {
+      enabled: true,
+      trust_mode: 'apply_with_approval',
+      approved_paths: [HUB_ROOT],
+      require_explicit_approval: true,
+      allow_deploy_triggers: false,
+      audit_log_limit: 200,
+    },
+    shay_lite_settings: {
+      identity_mode: 'character',
+      default_identity_mode: 'character',
+      remember_last_identity: true,
+      proactive_behavior: 'context_nudges',
+      allow_proactive_messages: true,
+      event_reaction_intensity: 'balanced',
+      character_style: 'default',
+      character_variant: 'shay-default',
+    },
   };
   if (fs.existsSync(SETTINGS_FILE)) {
     try {
-      return { ...defaults, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) };
-    } catch { return defaults; }
+      const loaded = { ...defaults, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) };
+      loaded.developer_mode = normalizeShayDeveloperModeSettings(loaded.developer_mode);
+      loaded.shay_lite_settings = normalizeShayLiteSettings(loaded.shay_lite_settings);
+      return loaded;
+    } catch {
+      defaults.developer_mode = normalizeShayDeveloperModeSettings(defaults.developer_mode);
+      defaults.shay_lite_settings = normalizeShayLiteSettings(defaults.shay_lite_settings);
+      return defaults;
+    }
   }
+  defaults.developer_mode = normalizeShayDeveloperModeSettings(defaults.developer_mode);
+  defaults.shay_lite_settings = normalizeShayLiteSettings(defaults.shay_lite_settings);
   return defaults;
 }
 
 function saveSettings(settings) {
   const dir = path.dirname(SETTINGS_FILE);
   fs.mkdirSync(dir, { recursive: true });
+  settings.developer_mode = normalizeShayDeveloperModeSettings(settings.developer_mode);
+  settings.shay_lite_settings = normalizeShayLiteSettings(settings.shay_lite_settings);
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
+
+function normalizeShayDeveloperModeSettings(raw = {}) {
+  const approvedPaths = Array.isArray(raw.approved_paths)
+    ? raw.approved_paths
+    : String(raw.approved_paths || '')
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean);
+  const normalizedPaths = [...new Set(approvedPaths
+    .map(p => {
+      try { return path.resolve(String(p || '').trim()); } catch { return ''; }
+    })
+    .filter(Boolean))];
+  const trustMode = SHAY_DEVELOPER_TRUST_MODES.includes(raw.trust_mode) ? raw.trust_mode : 'observe_only';
+  return {
+    enabled: raw.enabled === true,
+    trust_mode: trustMode,
+    approved_paths: normalizedPaths,
+    require_explicit_approval: raw.require_explicit_approval !== false,
+    allow_deploy_triggers: raw.allow_deploy_triggers === true,
+    audit_log_limit: Number(raw.audit_log_limit) > 0 ? Math.min(1000, Number(raw.audit_log_limit)) : 200,
+  };
+}
+
+function getShayDeveloperModeSettings() {
+  const settings = loadSettings();
+  return normalizeShayDeveloperModeSettings(settings.developer_mode);
+}
+
+const SHAY_LITE_IDENTITY_MODES = ['character', 'orb_classic', 'mini_panel'];
+const SHAY_PROACTIVE_BEHAVIOR_MODES = ['off', 'context_nudges', 'active_assist'];
+const SHAY_EVENT_REACTION_INTENSITIES = ['quiet', 'balanced', 'expressive'];
+
+function normalizeShayLiteSettings(raw = {}) {
+  const identityMode = SHAY_LITE_IDENTITY_MODES.includes(raw.identity_mode) ? raw.identity_mode : 'character';
+  const defaultIdentityMode = SHAY_LITE_IDENTITY_MODES.includes(raw.default_identity_mode) ? raw.default_identity_mode : 'character';
+  const proactiveBehavior = SHAY_PROACTIVE_BEHAVIOR_MODES.includes(raw.proactive_behavior) ? raw.proactive_behavior : 'context_nudges';
+  const eventReactionIntensity = SHAY_EVENT_REACTION_INTENSITIES.includes(raw.event_reaction_intensity) ? raw.event_reaction_intensity : 'balanced';
+  return {
+    identity_mode: identityMode,
+    default_identity_mode: defaultIdentityMode,
+    remember_last_identity: raw.remember_last_identity !== false,
+    proactive_behavior: proactiveBehavior,
+    allow_proactive_messages: raw.allow_proactive_messages !== false,
+    event_reaction_intensity: eventReactionIntensity,
+    character_style: String(raw.character_style || 'default').trim() || 'default',
+    character_variant: String(raw.character_variant || 'shay-default').trim() || 'shay-default',
+  };
+}
+
+function logShayDeveloperModeEvent(event = {}) {
+  try {
+    fs.mkdirSync(path.dirname(SHAY_DEVELOPER_AUDIT_FILE), { recursive: true });
+    const entry = {
+      timestamp: new Date().toISOString(),
+      site_tag: TAG,
+      active_page: currentPage || 'index.html',
+      ...event,
+    };
+    fs.appendFileSync(SHAY_DEVELOPER_AUDIT_FILE, JSON.stringify(entry) + '\n');
+  } catch {}
+}
+
+function readShayDeveloperModeAudit(limit) {
+  const max = Number(limit) > 0 ? Math.min(500, Number(limit)) : getShayDeveloperModeSettings().audit_log_limit;
+  if (!fs.existsSync(SHAY_DEVELOPER_AUDIT_FILE)) return [];
+  try {
+    const lines = fs.readFileSync(SHAY_DEVELOPER_AUDIT_FILE, 'utf8').trim().split('\n').filter(Boolean);
+    return lines.slice(-max).reverse().map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function summarizeShayDeveloperMode(settings = getShayDeveloperModeSettings()) {
+  const modeLabels = {
+    observe_only: 'Observe only',
+    propose_changes: 'Propose changes',
+    apply_with_approval: 'Apply with approval',
+    trusted_auto_apply: 'Trusted auto-apply',
+  };
+  return {
+    enabled: settings.enabled,
+    trust_mode: settings.trust_mode,
+    trust_mode_label: modeLabels[settings.trust_mode] || settings.trust_mode,
+    approved_paths: settings.approved_paths || [],
+    approved_scope_count: Array.isArray(settings.approved_paths) ? settings.approved_paths.length : 0,
+    require_explicit_approval: settings.require_explicit_approval !== false,
+    allow_deploy_triggers: settings.allow_deploy_triggers === true,
+    audit_log_limit: settings.audit_log_limit || 200,
+  };
+}
+
+function hasApprovedPathScope(targetPath, approvedPaths = []) {
+  if (!targetPath) return false;
+  const resolvedTarget = path.resolve(targetPath);
+  return approvedPaths.some(scopePath => {
+    const resolvedScope = path.resolve(scopePath);
+    return resolvedTarget === resolvedScope || resolvedTarget.startsWith(resolvedScope + path.sep);
+  });
+}
+
+function isExplicitDeveloperApprovalGranted(context = {}) {
+  return context.developer_mode_approved === true
+    || context.approved === true
+    || context.trusted_auto_apply === true;
+}
+
+function authorizeShayDeveloperAction(action, targetPaths = [], context = {}) {
+  const settings = getShayDeveloperModeSettings();
+  const summary = summarizeShayDeveloperMode(settings);
+  const scopedTargets = (targetPaths || []).map(p => path.resolve(p));
+  const allTargetsInScope = scopedTargets.length > 0 && scopedTargets.every(target => hasApprovedPathScope(target, settings.approved_paths));
+  const approvalGranted = isExplicitDeveloperApprovalGranted(context);
+
+  if (!settings.enabled) {
+    return {
+      allowed: false,
+      summary,
+      reason: 'Developer Mode is off.',
+      status: 'disabled',
+    };
+  }
+  if (settings.trust_mode === 'observe_only') {
+    return {
+      allowed: false,
+      summary,
+      reason: 'Developer Mode is in Observe only.',
+      status: 'observe_only',
+    };
+  }
+  if (settings.trust_mode === 'propose_changes') {
+    return {
+      allowed: false,
+      summary,
+      reason: 'Developer Mode can propose changes but not apply them.',
+      status: 'propose_only',
+    };
+  }
+  if (!allTargetsInScope) {
+    return {
+      allowed: false,
+      summary,
+      reason: 'Requested write paths are outside the approved Developer Mode scope.',
+      status: 'out_of_scope',
+    };
+  }
+  if (action === 'deploy_trigger' && !settings.allow_deploy_triggers) {
+    return {
+      allowed: false,
+      summary,
+      reason: 'Deploy triggers are disabled for Developer Mode.',
+      status: 'deploy_blocked',
+    };
+  }
+  if (settings.trust_mode === 'apply_with_approval' && settings.require_explicit_approval !== false && !approvalGranted) {
+    return {
+      allowed: false,
+      summary,
+      reason: 'This action requires explicit approval in Apply with approval mode.',
+      status: 'approval_required',
+    };
+  }
+  return {
+    allowed: true,
+    summary,
+    reason: null,
+    status: settings.trust_mode,
+  };
 }
 
 app.get('/api/blueprint', (req, res) => {
@@ -4987,6 +5388,102 @@ app.get('/api/components/:id', (req, res) => {
   try {
     res.json(JSON.parse(fs.readFileSync(compPath, 'utf8')));
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+function normalizeComponentImportPayload(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const componentId = String(source.component_id || source.id || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+  if (!componentId) throw new Error('component_id required');
+
+  const htmlTemplate = String(source.html_template || source.html || '').trim();
+  if (!htmlTemplate) throw new Error('html_template required');
+
+  const normalized = {
+    component_id: componentId,
+    id: componentId,
+    name: String(source.name || componentId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
+    type: String(source.type || 'generic'),
+    version: String(source.version || '1.0'),
+    description: String(source.description || ''),
+    created_from: source.created_from || source.extracted_from || 'imported',
+    created_at: source.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    html_template: htmlTemplate,
+    css: source.css && typeof source.css === 'object' ? source.css : {
+      variables: source.css_variables || {},
+      local: source.css_local || source.css_text || '',
+    },
+    js: source.js && typeof source.js === 'object' ? source.js : {
+      local: source.js_local || source.js_text || '',
+    },
+    content_fields: Array.isArray(source.content_fields) ? source.content_fields : [],
+    slots: Array.isArray(source.slots) ? source.slots : [],
+    dependencies: source.dependencies && typeof source.dependencies === 'object'
+      ? source.dependencies
+      : { css: [], js: [], external: [], fonts: [] },
+    dependency_manifest: source.dependency_manifest && typeof source.dependency_manifest === 'object'
+      ? source.dependency_manifest
+      : null,
+    css_variables: source.css_variables || source.css?.variables || {},
+    slot_schema: Array.isArray(source.slot_schema) ? source.slot_schema : [],
+    field_schema: Array.isArray(source.field_schema) ? source.field_schema : [],
+    preview_assets: Array.isArray(source.preview_assets) ? source.preview_assets : [],
+    demo_assets: Array.isArray(source.demo_assets) ? source.demo_assets : [],
+    usage_count: Number(source.usage_count || 0),
+    tags: Array.isArray(source.tags) ? source.tags : [],
+  };
+
+  return normalized;
+}
+
+app.post('/api/components/import', (req, res) => {
+  try {
+    const component = normalizeComponentImportPayload(req.body && (req.body.component || req.body));
+    const compDir = path.join(HUB_ROOT, 'components', component.component_id);
+    fs.mkdirSync(compDir, { recursive: true });
+    fs.writeFileSync(path.join(compDir, 'component.json'), JSON.stringify(component, null, 2));
+    fs.writeFileSync(path.join(compDir, `${component.component_id}.html`), component.html_template);
+    if (component.css && component.css.local) {
+      fs.writeFileSync(path.join(compDir, `${component.component_id}.css`), String(component.css.local));
+    }
+    if (component.js && component.js.local) {
+      fs.writeFileSync(path.join(compDir, `${component.component_id}.js`), String(component.js.local));
+    }
+
+    const libPath = path.join(HUB_ROOT, 'components', 'library.json');
+    let lib = { version: '1.0', components: [] };
+    if (fs.existsSync(libPath)) {
+      try { lib = JSON.parse(fs.readFileSync(libPath, 'utf8')); } catch {}
+    }
+    lib.components = (lib.components || []).filter(c => (c.component_id || c.id) !== component.component_id);
+    lib.components.push({
+      id: component.component_id,
+      component_id: component.component_id,
+      name: component.name,
+      type: component.type,
+      version: component.version,
+      created_from: component.created_from,
+      created_at: component.created_at,
+      updated_at: component.updated_at,
+      field_count: component.content_fields.length,
+      slot_count: component.slots.length,
+      css_variables: Object.keys(component.css_variables || {}),
+      used_in: Array.isArray(component.sites_using) ? component.sites_using : [],
+      path: component.component_id,
+      description: component.description || `${component.type} component import`,
+    });
+    lib.last_updated = new Date().toISOString();
+    fs.writeFileSync(libPath, JSON.stringify(lib, null, 2));
+
+    syncSkillFromComponent(component);
+    res.json({ success: true, component });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Export a section from the current site as a component
@@ -5257,6 +5754,29 @@ app.get('/api/capability-manifest', async (req, res) => {
   }
 });
 
+app.get('/api/shay-shay/session-init', async (req, res) => {
+  try {
+    const manifest = loadManifest() || await buildCapabilityManifest();
+    const agentCards = loadShayShayAgentCards();
+    const diff = require('./lib/capability-manifest').diffStateVsManifest(manifest);
+    const developerMode = summarizeShayDeveloperMode();
+    const recentAudit = readShayDeveloperModeAudit(5);
+    res.json({
+      ok: true,
+      generated_at: new Date().toISOString(),
+      manifest,
+      diff,
+      agent_cards: agentCards,
+      active_site: TAG,
+      active_page: currentPage || 'index.html',
+      developer_mode: developerMode,
+      developer_audit: recentAudit,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Shay-Shay orchestrator endpoint — separate from Studio chat WebSocket
 app.post('/api/shay-shay', async (req, res) => {
   try {
@@ -5443,6 +5963,11 @@ function buildShayShaySiteSnapshot(context = {}) {
   const approvedDecisions = Array.isArray(spec.design_decisions)
     ? spec.design_decisions.filter(d => d && d.status === 'approved').length
     : 0;
+  const uiState = (context && typeof context.ui_state === 'object' && context.ui_state) ? context.ui_state : {};
+  const workspaceState = (context && typeof context.workspace_state === 'object' && context.workspace_state) ? context.workspace_state : {};
+  const componentState = (context && typeof context.component_state === 'object' && context.component_state) ? context.component_state : {};
+  const previewState = (context && typeof context.preview_state === 'object' && context.preview_state) ? context.preview_state : {};
+  const developerMode = summarizeShayDeveloperMode();
 
   return {
     site_tag: context.active_site || TAG || null,
@@ -5459,6 +5984,67 @@ function buildShayShaySiteSnapshot(context = {}) {
     deployed_url: (spec.environments && spec.environments.production && spec.environments.production.url) || spec.deployed_url || null,
     last_deploy_status: lastDeploy && lastDeploy.status ? lastDeploy.status : null,
     brief_summary: summarizeDesignBrief(spec.design_brief),
+    ui_state: {
+      pip_badge_count: uiState.pip_badge_count != null ? uiState.pip_badge_count : null,
+      worker_queue_pending_count: uiState.worker_queue_pending_count != null ? uiState.worker_queue_pending_count : null,
+      worker_queue_badge_visible: uiState.worker_queue_badge_visible != null ? uiState.worker_queue_badge_visible : null,
+      context_job_count: uiState.context_job_count != null ? uiState.context_job_count : null,
+      context_diff_count: uiState.context_diff_count != null ? uiState.context_diff_count : null,
+      shay_orb_state: uiState.shay_orb_state || null,
+      shay_desk_has_transcript: uiState.shay_desk_has_transcript != null ? uiState.shay_desk_has_transcript : null,
+      shay_mode: uiState.shay_mode || null,
+      step_log_visible: uiState.step_log_visible != null ? uiState.step_log_visible : null,
+      step_log_items: Array.isArray(uiState.step_log_items) ? uiState.step_log_items : [],
+      intelligence_finding_cards_visible: uiState.intelligence_finding_cards_visible != null ? uiState.intelligence_finding_cards_visible : null,
+      research_items_visible: uiState.research_items_visible != null ? uiState.research_items_visible : null,
+      dismissed_prompt_keys: Array.isArray(uiState.dismissed_prompt_keys) ? uiState.dismissed_prompt_keys : [],
+      validation: uiState.validation && typeof uiState.validation === 'object' ? uiState.validation : null,
+    },
+    workspace_state: {
+      active_rail: workspaceState.active_rail || context.active_rail || null,
+      sidebar_collapsed: workspaceState.sidebar_collapsed != null ? workspaceState.sidebar_collapsed : null,
+      sidebar_visible: workspaceState.sidebar_visible != null ? workspaceState.sidebar_visible : null,
+      active_mode: workspaceState.active_mode || null,
+      active_tab: workspaceState.active_tab || context.active_tab || null,
+      active_page: workspaceState.active_page || context.active_page || currentPage || null,
+      workspace_layout: workspaceState.workspace_layout || null,
+      inspector_pinned: workspaceState.inspector_pinned != null ? workspaceState.inspector_pinned : null,
+      inspector_open: workspaceState.inspector_open != null ? workspaceState.inspector_open : null,
+      selected_context: workspaceState.selected_context || null,
+      return_stack: Array.isArray(workspaceState.return_stack) ? workspaceState.return_stack : [],
+      open_tabs: Array.isArray(workspaceState.open_tabs) ? workspaceState.open_tabs : [],
+      hierarchy_summary: workspaceState.hierarchy_summary || null,
+    },
+    component_state: {
+      selected_context: componentState.selected_context || null,
+      return_stack: Array.isArray(componentState.return_stack) ? componentState.return_stack : [],
+      media_workspace: componentState.media_workspace || null,
+      brief_workspace: componentState.brief_workspace || null,
+    },
+    preview_state: {
+      active_page: previewState.active_page || context.active_page || currentPage || null,
+      current_view_mode: previewState.current_view_mode || null,
+      slot_mode_active: previewState.slot_mode_active != null ? previewState.slot_mode_active : null,
+      current_slot_target: previewState.current_slot_target || null,
+      preview_src: previewState.preview_src || null,
+      preview_visible: previewState.preview_visible != null ? previewState.preview_visible : null,
+      device_mode: previewState.device_mode || null,
+      preview_port: previewState.preview_port != null ? previewState.preview_port : null,
+    },
+    developer_mode: developerMode,
+    visibility_contract: {
+      can_see: [
+        'active site snapshot fields',
+        'active page and active tab from client context',
+        'explicit ui_state fields included by the browser payload',
+        'workspace_state, component_state, and preview_state serialized from browser memory'
+      ],
+      cannot_see_without_wiring: [
+        'live DOM text not serialized into ui_state',
+        'arbitrary rendered component state',
+        'browser memory that is not included in the snapshot payload'
+      ]
+    }
   };
 }
 
@@ -5475,6 +6061,13 @@ function summarizeDesignBrief(brief) {
 }
 
 function answerShayShayDirect(lower, siteSnapshot, manifest) {
+  if (/\b(developer\s+mode|trust\s+mode|auto-apply|approval\s+mode)\b/.test(lower)) {
+    const mode = siteSnapshot.developer_mode || {};
+    return {
+      intent: 'developer_mode_status',
+      response: `Developer Mode is ${mode.enabled ? 'enabled' : 'off'}. Trust mode: ${mode.trust_mode_label || mode.trust_mode || 'Observe only'}. Approved paths: ${mode.approved_scope_count || 0}. Deploy triggers: ${mode.allow_deploy_triggers ? 'enabled' : 'blocked'}.`,
+    };
+  }
   if (/\b(active\s+site|what\s+site|which\s+site|current\s+site)\b/.test(lower)) {
     const siteLabel = siteSnapshot.site_name
       ? `${siteSnapshot.site_name} (${siteSnapshot.site_tag})`
@@ -5517,6 +6110,20 @@ function answerShayShayDirect(lower, siteSnapshot, manifest) {
     return {
       intent: 'site_summary',
       response: `This is ${siteSnapshot.site_name || siteSnapshot.site_tag || 'the active site'}. Business type: ${siteSnapshot.business_type || 'not set'}. Pages: ${siteSnapshot.page_count || 0}. Empty media slots: ${siteSnapshot.media_slots_empty}/${siteSnapshot.media_slots_total}. Brief summary: ${siteSnapshot.brief_summary}`
+    };
+  }
+
+  if (/\b(badge\s+count|what\s+is\s+the\s+badge|worker\s+queue)\b/.test(lower)) {
+    const ui = siteSnapshot.ui_state || {};
+    if (ui.worker_queue_pending_count != null) {
+      return {
+        intent: 'badge_count',
+        response: `The worker queue badge count is ${ui.worker_queue_pending_count}. The Shay orb badge count is ${ui.pip_badge_count != null ? ui.pip_badge_count : 'not present in my payload'}.`
+      };
+    }
+    return {
+      intent: 'badge_count_missing',
+      response: 'I do not have the UI badge values in my payload yet. That is a NOT_CONNECTED gap: I need `ui_state.worker_queue_pending_count` and `ui_state.pip_badge_count` in the snapshot.'
     };
   }
 
@@ -6065,10 +6672,38 @@ async function runAutonomousBuild(message, context = {}) {
   };
 
   try {
+    const approval = authorizeShayDeveloperAction('site_write', [SITES_ROOT], context);
+    logShayDeveloperModeEvent({
+      event: 'autonomous_build_requested',
+      actor: 'shay',
+      status: approval.allowed ? 'allowed' : approval.status,
+      trust_mode: approval.summary && approval.summary.trust_mode,
+      target_paths: [SITES_ROOT],
+      message_preview: String(message || '').slice(0, 180),
+    });
+    if (!approval.allowed) {
+      return {
+        success: false,
+        blocked_by_developer_mode: true,
+        developer_mode: approval.summary,
+        log,
+        message: `Developer Mode blocked this autonomous build. ${approval.reason}`,
+        error: approval.reason,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+
     // Step 1: Extract brief
     step('Extracting brief');
     const brief = await extractBriefFromMessage(message);
     step('Brief extracted', { tag: brief.tag, name: brief.business_name, revenue: brief.revenue_model });
+    logShayDeveloperModeEvent({
+      event: 'autonomous_build_brief_extracted',
+      actor: 'shay',
+      status: 'ok',
+      trust_mode: approval.summary.trust_mode,
+      target_site_tag: brief.tag,
+    });
 
     // Step 2: Create site (with brief pre-loaded)
     step('Creating site', { tag: brief.tag });
@@ -6091,6 +6726,14 @@ async function runAutonomousBuild(message, context = {}) {
       fs.writeFileSync(tmpPath, JSON.stringify(existSpec, null, 2));
       fs.renameSync(tmpPath, path.join(existingDir, 'spec.json'));
       step('Site exists — brief updated');
+      logShayDeveloperModeEvent({
+        event: 'site_write',
+        actor: 'shay',
+        status: 'updated_existing',
+        trust_mode: approval.summary.trust_mode,
+        target_paths: [existingDir],
+        target_site_tag: brief.tag,
+      });
     } else {
       // Create fresh
       const distDir = path.join(existingDir, 'dist');
@@ -6117,6 +6760,14 @@ async function runAutonomousBuild(message, context = {}) {
       fs.writeFileSync(newSpecPath + '.tmp', JSON.stringify(newSpec, null, 2));
       fs.renameSync(newSpecPath + '.tmp', newSpecPath);
       step('Site created');
+      logShayDeveloperModeEvent({
+        event: 'site_write',
+        actor: 'shay',
+        status: 'created_site',
+        trust_mode: approval.summary.trust_mode,
+        target_paths: [existingDir],
+        target_site_tag: brief.tag,
+      });
     }
 
     // Step 2b: Synthesize design_brief from client_brief so classifier routes
@@ -6147,6 +6798,14 @@ async function runAutonomousBuild(message, context = {}) {
       fs.writeFileSync(tmpP, JSON.stringify(specToUpdate, null, 2));
       fs.renameSync(tmpP, path.join(SITES_ROOT, brief.tag, 'spec.json'));
       step('design_brief synthesized');
+      logShayDeveloperModeEvent({
+        event: 'site_write',
+        actor: 'shay',
+        status: 'design_brief_synthesized',
+        trust_mode: approval.summary.trust_mode,
+        target_paths: [path.join(SITES_ROOT, brief.tag)],
+        target_site_tag: brief.tag,
+      });
     }
 
     // Step 3: Switch to the new site
@@ -6171,6 +6830,13 @@ async function runAutonomousBuild(message, context = {}) {
       }
     });
     step('Site switched, clients notified');
+    logShayDeveloperModeEvent({
+      event: 'site_switch',
+      actor: 'shay',
+      status: 'ok',
+      trust_mode: approval.summary.trust_mode,
+      target_site_tag: brief.tag,
+    });
 
     // Step 4: Trigger build directly via routeToHandler with a mock WS.
     // IMPORTANT: Cannot call handleChatMessage twice — it self-blocks via buildInProgress.
@@ -6212,8 +6878,25 @@ async function runAutonomousBuild(message, context = {}) {
     try {
       routeToHandler(mockWs, 'build', buildMsg, builtSpec);
       step('Build dispatched via routeToHandler');
+      logShayDeveloperModeEvent({
+        event: 'build_trigger',
+        actor: 'shay',
+        status: 'dispatched',
+        trust_mode: approval.summary.trust_mode,
+        target_paths: [path.join(SITES_ROOT, brief.tag)],
+        target_site_tag: brief.tag,
+      });
     } catch (routeErr) {
       step('routeToHandler error', { error: routeErr.message });
+      logShayDeveloperModeEvent({
+        event: 'build_trigger',
+        actor: 'shay',
+        status: 'error',
+        trust_mode: approval.summary.trust_mode,
+        target_paths: [path.join(SITES_ROOT, brief.tag)],
+        target_site_tag: brief.tag,
+        error: routeErr.message,
+      });
     }
 
     const wsClients = [...wss.clients].filter(c => c.readyState === 1).length;
@@ -8016,6 +8699,19 @@ app.post('/api/media/log', (req, res) => {
   res.json({ success: true, entry });
 });
 
+app.post('/api/media/generate-asset', async (req, res) => {
+  try {
+    const assetType = String(req.body?.asset_type || 'icon').toLowerCase();
+    const description = String(req.body?.description || '').trim();
+    const allowed = ['logo', 'icon', 'hero', 'divider', 'favicon', 'banner', 'illustration'];
+    if (!allowed.includes(assetType)) return res.status(400).json({ error: 'Unsupported asset_type' });
+    const result = await generateAsset(assetType, description);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/media/usage', (req, res) => {
   const { provider, site } = req.query;
   const options = {};
@@ -8237,6 +8933,8 @@ app.get('/api/settings', (req, res) => {
       delete safe[section][key];
     }
   }
+  safe.developer_mode = summarizeShayDeveloperMode(settings.developer_mode);
+  safe.shay_lite_settings = normalizeShayLiteSettings(settings.shay_lite_settings);
   res.json(safe);
 });
 
@@ -8245,13 +8943,31 @@ app.put('/api/settings', (req, res) => {
   const allowedKeys = ['model', 'deploy_target', 'deploy_team', 'preview_port', 'studio_port',
     'max_upload_size_mb', 'max_uploads_per_site', 'auto_summary', 'auto_version', 'max_versions',
     'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id', 'brainstorm_profile',
-    'prod_sites_base', 'plan_mode', 'hero_full_width'];
+    'prod_sites_base', 'plan_mode', 'hero_full_width', 'developer_mode', 'shay_lite_settings'];
   const current = loadSettings();
   for (const key of Object.keys(req.body)) {
     if (allowedKeys.includes(key)) current[key] = req.body[key];
   }
   saveSettings(current);
+  logShayDeveloperModeEvent({
+    event: 'settings_updated',
+    actor: 'user',
+    status: 'saved',
+    developer_mode: summarizeShayDeveloperMode(current.developer_mode),
+  });
   res.json(current);
+});
+
+app.get('/api/shay-shay/developer-mode/audit', (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      developer_mode: summarizeShayDeveloperMode(),
+      entries: readShayDeveloperModeAudit(req.query.limit),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // --- Enhancement Pass Detector ---
@@ -10231,6 +10947,7 @@ function runPostProcessing(ws, writtenPages, options = {}) {
 
   // Step 2.5: Sync content fields from generated HTML to spec (new fields only — spec is authoritative)
   syncContentFieldsFromHtml(writtenPages);
+  ensureComponentAnchors(writtenPages);
 
   // Step 3: Metadata
   updateBlueprint(writtenPages);
@@ -14540,38 +15257,64 @@ function syncSiteRepo(ws, spec, targetBranch, callback) {
   });
 }
 
-// --- Run asset-generate script ---
-function runAssetGenerate(ws, assetType, description) {
+function generateAsset(assetType, description) {
   const scriptPath = path.join(HUB_ROOT, 'scripts', 'asset-generate');
   const args = [TAG, assetType];
   if (description) args.push(description);
-  const child = spawn(scriptPath, args, {
-    env: process.env,
-    cwd: HUB_ROOT,
+  return new Promise((resolve, reject) => {
+    const child = spawn(scriptPath, args, {
+      env: process.env,
+      cwd: HUB_ROOT,
+    });
+
+    let output = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk.toString();
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+      console.error('[asset]', chunk.toString());
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        const filename = `${assetType}.svg`;
+        const pngPath = `/assets/${assetType}.png`;
+        const extraFiles = assetType === 'favicon'
+          ? ['/assets/favicon-16.png', '/assets/favicon-32.png', '/assets/favicon-48.png']
+          : [];
+        resolve({
+          success: true,
+          asset_type: assetType,
+          filename,
+          path: `/assets/${filename}`,
+          png_path: (assetType === 'logo' || assetType === 'icon') ? pngPath : null,
+          extra_files: extraFiles,
+          log: output.trim(),
+        });
+      } else {
+        reject(new Error(stderr.trim() || `Failed to generate ${assetType}`));
+      }
+    });
   });
+}
 
-  let output = '';
-
-  child.stdout.on('data', (chunk) => {
-    output += chunk.toString();
-    ws.send(JSON.stringify({ type: 'status', content: chunk.toString().trim() }));
-  });
-
-  child.stderr.on('data', (chunk) => {
-    console.error('[asset]', chunk.toString());
-  });
-
-  child.on('close', (code) => {
-    if (code === 0) {
-      const filename = `${assetType}.svg`;
+// --- Run asset-generate script ---
+function runAssetGenerate(ws, assetType, description) {
+  generateAsset(assetType, description)
+    .then((result) => {
+      const statusLines = String(result.log || '').split('\n').filter(Boolean);
+      statusLines.forEach((line) => {
+        ws.send(JSON.stringify({ type: 'status', content: line.trim() }));
+      });
       ws.send(JSON.stringify({ type: 'assistant', content: `${assetType} generated! Check the preview.` }));
-      ws.send(JSON.stringify({ type: 'asset-created', filename, path: `/assets/${filename}` }));
+      ws.send(JSON.stringify({ type: 'asset-created', filename: result.filename, path: result.path }));
       ws.send(JSON.stringify({ type: 'reload-preview' }));
       appendConvo({ role: 'assistant', content: `Generated ${assetType} asset`, at: new Date().toISOString() });
-    } else {
-      ws.send(JSON.stringify({ type: 'error', content: `Failed to generate ${assetType}. Check logs.` }));
-    }
-  });
+    })
+    .catch((err) => {
+      ws.send(JSON.stringify({ type: 'error', content: err.message || `Failed to generate ${assetType}. Check logs.` }));
+    });
 }
 
 // --- Helpers ---
@@ -15001,7 +15744,7 @@ const previewServer = http.createServer((req, res) => {
   let content = fs.readFileSync(filePath);
 
   if (ext === '.html') {
-    content = content.toString().replace('</body>', RELOAD_SCRIPT + '</body>');
+    content = content.toString().replace('</body>', buildPreviewSelectionBridgeScript() + RELOAD_SCRIPT + '</body>');
   }
 
   res.writeHead(200, { 'Content-Type': mime });
@@ -15186,6 +15929,7 @@ module.exports = {
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
   classifyShayShayReasoning, selectShayShayBrain, normalizeShayShayResponse, answerShayShayDirect,
+  normalizeShayLiteSettings,
   extractTemplateComponents, loadTemplateContext, applyTemplateToPages, writeTemplateArtifacts,
   // Verification + auto-fix
   verifySlotAttributes, verifyCssCoherence, verifyCrossPageConsistency,

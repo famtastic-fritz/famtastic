@@ -1,5 +1,11 @@
 # FAMtastic Changelog
 
+## 2026-04-21 — Shay Lite system pass + Media Studio mini-app redesign
+
+Shipped a substantial Studio shell and media workflow pass. Shay Lite now has a real persisted settings contract in `server.js` (`shay_lite_settings`) with identity mode, default identity, remember-last, proactive behavior, event reaction intensity, and character placeholders. On the client, Lite identities are now mutually exclusive (`character`, `orb_classic`, `mini_panel`) with Character as the first-run default, Classic Orb preserved as a fallback, explicit quick-ask behavior, a shared Lite surface state machine (`idle`, `prompting`, `thinking`, `responding`, `alerting`, `show_me`), and proactive nudges gated through settings rather than always firing. Mission Control was restored as a visible workspace alongside Intelligence. Shay Lite can now also be dragged and its position persists locally.
+
+Media Studio was restructured into a clearer mini-app rather than a crowded drawer-based workspace. Internal nav now reads as `Create`, `Image`, `Motion`, `Library`, `Brand`, `Queue / History`, and `Providers`. `Create` became a prompt-first landing surface with stacked rows, larger visual staging, quieter controls, recent result rails, explicit provider status, and persistent Shay access. `Library` now behaves more like a gallery with a large visual grid, selection detail, and send-to-Shay / Brand Kit / slot actions. A separate `Motion / Video` surface now makes the current backend gap explicit: motion planning exists, but direct video generation is not yet wired. The right panel was softened into a companion surface rather than a dominant utility drawer.
+
 ## 2026-04-20 — Phase 7: FAMtastic logo + FAMtastic.com site
 
 Created the FAMtastic brand logo SVG (8-point starburst icon + red/gold wordmark) and replaced the plain text in the Studio top bar with the SVG image. Built the `site-famtastic-com` site: spec.json with approved brief (platform marketing — hero, how-it-works, portfolio proof, pricing, CTA, footer), full HTML with `.fam-hero-layered` BEM layers and animated starburst, complete brand stylesheet with diagonal divider clip-paths and pure-CSS mobile nav. Site is in `draft` state ready for Studio build pipeline. Portfolio cards are placeholder-colored divs — real screenshots deferred.

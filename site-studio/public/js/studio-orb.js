@@ -16,17 +16,40 @@
   let idleTimer = null;
   let highlightEl = null;
   let currentOrbState = 'IDLE'; // IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE | SHAY_THINKING
+  let shayDeskHasTranscript = false;
+  let liteSurfaceState = 'idle'; // idle | prompting | thinking | responding | alerting | show_me
+  let shayLiteSettings = {
+    identity_mode: 'character',
+    default_identity_mode: 'character',
+    remember_last_identity: true,
+    proactive_behavior: 'context_nudges',
+    allow_proactive_messages: true,
+    event_reaction_intensity: 'balanced',
+    character_style: 'default',
+    character_variant: 'shay-default'
+  };
+  const SHAY_LITE_IDENTITY_KEY = 'shay-lite-last-identity';
+  const SHAY_LITE_POSITION_KEY = 'shay-lite-position';
+  let suppressNextOrbClick = false;
+  let dragState = null;
 
   // ── Init ────────────────────────────────────────────────────────────────
   function init() {
     const orb = document.getElementById('pip-orb');
     if (!orb) return;
 
-    // Left-click orb → toggle floating callout (Show Me mode only now)
+    loadShayLiteSettings();
+    loadLitePosition();
+
+    // Left-click orb → open the active Lite surface with quick ask ready
     orb.addEventListener('click', (e) => {
       if (e.button !== 0) return;
+      if (suppressNextOrbClick) {
+        suppressNextOrbClick = false;
+        return;
+      }
       e.stopPropagation();
-      toggleCallout();
+      toggleLitePanel({ focusInput: true });
     });
 
     // Right-click → mode selector popup
@@ -38,8 +61,10 @@
     // Close floating callout on backdrop click
     document.addEventListener('click', (e) => {
       const orbEl = document.getElementById('pip-orb');
-      if (!orbEl || !orbEl.contains(e.target)) {
+      const panelEl = document.getElementById('shay-lite-panel');
+      if ((!orbEl || !orbEl.contains(e.target)) && (!panelEl || !panelEl.contains(e.target))) {
         closeModePopup();
+        if (getIdentityMode() !== 'mini_panel') closeLitePanel();
       }
     });
 
@@ -54,12 +79,15 @@
 
     // Wire direct input in column
     initDirectInput();
+    initLiteDragging();
 
     // Dynamic area starts in IDLE state — loads validation plan or placeholder
     setOrbState('IDLE');
 
     // Start idle pulse animation
     orb.classList.add('pip-idle');
+    applyLiteSurfaceState('idle');
+    closeLitePanel();
 
     // Trigger 1: welcome message — now only shows in the dynamic area placeholder,
     // not auto-populating the response column. Column stays clean on load.
@@ -77,6 +105,13 @@
 
     // Subscribe to worker queue updates
     window.addEventListener('pip:worker-queue-updated', onWorkerQueueUpdate);
+    window.addEventListener('studio:workspace-chrome', syncLiteShellPositioning);
+    window.addEventListener('studio:shay-lite-settings-updated', function (event) {
+      shayLiteSettings = normalizeShayLiteSettings(event && event.detail);
+      applyIdentityMode(shayLiteSettings.identity_mode, { fromSettings: true, silent: true });
+      renderIdentitySwitch();
+      syncDeskModeSummary();
+    });
 
     // Watch step-log appearance to toggle active glow
     const observer = new MutationObserver(() => {
@@ -95,17 +130,267 @@
     if (messages) observer.observe(messages, { childList: true });
   }
 
+  function loadLitePosition() {
+    try {
+      var raw = localStorage.getItem(SHAY_LITE_POSITION_KEY);
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.x !== 'number' || typeof parsed.y !== 'number') return;
+      applyLiteCustomPosition(parsed);
+    } catch (_) {}
+  }
+
+  function saveLitePosition(pos) {
+    try {
+      if (!pos) localStorage.removeItem(SHAY_LITE_POSITION_KEY);
+      else localStorage.setItem(SHAY_LITE_POSITION_KEY, JSON.stringify(pos));
+    } catch (_) {}
+  }
+
+  function applyLiteCustomPosition(pos) {
+    var shell = document.getElementById('shay-lite-shell');
+    if (!shell) return;
+    if (!pos) {
+      shell.classList.remove('is-custom-position');
+      shell.style.left = '';
+      shell.style.top = '';
+      shell.style.right = '';
+      shell.style.bottom = '';
+      saveLitePosition(null);
+      return;
+    }
+    shell.classList.add('is-custom-position');
+    shell.style.left = Math.round(pos.x) + 'px';
+    shell.style.top = Math.round(pos.y) + 'px';
+    shell.style.right = 'auto';
+    shell.style.bottom = 'auto';
+    saveLitePosition({ x: Math.round(pos.x), y: Math.round(pos.y) });
+  }
+
+  function clampLitePosition(pos) {
+    var shell = document.getElementById('shay-lite-shell');
+    var orb = document.getElementById('pip-orb');
+    var width = (shell && shell.getBoundingClientRect().width) || (orb && orb.getBoundingClientRect().width) || 74;
+    var height = (shell && shell.getBoundingClientRect().height) || (orb && orb.getBoundingClientRect().height) || 74;
+    var maxX = Math.max(8, window.innerWidth - width - 8);
+    var maxY = Math.max(8, window.innerHeight - height - 8);
+    return {
+      x: Math.min(Math.max(8, pos.x), maxX),
+      y: Math.min(Math.max(8, pos.y), maxY)
+    };
+  }
+
+  function initLiteDragging() {
+    var orb = document.getElementById('pip-orb');
+    var shell = document.getElementById('shay-lite-shell');
+    if (!orb || !shell) return;
+
+    orb.addEventListener('pointerdown', function (event) {
+      if (event.button !== 0) return;
+      var shellRect = shell.getBoundingClientRect();
+      dragState = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        originX: shell.classList.contains('is-custom-position') ? shellRect.left : event.clientX - 74,
+        originY: shell.classList.contains('is-custom-position') ? shellRect.top : event.clientY - 74,
+        dragging: false
+      };
+      orb.setPointerCapture(event.pointerId);
+    });
+
+    orb.addEventListener('pointermove', function (event) {
+      if (!dragState || dragState.pointerId !== event.pointerId) return;
+      var dx = event.clientX - dragState.startX;
+      var dy = event.clientY - dragState.startY;
+      if (!dragState.dragging && Math.abs(dx) + Math.abs(dy) < 8) return;
+      dragState.dragging = true;
+      var next = clampLitePosition({
+        x: dragState.originX + dx,
+        y: dragState.originY + dy
+      });
+      applyLiteCustomPosition(next);
+    });
+
+    function finishDrag(event) {
+      if (!dragState || dragState.pointerId !== event.pointerId) return;
+      if (dragState.dragging) suppressNextOrbClick = true;
+      dragState = null;
+    }
+
+    orb.addEventListener('pointerup', finishDrag);
+    orb.addEventListener('pointercancel', finishDrag);
+    window.addEventListener('resize', function () {
+      if (!shell.classList.contains('is-custom-position')) return;
+      applyLiteCustomPosition(clampLitePosition({
+        x: parseFloat(shell.style.left) || 8,
+        y: parseFloat(shell.style.top) || 8
+      }));
+    });
+  }
+
+  function normalizeShayLiteSettings(raw) {
+    raw = raw || {};
+    var identityModes = ['character', 'orb_classic', 'mini_panel'];
+    var proactiveModes = ['off', 'context_nudges', 'active_assist'];
+    var reactionModes = ['quiet', 'balanced', 'expressive'];
+    return {
+      identity_mode: identityModes.indexOf(raw.identity_mode) !== -1 ? raw.identity_mode : 'character',
+      default_identity_mode: identityModes.indexOf(raw.default_identity_mode) !== -1 ? raw.default_identity_mode : 'character',
+      remember_last_identity: raw.remember_last_identity !== false,
+      proactive_behavior: proactiveModes.indexOf(raw.proactive_behavior) !== -1 ? raw.proactive_behavior : 'context_nudges',
+      allow_proactive_messages: raw.allow_proactive_messages !== false,
+      event_reaction_intensity: reactionModes.indexOf(raw.event_reaction_intensity) !== -1 ? raw.event_reaction_intensity : 'balanced',
+      character_style: raw.character_style || 'default',
+      character_variant: raw.character_variant || 'shay-default'
+    };
+  }
+
+  function loadShayLiteSettings() {
+    fetch('/api/settings').then(function (r) { return r.json(); }).then(function (settings) {
+      shayLiteSettings = normalizeShayLiteSettings(settings && settings.shay_lite_settings);
+      var initialMode = shayLiteSettings.default_identity_mode || 'character';
+      if (shayLiteSettings.remember_last_identity) {
+        var remembered = localStorage.getItem(SHAY_LITE_IDENTITY_KEY);
+        if (remembered) initialMode = remembered;
+      }
+      applyIdentityMode(initialMode, { fromSettings: true, silent: true });
+      renderIdentitySwitch();
+      syncDeskModeSummary();
+    }).catch(function () {
+      shayLiteSettings = normalizeShayLiteSettings(shayLiteSettings);
+      applyIdentityMode(shayLiteSettings.default_identity_mode || 'character', { silent: true });
+      renderIdentitySwitch();
+      syncDeskModeSummary();
+    });
+  }
+
+  function syncDeskModeSummary() {
+    var summary = document.getElementById('shay-desk-mode-summary');
+    if (!summary) return;
+    summary.textContent = 'Current Lite identity: ' + identityLabel(getIdentityMode()) + '. Proactive behavior: ' + humanizeLabel(shayLiteSettings.proactive_behavior) + '. Drag Shay Lite to reposition, or switch identity from Lite or Assistant settings.';
+  }
+
+  function renderIdentitySwitch() {
+    var mount = document.getElementById('shay-lite-mode-switch');
+    if (!mount) return;
+    mount.innerHTML = '';
+    ['character', 'orb_classic', 'mini_panel'].forEach(function (mode) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'shay-lite-mode-btn' + (mode === getIdentityMode() ? ' active' : '');
+      btn.textContent = identityLabel(mode);
+      btn.addEventListener('click', function () {
+        applyIdentityMode(mode);
+        renderIdentitySwitch();
+        syncDeskModeSummary();
+      });
+      mount.appendChild(btn);
+    });
+  }
+
+  function identityLabel(mode) {
+    if (mode === 'orb_classic') return 'Classic Orb';
+    if (mode === 'mini_panel') return 'Mini Panel';
+    return 'Character';
+  }
+
+  function humanizeLabel(value) {
+    return String(value || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+  }
+
+  function getIdentityMode() {
+    return (shayLiteSettings && shayLiteSettings.identity_mode) || 'character';
+  }
+
+  function applyIdentityMode(mode, opts) {
+    opts = opts || {};
+    shayLiteSettings.identity_mode = mode;
+    var shell = document.getElementById('shay-lite-shell');
+    if (shell) shell.dataset.identity = mode;
+    if (shayLiteSettings.remember_last_identity) {
+      try { localStorage.setItem(SHAY_LITE_IDENTITY_KEY, mode); } catch (_) {}
+    }
+    if (mode === 'mini_panel') openLitePanel({ silent: true });
+    else if (!opts.silent) closeLitePanel();
+    if (!opts.fromSettings) {
+      fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shay_lite_settings: shayLiteSettings })
+      }).catch(function () {});
+    }
+    syncLiteShellPositioning();
+  }
+
+  function toggleLitePanel(opts) {
+    var shell = document.getElementById('shay-lite-shell');
+    if (!shell) return;
+    if (shell.dataset.panelOpen === 'true' && getIdentityMode() !== 'mini_panel') {
+      closeLitePanel();
+      return;
+    }
+    openLitePanel(opts);
+  }
+
+  function openLitePanel(opts) {
+    opts = opts || {};
+    var shell = document.getElementById('shay-lite-shell');
+    if (!shell) return;
+    shell.dataset.panelOpen = 'true';
+    if (!opts.silent) applyLiteSurfaceState(liteSurfaceState === 'idle' ? 'prompting' : liteSurfaceState);
+    if (opts.focusInput) {
+      setTimeout(function () {
+        var input = document.getElementById('pip-direct-input');
+        if (input) input.focus();
+      }, 30);
+    }
+  }
+
+  function closeLitePanel() {
+    var shell = document.getElementById('shay-lite-shell');
+    if (!shell || getIdentityMode() === 'mini_panel') return;
+    shell.dataset.panelOpen = 'false';
+    if (liteSurfaceState !== 'thinking') applyLiteSurfaceState('idle');
+  }
+
+  function syncLiteShellPositioning() {
+    var shell = document.getElementById('shay-lite-shell');
+    if (!shell) return;
+    shell.dataset.reaction = shayLiteSettings.event_reaction_intensity || 'balanced';
+  }
+
+  function shouldShowProactiveMessages() {
+    return !!(shayLiteSettings.allow_proactive_messages && shayLiteSettings.proactive_behavior !== 'off');
+  }
+
+  function applyLiteSurfaceState(state) {
+    liteSurfaceState = state || 'idle';
+    var shell = document.getElementById('shay-lite-shell');
+    var orb = document.getElementById('pip-orb');
+    if (shell) shell.dataset.state = liteSurfaceState;
+    if (!orb) return;
+    orb.classList.remove('pip-idle', 'pip-active', 'pip-thinking', 'pip-alerting', 'pip-show-me');
+    if (liteSurfaceState === 'thinking') orb.classList.add('pip-thinking');
+    else if (liteSurfaceState === 'alerting') orb.classList.add('pip-alerting');
+    else if (liteSurfaceState === 'show_me') orb.classList.add('pip-show-me');
+    else if (liteSurfaceState === 'responding' || liteSurfaceState === 'prompting') orb.classList.add('pip-active');
+    else orb.classList.add('pip-idle');
+  }
+
   // ── Trigger: worker queue pending ───────────────────────────────────────
   // Only updates the badge — does NOT auto-populate the column.
   // Column is reserved for validation plan, Show Me, and explicit Shay-Shay responses.
   function onWorkerQueueUpdate(e) {
     const count = (e.detail && e.detail.count) || 0;
-    setBadge(count);
-    // No showMessage() — badge count communicates pending tasks without interrupting the column
+    // Keep the queue event available for future UI affordances, but do not
+    // present worker debt as an undismissable Shay notification badge.
+    window.__pipWorkerQueueCount = count;
   }
 
   // ── Trigger: build complete with low score ───────────────────────────────
   function onBuildComplete(e) {
+    if (!shouldShowProactiveMessages()) return;
     const score = e.detail && e.detail.score;
     const total = (e.detail && e.detail.total) || 5;
     if (score != null && score < total && !isDismissed(TRIGGERS.build_warn)) {
@@ -127,7 +412,7 @@
   function resetIdleTimer() {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(function () {
-      if (window.hasUnsavedWork && !isDismissed(TRIGGERS.idle_unsaved)) {
+      if (shouldShowProactiveMessages() && window.hasUnsavedWork && !isDismissed(TRIGGERS.idle_unsaved)) {
         showMessage(
           'You have unsaved work. Deploy to staging for a checkpoint?',
           [
@@ -142,6 +427,7 @@
   // ── Trigger: briefed idle ────────────────────────────────────────────────
   function checkBriefedIdle() {
     if (isDismissed(TRIGGERS.briefed_idle)) return;
+    if (!shouldShowProactiveMessages()) return;
     const state = window.cachedStudioState;
     if (state && state.state === 'briefed' && !window.buildInProgress) {
       showMessage(
@@ -230,8 +516,7 @@
     // Hide floating callout (used for Show Me mode)
     const callout = document.getElementById('pip-callout');
     if (callout) callout.classList.add('hidden');
-    const orb = document.getElementById('pip-orb');
-    if (orb) { orb.classList.remove('pip-active'); orb.classList.add('pip-idle'); }
+    applyLiteSurfaceState('idle');
     const msgEl    = document.getElementById('pip-callout-msg');
     const actionsEl = document.getElementById('pip-callout-actions');
     if (msgEl) msgEl.textContent = '';
@@ -366,11 +651,15 @@
     var sendBtn = document.getElementById('pip-send-btn');
     if (!input) return;
 
-    function sendDirect() {
-      var text = input.value.trim();
+    function sendDirect(forcedText) {
+      var text = String(forcedText != null ? forcedText : input.value).trim();
       if (!text) return;
       input.value = '';
+      openLitePanel({ silent: true });
+      applyLiteSurfaceState('prompting');
+      appendDeskMessage('user', text);
       showColumnResponse(null, true); // show typing indicator
+      applyLiteSurfaceState('thinking');
       setOrbState('SHAY_THINKING');
       sendToShayShay(text);
     }
@@ -378,7 +667,11 @@
     function getShayShayContext() {
       var ctxPage = window.activePage || (document.getElementById('ctx-active-page') && document.getElementById('ctx-active-page').textContent) || null;
       var ctxTab = window.StudioShell && window.StudioShell.activeTabId ? window.StudioShell.activeTabId : null;
+      var ctxRail = window.StudioShell && window.StudioShell.activeRailItemId ? window.StudioShell.activeRailItemId : null;
       var famScore = null;
+      var clientSnapshot = typeof window.buildShayShayClientSnapshot === 'function'
+        ? window.buildShayShayClientSnapshot()
+        : {};
       if (window.cachedStudioState) {
         if (window.cachedStudioState.fam_score != null) famScore = window.cachedStudioState.fam_score;
         else if (window.cachedStudioState.spec && window.cachedStudioState.spec.fam_score != null) famScore = window.cachedStudioState.spec.fam_score;
@@ -388,6 +681,11 @@
         active_page: ctxPage,
         active_tab: ctxTab,
         fam_score: famScore,
+        active_rail: ctxRail,
+        ui_state: clientSnapshot.ui_state || null,
+        workspace_state: clientSnapshot.workspace_state || null,
+        component_state: clientSnapshot.component_state || null,
+        preview_state: clientSnapshot.preview_state || null,
       };
     }
 
@@ -408,8 +706,7 @@
       }
 
       function exitThinking() {
-        var orb = document.getElementById('pip-orb');
-        if (orb) { orb.classList.remove('pip-thinking'); orb.classList.add('pip-idle'); }
+        applyLiteSurfaceState('responding');
         setOrbState('IDLE');
       }
 
@@ -436,6 +733,7 @@
               window.ws.send(JSON.stringify({ type: 'chat', content: 'restart studio' }));
             }
           } else if (data.action === 'show_me') {
+            applyLiteSurfaceState('show_me');
             showColumnResponse(data.response || 'Opening Show Me\u2026', false);
           } else if (data.action === 'suggest_brainstorm') {
             showColumnResponse(data.response || 'Want to switch to brainstorm mode?', false);
@@ -467,6 +765,7 @@
         .catch(function (err) {
           afterThinking(function () {
             hideTyping();
+            applyLiteSurfaceState('alerting');
             exitThinking();
             showColumnResponse('Error reaching Shay-Shay: ' + err.message, false);
           });
@@ -478,40 +777,78 @@
     });
 
     if (sendBtn) sendBtn.addEventListener('click', sendDirect);
+
+    window.__pipSendDirect = sendDirect;
   }
 
   // ── Column: response area ───────────────────────────────────────────────
-  function showColumnResponse(text, isTyping) {
-    var area = document.getElementById('pip-response-area');
+  function getDeskTranscriptArea() {
+    return document.getElementById('pip-response-area');
+  }
+
+  function updateDeskTranscriptState() {
+    var area = getDeskTranscriptArea();
+    var dynamic = document.getElementById('pip-dynamic-area');
     if (!area) return;
-    area.innerHTML = '';
+    var hasMessages = !!area.querySelector('.pip-msg, .job-plan-card, .pip-typing');
+    shayDeskHasTranscript = hasMessages;
+    area.className = hasMessages ? 'has-content' : '';
+    if (dynamic) dynamic.style.display = hasMessages ? 'none' : '';
+  }
+
+  function scrollDeskTranscriptToBottom() {
+    var area = getDeskTranscriptArea();
+    if (!area) return;
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function appendDeskMessage(role, text, opts) {
+    var area = getDeskTranscriptArea();
+    if (!area || !text) return null;
+    var options = opts || {};
+    var row = document.createElement('div');
+    row.className = 'pip-msg pip-msg-' + (role || 'assistant') + (options.subtle ? ' is-subtle' : '');
+    if (options.id) row.id = options.id;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'pip-response-bubble';
+    bubble.textContent = text;
+    row.appendChild(bubble);
+
+    area.appendChild(row);
+    updateDeskTranscriptState();
+    scrollDeskTranscriptToBottom();
+    return row;
+  }
+
+  function showColumnResponse(text, isTyping) {
+    var area = getDeskTranscriptArea();
+    if (!area) return;
 
     if (isTyping) {
+      hideTyping();
       var typing = document.createElement('div');
       typing.className = 'pip-typing';
       typing.id = 'pip-typing';
       for (var i = 0; i < 3; i++) { var dot = document.createElement('span'); typing.appendChild(dot); }
       area.appendChild(typing);
-      area.className = 'has-content';
+      updateDeskTranscriptState();
+      scrollDeskTranscriptToBottom();
       return;
     }
 
     if (text) {
-      var bubble = document.createElement('div');
-      bubble.className = 'pip-response-bubble';
-      bubble.textContent = text;
-      area.appendChild(bubble);
-      area.className = 'has-content';
+      applyLiteSurfaceState('responding');
+      appendDeskMessage('assistant', text);
     } else {
-      area.className = '';
+      updateDeskTranscriptState();
     }
   }
 
   function hideTyping() {
     var typing = document.getElementById('pip-typing');
     if (typing) typing.remove();
-    var area = document.getElementById('pip-response-area');
-    if (area && !area.querySelector('.pip-response-bubble')) area.className = '';
+    updateDeskTranscriptState();
   }
 
   function showColumnActions(actions) {
@@ -533,16 +870,11 @@
   var STATUS_LABEL = { pending: 'Pending', blocked: 'Blocked', approved: 'Approved', parked: 'Parked', running: 'Running', done: 'Done', failed: 'Failed' };
 
   function showJobPlanCard(jobs, introText) {
-    var area = document.getElementById('pip-response-area');
+    var area = getDeskTranscriptArea();
     if (!area) return;
-    while (area.firstChild) area.removeChild(area.firstChild);
-    area.className = 'has-content';
 
     if (introText) {
-      var intro = document.createElement('div');
-      intro.className = 'pip-response-bubble';
-      intro.textContent = introText;
-      area.appendChild(intro);
+      appendDeskMessage('assistant', introText);
     }
 
     var card = document.createElement('div');
@@ -592,6 +924,8 @@
     });
 
     area.appendChild(card);
+    updateDeskTranscriptState();
+    scrollDeskTranscriptToBottom();
   }
 
   function jobAction(action, jobId) {
@@ -638,6 +972,12 @@
   }
 
   function showPlaceholder(area) {
+    if (shayDeskHasTranscript) {
+      area.innerHTML = '';
+      area.style.display = 'none';
+      return;
+    }
+    area.style.display = '';
     area.innerHTML = '';
     var wrap = document.createElement('div');
     wrap.className = 'pip-placeholder';
@@ -653,6 +993,12 @@
   }
 
   function renderTodoList(area, plan) {
+    if (shayDeskHasTranscript) {
+      area.innerHTML = '';
+      area.style.display = 'none';
+      return;
+    }
+    area.style.display = '';
     area.innerHTML = '';
 
     var header = document.createElement('div');
@@ -718,11 +1064,10 @@
   // Now messages go to the column response area so they're always visible.
   function showMessage(msg, actions) {
     if (_suppressMessages) return; // suppress follow-on messages after dismiss
-    showColumnResponse(msg, false);
+    openLitePanel({ silent: true });
+    applyLiteSurfaceState('alerting');
+    appendDeskMessage('assistant', msg, { subtle: true });
     showColumnActions(actions || []);
-    // Also ensure the orb is in active state
-    var orb = document.getElementById('pip-orb');
-    if (orb) { orb.classList.add('pip-active'); orb.classList.remove('pip-idle'); }
   }
 
   // ── Orb state machine ─────────────────────────────────────────────────────
@@ -830,11 +1175,11 @@
     var row = document.getElementById('pip-action-row');
     if (area) { while (area.firstChild) area.removeChild(area.firstChild); area.className = ''; }
     if (row) { while (row.firstChild) row.removeChild(row.firstChild); row.style.display = 'none'; }
-    var orb = document.getElementById('pip-orb');
-    if (orb) { orb.classList.remove('pip-active'); orb.classList.add('pip-idle'); }
+    applyLiteSurfaceState('idle');
   }
 
   function triggerShowMe(step) {
+    applyLiteSurfaceState('show_me');
     var target = document.querySelector(step.show_me_target);
     if (target) {
       showMeElement(step.show_me_target, step.show_me_instruction, [
@@ -917,11 +1262,25 @@
     flash:              flashCallout,
     setBadge:           setBadge,
     close:              closeCallout,
+    openLitePanel:      openLitePanel,
+    askLite:            function (text, opts) {
+      var input = document.getElementById('pip-direct-input');
+      openLitePanel({ focusInput: !(opts && opts.skipFocus) });
+      if (input) input.value = text || '';
+      if (opts && opts.sendNow && window.__pipSendDirect) window.__pipSendDirect(text || '');
+    },
     showMe:             showMeElement,
+    quickShowMe:        function () {
+      var plan = validationPlan;
+      var currentStep = plan && plan.steps ? plan.steps[plan.current_step] : null;
+      if (currentStep) triggerShowMe(currentStep);
+      else showMessage('Show Me is ready once Shay has a current task or prompt for you.', []);
+    },
     doIt:               doIt,
     dismiss:            dismiss,
     send:               sendToChat,
     showColumnResponse: showColumnResponse,
+    appendDeskMessage: appendDeskMessage,
     showColumnActions:  showColumnActions,
     reloadTodos:        function () { setOrbState('IDLE'); },
     setOrbState:        setOrbState,
@@ -929,6 +1288,28 @@
       check:    checkValidationPlan,
       markStep: markValidationStep,
       showPlan: function () { if (validationPlan) showFullPlan(validationPlan); },
+    },
+    getState: function () {
+      var workerCountEl = document.getElementById('worker-queue-count');
+      var workerBadgeEl = document.getElementById('worker-queue-badge');
+      return {
+        mode: pipMode,
+        identity_mode: getIdentityMode(),
+        lite_state: liteSurfaceState,
+        orb_state: currentOrbState,
+        badge_count: badgeCount,
+        worker_queue_pending_count: Number.parseInt(workerCountEl && workerCountEl.textContent, 10) || 0,
+        worker_queue_badge_visible: !!(workerBadgeEl && !workerBadgeEl.classList.contains('hidden')),
+        has_transcript: !!shayDeskHasTranscript,
+        validation: validationPlan ? {
+          status: validationPlan.status || null,
+          current_step: validationPlan.current_step,
+          total_steps: Array.isArray(validationPlan.steps) ? validationPlan.steps.length : 0,
+          pending_steps: Array.isArray(validationPlan.steps) ? validationPlan.steps.filter(function (step) { return step.status === 'pending'; }).length : 0,
+          failed_steps: Array.isArray(validationPlan.steps) ? validationPlan.steps.filter(function (step) { return step.status === 'failed'; }).length : 0,
+        } : null,
+        settings: Object.assign({}, shayLiteSettings),
+      };
     },
     get mode() { return pipMode; },
     get orbState() { return currentOrbState; },

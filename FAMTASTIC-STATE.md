@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-20 (Session 17 — Nav Contract + Intel Actions + Orb State Machine: 30 tests passing)
+**Last updated:** 2026-04-21 (Session 18 — Shay Lite System + Media Studio Mini-App pass)
 
 ---
 
@@ -27,6 +27,16 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 4. **Site-scoped dismiss** — `POST /api/intel/dismiss` persists dismiss keys to `site-studio/.dismissed-findings.json` keyed by `${siteTag}-${severity}-${slugify(title)}`. `GET /api/intel/findings` filters dismissed findings before returning.
 5. **Build backlog** — `POST /api/intel/backlog` appends entries to `.wolf/build-backlog.json` (append-only, full schema: id, logged_at, source, severity, site_tag, category, title, description, status, session).
 6. **Orb state machine** — `#pip-dynamic-area` now transitions via `setOrbState(state, data)` in `studio-orb.js`. Four states: `IDLE` (validation plan or placeholder), `BRIEF_PROGRESS` (brief completion), `BRAINSTORM_ACTIVE`, `REVIEW_ACTIVE`. Single source of truth: `currentOrbState` module-level variable. All three event listeners updated (`studio:site-changed` → IDLE, `pip:mode-changed` → state by mode, `pip:brief-updated` → BRIEF_PROGRESS). Exposed via `PipOrb.setOrbState()` and `PipOrb.orbState` getter.
+
+**Session 18 additions (2026-04-21):**
+1. **Shay Lite settings contract** — `server.js` now persists `shay_lite_settings` with `identity_mode`, `default_identity_mode`, `remember_last_identity`, `proactive_behavior`, `allow_proactive_messages`, `event_reaction_intensity`, `character_style`, and `character_variant`. Added `normalizeShayLiteSettings()` and settings API support.
+2. **Mutually exclusive Lite identities** — `studio-orb.js` now treats `character`, `orb_classic`, and `mini_panel` as formal identities. Character is the first-run default, Classic Orb is preserved as the fallback, and Mini Panel remains a dedicated compact mode.
+3. **Lite surface state machine** — explicit UI states in `studio-orb.js`: `idle`, `prompting`, `thinking`, `responding`, `alerting`, `show_me`. Event reactions and proactive behavior now flow through the same layer for all Lite identities.
+4. **Quick Ask + persistent Shay access** — Lite click behavior now always exposes an immediate ask path. Media Studio surfaces now embed Shay access directly instead of treating Shay as a separate destination.
+5. **Mission Control restored as visible workspace** — distinct from Intelligence again in the shell, activity rail, sidebar, and tab model.
+6. **Media Studio mini-app restructure** — internal nav now reads `Create`, `Image`, `Motion`, `Library`, `Brand`, `Queue / History`, `Providers`. `Create` became the prompt-first landing surface; `Library` became a visual gallery; `Motion` now explicitly separates motion/video planning from image generation.
+7. **Provider visibility pass** — Media UI now surfaces provider state and a preferred route selector instead of hiding the existence of Claude/Gemini/OpenAI capability behind a single implied generator path. Direct video generation remains a known backend gap.
+8. **Movable Shay Lite** — Shay Lite orb can now be dragged and its position persists locally, addressing the earlier fixed-but-immovable bottom anchor behavior.
 
 **Session 16 additions (2026-04-16):**
 1. **Surgical editor wired** — `tryDeterministicHandler()` now has a STRUCTURAL_HINTS block. "change the hero headline to X" resolved without Claude when structural index exists. ~90% token reduction on matched content edits.
@@ -237,6 +247,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 |-----|----------|--------|
 | Revenue path (end-to-end) | Tier 1 | Client preview URL + payment (PayPal) + domain provisioning + approval flow. |
 | Shay-Shay Mem0/Kuzu integration | Tier 1 | Persistent memory layer not yet wired. Episodic/semantic/procedural memory schemas defined but not connected to Mem0 MCP. Session 17 "Grow" phase. |
+| Shay Developer Mode | Tier 1 | User explicitly wants optional developer-level code-writing access for Shay-Shay. Must be designed as an explicit capability with on/off control, scoped write permissions, approval modes, audit trail, and rebuild/deploy hooks. Mandatory roadmap scope; tracked in `docs/STUDIO-MASTER-PLAN.md` Wave 8. |
 | Brand drift intelligence promotion | Tier 2 | Brand tracker logs drift to console. Not yet promoted as intelligence finding to intelligence-promotions.json. |
 | Agent cards not loaded by brain router | Tier 2 | Agent card files exist but brain router still uses hardcoded config. Adoption requires updating brain router to load from agent-cards/ directory. |
 | Shay-Shay session init not wired to WS | Tier 2 | Capability manifest not diffed and surfaced as callout on Studio WS connect. |
@@ -288,6 +299,7 @@ See CHANGELOG.md for full session history.
 | `SITE-LEARNINGS.md` | Authoritative technical reference — architecture notes, all sessions |
 | `CHANGELOG.md` | Chronological session summaries |
 | `famtastic-dna.md` | Auto-updated build knowledge — injected into every Claude session |
+| `docs/STUDIO-MASTER-PLAN.md` | Studio-first execution source of truth. Wave-based roadmap with frozen shell guardrails and mandatory `Shay Developer Mode` scope. |
 | `docs/DEEP-DISCOVERY.md` | Deep research sweep — 12 threads, synthesis, blind spots (2026-04-16) |
 | `docs/STUDIO-COMPARISON.md` | V1 vs. industry standard vs. V2 direction across 15 areas |
 | `docs/REWRITE-CONTEXT-PACKAGE.md` | Complete architectural analysis Sessions 1–11 |

@@ -24,6 +24,11 @@ const {
   autoTagMissingSlots,
   calculateSessionCost,
   getContextPercentage,
+  classifyShayShayReasoning,
+  selectShayShayBrain,
+  normalizeShayShayResponse,
+  answerShayShayDirect,
+  normalizeShayLiteSettings,
 } = require('../server');
 
 const db = require('../lib/db');
@@ -302,6 +307,55 @@ describe('classifyRequest', () => {
     expect(classifyRequest('add a new service section', withBrief)).toBe('layout_update');
     expect(classifyRequest('remove the hero section', withBrief)).toBe('layout_update');
     expect(classifyRequest('add a banner at the top', withBrief)).toBe('layout_update');
+  });
+});
+
+describe('normalizeShayLiteSettings', () => {
+  it('defaults Shay Lite to character mode with contextual nudges', () => {
+    expect(normalizeShayLiteSettings({})).toMatchObject({
+      identity_mode: 'character',
+      default_identity_mode: 'character',
+      remember_last_identity: true,
+      proactive_behavior: 'context_nudges',
+      allow_proactive_messages: true,
+      event_reaction_intensity: 'balanced',
+    });
+  });
+
+  it('clamps invalid values back to safe defaults', () => {
+    expect(normalizeShayLiteSettings({
+      identity_mode: 'orb+character',
+      default_identity_mode: 'unknown',
+      proactive_behavior: 'loud',
+      event_reaction_intensity: 'max',
+    })).toMatchObject({
+      identity_mode: 'character',
+      default_identity_mode: 'character',
+      proactive_behavior: 'context_nudges',
+      event_reaction_intensity: 'balanced',
+    });
+  });
+
+  it('preserves supported identity and proactive settings', () => {
+    expect(normalizeShayLiteSettings({
+      identity_mode: 'orb_classic',
+      default_identity_mode: 'mini_panel',
+      remember_last_identity: false,
+      proactive_behavior: 'off',
+      allow_proactive_messages: false,
+      event_reaction_intensity: 'expressive',
+      character_style: 'illustrated',
+      character_variant: 'shay-v2',
+    })).toMatchObject({
+      identity_mode: 'orb_classic',
+      default_identity_mode: 'mini_panel',
+      remember_last_identity: false,
+      proactive_behavior: 'off',
+      allow_proactive_messages: false,
+      event_reaction_intensity: 'expressive',
+      character_style: 'illustrated',
+      character_variant: 'shay-v2',
+    });
   });
 });
 
@@ -652,6 +706,70 @@ describe('getContextPercentage', () => {
   it('returns red class when usage exceeds 80%', () => {
     const r = getContextPercentage(170000, 200000);
     expect(r.colorClass).toBe('context-red');
+  });
+});
+
+// --- Shay-Shay routing helpers ---
+
+describe('Shay-Shay helpers', () => {
+  it('classifies research and review requests into the right reasoning buckets', () => {
+    expect(classifyShayShayReasoning('research this market and competitors').kind).toBe('research');
+    expect(classifyShayShayReasoning('give me a harsh review of this bug').kind).toBe('review');
+    expect(classifyShayShayReasoning('what do you think about this strategy').tier).toBe(3);
+  });
+
+  it('selects the best available brain and falls back when needed', () => {
+    const cards = {
+      claude: { id: 'claude', model: 'claude-sonnet-4-6', name: 'Claude Sonnet' },
+      gemini: { id: 'gemini', model: 'gemini-2.5-flash', name: 'Gemini Flash' },
+      codex: { id: 'codex', model: 'gpt-4o', name: 'Codex' },
+    };
+
+    const preferred = selectShayShayBrain(
+      { kind: 'research', tier: 2 },
+      { capabilities: { claude_api: 'available', gemini_api: 'available', openai_api: 'available' } },
+      cards
+    );
+    expect(preferred.brain).toBe('gemini');
+    expect(preferred.model).toBe('gemini-2.5-flash');
+
+    const fallback = selectShayShayBrain(
+      { kind: 'review', tier: 2 },
+      { capabilities: { claude_api: 'available', gemini_api: 'available', openai_api: 'broken' } },
+      cards
+    );
+    expect(fallback.brain).toBe('claude');
+    expect(fallback.note).toContain('Codex');
+  });
+
+  it('normalizes JSON and plain-text Shay-Shay responses', () => {
+    const parsed = normalizeShayShayResponse('{"response":"Hi","action":"show_me","message":"assets"}');
+    expect(parsed.response).toBe('Hi');
+    expect(parsed.action).toBe('show_me');
+    expect(parsed.message).toBe('assets');
+
+    const fallback = normalizeShayShayResponse('Plain response only');
+    expect(fallback.response).toBe('Plain response only');
+    expect(fallback.action).toBe(null);
+  });
+
+  it('answers active-site questions directly from Studio state', () => {
+    const snapshot = {
+      site_tag: 'site-demo',
+      site_name: 'Demo Site',
+      active_page: 'about.html',
+      fam_score: 92,
+      page_count: 3,
+      pages: ['index.html', 'about.html', 'contact.html'],
+      media_slots_empty: 2,
+      media_slots_total: 5,
+      brief_summary: 'Restaurant | warm | conversions',
+    };
+    const manifest = { capabilities: { claude_api: 'available', gemini_api: 'available' } };
+
+    expect(answerShayShayDirect('what site is active', snapshot, manifest)?.response).toContain('Demo Site');
+    expect(answerShayShayDirect('what page am i on', snapshot, manifest)?.response).toContain('about.html');
+    expect(answerShayShayDirect('what is the fam score', snapshot, manifest)?.response).toContain('92');
   });
 });
 
