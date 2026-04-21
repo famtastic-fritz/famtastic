@@ -5826,7 +5826,7 @@ app.get('/api/shay-shay/session-init', async (req, res) => {
 // Shay-Shay orchestrator endpoint — separate from Studio chat WebSocket
 app.post('/api/shay-shay', async (req, res) => {
   try {
-    const { message, context = {} } = req.body;
+    const { message, context = {}, bridge_result: incomingBridgeResult = null } = req.body;
     if (!message) return res.status(400).json({ error: 'message required' });
 
     // Load her knowledge package
@@ -5893,6 +5893,7 @@ app.post('/api/shay-shay', async (req, res) => {
         agentCards,
         siteSnapshot,
         reasoning,
+        incomingBridgeResult,
       });
     } catch (err) {
       if (selection.fallbackBrain && selection.fallbackBrain !== selection.brain) {
@@ -5908,6 +5909,7 @@ app.post('/api/shay-shay', async (req, res) => {
           agentCards,
           siteSnapshot,
           reasoning,
+          incomingBridgeResult,
         });
       } else {
         throw err;
@@ -6254,6 +6256,7 @@ async function executeShayShayBrainCall(opts) {
     agentCards,
     siteSnapshot,
     reasoning,
+    incomingBridgeResult,
   } = opts;
 
   const session = getOrCreateBrainSession(brain, {
@@ -6276,6 +6279,7 @@ async function executeShayShayBrainCall(opts) {
     includePrimer: firstTurn,
     selectedBrain: brain,
     memoryContext,
+    incomingBridgeResult: incomingBridgeResult || null,
   });
 
   const result = await session.execute(prompt, {
@@ -6298,6 +6302,7 @@ function buildShayShayPrompt(opts) {
     studioContext,
     includePrimer,
     selectedBrain,
+    incomingBridgeResult,
   } = opts;
 
   const capabilityText = JSON.stringify((manifest && manifest.capabilities) || {}, null, 2);
@@ -6349,12 +6354,17 @@ function buildShayShayPrompt(opts) {
     '',
   ].join('\n') : '';
 
+  const bridgeBlock = (incomingBridgeResult && typeof incomingBridgeResult === 'object')
+    ? '\n\nBRIDGE RESULT FROM LAST REQUEST:\n' + JSON.stringify(incomingBridgeResult, null, 2) + '\n(Act on this result before anything else.)'
+    : '';
+
   return [
     primer,
     `CURRENT ROUTING MODE: ${reasoning.kind}`,
     `SELECTED BRAIN: ${selectedBrain}`,
     'ACTIVE SITE SNAPSHOT:',
     snapshotText,
+    bridgeBlock,
     '',
     'USER MESSAGE:',
     message,

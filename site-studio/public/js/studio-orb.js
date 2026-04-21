@@ -16,7 +16,7 @@
   let idleTimer = null;
   let highlightEl = null;
   let currentOrbState = 'IDLE'; // IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE | SHAY_THINKING
-  let lastBridgeResult = null; // stored after each Shay response, sent once in the next context payload
+  let pendingBridgeResult = null; // stored after each Shay response, sent top-level on next request then consumed
   let shayDeskHasTranscript = false;
   let liteSurfaceState = 'idle'; // idle | prompting | thinking | responding | alerting | show_me
   let shayLiteSettings = {
@@ -304,15 +304,17 @@
       }
       setDeskThinking(true);
       var context = getShayShayContext();
+      var outgoingBridge = pendingBridgeResult;
+      pendingBridgeResult = null; // consume
       fetch('/api/shay-shay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, context: context }),
+        body: JSON.stringify({ message: text, context: context, bridge_result: outgoingBridge || null }),
       })
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.bridge_result && typeof data.bridge_result === 'object') {
-            lastBridgeResult = data.bridge_result;
+            pendingBridgeResult = data.bridge_result;
           }
           setDeskThinking(false);
           showDeskResponse(data.response || data.error || 'No response.');
@@ -733,6 +735,32 @@
     }
   }
 
+  // ── Shay-Shay context builder (outer scope — used by both direct input and desk) ──
+  function getShayShayContext() {
+    var ctxPage = window.activePage || (document.getElementById('ctx-active-page') && document.getElementById('ctx-active-page').textContent) || null;
+    var ctxTab = window.StudioShell && window.StudioShell.activeTabId ? window.StudioShell.activeTabId : null;
+    var ctxRail = window.StudioShell && window.StudioShell.activeRailItemId ? window.StudioShell.activeRailItemId : null;
+    var famScore = null;
+    var clientSnapshot = typeof window.buildShayShayClientSnapshot === 'function'
+      ? window.buildShayShayClientSnapshot()
+      : {};
+    if (window.cachedStudioState) {
+      if (window.cachedStudioState.fam_score != null) famScore = window.cachedStudioState.fam_score;
+      else if (window.cachedStudioState.spec && window.cachedStudioState.spec.fam_score != null) famScore = window.cachedStudioState.spec.fam_score;
+    }
+    return {
+      active_site: (window.config && window.config.tag) || null,
+      active_page: ctxPage,
+      active_tab: ctxTab,
+      fam_score: famScore,
+      active_rail: ctxRail,
+      ui_state: clientSnapshot.ui_state || null,
+      workspace_state: clientSnapshot.workspace_state || null,
+      component_state: clientSnapshot.component_state || null,
+      preview_state: clientSnapshot.preview_state || null,
+    };
+  }
+
   // ── Column: direct input wiring ─────────────────────────────────────────
   function initDirectInput() {
     var input = document.getElementById('pip-direct-input');
@@ -752,39 +780,13 @@
       sendToShayShay(text);
     }
 
-    function getShayShayContext() {
-      var ctxPage = window.activePage || (document.getElementById('ctx-active-page') && document.getElementById('ctx-active-page').textContent) || null;
-      var ctxTab = window.StudioShell && window.StudioShell.activeTabId ? window.StudioShell.activeTabId : null;
-      var ctxRail = window.StudioShell && window.StudioShell.activeRailItemId ? window.StudioShell.activeRailItemId : null;
-      var famScore = null;
-      var clientSnapshot = typeof window.buildShayShayClientSnapshot === 'function'
-        ? window.buildShayShayClientSnapshot()
-        : {};
-      if (window.cachedStudioState) {
-        if (window.cachedStudioState.fam_score != null) famScore = window.cachedStudioState.fam_score;
-        else if (window.cachedStudioState.spec && window.cachedStudioState.spec.fam_score != null) famScore = window.cachedStudioState.spec.fam_score;
-      }
-      var pendingBridge = lastBridgeResult;
-      lastBridgeResult = null; // consume — only send once
-      return {
-        active_site: (window.config && window.config.tag) || null,
-        active_page: ctxPage,
-        active_tab: ctxTab,
-        fam_score: famScore,
-        active_rail: ctxRail,
-        ui_state: clientSnapshot.ui_state || null,
-        workspace_state: clientSnapshot.workspace_state || null,
-        component_state: clientSnapshot.component_state || null,
-        preview_state: clientSnapshot.preview_state || null,
-        bridge_result: pendingBridge || null,
-      };
-    }
-
     var THINKING_MIN_MS = 800;
 
     function sendToShayShay(message) {
       var context = getShayShayContext();
       var thinkStart = Date.now();
+      var outgoingBridge = pendingBridgeResult;
+      pendingBridgeResult = null; // consume — sent once then cleared
 
       function afterThinking(fn) {
         var elapsed = Date.now() - thinkStart;
@@ -804,13 +806,13 @@
       fetch('/api/shay-shay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message, context: context }),
+        body: JSON.stringify({ message: message, context: context, bridge_result: outgoingBridge || null }),
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          // Capture bridge_result for next turn's context payload
+          // Store bridge_result for the next turn (sent top-level, not nested in context)
           if (data.bridge_result && typeof data.bridge_result === 'object') {
-            lastBridgeResult = data.bridge_result;
+            pendingBridgeResult = data.bridge_result;
           }
           afterThinking(function () {
           hideTyping();

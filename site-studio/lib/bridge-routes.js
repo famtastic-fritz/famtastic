@@ -32,6 +32,20 @@ router.get('/read', (req, res) => {
   }
 });
 
+// POST /api/bridge/read  { path } — same as GET but accepts JSON body
+router.post('/read', (req, res) => {
+  const rel = (req.body && req.body.path) || req.query.path;
+  if (!rel) return res.status(400).json({ error: 'path required' });
+  const abs = resolveSafe(rel);
+  if (!abs) return res.status(403).json({ error: 'Path escapes ~/famtastic' });
+  try {
+    const content = fs.readFileSync(abs, 'utf8');
+    res.json({ content, path: rel });
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
+});
+
 // POST /api/bridge/write  { path, content }
 router.post('/write', (req, res) => {
   const { path: rel, content } = req.body || {};
