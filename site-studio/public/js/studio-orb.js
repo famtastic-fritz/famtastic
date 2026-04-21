@@ -16,6 +16,7 @@
   let idleTimer = null;
   let highlightEl = null;
   let currentOrbState = 'IDLE'; // IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE | SHAY_THINKING
+  let lastBridgeResult = null; // stored after each Shay response, sent once in the next context payload
   let shayDeskHasTranscript = false;
   let liteSurfaceState = 'idle'; // idle | prompting | thinking | responding | alerting | show_me
   let shayLiteSettings = {
@@ -39,6 +40,7 @@
     if (!orb) return;
 
     loadShayLiteSettings();
+    bindShayDeskControls();
     loadLitePosition();
 
     // Left-click orb → open the active Lite surface with quick ask ready
@@ -269,6 +271,92 @@
     var summary = document.getElementById('shay-desk-mode-summary');
     if (!summary) return;
     summary.textContent = 'Current Lite identity: ' + identityLabel(getIdentityMode()) + '. Proactive behavior: ' + humanizeLabel(shayLiteSettings.proactive_behavior) + '. Drag Shay Lite to reposition, or switch identity from Lite or Assistant settings.';
+  }
+
+  function bindShayDeskControls() {
+    var input = document.getElementById('shay-desk-input');
+    var sendBtn = document.getElementById('shay-desk-send-btn');
+    var liteBtn = document.getElementById('shay-desk-lite-btn');
+    var cardLiteBtn = document.getElementById('shay-desk-card-lite-btn');
+    var showMeBtn = document.getElementById('shay-desk-showme-btn');
+    var chatBtn = document.getElementById('shay-desk-chat-btn');
+    var cardChatBtn = document.getElementById('shay-desk-card-chat-btn');
+
+    function setDeskThinking(on) {
+      var btn = document.getElementById('shay-desk-send-btn');
+      var indicator = document.getElementById('shay-desk-thinking');
+      if (btn) { btn.disabled = on; btn.style.opacity = on ? '0.45' : ''; }
+      if (indicator) indicator.style.display = on ? 'flex' : 'none';
+    }
+
+    function showDeskResponse(text) {
+      var area = document.getElementById('shay-desk-response-area');
+      if (!area) return;
+      area.style.display = 'block';
+      area.textContent = text;
+    }
+
+    function askFromDesk() {
+      var text = input && input.value ? input.value.trim() : '';
+      if (!text) {
+        openLitePanel({ focusInput: true });
+        return;
+      }
+      setDeskThinking(true);
+      var context = getShayShayContext();
+      fetch('/api/shay-shay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, context: context }),
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.bridge_result && typeof data.bridge_result === 'object') {
+            lastBridgeResult = data.bridge_result;
+          }
+          setDeskThinking(false);
+          showDeskResponse(data.response || data.error || 'No response.');
+          if (input) input.value = '';
+        })
+        .catch(function(err) {
+          setDeskThinking(false);
+          showDeskResponse('Error: ' + err.message);
+        });
+    }
+
+    if (input && !input.dataset.boundDeskEnter) {
+      input.dataset.boundDeskEnter = 'true';
+      input.addEventListener('keydown', function (event) {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+          event.preventDefault();
+          askFromDesk();
+        }
+      });
+    }
+    if (sendBtn && !sendBtn.dataset.boundDeskClick) {
+      sendBtn.dataset.boundDeskClick = 'true';
+      sendBtn.addEventListener('click', askFromDesk);
+    }
+    [liteBtn, cardLiteBtn].forEach(function (btn) {
+      if (btn && !btn.dataset.boundDeskClick) {
+        btn.dataset.boundDeskClick = 'true';
+        btn.addEventListener('click', function () { openLitePanel({ focusInput: true }); });
+      }
+    });
+    if (showMeBtn && !showMeBtn.dataset.boundDeskClick) {
+      showMeBtn.dataset.boundDeskClick = 'true';
+      showMeBtn.addEventListener('click', function () {
+        if (window.PipOrb && typeof window.PipOrb.quickShowMe === 'function') window.PipOrb.quickShowMe();
+      });
+    }
+    [chatBtn, cardChatBtn].forEach(function (btn) {
+      if (btn && !btn.dataset.boundDeskClick) {
+        btn.dataset.boundDeskClick = 'true';
+        btn.addEventListener('click', function () {
+          if (window.StudioShell && typeof window.StudioShell.switchTab === 'function') window.StudioShell.switchTab('chat');
+        });
+      }
+    });
   }
 
   function renderIdentitySwitch() {
@@ -676,6 +764,8 @@
         if (window.cachedStudioState.fam_score != null) famScore = window.cachedStudioState.fam_score;
         else if (window.cachedStudioState.spec && window.cachedStudioState.spec.fam_score != null) famScore = window.cachedStudioState.spec.fam_score;
       }
+      var pendingBridge = lastBridgeResult;
+      lastBridgeResult = null; // consume — only send once
       return {
         active_site: (window.config && window.config.tag) || null,
         active_page: ctxPage,
@@ -686,6 +776,7 @@
         workspace_state: clientSnapshot.workspace_state || null,
         component_state: clientSnapshot.component_state || null,
         preview_state: clientSnapshot.preview_state || null,
+        bridge_result: pendingBridge || null,
       };
     }
 
@@ -717,6 +808,10 @@
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
+          // Capture bridge_result for next turn's context payload
+          if (data.bridge_result && typeof data.bridge_result === 'object') {
+            lastBridgeResult = data.bridge_result;
+          }
           afterThinking(function () {
           hideTyping();
           exitThinking();
