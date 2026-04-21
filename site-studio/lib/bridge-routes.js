@@ -108,13 +108,12 @@ router.post('/exec', (req, res) => {
   const { command } = req.body || {};
   if (!command) return res.status(400).json({ error: 'command required' });
 
-  const parts = command.trim().split(/\s+/);
-  const bin = parts[0];
+  const bin = command.trim().split(/\s+/)[0];
   if (!ALLOWED_COMMANDS.includes(bin)) {
     return res.status(403).json({ error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}` });
   }
 
-  execFile(bin, parts.slice(1), { cwd: FAM_ROOT, timeout: 20000 }, (err, stdout, stderr) => {
+  execFile('bash', ['-c', command.trim()], { cwd: FAM_ROOT, timeout: 20000 }, (err, stdout, stderr) => {
     res.json({
       stdout: stdout || '',
       stderr: stderr || '',

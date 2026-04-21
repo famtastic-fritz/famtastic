@@ -6991,8 +6991,7 @@ async function executeBridgeOp(bridgeRequest) {
 
   if (op === 'exec') {
     const command = (bridgeRequest.command || '').trim();
-    const parts = command.split(/\s+/).filter(Boolean);
-    const bin = parts[0];
+    const bin = command.split(/\s+/)[0];
     if (!ALLOWED_COMMANDS.includes(bin)) {
       return {
         op,
@@ -7005,7 +7004,7 @@ async function executeBridgeOp(bridgeRequest) {
       };
     }
     return new Promise(resolve => {
-      execFile(bin, parts.slice(1), { cwd: FAM_ROOT, timeout: BRIDGE_TIMEOUTS.exec }, (err, stdout, stderr) => {
+      execFile('bash', ['-c', command], { cwd: FAM_ROOT, timeout: BRIDGE_TIMEOUTS.exec }, (err, stdout, stderr) => {
         const result = {
           op,
           command,
