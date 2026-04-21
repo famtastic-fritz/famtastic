@@ -112,25 +112,28 @@ async function initBrainSessions(studioEvents = null, STUDIO_EVENTS = {}, opts =
 
 /**
  * Get or create a persistent BrainInterface session for the current Studio session.
- * Sessions are keyed by brain name. A new instance is created on first call.
+ * Sessions are keyed by sessionKey (may be composite like "claude:conv-uuid" or plain brain name).
+ * The actual brain adapter used is opts.brain || the sessionKey's brain prefix.
  * Call resetSessions() on site switch to clear history.
  *
- * @param {string} brain
- * @param {object} opts — { tag, hubRoot, page }
+ * @param {string} sessionKey — composite key: "brain:conversation_id" or plain brain name
+ * @param {object} opts — { brain, tag, hubRoot, page }
  * @returns {BrainInterface}
  */
-function getOrCreateBrainSession(brain = 'claude', opts = {}) {
-  if (!_sessions[brain]) {
+function getOrCreateBrainSession(sessionKey = 'claude', opts = {}) {
+  // Support composite keys: use opts.brain as the actual brain adapter name
+  const actualBrain = opts.brain || sessionKey.split(':')[0] || 'claude';
+  if (!_sessions[sessionKey]) {
     const { BrainInterface } = require('./brain-interface');
-    _sessions[brain] = new BrainInterface(brain, opts);
-    console.log(`[brain-sessions] Created new session for brain: ${brain}`);
+    _sessions[sessionKey] = new BrainInterface(actualBrain, opts);
+    console.log(`[brain-sessions] Created new session: key=${sessionKey} brain=${actualBrain}`);
   } else {
     // Update context in existing session
-    if (opts.tag)     _sessions[brain].tag     = opts.tag;
-    if (opts.hubRoot) _sessions[brain].hubRoot = opts.hubRoot;
-    if (opts.page)    _sessions[brain].page    = opts.page;
+    if (opts.tag)     _sessions[sessionKey].tag     = opts.tag;
+    if (opts.hubRoot) _sessions[sessionKey].hubRoot = opts.hubRoot;
+    if (opts.page)    _sessions[sessionKey].page    = opts.page;
   }
-  return _sessions[brain];
+  return _sessions[sessionKey];
 }
 
 /**
@@ -146,10 +149,11 @@ function resetSessions() {
 
 /**
  * Get current brain session if it exists.
- * Returns null if no session has been started for this brain.
+ * @param {string} sessionKey — composite key or plain brain name
+ * Returns null if no session has been started for this key.
  */
-function getBrainSession(brain = 'claude') {
-  return _sessions[brain] || null;
+function getBrainSession(sessionKey = 'claude') {
+  return _sessions[sessionKey] || null;
 }
 
 module.exports = { initBrainSessions, getOrCreateBrainSession, getBrainSession, resetSessions };

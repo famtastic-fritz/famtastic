@@ -75,6 +75,65 @@ function VERSIONS_DIR() { return path.join(DIST_DIR(), '.versions'); }
 function SUMMARIES_DIR() { return path.join(SITE_DIR(), 'summaries'); }
 function UPLOADS_DIR() { return path.join(DIST_DIR(), 'assets', 'uploads'); }
 
+// --- Capability manifest 60-second TTL cache ---
+let _manifestCache = null;
+let _manifestCacheAt = 0;
+const MANIFEST_CACHE_TTL_MS = 60000;
+
+async function getCachedManifest() {
+  const now = Date.now();
+  if (_manifestCache && (now - _manifestCacheAt) < MANIFEST_CACHE_TTL_MS) return _manifestCache;
+  _manifestCache = await buildCapabilityManifest();
+  _manifestCacheAt = now;
+  return _manifestCache;
+}
+
+// --- Repo recent commits (30s TTL cache) ---
+let _recentCommitsCache = null;
+let _recentCommitsCacheAt = 0;
+const COMMITS_CACHE_TTL_MS = 30000;
+
+function getRepoRecentCommits() {
+  const now = Date.now();
+  if (_recentCommitsCache && (now - _recentCommitsCacheAt) < COMMITS_CACHE_TTL_MS) return _recentCommitsCache;
+  try {
+    const { execFileSync } = require('child_process');
+    const raw = execFileSync('git', ['log', '--oneline', '-3', '--format=%h %s %ci'], {
+      cwd: HUB_ROOT,
+      encoding: 'utf8',
+      timeout: 3000,
+    }).trim();
+    _recentCommitsCache = raw.split('\n').filter(Boolean).map(line => {
+      const parts = line.match(/^([0-9a-f]+) (.+?) (\d{4}-\d{2}-\d{2}T[\d:+ -]+)$/);
+      if (parts) return { sha_short: parts[1], subject: parts[2], at: parts[3].trim() };
+      // Fallback: just split by first two spaces
+      const sp = line.indexOf(' ');
+      const sp2 = line.indexOf(' ', sp + 1);
+      return {
+        sha_short: sp > 0 ? line.slice(0, sp) : line,
+        subject: sp2 > 0 ? line.slice(sp + 1, sp2) : line.slice(sp + 1),
+        at: sp2 > 0 ? line.slice(sp2 + 1).trim() : null,
+      };
+    });
+  } catch {
+    _recentCommitsCache = [];
+  }
+  _recentCommitsCacheAt = Date.now();
+  return _recentCommitsCache;
+}
+
+// --- Last test run result ---
+function getLastTestRun() {
+  const testResultPath = path.join(__dirname, '.last-test-run.json');
+  try {
+    if (!fs.existsSync(testResultPath)) return null;
+    const raw = fs.readFileSync(testResultPath, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 // --- Spec.json write-through cache ---
 // Single-process Node.js: all reads/writes go through these two functions.
 // Eliminates read-modify-write race conditions across concurrent handlers.
@@ -948,7 +1007,17 @@ function listPages() {
 // --- Express app ---
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders(res, filePath) {
+    if (/\.(?:html|js|css)$/i.test(filePath)) {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return;
+    }
+    res.set('Cache-Control', 'no-cache');
+  },
+}));
 
 // Bridge routes — mounted before CSRF so internal Studio tool calls pass through
 app.use('/api/bridge', require('./lib/bridge-routes'));
@@ -5826,14 +5895,28 @@ app.get('/api/shay-shay/session-init', async (req, res) => {
 // Shay-Shay orchestrator endpoint — separate from Studio chat WebSocket
 app.post('/api/shay-shay', async (req, res) => {
   try {
-    const { message, context = {}, bridge_result: incomingBridgeResult = null } = req.body;
+    const requestBody = (req && req.body && typeof req.body === 'object') ? req.body : {};
+    const hasIncomingBridgeResult = Object.prototype.hasOwnProperty.call(requestBody, 'bridge_result');
+    const {
+      message,
+      context = {},
+      bridge_result: incomingBridgeResult = null,
+      surface = 'lite',
+      conversation_id = null,
+      handoff_context = null,
+    } = requestBody;
     if (!message) return res.status(400).json({ error: 'message required' });
 
-    // Load her knowledge package
-    const manifest = await buildCapabilityManifest();
+    const bridgeState = resolveShayShayBridgeState(incomingBridgeResult, context, {
+      topLevelProvided: hasIncomingBridgeResult,
+    });
+
+    // Load her knowledge package (manifest is cached for 60s)
+    const manifest = await getCachedManifest();
     const instructions = loadShayShayInstructions();
     const agentCards = loadShayShayAgentCards();
-    const siteSnapshot = buildShayShaySiteSnapshot(context);
+    const siteSnapshot = buildShayShaySiteSnapshot(context, { bridgeState, surface, conversation_id });
+    const bridgeDebug = siteSnapshot.bridge_debug;
 
     // Tier 0: deterministic commands — no AI needed
     const lower = message.toLowerCase().trim();
@@ -5842,7 +5925,10 @@ app.post('/api/shay-shay', async (req, res) => {
       // job plan creation — create SQLite jobs, return structured plan
       if (tier0.intent === 'create_job_plan') {
         const planResult = buildShayShayJobPlan(message, context);
-        return res.json(planResult);
+        return res.json({
+          ...planResult,
+          bridge_debug: bridgeDebug,
+        });
       }
       // autonomous_build is async — handle separately
       if (tier0.intent === 'autonomous_build') {
@@ -5851,12 +5937,16 @@ app.post('/api/shay-shay', async (req, res) => {
         return res.json({
           action: 'autonomous_build',
           response: buildResult.message || (buildResult.error ? `Build failed: ${buildResult.error}` : 'Build initiated'),
+          bridge_debug: bridgeDebug,
           ...buildResult,
         });
       }
       const result = handleShayShayTier0(tier0, message, context, manifest);
       suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });
-      return res.json(result);
+      return res.json({
+        ...result,
+        bridge_debug: bridgeDebug,
+      });
     }
 
     const direct = answerShayShayDirect(lower, siteSnapshot, manifest);
@@ -5871,6 +5961,7 @@ app.post('/api/shay-shay', async (req, res) => {
         action: direct.action || null,
         source: 'shay-shay-direct',
         suggestion_id: suggestionId,
+        bridge_debug: bridgeDebug,
       });
     }
 
@@ -5893,7 +5984,9 @@ app.post('/api/shay-shay', async (req, res) => {
         agentCards,
         siteSnapshot,
         reasoning,
-        incomingBridgeResult,
+        conversation_id,
+        surface,
+        handoff_context,
       });
     } catch (err) {
       if (selection.fallbackBrain && selection.fallbackBrain !== selection.brain) {
@@ -5909,7 +6002,9 @@ app.post('/api/shay-shay', async (req, res) => {
           agentCards,
           siteSnapshot,
           reasoning,
-          incomingBridgeResult,
+          conversation_id,
+          surface,
+          handoff_context,
         });
       } else {
         throw err;
@@ -5928,12 +6023,13 @@ app.post('/api/shay-shay', async (req, res) => {
     // Bridge execution loop — if Shay signaled a bridge_request, run it and include result
     let bridgeResult = null;
     if (normalized.bridge_request && typeof normalized.bridge_request === 'object') {
-      console.log(`[shay-shay] bridge_request detected: op=${normalized.bridge_request.op}`);
+      logShayShayBridgeRequest(normalized.bridge_request);
       try {
         bridgeResult = await executeBridgeOp(normalized.bridge_request);
-        console.log(`[shay-shay] bridge_result: op=${bridgeResult.op} ${bridgeResult.error ? 'ERROR: ' + bridgeResult.error : 'OK'}`);
+        logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
       } catch (e) {
         bridgeResult = { op: normalized.bridge_request.op, error: e.message };
+        logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
       }
     }
 
@@ -5956,7 +6052,11 @@ app.post('/api/shay-shay', async (req, res) => {
       brain: usedBrain,
       model: usedModel,
       suggestion_id: suggestionId,
+      bridge_debug: bridgeDebug,
+      conversation_id: conversation_id || null,
       ...(bridgeResult ? { bridge_result: bridgeResult } : {}),
+      ...(normalized.commit_request && typeof normalized.commit_request === 'object' ? { commit_request: normalized.commit_request } : {}),
+      ...(normalized.usage ? { usage: normalized.usage } : {}),
     });
 
     // Async memory extraction — non-blocking, best-effort
@@ -6014,7 +6114,85 @@ function loadShayShayAgentCards() {
     }, {});
 }
 
-function buildShayShaySiteSnapshot(context = {}) {
+function isShayShayBridgeObject(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function resolveShayShayBridgeState(topLevelBridgeResult = null, context = {}, opts = {}) {
+  if (opts && opts.topLevelProvided) {
+    return {
+      bridgeResult: isShayShayBridgeObject(topLevelBridgeResult) ? topLevelBridgeResult : null,
+      source: 'top_level',
+      seen: true,
+    };
+  }
+  if (isShayShayBridgeObject(topLevelBridgeResult)) {
+    return { bridgeResult: topLevelBridgeResult, source: 'top_level', seen: true };
+  }
+  // Legacy fallback for older clients that still nest bridge_result under context.
+  if (isShayShayBridgeObject(context && context.bridge_result)) {
+    return { bridgeResult: context.bridge_result, source: 'context_fallback', seen: true };
+  }
+  return { bridgeResult: null, source: 'none', seen: false };
+}
+
+function buildShayShayBridgeDebug(bridgeState) {
+  const result = bridgeState && isShayShayBridgeObject(bridgeState.bridgeResult)
+    ? bridgeState.bridgeResult
+    : null;
+  const lastRequestSeen = bridgeState && Object.prototype.hasOwnProperty.call(bridgeState, 'seen')
+    ? !!bridgeState.seen
+    : !!(bridgeState && bridgeState.source && bridgeState.source !== 'none');
+  return {
+    last_request_seen: lastRequestSeen,
+    last_result_source: bridgeState && bridgeState.source ? bridgeState.source : 'none',
+    last_result_op: result && typeof result.op === 'string' ? result.op : null,
+    last_result_exit_code: result && typeof result.exitCode === 'number' ? result.exitCode : null,
+    last_result_had_stdout: !!(result && typeof result.stdout === 'string' && result.stdout.length > 0),
+    last_result_had_stderr: !!(result && typeof result.stderr === 'string' && result.stderr.length > 0),
+  };
+}
+
+function toShayShayRepoRelative(absPath) {
+  if (!absPath) return null;
+  const rel = path.relative(HUB_ROOT, absPath);
+  return (rel || '.').split(path.sep).join('/');
+}
+
+function buildShayShayRepoPaths(context = {}) {
+  const activeSiteTag = context.active_site || TAG || null;
+  const activePage = context.active_page || currentPage || 'index.html';
+  const studioDir = toShayShayRepoRelative(__dirname);
+  const studioUiDir = toShayShayRepoRelative(path.join(__dirname, 'public'));
+  const activeSiteDir = activeSiteTag ? toShayShayRepoRelative(path.join(SITES_ROOT, activeSiteTag)) : null;
+  const activeSiteDistDir = activeSiteTag ? toShayShayRepoRelative(path.join(SITES_ROOT, activeSiteTag, 'dist')) : null;
+
+  return {
+    hub_root: '.',
+    studio_dir: studioDir,
+    studio_ui_dir: studioUiDir,
+    studio_ui_entry: toShayShayRepoRelative(path.join(__dirname, 'public', 'index.html')),
+    studio_orb_script: toShayShayRepoRelative(path.join(__dirname, 'public', 'js', 'studio-orb.js')),
+    studio_orb_styles: toShayShayRepoRelative(path.join(__dirname, 'public', 'css', 'studio-orb.css')),
+    studio_server_entry: toShayShayRepoRelative(path.join(__dirname, 'server.js')),
+    active_site_dir: activeSiteDir,
+    active_site_dist_dir: activeSiteDistDir,
+    active_page_path: activeSiteDistDir ? path.posix.join(activeSiteDistDir, activePage) : null,
+    bridge_aliases: {
+      '@hub/': '.',
+      '@studio/': studioDir,
+      '@studio-ui/': studioUiDir,
+      '@active-site/': activeSiteDistDir,
+    },
+  };
+}
+
+function buildShayShaySiteSnapshot(context = {}, opts = {}) {
+  const bridgeState = (opts && opts.bridgeState && typeof opts.bridgeState === 'object')
+    ? opts.bridgeState
+    : resolveShayShayBridgeState(null, context);
+  const _surface = opts.surface || 'lite';
+  const _conversation_id = opts.conversation_id || null;
   const spec = readSpec();
   const pages = listPages();
   const mediaSpecs = Array.isArray(spec.media_specs) ? spec.media_specs : [];
@@ -6092,14 +6270,21 @@ function buildShayShaySiteSnapshot(context = {}) {
       device_mode: previewState.device_mode || null,
       preview_port: previewState.preview_port != null ? previewState.preview_port : null,
     },
-    bridge_result: (context && context.bridge_result && typeof context.bridge_result === 'object') ? context.bridge_result : null,
+    repo_paths: buildShayShayRepoPaths(context),
+    bridge_result: bridgeState.bridgeResult,
+    bridge_debug: buildShayShayBridgeDebug(bridgeState),
     developer_mode: developerMode,
+    repo_recent_commits: getRepoRecentCommits(),
+    quality_signals: { last_test_run: getLastTestRun() },
+    surface: _surface,
+    conversation_id: _conversation_id,
     visibility_contract: {
       can_see: [
         'active site snapshot fields',
         'active page and active tab from client context',
         'explicit ui_state fields included by the browser payload',
-        'workspace_state, component_state, and preview_state serialized from browser memory'
+        'workspace_state, component_state, and preview_state serialized from browser memory',
+        'repo_paths for common bridge targets inside the repo'
       ],
       cannot_see_without_wiring: [
         'live DOM text not serialized into ui_state',
@@ -6120,6 +6305,211 @@ function summarizeDesignBrief(brief) {
     brief.primary_goal,
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(' | ') : 'Design brief exists but core summary fields are sparse.';
+}
+
+const SHAY_SHAY_PROMPT_LIMITS = {
+  pages: 8,
+  stepLogItems: 4,
+  dismissedPromptKeys: 4,
+  returnStack: 4,
+  openTabs: 4,
+  excerptLines: {
+    cerebrum: 16,
+    shayContext: 24,
+    studioContext: 24,
+    crossSession: 24,
+  },
+  textChars: 220,
+  urlChars: 160,
+};
+
+function truncateShayShayText(text, maxChars) {
+  if (text == null) return text;
+  const value = String(text);
+  const limit = typeof maxChars === 'number' ? maxChars : SHAY_SHAY_PROMPT_LIMITS.textChars;
+  if (value.length <= limit) return value;
+  return value.slice(0, Math.max(0, limit - 12)).trimEnd() + ` ... (+${value.length - limit} chars)`;
+}
+
+function summarizeShayShayContextRef(value) {
+  if (value == null) return value;
+  if (typeof value === 'string') return truncateShayShayText(value, SHAY_SHAY_PROMPT_LIMITS.textChars);
+  if (typeof value !== 'object') return value;
+  const out = {};
+  ['id', 'type', 'kind', 'label', 'title', 'name', 'page', 'slot_id', 'component_id'].forEach((key) => {
+    if (value[key] == null) return;
+    out[key] = typeof value[key] === 'string'
+      ? truncateShayShayText(value[key], 120)
+      : value[key];
+  });
+  if (Object.keys(out).length > 0) return out;
+  try {
+    return truncateShayShayText(JSON.stringify(value), SHAY_SHAY_PROMPT_LIMITS.textChars);
+  } catch {
+    return '[object]';
+  }
+}
+
+function summarizeShayShayStepLogItem(item) {
+  if (item == null) return item;
+  if (typeof item === 'string') return truncateShayShayText(item, 120);
+  if (typeof item !== 'object') return item;
+  const title = item.title || item.label || item.step || item.message || item.description || null;
+  const summary = {
+    title: title ? truncateShayShayText(title, 120) : null,
+    status: item.status || null,
+    kind: item.kind || null,
+  };
+  return Object.fromEntries(Object.entries(summary).filter(([, val]) => val != null));
+}
+
+function summarizeShayShayOpenTab(tab) {
+  if (tab == null) return tab;
+  if (typeof tab === 'string') return truncateShayShayText(tab, 80);
+  if (typeof tab !== 'object') return tab;
+  const summary = {
+    id: tab.id || tab.tab_id || tab.key || null,
+    title: truncateShayShayText(tab.title || tab.label || tab.name || '', 80) || null,
+    page: tab.page || tab.page_id || null,
+    active: tab.active === true ? true : undefined,
+    dirty: tab.dirty === true ? true : undefined,
+  };
+  return Object.fromEntries(Object.entries(summary).filter(([, val]) => val != null && val !== ''));
+}
+
+function summarizeShayShayValidation(validation) {
+  if (!validation || typeof validation !== 'object') return null;
+  const summary = {
+    status: validation.status || null,
+    current_step: validation.current_step != null ? validation.current_step : null,
+    total_steps: validation.total_steps != null ? validation.total_steps : null,
+    pending_steps: validation.pending_steps != null ? validation.pending_steps : null,
+    failed_steps: validation.failed_steps != null ? validation.failed_steps : null,
+  };
+  return Object.fromEntries(Object.entries(summary).filter(([, val]) => val != null));
+}
+
+function summarizeShayShayStateBucket(value) {
+  if (value == null) return value;
+  if (typeof value === 'string') return truncateShayShayText(value, SHAY_SHAY_PROMPT_LIMITS.textChars);
+  if (typeof value !== 'object') return value;
+  const summary = {};
+  Object.entries(value).slice(0, 8).forEach(([key, item]) => {
+    if (item == null) {
+      summary[key] = item;
+    } else if (typeof item === 'string') {
+      summary[key] = truncateShayShayText(item, SHAY_SHAY_PROMPT_LIMITS.textChars);
+    } else if (typeof item === 'number' || typeof item === 'boolean') {
+      summary[key] = item;
+    } else if (Array.isArray(item)) {
+      summary[`${key}_count`] = item.length;
+    } else if (typeof item === 'object') {
+      summary[key] = summarizeShayShayContextRef(item);
+    }
+  });
+  return summary;
+}
+
+function assignShayShayArrayPreview(target, key, items, maxItems, mapItem) {
+  if (!Array.isArray(items)) return;
+  target[key] = items.slice(0, maxItems).map(item => mapItem ? mapItem(item) : item);
+  if (items.length > maxItems) target[`${key}_omitted_count`] = items.length - maxItems;
+}
+
+function buildShayShayPromptSnapshot(siteSnapshot = {}) {
+  const uiState = siteSnapshot.ui_state || {};
+  const workspaceState = siteSnapshot.workspace_state || {};
+  const componentState = siteSnapshot.component_state || {};
+  const previewState = siteSnapshot.preview_state || {};
+  const promptSnapshot = {
+    site_tag: siteSnapshot.site_tag || null,
+    site_name: siteSnapshot.site_name || null,
+    business_type: siteSnapshot.business_type || null,
+    active_page: siteSnapshot.active_page || null,
+    active_tab: siteSnapshot.active_tab || null,
+    fam_score: siteSnapshot.fam_score != null ? siteSnapshot.fam_score : null,
+    page_count: siteSnapshot.page_count != null ? siteSnapshot.page_count : 0,
+    media_slots_total: siteSnapshot.media_slots_total != null ? siteSnapshot.media_slots_total : 0,
+    media_slots_empty: siteSnapshot.media_slots_empty != null ? siteSnapshot.media_slots_empty : 0,
+    approved_decisions: siteSnapshot.approved_decisions != null ? siteSnapshot.approved_decisions : 0,
+    deployed_url: siteSnapshot.deployed_url || null,
+    last_deploy_status: siteSnapshot.last_deploy_status || null,
+    brief_summary: truncateShayShayText(siteSnapshot.brief_summary || '', SHAY_SHAY_PROMPT_LIMITS.textChars),
+    ui_state: {
+      pip_badge_count: uiState.pip_badge_count != null ? uiState.pip_badge_count : null,
+      worker_queue_pending_count: uiState.worker_queue_pending_count != null ? uiState.worker_queue_pending_count : null,
+      worker_queue_badge_visible: uiState.worker_queue_badge_visible != null ? uiState.worker_queue_badge_visible : null,
+      context_job_count: uiState.context_job_count != null ? uiState.context_job_count : null,
+      context_diff_count: uiState.context_diff_count != null ? uiState.context_diff_count : null,
+      shay_orb_state: uiState.shay_orb_state || null,
+      shay_desk_has_transcript: uiState.shay_desk_has_transcript != null ? uiState.shay_desk_has_transcript : null,
+      shay_mode: uiState.shay_mode || null,
+      step_log_visible: uiState.step_log_visible != null ? uiState.step_log_visible : null,
+      intelligence_finding_cards_visible: uiState.intelligence_finding_cards_visible != null ? uiState.intelligence_finding_cards_visible : null,
+      research_items_visible: uiState.research_items_visible != null ? uiState.research_items_visible : null,
+      validation: summarizeShayShayValidation(uiState.validation),
+    },
+    workspace_state: {
+      active_rail: workspaceState.active_rail || null,
+      sidebar_collapsed: workspaceState.sidebar_collapsed != null ? workspaceState.sidebar_collapsed : null,
+      sidebar_visible: workspaceState.sidebar_visible != null ? workspaceState.sidebar_visible : null,
+      active_mode: workspaceState.active_mode || null,
+      active_tab: workspaceState.active_tab || null,
+      active_page: workspaceState.active_page || null,
+      workspace_layout: workspaceState.workspace_layout || null,
+      inspector_pinned: workspaceState.inspector_pinned != null ? workspaceState.inspector_pinned : null,
+      inspector_open: workspaceState.inspector_open != null ? workspaceState.inspector_open : null,
+      selected_context: summarizeShayShayContextRef(workspaceState.selected_context),
+      hierarchy_summary: truncateShayShayText(workspaceState.hierarchy_summary || '', SHAY_SHAY_PROMPT_LIMITS.textChars),
+    },
+    component_state: {
+      selected_context: summarizeShayShayContextRef(componentState.selected_context),
+      media_workspace: summarizeShayShayStateBucket(componentState.media_workspace),
+      brief_workspace: componentState.brief_workspace && typeof componentState.brief_workspace === 'object'
+        ? {
+            completion_pct: componentState.brief_workspace.completion_pct != null ? componentState.brief_workspace.completion_pct : null,
+            answers_count: componentState.brief_workspace.answers && typeof componentState.brief_workspace.answers === 'object'
+              ? Object.keys(componentState.brief_workspace.answers).length
+              : 0,
+          }
+        : null,
+    },
+    preview_state: {
+      active_page: previewState.active_page || null,
+      current_view_mode: previewState.current_view_mode || null,
+      slot_mode_active: previewState.slot_mode_active != null ? previewState.slot_mode_active : null,
+      current_slot_target: summarizeShayShayContextRef(previewState.current_slot_target),
+      preview_src: truncateShayShayText(previewState.preview_src || '', SHAY_SHAY_PROMPT_LIMITS.urlChars),
+      preview_visible: previewState.preview_visible != null ? previewState.preview_visible : null,
+      device_mode: previewState.device_mode || null,
+      preview_port: previewState.preview_port != null ? previewState.preview_port : null,
+    },
+    repo_paths: siteSnapshot.repo_paths || null,
+    bridge_result: siteSnapshot.bridge_result || null,
+    bridge_debug: siteSnapshot.bridge_debug || null,
+    developer_mode: siteSnapshot.developer_mode && typeof siteSnapshot.developer_mode === 'object'
+      ? {
+          enabled: !!siteSnapshot.developer_mode.enabled,
+          trust_mode: siteSnapshot.developer_mode.trust_mode || null,
+          trust_mode_label: siteSnapshot.developer_mode.trust_mode_label || null,
+          approved_scope_count: siteSnapshot.developer_mode.approved_scope_count != null
+            ? siteSnapshot.developer_mode.approved_scope_count
+            : null,
+          allow_deploy_triggers: siteSnapshot.developer_mode.allow_deploy_triggers != null
+            ? siteSnapshot.developer_mode.allow_deploy_triggers
+            : null,
+        }
+      : null,
+  };
+
+  assignShayShayArrayPreview(promptSnapshot, 'pages', siteSnapshot.pages, SHAY_SHAY_PROMPT_LIMITS.pages, item => truncateShayShayText(item, 80));
+  assignShayShayArrayPreview(promptSnapshot.ui_state, 'step_log_items', uiState.step_log_items, SHAY_SHAY_PROMPT_LIMITS.stepLogItems, summarizeShayShayStepLogItem);
+  assignShayShayArrayPreview(promptSnapshot.ui_state, 'dismissed_prompt_keys', uiState.dismissed_prompt_keys, SHAY_SHAY_PROMPT_LIMITS.dismissedPromptKeys, item => truncateShayShayText(item, 80));
+  assignShayShayArrayPreview(promptSnapshot.workspace_state, 'return_stack', workspaceState.return_stack, SHAY_SHAY_PROMPT_LIMITS.returnStack, summarizeShayShayContextRef);
+  assignShayShayArrayPreview(promptSnapshot.workspace_state, 'open_tabs', workspaceState.open_tabs, SHAY_SHAY_PROMPT_LIMITS.openTabs, summarizeShayShayOpenTab);
+  assignShayShayArrayPreview(promptSnapshot.component_state, 'return_stack', componentState.return_stack, SHAY_SHAY_PROMPT_LIMITS.returnStack, summarizeShayShayContextRef);
+
+  return promptSnapshot;
 }
 
 function answerShayShayDirect(lower, siteSnapshot, manifest) {
@@ -6256,10 +6646,15 @@ async function executeShayShayBrainCall(opts) {
     agentCards,
     siteSnapshot,
     reasoning,
-    incomingBridgeResult,
+    conversation_id = null,
+    surface = 'lite',
+    handoff_context = null,
   } = opts;
 
-  const session = getOrCreateBrainSession(brain, {
+  // Composite session key: brain:conversation_id (or brain:surface as fallback)
+  const sessionKey = `${brain}:${conversation_id || surface || 'default'}`;
+  const session = getOrCreateBrainSession(sessionKey, {
+    brain,
     tag: siteSnapshot.site_tag || TAG,
     hubRoot: HUB_ROOT,
     page: siteSnapshot.active_page || currentPage,
@@ -6267,8 +6662,25 @@ async function executeShayShayBrainCall(opts) {
 
   const firstTurn = session.historyLength === 0;
   const memoryContext = memory.buildShayShayContext(siteSnapshot.site_tag || TAG);
+
+  // Build the user message — if this is a desk handoff first turn, prepend the context block
+  let effectiveMessage = message;
+  if (handoff_context && firstTurn && surface === 'desk') {
+    const turns = Array.isArray(handoff_context.turns) ? handoff_context.turns : [];
+    if (turns.length > 0) {
+      const handoffBlock = [
+        'HANDOFF FROM LITE:',
+        ...turns.map(t => `  ${t.role}: ${String(t.content || '').slice(0, 300)}`),
+        '',
+        'USER MESSAGE:',
+        message,
+      ].join('\n');
+      effectiveMessage = handoffBlock;
+    }
+  }
+
   const prompt = buildShayShayPrompt({
-    message,
+    message: effectiveMessage,
     context,
     manifest,
     instructions,
@@ -6279,7 +6691,6 @@ async function executeShayShayBrainCall(opts) {
     includePrimer: firstTurn,
     selectedBrain: brain,
     memoryContext,
-    incomingBridgeResult: incomingBridgeResult || null,
   });
 
   const result = await session.execute(prompt, {
@@ -6302,19 +6713,22 @@ function buildShayShayPrompt(opts) {
     studioContext,
     includePrimer,
     selectedBrain,
-    incomingBridgeResult,
   } = opts;
 
-  const capabilityText = JSON.stringify((manifest && manifest.capabilities) || {}, null, 2);
+  const capabilityText = JSON.stringify((manifest && manifest.capabilities) || {});
   const agentCardText = Object.values(agentCards || {}).map(card => {
     return `- ${card.id}: ${card.name} | model=${card.model} | best_for=${(card.best_for || []).join(', ')}`;
   }).join('\n');
   const cerebrumPath = path.join(HUB_ROOT, '.wolf', 'cerebrum.md');
-  const cerebrumExcerpt = readShayShayExcerpt(cerebrumPath, 40);
-  const studioContextExcerpt = truncateShayShayContext(studioContext, 50);
-  const snapshotText = JSON.stringify(siteSnapshot, null, 2);
+  const cerebrumExcerpt = readShayShayExcerpt(cerebrumPath, SHAY_SHAY_PROMPT_LIMITS.excerptLines.cerebrum);
+  const studioContextExcerpt = truncateShayShayContext(studioContext, SHAY_SHAY_PROMPT_LIMITS.excerptLines.studioContext);
+  const snapshotText = JSON.stringify(buildShayShayPromptSnapshot(siteSnapshot));
   const shayContextPath = path.join(__dirname, 'SHAY_CONTEXT.md');
   const shayContextContent = fs.existsSync(shayContextPath) ? fs.readFileSync(shayContextPath, 'utf8') : '';
+  const shayContextExcerpt = truncateShayShayContext(shayContextContent, SHAY_SHAY_PROMPT_LIMITS.excerptLines.shayContext);
+  const crossSessionMemoryExcerpt = truncateShayShayContext(opts.memoryContext || '', SHAY_SHAY_PROMPT_LIMITS.excerptLines.crossSession);
+  const repoPaths = siteSnapshot && siteSnapshot.repo_paths ? siteSnapshot.repo_paths : {};
+  const currentActivePagePath = repoPaths.active_page_path || '@active-site/' + (siteSnapshot && siteSnapshot.active_page ? siteSnapshot.active_page : 'index.html');
 
   const primer = includePrimer ? [
     instructions,
@@ -6332,10 +6746,20 @@ function buildShayShayPrompt(opts) {
     '  Write file:   { "bridge_request": { "op": "write", "path": "relative/path", "content": "..." } }',
     '  Run command:  { "bridge_request": { "op": "exec", "command": "git status" } }',
     'All exec commands run in ~/famtastic. Allowed binaries: git, npm, node, bash, cat, ls, sed.',
+    'Do not guess that "index.html" lives at the repo root. Use siteSnapshot.repo_paths to target the correct file.',
+    'Preferred bridge path aliases:',
+    '  @hub/...         => repo root',
+    '  @studio/...      => site-studio/',
+    '  @studio-ui/...   => site-studio/public/',
+    '  @active-site/... => active site dist/',
+    `For the current live page, prefer siteSnapshot.repo_paths.active_page_path (${currentActivePagePath}).`,
+    `For Studio UI work, prefer ${repoPaths.studio_ui_entry || '@studio-ui/index.html'}, ${repoPaths.studio_orb_script || '@studio-ui/js/studio-orb.js'}, or ${repoPaths.studio_orb_styles || '@studio-ui/css/studio-orb.css'}.`,
     'Always check siteSnapshot.bridge_result at the start of your response — if it is present, it is the',
     'result of your previous bridge_request. Act on it before doing anything else.',
+    'Use siteSnapshot.bridge_debug only for diagnosis: it tells you whether a prior result was seen,',
+    'where it came from, and whether stdout or stderr were present.',
     '',
-    shayContextContent ? ('SHAY PERSISTENT CONTEXT (SHAY_CONTEXT.md):\n' + shayContextContent) : '',
+    shayContextExcerpt ? ('SHAY PERSISTENT CONTEXT (SHAY_CONTEXT.md):\n' + shayContextExcerpt) : '',
     '',
     'LIVE CAPABILITY MANIFEST:',
     capabilityText,
@@ -6347,15 +6771,15 @@ function buildShayShayPrompt(opts) {
     cerebrumExcerpt || 'No cerebrum memory available.',
     '',
     'CROSS-SESSION MEMORY:',
-    (opts.memoryContext || 'No prior memories.'),
+    (crossSessionMemoryExcerpt || 'No prior memories.'),
     '',
     'STUDIO CONTEXT EXCERPT:',
     studioContextExcerpt || 'No STUDIO-CONTEXT.md available yet.',
     '',
   ].join('\n') : '';
 
-  const bridgeBlock = (incomingBridgeResult && typeof incomingBridgeResult === 'object')
-    ? '\n\nBRIDGE RESULT FROM LAST REQUEST:\n' + JSON.stringify(incomingBridgeResult, null, 2) + '\n(Act on this result before anything else.)'
+  const bridgeBlock = isShayShayBridgeObject(siteSnapshot && siteSnapshot.bridge_result)
+    ? '\n\nBRIDGE RESULT FROM LAST REQUEST (same object as siteSnapshot.bridge_result):\n' + JSON.stringify(siteSnapshot.bridge_result, null, 2) + '\n(Act on this result before anything else.)'
     : '';
 
   return [
@@ -6418,6 +6842,8 @@ function normalizeShayShayResponse(raw, fallback = {}) {
           action: parsed.action || null,
           message: parsed.message || null,
           bridge_request: (parsed.bridge_request && typeof parsed.bridge_request === 'object') ? parsed.bridge_request : null,
+          commit_request: (parsed.commit_request && typeof parsed.commit_request === 'object' && parsed.commit_request.message) ? parsed.commit_request : null,
+          usage: parsed.usage || null,
         };
       }
     } catch {}
@@ -6428,56 +6854,183 @@ function normalizeShayShayResponse(raw, fallback = {}) {
     action: fallback.action || null,
     message: fallback.message || null,
     bridge_request: null,
+    commit_request: null,
+    usage: null,
   };
+}
+
+function summarizeBridgeExecBytes(text) {
+  return Buffer.byteLength(String(text || ''), 'utf8');
+}
+
+function logShayShayBridgeRequest(bridgeRequest) {
+  const op = bridgeRequest && bridgeRequest.op ? bridgeRequest.op : 'unknown';
+  if (op === 'exec') {
+    const command = String((bridgeRequest && bridgeRequest.command) || '').trim();
+    const bin = command.split(/\s+/).filter(Boolean)[0] || 'unknown';
+    console.log(`[shay-shay] bridge_request received: op=exec bin=${bin}`);
+    return;
+  }
+  if (op === 'read' || op === 'write') {
+    console.log(`[shay-shay] bridge_request received: op=${op} path=${bridgeRequest.path || '(missing)'}`);
+    return;
+  }
+  console.log(`[shay-shay] bridge_request received: op=${op}`);
+}
+
+function logShayShayBridgeResult(bridgeRequest, bridgeResult) {
+  const op = bridgeResult && bridgeResult.op ? bridgeResult.op : (bridgeRequest && bridgeRequest.op) || 'unknown';
+  if (op === 'exec') {
+    console.log(
+      `[shay-shay] bridge_exec completed: exitCode=${bridgeResult && bridgeResult.exitCode != null ? bridgeResult.exitCode : 'null'} ` +
+      `stdout_bytes=${summarizeBridgeExecBytes(bridgeResult && bridgeResult.stdout)} ` +
+      `stderr_bytes=${summarizeBridgeExecBytes(bridgeResult && bridgeResult.stderr)} ` +
+      `error=${bridgeResult && bridgeResult.error ? 'yes' : 'no'}`
+    );
+    return;
+  }
+  if (op === 'read' || op === 'write') {
+    console.log(`[shay-shay] bridge_${op} completed: error=${bridgeResult && bridgeResult.error ? 'yes' : 'no'}`);
+    return;
+  }
+  console.log(`[shay-shay] bridge_result completed: op=${op} error=${bridgeResult && bridgeResult.error ? 'yes' : 'no'}`);
+}
+
+// Minimal unified diff (line-by-line, no external dep)
+function unifiedDiff(oldStr, newStr, label) {
+  const oldLines = String(oldStr || '').split('\n');
+  const newLines = String(newStr || '').split('\n');
+  const header = `--- a/${label}\n+++ b/${label}\n`;
+  // Simple approach: find changed lines with 2 lines of context
+  const patches = [];
+  let i = 0, j = 0;
+  while (i < oldLines.length || j < newLines.length) {
+    if (oldLines[i] === newLines[j]) {
+      i++; j++;
+    } else {
+      const ctxStart = Math.max(0, i - 2);
+      const chunk = [`@@ -${ctxStart + 1} +${ctxStart + 1} @@`];
+      for (let k = ctxStart; k < i; k++) chunk.push(' ' + oldLines[k]);
+      while (i < oldLines.length && (j >= newLines.length || oldLines[i] !== newLines[j])) {
+        chunk.push('-' + oldLines[i++]);
+      }
+      while (j < newLines.length && (i >= oldLines.length || oldLines[i] !== newLines[j])) {
+        chunk.push('+' + newLines[j++]);
+      }
+      const ctxEnd = Math.min(oldLines.length, i + 2);
+      for (let k = i; k < ctxEnd; k++) chunk.push(' ' + oldLines[k]);
+      i = ctxEnd; j += ctxEnd - i + (ctxEnd - i); // advance past context
+      patches.push(chunk.join('\n'));
+      break; // simplified: one chunk only for performance
+    }
+  }
+  return header + (patches.length > 0 ? patches.join('\n\n') : '(no differences)');
 }
 
 async function executeBridgeOp(bridgeRequest) {
   const { execFile } = require('child_process');
-  const FAM_ROOT = path.resolve(process.env.HOME, 'famtastic');
+  const FAM_ROOT = HUB_ROOT;
   const ALLOWED_COMMANDS = ['git', 'npm', 'node', 'bash', 'cat', 'ls', 'sed'];
+  const BRIDGE_TIMEOUTS = { read: 3000, write: 5000, exec: 20000 };
+  const PATH_ALIASES = [
+    { prefix: '@active-site/', root: () => DIST_DIR() },
+    { prefix: '@studio-ui/', root: () => path.join(__dirname, 'public') },
+    { prefix: '@studio/', root: () => __dirname },
+    { prefix: '@hub/', root: () => HUB_ROOT },
+  ];
 
-  function resolveSafe(relPath) {
-    const resolved = path.resolve(FAM_ROOT, relPath);
-    return (resolved.startsWith(FAM_ROOT + path.sep) || resolved === FAM_ROOT) ? resolved : null;
+  function resolveSafe(inputPath) {
+    const requested = String(inputPath || '').trim();
+    let root = FAM_ROOT;
+    let relativePath = requested;
+    let alias = '@hub/';
+
+    for (const entry of PATH_ALIASES) {
+      if (requested.startsWith(entry.prefix)) {
+        root = entry.root();
+        relativePath = requested.slice(entry.prefix.length);
+        alias = entry.prefix;
+        break;
+      }
+    }
+
+    const safeRoot = path.resolve(root);
+    const resolved = path.resolve(safeRoot, relativePath || '');
+    if (!(resolved.startsWith(safeRoot + path.sep) || resolved === safeRoot)) return null;
+    return {
+      abs: resolved,
+      alias,
+      resolvedPath: toShayShayRepoRelative(resolved),
+    };
   }
 
   const op = bridgeRequest.op;
 
   if (op === 'read') {
-    const abs = resolveSafe(bridgeRequest.path || '');
-    if (!abs) return { op, error: 'Path escapes ~/famtastic' };
+    const target = resolveSafe(bridgeRequest.path || '');
+    if (!target) return { op, path: bridgeRequest.path, error: 'Path escapes allowed bridge roots' };
     try {
-      const content = fs.readFileSync(abs, 'utf8');
-      return { op, path: bridgeRequest.path, content };
+      const content = fs.readFileSync(target.abs, 'utf8');
+      return { op, path: bridgeRequest.path, resolved_path: target.resolvedPath, content };
     } catch (e) {
-      return { op, path: bridgeRequest.path, error: e.message };
+      return { op, path: bridgeRequest.path, resolved_path: target.resolvedPath, error: e.message };
     }
   }
 
   if (op === 'write') {
-    const abs = resolveSafe(bridgeRequest.path || '');
-    if (!abs) return { op, error: 'Path escapes ~/famtastic' };
+    const target = resolveSafe(bridgeRequest.path || '');
+    if (!target) return { op, path: bridgeRequest.path, error: 'Path escapes allowed bridge roots' };
     try {
-      fs.mkdirSync(path.dirname(abs), { recursive: true });
-      fs.writeFileSync(abs, bridgeRequest.content || '', 'utf8');
-      return { op, path: bridgeRequest.path, success: true };
+      fs.mkdirSync(path.dirname(target.abs), { recursive: true });
+      fs.writeFileSync(target.abs, bridgeRequest.content || '', 'utf8');
+      return { op, path: bridgeRequest.path, resolved_path: target.resolvedPath, success: true };
     } catch (e) {
-      return { op, path: bridgeRequest.path, error: e.message };
+      return { op, path: bridgeRequest.path, resolved_path: target.resolvedPath, error: e.message };
     }
   }
 
   if (op === 'exec') {
     const command = (bridgeRequest.command || '').trim();
-    const parts = command.split(/\s+/);
+    const parts = command.split(/\s+/).filter(Boolean);
     const bin = parts[0];
     if (!ALLOWED_COMMANDS.includes(bin)) {
-      return { op, error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}` };
+      return {
+        op,
+        command,
+        cwd: '.',
+        stdout: '',
+        stderr: '',
+        exitCode: null,
+        error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}`,
+      };
     }
     return new Promise(resolve => {
-      execFile(bin, parts.slice(1), { cwd: FAM_ROOT, timeout: 30000 }, (err, stdout, stderr) => {
-        resolve({ op, command, stdout: stdout || '', stderr: stderr || '', exitCode: err ? (err.code ?? 1) : 0 });
+      execFile(bin, parts.slice(1), { cwd: FAM_ROOT, timeout: BRIDGE_TIMEOUTS.exec }, (err, stdout, stderr) => {
+        const result = {
+          op,
+          command,
+          cwd: '.',
+          stdout: stdout || '',
+          stderr: stderr || '',
+          exitCode: typeof (err && err.code) === 'number' ? err.code : (err ? 1 : 0),
+        };
+        if (err && typeof err.code !== 'number') result.error = err.message;
+        resolve(result);
       });
     });
+  }
+
+  if (op === 'diff') {
+    const target = resolveSafe(bridgeRequest.path || '');
+    if (!target) return { op, path: bridgeRequest.path, error: 'Path escapes allowed bridge roots' };
+    try {
+      const current = fs.existsSync(target.abs) ? fs.readFileSync(target.abs, 'utf8') : '';
+      const proposed = bridgeRequest.content || '';
+      const diff = unifiedDiff(current, proposed, target.resolvedPath);
+      return { op, path: bridgeRequest.path, resolved_path: target.resolvedPath, diff };
+    } catch (e) {
+      return { op, path: bridgeRequest.path, error: e.message };
+    }
   }
 
   return { op, error: `Unknown bridge op: ${op}` };
@@ -16359,6 +16912,7 @@ module.exports = {
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
   classifyShayShayReasoning, selectShayShayBrain, normalizeShayShayResponse, answerShayShayDirect,
+  resolveShayShayBridgeState, buildShayShayBridgeDebug, buildShayShaySiteSnapshot, buildShayShayPrompt, executeBridgeOp,
   normalizeShayLiteSettings,
   extractTemplateComponents, loadTemplateContext, applyTemplateToPages, writeTemplateArtifacts,
   // Verification + auto-fix
@@ -16422,6 +16976,29 @@ function setupFileWatcher() {
       fileWatchers.push(cssWatcher);
     } catch (err) {
       console.log(`[file-watch] Could not watch css/ directory: ${err.message}`);
+    }
+  }
+
+  // Watch js/ directory for client refresh-recommended changes
+  const jsDir = path.join(__dirname, 'public', 'js');
+  if (fs.existsSync(jsDir)) {
+    try {
+      let jsDebounce = null;
+      const jsWatcher = fs.watch(jsDir, (eventType, filename) => {
+        if (!filename || !filename.endsWith('.js')) return;
+        clearTimeout(jsDebounce);
+        jsDebounce = setTimeout(() => {
+          console.log(`[file-watch] js/${filename} changed — restart recommended`);
+          wss.clients.forEach(client => {
+            try {
+              client.send(JSON.stringify({ type: 'restart-needed', file: `js/${filename}`, timestamp: new Date().toISOString() }));
+            } catch {}
+          });
+        }, 2000);
+      });
+      fileWatchers.push(jsWatcher);
+    } catch (err) {
+      console.log(`[file-watch] Could not watch js/ directory: ${err.message}`);
     }
   }
 }

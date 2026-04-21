@@ -18,6 +18,32 @@ function resolveSafe(relPath) {
   return resolved;
 }
 
+function unifiedDiff(oldStr, newStr, label) {
+  const oldLines = String(oldStr || '').split('\n');
+  const newLines = String(newStr || '').split('\n');
+  const header = `--- a/${label}\n+++ b/${label}\n`;
+  const patches = [];
+  let i = 0, j = 0;
+  while (i < oldLines.length || j < newLines.length) {
+    if (oldLines[i] === newLines[j]) {
+      i++; j++;
+    } else {
+      const ctxStart = Math.max(0, i - 2);
+      const chunk = [`@@ -${ctxStart + 1} +${ctxStart + 1} @@`];
+      for (let k = ctxStart; k < i; k++) chunk.push(' ' + oldLines[k]);
+      while (i < oldLines.length && (j >= newLines.length || oldLines[i] !== newLines[j])) {
+        chunk.push('-' + oldLines[i++]);
+      }
+      while (j < newLines.length && (i >= oldLines.length || oldLines[i] !== newLines[j])) {
+        chunk.push('+' + newLines[j++]);
+      }
+      patches.push(chunk.join('\n'));
+      break;
+    }
+  }
+  return header + (patches.length > 0 ? patches.join('\n\n') : '(no differences)');
+}
+
 // GET /api/bridge/read?path=relative/path
 router.get('/read', (req, res) => {
   const rel = req.query.path;
@@ -61,6 +87,22 @@ router.post('/write', (req, res) => {
   }
 });
 
+// POST /api/bridge/diff  { path, content }
+router.post('/diff', (req, res) => {
+  const { path: rel, content } = req.body || {};
+  if (!rel || content === undefined) return res.status(400).json({ error: 'path and content required' });
+  const abs = resolveSafe(rel);
+  if (!abs) return res.status(403).json({ error: 'Path escapes ~/famtastic' });
+  try {
+    const current = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
+    const proposed = content || '';
+    const diff = unifiedDiff(current, proposed, rel);
+    res.json({ diff, path: rel });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/bridge/exec  { command }
 router.post('/exec', (req, res) => {
   const { command } = req.body || {};
@@ -72,7 +114,7 @@ router.post('/exec', (req, res) => {
     return res.status(403).json({ error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}` });
   }
 
-  execFile(bin, parts.slice(1), { cwd: FAM_ROOT, timeout: 30000 }, (err, stdout, stderr) => {
+  execFile(bin, parts.slice(1), { cwd: FAM_ROOT, timeout: 20000 }, (err, stdout, stderr) => {
     res.json({
       stdout: stdout || '',
       stderr: stderr || '',

@@ -3,6 +3,62 @@
 // 5 proactive triggers, session-permanent dismiss, Show Me / Do It modes.
 
 (function () {
+  // Generate a stable UUID for per-surface conversation separation
+  function generateConvId() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return 'conv-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36);
+  }
+
+  function createLocalShayBridgeClient(surfaceName) {
+    var pendingResult = null;
+    var convId = generateConvId();
+    var inFlight = false;
+    var queue = [];
+    var surface = surfaceName || 'lite';
+
+    function _drainQueue() {
+      if (inFlight || queue.length === 0) return;
+      var next = queue.shift();
+      inFlight = true;
+      next();
+    }
+
+    return {
+      surface: surface,
+      convId: convId,
+      prepareRequestPayload: function (message, context) {
+        var outgoingBridge = pendingResult;
+        pendingResult = null;
+        return {
+          message: message,
+          context: context || {},
+          surface: surface,
+          conversation_id: convId,
+          bridge_result: outgoingBridge || null,
+        };
+      },
+      storeResponseResult: function (data) {
+        if (data && data.bridge_result && typeof data.bridge_result === 'object' && !Array.isArray(data.bridge_result)) {
+          pendingResult = data.bridge_result;
+        }
+        return pendingResult;
+      },
+      getPendingResult: function () {
+        return pendingResult;
+      },
+      // FIFO request serialization
+      enqueue: function (fn) {
+        queue.push(fn);
+        _drainQueue();
+      },
+      markResponseReceived: function () {
+        inFlight = false;
+        _drainQueue();
+      },
+      isInFlight: function () { return inFlight; },
+    };
+  }
+
   const TRIGGERS = {
     welcome:      'pip-t-welcome',
     build_warn:   'pip-t-build-warn',
@@ -16,8 +72,11 @@
   let idleTimer = null;
   let highlightEl = null;
   let currentOrbState = 'IDLE'; // IDLE | BRIEF_PROGRESS | BRAINSTORM_ACTIVE | REVIEW_ACTIVE | SHAY_THINKING
-  let pendingBridgeResult = null; // stored after each Shay response, sent top-level on next request then consumed
+  // Per-surface bridge clients — separate conversation histories
+  let liteBridgeClient = createLocalShayBridgeClient('lite');
+  let deskBridgeClient = createLocalShayBridgeClient('desk');
   let shayDeskHasTranscript = false;
+  let liteTurnCount = 0; // track Lite turns for "Open in Desk" affordance
   let liteSurfaceState = 'idle'; // idle | prompting | thinking | responding | alerting | show_me
   let shayLiteSettings = {
     identity_mode: 'character',
@@ -31,6 +90,7 @@
   };
   const SHAY_LITE_IDENTITY_KEY = 'shay-lite-last-identity';
   const SHAY_LITE_POSITION_KEY = 'shay-lite-position';
+  const SHAY_THINKING_MIN_MS = 800;
   let suppressNextOrbClick = false;
   let dragState = null;
 
@@ -169,6 +229,10 @@
     saveLitePosition({ x: Math.round(pos.x), y: Math.round(pos.y) });
   }
 
+  function resetLitePosition() {
+    applyLiteCustomPosition(null);
+  }
+
   function clampLitePosition(pos) {
     var shell = document.getElementById('shay-lite-shell');
     var orb = document.getElementById('pip-orb');
@@ -273,14 +337,96 @@
     summary.textContent = 'Current Lite identity: ' + identityLabel(getIdentityMode()) + '. Proactive behavior: ' + humanizeLabel(shayLiteSettings.proactive_behavior) + '. Drag Shay Lite to reposition, or switch identity from Lite or Assistant settings.';
   }
 
+  function beginShayThinking() {
+    applyLiteSurfaceState('thinking');
+    setOrbState('SHAY_THINKING');
+    return Date.now();
+  }
+
+  function completeShayThinkingWindow(startedAt, fn) {
+    var elapsed = Date.now() - (startedAt || Date.now());
+    var remaining = SHAY_THINKING_MIN_MS - elapsed;
+    if (remaining > 0) {
+      setTimeout(fn, remaining);
+    } else if (typeof fn === 'function') {
+      fn();
+    }
+  }
+
+  function endShayThinking() {
+    applyLiteSurfaceState('responding');
+    setOrbState('IDLE');
+  }
+
+  function getShayDeskTranscriptArea() {
+    return document.getElementById('shay-desk-transcript');
+  }
+
+  function updateShayDeskTranscriptState() {
+    var area = getShayDeskTranscriptArea();
+    var empty = document.getElementById('shay-desk-empty-state');
+    if (!area) return;
+    var hasMessages = !!area.querySelector('.shay-desk-msg');
+    area.classList.toggle('has-messages', hasMessages);
+    if (empty) empty.style.display = hasMessages ? 'none' : '';
+  }
+
+  function scrollShayDeskTranscriptToBottom() {
+    var area = getShayDeskTranscriptArea();
+    if (!area) return;
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function appendShayDeskMessage(role, text, opts) {
+    var area = getShayDeskTranscriptArea();
+    if (!area || !text) return null;
+    var options = opts || {};
+    var row = document.createElement('div');
+    row.className = 'shay-desk-msg shay-desk-msg-' + (role || 'assistant') + (options.subtle ? ' is-subtle' : '');
+    if (options.id) row.id = options.id;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'shay-desk-bubble' + (options.typing ? ' shay-desk-bubble-typing' : '');
+    if (options.typing) {
+      var dots = document.createElement('div');
+      dots.className = 'shay-thinking-dots';
+      for (var i = 0; i < 3; i++) dots.appendChild(document.createElement('span'));
+      var label = document.createElement('div');
+      label.className = 'shay-thinking-label';
+      label.textContent = text;
+      bubble.appendChild(dots);
+      bubble.appendChild(label);
+    } else {
+      bubble.textContent = text;
+    }
+
+    row.appendChild(bubble);
+    area.appendChild(row);
+    updateShayDeskTranscriptState();
+    scrollShayDeskTranscriptToBottom();
+    return row;
+  }
+
+  function showShayDeskTyping(on) {
+    var existing = document.getElementById('shay-desk-typing-row');
+    if (!on) {
+      if (existing) existing.remove();
+      updateShayDeskTranscriptState();
+      return;
+    }
+    if (existing) {
+      scrollShayDeskTranscriptToBottom();
+      return;
+    }
+    appendShayDeskMessage('assistant', 'Shay is on it…', { id: 'shay-desk-typing-row', typing: true, subtle: true });
+  }
+
   function bindShayDeskControls() {
     var input = document.getElementById('shay-desk-input');
     var sendBtn = document.getElementById('shay-desk-send-btn');
     var liteBtn = document.getElementById('shay-desk-lite-btn');
-    var cardLiteBtn = document.getElementById('shay-desk-card-lite-btn');
     var showMeBtn = document.getElementById('shay-desk-showme-btn');
     var chatBtn = document.getElementById('shay-desk-chat-btn');
-    var cardChatBtn = document.getElementById('shay-desk-card-chat-btn');
 
     function setDeskThinking(on) {
       var btn = document.getElementById('shay-desk-send-btn');
@@ -289,42 +435,72 @@
       if (indicator) indicator.style.display = on ? 'flex' : 'none';
     }
 
-    function showDeskResponse(text) {
-      var area = document.getElementById('shay-desk-response-area');
-      if (!area) return;
-      area.style.display = 'block';
-      area.textContent = text;
-    }
-
     function askFromDesk() {
       var text = input && input.value ? input.value.trim() : '';
       if (!text) {
-        openLitePanel({ focusInput: true });
+        if (input) input.focus();
         return;
       }
-      setDeskThinking(true);
-      var context = getShayShayContext();
-      var outgoingBridge = pendingBridgeResult;
-      pendingBridgeResult = null; // consume
-      fetch('/api/shay-shay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, context: context, bridge_result: outgoingBridge || null }),
-      })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.bridge_result && typeof data.bridge_result === 'object') {
-            pendingBridgeResult = data.bridge_result;
-          }
-          setDeskThinking(false);
-          showDeskResponse(data.response || data.error || 'No response.');
-          if (input) input.value = '';
+      appendShayDeskMessage('user', text);
+      if (input) input.value = '';
+
+      function doRequest() {
+        var thinkStart = beginShayThinking();
+        setDeskThinking(true);
+        showShayDeskTyping(true);
+        var context = getShayShayContext();
+        var payload = deskBridgeClient.prepareRequestPayload(text, context);
+        // Attach handoff context if coming from Lite
+        if (deskBridgeClient._pendingHandoff) {
+          payload.handoff_context = deskBridgeClient._pendingHandoff;
+          deskBridgeClient._pendingHandoff = null;
+        }
+        fetch('/api/shay-shay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         })
-        .catch(function(err) {
-          setDeskThinking(false);
-          showDeskResponse('Error: ' + err.message);
-        });
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            deskBridgeClient.storeResponseResult(data);
+            deskBridgeClient.markResponseReceived();
+            // Show last bridge op hint if present
+            if (data.bridge_result && data.bridge_result.op) {
+              var bPath = data.bridge_result.path || data.bridge_result.command || '';
+              setShayStatusHint('Last bridge: ' + data.bridge_result.op + (bPath ? ' ' + bPath : ''));
+            }
+            // Handle commit proposal
+            if (data.commit_request && data.commit_request.message) {
+              showCommitProposalBanner(data.commit_request.message);
+            }
+            completeShayThinkingWindow(thinkStart, function () {
+              showShayDeskTyping(false);
+              setDeskThinking(false);
+              endShayThinking();
+              appendShayDeskMessage('assistant', data.response || data.error || 'No response.');
+              // Usage metadata
+              if (data.usage) {
+                var usageLine = '\u21b3 ' + (data.usage.input_tokens || 0) + '\u2192' + (data.usage.output_tokens || 0) + ' tokens' + (data.usage.cost_usd ? ' \u00b7 $' + Number(data.usage.cost_usd).toFixed(4) : '');
+                appendShayDeskMessage('system', usageLine, { subtle: true });
+              }
+            });
+          })
+          .catch(function(err) {
+            deskBridgeClient.markResponseReceived();
+            completeShayThinkingWindow(thinkStart, function () {
+              showShayDeskTyping(false);
+              setDeskThinking(false);
+              applyLiteSurfaceState('alerting');
+              setOrbState('IDLE');
+              appendShayDeskMessage('system', 'Error: ' + err.message, { subtle: true });
+            });
+          });
+      }
+
+      deskBridgeClient.enqueue(doRequest);
     }
+
+    updateShayDeskTranscriptState();
 
     if (input && !input.dataset.boundDeskEnter) {
       input.dataset.boundDeskEnter = 'true';
@@ -339,7 +515,7 @@
       sendBtn.dataset.boundDeskClick = 'true';
       sendBtn.addEventListener('click', askFromDesk);
     }
-    [liteBtn, cardLiteBtn].forEach(function (btn) {
+    [liteBtn].forEach(function (btn) {
       if (btn && !btn.dataset.boundDeskClick) {
         btn.dataset.boundDeskClick = 'true';
         btn.addEventListener('click', function () { openLitePanel({ focusInput: true }); });
@@ -351,7 +527,7 @@
         if (window.PipOrb && typeof window.PipOrb.quickShowMe === 'function') window.PipOrb.quickShowMe();
       });
     }
-    [chatBtn, cardChatBtn].forEach(function (btn) {
+    [chatBtn].forEach(function (btn) {
       if (btn && !btn.dataset.boundDeskClick) {
         btn.dataset.boundDeskClick = 'true';
         btn.addEventListener('click', function () {
@@ -670,6 +846,15 @@
       popup.appendChild(item);
     });
 
+    const dockItem = document.createElement('div');
+    dockItem.className = 'pip-mode-item';
+    dockItem.appendChild(document.createTextNode('\u21AA Dock Right'));
+    dockItem.addEventListener('click', function () {
+      resetLitePosition();
+      closeModePopup();
+    });
+    popup.appendChild(dockItem);
+
     orb.appendChild(popup);
 
     setTimeout(function () {
@@ -775,98 +960,97 @@
       applyLiteSurfaceState('prompting');
       appendDeskMessage('user', text);
       showColumnResponse(null, true); // show typing indicator
-      applyLiteSurfaceState('thinking');
-      setOrbState('SHAY_THINKING');
-      sendToShayShay(text);
+      sendToShayShay(text, beginShayThinking());
     }
 
-    var THINKING_MIN_MS = 800;
+    function sendToShayShay(message, thinkStart) {
+      liteTurnCount++;
+      var currentTurn = liteTurnCount;
 
-    function sendToShayShay(message) {
-      var context = getShayShayContext();
-      var thinkStart = Date.now();
-      var outgoingBridge = pendingBridgeResult;
-      pendingBridgeResult = null; // consume — sent once then cleared
+      function doRequest() {
+        var context = getShayShayContext();
+        var payload = liteBridgeClient.prepareRequestPayload(message, context);
 
-      function afterThinking(fn) {
-        var elapsed = Date.now() - thinkStart;
-        var remaining = THINKING_MIN_MS - elapsed;
-        if (remaining > 0) {
-          setTimeout(fn, remaining);
-        } else {
-          fn();
-        }
-      }
-
-      function exitThinking() {
-        applyLiteSurfaceState('responding');
-        setOrbState('IDLE');
-      }
-
-      fetch('/api/shay-shay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message, context: context, bridge_result: outgoingBridge || null }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          // Store bridge_result for the next turn (sent top-level, not nested in context)
-          if (data.bridge_result && typeof data.bridge_result === 'object') {
-            pendingBridgeResult = data.bridge_result;
-          }
-          afterThinking(function () {
-          hideTyping();
-          exitThinking();
-          if (data.action === 'route_to_chat') {
-            // Route message to Studio chat — Shay-Shay is delegating
-            if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-              if (window.addMessage) window.addMessage('user', data.message || message);
-              window.ws.send(JSON.stringify({ type: 'chat', content: data.message || message }));
-            }
-            showColumnResponse('Sent to Studio: "' + (data.message || message) + '"', false);
-          } else if (data.action === 'system_command') {
-            showColumnResponse(data.response || 'Running command\u2026', false);
-            if (data.command === 'restart' && window.ws) {
-              window.ws.send(JSON.stringify({ type: 'chat', content: 'restart studio' }));
-            }
-          } else if (data.action === 'show_me') {
-            applyLiteSurfaceState('show_me');
-            showColumnResponse(data.response || 'Opening Show Me\u2026', false);
-          } else if (data.action === 'suggest_brainstorm') {
-            showColumnResponse(data.response || 'Want to switch to brainstorm mode?', false);
-            showColumnActions([
-              {
-                label: 'Switch to Brainstorm',
-                action: function () {
-                  if (window.StudioShell && typeof StudioShell.switchMode === 'function') {
-                    StudioShell.switchMode('brainstorm');
-                  }
-                  showColumnActions([]);
-                }
-              },
-              {
-                label: 'Stay Here',
-                action: function () { showColumnActions([]); },
-                secondary: true
-              }
-            ]);
-          } else if (data.action === 'job_plan') {
-            showJobPlanCard(data.jobs || [], data.response || 'Job plan created.');
-            showColumnActions([]);
-          } else {
-            showColumnResponse(data.response || data.error || 'No response.', false);
-            showColumnActions([]);
-          }
-          }); // afterThinking
+        fetch('/api/shay-shay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         })
-        .catch(function (err) {
-          afterThinking(function () {
-            hideTyping();
-            applyLiteSurfaceState('alerting');
-            exitThinking();
-            showColumnResponse('Error reaching Shay-Shay: ' + err.message, false);
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            liteBridgeClient.storeResponseResult(data);
+            liteBridgeClient.markResponseReceived();
+            // Show last bridge op hint if present
+            if (data.bridge_result && data.bridge_result.op) {
+              var bPath = data.bridge_result.path || data.bridge_result.command || '';
+              setShayStatusHint('Last bridge: ' + data.bridge_result.op + (bPath ? ' ' + bPath : ''));
+            }
+            completeShayThinkingWindow(thinkStart, function () {
+              hideTyping();
+              endShayThinking();
+              if (data.action === 'route_to_chat') {
+                // Route message to Studio chat — Shay-Shay is delegating
+                if (window.ws && window.ws.readyState === WebSocket.OPEN) {
+                  if (window.addMessage) window.addMessage('user', data.message || message);
+                  window.ws.send(JSON.stringify({ type: 'chat', content: data.message || message }));
+                }
+                showColumnResponse('Sent to Studio: "' + (data.message || message) + '"', false);
+              } else if (data.action === 'system_command') {
+                showColumnResponse(data.response || 'Running command\u2026', false);
+                if (data.command === 'restart' && window.ws) {
+                  window.ws.send(JSON.stringify({ type: 'chat', content: 'restart studio' }));
+                }
+              } else if (data.action === 'show_me') {
+                applyLiteSurfaceState('show_me');
+                showColumnResponse(data.response || 'Opening Show Me\u2026', false);
+              } else if (data.action === 'suggest_brainstorm') {
+                showColumnResponse(data.response || 'Want to switch to brainstorm mode?', false);
+                showColumnActions([
+                  {
+                    label: 'Switch to Brainstorm',
+                    action: function () {
+                      if (window.StudioShell && typeof StudioShell.switchMode === 'function') {
+                        StudioShell.switchMode('brainstorm');
+                      }
+                      showColumnActions([]);
+                    }
+                  },
+                  {
+                    label: 'Stay Here',
+                    action: function () { showColumnActions([]); },
+                    secondary: true
+                  }
+                ]);
+              } else if (data.action === 'job_plan') {
+                showJobPlanCard(data.jobs || [], data.response || 'Job plan created.');
+                showColumnActions([]);
+              } else {
+                showColumnResponse(data.response || data.error || 'No response.', false);
+                showColumnActions([]);
+              }
+              // Usage metadata
+              if (data.usage) {
+                var usageLine = '\u21b3 ' + (data.usage.input_tokens || 0) + '\u2192' + (data.usage.output_tokens || 0) + ' tokens' + (data.usage.cost_usd ? ' \u00b7 $' + Number(data.usage.cost_usd).toFixed(4) : '');
+                appendDeskMessage('system', usageLine, { subtle: true });
+              }
+              // After 3 Lite turns, show "Open in Desk" affordance
+              if (currentTurn >= 3) {
+                showOpenInDeskAffordance();
+              }
+            });
+          })
+          .catch(function (err) {
+            liteBridgeClient.markResponseReceived();
+            completeShayThinkingWindow(thinkStart, function () {
+              hideTyping();
+              applyLiteSurfaceState('alerting');
+              setOrbState('IDLE');
+              showColumnResponse('Error reaching Shay-Shay: ' + err.message, false);
+            });
           });
-        });
+      }
+
+      liteBridgeClient.enqueue(doRequest);
     }
 
     input.addEventListener('keydown', function (e) {
@@ -1198,7 +1382,7 @@
     for (var i = 0; i < 3; i++) { var d = document.createElement('span'); dots.appendChild(d); }
     var label = document.createElement('div');
     label.className = 'shay-thinking-label';
-    label.textContent = 'Shay is thinking\u2026';
+    label.textContent = 'Shay is on it\u2026';
     wrap.appendChild(dots);
     wrap.appendChild(label);
     area.appendChild(wrap);
@@ -1354,6 +1538,116 @@
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
+  // ── Shay status hint ────────────────────────────────────────────────────
+  function setShayStatusHint(text) {
+    var hint = document.getElementById('shay-status-hint');
+    if (!hint) {
+      // Try to create it in the Desk panel if it doesn't exist
+      var deskShell = document.getElementById('shay-desk-shell');
+      if (deskShell) {
+        hint = document.createElement('div');
+        hint.id = 'shay-status-hint';
+        hint.style.cssText = 'padding:4px 14px;font-size:10px;color:var(--fam-text-3,rgba(255,255,255,0.4));font-style:italic;flex:0 0 auto;';
+        deskShell.insertBefore(hint, deskShell.firstChild);
+      }
+    }
+    if (hint) hint.textContent = text || '';
+  }
+
+  // ── Open in Desk affordance ─────────────────────────────────────────────
+  var _openInDeskShown = false;
+
+  function showOpenInDeskAffordance() {
+    if (_openInDeskShown) return;
+    var area = getDeskTranscriptArea();
+    if (!area) return;
+    _openInDeskShown = true;
+
+    var btn = document.createElement('button');
+    btn.className = 'pip-open-desk-btn';
+    btn.textContent = 'Open in Desk \u2192';
+    btn.style.cssText = 'display:block;margin:8px auto 4px;padding:6px 14px;border-radius:8px;border:1px solid rgba(167,139,250,0.35);background:rgba(167,139,250,0.08);color:var(--fam-purple,#a78bfa);font-size:11px;cursor:pointer;';
+    btn.addEventListener('click', function () {
+      openShayDeskFromLite();
+      btn.remove();
+    });
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'pip-msg pip-msg-system';
+    wrapper.appendChild(btn);
+    area.appendChild(wrapper);
+    scrollDeskTranscriptToBottom();
+  }
+
+  function openShayDeskFromLite() {
+    // Reveal the Desk panel — switch to the Shay Desk tab or sidebar
+    if (window.StudioShell && typeof StudioShell.switchTab === 'function') {
+      StudioShell.switchTab('shay');
+    } else {
+      // Fallback: find and click the shay-desk rail button
+      var rail = document.querySelector('[data-rail="shay"], [data-tab="shay"], [data-hook="shay-desk"]');
+      if (rail) rail.click();
+    }
+
+    // Collect last 3 Lite turns from the response area
+    var area = getDeskTranscriptArea();
+    var turns = [];
+    if (area) {
+      var msgs = area.querySelectorAll('.pip-msg-user, .pip-msg-assistant');
+      var recent = Array.from(msgs).slice(-6); // last 3 pairs
+      recent.forEach(function (el) {
+        var role = el.classList.contains('pip-msg-user') ? 'user' : 'assistant';
+        var bubble = el.querySelector('.pip-response-bubble');
+        if (bubble) turns.push({ role: role, content: bubble.textContent });
+      });
+    }
+
+    // Store handoff context for next desk message
+    deskBridgeClient._pendingHandoff = turns.length > 0 ? { turns: turns } : null;
+  }
+
+  // ── Commit proposal banner ──────────────────────────────────────────────
+  function showCommitProposalBanner(commitMessage) {
+    var area = getShayDeskTranscriptArea();
+    if (!area) return;
+
+    var banner = document.createElement('div');
+    banner.className = 'shay-commit-proposal';
+    banner.style.cssText = 'margin:8px 0;padding:10px 14px;border-radius:10px;border:1px solid rgba(245,196,0,0.3);background:rgba(245,196,0,0.07);display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+
+    var label = document.createElement('span');
+    label.style.cssText = 'flex:1;font-size:12px;color:var(--fam-text);';
+    label.textContent = 'Commit proposed: ' + commitMessage;
+    banner.appendChild(label);
+
+    var approveBtn = document.createElement('button');
+    approveBtn.textContent = 'Approve';
+    approveBtn.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid rgba(245,196,0,0.4);background:rgba(245,196,0,0.15);color:var(--fam-gold,#f5c400);font-size:11px;cursor:pointer;';
+    approveBtn.addEventListener('click', function () {
+      fetch('/api/bridge/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: 'git commit -am "' + commitMessage.replace(/"/g, '\\"') + '"' }),
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        label.textContent = data.exitCode === 0 ? 'Committed: ' + commitMessage : 'Error: ' + (data.stderr || data.error || 'unknown');
+        approveBtn.remove();
+        dismissBtn.remove();
+      }).catch(function (err) {
+        label.textContent = 'Commit failed: ' + err.message;
+      });
+    });
+    banner.appendChild(approveBtn);
+
+    var dismissBtn = document.createElement('button');
+    dismissBtn.textContent = 'Dismiss';
+    dismissBtn.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid var(--fam-border);background:transparent;color:var(--fam-text-2);font-size:11px;cursor:pointer;';
+    dismissBtn.addEventListener('click', function () { banner.remove(); });
+    banner.appendChild(dismissBtn);
+
+    area.appendChild(banner);
+    scrollShayDeskTranscriptToBottom();
+  }
+
   window.PipOrb = {
     show:               showMessage,
     flash:              flashCallout,
@@ -1373,6 +1667,7 @@
       if (currentStep) triggerShowMe(currentStep);
       else showMessage('Show Me is ready once Shay has a current task or prompt for you.', []);
     },
+    resetLitePosition:  resetLitePosition,
     doIt:               doIt,
     dismiss:            dismiss,
     send:               sendToChat,

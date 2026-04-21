@@ -125,6 +125,11 @@ class BrainInterface {
     // Add assistant turn to history
     this.conversationHistory.push({ role: 'assistant', content: result.content || '' });
 
+    // History compression: if history exceeds 20 messages (10 turns), compress the oldest 12
+    if (this.conversationHistory.length > 20) {
+      this._compressHistory();
+    }
+
     return result;
   }
 
@@ -151,6 +156,39 @@ class BrainInterface {
 
     const parts = [modeLabel, siteLabel, pageLabel].filter(Boolean);
     return parts.join(' ') + '\n\n';
+  }
+
+  /**
+   * Compress conversation history when it grows beyond 20 messages (10 turns).
+   * Takes the first 12 messages (6 turns), summarizes them inline (no AI call),
+   * and replaces with a 2-message summary block. Keeps messages 13+ intact.
+   */
+  _compressHistory() {
+    const toCompress = this.conversationHistory.slice(0, 12);
+    const remainder = this.conversationHistory.slice(12);
+
+    const summaryLines = [];
+    for (let i = 0; i < toCompress.length; i += 2) {
+      const userMsg = toCompress[i];
+      const assistantMsg = toCompress[i + 1];
+      if (!userMsg) break;
+      const userSnippet = String(userMsg.content || '').slice(0, 120).replace(/\n/g, ' ');
+      const assistantSnippet = assistantMsg
+        ? String(assistantMsg.content || '').slice(0, 120).replace(/\n/g, ' ')
+        : '(no response)';
+      summaryLines.push(`- User: ${userSnippet}`);
+      summaryLines.push(`  Assistant: ${assistantSnippet}`);
+    }
+
+    const summaryContent = `CONVERSATION SUMMARY (compressed ${Math.floor(toCompress.length / 2)} turns):\n${summaryLines.join('\n')}`;
+
+    this.conversationHistory = [
+      { role: 'user', content: '[session context]' },
+      { role: 'assistant', content: summaryContent },
+      ...remainder,
+    ];
+
+    console.log(`[brain-interface] History compressed: ${12} messages → 2 summary messages + ${remainder.length} retained`);
   }
 
   /**
