@@ -9612,6 +9612,297 @@ app.get('/api/video/jobs', (req, res) => {
   res.json({ jobs: readVideoJobs() });
 });
 
+// ── Character pipeline ────────────────────────────────────────────────────────
+
+function getLeonardoApiKey() {
+  return getConfiguredSecretValue('LEONARDO_API_KEY', null, ['leonardo_api_key']);
+}
+
+function getCharacterSiteDir(siteTag) {
+  const tag = (siteTag || '').replace(/[^a-z0-9-]/g, '');
+  return tag ? path.join(SITES_ROOT, tag) : SITE_DIR();
+}
+
+function readSpecForSite(siteDir) {
+  const specPath = path.join(siteDir, 'spec.json');
+  if (!fs.existsSync(specPath)) return {};
+  try { return JSON.parse(fs.readFileSync(specPath, 'utf8')); } catch { return {}; }
+}
+
+function writeSpecForSite(siteDir, spec) {
+  const specPath = path.join(siteDir, 'spec.json');
+  fs.mkdirSync(siteDir, { recursive: true });
+  fs.writeFileSync(specPath, JSON.stringify(spec, null, 2));
+}
+
+function broadcastAll(payload) {
+  const msg = JSON.stringify(payload);
+  wss.clients.forEach(client => { try { client.send(msg); } catch {} });
+}
+
+async function enrichCharacterPrompt(rawPrompt, name, description, style) {
+  const anthropic = getAnthropicClient();
+  const resp = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 400,
+    messages: [{
+      role: 'user',
+      content: `Expand this character description into a detailed Imagen image-generation prompt.
+Character name: ${name}
+Description: ${description}
+Art style: ${style}
+Raw prompt: ${rawPrompt}
+
+Requirements for the expanded prompt:
+- Clean white background, full body view
+- Consistent ${style} art style, high detail
+- Character must work as a style reference for 12 pose variations
+- Include specific colors, proportions, and distinctive features
+- Keep under 200 words, no markdown, just the prompt text.`,
+    }],
+  });
+  return resp.content[0].text.trim();
+}
+
+// POST /api/character/create-anchor
+// Generates an anchor/reference image for a character using Imagen 4.
+app.post('/api/character/create-anchor', async (req, res) => {
+  try {
+    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
+    const { name, description, style, prompt, site_tag } = req.body || {};
+    if (!name || !prompt) return res.status(400).json({ error: 'name and prompt are required' });
+
+    const siteDir = getCharacterSiteDir(site_tag);
+    const characterId = require('crypto').randomUUID();
+    const charDir = path.join(siteDir, 'assets', 'characters', characterId);
+    const anchorPath = path.join(charDir, 'anchor.jpg');
+    fs.mkdirSync(charDir, { recursive: true });
+
+    // Enrich prompt via Claude
+    let enrichedPrompt = prompt;
+    try {
+      enrichedPrompt = await enrichCharacterPrompt(prompt, name || '', description || '', style || 'illustrated');
+    } catch (e) {
+      console.warn('[character] prompt enrichment failed, using raw prompt:', e.message);
+    }
+
+    // Generate anchor image via Imagen 4
+    await runGoogleMediaScript([
+      '--prompt', enrichedPrompt,
+      '--output', anchorPath,
+      '--aspect-ratio', '1:1',
+      '--site-dir', siteDir,
+    ]);
+    if (!fs.existsSync(anchorPath)) throw new Error('Imagen did not produce anchor image');
+
+    const anchorRelPath = path.join('assets', 'characters', characterId, 'anchor.jpg');
+    const characterSet = {
+      id: characterId,
+      name: name || '',
+      description: description || '',
+      style: style || 'illustrated',
+      enriched_prompt: enrichedPrompt,
+      anchor_image_path: anchorRelPath,
+      poses: [],
+      created_at: new Date().toISOString(),
+      provider: 'imagen',
+    };
+
+    const spec = readSpecForSite(siteDir);
+    if (!Array.isArray(spec.character_sets)) spec.character_sets = [];
+    spec.character_sets.push(characterSet);
+    writeSpecForSite(siteDir, spec);
+
+    res.json({ character_id: characterId, anchor_path: anchorRelPath, character_set: characterSet });
+  } catch (e) {
+    console.error('[character/create-anchor]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/character/generate-poses
+// Generates pose variations using Leonardo AI with the anchor as init image.
+app.post('/api/character/generate-poses', async (req, res) => {
+  try {
+    const leonardoKey = getLeonardoApiKey();
+    if (!leonardoKey) return res.status(400).json({ error: 'LEONARDO_API_KEY not configured' });
+    const { character_id, poses, site_tag } = req.body || {};
+    if (!character_id || !Array.isArray(poses) || poses.length === 0)
+      return res.status(400).json({ error: 'character_id and poses[] are required' });
+
+    const siteDir = getCharacterSiteDir(site_tag);
+    const spec = readSpecForSite(siteDir);
+    if (!Array.isArray(spec.character_sets)) return res.status(404).json({ error: 'No character_sets in spec' });
+    const charSet = spec.character_sets.find(c => c.id === character_id);
+    if (!charSet) return res.status(404).json({ error: `Character ${character_id} not found` });
+
+    const anchorAbsPath = path.join(siteDir, charSet.anchor_image_path);
+    if (!fs.existsSync(anchorAbsPath)) return res.status(400).json({ error: 'Anchor image not found on disk' });
+
+    const { default: fetch } = await import('node-fetch').catch(() => ({ default: global.fetch }));
+    const fetchFn = fetch || global.fetch;
+
+    const leonardoHeaders = {
+      'Authorization': `Bearer ${leonardoKey}`,
+      'Content-Type': 'application/json',
+    };
+
+    // Upload anchor image to Leonardo init-image (presigned S3 upload)
+    const anchorBytes = fs.readFileSync(anchorAbsPath);
+    const uploadResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/init-image', {
+      method: 'POST',
+      headers: leonardoHeaders,
+      body: JSON.stringify({ extension: 'jpg' }),
+    });
+    if (!uploadResp.ok) {
+      const txt = await uploadResp.text();
+      throw new Error(`Leonardo init-image presign failed: ${uploadResp.status} ${txt}`);
+    }
+    const uploadData = await uploadResp.json();
+    // Leonardo returns fields as a JSON string — parse it
+    const rawFields = uploadData.uploadInitImage?.fields;
+    const uploadFields = rawFields ? (typeof rawFields === 'string' ? JSON.parse(rawFields) : rawFields) : {};
+    const uploadUrl = uploadData.uploadInitImage?.url || '';
+    const initImageId = uploadData.uploadInitImage?.id;
+    if (!uploadUrl || !initImageId) throw new Error('Leonardo did not return upload URL or id');
+
+    // POST to S3 presigned URL with multipart form data
+    const formData = new FormData();
+    Object.entries(uploadFields).forEach(([k, v]) => formData.append(k, String(v)));
+    formData.append('file', new Blob([anchorBytes], { type: 'image/jpeg' }), 'anchor.jpg');
+    const s3Resp = await fetchFn(uploadUrl, { method: 'POST', body: formData });
+    if (!s3Resp.ok && s3Resp.status !== 204) throw new Error(`Leonardo S3 upload failed: ${s3Resp.status}`);
+
+    const charDir = path.join(siteDir, 'assets', 'characters', character_id);
+    fs.mkdirSync(charDir, { recursive: true });
+
+    const results = [];
+    for (let i = 0; i < poses.length; i++) {
+      const poseName = poses[i];
+      const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const poseFilename = `pose-${i + 1}-${poseSlug}.jpg`;
+      const posePath = path.join(charDir, poseFilename);
+      const poseRelPath = path.join('assets', 'characters', character_id, poseFilename);
+
+      try {
+        const genPrompt = `${poseName}, ${charSet.description || charSet.name}, same character, white background, ${charSet.style || 'illustrated'} style, consistent design, full body`;
+        const genResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/generations', {
+          method: 'POST',
+          headers: leonardoHeaders,
+          body: JSON.stringify({
+            prompt: genPrompt,
+            modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
+            width: 512,
+            height: 512,
+            num_images: 1,
+            init_image_id: initImageId,
+            init_strength: 0.4,
+          }),
+        });
+        if (!genResp.ok) {
+          const txt = await genResp.text();
+          throw new Error(`Leonardo generation request failed: ${genResp.status} ${txt}`);
+        }
+        const genData = await genResp.json();
+        const generationId = genData.sdGenerationJob?.generationId;
+        if (!generationId) throw new Error('Leonardo did not return generationId');
+
+        // Poll until COMPLETE
+        let imageUrl = null;
+        const pollDeadline = Date.now() + 60000;
+        while (Date.now() < pollDeadline) {
+          await new Promise(r => setTimeout(r, 3000));
+          const pollResp = await fetchFn(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
+            headers: leonardoHeaders,
+          });
+          if (!pollResp.ok) continue;
+          const pollData = await pollResp.json();
+          const status = pollData.generations_by_pk?.status;
+          if (status === 'COMPLETE') {
+            imageUrl = pollData.generations_by_pk?.generated_images?.[0]?.url;
+            break;
+          }
+          if (status === 'FAILED') throw new Error('Leonardo generation FAILED');
+        }
+        if (!imageUrl) throw new Error('Leonardo generation timed out');
+
+        // Download result
+        const imgResp = await fetchFn(imageUrl);
+        if (!imgResp.ok) throw new Error(`Failed to download pose image: ${imgResp.status}`);
+        const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
+        fs.writeFileSync(posePath, imgBuffer);
+
+        // Update spec
+        const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
+        const specNow = readSpecForSite(siteDir);
+        const charSetNow = specNow.character_sets?.find(c => c.id === character_id);
+        if (charSetNow) {
+          if (!Array.isArray(charSetNow.poses)) charSetNow.poses = [];
+          charSetNow.poses[i] = poseEntry;
+          writeSpecForSite(siteDir, specNow);
+        }
+
+        broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
+        results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
+      } catch (poseErr) {
+        console.error(`[character/generate-poses] pose ${i + 1} failed:`, poseErr.message);
+        results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
+      }
+
+      if (i < poses.length - 1) await new Promise(r => setTimeout(r, 1500));
+    }
+
+    broadcastAll({ type: 'poses-complete', character_id, results });
+    res.json({ character_id, results });
+  } catch (e) {
+    console.error('[character/generate-poses]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/video/generate
+// Fire-and-forget Veo video generation. Returns jobId immediately, emits WS events.
+app.post('/api/video/generate', (req, res) => {
+  try {
+    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
+    const { image_path, prompt, duration_seconds, site_tag } = req.body || {};
+    if (!image_path || !prompt) return res.status(400).json({ error: 'image_path and prompt are required' });
+
+    const siteDir = getCharacterSiteDir(site_tag);
+    const jobId = require('crypto').randomUUID();
+    const videoDir = path.join(siteDir, 'assets', 'video');
+    const outputPath = path.join(videoDir, `${jobId}.mp4`);
+
+    // Resolve image_path: allow relative-to-site or absolute
+    const imagePath = path.isAbsolute(image_path)
+      ? image_path
+      : path.join(siteDir, image_path);
+
+    writeVideoJob(jobId, { status: 'generating', prompt, image_path });
+    res.json({ jobId, status: 'started' });
+
+    setImmediate(async () => {
+      broadcastAll({ type: 'video-progress', jobId, status: 'generating' });
+      try {
+        const { actual_duration, file_size } = await runVeoGeneration(
+          imagePath, prompt, outputPath,
+          { duration: Number(duration_seconds) || 5 }
+        );
+        const relPath = path.relative(siteDir, outputPath);
+        writeVideoJob(jobId, { status: 'complete', path: relPath, actual_duration, file_size });
+        broadcastAll({ type: 'video-complete', jobId, path: relPath, actual_duration });
+      } catch (e) {
+        console.error('[video/generate] veo error:', e.message);
+        writeVideoJob(jobId, { status: 'error', error: e.message });
+        broadcastAll({ type: 'video-error', jobId, error: e.message });
+      }
+    });
+  } catch (e) {
+    console.error('[video/generate]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/media/generate-asset', async (req, res) => {
   try {
     const assetType = String(req.body?.asset_type || 'icon').toLowerCase();
