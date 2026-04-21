@@ -950,6 +950,9 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Bridge routes — mounted before CSRF so internal Studio tool calls pass through
+app.use('/api/bridge', require('./lib/bridge-routes'));
+
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
@@ -1195,6 +1198,21 @@ app.get('/api/studio-state', (req, res) => {
   });
 });
 
+function currentUploadCapacity() {
+  const spec = readSpec();
+  const assets = spec.uploaded_assets || [];
+  const limit = loadSettings().max_uploads_per_site || MAX_UPLOADS_PER_SITE;
+  return { spec, assets, limit };
+}
+
+function recordUploadedAsset(asset) {
+  const spec = readSpec();
+  if (!spec.uploaded_assets) spec.uploaded_assets = [];
+  spec.uploaded_assets.push(asset);
+  writeSpec(spec);
+  return asset;
+}
+
 // --- Upload endpoint ---
 app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
@@ -1202,9 +1220,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   }
 
   // Check upload limit
-  const spec = readSpec();
-  const existingUploads = spec.uploaded_assets || [];
-  const uploadLimit = loadSettings().max_uploads_per_site || MAX_UPLOADS_PER_SITE;
+  const { spec, assets: existingUploads, limit: uploadLimit } = currentUploadCapacity();
   if (existingUploads.length >= uploadLimit) {
     fs.unlinkSync(req.file.path);
     return res.status(400).json({ error: `Upload limit reached (max ${uploadLimit} per site). Delete unused uploads to make room.` });
@@ -1300,9 +1316,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     uploaded_at: new Date().toISOString(),
   };
 
-  if (!spec.uploaded_assets) spec.uploaded_assets = [];
-  spec.uploaded_assets.push(asset);
-  writeSpec(spec);
+  recordUploadedAsset(asset);
 
   // If role is logo, copy to canonical assets/logo.{ext} and swap all data-logo-v elements
   if (role === 'logo') {
@@ -4998,6 +5012,14 @@ function loadSettings() {
     auto_interview: true,
     max_versions: 50,
     hero_full_width: true,
+    anthropic_api_key: '',
+    gemini_api_key: '',
+    google_api_key: '',
+    openai_api_key: '',
+    leonardo_api_key: '',
+    openrouter_api_key: '',
+    firefly_client_id: '',
+    firefly_client_secret: '',
     prod_sites_base: path.join(require('os').homedir(), 'famtastic-sites'),
     developer_mode: {
       enabled: true,
@@ -5041,6 +5063,21 @@ function saveSettings(settings) {
   settings.developer_mode = normalizeShayDeveloperModeSettings(settings.developer_mode);
   settings.shay_lite_settings = normalizeShayLiteSettings(settings.shay_lite_settings);
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
+
+function getConfiguredSecretValue(primaryEnvKey, fallbackEnvKey, settingsKeys) {
+  if (primaryEnvKey && process.env[primaryEnvKey]) return process.env[primaryEnvKey];
+  if (fallbackEnvKey && process.env[fallbackEnvKey]) return process.env[fallbackEnvKey];
+  const settings = loadSettings();
+  const keys = Array.isArray(settingsKeys) ? settingsKeys : [settingsKeys];
+  for (const key of keys) {
+    if (key && settings && settings[key]) return settings[key];
+  }
+  return '';
+}
+
+function getGoogleApiKey() {
+  return getConfiguredSecretValue('GEMINI_API_KEY', 'GOOGLE_API_KEY', ['gemini_api_key', 'google_api_key']);
 }
 
 function normalizeShayDeveloperModeSettings(raw = {}) {
@@ -5754,6 +5791,15 @@ app.get('/api/capability-manifest', async (req, res) => {
   }
 });
 
+app.get('/api/studio-capabilities', async (req, res) => {
+  try {
+    const manifest = await buildCapabilityManifest();
+    res.json(manifest);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/shay-shay/session-init', async (req, res) => {
   try {
     const manifest = loadManifest() || await buildCapabilityManifest();
@@ -5877,6 +5923,18 @@ app.post('/api/shay-shay', async (req, res) => {
       normalized.response = `${selection.note} ${normalized.response}`.trim();
     }
 
+    // Bridge execution loop — if Shay signaled a bridge_request, run it and include result
+    let bridgeResult = null;
+    if (normalized.bridge_request && typeof normalized.bridge_request === 'object') {
+      console.log(`[shay-shay] bridge_request detected: op=${normalized.bridge_request.op}`);
+      try {
+        bridgeResult = await executeBridgeOp(normalized.bridge_request);
+        console.log(`[shay-shay] bridge_result: op=${bridgeResult.op} ${bridgeResult.error ? 'ERROR: ' + bridgeResult.error : 'OK'}`);
+      } catch (e) {
+        bridgeResult = { op: normalized.bridge_request.op, error: e.message };
+      }
+    }
+
     // Log suggestion for outcome tracking
     const suggestionId = suggestionLogger.logSuggestion(message, {
       active_site: TAG,
@@ -5896,6 +5954,7 @@ app.post('/api/shay-shay', async (req, res) => {
       brain: usedBrain,
       model: usedModel,
       suggestion_id: suggestionId,
+      ...(bridgeResult ? { bridge_result: bridgeResult } : {}),
     });
 
     // Async memory extraction — non-blocking, best-effort
@@ -6031,6 +6090,7 @@ function buildShayShaySiteSnapshot(context = {}) {
       device_mode: previewState.device_mode || null,
       preview_port: previewState.preview_port != null ? previewState.preview_port : null,
     },
+    bridge_result: (context && context.bridge_result && typeof context.bridge_result === 'object') ? context.bridge_result : null,
     developer_mode: developerMode,
     visibility_contract: {
       can_see: [
@@ -6248,6 +6308,8 @@ function buildShayShayPrompt(opts) {
   const cerebrumExcerpt = readShayShayExcerpt(cerebrumPath, 40);
   const studioContextExcerpt = truncateShayShayContext(studioContext, 50);
   const snapshotText = JSON.stringify(siteSnapshot, null, 2);
+  const shayContextPath = path.join(__dirname, 'SHAY_CONTEXT.md');
+  const shayContextContent = fs.existsSync(shayContextPath) ? fs.readFileSync(shayContextPath, 'utf8') : '';
 
   const primer = includePrimer ? [
     instructions,
@@ -6256,6 +6318,19 @@ function buildShayShayPrompt(opts) {
     'Return strict JSON only. No markdown fences. No commentary outside the JSON object.',
     'Allowed actions: null, route_to_chat, system_command, show_me, suggest_brainstorm.',
     'Prefer action:null unless routing or UI behavior is genuinely needed.',
+    '',
+    'BRIDGE EXECUTION LOOP:',
+    'You have direct access to the local repo via a bridge. To read a file, write a file, or run a shell command,',
+    'include a "bridge_request" field in your JSON response. The Studio will execute it and return the result',
+    'in your next snapshot under siteSnapshot.bridge_result. Supported operations:',
+    '  Read file:    { "bridge_request": { "op": "read", "path": "relative/path/from/famtastic" } }',
+    '  Write file:   { "bridge_request": { "op": "write", "path": "relative/path", "content": "..." } }',
+    '  Run command:  { "bridge_request": { "op": "exec", "command": "git status" } }',
+    'All exec commands run in ~/famtastic. Allowed binaries: git, npm, node, bash, cat, ls, sed.',
+    'Always check siteSnapshot.bridge_result at the start of your response — if it is present, it is the',
+    'result of your previous bridge_request. Act on it before doing anything else.',
+    '',
+    shayContextContent ? ('SHAY PERSISTENT CONTEXT (SHAY_CONTEXT.md):\n' + shayContextContent) : '',
     '',
     'LIVE CAPABILITY MANIFEST:',
     capabilityText,
@@ -6332,6 +6407,7 @@ function normalizeShayShayResponse(raw, fallback = {}) {
           response: parsed.response || fallback.response || text,
           action: parsed.action || null,
           message: parsed.message || null,
+          bridge_request: (parsed.bridge_request && typeof parsed.bridge_request === 'object') ? parsed.bridge_request : null,
         };
       }
     } catch {}
@@ -6341,7 +6417,60 @@ function normalizeShayShayResponse(raw, fallback = {}) {
     response: text,
     action: fallback.action || null,
     message: fallback.message || null,
+    bridge_request: null,
   };
+}
+
+async function executeBridgeOp(bridgeRequest) {
+  const { execFile } = require('child_process');
+  const FAM_ROOT = path.resolve(process.env.HOME, 'famtastic');
+  const ALLOWED_COMMANDS = ['git', 'npm', 'node', 'bash', 'cat', 'ls', 'sed'];
+
+  function resolveSafe(relPath) {
+    const resolved = path.resolve(FAM_ROOT, relPath);
+    return (resolved.startsWith(FAM_ROOT + path.sep) || resolved === FAM_ROOT) ? resolved : null;
+  }
+
+  const op = bridgeRequest.op;
+
+  if (op === 'read') {
+    const abs = resolveSafe(bridgeRequest.path || '');
+    if (!abs) return { op, error: 'Path escapes ~/famtastic' };
+    try {
+      const content = fs.readFileSync(abs, 'utf8');
+      return { op, path: bridgeRequest.path, content };
+    } catch (e) {
+      return { op, path: bridgeRequest.path, error: e.message };
+    }
+  }
+
+  if (op === 'write') {
+    const abs = resolveSafe(bridgeRequest.path || '');
+    if (!abs) return { op, error: 'Path escapes ~/famtastic' };
+    try {
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, bridgeRequest.content || '', 'utf8');
+      return { op, path: bridgeRequest.path, success: true };
+    } catch (e) {
+      return { op, path: bridgeRequest.path, error: e.message };
+    }
+  }
+
+  if (op === 'exec') {
+    const command = (bridgeRequest.command || '').trim();
+    const parts = command.split(/\s+/);
+    const bin = parts[0];
+    if (!ALLOWED_COMMANDS.includes(bin)) {
+      return { op, error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}` };
+    }
+    return new Promise(resolve => {
+      execFile(bin, parts.slice(1), { cwd: FAM_ROOT, timeout: 30000 }, (err, stdout, stderr) => {
+        resolve({ op, command, stdout: stdout || '', stderr: stderr || '', exitCode: err ? (err.code ?? 1) : 0 });
+      });
+    });
+  }
+
+  return { op, error: `Unknown bridge op: ${op}` };
 }
 
 function classifyShayShayTier0(lower, context = {}) {
@@ -8699,6 +8828,228 @@ app.post('/api/media/log', (req, res) => {
   res.json({ success: true, entry });
 });
 
+function slugPrompt(prompt) {
+  return String(prompt || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'media';
+}
+
+function ensureGeneratedMediaCapacity(requiredSlots = 1) {
+  const { assets, limit } = currentUploadCapacity();
+  if (assets.length + requiredSlots - 1 >= limit) {
+    throw new Error(`Upload limit reached (max ${limit} per site). Delete unused uploads to make room.`);
+  }
+}
+
+function makeGeneratedMediaFilename(prefix, prompt, ext) {
+  const stamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+  return [prefix, slugPrompt(prompt), stamp].filter(Boolean).join('-') + ext;
+}
+
+function runGoogleMediaScript(args) {
+  const scriptPath = path.join(__dirname, '..', 'scripts', 'google-media-generate');
+  return new Promise((resolve, reject) => {
+    const { execFile } = require('child_process');
+    const googleApiKey = getGoogleApiKey();
+    const env = { ...process.env };
+    if (googleApiKey && !env.GEMINI_API_KEY) env.GEMINI_API_KEY = googleApiKey;
+    if (googleApiKey && !env.GOOGLE_API_KEY) env.GOOGLE_API_KEY = googleApiKey;
+    execFile(scriptPath, args, { env, timeout: 10 * 60 * 1000 }, (err, stdout, stderr) => {
+      if (err) {
+        const details = [stderr, stdout, err.message].filter(Boolean).join('\n').trim();
+        reject(new Error(details || 'Google media generation failed'));
+        return;
+      }
+      resolve({ stdout: stdout || '', stderr: stderr || '' });
+    });
+  });
+}
+
+async function createGoogleImageAsset({ prompt, aspectRatio, role, label, notes, brandFamilyId }) {
+  ensureGeneratedMediaCapacity(1);
+  const filename = makeGeneratedMediaFilename('media', prompt, '.png');
+  const outputPath = path.join(UPLOADS_DIR(), filename);
+  fs.mkdirSync(UPLOADS_DIR(), { recursive: true });
+  await runGoogleMediaScript([
+    '--prompt', prompt,
+    '--output', outputPath,
+    '--aspect-ratio', aspectRatio || '1:1',
+    '--site-dir', SITE_DIR(),
+  ]);
+
+  const asset = {
+    filename,
+    type: 'image',
+    role: role || 'content',
+    label: label || '',
+    notes: notes || '',
+    uploaded_at: new Date().toISOString(),
+    source_provider: 'google',
+    source_model: 'imagen-4.0-generate-001',
+    generation_mode: 'text_to_image',
+    source_prompt: prompt,
+    brand_family_id: brandFamilyId || null,
+  };
+  recordUploadedAsset(asset);
+  return {
+    success: true,
+    asset,
+    path: `/assets/uploads/${filename}`,
+  };
+}
+
+async function createGoogleVideoAsset({ prompt, videoPrompt, aspectRatio, duration, imageFilename, label, notes, brandFamilyId }) {
+  ensureGeneratedMediaCapacity(imageFilename ? 1 : 2);
+  fs.mkdirSync(UPLOADS_DIR(), { recursive: true });
+
+  let stillFilename = imageFilename || null;
+  let stillOutputPath = null;
+  let videoFilename;
+
+  if (stillFilename) {
+    stillOutputPath = path.join(UPLOADS_DIR(), stillFilename);
+    if (!fs.existsSync(stillOutputPath)) throw new Error('Selected source image was not found in uploads.');
+    videoFilename = makeGeneratedMediaFilename('motion', videoPrompt || prompt || stillFilename, '.mp4');
+    const videoOutputPath = path.join(UPLOADS_DIR(), videoFilename);
+    await runGoogleMediaScript([
+      '--video',
+      '--input-image', stillOutputPath,
+      '--video-prompt', videoPrompt || prompt,
+      '--output', videoOutputPath,
+      '--aspect-ratio', aspectRatio || '16:9',
+      '--duration', String(duration || 5),
+      '--site-dir', SITE_DIR(),
+    ]);
+    const asset = {
+      filename: videoFilename,
+      type: 'video',
+      role: 'motion',
+      label: label || '',
+      notes: notes || '',
+      uploaded_at: new Date().toISOString(),
+      source_provider: 'google',
+      source_model: 'veo-2.0-generate-001',
+      generation_mode: 'image_to_video',
+      source_prompt: videoPrompt || prompt,
+      reference_asset_ids: [stillFilename],
+      brand_family_id: brandFamilyId || null,
+    };
+    recordUploadedAsset(asset);
+    return {
+      success: true,
+      asset,
+      path: `/assets/uploads/${videoFilename}`,
+      still_asset_filename: stillFilename,
+    };
+  }
+
+  const stillPrompt = prompt || videoPrompt;
+  if (!stillPrompt) throw new Error('prompt or source image is required');
+  stillFilename = makeGeneratedMediaFilename('motion-still', stillPrompt, '.png');
+  stillOutputPath = path.join(UPLOADS_DIR(), stillFilename);
+  await runGoogleMediaScript([
+    '--prompt', stillPrompt,
+    '--video',
+    '--video-prompt', videoPrompt || stillPrompt,
+    '--output', stillOutputPath,
+    '--aspect-ratio', aspectRatio || '16:9',
+    '--duration', String(duration || 5),
+    '--site-dir', SITE_DIR(),
+  ]);
+  videoFilename = stillFilename.replace(/\.[a-z0-9]+$/i, '.mp4');
+  const stillAsset = {
+    filename: stillFilename,
+    type: 'image',
+    role: 'storyboard',
+    label: label ? `${label} Still` : '',
+    notes: notes || '',
+    uploaded_at: new Date().toISOString(),
+    source_provider: 'google',
+    source_model: 'imagen-4.0-generate-001',
+    generation_mode: 'text_to_image',
+    source_prompt: stillPrompt,
+    brand_family_id: brandFamilyId || null,
+  };
+  const videoAsset = {
+    filename: videoFilename,
+    type: 'video',
+    role: 'motion',
+    label: label || '',
+    notes: notes || '',
+    uploaded_at: new Date().toISOString(),
+    source_provider: 'google',
+    source_model: 'veo-2.0-generate-001',
+    generation_mode: 'text_to_video',
+    source_prompt: videoPrompt || stillPrompt,
+    reference_asset_ids: [stillFilename],
+    brand_family_id: brandFamilyId || null,
+  };
+  recordUploadedAsset(stillAsset);
+  recordUploadedAsset(videoAsset);
+  return {
+    success: true,
+    asset: videoAsset,
+    still_asset: stillAsset,
+    path: `/assets/uploads/${videoFilename}`,
+  };
+}
+
+// ── Video job persistence (fix: WebSocket reconnection recovery) ─────────────
+// When a Veo job starts, state is written to spec.video_jobs immediately.
+// When it completes, the path is persisted. A reconnected client can call
+// GET /api/video/jobs to discover in-progress or completed jobs without
+// relying on the fire-and-forget WebSocket event.
+
+function writeVideoJob(jobId, data) {
+  const spec = readSpec();
+  if (!spec.video_jobs) spec.video_jobs = [];
+  const idx = spec.video_jobs.findIndex(j => j.job_id === jobId);
+  const entry = idx >= 0
+    ? { ...spec.video_jobs[idx], ...data, job_id: jobId }
+    : { job_id: jobId, created_at: new Date().toISOString(), ...data };
+  if (idx >= 0) spec.video_jobs[idx] = entry;
+  else spec.video_jobs.push(entry);
+  writeSpec(spec, { source: 'writeVideoJob' });
+}
+
+function readVideoJobs() {
+  return (readSpec().video_jobs || []);
+}
+
+// ── runVeoGeneration — standalone, callable by both POST /api/character/video/generate
+// and POST /api/video/promo without duplicating the script invocation logic.
+// Returns { output_path, file_size, actual_duration } on success.
+async function runVeoGeneration(imagePath, prompt, outputPath, { duration = 5, aspectRatio = '16:9' } = {}) {
+  if (!fs.existsSync(imagePath)) throw new Error(`Source image not found: ${imagePath}`);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  const { stdout } = await runGoogleMediaScript([
+    '--video',
+    '--input-image', imagePath,
+    '--video-prompt', prompt,
+    '--output', outputPath,
+    '--aspect-ratio', aspectRatio,
+    '--duration', String(duration),
+    '--site-dir', SITE_DIR(),
+    '--print-duration',
+  ]);
+  if (!fs.existsSync(outputPath)) throw new Error(`Veo output not found: ${outputPath}`);
+  const stat = fs.statSync(outputPath);
+  // Parse FAM_DURATION=<seconds> sentinel emitted by generate_video() when --print-duration is set.
+  // This is the ffprobe-measured actual duration — use it for ffmpeg fade timing, not the requested duration.
+  const durMatch = stdout.match(/^FAM_DURATION=([\d.]+)/m);
+  const actual_duration = durMatch ? parseFloat(durMatch[1]) : null;
+  return { output_path: outputPath, file_size: stat.size, actual_duration };
+}
+
+// GET /api/video/jobs — returns all video generation jobs for the active site.
+// Use this on reconnect to recover in-progress or completed jobs whose
+// WS video-complete event may have been missed.
+app.get('/api/video/jobs', (req, res) => {
+  res.json({ jobs: readVideoJobs() });
+});
+
 app.post('/api/media/generate-asset', async (req, res) => {
   try {
     const assetType = String(req.body?.asset_type || 'icon').toLowerCase();
@@ -8706,6 +9057,62 @@ app.post('/api/media/generate-asset', async (req, res) => {
     const allowed = ['logo', 'icon', 'hero', 'divider', 'favicon', 'banner', 'illustration'];
     if (!allowed.includes(assetType)) return res.status(400).json({ error: 'Unsupported asset_type' });
     const result = await generateAsset(assetType, description);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/media/generate-image', async (req, res) => {
+  try {
+    if (!getGoogleApiKey()) {
+      return res.status(400).json({ error: 'Google AI Studio key is not configured. Add GEMINI_API_KEY, GOOGLE_API_KEY, or save a Gemini key in Settings → Platform.' });
+    }
+    const prompt = String(req.body?.prompt || '').trim();
+    if (!prompt) return res.status(400).json({ error: 'prompt is required' });
+    const provider = String(req.body?.provider || 'auto');
+    if (!['auto', 'google'].includes(provider)) {
+      return res.status(409).json({ error: `${provider} is not wired yet for direct Media Studio image generation.` });
+    }
+    const result = await createGoogleImageAsset({
+      prompt,
+      aspectRatio: String(req.body?.aspect_ratio || '1:1'),
+      role: String(req.body?.role || 'content'),
+      label: String(req.body?.label || ''),
+      notes: String(req.body?.notes || ''),
+      brandFamilyId: req.body?.brand_family_id || null,
+    });
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/media/generate-video', async (req, res) => {
+  try {
+    if (!getGoogleApiKey()) {
+      return res.status(400).json({ error: 'Google AI Studio key is not configured. Add GEMINI_API_KEY, GOOGLE_API_KEY, or save a Gemini key in Settings → Platform.' });
+    }
+    const provider = String(req.body?.provider || 'auto');
+    if (!['auto', 'google'].includes(provider)) {
+      return res.status(409).json({ error: `${provider} is not wired yet for direct Media Studio video generation.` });
+    }
+    const prompt = String(req.body?.prompt || '').trim();
+    const videoPrompt = String(req.body?.video_prompt || '').trim();
+    const imageFilename = req.body?.image_filename ? String(req.body.image_filename) : null;
+    if (!imageFilename && !prompt && !videoPrompt) {
+      return res.status(400).json({ error: 'prompt or image_filename is required' });
+    }
+    const result = await createGoogleVideoAsset({
+      prompt,
+      videoPrompt,
+      imageFilename,
+      aspectRatio: String(req.body?.aspect_ratio || '16:9'),
+      duration: Number(req.body?.duration || 5),
+      label: String(req.body?.label || ''),
+      notes: String(req.body?.notes || ''),
+      brandFamilyId: req.body?.brand_family_id || null,
+    });
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -8917,7 +9324,16 @@ app.get('/api/settings', (req, res) => {
   const settings = loadSettings();
   // Redact sensitive values — only expose whether keys are configured
   const safe = JSON.parse(JSON.stringify(settings));
+  safe._configured = safe._configured || {};
   const secretPaths = [
+    ['root', 'anthropic_api_key'],
+    ['root', 'gemini_api_key'],
+    ['root', 'google_api_key'],
+    ['root', 'openai_api_key'],
+    ['root', 'leonardo_api_key'],
+    ['root', 'openrouter_api_key'],
+    ['root', 'firefly_client_id'],
+    ['root', 'firefly_client_secret'],
     ['stock_photo', 'unsplash_api_key'],
     ['stock_photo', 'pexels_api_key'],
     ['stock_photo', 'pixabay_api_key'],
@@ -8928,9 +9344,11 @@ app.get('/api/settings', (req, res) => {
     ['sms', 'account_sid'],
   ];
   for (const [section, key] of secretPaths) {
-    if (safe[section] && safe[section][key]) {
-      safe[section][key + '_configured'] = true;
-      delete safe[section][key];
+    const bucket = section === 'root' ? safe : safe[section];
+    if (bucket && bucket[key]) {
+      safe._configured[key] = true;
+      bucket[key + '_configured'] = true;
+      delete bucket[key];
     }
   }
   safe.developer_mode = summarizeShayDeveloperMode(settings.developer_mode);
@@ -8943,7 +9361,9 @@ app.put('/api/settings', (req, res) => {
   const allowedKeys = ['model', 'deploy_target', 'deploy_team', 'preview_port', 'studio_port',
     'max_upload_size_mb', 'max_uploads_per_site', 'auto_summary', 'auto_version', 'max_versions',
     'email', 'sms', 'stock_photo', 'analytics_provider', 'analytics_id', 'brainstorm_profile',
-    'prod_sites_base', 'plan_mode', 'hero_full_width', 'developer_mode', 'shay_lite_settings'];
+    'prod_sites_base', 'plan_mode', 'hero_full_width', 'developer_mode', 'shay_lite_settings',
+    'anthropic_api_key', 'gemini_api_key', 'google_api_key', 'openai_api_key', 'leonardo_api_key',
+    'openrouter_api_key', 'firefly_client_id', 'firefly_client_secret'];
   const current = loadSettings();
   for (const key of Object.keys(req.body)) {
     if (allowedKeys.includes(key)) current[key] = req.body[key];

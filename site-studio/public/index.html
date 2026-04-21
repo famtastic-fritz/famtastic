@@ -24,6 +24,8 @@
   <!-- Studio CSS -->
   <link rel="stylesheet" href="css/studio-shell.css">
   <link rel="stylesheet" href="css/studio-base.css">
+  <link rel="stylesheet" href="css/studio-panels.css">
+  <link rel="stylesheet" href="css/studio-sidebar.css">
   <link rel="stylesheet" href="css/studio-chat.css">
   <link rel="stylesheet" href="css/studio-orb.css">
   <link rel="stylesheet" href="css/studio-brief.css">
@@ -386,18 +388,32 @@
                 </div>
                 <div id="shay-session-init" style="display:none;padding:10px 16px;border-bottom:1px solid var(--fam-border);background:rgba(255,255,255,0.015);"></div>
                 <div style="padding:18px 16px 20px;display:grid;gap:14px;overflow:auto;">
+                  <div style="padding:16px;border:1px solid rgba(245,196,0,0.16);border-radius:16px;background:linear-gradient(180deg, rgba(245,196,0,0.10), rgba(255,255,255,0.02));">
+                    <div style="font-size:11px;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.08em;">Desk Prompt</div>
+                    <div style="font-size:18px;color:var(--fam-text);font-weight:700;margin-top:8px;">Ask Shay from here</div>
+                    <div style="font-size:12px;color:var(--fam-text-2);line-height:1.55;margin-top:6px;max-width:720px;">Desk should not be a dead description tab. Type a prompt here to send it into Shay Lite immediately, ask for Show Me help, or jump straight back into Build chat.</div>
+                    <div style="display:grid;gap:12px;margin-top:14px;">
+                      <textarea id="shay-desk-input" placeholder="Ask Shay about Media Studio, a build problem, a brand workflow, or what to do next…" style="min-height:120px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,0.10);background:rgba(7,7,10,0.62);color:var(--fam-text);font:inherit;resize:vertical;"></textarea>
+                      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                        <button type="button" id="shay-desk-send-btn" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(245,196,0,0.28);background:rgba(245,196,0,0.14);color:var(--fam-gold);cursor:pointer;">Ask Shay</button>
+                        <button type="button" id="shay-desk-lite-btn" style="padding:10px 14px;border-radius:10px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Open Shay Lite</button>
+                        <button type="button" id="shay-desk-showme-btn" style="padding:10px 14px;border-radius:10px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Show Me</button>
+                        <button type="button" id="shay-desk-chat-btn" style="padding:10px 14px;border-radius:10px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Go To Build Chat</button>
+                      </div>
+                    </div>
+                  </div>
                   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
                     <div style="padding:14px;border:1px solid var(--fam-border);border-radius:12px;background:rgba(255,255,255,0.02);">
                       <div style="font-size:11px;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.08em;">Lite</div>
                       <div style="font-size:16px;color:var(--fam-text);font-weight:600;margin-top:6px;">Quick Ask</div>
                       <div style="font-size:12px;color:var(--fam-text-2);line-height:1.5;margin-top:6px;">Open the floating Lite surface for immediate questions, light event reactions, and selection-aware nudges.</div>
-                      <button type="button" onclick="window.PipOrb && window.PipOrb.openLitePanel && window.PipOrb.openLitePanel({focusInput:true})" style="margin-top:12px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,196,0,0.25);background:rgba(245,196,0,0.12);color:var(--fam-gold);cursor:pointer;">Open Shay Lite</button>
+                      <button type="button" id="shay-desk-card-lite-btn" style="margin-top:12px;padding:8px 10px;border-radius:8px;border:1px solid rgba(245,196,0,0.25);background:rgba(245,196,0,0.12);color:var(--fam-gold);cursor:pointer;">Open Shay Lite</button>
                     </div>
                     <div style="padding:14px;border:1px solid var(--fam-border);border-radius:12px;background:rgba(255,255,255,0.02);">
                       <div style="font-size:11px;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.08em;">Desk</div>
                       <div style="font-size:16px;color:var(--fam-text);font-weight:600;margin-top:6px;">Longer Collaboration</div>
                       <div style="font-size:12px;color:var(--fam-text-2);line-height:1.5;margin-top:6px;">Keep build chat for execution. Use Desk as the place to frame multi-step thinking and move between workspaces intentionally.</div>
-                      <button type="button" onclick="StudioShell.switchTab('chat')" style="margin-top:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Go To Build Chat</button>
+                      <button type="button" id="shay-desk-card-chat-btn" style="margin-top:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Go To Build Chat</button>
                     </div>
                   </div>
                   <div id="shay-desk-mode-summary" style="padding:14px;border:1px solid var(--fam-border);border-radius:12px;background:linear-gradient(180deg, rgba(245,196,0,0.06), rgba(255,255,255,0.02));font-size:13px;color:var(--fam-text-2);line-height:1.6;">

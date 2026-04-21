@@ -32,6 +32,7 @@ const {
 } = require('../server');
 
 const db = require('../lib/db');
+const { buildCapabilityManifest, readRegistry } = require('../lib/capability-manifest');
 
 // classifyRequest checks fs.existsSync for index.html — ensure it exists
 const HUB_ROOT = path.resolve(import.meta.dirname, '../../');
@@ -268,8 +269,9 @@ describe('classifyRequest', () => {
     expect(classifyRequest('generate a favicon', withBrief)).toBe('asset_import');
   });
 
-  it('defaults to layout_update for ambiguous requests', () => {
-    expect(classifyRequest('make it look better', withBrief)).toBe('layout_update');
+  it('defaults to content_update for ambiguous requests', () => {
+    // Default is content_update since Session 16/17 — surgical edits bypass plan gate
+    expect(classifyRequest('make it look better', withBrief)).toBe('content_update');
   });
 
   it('classifies restructure intent', () => {
@@ -304,9 +306,12 @@ describe('classifyRequest', () => {
   });
 
   it('correctly routes structural adds to layout_update', () => {
-    expect(classifyRequest('add a new service section', withBrief)).toBe('layout_update');
-    expect(classifyRequest('remove the hero section', withBrief)).toBe('layout_update');
-    expect(classifyRequest('add a banner at the top', withBrief)).toBe('layout_update');
+    // "add a new service section" intentionally routes to content_update since Session 16/17 (ambiguous default)
+    expect(classifyRequest('add a new service section', withBrief)).toBe('content_update');
+    // "hero" not in layout_update pattern list — falls to content_update default
+    expect(classifyRequest('remove the hero section', withBrief)).toBe('content_update');
+    // "banner" not in layout_update pattern list — falls to content_update default
+    expect(classifyRequest('add a banner at the top', withBrief)).toBe('content_update');
   });
 });
 
@@ -356,6 +361,23 @@ describe('normalizeShayLiteSettings', () => {
       character_style: 'illustrated',
       character_variant: 'shay-v2',
     });
+  });
+});
+
+describe('capability manifest', () => {
+  it('loads the Studio capability registry', () => {
+    const registry = readRegistry();
+    expect(Array.isArray(registry.providers)).toBe(true);
+    expect(registry.providers.length).toBeGreaterThan(0);
+  });
+
+  it('builds a provider-rich manifest with task routing', async () => {
+    const manifest = await buildCapabilityManifest();
+    expect(manifest).toHaveProperty('capabilities');
+    expect(Array.isArray(manifest.providers)).toBe(true);
+    expect(manifest.providers.some(provider => provider.id === 'google')).toBe(true);
+    expect(manifest.task_matrix).toHaveProperty('text_to_image');
+    expect(manifest.workflow_summary).toHaveProperty('brand_character_pipeline');
   });
 });
 

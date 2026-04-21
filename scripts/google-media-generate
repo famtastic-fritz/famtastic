@@ -4,7 +4,9 @@
 Usage:
   google-media-generate --prompt "..." --output path/to/image.png
   google-media-generate --video --prompt "..." --video-prompt "..." --output dir/
+  google-media-generate --video --input-image path/to/still.png --video-prompt "..." --output path/to/video.mp4
   google-media-generate --batch batch.json [--output-dir path/]
+  google-media-generate --subject-ref anchor.jpg --prompt "waving hello" --output pose.jpg
 
 Batch JSON format:
   [
@@ -21,22 +23,35 @@ Batch JSON format:
       "still_prompt": "...",
       "video_prompt": "...",
       "duration_seconds": 5
+    },
+    {
+      "type": "character_pose",
+      "filename": "pose-01-waving.jpg",
+      "anchor_filename": "anchor.jpg",
+      "prompt": "waving hello enthusiastically",
+      "aspect_ratio": "1:1"
     }
   ]
 
 Environment:
-  GEMINI_API_KEY — Google AI Studio API key (paid plan required for Imagen/Veo)
+  GEMINI_API_KEY or GOOGLE_API_KEY — Google AI Studio API key (paid plan required for Imagen/Veo)
 
 Models:
-  Image: imagen-4.0-generate-001  (~$0.004/image, ~7s)
-  Video: veo-2.0-generate-001     (~$0.05/video, ~33s, 5s loop)
+  Image:          imagen-4.0-generate-001       (~$0.004/image, ~7s)
+  Character pose: imagen-3.0-capability-001     (edit_image with SubjectReferenceImage)
+  Video:          veo-2.0-generate-001           (~$0.05/video, ~33s, 5s loop)
+
+Notes:
+  Character pose generation uses client.models.edit_image (NOT generate_images).
+  SubjectReferenceImage is only available in _EditImageParameters, not GenerateImagesConfig.
+  The reference_images parameter does not exist on generate_images — this is intentional SDK design.
 
 Telemetry:
   Logs every operation to intelligence/media-usage.jsonl (global)
   and to the site's media-telemetry.jsonl when --site-dir is provided.
 """
 
-import os, sys, json, time, argparse, base64
+import os, sys, json, time, argparse, base64, mimetypes
 from pathlib import Path
 
 try:
@@ -49,6 +64,7 @@ except ImportError:
 # ── Constants ────────────────────────────────────────────────────────────────
 
 IMAGE_MODEL = 'imagen-4.0-generate-001'
+CHARACTER_MODEL = 'imagen-3.0-capability-001'  # edit_image + SubjectReferenceImage
 VIDEO_MODEL = 'veo-2.0-generate-001'
 HUB_ROOT = Path(__file__).parent.parent
 
@@ -125,11 +141,128 @@ def generate_image(client, prompt, output_path, aspect_ratio='16:9', site_dir=No
 
     return image_bytes
 
+# ── Character pose generation (edit_image + SubjectReferenceImage) ───────────
+
+def generate_character_pose(client, anchor_bytes, pose_prompt, output_path,
+                            aspect_ratio='1:1', site_dir=None,
+                            subject_description=None,
+                            subject_type='SUBJECT_TYPE_DEFAULT'):
+    """Generate a character pose using the anchor image as a subject reference.
+
+    Uses edit_image (not generate_images) because SubjectReferenceImage is only
+    available in _EditImageParameters. The anchor is passed as a subject reference
+    so Imagen preserves visual identity while varying the pose.
+
+    subject_description is a text description of the character's appearance. Providing
+    it alongside the reference image gives the model a stronger identity anchor,
+    which is especially important for stylized/illustrated characters. Always populate it.
+
+    subject_type: SUBJECT_TYPE_DEFAULT works for illustrated/cartoon characters.
+    SUBJECT_TYPE_ANIMAL may produce better consistency for animal mascots —
+    test both and compare before committing to one for a full 12-pose set.
+    """
+    print(f'  [imagen-edit] generating pose: {Path(output_path).name}')
+    print(f'  [imagen-edit] prompt: {pose_prompt[:80]}...' if len(pose_prompt) > 80 else f'  [imagen-edit] prompt: {pose_prompt}')
+    if subject_description:
+        print(f'  [imagen-edit] subject: {subject_description[:80]}...' if len(subject_description) > 80 else f'  [imagen-edit] subject: {subject_description}')
+
+    resolved_type = getattr(types.SubjectReferenceType, subject_type,
+                            types.SubjectReferenceType.SUBJECT_TYPE_DEFAULT)
+
+    t0 = time.time()
+    try:
+        response = client.models.edit_image(
+            model=CHARACTER_MODEL,
+            prompt=pose_prompt,
+            reference_images=[
+                types.SubjectReferenceImage(
+                    reference_id=1,
+                    reference_image=types.Image(image_bytes=anchor_bytes),
+                    config=types.SubjectReferenceConfig(
+                        subject_type=resolved_type,
+                        subject_description=subject_description or None,
+                    )
+                )
+            ],
+            config=types.EditImageConfig(
+                number_of_images=1,
+                output_mime_type='image/jpeg',
+                person_generation='ALLOW_ADULT',
+            )
+        )
+    except Exception as e:
+        print(f'  [imagen-edit] ERROR: {e}', file=sys.stderr)
+        raise
+
+    elapsed = round(time.time() - t0, 1)
+    if not response.generated_images:
+        raise RuntimeError('edit_image returned no images — likely blocked by safety filters.')
+    image_bytes = response.generated_images[0].image.image_bytes
+    if not image_bytes:
+        raise RuntimeError('edit_image returned an image with no bytes.')
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'wb') as f:
+        f.write(image_bytes)
+
+    file_size = output_path.stat().st_size
+    print(f'  [imagen-edit] saved {output_path.name} ({file_size // 1024}KB) in {elapsed}s')
+
+    log_telemetry({
+        'provider': 'google',
+        'model': CHARACTER_MODEL,
+        'operation': 'character_pose',
+        'site': site_dir.split('/')[-2] if site_dir else 'unknown',
+        'cost_usd': 0.004,
+        'credits_used': 0,
+        'generation_time_seconds': elapsed,
+        'file_size_bytes': file_size,
+        'resolution': aspect_ratio,
+        'prompt': pose_prompt,
+        'output_file': str(output_path),
+    }, site_dir)
+
+    return image_bytes
+
+
+# ── Video utilities ───────────────────────────────────────────────────────────
+
+def get_video_duration(video_path):
+    """Return actual video duration in seconds via ffprobe, or None if unavailable.
+
+    Always call this after saving a Veo output. The promo pipeline uses the
+    actual duration to compute ffmpeg fade timing — fade=t=out:st=(duration-1):d=1.
+    Never assume the clip matches the requested duration_seconds.
+    """
+    import shutil, subprocess
+    ffprobe = shutil.which('ffprobe') or '/opt/homebrew/bin/ffprobe'
+    if not os.path.exists(ffprobe):
+        ffprobe = shutil.which('ffprobe')
+    if not ffprobe:
+        return None
+    try:
+        result = subprocess.run(
+            [ffprobe, '-v', 'quiet', '-print_format', 'json', '-show_format', str(video_path)],
+            capture_output=True, text=True, timeout=10
+        )
+        data = json.loads(result.stdout)
+        return round(float(data['format']['duration']), 2)
+    except Exception:
+        return None
+
+
 # ── Video generation ───────────────────────────────────────────────────────────
 
 def generate_video(client, still_bytes, video_prompt, output_path,
-                   duration_seconds=5, aspect_ratio='16:9', site_dir=None):
-    """Animate a still image into a video with Veo 2. Returns output_path."""
+                   duration_seconds=5, aspect_ratio='16:9', site_dir=None,
+                   mime_type='image/png', print_duration=False):
+    """Animate a still image into a video with Veo 2. Returns (output_path, actual_duration).
+
+    When print_duration=True, emits FAM_DURATION=<seconds> to stdout after saving.
+    Node.js callers (runVeoGeneration) always pass --print-duration and parse this
+    sentinel to return actual_duration without a second ffprobe call from JS.
+    """
     print(f'  [veo] generating video: {Path(output_path).name}')
     print(f'  [veo] prompt: {video_prompt[:80]}...' if len(video_prompt) > 80 else f'  [veo] prompt: {video_prompt}')
 
@@ -140,7 +273,7 @@ def generate_video(client, still_bytes, video_prompt, output_path,
         op = client.models.generate_videos(
             model=VIDEO_MODEL,
             prompt=video_prompt,
-            image=types.Image(image_bytes=still_bytes, mime_type='image/png'),
+            image=types.Image(image_bytes=still_bytes, mime_type=mime_type),
             config=types.GenerateVideosConfig(
                 duration_seconds=duration_seconds,
                 aspect_ratio=aspect_ratio,
@@ -187,7 +320,7 @@ def generate_video(client, still_bytes, video_prompt, output_path,
     elif hasattr(video, 'uri') and video.uri:
         # Download from URI using the API key
         import urllib.request
-        api_key = os.environ['GEMINI_API_KEY']
+        api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('GEMINI_API_KEY')
         uri = video.uri
         if '?' in uri:
             uri += f'&key={api_key}'
@@ -198,7 +331,13 @@ def generate_video(client, still_bytes, video_prompt, output_path,
         raise RuntimeError('Veo response has no video_bytes or uri')
 
     file_size = output_path.stat().st_size
-    print(f'  [veo] saved {output_path.name} ({file_size / 1024 / 1024:.1f}MB) in {elapsed}s')
+    actual_duration = get_video_duration(output_path)
+    duration_note = f', actual duration: {actual_duration}s' if actual_duration else ''
+    print(f'  [veo] saved {output_path.name} ({file_size / 1024 / 1024:.1f}MB) in {elapsed}s{duration_note}')
+    if actual_duration and abs(actual_duration - duration_seconds) > 0.5:
+        print(f'  [veo] NOTE: requested {duration_seconds}s but received {actual_duration}s — use actual for ffmpeg fade timing')
+    if print_duration and actual_duration is not None:
+        print(f'FAM_DURATION={actual_duration}')
 
     log_telemetry({
         'provider': 'google',
@@ -210,11 +349,13 @@ def generate_video(client, still_bytes, video_prompt, output_path,
         'generation_time_seconds': elapsed,
         'file_size_bytes': file_size,
         'resolution': aspect_ratio,
+        'actual_duration_seconds': actual_duration,
+        'requested_duration_seconds': duration_seconds,
         'prompt': video_prompt,
         'output_file': str(output_path),
     }, site_dir)
 
-    return output_path
+    return output_path, actual_duration
 
 # ── Batch mode ────────────────────────────────────────────────────────────────
 
@@ -249,6 +390,29 @@ def run_batch(client, batch_path, output_dir, site_dir=None):
                 results.append({'filename': filename, 'type': 'image', 'status': 'ok',
                                  'path': str(output_path)})
 
+            elif item_type == 'character_pose':
+                anchor_filename = item['anchor_filename']
+                anchor_bytes = still_bytes_cache.get(anchor_filename)
+                if anchor_bytes is None:
+                    anchor_path = output_dir / anchor_filename
+                    if not anchor_path.exists():
+                        raise ValueError(f'Anchor image not found: {anchor_path}')
+                    with open(anchor_path, 'rb') as f:
+                        anchor_bytes = f.read()
+                    still_bytes_cache[anchor_filename] = anchor_bytes
+                generate_character_pose(
+                    client,
+                    anchor_bytes=anchor_bytes,
+                    pose_prompt=item['prompt'],
+                    output_path=output_path,
+                    aspect_ratio=item.get('aspect_ratio', '1:1'),
+                    site_dir=site_dir,
+                    subject_description=item.get('subject_description'),
+                    subject_type=item.get('subject_type', 'SUBJECT_TYPE_DEFAULT'),
+                )
+                results.append({'filename': filename, 'type': 'character_pose', 'status': 'ok',
+                                 'path': str(output_path)})
+
             elif item_type == 'video':
                 # Get still bytes: either from cache or generate now
                 still_filename = item.get('still_filename')
@@ -271,7 +435,7 @@ def run_batch(client, batch_path, output_dir, site_dir=None):
                 if still_bytes is None:
                     raise ValueError(f'No still bytes available for video {filename}')
 
-                generate_video(
+                _, actual_dur = generate_video(
                     client,
                     still_bytes=still_bytes,
                     video_prompt=item['video_prompt'],
@@ -281,7 +445,7 @@ def run_batch(client, batch_path, output_dir, site_dir=None):
                     site_dir=site_dir,
                 )
                 results.append({'filename': filename, 'type': 'video', 'status': 'ok',
-                                 'path': str(output_path)})
+                                 'path': str(output_path), 'actual_duration': actual_dur})
             else:
                 print(f'  unknown type: {item_type}', file=sys.stderr)
                 results.append({'filename': filename, 'type': item_type, 'status': 'skipped'})
@@ -299,18 +463,26 @@ def main():
     parser = argparse.ArgumentParser(description='Generate images and videos via Google Imagen 4 + Veo 2')
     parser.add_argument('--prompt', help='Image prompt (single image mode)')
     parser.add_argument('--video', action='store_true', help='Also generate a video from the still')
+    parser.add_argument('--input-image', help='Existing still image path for image-to-video mode')
     parser.add_argument('--video-prompt', help='Video animation prompt (used with --video)')
+    parser.add_argument('--subject-ref', help='Anchor image path for character pose generation (uses edit_image)')
+    parser.add_argument('--subject-description', help='Text description of the character (anchors identity alongside the reference image)')
+    parser.add_argument('--subject-type', default='SUBJECT_TYPE_DEFAULT',
+                        choices=['SUBJECT_TYPE_DEFAULT', 'SUBJECT_TYPE_PERSON', 'SUBJECT_TYPE_ANIMAL', 'SUBJECT_TYPE_PRODUCT'],
+                        help='Subject reference type (default: SUBJECT_TYPE_DEFAULT; try SUBJECT_TYPE_ANIMAL for animal mascots)')
     parser.add_argument('--output', help='Output file path (single mode) or directory (--video mode)')
     parser.add_argument('--aspect-ratio', default='16:9', help='Aspect ratio (default: 16:9)')
     parser.add_argument('--duration', type=int, default=5, help='Video duration in seconds (default: 5)')
     parser.add_argument('--batch', help='Path to batch JSON file')
     parser.add_argument('--output-dir', help='Output directory (batch mode)')
     parser.add_argument('--site-dir', help='Site directory for per-site telemetry')
+    parser.add_argument('--print-duration', action='store_true',
+                        help='Emit FAM_DURATION=<seconds> to stdout after video generation (for machine parsing)')
     args = parser.parse_args()
 
-    api_key = os.environ.get('GEMINI_API_KEY')
+    api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('GEMINI_API_KEY')
     if not api_key:
-        print('ERROR: GEMINI_API_KEY not set', file=sys.stderr)
+        print('ERROR: GEMINI_API_KEY or GOOGLE_API_KEY not set', file=sys.stderr)
         sys.exit(1)
 
     client = genai.Client(api_key=api_key)
@@ -324,6 +496,58 @@ def main():
         for r in results:
             status = '✓' if r['status'] == 'ok' else '✗'
             print(f'  {status} {r["filename"]} ({r["type"]})')
+        return
+
+    # ── Character pose from subject reference ──
+    if args.subject_ref:
+        if not args.prompt:
+            print('ERROR: --prompt is required with --subject-ref', file=sys.stderr)
+            sys.exit(1)
+        ref_path = Path(args.subject_ref)
+        if not ref_path.exists():
+            print(f'ERROR: subject reference image not found: {ref_path}', file=sys.stderr)
+            sys.exit(1)
+        with open(ref_path, 'rb') as f:
+            anchor_bytes = f.read()
+        output = args.output or str(ref_path.parent / 'pose-output.jpg')
+        generate_character_pose(
+            client,
+            anchor_bytes=anchor_bytes,
+            pose_prompt=args.prompt,
+            output_path=output,
+            aspect_ratio=args.aspect_ratio,
+            site_dir=args.site_dir,
+            subject_description=args.subject_description,
+            subject_type=args.subject_type,
+        )
+        return
+
+    # ── Image-to-video from existing still ──
+    if args.video and args.input_image:
+        if not args.video_prompt:
+            print('ERROR: --video-prompt is required when using --input-image', file=sys.stderr)
+            sys.exit(1)
+        still_path = Path(args.input_image)
+        if not still_path.exists():
+            print(f'ERROR: input image not found: {still_path}', file=sys.stderr)
+            sys.exit(1)
+        with open(still_path, 'rb') as f:
+            still_bytes = f.read()
+        still_mime = mimetypes.guess_type(str(still_path))[0] or 'image/png'
+        output = args.output or str(still_path.with_suffix('.mp4'))
+        _, actual_dur = generate_video(
+            client,
+            still_bytes,
+            args.video_prompt,
+            output,
+            duration_seconds=args.duration,
+            aspect_ratio=args.aspect_ratio,
+            site_dir=args.site_dir,
+            mime_type=still_mime,
+            print_duration=args.print_duration,
+        )
+        if actual_dur:
+            print(f'  [info] actual duration for ffmpeg: {actual_dur}s (use this, not requested {args.duration}s)')
         return
 
     # ── Single image mode ──
@@ -340,10 +564,13 @@ def main():
         video_prompt = args.video_prompt or args.prompt
         output_dir = Path(output).parent
         video_out = output_dir / (Path(output).stem + '.mp4')
-        generate_video(client, img_bytes, video_prompt, video_out,
-                       duration_seconds=args.duration,
-                       aspect_ratio=args.aspect_ratio,
-                       site_dir=args.site_dir)
+        _, actual_dur = generate_video(client, img_bytes, video_prompt, video_out,
+                                       duration_seconds=args.duration,
+                                       aspect_ratio=args.aspect_ratio,
+                                       site_dir=args.site_dir,
+                                       print_duration=args.print_duration)
+        if actual_dur:
+            print(f'  [info] actual duration for ffmpeg: {actual_dur}s (use this, not requested {args.duration}s)')
 
 if __name__ == '__main__':
     main()
