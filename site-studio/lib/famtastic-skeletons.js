@@ -167,6 +167,119 @@ CRITICAL RULES:
   the HTML. Do NOT merge them into a single collapsible element.
 `.trim();
 
+const FOOTER_SKELETON = `
+MANDATORY FOOTER CLASS NAMES — DO NOT INVENT ALTERNATIVES:
+
+The shared stylesheet and footer partial sync both work best when the footer
+uses one stable contract. Do NOT switch between generic <footer> styling,
+Tailwind-only class soups, and ad hoc footer names across sites.
+
+REQUIRED outer structure:
+
+<footer class="site-footer" data-template="footer" role="contentinfo">
+  <div class="footer-accent-bar" aria-hidden="true"></div>
+  <div class="container">
+    <div class="footer-grid">
+      <div data-section-id="footer-brand" data-section-type="brand">
+        <div class="footer-brand-name">[BUSINESS NAME OR LOGO]</div>
+        <p class="footer-tagline" data-field-id="footer-tagline" data-field-type="text">[TAGLINE]</p>
+      </div>
+
+      <div data-section-id="footer-nav" data-section-type="navigation">
+        <p class="footer-heading">Quick Links</p>
+        <ul class="footer-links" role="list">
+          <li><a href="index.html">Home</a></li>
+          <!-- one li per page -->
+        </ul>
+      </div>
+
+      <div data-section-id="footer-contact" data-section-type="contact">
+        <p class="footer-heading">Contact</p>
+        <div class="footer-contact-item">[PHONE / EMAIL / ADDRESS / HOURS]</div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-bottom-text" data-field-id="footer-copyright" data-field-type="text">
+        © [YEAR] [BUSINESS NAME]. All rights reserved.
+      </p>
+      <nav class="footer-bottom-links" aria-label="Footer legal links">
+        <a href="#" data-field-id="footer-privacy" data-field-type="link">Privacy Policy</a>
+        <a href="#" data-field-id="footer-terms" data-field-type="link">Terms of Use</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+REQUIRED class names (copy exactly):
+  .site-footer
+  .footer-accent-bar
+  .footer-grid
+  .footer-brand-name
+  .footer-tagline
+  .footer-heading
+  .footer-links
+  .footer-contact-item
+  .footer-bottom
+  .footer-bottom-text
+  .footer-bottom-links
+
+REQUIRED shared CSS pattern:
+  .site-footer { background: var(--color-primary); color: rgba(255,255,255,0.85); }
+  .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 3rem 2.5rem; }
+  .footer-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .footer-contact-item { display: flex; align-items: flex-start; gap: 0.625rem; }
+  .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; gap: 0.75rem; }
+
+  @media (max-width: 767px) {
+    .footer-grid { grid-template-columns: 1fr; }
+    .footer-bottom { flex-direction: column; align-items: flex-start; }
+  }
+
+CRITICAL RULES:
+- Do NOT use a bare footer selector as the main contract. Use .site-footer and the
+  footer-* class names above.
+- Do NOT rely on Tailwind utility classes alone for the footer structure.
+- Do NOT use inline onmouseover/onmouseout handlers in footer links or social icons.
+- Keep all footer content inside <div class="container">.
+- Every page will inherit this footer through _partials/_footer.html sync, so the
+  template footer must be complete, polished, and reusable.
+`.trim();
+
+const VIDEO_HERO_SKELETON = `
+IMPORTANT — VIDEO HERO: When the site brief mentions a mascot, character, or
+animated brand element, generate the hero as a VIDEO hero using this exact structure.
+The video will be auto-generated and injected after the build completes.
+
+<section class="fam-hero fam-hero--video"
+         data-section-id="hero"
+         data-section-type="hero">
+  <div class="fam-hero__video-wrapper">
+    <video class="fam-hero__video"
+           autoplay loop muted playsinline
+           data-slot-id="hero-video-1"
+           data-slot-type="video">
+      <source src="" type="video/mp4">
+    </video>
+  </div>
+  <div class="fam-hero__content">
+    <!-- headline, subhead, CTAs go here — same content as a standard hero -->
+  </div>
+</section>
+
+Add this CSS to assets/styles.css (in the hero block):
+.fam-hero--video { position: relative; overflow: hidden; min-height: 100vh; }
+.fam-hero__video-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+.fam-hero__video { width: 100%; height: 100%; object-fit: cover; }
+.fam-hero__content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+
+CRITICAL RULES:
+- Use data-slot-type="video" (not data-slot-role) on the <video> element.
+- The <source src=""> is intentionally empty — the server fills it after build.
+- Do NOT inline the video path — leave src="" on the source element.
+- This structure is only appropriate when a mascot/character/animation is in the brief.
+`.trim();
+
 const INLINE_STYLE_PROHIBITION = `
 INLINE STYLE PROHIBITION:
 
@@ -241,6 +354,8 @@ module.exports = {
   LOGO_SKELETON_TEMPLATE,
   LOGO_NOTE_PAGE,
   NAV_SKELETON,
+  FOOTER_SKELETON,
+  VIDEO_HERO_SKELETON,
   INLINE_STYLE_PROHIBITION,
   extractLogoSVGs,
 };

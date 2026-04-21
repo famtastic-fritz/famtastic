@@ -3554,6 +3554,8 @@ NAVIGATION:
 
 ${famSkeletons.NAV_SKELETON}
 
+${spec.character_sets && spec.character_sets.length > 0 ? famSkeletons.VIDEO_HERO_SKELETON : ''}
+
 FOOTER:
 - Business name and tagline
 - Quick links to all pages
@@ -12034,6 +12036,64 @@ ${FOUNDATION_END}
   }
 }
 
+// Step 11 — Auto-fill video slots after build.
+// Scans built pages for data-slot-type="video", checks if a character set with done
+// poses exists, generates a Veo video from the best available pose, and patches the
+// <source src=""> in the HTML. Fire-and-forget, non-blocking.
+async function fillVideoSlotsAfterBuild(ws, writtenPages) {
+  const spec = readSpec();
+  const charSets = Array.isArray(spec.character_sets) ? spec.character_sets : [];
+  const charSet = charSets.find(c => Array.isArray(c.poses) && c.poses.some(p => p.status === 'done'));
+  if (!charSet) return; // no character with completed poses — nothing to do
+
+  const pose = charSet.poses.find(p => p.status === 'done');
+  if (!pose) return;
+
+  const poseImageAbsPath = path.join(SITE_DIR(), pose.image_path);
+  if (!fs.existsSync(poseImageAbsPath)) {
+    console.warn('[video-slots] pose image not found on disk:', poseImageAbsPath);
+    return;
+  }
+
+  for (const page of writtenPages) {
+    const pagePath = path.join(DIST_DIR(), page);
+    if (!fs.existsSync(pagePath)) continue;
+    let html = fs.readFileSync(pagePath, 'utf8');
+
+    // Find video slots: <video ... data-slot-type="video" ...>
+    if (!html.includes('data-slot-type="video"')) continue;
+
+    const jobId = require('crypto').randomUUID();
+    const videoDir = path.join(DIST_DIR(), 'assets', 'video');
+    fs.mkdirSync(videoDir, { recursive: true });
+    const videoOutputPath = path.join(videoDir, `hero-${jobId}.mp4`);
+    const videoRelPath = `assets/video/hero-${jobId}.mp4`;
+
+    broadcastAll({ type: 'video-progress', jobId, status: 'generating', message: 'Generating hero video…' });
+
+    try {
+      await runVeoGeneration(
+        poseImageAbsPath,
+        `${charSet.description || charSet.name} hero animation, smooth motion, loop-ready`,
+        videoOutputPath,
+        { duration: 5 }
+      );
+
+      // Patch <source src=""> inside the video slot with the generated path
+      html = html.replace(
+        /(<video[^>]*data-slot-type="video"[^>]*>[\s\S]*?<source\s+src=)"([^"]*)"([^>]*>)/i,
+        `$1"${videoRelPath}"$3`
+      );
+      fs.writeFileSync(pagePath, html, 'utf8');
+      console.log(`[video-slots] injected ${videoRelPath} into ${page}`);
+      broadcastAll({ type: 'video-complete', jobId, path: videoRelPath, page });
+    } catch (e) {
+      console.error('[video-slots] veo generation failed:', e.message);
+      broadcastAll({ type: 'video-error', jobId, error: e.message });
+    }
+  }
+}
+
 // Step 10 — Auto-fill image slots with Imagen 4 (primary) or Unsplash (fallback).
 // Fire-and-forget: called without await from runPostProcessing so the synchronous
 // post-processing pipeline isn't blocked. WS messages keep the user informed.
@@ -12319,6 +12379,13 @@ function runPostProcessing(ws, writtenPages, options = {}) {
   if (isFullBuild) {
     fillImageSlotsAfterBuild(ws, writtenPages).catch(e =>
       console.error('[image-gen] Unexpected error in fillImageSlotsAfterBuild:', e.message)
+    );
+  }
+
+  // Step 11: Auto-fill video slots — only when character_sets exist with done poses.
+  if (isFullBuild) {
+    fillVideoSlotsAfterBuild(ws, writtenPages).catch(e =>
+      console.error('[video-slots] Unexpected error in fillVideoSlotsAfterBuild:', e.message)
     );
   }
 }
