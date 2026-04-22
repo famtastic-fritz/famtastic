@@ -49,6 +49,9 @@
     slots: [],
     uploads: [],
     capabilities: null,
+    capabilityManifest: null,
+    providers: [],
+    taskMatrix: {},
     selectedSlotId: null,
     selectedAssetFilename: null,
     selectedBrandFilename: null,
@@ -60,6 +63,7 @@
     history: [],
     generation: {
       prompt: '',
+      videoPrompt: '',
       assetType: 'slot-image',
       aspect: 'slot',
       count: 1,
@@ -69,12 +73,37 @@
       styleIntent: 'bold',
       providerMode: 'auto',
       showOptions: false,
-      showAdvanced: false
+      showAdvanced: false,
+      referenceAssetFilename: null,
+      brandFamilyId: ''
     }
   };
 
   var assetsRefs = {};
   var componentRefs = {};
+
+  // ── Character Pipeline state ─────────────────────────────────────────────
+  var charState = {
+    characterId: null,
+    anchorImagePath: null,
+    anchorImageUrl: null,
+    name: '',
+    description: '',
+    style: 'Illustrated/Cartoon',
+    poses: [
+      'Waving hello', 'Thumbs up', 'Celebrating (arms raised)', 'Pointing forward',
+      'Dancing', 'Laughing', 'Sitting at desk', 'Holding coffee',
+      'Running', 'Hugging', 'Presenting', 'Cheering with pennant'
+    ],
+    poseStatuses: {},
+    selectedPoseIdx: null,
+    heroVideoJobId: null,
+    heroVideoStatus: 'idle',
+    promoJobId: null,
+    promoStatus: 'idle',
+    promoStepText: '',
+    promoDownloadTag: null
+  };
 
   function humanizeLabel(value) {
     return String(value || '')
@@ -830,7 +859,9 @@
       fetch('/api/studio-state').then(function (r) { return r.json(); }),
       fetch('/api/uploads').then(function (r) { return r.json(); }),
       fetch('/api/media/usage').then(function (r) { return r.json(); }).catch(function () { return {}; }),
-      fetch('/api/capability-manifest').then(function (r) { return r.json(); }).catch(function () { return {}; })
+      fetch('/api/studio-capabilities').then(function (r) { return r.json(); }).catch(function () {
+        return fetch('/api/capability-manifest').then(function (r) { return r.json(); }).catch(function () { return {}; });
+      })
     ]).then(function (results) {
       var studio = results[0] || {};
       var uploadsRaw = results[1] || [];
@@ -856,6 +887,9 @@
       assetsState.siteTag = studio.tag || null;
       assetsState.usageSummary = usage;
       assetsState.capabilities = manifest.capabilities || {};
+      assetsState.capabilityManifest = manifest;
+      assetsState.providers = manifest.providers || [];
+      assetsState.taskMatrix = manifest.task_matrix || {};
       assetsState.slots = (spec.media_specs || []).map(function (slot) {
         return {
           slot_id: slot.slot_id,
@@ -877,11 +911,21 @@
           label: asset.label || '',
           notes: asset.notes || '',
           uploaded_at: asset.uploaded_at || '',
+          source_provider: asset.source_provider || '',
+          source_model: asset.source_model || '',
+          generation_mode: asset.generation_mode || '',
+          source_prompt: asset.source_prompt || '',
+          reference_asset_ids: asset.reference_asset_ids || [],
+          brand_family_id: asset.brand_family_id || null,
           exists: asset.exists !== false,
           src: filename ? ('assets/uploads/' + filename) : (asset.url || asset.path || ''),
           url: asset.url || asset.path || '',
           usage: usageEntries,
-          asset_class: asset.role === 'logo' || asset.type === 'logo' ? 'logo' : (asset.role === 'brand' ? 'brand_asset' : 'image'),
+          asset_class: asset.type === 'video'
+            ? 'video'
+            : asset.role === 'logo' || asset.type === 'logo'
+              ? 'logo'
+              : (asset.role === 'brand' ? 'brand_asset' : 'image'),
           lifecycle_state: usageEntries.length ? 'approved' : 'uploaded'
         };
       });
@@ -893,6 +937,9 @@
       }
       if (!findAssetByFilename(assetsState.selectedAssetFilename)) {
         assetsState.selectedAssetFilename = assetsState.uploads[0] ? assetsState.uploads[0].filename : null;
+      }
+      if (assetsState.generation.referenceAssetFilename && !findAssetByFilename(assetsState.generation.referenceAssetFilename)) {
+        assetsState.generation.referenceAssetFilename = null;
       }
       if (!findAssetByFilename(assetsState.selectedBrandFilename)) {
         var firstBrand = assetsState.uploads.find(function (asset) { return asset.role === 'logo' || asset.role === 'brand'; });
@@ -1005,6 +1052,19 @@
     if (!list) return;
     clearEl(list);
 
+    if (assetsState.activeTab === 'character') {
+      renderCharacterBriefForm(list);
+      return;
+    }
+
+    if (assetsState.activeTab === 'home' || assetsState.activeTab === 'generate' || assetsState.activeTab === 'motion') {
+      list.appendChild(mkEl('div', {
+        className: 'assets-empty-note',
+        text: 'Use the center stage first. Slot-specific routing stays secondary here.'
+      }));
+      return;
+    }
+
     if (assetsState.activeTab === 'brand') {
       renderBrandAssetList(list);
       return;
@@ -1097,19 +1157,22 @@
   }
 
   function renderProviderList(list) {
-    var providers = (assetsState.usageSummary && assetsState.usageSummary.by_provider) || {};
-    var names = Object.keys(providers);
-    if (!names.length) {
-      list.appendChild(mkEl('div', { className: 'assets-empty-note', text: 'No provider telemetry yet. Generate or import media to populate this view.' }));
+    var providers = assetsState.providers || [];
+    if (!providers.length) {
+      list.appendChild(mkEl('div', { className: 'assets-empty-note', text: 'No capability registry loaded yet.' }));
       return;
     }
-    names.forEach(function (name) {
-      var data = providers[name];
+    providers.forEach(function (provider) {
+      var data = ((assetsState.usageSummary || {}).by_provider || {})[provider.id] || {};
       var item = mkEl('div', { className: 'assets-slot-item' });
-      item.appendChild(mkEl('div', { className: 'assets-slot-item-name', text: name }));
+      item.appendChild(mkEl('div', { className: 'assets-slot-item-name', text: provider.label }));
       item.appendChild(mkEl('div', {
         className: 'assets-slot-item-meta',
-        text: [String(data.operations || 0) + ' ops', '$' + Number(data.cost || 0).toFixed(2), (data.avg_speed_seconds || 0) + 's avg'].join(' · ')
+        text: [
+          humanizeLabel(provider.state || provider.auth_status || 'unknown'),
+          provider.surface || 'api',
+          String(data.operations || 0) + ' ops'
+        ].join(' · ')
       }));
       list.appendChild(item);
     });
@@ -1145,6 +1208,10 @@
     }
     if (assetsState.activeTab === 'motion') {
       detail.appendChild(buildMotionVideoView());
+      return;
+    }
+    if (assetsState.activeTab === 'character') {
+      detail.appendChild(buildCharacterPoseGrid());
       return;
     }
     if (assetsState.activeTab === 'library') {
@@ -1257,6 +1324,8 @@
         ? 'Shay + Results'
         : assetsState.activeTab === 'motion'
         ? 'Motion + Shay'
+        : assetsState.activeTab === 'character'
+        ? 'Pipeline Actions'
         : assetsState.activeTab === 'brand'
           ? 'Brand Review'
           : assetsState.activeTab === 'provider'
@@ -1266,6 +1335,10 @@
               : 'Library Companion';
     }
 
+    if (assetsState.activeTab === 'character') {
+      renderCharacterPipelineActions(side);
+      return;
+    }
     if (assetsState.activeTab === 'provider') {
       renderProviderRecommendations(side);
       return;
@@ -1371,9 +1444,6 @@
     var promptSeed = assetsState.generation.prompt || buildGenerationPrompt(slot) || defaultStockQuery(slot) || '';
 
     var hero = mkEl('div', { className: 'assets-action-card media-home-hero media-home-create-hero' });
-    if (heroAsset && heroAsset.src) {
-      hero.style.backgroundImage = 'linear-gradient(180deg, rgba(11,11,14,0.18), rgba(11,11,14,0.78)), url("' + resolveSiteAssetUrl(heroAsset.src) + '")';
-    }
     hero.appendChild(mkEl('div', { className: 'assets-detail-eyebrow', text: 'Create' }));
     hero.appendChild(mkEl('div', { className: 'media-stage-title media-home-display-title', text: 'Prompt first. Results next. Everything else stays secondary.' }));
     hero.appendChild(mkEl('div', {
@@ -1483,14 +1553,18 @@
   function buildMediaGenerateView() {
     var wrap = mkEl('div', { className: 'assets-workspace-detail' });
     var slot = findSlotById(assetsState.selectedSlotId);
+    var referenceAsset = findAssetByFilename(assetsState.generation.referenceAssetFilename);
+    var preferredImageRoute = selectedProviderState('text_to_image', assetsState.generation.providerMode);
+    var preferredVectorRoute = bestTaskCapability('vector_asset');
+    var imageRouteLive = preferredImageRoute && preferredImageRoute.state === 'wired';
     var stage = mkEl('div', { className: 'assets-action-card media-generate-stage' });
     stage.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Image Studio' }));
-    stage.appendChild(mkEl('div', { className: 'media-stage-title', text: 'Image generation stays focused: prompt, recipe, options, results' }));
+    stage.appendChild(mkEl('div', { className: 'media-stage-title', text: 'One prompt stage. Three clear image routes.' }));
     stage.appendChild(mkEl('div', {
       className: 'media-stage-sub',
       text: slot
-        ? 'Destination ready: ' + formatSlotName(slot) + ' on ' + (slot.page || 'index.html') + '. Stay on image work here; motion and video live on their own screen.'
-        : 'Start with a prompt. You can select a destination slot from the left, or generate a reusable asset for the library.'
+        ? 'Destination ready: ' + formatSlotName(slot) + ' on ' + (slot.page || 'index.html') + '. Generate a reusable image, a vector asset, or fill the active slot without cluttering the whole screen.'
+        : 'Generate reusable media first, then route it into Library, Brand, or Motion.'
     }));
 
     var prompt = document.createElement('textarea');
@@ -1501,12 +1575,40 @@
     prompt.addEventListener('input', function () { assetsState.generation.prompt = prompt.value; });
     stage.appendChild(prompt);
 
+    if (referenceAsset) {
+      var refCard = mkEl('div', { className: 'media-reference-card' });
+      refCard.appendChild(buildMediaThumb(resolveSiteAssetUrl(referenceAsset.src), referenceAsset.label || referenceAsset.filename, 'media-reference-thumb'));
+      var refCopy = mkEl('div', { className: 'media-reference-copy' });
+      refCopy.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Character Source' }));
+      refCopy.appendChild(mkEl('div', { className: 'media-mode-card-title', text: referenceAsset.label || referenceAsset.filename }));
+      refCopy.appendChild(mkEl('div', {
+        className: 'assets-help-text',
+        text: 'This source asset is pinned into the image workflow. Prompt lineage is active now; direct reference-image generation remains provider-dependent.'
+      }));
+      var refActions = mkEl('div', { className: 'assets-action-row' });
+      refActions.appendChild(makeWorkspaceButton('Ask Shay About Consistency', function () {
+        askShayFromMedia('Help me keep this character visually consistent across new poses and branded scenes: ' + (referenceAsset.label || referenceAsset.filename) + '.');
+      }, false));
+      refActions.appendChild(makeWorkspaceButton('Clear Source', function () {
+        assetsState.generation.referenceAssetFilename = null;
+        renderAssetsWorkspace();
+      }, false));
+      refCopy.appendChild(refActions);
+      refCard.appendChild(refCopy);
+      stage.appendChild(refCard);
+    }
+
     stage.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Recipes' }));
     stage.appendChild(buildPromptChipRow([
       {
-        label: 'Shay-Shay',
-        value: 'Create a charismatic Shay-Shay assistant mascot: radiant orb energy, confident expression, premium brand glow, crisp silhouette, memorable enough for icons and motion.',
+        label: 'Brand Character',
+        value: 'Create a premium branded character with a memorable silhouette, expressive face, warm FAMtastic tone, and clean shapes that can support future pose variations and motion.',
         patch: { assetType: 'illustration', styleIntent: 'playful' }
+      },
+      {
+        label: 'Pose Variants',
+        value: 'Create 6 clean pose variations of the same branded character. Keep the silhouette, costume language, and face identity consistent while changing gesture and posture.',
+        patch: { assetType: 'illustration', styleIntent: 'editorial' }
       },
       {
         label: 'FAM Icon Pack',
@@ -1547,37 +1649,38 @@
 
     stage.appendChild(buildProviderStatusRow({ compact: true }));
 
-    var primaryRow = mkEl('div', { className: 'assets-action-row media-stage-primary-row' });
-    primaryRow.appendChild(buildSelectControl('Asset type', assetsState.generation.assetType, [
-      { value: 'slot-image', label: 'Fill slot image' },
-      { value: 'icon', label: 'SVG icon' },
-      { value: 'logo', label: 'Logo' },
-      { value: 'favicon', label: 'Favicon' },
-      { value: 'hero', label: 'Hero art' },
-      { value: 'divider', label: 'Divider' },
-      { value: 'illustration', label: 'Illustration' }
-    ], function (value) { assetsState.generation.assetType = value; }));
-    if (assetsState.generation.assetType === 'slot-image') {
-      primaryRow.appendChild(buildSelectControl('Destination', assetsState.generation.destination, [
-        { value: 'selected-slot', label: 'Selected slot' },
-        { value: 'empty-slot', label: 'First empty slot' }
-      ], function (value) { assetsState.generation.destination = value; }));
-    }
-    var generateBtn = assetsState.generation.assetType === 'slot-image'
-      ? makeWorkspaceButton('Generate for destination', function () {
-        var targetSlot = resolveGenerationSlot();
-        if (!targetSlot) {
-          showAssetsFeedback('Select a destination slot before generating.', 'error');
-          return;
+    var routesRow = buildMediaModeRow([
+      {
+        title: 'Generate Media Image',
+        sub: imageRouteLive
+          ? preferredImageRoute.provider_label + ' is the live still-image route for characters, scenes, and reusable branded media.'
+          : 'No live still-image route is available right now. Use Providers to inspect what is broken versus merely available elsewhere.',
+        action: imageRouteLive ? 'Generate Image' : 'Route Not Live',
+        primary: true,
+        disabled: !imageRouteLive,
+        onClick: function () { generateMediaImage(); }
+      },
+      {
+        title: 'Generate Vector Asset',
+        sub: (preferredVectorRoute ? preferredVectorRoute.provider_label : 'No vector provider') + ' handles logos, icons, favicons, dividers, and other SVG-first assets.',
+        action: 'Generate Vector',
+        onClick: function () { generateStandaloneAsset(); }
+      },
+      {
+        title: 'Fill Active Slot',
+        sub: 'Use the selected slot or first empty slot for a quick fill. This keeps slot work separate from reusable library generation.',
+        action: 'Fill Slot',
+        onClick: function () {
+          var targetSlot = resolveGenerationSlot();
+          if (!targetSlot) {
+            showAssetsFeedback('Select a destination slot before generating.', 'error');
+            return;
+          }
+          generateStockForSlot(targetSlot, buildGenerationPrompt(slot));
         }
-        generateStockForSlot(targetSlot, buildGenerationPrompt(slot));
-      }, true)
-      : makeWorkspaceButton('Generate asset', function () {
-        generateStandaloneAsset();
-      }, true);
-    generateBtn.className += ' media-stage-generate-btn';
-    primaryRow.appendChild(generateBtn);
-    stage.appendChild(primaryRow);
+      }
+    ]);
+    stage.appendChild(routesRow);
 
     var advancedBtn = mkEl('button', {
       className: 'media-action-btn',
@@ -1613,12 +1716,13 @@
         { value: 'playful', label: 'Playful' },
         { value: 'editorial', label: 'Editorial' }
       ], function (value) { assetsState.generation.styleIntent = value; }));
-      optionsRow.appendChild(buildSelectControl('Preferred route', assetsState.generation.providerMode, [
-        { value: 'auto', label: 'Auto' },
-        { value: 'claude_svg', label: 'Claude SVG' },
-        { value: 'gemini_imagen', label: 'Gemini / Imagen' },
-        { value: 'openai', label: 'OpenAI' }
-      ], function (value) { assetsState.generation.providerMode = value; }));
+      optionsRow.appendChild(buildSelectControl('Destination', assetsState.generation.destination, [
+        { value: 'selected-slot', label: 'Selected slot' },
+        { value: 'empty-slot', label: 'First empty slot' }
+      ], function (value) { assetsState.generation.destination = value; }));
+      optionsRow.appendChild(buildSelectControl('Preferred route', assetsState.generation.providerMode, buildProviderOptionsForTask('text_to_image'), function (value) {
+        assetsState.generation.providerMode = value;
+      }));
       optionsRow.appendChild(buildSelectControl('Motion pass', assetsState.generation.motionIntent, [
         { value: 'none', label: 'No motion' },
         { value: 'subtle-reveal', label: 'Subtle reveal' },
@@ -1651,11 +1755,11 @@
       advanced.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Provider detail' }));
       advanced.appendChild(mkEl('div', {
         className: 'assets-help-text',
-        text: 'Provider routing is still automatic today. This drawer surfaces telemetry truth and leaves provider complexity optional instead of primary.'
+        text: 'Auto remains the default. Override only when you need a specific route, and use the Providers screen when you need the full truth layer.'
       }));
       advanced.appendChild(mkEl('div', {
         className: 'assets-help-text',
-        text: 'Known providers: ' + Object.keys((assetsState.usageSummary || {}).by_provider || {}).join(', ') || 'none yet'
+        text: 'Selected route: ' + providerLabelForValue(assetsState.generation.providerMode) + '. Best text-to-image route: ' + ((bestTaskCapability('text_to_image') || {}).provider_label || 'none yet')
       }));
       wrap.appendChild(advanced);
     }
@@ -1664,9 +1768,9 @@
     results.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Recent Results' }));
     results.appendChild(mkEl('div', {
       className: 'assets-help-text',
-      text: 'Generate, review, iterate, then send the strongest result into the right slot or Brand Kit.'
+      text: 'Generate, review, iterate, pin a character source, then move the strongest result into Library, Brand, Motion, or a live slot.'
     }));
-    results.appendChild(buildMediaResultRail((assetsState.uploads || []).slice(0, 8), { allowAssign: true, allowShay: true }));
+    results.appendChild(buildMediaResultRail((assetsState.uploads || []).slice(0, 8), { allowAssign: true, allowBrand: true, allowShay: true }));
     wrap.appendChild(results);
 
     wrap.appendChild(buildMediaShayDock({
@@ -1699,7 +1803,7 @@
       renderAssetsWorkspace();
     });
     controls.appendChild(search);
-    ['all', 'logo', 'content', 'character', 'brand'].forEach(function (role) {
+    ['all', 'logo', 'content', 'character', 'motion', 'brand'].forEach(function (role) {
       var btn = mkEl('button', {
         className: 'media-filter-btn' + (assetsState.roleFilter === role ? ' active' : ''),
         text: role === 'all' ? 'All' : humanizeLabel(role)
@@ -1734,18 +1838,51 @@
 
   function buildMotionVideoView() {
     var wrap = mkEl('div', { className: 'assets-workspace-detail media-motion-view' });
+    var selectedAsset = findAssetByFilename(assetsState.selectedAssetFilename);
+    var selectedStillAsset = selectedAsset && selectedAsset.type !== 'video' ? selectedAsset : null;
+    var preferredVideoRoute = selectedProviderState('image_to_video', assetsState.generation.providerMode) || selectedProviderState('text_to_video', assetsState.generation.providerMode);
+    var videoRouteLive = preferredVideoRoute && preferredVideoRoute.state === 'wired';
 
     var hero = mkEl('div', { className: 'assets-action-card media-motion-stage' });
     hero.appendChild(mkEl('div', { className: 'assets-detail-eyebrow', text: 'Motion / Video' }));
-    hero.appendChild(mkEl('div', { className: 'media-stage-title', text: 'Video should live on its own screen, not hide inside image generation' }));
+    hero.appendChild(mkEl('div', { className: 'media-stage-title', text: 'Video now has a real lane: text-to-video, image-to-video, and motion planning.' }));
     hero.appendChild(mkEl('div', {
       className: 'media-stage-sub',
-      text: 'The repo currently supports motion direction and image generation, but there is no direct video generation endpoint wired into Media Studio yet.'
+      text: videoRouteLive
+        ? preferredVideoRoute.provider_label + ' is the current motion route for short branded clips.'
+        : 'No live motion route is available yet. Use the Providers screen to inspect what is wired versus only documented.'
     }));
+    var prompt = document.createElement('textarea');
+    prompt.className = 'assets-stock-input media-stage-prompt';
+    prompt.rows = 5;
+    prompt.value = assetsState.generation.videoPrompt || assetsState.generation.prompt || '';
+    prompt.placeholder = 'Describe the shot, motion, pacing, or commercial beat you want in the clip...';
+    prompt.addEventListener('input', function () {
+      assetsState.generation.videoPrompt = prompt.value;
+    });
+    hero.appendChild(prompt);
+    var controls = mkEl('div', { className: 'assets-action-row' });
+    controls.appendChild(buildSelectControl('Preferred motion route', assetsState.generation.providerMode, buildProviderOptionsForTask('image_to_video').length > 1 ? buildProviderOptionsForTask('image_to_video') : buildProviderOptionsForTask('text_to_video'), function (value) {
+      assetsState.generation.providerMode = value;
+      renderAssetsWorkspace();
+    }));
+    hero.appendChild(controls);
     var heroActions = mkEl('div', { className: 'assets-action-row media-stage-primary-row' });
-    heroActions.appendChild(makeWorkspaceButton('Send Motion Pass To Build', function () {
-      routeMotionPassToBuild();
-    }, true));
+    var textVideoBtn = makeWorkspaceButton('Generate Text-To-Video', function () {
+      generateMediaVideo({ useSelectedAsset: false });
+    }, true);
+    textVideoBtn.disabled = !videoRouteLive;
+    heroActions.appendChild(textVideoBtn);
+    var animateBtn = makeWorkspaceButton(selectedStillAsset ? 'Animate Selected Asset' : 'Select Asset For Image-To-Video', function () {
+      if (!selectedStillAsset) {
+        assetsState.activeTab = 'library';
+        renderAssetsWorkspace();
+        return;
+      }
+      generateMediaVideo({ useSelectedAsset: true });
+    }, false);
+    if (selectedStillAsset) animateBtn.disabled = !videoRouteLive;
+    heroActions.appendChild(animateBtn);
     heroActions.appendChild(makeWorkspaceButton('Ask Shay About Video', function () {
       askShayFromMedia('Help me plan a video or motion direction for this site. Tell me what is possible now and what still needs backend work.');
     }, false));
@@ -1754,29 +1891,42 @@
 
     wrap.appendChild(buildMediaModeRow([
       {
-        title: 'Direct video generation',
-        sub: 'Not wired yet. There is no direct `/api/media/generate-video` route in the current codebase.',
-        action: 'Missing Endpoint',
-        disabled: true
+        title: 'Text to video',
+        sub: videoRouteLive
+          ? preferredVideoRoute.provider_label + ' can create a short clip directly from your prompt.'
+          : 'No provider route is available for direct video generation.',
+        action: videoRouteLive ? 'Generate Clip' : 'Unavailable',
+        primary: true,
+        disabled: !videoRouteLive,
+        onClick: function () { generateMediaVideo({ useSelectedAsset: false }); }
+      },
+      {
+        title: 'Animate selected asset',
+        sub: selectedStillAsset
+          ? 'Use ' + (selectedStillAsset.label || selectedStillAsset.filename) + ' as the first frame for a short branded motion clip.'
+          : 'Select a still from Library first, then come back here for image-to-video generation.',
+        action: selectedStillAsset ? 'Use Selected Asset' : 'Open Library',
+        disabled: selectedStillAsset ? !videoRouteLive : false,
+        onClick: function () {
+          if (!selectedStillAsset) {
+            assetsState.activeTab = 'library';
+            renderAssetsWorkspace();
+            return;
+          }
+          generateMediaVideo({ useSelectedAsset: true });
+        }
       },
       {
         title: 'Motion pass to Build',
-        sub: 'Available now. Send restrained animation direction into Build for the current page.',
+        sub: 'Keep lightweight page animation separate from deeper media clips. This sends restrained motion direction into Build.',
         action: 'Send Motion',
-        primary: true,
         onClick: function () { routeMotionPassToBuild(); }
-      },
-      {
-        title: 'Storyboard with Shay',
-        sub: 'Available now. Use Shay to outline pacing, scenes, prompts, and transition ideas.',
-        action: 'Ask Shay',
-        onClick: function () { askShayFromMedia('Storyboard a short branded video concept for this site.'); }
       }
     ]));
 
     var requirements = mkEl('div', { className: 'assets-action-card' });
-    requirements.appendChild(mkEl('div', { className: 'assets-section-label', text: 'What video needs next' }));
-    ['A direct server endpoint for video generation', 'Provider routing for long-running renders', 'Queue entries for video jobs', 'Review and playback UI for video outputs'].forEach(function (line) {
+    requirements.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Current workflow' }));
+    ['Prompt-only clips use text-to-video.', 'Selected stills become image-to-video inputs.', 'Motion passes for the page shell stay separate from generated media clips.', 'Every clip should route back into Library, Brand, or Shay review.'].forEach(function (line) {
       requirements.appendChild(mkEl('div', { className: 'assets-help-text', text: line }));
     });
     wrap.appendChild(requirements);
@@ -1811,33 +1961,36 @@
     options = options || {};
     var card = mkEl('div', { className: 'assets-action-card media-provider-row' + (options.compact ? ' compact' : '') });
     card.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Providers' }));
+    var imageRoute = bestTaskCapability('text_to_image');
+    var motionRoute = bestTaskCapability('image_to_video') || bestTaskCapability('text_to_video');
+    var vectorRoute = bestTaskCapability('vector_asset');
     card.appendChild(mkEl('div', {
       className: 'assets-help-text',
-      text: 'Multiple APIs exist in Studio, but not every provider is routed into every media flow yet. Preferred route is visible now, but some routes are still advisory instead of fully wired.'
+      text: 'Capability truth drives this strip now. Live routes are marked as wired; everything else is visible but clearly separated as available, partial, or blocked.'
     }));
     var strip = mkEl('div', { className: 'media-provider-strip' });
     [
-      {
-        label: 'Claude SVG',
-        state: 'available',
-        detail: 'Current asset generator for logo, icon, hero, divider, favicon, banner, illustration'
+      vectorRoute && {
+        label: 'Vector',
+        state: vectorRoute.state,
+        detail: vectorRoute.provider_label + ' · logos, icons, favicons, dividers'
+      },
+      imageRoute && {
+        label: 'Image',
+        state: imageRoute.state,
+        detail: imageRoute.provider_label + ' · prompt-first still generation'
+      },
+      motionRoute && {
+        label: 'Motion / Video',
+        state: motionRoute.state,
+        detail: motionRoute.provider_label + ' · text-to-video and image-to-video'
       },
       {
-        label: 'Gemini / Imagen',
-        state: capabilityStatus('gemini_api'),
-        detail: 'Available for image-related flows when Gemini is configured'
-      },
-      {
-        label: 'OpenAI',
-        state: capabilityStatus('openai_api'),
-        detail: 'API is present in Studio, not yet a first-class Media generation route'
-      },
-      {
-        label: 'Video',
-        state: 'partial',
-        detail: 'Dedicated screen now exists, direct video generation route still missing'
+        label: 'Registry',
+        state: (assetsState.providers || []).length ? 'wired' : 'unavailable',
+        detail: (assetsState.providers || []).length + ' providers tracked in Studio'
       }
-    ].forEach(function (provider) {
+    ].filter(Boolean).forEach(function (provider) {
       var pill = mkEl('button', { className: 'media-provider-pill state-' + providerStateTone(provider.state) });
       pill.type = 'button';
       pill.appendChild(mkEl('span', { className: 'media-provider-pill-label', text: provider.label }));
@@ -1858,10 +2011,48 @@
   }
 
   function providerStateTone(state) {
+    if (state === 'wired') return 'available';
+    if (state === 'verified_available') return 'available';
     if (state === 'available') return 'available';
     if (state === 'partial') return 'partial';
     if (state === 'broken') return 'broken';
     return 'unavailable';
+  }
+
+  function taskCapabilities(task) {
+    return (assetsState.taskMatrix && assetsState.taskMatrix[task]) || [];
+  }
+
+  function bestTaskCapability(task) {
+    return taskCapabilities(task)[0] || null;
+  }
+
+  function providerById(providerId) {
+    return (assetsState.providers || []).find(function (provider) { return provider.id === providerId; }) || null;
+  }
+
+  function providerLabelForValue(value) {
+    if (value === 'auto') return 'Auto';
+    var provider = providerById(value);
+    return provider ? provider.label : humanizeLabel(value);
+  }
+
+  function buildProviderOptionsForTask(task) {
+    var options = [{ value: 'auto', label: 'Auto' }];
+    taskCapabilities(task).forEach(function (entry) {
+      if (entry.state === 'unavailable' || entry.state === 'broken') return;
+      if (options.some(function (item) { return item.value === entry.provider_id; })) return;
+      options.push({
+        value: entry.provider_id,
+        label: entry.provider_label + (entry.state === 'wired' ? ' (Live)' : entry.state === 'verified_available' ? ' (Available)' : ' (Partial)')
+      });
+    });
+    return options;
+  }
+
+  function selectedProviderState(task, preferredValue) {
+    if (!preferredValue || preferredValue === 'auto') return bestTaskCapability(task);
+    return taskCapabilities(task).find(function (entry) { return entry.provider_id === preferredValue; }) || null;
   }
 
   function filteredUploads() {
@@ -2107,12 +2298,22 @@
       assetsState.activeTab = 'brand';
       renderAssetsWorkspace();
     }, false));
+    actions.appendChild(makeWorkspaceButton('Use As Character Source', function () {
+      assetsState.generation.referenceAssetFilename = asset.filename;
+      assetsState.activeTab = 'generate';
+      renderAssetsWorkspace();
+    }, false));
     wrap.appendChild(actions);
 
     var refine = mkEl('div', { className: 'assets-action-row media-selected-refine-row' });
     refine.appendChild(makeWorkspaceButton('Iterate In Generate', function () {
       assetsState.generation.prompt = 'Create a stronger variation of this asset: ' + (asset.label || asset.filename) + '. Keep the best parts, improve silhouette clarity, and make it feel more FAMtastic and premium.';
       assetsState.activeTab = 'generate';
+      renderAssetsWorkspace();
+    }, false));
+    refine.appendChild(makeWorkspaceButton('Send To Motion', function () {
+      assetsState.selectedAssetFilename = asset.filename;
+      assetsState.activeTab = 'motion';
       renderAssetsWorkspace();
     }, false));
     refine.appendChild(makeWorkspaceButton('Show Me Fit', function () {
@@ -2156,10 +2357,18 @@
 
     var outputs = mkEl('div', { className: 'assets-action-card' });
     outputs.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Canonical + derived outputs' }));
-    ['Vector master', 'PNG web export', 'App icon / favicon', 'Footer lockup', 'Print pack'].forEach(function (line) {
+    ['Vector master', 'PNG web export', 'App icon / favicon', 'Footer lockup', 'Character family / mascot set'].forEach(function (line) {
       outputs.appendChild(mkEl('div', { className: 'assets-help-text', text: line }));
     });
     wrap.appendChild(outputs);
+
+    var lineage = mkEl('div', { className: 'assets-action-card' });
+    lineage.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Brand families' }));
+    lineage.appendChild(mkEl('div', {
+      className: 'assets-help-text',
+      text: 'Promote logos, characters, and recurring visual systems here so Media can reuse them across stills, variants, and motion clips.'
+    }));
+    wrap.appendChild(lineage);
     return wrap;
   }
 
@@ -2192,29 +2401,40 @@
   function buildProviderView() {
     var wrap = mkEl('div', { className: 'assets-workspace-detail' });
     var usage = assetsState.usageSummary || {};
-    var providers = usage.by_provider || {};
-    var capabilities = assetsState.capabilities || {};
+    var usageProviders = usage.by_provider || {};
+    var providers = assetsState.providers || [];
     var card = mkEl('div', { className: 'assets-action-card' });
     card.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Provider truth' }));
     card.appendChild(mkEl('div', {
       className: 'assets-help-text',
-      text: 'Keep provider complexity compact by default, but surface cost, speed, and recommendations here when you need them.'
+      text: 'This screen separates what is wired now from what is only verified elsewhere. Media Studio should never pretend those are the same thing.'
     }));
-    Object.keys(providers).forEach(function (name) {
-      var data = providers[name];
-      card.appendChild(mkEl('div', {
-        className: 'assets-help-text',
-        text: [name, String(data.operations || 0) + ' ops', '$' + Number(data.cost || 0).toFixed(2), (data.avg_speed_seconds || 0) + 's avg'].join(' · ')
+    providers.forEach(function (provider) {
+      var item = mkEl('div', { className: 'media-provider-detail-card' });
+      item.appendChild(mkEl('div', { className: 'media-mode-card-title', text: provider.label }));
+      item.appendChild(mkEl('div', {
+        className: 'assets-detail-meta',
+        text: [
+          humanizeLabel(provider.state || provider.auth_status || 'unknown'),
+          provider.surface || 'api',
+          provider.auth_status ? ('auth ' + humanizeLabel(provider.auth_status)) : ''
+        ].filter(Boolean).join(' · ')
       }));
-    });
-    if (!Object.keys(providers).length) {
-      card.appendChild(mkEl('div', { className: 'assets-empty-note', text: 'No provider telemetry yet.' }));
-    }
-    ['claude_api', 'gemini_api', 'openai_api'].forEach(function (key) {
-      card.appendChild(mkEl('div', {
-        className: 'assets-help-text',
-        text: humanizeLabel(key) + ': ' + humanizeLabel(capabilities[key] || 'unavailable')
-      }));
+      item.appendChild(mkEl('div', { className: 'assets-help-text', text: provider.description || '' }));
+      (provider.capabilities || []).forEach(function (capability) {
+        item.appendChild(mkEl('div', {
+          className: 'assets-help-text',
+          text: capability.label + ': ' + humanizeLabel(capability.state) + (capability.entrypoint ? (' · ' + capability.entrypoint) : '')
+        }));
+      });
+      var usageData = usageProviders[provider.id] || {};
+      if (usageData.operations) {
+        item.appendChild(mkEl('div', {
+          className: 'assets-help-text',
+          text: 'Telemetry: ' + [String(usageData.operations || 0) + ' ops', '$' + Number(usageData.cost || 0).toFixed(2), (usageData.avg_speed_seconds || 0) + 's avg'].join(' · ')
+        }));
+      }
+      card.appendChild(item);
     });
     wrap.appendChild(card);
 
@@ -2231,11 +2451,14 @@
     wrap.appendChild(recs);
 
     var gaps = mkEl('div', { className: 'assets-action-card' });
-    gaps.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Current gaps' }));
-    gaps.appendChild(mkEl('div', {
-      className: 'assets-help-text',
-      text: 'Direct video generation is not wired yet, and provider switching is still more visible than fully routable in the current Media UI.'
-    }));
+    gaps.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Workflow defaults' }));
+    var workflow = (assetsState.capabilityManifest || {}).workflow_summary || {};
+    ['create', 'vector', 'motion'].forEach(function (key) {
+      gaps.appendChild(mkEl('div', {
+        className: 'assets-help-text',
+        text: humanizeLabel(key) + ': ' + (((workflow.recommended_defaults || {})[key]) || 'none yet')
+      }));
+    });
     wrap.appendChild(gaps);
     return wrap;
   }
@@ -2420,10 +2643,20 @@
   function buildMediaThumb(src, alt, className) {
     var wrap = mkEl('div', { className: className || '' });
     if (src) {
-      var img = document.createElement('img');
-      img.src = src;
-      img.alt = alt || '';
-      wrap.appendChild(img);
+      if (/\.(mp4|webm|mov)$/i.test(src)) {
+        var video = document.createElement('video');
+        video.src = src;
+        video.muted = true;
+        video.loop = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        wrap.appendChild(video);
+      } else {
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = alt || '';
+        wrap.appendChild(img);
+      }
     } else {
       wrap.appendChild(mkEl('div', {
         className: 'assets-thumb-empty',
@@ -2516,6 +2749,9 @@
     if (assetsState.generation.providerMode && assetsState.generation.providerMode !== 'auto') {
       extras.push('preferred route: ' + assetsState.generation.providerMode);
     }
+    if (assetsState.generation.referenceAssetFilename) {
+      extras.push('character source: ' + assetsState.generation.referenceAssetFilename);
+    }
     return [prompt].concat(extras).join('. ');
   }
 
@@ -2542,6 +2778,90 @@
     window.ws.send(JSON.stringify({ type: 'chat', content: message }));
     if (window.addMessage) window.addMessage('user', message);
     if (window.StudioShell) StudioShell.switchTab('chat');
+  }
+
+  function resolvedAspectRatio() {
+    if (assetsState.generation.aspect && assetsState.generation.aspect !== 'slot') return assetsState.generation.aspect;
+    var slot = findSlotById(assetsState.selectedSlotId);
+    if (!slot || !slot.dimensions) return '1:1';
+    var dims = String(slot.dimensions).split('x').map(Number);
+    if (dims.length !== 2 || !dims[0] || !dims[1]) return '1:1';
+    if (dims[0] > dims[1] * 1.3) return '16:9';
+    if (dims[1] > dims[0] * 1.3) return '9:16';
+    return '1:1';
+  }
+
+  function generateMediaImage() {
+    var prompt = buildGenerationPrompt(findSlotById(assetsState.selectedSlotId));
+    if (!prompt) {
+      showAssetsFeedback('Enter a prompt before generating an image.', 'error');
+      return;
+    }
+    showAssetsFeedback('Generating media image...', 'info');
+    fetch('/api/media/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: prompt,
+        aspect_ratio: resolvedAspectRatio(),
+        provider: assetsState.generation.providerMode === 'auto' ? 'auto' : assetsState.generation.providerMode,
+        role: assetsState.generation.assetType === 'illustration' ? 'character' : 'content',
+        label: '',
+        notes: assetsState.generation.referenceAssetFilename
+          ? 'Source asset pinned: ' + assetsState.generation.referenceAssetFilename
+          : '',
+        brand_family_id: assetsState.generation.brandFamilyId || null,
+      })
+    }).then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || data.error) throw new Error((data && data.error) || 'Image generation failed');
+        assetsState.selectedAssetFilename = data.asset && data.asset.filename ? data.asset.filename : assetsState.selectedAssetFilename;
+        showAssetsFeedback('Generated media image.', 'success');
+        refreshAssetsWorkspace();
+      })
+      .catch(function (err) {
+        showAssetsFeedback('Could not generate media image: ' + err.message, 'error');
+      });
+  }
+
+  function generateMediaVideo(options) {
+    options = options || {};
+    var selectedAsset = findAssetByFilename(assetsState.selectedAssetFilename);
+    if (selectedAsset && selectedAsset.type === 'video') selectedAsset = null;
+    var prompt = String(assetsState.generation.prompt || '').trim();
+    var videoPrompt = String(assetsState.generation.videoPrompt || '').trim() || prompt;
+    if (options.useSelectedAsset && !selectedAsset) {
+      showAssetsFeedback('Select a source asset from Library before using image-to-video.', 'error');
+      return;
+    }
+    if (!options.useSelectedAsset && !videoPrompt && !prompt) {
+      showAssetsFeedback('Enter a motion prompt before generating a clip.', 'error');
+      return;
+    }
+    showAssetsFeedback(options.useSelectedAsset ? 'Animating selected asset...' : 'Generating video clip...', 'info');
+    fetch('/api/media/generate-video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: prompt,
+        video_prompt: videoPrompt,
+        image_filename: options.useSelectedAsset && selectedAsset ? selectedAsset.filename : null,
+        aspect_ratio: '16:9',
+        duration: 5,
+        provider: assetsState.generation.providerMode === 'auto' ? 'auto' : assetsState.generation.providerMode,
+        label: selectedAsset ? (selectedAsset.label || selectedAsset.filename) + ' Motion' : '',
+        brand_family_id: assetsState.generation.brandFamilyId || null,
+      })
+    }).then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || data.error) throw new Error((data && data.error) || 'Video generation failed');
+        assetsState.selectedAssetFilename = data.asset && data.asset.filename ? data.asset.filename : assetsState.selectedAssetFilename;
+        showAssetsFeedback('Generated motion clip.', 'success');
+        refreshAssetsWorkspace();
+      })
+      .catch(function (err) {
+        showAssetsFeedback('Could not generate motion clip: ' + err.message, 'error');
+      });
   }
 
   function generateStandaloneAsset() {
@@ -2574,7 +2894,8 @@
       motion: 'Motion',
       brand: 'Brand',
       queue: 'Queue / History',
-      provider: 'Providers'
+      provider: 'Providers',
+      character: 'Character'
     };
     return labels[tabId] || humanizeLabel(tabId);
   }
@@ -2584,12 +2905,419 @@
       { id: 'home', label: 'Create', sub: 'Prompt-first landing screen with one major function per row.' },
       { id: 'generate', label: 'Image', sub: 'Focused image generation for icons, logos, hero art, and slot fills.' },
       { id: 'motion', label: 'Motion', sub: 'Separate surface for video, motion planning, and what is not wired yet.' },
+      { id: 'character', label: 'Character', sub: 'Build mascots, generate poses, and produce hero + promo videos.' },
       { id: 'library', label: 'Library', sub: 'Browse existing uploads and apply them with less clutter.' },
       { id: 'brand', label: 'Brand', sub: 'Keep logo marks, lockups, favicons, and exports together.' },
       { id: 'queue', label: 'Queue / History', sub: 'See what still needs attention and what was generated.' },
       { id: 'provider', label: 'Providers', sub: 'Inspect API state, routing truth, and what is actually wired.' }
     ];
   }
+
+  // ── Character Pipeline views ─────────────────────────────────────────────
+
+  var DEFAULT_POSES = [
+    'Waving hello', 'Thumbs up', 'Celebrating (arms raised)', 'Pointing forward',
+    'Dancing', 'Laughing', 'Sitting at desk', 'Holding coffee',
+    'Running', 'Hugging', 'Presenting', 'Cheering with pennant'
+  ];
+
+  function renderCharacterBriefForm(container) {
+    clearEl(container);
+    var form = mkEl('div', { style: 'padding:12px;display:flex;flex-direction:column;gap:10px;' });
+
+    form.appendChild(mkEl('div', { className: 'screen-header', text: 'Character Brief', style: 'padding:0 0 6px;border:none;' }));
+
+    var nameWrap = mkEl('div', { className: 'settings-field' });
+    nameWrap.appendChild(mkEl('div', { className: 'settings-label', text: 'Name' }));
+    var nameInput = document.createElement('input');
+    nameInput.className = 'settings-input';
+    nameInput.type = 'text';
+    nameInput.placeholder = 'e.g. Benny the Bear';
+    nameInput.value = charState.name;
+    nameInput.addEventListener('input', function () { charState.name = nameInput.value; });
+    nameWrap.appendChild(nameInput);
+    form.appendChild(nameWrap);
+
+    var descWrap = mkEl('div', { className: 'settings-field' });
+    descWrap.appendChild(mkEl('div', { className: 'settings-label', text: 'Description' }));
+    var descInput = document.createElement('textarea');
+    descInput.className = 'settings-input settings-textarea';
+    descInput.placeholder = 'Describe your mascot — look, personality, brand fit';
+    descInput.rows = 3;
+    descInput.value = charState.description;
+    descInput.addEventListener('input', function () { charState.description = descInput.value; });
+    descWrap.appendChild(descInput);
+    form.appendChild(descWrap);
+
+    var styleWrap = mkEl('div', { className: 'settings-field' });
+    styleWrap.appendChild(mkEl('div', { className: 'settings-label', text: 'Style' }));
+    var styleSelect = document.createElement('select');
+    styleSelect.className = 'workspace-select';
+    ['Illustrated/Cartoon', '3D Render', 'Pixel Art', 'Realistic'].forEach(function (s) {
+      var opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      opt.selected = s === charState.style;
+      styleSelect.appendChild(opt);
+    });
+    styleSelect.addEventListener('change', function () { charState.style = styleSelect.value; });
+    styleWrap.appendChild(styleSelect);
+    form.appendChild(styleWrap);
+
+    if (charState.anchorImageUrl) {
+      var anchorPreview = mkEl('div', { style: 'border-radius:8px;overflow:hidden;border:1px solid var(--fam-border);margin-bottom:4px;' });
+      var anchorImg = document.createElement('img');
+      anchorImg.src = charState.anchorImageUrl;
+      anchorImg.alt = 'Anchor';
+      anchorImg.style.cssText = 'width:100%;display:block;';
+      anchorPreview.appendChild(anchorImg);
+      form.appendChild(anchorPreview);
+      form.appendChild(mkEl('div', { className: 'assets-help-text', text: 'Anchor ready. ID: ' + (charState.characterId || '').slice(0, 8) + '...' }));
+    }
+
+    var anchorBtn = makeWorkspaceButton(charState.anchorImageUrl ? 'Re-generate Anchor' : 'Generate Anchor', function () {
+      if (!charState.name || !charState.description) { showAssetsFeedback('Fill in name and description first.', 'error'); return; }
+      anchorBtn.disabled = true;
+      anchorBtn.textContent = 'Generating...';
+      showAssetsFeedback('Generating character anchor via Imagen...', 'info');
+      fetch('/api/character/create-anchor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: charState.name, description: charState.description, style: charState.style, site_tag: assetsState.siteTag })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.error) throw new Error(data.error);
+        charState.characterId = data.character_id;
+        charState.anchorImagePath = data.image_path;
+        var previewPort = ((window.config || {}).previewPort) || 3333;
+        charState.anchorImageUrl = 'http://localhost:' + previewPort + '/' + (data.image_path || '').replace(/^\//, '');
+        showAssetsFeedback('Anchor created! Now generate poses.', 'success');
+        renderAssetsWorkspace();
+      }).catch(function (err) {
+        showAssetsFeedback('Anchor failed: ' + err.message, 'error');
+        anchorBtn.disabled = false;
+        anchorBtn.textContent = 'Generate Anchor';
+      });
+    }, true);
+    form.appendChild(anchorBtn);
+
+    form.appendChild(mkEl('div', { className: 'screen-header', text: 'Poses (12)', style: 'padding:8px 0 4px;border:none;margin-top:8px;' }));
+    charState.poses.forEach(function (pose, i) {
+      var pi = document.createElement('input');
+      pi.className = 'settings-input';
+      pi.type = 'text';
+      pi.value = pose || DEFAULT_POSES[i] || '';
+      pi.style.cssText = 'margin-bottom:4px;font-size:11px;padding:5px 8px;';
+      pi.addEventListener('input', function () { charState.poses[i] = pi.value; });
+      form.appendChild(pi);
+    });
+
+    if (charState.characterId) {
+      var posesBtn = makeWorkspaceButton('Generate All Poses', function () {
+        posesBtn.disabled = true;
+        posesBtn.textContent = 'Queuing poses...';
+        charState.poseStatuses = {};
+        for (var j = 0; j < 12; j++) charState.poseStatuses[j] = { status: 'generating' };
+        showAssetsFeedback('Generating 12 poses via Leonardo...', 'info');
+        renderAssetsWorkspace();
+        fetch('/api/character/generate-poses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ character_id: charState.characterId, anchor_image_path: charState.anchorImagePath, style: charState.style, poses: charState.poses, site_tag: assetsState.siteTag })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+          if (data.error) throw new Error(data.error);
+          showAssetsFeedback('Poses complete! Select one to continue.', 'success');
+          if (data.results) data.results.forEach(function (r, idx) {
+            charState.poseStatuses[idx] = { status: r.status === 'done' ? 'done' : 'failed', image_path: r.image_path, image_url: r.image_url };
+          });
+          renderAssetsWorkspace();
+        }).catch(function (err) {
+          showAssetsFeedback('Pose generation failed: ' + err.message, 'error');
+          posesBtn.disabled = false;
+          posesBtn.textContent = 'Generate All Poses';
+        });
+      }, true);
+      form.appendChild(posesBtn);
+    }
+
+    container.appendChild(form);
+  }
+
+  function buildCharacterPoseGrid() {
+    var wrap = mkEl('div', { className: 'media-motion-stage', style: 'padding:20px;' });
+
+    var hdr = mkEl('div', { style: 'margin-bottom:16px;' });
+    hdr.appendChild(mkEl('div', { className: 'assets-detail-eyebrow', text: 'Character Pipeline' }));
+    hdr.appendChild(mkEl('div', { className: 'media-stage-title', text: charState.name || 'Pose Gallery', style: 'font-size:24px;' }));
+    wrap.appendChild(hdr);
+
+    var selectedStatus = charState.selectedPoseIdx !== null ? charState.poseStatuses[charState.selectedPoseIdx] : null;
+    if (selectedStatus && selectedStatus.image_url) {
+      var bigPreview = mkEl('div', { style: 'margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--fam-border);max-height:220px;' });
+      var bigImg = document.createElement('img');
+      bigImg.src = selectedStatus.image_url;
+      bigImg.alt = 'Selected pose';
+      bigImg.style.cssText = 'width:100%;display:block;object-fit:contain;';
+      bigPreview.appendChild(bigImg);
+      wrap.appendChild(bigPreview);
+
+      var useBtn = makeWorkspaceButton('Use in site', function () {
+        if (!selectedStatus.image_path) { showAssetsFeedback('No image path available.', 'error'); return; }
+        var slot = findSlotById(assetsState.selectedSlotId);
+        if (!slot) { showAssetsFeedback('Select a slot first.', 'error'); return; }
+        fetch('/api/replace-slot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot_id: slot.slot_id, page: slot.page, src: selectedStatus.image_path, provider: 'character' })
+        }).then(function (r) { return r.json(); }).then(function () {
+          showAssetsFeedback('Pose assigned to slot!', 'success');
+          refreshAssetsWorkspace();
+        }).catch(function (err) { showAssetsFeedback('Could not assign: ' + err.message, 'error'); });
+      }, true);
+      useBtn.style.marginBottom = '12px';
+      wrap.appendChild(useBtn);
+    }
+
+    var grid = mkEl('div', { className: 'char-pose-grid' });
+    for (var i = 0; i < 12; i++) {
+      (function (idx) {
+        var isSelected = charState.selectedPoseIdx === idx;
+        var cell = mkEl('div', { className: 'char-pose-cell' + (isSelected ? ' selected' : '') });
+        var status = charState.poseStatuses[idx];
+        cell.appendChild(mkEl('div', { className: 'char-pose-num', text: String(idx + 1) }));
+
+        if (!status || status.status === 'pending') {
+          cell.appendChild(mkEl('div', { className: 'char-pose-placeholder', text: charState.poses[idx] || 'Pose ' + (idx + 1) }));
+        } else if (status.status === 'generating') {
+          var ring = mkEl('div', { className: 'char-spinner-ring' });
+          var spinner = mkEl('div', { className: 'char-pose-spinner' });
+          spinner.appendChild(ring);
+          cell.appendChild(spinner);
+          cell.appendChild(mkEl('div', { className: 'char-pose-placeholder', style: 'font-size:9px;', text: 'Generating...' }));
+        } else if (status.status === 'done' && status.image_url) {
+          var thumb = document.createElement('img');
+          thumb.src = status.image_url;
+          thumb.alt = 'Pose ' + (idx + 1);
+          thumb.className = 'char-pose-thumb';
+          cell.appendChild(thumb);
+          cell.style.cursor = 'pointer';
+          cell.addEventListener('click', function () {
+            charState.selectedPoseIdx = idx;
+            renderAssetsWorkspace();
+          });
+        } else if (status.status === 'failed') {
+          cell.appendChild(mkEl('div', { className: 'char-pose-failed', text: '\u2717' }));
+          cell.appendChild(mkEl('div', { className: 'char-pose-placeholder', style: 'font-size:9px;color:var(--fam-red);', text: 'Failed' }));
+        }
+
+        grid.appendChild(cell);
+      })(i);
+    }
+    wrap.appendChild(grid);
+
+    if (!charState.characterId) {
+      wrap.appendChild(mkEl('div', { className: 'assets-empty-preview', style: 'margin-top:16px;', text: 'Fill in the brief on the left and click Generate Anchor to start.' }));
+    }
+
+    return wrap;
+  }
+
+  function renderCharacterPipelineActions(container) {
+    clearEl(container);
+    var panel = mkEl('div', { style: 'padding:14px;display:flex;flex-direction:column;gap:14px;' });
+
+    var summaryCard = mkEl('div', { className: 'media-context-card', style: 'margin-top:0;' });
+    if (charState.characterId) {
+      summaryCard.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Active Character' }));
+      summaryCard.appendChild(mkEl('div', { className: 'assets-detail-title', style: 'font-size:16px;', text: charState.name || 'Character' }));
+      summaryCard.appendChild(mkEl('div', { className: 'assets-detail-meta', text: charState.style }));
+      var doneCount = Object.values(charState.poseStatuses).filter(function (p) { return p.status === 'done'; }).length;
+      summaryCard.appendChild(mkEl('div', { className: 'assets-detail-meta', style: 'font-weight:600;margin-top:6px;', text: doneCount + '/12 poses done' }));
+      if (charState.anchorImageUrl) {
+        var aThumb = mkEl('div', { style: 'margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--fam-border);' });
+        var aImg = document.createElement('img');
+        aImg.src = charState.anchorImageUrl;
+        aImg.alt = 'Anchor';
+        aImg.style.cssText = 'width:100%;display:block;';
+        aThumb.appendChild(aImg);
+        summaryCard.appendChild(aThumb);
+      }
+    } else {
+      summaryCard.appendChild(mkEl('div', { className: 'assets-help-text', text: 'Generate an anchor character first.' }));
+    }
+    panel.appendChild(summaryCard);
+
+    var donePoses = Object.entries(charState.poseStatuses).filter(function (e) { return e[1].status === 'done'; });
+
+    // Hero Video
+    var heroCard = mkEl('div', { className: 'media-side-card', style: 'margin-top:0;' });
+    heroCard.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Generate Hero Video' }));
+    var heroSelect = document.createElement('select');
+    heroSelect.className = 'workspace-select';
+    heroSelect.style.cssText = 'width:100%;margin:8px 0;';
+    if (donePoses.length === 0) {
+      var noOpt = document.createElement('option');
+      noOpt.textContent = 'No poses yet';
+      heroSelect.appendChild(noOpt);
+      heroSelect.disabled = true;
+    } else {
+      donePoses.forEach(function (entry) {
+        var idx = parseInt(entry[0], 10);
+        var opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = 'Pose ' + (idx + 1) + ': ' + (charState.poses[idx] || '');
+        heroSelect.appendChild(opt);
+      });
+    }
+    heroCard.appendChild(heroSelect);
+
+    var heroStatus = mkEl('div', { style: 'font-size:11px;color:var(--fam-text-3);min-height:18px;margin-bottom:6px;' });
+    heroStatus.id = 'char-hero-status';
+    heroStatus.textContent = charState.heroVideoStatus === 'generating' ? 'Generating...' : charState.heroVideoStatus === 'done' ? '\u2713 Hero video ready' : '';
+    heroCard.appendChild(heroStatus);
+
+    var heroBtn = makeWorkspaceButton('Generate Hero Video', function () {
+      var idx = parseInt(heroSelect.value, 10);
+      var poseData = charState.poseStatuses[idx];
+      if (!poseData || !poseData.image_path) { showAssetsFeedback('Select a valid pose.', 'error'); return; }
+      heroBtn.disabled = true;
+      charState.heroVideoStatus = 'generating';
+      heroStatus.textContent = 'Generating...';
+      fetch('/api/video/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_path: poseData.image_path, prompt: (charState.name || 'mascot') + ' ' + (charState.poses[idx] || '') + ' smooth looping animation', site_tag: assetsState.siteTag })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.error) throw new Error(data.error);
+        charState.heroVideoJobId = data.jobId;
+        showAssetsFeedback('Hero video started: ' + data.jobId.slice(0, 8), 'info');
+      }).catch(function (err) {
+        showAssetsFeedback('Video failed: ' + err.message, 'error');
+        heroBtn.disabled = false;
+        charState.heroVideoStatus = 'idle';
+        heroStatus.textContent = '';
+      });
+    }, donePoses.length === 0);
+    heroBtn.disabled = donePoses.length === 0 || charState.heroVideoStatus === 'generating';
+    heroCard.appendChild(heroBtn);
+    panel.appendChild(heroCard);
+
+    // Promo Video
+    var promoCard = mkEl('div', { className: 'media-side-card', style: 'margin-top:0;' });
+    promoCard.appendChild(mkEl('div', { className: 'assets-section-label', text: 'Generate Promo Video' }));
+    var siteNameInput = document.createElement('input');
+    siteNameInput.className = 'settings-input';
+    siteNameInput.type = 'text';
+    siteNameInput.placeholder = 'Site name';
+    siteNameInput.value = (assetsState.siteTag || '').replace(/^site-/, '').replace(/-/g, ' ');
+    siteNameInput.style.marginBottom = '4px';
+    promoCard.appendChild(siteNameInput);
+    var taglineInput = document.createElement('input');
+    taglineInput.className = 'settings-input';
+    taglineInput.type = 'text';
+    taglineInput.placeholder = 'Tagline (optional)';
+    taglineInput.style.marginBottom = '8px';
+    promoCard.appendChild(taglineInput);
+
+    var promoStepEl = mkEl('div', { style: 'font-size:11px;color:var(--fam-text-3);min-height:18px;margin-bottom:6px;' });
+    promoStepEl.id = 'char-promo-step';
+    promoStepEl.textContent = charState.promoStepText || '';
+    promoCard.appendChild(promoStepEl);
+
+    var promoBtn = makeWorkspaceButton('Generate Promo Video', function () {
+      if (!charState.characterId) { showAssetsFeedback('Need a character first.', 'error'); return; }
+      if (donePoses.length < 1) { showAssetsFeedback('Need at least one done pose.', 'error'); return; }
+      promoBtn.disabled = true;
+      charState.promoStatus = 'generating';
+      charState.promoStepText = 'Starting...';
+      promoStepEl.textContent = 'Starting...';
+      fetch('/api/video/promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ character_id: charState.characterId, site_tag: assetsState.siteTag, site_name: siteNameInput.value || '', tagline: taglineInput.value || '' })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.error) throw new Error(data.error);
+        charState.promoJobId = data.jobId;
+        charState.promoDownloadTag = assetsState.siteTag;
+        showAssetsFeedback('Promo job started — this takes 3-5 min.', 'info');
+      }).catch(function (err) {
+        showAssetsFeedback('Promo failed: ' + err.message, 'error');
+        promoBtn.disabled = false;
+        charState.promoStatus = 'idle';
+      });
+    }, donePoses.length === 0);
+    promoBtn.disabled = donePoses.length === 0 || charState.promoStatus === 'generating';
+    promoCard.appendChild(promoBtn);
+
+    if (charState.promoStatus === 'done' && charState.promoDownloadTag) {
+      var dlBtn = makeWorkspaceButton('Download Promo', function () {
+        window.location.href = '/api/video/promo/' + charState.promoDownloadTag + '/download';
+      }, true);
+      dlBtn.style.marginTop = '8px';
+      promoCard.appendChild(dlBtn);
+    }
+
+    panel.appendChild(promoCard);
+    container.appendChild(panel);
+  }
+
+  // WS dispatcher — called from index.html onmessage handler
+  window.charPipelineHandleWS = function (msg) {
+    if (!msg) return;
+    var stepLabels = { 'clip-0': 'Clip 1 done', 'clip-1': 'Clip 2 done', 'clip-2': 'Clip 3 done', concat: 'Concatenating clips...', 'text-overlay': 'Adding text overlay...' };
+
+    if (msg.type === 'pose-generated') {
+      var idx = msg.pose_index;
+      if (idx !== undefined) {
+        charState.poseStatuses[idx] = { status: msg.status === 'done' ? 'done' : 'failed', image_path: msg.image_path, image_url: msg.image_url };
+        if (assetsState.activeTab === 'character') renderAssetsWorkspace();
+      }
+      return;
+    }
+    if (msg.type === 'poses-complete') {
+      showAssetsFeedback('All poses complete!', 'success');
+      if (msg.results) msg.results.forEach(function (r, i) {
+        charState.poseStatuses[i] = { status: r.status === 'done' ? 'done' : 'failed', image_path: r.image_path, image_url: r.image_url };
+      });
+      if (assetsState.activeTab === 'character') renderAssetsWorkspace();
+      return;
+    }
+    if (msg.type === 'video-progress' && msg.jobId === charState.heroVideoJobId) {
+      charState.heroVideoStatus = 'generating';
+      var el1 = document.getElementById('char-hero-status');
+      if (el1) el1.textContent = 'Generating...';
+      return;
+    }
+    if (msg.type === 'video-complete' && msg.jobId === charState.heroVideoJobId) {
+      charState.heroVideoStatus = 'done';
+      var el2 = document.getElementById('char-hero-status');
+      if (el2) el2.textContent = '\u2713 Hero video ready';
+      showAssetsFeedback('Hero video ready!', 'success');
+      if (typeof window.reloadPreview === 'function') window.reloadPreview();
+      if (assetsState.activeTab === 'character') renderAssetsWorkspace();
+      return;
+    }
+    if (msg.type === 'promo-step' && msg.jobId === charState.promoJobId) {
+      charState.promoStepText = stepLabels[msg.step] || msg.step;
+      var el3 = document.getElementById('char-promo-step');
+      if (el3) el3.textContent = charState.promoStepText;
+      return;
+    }
+    if (msg.type === 'promo-complete' && msg.jobId === charState.promoJobId) {
+      charState.promoStatus = 'done';
+      charState.promoStepText = '\u2713 Done!';
+      var el4 = document.getElementById('char-promo-step');
+      if (el4) el4.textContent = '\u2713 Done!';
+      showAssetsFeedback('Promo video ready \u2014 download below!', 'success');
+      if (assetsState.activeTab === 'character') renderAssetsWorkspace();
+      return;
+    }
+    if (msg.type === 'promo-error' && msg.jobId === charState.promoJobId) {
+      charState.promoStatus = 'idle';
+      charState.promoStepText = 'Failed: ' + msg.error;
+      showAssetsFeedback('Promo failed: ' + msg.error, 'error');
+      if (assetsState.activeTab === 'character') renderAssetsWorkspace();
+    }
+  };
 
   function syncMediaOverflowCue() {
     var detail = assetsRefs.detail;
@@ -2675,9 +3403,33 @@
     fetch('/api/settings').then(function (r) { return r.json(); }).then(function (settings) {
       var saveAction = null;
       if (tier === 'platform') {
-        renderAPIKeyField(container, 'Anthropic API Key', settings._configured && settings._configured.anthropic_api_key ? '••••••••' : '');
-        renderAPIKeyField(container, 'Gemini API Key', settings._configured && settings._configured.gemini_api_key ? '••••••••' : '');
-        renderAPIKeyField(container, 'OpenAI API Key', settings._configured && settings._configured.openai_api_key ? '••••••••' : '');
+        var anthropicInput = renderAPIKeyField(container, 'Anthropic API Key', settings._configured && settings._configured.anthropic_api_key ? '••••••••' : '');
+        var geminiInput = renderAPIKeyField(container, 'Gemini / Google AI Studio Key', settings._configured && (settings._configured.gemini_api_key || settings._configured.google_api_key) ? '••••••••' : '');
+        var openaiInput = renderAPIKeyField(container, 'OpenAI API Key', settings._configured && settings._configured.openai_api_key ? '••••••••' : '');
+        var leonardoInput = renderAPIKeyField(container, 'Leonardo API Key', settings._configured && settings._configured.leonardo_api_key ? '••••••••' : '');
+        var openRouterInput = renderAPIKeyField(container, 'OpenRouter API Key', settings._configured && settings._configured.openrouter_api_key ? '••••••••' : '');
+        saveAction = function () {
+          function preserveMask(value, currentConfigured) {
+            var trimmed = String(value || '').trim();
+            if (trimmed === '••••••••' && currentConfigured) return undefined;
+            return trimmed;
+          }
+          return fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              anthropic_api_key: preserveMask(anthropicInput.value, settings._configured && settings._configured.anthropic_api_key),
+              gemini_api_key: preserveMask(geminiInput.value, settings._configured && (settings._configured.gemini_api_key || settings._configured.google_api_key)),
+              google_api_key: preserveMask(geminiInput.value, settings._configured && (settings._configured.gemini_api_key || settings._configured.google_api_key)),
+              openai_api_key: preserveMask(openaiInput.value, settings._configured && settings._configured.openai_api_key),
+              leonardo_api_key: preserveMask(leonardoInput.value, settings._configured && settings._configured.leonardo_api_key),
+              openrouter_api_key: preserveMask(openRouterInput.value, settings._configured && settings._configured.openrouter_api_key)
+            })
+          }).then(function (r) {
+            if (!r.ok) throw new Error('Save failed');
+            return r.json();
+          });
+        };
       } else if (tier === 'workspace') {
         renderToggleField(container, 'Surgical edits (90% token reduction)', true);
         renderToggleField(container, 'Revenue-first brief', true);
@@ -2743,6 +3495,7 @@
     row.appendChild(btn);
     field.appendChild(row);
     container.appendChild(field);
+    return input;
   }
 
   function renderTextField(container, label, value) {
