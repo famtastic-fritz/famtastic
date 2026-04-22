@@ -9905,6 +9905,136 @@ app.post('/api/video/generate', (req, res) => {
   }
 });
 
+// POST /api/video/promo
+// Async promo video pipeline: Veo clips → ffmpeg xfade concat → drawtext overlay.
+// Returns jobId immediately; emits WS promo-step / promo-complete events.
+app.post('/api/video/promo', (req, res) => {
+  try {
+    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
+    const { character_id, site_tag, site_name, tagline, pose_indices } = req.body || {};
+    if (!character_id) return res.status(400).json({ error: 'character_id is required' });
+
+    const jobId = require('crypto').randomUUID();
+    res.json({ jobId, status: 'started' });
+
+    setImmediate(async () => {
+      const ffmpeg = '/opt/homebrew/bin/ffmpeg';
+      const { execFile: ef } = require('child_process');
+      const { promisify } = require('util');
+      const efAsync = promisify(ef);
+
+      function step(s, status = 'done', extra = {}) {
+        broadcastAll({ type: 'promo-step', jobId, step: s, status, ...extra });
+      }
+
+      try {
+        const siteDir = getCharacterSiteDir(site_tag);
+        const spec = readSpecForSite(siteDir);
+        const charSet = (spec.character_sets || []).find(c => c.id === character_id);
+        if (!charSet) throw new Error(`character_set ${character_id} not found in spec`);
+
+        // Select poses
+        const donePoses = (charSet.poses || []).filter(p => p.status === 'done' && p.image_path);
+        if (donePoses.length < 1) throw new Error('No done poses available for promo');
+        const indices = Array.isArray(pose_indices) && pose_indices.length > 0
+          ? pose_indices.map(i => donePoses[i]).filter(Boolean)
+          : donePoses.slice(0, 3);
+        const selectedPoses = indices.length > 0 ? indices : donePoses.slice(0, 3);
+
+        // Generate Veo clips
+        const tmpClips = [];
+        const brandName = site_name || charSet.name || 'Brand';
+        for (let i = 0; i < selectedPoses.length; i++) {
+          const pose = selectedPoses[i];
+          const clipPath = `/tmp/promo-clip-${jobId}-${i}.mp4`;
+          const clipPrompt = `${brandName} ${pose.name || pose.id} smooth looping animation`;
+          const imagePath = path.isAbsolute(pose.image_path)
+            ? pose.image_path
+            : path.join(siteDir, pose.image_path);
+          await runVeoGeneration(imagePath, clipPrompt, clipPath, { duration: 5 });
+          tmpClips.push(clipPath);
+          step(`clip-${i}`);
+        }
+
+        // Ensure output dir
+        const videoDir = path.join(siteDir, 'assets', 'video');
+        require('fs').mkdirSync(videoDir, { recursive: true });
+        const concatPath = `/tmp/promo-concat-${jobId}.mp4`;
+        const finalPath = path.join(videoDir, 'promo.mp4');
+
+        // ffmpeg xfade concat
+        if (tmpClips.length === 1) {
+          require('fs').copyFileSync(tmpClips[0], concatPath);
+        } else {
+          // Build xfade filter chain
+          const clipDuration = 5;
+          const xfadeDuration = 0.5;
+          let filterStr = '';
+          let lastLabel = '[0:v]';
+          for (let i = 1; i < tmpClips.length; i++) {
+            const offset = (clipDuration - xfadeDuration) * i - xfadeDuration * (i - 1);
+            const outLabel = i === tmpClips.length - 1 ? '' : `[v${i}]`;
+            filterStr += `${lastLabel}[${i}:v]xfade=transition=fade:duration=${xfadeDuration}:offset=${offset.toFixed(2)}${outLabel ? outLabel : ''}`;
+            if (i < tmpClips.length - 1) { filterStr += ';'; lastLabel = `[v${i}]`; }
+          }
+          const inputArgs = tmpClips.flatMap(c => ['-i', c]);
+          await efAsync(ffmpeg, [
+            ...inputArgs,
+            '-filter_complex', filterStr,
+            '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', concatPath
+          ], { timeout: 120000 });
+        }
+        step('concat');
+
+        // ffmpeg drawtext overlay
+        const siteName = (site_name || brandName).replace(/'/g, "\\'");
+        const taglineText = (tagline || '').replace(/'/g, "\\'");
+        const drawtextFilters = [
+          `drawtext=text='${siteName}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=(h/2)-80:shadowx=3:shadowy=3:shadowcolor=black@0.8`,
+          taglineText ? `drawtext=text='${taglineText}':fontsize=36:fontcolor=white@0.9:x=(w-text_w)/2:y=(h/2)+30:shadowx=2:shadowy=2:shadowcolor=black@0.7` : null
+        ].filter(Boolean).join(',');
+
+        await efAsync(ffmpeg, [
+          '-i', concatPath,
+          '-vf', drawtextFilters,
+          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', finalPath
+        ], { timeout: 60000 });
+        step('text-overlay');
+
+        // Cleanup tmp files
+        [...tmpClips, concatPath].forEach(f => { try { require('fs').unlinkSync(f); } catch (_) {} });
+
+        const resolvedTag = site_tag || TAG;
+        const download_url = `/api/video/promo/${resolvedTag}/download`;
+        broadcastAll({ type: 'promo-complete', jobId, path: finalPath, download_url });
+        console.log(`[video/promo] Complete → ${finalPath}`);
+      } catch (e) {
+        console.error('[video/promo] pipeline error:', e.message);
+        broadcastAll({ type: 'promo-error', jobId, error: e.message });
+      }
+    });
+  } catch (e) {
+    console.error('[video/promo]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/video/promo/:tag/download
+// Serve promo.mp4 as a file download attachment.
+app.get('/api/video/promo/:tag/download', (req, res) => {
+  const siteTag = req.params.tag;
+  const siteDir = getCharacterSiteDir(siteTag);
+  const promoPath = path.join(siteDir, 'assets', 'video', 'promo.mp4');
+  if (!require('fs').existsSync(promoPath)) {
+    return res.status(404).json({ error: `promo.mp4 not found for ${siteTag} — run POST /api/video/promo first` });
+  }
+  const spec = readSpecForSite(siteDir);
+  const siteName = (spec.site_name || siteTag).replace(/[^a-z0-9-_]/gi, '-');
+  res.setHeader('Content-Disposition', `attachment; filename="${siteName}-promo.mp4"`);
+  res.setHeader('Content-Type', 'video/mp4');
+  res.sendFile(promoPath);
+});
+
 app.post('/api/media/generate-asset', async (req, res) => {
   try {
     const assetType = String(req.body?.asset_type || 'icon').toLowerCase();
