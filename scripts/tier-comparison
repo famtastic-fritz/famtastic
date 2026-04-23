@@ -1,0 +1,841 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * tier-comparison — Four-tier character generation benchmark.
+ *
+ * Tier 1: Imagen 4 anchor → Leonardo AI poses
+ * Tier 2: Imagen 4 anchor → Firefly web (Playwright + Chrome)
+ * Tier 3: Imagen 4 anchor → Photoshop Generative Fill (via adb-proxy socket)
+ * Tier 4: Imagen 4 anchor → FLUX Dev via fal.ai (image-to-image)
+ *
+ * All tiers share the same anchor image for a fair comparison.
+ */
+
+const path    = require('path');
+const fs      = require('fs');
+const cp      = require('child_process');
+const http    = require('http');
+const https   = require('https');
+const rl      = require('readline');
+
+// ── Paths ─────────────────────────────────────────────────────────────────────
+
+const FAM_ROOT    = path.resolve(__dirname, '..');
+const OUT_ROOT    = path.join(FAM_ROOT, 'tier-comparison-results');
+const TIER1_DIR   = path.join(OUT_ROOT, 'tier1');
+const TIER2_DIR   = path.join(OUT_ROOT, 'tier2');
+const TIER3_DIR   = path.join(OUT_ROOT, 'tier3');
+const TIER4_DIR   = path.join(OUT_ROOT, 'tier4');
+const ANCHOR_PATH = path.join(OUT_ROOT, 'anchor.jpg');
+const PY_SCRIPT   = path.join(FAM_ROOT, 'scripts', 'google-media-generate');
+const PYTHON      = '/opt/homebrew/opt/python@3.11/bin/python3.11';
+const PS_DRIVER   = path.join(FAM_ROOT, 'scripts', 'tier3-ps-driver.py');
+
+// ── Load env ──────────────────────────────────────────────────────────────────
+
+const envPath = path.join(FAM_ROOT, 'site-studio', '.env');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const m = line.match(/^([A-Z_]+)=(.+)$/);
+    if (m) process.env[m[1]] = m[2].trim();
+  });
+}
+
+const GEMINI_KEY   = process.env.GEMINI_API_KEY || '';
+const LEONARDO_KEY = process.env.LEONARDO_API_KEY || '';
+const FAL_KEY      = process.env.FAL_API_KEY || '';
+
+// ── Brief & poses ─────────────────────────────────────────────────────────────
+
+const CHAR_BRIEF = 'futuristic cartoon teddy bear, bright blue bow tie, circuit pattern details, friendly expression, full body, white background, illustrated style';
+
+const POSES = [
+  'waving hello',
+  'dancing, arms out',
+  'celebrating, both arms raised',
+];
+
+// ── Timing metadata ───────────────────────────────────────────────────────────
+
+const timings = { anchor: null, tier1: [], tier2: [], tier3: [], tier4: [] };
+const costs   = { anchor: 0.004, tier1: 0, tier2: 0, tier3: 0, tier4: 0 };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function log(tier, msg) {
+  const prefix = tier ? `[${tier}]` : '[comparison]';
+  console.log(`${prefix} ${msg}`);
+}
+
+function prompt(question) {
+  return new Promise(resolve => {
+    const iface = rl.createInterface({ input: process.stdin, output: process.stdout });
+    iface.question(question, ans => { iface.close(); resolve(ans.trim()); });
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function fetchJson(url, opts) {
+  return new Promise((resolve, reject) => {
+    const lib = url.startsWith('https') ? https : http;
+    const body = opts.body ? Buffer.from(opts.body) : null;
+    const reqOpts = { ...new URL(url), method: opts.method || 'GET', headers: opts.headers || {} };
+    if (body) reqOpts.headers['Content-Length'] = body.length;
+    const req = lib.request(reqOpts, res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => {
+        try { resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, json: () => JSON.parse(Buffer.concat(chunks).toString()) }); }
+        catch { resolve({ ok: false, status: res.statusCode, json: () => ({}) }); }
+      });
+    });
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+function fetchBuffer(url) {
+  return new Promise((resolve, reject) => {
+    const lib = url.startsWith('https') ? https : http;
+    const opts = new URL(url);
+    lib.get(opts, res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    }).on('error', reject);
+  });
+}
+
+// ── Phase 0: Setup ────────────────────────────────────────────────────────────
+
+function setup() {
+  [OUT_ROOT, TIER1_DIR, TIER2_DIR, TIER3_DIR, TIER4_DIR].forEach(d => fs.mkdirSync(d, { recursive: true }));
+  log(null, `Output: ${OUT_ROOT}`);
+  log(null, 'Brief: ' + CHAR_BRIEF.slice(0, 60) + '...');
+  log(null, 'Poses: ' + POSES.join(', '));
+  console.log('');
+}
+
+// ── Phase 1: Anchor (Imagen 4) ────────────────────────────────────────────────
+
+async function generateAnchor() {
+  if (fs.existsSync(ANCHOR_PATH)) {
+    log('anchor', `Reusing existing anchor → ${ANCHOR_PATH}`);
+    timings.anchor = '0 (cached)';
+    return ANCHOR_PATH;
+  }
+
+  log('anchor', 'Generating with Imagen 4...');
+  if (!GEMINI_KEY) { log('anchor', 'ERROR: GEMINI_API_KEY not set'); process.exit(1); }
+
+  const anchorPrompt = CHAR_BRIEF + ', clean white background, no shadow, centered, full body character sheet';
+  const t0 = Date.now();
+
+  await new Promise((resolve, reject) => {
+    const proc = cp.spawn(PYTHON, [
+      PY_SCRIPT,
+      '--prompt', anchorPrompt,
+      '--output', ANCHOR_PATH,
+      '--aspect-ratio', '1:1',
+    ], { env: { ...process.env }, stdio: 'inherit' });
+    proc.on('close', code => code === 0 ? resolve() : reject(new Error('Anchor generation failed')));
+  });
+
+  timings.anchor = ((Date.now() - t0) / 1000).toFixed(1);
+  log('anchor', `Done in ${timings.anchor}s → ${ANCHOR_PATH}`);
+  return ANCHOR_PATH;
+}
+
+// ── Phase 2: Tier 1 — Leonardo AI ────────────────────────────────────────────
+// Uses native Node 24 fetch + FormData + Blob (no external dependencies).
+
+async function runTier1() {
+  log('T1', 'Leonardo AI — uploading anchor as init image...');
+  if (!LEONARDO_KEY) { log('T1', 'ERROR: LEONARDO_API_KEY not set — skipping'); return false; }
+
+  const jsonHeaders = {
+    'Authorization': `Bearer ${LEONARDO_KEY}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  // Step 1: get presigned S3 URL from Leonardo
+  let uploadData;
+  try {
+    const uploadRes = await fetch('https://cloud.leonardo.ai/api/rest/v1/init-image', {
+      method: 'POST',
+      headers: jsonHeaders,
+      body: JSON.stringify({ extension: 'jpg' }),
+    });
+    if (!uploadRes.ok) {
+      const txt = await uploadRes.text();
+      log('T1', `ERROR: presign failed ${uploadRes.status}: ${txt.slice(0, 200)}`);
+      return false;
+    }
+    uploadData = await uploadRes.json();
+  } catch (err) {
+    log('T1', `ERROR: presign request threw: ${err.message}`);
+    return false;
+  }
+
+  const rawFields = uploadData.uploadInitImage?.fields;
+  const uploadFields = rawFields
+    ? (typeof rawFields === 'string' ? JSON.parse(rawFields) : rawFields)
+    : {};
+  const uploadUrl  = uploadData.uploadInitImage?.url || '';
+  const initImageId = uploadData.uploadInitImage?.id;
+  if (!uploadUrl || !initImageId) {
+    log('T1', `ERROR: no upload URL/id in presign response: ${JSON.stringify(uploadData).slice(0, 200)}`);
+    return false;
+  }
+
+  // Step 2: upload anchor via S3 multipart — native FormData + Blob (Node 18+)
+  const anchorBytes = fs.readFileSync(ANCHOR_PATH);
+  const form = new FormData();
+  Object.entries(uploadFields).forEach(([k, v]) => form.append(k, String(v)));
+  form.append('file', new Blob([anchorBytes], { type: 'image/jpeg' }), 'anchor.jpg');
+
+  const s3Resp = await fetch(uploadUrl, { method: 'POST', body: form });
+  if (!s3Resp.ok && s3Resp.status !== 204) {
+    log('T1', `ERROR: S3 upload failed ${s3Resp.status}`);
+    return false;
+  }
+  log('T1', `Anchor uploaded (id: ${initImageId}). Generating ${POSES.length} poses...`);
+
+  for (let i = 0; i < POSES.length; i++) {
+    const poseName = POSES[i];
+    const slug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const outPath = path.join(TIER1_DIR, `pose-${i + 1}-${slug}.jpg`);
+    const t0 = Date.now();
+    const fullPrompt = `${poseName}, ${CHAR_BRIEF}, white background, illustrated style, consistent character design, full body, no text`;
+
+    try {
+      const genRes = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify({
+          prompt: fullPrompt,
+          modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
+          width: 512,
+          height: 512,
+          num_images: 1,
+          init_image_id: initImageId,
+          init_strength: 0.4,
+        }),
+      });
+      if (!genRes.ok) {
+        const t = await genRes.text();
+        throw new Error(`gen request failed ${genRes.status}: ${t.slice(0, 200)}`);
+      }
+      const genData = await genRes.json();
+      const generationId = genData.sdGenerationJob?.generationId;
+      if (!generationId) throw new Error(`no generationId in response: ${JSON.stringify(genData).slice(0, 200)}`);
+
+      let imageUrl = null;
+      const deadline = Date.now() + 120000;
+      while (Date.now() < deadline) {
+        await sleep(4000);
+        const poll = await fetch(
+          `https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`,
+          { headers: jsonHeaders }
+        );
+        if (poll.ok) {
+          const pd = await poll.json();
+          const status = pd.generations_by_pk?.status;
+          if (status === 'COMPLETE') { imageUrl = pd.generations_by_pk?.generated_images?.[0]?.url; break; }
+          if (status === 'FAILED') throw new Error('Leonardo generation FAILED');
+          process.stdout.write('.');
+        }
+      }
+      process.stdout.write('\n');
+      if (!imageUrl) throw new Error('timed out waiting for generation');
+
+      const imgBuf = await fetchBuffer(imageUrl);
+      fs.writeFileSync(outPath, imgBuf);
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      timings.tier1.push(elapsed);
+      costs.tier1 += 0.002;
+      log('T1', `Pose ${i + 1}/${POSES.length}: "${poseName}" → ${elapsed}s`);
+    } catch (err) {
+      timings.tier1.push('err');
+      log('T1', `Pose ${i + 1} FAILED: ${err.message}`);
+    }
+
+    if (i < POSES.length - 1) await sleep(2000);
+  }
+  return true;
+}
+
+// ── Phase 3: Tier 2 — Firefly web via Playwright ──────────────────────────────
+
+async function runTier2() {
+  log('T2', 'Firefly web automation via Playwright...');
+
+  let playwright;
+  try {
+    playwright = require(path.join(FAM_ROOT, 'node_modules', 'playwright'));
+  } catch (e) {
+    log('T2', 'ERROR: playwright not found at ~/famtastic/node_modules/playwright');
+    return false;
+  }
+
+  // Launch system Chrome with user profile so Adobe auth cookies are present
+  let browser;
+  try {
+    browser = await playwright.chromium.launch({
+      channel: 'chrome',
+      headless: false,
+      args: ['--start-maximized'],
+      slowMo: 120,
+    });
+  } catch (e) {
+    log('T2', `ERROR: could not launch Chrome: ${e.message}`);
+    return false;
+  }
+
+  const ctx = await browser.newContext({ viewport: null });
+  const page = await ctx.newPage();
+
+  // Helper: walk shadow DOM by CSS selector chain
+  async function queryShadow(selectors) {
+    return page.evaluate((sels) => {
+      let node = document;
+      for (const s of sels) {
+        const el = node.querySelector(s);
+        if (!el) return null;
+        node = el.shadowRoot || el;
+      }
+      return node !== document ? node : null;
+    }, selectors);
+  }
+
+  async function clickShadow(selectors) {
+    const h = await page.evaluateHandle((sels) => {
+      let node = document;
+      for (const s of sels) {
+        const el = node.querySelector(s);
+        if (!el) return null;
+        node = el.shadowRoot || el;
+      }
+      return node && node !== document ? node : null;
+    }, selectors);
+    if (h) await h.asElement()?.click?.();
+    return h;
+  }
+
+  try {
+    log('T2', 'Navigating to Firefly...');
+    await page.goto('https://firefly.adobe.com/', { waitUntil: 'networkidle', timeout: 30000 });
+    await sleep(2000);
+
+    // Check if we need to log in
+    const url = page.url();
+    if (url.includes('auth') || url.includes('login')) {
+      log('T2', 'Adobe login required — please sign in in the browser window...');
+      await prompt('Press Enter once you are logged in to Firefly → ');
+      await page.waitForURL('**/firefly.adobe.com/**', { timeout: 60000 });
+      await sleep(2000);
+    }
+
+    for (let i = 0; i < POSES.length; i++) {
+      const poseName = POSES[i];
+      const slug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const screenshotPath = path.join(TIER2_DIR, `pose-${i + 1}-${slug}.png`);
+      const t0 = Date.now();
+
+      log('T2', `Pose ${i + 1}: "${poseName}"`);
+
+      try {
+        // Navigate to text-to-image
+        await page.goto('https://firefly.adobe.com/generate/images', { waitUntil: 'networkidle', timeout: 20000 });
+        await sleep(2000);
+
+        // Find and fill the prompt field (Firefly uses standard textarea or input)
+        const promptSelectors = [
+          'textarea[placeholder*="Describe"]',
+          'textarea[placeholder*="prompt"]',
+          'textarea[data-testid*="prompt"]',
+          '[data-testid="prompt-input"] textarea',
+          '[class*="prompt"] textarea',
+          'textarea',
+        ];
+        let promptField = null;
+        for (const sel of promptSelectors) {
+          promptField = await page.$(sel);
+          if (promptField) break;
+        }
+        if (!promptField) {
+          log('T2', '  WARNING: could not find prompt field — taking screenshot of current state');
+          await page.screenshot({ path: screenshotPath, fullPage: false });
+          timings.tier2.push('err');
+          continue;
+        }
+
+        const fullPrompt = `${CHAR_BRIEF}, ${poseName}, white background, full body, no text`;
+        await promptField.click({ clickCount: 3 });
+        await promptField.type(fullPrompt, { delay: 20 });
+
+        // Upload style reference image
+        const styleRefBtnSelectors = [
+          '[data-testid*="style-ref"]',
+          '[aria-label*="Style reference"]',
+          '[aria-label*="style"]',
+          'button[class*="reference"]',
+          '[class*="styleRef"]',
+        ];
+        for (const sel of styleRefBtnSelectors) {
+          const btn = await page.$(sel);
+          if (btn) { await btn.click(); await sleep(1000); break; }
+        }
+
+        // Upload the anchor image as style reference
+        const fileInputSelectors = [
+          'input[type="file"][accept*="image"]',
+          'input[type="file"]',
+        ];
+        let fileInput = null;
+        for (const sel of fileInputSelectors) {
+          fileInput = await page.$(sel);
+          if (fileInput) break;
+        }
+        if (fileInput) {
+          await fileInput.setInputFiles(ANCHOR_PATH);
+          await sleep(2000);
+          log('T2', '  Style reference uploaded');
+
+          // Set strength slider to ~70%
+          const sliderSelectors = [
+            'input[type="range"][aria-label*="strength"]',
+            'input[type="range"][aria-label*="Style"]',
+            'input[type="range"]',
+          ];
+          for (const sel of sliderSelectors) {
+            const slider = await page.$(sel);
+            if (slider) {
+              await slider.evaluate(el => { el.value = '70'; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); });
+              log('T2', '  Style strength set to 70%');
+              break;
+            }
+          }
+        }
+
+        // Click Generate
+        const genBtnSelectors = [
+          'button[data-testid*="generate"]',
+          'button[aria-label*="Generate"]',
+          'button[class*="generate"]',
+          'button:has-text("Generate")',
+          '[type="submit"]',
+        ];
+        let generated = false;
+        for (const sel of genBtnSelectors) {
+          const btn = await page.$(sel);
+          if (btn) {
+            await btn.click();
+            log('T2', '  Generate clicked — waiting for results...');
+            generated = true;
+            break;
+          }
+        }
+        if (!generated) {
+          log('T2', '  WARNING: could not find Generate button');
+          await page.screenshot({ path: screenshotPath });
+          timings.tier2.push('err');
+          continue;
+        }
+
+        // Wait for results (loading indicator disappears or images appear)
+        try {
+          await page.waitForSelector('[class*="result"] img, [class*="generated"] img, [data-testid*="result"] img', {
+            timeout: 90000,
+            state: 'visible',
+          });
+        } catch {
+          log('T2', '  Timeout waiting for results — taking screenshot anyway');
+        }
+        await sleep(2000);
+
+        // Screenshot the results area
+        const resultArea = await page.$('[class*="result"], [class*="generated"], [data-testid*="results"], main');
+        if (resultArea) {
+          await resultArea.screenshot({ path: screenshotPath });
+        } else {
+          await page.screenshot({ path: screenshotPath, fullPage: false });
+        }
+
+        const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+        timings.tier2.push(elapsed);
+        costs.tier2 += 0;
+        log('T2', `  Screenshot saved in ${elapsed}s → ${screenshotPath}`);
+      } catch (err) {
+        log('T2', `  Pose ${i + 1} FAILED: ${err.message}`);
+        try { await page.screenshot({ path: screenshotPath }); } catch {}
+        timings.tier2.push('err');
+      }
+
+      if (i < POSES.length - 1) await sleep(3000);
+    }
+  } catch (outer) {
+    log('T2', `FATAL: ${outer.message}`);
+  } finally {
+    await browser.close();
+  }
+
+  return true;
+}
+
+// ── Phase 4: Tier 3 — Photoshop Generative Fill ───────────────────────────────
+
+async function runTier3() {
+  log('T3', 'Photoshop Generative Fill via adb-proxy...');
+
+  // Check if proxy is responding
+  const proxyUp = await new Promise(resolve => {
+    const req = http.get('http://localhost:3001/', res => resolve(res.statusCode < 500));
+    req.on('error', () => resolve(false));
+    req.setTimeout(2000, () => { req.destroy(); resolve(false); });
+  });
+
+  if (!proxyUp) {
+    log('T3', 'Photoshop proxy not running at localhost:3001');
+    log('T3', 'To enable: run `node ~/famtastic/tools/adb-mcp/adb-proxy-socket/proxy.js` in a terminal');
+    log('T3', 'Then open Photoshop and ensure the UXP plugin is connected.');
+    const ans = await prompt('Start the proxy now and press Enter to retry, or type "skip" to skip Tier 3: ');
+    if (ans.toLowerCase() === 'skip') {
+      log('T3', 'Skipped.');
+      return false;
+    }
+    // give proxy time to start
+    await sleep(3000);
+  }
+
+  // Run the Python driver for each pose
+  for (let i = 0; i < POSES.length; i++) {
+    const poseName = POSES[i];
+    const slug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const outPath = path.join(TIER3_DIR, `pose-${i + 1}-${slug}.png`);
+    const t0 = Date.now();
+
+    log('T3', `Pose ${i + 1}: "${poseName}"`);
+    const fullPrompt = `${CHAR_BRIEF}, ${poseName}, white background, full body, consistent character`;
+
+    try {
+      const result = cp.spawnSync(PYTHON, [
+        PS_DRIVER,
+        '--anchor', ANCHOR_PATH,
+        '--prompt', fullPrompt,
+        '--output', outPath,
+        '--pose', poseName,
+      ], {
+        env: { ...process.env, PYTHONPATH: path.join(FAM_ROOT, 'tools', 'adb-mcp', 'mcp') },
+        timeout: 120000,
+        encoding: 'utf8',
+      });
+
+      if (result.status !== 0) {
+        const errMsg = (result.stderr || result.stdout || '').slice(0, 200);
+        throw new Error(errMsg || `exit code ${result.status}`);
+      }
+      if (result.stdout) process.stdout.write(result.stdout);
+
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      timings.tier3.push(elapsed);
+      costs.tier3 += 0;
+      log('T3', `  Done in ${elapsed}s → ${outPath}`);
+    } catch (err) {
+      timings.tier3.push('err');
+      log('T3', `  Pose ${i + 1} FAILED: ${err.message.slice(0, 120)}`);
+    }
+
+    if (i < POSES.length - 1) await sleep(2000);
+  }
+
+  return true;
+}
+
+// ── Phase 4b: Tier 4 — FLUX Dev via fal.ai ───────────────────────────────────
+
+async function runTier4() {
+  log('T4', 'FLUX Dev via fal.ai — image-to-image...');
+  if (!FAL_KEY) { log('T4', 'ERROR: FAL_API_KEY not set — skipping'); return false; }
+
+  // Load fal client from site-studio node_modules
+  const FAL_CLIENT_PATH = path.join(FAM_ROOT, 'site-studio', 'node_modules', '@fal-ai', 'client');
+  let fal;
+  try {
+    ({ fal } = require(FAL_CLIENT_PATH));
+  } catch (e) {
+    log('T4', `ERROR: could not load @fal-ai/client: ${e.message}`);
+    return false;
+  }
+
+  fal.config({ credentials: FAL_KEY });
+
+  // Encode anchor as base64 data URI
+  const anchorBytes = fs.readFileSync(ANCHOR_PATH);
+  const anchorB64   = anchorBytes.toString('base64');
+  const anchorDataUri = `data:image/jpeg;base64,${anchorB64}`;
+
+  for (let i = 0; i < POSES.length; i++) {
+    const poseName = POSES[i];
+    const slug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const outPath = path.join(TIER4_DIR, `pose-${i + 1}-${slug}.jpg`);
+    const t0 = Date.now();
+
+    const fullPrompt = `${poseName}, futuristic cartoon teddy bear, bright blue bow tie, circuit pattern details, friendly expression, full body, white background, illustrated style, no text`;
+
+    log('T4', `Pose ${i + 1}/${POSES.length}: "${poseName}"`);
+    try {
+      const result = await fal.subscribe('fal-ai/flux/dev', {
+        input: {
+          prompt: fullPrompt,
+          image_url: anchorDataUri,
+          strength: 0.7,
+          num_images: 1,
+          enable_safety_checker: false,
+        },
+        logs: false,
+        onQueueUpdate: update => {
+          if (update.status === 'IN_PROGRESS') process.stdout.write('.');
+        },
+      });
+      process.stdout.write('\n');
+
+      // result.data.images[0].url — download it
+      const imageUrl = result?.data?.images?.[0]?.url;
+      if (!imageUrl) throw new Error(`no image URL in response: ${JSON.stringify(result?.data).slice(0, 200)}`);
+
+      const imgBuf = await fetchBuffer(imageUrl);
+      fs.writeFileSync(outPath, imgBuf);
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      timings.tier4.push(elapsed);
+      costs.tier4 += 0.003;
+      log('T4', `  Saved ${(imgBuf.length / 1024).toFixed(0)}KB → ${outPath} (${elapsed}s)`);
+    } catch (err) {
+      process.stdout.write('\n');
+      timings.tier4.push('err');
+      log('T4', `  Pose ${i + 1} FAILED: ${err.message.slice(0, 200)}`);
+    }
+
+    if (i < POSES.length - 1) await sleep(1000);
+  }
+  return true;
+}
+
+// ── Phase 5: HTML comparison page ─────────────────────────────────────────────
+
+function generateHTML() {
+  const imgTag = (dir, index, slug, ext) => {
+    const p = path.join(dir, `pose-${index}-${slug}.${ext}`);
+    if (fs.existsSync(p)) {
+      const rel = path.relative(OUT_ROOT, p);
+      return `<img src="${rel}" alt="pose ${index}" class="pose-img" onerror="this.style.opacity=0.2">`;
+    }
+    return `<div class="pose-missing">Not generated</div>`;
+  };
+
+  const anchorTag = fs.existsSync(ANCHOR_PATH)
+    ? `<img src="${path.relative(OUT_ROOT, ANCHOR_PATH)}" alt="anchor" class="anchor-img">`
+    : `<div class="pose-missing">Anchor missing</div>`;
+
+  const poseRows = POSES.map((poseName, i) => {
+    const idx = i + 1;
+    const slug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return `
+      <tr>
+        <td class="pose-label">${poseName}</td>
+        <td>${imgTag(TIER1_DIR, idx, slug, 'jpg')}</td>
+        <td>${imgTag(TIER2_DIR, idx, slug, 'png')}</td>
+        <td>${imgTag(TIER3_DIR, idx, slug, 'png')}</td>
+        <td>${imgTag(TIER4_DIR, idx, slug, 'jpg')}</td>
+      </tr>`;
+  }).join('');
+
+  const fmtTime = arr => arr.length ? arr.map(v => v === 'err' ? '✗' : v + 's').join(', ') : '—';
+  const fmtCost = c => c > 0 ? '$' + c.toFixed(3) : '~$0 (included)';
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FAMtastic Tier Comparison — ${new Date().toLocaleDateString()}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0d0d0f; color: #e8e8ea; margin: 0; padding: 24px; }
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+    .brief { font-size: 13px; color: #888; max-width: 720px; margin-bottom: 28px; line-height: 1.5; }
+    table { border-collapse: collapse; width: 100%; }
+    th { background: #1a1a1f; padding: 14px 16px; font-size: 16px; font-weight: 700; border: 1px solid #2a2a35; }
+    th.t1 { color: #e83d2a; }
+    th.t2 { color: #f5c400; }
+    th.t3 { color: #1d9e75; }
+    th.t4 { color: #a855f7; }
+    td { border: 1px solid #2a2a35; padding: 12px; vertical-align: top; text-align: center; background: #111115; }
+    td.pose-label { text-align: left; font-size: 13px; color: #aaa; font-weight: 600; background: #0d0d0f; min-width: 140px; }
+    .pose-img { width: 100%; max-width: 320px; border-radius: 8px; border: 1px solid #2a2a35; display: block; margin: 0 auto; }
+    .anchor-img { width: 100%; max-width: 220px; border-radius: 8px; border: 1px solid #2a2a35; display: block; margin: 0 auto; }
+    .pose-missing { padding: 40px 16px; color: #555; font-size: 12px; }
+    .anchor-row td { background: #14141a; }
+    .meta-row td { font-size: 12px; color: #999; padding: 10px 16px; background: #0d0d0f; }
+    .meta-key { color: #666; }
+    h2 { font-size: 14px; font-weight: 700; color: #e8e8ea; margin-bottom: 6px; }
+    .generated-at { font-size: 11px; color: #555; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <h1>Character Generation — Tier Comparison</h1>
+  <p class="brief"><strong>Brief:</strong> ${CHAR_BRIEF}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th class="t1">Tier 1<br><small style="font-weight:400;font-size:12px;">Imagen + Leonardo</small></th>
+        <th class="t2">Tier 2<br><small style="font-weight:400;font-size:12px;">Imagen + Firefly Web</small></th>
+        <th class="t3">Tier 3<br><small style="font-weight:400;font-size:12px;">Imagen + Photoshop</small></th>
+        <th class="t4">Tier 4<br><small style="font-weight:400;font-size:12px;">Imagen + FLUX (fal.ai)</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="anchor-row">
+        <td class="pose-label">Anchor</td>
+        <td colspan="4">${anchorTag}</td>
+      </tr>
+      ${poseRows}
+      <tr class="meta-row">
+        <td class="pose-label">Metadata</td>
+        <td>
+          <h2>Tier 1</h2>
+          <div><span class="meta-key">Provider:</span> Leonardo AI</div>
+          <div><span class="meta-key">Anchor:</span> Imagen 4 (${timings.anchor}s)</div>
+          <div><span class="meta-key">Pose times:</span> ${fmtTime(timings.tier1)}</div>
+          <div><span class="meta-key">Est. cost:</span> ${fmtCost(costs.tier1)}</div>
+        </td>
+        <td>
+          <h2>Tier 2</h2>
+          <div><span class="meta-key">Provider:</span> Adobe Firefly Web</div>
+          <div><span class="meta-key">Anchor:</span> Imagen 4 (${timings.anchor}s)</div>
+          <div><span class="meta-key">Pose times:</span> ${fmtTime(timings.tier2)}</div>
+          <div><span class="meta-key">Est. cost:</span> Included in CC</div>
+        </td>
+        <td>
+          <h2>Tier 3</h2>
+          <div><span class="meta-key">Provider:</span> Photoshop Generative Fill</div>
+          <div><span class="meta-key">Anchor:</span> Imagen 4 (${timings.anchor}s)</div>
+          <div><span class="meta-key">Pose times:</span> ${fmtTime(timings.tier3)}</div>
+          <div><span class="meta-key">Est. cost:</span> Included in CC</div>
+        </td>
+        <td>
+          <h2>Tier 4</h2>
+          <div><span class="meta-key">Provider:</span> fal.ai — FLUX Dev</div>
+          <div><span class="meta-key">Mode:</span> Image-to-image (strength 0.7)</div>
+          <div><span class="meta-key">Anchor:</span> Imagen 4 (${timings.anchor}s)</div>
+          <div><span class="meta-key">Pose times:</span> ${fmtTime(timings.tier4)}</div>
+          <div><span class="meta-key">Est. cost:</span> ${fmtCost(costs.tier4)}</div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="generated-at">Generated ${new Date().toISOString()} · FAMtastic tier-comparison</p>
+</body>
+</html>`;
+
+  const indexPath = path.join(OUT_ROOT, 'index.html');
+  fs.writeFileSync(indexPath, html);
+  log(null, `Comparison page → ${indexPath}`);
+  return indexPath;
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+async function main() {
+  console.log('\n══════════════════════════════════════════');
+  console.log('  FAMtastic Tier Comparison');
+  console.log('══════════════════════════════════════════\n');
+
+  setup();
+
+  // Anchor (shared by all tiers)
+  await generateAnchor();
+  console.log('');
+
+  // Tier 1 — Leonardo
+  console.log('─── TIER 1: Leonardo AI ──────────────────');
+  try { await runTier1(); } catch (e) { log('T1', `FATAL: ${e.message}`); }
+  console.log('');
+
+  // Tier 2 — Firefly web
+  console.log('─── TIER 2: Firefly Web ──────────────────');
+  log('T2', 'Make sure you are signed in to firefly.adobe.com in Chrome.');
+  await prompt('Press Enter to start Firefly automation → ');
+  try { await runTier2(); } catch (e) { log('T2', `FATAL: ${e.message}`); }
+  console.log('');
+
+  // Tier 3 — Photoshop
+  console.log('─── TIER 3: Photoshop ────────────────────');
+  log('T3', 'Ensure Photoshop is open and the adb-proxy-socket is running.');
+  try { await runTier3(); } catch (e) { log('T3', `FATAL: ${e.message}`); }
+  console.log('');
+
+  // Tier 4 — fal.ai FLUX
+  console.log('─── TIER 4: fal.ai FLUX Dev ──────────────');
+  try { await runTier4(); } catch (e) { log('T4', `FATAL: ${e.message}`); }
+  console.log('');
+
+  // HTML page
+  console.log('─── COMPARISON PAGE ──────────────────────');
+  const htmlPath = generateHTML();
+  cp.spawn('open', [htmlPath], { detached: true, stdio: 'ignore' }).unref();
+  console.log('\nDone. Opening comparison page...\n');
+
+  // Quick winner assessment based on what was generated
+  assessWinner();
+}
+
+function assessWinner() {
+  const t1Count = POSES.filter((_, i) => {
+    const slug = POSES[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return fs.existsSync(path.join(TIER1_DIR, `pose-${i + 1}-${slug}.jpg`));
+  }).length;
+  const t2Count = POSES.filter((_, i) => {
+    const slug = POSES[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return fs.existsSync(path.join(TIER2_DIR, `pose-${i + 1}-${slug}.png`));
+  }).length;
+  const t3Count = POSES.filter((_, i) => {
+    const slug = POSES[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return fs.existsSync(path.join(TIER3_DIR, `pose-${i + 1}-${slug}.png`));
+  }).length;
+  const t4Count = POSES.filter((_, i) => {
+    const slug = POSES[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return fs.existsSync(path.join(TIER4_DIR, `pose-${i + 1}-${slug}.jpg`));
+  }).length;
+
+  const scores = [
+    { label: 'Tier 1 (Leonardo)', count: t1Count },
+    { label: 'Tier 2 (Firefly) ', count: t2Count },
+    { label: 'Tier 3 (Photoshop)', count: t3Count },
+    { label: 'Tier 4 (fal FLUX) ', count: t4Count },
+  ];
+  const winner = scores.reduce((a, b) => b.count > a.count ? b : a);
+
+  console.log('══════════════════════════════════════════');
+  console.log('  Results');
+  console.log('══════════════════════════════════════════');
+  scores.forEach(s => console.log(`  ${s.label}: ${s.count}/${POSES.length} poses generated`));
+  console.log('');
+  console.log('  Consistency notes:');
+  console.log('  · T1 (Leonardo): init_image maintains the character style visually');
+  console.log('  · T2 (Firefly):  style reference with 0.7 strength — strong identity lock');
+  console.log('  · T3 (Photoshop): generative fill with context from anchor layer');
+  console.log('  · T4 (fal FLUX):  image-to-image at 0.7 strength via FLUX Dev');
+  console.log('');
+  console.log(`  Winner by pose count: ${winner.label}`);
+  console.log('  Open index.html to compare side-by-side.');
+  console.log('══════════════════════════════════════════\n');
+}
+
+main().catch(err => { console.error('[fatal]', err.message); process.exit(1); });
