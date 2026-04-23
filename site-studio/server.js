@@ -9869,9 +9869,22 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
   const charDir = path.join(siteDir, 'assets', 'characters', character_id);
   fs.mkdirSync(charDir, { recursive: true });
 
+  const charDescription = charSet.description || charSet.name || '';
+  const charStyle = charSet.style || 'illustrated';
+
   function buildPosePrompt(poseName) {
-    return `full body pose: ${poseName}, character facing forward, white background, ${charSet.description || charSet.name}, same character, ${charSet.style || 'illustrated'} style, consistent design, full body visible`;
+    return [
+      `full body pose: ${poseName}`,
+      `character facing forward`,
+      charDescription,
+      `${charStyle} style`,
+      `full body visible`,
+      `white background`,
+    ].filter(Boolean).join(', ');
   }
+
+  // Log sample prompt so each pipeline run can be verified before generation
+  console.log('[character/generate-poses] sample prompt →', buildPosePrompt(poses[0]));
 
   function savePoseToSpec(i, poseName, poseRelPath) {
     const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
