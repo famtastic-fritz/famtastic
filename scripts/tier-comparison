@@ -2,12 +2,14 @@
 'use strict';
 
 /**
- * tier-comparison — Four-tier character generation benchmark.
+ * tier-comparison — Six-tier character generation benchmark.
  *
  * Tier 1: Imagen 4 anchor → Leonardo AI poses
  * Tier 2: Imagen 4 anchor → Firefly web (Playwright + Chrome)
  * Tier 3: Imagen 4 anchor → Photoshop Generative Fill (via adb-proxy socket)
  * Tier 4: Imagen 4 anchor → FLUX Dev via fal.ai (image-to-image)
+ * Tier 5: Imagen 4 anchor → gpt-image-1 (images.edit)
+ * Tier 6: Imagen 4 anchor → gpt-image-2 (images.edit, skipped if unavailable)
  *
  * All tiers share the same anchor image for a fair comparison.
  */
@@ -27,6 +29,8 @@ const TIER1_DIR   = path.join(OUT_ROOT, 'tier1');
 const TIER2_DIR   = path.join(OUT_ROOT, 'tier2');
 const TIER3_DIR   = path.join(OUT_ROOT, 'tier3');
 const TIER4_DIR   = path.join(OUT_ROOT, 'tier4');
+const TIER5_DIR   = path.join(OUT_ROOT, 'tier5');
+const TIER6_DIR   = path.join(OUT_ROOT, 'tier6');
 const ANCHOR_PATH = path.join(OUT_ROOT, 'anchor.jpg');
 const PY_SCRIPT   = path.join(FAM_ROOT, 'scripts', 'google-media-generate');
 const PYTHON      = '/opt/homebrew/opt/python@3.11/bin/python3.11';
@@ -45,6 +49,7 @@ if (fs.existsSync(envPath)) {
 const GEMINI_KEY   = process.env.GEMINI_API_KEY || '';
 const LEONARDO_KEY = process.env.LEONARDO_API_KEY || '';
 const FAL_KEY      = process.env.FAL_API_KEY || '';
+const OPENAI_KEY   = process.env.OPENAI_API_KEY || '';
 
 // ── Brief & poses ─────────────────────────────────────────────────────────────
 
@@ -58,8 +63,8 @@ const POSES = [
 
 // ── Timing metadata ───────────────────────────────────────────────────────────
 
-const timings = { anchor: null, tier1: [], tier2: [], tier3: [], tier4: [] };
-const costs   = { anchor: 0.004, tier1: 0, tier2: 0, tier3: 0, tier4: 0 };
+const timings = { anchor: null, tier1: [], tier2: [], tier3: [], tier4: [], tier5: [], tier6: [] };
+const costs   = { anchor: 0.004, tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0, tier6: 0 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -112,7 +117,7 @@ function fetchBuffer(url) {
 // ── Phase 0: Setup ────────────────────────────────────────────────────────────
 
 function setup() {
-  [OUT_ROOT, TIER1_DIR, TIER2_DIR, TIER3_DIR, TIER4_DIR].forEach(d => fs.mkdirSync(d, { recursive: true }));
+  [OUT_ROOT, TIER1_DIR, TIER2_DIR, TIER3_DIR, TIER4_DIR, TIER5_DIR, TIER6_DIR].forEach(d => fs.mkdirSync(d, { recursive: true }));
   log(null, `Output: ${OUT_ROOT}`);
   log(null, 'Brief: ' + CHAR_BRIEF.slice(0, 60) + '...');
   log(null, 'Poses: ' + POSES.join(', '));
@@ -625,7 +630,88 @@ async function runTier4() {
   return true;
 }
 
-// ── Phase 5: HTML comparison page ─────────────────────────────────────────────
+// ── Phase 5: Tiers 5 & 6 — OpenAI gpt-image-1 / gpt-image-2 ─────────────────
+// Both models use images.generate (not images.edit).
+// gpt-image-1 always returns b64_json. No response_format param allowed.
+// gpt-image-2 requires org verification — 403 is handled gracefully.
+
+async function runOpenAITier(tierNum, model, outDir, timingsKey, costPerImage) {
+  log(`T${tierNum}`, `OpenAI ${model} — images.generate...`);
+  if (!OPENAI_KEY) { log(`T${tierNum}`, 'ERROR: OPENAI_API_KEY not set — skipping'); return false; }
+
+  const OPENAI_PATH = path.join(FAM_ROOT, 'site-studio', 'node_modules', 'openai');
+  let OpenAI;
+  try {
+    OpenAI = require(OPENAI_PATH).default || require(OPENAI_PATH);
+  } catch (e) {
+    log(`T${tierNum}`, `ERROR: could not load openai SDK: ${e.message}`);
+    return false;
+  }
+
+  const openai = new OpenAI({ apiKey: OPENAI_KEY });
+
+  for (let i = 0; i < POSES.length; i++) {
+    const poseName = POSES[i];
+    const slug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const outPath = path.join(outDir, `pose-${i + 1}-${slug}.png`);
+    const t0 = Date.now();
+    const fullPrompt = `${poseName}, futuristic cartoon teddy bear, bright blue bow tie, circuit pattern details, friendly expression, full body, white background, illustrated style, no text`;
+
+    log(`T${tierNum}`, `Pose ${i + 1}/${POSES.length}: "${poseName}"`);
+    try {
+      const response = await openai.images.generate({
+        model,
+        prompt: fullPrompt,
+        n: 1,
+        size: '1024x1024',
+      });
+
+      const imgData = response.data?.[0];
+      if (!imgData) throw new Error('no image in response');
+
+      let imgBuf;
+      if (imgData.b64_json) {
+        imgBuf = Buffer.from(imgData.b64_json, 'base64');
+      } else if (imgData.url) {
+        imgBuf = await fetchBuffer(imgData.url);
+      } else {
+        throw new Error('neither b64_json nor url in response');
+      }
+
+      fs.writeFileSync(outPath, imgBuf);
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      timings[timingsKey].push(elapsed);
+      costs[timingsKey] += costPerImage;
+      log(`T${tierNum}`, `  Saved ${(imgBuf.length / 1024).toFixed(0)}KB → ${outPath} (${elapsed}s)`);
+    } catch (err) {
+      timings[timingsKey].push('err');
+      const msg = err.message || '';
+      const status = err.status || 0;
+      if (status === 403 || /verify|verification|not verified/i.test(msg)) {
+        log(`T${tierNum}`, `  Model "${model}" requires org verification at platform.openai.com — skipping`);
+        return false;
+      }
+      if (status === 404 || /not (yet )?available|invalid_model|does not exist/i.test(msg)) {
+        log(`T${tierNum}`, `  Model "${model}" not yet available — skipping`);
+        return false;
+      }
+      log(`T${tierNum}`, `  Pose ${i + 1} FAILED: ${msg.slice(0, 200)}`);
+    }
+
+    if (i < POSES.length - 1) await sleep(1000);
+  }
+  return true;
+}
+
+async function runTier5() {
+  return runOpenAITier(5, 'gpt-image-1', TIER5_DIR, 'tier5', 0.04);
+}
+
+async function runTier6() {
+  return runOpenAITier(6, 'gpt-image-2', TIER6_DIR, 'tier6', 0.04);
+}
+
+// ── Phase 6: HTML comparison page ─────────────────────────────────────────────
 
 function generateHTML() {
   const imgTag = (dir, index, slug, ext) => {
@@ -651,6 +737,8 @@ function generateHTML() {
         <td>${imgTag(TIER2_DIR, idx, slug, 'png')}</td>
         <td>${imgTag(TIER3_DIR, idx, slug, 'png')}</td>
         <td>${imgTag(TIER4_DIR, idx, slug, 'jpg')}</td>
+        <td>${imgTag(TIER5_DIR, idx, slug, 'png')}</td>
+        <td>${imgTag(TIER6_DIR, idx, slug, 'png')}</td>
       </tr>`;
   }).join('');
 
@@ -673,6 +761,8 @@ function generateHTML() {
     th.t2 { color: #f5c400; }
     th.t3 { color: #1d9e75; }
     th.t4 { color: #a855f7; }
+    th.t5 { color: #0ea5e9; }
+    th.t6 { color: #f97316; }
     td { border: 1px solid #2a2a35; padding: 12px; vertical-align: top; text-align: center; background: #111115; }
     td.pose-label { text-align: left; font-size: 13px; color: #aaa; font-weight: 600; background: #0d0d0f; min-width: 140px; }
     .pose-img { width: 100%; max-width: 320px; border-radius: 8px; border: 1px solid #2a2a35; display: block; margin: 0 auto; }
@@ -697,12 +787,14 @@ function generateHTML() {
         <th class="t2">Tier 2<br><small style="font-weight:400;font-size:12px;">Imagen + Firefly Web</small></th>
         <th class="t3">Tier 3<br><small style="font-weight:400;font-size:12px;">Imagen + Photoshop</small></th>
         <th class="t4">Tier 4<br><small style="font-weight:400;font-size:12px;">Imagen + FLUX (fal.ai)</small></th>
+        <th class="t5">Tier 5<br><small style="font-weight:400;font-size:12px;">Imagen + gpt-image-1</small></th>
+        <th class="t6">Tier 6<br><small style="font-weight:400;font-size:12px;">Imagen + gpt-image-2</small></th>
       </tr>
     </thead>
     <tbody>
       <tr class="anchor-row">
         <td class="pose-label">Anchor</td>
-        <td colspan="4">${anchorTag}</td>
+        <td colspan="6">${anchorTag}</td>
       </tr>
       ${poseRows}
       <tr class="meta-row">
@@ -735,6 +827,22 @@ function generateHTML() {
           <div><span class="meta-key">Anchor:</span> Imagen 4 (${timings.anchor}s)</div>
           <div><span class="meta-key">Pose times:</span> ${fmtTime(timings.tier4)}</div>
           <div><span class="meta-key">Est. cost:</span> ${fmtCost(costs.tier4)}</div>
+        </td>
+        <td>
+          <h2>Tier 5</h2>
+          <div><span class="meta-key">Provider:</span> OpenAI — gpt-image-1</div>
+          <div><span class="meta-key">Mode:</span> images.generate (text-to-image)</div>
+          <div><span class="meta-key">Anchor:</span> Imagen 4 (${timings.anchor}s)</div>
+          <div><span class="meta-key">Pose times:</span> ${fmtTime(timings.tier5)}</div>
+          <div><span class="meta-key">Est. cost:</span> ${fmtCost(costs.tier5)}</div>
+        </td>
+        <td>
+          <h2>Tier 6</h2>
+          <div><span class="meta-key">Provider:</span> OpenAI — gpt-image-2</div>
+          <div><span class="meta-key">Mode:</span> images.generate (text-to-image)</div>
+          <div><span class="meta-key">Anchor:</span> Imagen 4 (${timings.anchor}s)</div>
+          <div><span class="meta-key">Pose times:</span> ${fmtTime(timings.tier6)}</div>
+          <div><span class="meta-key">Est. cost:</span> ${fmtCost(costs.tier6)}</div>
         </td>
       </tr>
     </tbody>
@@ -786,6 +894,16 @@ async function main() {
   try { await runTier4(); } catch (e) { log('T4', `FATAL: ${e.message}`); }
   console.log('');
 
+  // Tier 5 — gpt-image-1
+  console.log('─── TIER 5: OpenAI gpt-image-1 ───────────');
+  try { await runTier5(); } catch (e) { log('T5', `FATAL: ${e.message}`); }
+  console.log('');
+
+  // Tier 6 — gpt-image-2
+  console.log('─── TIER 6: OpenAI gpt-image-2 ───────────');
+  try { await runTier6(); } catch (e) { log('T6', `FATAL: ${e.message}`); }
+  console.log('');
+
   // HTML page
   console.log('─── COMPARISON PAGE ──────────────────────');
   const htmlPath = generateHTML();
@@ -814,11 +932,22 @@ function assessWinner() {
     return fs.existsSync(path.join(TIER4_DIR, `pose-${i + 1}-${slug}.jpg`));
   }).length;
 
+  const t5Count = POSES.filter((_, i) => {
+    const slug = POSES[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return fs.existsSync(path.join(TIER5_DIR, `pose-${i + 1}-${slug}.png`));
+  }).length;
+  const t6Count = POSES.filter((_, i) => {
+    const slug = POSES[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return fs.existsSync(path.join(TIER6_DIR, `pose-${i + 1}-${slug}.png`));
+  }).length;
+
   const scores = [
-    { label: 'Tier 1 (Leonardo)', count: t1Count },
-    { label: 'Tier 2 (Firefly) ', count: t2Count },
-    { label: 'Tier 3 (Photoshop)', count: t3Count },
-    { label: 'Tier 4 (fal FLUX) ', count: t4Count },
+    { label: 'Tier 1 (Leonardo)  ', count: t1Count },
+    { label: 'Tier 2 (Firefly)   ', count: t2Count },
+    { label: 'Tier 3 (Photoshop) ', count: t3Count },
+    { label: 'Tier 4 (fal FLUX)  ', count: t4Count },
+    { label: 'Tier 5 (gpt-image-1)', count: t5Count },
+    { label: 'Tier 6 (gpt-image-2)', count: t6Count },
   ];
   const winner = scores.reduce((a, b) => b.count > a.count ? b : a);
 
@@ -831,7 +960,9 @@ function assessWinner() {
   console.log('  · T1 (Leonardo): init_image maintains the character style visually');
   console.log('  · T2 (Firefly):  style reference with 0.7 strength — strong identity lock');
   console.log('  · T3 (Photoshop): generative fill with context from anchor layer');
-  console.log('  · T4 (fal FLUX):  image-to-image at 0.7 strength via FLUX Dev');
+  console.log('  · T4 (fal FLUX):    image-to-image at 0.7 strength via FLUX Dev');
+  console.log('  · T5 (gpt-image-1): images.edit with anchor — native OpenAI editing');
+  console.log('  · T6 (gpt-image-2): same as T5, skipped if model not yet available');
   console.log('');
   console.log(`  Winner by pose count: ${winner.label}`);
   console.log('  Open index.html to compare side-by-side.');
