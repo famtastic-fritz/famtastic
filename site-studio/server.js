@@ -9813,7 +9813,7 @@ async function createCharacterAnchorCore({ name, description, style, prompt, sit
   const siteDir = getCharacterSiteDir(site_tag);
   const characterId = require('crypto').randomUUID();
   const charDir = path.join(siteDir, 'assets', 'characters', characterId);
-  const anchorPath = path.join(charDir, 'anchor.jpg');
+  const anchorPath = path.join(charDir, 'anchor.png');
   fs.mkdirSync(charDir, { recursive: true });
 
   let enrichedPrompt = prompt;
@@ -9822,6 +9822,7 @@ async function createCharacterAnchorCore({ name, description, style, prompt, sit
   } catch (e) {
     console.warn('[character] prompt enrichment failed, using raw prompt:', e.message);
   }
+  enrichedPrompt = `${enrichedPrompt}, transparent background, isolated character, no background`;
 
   await runGoogleMediaScript([
     '--prompt', enrichedPrompt,
@@ -9831,7 +9832,7 @@ async function createCharacterAnchorCore({ name, description, style, prompt, sit
   ]);
   if (!fs.existsSync(anchorPath)) throw new Error('Imagen did not produce anchor image');
 
-  const anchorRelPath = path.join('assets', 'characters', characterId, 'anchor.jpg');
+  const anchorRelPath = path.join('assets', 'characters', characterId, 'anchor.png');
   const characterSet = {
     id: characterId,
     name: name || '',
@@ -9879,12 +9880,13 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
       charDescription,
       `${charStyle} style`,
       `full body visible`,
-      `white background`,
+      `transparent background`,
+      `PNG with alpha channel`,
     ].filter(Boolean).join(', ');
   }
 
-  // Log sample prompt so each pipeline run can be verified before generation
-  console.log('[character/generate-poses] sample prompt →', buildPosePrompt(poses[0]));
+  // Log sample prompt before generation loop so each run can be verified
+  console.log('[character/generate-poses] sample prompt →\n', buildPosePrompt(poses[0]));
 
   function savePoseToSpec(i, poseName, poseRelPath) {
     const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
@@ -9947,7 +9949,7 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
 
   const anchorBytes = fs.readFileSync(anchorAbsPath);
   const uploadResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/init-image', {
-    method: 'POST', headers: leonardoHeaders, body: JSON.stringify({ extension: 'jpg' }),
+    method: 'POST', headers: leonardoHeaders, body: JSON.stringify({ extension: 'png' }),
   });
   if (!uploadResp.ok) {
     const txt = await uploadResp.text();
@@ -9962,7 +9964,7 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
 
   const formData = new FormData();
   Object.entries(uploadFields).forEach(([k, v]) => formData.append(k, String(v)));
-  formData.append('file', new Blob([anchorBytes], { type: 'image/jpeg' }), 'anchor.jpg');
+  formData.append('file', new Blob([anchorBytes], { type: 'image/png' }), 'anchor.png');
   const s3Resp = await fetchFn(uploadUrl, { method: 'POST', body: formData });
   if (!s3Resp.ok && s3Resp.status !== 204) throw new Error(`Leonardo S3 upload failed: ${s3Resp.status}`);
 

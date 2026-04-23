@@ -1657,6 +1657,7 @@
   function setPipelineBanner(text, opts) {
     var done = opts && opts.done;
     var transcript = document.getElementById('shay-desk-transcript');
+    console.log('[pipeline-banner] setPipelineBanner called — text:', text, '| transcript el:', transcript, '| parent:', transcript && transcript.parentNode);
     if (!transcript) return;
 
     var banner = document.getElementById('shay-desk-pipeline-banner');
@@ -1686,6 +1687,7 @@
 
   function handlePipelineWsEvent(msg) {
     if (!msg || !msg.type) return;
+    console.log('[pipeline-ws] handlePipelineWsEvent:', msg.type, msg);
     var ts = new Date().toTimeString().slice(0, 8);
     var t = msg.type;
     var label, detail, lbl, bannerText;
