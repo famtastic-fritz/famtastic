@@ -1648,6 +1648,66 @@
     scrollShayDeskTranscriptToBottom();
   }
 
+  /* STANDING RULE: Every new WebSocket event added to server.js MUST have a
+     corresponding UI handler here that renders visible feedback in Shay Desk.
+     No silent events. No unhandled message types. */
+  function handlePipelineWsEvent(msg) {
+    if (!msg || !msg.type) return;
+    var ts = new Date().toTimeString().slice(0, 8);
+    var t = msg.type;
+    var label, detail;
+
+    switch (t) {
+      case 'character-pipeline-step':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] ' + t + ': ' + (msg.label || msg.message || ''), { subtle: true });
+        break;
+      case 'character-pipeline-complete':
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] character pipeline complete — ' + (msg.assessment || ''), { subtle: true });
+        break;
+      case 'character-pipeline-error':
+        appendShayDeskMessage('system', '\u2717 [' + ts + '] character pipeline error: ' + (msg.error || 'unknown'), { subtle: true });
+        break;
+      case 'pose-generated':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] pose-generated: pose ' + (msg.pose_index || '') + ' saved', { subtle: true });
+        break;
+      case 'poses-complete':
+        label = msg.results ? msg.results.length + ' pose(s)' : 'done';
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] poses-complete — ' + label, { subtle: true });
+        break;
+      case 'video-progress':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] video-progress: ' + (msg.status || msg.message || 'generating'), { subtle: true });
+        break;
+      case 'video-complete':
+        detail = msg.size ? ' (' + (msg.size / 1024).toFixed(0) + 'KB)' : '';
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] video-complete' + detail, { subtle: true });
+        break;
+      case 'video-error':
+        appendShayDeskMessage('system', '\u2717 [' + ts + '] video error: ' + (msg.error || 'unknown'), { subtle: true });
+        break;
+      case 'promo-step':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] promo-step: ' + (msg.step || msg.status || ''), { subtle: true });
+        break;
+      case 'promo-complete':
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] promo-complete', { subtle: true });
+        break;
+      case 'promo-error':
+        appendShayDeskMessage('system', '\u2717 [' + ts + '] promo error: ' + (msg.error || 'unknown'), { subtle: true });
+        break;
+      case 'build-progress':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] build-progress: ' + (msg.content || msg.message || ''), { subtle: true });
+        break;
+      case 'build-complete':
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] build-complete', { subtle: true });
+        break;
+      case 'deploy-progress':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] deploy-progress: ' + (msg.content || msg.message || ''), { subtle: true });
+        break;
+      case 'deploy-complete':
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] deploy-complete', { subtle: true });
+        break;
+    }
+  }
+
   window.PipOrb = {
     show:               showMessage,
     flash:              flashCallout,
@@ -1673,6 +1733,7 @@
     send:               sendToChat,
     showColumnResponse: showColumnResponse,
     appendDeskMessage: appendDeskMessage,
+    handlePipelineEvent: handlePipelineWsEvent,
     showColumnActions:  showColumnActions,
     reloadTodos:        function () { setOrbState('IDLE'); },
     setOrbState:        setOrbState,

@@ -1943,14 +1943,23 @@
             if (cBtn) cBtn.style.display = 'none';
             addMessage('assistant', 'Build was cancelled.');
             break;
+          case 'character-pipeline-step':
+          case 'character-pipeline-complete':
+          case 'character-pipeline-error':
           case 'pose-generated':
           case 'poses-complete':
           case 'video-progress':
           case 'video-complete':
+          case 'video-error':
           case 'promo-step':
           case 'promo-complete':
           case 'promo-error':
+          case 'build-progress':
+          case 'build-complete':
+          case 'deploy-progress':
+          case 'deploy-complete':
             if (typeof window.charPipelineHandleWS === 'function') window.charPipelineHandleWS(msg);
+            if (typeof PipOrb !== 'undefined' && PipOrb.handlePipelineEvent) PipOrb.handlePipelineEvent(msg);
             break;
           case 'deploy-updated':
             refreshDeployInfo();
