@@ -9853,10 +9853,12 @@ async function createCharacterAnchorCore({ name, description, style, prompt, sit
 }
 
 async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}) {
-  const leonardoKey = getLeonardoApiKey();
-  if (!leonardoKey) throw new Error('LEONARDO_API_KEY not configured');
   if (!character_id || !Array.isArray(poses) || poses.length === 0)
     throw new Error('character_id and poses[] are required');
+
+  const openaiKey = process.env.OPENAI_API_KEY || '';
+  const leonardoKey = getLeonardoApiKey();
+  if (!openaiKey && !leonardoKey) throw new Error('OPENAI_API_KEY or LEONARDO_API_KEY required for pose generation');
 
   const siteDir = getCharacterSiteDir(site_tag);
   const spec = readSpecForSite(siteDir);
@@ -9864,22 +9866,75 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
   const charSet = spec.character_sets.find(c => c.id === character_id);
   if (!charSet) throw new Error(`Character ${character_id} not found`);
 
+  const charDir = path.join(siteDir, 'assets', 'characters', character_id);
+  fs.mkdirSync(charDir, { recursive: true });
+
+  function buildPosePrompt(poseName) {
+    return `full body pose: ${poseName}, character facing forward, white background, ${charSet.description || charSet.name}, same character, ${charSet.style || 'illustrated'} style, consistent design, full body visible`;
+  }
+
+  function savePoseToSpec(i, poseName, poseRelPath) {
+    const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
+    const specNow = readSpecForSite(siteDir);
+    const charSetNow = specNow.character_sets?.find(c => c.id === character_id);
+    if (charSetNow) {
+      if (!Array.isArray(charSetNow.poses)) charSetNow.poses = [];
+      charSetNow.poses[i] = poseEntry;
+      writeSpecForSite(siteDir, specNow);
+    }
+  }
+
+  const results = [];
+
+  // ── Primary: gpt-image-1 ──────────────────────────────────────────────────
+  if (openaiKey) {
+    const { OpenAI } = require('openai');
+    const openai = new OpenAI({ apiKey: openaiKey });
+
+    for (let i = 0; i < poses.length; i++) {
+      const poseName = poses[i];
+      const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const posePath    = path.join(charDir, `pose-${i + 1}-${poseSlug}.png`);
+      const poseRelPath = path.join('assets', 'characters', character_id, `pose-${i + 1}-${poseSlug}.png`);
+
+      try {
+        const response = await openai.images.generate({
+          model: 'gpt-image-1',
+          prompt: buildPosePrompt(poseName),
+          size: '1024x1024',
+          n: 1,
+        });
+        const b64 = response.data[0].b64_json;
+        if (!b64) throw new Error('gpt-image-1 returned no image data');
+        fs.writeFileSync(posePath, Buffer.from(b64, 'base64'));
+        savePoseToSpec(i, poseName, poseRelPath);
+        broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
+        results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
+      } catch (poseErr) {
+        console.error(`[character/generate-poses] gpt-image-1 pose ${i + 1} failed:`, poseErr.message);
+        results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
+      }
+
+      if (i < poses.length - 1) await new Promise(r => setTimeout(r, 1000));
+    }
+
+    broadcastAll({ type: 'poses-complete', character_id, results });
+    return { character_id, results };
+  }
+
+  // ── Fallback: Leonardo AI ─────────────────────────────────────────────────
+  if (!leonardoKey) throw new Error('LEONARDO_API_KEY not configured');
+
   const anchorAbsPath = path.join(siteDir, charSet.anchor_image_path);
   if (!fs.existsSync(anchorAbsPath)) throw new Error('Anchor image not found on disk');
 
   const { default: fetch } = await import('node-fetch').catch(() => ({ default: global.fetch }));
   const fetchFn = fetch || global.fetch;
-
-  const leonardoHeaders = {
-    'Authorization': `Bearer ${leonardoKey}`,
-    'Content-Type': 'application/json',
-  };
+  const leonardoHeaders = { 'Authorization': `Bearer ${leonardoKey}`, 'Content-Type': 'application/json' };
 
   const anchorBytes = fs.readFileSync(anchorAbsPath);
   const uploadResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/init-image', {
-    method: 'POST',
-    headers: leonardoHeaders,
-    body: JSON.stringify({ extension: 'jpg' }),
+    method: 'POST', headers: leonardoHeaders, body: JSON.stringify({ extension: 'jpg' }),
   });
   if (!uploadResp.ok) {
     const txt = await uploadResp.text();
@@ -9898,36 +9953,23 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
   const s3Resp = await fetchFn(uploadUrl, { method: 'POST', body: formData });
   if (!s3Resp.ok && s3Resp.status !== 204) throw new Error(`Leonardo S3 upload failed: ${s3Resp.status}`);
 
-  const charDir = path.join(siteDir, 'assets', 'characters', character_id);
-  fs.mkdirSync(charDir, { recursive: true });
-
-  const results = [];
   for (let i = 0; i < poses.length; i++) {
     const poseName = poses[i];
     const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const poseFilename = `pose-${i + 1}-${poseSlug}.jpg`;
-    const posePath = path.join(charDir, poseFilename);
-    const poseRelPath = path.join('assets', 'characters', character_id, poseFilename);
+    const posePath    = path.join(charDir, `pose-${i + 1}-${poseSlug}.jpg`);
+    const poseRelPath = path.join('assets', 'characters', character_id, `pose-${i + 1}-${poseSlug}.jpg`);
 
     try {
-      const genPrompt = `full body pose: ${poseName}, character facing forward, white background, ${charSet.description || charSet.name}, same character, ${charSet.style || 'illustrated'} style, consistent design, full body visible`;
       const genResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/generations', {
-        method: 'POST',
-        headers: leonardoHeaders,
+        method: 'POST', headers: leonardoHeaders,
         body: JSON.stringify({
-          prompt: genPrompt,
+          prompt: buildPosePrompt(poseName),
           modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
-          width: 512,
-          height: 512,
-          num_images: 1,
-          init_image_id: initImageId,
-          init_strength: 0.4,
+          width: 512, height: 512, num_images: 1,
+          init_image_id: initImageId, init_strength: 0.4,
         }),
       });
-      if (!genResp.ok) {
-        const txt = await genResp.text();
-        throw new Error(`Leonardo generation request failed: ${genResp.status} ${txt}`);
-      }
+      if (!genResp.ok) { const txt = await genResp.text(); throw new Error(`Leonardo gen failed: ${genResp.status} ${txt}`); }
       const genData = await genResp.json();
       const generationId = genData.sdGenerationJob?.generationId;
       if (!generationId) throw new Error('Leonardo did not return generationId');
@@ -9936,9 +9978,7 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
       const pollDeadline = Date.now() + 60000;
       while (Date.now() < pollDeadline) {
         await new Promise(r => setTimeout(r, 3000));
-        const pollResp = await fetchFn(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
-          headers: leonardoHeaders,
-        });
+        const pollResp = await fetchFn(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, { headers: leonardoHeaders });
         if (!pollResp.ok) continue;
         const pollData = await pollResp.json();
         const status = pollData.generations_by_pk?.status;
@@ -9949,22 +9989,12 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
 
       const imgResp = await fetchFn(imageUrl);
       if (!imgResp.ok) throw new Error(`Failed to download pose image: ${imgResp.status}`);
-      const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
-      fs.writeFileSync(posePath, imgBuffer);
-
-      const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
-      const specNow = readSpecForSite(siteDir);
-      const charSetNow = specNow.character_sets?.find(c => c.id === character_id);
-      if (charSetNow) {
-        if (!Array.isArray(charSetNow.poses)) charSetNow.poses = [];
-        charSetNow.poses[i] = poseEntry;
-        writeSpecForSite(siteDir, specNow);
-      }
-
+      fs.writeFileSync(posePath, Buffer.from(await imgResp.arrayBuffer()));
+      savePoseToSpec(i, poseName, poseRelPath);
       broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
       results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
     } catch (poseErr) {
-      console.error(`[character/generate-poses] pose ${i + 1} failed:`, poseErr.message);
+      console.error(`[character/generate-poses] Leonardo pose ${i + 1} failed:`, poseErr.message);
       results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
     }
 
