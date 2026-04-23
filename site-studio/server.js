@@ -5932,6 +5932,21 @@ app.post('/api/shay-shay', async (req, res) => {
           bridge_debug: bridgeDebug,
         });
       }
+      // character_pipeline is async — fire-and-forget, return jobId immediately
+      if (tier0.intent === 'character_pipeline') {
+        suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'character_pipeline', source: 'shay-shay-t0' });
+        const jobId = require('crypto').randomUUID();
+        setImmediate(() => runCharacterPipeline(jobId, message, context).catch(e =>
+          broadcastAll({ type: 'character-pipeline-error', jobId, error: e.message })
+        ));
+        return res.json({
+          action: 'character_pipeline',
+          jobId,
+          status: 'started',
+          response: `Starting character pipeline. I'll generate the anchor, then all 12 poses, hero video, and promo — broadcasting progress as each step completes.`,
+          bridge_debug: bridgeDebug,
+        });
+      }
       // autonomous_build is async — handle separately
       if (tier0.intent === 'autonomous_build') {
         suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'autonomous_build', source: 'shay-shay-t0' });
@@ -7057,6 +7072,11 @@ function classifyShayShayTier0(lower, context = {}) {
   // Job plan creation — "plan jobs for...", "create a job plan", "schedule tasks"
   if (/\b(plan\s+(the\s+)?jobs?\s+for|create\s+a?\s+job\s+plan|schedule\s+(the\s+)?tasks?\s+for|build\s+(a\s+)?job\s+plan|queue\s+(up\s+)?jobs?\s+for)\b/.test(lower))
     return { intent: 'create_job_plan' };
+  // Character pipeline — "character pipeline", "FAM Bear", or "generate anchor" + "poses"
+  if (/character\s+pipeline/i.test(lower) ||
+      /\bfam\s*bear\b/i.test(lower) ||
+      (/generate\s+anchor/i.test(lower) && /\bposes?\b/i.test(lower)))
+    return { intent: 'character_pipeline' };
   // Autonomous build — explicitly requests full autonomous pipeline
   if (/\b(autonomous|auto.?build|build\s+autonomously|shay.?shay\s+build)\b/.test(lower) ||
       (context && context.autonomous === true))
@@ -7353,6 +7373,139 @@ async function extractBriefFromMessage(text) {
     }
   } catch { /* fall through to pattern matching */ }
   return extractBriefPatternBased(text);
+}
+
+// ── Character Pipeline — sequential anchor → poses → hero → promo ─────────────
+
+async function runCharacterPipeline(jobId, message, context = {}) {
+  const siteTag = TAG;
+
+  // Extract a character brief from the message, fall back to FAM Bear default.
+  const briefMatch = message.match(/(?:character(?:\s+pipeline)?(?:\s+for)?[:\s]+|generate\s+(?:a\s+)?(?:character|anchor)\s+(?:for\s+)?)\s*(.{8,120})/i);
+  const rawBrief = briefMatch ? briefMatch[1].trim() : '';
+  const isFamBear = /fam\s*bear/i.test(message) || !rawBrief;
+  const characterName   = isFamBear ? 'FAM Bear' : rawBrief.split(/[\.,]/)[0].trim().slice(0, 40);
+  const characterPrompt = isFamBear
+    ? 'futuristic cartoon teddy bear, bright blue bow tie, circuit pattern details, friendly expression, full body, white background, illustrated style'
+    : rawBrief;
+  const characterStyle  = 'Illustrated/Cartoon';
+
+  const DEFAULT_POSES = [
+    'Waving hello', 'Thumbs up', 'Celebrating (arms raised)', 'Pointing forward',
+    'Dancing', 'Laughing', 'Sitting at desk', 'Holding coffee',
+    'Running', 'Hugging', 'Presenting', 'Cheering with pennant',
+  ];
+
+  function step(label, data) {
+    broadcastAll({ type: 'character-pipeline-step', jobId, label, ...data });
+    console.log(`[character-pipeline:${jobId}] ${label}`);
+  }
+
+  function internalPost(path, body) {
+    return new Promise((resolve, reject) => {
+      const payload = Buffer.from(JSON.stringify(body));
+      const req = require('http').request(
+        { hostname: '127.0.0.1', port: PORT, path, method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': payload.length } },
+        res => {
+          const chunks = [];
+          res.on('data', c => chunks.push(c));
+          res.on('end', () => {
+            try {
+              const parsed = JSON.parse(Buffer.concat(chunks).toString());
+              if (res.statusCode >= 400) return reject(new Error(parsed.error || `HTTP ${res.statusCode}`));
+              resolve(parsed);
+            } catch (e) { reject(new Error('Bad JSON from ' + path)); }
+          });
+        }
+      );
+      req.on('error', reject);
+      req.setTimeout(300000, () => { req.destroy(new Error('timeout: ' + path)); });
+      req.write(payload);
+      req.end();
+    });
+  }
+
+  // Step 1: create anchor
+  step('anchor:start', { site_tag: siteTag, character: characterName });
+  let anchorResult;
+  try {
+    anchorResult = await internalPost('/api/character/create-anchor', {
+      name: characterName,
+      description: characterPrompt,
+      style: characterStyle,
+      prompt: characterPrompt,
+      site_tag: siteTag,
+    });
+    step('anchor:complete', { character_id: anchorResult.character_id, anchor_path: anchorResult.anchor_path });
+  } catch (e) {
+    step('anchor:error', { error: e.message });
+    broadcastAll({ type: 'character-pipeline-error', jobId, stage: 'anchor', error: e.message });
+    return;
+  }
+
+  const characterId = anchorResult.character_id;
+
+  // Step 2: generate all 12 poses
+  step('poses:start', { character_id: characterId, count: DEFAULT_POSES.length });
+  let posesResult;
+  try {
+    posesResult = await internalPost('/api/character/generate-poses', {
+      character_id: characterId,
+      poses: DEFAULT_POSES,
+      site_tag: siteTag,
+    });
+    const successCount = (posesResult.results || []).filter(r => r.success !== false).length;
+    step('poses:complete', { character_id: characterId, success_count: successCount, total: DEFAULT_POSES.length });
+  } catch (e) {
+    step('poses:error', { error: e.message });
+    // Non-fatal — continue to video if anchor exists
+  }
+
+  // Step 3: hero video (first pose)
+  step('video:start', { character_id: characterId });
+  let videoResult;
+  try {
+    videoResult = await internalPost('/api/video/generate', {
+      character_id: characterId,
+      site_tag: siteTag,
+      pose_index: 0,
+    });
+    step('video:complete', { character_id: characterId, jobId: videoResult.jobId });
+  } catch (e) {
+    step('video:error', { error: e.message });
+    // Non-fatal — continue to promo
+  }
+
+  // Step 4: promo video
+  step('promo:start', { character_id: characterId });
+  try {
+    const spec = readSpecForSite(getCharacterSiteDir(siteTag));
+    const siteName = spec.site_name || siteTag;
+    await internalPost('/api/video/promo', {
+      character_id: characterId,
+      site_tag: siteTag,
+      site_name: siteName,
+      tagline: `${siteName} — FAMtastic`,
+      pose_indices: [0, 1, 2],
+    });
+    step('promo:complete', { character_id: characterId });
+  } catch (e) {
+    step('promo:error', { error: e.message });
+  }
+
+  // Final assessment
+  const posesOk  = posesResult && (posesResult.results || []).filter(r => r.success !== false).length;
+  const videoOk  = !!videoResult;
+  const assessment = [
+    `Anchor: done (${characterName})`,
+    `Poses: ${posesOk != null ? posesOk + '/' + DEFAULT_POSES.length : 'failed'}`,
+    `Hero video: ${videoOk ? 'queued' : 'failed'}`,
+    `Promo: queued`,
+  ].join(' · ');
+
+  broadcastAll({ type: 'character-pipeline-complete', jobId, character_id: characterId, assessment });
+  console.log(`[character-pipeline:${jobId}] complete — ${assessment}`);
 }
 
 async function runAutonomousBuild(message, context = {}) {

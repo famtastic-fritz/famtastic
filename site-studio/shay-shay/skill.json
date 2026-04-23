@@ -64,6 +64,15 @@
       "examples": ["what do you think about", "should I", "is this a good idea"],
       "handler": "generalReasoning",
       "tier": 3
+    },
+    {
+      "id": "character_pipeline",
+      "description": "Run the full character pipeline: anchor → 12 poses → hero video → promo video",
+      "examples": ["character pipeline", "generate FAM Bear", "run the character pipeline", "generate anchor and poses"],
+      "handler": "runCharacterPipeline",
+      "tier": 0,
+      "triggers": ["character pipeline", "FAM Bear", "generate anchor + poses"],
+      "ws_events": ["character-pipeline-step", "character-pipeline-complete", "character-pipeline-error"]
     }
   ]
 }
