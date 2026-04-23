@@ -1651,28 +1651,74 @@
   /* STANDING RULE: Every new WebSocket event added to server.js MUST have a
      corresponding UI handler here that renders visible feedback in Shay Desk.
      No silent events. No unhandled message types. */
+
+  var _pipelineBannerTimer = null;
+
+  function setPipelineBanner(text, opts) {
+    var done = opts && opts.done;
+    var transcript = document.getElementById('shay-desk-transcript');
+    if (!transcript) return;
+
+    var banner = document.getElementById('shay-desk-pipeline-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'shay-desk-pipeline-banner';
+      banner.style.cssText = 'padding:8px 14px;font-size:12px;font-weight:500;border-bottom:1px solid var(--fam-border);background:rgba(167,139,250,0.08);color:var(--fam-purple,#a78bfa);flex:0 0 auto;opacity:1;transition:opacity 0.4s;';
+      transcript.parentNode.insertBefore(banner, transcript);
+    }
+
+    if (_pipelineBannerTimer) { clearTimeout(_pipelineBannerTimer); _pipelineBannerTimer = null; }
+    banner.style.opacity = '1';
+    banner.textContent = text;
+
+    if (done) {
+      _pipelineBannerTimer = setTimeout(function () {
+        if (banner.parentNode) banner.parentNode.removeChild(banner);
+      }, 3000);
+    }
+  }
+
+  function clearPipelineBanner() {
+    if (_pipelineBannerTimer) { clearTimeout(_pipelineBannerTimer); _pipelineBannerTimer = null; }
+    var banner = document.getElementById('shay-desk-pipeline-banner');
+    if (banner && banner.parentNode) banner.parentNode.removeChild(banner);
+  }
+
   function handlePipelineWsEvent(msg) {
     if (!msg || !msg.type) return;
     var ts = new Date().toTimeString().slice(0, 8);
     var t = msg.type;
-    var label, detail;
+    var label, detail, lbl, bannerText;
 
     switch (t) {
       case 'character-pipeline-step':
-        appendShayDeskMessage('system', '\u2699 [' + ts + '] ' + t + ': ' + (msg.label || msg.message || ''), { subtle: true });
+        lbl = msg.label || '';
+        if (lbl === 'anchor:start')                bannerText = '\u2699 Shay is working \u2014 Generating anchor...';
+        else if (lbl === 'anchor:complete')         bannerText = '\u2699 Shay is working \u2014 Anchor done, starting poses...';
+        else if (lbl === 'poses:start')             bannerText = '\u2699 Shay is working \u2014 Generating poses...';
+        else if (lbl === 'video:start'
+              || lbl === 'video:queued')            bannerText = '\u2699 Shay is working \u2014 Creating hero video...';
+        else if (lbl === 'promo:start'
+              || lbl === 'promo:queued')            bannerText = '\u2699 Shay is working \u2014 Building promo...';
+        else                                        bannerText = '\u2699 Shay is working \u2014 ' + lbl;
+        setPipelineBanner(bannerText);
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] ' + t + ': ' + lbl, { subtle: true });
         break;
       case 'character-pipeline-complete':
-        appendShayDeskMessage('system', '\u2713 [' + ts + '] character pipeline complete — ' + (msg.assessment || ''), { subtle: true });
+        setPipelineBanner('\u2713 Pipeline complete', { done: true });
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] character pipeline complete \u2014 ' + (msg.assessment || ''), { subtle: true });
         break;
       case 'character-pipeline-error':
+        clearPipelineBanner();
         appendShayDeskMessage('system', '\u2717 [' + ts + '] character pipeline error: ' + (msg.error || 'unknown'), { subtle: true });
         break;
       case 'pose-generated':
+        setPipelineBanner('\u2699 Shay is working \u2014 Generating poses (' + (msg.pose_index || '?') + '/12)...');
         appendShayDeskMessage('system', '\u2699 [' + ts + '] pose-generated: pose ' + (msg.pose_index || '') + ' saved', { subtle: true });
         break;
       case 'poses-complete':
         label = msg.results ? msg.results.length + ' pose(s)' : 'done';
-        appendShayDeskMessage('system', '\u2713 [' + ts + '] poses-complete — ' + label, { subtle: true });
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] poses-complete \u2014 ' + label, { subtle: true });
         break;
       case 'video-progress':
         appendShayDeskMessage('system', '\u2699 [' + ts + '] video-progress: ' + (msg.status || msg.message || 'generating'), { subtle: true });

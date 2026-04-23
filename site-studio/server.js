@@ -7454,15 +7454,14 @@ async function runCharacterPipeline(jobId, message, context = {}) {
   }
 
   // Step 4: promo video — fire-and-forget via core function
+  // Use anchorResult.character_id directly — no spec re-read
   step('promo:start', { character_id: characterId });
   try {
-    const spec = readSpecForSite(getCharacterSiteDir(siteTag));
-    const siteName = spec.site_name || siteTag;
     startVideoPromoCore({
-      character_id: characterId,
+      character_id: anchorResult.character_id,
       site_tag: siteTag,
-      site_name: siteName,
-      tagline: `${siteName} — FAMtastic`,
+      site_name: siteTag,
+      tagline: `${siteTag} — FAMtastic`,
       pose_indices: [0, 1, 2],
     });
     step('promo:queued', { character_id: characterId });
