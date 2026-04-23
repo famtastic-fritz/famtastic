@@ -7380,7 +7380,6 @@ async function extractBriefFromMessage(text) {
 async function runCharacterPipeline(jobId, message, context = {}) {
   const siteTag = TAG;
 
-  // Extract a character brief from the message, fall back to FAM Bear default.
   const briefMatch = message.match(/(?:character(?:\s+pipeline)?(?:\s+for)?[:\s]+|generate\s+(?:a\s+)?(?:character|anchor)\s+(?:for\s+)?)\s*(.{8,120})/i);
   const rawBrief = briefMatch ? briefMatch[1].trim() : '';
   const isFamBear = /fam\s*bear/i.test(message) || !rawBrief;
@@ -7401,36 +7400,11 @@ async function runCharacterPipeline(jobId, message, context = {}) {
     console.log(`[character-pipeline:${jobId}] ${label}`);
   }
 
-  function internalPost(path, body) {
-    return new Promise((resolve, reject) => {
-      const payload = Buffer.from(JSON.stringify(body));
-      const req = require('http').request(
-        { hostname: '127.0.0.1', port: PORT, path, method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Content-Length': payload.length } },
-        res => {
-          const chunks = [];
-          res.on('data', c => chunks.push(c));
-          res.on('end', () => {
-            try {
-              const parsed = JSON.parse(Buffer.concat(chunks).toString());
-              if (res.statusCode >= 400) return reject(new Error(parsed.error || `HTTP ${res.statusCode}`));
-              resolve(parsed);
-            } catch (e) { reject(new Error('Bad JSON from ' + path)); }
-          });
-        }
-      );
-      req.on('error', reject);
-      req.setTimeout(300000, () => { req.destroy(new Error('timeout: ' + path)); });
-      req.write(payload);
-      req.end();
-    });
-  }
-
-  // Step 1: create anchor
+  // Step 1: create anchor — call core function directly (no HTTP round-trip)
   step('anchor:start', { site_tag: siteTag, character: characterName });
   let anchorResult;
   try {
-    anchorResult = await internalPost('/api/character/create-anchor', {
+    anchorResult = await createCharacterAnchorCore({
       name: characterName,
       description: characterPrompt,
       style: characterStyle,
@@ -7446,11 +7420,11 @@ async function runCharacterPipeline(jobId, message, context = {}) {
 
   const characterId = anchorResult.character_id;
 
-  // Step 2: generate all 12 poses
+  // Step 2: generate all 12 poses — call core function directly
   step('poses:start', { character_id: characterId, count: DEFAULT_POSES.length });
   let posesResult;
   try {
-    posesResult = await internalPost('/api/character/generate-poses', {
+    posesResult = await generateCharacterPosesCore({
       character_id: characterId,
       poses: DEFAULT_POSES,
       site_tag: siteTag,
@@ -7459,42 +7433,43 @@ async function runCharacterPipeline(jobId, message, context = {}) {
     step('poses:complete', { character_id: characterId, success_count: successCount, total: DEFAULT_POSES.length });
   } catch (e) {
     step('poses:error', { error: e.message });
-    // Non-fatal — continue to video if anchor exists
+    // Non-fatal — continue to video
   }
 
-  // Step 3: hero video (first pose)
+  // Step 3: hero video from anchor — fire-and-forget via core function
   step('video:start', { character_id: characterId });
   let videoResult;
   try {
-    videoResult = await internalPost('/api/video/generate', {
-      character_id: characterId,
+    const anchorAbsPath = path.join(getCharacterSiteDir(siteTag), anchorResult.anchor_path);
+    const videoPrompt = `${characterName} animated, smooth motion, ${characterPrompt.slice(0, 80)}, white background`;
+    videoResult = startVideoGenerateCore({
+      image_path: anchorAbsPath,
+      prompt: videoPrompt,
       site_tag: siteTag,
-      pose_index: 0,
     });
-    step('video:complete', { character_id: characterId, jobId: videoResult.jobId });
+    step('video:queued', { character_id: characterId, jobId: videoResult.jobId });
   } catch (e) {
     step('video:error', { error: e.message });
     // Non-fatal — continue to promo
   }
 
-  // Step 4: promo video
+  // Step 4: promo video — fire-and-forget via core function
   step('promo:start', { character_id: characterId });
   try {
     const spec = readSpecForSite(getCharacterSiteDir(siteTag));
     const siteName = spec.site_name || siteTag;
-    await internalPost('/api/video/promo', {
+    startVideoPromoCore({
       character_id: characterId,
       site_tag: siteTag,
       site_name: siteName,
       tagline: `${siteName} — FAMtastic`,
       pose_indices: [0, 1, 2],
     });
-    step('promo:complete', { character_id: characterId });
+    step('promo:queued', { character_id: characterId });
   } catch (e) {
     step('promo:error', { error: e.message });
   }
 
-  // Final assessment
   const posesOk  = posesResult && (posesResult.results || []).filter(r => r.success !== false).length;
   const videoOk  = !!videoResult;
   const assessment = [
@@ -9819,59 +9794,320 @@ Requirements for the expanded prompt:
   return resp.content[0].text.trim();
 }
 
+// ── Character pipeline core functions ─────────────────────────────────────
+// Called directly by runCharacterPipeline (no HTTP round-trip) and also
+// exposed via the HTTP routes below for external callers.
+
+async function createCharacterAnchorCore({ name, description, style, prompt, site_tag } = {}) {
+  if (!getGoogleApiKey()) throw new Error('GEMINI_API_KEY not configured');
+  if (!name || !prompt) throw new Error('name and prompt are required');
+
+  const siteDir = getCharacterSiteDir(site_tag);
+  const characterId = require('crypto').randomUUID();
+  const charDir = path.join(siteDir, 'assets', 'characters', characterId);
+  const anchorPath = path.join(charDir, 'anchor.jpg');
+  fs.mkdirSync(charDir, { recursive: true });
+
+  let enrichedPrompt = prompt;
+  try {
+    enrichedPrompt = await enrichCharacterPrompt(prompt, name || '', description || '', style || 'illustrated');
+  } catch (e) {
+    console.warn('[character] prompt enrichment failed, using raw prompt:', e.message);
+  }
+
+  await runGoogleMediaScript([
+    '--prompt', enrichedPrompt,
+    '--output', anchorPath,
+    '--aspect-ratio', '1:1',
+    '--site-dir', siteDir,
+  ]);
+  if (!fs.existsSync(anchorPath)) throw new Error('Imagen did not produce anchor image');
+
+  const anchorRelPath = path.join('assets', 'characters', characterId, 'anchor.jpg');
+  const characterSet = {
+    id: characterId,
+    name: name || '',
+    description: description || '',
+    style: style || 'illustrated',
+    enriched_prompt: enrichedPrompt,
+    anchor_image_path: anchorRelPath,
+    poses: [],
+    created_at: new Date().toISOString(),
+    provider: 'imagen',
+  };
+
+  const spec = readSpecForSite(siteDir);
+  if (!Array.isArray(spec.character_sets)) spec.character_sets = [];
+  spec.character_sets.push(characterSet);
+  writeSpecForSite(siteDir, spec);
+
+  return { character_id: characterId, anchor_path: anchorRelPath, character_set: characterSet };
+}
+
+async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}) {
+  const leonardoKey = getLeonardoApiKey();
+  if (!leonardoKey) throw new Error('LEONARDO_API_KEY not configured');
+  if (!character_id || !Array.isArray(poses) || poses.length === 0)
+    throw new Error('character_id and poses[] are required');
+
+  const siteDir = getCharacterSiteDir(site_tag);
+  const spec = readSpecForSite(siteDir);
+  if (!Array.isArray(spec.character_sets)) throw new Error('No character_sets in spec');
+  const charSet = spec.character_sets.find(c => c.id === character_id);
+  if (!charSet) throw new Error(`Character ${character_id} not found`);
+
+  const anchorAbsPath = path.join(siteDir, charSet.anchor_image_path);
+  if (!fs.existsSync(anchorAbsPath)) throw new Error('Anchor image not found on disk');
+
+  const { default: fetch } = await import('node-fetch').catch(() => ({ default: global.fetch }));
+  const fetchFn = fetch || global.fetch;
+
+  const leonardoHeaders = {
+    'Authorization': `Bearer ${leonardoKey}`,
+    'Content-Type': 'application/json',
+  };
+
+  const anchorBytes = fs.readFileSync(anchorAbsPath);
+  const uploadResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/init-image', {
+    method: 'POST',
+    headers: leonardoHeaders,
+    body: JSON.stringify({ extension: 'jpg' }),
+  });
+  if (!uploadResp.ok) {
+    const txt = await uploadResp.text();
+    throw new Error(`Leonardo init-image presign failed: ${uploadResp.status} ${txt}`);
+  }
+  const uploadData = await uploadResp.json();
+  const rawFields = uploadData.uploadInitImage?.fields;
+  const uploadFields = rawFields ? (typeof rawFields === 'string' ? JSON.parse(rawFields) : rawFields) : {};
+  const uploadUrl = uploadData.uploadInitImage?.url || '';
+  const initImageId = uploadData.uploadInitImage?.id;
+  if (!uploadUrl || !initImageId) throw new Error('Leonardo did not return upload URL or id');
+
+  const formData = new FormData();
+  Object.entries(uploadFields).forEach(([k, v]) => formData.append(k, String(v)));
+  formData.append('file', new Blob([anchorBytes], { type: 'image/jpeg' }), 'anchor.jpg');
+  const s3Resp = await fetchFn(uploadUrl, { method: 'POST', body: formData });
+  if (!s3Resp.ok && s3Resp.status !== 204) throw new Error(`Leonardo S3 upload failed: ${s3Resp.status}`);
+
+  const charDir = path.join(siteDir, 'assets', 'characters', character_id);
+  fs.mkdirSync(charDir, { recursive: true });
+
+  const results = [];
+  for (let i = 0; i < poses.length; i++) {
+    const poseName = poses[i];
+    const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const poseFilename = `pose-${i + 1}-${poseSlug}.jpg`;
+    const posePath = path.join(charDir, poseFilename);
+    const poseRelPath = path.join('assets', 'characters', character_id, poseFilename);
+
+    try {
+      const genPrompt = `${poseName}, ${charSet.description || charSet.name}, same character, white background, ${charSet.style || 'illustrated'} style, consistent design, full body`;
+      const genResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/generations', {
+        method: 'POST',
+        headers: leonardoHeaders,
+        body: JSON.stringify({
+          prompt: genPrompt,
+          modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
+          width: 512,
+          height: 512,
+          num_images: 1,
+          init_image_id: initImageId,
+          init_strength: 0.4,
+        }),
+      });
+      if (!genResp.ok) {
+        const txt = await genResp.text();
+        throw new Error(`Leonardo generation request failed: ${genResp.status} ${txt}`);
+      }
+      const genData = await genResp.json();
+      const generationId = genData.sdGenerationJob?.generationId;
+      if (!generationId) throw new Error('Leonardo did not return generationId');
+
+      let imageUrl = null;
+      const pollDeadline = Date.now() + 60000;
+      while (Date.now() < pollDeadline) {
+        await new Promise(r => setTimeout(r, 3000));
+        const pollResp = await fetchFn(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
+          headers: leonardoHeaders,
+        });
+        if (!pollResp.ok) continue;
+        const pollData = await pollResp.json();
+        const status = pollData.generations_by_pk?.status;
+        if (status === 'COMPLETE') { imageUrl = pollData.generations_by_pk?.generated_images?.[0]?.url; break; }
+        if (status === 'FAILED') throw new Error('Leonardo generation FAILED');
+      }
+      if (!imageUrl) throw new Error('Leonardo generation timed out');
+
+      const imgResp = await fetchFn(imageUrl);
+      if (!imgResp.ok) throw new Error(`Failed to download pose image: ${imgResp.status}`);
+      const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
+      fs.writeFileSync(posePath, imgBuffer);
+
+      const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
+      const specNow = readSpecForSite(siteDir);
+      const charSetNow = specNow.character_sets?.find(c => c.id === character_id);
+      if (charSetNow) {
+        if (!Array.isArray(charSetNow.poses)) charSetNow.poses = [];
+        charSetNow.poses[i] = poseEntry;
+        writeSpecForSite(siteDir, specNow);
+      }
+
+      broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
+      results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
+    } catch (poseErr) {
+      console.error(`[character/generate-poses] pose ${i + 1} failed:`, poseErr.message);
+      results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
+    }
+
+    if (i < poses.length - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+
+  broadcastAll({ type: 'poses-complete', character_id, results });
+  return { character_id, results };
+}
+
+function startVideoGenerateCore({ image_path, prompt, duration_seconds, site_tag } = {}) {
+  if (!getGoogleApiKey()) throw new Error('GEMINI_API_KEY not configured');
+  if (!image_path || !prompt) throw new Error('image_path and prompt are required');
+
+  const siteDir = getCharacterSiteDir(site_tag);
+  const jobId = require('crypto').randomUUID();
+  const videoDir = path.join(siteDir, 'assets', 'video');
+  const outputPath = path.join(videoDir, `${jobId}.mp4`);
+  const imagePath = path.isAbsolute(image_path) ? image_path : path.join(siteDir, image_path);
+
+  writeVideoJob(jobId, { status: 'generating', prompt, image_path });
+
+  setImmediate(async () => {
+    broadcastAll({ type: 'video-progress', jobId, status: 'generating' });
+    try {
+      const { actual_duration, file_size } = await runVeoGeneration(
+        imagePath, prompt, outputPath,
+        { duration: Number(duration_seconds) || 5 }
+      );
+      const relPath = path.relative(siteDir, outputPath);
+      writeVideoJob(jobId, { status: 'complete', path: relPath, actual_duration, file_size });
+      broadcastAll({ type: 'video-complete', jobId, path: relPath, actual_duration });
+    } catch (e) {
+      console.error('[video/generate] veo error:', e.message);
+      writeVideoJob(jobId, { status: 'error', error: e.message });
+      broadcastAll({ type: 'video-error', jobId, error: e.message });
+    }
+  });
+
+  return { jobId, status: 'started' };
+}
+
+function startVideoPromoCore({ character_id, site_tag, site_name, tagline, pose_indices } = {}) {
+  if (!getGoogleApiKey()) throw new Error('GEMINI_API_KEY not configured');
+  if (!character_id) throw new Error('character_id is required');
+
+  const jobId = require('crypto').randomUUID();
+
+  setImmediate(async () => {
+    const ffmpeg = '/opt/homebrew/bin/ffmpeg';
+    const { execFile: ef } = require('child_process');
+    const { promisify } = require('util');
+    const efAsync = promisify(ef);
+
+    function step(s, status = 'done', extra = {}) {
+      broadcastAll({ type: 'promo-step', jobId, step: s, status, ...extra });
+    }
+
+    try {
+      const siteDir = getCharacterSiteDir(site_tag);
+      const spec = readSpecForSite(siteDir);
+      const charSet = (spec.character_sets || []).find(c => c.id === character_id);
+      if (!charSet) throw new Error(`character_set ${character_id} not found in spec`);
+
+      const donePoses = (charSet.poses || []).filter(p => p.status === 'done' && p.image_path);
+      if (donePoses.length < 1) throw new Error('No done poses available for promo');
+      const indices = Array.isArray(pose_indices) && pose_indices.length > 0
+        ? pose_indices.map(i => donePoses[i]).filter(Boolean)
+        : donePoses.slice(0, 3);
+      const selectedPoses = indices.length > 0 ? indices : donePoses.slice(0, 3);
+
+      const tmpClips = [];
+      const brandName = site_name || charSet.name || 'Brand';
+      for (let i = 0; i < selectedPoses.length; i++) {
+        const pose = selectedPoses[i];
+        const clipPath = `/tmp/promo-clip-${jobId}-${i}.mp4`;
+        const clipPrompt = `${brandName} ${pose.name || pose.id} smooth looping animation`;
+        const imagePath = path.isAbsolute(pose.image_path)
+          ? pose.image_path
+          : path.join(siteDir, pose.image_path);
+        await runVeoGeneration(imagePath, clipPrompt, clipPath, { duration: 5 });
+        tmpClips.push(clipPath);
+        step(`clip-${i}`);
+      }
+
+      const videoDir = path.join(siteDir, 'assets', 'video');
+      require('fs').mkdirSync(videoDir, { recursive: true });
+      const concatPath = `/tmp/promo-concat-${jobId}.mp4`;
+      const finalPath = path.join(videoDir, 'promo.mp4');
+
+      if (tmpClips.length === 1) {
+        require('fs').copyFileSync(tmpClips[0], concatPath);
+      } else {
+        const clipDuration = 5;
+        const xfadeDuration = 0.5;
+        let filterStr = '';
+        let lastLabel = '[0:v]';
+        for (let i = 1; i < tmpClips.length; i++) {
+          const offset = (clipDuration - xfadeDuration) * i - xfadeDuration * (i - 1);
+          const outLabel = i === tmpClips.length - 1 ? '' : `[v${i}]`;
+          filterStr += `${lastLabel}[${i}:v]xfade=transition=fade:duration=${xfadeDuration}:offset=${offset.toFixed(2)}${outLabel ? outLabel : ''}`;
+          if (i < tmpClips.length - 1) { filterStr += ';'; lastLabel = `[v${i}]`; }
+        }
+        const inputArgs = tmpClips.flatMap(c => ['-i', c]);
+        await efAsync(ffmpeg, [
+          ...inputArgs,
+          '-filter_complex', filterStr,
+          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', concatPath
+        ], { timeout: 120000 });
+      }
+      step('concat');
+
+      const siteName = (site_name || brandName).replace(/'/g, "\\'");
+      const taglineText = (tagline || '').replace(/'/g, "\\'");
+      const drawtextFilters = [
+        `drawtext=text='${siteName}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=(h/2)-80:shadowx=3:shadowy=3:shadowcolor=black@0.8`,
+        taglineText ? `drawtext=text='${taglineText}':fontsize=36:fontcolor=white@0.9:x=(w-text_w)/2:y=(h/2)+30:shadowx=2:shadowy=2:shadowcolor=black@0.7` : null
+      ].filter(Boolean).join(',');
+
+      await efAsync(ffmpeg, [
+        '-i', concatPath,
+        '-vf', drawtextFilters,
+        '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', finalPath
+      ], { timeout: 60000 });
+      step('text-overlay');
+
+      [...tmpClips, concatPath].forEach(f => { try { require('fs').unlinkSync(f); } catch (_) {} });
+
+      const resolvedTag = site_tag || TAG;
+      const download_url = `/api/video/promo/${resolvedTag}/download`;
+      broadcastAll({ type: 'promo-complete', jobId, path: finalPath, download_url });
+      console.log(`[video/promo] Complete → ${finalPath}`);
+    } catch (e) {
+      console.error('[video/promo] pipeline error:', e.message);
+      broadcastAll({ type: 'promo-error', jobId, error: e.message });
+    }
+  });
+
+  return { jobId, status: 'started' };
+}
+
 // POST /api/character/create-anchor
 // Generates an anchor/reference image for a character using Imagen 4.
 app.post('/api/character/create-anchor', async (req, res) => {
   try {
-    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
-    const { name, description, style, prompt, site_tag } = req.body || {};
-    if (!name || !prompt) return res.status(400).json({ error: 'name and prompt are required' });
-
-    const siteDir = getCharacterSiteDir(site_tag);
-    const characterId = require('crypto').randomUUID();
-    const charDir = path.join(siteDir, 'assets', 'characters', characterId);
-    const anchorPath = path.join(charDir, 'anchor.jpg');
-    fs.mkdirSync(charDir, { recursive: true });
-
-    // Enrich prompt via Claude
-    let enrichedPrompt = prompt;
-    try {
-      enrichedPrompt = await enrichCharacterPrompt(prompt, name || '', description || '', style || 'illustrated');
-    } catch (e) {
-      console.warn('[character] prompt enrichment failed, using raw prompt:', e.message);
-    }
-
-    // Generate anchor image via Imagen 4
-    await runGoogleMediaScript([
-      '--prompt', enrichedPrompt,
-      '--output', anchorPath,
-      '--aspect-ratio', '1:1',
-      '--site-dir', siteDir,
-    ]);
-    if (!fs.existsSync(anchorPath)) throw new Error('Imagen did not produce anchor image');
-
-    const anchorRelPath = path.join('assets', 'characters', characterId, 'anchor.jpg');
-    const characterSet = {
-      id: characterId,
-      name: name || '',
-      description: description || '',
-      style: style || 'illustrated',
-      enriched_prompt: enrichedPrompt,
-      anchor_image_path: anchorRelPath,
-      poses: [],
-      created_at: new Date().toISOString(),
-      provider: 'imagen',
-    };
-
-    const spec = readSpecForSite(siteDir);
-    if (!Array.isArray(spec.character_sets)) spec.character_sets = [];
-    spec.character_sets.push(characterSet);
-    writeSpecForSite(siteDir, spec);
-
-    res.json({ character_id: characterId, anchor_path: anchorRelPath, character_set: characterSet });
+    const result = await createCharacterAnchorCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[character/create-anchor]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
@@ -9879,139 +10115,12 @@ app.post('/api/character/create-anchor', async (req, res) => {
 // Generates pose variations using Leonardo AI with the anchor as init image.
 app.post('/api/character/generate-poses', async (req, res) => {
   try {
-    const leonardoKey = getLeonardoApiKey();
-    if (!leonardoKey) return res.status(400).json({ error: 'LEONARDO_API_KEY not configured' });
-    const { character_id, poses, site_tag } = req.body || {};
-    if (!character_id || !Array.isArray(poses) || poses.length === 0)
-      return res.status(400).json({ error: 'character_id and poses[] are required' });
-
-    const siteDir = getCharacterSiteDir(site_tag);
-    const spec = readSpecForSite(siteDir);
-    if (!Array.isArray(spec.character_sets)) return res.status(404).json({ error: 'No character_sets in spec' });
-    const charSet = spec.character_sets.find(c => c.id === character_id);
-    if (!charSet) return res.status(404).json({ error: `Character ${character_id} not found` });
-
-    const anchorAbsPath = path.join(siteDir, charSet.anchor_image_path);
-    if (!fs.existsSync(anchorAbsPath)) return res.status(400).json({ error: 'Anchor image not found on disk' });
-
-    const { default: fetch } = await import('node-fetch').catch(() => ({ default: global.fetch }));
-    const fetchFn = fetch || global.fetch;
-
-    const leonardoHeaders = {
-      'Authorization': `Bearer ${leonardoKey}`,
-      'Content-Type': 'application/json',
-    };
-
-    // Upload anchor image to Leonardo init-image (presigned S3 upload)
-    const anchorBytes = fs.readFileSync(anchorAbsPath);
-    const uploadResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/init-image', {
-      method: 'POST',
-      headers: leonardoHeaders,
-      body: JSON.stringify({ extension: 'jpg' }),
-    });
-    if (!uploadResp.ok) {
-      const txt = await uploadResp.text();
-      throw new Error(`Leonardo init-image presign failed: ${uploadResp.status} ${txt}`);
-    }
-    const uploadData = await uploadResp.json();
-    // Leonardo returns fields as a JSON string — parse it
-    const rawFields = uploadData.uploadInitImage?.fields;
-    const uploadFields = rawFields ? (typeof rawFields === 'string' ? JSON.parse(rawFields) : rawFields) : {};
-    const uploadUrl = uploadData.uploadInitImage?.url || '';
-    const initImageId = uploadData.uploadInitImage?.id;
-    if (!uploadUrl || !initImageId) throw new Error('Leonardo did not return upload URL or id');
-
-    // POST to S3 presigned URL with multipart form data
-    const formData = new FormData();
-    Object.entries(uploadFields).forEach(([k, v]) => formData.append(k, String(v)));
-    formData.append('file', new Blob([anchorBytes], { type: 'image/jpeg' }), 'anchor.jpg');
-    const s3Resp = await fetchFn(uploadUrl, { method: 'POST', body: formData });
-    if (!s3Resp.ok && s3Resp.status !== 204) throw new Error(`Leonardo S3 upload failed: ${s3Resp.status}`);
-
-    const charDir = path.join(siteDir, 'assets', 'characters', character_id);
-    fs.mkdirSync(charDir, { recursive: true });
-
-    const results = [];
-    for (let i = 0; i < poses.length; i++) {
-      const poseName = poses[i];
-      const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      const poseFilename = `pose-${i + 1}-${poseSlug}.jpg`;
-      const posePath = path.join(charDir, poseFilename);
-      const poseRelPath = path.join('assets', 'characters', character_id, poseFilename);
-
-      try {
-        const genPrompt = `${poseName}, ${charSet.description || charSet.name}, same character, white background, ${charSet.style || 'illustrated'} style, consistent design, full body`;
-        const genResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/generations', {
-          method: 'POST',
-          headers: leonardoHeaders,
-          body: JSON.stringify({
-            prompt: genPrompt,
-            modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
-            width: 512,
-            height: 512,
-            num_images: 1,
-            init_image_id: initImageId,
-            init_strength: 0.4,
-          }),
-        });
-        if (!genResp.ok) {
-          const txt = await genResp.text();
-          throw new Error(`Leonardo generation request failed: ${genResp.status} ${txt}`);
-        }
-        const genData = await genResp.json();
-        const generationId = genData.sdGenerationJob?.generationId;
-        if (!generationId) throw new Error('Leonardo did not return generationId');
-
-        // Poll until COMPLETE
-        let imageUrl = null;
-        const pollDeadline = Date.now() + 60000;
-        while (Date.now() < pollDeadline) {
-          await new Promise(r => setTimeout(r, 3000));
-          const pollResp = await fetchFn(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
-            headers: leonardoHeaders,
-          });
-          if (!pollResp.ok) continue;
-          const pollData = await pollResp.json();
-          const status = pollData.generations_by_pk?.status;
-          if (status === 'COMPLETE') {
-            imageUrl = pollData.generations_by_pk?.generated_images?.[0]?.url;
-            break;
-          }
-          if (status === 'FAILED') throw new Error('Leonardo generation FAILED');
-        }
-        if (!imageUrl) throw new Error('Leonardo generation timed out');
-
-        // Download result
-        const imgResp = await fetchFn(imageUrl);
-        if (!imgResp.ok) throw new Error(`Failed to download pose image: ${imgResp.status}`);
-        const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
-        fs.writeFileSync(posePath, imgBuffer);
-
-        // Update spec
-        const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
-        const specNow = readSpecForSite(siteDir);
-        const charSetNow = specNow.character_sets?.find(c => c.id === character_id);
-        if (charSetNow) {
-          if (!Array.isArray(charSetNow.poses)) charSetNow.poses = [];
-          charSetNow.poses[i] = poseEntry;
-          writeSpecForSite(siteDir, specNow);
-        }
-
-        broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
-        results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
-      } catch (poseErr) {
-        console.error(`[character/generate-poses] pose ${i + 1} failed:`, poseErr.message);
-        results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
-      }
-
-      if (i < poses.length - 1) await new Promise(r => setTimeout(r, 1500));
-    }
-
-    broadcastAll({ type: 'poses-complete', character_id, results });
-    res.json({ character_id, results });
+    const result = await generateCharacterPosesCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[character/generate-poses]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured|not found/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
@@ -10019,42 +10128,12 @@ app.post('/api/character/generate-poses', async (req, res) => {
 // Fire-and-forget Veo video generation. Returns jobId immediately, emits WS events.
 app.post('/api/video/generate', (req, res) => {
   try {
-    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
-    const { image_path, prompt, duration_seconds, site_tag } = req.body || {};
-    if (!image_path || !prompt) return res.status(400).json({ error: 'image_path and prompt are required' });
-
-    const siteDir = getCharacterSiteDir(site_tag);
-    const jobId = require('crypto').randomUUID();
-    const videoDir = path.join(siteDir, 'assets', 'video');
-    const outputPath = path.join(videoDir, `${jobId}.mp4`);
-
-    // Resolve image_path: allow relative-to-site or absolute
-    const imagePath = path.isAbsolute(image_path)
-      ? image_path
-      : path.join(siteDir, image_path);
-
-    writeVideoJob(jobId, { status: 'generating', prompt, image_path });
-    res.json({ jobId, status: 'started' });
-
-    setImmediate(async () => {
-      broadcastAll({ type: 'video-progress', jobId, status: 'generating' });
-      try {
-        const { actual_duration, file_size } = await runVeoGeneration(
-          imagePath, prompt, outputPath,
-          { duration: Number(duration_seconds) || 5 }
-        );
-        const relPath = path.relative(siteDir, outputPath);
-        writeVideoJob(jobId, { status: 'complete', path: relPath, actual_duration, file_size });
-        broadcastAll({ type: 'video-complete', jobId, path: relPath, actual_duration });
-      } catch (e) {
-        console.error('[video/generate] veo error:', e.message);
-        writeVideoJob(jobId, { status: 'error', error: e.message });
-        broadcastAll({ type: 'video-error', jobId, error: e.message });
-      }
-    });
+    const result = startVideoGenerateCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[video/generate]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
@@ -10063,112 +10142,12 @@ app.post('/api/video/generate', (req, res) => {
 // Returns jobId immediately; emits WS promo-step / promo-complete events.
 app.post('/api/video/promo', (req, res) => {
   try {
-    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
-    const { character_id, site_tag, site_name, tagline, pose_indices } = req.body || {};
-    if (!character_id) return res.status(400).json({ error: 'character_id is required' });
-
-    const jobId = require('crypto').randomUUID();
-    res.json({ jobId, status: 'started' });
-
-    setImmediate(async () => {
-      const ffmpeg = '/opt/homebrew/bin/ffmpeg';
-      const { execFile: ef } = require('child_process');
-      const { promisify } = require('util');
-      const efAsync = promisify(ef);
-
-      function step(s, status = 'done', extra = {}) {
-        broadcastAll({ type: 'promo-step', jobId, step: s, status, ...extra });
-      }
-
-      try {
-        const siteDir = getCharacterSiteDir(site_tag);
-        const spec = readSpecForSite(siteDir);
-        const charSet = (spec.character_sets || []).find(c => c.id === character_id);
-        if (!charSet) throw new Error(`character_set ${character_id} not found in spec`);
-
-        // Select poses
-        const donePoses = (charSet.poses || []).filter(p => p.status === 'done' && p.image_path);
-        if (donePoses.length < 1) throw new Error('No done poses available for promo');
-        const indices = Array.isArray(pose_indices) && pose_indices.length > 0
-          ? pose_indices.map(i => donePoses[i]).filter(Boolean)
-          : donePoses.slice(0, 3);
-        const selectedPoses = indices.length > 0 ? indices : donePoses.slice(0, 3);
-
-        // Generate Veo clips
-        const tmpClips = [];
-        const brandName = site_name || charSet.name || 'Brand';
-        for (let i = 0; i < selectedPoses.length; i++) {
-          const pose = selectedPoses[i];
-          const clipPath = `/tmp/promo-clip-${jobId}-${i}.mp4`;
-          const clipPrompt = `${brandName} ${pose.name || pose.id} smooth looping animation`;
-          const imagePath = path.isAbsolute(pose.image_path)
-            ? pose.image_path
-            : path.join(siteDir, pose.image_path);
-          await runVeoGeneration(imagePath, clipPrompt, clipPath, { duration: 5 });
-          tmpClips.push(clipPath);
-          step(`clip-${i}`);
-        }
-
-        // Ensure output dir
-        const videoDir = path.join(siteDir, 'assets', 'video');
-        require('fs').mkdirSync(videoDir, { recursive: true });
-        const concatPath = `/tmp/promo-concat-${jobId}.mp4`;
-        const finalPath = path.join(videoDir, 'promo.mp4');
-
-        // ffmpeg xfade concat
-        if (tmpClips.length === 1) {
-          require('fs').copyFileSync(tmpClips[0], concatPath);
-        } else {
-          // Build xfade filter chain
-          const clipDuration = 5;
-          const xfadeDuration = 0.5;
-          let filterStr = '';
-          let lastLabel = '[0:v]';
-          for (let i = 1; i < tmpClips.length; i++) {
-            const offset = (clipDuration - xfadeDuration) * i - xfadeDuration * (i - 1);
-            const outLabel = i === tmpClips.length - 1 ? '' : `[v${i}]`;
-            filterStr += `${lastLabel}[${i}:v]xfade=transition=fade:duration=${xfadeDuration}:offset=${offset.toFixed(2)}${outLabel ? outLabel : ''}`;
-            if (i < tmpClips.length - 1) { filterStr += ';'; lastLabel = `[v${i}]`; }
-          }
-          const inputArgs = tmpClips.flatMap(c => ['-i', c]);
-          await efAsync(ffmpeg, [
-            ...inputArgs,
-            '-filter_complex', filterStr,
-            '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', concatPath
-          ], { timeout: 120000 });
-        }
-        step('concat');
-
-        // ffmpeg drawtext overlay
-        const siteName = (site_name || brandName).replace(/'/g, "\\'");
-        const taglineText = (tagline || '').replace(/'/g, "\\'");
-        const drawtextFilters = [
-          `drawtext=text='${siteName}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=(h/2)-80:shadowx=3:shadowy=3:shadowcolor=black@0.8`,
-          taglineText ? `drawtext=text='${taglineText}':fontsize=36:fontcolor=white@0.9:x=(w-text_w)/2:y=(h/2)+30:shadowx=2:shadowy=2:shadowcolor=black@0.7` : null
-        ].filter(Boolean).join(',');
-
-        await efAsync(ffmpeg, [
-          '-i', concatPath,
-          '-vf', drawtextFilters,
-          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', finalPath
-        ], { timeout: 60000 });
-        step('text-overlay');
-
-        // Cleanup tmp files
-        [...tmpClips, concatPath].forEach(f => { try { require('fs').unlinkSync(f); } catch (_) {} });
-
-        const resolvedTag = site_tag || TAG;
-        const download_url = `/api/video/promo/${resolvedTag}/download`;
-        broadcastAll({ type: 'promo-complete', jobId, path: finalPath, download_url });
-        console.log(`[video/promo] Complete → ${finalPath}`);
-      } catch (e) {
-        console.error('[video/promo] pipeline error:', e.message);
-        broadcastAll({ type: 'promo-error', jobId, error: e.message });
-      }
-    });
+    const result = startVideoPromoCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[video/promo]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
