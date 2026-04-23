@@ -7390,9 +7390,18 @@ async function runCharacterPipeline(jobId, message, context = {}) {
   const characterStyle  = 'Illustrated/Cartoon';
 
   const DEFAULT_POSES = [
-    'Waving hello', 'Thumbs up', 'Celebrating (arms raised)', 'Pointing forward',
-    'Dancing', 'Laughing', 'Sitting at desk', 'Holding coffee',
-    'Running', 'Hugging', 'Presenting', 'Cheering with pennant',
+    'right arm raised high waving, left arm at side, weight shifted, waving hello',
+    'right thumb raised, elbow bent, grinning, thumbs up',
+    'both arms raised overhead, feet apart, mouth open in cheer, celebrating',
+    'right arm extended forward, index finger pointing, leaning slightly, pointing forward',
+    'arms out wide, hips swaying, one knee bent, dancing',
+    'head tilted back, mouth open, hands on belly, laughing',
+    'seated, elbows on desk, hands on keyboard, looking at screen, sitting at desk',
+    'both hands wrapped around mug, elbows bent, slight smile, holding coffee',
+    'arms bent at 90 degrees, knees lifted alternately, leaning forward, running',
+    'arms extended forward and wrapped around, head tilted to side, hugging',
+    'one arm extended sideways toward audience, other hand on hip, presenting',
+    'one arm raised holding pennant, other fist pumping, cheering with pennant',
   ];
 
   function step(label, data) {
@@ -9901,7 +9910,7 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
     const poseRelPath = path.join('assets', 'characters', character_id, poseFilename);
 
     try {
-      const genPrompt = `${poseName}, ${charSet.description || charSet.name}, same character, white background, ${charSet.style || 'illustrated'} style, consistent design, full body`;
+      const genPrompt = `full body pose: ${poseName}, character facing forward, white background, ${charSet.description || charSet.name}, same character, ${charSet.style || 'illustrated'} style, consistent design, full body visible`;
       const genResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/generations', {
         method: 'POST',
         headers: leonardoHeaders,
