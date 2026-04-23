@@ -1,0 +1,178 @@
+#!/usr/bin/env node
+'use strict';
+/**
+ * tier1-test — Run only Tier 1 (Leonardo) against the existing anchor.
+ * Usage: node scripts/tier1-test
+ */
+
+const path = require('path');
+const fs   = require('fs');
+
+const FAM_ROOT    = path.resolve(__dirname, '..');
+const OUT_ROOT    = path.join(FAM_ROOT, 'tier-comparison-results');
+const TIER1_DIR   = path.join(OUT_ROOT, 'tier1');
+const ANCHOR_PATH = path.join(OUT_ROOT, 'anchor.png');
+
+// Load env
+const envPath = path.join(FAM_ROOT, 'site-studio', '.env');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.+)$/);
+    if (m) process.env[m[1]] = m[2].trim();
+  });
+}
+
+const LEONARDO_KEY = process.env.LEONARDO_API_KEY || '';
+const CHAR_BRIEF   = 'futuristic cartoon teddy bear, bright blue bow tie, circuit pattern details, friendly expression, full body, white background, illustrated style';
+const POSES        = ['waving hello', 'dancing, arms out', 'celebrating, both arms raised'];
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function fetchBuffer(url) {
+  return new Promise((resolve, reject) => {
+    const https = require('https');
+    const http  = require('http');
+    const lib = url.startsWith('https') ? https : http;
+    lib.get(new URL(url), res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    }).on('error', reject);
+  });
+}
+
+async function main() {
+  console.log('\n══════ Tier 1 Test — Leonardo AI ══════\n');
+
+  if (!fs.existsSync(ANCHOR_PATH)) {
+    console.error(`ERROR: anchor not found at ${ANCHOR_PATH}`);
+    console.error('Run scripts/tier-comparison first to generate the anchor.');
+    process.exit(1);
+  }
+  if (!LEONARDO_KEY) {
+    console.error('ERROR: LEONARDO_API_KEY not set in site-studio/.env');
+    process.exit(1);
+  }
+
+  fs.mkdirSync(TIER1_DIR, { recursive: true });
+  console.log(`Anchor: ${ANCHOR_PATH}`);
+  console.log(`Output: ${TIER1_DIR}`);
+  console.log(`Key:    ${LEONARDO_KEY.slice(0, 8)}...`);
+  console.log('');
+
+  const jsonHeaders = {
+    'Authorization': `Bearer ${LEONARDO_KEY}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  // Step 1: Presign S3 upload
+  console.log('[T1] Requesting presigned S3 URL...');
+  let uploadData;
+  try {
+    const res = await fetch('https://cloud.leonardo.ai/api/rest/v1/init-image', {
+      method: 'POST',
+      headers: jsonHeaders,
+      body: JSON.stringify({ extension: 'png' }),
+    });
+    const text = await res.text();
+    if (!res.ok) { console.error(`[T1] ERROR presign ${res.status}: ${text.slice(0, 300)}`); process.exit(1); }
+    uploadData = JSON.parse(text);
+  } catch (err) {
+    console.error(`[T1] ERROR presign threw: ${err.message}`); process.exit(1);
+  }
+
+  const rawFields  = uploadData.uploadInitImage?.fields;
+  const uploadFields = rawFields ? (typeof rawFields === 'string' ? JSON.parse(rawFields) : rawFields) : {};
+  const uploadUrl   = uploadData.uploadInitImage?.url || '';
+  const initImageId = uploadData.uploadInitImage?.id;
+
+  if (!uploadUrl || !initImageId) {
+    console.error(`[T1] ERROR: bad presign response: ${JSON.stringify(uploadData).slice(0, 300)}`);
+    process.exit(1);
+  }
+  console.log(`[T1] Got presign URL, init_image id: ${initImageId}`);
+
+  // Step 2: Upload anchor to S3
+  console.log('[T1] Uploading anchor to S3...');
+  const anchorBytes = fs.readFileSync(ANCHOR_PATH);
+  const form = new FormData();
+  Object.entries(uploadFields).forEach(([k, v]) => form.append(k, String(v)));
+  form.append('file', new Blob([anchorBytes], { type: 'image/png' }), 'anchor.png');
+
+  const s3Resp = await fetch(uploadUrl, { method: 'POST', body: form });
+  if (!s3Resp.ok && s3Resp.status !== 204) {
+    console.error(`[T1] ERROR: S3 upload failed ${s3Resp.status}`); process.exit(1);
+  }
+  console.log(`[T1] Anchor uploaded (HTTP ${s3Resp.status})`);
+  console.log('');
+
+  // Step 3: Generate 3 poses
+  let passed = 0;
+  for (let i = 0; i < POSES.length; i++) {
+    const poseName = POSES[i];
+    const slug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const outPath = path.join(TIER1_DIR, `pose-${i + 1}-${slug}.jpg`);
+    const fullPrompt = `${poseName}, ${CHAR_BRIEF}, white background, illustrated style, consistent character design, full body, no text`;
+    const t0 = Date.now();
+
+    console.log(`[T1] Pose ${i + 1}/${POSES.length}: "${poseName}"`);
+    try {
+      const genRes = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify({
+          prompt: fullPrompt,
+          modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
+          width: 512, height: 512, num_images: 1,
+          init_image_id: initImageId,
+          init_strength: 0.4,
+        }),
+      });
+      if (!genRes.ok) {
+        const t = await genRes.text();
+        throw new Error(`gen ${genRes.status}: ${t.slice(0, 200)}`);
+      }
+      const genData = await genRes.json();
+      const generationId = genData.sdGenerationJob?.generationId;
+      if (!generationId) throw new Error(`no generationId: ${JSON.stringify(genData).slice(0, 200)}`);
+      console.log(`       generationId: ${generationId} — polling...`);
+
+      let imageUrl = null;
+      const deadline = Date.now() + 120000;
+      while (Date.now() < deadline) {
+        await sleep(4000);
+        const poll = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, { headers: jsonHeaders });
+        if (poll.ok) {
+          const pd = await poll.json();
+          const status = pd.generations_by_pk?.status;
+          process.stdout.write(` ${status}`);
+          if (status === 'COMPLETE') { imageUrl = pd.generations_by_pk?.generated_images?.[0]?.url; break; }
+          if (status === 'FAILED') throw new Error('generation FAILED');
+        }
+      }
+      process.stdout.write('\n');
+      if (!imageUrl) throw new Error('timed out');
+
+      const imgBuf = await fetchBuffer(imageUrl);
+      fs.writeFileSync(outPath, imgBuf);
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(`       SAVED ${(imgBuf.length / 1024).toFixed(0)}KB → ${outPath} (${elapsed}s)`);
+      passed++;
+    } catch (err) {
+      console.error(`       FAILED: ${err.message}`);
+    }
+    if (i < POSES.length - 1) await sleep(2000);
+  }
+
+  console.log('');
+  console.log(`══════ Result: ${passed}/${POSES.length} poses generated ══════`);
+  if (passed === POSES.length) {
+    console.log('PASS — Tier 1 is working correctly.');
+  } else {
+    console.log('PARTIAL/FAIL — check errors above.');
+    process.exit(1);
+  }
+}
+
+main().catch(err => { console.error('[fatal]', err.message); process.exit(1); });

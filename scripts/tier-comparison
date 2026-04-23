@@ -31,7 +31,7 @@ const TIER3_DIR   = path.join(OUT_ROOT, 'tier3');
 const TIER4_DIR   = path.join(OUT_ROOT, 'tier4');
 const TIER5_DIR   = path.join(OUT_ROOT, 'tier5');
 const TIER6_DIR   = path.join(OUT_ROOT, 'tier6');
-const ANCHOR_PATH = path.join(OUT_ROOT, 'anchor.jpg');
+const ANCHOR_PATH = path.join(OUT_ROOT, 'anchor.png');
 const PY_SCRIPT   = path.join(FAM_ROOT, 'scripts', 'google-media-generate');
 const PYTHON      = '/opt/homebrew/opt/python@3.11/bin/python3.11';
 const PS_DRIVER   = path.join(FAM_ROOT, 'scripts', 'tier3-ps-driver.py');
@@ -173,7 +173,7 @@ async function runTier1() {
     const uploadRes = await fetch('https://cloud.leonardo.ai/api/rest/v1/init-image', {
       method: 'POST',
       headers: jsonHeaders,
-      body: JSON.stringify({ extension: 'jpg' }),
+      body: JSON.stringify({ extension: 'png' }),
     });
     if (!uploadRes.ok) {
       const txt = await uploadRes.text();
@@ -201,7 +201,7 @@ async function runTier1() {
   const anchorBytes = fs.readFileSync(ANCHOR_PATH);
   const form = new FormData();
   Object.entries(uploadFields).forEach(([k, v]) => form.append(k, String(v)));
-  form.append('file', new Blob([anchorBytes], { type: 'image/jpeg' }), 'anchor.jpg');
+  form.append('file', new Blob([anchorBytes], { type: 'image/png' }), 'anchor.png');
 
   const s3Resp = await fetch(uploadUrl, { method: 'POST', body: form });
   if (!s3Resp.ok && s3Resp.status !== 204) {
