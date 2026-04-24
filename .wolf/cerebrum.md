@@ -4,17 +4,28 @@
 > Do not edit manually unless correcting an error.
 > Last updated: 2026-03-24
 
-## Tool Availability (Verified April 8, 2026)
+## Tool Availability (Verified April 21, 2026)
 
 ### Image Generation
-- Google Imagen 4.0: AVAILABLE (Gemini API, $25 funded, ~$0.004/image)
+- Google Imagen 4.0: AVAILABLE (Gemini API, $25 funded, ~$0.004/image) — `imagen-4.0-generate-001`
+- Google Imagen 3 edit_image: AVAILABLE — `imagen-3.0-capability-001` — used for character pose generation with SubjectReferenceImage
 - Leonardo.ai Phoenix: AVAILABLE (API, $5 free credit, ~$0.016/image)
 - Adobe Firefly API: NOT AVAILABLE (requires enterprise $1K+/mo — verified in Developer Console)
 - Adobe Firefly Web: AVAILABLE (Playwright automation, CC credits)
+- ffmpeg 8.1: INSTALLED at /opt/homebrew/bin/ffmpeg (installed April 21, 2026)
 
 ### Video Generation
 - Google Veo: AVAILABLE (Gemini API, tested, 33s generation, 1.6MB output)
 - Adobe Firefly Video: AVAILABLE via web only (CC credits, no API)
+
+### Character Pose Generation — CRITICAL DO-NOT-REPEAT
+- `SubjectReferenceImage` is in `_EditImageParameters` ONLY — it does NOT exist in `GenerateImagesConfig`
+- Character poses MUST use `client.models.edit_image(model='imagen-3.0-capability-001', reference_images=[SubjectReferenceImage(...)])` — NOT `generate_images`
+- The enum is `types.SubjectReferenceType.SUBJECT_TYPE_DEFAULT` (not `REFERENCE_TYPE_SUBJECT` — that constant does not exist)
+- Available subject types: `SUBJECT_TYPE_DEFAULT`, `SUBJECT_TYPE_PERSON`, `SUBJECT_TYPE_ANIMAL`, `SUBJECT_TYPE_PRODUCT`
+- For cartoon mascots use `SUBJECT_TYPE_DEFAULT`
+- Implementation lives in `scripts/google-media-generate` as `generate_character_pose()` and `--subject-ref` CLI flag
+- Batch mode supports `"type": "character_pose"` with `anchor_filename` field
 
 ### Post-Processing
 - Photoshop via adb-mcp: PARTIALLY AVAILABLE (installed, UXP plugin load bug being fixed)
@@ -235,3 +246,62 @@ registry before first use.
 ### RESEARCH_ROUTER_SKIP_CACHE (2026-04-20)
 - `queryResearch(vertical, question, { skipCache: true })` or `{ forceSource: 'gemini_loop' }` both bypass Pinecone cache
 - `forceSource` was already in the code; `skipCache` was added in Session 3-A — use `skipCache: true` when you need a fresh result without constraining the source
+
+## Session 4-A — Job Queue Schema (2026-04-20)
+
+### JOBS_TABLE_SCHEMA (Decision Log)
+
+SQLite table `jobs` in `~/.config/famtastic/studio.db` (via `lib/db.js`):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT PK | UUID |
+| type | TEXT NOT NULL | job category: `build`, `research`, `deploy`, `gap`, etc. |
+| status | TEXT NOT NULL | see state machine below |
+| site_tag | TEXT | which site; null for global jobs |
+| payload | TEXT | JSON blob (build params, research question, etc.) |
+| dependencies | TEXT | JSON array of job IDs that must be `done` first |
+| cost_estimate | REAL | estimated USD cost before running |
+| cost_actual | REAL | actual USD cost after completion |
+| created_at | TEXT | ISO timestamp |
+| approved_at | TEXT | when approved (null until) |
+| approved_by | TEXT | who approved (default 'fritz') |
+| completed_at | TEXT | when done/failed (null until) |
+| result | TEXT | JSON blob (output, error, etc.) |
+
+**Status enum — semantics matter, parked ≠ pending:**
+- `pending` — reviewed by Fritz, awaiting approval to run
+- `approved` — approved, waiting for a worker to pick it up
+- `running` — actively executing
+- `done` — successfully completed
+- `blocked` — has unmet dependencies (auto-transitions to `pending` when all deps reach `done`)
+- `failed` — execution error
+- `parked` — consciously deferred; NOT rejected, NOT forgotten
+
+**State machine (lib/job-queue.js):**
+- `blocked` → `pending` (automatic: all dep jobs reach `done`)
+- `pending` → `approved` (POST /api/jobs/approve/:id)
+- `pending` → `parked` (POST /api/jobs/park/:id)
+- `blocked` → `parked` (POST /api/jobs/park/:id)
+- `approved` → `running` (when worker picks up)
+- `running` → `done` (completeJob)
+- `running` → `failed` (failJob)
+
+### JOB_QUEUE_DO_NOT_REPEAT (2026-04-20)
+- NEVER conflate `parked` and `pending` — parked is deliberate deferral, pending is awaiting approval. They are semantically distinct states.
+- `blocked` jobs auto-transition to `pending` when ALL dependency IDs reach `done` — this is automatic in `_unblockDependents()`, not manual
+- JSONL migration uses `INSERT OR IGNORE` so it's idempotent — safe to call on every restart
+
+### 2026-04-24 — Build Layer Default Injection (GAP-1/2/3)
+
+**Key Learning: Mandatory-language palette injection works.**
+Injecting `FAMTASTIC DEFAULT PALETTE (no client palette specified — you MUST use these exact hex values)` as a mandatory block in `briefContext` reliably causes Claude to apply the specified palette as CSS custom properties. Tested live: `site-small-accounting-firm` built from "Build a site for a small accounting firm" with zero hex colors in the brief — output contained all five `--color-*` properties correctly wired.
+
+**Key Learning: Dead variable pattern — returned but never destructured.**
+`buildPromptContext()` returned `heroSkeleton` and `navSkeleton` in its return object but `handleChatMessage()` did not destructure them. The variables existed in the return, were never referenced, and were silently discarded on every single-page edit. Pattern: when a function returns a large object, audit the destructure at call sites to confirm all needed fields are actually pulled out.
+
+**DO-NOT-REPEAT (2026-04-24): Default palette injection must cover the else branch.**
+The `visualRequirements` block only injects colors when client hex values are found. Without the `else` branch, a silent no-op means Claude picks industry-inference colors. Always pair "inject if present" blocks with "inject defaults if absent" fallback.
+
+**DO-NOT-REPEAT (2026-04-24): design_brief.approved blocks all edit routing.**
+`classifyRequest()` checks `spec.design_brief.approved` before any pattern matching. Sites built via `runAutonomousBuild` have `approved: false` by default — every subsequent Studio Chat message routes to `new_site` regardless of content. When testing single-page edits on autonomously-built sites, manually set `approved: true` in spec.json first.

@@ -3002,6 +3002,53 @@
         "subprocess-retry",
         "spawnAllPages"
       ]
+    },
+    {
+      "id": "bug-gap1-palette-default",
+      "timestamp": "2026-04-24T00:00:00.000Z",
+      "error_message": "Sites built with no client-specified hex colors received generic industry palette instead of FAMtastic defaults",
+      "file": "site-studio/server.js \u2014 buildPromptContext() visualRequirements block",
+      "root_cause": "visualRequirements block only injected colors found in decisions[], visual_direction, or userMessage. When all three sources were empty, visualRequirements stayed '' and no palette guidance reached Claude. Claude defaulted to vertical-inference colors (e.g. accounting blue/gray instead of FAMtastic aquamarine/gold).",
+      "fix": "Added else branch: when colorHexes is empty, inject FAMTASTIC_DEFAULT_PALETTE from famtastic-skeletons.js as 'FAMTASTIC DEFAULT PALETTE \u2014 you MUST use these exact hex values' block. All five defaults (#00A79D, #F5B800, #001F3F, #FF6B6B, #FDF4E3) appear as CSS custom properties. Verified live: accounting firm built with zero brief colors, all five --color-* properties in output.",
+      "tags": [
+        "build-layer",
+        "palette",
+        "gap-1",
+        "r-new-audit",
+        "2026-04-24"
+      ]
+    },
+    {
+      "id": "bug-gap2-hero-skeleton-dead-variable",
+      "timestamp": "2026-04-24T00:00:00.000Z",
+      "error_message": "heroSkeleton returned by buildPromptContext() was silently discarded \u2014 never injected into single-page build prompt",
+      "file": "site-studio/server.js \u2014 handleChatMessage() destructure at ~L14149, prompt string at ~L14320",
+      "root_cause": "buildPromptContext() returned heroSkeleton in its return object (L11332). handleChatMessage() destructured the return but did not include heroSkeleton in the destructure list. The variable was never referenced. Single-page build and layout_update prompts received no MANDATORY HERO STRUCTURE block with BEM double-dash layer names. Parallel build path was unaffected (injected heroSkeleton directly via famSkeletonBlock).",
+      "fix": "Added heroSkeleton and navSkeleton to handleChatMessage() destructure. Injected heroSkeleton conditionally (build/layout_update only) and navSkeleton unconditionally into the prompt string between _slotStabilityInstruction and briefContext. Verified live: hero headline edit preserved all four fam-hero-layer--* double-dash class names with zero single-dash regressions.",
+      "tags": [
+        "build-layer",
+        "hero-skeleton",
+        "gap-2",
+        "dead-variable",
+        "r-new-audit",
+        "2026-04-24"
+      ]
+    },
+    {
+      "id": "bug-gap3-nav-skeleton-dead-variable",
+      "timestamp": "2026-04-24T00:00:00.000Z",
+      "error_message": "navSkeleton returned by buildPromptContext() was silently discarded \u2014 never injected into single-page build prompt",
+      "file": "site-studio/server.js \u2014 handleChatMessage() \u2014 same location as GAP-2",
+      "root_cause": "Same root cause as GAP-2: navSkeleton was in buildPromptContext() return but not in handleChatMessage() destructure. Single-page prompts received no MANDATORY NAV CLASS NAMES block, so nav edits could produce arbitrary class names (desktop-nav, mobile-nav-toggle, hamburger) instead of mandated vocabulary (.nav-links, .nav-toggle-label, .nav-mobile-menu, #nav-toggle, .nav-cta). Parallel build path was unaffected.",
+      "fix": "Covered by same fix as GAP-2. navSkeleton now injected unconditionally (all request types) into single-page prompt. Verified live: nav 'add Team page link' request on site built after fix preserved all five mandated class names with zero drift.",
+      "tags": [
+        "build-layer",
+        "nav-skeleton",
+        "gap-3",
+        "dead-variable",
+        "r-new-audit",
+        "2026-04-24"
+      ]
     }
   ]
 }

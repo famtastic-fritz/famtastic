@@ -348,6 +348,19 @@ function extractLogoSVGs(responseText, distDir) {
   return { results, cleanedHtml };
 }
 
+// GAP-1 fix: default palette injected when no client colors are specified.
+// Keys match the role names used in visualRequirements color labels.
+const FAMTASTIC_DEFAULT_PALETTE = {
+  primary:    '#00A79D',
+  accent:     '#F5B800',
+  navy:       '#001F3F',
+  coral:      '#FF6B6B',
+  background: '#FDF4E3',
+};
+
+// V2 Phase 1 will consume this list for DNA context injection.
+const FAMTASTIC_PALETTE_NAMES = Object.keys(FAMTASTIC_DEFAULT_PALETTE);
+
 module.exports = {
   HERO_SKELETON,
   DIVIDER_SKELETON,
@@ -358,4 +371,6 @@ module.exports = {
   VIDEO_HERO_SKELETON,
   INLINE_STYLE_PROHIBITION,
   extractLogoSVGs,
+  FAMTASTIC_DEFAULT_PALETTE,
+  FAMTASTIC_PALETTE_NAMES,
 };

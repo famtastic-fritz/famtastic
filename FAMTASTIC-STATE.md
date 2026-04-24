@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-04-21 (Session 18 — Shay Lite System + Media Studio Mini-App pass)
+**Last updated:** 2026-04-24 (Build layer GAP-1/2/3 fixes — palette defaults + skeleton injection)
 
 ---
 
@@ -65,7 +65,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Tool Calling | `lib/studio-tools.js` + `lib/tool-handlers.js` | 5 Anthropic-format tools for Claude: get_site_context, get_component_library, get_research, dispatch_worker, read_file. `MAX_TOOL_DEPTH=3`. read_file sandboxed to SITE_DIR. |
 | Client Interview | `lib/client-interview.js` | Pre-build Q&A: quick (6q) / detailed (11q) / skip. Revenue model question (q_revenue) is second question. `REVENUE_MODEL_OPTIONS` + `getRevenueBuildHints()`. `suggestion_chips` in formatted questions. |
 | Surgical Editor | `lib/surgical-editor.js` | DOM-aware HTML surgery via cheerio. `buildStructuralIndex()`, `extractSection()`, `surgicalEdit()`, `trySurgicalEdit()`. Pure functions, no side effects. |
-| HTML Skeletons | `lib/famtastic-skeletons.js` | `HERO_SKELETON_TEMPLATE` (BEM double-dash vocabulary enforcement), `LOGO_SKELETON_TEMPLATE` (nav logo wiring), `LOGO_NOTE_PAGE` (parallel page logo reference). |
+| HTML Skeletons | `lib/famtastic-skeletons.js` | `HERO_SKELETON_TEMPLATE` (BEM double-dash vocabulary enforcement), `LOGO_SKELETON_TEMPLATE` (nav logo wiring), `LOGO_NOTE_PAGE` (parallel page logo reference). `FAMTASTIC_DEFAULT_PALETTE` (5 hex values: primary #00A79D, accent #F5B800, navy #001F3F, coral #FF6B6B, background #FDF4E3). `FAMTASTIC_PALETTE_NAMES` (key array for V2 Phase 1 DNA injection). |
 | Build DNA | `famtastic-dna.md` | Auto-updated by `updateFamtasticDna()` after every build. Cross-session build memory injected via CLAUDE.md `@famtastic-dna.md`. |
 | Brain Verifier | `lib/brain-verifier.js` | Startup API probes for all 3 APIs + Codex CLI. Results cached, served via `/api/brain-status`. |
 | Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~12,300 lines). |
@@ -251,7 +251,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Brand drift intelligence promotion | Tier 2 | Brand tracker logs drift to console. Not yet promoted as intelligence finding to intelligence-promotions.json. |
 | Agent cards not loaded by brain router | Tier 2 | Agent card files exist but brain router still uses hardcoded config. Adoption requires updating brain router to load from agent-cards/ directory. |
 | Shay-Shay session init not wired to WS | Tier 2 | Capability manifest not diffed and surfaced as callout on Studio WS connect. |
-| Prompt fidelity for FAMtastic vocabulary | Tier 1 | Claude does not consistently reach for `fam-hero__*` vocabulary or multi-part SVG logo on first prompt of fresh build. Infrastructure is in place; prompt language needs to be more imperative. |
+| Prompt fidelity for FAMtastic vocabulary | Tier 1 | Claude does not consistently reach for `fam-hero__*` vocabulary or multi-part SVG logo on first prompt of fresh build. Infrastructure is in place; prompt language needs to be more imperative. GAP-1/2/3 closed (palette defaults + skeleton injection on single-page path). GAP-4 open: `spec.famtastic_mode` defaults to `undefined`, gating logo skeleton + FAMtastic logo mode on new sites. |
 | Revenue model suggestion chips not in UI | Tier 2 | `REVENUE_MODEL_OPTIONS` and `suggestion_chips` are exported from `client-interview.js` but the Studio chat UI doesn't render them yet. |
 | Worker queue consumer | Tier 2 | `.worker-queue.jsonl` has no process polling it. `dispatch_worker` queues tasks that nothing executes. |
 | Detailed interview mode UI | Tier 3 | 10-question detailed mode works via API only — no UI exposure. |
@@ -263,6 +263,12 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | seed-pinecone --vertical flag | Tier 3 | Add `--vertical <name>` to `scripts/seed-pinecone` for per-build auto-seeding. |
 | server.js decomposition | Tier 3 | ~12,300 lines. Plan: thin assembler + modules in lib/. Do not split until specific pain demands it. |
 | deal-memo geography fallback | Tier 4 | Defaults to `[AREA]` placeholder when interview was skipped. Should pull from `spec.design_brief` as fallback. |
+
+### Closed 2026-04-24 — Build layer GAP-1/2/3
+
+- **GAP-1: No FAMtastic default palette** — `buildPromptContext()` `visualRequirements` block now injects `FAMTASTIC_DEFAULT_PALETTE` (5 hex values) when no client colors are specified. Mandatory-language block prevents Claude from falling back to generic industry palette. Verified live.
+- **GAP-2: `heroSkeleton` dead variable on single-page path** — `handleChatMessage()` destructure and prompt string now include `heroSkeleton` (gated to `build`/`layout_update`). Parallel build path unaffected. Verified live.
+- **GAP-3: `navSkeleton` dead variable on single-page path** — same fix; `navSkeleton` injected unconditionally into single-page prompt. All five mandated nav class names preserved after nav edit. Verified live.
 
 ### Closed in Session 17 (2026-04-20)
 

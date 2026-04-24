@@ -11119,6 +11119,15 @@ function buildPromptContext(requestType, spec, userMessage) {
         visualRequirements += 'Include the correct Google Fonts <link> tag in <head>.\n';
       }
       visualRequirements += 'Apply these colors and fonts in Tailwind config AND CSS custom properties.\n';
+    } else {
+      // GAP-1 fix: no client palette found — inject FAMtastic defaults so Claude
+      // never falls back to generic industry colors.
+      const defaultPalette = famSkeletons.FAMTASTIC_DEFAULT_PALETTE;
+      visualRequirements = '\n\nFAMTASTIC DEFAULT PALETTE (no client palette specified — you MUST use these exact hex values):\n';
+      for (const [role, hex] of Object.entries(defaultPalette)) {
+        visualRequirements += `  ${role}: ${hex}\n`;
+      }
+      visualRequirements += 'Apply in Tailwind config AND CSS custom properties. Using any other colors is a build failure.\n';
     }
   }
   // Append visual requirements to briefContext
@@ -14146,7 +14155,9 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
   const prevPage = currentPage;
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
+  // GAP-2/3 fix: destructure heroSkeleton and navSkeleton so they can be
+  // injected into the single-page prompt (they were returned but unused before).
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, navSkeleton } = buildPromptContext(requestType, spec, userMessage);
 
   // If buildPromptContext resolved a different page, update currentPage explicitly here
   if (resolvedPage !== prevPage) {
@@ -14309,6 +14320,8 @@ REQUEST TYPE: ${requestType}
 MODE: ${modeInstruction}
 ${_logoInstruction}
 ${_slotStabilityInstruction}
+${['build', 'layout_update'].includes(requestType) ? heroSkeleton : ''}
+${navSkeleton}
 ${briefContext}
 ${decisionsContext}
 ${assetsContext}
