@@ -4320,3 +4320,93 @@ The most important framings it establishes:
 - Research must be FAMtastic-applied, not generic
 - The conversation-based learning loop is how FAMtastic principle
   becomes operationalizable over time
+
+---
+
+## Baseline Closure Lessons (2026-04-25)
+
+The April 25 session closed the JJ B&A R-NEW audit (4 build-layer
+gaps), captured the canonical vision, ran a baseline test, diagnosed
+6 stacked sub-gaps, produced a 9-round-reviewed closure plan, and
+shipped the implementation in three commits. Lessons distilled from
+that arc, ordered by how often they're likely to recur:
+
+**1. Adversarial review with multiple AI tools beats single-tool
+review.** The closure plan went through nine rounds: V1 → V9. V1 had
+8 findings raised against it (Codex Round 1: dead seam, missing
+parity tests, schema mismatch, etc.). V9 returned MINOR-ONLY. Each
+round caught real bugs, not aesthetic objections. Lesson: before
+shipping anything structural, run the plan past at least one
+independent reviewer (Codex, Gemini, or a fresh Claude session
+with no shared context) and iterate until the verdict is clean.
+The cost is hours; the cost of NOT doing it is shipping a bad
+contract that has to be re-shipped.
+
+**2. Implementation order matters when workstreams share helpers.**
+Workstream 2 had to ship before Workstream 1 because both Studio
+Chat (`new_site_create` case) and Shay Desk (`handleShayBuildRequest`)
+depend on the shared `createSite()` helper, `triggerSiteBuild()`
+helper, and the new return shape of `extractBriefFromMessage`. If
+WS1 had been implemented first, it would have either duplicated
+those helpers or shipped against a target that didn't exist yet.
+Lesson: when planning multi-commit closure, identify which workstream
+introduces the shared substrate and ship that first.
+
+**3. "Caller-owned vs helper-owned" is a recurring contract
+question — document it in JSDoc.** `createSite()` had to make four
+explicit ownership decisions: (a) authorization is caller-owned,
+(b) TAG switch is helper-owned, (c) WS notification is helper-owned,
+(d) downstream build trigger is caller-owned. Each of these was
+worth a Codex round. The final JSDoc on `createSite` documents all
+four invariants explicitly. Lesson: any helper that mutates shared
+state across module boundaries needs ownership invariants written
+in JSDoc, not just inferred from the function name. Future helpers
+should adopt the same comment pattern as the canonical example.
+
+**4. Identity check before destructive operations prevents data
+corruption.** `createSite()` runs an identity check (lowercase,
+strip punctuation, strip common business words like
+"the/inc/llc/church/barber/...") against the existing
+`spec.site_name` BEFORE deciding what to do with a tag collision.
+Different-business collisions ALWAYS return `'collision'` regardless
+of the caller's `on_collision` setting — this is the gate that
+prevents Shay Desk's autonomous-build path from clobbering an
+unrelated site that happens to slug-collide. Same pattern applies
+anywhere a call site could "update" something it doesn't actually
+own. Lesson: the identity check is a single-line investment that
+makes the helper safe to use in autonomous contexts.
+
+**5. Wizard-of-Oz orchestration is the right way to discover
+capability gaps before building automation.** The baseline test
+itself was a Wizard-of-Oz pattern: a human typed a single prompt
+into Shay Desk and observed what the system did with no manual
+nudging. The failure exposed all six sub-gaps at once. If the
+gaps had been discovered by adding automation incrementally, each
+would have been hidden behind workarounds and never surfaced as a
+single coherent diagnosis. Lesson: when designing a new capability,
+do the orchestration manually first (typing real prompts, narrating
+the decision tree), capture every orchestration decision as
+training data, and only build automation against the recorded
+playbook. This pattern is now part of the FAMtastic build process
+and is being used to shape the V2 BuildIntent architecture.
+
+**6. The classifier-keyword-collision class of bug is a recurring
+shape.** The deploy keyword at `classifyRequest` L10788 hijacked the
+church prompt because the prompt contained "deploy" in a sentence
+about deployment-after-build. The fix was structural — move the
+`!hasBrief` fallback above the deploy gate so an unbriefed site
+can't be deployed by accident. The same shape (low-precedence
+keyword fires before higher-precedence intent matcher) is likely
+hiding in other places. Future classifier audits should test
+prompts that contain trailing or incidental keywords for every
+intent gate.
+
+**7. Documentation is part of the work, not a follow-up to it.**
+Every commit in this session shipped with the relevant docs
+updated in the same commit: WS2 with the createSite contract added
+to the vision capture doc, WS1 with handler invariants in JSDoc,
+WS3 with deploy reason taxonomy in JSDoc. The verification report
+shipped as a fourth commit on the same day. Lesson: the rule "no
+session ends without docs updates" applies at the workstream level
+too — if a workstream commits without documentation, the next
+session has to reverse-engineer what was decided.

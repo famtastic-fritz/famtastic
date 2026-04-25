@@ -3049,6 +3049,96 @@
         "r-new-audit",
         "2026-04-24"
       ]
+    },
+    {
+      "id": "bug-jjba-rnew-audit-2026-04-24",
+      "timestamp": "2026-04-24T20:00:00.000Z",
+      "error_message": "JJ Barbershop B&A site failed FAMtastic visual standard — generic industry palette, no FAMtastic default, missing nav skeleton + multi-part logo",
+      "file": "site-studio/server.js",
+      "root_cause": "Four R-NEW build-layer gaps stacked. GAP-1: buildPromptContext() did not inject the FAMtastic default palette when no client colors were specified, so Claude fell back to vertical-generic colors. GAP-2/3: heroSkeleton and navSkeleton were dead variables on the single-page path — destructured but never included in the prompt string. GAP-4: spec.famtastic_mode was a tacit toggle never set by code, gating the multi-part logo emission and LOGO_SKELETON_TEMPLATE off for every new site by default.",
+      "fix": "GAP-1/2/3 closed in commit 8536a4a (2026-04-24): visualRequirements injects FAMTASTIC_DEFAULT_PALETTE; heroSkeleton/navSkeleton inserted into the single-page prompt with appropriate gating. GAP-4 closed in commit 2c5e358 (2026-04-24) by promoting spec.tier to canonical and deriving famtastic_mode from it via normalizeTierAndMode() on every readSpec. Lib modules: site-studio/lib/tier.js, site-studio/lib/tier-gates.js. 28 new tests in tests/gap4-tier-canonicality.test.js.",
+      "tags": [
+        "build-layer",
+        "r-new-audit",
+        "famtastic-default-palette",
+        "hero-skeleton",
+        "nav-skeleton",
+        "famtastic-mode",
+        "tier-canonical",
+        "2026-04-24"
+      ],
+      "related_bugs": [
+        "bug-buildlayer-gap1-fam-palette-default",
+        "bug-buildlayer-gap2-hero-skeleton-dead",
+        "bug-buildlayer-gap3-nav-skeleton-dead"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-24T20:00:00.000Z"
+    },
+    {
+      "id": "bug-baseline-2026-04-25",
+      "timestamp": "2026-04-25T01:00:00.000Z",
+      "error_message": "Baseline test FAILED: Shay Desk church prompt did not create a new site. Studio Chat appeared to update site-small-accounting-firm and triggered an index.html rewrite (179s). Browser console errors observed.",
+      "file": "site-studio/server.js",
+      "root_cause": "Six stacked sub-gaps. (1) Shay Desk's classifyShayShayTier0 matched 'build_request' but routed via 'route_to_chat' which forwards the message to Studio Chat as a plain user input — there is no new-site flag in the payload. (2) Studio Chat's classifyRequest had a hijack at L10788 — '\\bdeploy\\b' matched the prompt's trailing 'deploy it so I can see it live' and returned 'deploy' before the !hasBrief fallback at L10802 could fire. (3) Studio Chat's strong-build-signals regex required exact 'build [a/the] [full] website for' word order and missed 'build me a 3-page website for' — Shay Desk's equivalent regex had the .{0,30} flexibility and matched, so the same prompt classified differently between the two layers. (4) handlePlanning was a brief-editor-only function — it could not create a new site directory and would have written a church brief into site-small-accounting-firm/spec.json had it run. (5) extractBriefFromMessage silently fell back to business_name='New Business' / tag='site-new-site' for any input it could not parse, hiding the real problem. (6) runAutonomousBuild dispatched the build via routeToHandler BEFORE checking if any WS clients were connected — orphaned builds with no observer.",
+      "fix": "Three workstream commits implemented the V9 closure plan. WS2 (a690ce4): canonical createSite(brief, options) helper with caller-owned auth, helper-owned TAG switch, three on_collision modes gated by same-business identity comparison; classifier reorder — new_site_create above strong-build-signals, !hasBrief above deploy keyword; extractBriefFromMessage hardened to return insufficient_identity instead of silent fallback; type+location synthesis (e.g. site-church-atlanta-ga); /api/new-site and runAutonomousBuild refactored onto the helper; Studio Chat new_site_create case added. WS1 (8ef7411): handleShayBuildRequest async chain (auth → extract → createSite → synthesize → triggerSiteBuild) with shay_response replacing route_to_chat. WS3 (35d73b9): triggerSiteBuild gates on WS clients before dispatch. New test file: tests/baseline-closure.test.js (23 tests). Verification: 28/28 scenarios PASS in architecture/2026-04-25-baseline-closure-verification.md.",
+      "tags": [
+        "baseline",
+        "shay-desk",
+        "classifier",
+        "deploy-keyword-hijack",
+        "createsite",
+        "site-creation-contract",
+        "v9-closure",
+        "2026-04-25"
+      ],
+      "related_bugs": [
+        "bug-jjba-rnew-audit-2026-04-24"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-25T01:00:00.000Z"
+    },
+    {
+      "id": "bug-shay-auto-build-no-confirmation-2026-04-25",
+      "timestamp": "2026-04-25T02:00:00.000Z",
+      "error_message": "Shay Desk auto-fires the build immediately after createSite succeeds — user has no opportunity to confirm the extracted brief, the suggested tag, or the synthesized design_brief before parallelBuild runs.",
+      "file": "site-studio/server.js",
+      "root_cause": "handleShayBuildRequest implements the V9 spec literally: auth → extract → createSite → synthesizeDesignBriefForBuild → triggerSiteBuild, with triggerSiteBuild calling routeToHandler synchronously inside the same chain. There is no human-in-the-loop checkpoint between extraction and build dispatch. The V9 spec did not require one; it became visible only after live testing against the corrected baseline.",
+      "fix": "DEFERRED — logged for future session. Candidate approaches: (a) introduce a 'confirm_build_request' Shay tier-0 intent that returns the extracted brief + tag + design_brief and waits for an explicit follow-up, (b) gate triggerSiteBuild behind a per-site-tag confirmation flag set via WS message from the orb, (c) make createSite return spec.state='briefed_pending_confirm' and require a separate user action to advance to 'briefed' before triggerSiteBuild runs.",
+      "tags": [
+        "ux",
+        "shay-desk",
+        "build-trigger",
+        "deferred",
+        "post-baseline-finding",
+        "2026-04-25"
+      ],
+      "related_bugs": [
+        "bug-baseline-2026-04-25"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-25T02:00:00.000Z"
+    },
+    {
+      "id": "bug-broken-header-links-2026-04-25",
+      "timestamp": "2026-04-25T02:30:00.000Z",
+      "error_message": "Generated site (post-baseline-closure church build) has broken header/nav links — clicking nav items does not navigate to the correct page.",
+      "file": "TBD — investigate site-church-atlanta-ga/dist/_template.html and parallel page outputs",
+      "root_cause": "UNCONFIRMED — investigation deferred. Candidate root causes: (1) parallel page builds emit nav links pointing to relative paths that don't match the actual filenames written to dist/, (2) NAV_SKELETON enforces class names but not href values, (3) post-processing nav propagation (writeTemplateArtifacts → _partials/_nav.html cascade) may have overwritten correct links with template-generated placeholders, (4) the type+location synthesized brief produced page names that diverge from the brief's must_have_sections list, causing href/filename mismatch.",
+      "fix": "DEFERRED — logged for future session. First investigation step: open sites/site-church-atlanta-ga/dist/index.html and dist/_template.html in the browser, inspect the nav, capture the exact href values vs the actual files in dist/. Then check writeTemplateArtifacts and the parallel page nav emission to find where the divergence is introduced.",
+      "tags": [
+        "build-output",
+        "nav",
+        "broken-links",
+        "deferred",
+        "post-baseline-finding",
+        "2026-04-25"
+      ],
+      "related_bugs": [
+        "bug-baseline-2026-04-25"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-25T02:30:00.000Z"
     }
   ]
 }

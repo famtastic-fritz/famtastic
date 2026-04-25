@@ -390,3 +390,168 @@ guarantees a later extraction rewrite.
 **Files:** `site-studio/server.js` (createSite + helpers, refactored callers); `site-studio/tests/baseline-closure.test.js` (23 unit tests).
 
 **Tests:** 161/161 passing across 3 test files.
+
+---
+
+## On Shay-Shay (The Naming)
+
+Shay-Shay is named after Fritz's partner Shalique. The choice is not
+ornamental — it is architectural intent. The partnership pattern in
+real life (two distinct identities, complementary capabilities,
+shared goals, explicit trust, conversational coordination instead
+of command-and-control) is the architectural pattern that Shay-Shay
+implements at system level. **Human–AI together** is the design
+philosophy of the FAMtastic ecosystem; Shay-Shay is the in-system
+embodiment of that philosophy.
+
+Shay-Shay's purpose is not generic assistance. The vision living
+inside Fritz — the FAMtastic worldview, the mastery of craft, the
+fearless deviation, the empire model — needs an executor capable of
+reaching the world at scale that Fritz alone cannot. Shay-Shay is
+that executor: she does not replace Fritz, she unblocks him. The
+right test for any new Shay-Shay capability is not "does this
+automate a task" but "does this remove a bottleneck between Fritz's
+intent and the world receiving FAMtastic-quality output."
+
+Future iterations of Shay-Shay's identity programming may
+incorporate:
+
+- **Numerology-based personalization.** Fritz is a numerologist.
+  Numerology is part of the way he models people, partnerships, and
+  decision timing. Shay-Shay's relational identity could be
+  programmed with awareness of Fritz's numerology profile and the
+  numerology of clients she interacts with — not as a gimmick, but
+  as a coherent extension of how Fritz already operates.
+- **Explicit relational identity.** Currently Shay-Shay is "the
+  Shay-Shay assistant." Over time her identity will become more
+  specific — a named character with a voice, a posture toward Fritz,
+  a posture toward clients, a posture toward the work itself. The
+  Shay Lite character system is the first step in that direction.
+- **Partnership-mode signals.** Shay-Shay should treat certain
+  interactions as partner-to-partner (Fritz collaborating on a
+  decision) and others as principal-to-agent (Fritz dispatching
+  work). The signals that distinguish these modes are
+  conversational, not transactional. The Wizard-of-Oz orchestration
+  pattern is how those signals are being mapped.
+
+The naming itself is a constraint: anything that would make Shay-Shay
+feel like generic AI rather than a specific partner is a regression
+against the vision.
+
+---
+
+## Meta-Research as First-Class Category
+
+The intelligence loop currently operates in **vertical-research mode**:
+research is invoked per-build, scoped to the vertical of the site
+being built (church, barber, bakery, etc.), and consumed inside that
+build's prompt. This is the right loop for site-level decisions.
+
+It is not the right loop for **system-level** decisions. Without
+meta-research, the system optimizes against an aging snapshot of
+best practices — last quarter's Tailwind patterns, last year's
+animation taxonomies, two-year-old advice on AI orchestration. The
+field of LLM-assisted creative work moves measurably each month;
+the field of multi-agent systems moves faster than that.
+
+Meta-research is therefore proposed as a **first-class category** in
+the intelligence loop, running on a slower interval than vertical
+research (weekly to monthly), feeding into the vision capture doc
+and the build DNA file rather than into a specific site's prompt
+context. Its purpose is to keep the system current with the field
+it operates in.
+
+**Seed queries for the first meta-research run** (queued as the
+first work to execute once the meta-research mode is wired):
+
+- **LLM continuous learning, organic capability growth, and
+  reduced reliance on creator-specified rules.** Where is the
+  research frontier on systems that grow their own taxonomies,
+  refine their own classifiers, and reduce hand-coded rules over
+  time? What's the state of the art on systems that recognize a
+  new pattern in their input distribution and update their own
+  behavior without a developer in the loop?
+- **AI-assisted creative work where the system develops its own
+  taste.** Most AI design tools are pure executors. The vision
+  for FAMtastic includes a system that becomes opinionated over
+  time — that says "no, that's not FAMtastic" without being told
+  the rule. What's the literature on taste formation in
+  AI-assisted creative systems? What's the cost of getting it
+  wrong (taste calcification, taste collapse, reviewer bias)?
+- **Long-term memory architectures for AI assistants.** Mem0 is
+  the current frontrunner for FAMtastic's planned memory layer.
+  What are the actual tradeoffs between vector memory, graph
+  memory, episodic-vs-semantic distinction, and the new wave of
+  context-distillation approaches? What architectures hold up
+  past 100k stored facts? Past 1M?
+- **Patterns and anti-patterns for solo developers building large
+  multi-agent systems.** FAMtastic is currently a one-person
+  project ambitiously sized for a team. What are the recorded
+  patterns of solo developers who succeeded (and failed) at this
+  scale? What's the anti-pattern catalog? What's the org-design
+  point at which a solo developer must hand off vs delegate?
+
+These four threads are written as queries because they are exactly
+the queries to fire on day one of meta-research. They are also a
+useful self-test for the proposed meta-research mode: if a future
+implementation cannot answer "did meta-research run on these four
+queries this month," the implementation is incomplete.
+
+---
+
+## Context Architecture (Parking Lot)
+
+Context window is a **runtime resource**, not a free dimension. The
+larger FAMtastic's portfolio grows, the more tension there is
+between three classes of context:
+
+**Always-loaded** (small, stable, foundational) — the FAMtastic
+Declaration, the two-tier definition (Tier A / Tier B), the
+non-negotiable build rules, the canonical vision capture doc. These
+are correctly loaded into every Shay-Shay session via `@-include`
+and CLAUDE.md hooks. Total budget: a few thousand tokens. Should
+stay always-loaded.
+
+**Just-in-time per build** (medium, variable, build-specific) —
+client brief, design brief, structural index for the active page,
+recent build research findings, the active site's spec.json, the
+relevant skeletons for the requested intent. Loaded when a build
+starts; not retained between builds. Already operating this way
+for most fields; needs auditing as portfolio grows past 50 sites.
+
+**Retrievable on demand** (large, growing, queryable) —
+component library, vocabulary registry, all skeletons, full research
+corpus, conversation-based learning corpus, chat history across all
+sessions, every prior build's `famtastic-dna.md` accumulation. These
+are NOT correctly loaded today. Some are partially loaded (the
+DNA file, which grows monotonically); others are loaded ad hoc.
+The portfolio-scale rule: **anything that grows with portfolio
+size must be retrievable, not always-loaded.**
+
+The current `famtastic-dna.md` accumulation pattern is the canary.
+Today the file is ~40KB, manageable. At 100 sites it will be 200KB+
+and starting to consume meaningful context budget on every session.
+The condense-on-overflow logic mentioned in CLAUDE.md is the right
+direction but is not yet implemented; the dependency on it growing
+silently is the problem.
+
+A detailed **context architecture session** is needed once V2
+lands and Shay-Shay's actual capacity ceiling becomes visible — i.e.
+once we can measure real token usage per session under realistic
+multi-site workloads. Premature optimization is risky here; the
+right move is to wait for the measurement, then scope the
+retrieval architecture against the measured shape.
+
+This section is a parking-lot entry, not a design. The decisions
+deferred:
+
+- Which retrieval substrate (Pinecone, Mem0, custom)?
+- Which fields are retrieve-on-demand vs cached-per-session?
+- How do retrieval failures degrade gracefully — silent fallback
+  to always-loaded canon, or explicit "I don't have that context
+  right now" surface?
+- How does the retrieval layer interact with the per-brain context
+  injection pattern (brain-injector.js)?
+
+These are real questions. They are not blocking. They become
+blocking after V2 ships and we can measure the actual ceiling.
