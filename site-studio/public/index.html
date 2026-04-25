@@ -1250,7 +1250,32 @@
       }
     }
 
+    // Insert a visual session/site break divider into the chat container.
+    // Used on TAG change and on session boundary detection.
+    function addChatSessionBreak(label, opts) {
+      var container = document.getElementById('chat-messages');
+      if (!container) return;
+      var prevTag = (window.__lastChatBreakTag || null);
+      if (opts && opts.dedupeKey && window.__lastChatBreakKey === opts.dedupeKey) return;
+      if (prevTag === label && (!opts || !opts.force)) return;
+      window.__lastChatBreakTag = label;
+      if (opts && opts.dedupeKey) window.__lastChatBreakKey = opts.dedupeKey;
+      var div = document.createElement('div');
+      div.className = 'chat-session-break';
+      var siteSpan = document.createElement('span');
+      siteSpan.className = 'break-site';
+      siteSpan.textContent = label;
+      var timeSpan = document.createElement('span');
+      timeSpan.className = 'break-time';
+      timeSpan.textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      div.appendChild(siteSpan);
+      div.appendChild(timeSpan);
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
     function handleSiteSwitch(tag, pages, currentPage) {
+      addChatSessionBreak(tag);
       config.tag = tag;
       document.title = 'Site Studio \u2014 ' + tag;
       // Update both top-bar button and sidebar button
@@ -1841,6 +1866,9 @@
             document.title = 'Studio \u2014 ' + data.tag;
             var ctxSite = document.getElementById('ctx-site-tag');
             if (ctxSite) ctxSite.textContent = data.tag;
+            // Session-boundary break — first connect or reconnect after drop.
+            // dedupeKey ties this to the WS session id so a single connect emits one break.
+            addChatSessionBreak(data.tag, { force: true, dedupeKey: 'ws-open-' + Date.now() });
           }
         }).catch(function() {});
         refreshVerification();

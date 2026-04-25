@@ -20,7 +20,7 @@ const surgicalEditor = require('./lib/surgical-editor');
 const gapLogger = require('./lib/gap-logger');
 const suggestionLogger = require('./lib/suggestion-logger');
 const brandTracker = require('./lib/brand-tracker');
-const { buildCapabilityManifest, loadManifest } = require('./lib/capability-manifest');
+const { buildCapabilityManifest, loadManifest, checkNetlify } = require('./lib/capability-manifest');
 const costMonitor = require('./lib/cost-monitor');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
@@ -16933,39 +16933,100 @@ function runOrchestratorSite(ws, template) {
 // --- Run site-deploy ---
 // env: 'staging' | 'production'
 let deployInProgress = false;
-function runDeploy(ws, env) {
+// Parse deploy stderr for known failure patterns and return a user-facing message.
+function parseDeployStderr(stderr) {
+  if (!stderr) return null;
+  const s = stderr.toLowerCase();
+  if (/not\s+(?:logged\s+in|authorized|authenticated)|login\s+required|netlify\s+login/.test(s))
+    return 'Netlify is not logged in. Run "netlify login" in a terminal.';
+  if (/network|enotfound|econnrefused|etimedout|getaddrinfo/.test(s))
+    return 'Network error reaching Netlify. Check your connection and retry.';
+  if (/site\s+id|site_id|no\s+site\s+specified/.test(s))
+    return 'Netlify site ID is missing or invalid. Set NETLIFY_SITE_ID or run "netlify link".';
+  if (/permission\s+denied|EACCES/i.test(stderr))
+    return 'Permission denied running the deploy script. Check file permissions on scripts/site-deploy.';
+  if (/quota|rate\s+limit/.test(s))
+    return 'Netlify rate limit or quota exceeded. Try again later.';
+  return null;
+}
+
+async function runDeploy(ws, env) {
   if (deployInProgress) {
     try { ws.send(JSON.stringify({ type: 'status', content: 'Deploy already in progress.' })); } catch {}
     return;
   }
-  deployInProgress = true;
   env = env || 'staging';
   const envLabel = env.charAt(0).toUpperCase() + env.slice(1);
+
+  // Layer 2 — Preflight BEFORE setting deployInProgress flag.
+  // If the preflight fails, the flag stays false and the user can retry.
+  let netlify;
+  try {
+    netlify = await checkNetlify();
+  } catch (probeErr) {
+    netlify = { ok: false, reason: 'other', details: probeErr.message };
+  }
+  if (!netlify || !netlify.ok) {
+    const detail = (netlify && netlify.details) || 'Netlify is not configured.';
+    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed: ${detail}` })); } catch {}
+    appendConvo({ role: 'assistant', content: `${envLabel} deploy preflight failed: ${detail}`, at: new Date().toISOString() });
+    return;
+  }
+
+  deployInProgress = true;
   const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG, '--prod', '--env', env];
-  const child = spawn(args[0], args.slice(1), {
-    env: process.env,
-    cwd: HUB_ROOT,
-  });
+  let child;
+  try {
+    child = spawn(args[0], args.slice(1), {
+      env: process.env,
+      cwd: HUB_ROOT,
+    });
+  } catch (spawnErr) {
+    // Synchronous spawn failure (rare — usually surfaces via 'error' event)
+    deployInProgress = false;
+    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed to start: ${spawnErr.message}` })); } catch {}
+    return;
+  }
 
   let output = '';
+  let stderrBuf = '';
+  let settled = false;
+  const settle = () => {
+    if (settled) return false;
+    settled = true;
+    deployInProgress = false;
+    return true;
+  };
 
   child.stdout.on('data', (chunk) => {
     output += chunk.toString();
-    ws.send(JSON.stringify({ type: 'status', content: chunk.toString().trim() }));
+    try { ws.send(JSON.stringify({ type: 'status', content: chunk.toString().trim() })); } catch {}
   });
 
   child.stderr.on('data', (chunk) => {
-    const text = chunk.toString().trim();
-    console.error('[deploy]', text);
-    if (text) ws.send(JSON.stringify({ type: 'status', content: text }));
+    const text = chunk.toString();
+    stderrBuf += text;
+    const trimmed = text.trim();
+    console.error('[deploy]', trimmed);
+    if (trimmed) try { ws.send(JSON.stringify({ type: 'status', content: trimmed })); } catch {}
   });
 
+  // Layer 3 — Spawn error handler (executable not found, permission denied, etc.)
+  child.on('error', (err) => {
+    if (!settle()) return;
+    const msg = err && err.code === 'ENOENT'
+      ? `${envLabel} deploy failed: deploy script not found at scripts/site-deploy.`
+      : `${envLabel} deploy failed to launch: ${err.message}`;
+    try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
+    appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+  });
+
+  // Layer 4 — Exit code handling with stderr pattern parsing
   child.on('close', (code) => {
+    if (!settle()) return;
     const urlMatch = output.match(/https:\/\/[^\s]+/);
     if (code === 0 && urlMatch) {
-      // Invalidate cache — deploy script wrote to spec.json via jq
       invalidateSpecCache();
-      // Update spec.environments (merge — preserve existing fields like repo, custom_domain)
       const spec = readSpec();
       if (!spec.environments) spec.environments = {};
       spec.environments[env] = {
@@ -16976,12 +17037,10 @@ function runDeploy(ws, env) {
         deployed_at: new Date().toISOString(),
         state: 'deployed',
       };
-      // Keep flat fields for backward compat
       spec.deployed_url = urlMatch[0];
       spec.deployed_at = spec.environments[env].deployed_at;
       spec.state = 'deployed';
 
-      // Persist deploy history — seed of Mission Control data model
       spec.deploy_history = spec.deploy_history || [];
       spec.deploy_history.push({
         version: spec.deploy_history.length + 1,
@@ -16992,32 +17051,34 @@ function runDeploy(ws, env) {
         lighthouse: spec.lighthouse_score || null,
         pages: (listPages() || []).length,
       });
-
       writeSpec(spec);
 
       studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });
-      ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` }));
-      // Notify client to refresh deploy info
-      ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] }));
+      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` })); } catch {}
+      try { ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] })); } catch {}
+      appendConvo({ role: 'assistant', content: `${envLabel} deploy succeeded: ${urlMatch[0]}`, at: new Date().toISOString() });
     } else if (code === 0) {
-      ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy completed. Check the output above for the URL.` }));
+      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy completed. Check the output above for the URL.` })); } catch {}
+      appendConvo({ role: 'assistant', content: `${envLabel} deploy completed (no URL captured)`, at: new Date().toISOString() });
     } else {
-      ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed. You may need to run "netlify login" first.` }));
+      // Non-zero exit — parse stderr for a specific reason; fall back to generic message.
+      const specific = parseDeployStderr(stderrBuf);
+      const msg = specific
+        ? `${envLabel} deploy failed: ${specific}`
+        : `${envLabel} deploy failed with exit code ${code}. Check the output above for details.`;
+      try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
+      appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
     }
-    appendConvo({ role: 'assistant', content: `${envLabel} deploy ${code === 0 ? 'succeeded' : 'failed'}: ${urlMatch ? urlMatch[0] : 'see logs'}`, at: new Date().toISOString() });
 
     // Auto-sync site repo after successful deploy
-    // staging → syncs dev then merges dev→staging
-    // production → syncs dev then merges dev→staging→main
     if (code === 0) {
       const freshSpec = readSpec();
       if (freshSpec.site_repo?.path) {
         const targetBranch = env === 'production' ? 'main' : 'staging';
-        ws.send(JSON.stringify({ type: 'status', content: `Syncing site repo (${targetBranch})...` }));
+        try { ws.send(JSON.stringify({ type: 'status', content: `Syncing site repo (${targetBranch})...` })); } catch {}
         syncSiteRepo(ws, freshSpec, targetBranch);
       }
     }
-    deployInProgress = false;
   });
 }
 
