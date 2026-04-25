@@ -305,3 +305,16 @@ The `visualRequirements` block only injects colors when client hex values are fo
 
 **DO-NOT-REPEAT (2026-04-24): design_brief.approved blocks all edit routing.**
 `classifyRequest()` checks `spec.design_brief.approved` before any pattern matching. Sites built via `runAutonomousBuild` have `approved: false` by default — every subsequent Studio Chat message routes to `new_site` regardless of content. When testing single-page edits on autonomously-built sites, manually set `approved: true` in spec.json first.
+
+### RULE — Separation-Ready Architecture for Future Studios (2026-04-24)
+
+Any work touching component logic, media/image generation, or
+strategy/brainstorming capability must be built assuming eventual
+extraction into a standalone studio (Component Studio, Media
+Studio, Think Tank respectively). Communicate through structured
+payload contracts, not tight function-call coupling. Cross-studio
+features — even the ones currently all living in Site Studio —
+are message contracts, not function calls. Platform services
+(research, memory, learning capture, Pinecone, Perplexity) must
+live in a shared services namespace that Site Studio calls but
+does not own.

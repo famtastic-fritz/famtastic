@@ -4299,3 +4299,24 @@ Spec brief: platform marketing site — hero, how-it-works, portfolio proof, pri
 - Logo SVG text uses system fonts — logo rendering may vary slightly across browsers; a future pass should convert text to paths for pixel-perfect consistency
 - `site-famtastic-com` is in `draft` state and has never been built through the Studio pipeline — `fam_score` is null, no post-processing has run (no logo extraction, no divider injection)
 - CTA links to mailto: — should eventually link to a Calendly or booking page
+
+---
+
+## Canonical Vision Capture (2026-04-24)
+
+The full FAMtastic vision and current-state gap map is captured in
+`docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md`. Future sessions should
+read that document before any architectural or product decision.
+The most important framings it establishes:
+
+- FAMtastic follows the Adobe Creative Cloud pattern: separate
+  full-identity studios (Site, Component, Media, Think Tank) with
+  shared Platform services
+- The Platform is the substrate hosting research, memory,
+  intelligence loop, conversation-based learning, and cross-studio
+  dispatching — not a studio itself
+- Two-tier FAMtastic output is deliberate design: Tier A
+  clean-competent, Tier B FAMtastic-WOW
+- Research must be FAMtastic-applied, not generic
+- The conversation-based learning loop is how FAMtastic principle
+  becomes operationalizable over time
