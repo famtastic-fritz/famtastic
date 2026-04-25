@@ -347,3 +347,28 @@ Stream 0 does not need to happen before Stream 1 (close the
 current refactor). But it needs to happen before Stream 2 and
 Stream 3, because doing Stream 2 or Stream 3 without Stream 0
 guarantees a later extraction rewrite.
+
+---
+
+## Architectural Decision Log
+
+### Decision: Tier as Canonical — 2026-04-24
+
+**Context:** `spec.famtastic_mode` was a tacit toggle — never set by code, only manually written into `spec.json`. The two-tier design intent (Tier A = clean-competent, Tier B = FAMtastic-WOW) existed in practice but had no formal representation in the data model.
+
+**Decision:** Introduce `spec.tier` ('famtastic' | 'clean') as the single source of truth. `famtastic_mode` becomes a derived boolean (`tier === 'famtastic'`), computed and repaired at every read site via `normalizeTierAndMode()`.
+
+**Precedence chain (highest → lowest):**
+1. `explicit_request_tier` — from the chat message requesting a rebuild
+2. `client_brief_tier` — from the intake brief
+3. `extracted_brief_tier` — from Claude's brief extraction
+4. `existing_spec_tier` — from the spec already on disk
+5. Default: `'famtastic'`
+
+**Key invariant:** Invalid values at any precedence slot are SKIPPED (with a warning stored in `spec.tier_normalization_warning`), not defaulted early. This prevents an invalid explicit request from corrupting an existing Tier-A spec.
+
+**Files:** `site-studio/lib/tier.js`, `site-studio/lib/tier-gates.js`, 18 edits to `server.js`.
+
+**Tests:** 28 unit tests in `tests/gap4-tier-canonicality.test.js`, 3 parity tests added to `tests/unit.test.js`. All 138 tests passing.
+
+**Deferral noted:** Pre-existing schema coherence issue (`colors`/`pages` listed as required but never written at creation time) deferred — tracked in `architecture/2026-04-24-schema-audit-followup.md`.

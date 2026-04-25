@@ -34,6 +34,8 @@ const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = re
 const fontRegistry = require('./lib/font-registry');
 const layoutRegistry = require('./lib/layout-registry');
 const famSkeletons = require('./lib/famtastic-skeletons');
+const { resolveTier, normalizeTierAndMode } = require('./lib/tier');
+const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -190,6 +192,14 @@ function readSpec() {
           };
           console.log(`[spec] ${TAG}: migrated flat deploy fields to environments.staging`);
           fs.writeFileSync(SPEC_FILE(), JSON.stringify(_specCache, null, 2));
+        }
+        // L143 — normalize tier and derived famtastic_mode; write back if dirty (drift repair)
+        const { dirty: _tierDirty } = normalizeTierAndMode(_specCache);
+        if (_tierDirty) {
+          console.log(`[spec] ${TAG}: tier normalized — writing drift repair`);
+          const _tierTmp = SPEC_FILE() + '.tmp';
+          fs.writeFileSync(_tierTmp, JSON.stringify(_specCache, null, 2));
+          fs.renameSync(_tierTmp, SPEC_FILE());
         }
       }
     } catch (e) {
@@ -3571,7 +3581,7 @@ ${FAMTASTIC_DNA_VOCAB}
 
 ${systemRules}
 
-${spec.famtastic_mode ? famSkeletons.LOGO_SKELETON_TEMPLATE : ''}
+${getLogoSkeletonBlock(spec)}
 
 OUTPUT: ${spec.famtastic_mode
   ? 'First output the three <!-- LOGO_FULL -->, <!-- LOGO_ICON -->, <!-- LOGO_WORDMARK --> SVG blocks exactly as specified above. Then output the complete HTML document. No explanation, no markdown fences.'
@@ -4113,7 +4123,8 @@ app.get('/api/projects', (req, res) => {
 
   const projects = dirs.map(d => {
     try {
-      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8'));
+      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8')); // L4116
+      normalizeTierAndMode(spec); // in-memory only — listing endpoint, no write-back
       const hasHtml = fs.existsSync(path.join(SITES_ROOT, d, 'dist', 'index.html'));
       const pageCount = hasHtml ? fs.readdirSync(path.join(SITES_ROOT, d, 'dist')).filter(f => f.endsWith('.html')).length : 0;
       // Resolve display name: stored site_name → brief.business_name → tag slug
@@ -4171,7 +4182,8 @@ app.get('/api/sites', (req, res) => {
   });
   const sites = dirs.map(d => {
     try {
-      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8'));
+      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8')); // L4174
+      normalizeTierAndMode(spec); // in-memory only — listing endpoint, no write-back
       const tagName = d.replace(/^site-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       const displayName = (spec.site_name && spec.site_name !== 'New Site') ? spec.site_name
                         : spec.design_brief?.business_name || tagName;
@@ -4266,6 +4278,7 @@ app.post('/api/new-site', async (req, res) => {
     site_name: req.body.name || newTag.replace('site-', '').replace(/-/g, ' '),
     business_type: req.body.business_type || '',
     state: 'new',
+    tier: 'famtastic',          // canonical — famtastic_mode is derived on first readSpec
     created_at: new Date().toISOString(),
     interview_pending: req.body.client_brief ? false : (autoInterviewEnabled === true),
     interview_completed: req.body.client_brief ? true : false,
@@ -7339,9 +7352,14 @@ function extractBriefPatternBased(text) {
     .replace(/-+/g, '-')
     .slice(0, 40);
 
+  // Tier: explicit clean/simple/minimal language → 'clean'; otherwise 'famtastic'
+  const tierCleanWords = ['simple', 'minimal', 'clean', 'professional', 'traditional', 'conservative', 'basic'];
+  const tier = tierCleanWords.some(w => lower.includes(w)) ? 'clean' : 'famtastic';
+
   return {
     business_name: businessName || 'New Business',
     tag,
+    tier,
     revenue_model: revenueModel,
     business_description: text.slice(0, 300),
     location,
@@ -7356,7 +7374,7 @@ async function extractBriefFromMessage(text) {
   // Use Claude if available, with explicit instruction to use business name in tag
   try {
     const extracted = await callSDK(
-      `Extract a structured site brief from this request. Return ONLY valid JSON, no markdown:\n\n"${text}"\n\nRules:\n- business_name: the actual business name (e.g. "Mario's Pizza")\n- tag: "site-" + business name slugified (e.g. "site-marios-pizza") — NEVER use a generic category word\n- revenue_model: one of lead_generation|rank_and_rent|ecommerce|appointment_booking\n\n{"business_name":"","tag":"site-","revenue_model":"lead_generation","business_description":"","location":"","differentiator":"","cta":"Contact Us","tone":["professional"],"pages":["home","about","contact"]}`,
+      `Extract a structured site brief from this request. Return ONLY valid JSON, no markdown:\n\n"${text}"\n\nRules:\n- business_name: the actual business name (e.g. "Mario's Pizza")\n- tag: "site-" + business name slugified (e.g. "site-marios-pizza") — NEVER use a generic category word\n- revenue_model: one of lead_generation|rank_and_rent|ecommerce|appointment_booking\n- tier: "famtastic" for bold/expressive design, "clean" for minimal/professional/simple design\n\n{"business_name":"","tag":"site-","tier":"famtastic","revenue_model":"lead_generation","business_description":"","location":"","differentiator":"","cta":"Contact Us","tone":["professional"],"pages":["home","about","contact"]}`,
       { maxTokens: 400, callSite: 'brief-extraction', timeoutMs: 8000 }
     );
     const clean = extracted.replace(/```(?:json)?\n?|```\n?/g, '').trim();
@@ -7539,7 +7557,8 @@ async function runAutonomousBuild(message, context = {}) {
     const existingDir = path.join(SITES_ROOT, brief.tag);
     if (fs.existsSync(existingDir)) {
       // Site exists — update the brief and switch to it
-      const existSpec = JSON.parse(fs.readFileSync(path.join(existingDir, 'spec.json'), 'utf8'));
+      const existSpec = JSON.parse(fs.readFileSync(path.join(existingDir, 'spec.json'), 'utf8')); // L7542
+      normalizeTierAndMode(existSpec); // repair tier/famtastic_mode drift before updating
       existSpec.client_brief = {
         business_description: brief.business_description,
         revenue_model: brief.revenue_model,
@@ -7572,6 +7591,7 @@ async function runAutonomousBuild(message, context = {}) {
         site_name: brief.business_name,
         business_type: brief.business_description.split(' ').slice(0, 3).join(' '),
         state: 'new',
+        tier: brief.tier || 'famtastic', // canonical; famtastic_mode derived on first readSpec
         created_at: new Date().toISOString(),
         interview_completed: true,
         interview_pending: false,
@@ -7602,7 +7622,8 @@ async function runAutonomousBuild(message, context = {}) {
     // Step 2b: Synthesize design_brief from client_brief so classifier routes
     // to 'build' intent (not 'new_site' → handlePlanning which needs approval)
     step('Synthesizing design_brief for build routing');
-    const specToUpdate = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, brief.tag, 'spec.json'), 'utf8'));
+    const specToUpdate = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, brief.tag, 'spec.json'), 'utf8')); // L7605
+    normalizeTierAndMode(specToUpdate); // repair before writing design_brief
     if (!specToUpdate.design_brief) {
       const cb = specToUpdate.client_brief || {};
       specToUpdate.design_brief = {
@@ -7778,7 +7799,8 @@ app.get('/api/build-status/:tag', (req, res) => {
   const specPath = path.join(SITES_ROOT, tagParam, 'spec.json');
   if (!fs.existsSync(specPath)) return res.status(404).json({ error: 'site not found' });
   try {
-    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // L7781
+    normalizeTierAndMode(spec); // in-memory only — status endpoint, no write-back
     const distDir = path.join(SITES_ROOT, tagParam, 'dist');
     const htmlFiles = fs.existsSync(distDir)
       ? fs.readdirSync(distDir).filter(f => f.endsWith('.html') && !f.startsWith('_'))
@@ -9764,13 +9786,28 @@ function getCharacterSiteDir(siteTag) {
 function readSpecForSite(siteDir) {
   const specPath = path.join(siteDir, 'spec.json');
   if (!fs.existsSync(specPath)) return {};
-  try { return JSON.parse(fs.readFileSync(specPath, 'utf8')); } catch { return {}; }
+  try {
+    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // L9764
+    normalizeTierAndMode(spec); // in-memory only — caller handles persistence via writeSpecForSite
+    return spec;
+  } catch { return {}; }
 }
 
 function writeSpecForSite(siteDir, spec) {
   const specPath = path.join(siteDir, 'spec.json');
   fs.mkdirSync(siteDir, { recursive: true });
-  fs.writeFileSync(specPath, JSON.stringify(spec, null, 2));
+  // Preserve revision metadata from the current on-disk spec if not already set
+  if (!spec._revision && fs.existsSync(specPath)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+      if (existing._revision)       spec._revision = existing._revision;
+      if (existing._last_modified)  spec._last_modified = existing._last_modified;
+    } catch {}
+  }
+  // Atomic write — matches the safety pattern used by the main writeSpec function
+  const tmpPath = specPath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(spec, null, 2));
+  fs.renameSync(tmpPath, specPath);
 }
 
 function broadcastAll(payload) {
@@ -11961,7 +11998,7 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
       famSkeletons.DIVIDER_SKELETON,
       famSkeletons.NAV_SKELETON,
       famSkeletons.INLINE_STYLE_PROHIBITION,
-      spec.famtastic_mode ? famSkeletons.LOGO_NOTE_PAGE : '',
+      getLogoNoteBlock(spec),
     ].filter(Boolean).join('\n\n');
 
     let pagePrompt;
@@ -14272,7 +14309,7 @@ ${variantList}
   // can write three separate files at once. Only triggered when there
   // is no existing logo file AND the user is building or asking for a
   // new site / logo.
-  if (spec.famtastic_mode === true && !_logoFile && ['build', 'new_site'].includes(requestType)) {
+  if (shouldInjectFamtasticLogoMode(spec, _logoFile, requestType)) {
     _logoInstruction += `
 
 FAMTASTIC LOGO MODE (spec.famtastic_mode = true, no logo file yet):
@@ -17594,6 +17631,10 @@ function broadcastSessionStatus(ws) {
 module.exports = {
   sanitizeSvg, extractMultiPartSvg, isValidPageName, extractSlotsFromPage, classifyRequest, detectEnhancementPasses, extractPagesFromBrief, syncContentFieldsFromHtml,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
+  // Tier canonicalization (GAP-4)
+  resolveTier, normalizeTierAndMode,
+  getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode,
+  extractBriefPatternBased,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
   classifyShayShayReasoning, selectShayShayBrain, normalizeShayShayResponse, answerShayShayDirect,
@@ -17803,7 +17844,7 @@ if (require.main === module) {
     // Initialise universal context writer — fires STUDIO-CONTEXT.md generation on every event
     studioContextWriter.init({
       getTag:     () => TAG,
-      getSpec:    () => { try { return JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')); } catch { return {}; } },
+      getSpec:    () => { try { const s = JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')); normalizeTierAndMode(s); return s; } catch { return {}; } }, // L17806
       getHubRoot: () => HUB_ROOT,
     });
 
