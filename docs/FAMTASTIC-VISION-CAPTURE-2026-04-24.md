@@ -372,3 +372,21 @@ guarantees a later extraction rewrite.
 **Tests:** 28 unit tests in `tests/gap4-tier-canonicality.test.js`, 3 parity tests added to `tests/unit.test.js`. All 138 tests passing.
 
 **Deferral noted:** Pre-existing schema coherence issue (`colors`/`pages` listed as required but never written at creation time) deferred — tracked in `architecture/2026-04-24-schema-audit-followup.md`.
+
+---
+
+### Decision: Site Creation Contract — 2026-04-25
+
+**Context:** The April 25 baseline test failed because both site-creation paths (`/api/new-site` and `runAutonomousBuild`) duplicated the slug-extraction → directory-creation → spec-write → endSession → TAG-switch → cache-invalidation → WS-notify sequence inline, with subtle drift between them. Studio Chat had no path to create a new site at all — every "build me a new site" message routed to the active TAG and either edited the wrong spec or hit the deploy keyword and tried to deploy the wrong site.
+
+**Decision:** A single canonical `createSite(brief, options)` helper owns site creation. All three entry points (`/api/new-site`, `runAutonomousBuild`, Studio Chat `new_site_create`) call it. Authorization is **caller-owned** — the helper does not check Developer Mode or any other auth — so each entry point applies its own gate (the API endpoint applies none, Studio Chat applies none because it is already inside the trusted UI, Shay Desk applies `authorizeShayDeveloperAction` before invoking).
+
+**TAG switch ownership:** The helper performs `endSession → TAG = newTag → writeLastSite → invalidateSpecCache → SITE_SWITCHED event → WS notify` on the success path **at creation time**, before the caller's downstream chain (build trigger, etc.) runs. This is a deliberate simplification of the previous `runAutonomousBuild` ordering, which switched TAG only after the design-brief synthesis. The new ordering means a half-initialized site (created but not yet built) is **recoverable**: the user is on the new site, can retry the build, and the dist directory persists.
+
+**Collision policy:** `createSite` runs an identity check against the existing `spec.site_name` (lowercase, punctuation stripped, business-noise words like "the/inc/llc/church/barber" filtered out) before any state mutation. Different-business collisions ALWAYS return `'collision'` or `'error'` regardless of the caller's `on_collision` setting — `on_collision: 'update'` permits in-place update only for same-business matches. The policy keeps Shay Desk's autonomous-build path safe from clobbering an unrelated site that happens to slug-collide.
+
+**Build trigger gating:** `triggerSiteBuild(ws, spec)` is the canonical build dispatcher and is gated on WS client presence **before** any dispatch work. The previous order (in `runAutonomousBuild` at the old L7690) dispatched first and checked clients afterward, producing orphaned builds with no observer. That was a bug, not a feature; the new order treats "no browser connected" as a hard precondition.
+
+**Files:** `site-studio/server.js` (createSite + helpers, refactored callers); `site-studio/tests/baseline-closure.test.js` (23 unit tests).
+
+**Tests:** 161/161 passing across 3 test files.

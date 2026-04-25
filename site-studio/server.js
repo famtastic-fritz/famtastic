@@ -4255,60 +4255,40 @@ app.post('/api/switch-site', async (req, res) => {
 });
 
 app.post('/api/new-site', async (req, res) => {
+  // Authorization is caller-owned (no Developer Mode gating on this endpoint).
+  // The shared createSite() helper performs sanitization, identity check,
+  // directory creation, atomic spec write, and TAG switch + WS notification.
   let newTag = req.body.tag;
   if (!newTag) return res.status(400).json({ error: 'tag required' });
-  // Sanitize: lowercase, replace spaces/special chars with hyphens
   newTag = newTag.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   if (!newTag.startsWith('site-')) newTag = 'site-' + newTag;
 
-  const newSiteDir = path.join(SITES_ROOT, newTag);
-  if (fs.existsSync(newSiteDir)) {
-    return res.status(400).json({ error: `Site "${newTag}" already exists` });
-  }
-
-  // Create minimal site structure
-  const distDir = path.join(newSiteDir, 'dist');
-  fs.mkdirSync(distDir, { recursive: true });
-
-  // Session 11 Fix 4: flag new sites for auto-interview on next studio open
-  // unless the admin has disabled auto_interview in studio-config.json.
-  const autoInterviewEnabled = loadSettings().auto_interview !== false;
-  const spec = {
-    tag: newTag,
-    site_name: req.body.name || newTag.replace('site-', '').replace(/-/g, ' '),
+  const brief = {
+    business_name: req.body.name || newTag.replace(/^site-/, '').replace(/-/g, ' '),
     business_type: req.body.business_type || '',
-    state: 'new',
-    tier: 'famtastic',          // canonical — famtastic_mode is derived on first readSpec
-    created_at: new Date().toISOString(),
-    interview_pending: req.body.client_brief ? false : (autoInterviewEnabled === true),
-    interview_completed: req.body.client_brief ? true : false,
-    // If brief data provided at creation time (from Brief tab flow), pre-load it
+    interview_pending: !req.body.client_brief,
+    interview_completed: !!req.body.client_brief,
     ...(req.body.client_brief ? { client_brief: req.body.client_brief } : {}),
   };
-  const _newSpecPath = path.join(newSiteDir, 'spec.json');
-  fs.writeFileSync(_newSpecPath + '.tmp', JSON.stringify(spec, null, 2));
-  fs.renameSync(_newSpecPath + '.tmp', _newSpecPath); // atomic write
 
-  // Switch to the new site — await so summary writes to the old site directory
-  await endSession();
-  TAG = newTag;
-  writeLastSite(TAG);
-  invalidateSpecCache();
-  currentPage = 'index.html';
-  sessionMessageCount = 0;
-  sessionStartedAt = new Date().toISOString();
-  startSession();
-  studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
-
-  const pages = listPages();
-  wss.clients.forEach(client => {
-    if (client.readyState === 1) {
-      client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
-    }
+  const result = await createSite(brief, {
+    tag_source: 'caller_supplied',
+    tag: newTag,
+    on_collision: 'error',
   });
 
-  console.log(`[studio] Created and switched to new site: ${TAG}`);
-  res.json({ success: true, tag: TAG });
+  if (result.status === 'error') {
+    // Preserve current human-readable error string for the Brief tab client contract,
+    // and add machine-readable error_code alongside it.
+    return res.status(400).json({
+      error: `Site "${result.existing_tag || newTag}" already exists`,
+      error_code: result.error_code || 'tag_exists',
+    });
+  }
+
+  // status === 'created' (caller_supplied with on_collision='error' never returns
+  // 'updated_existing' or 'collision' for fresh tags).
+  res.json({ success: true, tag: result.tag });
 });
 
 // --- Client Interview API ---
@@ -7278,6 +7258,339 @@ function buildShayShayJobPlan(message, context = {}) {
 // Shay-Shay can drive a complete site build from brief text, without the browser.
 // Fritz watches via the UI; Shay-Shay drives via the API and WS broadcast.
 
+// ── Site Creation Contract (2026-04-25) ──────────────────────────────────
+// Recognized business-type words for type+location synthesis when a prompt
+// describes a new site without a proper noun ("a church in Atlanta").
+// Also used by classifyRequest's new_site_create detection.
+const GENERIC_BUSINESS_TYPES = [
+  'church','barber','barbershop','bakery','salon','gym','clinic','school',
+  'studio','bar','cafe','restaurant','shop','store','office','practice',
+  'pharmacy','garage','spa','diner','lounge','theater','agency','firm',
+];
+
+// Words stripped when comparing two business names for same-business identity.
+// Used by createSite() collision handling and classifyRequest gating.
+const IDENTITY_STRIP_WORDS = new Set([
+  'the','inc','llc','co','company','ltd','church','barber','bakery','salon',
+  'gym','clinic','school','studio','bar','cafe','restaurant','office',
+  'practice','service','services','shop','store','firm','agency',
+]);
+
+function normalizeBizName(name) {
+  if (!name || typeof name !== 'string') return '';
+  return name.toLowerCase()
+    // Drop punctuation entirely (so "Tony's" → "tonys", "Acme, Inc." → "acme inc")
+    // Keep whitespace so multi-word names retain word boundaries.
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w && !IDENTITY_STRIP_WORDS.has(w))
+    .join(' ')
+    .trim();
+}
+
+// True when two business names refer to the same business after stripping
+// noise words. Returns false on either-empty input.
+function checkSameBusinessIdentity(nameA, nameB) {
+  if (!nameA || !nameB) return false;
+  const a = normalizeBizName(nameA);
+  const b = normalizeBizName(nameB);
+  return !!(a && b && a === b);
+}
+
+function suggestAlternativeSlug(tag) {
+  let i = 2;
+  let candidate = `${tag}-${i}`;
+  while (fs.existsSync(path.join(SITES_ROOT, candidate)) && i < 50) {
+    i += 1;
+    candidate = `${tag}-${i}`;
+  }
+  return candidate;
+}
+
+/**
+ * createSite(brief, options) — canonical site-creation helper.
+ *
+ * INVARIANTS:
+ *   - Authorization is CALLER-OWNED. This helper does NOT check Developer Mode
+ *     or any other auth. Callers must approve before calling.
+ *   - Identity check ALWAYS runs first against existing spec.site_name.
+ *     Different-business collisions ALWAYS return 'collision' (or 'error'
+ *     when on_collision === 'error'), regardless of caller's request.
+ *   - On status: 'collision' or 'error', the helper returns BEFORE any
+ *     endSession(), TAG change, cache invalidation, or site-switched WS
+ *     emit. Failure paths leave session state untouched.
+ *   - On status: 'created' or 'updated_existing', helper performs:
+ *     endSession → TAG switch → writeLastSite → cache invalidation →
+ *     session reset → SITE_SWITCHED event → WS notification to all clients.
+ *   - "Half-initialized site is recoverable; activation occurs at creation."
+ *     If the build chain that follows fails, the user is on the new site
+ *     and can retry — the site directory persists.
+ *
+ * @param {object} brief
+ *   Required: tag (extracted) OR caller-supplied via options.tag,
+ *             business_name (for site_name),
+ *   Optional: business_type, client_brief, interview_pending,
+ *             interview_completed, pages, tier, business_description,
+ *             revenue_model, location, tone, cta, differentiator
+ * @param {object} options
+ * @param {'extracted'|'caller_supplied'} options.tag_source
+ * @param {string} [options.tag]    Required when tag_source === 'caller_supplied'
+ * @param {'famtastic'|'clean'} [options.tier]
+ * @param {'error'|'update'|'return_collision'} [options.on_collision='error']
+ * @returns {Promise<
+ *     { status: 'created', tag, spec }
+ *   | { status: 'updated_existing', tag, spec }
+ *   | { status: 'collision', tag, existing_site_name, suggested_alternative_slug }
+ *   | { status: 'error', error, error_code, existing_tag? }
+ * >}
+ */
+async function createSite(brief, options = {}) {
+  const { tag_source = 'extracted', on_collision = 'error' } = options;
+
+  // Determine and sanitize the target tag
+  let newTag;
+  if (tag_source === 'caller_supplied') {
+    if (!options.tag) {
+      return { status: 'error', error: 'tag required', error_code: 'missing_tag' };
+    }
+    newTag = options.tag;
+  } else {
+    newTag = brief && brief.tag;
+    if (!newTag) {
+      return { status: 'error', error: 'brief.tag required for tag_source=extracted', error_code: 'missing_tag' };
+    }
+  }
+  newTag = String(newTag).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!newTag.startsWith('site-')) newTag = 'site-' + newTag;
+
+  const siteDir = path.join(SITES_ROOT, newTag);
+  const specPath = path.join(siteDir, 'spec.json');
+
+  // Identity check + collision handling — runs BEFORE any state change
+  if (fs.existsSync(siteDir)) {
+    let existingSpec = {};
+    try {
+      if (fs.existsSync(specPath)) {
+        existingSpec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+      }
+    } catch { /* treat as empty */ }
+
+    const incomingName = brief && (brief.business_name || brief.site_name);
+    const isSameBusiness = existingSpec.site_name
+      ? checkSameBusinessIdentity(incomingName, existingSpec.site_name)
+      : false; // No existing name → fall back to slug-only match (which already happened)
+
+    // Different-business collision ALWAYS returns 'collision'/'error' regardless of caller request
+    if (!isSameBusiness) {
+      if (on_collision === 'error') {
+        return {
+          status: 'error',
+          error: `Site "${newTag}" already exists`,
+          error_code: 'tag_exists',
+          existing_tag: newTag,
+        };
+      }
+      return {
+        status: 'collision',
+        tag: newTag,
+        existing_site_name: existingSpec.site_name || newTag.replace(/^site-/, ''),
+        suggested_alternative_slug: suggestAlternativeSlug(newTag),
+      };
+    }
+
+    // Same business — apply on_collision policy
+    if (on_collision === 'error') {
+      return {
+        status: 'error',
+        error: `Site "${newTag}" already exists`,
+        error_code: 'tag_exists',
+        existing_tag: newTag,
+      };
+    }
+
+    // 'update' or 'return_collision' for same-business → update in place
+    normalizeTierAndMode(existingSpec);
+    if (brief.business_name) existingSpec.site_name = brief.business_name;
+    if (brief.business_type) existingSpec.business_type = brief.business_type;
+    if (options.tier) {
+      existingSpec.tier = options.tier;
+      normalizeTierAndMode(existingSpec);
+    } else if (brief.tier) {
+      existingSpec.tier = brief.tier;
+      normalizeTierAndMode(existingSpec);
+    }
+    if (brief.client_brief) existingSpec.client_brief = brief.client_brief;
+    if (brief.interview_completed !== undefined) existingSpec.interview_completed = brief.interview_completed;
+    if (brief.interview_pending !== undefined) existingSpec.interview_pending = brief.interview_pending;
+    if (brief.pages) existingSpec.pages = brief.pages;
+
+    const tmpPath = specPath + '.tmp';
+    fs.writeFileSync(tmpPath, JSON.stringify(existingSpec, null, 2));
+    fs.renameSync(tmpPath, specPath);
+
+    // Helper-owned activation
+    await endSession();
+    TAG = newTag;
+    writeLastSite(TAG);
+    invalidateSpecCache();
+    currentPage = 'index.html';
+    sessionMessageCount = 0;
+    sessionStartedAt = new Date().toISOString();
+    startSession();
+    studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
+
+    const switchedSpec = readSpec();
+    const pages = listPages();
+    wss.clients.forEach(client => {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
+        client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+        client.send(JSON.stringify({ type: 'spec-updated', spec: switchedSpec }));
+      }
+    });
+    console.log(`[createSite] Updated existing same-business site: ${TAG}`);
+    return { status: 'updated_existing', tag: newTag, spec: switchedSpec };
+  }
+
+  // Fresh creation
+  try {
+    const distDir = path.join(siteDir, 'dist');
+    fs.mkdirSync(distDir, { recursive: true });
+  } catch (mkErr) {
+    return { status: 'error', error: `Failed to create site directory: ${mkErr.message}`, error_code: 'mkdir_failed' };
+  }
+
+  const autoInterviewEnabled = loadSettings().auto_interview !== false;
+  const tierForSpec = options.tier || brief.tier || 'famtastic';
+  const newSpec = {
+    tag: newTag,
+    site_name: brief.business_name || newTag.replace(/^site-/, '').replace(/-/g, ' '),
+    business_type: brief.business_type || (brief.business_description ? brief.business_description.split(' ').slice(0, 3).join(' ') : ''),
+    state: 'new',
+    tier: tierForSpec,
+    created_at: new Date().toISOString(),
+    interview_pending: brief.interview_completed
+      ? false
+      : (brief.interview_pending !== undefined ? !!brief.interview_pending : (autoInterviewEnabled === true)),
+    interview_completed: !!brief.interview_completed,
+    ...(brief.client_brief ? { client_brief: brief.client_brief } : {}),
+    ...(brief.pages ? { pages: brief.pages } : {}),
+  };
+  normalizeTierAndMode(newSpec);
+
+  try {
+    fs.writeFileSync(specPath + '.tmp', JSON.stringify(newSpec, null, 2));
+    fs.renameSync(specPath + '.tmp', specPath);
+  } catch (writeErr) {
+    return { status: 'error', error: `Failed to write spec: ${writeErr.message}`, error_code: 'write_failed' };
+  }
+
+  // Helper-owned activation — only after successful directory + spec write
+  await endSession();
+  TAG = newTag;
+  writeLastSite(TAG);
+  invalidateSpecCache();
+  currentPage = 'index.html';
+  sessionMessageCount = 0;
+  sessionStartedAt = new Date().toISOString();
+  startSession();
+  studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
+
+  const createdSpec = readSpec();
+  const pages = listPages();
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
+      client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+      client.send(JSON.stringify({ type: 'spec-updated', spec: createdSpec }));
+    }
+  });
+  console.log(`[createSite] Created and switched to new site: ${TAG}`);
+  return { status: 'created', tag: newTag, spec: createdSpec };
+}
+
+/**
+ * Synthesize design_brief on the active site spec from a brief object so the
+ * build classifier routes to 'build' (not 'new_site' → handlePlanning).
+ * Idempotent: if design_brief already exists, returns true without changes.
+ */
+function synthesizeDesignBriefForBuild(brief) {
+  const spec = readSpec();
+  if (!spec) return false;
+  if (spec.design_brief) return true;
+  const cb = spec.client_brief || {};
+  spec.design_brief = {
+    goal: cb.business_description || brief.business_description || `Site for ${brief.business_name || spec.site_name}`,
+    audience: cb.ideal_customer || (brief.location ? `Customers in ${brief.location}` : 'Local customers'),
+    tone: brief.tone && brief.tone.length ? brief.tone : ['professional', 'clean'],
+    visual_direction: {
+      layout: 'standard',
+      typography: 'clean and professional',
+      color_usage: 'brand colors throughout',
+      motion: 'subtle',
+      density: 'balanced',
+    },
+    content_priorities: [brief.cta || 'Lead generation', 'Brand credibility'],
+    must_have_sections: brief.pages || spec.pages || ['home', 'about', 'contact'],
+    avoid: ['clutter', 'stock-photo feel'],
+    open_questions: [],
+  };
+  if (brief.pages) spec.pages = brief.pages;
+  spec.state = 'briefed';
+  writeSpec(spec);
+  return true;
+}
+
+/**
+ * Trigger a build for the currently active site.
+ * Gates on WS client presence BEFORE dispatching — no orphaned builds.
+ *
+ * @param {object|null} ws  Optional real WS connection. When null, a mockWs
+ *   broadcasts to all connected clients.
+ * @param {object} spec     Spec for the current site (post-TAG-switch).
+ * @returns {{ triggered: boolean, reason?: string, error?: string }}
+ */
+function triggerSiteBuild(ws, spec) {
+  const wsClients = [...wss.clients].filter(c => c.readyState === 1);
+
+  // Gate on WS client presence FIRST — corrects prior dispatch-before-check order.
+  if (!ws && wsClients.length === 0) {
+    return { triggered: false, reason: 'no_ws_clients' };
+  }
+
+  // Use real ws or a mockWs that broadcasts to all clients.
+  const buildWs = ws || {
+    readyState: 1,
+    buildRunId: null,
+    currentBrain: 'claude',
+    brainModels: {},
+    activeChildren: [],
+    currentChild: null,
+    autoAccept: false,
+    send: (data) => {
+      wsClients.forEach(client => {
+        if (client.readyState === 1) {
+          try { client.send(data); } catch {}
+        }
+      });
+    },
+    once: () => {},
+    removeListener: () => {},
+    on: () => {},
+  };
+
+  const pagesList = (spec.pages || (spec.design_brief && spec.design_brief.must_have_sections) || ['home']).join(', ');
+  const buildMsg = `Build this site based on the design brief. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}.`;
+
+  try {
+    routeToHandler(buildWs, 'build', buildMsg, spec);
+    return { triggered: true };
+  } catch (err) {
+    console.error('[triggerSiteBuild] dispatch error:', err.message);
+    return { triggered: false, reason: 'dispatch_error', error: err.message };
+  }
+}
+
 function extractBriefPatternBased(text) {
   const lower = text.toLowerCase();
 
@@ -7370,27 +7683,128 @@ function extractBriefPatternBased(text) {
   };
 }
 
+// Generic tag blocklist — expanded to include all GENERIC_BUSINESS_TYPES so
+// generic category words can never become a site tag.
+const GENERIC_TAG_BLOCKLIST = new Set([
+  'restaurant','business','site','pizza','shop','store','company','new-site',
+  ...GENERIC_BUSINESS_TYPES,
+]);
+
+function isMeaningfulBusinessName(name) {
+  if (!name || typeof name !== 'string') return false;
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+  if (trimmed === 'New Business') return false;
+  // A name composed only of generic category words is not meaningful
+  const tokens = trimmed.toLowerCase().split(/\s+/);
+  const onlyGeneric = tokens.every(t => GENERIC_TAG_BLOCKLIST.has(t) || IDENTITY_STRIP_WORDS.has(t));
+  return !onlyGeneric;
+}
+
+function tryTypeLocationSynthesis(text, baseBrief) {
+  const lower = text.toLowerCase();
+  const detectedType = GENERIC_BUSINESS_TYPES.find(t => new RegExp(`\\b${t}\\b`).test(lower));
+  if (!detectedType) return null;
+  // Match "in [Location]" — captures up to two capitalized words plus optional state code
+  const locMatch = text.match(/\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?(?:,\s*[A-Z]{2})?)/);
+  if (!locMatch) return null;
+  const location = locMatch[1].trim();
+  const locationSlug = location.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const tag = ('site-' + detectedType + '-' + locationSlug).slice(0, 50);
+  const capitalType = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
+  const business_name = `${capitalType} in ${location}`;
+  const merged = { ...(baseBrief || {}) };
+  merged.business_name = business_name;
+  merged.tag = tag;
+  merged.business_type = detectedType;
+  merged.business_description = baseBrief && baseBrief.business_description
+    ? baseBrief.business_description
+    : `${business_name}. ${text.slice(0, 200)}`;
+  merged.location = location;
+  if (!merged.tone || !merged.tone.length) merged.tone = ['professional', 'clean'];
+  if (!merged.cta) merged.cta = 'Contact Us';
+  if (!merged.revenue_model) merged.revenue_model = 'lead_generation';
+  if (!merged.tier) merged.tier = baseBrief && baseBrief.tier ? baseBrief.tier : 'famtastic';
+  if (!merged.pages) merged.pages = ['home', 'about', 'contact'];
+  return merged;
+}
+
+/**
+ * extractBriefFromMessage(text) — extract a site brief from natural-language input.
+ *
+ * Returns one of:
+ *   { status: 'extracted', extraction_method: 'proper_noun', brief }
+ *   { status: 'extracted', extraction_method: 'type_location_synthesis', brief }
+ *   { status: 'insufficient_identity', reason, clarification_question, raw_message }
+ *
+ * Logic order:
+ *   1. Claude JSON extraction. Accept only when business_name is meaningful
+ *      AND tag isn't generic.
+ *   2. Pattern fallback (proper noun cluster) via extractBriefPatternBased.
+ *   3. Business-type + location synthesis ("a church in Atlanta" →
+ *      site-church-atlanta).
+ *   4. None matched → insufficient_identity with clarification question.
+ *
+ * NO silent fallback to "New Business" / "site-new-site".
+ */
 async function extractBriefFromMessage(text) {
-  // Use Claude if available, with explicit instruction to use business name in tag
+  const raw = String(text || '');
+
+  // Step 1: Claude JSON extraction
+  let claudeBrief = null;
   try {
     const extracted = await callSDK(
-      `Extract a structured site brief from this request. Return ONLY valid JSON, no markdown:\n\n"${text}"\n\nRules:\n- business_name: the actual business name (e.g. "Mario's Pizza")\n- tag: "site-" + business name slugified (e.g. "site-marios-pizza") — NEVER use a generic category word\n- revenue_model: one of lead_generation|rank_and_rent|ecommerce|appointment_booking\n- tier: "famtastic" for bold/expressive design, "clean" for minimal/professional/simple design\n\n{"business_name":"","tag":"site-","tier":"famtastic","revenue_model":"lead_generation","business_description":"","location":"","differentiator":"","cta":"Contact Us","tone":["professional"],"pages":["home","about","contact"]}`,
+      `Extract a structured site brief from this request. Return ONLY valid JSON, no markdown:\n\n"${raw}"\n\nRules:\n- business_name: the actual business name (e.g. "Mario's Pizza"). If no name is given, leave it empty — do NOT invent "New Business".\n- tag: "site-" + business name slugified (e.g. "site-marios-pizza") — NEVER use a generic category word\n- revenue_model: one of lead_generation|rank_and_rent|ecommerce|appointment_booking\n- tier: "famtastic" for bold/expressive design, "clean" for minimal/professional/simple design\n\n{"business_name":"","tag":"site-","tier":"famtastic","revenue_model":"lead_generation","business_description":"","location":"","differentiator":"","cta":"Contact Us","tone":["professional"],"pages":["home","about","contact"]}`,
       { maxTokens: 400, callSite: 'brief-extraction', timeoutMs: 8000 }
     );
     const clean = extracted.replace(/```(?:json)?\n?|```\n?/g, '').trim();
     const parsed = JSON.parse(clean);
-    // Validate tag isn't a generic word
-    const genericTags = ['restaurant', 'business', 'site', 'pizza', 'shop', 'store', 'company'];
     const tagSlug = (parsed.tag || '').replace(/^site-/, '');
-    if (parsed.business_name && parsed.tag && !genericTags.includes(tagSlug)) return parsed;
-    // Tag was generic — regenerate from business name
-    if (parsed.business_name) {
+    const tagOk = parsed.tag && !GENERIC_TAG_BLOCKLIST.has(tagSlug);
+    const nameOk = isMeaningfulBusinessName(parsed.business_name);
+    if (nameOk && tagOk) {
+      claudeBrief = parsed;
+    } else if (nameOk) {
+      // Name is good but tag was generic — regenerate from business name
       parsed.tag = 'site-' + parsed.business_name.toLowerCase()
         .replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 35);
-      return parsed;
+      claudeBrief = parsed;
     }
   } catch { /* fall through to pattern matching */ }
-  return extractBriefPatternBased(text);
+
+  if (claudeBrief) {
+    return { status: 'extracted', extraction_method: 'proper_noun', brief: claudeBrief };
+  }
+
+  // Step 2: Pattern-based proper noun cluster
+  const patternBrief = extractBriefPatternBased(raw);
+  if (patternBrief && isMeaningfulBusinessName(patternBrief.business_name)) {
+    const tagSlug = (patternBrief.tag || '').replace(/^site-/, '');
+    if (!GENERIC_TAG_BLOCKLIST.has(tagSlug)) {
+      return { status: 'extracted', extraction_method: 'proper_noun', brief: patternBrief };
+    }
+  }
+
+  // Step 3: Business-type + location synthesis
+  const synthesized = tryTypeLocationSynthesis(raw, patternBrief);
+  if (synthesized) {
+    return { status: 'extracted', extraction_method: 'type_location_synthesis', brief: synthesized };
+  }
+
+  // Step 4: Insufficient identity
+  const lower = raw.toLowerCase();
+  const hasType = GENERIC_BUSINESS_TYPES.some(t => new RegExp(`\\b${t}\\b`).test(lower));
+  const hasLocation = /\bin\s+[A-Z][a-zA-Z]/.test(raw);
+  let reason = 'no_proper_noun_no_location';
+  if (hasType && !hasLocation) reason = 'too_generic';
+  else if (!hasType && !hasLocation) reason = 'no_proper_noun_no_location';
+  else if (hasType && hasLocation) reason = 'parse_failed'; // synthesis should have caught this — fallback
+  return {
+    status: 'insufficient_identity',
+    reason,
+    clarification_question: `I'd love to build that site. To get the slug right, can you tell me the business name — or at least the type and location? For example: "Tony's Barber Shop in Atlanta" or "a church in Brooklyn".`,
+    raw_message: raw,
+  };
 }
 
 // ── Character Pipeline — sequential anchor → poses → hero → promo ─────────────
@@ -7540,10 +7954,37 @@ async function runAutonomousBuild(message, context = {}) {
       };
     }
 
-    // Step 1: Extract brief
+    // Step 1: Extract brief — new status-based shape
     step('Extracting brief');
-    const brief = await extractBriefFromMessage(message);
-    step('Brief extracted', { tag: brief.tag, name: brief.business_name, revenue: brief.revenue_model });
+    const briefResult = await extractBriefFromMessage(message);
+    if (briefResult.status === 'insufficient_identity') {
+      step('Insufficient identity', { reason: briefResult.reason });
+      return {
+        success: false,
+        insufficient_identity: true,
+        clarification_question: briefResult.clarification_question,
+        log,
+        message: briefResult.clarification_question,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+    const brief = briefResult.brief;
+    // Pre-load client_brief so the spec carries owner-style context downstream
+    const incomingClientBrief = {
+      business_description: brief.business_description,
+      revenue_model: brief.revenue_model,
+      ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
+      differentiator: brief.differentiator || 'Quality service',
+      primary_cta: brief.cta,
+      style_notes: (brief.tone || []).join(', '),
+    };
+    const briefForCreate = {
+      ...brief,
+      interview_completed: true,
+      interview_pending: false,
+      client_brief: incomingClientBrief,
+    };
+    step('Brief extracted', { tag: brief.tag, name: brief.business_name, method: briefResult.extraction_method });
     logShayDeveloperModeEvent({
       event: 'autonomous_build_brief_extracted',
       actor: 'shay',
@@ -7552,210 +7993,63 @@ async function runAutonomousBuild(message, context = {}) {
       target_site_tag: brief.tag,
     });
 
-    // Step 2: Create site (with brief pre-loaded)
-    step('Creating site', { tag: brief.tag });
-    const existingDir = path.join(SITES_ROOT, brief.tag);
-    if (fs.existsSync(existingDir)) {
-      // Site exists — update the brief and switch to it
-      const existSpec = JSON.parse(fs.readFileSync(path.join(existingDir, 'spec.json'), 'utf8')); // L7542
-      normalizeTierAndMode(existSpec); // repair tier/famtastic_mode drift before updating
-      existSpec.client_brief = {
-        business_description: brief.business_description,
-        revenue_model: brief.revenue_model,
-        ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
-        differentiator: brief.differentiator || 'Quality service',
-        primary_cta: brief.cta,
-        style_notes: brief.tone.join(', '),
-      };
-      existSpec.interview_completed = true;
-      existSpec.interview_pending = false;
-      if (brief.pages) existSpec.pages = brief.pages;
-      const tmpPath = path.join(existingDir, 'spec.json.tmp');
-      fs.writeFileSync(tmpPath, JSON.stringify(existSpec, null, 2));
-      fs.renameSync(tmpPath, path.join(existingDir, 'spec.json'));
-      step('Site exists — brief updated');
-      logShayDeveloperModeEvent({
-        event: 'site_write',
-        actor: 'shay',
-        status: 'updated_existing',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [existingDir],
-        target_site_tag: brief.tag,
-      });
-    } else {
-      // Create fresh
-      const distDir = path.join(existingDir, 'dist');
-      fs.mkdirSync(distDir, { recursive: true });
-      const newSpec = {
-        tag: brief.tag,
-        site_name: brief.business_name,
-        business_type: brief.business_description.split(' ').slice(0, 3).join(' '),
-        state: 'new',
-        tier: brief.tier || 'famtastic', // canonical; famtastic_mode derived on first readSpec
-        created_at: new Date().toISOString(),
-        interview_completed: true,
-        interview_pending: false,
-        pages: brief.pages,
-        client_brief: {
-          business_description: brief.business_description,
-          revenue_model: brief.revenue_model,
-          ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
-          differentiator: brief.differentiator || 'Quality service',
-          primary_cta: brief.cta,
-          style_notes: brief.tone.join(', '),
-        },
-      };
-      const newSpecPath = path.join(existingDir, 'spec.json');
-      fs.writeFileSync(newSpecPath + '.tmp', JSON.stringify(newSpec, null, 2));
-      fs.renameSync(newSpecPath + '.tmp', newSpecPath);
-      step('Site created');
-      logShayDeveloperModeEvent({
-        event: 'site_write',
-        actor: 'shay',
-        status: 'created_site',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [existingDir],
-        target_site_tag: brief.tag,
-      });
-    }
-
-    // Step 2b: Synthesize design_brief from client_brief so classifier routes
-    // to 'build' intent (not 'new_site' → handlePlanning which needs approval)
-    step('Synthesizing design_brief for build routing');
-    const specToUpdate = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, brief.tag, 'spec.json'), 'utf8')); // L7605
-    normalizeTierAndMode(specToUpdate); // repair before writing design_brief
-    if (!specToUpdate.design_brief) {
-      const cb = specToUpdate.client_brief || {};
-      specToUpdate.design_brief = {
-        goal: cb.business_description || brief.business_description,
-        audience: cb.ideal_customer || 'Local customers',
-        tone: brief.tone,
-        visual_direction: {
-          layout: 'standard',
-          typography: 'clean and professional',
-          color_usage: 'brand colors throughout',
-          motion: 'subtle',
-          density: 'balanced',
-        },
-        content_priorities: [brief.cta || 'Lead generation', 'Brand credibility'],
-        must_have_sections: brief.pages,
-        avoid: ['clutter', 'stock-photo feel'],
-        open_questions: [],
-      };
-      specToUpdate.pages = brief.pages;
-      specToUpdate.state = 'briefed';
-      const tmpP = path.join(SITES_ROOT, brief.tag, 'spec.json.tmp');
-      fs.writeFileSync(tmpP, JSON.stringify(specToUpdate, null, 2));
-      fs.renameSync(tmpP, path.join(SITES_ROOT, brief.tag, 'spec.json'));
-      step('design_brief synthesized');
-      logShayDeveloperModeEvent({
-        event: 'site_write',
-        actor: 'shay',
-        status: 'design_brief_synthesized',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [path.join(SITES_ROOT, brief.tag)],
-        target_site_tag: brief.tag,
-      });
-    }
-
-    // Step 3: Switch to the new site
-    step('Switching to site', { tag: brief.tag });
-    await endSession();
-    TAG = brief.tag;
-    writeLastSite(TAG);
-    invalidateSpecCache();
-    currentPage = 'index.html';
-    sessionMessageCount = 0;
-    sessionStartedAt = new Date().toISOString();
-    startSession();
-    studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
-
-    // Notify all WS clients of the switch
-    const spec = readSpec();
-    const pages = listPages();
-    wss.clients.forEach(client => {
-      if (client.readyState === 1) {
-        client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
-        client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
-      }
-    });
-    step('Site switched, clients notified');
-    logShayDeveloperModeEvent({
-      event: 'site_switch',
-      actor: 'shay',
-      status: 'ok',
-      trust_mode: approval.summary.trust_mode,
-      target_site_tag: brief.tag,
-    });
-
-    // Step 4: Trigger build directly via routeToHandler with a mock WS.
-    // IMPORTANT: Cannot call handleChatMessage twice — it self-blocks via buildInProgress.
-    // routeToHandler(ws, 'build', ...) calls handleChatMessage once with the right message,
-    // which then sets buildInProgress + calls parallelBuild. This is the correct entry point.
-    step('Triggering build (direct routeToHandler)');
-
-    // Mock WS — mirrors all build events to real browser clients so Fritz watches live
-    const mockWs = {
-      readyState: 1,
-      buildRunId: null,
-      currentBrain: 'claude',
-      brainModels: {},
-      activeChildren: [],
-      currentChild: null,
-      autoAccept: false,
-      send: (data) => {
-        try {
-          wss.clients.forEach(client => {
-            if (client.readyState === 1) {
-              try { client.send(data); } catch {}
-            }
-          });
-        } catch {}
-      },
-      // parallelBuild uses ws.once/removeListener/on for close-event guards.
-      // The mock WS never fires events so these are safe no-ops.
-      once: () => {},
-      removeListener: () => {},
-      on: () => {},
-    };
-
-    // Call routeToHandler directly — it calls handleChatMessage once with correct params.
-    // handleChatMessage sets buildInProgress=true, then calls parallelBuild.
-    const builtSpec = readSpec();
-    const buildMsg = `Build this site based on the design brief. Site name: ${builtSpec.site_name || brief.business_name}. Pages to generate: ${(builtSpec.pages || brief.pages).join(', ')}.`;
-    // routeToHandler case 'build' calls handleChatMessage(ws, buildMsg, 'build', spec)
-    // → buildInProgress=true → parallelBuild fires
-    try {
-      routeToHandler(mockWs, 'build', buildMsg, builtSpec);
-      step('Build dispatched via routeToHandler');
-      logShayDeveloperModeEvent({
-        event: 'build_trigger',
-        actor: 'shay',
-        status: 'dispatched',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [path.join(SITES_ROOT, brief.tag)],
-        target_site_tag: brief.tag,
-      });
-    } catch (routeErr) {
-      step('routeToHandler error', { error: routeErr.message });
-      logShayDeveloperModeEvent({
-        event: 'build_trigger',
-        actor: 'shay',
-        status: 'error',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [path.join(SITES_ROOT, brief.tag)],
-        target_site_tag: brief.tag,
-        error: routeErr.message,
-      });
-    }
-
-    const wsClients = [...wss.clients].filter(c => c.readyState === 1).length;
-
-    if (wsClients === 0) {
-      step('No active WS clients — build cannot be triggered until browser connects');
+    // Step 2: Create site via shared helper (TAG switch + WS notify owned by helper)
+    step('Creating site via createSite()', { tag: brief.tag });
+    const siteResult = await createSite(briefForCreate, { tag_source: 'extracted', on_collision: 'update' });
+    if (siteResult.status === 'collision') {
+      step('Different-business collision', { existing: siteResult.existing_site_name });
       return {
         success: false,
-        tag: brief.tag,
+        collision: true,
+        log,
+        message: `A site named "${siteResult.existing_site_name}" already exists. Suggested alternative: ${siteResult.suggested_alternative_slug}. Resend with explicit name to proceed.`,
+        existing_site_name: siteResult.existing_site_name,
+        suggested_alternative_slug: siteResult.suggested_alternative_slug,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+    if (siteResult.status === 'error') {
+      step('createSite error', { error: siteResult.error });
+      return {
+        success: false,
+        log,
+        error: siteResult.error,
+        message: `Could not create site: ${siteResult.error}`,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+    step(`Site ${siteResult.status}`, { tag: siteResult.tag });
+    logShayDeveloperModeEvent({
+      event: 'site_write',
+      actor: 'shay',
+      status: siteResult.status,
+      trust_mode: approval.summary.trust_mode,
+      target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+      target_site_tag: siteResult.tag,
+    });
+
+    // Step 2b: Synthesize design_brief on the active spec (post-TAG-switch)
+    step('Synthesizing design_brief for build routing');
+    synthesizeDesignBriefForBuild(brief);
+    logShayDeveloperModeEvent({
+      event: 'site_write',
+      actor: 'shay',
+      status: 'design_brief_synthesized',
+      trust_mode: approval.summary.trust_mode,
+      target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+      target_site_tag: siteResult.tag,
+    });
+
+    // Step 3: Trigger build via shared helper — gates on WS clients BEFORE dispatch
+    step('Trigger build via triggerSiteBuild()');
+    const builtSpec = readSpec();
+    const triggerResult = triggerSiteBuild(null, builtSpec);
+
+    if (!triggerResult.triggered && triggerResult.reason === 'no_ws_clients') {
+      step('No active WS clients — build NOT dispatched');
+      return {
+        success: false,
+        tag: siteResult.tag,
         brief,
         log,
         message: `Site ${brief.business_name} created. Open Studio to trigger build — no browser connected.`,
@@ -7763,16 +8057,44 @@ async function runAutonomousBuild(message, context = {}) {
       };
     }
 
-    step('Build triggered', { ws_clients: wsClients });
+    if (!triggerResult.triggered) {
+      step('Build dispatch failed', { reason: triggerResult.reason, error: triggerResult.error });
+      logShayDeveloperModeEvent({
+        event: 'build_trigger',
+        actor: 'shay',
+        status: 'error',
+        trust_mode: approval.summary.trust_mode,
+        target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+        target_site_tag: siteResult.tag,
+        error: triggerResult.error || triggerResult.reason,
+      });
+      return {
+        success: false,
+        tag: siteResult.tag,
+        brief,
+        log,
+        message: `Site created but build dispatch failed: ${triggerResult.error || triggerResult.reason}`,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+
+    step('Build dispatched');
+    logShayDeveloperModeEvent({
+      event: 'build_trigger',
+      actor: 'shay',
+      status: 'dispatched',
+      trust_mode: approval.summary.trust_mode,
+      target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+      target_site_tag: siteResult.tag,
+    });
 
     return {
       success: true,
-      tag: brief.tag,
+      tag: siteResult.tag,
       brief,
       log,
       message: `🚀 ${brief.business_name} build started. Watch Studio for progress.`,
       preview_url: `http://localhost:${PREVIEW_PORT}`,
-      ws_clients_notified: wsClients,
       elapsed_ms: Date.now() - t0,
     };
 
@@ -10678,6 +11000,39 @@ function classifyRequest(message, spec) {
   const hasBrief = spec && spec.design_brief && spec.design_brief.approved;
   const hasHtml = fs.existsSync(path.join(DIST_DIR(), 'index.html'));
 
+  // --- NEW SITE CREATE (highest precedence) ---------------------------------
+  // Detects an explicit build request that names or describes a NEW site target —
+  // distinct from edits to the active site. Fires BEFORE strong build signals
+  // so the active site's hasBrief doesn't lock the classifier into edit mode.
+  //
+  // Required ALL of:
+  //   1. Build phrase pattern: "build [me] [a] [new] (site|website) for ..."
+  //   2. Identifiable target: proper noun cluster OR business-type+location OR no active site
+  //   3. No edit-language keywords (change/update/modify/fix/edit/tweak/adjust/improve)
+  //   4. If active site exists, the extracted target must NOT match active spec.site_name
+  //      under normalized identity comparison (prevents same-site re-trigger).
+  const buildPhrasePattern = /\bbuild\b.{0,30}\b(?:me\s+)?(?:a\s+)?(?:new\s+)?(?:site|website)\b.{0,20}\bfor\b/;
+  const editLanguagePattern = /\b(change|update|modify|fix|edit|tweak|adjust|improve)\b/;
+  if (buildPhrasePattern.test(lower) && !editLanguagePattern.test(lower)) {
+    const properNounCluster = message.match(/\bfor\s+(?:a\s+|an\s+|the\s+)?([A-Z][a-zA-Z']+(?:\s+[A-Z][a-zA-Z']+){0,3})/);
+    const hasProperNoun = !!(properNounCluster && properNounCluster[1]);
+    const detectedType = GENERIC_BUSINESS_TYPES.find(t => new RegExp(`\\b${t}\\b`).test(lower));
+    const hasLocation = /\bin\s+[A-Z][a-zA-Z]/.test(message);
+    const hasTypeLocation = !!(detectedType && hasLocation);
+    const noActiveSite = !spec || !spec.site_name;
+
+    if (hasProperNoun || hasTypeLocation || noActiveSite) {
+      let isSameAsActive = false;
+      if (spec && spec.site_name && hasProperNoun) {
+        isSameAsActive = checkSameBusinessIdentity(properNounCluster[1], spec.site_name);
+      }
+      if (!isSameAsActive) {
+        console.log(`[classifier] intent=new_site_create (build request with identifiable new target)`);
+        return 'new_site_create';
+      }
+    }
+  }
+
   // --- STRONG BUILD SIGNALS (intent-dominant, override vocabulary) ---
   // These fire before any vocabulary matching to prevent brief text from being misclassified
   const strongBuildSignals = [
@@ -10784,6 +11139,14 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(push\s+studio\s+code|push\s+hub|sync\s+studio)\b/)) return 'hub_push';
   if (lower.match(/\b(push\s+to\s+(repo|git|github|remote)|git\s+push|sync\s+repo|update\s+repo)\b/)) return 'git_push';
 
+  // New site fallback — no brief exists yet (HTML may exist from fallback template).
+  // Moved ABOVE the deploy keyword gate so an unbriefed site doesn't get hijacked
+  // by an incidental "deploy" word into a deploy attempt on an unbuilt site.
+  if (!hasBrief) {
+    console.log(`[classifier] intent=new_site confidence=HIGH (no approved brief)`);
+    return 'new_site';
+  }
+
   // Explicit commands first
   if (lower.match(/\bdeploy\b/) && !lower.match(/\bhow\s+to\s+deploy\b/)) return 'deploy';
   if (lower.match(/\b(build|rebuild)\s+(the\s+)?site\b/) || lower.match(/\b(generate|create|make)\s+(the\s+)?site\b/)) return 'build';
@@ -10797,12 +11160,6 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(add|fill|insert|get|find|need)\s+(?:some\s+|all\s+)?(?:placeholder\s+)?(?:images?|photos?|stock\s+photos?|pictures?)\b/) ||
       lower.match(/\b(fill\s+(?:the\s+)?(?:image|photo)\s+slots?|stock\s+photos?)\b/) ||
       lower.match(/\bi\s+need\s+images?\b/)) return 'fill_stock_photos';
-
-  // New site — no brief exists yet (HTML may exist from fallback template)
-  if (!hasBrief) {
-    console.log(`[classifier] intent=new_site confidence=HIGH (no approved brief)`);
-    return 'new_site';
-  }
 
   // Brief approved but no HTML built yet — need to build first
   if (hasBrief && !hasHtml) return 'build';
@@ -15845,6 +16202,66 @@ wss.on('connection', (ws) => {
         case 'major_revision':
           handlePlanning(ws, userMessage, spec);
           break;
+
+        case 'new_site_create': {
+          // Direct Studio Chat path: full chain (extract → createSite → synthesize → trigger build).
+          // Authorization is NOT enforced here — Studio Chat is already inside the trusted UI.
+          // createSite() owns TAG switch + WS notify; this handler owns user-visible chat surfaces.
+          (async () => {
+            ws.send(JSON.stringify({ type: 'status', content: 'Analyzing new-site request...' }));
+            const briefResult = await extractBriefFromMessage(userMessage);
+            if (briefResult.status === 'insufficient_identity') {
+              ws.send(JSON.stringify({ type: 'assistant', content: briefResult.clarification_question }));
+              appendConvo({ role: 'assistant', content: briefResult.clarification_question, at: new Date().toISOString() });
+              return;
+            }
+            ws.send(JSON.stringify({ type: 'status', content: `Creating site for ${briefResult.brief.business_name}...` }));
+            const briefForCreate = {
+              ...briefResult.brief,
+              interview_completed: true,
+              interview_pending: false,
+              client_brief: {
+                business_description: briefResult.brief.business_description,
+                revenue_model: briefResult.brief.revenue_model,
+                ideal_customer: briefResult.brief.location ? `Customers in ${briefResult.brief.location}` : 'Local customers',
+                differentiator: briefResult.brief.differentiator || 'Quality service',
+                primary_cta: briefResult.brief.cta,
+                style_notes: (briefResult.brief.tone || []).join(', '),
+              },
+            };
+            const siteResult = await createSite(briefForCreate, { tag_source: 'extracted', on_collision: 'return_collision' });
+            if (siteResult.status === 'collision') {
+              const msg = `A site named "${siteResult.existing_site_name}" already exists. Suggested alternative: ${siteResult.suggested_alternative_slug}. Resend with an explicit different name to proceed.`;
+              ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+              appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+              return;
+            }
+            if (siteResult.status === 'error') {
+              const msg = `Could not create site: ${siteResult.error}`;
+              ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+              appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+              return;
+            }
+            // created or updated_existing — synthesize design_brief and trigger build
+            synthesizeDesignBriefForBuild(briefResult.brief);
+            const triggered = triggerSiteBuild(ws, readSpec());
+            if (!triggered.triggered) {
+              const msg = triggered.reason === 'no_ws_clients'
+                ? `Site ${briefResult.brief.business_name} created. Open Studio to trigger the build.`
+                : `Site created but build dispatch failed: ${triggered.error || triggered.reason}`;
+              ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+              appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+              return;
+            }
+            const okMsg = `Building ${briefResult.brief.business_name}.`;
+            appendConvo({ role: 'assistant', content: okMsg, at: new Date().toISOString() });
+          })().catch((err) => {
+            console.error('[new_site_create] error:', err);
+            try { ws.send(JSON.stringify({ type: 'error', content: `New-site flow failed: ${err.message}` })); } catch {}
+          });
+          break;
+        }
+
         case 'restyle':
           handleChatMessage(ws, userMessage, 'restyle', spec);
           break;
@@ -17635,6 +18052,10 @@ module.exports = {
   resolveTier, normalizeTierAndMode,
   getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode,
   extractBriefPatternBased,
+  // Site creation contract (2026-04-25 baseline closure)
+  GENERIC_BUSINESS_TYPES, IDENTITY_STRIP_WORDS, normalizeBizName, checkSameBusinessIdentity,
+  suggestAlternativeSlug, isMeaningfulBusinessName, tryTypeLocationSynthesis,
+  extractBriefFromMessage, createSite, synthesizeDesignBriefForBuild, triggerSiteBuild,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
   classifyShayShayReasoning, selectShayShayBrain, normalizeShayShayResponse, answerShayShayDirect,
