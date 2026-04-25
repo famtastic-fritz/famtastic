@@ -5951,6 +5951,16 @@ app.post('/api/shay-shay', async (req, res) => {
           ...buildResult,
         });
       }
+      // build_request is async — full chain (auth → extract → createSite → synthesize → trigger)
+      // No route_to_chat: status surfaces in Shay Desk only.
+      if (tier0.intent === 'build_request') {
+        suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'build_request', source: 'shay-shay-t0' });
+        const buildResult = await handleShayBuildRequest(message, context);
+        return res.json({
+          ...buildResult,
+          bridge_debug: bridgeDebug,
+        });
+      }
       const result = handleShayShayTier0(tier0, message, context, manifest);
       suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });
       return res.json({
@@ -7139,12 +7149,15 @@ function handleShayShayTier0(tier0, message, context, manifest) {
   }
 
   if (tier0.intent === 'build_request') {
-    // Route the entire build request directly to Studio chat — the classifier
-    // will pick it up as new_site or build intent and handle the brief + build
+    // Build_request is now intercepted in the /api/shay-shay dispatcher BEFORE
+    // reaching this synchronous handler — see handleShayBuildRequest for the
+    // full async chain (auth → extract → createSite → synthesize → trigger).
+    // This branch only fires if a future call site invokes handleShayShayTier0
+    // without going through the dispatcher; in that case, return a benign
+    // shay_response that explains where the work is owned now.
     return {
-      response: `Routing your build request to Studio. The brief interview will start automatically.`,
-      action: 'route_to_chat',
-      message: message, // full original message goes to Studio
+      action: 'shay_response',
+      response: 'Build requests are handled asynchronously via the /api/shay-shay dispatcher. This synchronous path is not used.',
     };
   }
 
@@ -8102,6 +8115,113 @@ async function runAutonomousBuild(message, context = {}) {
     step('ERROR', { error: err.message, stack: err.stack?.slice(0, 200) });
     return { success: false, error: err.message, log, elapsed_ms: Date.now() - t0 };
   }
+}
+
+/**
+ * handleShayBuildRequest(message, context)
+ *
+ * Async full chain for Shay Desk's build_request intent:
+ *   auth → extractBriefFromMessage → createSite → synthesizeDesignBriefForBuild → triggerSiteBuild
+ *
+ * Returns { action: 'shay_response', response: <user-facing text> }. Status
+ * surfaces in Shay Desk only — no route_to_chat side-channel; chat is for chat.
+ *
+ * The response key matches the orb fallback key at studio-orb.js:1027.
+ */
+async function handleShayBuildRequest(message, context = {}) {
+  // 1. Caller-owned authorization gate
+  const approval = authorizeShayDeveloperAction('site_write', [SITES_ROOT], context);
+  logShayDeveloperModeEvent({
+    event: 'shay_build_request_received',
+    actor: 'shay',
+    status: approval.allowed ? 'allowed' : approval.status,
+    trust_mode: approval.summary && approval.summary.trust_mode,
+    target_paths: [SITES_ROOT],
+    message_preview: String(message || '').slice(0, 180),
+  });
+  if (!approval.allowed) {
+    return {
+      action: 'shay_response',
+      response: 'This would create a new site. Approve in Developer Mode to proceed.',
+      blocked_by_developer_mode: true,
+      developer_mode: approval.summary,
+    };
+  }
+
+  // 2. Extract brief
+  const briefResult = await extractBriefFromMessage(message);
+  if (briefResult.status === 'insufficient_identity') {
+    return {
+      action: 'shay_response',
+      response: briefResult.clarification_question,
+      insufficient_identity: true,
+      reason: briefResult.reason,
+    };
+  }
+
+  // 3. Pre-load client_brief and create site (non-destructive on different-business collisions)
+  const briefForCreate = {
+    ...briefResult.brief,
+    interview_completed: true,
+    interview_pending: false,
+    client_brief: {
+      business_description: briefResult.brief.business_description,
+      revenue_model: briefResult.brief.revenue_model,
+      ideal_customer: briefResult.brief.location ? `Customers in ${briefResult.brief.location}` : 'Local customers',
+      differentiator: briefResult.brief.differentiator || 'Quality service',
+      primary_cta: briefResult.brief.cta,
+      style_notes: (briefResult.brief.tone || []).join(', '),
+    },
+  };
+  const siteResult = await createSite(briefForCreate, { tag_source: 'extracted', on_collision: 'return_collision' });
+
+  if (siteResult.status === 'collision') {
+    return {
+      action: 'shay_response',
+      response: `A site named "${siteResult.existing_site_name}" already exists. Suggested alternative: ${siteResult.suggested_alternative_slug}. Resend with explicit name to proceed.`,
+      collision: true,
+      existing_site_name: siteResult.existing_site_name,
+      suggested_alternative_slug: siteResult.suggested_alternative_slug,
+    };
+  }
+  if (siteResult.status === 'error') {
+    return {
+      action: 'shay_response',
+      response: `Could not create site: ${siteResult.error}`,
+      error: siteResult.error,
+      error_code: siteResult.error_code,
+    };
+  }
+
+  // 4. Synthesize design_brief on the active spec (post-TAG-switch)
+  synthesizeDesignBriefForBuild(briefResult.brief);
+
+  // 5. Trigger build via shared helper — gates on WS clients BEFORE dispatch
+  const triggerResult = triggerSiteBuild(null, readSpec());
+  const siteName = briefResult.brief.business_name;
+
+  if (!triggerResult.triggered && triggerResult.reason === 'no_ws_clients') {
+    return {
+      action: 'shay_response',
+      response: `${siteName} site created. Open Studio to trigger the build — no browser connected.`,
+      tag: siteResult.tag,
+      build_pending: true,
+    };
+  }
+  if (!triggerResult.triggered) {
+    return {
+      action: 'shay_response',
+      response: `${siteName} site created but build dispatch failed: ${triggerResult.error || triggerResult.reason}.`,
+      tag: siteResult.tag,
+      build_dispatch_error: triggerResult.error || triggerResult.reason,
+    };
+  }
+  return {
+    action: 'shay_response',
+    response: `Building ${siteName}. Watch progress in Studio Chat.`,
+    tag: siteResult.tag,
+    build_dispatched: true,
+  };
 }
 
 // POST /api/autonomous-build — Shay-Shay's autonomous site build endpoint
