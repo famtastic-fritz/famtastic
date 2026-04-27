@@ -5999,13 +5999,24 @@ app.post('/api/shay-shay', async (req, res) => {
           ...buildResult,
         });
       }
-      // build_request is async — full chain (auth → extract → createSite → synthesize → trigger)
-      // No route_to_chat: status surfaces in Shay Desk only.
+      // build_request is async — extracts brief, returns confirmation prompt.
+      // No route_to_chat: status surfaces in Shay Desk only. P0.3 split the
+      // chain into request → confirm to add a human-in-the-loop checkpoint.
       if (tier0.intent === 'build_request') {
         suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'build_request', source: 'shay-shay-t0' });
         const buildResult = await handleShayBuildRequest(message, context);
         return res.json({
           ...buildResult,
+          bridge_debug: bridgeDebug,
+        });
+      }
+      // confirm/cancel of a pending build_request. The full build chain
+      // (createSite → synthesize → triggerSiteBuild) runs here on confirm.
+      if (tier0.intent === 'confirm_build_request' || tier0.intent === 'cancel_build_request') {
+        suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });
+        const confirmResult = await handleShayBuildConfirmation(message, context);
+        return res.json({
+          ...confirmResult,
           bridge_debug: bridgeDebug,
         });
       }
@@ -7104,6 +7115,16 @@ async function executeBridgeOp(bridgeRequest) {
 }
 
 function classifyShayShayTier0(lower, context = {}) {
+  // P0.3 — confirmation/cancellation of a pending build_request. Only fires when
+  // there is an actual pending entry, so a bare "yes" outside the build flow
+  // doesn't get hijacked. See handleShayBuildConfirmation.
+  if (hasPendingBuildConfirmation()) {
+    if (/\b(yes|yep|yeah|yup|ok|okay|sure|proceed|build\s+it|go\s+ahead|do\s+it|let['']?s\s+go|sounds\s+good|approved|confirm|confirmed)\b/.test(lower))
+      return { intent: 'confirm_build_request' };
+    if (/\b(no|nope|cancel|abort|nevermind|never\s+mind|forget\s+it|stop|don['']?t)\b/.test(lower))
+      return { intent: 'cancel_build_request' };
+  }
+
   if (/\b(restart\s+studio|reboot\s+studio|reset\s+server)\b/.test(lower))
     return { intent: 'studio_command', command: 'restart' };
   if (/\b(clear\s+cache|purge\s+cache)\b/.test(lower))
@@ -8166,10 +8187,61 @@ async function runAutonomousBuild(message, context = {}) {
 }
 
 /**
+ * Build-confirmation pending map (P0.3 fix for bug-shay-auto-build-no-confirmation-2026-04-25).
+ *
+ * The build_request flow used to fire the full chain (auth → extract → createSite →
+ * synthesize → triggerSiteBuild) without a human-in-the-loop checkpoint. P0.3 splits
+ * the flow into two messages: the first message extracts the brief and stores it
+ * here; an explicit confirmation message ("yes" / "build it" / "proceed") triggers
+ * the deferred build chain.
+ *
+ * Single-key map ('shay-default') is acceptable for the single-user localhost
+ * system. TTL is 5 minutes — entries beyond TTL are treated as expired.
+ */
+const pendingBuildConfirmations = new Map();
+const BUILD_CONFIRMATION_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const BUILD_CONFIRMATION_KEY = 'shay-default';
+
+function setPendingBuildConfirmation(brief, extractionMethod) {
+  pendingBuildConfirmations.set(BUILD_CONFIRMATION_KEY, {
+    brief,
+    extraction_method: extractionMethod,
+    extracted_at: Date.now(),
+    expires_at: Date.now() + BUILD_CONFIRMATION_TTL_MS,
+  });
+}
+
+function takePendingBuildConfirmation() {
+  const entry = pendingBuildConfirmations.get(BUILD_CONFIRMATION_KEY);
+  if (!entry) return null;
+  if (Date.now() > entry.expires_at) {
+    pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+    return null;
+  }
+  pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+  return entry;
+}
+
+function hasPendingBuildConfirmation() {
+  const entry = pendingBuildConfirmations.get(BUILD_CONFIRMATION_KEY);
+  if (!entry) return false;
+  if (Date.now() > entry.expires_at) {
+    pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+    return false;
+  }
+  return true;
+}
+
+/**
  * handleShayBuildRequest(message, context)
  *
- * Async full chain for Shay Desk's build_request intent:
- *   auth → extractBriefFromMessage → createSite → synthesizeDesignBriefForBuild → triggerSiteBuild
+ * Async first-message handler for Shay Desk's build_request intent:
+ *   auth → extractBriefFromMessage → store pending → return confirmation prompt
+ *
+ * Does NOT auto-trigger the build. The user must explicitly confirm via a
+ * second message ("yes" / "build it" / "proceed" / "go ahead"), which is
+ * detected by classifyShayShayTier0 as 'confirm_build_request' and dispatched
+ * through handleShayBuildConfirmation.
  *
  * Returns { action: 'shay_response', response: <user-facing text> }. Status
  * surfaces in Shay Desk only — no route_to_chat side-channel; chat is for chat.
@@ -8207,18 +8279,86 @@ async function handleShayBuildRequest(message, context = {}) {
     };
   }
 
+  // 3. Store pending confirmation. The build chain runs in handleShayBuildConfirmation
+  // when the user explicitly confirms.
+  setPendingBuildConfirmation(briefResult.brief, briefResult.extraction_method);
+  const brief = briefResult.brief;
+  const pages = (brief.pages || ['home', 'about', 'contact']).join(', ');
+  const tier = brief.tier || 'famtastic';
+  const lines = [
+    `Ready to build "${brief.business_name}".`,
+    `  Tag: ${brief.tag}`,
+    `  Pages: ${pages}`,
+    `  Tier: ${tier}`,
+    `  Extraction: ${briefResult.extraction_method}`,
+    '',
+    'Reply "yes" / "build it" / "proceed" to start the build, or "cancel" to discard.',
+    '(Pending confirmation expires in 5 minutes.)',
+  ];
+  return {
+    action: 'shay_response',
+    response: lines.join('\n'),
+    pending_confirmation: true,
+    extracted_brief: brief,
+    extraction_method: briefResult.extraction_method,
+  };
+}
+
+/**
+ * handleShayBuildConfirmation(message, context)
+ *
+ * Runs the deferred build chain that handleShayBuildRequest set up:
+ *   takePending → createSite → synthesizeDesignBriefForBuild → triggerSiteBuild
+ *
+ * Called when classifyShayShayTier0 returns 'confirm_build_request' or
+ * 'cancel_build_request'. Re-runs auth (defence-in-depth — auth state may have
+ * changed between the build_request and the confirmation).
+ */
+async function handleShayBuildConfirmation(message, context = {}) {
+  const lower = String(message || '').toLowerCase();
+
+  // Cancel path
+  if (/\b(cancel|abort|nope|nevermind|never\s+mind|forget\s+it)\b/.test(lower)) {
+    const had = hasPendingBuildConfirmation();
+    pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+    return {
+      action: 'shay_response',
+      response: had ? 'Build cancelled. Pending confirmation discarded.' : 'No pending build to cancel.',
+    };
+  }
+
+  const pending = takePendingBuildConfirmation();
+  if (!pending) {
+    return {
+      action: 'shay_response',
+      response: 'No pending build to confirm. Send a fresh build request.',
+    };
+  }
+
+  // Re-check auth at confirmation time
+  const approval = authorizeShayDeveloperAction('site_write', [SITES_ROOT], context);
+  if (!approval.allowed) {
+    return {
+      action: 'shay_response',
+      response: 'This would create a new site. Approve in Developer Mode to proceed.',
+      blocked_by_developer_mode: true,
+      developer_mode: approval.summary,
+    };
+  }
+
   // 3. Pre-load client_brief and create site (non-destructive on different-business collisions)
+  const brief = pending.brief;
   const briefForCreate = {
-    ...briefResult.brief,
+    ...brief,
     interview_completed: true,
     interview_pending: false,
     client_brief: {
-      business_description: briefResult.brief.business_description,
-      revenue_model: briefResult.brief.revenue_model,
-      ideal_customer: briefResult.brief.location ? `Customers in ${briefResult.brief.location}` : 'Local customers',
-      differentiator: briefResult.brief.differentiator || 'Quality service',
-      primary_cta: briefResult.brief.cta,
-      style_notes: (briefResult.brief.tone || []).join(', '),
+      business_description: brief.business_description,
+      revenue_model: brief.revenue_model,
+      ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
+      differentiator: brief.differentiator || 'Quality service',
+      primary_cta: brief.cta,
+      style_notes: (brief.tone || []).join(', '),
     },
   };
   const siteResult = await createSite(briefForCreate, { tag_source: 'extracted', on_collision: 'return_collision' });
@@ -8242,11 +8382,11 @@ async function handleShayBuildRequest(message, context = {}) {
   }
 
   // 4. Synthesize design_brief on the active spec (post-TAG-switch)
-  synthesizeDesignBriefForBuild(briefResult.brief);
+  synthesizeDesignBriefForBuild(brief);
 
   // 5. Trigger build via shared helper — gates on WS clients BEFORE dispatch
   const triggerResult = triggerSiteBuild(null, readSpec());
-  const siteName = briefResult.brief.business_name;
+  const siteName = brief.business_name;
 
   if (!triggerResult.triggered && triggerResult.reason === 'no_ws_clients') {
     return {
@@ -14757,6 +14897,13 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
     case 'bug_fix':
       modeInstruction = `The user is reporting a BUG or visual issue on ${currentPage}. Fix only the specific problem. Do not change design direction or content.`;
       break;
+    case 'restyle':
+      // P0.3 fix — Session 13 wired routing + htmlContext but never added the
+      // modeInstruction case. Result was that restyle classified, hit the default
+      // generic instruction, and produced a vaguely-modified site instead of an
+      // actual restyle. This case makes the intent explicit.
+      modeInstruction = `The user wants to RESTYLE ${currentPage} — change the visual design (colors, fonts, layout, motion, decorative shapes) while preserving all content (headings, body copy, links, images, structure). Do NOT rewrite copy. Do NOT add or remove sections. Do NOT change navigation or CTAs. Only the visual treatment changes. Honor the FAMtastic Tier B identity unless the brief says otherwise. Return the COMPLETE updated page as HTML_UPDATE: — not a diff.`;
+      break;
     case 'enhancement_pass': {
       const passes = detectEnhancementPasses(userMessage);
       const enabled = Object.keys(passes).filter(k => passes[k] && k !== 'famtasticMode');
@@ -18478,6 +18625,26 @@ if (require.main === module) {
   // Wire cost-monitor broadcast to all connected WS clients
   costMonitor.setBroadcast(msg => {
     wss.clients.forEach(c => { if (c.readyState === 1) try { c.send(JSON.stringify(msg)); } catch {} });
+  });
+
+  // P0.3 — EADDRINUSE handler: emit a clear single-line operator signal instead
+  // of a raw uncaughtException stack trace. The previous process's port may still
+  // be in TIME_WAIT after a crash; launchd's ThrottleInterval (raised from 2 to 30
+  // in the plist) and the kernel's TIME_WAIT period together make this a transient
+  // error that resolves on the next launchd restart.
+  server.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      console.error(`[site-studio] EADDRINUSE on port ${PORT} — previous instance may still be releasing the socket. launchd will restart in ${30}s.`);
+      process.exit(1);
+    }
+    throw err;
+  });
+  previewServer.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      console.error(`[preview] EADDRINUSE on port ${PREVIEW_PORT} — previous instance may still be releasing the socket. launchd will restart in ${30}s.`);
+      process.exit(1);
+    }
+    throw err;
   });
 
   server.listen(PORT, () => {

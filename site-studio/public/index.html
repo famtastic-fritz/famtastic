@@ -1278,6 +1278,16 @@
       addChatSessionBreak(tag);
       config.tag = tag;
       document.title = 'Site Studio \u2014 ' + tag;
+      // P0.3 — force preview iframe to reload with cache-buster on TAG change.
+      // Same-URL .src assignment is a browser no-op in many engines; the buster
+      // forces a fresh fetch. Preview server strips query strings before lookup
+      // (server.js:18040 urlPath = req.url.split('?')[0]) so the buster is safe.
+      try {
+        var pf = document.getElementById('preview-frame');
+        if (pf && config.previewPort) {
+          pf.src = 'http://localhost:' + config.previewPort + '/' + (currentPage || 'index.html') + '?_switch=' + Date.now();
+        }
+      } catch (e) {}
       // Update both top-bar button and sidebar button
       var topBtn = document.getElementById('top-bar-site-btn');
       if (topBtn) topBtn.textContent = tag + ' \u25be';

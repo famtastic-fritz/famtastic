@@ -97,7 +97,19 @@ Each step has four blocks: (a) **Click path** (exact UI actions), (b) **Expected
 - Studio Chat panel begins receiving build progress (status messages, page builds completing)
 - Active TAG switches to `site-tonys-barber-shop` (top bar updates, chat session-break divider appears)
 
-**Pass condition:** Shay returns a `shay_response` (not `route_to_chat`), TAG switches automatically, build dispatch begins. **Note for P0.3:** the auto-build-fires-without-confirmation finding (`bug-shay-auto-build-no-confirmation-2026-04-25`) is logged but not yet fixed — for P0.0 smoke definition, the auto-fire behaviour is the documented current behaviour. P0.3 will introduce a confirmation step, at which point step 2's expected behaviour updates accordingly.
+**Pass condition (post-P0.3):** Shay returns a `shay_response` (not `route_to_chat`) containing a preview of the extracted brief: business name, tag, pages, tier, extraction method. The response asks the user to reply "yes" / "build it" / "proceed" to start, or "cancel" to abort. **No build dispatch yet — that happens in step 2b.** Pending entry expires in 5 minutes.
+
+### Step 2b — Confirm the build
+
+**Click path:** focus textarea `#shay-desk-input`, type `yes` (or `build it` / `proceed`), press send.
+
+**Expected behaviour during dispatch:**
+- Shay tier-0 detects pending confirmation + affirmative pattern → `confirm_build_request` intent
+- `handleShayBuildConfirmation` runs: takes pending → `createSite` (with `on_collision: 'return_collision'`) → `synthesizeDesignBriefForBuild` → `triggerSiteBuild`
+- TAG switches automatically (helper-owned)
+- Studio Chat panel begins receiving build progress (status messages, page builds completing)
+
+**Pass condition:** confirmation is detected, build dispatches. A bare "yes" outside any pending build flow should NOT trigger anything (verifying `hasPendingBuildConfirmation` gating).
 
 **Evidence to capture:**
 - [ ] Screenshot of Shay Desk showing the user message and `shay_response` reply
