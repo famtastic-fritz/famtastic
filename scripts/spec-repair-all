@@ -26,6 +26,7 @@ const path = require('path');
 const SITES_ROOT = path.join(__dirname, '..', 'sites');
 const { normalizeTierAndMode } = require('../site-studio/lib/tier');
 const { normalizeRequiredFields } = require('../site-studio/lib/spec-schema');
+const { generateStyleFingerprint, validateFingerprintShape } = require('../site-studio/lib/style-fingerprint');
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
@@ -97,7 +98,30 @@ for (const tag of sites) {
     approvedBackfilled = true;
   }
 
-  const dirty = tagDerived || tierDirty || schemaDirty || approvedBackfilled;
+  // P1.2 backfill — synthesize spec.style_fingerprint when missing.
+  // Recovery sources, in priority order: existing brand.json > vertical default
+  // (from business_type / client_brief.business_description) > FAMtastic
+  // fallback. Fingerprint becomes the source-of-truth for the next build.
+  // operator_override is left alone if already set (we never auto-touch it).
+  let fingerprintBackfilled = false;
+  const existingFp = spec.style_fingerprint;
+  const existingFpValid = existingFp && validateFingerprintShape(existingFp).valid;
+  const isOperatorOverride = existingFp && existingFp.source === 'operator_override';
+  if (!existingFpValid && !isOperatorOverride) {
+    let brand = null;
+    try {
+      const brandPath = path.join(SITES_ROOT, tag, 'brand.json');
+      if (fs.existsSync(brandPath)) brand = JSON.parse(fs.readFileSync(brandPath, 'utf8'));
+    } catch { /* ignore unreadable brand.json */ }
+    spec.style_fingerprint = generateStyleFingerprint(spec.design_brief, {
+      vertical: spec.business_type || (spec.client_brief && spec.client_brief.business_description),
+      userMessage: (spec.client_brief && spec.client_brief.style_notes) || '',
+      brand,
+    });
+    fingerprintBackfilled = true;
+  }
+
+  const dirty = tagDerived || tierDirty || schemaDirty || approvedBackfilled || fingerprintBackfilled;
 
   if (!dirty) {
     unchanged++;
@@ -111,6 +135,10 @@ for (const tag of sites) {
   if (beforeState !== spec.state) changes.push(`state: ${JSON.stringify(beforeState)} → ${JSON.stringify(spec.state)}`);
   const afterApproved = spec.design_brief && spec.design_brief.approved;
   if (beforeApproved !== afterApproved) changes.push(`design_brief.approved: ${JSON.stringify(beforeApproved)} → ${JSON.stringify(afterApproved)}`);
+  if (fingerprintBackfilled) {
+    const fp = spec.style_fingerprint || {};
+    changes.push(`style_fingerprint: synthesized (source=${fp.source}, vertical=${fp.vertical || 'none'}, primary=${fp.palette && fp.palette.primary})`);
+  }
   const afterKeys = Object.keys(spec).slice().sort();
   const addedKeys = afterKeys.filter(k => !beforeKeys.includes(k));
   if (addedKeys.length > 0) changes.push(`added keys: ${addedKeys.join(', ')}`);

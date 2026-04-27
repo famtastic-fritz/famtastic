@@ -34,6 +34,7 @@ const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = re
 const fontRegistry = require('./lib/font-registry');
 const layoutRegistry = require('./lib/layout-registry');
 const famSkeletons = require('./lib/famtastic-skeletons');
+const styleFingerprint = require('./lib/style-fingerprint');
 const { resolveTier, normalizeTierAndMode } = require('./lib/tier');
 const { validateSpec: validateSpecSchema, normalizeRequiredFields } = require('./lib/spec-schema');
 const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
@@ -3613,9 +3614,12 @@ OUTPUT FORMAT — generate this EXACT structure:
     /* END LAYOUT FOUNDATION */
 
     :root {
-      --color-primary: ${spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary};
-      --color-accent: ${spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent};
-      --color-bg: ${spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background};
+      /* P1.2 — per-site style fingerprint locked at build start (see lib/style-fingerprint.js).
+         Resolution order: spec.style_fingerprint.palette (P1.2) > spec.colors (legacy) >
+         FAMTASTIC_DEFAULT_PALETTE (GAP-1 fallback). */
+      --color-primary: ${spec.style_fingerprint?.palette?.primary || spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary};
+      --color-accent: ${spec.style_fingerprint?.palette?.accent || spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent};
+      --color-bg: ${spec.style_fingerprint?.palette?.background || spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background};
       --font-serif: '${fontSerif}', serif;
       --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
@@ -7684,6 +7688,16 @@ function synthesizeDesignBriefForBuild(brief) {
     };
     if (brief && brief.pages) spec.pages = brief.pages;
     spec.state = 'briefed';
+    // P1.2 — derive a per-site style fingerprint from the brief + vertical.
+    // Source ordering: explicit brief hex > vertical default > brand.json > FAMtastic default.
+    spec.style_fingerprint = styleFingerprint.generateStyleFingerprint(
+      spec.design_brief,
+      {
+        vertical: spec.business_type || (brief && brief.vertical) || (spec.client_brief && spec.client_brief.business_description),
+        userMessage: brief && (brief.business_description || brief.style_notes),
+        brand: readBrandJsonForFingerprint(),
+      },
+    );
     writeSpec(spec);
     return true;
   }
@@ -7692,11 +7706,38 @@ function synthesizeDesignBriefForBuild(brief) {
   // approves whatever brief is on disk. Flip approved=true if not already set.
   // This also closes the gap for legacy sites that have a brief but were
   // built before the P0.4 hotfix.
+  let dirty = false;
   if (spec.design_brief.approved !== true) {
     spec.design_brief.approved = true;
-    writeSpec(spec);
+    dirty = true;
   }
+  if (!spec.style_fingerprint || !spec.style_fingerprint.palette) {
+    // P1.2 — ensure a per-site fingerprint exists on the spec before the
+    // build prompt is assembled. Existing operator overrides are preserved
+    // by the early-exit check above.
+    spec.style_fingerprint = styleFingerprint.generateStyleFingerprint(
+      spec.design_brief,
+      {
+        vertical: spec.business_type || (brief && brief.vertical) || (spec.client_brief && spec.client_brief.business_description),
+        userMessage: brief && (brief.business_description || brief.style_notes),
+        brand: readBrandJsonForFingerprint(),
+      },
+    );
+    dirty = true;
+  }
+  if (dirty) writeSpec(spec);
   return true;
+}
+
+// Helper — read sites/<TAG>/brand.json if present, else null. Used as a recovery
+// source when generating a fingerprint for legacy sites that already have a
+// brand.json from a prior build but no spec.style_fingerprint yet.
+function readBrandJsonForFingerprint() {
+  try {
+    const brandPath = path.join(SITE_DIR(), 'brand.json');
+    if (!fs.existsSync(brandPath)) return null;
+    return JSON.parse(fs.readFileSync(brandPath, 'utf8'));
+  } catch { return null; }
 }
 
 /**
@@ -11897,9 +11938,19 @@ function buildPromptContext(requestType, spec, userMessage) {
         visualRequirements += 'Include the correct Google Fonts <link> tag in <head>.\n';
       }
       visualRequirements += 'Apply these colors and fonts in Tailwind config AND CSS custom properties.\n';
+    } else if (spec.style_fingerprint && spec.style_fingerprint.palette) {
+      // P1.2 — no decision/brief-mentioned hex colors found, BUT the spec
+      // already carries a per-site fingerprint. Use it. Replaces the GAP-1
+      // FAMtastic-default injection for fingerprint-having sites; the GAP-1
+      // intent (lock palette so Claude can't drift to generic industry colors)
+      // is preserved because the fingerprint itself is locked at build start.
+      visualRequirements += styleFingerprint.buildFingerprintPromptBlock(spec.style_fingerprint);
     } else {
-      // GAP-1 fix: no client palette found — inject FAMtastic defaults so Claude
-      // never falls back to generic industry colors.
+      // GAP-1 fix (legacy fallback): no fingerprint AND no brief colors —
+      // inject the FAMtastic default so Claude never falls back to generic
+      // industry colors. Sites that go through synthesizeDesignBriefForBuild
+      // get a fingerprint and skip this branch; this only fires for legacy
+      // builds that bypassed the synthesis step.
       const defaultPalette = famSkeletons.FAMTASTIC_DEFAULT_PALETTE;
       visualRequirements = '\n\nFAMTASTIC DEFAULT PALETTE (no client palette specified — you MUST use these exact hex values):\n';
       for (const [role, hex] of Object.entries(defaultPalette)) {
@@ -12663,7 +12714,7 @@ HEAD REQUIREMENTS (CRITICAL — every page MUST include these in <head>):
 
 CSS THEMING (REQUIRED):
 - Define brand colors as CSS custom properties in a <style> block inside <head>:
-  :root { --color-primary: ${spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary}; --color-accent: ${spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent}; --color-bg: ${spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background}; --font-serif: '${fontSerif}', serif; --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  :root { --color-primary: ${spec.style_fingerprint?.palette?.primary || spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary}; --color-accent: ${spec.style_fingerprint?.palette?.accent || spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent}; --color-bg: ${spec.style_fingerprint?.palette?.background || spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background}; --font-serif: '${fontSerif}', serif; --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 - Use these variables throughout — reference var(--color-primary), var(--font-sans), etc.
 - Put page-specific styles in a <style data-page="true"> block. Shared styles go in the main <style> block.
 

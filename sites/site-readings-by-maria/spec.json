@@ -419,5 +419,23 @@
   },
   "tier": "famtastic",
   "famtastic_mode": true,
-  "created_at": "2026-04-27T15:21:07.924Z"
+  "created_at": "2026-04-27T15:21:07.924Z",
+  "style_fingerprint": {
+    "palette": {
+      "primary": "#0B0B14",
+      "secondary": "#001F3F",
+      "accent": "#F5B800",
+      "neutral": "#FF6B6B",
+      "background": "#FDF4E3"
+    },
+    "typography": {
+      "heading_family": "Montserrat",
+      "body_family": "Open Sans",
+      "scale": "famtastic"
+    },
+    "mood": "bold and confidently different — the FAMtastic default",
+    "source": "brief_extracted",
+    "vertical": null,
+    "generated_at": "2026-04-27T19:26:19.343Z"
+  }
 }

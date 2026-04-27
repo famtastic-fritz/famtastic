@@ -47,6 +47,10 @@ const OBJECT_FIELDS = [
   'client_brief', 'design_brief', 'environments',
   'brand', 'layout', 'logo', 'site_repo',
   'structural_index', 'content', 'tech_recommendations',
+  // P1.2 — per-site style fingerprint. See lib/style-fingerprint.js.
+  // Optional on the spec (legacy sites lack it); when present, must match
+  // the shape validated by validateFingerprintShape.
+  'style_fingerprint',
 ];
 
 const VALID_TIER_VALUES = new Set(['famtastic', 'clean']);
@@ -108,6 +112,19 @@ function validateSpec(spec) {
   }
   if (spec.tier === 'clean' && spec.famtastic_mode === true) {
     warnings.push('famtastic_mode should be false when tier is clean');
+  }
+
+  // P1.2 — style_fingerprint shape, when present.
+  if (spec.style_fingerprint) {
+    try {
+      const { validateFingerprintShape } = require('./style-fingerprint');
+      const fpResult = validateFingerprintShape(spec.style_fingerprint);
+      if (!fpResult.valid) {
+        for (const e of fpResult.errors) warnings.push(`style_fingerprint: ${e}`);
+      }
+    } catch {
+      // Module not loadable in this context — skip silently.
+    }
   }
 
   return { valid: errors.length === 0, errors, warnings };

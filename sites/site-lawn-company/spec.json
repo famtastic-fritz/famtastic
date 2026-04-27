@@ -102,5 +102,23 @@
   "_last_modified": "2026-04-16T23:57:34.112Z",
   "tier": "famtastic",
   "famtastic_mode": true,
-  "created_at": "2026-04-27T15:21:07.917Z"
+  "created_at": "2026-04-27T15:21:07.917Z",
+  "style_fingerprint": {
+    "palette": {
+      "primary": "#2D5016",
+      "secondary": "#5D7B3F",
+      "accent": "#F4A442",
+      "neutral": "#F1EDE3",
+      "background": "#FBF9F2"
+    },
+    "typography": {
+      "heading_family": "Roboto Slab",
+      "body_family": "Roboto",
+      "scale": "sturdy"
+    },
+    "mood": "fresh and grounded, deep grass-green with sun-warmed accents",
+    "source": "vertical_default",
+    "vertical": "lawn",
+    "generated_at": "2026-04-27T19:26:19.339Z"
+  }
 }
