@@ -1721,23 +1721,34 @@
     function renderVerifyResults(msg) { updateVerifyIndicator(msg); refreshDeployInfo(); }
 
     // --- Deploy ---
-    function deployToStaging() {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        addMessage('user', 'Deploy to staging');
-        ws.send(JSON.stringify({ type: 'chat', content: 'deploy to staging' }));
-        steps = []; stepStart = null;
-        addStep('Deploying to staging...');
+    // P0.6: buttons hit POST /api/deploy directly. A 4xx response surfaces
+    // structured preflight failures (cli_missing, credentials_missing, …) so the
+    // operator sees why instead of the chat path silently no-opping.
+    // See architecture/2026-04-27-p0.6-diagnostic.md.
+    async function deployVia(env) {
+      const label = env === 'production' ? 'production' : 'staging';
+      addMessage('user', `Deploy to ${label}`);
+      steps = []; stepStart = null;
+      addStep(`Deploying to ${label}...`);
+      try {
+        const resp = await fetch('/api/deploy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ env: label }),
+        });
+        const body = await resp.json().catch(() => ({}));
+        if (!resp.ok || !body.ok) {
+          const reason = body.reason || `http_${resp.status}`;
+          const details = body.details || 'Deploy preflight failed.';
+          addMessage('assistant', `${label.charAt(0).toUpperCase() + label.slice(1)} deploy failed: ${details} (reason: ${reason})`);
+        }
+        // On 200, runDeploy streams progress + outcome via WS — handled by the existing chat handler.
+      } catch (err) {
+        addMessage('assistant', `${label} deploy request failed: ${err.message}`);
       }
     }
-
-    function deployToProduction() {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        addMessage('user', 'Deploy to production');
-        ws.send(JSON.stringify({ type: 'chat', content: 'deploy' }));
-        steps = []; stepStart = null;
-        addStep('Deploying to production...');
-      }
-    }
+    function deployToStaging()    { deployVia('staging'); }
+    function deployToProduction() { deployVia('production'); }
 
     function pushToRepo() {}
     function createProdRepo() {}

@@ -1125,6 +1125,61 @@ app.get('/api/deploy-info', (req, res) => {
   }
 });
 
+// POST /api/deploy — transactional deploy endpoint.
+// P0.6 fix: the Deploy buttons used to ws.send a chat message ("deploy to staging")
+// which was vulnerable to classifier mis-routing and brain-route gating. This
+// endpoint is the structured contract: 4xx + reason on preflight failure (so the
+// caller knows the dispatch failed), 200 + dispatched on success.
+// See architecture/2026-04-27-p0.6-diagnostic.md (Finding 3).
+app.post('/api/deploy', async (req, res) => {
+  const env = (req.body && req.body.env) || 'staging';
+  if (env !== 'staging' && env !== 'production') {
+    return res.status(400).json({ ok: false, reason: 'invalid_env', details: `env must be 'staging' or 'production', got '${env}'` });
+  }
+  if (!TAG) {
+    return res.status(400).json({ ok: false, reason: 'no_active_site', details: 'No active site selected.' });
+  }
+  if (deployInProgress) {
+    return res.status(409).json({ ok: false, reason: 'deploy_in_progress', details: 'A deploy is already running.' });
+  }
+
+  // Preflight here so the caller gets a structured reason synchronously.
+  // runDeploy will redo the same checkNetlify probe — that's cheap (~3s) and harmless.
+  let netlify;
+  try {
+    netlify = await checkNetlify();
+  } catch (probeErr) {
+    netlify = { ok: false, reason: 'other', details: probeErr.message };
+  }
+  if (!netlify || !netlify.ok) {
+    return res.status(412).json({
+      ok: false,
+      reason: netlify && netlify.reason ? netlify.reason : 'other',
+      details: (netlify && netlify.details) || 'Netlify is not configured.',
+    });
+  }
+
+  // Build a broadcasting WS proxy so progress reaches every connected client,
+  // mirroring the triggerSiteBuild mockWs pattern.
+  const wsClients = [...wss.clients].filter(c => c.readyState === 1);
+  const broadcastWs = {
+    readyState: 1,
+    send: (data) => {
+      wsClients.forEach(client => {
+        if (client.readyState === 1) {
+          try { client.send(data); } catch {}
+        }
+      });
+    },
+  };
+
+  // Fire and return — actual deploy progress streams to WS clients.
+  runDeploy(broadcastWs, env).catch(err => {
+    console.error('[deploy] uncaught error in runDeploy:', err.message);
+  });
+  return res.json({ ok: true, dispatched: true, env, tag: TAG });
+});
+
 // Create production repo for the current site
 app.post('/api/create-site-repo', (req, res) => {
   const client = [...wss.clients].find(c => c.readyState === 1);
@@ -16034,21 +16089,28 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // Non-Claude brain: route all conversational messages through the selected brain adapter.
-      // HTML build intents (build/layout_update/content_update/bug_fix/restyle/restructure/major_revision)
-      // still require Claude for HTML generation — but conversational queries go to the selected brain.
+      // Non-Claude brain: only conversational/edit-shaped intents divert to the
+      // selected brain adapter. Direct-dispatch intents (deploy, git_push, hub_push,
+      // page_switch, query, visual_inspect, asset_import) MUST fall through to the
+      // dispatcher switch — they have dedicated handlers and never need a brain.
+      // P0.6 fix: previously a build-intent whitelist, which silently dropped every
+      // direct-dispatch intent into handleBrainstorm. See architecture/2026-04-27-p0.6-diagnostic.md.
       if (currentBrain !== 'claude') {
-        const nonBuildIntents = ['brainstorm', 'content_update', 'bug_fix'];
+        const BRAINSTORM_INTENTS = ['brainstorm', 'content_update', 'bug_fix'];
         const quickClassify = classifyRequest(userMessage, spec);
-        const isBuildIntent = ['build', 'layout_update', 'restyle', 'restructure', 'major_revision', 'new_site', 'enhancement_pass'].includes(quickClassify);
-        if (!isBuildIntent) {
-          console.log(`[brain-route] ${currentBrain} selected — routing "${userMessage.substring(0, 40)}..." to handleBrainstorm`);
+        if (BRAINSTORM_INTENTS.includes(quickClassify)) {
+          console.log(`[brain-route] ${currentBrain} selected — routing "${userMessage.substring(0, 40)}..." (intent=${quickClassify}) to handleBrainstorm`);
           handleBrainstorm(ws, userMessage, spec);
           return;
         }
-        // Build intents: inform user then fall through to Claude
-        console.log(`[brain-route] ${currentBrain} selected but build intent detected — using Claude for HTML generation`);
-        ws.send(JSON.stringify({ type: 'status', content: `Using Claude for HTML generation (${currentBrain} handles brainstorm only)` }));
+        // HTML-build intents still need Claude for generation — fall through with a notice.
+        const HTML_BUILD_INTENTS = ['build', 'layout_update', 'restyle', 'restructure', 'major_revision', 'new_site', 'enhancement_pass'];
+        if (HTML_BUILD_INTENTS.includes(quickClassify)) {
+          console.log(`[brain-route] ${currentBrain} selected but build intent detected — using Claude for HTML generation`);
+          ws.send(JSON.stringify({ type: 'status', content: `Using Claude for HTML generation (${currentBrain} handles brainstorm only)` }));
+        }
+        // Everything else (deploy, git_push, hub_push, page_switch, query, visual_inspect, asset_import, …)
+        // falls through to the dispatcher unchanged.
       }
 
       // Classify request
@@ -17173,6 +17235,7 @@ async function runDeploy(ws, env) {
   }
   env = env || 'staging';
   const envLabel = env.charAt(0).toUpperCase() + env.slice(1);
+  console.log(`[deploy] starting env=${env} tag=${TAG}`);
 
   // Layer 2 — Preflight BEFORE setting deployInProgress flag.
   // If the preflight fails, the flag stays false and the user can retry.
@@ -17184,6 +17247,7 @@ async function runDeploy(ws, env) {
   }
   if (!netlify || !netlify.ok) {
     const detail = (netlify && netlify.details) || 'Netlify is not configured.';
+    console.log(`[deploy] preflight failed reason=${(netlify && netlify.reason) || 'other'} details=${detail}`);
     try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed: ${detail}` })); } catch {}
     appendConvo({ role: 'assistant', content: `${envLabel} deploy preflight failed: ${detail}`, at: new Date().toISOString() });
     return;
