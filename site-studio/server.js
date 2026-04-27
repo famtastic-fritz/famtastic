@@ -1163,6 +1163,17 @@ app.get('/api/config', (req, res) => {
   res.json({ tag: TAG, previewPort: PREVIEW_PORT, studioPort: PORT, sitesRoot: SITES_ROOT });
 });
 
+// Smoke-suite readiness probe (P0.0). Public, unauthenticated, no side effects.
+// Wrapper scripts use this to confirm the Studio process is up and serving HTTP
+// before issuing further commands (e.g. the EADDRINUSE 50-cycle test).
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Server info — session metadata, uptime, file status
 app.get('/api/session-history', (req, res) => {
   try { res.json(db.getSessionHistory(TAG)); }
