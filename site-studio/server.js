@@ -4370,9 +4370,25 @@ app.post('/api/new-site', async (req, res) => {
   newTag = newTag.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   if (!newTag.startsWith('site-')) newTag = 'site-' + newTag;
 
+  // P1.1.1 — reject invalid tier values explicitly instead of silently
+  // coercing via normalizeTierAndMode. The set of allowed values matches
+  // VALID_TIER_VALUES in lib/spec-schema.js. Closes C1.6 from the P1.1
+  // edge-case report.
+  const ALLOWED_TIERS = ['famtastic', 'clean'];
+  if (req.body.tier !== undefined && !ALLOWED_TIERS.includes(req.body.tier)) {
+    return res.status(400).json({
+      ok: false,
+      error: `Invalid tier "${req.body.tier}". Allowed: ${ALLOWED_TIERS.join(', ')}.`,
+      reason: 'invalid_tier',
+      allowed: ALLOWED_TIERS,
+      received: req.body.tier,
+    });
+  }
+
   const brief = {
     business_name: req.body.name || newTag.replace(/^site-/, '').replace(/-/g, ' '),
     business_type: req.body.business_type || '',
+    ...(req.body.tier ? { tier: req.body.tier } : {}),
     interview_pending: !req.body.client_brief,
     interview_completed: !!req.body.client_brief,
     ...(req.body.client_brief ? { client_brief: req.body.client_brief } : {}),
@@ -6876,6 +6892,14 @@ function buildShayShayPrompt(opts) {
     'Allowed actions: null, route_to_chat, system_command, show_me, suggest_brainstorm.',
     'Prefer action:null unless routing or UI behavior is genuinely needed.',
     '',
+    // P1.1.1 anti-hallucination rule — closes C1.2 / C2.3 from the P1.1
+    // edge-case report. The brain twice invented an active-site identity
+    // ("Crumb & Crust Bakery" for site-jj-ba-transport). Pin it.
+    'ACTIVE-SITE IDENTITY (strict):',
+    `  The active site IS site_tag="${siteSnapshot && siteSnapshot.site_tag || ''}", site_name="${siteSnapshot && siteSnapshot.site_name || ''}", business_type="${siteSnapshot && siteSnapshot.business_type || ''}".`,
+    '  Use these exact strings when referring to the active site. Do NOT paraphrase, translate, or invent a different name or description for it.',
+    '  If the user message references a DIFFERENT business than the active site, say so by referencing the active site by its exact site_name above — do not make up a different identity to compare against.',
+    '',
     'BRIDGE EXECUTION LOOP:',
     'You have direct access to the local repo via a bridge. To read a file, write a file, or run a shell command,',
     'include a "bridge_request" field in your JSON response. The Studio will execute it and return the result',
@@ -7198,8 +7222,14 @@ function classifyShayShayTier0(lower, context = {}) {
   if (/\b(i\s+don['']?t\s+know\s+how\s+i\s+feel|not\s+sure\s+(about|if)|i['']?m\s+not\s+sure|i\s+can['']?t\s+decide|help\s+me\s+think|let['']?s\s+brainstorm|should\s+we\s+brainstorm|i['']?m\s+unsure)\b/.test(lower))
     return { intent: 'suggest_brainstorm' };
   // Gap capture — "we need X", "I can't do X", "we're missing X"
-  if (/\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower))
-    return { intent: 'capture_gap' };
+  // P1.1.1 — exclude site/website-shaped phrases so a sentence like
+  // "we need a site for our family bakery" matches build_request below
+  // instead of capture_gap. Matches the C1.4 edge case in
+  // architecture/2026-04-27-p1.1-edge-case-results.md.
+  if (
+    /\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower) &&
+    !/\b(site|website|webpage|landing\s+page)\b/.test(lower)
+  ) return { intent: 'capture_gap' };
   // Job plan creation — "plan jobs for...", "create a job plan", "schedule tasks"
   if (/\b(plan\s+(the\s+)?jobs?\s+for|create\s+a?\s+job\s+plan|schedule\s+(the\s+)?tasks?\s+for|build\s+(a\s+)?job\s+plan|queue\s+(up\s+)?jobs?\s+for)\b/.test(lower))
     return { intent: 'create_job_plan' };
@@ -7216,7 +7246,7 @@ function classifyShayShayTier0(lower, context = {}) {
   if (/\bbuild\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
       /\bcreate\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
       /\bmake\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
-      /\b(i\s+want|i\s+need)\b.{0,20}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
+      /\b(i|we)\s+(want|need)\b.{0,20}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
       /\bnew\s+site\s+for\b/.test(lower))
     return { intent: 'build_request' };
   return null;
@@ -11653,9 +11683,12 @@ function classifyRequest(message, spec) {
   // Pattern 12: "fix the typo" / "fix the text" — minor text fixes are content, not layout
   if (lower.match(/\bfix\s+(?:the\s+)?(?:typo|spelling|wording|copy|text|label)\b/)) return 'content_update';
 
-  // Restyle signals — about overall vibe, not specific elements
-  if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
-  if (lower.match(/\b(more\s+(premium|minimal|bold|elegant|modern|playful|professional|corporate|clean|edgy))\b/) && !lower.match(/\b(header|footer|button|section|nav|hero|card)\b/)) return 'restyle';
+  // Restyle signals — about overall vibe, not specific elements.
+  // P1.1.1 widening (C3.3): accept "make it/this/the site/page (look/feel)
+  // more|less <adj>" and conjunctions like "more X and Y". Previous patterns
+  // missed "make this look more conservative and corporate".
+  if (lower.match(/\b(make\s+(it|this|the\s+(site|page))(\s+(look|feel))?\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
+  if (lower.match(/\b(more|less)\s+(premium|minimal|bold|elegant|modern|playful|professional|corporate|conservative|clean|edgy|moody|warm|cool)\b/) && !lower.match(/\b(header|footer|button|section|nav|hero|card)\b/)) return 'restyle';
 
   // Bug fix signals
   if (lower.match(/\b(broken|bug|doesn't\s+work|not\s+working|misaligned|overlapping|overflow)\b/)) return 'bug_fix';
