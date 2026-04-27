@@ -23,8 +23,8 @@
   "state": "deployed",
   "version": 1,
   "design_brief": {
-    "goal": "Establish Guy's Classy Shoes as a destination for discerning men seeking heirloom-quality leather footwear\u2014positioning the brand as the antithesis of trend-chasing, emphasizing restrained heritage craftsmanship over logo-driven luxury.",
-    "audience": "Affluent, professionally accomplished men aged 35\u201370 who value heritage, materials, and understated elegance. Men who buy shoes to be taken seriously, not to be seen. Likely wear them to boardrooms, formal events, and occasions where discretion signals confidence.",
+    "goal": "Establish Guy's Classy Shoes as a destination for discerning men seeking heirloom-quality leather footwear—positioning the brand as the antithesis of trend-chasing, emphasizing restrained heritage craftsmanship over logo-driven luxury.",
+    "audience": "Affluent, professionally accomplished men aged 35–70 who value heritage, materials, and understated elegance. Men who buy shoes to be taken seriously, not to be seen. Likely wear them to boardrooms, formal events, and occasions where discretion signals confidence.",
     "tone": [
       "authoritative",
       "understated",
@@ -32,10 +32,10 @@
       "confident without swagger"
     ],
     "visual_direction": {
-      "layout": "Spacious and breathing. Let photography dominate. Hero section should occupy full screen. Generous margins and white space throughout. Avoid visual clutter\u2014every element curated. Product grids should showcase one or two hero shots per category before deeper exploration.",
-      "typography": "Playfair Display or Georgia for headings (serif, classical, authoritative). Inter for body copy and UI (clean, readable, modern restraint). Generous line heights (1.6\u20131.8). Heading hierarchy should feel editorial, not commercial.",
-      "color_usage": "Charcoal (#1A1A1A) as primary text and structural framework. Cream (#FAF7F2) as background\u2014lets imagery breathe. Warm gold (#C9A96E) as accent for CTAs, highlighted collections, testimonial quotes. Rich burgundy (#4A1A2C) used sparingly in secondary contexts (dividers, subtle backgrounds) to add depth and luxury feeling. Avoid stacking all colors on one page.",
-      "motion": "Subtle and refined. Slow fade-ins on scroll. Gentle image transitions. No scrolljacking, parallax, or playful micro-interactions\u2014those feel cheap at this price point. Restraint over spectacle.",
+      "layout": "Spacious and breathing. Let photography dominate. Hero section should occupy full screen. Generous margins and white space throughout. Avoid visual clutter—every element curated. Product grids should showcase one or two hero shots per category before deeper exploration.",
+      "typography": "Playfair Display or Georgia for headings (serif, classical, authoritative). Inter for body copy and UI (clean, readable, modern restraint). Generous line heights (1.6–1.8). Heading hierarchy should feel editorial, not commercial.",
+      "color_usage": "Charcoal (#1A1A1A) as primary text and structural framework. Cream (#FAF7F2) as background—lets imagery breathe. Warm gold (#C9A96E) as accent for CTAs, highlighted collections, testimonial quotes. Rich burgundy (#4A1A2C) used sparingly in secondary contexts (dividers, subtle backgrounds) to add depth and luxury feeling. Avoid stacking all colors on one page.",
+      "motion": "Subtle and refined. Slow fade-ins on scroll. Gentle image transitions. No scrolljacking, parallax, or playful micro-interactions—those feel cheap at this price point. Restraint over spectacle.",
       "density": "Spacious. Negative space is a design choice, not an oversight. Content feels curated and intentional. Product pages should emphasize one shoe at a time with room to appreciate detail."
     },
     "content_priorities": [
@@ -49,14 +49,14 @@
       "Hero with luxury shoe or craftsmanship imagery",
       "Featured collections preview (teaser to Collections page)",
       "Brand story teaser with link to About",
-      "Testimonials section (3\u20134 quotes from satisfied customers)",
+      "Testimonials section (3–4 quotes from satisfied customers)",
       "Collections page with category grid (Classic Oxfords, Exotic Leathers, Loafers, Boots)",
       "About page: Guy's story, craftsmanship philosophy, materials sourcing detail",
       "Contact page: physical location, inquiry form, appointment booking widget"
     ],
     "avoid": [
-      "Trend language ('innovative,' 'disruptive,' 'cutting-edge,' 'game-changing'\u2014this brand predates trends)",
-      "Pressure sales tactics or urgency messaging ('limited time,' 'only 3 left'\u2014contradicts restrained positioning)",
+      "Trend language ('innovative,' 'disruptive,' 'cutting-edge,' 'game-changing'—this brand predates trends)",
+      "Pressure sales tactics or urgency messaging ('limited time,' 'only 3 left'—contradicts restrained positioning)",
       "Excessive product listings or catalog sprawl (quality over quantity; curate)",
       "Bright, saturated colors or playful imagery (feels juvenile for $1000+ shoes)",
       "Fast animations, parallax scrolling, or scrolljacking (reads as insecurity, not luxury)",
@@ -76,7 +76,7 @@
     {
       "category": "architecture",
       "suggestion": "Custom web application",
-      "reason": "Dynamic features detected \u2014 needs server-side logic for booking",
+      "reason": "Dynamic features detected — needs server-side logic for booking",
       "stack": "Next.js or Express + database"
     },
     {
@@ -107,7 +107,7 @@
     {
       "timestamp": "2026-04-06T13:08:16.425Z",
       "category": "typography",
-      "decision": "Identical nav/footer/typography** across all pages\u2014same sticky nav with logo, same 4-column footer, same Playfair Display + Inter fonts, same CSS custom properties for brand colors.",
+      "decision": "Identical nav/footer/typography** across all pages—same sticky nav with logo, same 4-column footer, same Playfair Display + Inter fonts, same CSS custom properties for brand colors.",
       "status": "approved"
     }
   ],
@@ -279,5 +279,38 @@
   },
   "deployed_url": "https://guys-classy-shoes-staging.netlify.app",
   "deployed_at": "2026-04-03T00:50:01.603Z",
-  "deploy_provider": "netlify"
+  "deploy_provider": "netlify",
+  "interview_state": {
+    "mode": "quick",
+    "started_at": "2026-04-16T23:48:16.805Z",
+    "completed_at": null,
+    "questions": [
+      "q_business",
+      "q_revenue",
+      "q_customer",
+      "q_differentiator",
+      "q_cta",
+      "q_style"
+    ],
+    "answers": {},
+    "current_index": 0,
+    "completed": false
+  },
+  "_revision": 3,
+  "_last_modified": "2026-04-21T23:42:08.614Z",
+  "video_jobs": [
+    {
+      "job_id": "9e2cc52e-c6ce-48f5-816f-835b2c852695",
+      "created_at": "2026-04-21T23:41:31.699Z",
+      "status": "complete",
+      "prompt": "teddy bear waving, smooth animation",
+      "image_path": "assets/characters/dc4937cf-a82d-4448-8df4-fd7b8a8eb289/pose-1-waving-hello.jpg",
+      "path": "assets/video/9e2cc52e-c6ce-48f5-816f-835b2c852695.mp4",
+      "actual_duration": 5,
+      "file_size": 1505754
+    }
+  ],
+  "tier": "famtastic",
+  "famtastic_mode": true,
+  "created_at": "2026-04-27T15:21:07.910Z"
 }

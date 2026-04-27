@@ -1,0 +1,119 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * One-shot migration — bring legacy site specs into compliance with the
+ * canonical schema by running normalizeTierAndMode + normalizeRequiredFields
+ * against every site's spec.json and writing back any repairs.
+ *
+ * Idempotent: running twice is a no-op on already-compliant specs.
+ *
+ * Does NOT touch TAG or any session state. Pure read/transform/write.
+ *
+ * P0.2 close-out for diagnostic Thread 6 (schema drift). After this runs once,
+ * `scripts/smoke-validate-all-specs` should pass cleanly. Newly created sites
+ * after this point auto-comply via the repair-on-read in readSpec().
+ *
+ * Usage:
+ *   scripts/spec-repair-all                # all sites
+ *   scripts/spec-repair-all --dry-run      # show what would change, no writes
+ *   scripts/spec-repair-all <tag>          # single site
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const SITES_ROOT = path.join(__dirname, '..', 'sites');
+const { normalizeTierAndMode } = require('../site-studio/lib/tier');
+const { normalizeRequiredFields } = require('../site-studio/lib/spec-schema');
+
+const args = process.argv.slice(2);
+const dryRun = args.includes('--dry-run');
+const tagArg = args.find(a => !a.startsWith('--'));
+
+let sites;
+if (tagArg) {
+  sites = [tagArg.startsWith('site-') ? tagArg : `site-${tagArg}`];
+} else {
+  sites = fs.readdirSync(SITES_ROOT, { withFileTypes: true })
+    .filter(d => d.isDirectory() && d.name.startsWith('site-'))
+    .map(d => d.name)
+    .sort();
+}
+
+let scanned = 0;
+let repaired = 0;
+let unchanged = 0;
+let parseErrors = 0;
+const repairLog = [];
+
+for (const tag of sites) {
+  const specPath = path.join(SITES_ROOT, tag, 'spec.json');
+  if (!fs.existsSync(specPath)) continue;
+  scanned++;
+
+  let spec;
+  try {
+    spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+  } catch (e) {
+    parseErrors++;
+    console.error(`[parse-error] ${tag}: ${e.message}`);
+    continue;
+  }
+
+  const beforeKeys = Object.keys(spec).slice().sort();
+  const beforeTier = spec.tier;
+  const beforeMode = spec.famtastic_mode;
+  const beforeState = spec.state;
+  const beforeTag = spec.tag;
+
+  // Derive `tag` from directory name when missing/null. Only safe in the
+  // migration context — the live readSpec() path does NOT default tag because
+  // a missing tag in a live spec is a real error, not a recoverable drift.
+  let tagDerived = false;
+  if (!spec.tag) {
+    spec.tag = tag;
+    tagDerived = true;
+  }
+
+  const { dirty: tierDirty } = normalizeTierAndMode(spec);
+  const { dirty: schemaDirty } = normalizeRequiredFields(spec);
+  const dirty = tagDerived || tierDirty || schemaDirty;
+
+  if (!dirty) {
+    unchanged++;
+    continue;
+  }
+
+  const changes = [];
+  if (beforeTag !== spec.tag) changes.push(`tag: ${JSON.stringify(beforeTag)} → ${JSON.stringify(spec.tag)} (derived from directory)`);
+  if (beforeTier !== spec.tier) changes.push(`tier: ${JSON.stringify(beforeTier)} → ${JSON.stringify(spec.tier)}`);
+  if (beforeMode !== spec.famtastic_mode) changes.push(`famtastic_mode: ${JSON.stringify(beforeMode)} → ${JSON.stringify(spec.famtastic_mode)}`);
+  if (beforeState !== spec.state) changes.push(`state: ${JSON.stringify(beforeState)} → ${JSON.stringify(spec.state)}`);
+  const afterKeys = Object.keys(spec).slice().sort();
+  const addedKeys = afterKeys.filter(k => !beforeKeys.includes(k));
+  if (addedKeys.length > 0) changes.push(`added keys: ${addedKeys.join(', ')}`);
+
+  if (dryRun) {
+    console.log(`[dry-run] ${tag}: ${changes.join('; ')}`);
+  } else {
+    const tmpPath = specPath + '.tmp';
+    fs.writeFileSync(tmpPath, JSON.stringify(spec, null, 2));
+    fs.renameSync(tmpPath, specPath);
+    console.log(`[repaired] ${tag}: ${changes.join('; ')}`);
+  }
+  repairLog.push({ tag, changes });
+  repaired++;
+}
+
+console.log('\n=== Spec Repair Summary ===');
+console.log(`Scanned:        ${scanned}`);
+console.log(`Repaired:       ${repaired}${dryRun ? ' (dry-run, no writes)' : ''}`);
+console.log(`Already valid:  ${unchanged}`);
+console.log(`Parse errors:   ${parseErrors}`);
+
+if (parseErrors > 0) {
+  console.log('\nParse errors are NOT auto-repaired. Investigate manually.');
+  process.exit(2);
+}
+process.exit(0);

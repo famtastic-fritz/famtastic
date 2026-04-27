@@ -1,0 +1,78 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * Sentinel — track when two sites' --color-primary converges to the
+ * FAMtastic default palette primary. Diagnostic Thread 1 from
+ * architecture/2026-04-27-p0.1-diagnostic.md.
+ *
+ * NOT a hard failure for P0. Real fix is P1.2 (per-site style fingerprint).
+ * This script's job is to make the convergence visible so we know when
+ * the P1.2 work is overdue.
+ *
+ * Usage:
+ *   scripts/smoke-distinct-palette <tag-a> <tag-b>
+ *
+ * Exit codes:
+ *   0  — distinct primaries OR at least one site overrides the default
+ *   1  — both sites use the FAMtastic default primary AND match each other
+ *   2  — input error (missing args, file not found)
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const { FAMTASTIC_DEFAULT_PALETTE } = require('../site-studio/lib/famtastic-skeletons');
+
+const SITES_ROOT = path.join(__dirname, '..', 'sites');
+const args = process.argv.slice(2);
+
+if (args.length < 2) {
+  console.log('Usage: smoke-distinct-palette <tag-a> <tag-b>');
+  console.log('Compares --color-primary in two sites\' dist/assets/styles.css');
+  process.exit(2);
+}
+
+function tagPath(tag) {
+  return tag.startsWith('site-') ? tag : `site-${tag}`;
+}
+
+function extractPrimary(tag) {
+  const cssPath = path.join(SITES_ROOT, tagPath(tag), 'dist', 'assets', 'styles.css');
+  if (!fs.existsSync(cssPath)) return { tag, error: `not found: ${cssPath}` };
+  const css = fs.readFileSync(cssPath, 'utf8');
+  const m = css.match(/--color-primary\s*:\s*([^;\n]+)/);
+  if (!m) return { tag, error: '--color-primary not found in styles.css' };
+  return { tag, primary: m[1].trim() };
+}
+
+const a = extractPrimary(args[0]);
+const b = extractPrimary(args[1]);
+
+let inputError = false;
+if (a.error) { console.log(`[error] ${a.tag}: ${a.error}`); inputError = true; }
+if (b.error) { console.log(`[error] ${b.tag}: ${b.error}`); inputError = true; }
+if (inputError) process.exit(2);
+
+const famPrimary = FAMTASTIC_DEFAULT_PALETTE.primary.toLowerCase();
+const aLower = a.primary.toLowerCase();
+const bLower = b.primary.toLowerCase();
+const aMatchesFam = aLower === famPrimary;
+const bMatchesFam = bLower === famPrimary;
+const matchEachOther = aLower === bLower;
+
+console.log(`${a.tag} primary: ${a.primary}`);
+console.log(`${b.tag} primary: ${b.primary}`);
+console.log(`FAMtastic default: ${FAMTASTIC_DEFAULT_PALETTE.primary}`);
+
+if (matchEachOther && aMatchesFam && bMatchesFam) {
+  console.log('\n[sentinel] BOTH sites use the FAMtastic default palette primary');
+  console.log('[sentinel]   AND the two sites match each other.');
+  console.log('[sentinel] This signals the GAP-1 default-palette convergence pattern.');
+  console.log('[sentinel] Real fix is P1.2 visual distinctiveness (per-site style fingerprint).');
+  console.log('[sentinel] Tracked in architecture/2026-04-27-p0.1-diagnostic.md Thread 1.');
+  process.exit(1);
+}
+
+console.log('\n[sentinel] OK — sites have distinct primaries OR override the default.');
+process.exit(0);

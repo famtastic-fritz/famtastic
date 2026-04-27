@@ -148,7 +148,9 @@ Exit code 0 = pass.
 | `pages` | array | `["home", "services", "contact"]` (or includes those) |
 | `design_brief` | object | present after synthesis (step 2b in `runAutonomousBuild`/`handleShayBuildRequest`) |
 
-**Validator script:** `scripts/smoke-validate-spec` (to be written in P0.2 site-output fixes session). For P0.0 the validation is manual: read `sites/<tag>/spec.json`, confirm each row above.
+**Validator script:** `scripts/smoke-validate-all-specs` *(shipped 2026-04-27 in P0.2)*. Run `./scripts/smoke-validate-all-specs <tag>` for a single site or no-arg for full sweep. Exits 0 when valid, 1 with a structured failure report when not. Backed by `site-studio/lib/spec-schema.js`.
+
+**Migration script (one-shot):** `scripts/spec-repair-all` *(shipped 2026-04-27 in P0.2)*. Brings legacy site specs into compliance by running `normalizeTierAndMode` + `normalizeRequiredFields` + tag-from-directory derivation. Idempotent. Use `--dry-run` to preview.
 
 **Pass condition:** All required fields present and types correct. `tier_normalization_warning` may appear and is informational, not a failure.
 
@@ -175,7 +177,7 @@ Exit code 0 = pass.
 
 **Pass condition:** All four HTML pages exist; iframe shows rendered hero, nav, content, footer; nav links navigate between pages without 404.
 
-**Known issue:** the `bug-broken-header-links-2026-04-25` finding may cause nav-link pass to fail. P0.0 documents this as the **canonical reproduction step**; P0.1 diagnostic must use this exact step to attach root-cause analysis. If nav links are broken, mark step 5 as **PARTIAL PASS** with a note pointing to the bug ID and proceed to step 6.
+**Known issue (closed 2026-04-27 in P0.2):** `bug-broken-header-links-2026-04-25` was rooted in `applyLogoV` using regex `/i` which only swapped the first `data-logo-v` anchor when Claude emitted two. Fix: `/gi` global swap + dedup pass + inline-style strip. After P0.2 ships, step 5's nav-link evidence should show a single, clean logo anchor and no inline `style=""` on it. If duplication or inline styles return on a fresh build, that's a **regression** of the P0.2 fix, not the original bug.
 
 **Evidence to capture:**
 - [ ] `ls -la sites/site-tonys-barber-shop/dist/` output

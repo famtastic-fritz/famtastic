@@ -32,9 +32,9 @@
     ],
     "visual_direction": {
       "layout": "Hero-driven layout with prominent visual proof, clear service hierarchy, and strategic lead capture points without overwhelming the experience",
-      "typography": "Clean, readable sans-serif with strong hierarchy \u2014 avoid cursive for body text, use it only sparingly for accents if at all",
-      "color_usage": "Nature-inspired palette that conveys growth and professionalism \u2014 greens for trust and growth, earth tones for reliability, with premium accent colors",
-      "motion": "Subtle, purposeful animations that enhance credibility \u2014 slow, controlled transitions that don't auto-advance galleries too quickly",
+      "typography": "Clean, readable sans-serif with strong hierarchy — avoid cursive for body text, use it only sparingly for accents if at all",
+      "color_usage": "Nature-inspired palette that conveys growth and professionalism — greens for trust and growth, earth tones for reliability, with premium accent colors",
+      "motion": "Subtle, purposeful animations that enhance credibility — slow, controlled transitions that don't auto-advance galleries too quickly",
       "density": "Spacious layout that feels premium and allows visual work to breathe, avoiding cramped corporate layouts"
     },
     "content_priorities": [
@@ -74,12 +74,33 @@
     {
       "category": "hosting",
       "suggestion": "Netlify",
-      "reason": "Already configured \u2014 free tier, CDN, instant deploys"
+      "reason": "Already configured — free tier, CDN, instant deploys"
     },
     {
       "category": "forms",
       "suggestion": "Netlify Forms or Formspree",
       "reason": "Contact forms on static sites need a form backend service"
     }
-  ]
+  ],
+  "interview_state": {
+    "mode": "quick",
+    "started_at": "2026-04-16T23:57:34.112Z",
+    "completed_at": null,
+    "questions": [
+      "q_business",
+      "q_revenue",
+      "q_customer",
+      "q_differentiator",
+      "q_cta",
+      "q_style"
+    ],
+    "answers": {},
+    "current_index": 0,
+    "completed": false
+  },
+  "_revision": 1,
+  "_last_modified": "2026-04-16T23:57:34.112Z",
+  "tier": "famtastic",
+  "famtastic_mode": true,
+  "created_at": "2026-04-27T15:21:07.917Z"
 }

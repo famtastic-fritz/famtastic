@@ -3122,23 +3122,81 @@
     {
       "id": "bug-broken-header-links-2026-04-25",
       "timestamp": "2026-04-25T02:30:00.000Z",
-      "error_message": "Generated site (post-baseline-closure church build) has broken header/nav links — clicking nav items does not navigate to the correct page.",
-      "file": "TBD — investigate site-church-atlanta-ga/dist/_template.html and parallel page outputs",
-      "root_cause": "UNCONFIRMED — investigation deferred. Candidate root causes: (1) parallel page builds emit nav links pointing to relative paths that don't match the actual filenames written to dist/, (2) NAV_SKELETON enforces class names but not href values, (3) post-processing nav propagation (writeTemplateArtifacts → _partials/_nav.html cascade) may have overwritten correct links with template-generated placeholders, (4) the type+location synthesized brief produced page names that diverge from the brief's must_have_sections list, causing href/filename mismatch.",
-      "fix": "DEFERRED — logged for future session. First investigation step: open sites/site-church-atlanta-ga/dist/index.html and dist/_template.html in the browser, inspect the nav, capture the exact href values vs the actual files in dist/. Then check writeTemplateArtifacts and the parallel page nav emission to find where the divergence is introduced.",
+      "error_message": "Generated site has 'broken' header — duplicate logo region (image anchor + redundant text anchor) with inline styles. Visually broken, two clickable brand links.",
+      "file": "site-studio/server.js (applyLogoV at L560-615)",
+      "root_cause": "P0.1 diagnostic Thread 3 confirmed: applyLogoV used regex /i (case-insensitive, single match). When Claude emitted two <a data-logo-v> elements (image-form and text-form, despite prompt instruction otherwise), only the first was normalised. The second kept Claude's original text content and inline styles. Result: image logo + redundant brand-name text anchor on every Tier-B build using FAMtastic logo mode.",
+      "fix": "CLOSED 2026-04-27 in P0.2 (commit pending). Rewrote applyLogoV with normalizeLogoMarkup() helper: (A) regex /gi swaps content of every data-logo-v anchor to canonical newContent, (B) dedup pass keeps only the first data-logo-v anchor and removes the rest, (C) strips inline style=\"...\" attribute from any surviving data-logo-v anchor. Applied to both _partials/_nav.html and per-page HTML.",
       "tags": [
         "build-output",
         "nav",
         "broken-links",
-        "deferred",
+        "applylogov",
         "post-baseline-finding",
-        "2026-04-25"
+        "2026-04-25",
+        "closed-p0.2"
       ],
       "related_bugs": [
         "bug-baseline-2026-04-25"
       ],
       "occurrences": 1,
       "last_seen": "2026-04-25T02:30:00.000Z"
+    },
+    {
+      "id": "bug-css-vars-dual-default-2026-04-27",
+      "timestamp": "2026-04-27T11:00:00.000Z",
+      "error_message": "Two different default palettes coexist; sites built minutes apart can render with #00A79D (FAMtastic teal) OR #1a5c2e (legacy dark green) depending on which template path executes.",
+      "file": "site-studio/server.js (L3524-3528 and L12413)",
+      "root_cause": "P0.1 diagnostic Thread 4. GAP-1 fix on 2026-04-24 added FAMTASTIC_DEFAULT_PALETTE injection at the brief level but did not update the literal :root block embedded in the template prompts. Those blocks hardcoded #1a5c2e/#d4a843/#f0f4f0 from a pre-GAP-1 era. Claude sometimes followed the brief-level palette, sometimes followed the literal :root, producing visible inconsistency.",
+      "fix": "CLOSED 2026-04-27 in P0.2 (commit pending). Replaced hardcoded fallbacks at L3524 and L12413 with famSkeletons.FAMTASTIC_DEFAULT_PALETTE.{primary,accent,background} references — single source of truth.",
+      "tags": [
+        "build-output",
+        "css-variables",
+        "palette",
+        "single-source-of-truth",
+        "2026-04-27",
+        "closed-p0.2"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:00:00.000Z"
+    },
+    {
+      "id": "bug-spec-schema-drift-2026-04-27",
+      "timestamp": "2026-04-27T11:00:00.000Z",
+      "error_message": "Site spec.json files have drifting key sets across the portfolio. Some sites missing tier (pre-GAP-4), some missing famtastic_mode, some missing created_at, one with tag: null. Implicit schema; no validator at write or read time.",
+      "file": "site-studio/server.js (readSpec at L145), sites/*/spec.json",
+      "root_cause": "P0.1 diagnostic Thread 6. No formal schema. Each writer (api/new-site, runAutonomousBuild, build verifier, brand tracker, logo extraction, etc.) added the fields it cared about. Older sites accumulated fields slowly; newer sites got the post-baseline-closure superset. The audit followup at architecture/2026-04-24-schema-audit-followup.md identified colors/pages required-but-not-written; P0.1 diagnostic Thread 6 confirmed and broadened the issue.",
+      "fix": "CLOSED 2026-04-27 in P0.2 (commit pending). Three changes: (1) NEW lib/spec-schema.js with REQUIRED_FIELDS, DEFAULT_FIELDS, validateSpec(), normalizeRequiredFields(). colors/pages decided as OPTIONAL per the audit followup. (2) Wired normalizeRequiredFields into readSpec next to normalizeTierAndMode (repair-on-read). (3) Two scripts: smoke-validate-all-specs (validator, P0 exit gate #5), spec-repair-all (one-shot migration, idempotent, optional --dry-run). Migration ran across 25 sites; 22 repaired, 3 already valid (post-fix). Validator now exits 0 on full portfolio.",
+      "tags": [
+        "schema-drift",
+        "spec-schema",
+        "validator",
+        "migration",
+        "p0-exit-gate-5",
+        "2026-04-27",
+        "closed-p0.2"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:00:00.000Z"
+    },
+    {
+      "id": "bug-template-sameness-2026-04-27",
+      "timestamp": "2026-04-27T11:00:00.000Z",
+      "error_message": "Sentinel: every Tier-B site without explicit spec.colors converges to the FAMtastic default palette (#00A79D primary). Two unrelated businesses (e.g. JJ B&A Transport vs Small Accounting Firm) render with identical primaries.",
+      "file": "site-studio/lib/famtastic-skeletons.js (FAMTASTIC_DEFAULT_PALETTE), site-studio/server.js (visualRequirements injection)",
+      "root_cause": "P0.1 diagnostic Thread 1. GAP-1 fix on 2026-04-24 made FAMTASTIC_DEFAULT_PALETTE a strong default. The fix solved the prior failure mode (sites used a generic industry palette) but introduced its inverse: every Tier-B site without explicit colors converges to the same five colors. The font-registry produces narrow variation. Visual sameness is the structural cost of the FAMtastic identity strong-default approach.",
+      "fix": "P0.2 sentinel-only. Added scripts/smoke-distinct-palette which exits 1 when two sites' --color-primary match each other AND match the FAMtastic default. Added documentation block at top of FAMTASTIC_DEFAULT_PALETTE pointing to the P1.2 work. Real fix is P1.2 (Visual Distinctiveness): per-site style fingerprint, Global Style Object, design tokens.",
+      "tags": [
+        "visual-quality",
+        "template-sameness",
+        "sentinel-only",
+        "p1.2-deferred",
+        "2026-04-27"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:00:00.000Z"
     }
   ]
 }

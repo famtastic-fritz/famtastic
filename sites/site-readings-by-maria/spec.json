@@ -23,7 +23,7 @@
   "state": "prototype",
   "version": 1,
   "design_brief": {
-    "goal": "Establish Readings by Maria as a credible, professional spiritual guide offering clarity and insight through intuitive services. Build trust through transparent pricing, authentic testimonials, and professional positioning that explicitly positions her as a wellness practitioner and guide\u2014not a fortune teller. Convert site visitors into booked sessions.",
+    "goal": "Establish Readings by Maria as a credible, professional spiritual guide offering clarity and insight through intuitive services. Build trust through transparent pricing, authentic testimonials, and professional positioning that explicitly positions her as a wellness practitioner and guide—not a fortune teller. Convert site visitors into booked sessions.",
     "audience": "Wellness-minded individuals seeking spiritual guidance and clarity through tarot, chakra work, past-life exploration, and mediumship. They value professionalism, authenticity, and specificity over mystique. They are skeptical of stereotypical psychic imagery but drawn to credible, warm practitioners who frame intuitive work as guidance and insight, not prediction.",
     "tone": [
       "warm",
@@ -33,21 +33,21 @@
       "grounded"
     ],
     "visual_direction": {
-      "layout": "Dark, immersive luxury-wellness aesthetic. Full-screen atmospheric dark hero with breathing room and intentional silence. Ample negative space throughout\u2014spacious card layouts, generous padding, whitespace as a design element (not emptiness). Single-column on mobile, thoughtful grid on desktop. Calm visual hierarchy that guides the eye toward CTAs and key trust signals without noise.",
-      "typography": "Cormorant Garamond for all headings (elegant serif, conveys timelessness and ancient wisdom without clich\u00e9). Raleway for body text (modern, clean, highly readable sans-serif). Large, generous heading sizes. Substantial line-height on body copy (1.7\u20131.8) for luxury feel and readability. Clear H1\u2192H2\u2192H3 hierarchy. Use Moonstone and Pearl White for text, with strong contrast against dark backgrounds.",
-      "color_usage": "Obsidian Night (#0B0B14) as the dominant background color\u2014immersive, grounding. Midnight Plum (#1A1128) for card backgrounds and section containers. Dark Amethyst (#2A1F3D) for elevated interactive elements (buttons on hover, elevated cards). Mystic Gold (#C9A84C) exclusively for primary CTAs (\"Begin Your Journey,\" booking buttons, key highlights)\u2014every instance should feel intentional and drive action. Pearl White (#F5F1FA) for main headings, Moonstone (#E8E4F0) for body text. Violet Veil (#7B5EA7) for secondary links and subtle dividers. Dusty Rose (#9E4773) sparingly for testimonials or special callouts. Every color must earn its place\u2014no decorative color use.",
-      "motion": "Subtle, atmospheric only. Fade-ins on scroll, gentle parallax on hero image, smooth transitions on interactive elements (0.3\u20130.5s). Avoid flashy animations, autoplaying elements, or motion that distracts. Motion should enhance the contemplative, immersive feeling and support navigation\u2014nothing performative.",
-      "density": "Spacious and premium. Luxury-wellness framing demands breathing room. Significant whitespace around cards, sections, and text blocks. Generous padding (40\u201360px+). No cramped layouts. Content should feel curated, not exhaustive."
+      "layout": "Dark, immersive luxury-wellness aesthetic. Full-screen atmospheric dark hero with breathing room and intentional silence. Ample negative space throughout—spacious card layouts, generous padding, whitespace as a design element (not emptiness). Single-column on mobile, thoughtful grid on desktop. Calm visual hierarchy that guides the eye toward CTAs and key trust signals without noise.",
+      "typography": "Cormorant Garamond for all headings (elegant serif, conveys timelessness and ancient wisdom without cliché). Raleway for body text (modern, clean, highly readable sans-serif). Large, generous heading sizes. Substantial line-height on body copy (1.7–1.8) for luxury feel and readability. Clear H1→H2→H3 hierarchy. Use Moonstone and Pearl White for text, with strong contrast against dark backgrounds.",
+      "color_usage": "Obsidian Night (#0B0B14) as the dominant background color—immersive, grounding. Midnight Plum (#1A1128) for card backgrounds and section containers. Dark Amethyst (#2A1F3D) for elevated interactive elements (buttons on hover, elevated cards). Mystic Gold (#C9A84C) exclusively for primary CTAs (\"Begin Your Journey,\" booking buttons, key highlights)—every instance should feel intentional and drive action. Pearl White (#F5F1FA) for main headings, Moonstone (#E8E4F0) for body text. Violet Veil (#7B5EA7) for secondary links and subtle dividers. Dusty Rose (#9E4773) sparingly for testimonials or special callouts. Every color must earn its place—no decorative color use.",
+      "motion": "Subtle, atmospheric only. Fade-ins on scroll, gentle parallax on hero image, smooth transitions on interactive elements (0.3–0.5s). Avoid flashy animations, autoplaying elements, or motion that distracts. Motion should enhance the contemplative, immersive feeling and support navigation—nothing performative.",
+      "density": "Spacious and premium. Luxury-wellness framing demands breathing room. Significant whitespace around cards, sections, and text blocks. Generous padding (40–60px+). No cramped layouts. Content should feel curated, not exhaustive."
     },
     "content_priorities": [
       "Trust and credibility signals first (transparent service pricing, professional credentials, specific testimonials with client first names and details, FAQ addressing what to expect, cancellation/prep policies)",
       "Clear service offerings with pricing, session descriptions, and format options (in-person, video, phone)",
-      "Maria's positioning as a guide and wellness practitioner (warm origin story, philosophy, professional photos\u2014not mystical portraiture)",
+      "Maria's positioning as a guide and wellness practitioner (warm origin story, philosophy, professional photos—not mystical portraiture)",
       "Seamless path to booking (prominent CTAs, booking form usability, session preparation info)"
     ],
     "must_have_sections": [
       "Hero (full-screen, atmospheric dark background, brief warm intro to Maria, primary \"Begin Your Journey\" CTA)",
-      "Services (grid of service cards: each with name, price, duration, description, session format options\u2014in-person/video/phone)",
+      "Services (grid of service cards: each with name, price, duration, description, session format options—in-person/video/phone)",
       "About (Maria's origin story, philosophy, credentials, warm candlelit professional photos)",
       "Featured Testimonial (on home, with client first name, specific detail about how guidance helped them)",
       "Contact & Booking (booking form, contact info, session prep tips, cancellation policy, FAQ)",
@@ -55,14 +55,14 @@
     ],
     "avoid": [
       "Fortune-telling language: no \"predictions,\" \"destiny,\" \"fate,\" \"guaranteed results,\" or \"I will tell you your future.\" Frame everything as guidance, clarity, and insight.",
-      "Carnival/stereotypical mystical imagery: no crystal balls, fortune-teller hats, cosmic clich\u00e9s, or over-the-top esoteric symbolism.",
+      "Carnival/stereotypical mystical imagery: no crystal balls, fortune-teller hats, cosmic clichés, or over-the-top esoteric symbolism.",
       "Vague or generic testimonials: no fake names or quotes without specific details. All testimonials must include a real first name and specific description of what changed or shifted for them.",
-      "Bright or light color schemes: commit to the dark, immersive Midnight Oracle palette. Do not lighten it for \"accessibility\"\u2014this is a core brand positioning.",
+      "Bright or light color schemes: commit to the dark, immersive Midnight Oracle palette. Do not lighten it for \"accessibility\"—this is a core brand positioning.",
       "Ornamental clutter or decorative excess: every design element should serve clarity or trust, not aesthetics alone.",
       "Language that positions Maria as all-knowing or magical: she's a skilled guide using intuitive tools, not a mystic with supernatural powers.",
       "Mobile-unfriendly design: services, pricing, and booking must work seamlessly on phones.",
       "Unclear session formats or hidden pricing: be explicit about in-person vs. video vs. phone, duration, and cost.",
-      "Overly trendy design: timeless luxury aesthetic over 2024\u20132025 visual fads."
+      "Overly trendy design: timeless luxury aesthetic over 2024–2025 visual fads."
     ],
     "open_questions": [],
     "approved": true
@@ -71,7 +71,7 @@
     {
       "category": "architecture",
       "suggestion": "Custom web application",
-      "reason": "Dynamic features detected \u2014 needs server-side logic for booking",
+      "reason": "Dynamic features detected — needs server-side logic for booking",
       "stack": "Next.js or Express + database"
     },
     {
@@ -100,13 +100,13 @@
     {
       "timestamp": "2026-04-06T15:49:24.238Z",
       "category": "structure",
-      "decision": "Added \"Who This Is For\" callout** (after hero) \u2014 Subtle boundary-setting signal that establishes Maria's selectivity and attracts the right audience",
+      "decision": "Added \"Who This Is For\" callout** (after hero) — Subtle boundary-setting signal that establishes Maria's selectivity and attracts the right audience",
       "status": "approved"
     },
     {
       "timestamp": "2026-04-06T18:10:04.763Z",
       "category": "structure",
-      "decision": "Preserved image slots and form exactly** \u2014 hero-1 on index.html, about-1 on about.html, booking form on contact.html all maintain original data-slot-id and Netlify form attributes.",
+      "decision": "Preserved image slots and form exactly** — hero-1 on index.html, about-1 on about.html, booking form on contact.html all maintain original data-slot-id and Netlify form attributes.",
       "status": "approved"
     },
     {
@@ -154,7 +154,7 @@
     {
       "timestamp": "2026-04-06T19:44:13.995Z",
       "category": "layout",
-      "decision": "Added \"Business Hours\" section in the right column info area, displaying Tuesday\u2013Saturday 10am\u20137pm, closed Sunday\u2013Monday",
+      "decision": "Added \"Business Hours\" section in the right column info area, displaying Tuesday–Saturday 10am–7pm, closed Sunday–Monday",
       "status": "approved"
     },
     {
@@ -262,7 +262,7 @@
     {
       "timestamp": "2026-04-07T18:18:54.224Z",
       "category": "structure",
-      "decision": "Banner includes the exact message \"Mercury is in retrograde \u2014 book before March 15th\" with a linked CTA to the contact page",
+      "decision": "Banner includes the exact message \"Mercury is in retrograde — book before March 15th\" with a linked CTA to the contact page",
       "status": "approved"
     },
     {
@@ -284,8 +284,8 @@
       "provider": "unsplash"
     }
   },
-  "_revision": 10,
-  "_last_modified": "2026-04-07T23:15:14.538Z",
+  "_revision": 11,
+  "_last_modified": "2026-04-17T13:59:19.875Z",
   "content": {
     "contact.html": {
       "fields": []
@@ -400,5 +400,24 @@
       "images_without_alt": 0,
       "total_images": 6
     }
-  }
+  },
+  "interview_state": {
+    "mode": "quick",
+    "started_at": "2026-04-17T13:59:19.875Z",
+    "completed_at": null,
+    "questions": [
+      "q_business",
+      "q_revenue",
+      "q_customer",
+      "q_differentiator",
+      "q_cta",
+      "q_style"
+    ],
+    "answers": {},
+    "current_index": 0,
+    "completed": false
+  },
+  "tier": "famtastic",
+  "famtastic_mode": true,
+  "created_at": "2026-04-27T15:21:07.924Z"
 }

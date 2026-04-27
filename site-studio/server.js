@@ -35,6 +35,7 @@ const fontRegistry = require('./lib/font-registry');
 const layoutRegistry = require('./lib/layout-registry');
 const famSkeletons = require('./lib/famtastic-skeletons');
 const { resolveTier, normalizeTierAndMode } = require('./lib/tier');
+const { validateSpec: validateSpecSchema, normalizeRequiredFields } = require('./lib/spec-schema');
 const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
 
 // --- Config ---
@@ -195,8 +196,11 @@ function readSpec() {
         }
         // L143 — normalize tier and derived famtastic_mode; write back if dirty (drift repair)
         const { dirty: _tierDirty } = normalizeTierAndMode(_specCache);
-        if (_tierDirty) {
-          console.log(`[spec] ${TAG}: tier normalized — writing drift repair`);
+        // P0.2 schema repair-on-read — fill required fields with sensible defaults
+        // when missing. Does NOT default tag/site_name (those identify the site).
+        const { dirty: _schemaDirty } = normalizeRequiredFields(_specCache);
+        if (_tierDirty || _schemaDirty) {
+          console.log(`[spec] ${TAG}: spec normalized (tier=${_tierDirty}, schema=${_schemaDirty}) — writing drift repair`);
           const _tierTmp = SPEC_FILE() + '.tmp';
           fs.writeFileSync(_tierTmp, JSON.stringify(_specCache, null, 2));
           fs.renameSync(_tierTmp, SPEC_FILE());
@@ -557,7 +561,15 @@ function writeBlueprint(bp) {
   fs.writeFileSync(BLUEPRINT_FILE(), JSON.stringify(bp, null, 2));
 }
 
-// Swap data-logo-v anchor content: img if assets/logo.{ext} exists, site name text otherwise
+// Swap data-logo-v anchor content: img if assets/logo.{ext} exists, site name text otherwise.
+//
+// Three-step normalisation (P0.2 fix for bug-broken-header-links-2026-04-25):
+//   A. Swap inner content of EVERY data-logo-v anchor to canonical newContent
+//      (regex /gi — Claude sometimes emits both image-form and text-form anchors;
+//      the prior /i flag only normalised the first).
+//   B. Dedupe — keep only the first data-logo-v anchor; remove the rest.
+//   C. Strip any style="..." attribute from surviving data-logo-v anchors
+//      (no-inline-styles standing rule).
 function applyLogoV(pages) {
   try {
     const distDir = DIST_DIR();
@@ -580,16 +592,41 @@ function applyLogoV(pages) {
       ? `<img src="${logoFile}" alt="${siteName}" class="h-10 w-auto">`
       : siteName;
 
-    const logoVRegex = /(<a[^>]*data-logo-v[^>]*>)([\s\S]*?)(<\/a>)/i;
+    function normalizeLogoMarkup(htmlString) {
+      if (!htmlString.includes('data-logo-v')) return htmlString;
+
+      // Step A: swap content of every data-logo-v anchor (note /gi for global match)
+      let html = htmlString.replace(
+        /(<a[^>]*data-logo-v[^>]*>)([\s\S]*?)(<\/a>)/gi,
+        `$1${newContent}$3`
+      );
+
+      // Step B: dedupe — keep only the first data-logo-v anchor
+      const anchorRegex = /<a[^>]*data-logo-v[^>]*>[\s\S]*?<\/a>/gi;
+      const matches = html.match(anchorRegex) || [];
+      if (matches.length > 1) {
+        let seenFirst = false;
+        html = html.replace(anchorRegex, (m) => {
+          if (!seenFirst) { seenFirst = true; return m; }
+          return '';
+        });
+      }
+
+      // Step C: strip inline style="..." from any data-logo-v anchor
+      html = html.replace(
+        /(<a[^>]*data-logo-v[^>]*?)(\s*style="[^"]*")([^>]*>)/gi,
+        '$1$3'
+      );
+
+      return html;
+    }
 
     // Update the canonical nav partial first so syncNavPartial won't clobber it
     const navPartialPath = path.join(distDir, '_partials', '_nav.html');
     if (fs.existsSync(navPartialPath)) {
-      let nav = fs.readFileSync(navPartialPath, 'utf8');
-      if (logoVRegex.test(nav)) {
-        nav = nav.replace(logoVRegex, `$1${newContent}$3`);
-        fs.writeFileSync(navPartialPath, nav);
-      }
+      const original = fs.readFileSync(navPartialPath, 'utf8');
+      const updated = normalizeLogoMarkup(original);
+      if (updated !== original) fs.writeFileSync(navPartialPath, updated);
     }
 
     // Update all pages
@@ -598,10 +635,10 @@ function applyLogoV(pages) {
     for (const page of allPages) {
       const filePath = path.join(distDir, page);
       if (!fs.existsSync(filePath)) continue;
-      let html = fs.readFileSync(filePath, 'utf8');
-      if (logoVRegex.test(html)) {
-        html = html.replace(logoVRegex, `$1${newContent}$3`);
-        fs.writeFileSync(filePath, html);
+      const original = fs.readFileSync(filePath, 'utf8');
+      const updatedHtml = normalizeLogoMarkup(original);
+      if (updatedHtml !== original) {
+        fs.writeFileSync(filePath, updatedHtml);
         updated++;
       }
     }
@@ -3521,9 +3558,9 @@ OUTPUT FORMAT — generate this EXACT structure:
     /* END LAYOUT FOUNDATION */
 
     :root {
-      --color-primary: ${spec.colors?.primary || '#1a5c2e'};
-      --color-accent: ${spec.colors?.accent || '#d4a843'};
-      --color-bg: ${spec.colors?.bg || '#f0f4f0'};
+      --color-primary: ${spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary};
+      --color-accent: ${spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent};
+      --color-bg: ${spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background};
       --font-serif: '${fontSerif}', serif;
       --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
@@ -12410,7 +12447,7 @@ HEAD REQUIREMENTS (CRITICAL — every page MUST include these in <head>):
 
 CSS THEMING (REQUIRED):
 - Define brand colors as CSS custom properties in a <style> block inside <head>:
-  :root { --color-primary: ${spec.colors?.primary || '#1a5c2e'}; --color-accent: ${spec.colors?.accent || '#d4a843'}; --color-bg: ${spec.colors?.bg || '#f0f4f0'}; --font-serif: '${fontSerif}', serif; --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  :root { --color-primary: ${spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary}; --color-accent: ${spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent}; --color-bg: ${spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background}; --font-serif: '${fontSerif}', serif; --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 - Use these variables throughout — reference var(--color-primary), var(--font-sans), etc.
 - Put page-specific styles in a <style data-page="true"> block. Shared styles go in the main <style> block.
 
