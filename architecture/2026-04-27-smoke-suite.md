@@ -197,6 +197,25 @@ Exit code 0 = pass.
 - [ ] Screenshot after clicking each nav link (3 screenshots: services, contact, home)
 - [ ] Browser DevTools Network panel screenshot showing 200/404 for each nav-link click
 
+### Step 5b — Post-build spec invariants (added P0.4)
+
+**Click path:** none — terminal command.
+
+```bash
+./scripts/smoke-assert-built-spec site-tonys-barber-shop
+```
+
+**Pass condition:** exit 0 with:
+- `state` ∈ `{built, deployed, client_approved}`
+- `design_brief.approved === true`
+- `interview_completed === true`
+- `pages` is a non-empty array
+
+**Why this matters:** without `design_brief.approved === true`, the classifier's `hasBrief` gate falls through to `new_site` on every subsequent chat message. That's the regression P0.4 closed. If this assertion fails on a fresh build, **stop the smoke run** — Steps 6, 7, and 8 will all silently misclassify and produce useless evidence.
+
+**Evidence to capture:**
+- [ ] Output of `./scripts/smoke-assert-built-spec site-tonys-barber-shop`
+
 ### Step 6 — Make a content edit through chat
 
 **Click path:**

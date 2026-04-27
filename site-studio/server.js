@@ -7594,32 +7594,53 @@ async function createSite(brief, options = {}) {
 /**
  * Synthesize design_brief on the active site spec from a brief object so the
  * build classifier routes to 'build' (not 'new_site' → handlePlanning).
- * Idempotent: if design_brief already exists, returns true without changes.
+ *
+ * P0.4 hotfix (2026-04-27) — also flips design_brief.approved=true at this
+ * synthesis point. Confirmation IS the approval: when this function runs,
+ * the user has just confirmed the build via Shay Desk (or via createSite at
+ * /api/new-site). Without this flip, the classifier's hasBrief gate at
+ * server.js:11308 stays false post-build and every subsequent chat message
+ * misclassifies as new_site, blocking content edits, deploys, and restyle.
+ * See architecture/2026-04-27-p0-exit-gate-results.md.
  */
 function synthesizeDesignBriefForBuild(brief) {
   const spec = readSpec();
   if (!spec) return false;
-  if (spec.design_brief) return true;
-  const cb = spec.client_brief || {};
-  spec.design_brief = {
-    goal: cb.business_description || brief.business_description || `Site for ${brief.business_name || spec.site_name}`,
-    audience: cb.ideal_customer || (brief.location ? `Customers in ${brief.location}` : 'Local customers'),
-    tone: brief.tone && brief.tone.length ? brief.tone : ['professional', 'clean'],
-    visual_direction: {
-      layout: 'standard',
-      typography: 'clean and professional',
-      color_usage: 'brand colors throughout',
-      motion: 'subtle',
-      density: 'balanced',
-    },
-    content_priorities: [brief.cta || 'Lead generation', 'Brand credibility'],
-    must_have_sections: brief.pages || spec.pages || ['home', 'about', 'contact'],
-    avoid: ['clutter', 'stock-photo feel'],
-    open_questions: [],
-  };
-  if (brief.pages) spec.pages = brief.pages;
-  spec.state = 'briefed';
-  writeSpec(spec);
+
+  // Path A: no existing design_brief — synthesize fresh and persist.
+  if (!spec.design_brief) {
+    const cb = spec.client_brief || {};
+    spec.design_brief = {
+      goal: cb.business_description || brief.business_description || `Site for ${brief.business_name || spec.site_name}`,
+      audience: cb.ideal_customer || (brief.location ? `Customers in ${brief.location}` : 'Local customers'),
+      tone: brief.tone && brief.tone.length ? brief.tone : ['professional', 'clean'],
+      visual_direction: {
+        layout: 'standard',
+        typography: 'clean and professional',
+        color_usage: 'brand colors throughout',
+        motion: 'subtle',
+        density: 'balanced',
+      },
+      content_priorities: [brief.cta || 'Lead generation', 'Brand credibility'],
+      must_have_sections: brief.pages || spec.pages || ['home', 'about', 'contact'],
+      avoid: ['clutter', 'stock-photo feel'],
+      open_questions: [],
+      approved: true, // P0.4: synthesizing-for-build implies approval
+    };
+    if (brief && brief.pages) spec.pages = brief.pages;
+    spec.state = 'briefed';
+    writeSpec(spec);
+    return true;
+  }
+
+  // Path B: design_brief already exists. Confirming a build implicitly
+  // approves whatever brief is on disk. Flip approved=true if not already set.
+  // This also closes the gap for legacy sites that have a brief but were
+  // built before the P0.4 hotfix.
+  if (spec.design_brief.approved !== true) {
+    spec.design_brief.approved = true;
+    writeSpec(spec);
+  }
   return true;
 }
 

@@ -3159,6 +3159,68 @@
       "last_seen": "2026-04-27T11:35:00.000Z"
     },
     {
+      "id": "bug-design-brief-approved-never-set-2026-04-27",
+      "timestamp": "2026-04-27T13:00:00.000Z",
+      "error_message": "After a successful Shay-confirmed build, spec.design_brief.approved stays false (or undefined). Every subsequent chat message hits the classifier's hasBrief gate at server.js:11308 and falls through to new_site, blocking content edits, deploys, and restyle. Caused P0 exit gates 1, 2, and 4 to fail.",
+      "file": "site-studio/server.js (synthesizeDesignBriefForBuild at L7599), pre-existing built-site spec.json files",
+      "root_cause": "P0 exit gate diagnostic at architecture/2026-04-27-p0-exit-gate-results.md. P0.3 introduced the Shay confirm flow (handleShayBuildRequest → pending → handleShayBuildConfirmation → synthesizeDesignBriefForBuild → triggerSiteBuild). synthesizeDesignBriefForBuild constructed the design_brief object but never set approved=true. The pre-P0.3 autonomous-build path also never set it. So every site ever built ended up with approved=false (or undefined), and the chat classifier's hasBrief gate became permanently false post-build.",
+      "fix": "CLOSED 2026-04-27 in P0.4 hotfix. Three changes: (1) synthesizeDesignBriefForBuild now sets approved=true at synthesis time (Path A: new brief gets approved=true in the synthesised object; Path B: existing brief gets approved=true via flip if not already set). Confirmation IS the approval. (2) NEW scripts/smoke-assert-built-spec asserts the post-build invariants (state in {built, deployed, client_approved}, design_brief.approved===true, interview_completed===true, non-empty pages). (3) Migration: scripts/spec-repair-all extended to backfill design_brief.approved=true for built/deployed/client_approved sites with interview_completed=true. Migration ran: 7 sites backfilled.",
+      "tags": [
+        "classifier",
+        "design-brief",
+        "approved-flag",
+        "post-build-regression",
+        "p0-exit-gate-blocker",
+        "2026-04-27",
+        "closed-p0.4"
+      ],
+      "related_bugs": [
+        "bug-baseline-2026-04-25",
+        "bug-shay-auto-build-no-confirmation-2026-04-25"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:00:00.000Z"
+    },
+    {
+      "id": "bug-gh-enoent-post-build-2026-04-27",
+      "timestamp": "2026-04-27T13:00:00.000Z",
+      "error_message": "[fatal] uncaughtException: Error: spawn gh ENOENT after successful build. Studio crashes (respawned by while-true wrapper); build itself completes but the launchd-supervised process takes an unscheduled exit and the post-build push step is silently dropped.",
+      "file": "site-studio/server.js (post-build push step — exact location TBD)",
+      "root_cause": "P0 exit gate run surfaced this. The post-build production-repo push expects the GitHub CLI (gh) in PATH. On the current machine gh is not installed. The spawn call has no preflight check or graceful fallback — the ENOENT bubbles to uncaughtException.",
+      "fix": "DEFERRED — log only per P0.4 scope. Two candidate approaches: (a) preflight check at startup (which gh) that downgrades the post-build push to a no-op with a structured chat message when gh is missing, (b) document gh as a hard prereq in setup. Option (a) preferred — keeps Studio operable on machines without gh. Severity: medium (Studio recovers via respawn but post-build push is silently dropped).",
+      "tags": [
+        "post-build",
+        "git-cli",
+        "spawn-enoent",
+        "deferred",
+        "medium-severity",
+        "2026-04-27"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:00:00.000Z"
+    },
+    {
+      "id": "bug-business-type-truncation-2026-04-27",
+      "timestamp": "2026-04-27T13:00:00.000Z",
+      "error_message": "business_type extracted from the brief gets truncated mid-phrase, e.g. 'A bold and' instead of 'A bold and confident barber shop'. Surfaced via image-prompt template that read 'kids cut service photograph for A bold and business' which Imagen-4 safety-filtered.",
+      "file": "site-studio/server.js (extractBriefFromMessage / brief synthesis)",
+      "root_cause": "P0 exit gate run surfaced this. The brief extractor or synthesisDesignBriefForBuild truncates business_type to the first three space-separated words (or similar). When the business description starts with a leading adjective phrase ('A bold and confident barber shop'), the truncation lops off the actual business noun, leaving a fragment that's syntactically incomplete.",
+      "fix": "DEFERRED — log only per P0.4 scope. Likely lives in createSite at server.js (when business_type is derived from business_description.split(' ').slice(0, 3).join(' ')). Fix would either: (a) skip leading articles/adjectives before slicing, or (b) require the noun phrase to include a recognisable business-type word from GENERIC_BUSINESS_TYPES. Severity: low (safety filter recovers via Unsplash fallback; image still produced).",
+      "tags": [
+        "brief-extraction",
+        "business-type",
+        "truncation",
+        "imagen-safety",
+        "deferred",
+        "low-severity",
+        "2026-04-27"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:00:00.000Z"
+    },
+    {
       "id": "bug-restyle-dead-mode-instruction-2026-04-27",
       "timestamp": "2026-04-27T11:35:00.000Z",
       "error_message": "Restyle classification fires correctly (classifier returns 'restyle', routing sends to handleChatMessage) but the resulting Claude prompt has no restyle-specific instruction. Output is generic, indistinguishable from a vague edit.",

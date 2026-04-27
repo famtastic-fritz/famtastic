@@ -66,6 +66,7 @@ for (const tag of sites) {
   const beforeMode = spec.famtastic_mode;
   const beforeState = spec.state;
   const beforeTag = spec.tag;
+  const beforeApproved = spec.design_brief && spec.design_brief.approved;
 
   // Derive `tag` from directory name when missing/null. Only safe in the
   // migration context — the live readSpec() path does NOT default tag because
@@ -78,7 +79,25 @@ for (const tag of sites) {
 
   const { dirty: tierDirty } = normalizeTierAndMode(spec);
   const { dirty: schemaDirty } = normalizeRequiredFields(spec);
-  const dirty = tagDerived || tierDirty || schemaDirty;
+
+  // P0.4 backfill — sites that completed a build (state in {built, deployed,
+  // client_approved}) AND have a design_brief AND interview_completed=true
+  // should have design_brief.approved=true. The pre-P0.4 build path never set
+  // this flag, leaving every built site stuck in the new_site classifier branch.
+  let approvedBackfilled = false;
+  const builtStates = new Set(['built', 'deployed', 'client_approved']);
+  if (
+    spec.design_brief &&
+    typeof spec.design_brief === 'object' &&
+    builtStates.has(spec.state) &&
+    spec.interview_completed === true &&
+    spec.design_brief.approved !== true
+  ) {
+    spec.design_brief.approved = true;
+    approvedBackfilled = true;
+  }
+
+  const dirty = tagDerived || tierDirty || schemaDirty || approvedBackfilled;
 
   if (!dirty) {
     unchanged++;
@@ -90,6 +109,8 @@ for (const tag of sites) {
   if (beforeTier !== spec.tier) changes.push(`tier: ${JSON.stringify(beforeTier)} → ${JSON.stringify(spec.tier)}`);
   if (beforeMode !== spec.famtastic_mode) changes.push(`famtastic_mode: ${JSON.stringify(beforeMode)} → ${JSON.stringify(spec.famtastic_mode)}`);
   if (beforeState !== spec.state) changes.push(`state: ${JSON.stringify(beforeState)} → ${JSON.stringify(spec.state)}`);
+  const afterApproved = spec.design_brief && spec.design_brief.approved;
+  if (beforeApproved !== afterApproved) changes.push(`design_brief.approved: ${JSON.stringify(beforeApproved)} → ${JSON.stringify(afterApproved)}`);
   const afterKeys = Object.keys(spec).slice().sort();
   const addedKeys = afterKeys.filter(k => !beforeKeys.includes(k));
   if (addedKeys.length > 0) changes.push(`added keys: ${addedKeys.join(', ')}`);
