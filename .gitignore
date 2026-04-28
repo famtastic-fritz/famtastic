@@ -7,7 +7,8 @@ site-studio/.env
 
 # Site working directories — local only, not committed to hub repo
 # Each site gets its own repo at ~/famtastic-sites/<tag>/
-sites/
+# Anchored to root so nested directories named `sites` (e.g. docs/sites/) aren't caught.
+/sites/
 
 # Local Netlify folder
 .netlify
