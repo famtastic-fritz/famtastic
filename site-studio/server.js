@@ -10793,7 +10793,7 @@ async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}
         method: 'POST', headers: leonardoHeaders,
         body: JSON.stringify({
           prompt: buildPosePrompt(poseName),
-          modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
+          modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876', // Leonardo Lightning XL
           width: 512, height: 512, num_images: 1,
           init_image_id: initImageId, init_strength: 0.4,
         }),
