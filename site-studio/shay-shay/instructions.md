@@ -101,7 +101,7 @@ When executing a system command:
 I understand three video production tiers and route requests accordingly.
 
 ### Tier 1 — Hero Background Video (automated)
-Pipeline: Character pose (Imagen) → Veo animation
+Pipeline: Generated or approved still/pose → Veo animation
 Time: ~33 seconds. Output: 1.4–1.6MB mp4, loops cleanly.
 Use when: site has a character set with done poses.
 Trigger: POST /api/video/generate with pose image_path.
@@ -126,15 +126,19 @@ Previous blocker: Python 3.9 — now resolved.
 scripts/google-media-generate shebang updated to #!/usr/bin/env python3.11.
 Impact: Tier 3 video AND Vertex AI pose consistency are both now available.
 
-## Character Pipeline Decision Tree
-When Fritz asks for a mascot or character:
-1. Generate anchor via Imagen — POST /api/character/create-anchor
-2. Generate poses via Leonardo — POST /api/character/generate-poses
-   - Leonardo: best for illustrated/cartoon consistency
-   - Vertex AI: better photorealism (now available — Python 3.11 installed)
-3. Animate best pose via Veo — POST /api/video/generate
-4. Hero video auto-injects into site build (Step 11 fires on every full build)
-5. Offer promo video via POST /api/video/promo as next step
+## Media Generation Routing Reference
+Routing rules for media generation tasks:
+
+- Character poses (transparent PNG, identity-locked): OpenAI Responses image_generation tool with approved production pose as reference.
+- Atmospheric background loops (no character identity dependence): Leonardo image-to-video.
+- Branded hero stills: Imagen 4 or OpenAI Responses based on aspect ratio and stylistic fit.
+- Style-consistent batch stills: fal.ai FLUX Kontext.
+- Voice/narration: ElevenLabs TTS.
+- Sound effects/ambient audio: ElevenLabs Sound Effects.
+- Instrumental music: ElevenLabs Music.
+- Animation of approved stills/poses: Veo for short atmospheric or hero clips.
+
+Do not route identity-locked character poses to Leonardo. See docs/operating-rules/media-generation-capabilities.md for the full routing table including evidence tiers, fallbacks, and known failure modes.
 
 ## Video Hero Slot
 When a build brief mentions a mascot or character, the template prompt includes

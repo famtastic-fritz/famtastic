@@ -1,0 +1,308 @@
+{
+  "version": "2.1",
+  "updated_at": "2026-04-29",
+  "canonical_media_routing": "docs/operating-rules/media-generation-capabilities.md",
+  "routing_rules": {
+    "character_pose_transparent_png": {
+      "primary": "openai_responses.image_generation",
+      "fallback": "manual_chatgpt_for_flagship_or_local_background_removal_for_nontransparent_outputs",
+      "evidence_tier": "VALIDATED",
+      "notes": "Use approved production pose as reference input. Do not route Hi-Tide Harry-style identity-locked poses to Leonardo."
+    },
+    "multi_pose_character_set": {
+      "primary": "openai_responses.image_generation",
+      "fallback": "manual_chatgpt_for_high_touch",
+      "evidence_tier": "VALIDATED",
+      "notes": "Reference image required for every generated pose."
+    },
+    "hero_still_environment": {
+      "primary": "google.imagen_4",
+      "fallback": "openai_responses.image_generation",
+      "evidence_tier": "VALIDATED",
+      "notes": "Choose per site by aspect ratio, prompt specifics, and stylistic fit."
+    },
+    "hero_still_branded_story": {
+      "primary": "google.imagen_4_or_openai_responses.image_generation",
+      "fallback": "leonardo.phoenix_start_frame_for_motion_workflows",
+      "evidence_tier": "VALIDATED",
+      "notes": "Exact copy belongs in HTML/SVG overlay, not raster generation."
+    },
+    "atmospheric_background_loop": {
+      "primary": "leonardo.image_to_video",
+      "fallback": "google.veo_2_or_veo_3",
+      "evidence_tier": "VALIDATED",
+      "notes": "Leonardo is validated for cinematic ambience/background loops, not foreground mascot identity."
+    },
+    "style_consistent_batch_stills": {
+      "primary": "fal.flux_kontext",
+      "fallback": "adobe_firefly_web_manual_or_google_prompt_consistency",
+      "evidence_tier": "VALIDATED",
+      "notes": "Validated for non-character scene style variation."
+    },
+    "voice_narration": {
+      "primary": "elevenlabs.tts",
+      "fallback": "runway_audio_after_auth",
+      "evidence_tier": "VALIDATED"
+    },
+    "sfx_ambient_audio": {
+      "primary": "elevenlabs.sound_effects",
+      "fallback": "runway_audio_after_auth",
+      "evidence_tier": "VALIDATED"
+    },
+    "instrumental_music": {
+      "primary": "elevenlabs.music",
+      "fallback": "suno_after_auth",
+      "evidence_tier": "VALIDATED"
+    },
+    "photoshop_finishing": {
+      "primary": "adobe.photoshop_desktop_or_adb_mcp_after_precheck",
+      "fallback": "local_scripts_only",
+      "evidence_tier": "DOCS-CONFIRMED-UNTESTED",
+      "notes": "Photoshop is a finishing station, not a generator. adb-mcp openFile is currently failed and tracked in the benchmark backlog."
+    }
+  },
+  "providers": [
+    {
+      "id": "openai_responses",
+      "label": "OpenAI Responses",
+      "surface": "api",
+      "auth_key": "openai_api",
+      "description": "Validated reference-image generation path for identity-locked character poses and transparent PNG assets.",
+      "preferred_for": ["character_pose_transparent_png", "multi_pose_character_set", "hero_still_branded_story"],
+      "capabilities": [
+        {
+          "id": "image_generation_reference_edit",
+          "label": "Reference-image generation/edit",
+          "task": "character_pose_transparent_png",
+          "status": "validated_external_script",
+          "entrypoint": "Responses API /v1/responses with image_generation tool",
+          "notes": "Validated with approved production pose reference. Studio route is follow-up; do not use legacy text-only pose generation for identity-locked characters."
+        },
+        {
+          "id": "transparent_png",
+          "label": "Transparent PNG output",
+          "task": "transparent_character_asset",
+          "status": "validated_external_script",
+          "entrypoint": "Responses API /v1/responses with image_generation background=transparent",
+          "notes": "Validated for Hi-Tide Harry pose variants."
+        },
+        {
+          "id": "hero_still_branded_story",
+          "label": "Branded hero still",
+          "task": "hero_still_branded_story",
+          "status": "validated_external_script",
+          "entrypoint": "Responses API /v1/responses with image_generation tool",
+          "notes": "Validated against Imagen comparator; select per site."
+        }
+      ]
+    },
+    {
+      "id": "claude_svg",
+      "label": "Claude SVG",
+      "surface": "api",
+      "auth_key": "claude_api",
+      "description": "Studio-native vector asset generation for logo systems, icons, favicons, dividers, and lightweight illustrative assets.",
+      "preferred_for": ["logo_systems", "iconography", "favicons", "decorative_vectors"],
+      "capabilities": [
+        {
+          "id": "vector_asset_generation",
+          "label": "Vector asset generation",
+          "task": "vector_asset",
+          "status": "wired",
+          "entrypoint": "/api/media/generate-asset",
+          "notes": "Best for SVG-style identity assets and decorative components."
+        }
+      ]
+    },
+    {
+      "id": "google",
+      "label": "Google AI Studio",
+      "surface": "api",
+      "auth_key": "gemini_api",
+      "description": "Google image and video generation stack exposed through Gemini, Imagen, and Veo.",
+      "preferred_for": ["hero_still_environment", "hero_still_branded_story", "image_to_video", "text_to_video"],
+      "capabilities": [
+        {
+          "id": "text_to_image",
+          "label": "Text to image",
+          "task": "text_to_image",
+          "status": "wired",
+          "entrypoint": "/api/media/generate-image",
+          "notes": "Primary route for hero/environment stills and reusable media images. Identity-locked character poses route to OpenAI Responses."
+        },
+        {
+          "id": "text_to_video",
+          "label": "Text to video",
+          "task": "text_to_video",
+          "status": "wired",
+          "entrypoint": "/api/media/generate-video",
+          "notes": "Generates a still and animates it into a short clip."
+        },
+        {
+          "id": "image_to_video",
+          "label": "Image to video",
+          "task": "image_to_video",
+          "status": "wired",
+          "entrypoint": "/api/media/generate-video",
+          "notes": "Animates an existing uploaded or generated still into a short clip."
+        },
+        {
+          "id": "character_consistency",
+          "label": "Character consistency",
+          "task": "character_consistency",
+          "status": "partial",
+          "entrypoint": "/api/media/generate-image",
+          "notes": "Not the validated primary route for identity-locked character poses in current Studio routing. See canonical media routing doc."
+        }
+      ]
+    },
+    {
+      "id": "leonardo",
+      "label": "Leonardo",
+      "surface": "api",
+      "auth_key": "leonardo_api",
+      "description": "Visual-first image and video generation with reference-guided workflows and custom training paths.",
+      "preferred_for": ["atmospheric_background_loop", "style_reference", "custom_models", "image_to_video"],
+      "capabilities": [
+        {
+          "id": "text_to_image",
+          "label": "Text to image",
+          "task": "text_to_image",
+          "status": "verified_available",
+          "notes": "Officially available, but not yet routed through Studio endpoints."
+        },
+        {
+          "id": "image_guidance",
+          "label": "Image guidance",
+          "task": "image_to_image",
+          "status": "verified_available",
+          "notes": "Supports style/content references, but Phoenix Character Reference failed Hi-Tide Harry identity consistency. Do not route identity-locked character poses here without new validation."
+        },
+        {
+          "id": "image_to_video",
+          "label": "Image to video",
+          "task": "image_to_video",
+          "status": "verified_available",
+          "notes": "Officially available, but not yet wired into Studio server routes."
+        },
+        {
+          "id": "custom_models",
+          "label": "Custom models",
+          "task": "custom_model",
+          "status": "verified_available",
+          "notes": "Potential long-term route for stable brand character consistency."
+        }
+      ]
+    },
+    {
+      "id": "adobe-firefly",
+      "label": "Adobe Firefly API",
+      "surface": "api",
+      "auth_key": "firefly_api",
+      "description": "Adobe Firefly Services APIs for image generation, custom models, composites, upscale, and video.",
+      "preferred_for": ["brand_safe_imagery", "custom_models", "composites", "upscale"],
+      "capabilities": [
+        {
+          "id": "text_to_image",
+          "label": "Text to image",
+          "task": "text_to_image",
+          "status": "verified_available",
+          "notes": "Repo has a Firefly image script, but Studio does not use it as a primary Media route yet."
+        },
+        {
+          "id": "custom_models",
+          "label": "Custom models",
+          "task": "custom_model",
+          "status": "verified_available",
+          "notes": "Strong candidate for brand character and style consistency when access is enabled."
+        },
+        {
+          "id": "upscale",
+          "label": "Upscale",
+          "task": "upscale",
+          "status": "verified_available",
+          "notes": "Officially available in current Firefly Services docs."
+        },
+        {
+          "id": "video",
+          "label": "Generate video",
+          "task": "text_to_video",
+          "status": "verified_available",
+          "notes": "Officially available, but not yet wired into Studio."
+        }
+      ]
+    },
+    {
+      "id": "adobe_firefly_web",
+      "label": "Adobe Firefly Web",
+      "surface": "web_automation",
+      "auth_key": "firefly_web",
+      "description": "Creative Cloud web-app path for Firefly image and video features.",
+      "preferred_for": ["style_reference", "brand_safe_imagery", "manual_high_touch_workflows"],
+      "capabilities": [
+        {
+          "id": "image_generation",
+          "label": "Image generation",
+          "task": "text_to_image",
+          "status": "partial",
+          "notes": "Usable through the web surface, but not a dependable primary automation path."
+        },
+        {
+          "id": "video_generation",
+          "label": "Video generation",
+          "task": "image_to_video",
+          "status": "partial",
+          "notes": "Present in Adobe surfaces, but Studio should treat it as secondary until automation is hardened."
+        }
+      ]
+    },
+    {
+      "id": "openrouter",
+      "label": "OpenRouter",
+      "surface": "api",
+      "auth_key": "openrouter_api",
+      "description": "Unified routing layer for multiple image and video models.",
+      "preferred_for": ["model_variety", "future_routing", "fallback_video"],
+      "capabilities": [
+        {
+          "id": "text_to_image",
+          "label": "Text to image",
+          "task": "text_to_image",
+          "status": "verified_available",
+          "notes": "Official image generation support is available through OpenRouter."
+        },
+        {
+          "id": "text_to_video",
+          "label": "Text to video",
+          "task": "text_to_video",
+          "status": "verified_available",
+          "notes": "Official video generation API is available through OpenRouter."
+        },
+        {
+          "id": "image_to_video",
+          "label": "Image to video",
+          "task": "image_to_video",
+          "status": "verified_available",
+          "notes": "Useful as a future model-routing surface once Studio adds first-class support."
+        }
+      ]
+    },
+    {
+      "id": "adobe_photoshop_mcp",
+      "label": "Photoshop / MCP",
+      "surface": "plugin",
+      "auth_key": "adobe_photoshop_mcp",
+      "description": "Photoshop automation and editing path through plugin/MCP integration.",
+      "preferred_for": ["editing", "cleanup", "composites"],
+      "capabilities": [
+        {
+          "id": "image_editing",
+          "label": "Image editing",
+          "task": "image_editing",
+          "status": "partial",
+          "notes": "Available in principle, but plugin reliability remains a blocker."
+        }
+      ]
+    }
+  ]
+}

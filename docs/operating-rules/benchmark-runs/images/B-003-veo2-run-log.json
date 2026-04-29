@@ -1,0 +1,40 @@
+{
+  "benchmark": "B-003 Veo 2 Atmospheric Loop Comparator",
+  "ran_at": "2026-04-29T00:00:00-04:00",
+  "status": "ok",
+  "provider": "google",
+  "model": "veo-2.0-generate-001",
+  "input_image": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images/B-002-IMAGEN-yearbook-hero.png",
+  "output_path": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images/B-003-VEO2-yearbook-atmospheric-loop.mp4",
+  "prompt": "Animate this 1996 reunion yearbook hero still into a subtle atmospheric website background loop: gentle page movement, warm dust motes, slight cinematic push-in, soft film grain shimmer, red white and silver accents catching light, no readable text, no people, no logos, no mascot character, calm seamless motion behind HTML overlay.",
+  "aspect_ratio": "16:9",
+  "requested_duration_seconds": 5,
+  "actual_duration_seconds": 5.0,
+  "generation_time_seconds": 33.2,
+  "file_size_bytes": 1468000,
+  "estimated_cost_usd": 0.05,
+  "request_shape": {
+    "command": "scripts/google-media-generate",
+    "args": [
+      "--video",
+      "--input-image",
+      "docs/operating-rules/benchmark-runs/images/B-002-IMAGEN-yearbook-hero.png",
+      "--video-prompt",
+      "Animate this 1996 reunion yearbook hero still into a subtle atmospheric website background loop: gentle page movement, warm dust motes, slight cinematic push-in, soft film grain shimmer, red white and silver accents catching light, no readable text, no people, no logos, no mascot character, calm seamless motion behind HTML overlay.",
+      "--output",
+      "docs/operating-rules/benchmark-runs/images/B-003-VEO2-yearbook-atmospheric-loop.mp4",
+      "--duration",
+      "5",
+      "--aspect-ratio",
+      "16:9",
+      "--print-duration"
+    ],
+    "env": {
+      "GEMINI_API_KEY": "<redacted>"
+    }
+  },
+  "self_assessment": {
+    "pass": null,
+    "note": "Generated successfully. Visual judgment is downstream review by Fritz."
+  }
+}

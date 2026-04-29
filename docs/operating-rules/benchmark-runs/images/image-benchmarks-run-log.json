@@ -1,0 +1,262 @@
+{
+  "ranAt": "2026-04-28T19:25:07.254Z",
+  "status": "complete",
+  "outputDir": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images",
+  "budgetCapUsd": 50,
+  "estimatedCostUsd": {
+    "openai": 0.07,
+    "imagen": 0.004,
+    "fal": 0.12,
+    "total": 0.194
+  },
+  "sharedHeroPrompt": "Cinematic 3:2 wide website hero background for a 30th high school reunion website. Open 1996 high school yearbook on a table, warm film grain, red white and silver school color accents, nostalgic but premium, soft depth of field, tasteful dramatic lighting, no readable text, no people, no logos, no mascot character, clean center safe area for HTML headline overlay.",
+  "b001_openai": {
+    "benchmark": "B-001",
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "prompt": "Cinematic 3:2 wide website hero background for a 30th high school reunion website. Open 1996 high school yearbook on a table, warm film grain, red white and silver school color accents, nostalgic but premium, soft depth of field, tasteful dramatic lighting, no readable text, no people, no logos, no mascot character, clean center safe area for HTML headline overlay.",
+    "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images/B-001-OPENAI-yearbook-hero.png",
+    "aspect": "3:2",
+    "size": "1536x1024",
+    "seed": null,
+    "seedNote": "Responses image_generation tool does not expose seed in current route.",
+    "request": {
+      "method": "POST",
+      "url": "https://api.openai.com/v1/responses",
+      "headers": {
+        "Authorization": "<redacted>",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "model": "gpt-5.5",
+        "input": "Cinematic 3:2 wide website hero background for a 30th high school reunion website. Open 1996 high school yearbook on a table, warm film grain, red white and silver school color accents, nostalgic but premium, soft depth of field, tasteful dramatic lighting, no readable text, no people, no logos, no mascot character, clean center safe area for HTML headline overlay.",
+        "tools": [
+          {
+            "type": "image_generation",
+            "action": "generate",
+            "size": "1536x1024",
+            "quality": "medium",
+            "output_format": "png",
+            "background": "opaque"
+          }
+        ],
+        "tool_choice": {
+          "type": "image_generation"
+        }
+      }
+    },
+    "status": "ok",
+    "durationMs": 35961,
+    "responseId": "resp_02907816012e09850069f10994437481a0bd373012189a4d0e",
+    "usage": {
+      "input_tokens": 2433,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 154,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 2587
+    },
+    "revisedPrompt": "Cinematic 3:2 wide website hero background for a 30th high school reunion website. An open 1996 high school yearbook lying on a polished wooden table, pages visible but with absolutely no readable text, typography blurred/abstract. Warm nostalgic film grain, premium editorial photography style. Red, white, and silver school-color accents as subtle ribbons, confetti, or decor near the edges. Soft depth of field, tasteful dramatic lighting with warm highlights and gentle shadows. No people, no logos, no mascot character. Clean uncluttered center safe area with negative space for an HTML headline overlay. Wide composition, high resolution, elegant, nostalgic, cinematic.",
+    "byteCount": 2367615,
+    "estimatedCostUsd": 0.07,
+    "estimatedCostNote": "Estimate only; exact billing not returned. Medium landscape image uses 1568 image output tokens per OpenAI docs plus text tokens."
+  },
+  "b002_imagen": {
+    "benchmark": "B-002",
+    "provider": "google",
+    "model": "imagen-4.0-generate-001",
+    "status": "ok",
+    "prompt": "Cinematic website hero background for a 30th high school reunion website. Open 1996 high school yearbook on a table, warm film grain, red white and silver school color accents, nostalgic but premium, soft depth of field, tasteful dramatic lighting, no readable text, no people, no logos, no mascot character, clean center safe area for HTML headline overlay.",
+    "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images/B-002-IMAGEN-yearbook-hero.png",
+    "aspect": "16:9",
+    "seed": null,
+    "seedNote": "Current local google-media-generate wrapper does not expose seed. Rerun uses Imagen native 16:9 because Imagen 4 rejects 3:2.",
+    "estimatedCostUsd": 0.004,
+    "durationMs": 14300,
+    "byteCount": 1189089,
+    "rerunReason": "Practical hero comparison: OpenAI native 3:2 vs Imagen native 16:9 at production aspect ratios."
+  },
+  "b004_fal_kontext": [
+    {
+      "benchmark": "B-004",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/kontext",
+      "slug": "warm-yearbook-print",
+      "inputImage": "/Users/famtasticfritz/famtastic/sites/site-mbsh-reunion/assets/background-tests/leonardo-motion/02-rebuilt-school-push-in-start.jpg",
+      "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images/B-004-FAL-Kontext-01-warm-yearbook-print.png",
+      "prompt": "Apply a 1996 high school yearbook print treatment while preserving the exact building/exterior identity, geometry, layout, palm silhouettes, and composition. Warm nostalgic film grain, slight paper texture, period color grade, soft focus around the edges, tasteful red white silver accents. Do not add people, readable text, logos, or mascot characters.",
+      "seed": 1996001,
+      "estimatedCostUsd": 0.04,
+      "request": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux-pro/kontext",
+        "headers": {
+          "Authorization": "<redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "prompt": "Apply a 1996 high school yearbook print treatment while preserving the exact building/exterior identity, geometry, layout, palm silhouettes, and composition. Warm nostalgic film grain, slight paper texture, period color grade, soft focus around the edges, tasteful red white silver accents. Do not add people, readable text, logos, or mascot characters.",
+          "image_url": "data:image/jpeg;base64,<1523815 input bytes>",
+          "guidance_scale": 3.5,
+          "num_images": 1,
+          "output_format": "png",
+          "safety_tolerance": "2",
+          "enhance_prompt": false,
+          "aspect_ratio": "16:9",
+          "seed": 1996001
+        }
+      },
+      "durationMs": 13232,
+      "response": {
+        "images": [
+          {
+            "url": "https://v3b.fal.media/files/b/0a981a8f/mkQPuQUbvoqZh0v5kmNFK_245a611747fd41fba9eb4921711004ee.png",
+            "content_type": "image/jpeg",
+            "file_name": null,
+            "file_size": null,
+            "width": 1392,
+            "height": 752
+          }
+        ],
+        "timings": {},
+        "seed": 1996001,
+        "has_nsfw_concepts": [
+          false
+        ],
+        "prompt": "Apply a 1996 high school yearbook print treatment while preserving the exact building/exterior identity, geometry, layout, palm silhouettes, and composition. Warm nostalgic film grain, slight paper texture, period color grade, soft focus around the edges, tasteful red white silver accents. Do not add people, readable text, logos, or mascot characters."
+      },
+      "remoteUrl": "https://v3b.fal.media/files/b/0a981a8f/mkQPuQUbvoqZh0v5kmNFK_245a611747fd41fba9eb4921711004ee.png",
+      "width": 1392,
+      "height": 752,
+      "status": "ok",
+      "download": {
+        "durationMs": 564,
+        "contentType": "image/png",
+        "byteCount": 1678577
+      },
+      "byteCount": 1678577
+    },
+    {
+      "benchmark": "B-004",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/kontext",
+      "slug": "flashback-vhs-yearbook",
+      "inputImage": "/Users/famtasticfritz/famtastic/sites/site-mbsh-reunion/assets/background-tests/leonardo-motion/02-rebuilt-school-push-in-start.jpg",
+      "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images/B-004-FAL-Kontext-02-flashback-vhs-yearbook.png",
+      "prompt": "Transform this into a 1996 yearbook flashback look while preserving the same building identity and camera angle. Add subtle VHS-era softness, warm print grain, gentle vignette, slightly faded reds and silvers, and soft-focus yearbook-photo edges. No people, no fake text, no logos, no mascot characters.",
+      "seed": 1996002,
+      "estimatedCostUsd": 0.04,
+      "request": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux-pro/kontext",
+        "headers": {
+          "Authorization": "<redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "prompt": "Transform this into a 1996 yearbook flashback look while preserving the same building identity and camera angle. Add subtle VHS-era softness, warm print grain, gentle vignette, slightly faded reds and silvers, and soft-focus yearbook-photo edges. No people, no fake text, no logos, no mascot characters.",
+          "image_url": "data:image/jpeg;base64,<1523815 input bytes>",
+          "guidance_scale": 3.5,
+          "num_images": 1,
+          "output_format": "png",
+          "safety_tolerance": "2",
+          "enhance_prompt": false,
+          "aspect_ratio": "16:9",
+          "seed": 1996002
+        }
+      },
+      "durationMs": 10941,
+      "response": {
+        "images": [
+          {
+            "url": "https://v3b.fal.media/files/b/0a981a8f/WSh-q3xiFf0ltTvDqhBLT_1a8140c9254c42e1ad3e01e8254a7ce4.png",
+            "content_type": "image/jpeg",
+            "file_name": null,
+            "file_size": null,
+            "width": 1392,
+            "height": 752
+          }
+        ],
+        "timings": {},
+        "seed": 1996002,
+        "has_nsfw_concepts": [
+          false
+        ],
+        "prompt": "Transform this into a 1996 yearbook flashback look while preserving the same building identity and camera angle. Add subtle VHS-era softness, warm print grain, gentle vignette, slightly faded reds and silvers, and soft-focus yearbook-photo edges. No people, no fake text, no logos, no mascot characters."
+      },
+      "remoteUrl": "https://v3b.fal.media/files/b/0a981a8f/WSh-q3xiFf0ltTvDqhBLT_1a8140c9254c42e1ad3e01e8254a7ce4.png",
+      "width": 1392,
+      "height": 752,
+      "status": "ok",
+      "download": {
+        "durationMs": 579,
+        "contentType": "image/png",
+        "byteCount": 1697135
+      },
+      "byteCount": 1697135
+    },
+    {
+      "benchmark": "B-004",
+      "provider": "fal.ai",
+      "model": "fal-ai/flux-pro/kontext",
+      "slug": "archival-school-memory",
+      "inputImage": "/Users/famtasticfritz/famtastic/sites/site-mbsh-reunion/assets/background-tests/leonardo-motion/02-rebuilt-school-push-in-start.jpg",
+      "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/images/B-004-FAL-Kontext-03-archival-school-memory.png",
+      "prompt": "Create an archival 1996 school-memory treatment while keeping the original scene identity intact: same school exterior structure, same layout, same palm silhouettes, same perspective. Add warm analog grain, printed-yearbook halftone texture, subtle light leaks, soft edges, and nostalgic color fade. No people, no readable text, no logos.",
+      "seed": 1996003,
+      "estimatedCostUsd": 0.04,
+      "request": {
+        "method": "POST",
+        "url": "https://fal.run/fal-ai/flux-pro/kontext",
+        "headers": {
+          "Authorization": "<redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "prompt": "Create an archival 1996 school-memory treatment while keeping the original scene identity intact: same school exterior structure, same layout, same palm silhouettes, same perspective. Add warm analog grain, printed-yearbook halftone texture, subtle light leaks, soft edges, and nostalgic color fade. No people, no readable text, no logos.",
+          "image_url": "data:image/jpeg;base64,<1523815 input bytes>",
+          "guidance_scale": 3.5,
+          "num_images": 1,
+          "output_format": "png",
+          "safety_tolerance": "2",
+          "enhance_prompt": false,
+          "aspect_ratio": "16:9",
+          "seed": 1996003
+        }
+      },
+      "durationMs": 11456,
+      "response": {
+        "images": [
+          {
+            "url": "https://v3b.fal.media/files/b/0a981a8f/oCaIEffIgJgr_sxjU86St_7e7020b25cca44e8bd4ba4f38b2dce3c.png",
+            "content_type": "image/jpeg",
+            "file_name": null,
+            "file_size": null,
+            "width": 1392,
+            "height": 752
+          }
+        ],
+        "timings": {},
+        "seed": 1996003,
+        "has_nsfw_concepts": [
+          false
+        ],
+        "prompt": "Create an archival 1996 school-memory treatment while keeping the original scene identity intact: same school exterior structure, same layout, same palm silhouettes, same perspective. Add warm analog grain, printed-yearbook halftone texture, subtle light leaks, soft edges, and nostalgic color fade. No people, no readable text, no logos."
+      },
+      "remoteUrl": "https://v3b.fal.media/files/b/0a981a8f/oCaIEffIgJgr_sxjU86St_7e7020b25cca44e8bd4ba4f38b2dce3c.png",
+      "width": 1392,
+      "height": 752,
+      "status": "ok",
+      "download": {
+        "durationMs": 607,
+        "contentType": "image/png",
+        "byteCount": 1704337
+      },
+      "byteCount": 1704337
+    }
+  ],
+  "aspectRatioConstraint": "Imagen 4 supports 1:1, 9:16, 16:9, 4:3, 3:4; it rejected 3:2. OpenAI output remains existing 1536x1024 3:2."
+}
