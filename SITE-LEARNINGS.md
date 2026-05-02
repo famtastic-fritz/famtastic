@@ -1,5 +1,104 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Studio Tier mode for Shay-Shay self-modify (2026-04-30)
+
+Studio Tier is a per-conversation flag on the Shay-Shay HTTP surface (`POST /api/shay-shay`) that grants two new Claude-only tools — `read_studio_file` and `propose_studio_patch` — for editing Studio's own source. Patches go to a review queue and never apply automatically; Fritz approves each one through the `fam-hub studio patches` CLI.
+
+### Files added in this session
+
+- `docs/famtastic-root-inventory.json` — hand-maintained per-path policy sidecar (70 entries). Companion to the human-facing `docs/famtastic-root-inventory.md`.
+- `site-studio/lib/studio-tier-resolver.js` — `createStudioTierResolver({ hubRoot, inventoryPath })`. Validates inventory at load time (rejects malformed entries, missing trailing slash on dir entries, duplicate paths). Exposes `resolveStudioPath(rel)`, `getPolicyForPath(rel)`, `isAvailable()`, `getLoadError()`. Path resolution uses `fs.realpathSync` on both hubRoot and the requested path, rejects `..`, and verifies descendancy. Policy lookup: exact match wins; otherwise longest matching directory prefix with trailing-slash boundary semantics (so `site-studio/lib/` matches `site-studio/lib` and `site-studio/lib/foo.js` but NOT `site-studio/library-old/`). Diagnostic logs go to stderr so the validate script's stdout stays a clean single JSON line.
+- `site-studio/lib/shay-shay-sessions.js` — `Map<conversation_id, { studioTier, forcedBrain, lastSeen }>`. Idle eviction at 6h via an unref'd interval. Exposes `getOrCreate`, `get`, `reset`, `resetAll`, `snapshot`. Returns `null` for missing conversation_id (callers must check) so tier state is never stored under a shared "surface" fallback key.
+- `scripts/lib/studio-tier-validate.js` — invoked by `fam-hub studio patches apply`. Re-resolves the patch path against the CURRENT inventory (does not trust the patch JSON path field), re-checks `old_str` uniqueness, exits 0/1 with structured JSON on stdout. Refuses if current policy is READ_ONLY or REVIEW; refuses BLOCK unless `override_allowed` is true AND the patch was proposed with `flagged_secret: true`.
+
+### Files modified in this session
+
+- `site-studio/lib/studio-tools.js` — added `STUDIO_TIER_TOOLS` array (two tool definitions: `read_studio_file`, `propose_studio_patch`). `STUDIO_TOOLS` length unchanged at 5. Both arrays exported separately so the gate decides which to attach at runtime.
+- `site-studio/lib/tool-handlers.js` — added two `case` arms to the existing `switch` dispatch (the dispatch is a switch, not a map), plus `handleReadStudioFile` and `handleProposeStudioPatch`. Resolver bootstrap is lazy and memoized; `_HUB_ROOT` is the already-injected value (no recomputation). Exported `isStudioTierAvailable()` and `getStudioTierResolver()` so server.js can check availability for the slash command. Patch IDs use ISO-timestamp shape + `crypto.randomBytes(3).toString('hex')` suffix to prevent burst-collision. Old_str line-ending mismatch (CRLF vs LF) detected and surfaced in the error message rather than producing a confusing "not found".
+- `site-studio/lib/brain-interface.js:92` — tool-list assembly. Was: `(claude && (mode === 'build' || mode === 'brainstorm'))`. Now: also attaches `STUDIO_TOOLS` when `studioTier && tierAvailable`, and additionally appends `STUDIO_TIER_TOOLS` only in that case. Logs `[studio-tier] tool-assembly studioTier=… brain=… mode=… tierAvailable=… tools=… (base=… tier=…)` whenever `studioTier=true` is observed at this point. New `studioTier` opt threaded through from callers.
+- `site-studio/server.js` — slash command parser inserted into `POST /api/shay-shay` after manifest/instructions load and BEFORE `classifyShayShayTier0`. Recognizes `/studio on|off|tier on|tier off|status`. `/studio on` checks Claude availability via `manifest.capabilities.claude_api === 'available'` and refuses with explanation if Claude is not available, the resolver is not available, or `conversation_id` is missing. On success sets `session.studioTier = true` and `session.forcedBrain = 'claude'`. `executeShayShayBrainCall` now accepts `studioTier` and threads it into `session.execute({ studioTier })`. The main handler reads `tierSession`, overrides `selection.brain` to Claude when tier is on, and refuses (HTTP 503) if Claude becomes unavailable mid-session rather than silently falling back to Codex/Gemini — `suppressFallback` skips the `catch` fallback in that case. `shayShaySessions.resetAll()` called at three site-switch sites: `app.post('/api/switch-site')` (~4344), `createSite` updated_existing branch (~7728), `createSite` fresh-creation branch (~7786).
+- `scripts/fam-hub` — new `studio` command group with `patches list|show|apply|reject` actions. Uses `$HUB_ROOT` (NOT a non-existent `$FAMTASTIC_HOME`). Patch ID strict regex: `^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-[0-9a-f]{6}$`. Description and target-path output run through a `sanitize_terminal` filter that strips ANSI escapes and bare control bytes. Apply re-validates via the Node helper before performing replacement; on `flagged_secret=true` prints a warning and proceeds without re-asking; on policy-mismatch refuses and shows policy_at_propose vs current_policy.
+
+### How the four-class policy actually behaves
+
+| Policy | Read | Patch | acknowledge_secrets effect |
+|--------|------|-------|----------------------------|
+| ALLOW | Returns contents | Queues patch | n/a |
+| READ_ONLY | Returns contents | Refused | None — flag does NOT bypass |
+| BLOCK + override_allowed=true | Refused; override available | Refused; override available | When `true`, returns contents / queues patch; patch is tagged `flagged_secret: true` |
+| BLOCK + override_allowed=false | Refused; hard block noted | Refused; hard block noted | None — explicit `attempted_override + override_refused` markers |
+| REVIEW | Refused; inventory must be updated | Refused; inventory must be updated | None — flag does NOT bypass |
+
+### Known Gaps for Studio Tier
+
+- `STUDIO-CONTEXT.md` is REGENERATED on every Shay-Shay session start (overwriting the entire file via `studio-context-writer`). Patches against this file via Studio Tier are blocked at the policy layer (READ_ONLY) because they would be clobbered immediately. Documented as the intended behavior.
+- `script.py` at the repo root is empty and classified REVIEW. Recommended action is deletion, not patching. No automated cleanup.
+- The validate-script-runs-resolver path means apply is slower than necessary (one Node spawn per apply). Acceptable for day-one volumes; revisit if patch volume grows.
+- No automated test running on patch apply. If a patch breaks tests, the operator finds out by running tests after applying. Spec-deferred per non-goal #1.
+- `tools/`, `sites/`, `node_modules/`, `.git/`, `.studio-patches/applied|rejected/`, `.netlify/`, `.local/`, `.playwright-mcp/`, `.worker-queue.jsonl`, `.claude/` are all hard-blocked (`override_allowed=false`) and cannot be opened by Studio Tier even with acknowledgment. This is intentional. If a future workflow needs access to one of these (e.g. patching a vendored MCP), the inventory must be updated to reclassify the path — there is no programmatic backdoor.
+
+## GoDaddy / cPanel MCP capability spike (2026-04-29)
+
+Installed [`ringo380/cpanel-mcp`](https://github.com/ringo380/cpanel-mcp)
+v1.1.0 at `~/famtastic/tools/cpanel-mcp/` to replace manual cPanel clicking
+in the factory pipeline. **First proof-of-concept:** provisioned the MBSH
+reunion database (`nineoo_mbsh96_reunion`), user (`nineoo_mbsh_user`), and
+`ALL PRIVILEGES` grant via the MCP end-to-end. Auth uses an API token
+(`CPANEL_API_TOKEN` in `.env`, mode 0600) — no password.
+
+**Upstream bug fixed locally** (see `tools/cpanel-mcp/PATCHES.md`): the
+shipped `src/cpanel-client.ts` parses responses as the legacy
+`response.data.cpanelresult.event.result` shape but actually requests the
+modern UAPI v3 endpoint `/execute/<Module>/<func>`, which returns
+`{ status, data, errors, messages, warnings, metadata }` at the top level.
+Every tool call failed with `Cannot read properties of undefined (reading
+'event')` until the parser and the `CpanelResponse` type were rewritten to
+UAPI v3. PR pending; fork-fallback check-in 2026-05-13 in
+`FAMTASTIC-STATE.md` → Pending Tasks.
+
+**Working tools (37 registered, 4 verified end-to-end this session):**
+`list_databases`, `create_database`, `create_database_user`,
+`set_database_privileges`. Available but not yet exercised: subdomain CRUD,
+DNS record CRUD, SSL upload/install, file upload/download, email/FTP/cron,
+backups, disk usage. Full inventory in
+`docs/operating-rules/godaddy-mcp-spike.md`.
+
+**Biggest factory gap: no `create_addon_domain` tool.** Addon-domain
+creation is the operation that ties a fresh site to its public domain;
+until we extend the MCP (UAPI module `AddonDomain`, function
+`addaddondomain`), every new site requires one manual cPanel click.
+`mbsh96reunion.com` will be added by hand for now. Layer-2 priority list
+in the spike doc: `create_addon_domain` (P1), `delete_addon_domain`,
+`issue_autossl_certificate`, `set_php_version`.
+
+**Harness constraint discovered (architectural):** the Claude Code Bash
+tool cannot accept interactive stdin from the user's TTY. Spawned
+subprocesses inherit harness stdin, so `read -rsp` returns immediately
+with empty input even when prompts go to stderr. Pattern used in this
+session: assistant wrote `inject-token.sh` (mode 0700) and the user ran
+it themselves in their own terminal; the script `read -rsp`'d the token,
+sed-injected into `.env`, `unset`'d the variable, and self-deleted.
+**Implication for Studio (Layer 3):** Studio cannot prompt the user for
+secrets mid-flow through Claude Code. cPanel credentials must be
+pre-provisioned (env file written outside the harness, macOS keychain,
+or a secrets manager) before Studio invokes the MCP. Any provisioning
+intent (future `provision_hosting`) must hard-fail with a clear
+"run this bootstrap script in your terminal" message if `.env` is
+missing or unreadable.
+
+**Files added:**
+- `tools/cpanel-mcp/` (vendored upstream + local patches)
+- `tools/cpanel-mcp/.env` (0600, secrets, gitignored)
+- `tools/cpanel-mcp/test-connection.js` (stdio MCP smoke test)
+- `tools/cpanel-mcp/provision-mbsh.js` (MBSH provisioning one-shot)
+- `tools/cpanel-mcp/PATCHES.md` (re-apply procedure for the parser fix)
+- `docs/operating-rules/godaddy-mcp-spike.md` (gap analysis + Layer 2/3
+  recommendations)
+
+This spike explicitly did **not** add the addon domain, configure DNS,
+modify any Studio code, or touch the MBSH scaffold. It is a capability
+spike only; Studio integration is Layer 3 and tracked separately.
+
 ## Platform audit fixes (2026-04-17)
 
 13 audit findings from `docs/platform-audit-report.md` closed in one sweep.
@@ -4410,3 +4509,34 @@ shipped as a fourth commit on the same day. Lesson: the rule "no
 session ends without docs updates" applies at the workstream level
 too — if a workstream commits without documentation, the next
 session has to reverse-engineer what was decided.
+
+## Bridge Exec Patterns — Learned the Hard Way
+
+### ❌ NEVER DO: inline node -e with nested quotes
+```
+bash -c "node -e \"...code with 'quotes'...\""
+```
+This always fails. Quote escaping breaks across bash/JSON/node layers.
+
+### ❌ NEVER DO: sed with complex patterns containing quotes
+```
+sed -i 's/if ((event.metaKey...)/replacement/' file.js
+```
+Parentheses and quotes in sed patterns cause silent failures or syntax errors.
+
+### ✅ ALWAYS DO: heredoc to write a .js file, then run it
+```
+cat > patch.js << 'ENDOFSCRIPT'
+const fs = require('fs');
+let content = fs.readFileSync('path/to/file', 'utf8');
+content = content.replace('exact string', 'replacement');
+fs.writeFileSync('path/to/file', content);
+console.log('patched:', content.includes('replacement') ? 'YES' : 'NO');
+ENDOFSCRIPT
+node patch.js
+```
+Heredoc with quoted delimiter ('ENDOFSCRIPT') prevents ALL shell expansion. Node handles its own string logic. Always verify with console.log after.
+
+### ✅ ALSO VALID: multi-step exec — write file first, run second
+If heredoc inline also fails, split into two bridge requests: one to write the file, one to run it.
+

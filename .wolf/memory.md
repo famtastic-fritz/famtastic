@@ -2868,3 +2868,858 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 13:15 | Created docs/current-state-snapshot.md | — | ~3452 |
+| 13:15 | Session end: 1 writes across 1 files (current-state-snapshot.md) | 1 reads | ~29443 tok |
+| 14:01 | Session end: 1 writes across 1 files (current-state-snapshot.md) | 1 reads | ~29443 tok |
+
+## Session: 2026-04-21 14:02
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-21 14:03
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 14:04 | Edited site-studio/public/index.html | 2→4 lines | ~58 |
+| 14:04 | Edited site-studio/tests/unit.test.js | 3→4 lines | ~103 |
+| 14:05 | Edited site-studio/tests/unit.test.js | 3→4 lines | ~70 |
+| 14:05 | Edited site-studio/tests/unit.test.js | 1→2 lines | ~49 |
+| 14:05 | Edited site-studio/tests/unit.test.js | 3→4 lines | ~53 |
+| 14:05 | Session end: 5 writes across 2 files (index.html, unit.test.js) | 3 reads | ~229498 tok |
+| 14:06 | Session end: 5 writes across 2 files (index.html, unit.test.js) | 3 reads | ~229498 tok |
+| 14:12 | Edited scripts/google-media-generate | expanded (+14 lines) | ~495 |
+| 14:12 | Edited scripts/google-media-generate | 2→3 lines | ~43 |
+| 14:13 | Edited scripts/google-media-generate | modified generate_character_pose() | ~739 |
+| 14:13 | Edited scripts/google-media-generate | modified exists() | ~430 |
+| 14:13 | Edited scripts/google-media-generate | 10→11 lines | ~272 |
+| 14:13 | Edited scripts/google-media-generate | modified exists() | ~242 |
+| 14:14 | Session end: 11 writes across 3 files (index.html, unit.test.js, google-media-generate) | 4 reads | ~235410 tok |
+| 14:20 | Session end: 11 writes across 3 files (index.html, unit.test.js, google-media-generate) | 4 reads | ~235410 tok |
+| 14:25 | Edited scripts/google-media-generate | inline fix | ~15 |
+| 14:25 | Edited scripts/google-media-generate | modified generate_video() | ~50 |
+| 14:25 | Edited scripts/google-media-generate | inline fix | ~21 |
+| 14:25 | Edited scripts/google-media-generate | 11→13 lines | ~133 |
+| 14:26 | Session end: 15 writes across 3 files (index.html, unit.test.js, google-media-generate) | 5 reads | ~237427 tok |
+| 14:46 | Session end: 15 writes across 3 files (index.html, unit.test.js, google-media-generate) | 5 reads | ~237427 tok |
+| 14:55 | Created scripts/verify-character-pipeline | — | ~661 |
+| 14:56 | Edited scripts/google-media-generate | modified generate_character_pose() | ~660 |
+| 14:56 | Edited scripts/google-media-generate | modified get_video_duration() | ~289 |
+| 14:56 | Edited scripts/google-media-generate | expanded (+6 lines) | ~290 |
+| 14:56 | Edited scripts/google-media-generate | 11→11 lines | ~158 |
+| 14:56 | Edited scripts/google-media-generate | 11→13 lines | ~122 |
+| 14:56 | Edited scripts/google-media-generate | 4→6 lines | ~114 |
+| 14:56 | Edited scripts/google-media-generate | 2→6 lines | ~184 |
+| 14:57 | Edited scripts/google-media-generate | 9→11 lines | ~98 |
+| 14:57 | Edited scripts/google-media-generate | 10→12 lines | ~172 |
+| 14:57 | Edited site-studio/server.js | added 4 condition(s) | ~681 |
+| 14:58 | Session end: 26 writes across 5 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~241979 tok |
+| 15:08 | Edited scripts/google-media-generate | modified generate_video() | ~148 |
+| 15:08 | Edited scripts/google-media-generate | 5→7 lines | ~150 |
+| 15:08 | Edited scripts/google-media-generate | 2→4 lines | ~79 |
+| 15:08 | Edited scripts/google-media-generate | 13→14 lines | ~135 |
+| 15:08 | Edited scripts/google-media-generate | 4→5 lines | ~97 |
+| 15:09 | Edited site-studio/server.js | modified runVeoGeneration() | ~314 |
+| 15:09 | Session end: 32 writes across 5 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~243166 tok |
+| 15:14 | Session end: 32 writes across 5 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~243166 tok |
+| 15:21 | Session end: 32 writes across 5 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~243166 tok |
+| 15:27 | Session end: 32 writes across 5 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~243166 tok |
+| 15:28 | Session end: 32 writes across 5 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~243166 tok |
+| 15:38 | Session end: 32 writes across 5 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~243166 tok |
+| 15:44 | Created site-studio/lib/bridge-routes.js | — | ~646 |
+| 15:44 | Edited site-studio/server.js | 6→9 lines | ~91 |
+| 15:45 | Session end: 34 writes across 6 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~256543 tok |
+| 15:58 | Created site-studio/SHAY_CONTEXT.md | — | ~815 |
+| 15:58 | Session end: 35 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257416 tok |
+| 16:00 | Session end: 35 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257416 tok |
+| 16:03 | Edited site-studio/server.js | modified readFileSync() | ~480 |
+| 16:03 | Session end: 36 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257935 tok |
+| 16:04 | Session end: 36 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257935 tok |
+| 16:06 | Session end: 36 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257935 tok |
+| 16:11 | Session end: 36 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257935 tok |
+| 16:12 | Session end: 36 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257935 tok |
+| 16:13 | Session end: 36 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257935 tok |
+| 16:15 | Session end: 36 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 5 reads | ~257935 tok |
+| 16:29 | Edited site-studio/server.js | added nullish coalescing | ~878 |
+| 16:29 | Edited site-studio/server.js | added error handling | ~441 |
+| 16:29 | Edited site-studio/server.js | 2→3 lines | ~55 |
+| 16:30 | Edited site-studio/server.js | expanded (+11 lines) | ~360 |
+| 16:33 | Session end: 40 writes across 7 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 7 reads | ~262300 tok |
+| 16:40 | Edited site-studio/public/js/studio-orb.js | 2→3 lines | ~72 |
+| 16:40 | Edited site-studio/public/js/studio-orb.js | 11→14 lines | ~171 |
+| 16:40 | Edited site-studio/public/js/studio-orb.js | added 1 condition(s) | ~108 |
+| 16:40 | Edited site-studio/public/js/studio-orb.js | added 4 condition(s) | ~424 |
+| 16:40 | Edited site-studio/public/index.html | expanded (+9 lines) | ~616 |
+| 16:41 | Edited site-studio/public/index.html | inline fix | ~19 |
+| 16:41 | Edited site-studio/public/index.html | inline fix | ~19 |
+| 16:41 | Edited site-studio/public/index.html | inline fix | ~19 |
+| 16:42 | Session end: 48 writes across 8 files (index.html, unit.test.js, google-media-generate, verify-character-pipeline, server.js) | 9 reads | ~290322 tok |
+
+## Session: 2026-04-21 16:48
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 16:50 | Edited site-studio/public/js/studio-orb.js | inline fix | ~33 |
+| 16:50 | Edited site-studio/public/js/studio-orb.js | added 3 condition(s) | ~430 |
+| 16:50 | Edited site-studio/public/js/studio-orb.js | removed 29 lines | ~9 |
+| 16:50 | Edited site-studio/public/js/studio-orb.js | modified sendToShayShay() | ~328 |
+| 16:50 | Edited site-studio/public/js/studio-orb.js | modified askFromDesk() | ~312 |
+| 16:50 | Edited site-studio/server.js | 8→8 lines | ~121 |
+| 16:51 | Edited site-studio/server.js | modified executeShayShayBrainCall() | ~64 |
+| 16:51 | Edited site-studio/server.js | 13→14 lines | ~95 |
+| 16:51 | Edited site-studio/server.js | modified catch() | ~234 |
+| 16:51 | Edited site-studio/server.js | modified buildShayShayPrompt() | ~68 |
+| 16:51 | Edited site-studio/server.js | 13→18 lines | ~169 |
+| 16:51 | Edited site-studio/lib/bridge-routes.js | added 2 condition(s) | ~298 |
+| 16:52 | Session end: 12 writes across 3 files (studio-orb.js, server.js, bridge-routes.js) | 3 reads | ~228307 tok |
+| 16:54 | Session end: 12 writes across 3 files (studio-orb.js, server.js, bridge-routes.js) | 3 reads | ~228307 tok |
+| 19:08 | Edited site-studio/lib/brain-interface.js | added 1 condition(s) | ~93 |
+| 19:08 | Edited site-studio/lib/brain-interface.js | added 1 condition(s) | ~430 |
+| 19:08 | Edited site-studio/lib/brain-sessions.js | modified getOrCreateBrainSession() | ~364 |
+| 19:08 | Edited site-studio/lib/brain-sessions.js | modified getBrainSession() | ~77 |
+| 19:09 | Edited site-studio/server.js | expanded (+7 lines) | ~208 |
+| 19:09 | Edited site-studio/server.js | 2→2 lines | ~44 |
+| 19:09 | Edited site-studio/server.js | modified catch() | ~273 |
+| 19:09 | Edited site-studio/server.js | 12→15 lines | ~180 |
+| 19:09 | Edited site-studio/server.js | added 2 condition(s) | ~532 |
+| 19:09 | Edited site-studio/server.js | modified for() | ~245 |
+| 19:10 | Edited site-studio/server.js | added error handling | ~647 |
+| 19:10 | Edited site-studio/server.js | modified buildShayShaySiteSnapshot() | ~92 |
+| 19:10 | Edited site-studio/server.js | 4→8 lines | ~102 |
+| 19:10 | Edited site-studio/server.js | added 1 condition(s) | ~463 |
+| 19:10 | Edited site-studio/server.js | added error handling | ~331 |
+| 19:10 | Edited site-studio/lib/bridge-routes.js | added error handling | ~203 |
+| 19:11 | Edited site-studio/lib/bridge-routes.js | added 1 condition(s) | ~338 |
+| 19:11 | Edited site-studio/lib/bridge-routes.js | inline fix | ~27 |
+| 19:11 | Edited site-studio/public/js/studio-orb.js | added 2 condition(s) | ~482 |
+| 19:11 | Edited site-studio/public/js/studio-orb.js | 9→10 lines | ~156 |
+| 19:12 | Edited site-studio/public/js/studio-orb.js | added 3 condition(s) | ~743 |
+| 19:12 | Edited site-studio/public/js/studio-orb.js | added 3 condition(s) | ~1212 |
+| 19:12 | Edited site-studio/public/js/studio-orb.js | added 10 condition(s) | ~1416 |
+| 19:13 | Edited site-studio/public/js/studio-orb.js | added 1 condition(s) | ~138 |
+| 19:13 | Edited site-studio/public/js/studio-orb.js | 4→3 lines | ~46 |
+| 19:19 | Session end: 37 writes across 5 files (studio-orb.js, server.js, bridge-routes.js, brain-interface.js, brain-sessions.js) | 7 reads | ~262120 tok |
+| 19:22 | Edited site-studio/server.js | modified if() | ~156 |
+| 19:22 | Edited site-studio/lib/bridge-routes.js | 7→6 lines | ~90 |
+| 19:22 | Session end: 39 writes across 5 files (studio-orb.js, server.js, bridge-routes.js, brain-interface.js, brain-sessions.js) | 7 reads | ~262828 tok |
+| 19:24 | Session end: 39 writes across 5 files (studio-orb.js, server.js, bridge-routes.js, brain-interface.js, brain-sessions.js) | 7 reads | ~262828 tok |
+| 19:38 | Edited site-studio/server.js | added error handling | ~3620 |
+| 19:39 | Edited site-studio/server.js | modified if() | ~414 |
+| 19:42 | Session end: 41 writes across 5 files (studio-orb.js, server.js, bridge-routes.js, brain-interface.js, brain-sessions.js) | 7 reads | ~270433 tok |
+| 19:47 | Edited scripts/google-media-generate | inline fix | ~7 |
+| 19:48 | Edited site-studio/lib/famtastic-skeletons.js | modified css() | ~468 |
+| 19:48 | Edited site-studio/lib/famtastic-skeletons.js | 10→11 lines | ~60 |
+| 19:48 | Edited site-studio/server.js | 3→5 lines | ~39 |
+| 19:48 | Edited site-studio/server.js | added error handling | ~728 |
+| 19:48 | Edited site-studio/server.js | added 1 condition(s) | ~181 |
+| 19:48 | Edited site-studio/shay-shay/instructions.md | expanded (+46 lines) | ~659 |
+| 19:50 | Session end: 48 writes across 8 files (studio-orb.js, server.js, bridge-routes.js, brain-interface.js, brain-sessions.js) | 9 reads | ~279735 tok |
+
+## Session: 2026-04-22 20:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:01 | Edited site-studio/server.js | added error handling | ~1734 |
+| 20:01 | Session end: 1 writes across 1 files (server.js) | 1 reads | ~221487 tok |
+| 20:10 | Edited site-studio/public/js/studio-screens.js | expanded (+23 lines) | ~210 |
+| 20:11 | Edited site-studio/public/js/studio-screens.js | modified mediaTabLabel() | ~368 |
+| 20:11 | Edited site-studio/public/js/studio-screens.js | added 1 condition(s) | ~122 |
+| 20:11 | Edited site-studio/public/js/studio-screens.js | added 1 condition(s) | ~81 |
+| 20:11 | Edited site-studio/public/js/studio-screens.js | added 1 condition(s) | ~228 |
+| 20:14 | Edited site-studio/public/js/studio-screens.js | added error handling | ~5988 |
+| 20:14 | Edited site-studio/public/index.html | added 1 condition(s) | ~115 |
+| 20:14 | Edited site-studio/public/css/studio-screens.css | expanded (+87 lines) | ~500 |
+| 20:15 | Session end: 9 writes across 4 files (server.js, studio-screens.js, index.html, studio-screens.css) | 3 reads | ~276165 tok |
+| 20:21 | Created ../Library/LaunchAgents/com.famtastic.studio.plist | — | ~317 |
+| 20:23 | Edited CLAUDE.md | expanded (+10 lines) | ~152 |
+| 20:24 | Session end: 11 writes across 6 files (server.js, studio-screens.js, index.html, studio-screens.css, com.famtastic.studio.plist) | 4 reads | ~280478 tok |
+| 20:45 | Created scripts/tier-comparison | — | ~7339 |
+
+## Session: 2026-04-22 20:48
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:49 | Created scripts/tier3-ps-driver.py | — | ~1539 |
+| 20:51 | Session end: 1 writes across 1 files (tier3-ps-driver.py) | 4 reads | ~8878 tok |
+| 20:54 | Edited scripts/tier-comparison | added 1 condition(s) | ~282 |
+| 20:54 | Edited scripts/tier-comparison | modified runTier1() | ~1234 |
+| 20:55 | Created scripts/tier1-test | — | ~1822 |
+| 20:56 | Session end: 4 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 4 reads | ~12454 tok |
+| 20:58 | Session end: 4 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 4 reads | ~12454 tok |
+| 14:48 | Session end: 4 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~12454 tok |
+| 14:49 | Edited scripts/tier-comparison | 9→10 lines | ~106 |
+| 14:49 | Edited scripts/tier-comparison | 2→3 lines | ~42 |
+| 14:49 | Edited scripts/tier-comparison | 2→3 lines | ~44 |
+| 14:49 | Edited scripts/tier-comparison | 2→2 lines | ~41 |
+| 14:49 | Edited scripts/tier-comparison | modified setup() | ~34 |
+| 14:49 | Edited scripts/tier-comparison | added error handling | ~702 |
+| 14:49 | Edited scripts/tier-comparison | 11→12 lines | ~130 |
+| 14:49 | Edited scripts/tier-comparison | 3→4 lines | ~68 |
+| 14:49 | Edited scripts/tier-comparison | "3" → "4" | ~11 |
+| 14:49 | Edited scripts/tier-comparison | expanded (+8 lines) | ~238 |
+| 14:50 | Edited scripts/tier-comparison | 1→2 lines | ~16 |
+| 14:50 | Edited scripts/tier-comparison | modified catch() | ~122 |
+| 14:50 | Edited scripts/tier-comparison | modified log() | ~428 |
+| 14:51 | Session end: 17 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~14756 tok |
+| 14:53 | Edited scripts/tier-comparison | 9→11 lines | ~140 |
+| 14:53 | Edited scripts/tier-comparison | 2→4 lines | ~55 |
+| 14:53 | Edited scripts/tier-comparison | 1→2 lines | ~29 |
+| 14:53 | Edited scripts/tier-comparison | 2→2 lines | ~52 |
+| 14:53 | Edited scripts/tier-comparison | inline fix | ~35 |
+| 14:54 | Edited scripts/tier-comparison | added error handling | ~771 |
+| 14:54 | Edited scripts/tier-comparison | 3→5 lines | ~53 |
+| 14:54 | Edited scripts/tier-comparison | 2→4 lines | ~95 |
+| 14:54 | Edited scripts/tier-comparison | "4" → "6" | ~11 |
+| 14:54 | Edited scripts/tier-comparison | expanded (+16 lines) | ~391 |
+| 14:54 | Edited scripts/tier-comparison | 1→3 lines | ~24 |
+| 14:54 | Edited scripts/tier-comparison | modified catch() | ~151 |
+| 14:54 | Edited scripts/tier-comparison | expanded (+11 lines) | ~213 |
+| 14:54 | Edited scripts/tier-comparison | modified log() | ~69 |
+| 14:57 | Edited scripts/tier-comparison | added 1 condition(s) | ~832 |
+| 14:57 | Edited scripts/tier-comparison | edit() → generate() | ~71 |
+| 14:57 | Edited scripts/tier-comparison | edit() → generate() | ~71 |
+| 15:00 | Session end: 34 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~19138 tok |
+| 15:02 | Session end: 34 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~19138 tok |
+| 15:14 | Session end: 34 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~20726 tok |
+| 15:17 | Edited scripts/tier-comparison | "anchor.jpg" → "anchor.png" | ~15 |
+| 15:17 | Edited scripts/tier-comparison | 5→5 lines | ~52 |
+| 15:17 | Edited scripts/tier-comparison | inline fix | ~23 |
+| 15:17 | Edited scripts/tier1-test | "anchor.jpg" → "anchor.png" | ~15 |
+| 15:17 | Edited scripts/tier1-test | 5→5 lines | ~50 |
+| 15:17 | Edited scripts/tier1-test | inline fix | ~23 |
+| 15:18 | Session end: 40 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~20916 tok |
+| 15:19 | Session end: 40 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~20916 tok |
+| 15:28 | Session end: 40 writes across 3 files (tier3-ps-driver.py, tier-comparison, tier1-test) | 5 reads | ~20916 tok |
+| 15:41 | Edited site-studio/server.js | added 1 condition(s) | ~155 |
+| 15:41 | Edited site-studio/server.js | added 1 condition(s) | ~400 |
+| 15:41 | Edited site-studio/server.js | added error handling | ~1500 |
+| 15:42 | Edited site-studio/shay-shay/skill.json | expanded (+9 lines) | ~217 |
+| 15:43 | Session end: 44 writes across 5 files (tier3-ps-driver.py, tier-comparison, tier1-test, server.js, skill.json) | 7 reads | ~245279 tok |
+
+## Session: 2026-04-23 15:51
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:52 | Edited site-studio/public/js/studio-orb.js | added 1 condition(s) | ~909 |
+| 15:52 | Edited site-studio/public/js/studio-orb.js | 2→3 lines | ~38 |
+| 15:52 | Edited site-studio/public/index.html | added 1 condition(s) | ~209 |
+| 15:52 | Session end: 3 writes across 2 files (studio-orb.js, index.html) | 2 reads | ~54293 tok |
+| 17:59 | Session end: 3 writes across 2 files (studio-orb.js, index.html) | 2 reads | ~54293 tok |
+| 18:22 | Session end: 3 writes across 2 files (studio-orb.js, index.html) | 2 reads | ~54293 tok |
+| 18:39 | Edited site-studio/server.js | modified runCharacterPipeline() | ~1228 |
+| 18:40 | Edited site-studio/server.js | added optional chaining | ~4024 |
+| 18:41 | Edited site-studio/server.js | removed 139 lines | ~142 |
+| 18:41 | Edited site-studio/server.js | modified catch() | ~128 |
+| 18:42 | Edited site-studio/server.js | removed 113 lines | ~146 |
+| 18:42 | Session end: 8 writes across 3 files (studio-orb.js, index.html, server.js) | 3 reads | ~283235 tok |
+| 18:50 | Edited site-studio/server.js | modified catch() | ~147 |
+| 18:51 | Edited site-studio/public/js/studio-orb.js | added 12 condition(s) | ~1565 |
+| 18:51 | Session end: 10 writes across 3 files (studio-orb.js, index.html, server.js) | 3 reads | ~284576 tok |
+| 19:13 | Edited site-studio/server.js | "${poseName}, ${charSet.de" → "full body pose: ${poseNam" | ~67 |
+| 19:13 | Edited site-studio/server.js | expanded (+9 lines) | ~273 |
+| 19:14 | Session end: 12 writes across 3 files (studio-orb.js, index.html, server.js) | 3 reads | ~284905 tok |
+| 19:18 | Edited scripts/google-media-generate | inline fix | ~13 |
+| 19:18 | Session end: 13 writes across 4 files (studio-orb.js, index.html, server.js, google-media-generate) | 4 reads | ~291392 tok |
+| 19:27 | Edited site-studio/server.js | added 4 condition(s) | ~2189 |
+| 19:27 | Session end: 14 writes across 4 files (studio-orb.js, index.html, server.js, google-media-generate) | 4 reads | ~293799 tok |
+| 19:39 | Edited site-studio/server.js | modified buildPosePrompt() | ~174 |
+| 19:39 | Session end: 15 writes across 4 files (studio-orb.js, index.html, server.js, google-media-generate) | 4 reads | ~294498 tok |
+| 19:51 | Edited site-studio/server.js | modified catch() | ~248 |
+| 19:51 | Edited site-studio/server.js | modified buildPosePrompt() | ~134 |
+| 19:52 | Edited site-studio/server.js | modified if() | ~363 |
+| 19:52 | Edited site-studio/public/js/studio-orb.js | modified setPipelineBanner() | ~96 |
+| 19:52 | Edited site-studio/public/js/studio-orb.js | modified handlePipelineWsEvent() | ~57 |
+| 19:52 | Session end: 20 writes across 4 files (studio-orb.js, index.html, server.js, google-media-generate) | 4 reads | ~295587 tok |
+| 20:09 | Edited site-studio/server.js | added optional chaining | ~142 |
+| 20:09 | Session end: 21 writes across 4 files (studio-orb.js, index.html, server.js, google-media-generate) | 4 reads | ~295767 tok |
+| 10:51 | Session end: 21 writes across 4 files (studio-orb.js, index.html, server.js, google-media-generate) | 4 reads | ~295767 tok |
+
+## Session: 2026-04-24 10:56
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 10:57 | Created diagnostics/2026-04-24-jjba-postmortem.md | — | ~3239 |
+| 10:58 | Session end: 1 writes across 1 files (2026-04-24-jjba-postmortem.md) | 0 reads | ~3470 tok |
+| 11:15 | Created architecture/2026-04-24-canonical-build-intent.md | — | ~12877 |
+| 11:19 | Session end: 2 writes across 2 files (2026-04-24-jjba-postmortem.md, 2026-04-24-canonical-build-intent.md) | 1 reads | ~241053 tok |
+| 11:45 | Created architecture/2026-04-24-canonical-build-intent-v2.md | — | ~1052 |
+| 11:46 | Edited architecture/2026-04-24-canonical-build-intent-v2.md | expanded (+136 lines) | ~2668 |
+| 11:48 | Edited architecture/2026-04-24-canonical-build-intent-v2.md | added 1 condition(s) | ~2743 |
+| 11:48 | Edited architecture/2026-04-24-canonical-build-intent-v2.md | added error handling | ~1272 |
+| 11:50 | Edited architecture/2026-04-24-canonical-build-intent-v2.md | modified touched() | ~3550 |
+| 11:51 | Edited architecture/2026-04-24-canonical-build-intent-v2.md | added 1 condition(s) | ~2175 |
+| 11:52 | Edited architecture/2026-04-24-canonical-build-intent-v2.md | modified 8() | ~2384 |
+| 11:52 | Edited architecture/2026-04-24-canonical-build-intent-v2.md | expanded (+25 lines) | ~1150 |
+| 11:55 | Session end: 10 writes across 3 files (2026-04-24-jjba-postmortem.md, 2026-04-24-canonical-build-intent.md, 2026-04-24-canonical-build-intent-v2.md) | 3 reads | ~272320 tok |
+
+## Session: 2026-04-24 12:16
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:19 | Created architecture/2026-04-24-build-layer-audit.md | — | ~4912 |
+| 12:20 | Session end: 1 writes across 1 files (2026-04-24-build-layer-audit.md) | 1 reads | ~229049 tok |
+| 12:31 | Edited site-studio/lib/famtastic-skeletons.js | expanded (+15 lines) | ~204 |
+| 12:32 | Edited site-studio/server.js | modified REQUIREMENTS() | ~470 |
+| 12:32 | Edited site-studio/server.js | 1→3 lines | ~138 |
+| 12:32 | Edited site-studio/server.js | 7→9 lines | ~64 |
+| 12:34 | Created tests/gap123-verification.js | — | ~1408 |
+| 12:34 | Created tests/gap23-prompt-assembly.js | — | ~1491 |
+| 12:35 | Edited tests/gap23-prompt-assembly.js | "MANDATORY NAV STRUCTURE —" → "MANDATORY NAV CLASS NAMES" | ~22 |
+| 12:35 | Session end: 8 writes across 5 files (2026-04-24-build-layer-audit.md, famtastic-skeletons.js, server.js, gap123-verification.js, gap23-prompt-assembly.js) | 2 reads | ~237377 tok |
+| 12:52 | Created tests/gap23-ws-chat-test.js | — | ~2048 |
+| 12:52 | Edited tests/gap23-ws-chat-test.js | "./site-studio/node_module" → "../site-studio/node_modul" | ~18 |
+| 13:22 | Edited tests/gap23-ws-chat-test.js | 2→2 lines | ~35 |
+| 13:22 | Edited tests/gap23-ws-chat-test.js | inline fix | ~27 |
+| 13:22 | Edited tests/gap23-ws-chat-test.js | "Authentic wood-fired pizz" → "Fly higher" | ~16 |
+| 14:26 | Created architecture/2026-04-24-gap123-live-verification.md | — | ~2218 |
+| 14:27 | Session end: 14 writes across 7 files (2026-04-24-build-layer-audit.md, famtastic-skeletons.js, server.js, gap123-verification.js, gap23-prompt-assembly.js) | 2 reads | ~241897 tok |
+| 15:37 | Edited site-studio/server.js | modified PALETTE() | ~231 |
+| 15:37 | Edited site-studio/server.js | 1→3 lines | ~138 |
+| 15:37 | Edited site-studio/server.js | 3→5 lines | ~44 |
+| 15:39 | Edited FAMTASTIC-STATE.md | inline fix | ~108 |
+| 15:39 | Edited FAMTASTIC-STATE.md | inline fix | ~27 |
+| 15:40 | Edited FAMTASTIC-STATE.md | inline fix | ~118 |
+| 15:40 | Edited FAMTASTIC-STATE.md | expanded (+6 lines) | ~217 |
+
+## Session: 2026-04-24 15:42
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:46 | Created architecture/2026-04-24-gap4-plan.md | — | ~2985 |
+| 15:47 | Created architecture/2026-04-24-gap4-review-summary.md | — | ~2511 |
+| 15:48 | Session end: 2 writes across 2 files (2026-04-24-gap4-plan.md, 2026-04-24-gap4-review-summary.md) | 2 reads | ~234203 tok |
+| 17:39 | Session end: 2 writes across 2 files (2026-04-24-gap4-plan.md, 2026-04-24-gap4-review-summary.md) | 2 reads | ~234203 tok |
+| 17:42 | Session end: 2 writes across 2 files (2026-04-24-gap4-plan.md, 2026-04-24-gap4-review-summary.md) | 2 reads | ~234203 tok |
+| 20:55 | Created docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md | — | ~5943 |
+| 20:55 | Edited SITE-LEARNINGS.md | expanded (+21 lines) | ~251 |
+| 20:56 | Session end: 4 writes across 4 files (2026-04-24-gap4-plan.md, 2026-04-24-gap4-review-summary.md, FAMTASTIC-VISION-CAPTURE-2026-04-24.md, SITE-LEARNINGS.md) | 3 reads | ~303736 tok |
+| 21:32 | Session end: 4 writes across 4 files (2026-04-24-gap4-plan.md, 2026-04-24-gap4-review-summary.md, FAMTASTIC-VISION-CAPTURE-2026-04-24.md, SITE-LEARNINGS.md) | 3 reads | ~303736 tok |
+| 21:40 | Created site-studio/lib/tier.js | — | ~1001 |
+| 21:41 | Created site-studio/lib/tier-gates.js | — | ~456 |
+| 21:41 | Edited site-studio/server.js | 1→3 lines | ~68 |
+| 21:41 | Edited site-studio/server.js | added 1 condition(s) | ~190 |
+| 21:41 | Edited site-studio/server.js | 11→12 lines | ~180 |
+| 21:41 | Edited site-studio/server.js | 4→5 lines | ~92 |
+| 21:41 | Edited site-studio/server.js | 4→5 lines | ~96 |
+| 21:41 | Edited site-studio/server.js | 12→17 lines | ~160 |
+| 21:41 | Edited site-studio/server.js | 2→2 lines | ~211 |
+| 21:41 | Edited site-studio/server.js | 3→4 lines | ~82 |
+| 21:42 | Edited site-studio/server.js | 10→11 lines | ~131 |
+| 21:42 | Edited site-studio/server.js | 2→3 lines | ~72 |
+| 21:42 | Edited site-studio/server.js | 3→4 lines | ~64 |
+| 21:42 | Edited site-studio/server.js | added 3 condition(s) | ~316 |
+| 21:42 | Edited site-studio/server.js | 5→5 lines | ~102 |
+| 21:42 | Edited site-studio/server.js | 2→2 lines | ~19 |
+| 21:42 | Edited site-studio/server.js | includes() → shouldInjectFamtasticLogoMode() | ~27 |
+| 21:42 | Edited site-studio/server.js | inline fix | ~47 |
+| 21:42 | Edited site-studio/server.js | 3→7 lines | ~132 |
+| 21:43 | Created site-studio/tests/gap4-tier-canonicality.test.js | — | ~2311 |
+| 21:43 | Edited site-studio/tests/gap4-tier-canonicality.test.js | 5→5 lines | ~70 |
+| 21:43 | Edited site-studio/tests/gap4-tier-canonicality.test.js | 3→4 lines | ~65 |
+| 21:43 | Edited site-studio/tests/unit.test.js | 2→3 lines | ~24 |
+| 21:44 | Edited site-studio/tests/unit.test.js | expanded (+20 lines) | ~269 |
+| 21:44 | Created architecture/2026-04-24-schema-audit-followup.md | — | ~736 |
+
+## Session: 2026-04-25 21:46
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:47 | Edited docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md | modified chain() | ~475 |
+| 21:52 | Session end: 1 writes across 1 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md) | 1 reads | ~6080 tok |
+| 00:08 | Created architecture/2026-04-25-baseline-failure-diagnostic.md | — | ~4705 |
+| 00:09 | Session end: 2 writes across 2 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md) | 3 reads | ~258767 tok |
+| 01:06 | Session end: 2 writes across 2 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md) | 3 reads | ~258767 tok |
+| 01:26 | Edited site-studio/server.js | added error handling | ~3837 |
+| 01:27 | Edited site-studio/server.js | added 17 condition(s) | ~1817 |
+| 01:28 | Edited site-studio/server.js | modified if() | ~1588 |
+| 01:28 | Edited site-studio/server.js | modified if() | ~443 |
+| 01:29 | Edited site-studio/server.js | added 4 condition(s) | ~682 |
+| 01:29 | Edited site-studio/server.js | modified if() | ~498 |
+| 01:30 | Edited site-studio/server.js | added error handling | ~1139 |
+| 01:30 | Edited site-studio/server.js | 2→6 lines | ~120 |
+| 01:32 | Created site-studio/tests/baseline-closure.test.js | — | ~2198 |
+| 01:33 | Edited site-studio/server.js | modified normalizeBizName() | ~114 |
+| 01:33 | Edited site-studio/tests/baseline-closure.test.js | reduced (-10 lines) | ~73 |
+| 01:34 | Edited docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md | expanded (+18 lines) | ~797 |
+| 01:35 | Edited site-studio/server.js | added 6 condition(s) | ~1177 |
+| 01:35 | Edited site-studio/server.js | added 1 condition(s) | ~331 |
+| 01:35 | Edited site-studio/server.js | modified if() | ~195 |
+| 01:37 | Edited site-studio/lib/capability-manifest.js | added 1 condition(s) | ~509 |
+| 01:37 | Edited site-studio/lib/capability-manifest.js | inline fix | ~20 |
+| 01:37 | Edited site-studio/lib/capability-manifest.js | 6→7 lines | ~34 |
+| 01:38 | Edited site-studio/server.js | inline fix | ~29 |
+| 01:38 | Edited site-studio/server.js | added 10 condition(s) | ~1846 |
+| 01:39 | Edited site-studio/public/css/studio-chat.css | expanded (+33 lines) | ~251 |
+| 01:39 | Edited site-studio/public/index.html | added 4 condition(s) | ~360 |
+| 01:39 | Edited site-studio/public/index.html | modified then() | ~163 |
+| 01:44 | Created architecture/2026-04-25-baseline-closure-verification.md | — | ~4592 |
+| 01:44 | Session end: 26 writes across 8 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 8 reads | ~336470 tok |
+| 02:14 | Edited CHANGELOG.md | expanded (+14 lines) | ~1365 |
+| 02:15 | Edited SITE-LEARNINGS.md | modified name() | ~1555 |
+| 02:16 | Edited docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md | expanded (+165 lines) | ~2236 |
+| 02:18 | Created architecture/2026-04-25-outstanding-plan.md | — | ~3936 |
+| 02:24 | Created FAMTASTIC-STATE.md | — | ~12174 |
+| 02:24 | Session end: 31 writes across 12 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 11 reads | ~461321 tok |
+| 10:37 | Session end: 31 writes across 12 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 11 reads | ~461321 tok |
+| 10:38 | Session end: 31 writes across 12 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 11 reads | ~461321 tok |
+| 10:39 | Session end: 31 writes across 12 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 11 reads | ~461321 tok |
+| 10:42 | Session end: 31 writes across 12 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 11 reads | ~461321 tok |
+| 10:44 | Edited site-studio/server.js | expanded (+11 lines) | ~179 |
+| 10:46 | Created architecture/2026-04-27-smoke-suite.md | — | ~6250 |
+| 10:47 | Session end: 33 writes across 13 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 11 reads | ~468268 tok |
+| 10:58 | Created architecture/2026-04-27-p0.1-diagnostic.md | — | ~7902 |
+| 10:58 | Session end: 34 writes across 14 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 12 reads | ~476845 tok |
+| 11:04 | Edited site-studio/server.js | added 3 condition(s) | ~1022 |
+| 11:05 | Edited site-studio/server.js | 7→7 lines | ~125 |
+| 11:05 | Edited site-studio/server.js | "#1a5c2e" → "${fontSerif}" | ~115 |
+| 11:05 | Created site-studio/lib/spec-schema.js | — | ~1715 |
+| 11:05 | Edited site-studio/server.js | 1→2 lines | ~48 |
+| 11:06 | Edited site-studio/server.js | modified if() | ~218 |
+| 11:06 | Edited site-studio/lib/famtastic-skeletons.js | modified fix() | ~280 |
+| 11:06 | Edited site-studio/lib/famtastic-skeletons.js | expanded (+7 lines) | ~154 |
+| 11:06 | Created scripts/smoke-validate-all-specs | — | ~742 |
+| 11:07 | Created scripts/smoke-distinct-palette | — | ~792 |
+| 11:14 | Created scripts/spec-repair-all | — | ~980 |
+| 11:21 | Edited scripts/spec-repair-all | added 1 condition(s) | ~186 |
+| 11:21 | Edited scripts/spec-repair-all | added 1 condition(s) | ~144 |
+| 11:22 | Created site-studio/tests/spec-schema.test.js | — | ~1974 |
+| 11:23 | Edited architecture/2026-04-27-smoke-suite.md | "scripts/smoke-validate-sp" → "scripts/smoke-validate-al" | ~77 |
+| 11:23 | Edited architecture/2026-04-27-smoke-suite.md | inline fix | ~132 |
+| 11:23 | Edited architecture/2026-04-27-smoke-suite.md | modified script() | ~149 |
+| 11:25 | Session end: 51 writes across 20 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 13 reads | ~490205 tok |
+| 11:29 | Edited site-studio/server.js | added 2 condition(s) | ~392 |
+| 11:29 | Edited site-studio/server.js | expanded (+7 lines) | ~298 |
+| 11:30 | Edited site-studio/server.js | added 7 condition(s) | ~2147 |
+| 11:31 | Edited site-studio/server.js | added 3 condition(s) | ~310 |
+| 11:31 | Edited site-studio/server.js | chain() → handleShayBuildConfirmation() | ~348 |
+| 11:31 | Edited site-studio/public/index.html | added error handling | ~202 |
+| 11:40 | Edited ../Library/LaunchAgents/com.famtastic.studio.plist | 3→6 lines | ~91 |
+| 11:40 | Created site-studio/launchd/com.famtastic.studio.plist | — | ~520 |
+| 11:41 | Created scripts/smoke-eaddrinuse-50 | — | ~945 |
+| 11:42 | Edited architecture/2026-04-27-smoke-suite.md | modified condition() | ~303 |
+| 11:56 | Session end: 61 writes across 22 files (FAMTASTIC-VISION-CAPTURE-2026-04-24.md, 2026-04-25-baseline-failure-diagnostic.md, server.js, baseline-closure.test.js, capability-manifest.js) | 14 reads | ~498369 tok |
+
+## Session: 2026-04-27 12:02
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:06 | Created architecture/2026-04-27-p0-exit-gate-results.md | — | ~2082 |
+| 12:06 | Session end: 1 writes across 1 files (2026-04-27-p0-exit-gate-results.md) | 2 reads | ~9331 tok |
+| 12:10 | Session end: 1 writes across 1 files (2026-04-27-p0-exit-gate-results.md) | 2 reads | ~9331 tok |
+| 12:59 | Created architecture/2026-04-27-p0-exit-gate-results.md | — | ~5145 |
+| 12:59 | Session end: 2 writes across 1 files (2026-04-27-p0-exit-gate-results.md) | 4 reads | ~282580 tok |
+| 13:03 | Edited site-studio/server.js | added 1 condition(s) | ~656 |
+| 13:03 | Edited scripts/spec-repair-all | added 1 condition(s) | ~397 |
+| 13:03 | Edited scripts/spec-repair-all | added 1 condition(s) | ~204 |
+| 13:04 | Created scripts/smoke-assert-built-spec | — | ~783 |
+| 13:07 | Edited architecture/2026-04-27-smoke-suite.md | expanded (+19 lines) | ~306 |
+| 13:10 | Created architecture/2026-04-27-p0.4-gate-rerun.md | — | ~2065 |
+| 13:11 | Session end: 8 writes across 6 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 5 reads | ~292081 tok |
+| 14:06 | Created architecture/2026-04-27-p0.5-diagnostic.md | — | ~3405 |
+| 14:06 | Session end: 9 writes across 7 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 5 reads | ~296017 tok |
+| 14:28 | Created architecture/2026-04-27-p0.6-diagnostic.md | — | ~5798 |
+| 14:28 | Session end: 10 writes across 8 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 6 reads | ~304872 tok |
+| 14:30 | Edited site-studio/server.js | modified runDeploy() | ~318 |
+| 14:32 | Edited site-studio/server.js | added 1 condition(s) | ~497 |
+| 14:35 | Edited site-studio/server.js | added error handling | ~670 |
+| 14:36 | Edited site-studio/public/index.html | added error handling | ~390 |
+| 14:52 | Session end: 14 writes across 9 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 6 reads | ~306969 tok |
+| 15:04 | Session end: 14 writes across 9 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 6 reads | ~306969 tok |
+| 15:04 | Session end: 14 writes across 9 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 6 reads | ~306969 tok |
+| 15:05 | Edited ../Library/LaunchAgents/com.famtastic.studio.plist | 5→10 lines | ~123 |
+| 15:07 | Edited ../Library/LaunchAgents/com.famtastic.studio.plist | inline fix | ~39 |
+| 15:09 | Edited site-studio/launchd/com.famtastic.studio.plist | expanded (+11 lines) | ~303 |
+| 15:09 | Edited site-studio/launchd/com.famtastic.studio.plist | 5→8 lines | ~83 |
+| 15:10 | Session end: 18 writes across 10 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 8 reads | ~308077 tok |
+| 15:19 | Created site-studio/lib/style-fingerprint.js | — | ~5128 |
+| 15:19 | Edited site-studio/server.js | 1→2 lines | ~34 |
+| 15:20 | Edited site-studio/server.js | added error handling | ~447 |
+| 15:20 | Edited site-studio/server.js | expanded (+10 lines) | ~237 |
+| 15:20 | Edited site-studio/server.js | 7→10 lines | ~233 |
+| 15:20 | Edited site-studio/server.js | inline fix | ~153 |
+| 15:21 | Edited site-studio/server.js | added 1 condition(s) | ~398 |
+| 15:21 | Edited site-studio/lib/spec-schema.js | 5→9 lines | ~114 |
+| 15:21 | Edited site-studio/lib/spec-schema.js | added error handling | ~243 |
+| 15:21 | Edited scripts/spec-repair-all | 3→4 lines | ~84 |
+| 15:21 | Edited scripts/spec-repair-all | added error handling | ~357 |
+| 15:21 | Edited scripts/spec-repair-all | added 1 condition(s) | ~122 |
+| 15:23 | Created scripts/smoke-distinct-palette | — | ~2069 |
+| 15:23 | Created tests/p1.2-style-fingerprint.test.js | — | ~2170 |
+| 15:26 | Edited site-studio/lib/style-fingerprint.js | chain() → key() | ~560 |
+| 15:28 | Session end: 33 writes across 14 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 12 reads | ~330099 tok |
+| 16:50 | Created architecture/2026-04-27-p1.1-edge-case-results.md | — | ~4668 |
+| 16:51 | Session end: 34 writes across 15 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 12 reads | ~335101 tok |
+| 16:56 | Edited site-studio/server.js | expanded (+6 lines) | ~142 |
+| 16:56 | Edited site-studio/server.js | modified widening() | ~202 |
+| 16:56 | Edited site-studio/server.js | added 1 condition(s) | ~442 |
+| 16:57 | Edited site-studio/server.js | modified IDENTITY() | ~347 |
+| 17:03 | Edited site-studio/server.js | inline fix | ~25 |
+| 17:08 | Created architecture/2026-04-27-p1.1-round2-results.md | — | ~2422 |
+| 17:09 | Session end: 40 writes across 16 files (2026-04-27-p0-exit-gate-results.md, server.js, spec-repair-all, smoke-assert-built-spec, 2026-04-27-smoke-suite.md) | 12 reads | ~339983 tok |
+
+## Session: 2026-04-27 17:55
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 18:00 | Created site-studio/lib/openai-image-adapter.js | — | ~1308 |
+| 18:00 | Edited site-studio/server.js | 1→2 lines | ~31 |
+| 18:00 | Edited site-studio/server.js | added error handling | ~760 |
+| 18:01 | Edited site-studio/server.js | added 2 condition(s) | ~661 |
+| 18:02 | Session end: 4 writes across 2 files (openai-image-adapter.js, server.js) | 2 reads | ~247790 tok |
+| 18:07 | Session end: 4 writes across 2 files (openai-image-adapter.js, server.js) | 2 reads | ~247790 tok |
+| 18:07 | Session end: 4 writes across 2 files (openai-image-adapter.js, server.js) | 3 reads | ~247790 tok |
+| 18:10 | Created site-studio/scripts/test-hi-tide-harry-poses.js | — | ~1514 |
+| 18:11 | Session end: 5 writes across 3 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js) | 4 reads | ~249304 tok |
+| 18:30 | Session end: 5 writes across 3 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js) | 4 reads | ~249304 tok |
+| 18:33 | Created site-studio/scripts/test-hi-tide-harry-poses-imagen.js | — | ~2069 |
+| 18:34 | Session end: 6 writes across 4 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js) | 4 reads | ~251373 tok |
+| 18:35 | Session end: 6 writes across 4 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js) | 4 reads | ~251373 tok |
+| 18:41 | Created site-studio/scripts/test-hi-tide-harry-poses-leonardo.js | — | ~3613 |
+| 19:01 | Session end: 7 writes across 5 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 4 reads | ~255343 tok |
+| 19:19 | Session end: 7 writes across 5 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 5 reads | ~255343 tok |
+| 19:21 | Session end: 7 writes across 5 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 5 reads | ~255343 tok |
+| 11:10 | Edited site-studio/server.js | 2→2 lines | ~38 |
+| 11:10 | Edited site-studio/scripts/test-hi-tide-harry-poses-leonardo.js | 2→2 lines | ~34 |
+| 11:10 | Edited site-studio/scripts/test-hi-tide-harry-poses-leonardo.js | inline fix | ~48 |
+| 11:10 | Edited site-studio/scripts/test-hi-tide-harry-poses-leonardo.js | "Leonardo Diffusion XL" → "Leonardo Lightning XL" | ~12 |
+| 11:14 | Session end: 11 writes across 5 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 5 reads | ~255475 tok |
+| 11:41 | Edited site-studio/server.js | 3→3 lines | ~55 |
+| 11:41 | Session end: 12 writes across 5 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 5 reads | ~255537 tok |
+| 11:43 | Session end: 12 writes across 5 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 6 reads | ~255537 tok |
+| 11:45 | Edited sites/site-mbsh-reunion/research/character-sheet.md | 1→3 lines | ~211 |
+| 11:45 | Edited sites/site-mbsh-reunion/research/character-sheet.md | inline fix | ~18 |
+| 11:45 | Edited sites/site-mbsh-reunion/research/character-sheet.md | inline fix | ~12 |
+| 11:45 | Edited sites/site-mbsh-reunion/research/character-sheet.md | inline fix | ~8 |
+| 11:45 | Edited sites/site-mbsh-reunion/research/character-sheet.md | inline fix | ~20 |
+| 11:45 | Edited sites/site-mbsh-reunion/research/planning-consolidated.md | inline fix | ~26 |
+| 11:45 | Edited sites/site-mbsh-reunion/research/planning-consolidated.md | inline fix | ~11 |
+| 11:45 | Edited sites/site-mbsh-reunion/research/planning-consolidated.md | inline fix | ~6 |
+| 11:48 | Session end: 20 writes across 7 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 6 reads | ~255871 tok |
+| 11:57 | Session end: 20 writes across 7 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 6 reads | ~255871 tok |
+| 11:59 | Created docs/sites/README.md | — | ~172 |
+| 12:00 | Session end: 21 writes across 8 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 6 reads | ~256055 tok |
+| 12:18 | Edited .gitignore | 3→4 lines | ~59 |
+| 12:19 | Session end: 22 writes across 9 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 7 reads | ~256411 tok |
+| 13:32 | Session end: 22 writes across 9 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 7 reads | ~256411 tok |
+| 13:32 | Session end: 22 writes across 9 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 7 reads | ~256411 tok |
+| 13:33 | Session end: 22 writes across 9 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 7 reads | ~256411 tok |
+| 10:48 | Created docs/sync-checklist.md | — | ~2616 |
+| 10:48 | Session end: 23 writes across 10 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 7 reads | ~259214 tok |
+| 10:55 | Created docs/sites/site-mbsh-reunion/DISCOVERY.md | — | ~5965 |
+| 10:55 | Session end: 24 writes across 11 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 9 reads | ~266971 tok |
+| 11:51 | Session end: 24 writes across 11 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 9 reads | ~266971 tok |
+| 12:59 | Session end: 24 writes across 11 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 9 reads | ~266971 tok |
+| 13:01 | Session end: 24 writes across 11 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 10 reads | ~266971 tok |
+| 13:10 | Created docs/sites/site-mbsh-reunion/SESSION-1A-SCAFFOLD-PROPOSAL.md | — | ~7462 |
+| 13:11 | Session end: 25 writes across 12 files (openai-image-adapter.js, server.js, test-hi-tide-harry-poses.js, test-hi-tide-harry-poses-imagen.js, test-hi-tide-harry-poses-leonardo.js) | 10 reads | ~274966 tok |
+
+## Session: 2026-04-29 13:32
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:57 | Created tools/cpanel-mcp/inject-token.sh | — | ~259 |
+| 13:58 | Session end: 1 writes across 1 files (inject-token.sh) | 1 reads | ~277 tok |
+| 13:59 | Created tools/cpanel-mcp/test-connection.js | — | ~602 |
+| 14:00 | Edited tools/cpanel-mcp/src/types/cpanel.ts | reduced (-9 lines) | ~80 |
+| 14:00 | Edited tools/cpanel-mcp/src/cpanel-client.ts | added optional chaining | ~170 |
+| 14:01 | Created tools/cpanel-mcp/provision-mbsh.js | — | ~1059 |
+| 14:02 | Created docs/operating-rules/godaddy-mcp-spike.md | — | ~2306 |
+| 14:03 | Session end: 6 writes across 6 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 3 reads | ~4659 tok |
+| 14:07 | Created tools/cpanel-mcp/PATCHES.md | — | ~1052 |
+| 14:07 | Edited FAMTASTIC-STATE.md | modified domain() | ~286 |
+| 14:07 | Session end: 8 writes across 8 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 4 reads | ~17506 tok |
+| 14:12 | Edited SITE-LEARNINGS.md | modified tools() | ~944 |
+| 14:12 | Edited CHANGELOG.md | 3→7 lines | ~295 |
+| 14:28 | Session end: 10 writes across 10 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~113191 tok |
+| 14:28 | Session end: 10 writes across 10 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~113191 tok |
+| 14:32 | Created site-studio/inject-mbsh-creds.sh | — | ~582 |
+| 14:32 | Session end: 11 writes across 11 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~113815 tok |
+| 14:35 | Session end: 11 writes across 11 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~113815 tok |
+| 14:37 | Created ../famtastic-sites/mbsh-reunion/frontend/index.html | — | ~327 |
+| 14:38 | Created ../famtastic-sites/mbsh-reunion/backend/uploads/approved/.htaccess | — | ~125 |
+| 14:38 | Created ../famtastic-sites/mbsh-reunion/backend/uploads/README.md | — | ~516 |
+| 14:40 | Created ../famtastic-sites/mbsh-reunion/config/site-config.json | — | ~137 |
+| 14:40 | Created ../famtastic-sites/mbsh-reunion/netlify.toml | — | ~83 |
+| 14:40 | Created ../famtastic-sites/mbsh-reunion/.gitignore | — | ~135 |
+| 14:41 | Created ../famtastic-sites/mbsh-reunion/README.md | — | ~2018 |
+| 14:43 | Created ../famtastic-sites/mbsh-reunion/DATA-PERSISTENCE.md | — | ~4288 |
+| 14:44 | Session end: 19 writes across 18 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~121979 tok |
+| 14:59 | Created ../famtastic-sites/mbsh-reunion/scripts/generate-brand-mark.js | — | ~1130 |
+| 15:00 | Session end: 20 writes across 19 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~123109 tok |
+| 15:03 | Created ../famtastic-sites/mbsh-reunion/scripts/generate-brand-mark.js | — | ~1300 |
+| 15:05 | Session end: 21 writes across 19 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~124409 tok |
+| 15:10 | Edited ../famtastic-sites/mbsh-reunion/scripts/generate-brand-mark.js | "A premium circular medall" → "A premium circular medall" | ~311 |
+| 15:11 | Session end: 22 writes across 19 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 6 reads | ~124720 tok |
+| 15:57 | Created ../famtastic-sites/mbsh-reunion/frontend/assets/brand-mark/rejected/rejection-notes.md | — | ~582 |
+| 15:58 | Created ../famtastic-sites/mbsh-reunion/frontend/index.html | — | ~902 |
+| 15:59 | Created ../famtastic-sites/mbsh-reunion/frontend/css/typography.css | — | ~213 |
+| 15:59 | Created ../famtastic-sites/mbsh-reunion/frontend/css/base.css | — | ~246 |
+| 15:59 | Created ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | — | ~1393 |
+| 16:26 | Created ../famtastic-sites/mbsh-reunion/scripts/screenshot-hero.js | — | ~584 |
+| 16:27 | Session end: 28 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 11 reads | ~128747 tok |
+| 16:42 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | 4→4 lines | ~32 |
+| 16:43 | Created ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | — | ~1823 |
+| 16:44 | Session end: 30 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 11 reads | ~130605 tok |
+| 16:48 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 14→13 lines | ~118 |
+| 16:48 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 11→11 lines | ~98 |
+| 16:48 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 13→12 lines | ~96 |
+| 16:48 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | modified media() | ~74 |
+| 16:48 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 11→9 lines | ~78 |
+| 16:48 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 11→9 lines | ~60 |
+| 16:50 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 7→7 lines | ~71 |
+| 16:50 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 11→13 lines | ~120 |
+| 16:50 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | expanded (+8 lines) | ~184 |
+| 16:51 | Session end: 39 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 11 reads | ~131504 tok |
+| 16:58 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | 6→7 lines | ~112 |
+| 16:58 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | tagline() → bezier() | ~296 |
+| 16:58 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | CSS: right | ~91 |
+| 16:58 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 27→25 lines | ~170 |
+| 16:59 | Session end: 43 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 11 reads | ~132181 tok |
+| 17:02 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | 4→4 lines | ~79 |
+| 17:02 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 13→11 lines | ~104 |
+| 17:02 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 12→10 lines | ~86 |
+| 17:02 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 9→7 lines | ~64 |
+| 17:02 | Edited ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | 25→28 lines | ~217 |
+| 17:02 | Session end: 48 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 11 reads | ~132737 tok |
+| 17:06 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | inline fix | ~5 |
+| 17:11 | Session end: 49 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 11 reads | ~132743 tok |
+| 17:13 | Edited ../famtastic-sites/mbsh-reunion/.gitignore | 3→6 lines | ~31 |
+| 17:14 | Created ../famtastic-sites/mbsh-reunion/frontend/index.html | — | ~327 |
+| 17:14 | Created ../famtastic-sites/mbsh-reunion/frontend/css/base.css | — | ~12 |
+| 17:14 | Created ../famtastic-sites/mbsh-reunion/frontend/css/typography.css | — | ~14 |
+| 17:14 | Created ../famtastic-sites/mbsh-reunion/frontend/css/hero.css | — | ~12 |
+| 17:15 | Session end: 54 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 12 reads | ~133480 tok |
+| 17:17 | Session end: 54 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 12 reads | ~133480 tok |
+| 17:19 | Session end: 54 writes across 24 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 12 reads | ~133480 tok |
+| 17:22 | Created ../famtastic-sites/mbsh-reunion/scripts/generate-story-stills.js | — | ~1510 |
+| 17:25 | Session end: 55 writes across 25 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 12 reads | ~134990 tok |
+| 17:39 | Created ../famtastic-sites/mbsh-reunion/frontend/assets/story/rejected/selection-notes.md | — | ~534 |
+| 17:40 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | expanded (+43 lines) | ~568 |
+| 17:40 | Created ../famtastic-sites/mbsh-reunion/frontend/css/sections.css | — | ~1275 |
+| 17:40 | Created ../famtastic-sites/mbsh-reunion/frontend/js/main.js | — | ~385 |
+| 17:41 | Created ../famtastic-sites/mbsh-reunion/scripts/screenshot-story.js | — | ~606 |
+| 17:42 | Created ../famtastic-sites/mbsh-reunion/scripts/screenshot-story.js | — | ~630 |
+| 17:43 | Session end: 61 writes across 29 files (inject-token.sh, test-connection.js, cpanel.ts, cpanel-client.ts, provision-mbsh.js) | 20 reads | ~139067 tok |
+
+## Session: 2026-04-29 19:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:25 | Created docs/operating-rules/studio-multipage-discovery-2026-04-29.md | — | ~8329 |
+| 19:25 | Session end: 1 writes across 1 files (studio-multipage-discovery-2026-04-29.md) | 5 reads | ~265663 tok |
+| 20:01 | Created docs/operating-rules/mbsh-rsvp-integration-notes-2026-04-29.md | — | ~2702 |
+| 20:01 | Created ../famtastic-sites/mbsh-reunion/frontend/rsvp.html | — | ~2193 |
+| 20:02 | Created ../famtastic-sites/mbsh-reunion/frontend/css/rsvp.css | — | ~2649 |
+| 20:02 | Created ../famtastic-sites/mbsh-reunion/frontend/js/rsvp-form.js | — | ~1528 |
+| 20:03 | Created ../famtastic-sites/mbsh-reunion/frontend/js/countdown.js | — | ~534 |
+| 20:03 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | inline fix | ~18 |
+| 20:03 | Created ../famtastic-sites/mbsh-reunion/scripts/dev-backend.sh | — | ~202 |
+| 20:04 | Created ../famtastic-sites/mbsh-reunion/backend/lib/config.php | — | ~620 |
+| 20:04 | Created ../famtastic-sites/mbsh-reunion/backend/lib/db.php | — | ~211 |
+| 20:05 | Created ../famtastic-sites/mbsh-reunion/backend/lib/cors.php | — | ~631 |
+| 20:05 | Created ../famtastic-sites/mbsh-reunion/backend/lib/validate.php | — | ~651 |
+| 20:06 | Created ../famtastic-sites/mbsh-reunion/backend/lib/rate-limit.php | — | ~416 |
+| 20:06 | Created ../famtastic-sites/mbsh-reunion/backend/lib/resend.php | — | ~496 |
+| 20:07 | Created ../famtastic-sites/mbsh-reunion/backend/rsvp.php | — | ~2912 |
+| 20:07 | Created ../famtastic-sites/mbsh-reunion/backend/scripts/verify-rsvp.php | — | ~492 |
+| 20:09 | Session end: 16 writes across 16 files (studio-multipage-discovery-2026-04-29.md, mbsh-rsvp-integration-notes-2026-04-29.md, rsvp.html, rsvp.css, rsvp-form.js) | 14 reads | ~282743 tok |
+| 20:09 | Edited ../famtastic-sites/mbsh-reunion/backend/lib/db.php | inline fix | ~33 |
+| 20:09 | Edited ../famtastic-sites/mbsh-reunion/backend/lib/resend.php | 4→4 lines | ~56 |
+
+## Session: 2026-04-30 20:09
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:25 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | inline fix | ~31 |
+| 20:25 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | inline fix | ~19 |
+| 20:25 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | inline fix | ~35 |
+| 20:25 | Edited ../famtastic-sites/mbsh-reunion/frontend/rsvp.html | inline fix | ~32 |
+| 20:25 | Edited ../famtastic-sites/mbsh-reunion/frontend/rsvp.html | inline fix | ~37 |
+| 20:25 | Edited ../famtastic-sites/mbsh-reunion/frontend/rsvp.html | 21→23 lines | ~295 |
+| 20:26 | Edited ../famtastic-sites/mbsh-reunion/frontend/rsvp.html | inline fix | ~37 |
+| 20:26 | Edited ../famtastic-sites/mbsh-reunion/backend/rsvp.php | 6→5 lines | ~47 |
+| 20:27 | Created docs/operating-rules/studio-vs-eleventy-evaluation-2026-04-29.md | — | ~11520 |
+| 20:27 | Session end: 9 writes across 4 files (index.html, rsvp.html, rsvp.php, studio-vs-eleventy-evaluation-2026-04-29.md) | 4 reads | ~292083 tok |
+| 20:27 | Session end: 9 writes across 4 files (index.html, rsvp.html, rsvp.php, studio-vs-eleventy-evaluation-2026-04-29.md) | 4 reads | ~292083 tok |
+| 20:41 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | inline fix | ~34 |
+| 20:41 | Edited ../famtastic-sites/mbsh-reunion/frontend/index.html | removed 46 lines | ~76 |
+| 20:54 | Created docs/operating-rules/mbsh-rsvp-integration-notes-2026-04-29.md | — | ~2999 |
+| 20:56 | Session end: 12 writes across 5 files (index.html, rsvp.html, rsvp.php, studio-vs-eleventy-evaluation-2026-04-29.md, mbsh-rsvp-integration-notes-2026-04-29.md) | 4 reads | ~295414 tok |
+
+## Session: 2026-04-30 12:55
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:16 | Created docs/famtastic-root-inventory.md | — | ~4908 |
+| 13:17 | Session end: 1 writes across 1 files (famtastic-root-inventory.md) | 4 reads | ~249164 tok |
+| 15:06 | Session end: 1 writes across 1 files (famtastic-root-inventory.md) | 6 reads | ~254685 tok |
+| 15:10 | Created docs/famtastic-root-inventory.json | — | ~3033 |
+| 15:11 | Created site-studio/lib/studio-tier-resolver.js | — | ~2280 |
+| 15:11 | Created site-studio/lib/shay-shay-sessions.js | — | ~795 |
+| 15:11 | Edited site-studio/lib/studio-tools.js | expanded (+62 lines) | ~794 |
+| 15:12 | Edited site-studio/lib/tool-handlers.js | added error handling | ~554 |
+| 15:12 | Edited site-studio/lib/tool-handlers.js | 2→4 lines | ~85 |
+| 15:13 | Edited site-studio/lib/tool-handlers.js | added error handling | ~3078 |
+| 15:14 | Edited site-studio/lib/brain-interface.js | added 1 condition(s) | ~520 |
+| 15:14 | Edited site-studio/server.js | 1→2 lines | ~53 |
+| 15:14 | Edited site-studio/server.js | added 8 condition(s) | ~1226 |
+| 15:15 | Edited site-studio/server.js | added 3 condition(s) | ~781 |
+| 15:15 | Edited site-studio/server.js | modified executeShayShayBrainCall() | ~86 |
+| 15:15 | Edited site-studio/server.js | 5→6 lines | ~57 |
+| 15:15 | Edited site-studio/server.js | 8→9 lines | ~77 |
+| 15:15 | Edited site-studio/server.js | 12→13 lines | ~112 |
+| 15:15 | Edited site-studio/server.js | 11→12 lines | ~96 |
+| 15:16 | Created scripts/lib/studio-tier-validate.js | — | ~1344 |
+| 15:17 | Edited scripts/fam-hub | modified validate_patch_id() | ~2064 |
+| 15:21 | Edited site-studio/lib/studio-tier-resolver.js | modified if() | ~78 |
+| 15:25 | Edited CHANGELOG.md | 3→7 lines | ~513 |
+| 15:26 | Edited SITE-LEARNINGS.md | expanded (+37 lines) | ~1942 |
+| 15:27 | Session end: 22 writes across 12 files (famtastic-root-inventory.md, famtastic-root-inventory.json, studio-tier-resolver.js, shay-shay-sessions.js, studio-tools.js) | 8 reads | ~372705 tok |
+
+## Session: 2026-04-30 17:40
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:41 | Edited site-studio/server.js | 4→5 lines | ~100 |
+| 17:41 | Edited site-studio/server.js | modified get() | ~134 |
+| 17:41 | Edited site-studio/server.js | modified selectShayShayBrain() | ~150 |
+| 17:41 | Edited site-studio/server.js | 6→8 lines | ~88 |
+| 17:41 | Edited site-studio/server.js | 6→8 lines | ~118 |
+| 17:42 | Edited site-studio/server.js | modified if() | ~124 |
+| 17:42 | Edited site-studio/server.js | 5→6 lines | ~94 |
+| 17:42 | Edited site-studio/lib/brain-interface.js | 2→4 lines | ~93 |
+| 17:42 | Edited site-studio/lib/brain-interface.js | modified if() | ~123 |
+| 17:42 | Session end: 9 writes across 2 files (server.js, brain-interface.js) | 3 reads | ~246075 tok |
+
+## Session: 2026-04-30 18:07
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 18:08 | Edited site-studio/server.js | added 1 condition(s) | ~352 |
+| 18:09 | Edited site-studio/server.js | 12→13 lines | ~178 |
+| 18:09 | Session end: 2 writes across 1 files (server.js) | 3 reads | ~264306 tok |
+| 18:12 | Edited site-studio/server.js | modified if() | ~1000 |
+| 18:12 | Edited site-studio/server.js | 13→15 lines | ~228 |
+| 18:13 | Session end: 4 writes across 1 files (server.js) | 3 reads | ~265770 tok |
+| 18:30 | Edited site-studio/lib/shay-shay-sessions.js | modified getOrCreate() | ~747 |
+| 18:30 | Edited site-studio/lib/shay-shay-sessions.js | added 1 condition(s) | ~136 |
+| 18:30 | Session end: 6 writes across 2 files (server.js, shay-shay-sessions.js) | 4 reads | ~268067 tok |
+| 18:36 | Edited site-studio/public/js/studio-orb.js | added error handling | ~426 |
+| 18:36 | Edited site-studio/public/js/studio-orb.js | added error handling | ~224 |
+| 18:36 | Edited site-studio/public/js/studio-orb.js | added 2 condition(s) | ~188 |
+| 18:38 | Session end: 9 writes across 3 files (server.js, shay-shay-sessions.js, studio-orb.js) | 4 reads | ~269296 tok |
+| 18:40 | Edited site-studio/server.js | 5 → 50 | ~11 |
+| 18:40 | Session end: 10 writes across 3 files (server.js, shay-shay-sessions.js, studio-orb.js) | 4 reads | ~269307 tok |
+| 18:42 | Session end: 10 writes across 3 files (server.js, shay-shay-sessions.js, studio-orb.js) | 4 reads | ~269307 tok |
+| 18:57 | Edited site-studio/server.js | modified catch() | ~495 |
+| 18:57 | Edited site-studio/server.js | added error handling | ~231 |
+| 18:57 | Edited site-studio/public/index.html | added 1 condition(s) | ~80 |
+| 18:57 | Edited site-studio/public/js/studio-orb.js | 1→2 lines | ~29 |
+| 18:58 | Edited site-studio/public/js/studio-orb.js | added 8 condition(s) | ~456 |
+| 18:58 | Edited site-studio/public/js/studio-orb.js | added 1 condition(s) | ~462 |
+| 18:59 | Session end: 16 writes across 4 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html) | 5 reads | ~304410 tok |
+| 19:06 | Edited site-studio/server.js | added 6 condition(s) | ~808 |
+| 19:06 | Edited site-studio/server.js | expanded (+8 lines) | ~306 |
+| 19:08 | Edited site-studio/server.js | modified get() | ~383 |
+| 19:08 | Edited site-studio/server.js | 8→9 lines | ~85 |
+| 19:08 | Edited site-studio/server.js | 8→9 lines | ~85 |
+| 19:08 | Edited site-studio/public/js/studio-orb.js | modified createLocalShayBridgeClient() | ~111 |
+| 19:09 | Edited site-studio/public/js/studio-orb.js | modified function() | ~116 |
+| 19:09 | Edited site-studio/public/js/studio-orb.js | modified function() | ~312 |
+| 19:09 | Edited site-studio/public/js/studio-orb.js | modified handleShayShayProgress() | ~82 |
+| 19:09 | Edited site-studio/public/js/studio-orb.js | 2→2 lines | ~51 |
+| 19:09 | Edited site-studio/public/js/studio-orb.js | 7→8 lines | ~77 |
+| 19:09 | Edited site-studio/public/js/studio-orb.js | modified then() | ~84 |
+| 19:11 | Session end: 28 writes across 4 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html) | 5 reads | ~308164 tok |
+| 19:27 | Edited site-studio/lib/brain-interface.js | modified execute() | ~139 |
+| 19:27 | Edited site-studio/lib/brain-interface.js | added 3 condition(s) | ~440 |
+| 19:27 | Edited site-studio/lib/brain-interface.js | filter() → adapter() | ~454 |
+| 19:27 | Edited site-studio/lib/brain-interface.js | added 2 condition(s) | ~220 |
+| 19:27 | Edited site-studio/server.js | modified executeShayShayBrainCall() | ~109 |
+| 19:28 | Edited site-studio/server.js | 9→10 lines | ~95 |
+| 19:28 | Edited site-studio/server.js | 7→11 lines | ~137 |
+| 19:28 | Edited site-studio/server.js | modified catch() | ~280 |
+| 19:28 | Edited site-studio/server.js | 2→3 lines | ~138 |
+| 19:28 | Edited site-studio/server.js | 9→10 lines | ~61 |
+| 19:29 | Edited site-studio/server.js | added 3 condition(s) | ~1757 |
+| 19:29 | Edited site-studio/server.js | added error handling | ~1469 |
+| 19:29 | Edited site-studio/server.js | 7→11 lines | ~308 |
+| 19:33 | Edited site-studio/public/js/studio-orb.js | added error handling | ~1714 |
+| 19:35 | Session end: 42 writes across 5 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 8 reads | ~323080 tok |
+| 19:39 | Edited site-studio/server.js | added 3 condition(s) | ~432 |
+| 19:39 | Edited site-studio/server.js | modified if() | ~115 |
+| 19:39 | Edited site-studio/server.js | added 1 condition(s) | ~384 |
+| 19:39 | Edited site-studio/server.js | 3→6 lines | ~86 |
+| 19:40 | Edited site-studio/server.js | modified if() | ~114 |
+| 19:40 | Edited site-studio/server.js | 7→8 lines | ~262 |
+| 19:40 | Edited site-studio/server.js | added 1 condition(s) | ~286 |
+| 19:41 | Session end: 49 writes across 5 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 8 reads | ~327072 tok |
+| 19:45 | Edited site-studio/server.js | modified if() | ~42 |
+| 19:45 | Edited site-studio/server.js | 2→6 lines | ~51 |
+| 19:45 | Edited site-studio/server.js | added 1 condition(s) | ~342 |
+| 19:46 | Session end: 52 writes across 5 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 8 reads | ~327507 tok |
+| 19:53 | Session end: 52 writes across 5 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 8 reads | ~328565 tok |
+| 19:59 | Edited site-studio/server.js | added 7 condition(s) | ~879 |
+| 19:59 | Edited site-studio/server.js | added 1 condition(s) | ~470 |
+| 19:59 | Edited site-studio/server.js | 1→3 lines | ~97 |
+| 19:59 | Edited site-studio/public/js/studio-orb.js | added error handling | ~232 |
+| 19:59 | Edited site-studio/public/js/studio-orb.js | inline fix | ~35 |
+| 19:59 | Edited site-studio/public/js/studio-orb.js | inline fix | ~33 |
+| 20:01 | Session end: 58 writes across 5 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 8 reads | ~330879 tok |
+| 20:45 | Edited site-studio/lib/tool-handlers.js | modified setCurrentShayContext() | ~195 |
+| 20:45 | Edited site-studio/lib/tool-handlers.js | inline fix | ~42 |
+| 20:45 | Edited site-studio/lib/tool-handlers.js | 13→16 lines | ~138 |
+| 20:45 | Edited site-studio/server.js | added 1 condition(s) | ~384 |
+| 20:46 | Edited site-studio/server.js | modified if() | ~189 |
+| 20:46 | Edited site-studio/server.js | 16→16 lines | ~126 |
+| 20:46 | Edited site-studio/server.js | 11→11 lines | ~95 |
+| 20:46 | Edited site-studio/server.js | 10→10 lines | ~81 |
+| 20:47 | Edited site-studio/server.js | added error handling | ~1058 |
+| 20:47 | Edited scripts/fam-hub | expanded (+12 lines) | ~252 |
+| 20:47 | Edited site-studio/public/index.html | added 1 condition(s) | ~104 |
+| 20:47 | Edited site-studio/public/js/studio-orb.js | added 2 condition(s) | ~273 |
+| 20:47 | Edited site-studio/public/js/studio-orb.js | 1→2 lines | ~28 |
+| 20:48 | Session end: 71 writes across 7 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 10 reads | ~348849 tok |
+| 21:19 | Edited site-studio/server.js | added 1 condition(s) | ~380 |
+| 21:20 | Edited site-studio/server.js | expanded (+6 lines) | ~145 |
+| 21:20 | Edited site-studio/lib/shay-shay-sessions.js | modified _newSession() | ~101 |
+| 21:20 | Edited site-studio/server.js | added 1 condition(s) | ~272 |
+| 21:20 | Edited ../Library/LaunchAgents/com.famtastic.studio.plist | 3→7 lines | ~88 |
+| 21:22 | Session end: 76 writes across 8 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 11 reads | ~351226 tok |
+| 22:06 | Edited site-studio/server.js | expanded (+13 lines) | ~259 |
+| 22:06 | Edited site-studio/server.js | added 1 condition(s) | ~410 |
+| 22:07 | Edited site-studio/server.js | modified POLICY() | ~952 |
+| 22:08 | Session end: 79 writes across 8 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 11 reads | ~353631 tok |
+| 22:32 | Edited site-studio/lib/tool-handlers.js | modified setCurrentShayContext() | ~158 |
+| 22:33 | Edited site-studio/lib/tool-handlers.js | added 4 condition(s) | ~1104 |
+| 22:33 | Edited site-studio/lib/tool-handlers.js | inline fix | ~49 |
+| 22:33 | Edited site-studio/server.js | added 1 condition(s) | ~433 |
+| 22:33 | Edited site-studio/server.js | reduced (-17 lines) | ~122 |
+| 22:33 | Edited site-studio/server.js | 6→11 lines | ~132 |
+| 22:33 | Edited site-studio/server.js | 1→2 lines | ~57 |
+| 22:34 | Edited site-studio/server.js | modified ACTIVE() | ~332 |
+| 22:34 | Edited ../Library/LaunchAgents/com.famtastic.studio.plist | 5→10 lines | ~143 |
+| 22:40 | Session end: 88 writes across 8 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 11 reads | ~357090 tok |
+| 22:41 | Edited site-studio/server.js | 4→8 lines | ~186 |
+| 22:41 | Edited site-studio/server.js | added 2 condition(s) | ~432 |
+| 22:41 | Edited site-studio/server.js | 1→2 lines | ~89 |
+| 22:42 | Edited site-studio/server.js | added 1 condition(s) | ~366 |
+| 22:42 | Edited site-studio/server.js | 15→15 lines | ~150 |
+| 22:43 | Edited site-studio/server.js | ".famtastic-bin" → "os" | ~26 |
+| 22:43 | Session end: 94 writes across 8 files (server.js, shay-shay-sessions.js, studio-orb.js, index.html, brain-interface.js) | 11 reads | ~358339 tok |
+
+## Session: 2026-05-02 09:10
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 09:17 | Edited .gitignore | 2→5 lines | ~57 |
+| 09:17 | Edited .gitignore | 5→4 lines | ~44 |
+| 09:48 | Session end: 2 writes across 1 files (.gitignore) | 2 reads | ~424 tok |
+| 09:52 | Session end: 2 writes across 1 files (.gitignore) | 2 reads | ~424 tok |
+| 10:28 | Edited ../Library/Application Support/Claude/claude_desktop_config.json | expanded (+8 lines) | ~66 |
+| 10:30 | Session end: 3 writes across 2 files (.gitignore, claude_desktop_config.json) | 3 reads | ~490 tok |
+
+## Session: 2026-05-02 10:52
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

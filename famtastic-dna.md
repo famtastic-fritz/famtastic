@@ -316,4 +316,70 @@ repeat list enforces this.
 - Intent: build
 - Duration: 289s
 - Note: parallel build — 4 page(s)
+
+### 2026-04-24 — site-small-accounting-firm build
+- Pages: index.html, about.html, services.html, contact.html
+- Intent: build
+- Duration: 256s
+- Note: parallel build — 4 page(s)
+
+### 2026-04-25 — site-black build
+- Pages: index.html, about.html, contact.html
+- Intent: build
+- Duration: 294s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-25 — site-jj-ba-transport build
+- Pages: index.html, services.html, contact.html
+- Intent: build
+- Duration: 241s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-25 — site-jj-ba-transport2 build
+- Pages: index.html, services.html, contact.html
+- Intent: build
+- Duration: 309s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-27 — site-tonys-barber-shop build
+- Pages: index.html, services.html, contact.html
+- Intent: build
+- Duration: 267s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-27 — site-lunas-flower-shop build
+- Pages: index.html, about.html, contact.html
+- Intent: build
+- Duration: 231s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-27 — site-jj-ba-transport build
+- Pages: index.html, services.html, contact.html
+- Intent: build
+- Duration: 270s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-27 — site-jj-ba-transport build
+- Pages: index.html, services.html, contact.html
+- Intent: build
+- Duration: 273s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-27 — site-lunas-flower-shop build
+- Pages: index.html, about.html, contact.html
+- Intent: build
+- Duration: 264s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-27 — site-crumb-and-crust-bakery build
+- Pages: index.html, menu.html, visit-us.html
+- Intent: build
+- Duration: 289s
+- Note: parallel build — 3 page(s)
+
+### 2026-04-30 — site-mbsh96reunion build
+- Pages: index.html, about.html, schedule.html, rsvp.html, contact.html
+- Intent: build
+- Duration: 313s
+- Note: parallel build — 5 page(s)
 <!-- DNA-AUTO-END -->

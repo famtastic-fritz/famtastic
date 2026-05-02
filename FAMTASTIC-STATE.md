@@ -479,6 +479,26 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 
 ---
 
+## Pending Tasks
+
+### This Week
+
+- **Send PR to `ringo380/cpanel-mcp`** with the UAPI v3 response-parser fix
+  (see `~/famtastic/tools/cpanel-mcp/PATCHES.md`). Without this patch every
+  tool call fails with `Cannot read properties of undefined (reading 'event')`
+  because the shipped client parses the legacy cPanel JSON-API shape but
+  hits the modern `/execute/<Module>/<func>` UAPI v3 endpoint.
+- **Fork-fallback check-in: 2026-05-13.** If the PR has not been reviewed
+  by then, fork `ringo380/cpanel-mcp` publicly under `famtastic-fritz`,
+  repoint the local clone's `origin` at the fork, and record the fork URL
+  in `~/famtastic/tools/cpanel-mcp/PATCHES.md`. This stops every fresh
+  clone or upstream pull from silently wiping the fix.
+- **MBSH addon domain (manual):** add `mbsh96reunion.com` in cPanel by hand
+  — the MCP does not yet expose `create_addon_domain`. Tracked as the #1
+  Layer-2 extension in `docs/operating-rules/godaddy-mcp-spike.md`.
+
+---
+
 ## What's Next
 
 The full iterative roadmap is in `architecture/2026-04-25-outstanding-plan.md`.
