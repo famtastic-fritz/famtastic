@@ -154,6 +154,115 @@
 
 #pip-response-area.has-content { display: block; }
 
+.shay-desk-transcript,
+#shay-desk-transcript {
+  min-height: 280px;
+  max-height: min(48vh, 440px);
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015)),
+    rgba(7,7,10,0.56);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-gutter: stable;
+}
+
+#shay-desk-transcript:not(.has-messages) {
+  justify-content: center;
+}
+
+.shay-desk-empty {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  max-width: 560px;
+}
+
+.shay-desk-empty-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fam-text-3);
+}
+
+.shay-desk-empty-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--fam-text);
+}
+
+.shay-desk-empty-copy {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fam-text-2);
+}
+
+.shay-desk-msg {
+  display: flex;
+  animation: pip-slide-up 0.18s ease;
+}
+
+.shay-desk-msg-user {
+  justify-content: flex-end;
+}
+
+.shay-desk-msg-assistant,
+.shay-desk-msg-system {
+  justify-content: flex-start;
+}
+
+.shay-desk-msg.is-subtle {
+  opacity: 0.94;
+}
+
+.shay-desk-bubble {
+  max-width: min(84%, 760px);
+  padding: 12px 14px;
+  border-radius: 14px 14px 14px 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: var(--fam-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.shay-desk-msg-user .shay-desk-bubble {
+  background: rgba(245,196,0,0.12);
+  border-color: rgba(245,196,0,0.24);
+  color: #fff5cd;
+  border-radius: 14px 14px 6px 14px;
+}
+
+.shay-desk-msg-system .shay-desk-bubble {
+  background: rgba(232,53,42,0.09);
+  border-color: rgba(232,53,42,0.22);
+  color: #ffd3cd;
+}
+
+.shay-desk-bubble-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shay-desk-bubble-typing .shay-thinking-dots {
+  gap: 5px;
+}
+
+.shay-desk-bubble-typing .shay-thinking-dots span {
+  width: 6px;
+  height: 6px;
+}
+
+.shay-desk-bubble-typing .shay-thinking-label {
+  color: var(--fam-text-2);
+}
+
 .pip-msg {
   display: flex;
   margin-bottom: 8px;
@@ -216,7 +325,7 @@
   align-self: center;
 }
 
-#pip-direct-input {
+#shay-shay-input {
   flex: 1;
   background: var(--fam-bg-3);
   border: 1px solid var(--fam-border);
@@ -230,12 +339,12 @@
   min-width: 0;
 }
 
-#pip-direct-input:focus {
+#shay-shay-input:focus {
   border-color: rgba(245,196,0,0.5);
   box-shadow: 0 0 0 2px rgba(245,196,0,0.08);
 }
 
-#pip-direct-input::placeholder { color: var(--fam-text-3); }
+#shay-shay-input::placeholder { color: var(--fam-text-3); }
 
 #pip-send-btn {
   width: 28px;
@@ -282,6 +391,10 @@
   gap: 14px;
   pointer-events: none;
   transition: right 0.28s ease, bottom 0.28s ease;
+  /* SHAY V2 (2026-05-02): isolation creates a new stacking context so the
+     orb, callout, mode popup, and direct input no longer race with sibling
+     z-9999 elements (#project-picker, #brain-fallback-bar). */
+  isolation: isolate;
 }
 
 #shay-lite-shell.is-custom-position {
@@ -289,6 +402,7 @@
   top: 120px;
   right: auto;
   bottom: auto;
+  flex-direction: row-reverse;
   transition: none;
 }
 

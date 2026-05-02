@@ -34,6 +34,12 @@
   <link rel="stylesheet" href="css/studio-terminal.css">
   <link rel="stylesheet" href="css/studio-brain-selector.css">
   <link rel="stylesheet" href="css/fam-hero.css">
+  <style>
+    body { max-width: 1100px; margin: 0 auto; }
+    #top-bar { max-width: 1100px; left: 50%; transform: translateX(-50%); }
+    #status-bar { max-width: 1100px; left: 50%; transform: translateX(-50%); }
+    #shay-lite-shell { right: max(16px, calc(50% - 534px)); }
+  </style>
 </head>
 <body>
   <!-- Banners (fixed, above layout) -->
@@ -92,7 +98,7 @@
       <button class="rail-btn" data-rail="research" title="Research">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/><line x1="10" y1="7" x2="10" y2="13"/><line x1="7" y1="10" x2="13" y2="10"/></svg>
       </button>
-      <button class="rail-btn" data-rail="shay" title="Shay-Shay Desk">
+      <button class="rail-btn" data-rail="shay" title="Shay-Shay">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.5L12 15.8 7.2 18l.9-5.5-3.9-3.8 5.4-.8L12 3z"/><circle cx="12" cy="12" r="2.5"/></svg>
       </button>
       <div class="rail-spacer"></div>
@@ -134,10 +140,8 @@
           <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13.5h12"/><path d="M3 11l3-4 2.2 2.2L13 3"/></svg>
           Mission Control
         </div>
-        <div class="sidebar-nav-item" data-tab="shay" onclick="StudioShell.switchTab('shay')">
-          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5l1.7 3.4 3.8.6-2.7 2.7.6 3.9L8 10.5 4.6 12l.6-3.9L2.5 5.5l3.8-.6L8 1.5z"/><circle cx="8" cy="8" r="1.5"/></svg>
-          Shay
-        </div>
+        <!-- SHAY V2 (2026-05-02): Sidebar nav row "Shay" removed.
+             It duplicated the rail star button. Kept the rail entry as the single home for Shay-Shay. -->
         <div class="sidebar-nav-item" data-tab="deploy" onclick="StudioShell.switchTab('deploy')">
           <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="11 11 8 8 5 11"/><line x1="8" y1="8" x2="8" y2="14"/><path d="M13.5 12.5A5 5 0 002 10h-1a6 6 0 0012 2.5"/></svg>
           Deploy
@@ -207,16 +211,9 @@
           <div id="research-ingest-status" style="font-size:10px;color:var(--fam-text-3);padding:3px 0 0;min-height:14px;line-height:1.4;"></div>
         </div>
       </div>
-      <!-- Shay pane -->
-      <div class="sidebar-pane hidden" data-pane="shay">
-        <div class="sidebar-header">Shay-Shay Desk</div>
-        <div style="padding:10px 12px 0;font-size:11px;color:var(--fam-text-2);line-height:1.5;">
-          Full assistant workspace for planning, strategy, jobs, and deeper back-and-forth. Use the orb for lightweight nudges and quick reminders.
-        </div>
-        <div style="padding:10px 12px;">
-          <button onclick="StudioShell.switchTab('shay')" style="width:100%;padding:8px 10px;background:rgba(245,196,0,0.12);border:1px solid rgba(245,196,0,0.25);border-radius:6px;color:var(--fam-gold);cursor:pointer;font-size:11px;">Open Shay Desk</button>
-        </div>
-      </div>
+      <!-- SHAY V2 (2026-05-02): "Shay pane" sidebar removed.
+           It duplicated the rail entry and the workspace tab. Shay-Shay is always-on; she doesn't
+           need a sidebar pane to launch her. The Workshop is reachable via its tab. -->
       <!-- Deploy pane -->
       <div class="sidebar-pane hidden" data-pane="deploy">
         <div class="sidebar-header">Deploy</div>
@@ -377,50 +374,36 @@
             </div>
             <!-- Mission Control pane -->
             <div id="tab-pane-mc" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;"></div>
-            <!-- Shay pane -->
-            <div id="tab-pane-shay" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;">
-              <div id="shay-desk-shell" style="display:flex;flex-direction:column;height:100%;min-height:0;">
-                <div style="padding:14px 16px;border-bottom:1px solid var(--fam-border);background:linear-gradient(180deg, rgba(245,196,0,0.08), rgba(245,196,0,0));">
-                  <div style="font-size:18px;font-weight:700;color:var(--fam-text);">Shay-Shay Desk</div>
-                  <div style="font-size:12px;color:var(--fam-text-2);margin-top:4px;max-width:720px;line-height:1.5;">
-                    Desk is the deeper collaboration surface. Lite stays separate for quick asks, contextual nudges, and fast Show Me help.
+            <!-- SHAY V2 (2026-05-02 + tighten 2026-05-02b):
+                 - Internal tab key stays 'shay' for backwards compat with switchTab('shay').
+                 - Outer pane no longer scrolls; content fits.
+                 - Max-width container (920px, centered) so content stops stretching to viewport edge.
+                 - Verbose intro/mode-summary cards removed; the input itself is the surface. -->
+            <div id="tab-pane-shay" class="ws-tab-pane hidden" style="height:100%;overflow-y:auto;">
+              <div id="shay-workshop-shell" style="max-width:920px;margin:0 auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+                  <h2 style="font-size:20px;font-weight:700;color:var(--fam-text);letter-spacing:-0.01em;">Shay's Workshop</h2>
+                  <span style="font-size:11px;color:var(--fam-text-3);">Same Shay. More room. More tools.</span>
+                </div>
+                <div id="shay-session-init" style="display:none;padding:10px 12px;border:1px solid var(--fam-border);border-radius:10px;background:rgba(255,255,255,0.015);font-size:11px;color:var(--fam-text-2);"></div>
+                <div id="shay-workshop-transcript" aria-live="polite" style="min-height:120px;display:flex;flex-direction:column;gap:10px;">
+                  <div id="shay-workshop-empty-state" style="padding:18px;border:1px dashed var(--fam-border);border-radius:12px;color:var(--fam-text-3);font-size:12px;line-height:1.55;text-align:center;">
+                    No thread yet. Type below to start one, or use a handoff from Shay-Shay.
                   </div>
                 </div>
-                <div id="shay-session-init" style="display:none;padding:10px 16px;border-bottom:1px solid var(--fam-border);background:rgba(255,255,255,0.015);"></div>
-                <div style="padding:18px 16px 20px;display:flex;flex-direction:column;gap:14px;overflow:auto;min-height:0;">
-                  <div style="padding:16px;border:1px solid rgba(245,196,0,0.16);border-radius:16px;background:linear-gradient(180deg, rgba(245,196,0,0.10), rgba(255,255,255,0.02));display:flex;flex-direction:column;gap:14px;min-height:0;flex:0 0 auto;">
-                    <div style="font-size:11px;color:var(--fam-text-3);text-transform:uppercase;letter-spacing:.08em;">Desk Prompt</div>
-                    <div style="font-size:18px;color:var(--fam-text);font-weight:700;margin-top:8px;">Ask Shay from here</div>
-                    <div style="font-size:12px;color:var(--fam-text-2);line-height:1.55;margin-top:6px;max-width:720px;">Desk should not be a dead description tab. Type a prompt here to send it into Shay Lite immediately, ask for Show Me help, or jump straight back into Build chat.</div>
-                    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;min-height:0;">
-                      <div id="shay-desk-transcript" aria-live="polite">
-                        <div id="shay-desk-empty-state" class="shay-desk-empty">
-                          <div class="shay-desk-empty-eyebrow">Conversation</div>
-                          <div class="shay-desk-empty-title">Start a desk thread</div>
-                          <div class="shay-desk-empty-copy">Your prompts and Shay responses stay here as a running conversation, with the newest turn pinned at the bottom above the composer.</div>
-                        </div>
-                      </div>
-                      <div style="display:flex;flex-direction:column;gap:12px;">
-                        <textarea id="shay-desk-input" placeholder="Ask Shay about Media Studio, a build problem, a brand workflow, or what to do next…" style="min-height:120px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,0.10);background:rgba(7,7,10,0.62);color:var(--fam-text);font:inherit;resize:vertical;"></textarea>
-                        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-                          <button type="button" id="shay-desk-send-btn" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(245,196,0,0.28);background:rgba(245,196,0,0.14);color:var(--fam-gold);cursor:pointer;">Ask Shay</button>
-                          <button type="button" id="shay-desk-lite-btn" style="padding:10px 14px;border-radius:10px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Open Shay Lite</button>
-                          <button type="button" id="shay-desk-showme-btn" style="padding:10px 14px;border-radius:10px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Show Me</button>
-                          <button type="button" id="shay-desk-chat-btn" style="padding:10px 14px;border-radius:10px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text);cursor:pointer;">Go To Build Chat</button>
-                          <div id="shay-desk-thinking" style="display:none;align-items:center;gap:8px;font-size:12px;color:var(--fam-purple,#a78bfa);">
-                            <span style="display:inline-flex;gap:4px;">
-                              <span style="width:6px;height:6px;border-radius:50%;background:currentColor;animation:shay-dot-bounce 1s ease-in-out infinite;animation-delay:0s;"></span>
-                              <span style="width:6px;height:6px;border-radius:50%;background:currentColor;animation:shay-dot-bounce 1s ease-in-out infinite;animation-delay:.2s;"></span>
-                              <span style="width:6px;height:6px;border-radius:50%;background:currentColor;animation:shay-dot-bounce 1s ease-in-out infinite;animation-delay:.4s;"></span>
-                            </span>
-                            Shay is on it…
-                          </div>
-                        </div>
-                      </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <textarea id="shay-workshop-input" placeholder="Ask Shay…" style="min-height:80px;padding:12px 14px;border-radius:12px;border:1px solid var(--fam-border);background:rgba(7,7,10,0.62);color:var(--fam-text);font:inherit;resize:vertical;"></textarea>
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                    <button type="button" id="shay-workshop-send-btn" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(245,196,0,0.28);background:rgba(245,196,0,0.14);color:var(--fam-gold);cursor:pointer;font-size:12px;font-weight:600;">Ask Shay</button>
+                    <button type="button" id="shay-workshop-light-btn" style="padding:8px 14px;border-radius:8px;border:1px solid var(--fam-border);background:rgba(255,255,255,0.03);color:var(--fam-text-2);cursor:pointer;font-size:12px;">Open Shay-Shay</button>
+                    <div id="shay-workshop-thinking" style="display:none;align-items:center;gap:8px;font-size:11px;color:var(--fam-purple,#a78bfa);margin-left:auto;">
+                      <span style="display:inline-flex;gap:4px;">
+                        <span style="width:5px;height:5px;border-radius:50%;background:currentColor;animation:shay-dot-bounce 1s ease-in-out infinite;animation-delay:0s;"></span>
+                        <span style="width:5px;height:5px;border-radius:50%;background:currentColor;animation:shay-dot-bounce 1s ease-in-out infinite;animation-delay:.2s;"></span>
+                        <span style="width:5px;height:5px;border-radius:50%;background:currentColor;animation:shay-dot-bounce 1s ease-in-out infinite;animation-delay:.4s;"></span>
+                      </span>
+                      Shay is on it…
                     </div>
-                  </div>
-                  <div id="shay-desk-mode-summary" style="padding:14px;border:1px solid var(--fam-border);border-radius:12px;background:linear-gradient(180deg, rgba(245,196,0,0.06), rgba(255,255,255,0.02));font-size:13px;color:var(--fam-text-2);line-height:1.6;flex:0 0 auto;">
-                    Shay Lite can run as Character Default, Classic Orb, or Mini Panel. Change it from the Lite surface itself or under Assistant settings.
                   </div>
                 </div>
               </div>
@@ -492,7 +475,7 @@
                     <input type="checkbox" id="auto-accept-toggle" onchange="toggleAutoAccept(this.checked)">
                     Auto-accept
                   </label>
-                  <button type="button" id="composer-shay-btn" class="composer-ghost-btn" onclick="StudioShell.switchTab('shay')">Open Shay Desk</button>
+                  
                 </div>
                 <div id="composer-main">
                   <textarea id="chat-input" rows="1" placeholder="Describe what you want to build..." autocomplete="off"></textarea>
@@ -617,7 +600,7 @@
         <div class="shay-lite-panel-actions">
           <button type="button" class="shay-lite-header-btn" onclick="window.PipOrb && window.PipOrb.resetLitePosition && window.PipOrb.resetLitePosition()">Dock Right</button>
           <button type="button" class="shay-lite-header-btn" onclick="window.PipOrb && window.PipOrb.quickShowMe && window.PipOrb.quickShowMe()">Show Me</button>
-          <button type="button" class="shay-lite-header-btn" onclick="StudioShell.switchTab('shay')">Desk</button>
+          <button type="button" class="shay-lite-header-btn" onclick="StudioShell.switchTab('shay')">Workshop</button>
         </div>
       </div>
       <div id="shay-lite-mode-switch" class="shay-lite-mode-switch"></div>
@@ -631,7 +614,7 @@
         <div id="pip-response-area"></div>
         <div id="pip-action-row" class="pip-action-row" style="display:none;"></div>
         <div id="pip-input-row">
-          <input id="pip-direct-input" type="text" placeholder="Ask Shay Lite…" autocomplete="off">
+          <input id="shay-shay-input" type="text" placeholder="Ask Shay…" autocomplete="off">
           <button id="pip-send-btn" title="Send (Enter)">&#x2191;</button>
         </div>
       </div>
@@ -661,6 +644,12 @@
   <script src="js/brain-selector.js"></script>
   <script src="js/worker-queue-badge.js"></script>
   <script src="js/shay-bridge-client.js"></script>
+  <!-- SHAY V2 (2026-05-02): page-context registry (must load before studio-orb.js so getShayShayContext can read from it) -->
+  <script src="js/shay-context-registry.js"></script>
+  <!-- SHAY V2 (2026-05-02): handoff contract — Shay-Shay (light) → Shay's Workshop (deep) -->
+  <script src="js/shay-handoff.js"></script>
+  <!-- SHAY V2 (2026-05-02): Workshop tool rail (Cowork-pattern, pluggable) + 2 starter tools -->
+  <script src="js/shay-workshop.js"></script>
   <script src="js/studio-orb.js"></script>
   <script src="js/studio-brief.js"></script>
   <script src="js/studio-screens.js"></script>
@@ -2015,6 +2004,16 @@
             break;
           case 'verification-result':
             updateVerifyIndicator(msg);
+            break;
+          case 'shay-shay-progress':
+            if (typeof PipOrb !== 'undefined' && PipOrb.handleShayShayProgress) {
+              PipOrb.handleShayShayProgress(msg);
+            }
+            break;
+          case 'patch-applied':
+            if (typeof PipOrb !== 'undefined' && PipOrb.handlePatchApplied) {
+              PipOrb.handlePatchApplied(msg);
+            }
             break;
           case 'verification-warning': {
             var vContainer = document.getElementById('chat-messages');
