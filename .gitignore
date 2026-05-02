@@ -41,3 +41,35 @@ PENDING-REVIEW.md
 .wolf/designqc-report.json
 .wolf/identity.md
 .wolf/suggestions.json
+
+# Runtime / auto-generated state — never commit
+.brain/
+.local/
+.worker-queue.jsonl
+intelligence/
+STUDIO-CONTEXT.md
+site-studio/.dismissed-findings.json
+site-studio/intelligence/
+site-studio/logs/
+tests/automation/logs/
+tier-comparison-results/
+diagnostics/
+
+# Built site output — dist/ is a deploy artifact, not source
+sites/*/dist/
+
+# Playwright MCP captures — ephemeral test screenshots and console logs
+.playwright-mcp/
+
+# Scratch / throwaway files at repo root
+bridge-test.txt
+script.py
+proposed_patch.diff
+header-font-patch.diff
+patch-shay-desk.js
+gate1-step6-misclassify.png
+codex\ final\ review\ plan.md
+site-studio/_patch_promo.py
+site-studio/validation-plan.json.done
+.studio-patches/
+scripts/Screenshot*
