@@ -29,7 +29,8 @@ const { verifyAllAPIs, getBrainStatus } = require('./lib/brain-verifier');
 // DECISION: Tool calling is Claude-only (Session 10).
 // Gemini and OpenAI tool format translation deferred to Session 12.
 // Do not pass STUDIO_TOOLS to GeminiAdapter or CodexAdapter.
-const { handleToolCall, initToolHandlers } = require('./lib/tool-handlers');
+const { handleToolCall, initToolHandlers, isStudioTierAvailable, getStudioTierResolver } = require('./lib/tool-handlers');
+const shayShaySessions = require('./lib/shay-shay-sessions');
 const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = require('./lib/client-interview');
 const fontRegistry = require('./lib/font-registry');
 const layoutRegistry = require('./lib/layout-registry');
@@ -38,6 +39,7 @@ const styleFingerprint = require('./lib/style-fingerprint');
 const { resolveTier, normalizeTierAndMode } = require('./lib/tier');
 const { validateSpec: validateSpecSchema, normalizeRequiredFields } = require('./lib/spec-schema');
 const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
+const logger = require('./lib/logger');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -268,6 +270,11 @@ initToolHandlers({
   getTag:     () => TAG,
   hubRoot:    HUB_ROOT,
 });
+
+// Wire the patch-applied notifier so propose_studio_patch's auto-apply path
+// (SHAY_AUTO_APPROVE=true) can fire the same WS broadcast + system-notification
+// queue that the CLI apply route uses. Lazy require so circular deps stay quiet.
+require('./lib/tool-handlers').setPatchAppliedNotifier((payload) => notifyShayShayPatchApplied(payload));
 
 // --- Path safety ---
 // Validates that a page name is safe (no traversal, alphanumeric + hyphens only)
@@ -1055,6 +1062,7 @@ function listPages() {
 // --- Express app ---
 const app = express();
 app.use(express.json());
+app.use(logger.middleware());
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: false,
@@ -1083,6 +1091,14 @@ app.use((req, res, next) => {
 
 // Serve spec.json
 // Deploy & environment info (structured: local + staging + production)
+app.get('/api/logs/tail', (req, res) => {
+  const n = Math.min(parseInt(req.query.n) || 100, 500);
+  const level = req.query.level || null;
+  let lines = logger.tail(n);
+  if (level) lines = lines.filter(l => l.level === level);
+  res.json({ count: lines.length, lines });
+});
+
 app.get('/api/deploy-info', (req, res) => {
   try {
     const spec = readSpec();
@@ -4340,6 +4356,7 @@ app.post('/api/switch-site', async (req, res) => {
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
   resetBrainSessions();
+  shayShaySessions.resetAll();
 
   // Load new site state
   const studio = loadStudio();
@@ -5208,6 +5225,7 @@ function loadSettings() {
     firefly_client_id: '',
     firefly_client_secret: '',
     prod_sites_base: path.join(require('os').homedir(), 'famtastic-sites'),
+    image_provider: 'imagen4',
     developer_mode: {
       enabled: true,
       trust_mode: 'apply_with_approval',
@@ -5987,6 +6005,74 @@ app.get('/api/studio-capabilities', async (req, res) => {
   }
 });
 
+// ── Shay-Shay session cookie ──────────────────────────────────────────────
+// Server-issued, server-validated session id per surface (lite/desk). Replaces
+// the older client-localStorage scheme, which couldn't reconcile with non-
+// browser callers (curl, Claude Code test runs). Cookie is httpOnly + sameSite
+// lax; no expiration so the id persists until the user runs new-conversation.
+
+const SHAY_SHAY_SURFACES = new Set(['lite', 'desk']);
+
+function _parseCookies(req) {
+  const header = req && req.headers && req.headers.cookie;
+  if (!header) return {};
+  const out = {};
+  for (const part of String(header).split(';')) {
+    const idx = part.indexOf('=');
+    if (idx < 0) continue;
+    const k = part.slice(0, idx).trim();
+    const v = part.slice(idx + 1).trim();
+    if (k) out[k] = decodeURIComponent(v);
+  }
+  return out;
+}
+
+function _shaySessionCookieName(surface) {
+  const s = SHAY_SHAY_SURFACES.has(surface) ? surface : 'lite';
+  return 'shay-shay-session-' + s;
+}
+
+function _setShaySessionCookie(res, name, value) {
+  // httpOnly + sameSite=Lax. No Max-Age → session-permanent until cleared.
+  // Path=/ so all studio routes see it. No Secure flag (localhost http://).
+  res.append('Set-Cookie', name + '=' + encodeURIComponent(value) + '; Path=/; HttpOnly; SameSite=Lax');
+}
+
+function _clearShaySessionCookie(res, name) {
+  res.append('Set-Cookie', name + '=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+}
+
+function getOrMintShayShaySession(req, res, surface) {
+  const name = _shaySessionCookieName(surface);
+  const cookies = _parseCookies(req);
+  const existing = cookies[name];
+  if (existing && typeof existing === 'string' && existing.length >= 8) {
+    console.error('[session-diag] cookie HIT name=' + name + ' id=' + existing);
+    return { conversationId: existing, source: 'cookie', minted: false };
+  }
+  const fresh = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : ('conv-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36));
+  _setShaySessionCookie(res, name, fresh);
+  console.error('[session-diag] cookie MINTED name=' + name + ' id=' + fresh);
+  return { conversationId: fresh, source: 'minted', minted: true };
+}
+
+app.post('/api/shay-shay/new-conversation', (req, res) => {
+  const target = (req.body && req.body.surface) || 'all';
+  const cleared = [];
+  if (target === 'lite' || target === 'all') {
+    _clearShaySessionCookie(res, _shaySessionCookieName('lite'));
+    cleared.push('lite');
+  }
+  if (target === 'desk' || target === 'all') {
+    _clearShaySessionCookie(res, _shaySessionCookieName('desk'));
+    cleared.push('desk');
+  }
+  console.error('[session-diag] new-conversation cleared=' + JSON.stringify(cleared));
+  res.json({ ok: true, cleared });
+});
+
 app.get('/api/shay-shay/session-init', async (req, res) => {
   try {
     const manifest = loadManifest() || await buildCapabilityManifest();
@@ -5994,6 +6080,10 @@ app.get('/api/shay-shay/session-init', async (req, res) => {
     const diff = require('./lib/capability-manifest').diffStateVsManifest(manifest);
     const developerMode = summarizeShayDeveloperMode();
     const recentAudit = readShayDeveloperModeAudit(5);
+    // Mint (or read) per-surface session cookies on init so subsequent
+    // /api/shay-shay calls always travel with a server-issued id.
+    const liteSession = getOrMintShayShaySession(req, res, 'lite');
+    const deskSession = getOrMintShayShaySession(req, res, 'desk');
     res.json({
       ok: true,
       generated_at: new Date().toISOString(),
@@ -6004,6 +6094,10 @@ app.get('/api/shay-shay/session-init', async (req, res) => {
       active_page: currentPage || 'index.html',
       developer_mode: developerMode,
       developer_audit: recentAudit,
+      conversation_ids: {
+        lite: liteSession.conversationId,
+        desk: deskSession.conversationId,
+      },
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -6020,10 +6114,57 @@ app.post('/api/shay-shay', async (req, res) => {
       context = {},
       bridge_result: incomingBridgeResult = null,
       surface = 'lite',
-      conversation_id = null,
       handoff_context = null,
+      images: incomingImages = null,   // vision: user-attached images for the brain
     } = requestBody;
+    // Sanitize incoming images — accept either { media_type, data } (base64)
+    // or { url } and download. Cap count + per-image size for safety.
+    const sanitizedImages = await sanitizeShayShayImages(incomingImages);
     if (!message) return res.status(400).json({ error: 'message required' });
+
+    // Cookie is the source of truth for conversation_id. Any body-provided
+    // convId is ignored — frontends no longer mint or send it. Non-browser
+    // callers (curl, test runners) without a cookie get a freshly minted id,
+    // which is correct: they're a new session.
+    const _resolvedSurface = SHAY_SHAY_SURFACES.has(surface) ? surface : 'lite';
+    const sessionInfo = getOrMintShayShaySession(req, res, _resolvedSurface);
+    const conversation_id = sessionInfo.conversationId;
+
+    // Cookie convId is authoritative — ensure the session map has a default
+    // entry for it so /studio on (and the tier-pin gate) can mutate flags
+    // without a chicken-and-egg problem. getOrCreate is a no-op when an
+    // entry already exists; on first sight it creates studioTier=false.
+    if (conversation_id) {
+      shayShaySessions.getOrCreate(conversation_id);
+    }
+
+    // Stash convId/surface for tool handlers (propose_studio_patch records it
+    // in the patch JSON so the apply CLI can notify the right convId).
+    require('./lib/tool-handlers').setCurrentShayContext({
+      conversation_id,
+      surface: _resolvedSurface,
+    });
+
+    // Drain any system notifications queued for this convId (e.g., a patch
+    // landing while Shay-Shay is idle) and prepend to the user message so
+    // her next turn knows about external state changes.
+    const _notif = drainShayShayNotifications(conversation_id);
+    let messageForBrain = message;
+    if (_notif.length > 0) {
+      messageForBrain = [
+        'SYSTEM NOTIFICATIONS (since your last turn):',
+        ...(_notif.map(n => '  • ' + n)),
+        '',
+        'USER MESSAGE:',
+        message,
+      ].join('\n');
+      console.log('[shay-shay] drained ' + _notif.length + ' notification(s) into next turn convId=' + conversation_id);
+    }
+
+    {
+      const _diagSession = conversation_id ? shayShaySessions.get(conversation_id) : null;
+      console.error('[tier-diag] /api/shay-shay ENTRY convId=', conversation_id, 'source=' + sessionInfo.source, 'surface=' + _resolvedSurface, 'msg=', String(message).slice(0, 80), 'session=', _diagSession ? { studioTier: _diagSession.studioTier, forcedBrain: _diagSession.forcedBrain } : null);
+    }
 
     const bridgeState = resolveShayShayBridgeState(incomingBridgeResult, context, {
       topLevelProvided: hasIncomingBridgeResult,
@@ -6035,6 +6176,96 @@ app.post('/api/shay-shay', async (req, res) => {
     const agentCards = loadShayShayAgentCards();
     const siteSnapshot = buildShayShaySiteSnapshot(context, { bridgeState, surface, conversation_id });
     const bridgeDebug = siteSnapshot.bridge_debug;
+
+    // Studio Tier slash commands — must run BEFORE tier-0 classification so a
+    // command like /studio on can't be intercepted by any other deterministic
+    // matcher. Returns early on every recognized command.
+    const trimmedMessage = typeof message === 'string' ? message.trim() : '';
+    if (trimmedMessage.startsWith('/studio')) {
+      const cmd = trimmedMessage.slice('/studio'.length).trim().toLowerCase();
+      const session = conversation_id ? shayShaySessions.getOrCreate(conversation_id) : null;
+      const claudeAvailable = ((manifest && manifest.capabilities) || {}).claude_api === 'available';
+
+      if (cmd === 'on' || cmd === 'tier on') {
+        if (!session) {
+          return res.json({
+            response: 'Studio Tier requires a stable conversation_id. Reload the Shay-Shay UI to obtain one, then try again.',
+            source: 'studio-tier-slash',
+            bridge_debug: bridgeDebug,
+          });
+        }
+        if (!isStudioTierAvailable()) {
+          const r = getStudioTierResolver();
+          const loadErr = r ? r.getLoadError() : 'resolver not initialized';
+          return res.json({
+            response: `Studio Tier is unavailable: ${loadErr}. Fix docs/famtastic-root-inventory.json and restart Studio.`,
+            source: 'studio-tier-slash',
+            bridge_debug: bridgeDebug,
+          });
+        }
+        if (!claudeAvailable) {
+          return res.json({
+            response: 'Studio Tier requires Claude. Claude is not available right now (check ANTHROPIC_API_KEY and brain status). Try again once Claude is back.',
+            source: 'studio-tier-slash',
+            bridge_debug: bridgeDebug,
+          });
+        }
+        session.studioTier  = true;
+        session.forcedBrain = 'claude';
+        console.error('[tier-diag] /studio on — convId=', conversation_id, 'studioTier=', session.studioTier, 'forcedBrain=', session.forcedBrain, 'sessionMap.has=', !!shayShaySessions.get(conversation_id));
+        return res.json({
+          response: '🔧 Studio Tier ON. I can now read Studio source via `read_studio_file` and propose patches via `propose_studio_patch`. Patches go to a review queue at `~/famtastic/.studio-patches/pending/` — nothing applies until you run `fam-hub studio patches apply <id>`.',
+          source: 'studio-tier-slash',
+          studio_tier: true,
+          forced_brain: 'claude',
+          bridge_debug: bridgeDebug,
+        });
+      }
+
+      if (cmd === 'off' || cmd === 'tier off') {
+        // Studio Tier off clears tier flags but does NOT change brain pinning.
+        // When SHAY_BRAIN_OVERRIDE is set the forcedBrain stays so routing
+        // continues to lock to the override across tier-on/tier-off cycles.
+        const _brainOverride = String(process.env.SHAY_BRAIN_OVERRIDE || '').trim().toLowerCase();
+        if (session) {
+          session.studioTier = false;
+          if (!_brainOverride) {
+            session.forcedBrain = null;
+          }
+        }
+        return res.json({
+          response: '🔧 Studio Tier OFF. Back to standard Shay-Shay tools.' + (_brainOverride ? ' (Brain stays pinned to ' + _brainOverride + ' via SHAY_BRAIN_OVERRIDE.)' : ''),
+          source: 'studio-tier-slash',
+          studio_tier: false,
+          forced_brain: session && session.forcedBrain ? session.forcedBrain : null,
+          bridge_debug: bridgeDebug,
+        });
+      }
+
+      if (cmd === 'status') {
+        const tierOn = !!(session && session.studioTier);
+        const brain  = session && session.forcedBrain ? session.forcedBrain : 'dynamic';
+        return res.json({
+          response: `Studio Tier: ${tierOn ? 'ON' : 'OFF'} | brain: ${brain} | available: ${isStudioTierAvailable() ? 'yes' : 'no'} | claude: ${claudeAvailable ? 'available' : 'unavailable'}`,
+          source: 'studio-tier-slash',
+          studio_tier: tierOn,
+          forced_brain: session && session.forcedBrain ? session.forcedBrain : null,
+          bridge_debug: bridgeDebug,
+        });
+      }
+
+      // Unknown / no-arg: list commands
+      return res.json({
+        response: 'Studio Tier commands: `/studio on`, `/studio off`, `/studio status`',
+        source: 'studio-tier-slash',
+        bridge_debug: bridgeDebug,
+      });
+    }
+
+    // Look up Studio Tier session state for this conversation. Used below to
+    // pin Claude when forcedBrain is set and to thread studioTier into the
+    // brain-interface tool-assembly gate.
+    const tierSession = conversation_id ? shayShaySessions.get(conversation_id) : null;
 
     // Tier 0: deterministic commands — no AI needed
     const lower = message.toLowerCase().trim();
@@ -6123,15 +6354,42 @@ app.post('/api/shay-shay', async (req, res) => {
     const reasoning = classifyShayShayReasoning(lower);
     const selection = selectShayShayBrain(reasoning, manifest, agentCards);
 
-    let usedBrain = selection.brain;
-    let usedModel = selection.model;
+    // Studio Tier brain pinning. When tier is on, force Claude and refuse the
+    // request rather than silently fall back to another brain — Studio Tier
+    // tools only reach Claude, so a fallback would leave the user with a
+    // present-but-broken mode.
+    let effectiveBrain = selection.brain;
+    let effectiveModel = selection.model;
+    let suppressFallback = false;
+    console.error('[tier-diag] tier-pin GATE convId=', conversation_id, 'tierSession=', tierSession ? { studioTier: tierSession.studioTier, forcedBrain: tierSession.forcedBrain } : null, 'selection.brain=', selection.brain);
+    if (tierSession && tierSession.studioTier && tierSession.forcedBrain === 'claude') {
+      const claudeAvailable = ((manifest && manifest.capabilities) || {}).claude_api === 'available';
+      if (!claudeAvailable) {
+        // Clear tier state so future requests don't keep failing
+        tierSession.studioTier  = false;
+        tierSession.forcedBrain = null;
+        return res.status(503).json({
+          error: 'Studio Tier requires Claude, and Claude is currently unavailable. Tier mode has been turned off; run `/studio on` again once Claude is back.',
+          studio_tier: false,
+          bridge_debug: bridgeDebug,
+        });
+      }
+      effectiveBrain = 'claude';
+      const claudeCard = agentCards && agentCards.claude ? agentCards.claude : {};
+      effectiveModel = claudeCard.model || selection.model || null;
+      suppressFallback = true;
+      console.error('[tier-diag] tier-pin APPLIED effectiveBrain=claude effectiveModel=', effectiveModel);
+    }
+
+    let usedBrain = effectiveBrain;
+    let usedModel = effectiveModel;
     let responseText = '';
 
     try {
       responseText = await executeShayShayBrainCall({
-        brain: selection.brain,
-        model: selection.model,
-        message,
+        brain: effectiveBrain,
+        model: effectiveModel,
+        message: messageForBrain,
         context,
         manifest,
         instructions,
@@ -6141,15 +6399,21 @@ app.post('/api/shay-shay', async (req, res) => {
         conversation_id,
         surface,
         handoff_context,
+        studioTier: !!(tierSession && tierSession.studioTier),
+        images: sanitizedImages,
       });
     } catch (err) {
+      if (suppressFallback) {
+        // Studio Tier is on — do not fall back to a non-Claude brain.
+        throw err;
+      }
       if (selection.fallbackBrain && selection.fallbackBrain !== selection.brain) {
         usedBrain = selection.fallbackBrain;
         usedModel = selection.fallbackModel;
         responseText = await executeShayShayBrainCall({
           brain: selection.fallbackBrain,
           model: selection.fallbackModel,
-          message,
+          message: messageForBrain,
           context,
           manifest,
           instructions,
@@ -6159,13 +6423,14 @@ app.post('/api/shay-shay', async (req, res) => {
           conversation_id,
           surface,
           handoff_context,
+          studioTier: false,
         });
       } else {
         throw err;
       }
     }
 
-    const normalized = normalizeShayShayResponse(responseText, {
+    let normalized = normalizeShayShayResponse(responseText, {
       response: responseText || 'I do not have a good answer yet.',
       action: null,
     });
@@ -6174,17 +6439,186 @@ app.post('/api/shay-shay', async (req, res) => {
       normalized.response = `${selection.note} ${normalized.response}`.trim();
     }
 
-    // Bridge execution loop — if Shay signaled a bridge_request, run it and include result
+    if (hasIncomingBridgeResult && incomingBridgeResult) {
+      console.error('[bridge-diag] inbound: client carried prior bridge_result back op=' + (incomingBridgeResult.op || 'unknown') + ' — brain saw it via siteSnapshot.bridge_result');
+    }
+
+    // Bridge execution loop — server-side auto-continuation (max 5 iterations).
+    // Loop closes inside one user turn: execute bridge op, re-call brain with
+    // siteSnapshot.bridge_result populated, re-normalize, repeat until the
+    // brain stops emitting bridge_request or the iteration cap is hit.
     let bridgeResult = null;
-    if (normalized.bridge_request && typeof normalized.bridge_request === 'object') {
-      logShayShayBridgeRequest(normalized.bridge_request);
-      try {
-        bridgeResult = await executeBridgeOp(normalized.bridge_request);
-        logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
-      } catch (e) {
-        bridgeResult = { op: normalized.bridge_request.op, error: e.message };
-        logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
+    let bridgeIterations = 0;
+    let bridgeTruncated = false;
+    const MAX_BRIDGE_ITERATIONS = 50;
+
+    while (
+      (normalized.bridge_request && typeof normalized.bridge_request === 'object') ||
+      (normalized.screenshot_request && typeof normalized.screenshot_request === 'object')
+    ) {
+      if (bridgeIterations >= MAX_BRIDGE_ITERATIONS) {
+        bridgeTruncated = true;
+        console.error('[bridge-diag] iteration cap hit (' + MAX_BRIDGE_ITERATIONS + ') — returning latest response with truncation flag');
+        break;
       }
+      bridgeIterations += 1;
+      // Per-iteration image buffer. May be populated by either (a) a
+      // bridge_request with op=screenshot or (b) a top-level screenshot_request.
+      let continuationImages = null;
+
+      // ── (a) bridge_request (text-feedback path; or image when op=screenshot) ─
+      if (normalized.bridge_request && typeof normalized.bridge_request === 'object') {
+        const reqOp = (normalized.bridge_request.op || 'unknown');
+        const reqTarget = normalized.bridge_request.path
+          || normalized.bridge_request.command
+          || normalized.bridge_request.url
+          || '';
+        console.error('[bridge-diag] iteration=' + bridgeIterations + ' op=' + reqOp);
+        console.error('[bridge-diag] brain emitted bridge_request: op=' + reqOp + ' response_text_len=' + String(normalized.response || '').length);
+        logShayShayBridgeRequest(normalized.bridge_request);
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: reqOp,
+          target: String(reqTarget).slice(0, 200),
+          phase: 'executing',
+        });
+        try {
+          bridgeResult = await executeBridgeOp(normalized.bridge_request);
+          logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
+        } catch (e) {
+          bridgeResult = { op: reqOp, error: e.message };
+          logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
+        }
+        // Short-circuit on unknown-op: don't burn iterations re-asking the
+        // brain when the bridge dispatcher rejected the call. Surface the
+        // real error instead of letting the loop drift into the adapter's
+        // depth-limit boilerplate ("max number of tool calls").
+        if (bridgeResult && typeof bridgeResult.error === 'string' && bridgeResult.error.indexOf('Unknown bridge op') === 0) {
+          console.error('[bridge-diag] iteration=' + bridgeIterations + ' UNKNOWN OP → short-circuit. error=' + bridgeResult.error);
+          normalized.response = bridgeResult.error
+            + (Array.isArray(bridgeResult.valid_ops) ? ' (Brain emitted: ' + JSON.stringify(normalized.bridge_request).slice(0, 200) + ')' : '');
+          normalized.bridge_request = null;
+          normalized.screenshot_request = null;
+          break;
+        }
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: reqOp,
+          target: String(reqTarget).slice(0, 200),
+          phase: 'thinking',
+        });
+        // If the bridge op produced an image (screenshot), route the bytes
+        // into the next brain call as image content and replace the snapshot
+        // payload with a small note — never put raw base64 into the prompt.
+        if (bridgeResult && bridgeResult.data && bridgeResult.media_type && (reqOp === 'screenshot' || reqOp === 'capture_screenshot')) {
+          continuationImages = (continuationImages || []).concat([{
+            media_type: bridgeResult.media_type,
+            data: bridgeResult.data,
+            source_label: bridgeResult.url || reqTarget,
+          }]);
+          console.log('[shay-shay] bridge screenshot captured ' + (bridgeResult.url || reqTarget) + ' bytes_b64=' + bridgeResult.data.length + ' (routed to next brain call as image)');
+          siteSnapshot.bridge_result = {
+            op: reqOp,
+            url: bridgeResult.url || reqTarget,
+            attached_as_image: true,
+            note: 'Image attached to this turn — see your visual input.',
+          };
+        } else {
+          siteSnapshot.bridge_result = bridgeResult;
+        }
+        siteSnapshot.bridge_debug = buildShayShayBridgeDebug({
+          bridgeResult,
+          source: 'server_continuation',
+          seen: true,
+        });
+      }
+
+      // ── (b) screenshot_request (image-feedback path) ───────────────────
+      // The brain emits { screenshot_request: { url, fullPage?, viewport? } }.
+      // Server captures via Playwright, attaches the PNG as an image block
+      // on the next brain call so vision drives the next iteration.
+      if (normalized.screenshot_request && typeof normalized.screenshot_request === 'object') {
+        const ssUrl = String(normalized.screenshot_request.url || '');
+        console.error('[bridge-diag] iteration=' + bridgeIterations + ' op=screenshot url=' + ssUrl);
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: 'screenshot',
+          target: ssUrl.slice(0, 200),
+          phase: 'executing',
+        });
+        let shotResult;
+        try {
+          shotResult = await captureScreenshotForShay(ssUrl, normalized.screenshot_request);
+        } catch (e) {
+          shotResult = { error: e.message };
+        }
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: 'screenshot',
+          target: ssUrl.slice(0, 200),
+          phase: 'thinking',
+        });
+        if (shotResult && shotResult.data) {
+          continuationImages = [{
+            media_type: shotResult.media_type || 'image/png',
+            data: shotResult.data,
+            source_label: ssUrl,
+          }];
+          console.log('[shay-shay] screenshot captured ' + ssUrl + ' bytes_b64=' + shotResult.data.length);
+          // Surface a short note in the snapshot so the brain knows the
+          // image was attached (and from where).
+          siteSnapshot.screenshot_result = { url: ssUrl, attached: true, note: 'Image attached to this turn.' };
+        } else {
+          console.error('[shay-shay] screenshot FAILED url=' + ssUrl + ' err=' + (shotResult && shotResult.error));
+          siteSnapshot.screenshot_result = { url: ssUrl, attached: false, error: (shotResult && shotResult.error) || 'unknown' };
+        }
+      } else {
+        siteSnapshot.screenshot_result = null;
+      }
+
+      // ── (c) re-call brain ──────────────────────────────────────────────
+      let nextResponseText = '';
+      try {
+        nextResponseText = await executeShayShayBrainCall({
+          brain: usedBrain,
+          model: usedModel,
+          message: messageForBrain,
+          context,
+          manifest,
+          instructions,
+          agentCards,
+          siteSnapshot,
+          reasoning,
+          conversation_id,
+          surface,
+          handoff_context: null,
+          studioTier: !!(tierSession && tierSession.studioTier),
+          images: continuationImages,
+        });
+      } catch (e) {
+        console.error('[bridge-diag] iteration=' + bridgeIterations + ' continuation brain call FAILED: ' + e.message);
+        normalized.response = (normalized.response || '') + '\n\n(Bridge continuation failed: ' + e.message + ')';
+        normalized.bridge_request = null;
+        normalized.screenshot_request = null;
+        break;
+      }
+      normalized = normalizeShayShayResponse(nextResponseText, {
+        response: nextResponseText || normalized.response || 'No response.',
+        action: null,
+      });
+      console.error('[bridge-diag] iteration=' + bridgeIterations + ' completion response_text_len=' + String(normalized.response || '').length + ' has_next_bridge=' + !!(normalized.bridge_request && typeof normalized.bridge_request === 'object') + ' has_next_screenshot=' + !!(normalized.screenshot_request && typeof normalized.screenshot_request === 'object'));
     }
 
     // Log suggestion for outcome tracking
@@ -6197,6 +6631,7 @@ app.post('/api/shay-shay', async (req, res) => {
       model: usedModel,
     });
 
+    console.error('[bridge-diag] HTTP response sent: response_text_len=' + String(normalized.response || '').length + ' has_bridge_result=' + !!bridgeResult + ' iterations=' + bridgeIterations + ' truncated=' + bridgeTruncated + ' action=' + (normalized.action || 'null'));
     res.json({
       response: normalized.response,
       action: normalized.action || null,
@@ -6208,6 +6643,8 @@ app.post('/api/shay-shay', async (req, res) => {
       suggestion_id: suggestionId,
       bridge_debug: bridgeDebug,
       conversation_id: conversation_id || null,
+      bridge_iterations: bridgeIterations,
+      ...(bridgeTruncated ? { bridge_truncated: true } : {}),
       ...(bridgeResult ? { bridge_result: bridgeResult } : {}),
       ...(normalized.commit_request && typeof normalized.commit_request === 'object' ? { commit_request: normalized.commit_request } : {}),
       ...(normalized.usage ? { usage: normalized.usage } : {}),
@@ -6361,6 +6798,11 @@ function buildShayShaySiteSnapshot(context = {}, opts = {}) {
   const componentState = (context && typeof context.component_state === 'object' && context.component_state) ? context.component_state : {};
   const previewState = (context && typeof context.preview_state === 'object' && context.preview_state) ? context.preview_state : {};
   const developerMode = summarizeShayDeveloperMode();
+  // SHAY V2 (2026-05-02 iter 3): page_context — what the page Shay-Shay is on
+  // currently exposes via the ShayContextRegistry (browser-side). Pages register
+  // a context provider; getShayShayContext() pulls the snapshot per request.
+  const pageContext = (context && typeof context.page_context === 'object' && context.page_context) ? context.page_context : null;
+  const registeredContextProviders = Array.isArray(context.registered_context_providers) ? context.registered_context_providers : [];
 
   return {
     site_tag: context.active_site || TAG || null,
@@ -6431,6 +6873,12 @@ function buildShayShaySiteSnapshot(context = {}, opts = {}) {
     repo_recent_commits: getRepoRecentCommits(),
     quality_signals: { last_test_run: getLastTestRun() },
     surface: _surface,
+    // SHAY V2 (2026-05-02 iter 3): page_context surfaces what Shay-Shay can SEE
+    // on the active page right now (Media Studio image grid, etc.). Pulled from
+    // the browser-side ShayContextRegistry. Without this, Shay is a chatbot with
+    // a fixed prompt; with it, she's a multifunctional utility tool.
+    page_context: pageContext,
+    registered_context_providers: registeredContextProviders,
     conversation_id: _conversation_id,
     visibility_contract: {
       can_see: [
@@ -6641,6 +7089,11 @@ function buildShayShayPromptSnapshot(siteSnapshot = {}) {
     repo_paths: siteSnapshot.repo_paths || null,
     bridge_result: siteSnapshot.bridge_result || null,
     bridge_debug: siteSnapshot.bridge_debug || null,
+    // SHAY V2 (2026-05-02 iter 3): page_context — Shay reads this to answer
+    // questions about what's currently on screen. If null, she's not connected
+    // to a registered page (which is itself useful info — she can name the gap).
+    page_context: siteSnapshot.page_context || null,
+    registered_context_providers: Array.isArray(siteSnapshot.registered_context_providers) ? siteSnapshot.registered_context_providers : [],
     developer_mode: siteSnapshot.developer_mode && typeof siteSnapshot.developer_mode === 'object'
       ? {
           enabled: !!siteSnapshot.developer_mode.enabled,
@@ -6756,12 +7209,31 @@ function classifyShayShayReasoning(lower) {
 }
 
 function selectShayShayBrain(reasoning, manifest, agentCards) {
+  // Override gate — when SHAY_BRAIN_OVERRIDE is set, lock to that brain
+  // regardless of reasoning, availability matrix, or fallbacks. The full
+  // selector logic below is intentionally retained so we can flip the flag
+  // off and resume routing without a code change.
+  const override = String(process.env.SHAY_BRAIN_OVERRIDE || '').trim().toLowerCase();
+  if (override) {
+    const overrideCard = (agentCards && agentCards[override]) || {};
+    const overrideModel = overrideCard.model || (override === 'claude' ? 'claude-sonnet-4-6' : null);
+    console.error('[tier-diag] selectShayShayBrain OVERRIDE brain=' + override + ' model=' + overrideModel);
+    return {
+      brain: override,
+      model: overrideModel,
+      fallbackBrain: null,
+      fallbackModel: null,
+      note: '',
+    };
+  }
+
   const capabilities = (manifest && manifest.capabilities) || {};
   const availability = {
     claude: capabilities.claude_api === 'available',
     gemini: capabilities.gemini_api === 'available',
     codex: capabilities.openai_api === 'available',
   };
+  console.error('[tier-diag] selectShayShayBrain INPUT reasoning=', reasoning, 'availability=', availability, 'argCount=', arguments.length, '— note: NO session/forcedBrain arg is passed to this function');
 
   const preferenceByKind = {
     brainstorm: ['gemini', 'claude', 'codex'],
@@ -6779,6 +7251,8 @@ function selectShayShayBrain(reasoning, manifest, agentCards) {
   const note = chosen !== preferred[0]
     ? `${preferredCard.name || preferred[0]} is not available right now, so I’m using ${chosenCard.name || chosen}.`
     : '';
+
+  console.error('[tier-diag] selectShayShayBrain CHOSE brain=', chosen, 'model=', chosenCard.model || null);
 
   return {
     brain: chosen,
@@ -6803,6 +7277,8 @@ async function executeShayShayBrainCall(opts) {
     conversation_id = null,
     surface = 'lite',
     handoff_context = null,
+    studioTier = false,
+    images = null,   // optional: vision input — [{ media_type, data (base64) }]
   } = opts;
 
   // Composite session key: brain:conversation_id (or brain:surface as fallback)
@@ -6847,10 +7323,14 @@ async function executeShayShayBrainCall(opts) {
     memoryContext,
   });
 
+  console.error('[tier-diag] executeShayShayBrainCall FIRING brain=', brain, 'model=', model, 'studioTier=', studioTier, 'sessionKey=', sessionKey, 'session.brain=', session.brain, 'convId=', conversation_id);
+
   const result = await session.execute(prompt, {
     maxTokens: reasoning.tier === 3 ? 2048 : 1400,
     mode: reasoning.kind === 'brainstorm' ? 'brainstorm' : 'chat',
     model,
+    studioTier,
+    images: Array.isArray(images) && images.length > 0 ? images : null,
   });
 
   return result && result.content ? result.content : '';
@@ -6881,6 +7361,7 @@ function buildShayShayPrompt(opts) {
   const shayContextContent = fs.existsSync(shayContextPath) ? fs.readFileSync(shayContextPath, 'utf8') : '';
   const shayContextExcerpt = truncateShayShayContext(shayContextContent, SHAY_SHAY_PROMPT_LIMITS.excerptLines.shayContext);
   const crossSessionMemoryExcerpt = truncateShayShayContext(opts.memoryContext || '', SHAY_SHAY_PROMPT_LIMITS.excerptLines.crossSession);
+  const _autoApproveActive = String(process.env.SHAY_AUTO_APPROVE || '').trim().toLowerCase() === 'true';
   const repoPaths = siteSnapshot && siteSnapshot.repo_paths ? siteSnapshot.repo_paths : {};
   const currentActivePagePath = repoPaths.active_page_path || '@active-site/' + (siteSnapshot && siteSnapshot.active_page ? siteSnapshot.active_page : 'index.html');
 
@@ -6900,14 +7381,39 @@ function buildShayShayPrompt(opts) {
     '  Use these exact strings when referring to the active site. Do NOT paraphrase, translate, or invent a different name or description for it.',
     '  If the user message references a DIFFERENT business than the active site, say so by referencing the active site by its exact site_name above — do not make up a different identity to compare against.',
     '',
+    'TOOL POLICY (read this before every action):',
+    '  Reading Studio source       → use the `read_studio_file` tool (NOT bridge exec + cat).',
+    '  Modifying Studio source     → use the `propose_studio_patch` tool.' + (_autoApproveActive
+      ? '\n                                AUTO-APPROVE MODE ACTIVE (SHAY_AUTO_APPROVE=true): patches\n                                on ALLOW-policy paths apply IMMEDIATELY (no queue, no review).\n                                BLOCK / READ_ONLY / REVIEW paths still queue for Fritz approval.\n                                After every apply (auto or manual) the system notifies you in\n                                your next turn — re-screenshot and verify the change took.'
+      : '\n                                Patches land in a review queue at ~/famtastic/.studio-patches/pending/\n                                and only apply when Fritz runs `fam-hub studio patches apply <id>`.\n                                EVEN under trusted_auto_apply mode, Studio source still routes\n                                through the patch queue — there is no auto-write path for Studio\n                                source. After apply, the system will notify you in your next turn\n                                so you can re-screenshot and verify.'),
+    '  Reading site/hub files      → bridge_request op=read.',
+    '  Writing site content        → bridge_request op=write, ONLY under sites/<tag>/.',
+    '                                Anywhere else → propose_studio_patch.',
+    '  Running shell commands      → bridge_request op=exec is READ-ONLY. Inspection only:',
+    '                                git diff, git log, git status, cat, ls, grep, head, tail,',
+    '                                find, wc, jq, diff, echo, pwd. NO redirects (>, >>), NO tee,',
+    '                                NO sed -i, NO mv/cp/rm/chmod/touch/mkdir. Any write',
+    '                                attempt is refused with a pointer to propose_studio_patch.',
+    '  Visual capture              → bridge_request op=screenshot (image arrives next turn).',
+    '',
     'BRIDGE EXECUTION LOOP:',
-    'You have direct access to the local repo via a bridge. To read a file, write a file, or run a shell command,',
-    'include a "bridge_request" field in your JSON response. The Studio will execute it and return the result',
-    'in your next snapshot under siteSnapshot.bridge_result. Supported operations:',
+    'You have direct access to the local repo via a bridge. Include a "bridge_request" field in',
+    'your JSON response and the Studio will execute it and return the result in your next snapshot',
+    'under siteSnapshot.bridge_result. Supported operations:',
     '  Read file:    { "bridge_request": { "op": "read", "path": "relative/path/from/famtastic" } }',
-    '  Write file:   { "bridge_request": { "op": "write", "path": "relative/path", "content": "..." } }',
+    '  Write file:   { "bridge_request": { "op": "write", "path": "sites/<tag>/...", "content": "..." } }',
+    '    SCOPE: bridge writes are ALLOWED ONLY under sites/<tag>/ (site content).',
+    '    For Studio source, hub docs, configs, or any other repo file: use propose_studio_patch.',
     '  Run command:  { "bridge_request": { "op": "exec", "command": "git status" } }',
-    'All exec commands run in ~/famtastic. Allowed binaries: git, npm, node, bash, cat, ls, sed.',
+    '    READ-ONLY. Refused if it contains > >> tee sed -i mv cp rm chmod touch mkdir or any',
+    '    other write-y pattern. Use propose_studio_patch / op=write instead.',
+    '  Screenshot:   { "bridge_request": { "op": "screenshot", "url": "https://example.com", "fullPage": false, "viewport": { "width": 1280, "height": 800 } } }',
+    '    Equivalent shape: { "screenshot_request": { "url": "...", "fullPage": false, "viewport": {...} } }.',
+    '    The captured PNG is attached as an image to your NEXT iteration — you can SEE it.',
+    '    Useful for visual diffs, layout verification, and reviewing live sites against builds.',
+    '    The next siteSnapshot.bridge_result will be a small note (attached_as_image:true) — the image itself arrives as visual input on your next turn.',
+    'All exec commands run in ~/famtastic. Allowed binaries: git, cat, ls, grep, wc, head, tail, find, pwd, echo, jq, diff, fam-hub.',
+    'fam-hub is scoped: only `fam-hub studio patches {apply|show|list|reject} [id]` is callable. Use it to apply your own queued patches end-to-end without a Fritz handoff.',
     'Do not guess that "index.html" lives at the repo root. Use siteSnapshot.repo_paths to target the correct file.',
     'Preferred bridge path aliases:',
     '  @hub/...         => repo root',
@@ -6944,10 +7450,16 @@ function buildShayShayPrompt(opts) {
     ? '\n\nBRIDGE RESULT FROM LAST REQUEST (same object as siteSnapshot.bridge_result):\n' + JSON.stringify(siteSnapshot.bridge_result, null, 2) + '\n(Act on this result before anything else.)'
     : '';
 
+  // When SHAY_BRAIN_OVERRIDE is set, the snapshot reports the override brain
+  // verbatim regardless of what the routing layer "would have" chosen, so the
+  // brain sees consistent identity across selector + snapshot.
+  const _brainOverride = String(process.env.SHAY_BRAIN_OVERRIDE || '').trim().toLowerCase();
+  const _selectedBrainForSnapshot = _brainOverride || selectedBrain;
+
   return [
     primer,
     `CURRENT ROUTING MODE: ${reasoning.kind}`,
-    `SELECTED BRAIN: ${selectedBrain}`,
+    `SELECTED BRAIN: ${_selectedBrainForSnapshot}`,
     'ACTIVE SITE SNAPSHOT:',
     snapshotText,
     bridgeBlock,
@@ -6999,11 +7511,30 @@ function normalizeShayShayResponse(raw, fallback = {}) {
     try {
       const parsed = JSON.parse(candidate);
       if (parsed && typeof parsed === 'object') {
+        // Defense against nested-envelope hallucination: when the brain
+        // emits its full JSON envelope INSIDE the response field as text
+        // (a known structured-output failure mode), peel one more layer.
+        let respText = parsed.response;
+        if (typeof respText === 'string' && /^\s*\{\s*"response"\s*:/.test(respText)) {
+          try {
+            const inner = JSON.parse(respText);
+            if (inner && typeof inner === 'object' && typeof inner.response === 'string') {
+              console.log('[shay-shay] normalize: peeled nested envelope from response field');
+              respText = inner.response;
+              // Lift any nested control fields the brain forgot to put at the top.
+              if (!parsed.bridge_request && inner.bridge_request) parsed.bridge_request = inner.bridge_request;
+              if (!parsed.screenshot_request && inner.screenshot_request) parsed.screenshot_request = inner.screenshot_request;
+              if (!parsed.commit_request && inner.commit_request) parsed.commit_request = inner.commit_request;
+              if (!parsed.action && inner.action) parsed.action = inner.action;
+            }
+          } catch {}
+        }
         return {
-          response: parsed.response || fallback.response || text,
+          response: typeof respText === 'string' && respText ? respText : (fallback.response || text),
           action: parsed.action || null,
           message: parsed.message || null,
           bridge_request: (parsed.bridge_request && typeof parsed.bridge_request === 'object') ? parsed.bridge_request : null,
+          screenshot_request: (parsed.screenshot_request && typeof parsed.screenshot_request === 'object' && typeof parsed.screenshot_request.url === 'string') ? parsed.screenshot_request : null,
           commit_request: (parsed.commit_request && typeof parsed.commit_request === 'object' && parsed.commit_request.message) ? parsed.commit_request : null,
           usage: parsed.usage || null,
         };
@@ -7011,11 +7542,30 @@ function normalizeShayShayResponse(raw, fallback = {}) {
     } catch {}
   }
 
+  // Last-ditch: raw text starts with a JSON envelope shape but didn't parse.
+  // Strip a leading `{"response":"..."` fragment so the user at least sees
+  // text rather than the literal JSON envelope.
+  const envelopeMatch = text.match(/^\s*\{\s*"response"\s*:\s*"([\s\S]*?)"\s*[,}]/);
+  if (envelopeMatch) {
+    const unescaped = envelopeMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    console.log('[shay-shay] normalize: extracted response field from unparseable envelope');
+    return {
+      response: unescaped,
+      action: fallback.action || null,
+      message: fallback.message || null,
+      bridge_request: null,
+      screenshot_request: null,
+      commit_request: null,
+      usage: null,
+    };
+  }
+
   return {
     response: text,
     action: fallback.action || null,
     message: fallback.message || null,
     bridge_request: null,
+    screenshot_request: null,
     commit_request: null,
     usage: null,
   };
@@ -7023,6 +7573,235 @@ function normalizeShayShayResponse(raw, fallback = {}) {
 
 function summarizeBridgeExecBytes(text) {
   return Buffer.byteLength(String(text || ''), 'utf8');
+}
+
+// ── Vision: image sanitation + Playwright screenshot capture ─────────────
+// Two paths feed image content into Claude's messages array:
+//   1. User attaches images in the chat — sanitized here from the request body.
+//   2. Brain emits screenshot_request — captured here via Playwright.
+// Both produce { media_type, data (base64) } blocks the brain-interface knows
+// how to render into Anthropic's content-array format.
+
+const SHAY_VISION_LIMITS = {
+  maxImages: 6,
+  maxBase64Bytes: 4 * 1024 * 1024,    // ~3 MB raw per image
+  allowedMediaTypes: new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
+  fetchTimeoutMs: 8000,
+  screenshotTimeoutMs: 25000,
+};
+
+function _b64FromDataUrl(s) {
+  const m = String(s || '').match(/^data:([^;]+);base64,(.+)$/);
+  if (!m) return null;
+  return { media_type: m[1], data: m[2] };
+}
+
+async function sanitizeShayShayImages(rawImages) {
+  if (!Array.isArray(rawImages) || rawImages.length === 0) return null;
+  const out = [];
+  for (const img of rawImages.slice(0, SHAY_VISION_LIMITS.maxImages)) {
+    if (!img || typeof img !== 'object') continue;
+    let entry = null;
+    if (typeof img.data === 'string' && typeof img.media_type === 'string') {
+      // Strip any data:URL prefix the client may have left in place.
+      const fromDataUrl = _b64FromDataUrl(img.data);
+      if (fromDataUrl) {
+        entry = { media_type: fromDataUrl.media_type, data: fromDataUrl.data };
+      } else {
+        entry = { media_type: img.media_type, data: img.data };
+      }
+    } else if (typeof img.data === 'string' && img.data.startsWith('data:')) {
+      const fromDataUrl = _b64FromDataUrl(img.data);
+      if (fromDataUrl) entry = fromDataUrl;
+    } else if (typeof img.url === 'string') {
+      try {
+        const fetched = await _fetchUrlAsBase64(img.url);
+        if (fetched) entry = fetched;
+      } catch (e) {
+        console.error('[shay-shay] image url fetch failed: ' + img.url + ' — ' + e.message);
+      }
+    }
+    if (!entry) continue;
+    if (!SHAY_VISION_LIMITS.allowedMediaTypes.has(entry.media_type)) continue;
+    if (entry.data.length > SHAY_VISION_LIMITS.maxBase64Bytes) {
+      console.error('[shay-shay] image rejected — exceeds size cap (' + entry.data.length + ' > ' + SHAY_VISION_LIMITS.maxBase64Bytes + ')');
+      continue;
+    }
+    out.push(entry);
+  }
+  if (out.length > 0) {
+    console.log('[shay-shay] sanitizeShayShayImages — accepted ' + out.length + ' image(s)');
+  }
+  return out.length > 0 ? out : null;
+}
+
+async function _fetchUrlAsBase64(urlStr) {
+  const url = new URL(urlStr);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SHAY_VISION_LIMITS.fetchTimeoutMs);
+  try {
+    const res = await fetch(urlStr, { signal: controller.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const ct = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!SHAY_VISION_LIMITS.allowedMediaTypes.has(ct)) throw new Error('unsupported content-type ' + ct);
+    const buf = Buffer.from(await res.arrayBuffer());
+    return { media_type: ct, data: buf.toString('base64') };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Cached Playwright browser — launched once, reused. Closed on process exit.
+let _shayPlaywrightBrowser = null;
+async function _getShayPlaywrightBrowser() {
+  if (_shayPlaywrightBrowser && _shayPlaywrightBrowser.isConnected && _shayPlaywrightBrowser.isConnected()) {
+    return _shayPlaywrightBrowser;
+  }
+  const { chromium } = require('playwright');
+  _shayPlaywrightBrowser = await chromium.launch({ headless: true });
+  process.once('exit', () => { try { _shayPlaywrightBrowser && _shayPlaywrightBrowser.close(); } catch {} });
+  return _shayPlaywrightBrowser;
+}
+
+async function captureScreenshotForShay(rawUrl, opts = {}) {
+  const url = String(rawUrl || '').trim();
+  if (!url) return { error: 'url required' };
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { error: 'invalid url' };
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { error: 'unsupported protocol ' + parsed.protocol };
+  }
+  const fullPage = !!opts.fullPage;
+  const vp = (opts.viewport && typeof opts.viewport === 'object') ? opts.viewport : { width: 1280, height: 800 };
+  const browser = await _getShayPlaywrightBrowser();
+  const ctx = await browser.newContext({ viewport: { width: vp.width || 1280, height: vp.height || 800 } });
+  const page = await ctx.newPage();
+  try {
+    const navP = page.goto(url, { waitUntil: 'load', timeout: SHAY_VISION_LIMITS.screenshotTimeoutMs });
+    await navP.catch(e => { console.error('[shay-shay] screenshot nav warn: ' + e.message); });
+    // Small settle delay for late paint
+    await page.waitForTimeout(300);
+    const buf = await page.screenshot({ type: 'png', fullPage });
+    return { media_type: 'image/png', data: buf.toString('base64'), url };
+  } finally {
+    try { await ctx.close(); } catch {}
+  }
+}
+
+// ── Shay-Shay system notifications queue ──────────────────────────────────
+// Stores per-convId notifications that the next /api/shay-shay request drains
+// into the prompt as a "SYSTEM NOTIFICATIONS" block. Used today by the patch-
+// applied callback so Shay knows to re-screenshot and verify after Fritz
+// approves a patch externally.
+const _shayShayNotifications = new Map();
+function enqueueShayShayNotification(convId, text) {
+  if (!convId || !text) return;
+  if (!_shayShayNotifications.has(convId)) _shayShayNotifications.set(convId, []);
+  _shayShayNotifications.get(convId).push(String(text).slice(0, 500));
+  console.log('[shay-shay] notification enqueued convId=' + convId + ' text=' + String(text).slice(0, 80));
+}
+function drainShayShayNotifications(convId) {
+  if (!convId || !_shayShayNotifications.has(convId)) return [];
+  const out = _shayShayNotifications.get(convId);
+  _shayShayNotifications.delete(convId);
+  return out;
+}
+
+function broadcastShayShayPatchApplied(payload) {
+  if (!wss || !wss.clients) return;
+  let frame;
+  try {
+    frame = JSON.stringify({ type: 'patch-applied', ...payload });
+  } catch { return; }
+  console.log('[patch-loop] broadcast patch-applied id=' + payload.id + ' status=' + payload.status + ' convId=' + (payload.conversation_id || 'unknown'));
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) { try { client.send(frame); } catch {} }
+  });
+}
+
+// Shared notifier: WS broadcast + system-notification queue. Used by both the
+// CLI apply endpoint and the in-process auto-apply path (SHAY_AUTO_APPROVE).
+function notifyShayShayPatchApplied({ id, path: targetPath, status, error, conversation_id, auto_applied }) {
+  const payload = {
+    id,
+    path: targetPath || null,
+    status: status || 'applied',
+    error: error || null,
+    conversation_id: conversation_id || null,
+    auto_applied: !!auto_applied,
+    applied_at: new Date().toISOString(),
+  };
+  broadcastShayShayPatchApplied(payload);
+  if (conversation_id) {
+    const verb = payload.status === 'applied' ? (auto_applied ? 'auto-applied' : 'applied') : (payload.status === 'failed' ? 'failed to apply' : payload.status);
+    enqueueShayShayNotification(conversation_id,
+      'Your proposed patch ' + id + ' has been ' + verb +
+      (targetPath ? ' (target: ' + targetPath + ')' : '') +
+      '. Re-screenshot and verify the change took effect; if anything looks off, propose a follow-up patch.'
+    );
+  }
+  return payload;
+}
+
+// Endpoint called by `fam-hub studio patches apply <id>` after the patch is
+// successfully applied (or fails). Reads the patch JSON to recover the convId,
+// broadcasts the WS event to clients, and queues a system notification so the
+// proposing convId sees it on its next /api/shay-shay turn.
+app.post('/api/studio-patches/applied', (req, res) => {
+  try {
+    const body = (req && req.body && typeof req.body === 'object') ? req.body : {};
+    const id = String(body.id || '').trim();
+    if (!id) return res.status(400).json({ error: 'id required' });
+
+    const patchesRoot = path.join(HUB_ROOT, '.studio-patches');
+    const candidates = [
+      path.join(patchesRoot, 'applied', id + '.json'),
+      path.join(patchesRoot, 'pending', id + '.json'),
+      path.join(patchesRoot, 'rejected', id + '.json'),
+    ];
+    let patchData = null;
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        try { patchData = JSON.parse(fs.readFileSync(f, 'utf8')); } catch {}
+        break;
+      }
+    }
+
+    const payload = notifyShayShayPatchApplied({
+      id,
+      path: (patchData && patchData.path) || body.path || null,
+      status: String(body.status || (patchData ? 'applied' : 'unknown')),
+      error: body.error || null,
+      conversation_id: (patchData && patchData.conversation_id) || body.conversation_id || null,
+      auto_applied: false,
+    });
+    res.json({ ok: true, broadcasted: true, patch: payload });
+  } catch (e) {
+    console.error('[patch-loop] /api/studio-patches/applied error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Broadcast bridge-loop progress over the existing Studio WebSocket so the
+// client can render "Iteration N/M: <op> <target>" during multi-step turns.
+// Filtered client-side by conversation_id to avoid cross-surface noise.
+function broadcastShayShayProgress(payload) {
+  if (!wss || !wss.clients) return;
+  let frame;
+  try {
+    frame = JSON.stringify({ type: 'shay-shay-progress', ...payload });
+  } catch { return; }
+  console.error('[bridge-diag] broadcast progress: iteration=' + payload.iteration + '/' + payload.max + ' op=' + payload.op + ' phase=' + payload.phase + ' target=' + (payload.target || '').slice(0, 60));
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      try { client.send(frame); } catch {}
+    }
+  });
 }
 
 function logShayShayBridgeRequest(bridgeRequest) {
@@ -7092,7 +7871,24 @@ function unifiedDiff(oldStr, newStr, label) {
 async function executeBridgeOp(bridgeRequest) {
   const { execFile } = require('child_process');
   const FAM_ROOT = HUB_ROOT;
-  const ALLOWED_COMMANDS = ['git', 'npm', 'node', 'bash', 'cat', 'ls', 'sed'];
+  // exec is read-only. Writes go through propose_studio_patch (Studio source,
+  // hub docs, configs) or op:write (site content under sites/<tag>/). Removed
+  // npm/node/bash/sed because they can mutate state via tasks/scripts/-i flags.
+  // fam-hub is allowed but additionally scoped to `fam-hub studio patches …`
+  // subcommands so its other branches (site builds, deploys, agent dispatch)
+  // remain out of reach from this surface.
+  const ALLOWED_COMMANDS = ['git', 'cat', 'ls', 'grep', 'wc', 'head', 'tail', 'find', 'pwd', 'echo', 'jq', 'diff', 'fam-hub'];
+  const FAM_HUB_ALLOWED_SUBCOMMANDS = new Set(['apply', 'show', 'list', 'reject']);
+
+  // Patterns that perform writes — refuse with the propose_studio_patch
+  // message so the brain reroutes through the review queue.
+  const WRITE_PATTERNS = [
+    { re: /(?:^|[^>&])>>?\s*(?!\s*$)\S/, name: 'redirect (> or >>)' },
+    { re: /(?:^|[\s|;])tee(?:\s|$)/,     name: 'tee' },
+    { re: /(?:^|[\s|;])sed\s+[^|]*-[iI]\b/, name: 'sed -i' },
+    { re: /(?:^|[\s|;])dd\s+[^|]*\bof=/, name: 'dd of=' },
+    { re: /(?:^|[\s|;])(mv|cp|rm|rmdir|truncate|install|chmod|chown|ln|touch|mkdir|rsync|patch)(?:\s|$)/, name: 'mutating fs command' },
+  ];
   const BRIDGE_TIMEOUTS = { read: 3000, write: 5000, exec: 20000 };
   const PATH_ALIASES = [
     { prefix: '@active-site/', root: () => DIST_DIR() },
@@ -7142,6 +7938,23 @@ async function executeBridgeOp(bridgeRequest) {
   if (op === 'write') {
     const target = resolveSafe(bridgeRequest.path || '');
     if (!target) return { op, path: bridgeRequest.path, error: 'Path escapes allowed bridge roots' };
+    // Guard: bridge writes are allowed ONLY for site content under
+    // <hub>/sites/<tag>/ (which includes @active-site/* paths). Any write
+    // touching Studio source, hub docs, configs, or other infra files must
+    // go through propose_studio_patch so Fritz reviews before it lands.
+    const sitesDirAbs = path.resolve(HUB_ROOT, 'sites') + path.sep;
+    const allowedForBridge = (target.abs + path.sep).startsWith(sitesDirAbs);
+    if (!allowedForBridge) {
+      const err = 'Bridge writes are blocked outside sites/<tag>/. To modify Studio source, hub docs, or any other repo file, use propose_studio_patch instead — patches go to ~/famtastic/.studio-patches/pending/ for Fritz to review and apply with `fam-hub studio patches apply <id>`.';
+      console.error('[bridge-diag] write REFUSED path=' + (bridgeRequest.path || '') + ' resolved=' + target.resolvedPath + ' (outside sites/)');
+      return {
+        op,
+        path: bridgeRequest.path,
+        resolved_path: target.resolvedPath,
+        error: err,
+        use_instead: 'propose_studio_patch',
+      };
+    }
     try {
       fs.mkdirSync(path.dirname(target.abs), { recursive: true });
       fs.writeFileSync(target.abs, bridgeRequest.content || '', 'utf8');
@@ -7162,11 +7975,59 @@ async function executeBridgeOp(bridgeRequest) {
         stdout: '',
         stderr: '',
         exitCode: null,
-        error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}`,
+        error: `Command not allowed: ${bin}. exec is read-only — allowed binaries: ${ALLOWED_COMMANDS.join(', ')}. To modify Studio source or hub files use propose_studio_patch; for site content under sites/<tag>/ use bridge_request op=write.`,
       };
     }
+    // fam-hub is scoped: only `fam-hub studio patches {apply|show|list|reject}`.
+    // This keeps the patch end-to-end loop usable while blocking the binary's
+    // other subcommands (site builds, deploys, agent dispatch, admin).
+    let resolvedCommand = command;
+    if (bin === 'fam-hub') {
+      const tokens = command.split(/\s+/);
+      const sub1 = tokens[1] || '';
+      const sub2 = tokens[2] || '';
+      const sub3 = tokens[3] || '';
+      if (sub1 !== 'studio' || sub2 !== 'patches' || !FAM_HUB_ALLOWED_SUBCOMMANDS.has(sub3)) {
+        console.error('[bridge-diag] fam-hub REFUSED scope sub1=' + sub1 + ' sub2=' + sub2 + ' sub3=' + sub3);
+        return {
+          op,
+          command,
+          cwd: '.',
+          stdout: '',
+          stderr: '',
+          exitCode: null,
+          error: 'fam-hub is scoped: only `fam-hub studio patches {apply|show|list|reject} [id]` is allowed via exec. For site builds, deploys, or other admin actions, use the proper Studio path or have Fritz run them.',
+        };
+      }
+      // Resolve `fam-hub` to its absolute path — launchd's PATH does not
+      // include ~/.famtastic-bin so the bare name fails with exit 127.
+      const famHubAbs = path.join(require('os').homedir(), '.famtastic-bin', 'fam-hub');
+      if (!fs.existsSync(famHubAbs)) {
+        return { op, command, cwd: '.', stdout: '', stderr: '', exitCode: null, error: 'fam-hub binary not found at ' + famHubAbs };
+      }
+      tokens[0] = famHubAbs;
+      resolvedCommand = tokens.join(' ');
+    }
+    // Refuse any write redirection / mutating operation regardless of target.
+    // Matches the same write policy as op:write — repo writes flow through
+    // propose_studio_patch (review queue) or op:write (sites/<tag>/ only).
+    for (const wp of WRITE_PATTERNS) {
+      if (wp.re.test(command)) {
+        console.error('[bridge-diag] exec REFUSED reason=' + wp.name + ' command=' + command.slice(0, 200));
+        return {
+          op,
+          command,
+          cwd: '.',
+          stdout: '',
+          stderr: '',
+          exitCode: null,
+          error: `exec refused: command contains ${wp.name}, which writes to disk. exec is read-only. Use propose_studio_patch for Studio source/hub files, or bridge_request op=write for site content under sites/<tag>/.`,
+          use_instead: 'propose_studio_patch',
+        };
+      }
+    }
     return new Promise(resolve => {
-      execFile('bash', ['-c', command], { cwd: FAM_ROOT, timeout: BRIDGE_TIMEOUTS.exec }, (err, stdout, stderr) => {
+      execFile('bash', ['-c', resolvedCommand], { cwd: FAM_ROOT, timeout: BRIDGE_TIMEOUTS.exec }, (err, stdout, stderr) => {
         const result = {
           op,
           command,
@@ -7194,7 +8055,35 @@ async function executeBridgeOp(bridgeRequest) {
     }
   }
 
-  return { op, error: `Unknown bridge op: ${op}` };
+  if (op === 'screenshot' || op === 'capture_screenshot' || op === 'screenshot_request') {
+    const url = String(bridgeRequest.url || '').trim();
+    if (!url) return { op, error: 'url required' };
+    try {
+      const shot = await captureScreenshotForShay(url, {
+        fullPage: !!bridgeRequest.fullPage,
+        viewport: bridgeRequest.viewport,
+      });
+      if (shot && shot.error) return { op, url, error: shot.error };
+      // Image data is returned in the bridge_result. The bridge loop detects
+      // media_type+data and routes the bytes into the next brain call as an
+      // image content block (rather than dumping base64 into the prompt).
+      return {
+        op,
+        url,
+        media_type: shot.media_type,
+        data: shot.data,
+        bytes_b64: shot.data ? shot.data.length : 0,
+      };
+    } catch (e) {
+      return { op, url, error: e.message };
+    }
+  }
+
+  return {
+    op,
+    error: `Unknown bridge op: ${op}. Valid ops: read, write, exec, diff, screenshot.`,
+    valid_ops: ['read', 'write', 'exec', 'diff', 'screenshot'],
+  };
 }
 
 function classifyShayShayTier0(lower, context = {}) {
@@ -7607,6 +8496,7 @@ async function createSite(brief, options = {}) {
     currentPage = 'index.html';
     sessionMessageCount = 0;
     sessionStartedAt = new Date().toISOString();
+    shayShaySessions.resetAll();
     startSession();
     studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
 
@@ -7664,6 +8554,7 @@ async function createSite(brief, options = {}) {
   currentPage = 'index.html';
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
+  shayShaySessions.resetAll();
   startSession();
   studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
 
@@ -10366,6 +11257,92 @@ function runGoogleMediaScript(args) {
   });
 }
 
+// ── OpenAI gpt-image-2 adapter wiring ────────────────────────────────────────
+// Mirrors createGoogleImageAsset but routes through lib/openai-image-adapter.js.
+// Selectable per request via pickImageProvider(); defaults to imagen4 for
+// backwards compatibility (settings.image_provider).
+
+const openaiImageAdapter = require('./lib/openai-image-adapter');
+
+function pickImageProvider(requestProvider) {
+  try {
+    return openaiImageAdapter.pickProvider(requestProvider, loadSettings().image_provider);
+  } catch {
+    return openaiImageAdapter.pickProvider(requestProvider, 'imagen4');
+  }
+}
+
+// Aspect ratio → gpt-image-2 size preset. The adapter only accepts square,
+// portrait, or landscape; everything else snaps to 1024x1024.
+function aspectRatioToOpenAiSize(aspectRatio) {
+  switch ((aspectRatio || '').trim()) {
+    case '16:9':
+    case '3:2':
+    case '4:3':
+      return '1792x1024';
+    case '9:16':
+    case '2:3':
+    case '3:4':
+      return '1024x1792';
+    case '1:1':
+    default:
+      return '1024x1024';
+  }
+}
+
+async function createOpenAiImageAsset({
+  prompt,
+  aspectRatio,
+  size,
+  transparent,
+  referenceImages,
+  role,
+  label,
+  notes,
+  brandFamilyId,
+  model,
+}) {
+  ensureGeneratedMediaCapacity(1);
+  const filename = makeGeneratedMediaFilename('media', prompt, '.png');
+  const outputPath = path.join(UPLOADS_DIR(), filename);
+  fs.mkdirSync(UPLOADS_DIR(), { recursive: true });
+
+  const finalSize = size || aspectRatioToOpenAiSize(aspectRatio);
+  const useEdits = Array.isArray(referenceImages) ? referenceImages.length > 0 : !!referenceImages;
+  const finalModel = model || openaiImageAdapter.DEFAULT_MODEL;
+
+  const result = useEdits
+    ? await openaiImageAdapter.editImage({
+        prompt, referenceImages, size: finalSize, transparent, model: finalModel, savePath: outputPath,
+      })
+    : await openaiImageAdapter.generateImage({
+        prompt, size: finalSize, transparent, model: finalModel, savePath: outputPath,
+      });
+
+  const asset = {
+    filename,
+    type: 'image',
+    role: role || 'content',
+    label: label || '',
+    notes: notes || '',
+    uploaded_at: new Date().toISOString(),
+    source_provider: 'openai',
+    source_model: finalModel,
+    generation_mode: useEdits ? 'image_edit' : 'text_to_image',
+    source_prompt: prompt,
+    brand_family_id: brandFamilyId || null,
+    size: result.size,
+    transparent: !!transparent,
+    duration_ms: result.durationMs,
+  };
+  recordUploadedAsset(asset);
+  return {
+    success: true,
+    asset,
+    path: `/assets/uploads/${filename}`,
+  };
+}
+
 async function createGoogleImageAsset({ prompt, aspectRatio, role, label, notes, brandFamilyId }) {
   ensureGeneratedMediaCapacity(1);
   const filename = makeGeneratedMediaFilename('media', prompt, '.png');
@@ -11049,24 +12026,52 @@ app.post('/api/media/generate-asset', async (req, res) => {
 
 app.post('/api/media/generate-image', async (req, res) => {
   try {
-    if (!getGoogleApiKey()) {
-      return res.status(400).json({ error: 'Google AI Studio key is not configured. Add GEMINI_API_KEY, GOOGLE_API_KEY, or save a Gemini key in Settings → Platform.' });
-    }
     const prompt = String(req.body?.prompt || '').trim();
     if (!prompt) return res.status(400).json({ error: 'prompt is required' });
-    const provider = String(req.body?.provider || 'auto');
-    if (!['auto', 'google'].includes(provider)) {
-      return res.status(409).json({ error: `${provider} is not wired yet for direct Media Studio image generation.` });
+
+    // Per-request provider overrides site-level config default (loadSettings().image_provider).
+    // 'auto' or unset → use site default. Explicit 'google'/'imagen4'/'gpt-image-2' picks one.
+    const requestedRaw = String(req.body?.provider || 'auto');
+    const requested = requestedRaw === 'google' ? 'imagen4' : requestedRaw;
+    const provider = requested === 'auto' ? pickImageProvider(null) : pickImageProvider(requested);
+
+    if (provider === 'gpt-image-2') {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ error: 'OPENAI_API_KEY is not configured.' });
+      }
+      const refsRaw = req.body?.reference_images || req.body?.reference_image || null;
+      const referenceImages = !refsRaw ? null : (Array.isArray(refsRaw) ? refsRaw : [refsRaw]);
+      const result = await createOpenAiImageAsset({
+        prompt,
+        aspectRatio: String(req.body?.aspect_ratio || '1:1'),
+        size: req.body?.size || null,
+        transparent: !!req.body?.transparent,
+        referenceImages,
+        role: String(req.body?.role || 'content'),
+        label: String(req.body?.label || ''),
+        notes: String(req.body?.notes || ''),
+        brandFamilyId: req.body?.brand_family_id || null,
+        model: req.body?.model || null,
+      });
+      return res.json(result);
     }
-    const result = await createGoogleImageAsset({
-      prompt,
-      aspectRatio: String(req.body?.aspect_ratio || '1:1'),
-      role: String(req.body?.role || 'content'),
-      label: String(req.body?.label || ''),
-      notes: String(req.body?.notes || ''),
-      brandFamilyId: req.body?.brand_family_id || null,
-    });
-    res.json(result);
+
+    if (provider === 'imagen4') {
+      if (!getGoogleApiKey()) {
+        return res.status(400).json({ error: 'Google AI Studio key is not configured. Add GEMINI_API_KEY, GOOGLE_API_KEY, or save a Gemini key in Settings → Platform.' });
+      }
+      const result = await createGoogleImageAsset({
+        prompt,
+        aspectRatio: String(req.body?.aspect_ratio || '1:1'),
+        role: String(req.body?.role || 'content'),
+        label: String(req.body?.label || ''),
+        notes: String(req.body?.notes || ''),
+        brandFamilyId: req.body?.brand_family_id || null,
+      });
+      return res.json(result);
+    }
+
+    return res.status(409).json({ error: `${requestedRaw} is not a known image provider.` });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

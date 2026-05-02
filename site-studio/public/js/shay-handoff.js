@@ -81,9 +81,13 @@
 
   function takeToWorkshop(opts) {
     var payload = buildPayload(opts);
+    // SHAY V2 (2026-05-02 iter 3): cross-Studio routing.
+    // payload.destination_surface can be 'workshop' (same Studio) or '<studio>.workshop'
+    // (cross-Studio, e.g. 'media_studio.workshop'). The receiver handles routing.
     inflight[payload.handoff_id] = payload;
 
     // Switch to the Workshop tab (internal id stays 'shay' for backwards compat).
+    // Future: if cross-studio, also navigate to that Studio's Workshop entry point.
     if (window.StudioShell && typeof window.StudioShell.switchTab === 'function') {
       window.StudioShell.switchTab('shay');
     }
@@ -94,6 +98,27 @@
     // Mirror to console for inspection during dev.
     console.log('[shay] handoff → Workshop', payload);
     return payload;
+  }
+
+  function takeToStudio(studio_id, opts) {
+    // Cross-Studio variant: explicitly target another Studio's Workshop.
+    opts = opts || {};
+    opts.return_path = opts.return_path || { to_surface: 'shay-shay', to_studio: getCurrentStudio(), as_message: null };
+    var payload = buildPayload(opts);
+    payload.destination_surface = studio_id + '.workshop';
+    payload.destination_studio = studio_id;
+    inflight[payload.handoff_id] = payload;
+    window.dispatchEvent(new CustomEvent('shay:handoff:received', { detail: payload }));
+    console.log('[shay] cross-studio handoff →', studio_id, payload);
+    return payload;
+  }
+
+  function getCurrentStudio() {
+    if (window.ShayContextRegistry && window.ShayContextRegistry.getActivePageId) {
+      var id = window.ShayContextRegistry.getActivePageId();
+      if (id && id.includes('.')) return id.split('.')[0];
+    }
+    return 'site_studio';
   }
 
   function returnToShayShay(opts) {
@@ -255,6 +280,7 @@
 
   window.ShayHandoff = {
     takeToWorkshop: takeToWorkshop,
+    takeToStudio: takeToStudio,           // SHAY V2 iter 3: cross-Studio routing
     returnToShayShay: returnToShayShay,
     listInflight: listInflight,
     buildPayload: buildPayload,

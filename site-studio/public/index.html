@@ -600,7 +600,8 @@
         <div class="shay-lite-panel-actions">
           <button type="button" class="shay-lite-header-btn" onclick="window.PipOrb && window.PipOrb.resetLitePosition && window.PipOrb.resetLitePosition()">Dock Right</button>
           <button type="button" class="shay-lite-header-btn" onclick="window.PipOrb && window.PipOrb.quickShowMe && window.PipOrb.quickShowMe()">Show Me</button>
-          <button type="button" class="shay-lite-header-btn" onclick="StudioShell.switchTab('shay')">Workshop</button>
+          <!-- SHAY V2 (2026-05-02 iter 3): Real handoff trigger. Packages current page context + last user message into a structured payload, then opens Workshop with the handoff banner already rendered. Falls back to plain tab switch if ShayHandoff not loaded. -->
+          <button type="button" class="shay-lite-header-btn" onclick="(function(){if(window.ShayHandoff){var lastInput=document.getElementById('shay-shay-input');var intent=(lastInput&&lastInput.value)||'(no specific intent — opening Workshop for general work)';window.ShayHandoff.takeToWorkshop({user_intent:intent});}else{StudioShell.switchTab('shay');}})()">→ Workshop</button>
         </div>
       </div>
       <div id="shay-lite-mode-switch" class="shay-lite-mode-switch"></div>
@@ -650,6 +651,10 @@
   <script src="js/shay-handoff.js"></script>
   <!-- SHAY V2 (2026-05-02): Workshop tool rail (Cowork-pattern, pluggable) + 2 starter tools -->
   <script src="js/shay-workshop.js"></script>
+  <!-- SHAY V2 (2026-05-02 iter 3): Capture Inspector tool (registers with workshop) -->
+  <script src="js/shay-workshop-tool-capture.js"></script>
+  <!-- SHAY V2 (2026-05-02 iter 3): Show-Me-How routine engine + starter routine -->
+  <script src="js/shay-routine.js"></script>
   <script src="js/studio-orb.js"></script>
   <script src="js/studio-brief.js"></script>
   <script src="js/studio-screens.js"></script>

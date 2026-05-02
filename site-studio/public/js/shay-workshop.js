@@ -228,19 +228,49 @@
   });
 
   // ── Built-in: Active Job Tracker ──────────────────────────────────────────
+  // SHAY V2 (2026-05-02 iter 3): now fetches live data from /api/jobs.
   registerTool({
     id: 'active-job',
     name: 'Active Job',
     icon: '◌',
     appliesTo: ['*'],
-    panel: function (container) {
+    panel: async function (container) {
       container.appendChild(el('div', { style: { fontSize: '11px', color: 'var(--fam-gold)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700', marginBottom: '8px' } }, 'Active Job'));
       container.appendChild(el('h2', { style: { fontSize: '18px', fontWeight: '700', marginBottom: '4px', color: 'var(--fam-text)' } }, 'What Shay is doing right now'));
-      container.appendChild(el('p', { style: { color: 'var(--fam-text-2)', fontSize: '12px', marginBottom: '16px' } }, 'Live view of in-flight jobs from the Studio job queue (lib/job-queue.js).'));
+      container.appendChild(el('p', { style: { color: 'var(--fam-text-2)', fontSize: '12px', marginBottom: '16px' } }, 'Live from /api/jobs. Auto-refreshes every 5s while panel is open.'));
       const list = el('div', { id: 'shay-workshop-active-jobs', style: { display: 'flex', flexDirection: 'column', gap: '8px' } });
       container.appendChild(list);
-      list.appendChild(el('div', { style: { padding: '14px', border: '1px dashed var(--fam-border)', borderRadius: '10px', color: 'var(--fam-text-3)', fontSize: '12px', textAlign: 'center' } }, 'No active jobs. (MVP: live polling against /api/jobs is wired in iteration 3.)'));
-      container.appendChild(el('div', { style: { marginTop: '14px', padding: '10px 12px', background: 'rgba(245,196,0,0.08)', border: '1px solid rgba(245,196,0,0.2)', borderRadius: '8px', fontSize: '11px', color: 'var(--fam-text-2)' } }, 'Iteration 3 will add: live polling, WebSocket subscription, parking/approving inline.'));
+
+      async function refresh() {
+        list.innerHTML = '';
+        try {
+          const r = await fetch('/api/jobs?limit=20', { credentials: 'same-origin' });
+          if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+          const data = await r.json();
+          const jobs = data.jobs || [];
+          if (jobs.length === 0) {
+            list.appendChild(el('div', { style: { padding: '14px', border: '1px dashed var(--fam-border)', borderRadius: '10px', color: 'var(--fam-text-3)', fontSize: '12px', textAlign: 'center' } }, 'No active jobs.'));
+            return;
+          }
+          for (const j of jobs) {
+            const statusColor = j.status === 'running' ? 'var(--fam-blue,#60a5fa)' : (j.status === 'done' ? 'var(--fam-green,#4ade80)' : (j.status === 'failed' ? 'var(--fam-red,#f87171)' : 'var(--fam-text-3)'));
+            list.appendChild(el('div', { style: { padding: '10px 12px', background: 'var(--fam-bg-2)', border: '1px solid var(--fam-border)', borderRadius: '8px', fontSize: '12px', display: 'flex', gap: '12px', alignItems: 'center' } }, [
+              el('span', { style: { fontFamily: 'monospace', fontSize: '10px', color: 'var(--fam-text-3)' } }, (j.id || '').slice(0, 8)),
+              el('span', { style: { fontWeight: '600', color: 'var(--fam-text)' } }, j.type || '—'),
+              el('span', { style: { fontSize: '11px', color: 'var(--fam-text-2)' } }, j.site_tag || '(global)'),
+              el('span', { style: { marginLeft: 'auto', padding: '2px 8px', borderRadius: '99px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: statusColor, border: '1px solid currentColor' } }, j.status || 'unknown')
+            ]));
+          }
+        } catch (err) {
+          list.appendChild(el('div', { style: { padding: '12px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.32)', borderRadius: '8px', color: 'var(--fam-red,#f87171)', fontSize: '12px' } }, '/api/jobs error: ' + err.message));
+        }
+      }
+
+      await refresh();
+      const interval = setInterval(() => {
+        if (window.ShayWorkshop && window.ShayWorkshop.getActiveToolId() === 'active-job') refresh();
+        else clearInterval(interval);
+      }, 5000);
     }
   });
 
