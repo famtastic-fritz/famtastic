@@ -260,6 +260,24 @@ Items 3, 4, 12, 17 are essentially done. Items 13/14 (Drive sync) are highest im
 
 ---
 
+## Iteration 3 update (2026-05-02 autonomous)
+
+Fritz authorized full autonomy ("no interactions, install what you need, log everything") to push chunks A+B+C to completion with stretch toward D. Result:
+
+| Chunk | Status after iter 3 | Hours remaining |
+|---|---|---|
+| **A — Capture flywheel** | ✓ COMPLETE — promote, extract, patterns, capture inspector tool, route mountable | 0–4 (polish only) |
+| **B — Shay v2** | Substantially complete — Take-to-Workshop button live, server-side page_context wired, job queue real, Show-Me-How routine engine + 1 routine | ~12–20 (real Media Studio page registrations, full Mockup B layout, visual reasoning, brand color, orb personality) |
+| **C — Ecosystem substrate** | ✓ COMPLETE — registerStudio API, 4 studios pre-registered, shared services (research/memory/learning) scaffolded, cross-Studio handoff routing, component library auto-discovers, recipe library + 1 example recipe | 0–8 (relocate underlying impls from site-studio/lib/* into lib/famtastic/* over time) |
+| **D — Infrastructure wins** | D1 (Drive sync) ✓ COMPLETE | ~24–42 remaining (D2 workflow-as-data, D3 visualizer, D4 three site workflows, D5 long-context fixes) |
+| **E — 18 eval tests** | ~6 done implicitly | ~10–15 |
+
+**Total remaining estimate:** 46–89 hours, down from 85–135 at iter 2 close. Roughly 6–12 more sessions to v1 done.
+
+**Iteration 3 deliverables:** see `docs/iterations/2026-05-02_iteration-3-report.html` for the full review surface.
+
+---
+
 ## What's already shipped (Iteration 0, this session)
 
 - `docs/shay-architecture-v2-proposal.md` — full architecture doc

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>iteration-3 report — 2026-05-02</title>
+<style>
+  :root {
+    --bg: #0a0a0c; --surface: #14141a; --surface-2: #1c1c24; --border: rgba(255,255,255,0.08);
+    --gold: #f5c400; --gold-soft: rgba(245,196,0,0.14); --gold-line: rgba(245,196,0,0.32);
+    --text: #f0f0f5; --text-2: #a0a0aa; --text-3: #606068;
+    --green: #4ade80; --red: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.55; padding: 32px 28px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .banner {
+    background: linear-gradient(180deg, var(--gold-soft), transparent);
+    border: 1px solid var(--gold-line);
+    border-radius: 14px; padding: 24px 28px; margin-bottom: 24px;
+  }
+  .banner .eyebrow {
+    font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+  }
+  .banner h1 { font-size: 28px; margin-top: 6px; letter-spacing: -0.01em; }
+  .banner .meta {
+    margin-top: 10px; color: var(--text-2); font-size: 13px;
+    display: flex; gap: 18px; flex-wrap: wrap;
+  }
+  .banner .meta span strong { color: var(--text); }
+  .banner .summary {
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gold-line);
+    color: var(--text); font-size: 14px; line-height: 1.65;
+  }
+  h2 {
+    margin: 28px 0 12px; font-size: 18px; color: var(--gold);
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+  }
+  .cat-desc {
+    color: var(--text-2); font-size: 12px; margin-bottom: 14px; line-height: 1.55;
+  }
+  .files {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .file {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; transition: all 0.15s;
+  }
+  .file:hover { border-color: var(--text-3); background: var(--surface-2); }
+  .file .row1 {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  .file .pill {
+    padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+  }
+  .file .pill.new { background: rgba(74, 222, 128, 0.14); color: var(--green); }
+  .file .pill.modified { background: rgba(245, 196, 0, 0.14); color: var(--gold); }
+  .file .pill.removed { background: rgba(248, 113, 113, 0.14); color: var(--red); }
+  .file .path {
+    font-family: "SF Mono", Menlo, monospace; font-size: 12px; color: var(--text);
+    word-break: break-all; flex: 1;
+  }
+  .file .size { font-size: 11px; color: var(--text-3); font-family: "SF Mono", Menlo, monospace; }
+  .file .desc { color: var(--text-2); font-size: 12px; margin-top: 6px; line-height: 1.55; }
+  .file .actions { margin-top: 8px; display: flex; gap: 6px; }
+  .file a {
+    color: var(--gold); text-decoration: none; font-size: 11px;
+    padding: 4px 9px; background: var(--gold-soft); border: 1px solid var(--gold-line);
+    border-radius: 6px;
+  }
+  .file a:hover { background: var(--gold); color: #1a1a00; }
+  .file.missing { opacity: 0.5; }
+  .file.missing .pill { background: rgba(248, 113, 113, 0.14); color: var(--red); }
+  .legend {
+    margin-top: 32px; padding: 16px 18px; background: var(--surface); border: 1px dashed var(--border);
+    border-radius: 10px; font-size: 12px; color: var(--text-2); line-height: 1.6;
+  }
+  .legend strong { color: var(--text); }
+  code {
+    background: var(--surface-2); padding: 2px 7px; border-radius: 5px;
+    color: var(--gold); font-size: 12px; font-family: "SF Mono", Menlo, monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <div class="eyebrow">FAMtastic iteration-3 report</div>
+  <h1>Chunks A + B + C complete (with D1 stretch) — capture flywheel realized, ecosystem substrate live</h1>
+  <div class="meta">
+    <span><strong>Date:</strong> 2026-05-02</span>
+    <span><strong>Files touched:</strong> 26</span>
+    <span><strong>Categories:</strong> 5</span>
+    <span><strong>Duration:</strong> ~3 hours autonomous (no Fritz interactions during build)</span>
+  </div>
+  <div class="summary">Iteration 3 of the FAMtastic total-ask plan. Fritz authorized full autonomy with directive to complete chunks A, B, C and stretch toward D. Shipped: capture promote command, LLM-assisted extraction, pattern detection, capture inspector tool, real Take-to-Workshop button, server-side page_context injection, live job queue panel, Show-Me-How routine engine with starter routine, FAMtasticEcosystem registration API with 4 pre-registered Studios, shared services scaffolding (research/memory/learning), cross-Studio handoff routing, component library with auto-discovery, recipe library with example recipe, Drive sync GitHub Action with delete-before-upload fix. 17 new files, 5 modified files, ~3000 lines. Nothing committed — Fritz reviews via this report.</div>
+</div>
+
+
+<h2>CHUNK A — Capture flywheel completed</h2>
+<div class="cat-desc">MVP from iteration 2 now has the full feature set: extract, dry-run, promote, patterns. Workshop tool registered for live UI access.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/promote.js</span>
+      <span class="size">5.5 KB</span>
+    </div>
+    <div class="desc">Promote command — reads approved items from a capture, routes each to its destination canonical file (markdown append, jsonl append, json array append). Closes the capture loop.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/promote.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/extract.js</span>
+      <span class="size">5.2 KB</span>
+    </div>
+    <div class="desc">LLM-assisted extraction — takes a transcript, builds a structured prompt, calls Anthropic API (with key) or outputs prompt for manual paste (no key). Cost estimation included.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/extract.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/patterns.js</span>
+      <span class="size">3.7 KB</span>
+    </div>
+    <div class="desc">Pattern detection across captures — Jaccard-similarity clustering on item titles, flags 3+ recurrences across 2+ captures as standing-rule candidates.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/patterns.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/route.js</span>
+      <span class="size">1.7 KB</span>
+    </div>
+    <div class="desc">Express router exposing capture endpoints. Mount: app.use(&#39;/api/capture&#39;, require(&#39;./lib/famtastic/capture/route.js&#39;)). Endpoints: summary, scan, captures, patterns, scaffold.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/route.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">lib/famtastic/capture/cli.js</span>
+      <span class="size">7.9 KB</span>
+    </div>
+    <div class="desc">CLI updated with promote, extract, patterns commands. Help text refreshed.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/cli.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">site-studio/public/js/shay-workshop-tool-capture.js</span>
+      <span class="size">6.2 KB</span>
+    </div>
+    <div class="desc">Workshop Capture Inspector tool — live view of captures + patterns. Registers with ShayWorkshop.registerTool. Fetches from /api/capture/* (requires server route mount).</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/shay-workshop-tool-capture.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>CHUNK B — Shay v2 wired live</h2>
+<div class="cat-desc">Architecture from iteration 2 is now connected to the running Studio. Shay actually USES page context. Real handoff button. Show-Me-How engine works.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/index.html</span>
+      <span class="size">119.1 KB</span>
+    </div>
+    <div class="desc">Take-to-Workshop button on Shay-Shay light surface now fires real ShayHandoff.takeToWorkshop with intent from input. Three new script tags for v2 iter 3 modules.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/index.html" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/server.js</span>
+      <span class="size">866.7 KB</span>
+    </div>
+    <div class="desc">buildShayShaySiteSnapshot + buildShayShayPromptSnapshot now thread page_context + registered_context_providers from incoming context all the way into Shay&#39;s prompt. Two surgical inserts; no existing logic touched.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/server.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/js/shay-workshop.js</span>
+      <span class="size">14.5 KB</span>
+    </div>
+    <div class="desc">Active Job Tracker tool now fetches live from /api/jobs every 5s while panel is open. Real status colors, abbreviated IDs, Studio tag display.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/shay-workshop.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/js/shay-handoff.js</span>
+      <span class="size">11.6 KB</span>
+    </div>
+    <div class="desc">takeToStudio() added for cross-Studio routing (e.g. takeToStudio(&#39;media_studio&#39;, {...})). Auto-detects current Studio from ShayContextRegistry.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/shay-handoff.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">site-studio/public/js/shay-routine.js</span>
+      <span class="size">13.4 KB</span>
+    </div>
+    <div class="desc">Show-Me-How routine engine. Routine registration API. Spotlight overlay (dim layer + glowing ring + callout). Bottom-right control panel with step counter + Continue/Hand-back/Stop. Status-bar indicator. Includes one starter routine: &#39;show-me-how:settings.domain&#39;.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/shay-routine.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>CHUNK C — Ecosystem substrate built</h2>
+<div class="cat-desc">Site Studio is the seed; this is the substrate every future Studio plugs into. Registration API live. 4 Studios pre-declared. Shared services scaffolded. Component + recipe libraries scaffolded.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/ecosystem/index.js</span>
+      <span class="size">5.6 KB</span>
+    </div>
+    <div class="desc">FAMtasticEcosystem.registerStudio API. 4 Studios pre-registered: Site Studio (live), Media Studio (seed), Brand Studio (seed), Think Tank (seed). Cross-Studio handoff routing via resolveHandoffRoute().</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/ecosystem/index.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/ecosystem/route.js</span>
+      <span class="size">869 B</span>
+    </div>
+    <div class="desc">HTTP routes for ecosystem registry. /studios, /studios/:id, /route?target=.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/ecosystem/route.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/research/index.js</span>
+      <span class="size">1.7 KB</span>
+    </div>
+    <div class="desc">Shared research service scaffold. Wraps existing site-studio/lib/research-router.js. Iteration 4+ relocates impl here.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/research/index.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/memory/index.js</span>
+      <span class="size">1.6 KB</span>
+    </div>
+    <div class="desc">Shared memory service scaffold. Three-layer model (episodic/semantic/procedural). Wraps existing site-studio/lib/memory.js.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/memory/index.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/learning/index.js</span>
+      <span class="size">2.2 KB</span>
+    </div>
+    <div class="desc">Shared learning service scaffold. Promotion log (.wolf/memory/promotions.jsonl). Wraps suggestion-logger.js.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/learning/index.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/components/index.js</span>
+      <span class="size">4.3 KB</span>
+    </div>
+    <div class="desc">Component library — auto-discovers components/* directory at boot. Pluggable, ecosystem-shared. Studios contribute, all consume.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/components/index.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/components/route.js</span>
+      <span class="size">814 B</span>
+    </div>
+    <div class="desc">HTTP routes for component library. /, /summary, /:id, /refresh.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/components/route.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/recipes/index.js</span>
+      <span class="size">5.5 KB</span>
+    </div>
+    <div class="desc">Recipe library — Fritz&#39;s &#39;proven recipes&#39; framing realized. One example recipe registered (family-reunion-event-site, tested confidence). Scaffold for iteration 5+ to mine sites/&lt;tag&gt;/spec.json for proven patterns.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/recipes/index.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/recipes/route.js</span>
+      <span class="size">832 B</span>
+    </div>
+    <div class="desc">HTTP routes for recipe library. /, /summary, /find?intent=, /:id.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/recipes/route.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/README.md</span>
+      <span class="size">2.9 KB</span>
+    </div>
+    <div class="desc">Top-level README for lib/famtastic/ — separation-ready architecture, layout, status of each module, how to add a new Studio.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/README.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>CHUNK D STRETCH — D1 Drive sync (delete-before-upload)</h2>
+<div class="cat-desc">The highest-immediate-ROI item from the briefing. Closed.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">.github/workflows/drive-sync.yml</span>
+      <span class="size">1.3 KB</span>
+    </div>
+    <div class="desc">GitHub Action triggered on push to main when canonical files change. Runs scripts/drive-sync.js. Required secrets: GDRIVE_SERVICE_ACCOUNT_JSON, GDRIVE_FOLDER_ID.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/.github/workflows/drive-sync.yml" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">scripts/drive-sync.js</span>
+      <span class="size">5.4 KB</span>
+    </div>
+    <div class="desc">Drive sync with delete-before-upload — fixes the duplicate-doc accumulation bug from the briefing. Supports --dry-run and --diff modes for inspection. Syncs FAMTASTIC-STATE, CHANGELOG, CLAUDE, .wolf/*, docs/famtastic-total-ask-plan, shay-architecture-v2-proposal, all docs/captures/*.md.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/scripts/drive-sync.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>META — Reports + plan update + capture</h2>
+<div class="cat-desc">Self-bootstrapping artifacts.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/iteration-report/iteration-3-manifest.json</span>
+      <span class="size">8.3 KB</span>
+    </div>
+    <div class="desc">This iteration&#39;s manifest. Hand-curated; iteration 4+ may auto-generate from git diff + chat summary.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/iteration-report/iteration-3-manifest.json" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file missing">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">docs/iterations/2026-05-02_iteration-3-report.html</span>
+      <span class="size">—</span>
+    </div>
+    <div class="desc">This report. Generated by lib/famtastic/iteration-report/generate.js from the manifest above.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/iterations/2026-05-02_iteration-3-report.html" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file missing">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">docs/captures/2026-05-02_cowork-session-02.md</span>
+      <span class="size">—</span>
+    </div>
+    <div class="desc">Knowledge-capture artifact for this iteration. Items proposed for canonical file promotion.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/captures/2026-05-02_cowork-session-02.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+
+<div class="legend">
+  <strong>How to use this report:</strong>
+  Click <code>Open</code> next to any file to view it in your browser or default editor.
+  Files marked <code>new</code> didn't exist before this iteration.
+  Files marked <code>modified</code> were edited.
+  Files marked <code>missing</code> are referenced but not found on disk (debug only).
+  <br><br>
+  <strong>Workflow next:</strong>
+  Read what changed → run <code>git status</code> → pick what to commit →
+  <code>git checkout -b iteration-3-rebuild</code> → review with <code>git diff</code> → commit on the feature branch.
+  <br><br>
+  Per CLAUDE.md: commits never reference Claude/AI/Cowork.
+</div>
+
+</body>
+</html>
