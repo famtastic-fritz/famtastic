@@ -1,0 +1,40 @@
+name: drive-sync
+# SHAY V2 (2026-05-02 iter 3): Push canonical FAMtastic files to Google Drive
+# with delete-before-upload to prevent duplicate accumulation. Runs on every
+# push to main. Required GitHub secrets:
+#   GDRIVE_SERVICE_ACCOUNT_JSON  — Google service account credential (full JSON)
+#   GDRIVE_FOLDER_ID             — Drive folder where canonical files land
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'FAMTASTIC-STATE.md'
+      - 'CHANGELOG.md'
+      - 'CLAUDE.md'
+      - 'famtastic-dna.md'
+      - 'FAMTASTIC-VISION.md'
+      - 'SITE-LEARNINGS.md'
+      - '.wolf/cerebrum.md'
+      - '.wolf/anatomy.md'
+      - '.wolf/buglog.json'
+      - 'docs/famtastic-total-ask-plan.md'
+      - 'docs/shay-architecture-v2-proposal.md'
+      - 'docs/captures/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Drive SDK
+        run: npm install --no-save googleapis@137
+      - name: Sync to Drive (delete-before-upload)
+        env:
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: node scripts/drive-sync.js
