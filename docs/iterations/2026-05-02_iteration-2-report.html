@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>iteration-2 report — 2026-05-02</title>
+<style>
+  :root {
+    --bg: #0a0a0c; --surface: #14141a; --surface-2: #1c1c24; --border: rgba(255,255,255,0.08);
+    --gold: #f5c400; --gold-soft: rgba(245,196,0,0.14); --gold-line: rgba(245,196,0,0.32);
+    --text: #f0f0f5; --text-2: #a0a0aa; --text-3: #606068;
+    --green: #4ade80; --red: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.55; padding: 32px 28px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .banner {
+    background: linear-gradient(180deg, var(--gold-soft), transparent);
+    border: 1px solid var(--gold-line);
+    border-radius: 14px; padding: 24px 28px; margin-bottom: 24px;
+  }
+  .banner .eyebrow {
+    font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+  }
+  .banner h1 { font-size: 28px; margin-top: 6px; letter-spacing: -0.01em; }
+  .banner .meta {
+    margin-top: 10px; color: var(--text-2); font-size: 13px;
+    display: flex; gap: 18px; flex-wrap: wrap;
+  }
+  .banner .meta span strong { color: var(--text); }
+  .banner .summary {
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gold-line);
+    color: var(--text); font-size: 14px; line-height: 1.65;
+  }
+  h2 {
+    margin: 28px 0 12px; font-size: 18px; color: var(--gold);
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+  }
+  .cat-desc {
+    color: var(--text-2); font-size: 12px; margin-bottom: 14px; line-height: 1.55;
+  }
+  .files {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .file {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; transition: all 0.15s;
+  }
+  .file:hover { border-color: var(--text-3); background: var(--surface-2); }
+  .file .row1 {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  .file .pill {
+    padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+  }
+  .file .pill.new { background: rgba(74, 222, 128, 0.14); color: var(--green); }
+  .file .pill.modified { background: rgba(245, 196, 0, 0.14); color: var(--gold); }
+  .file .pill.removed { background: rgba(248, 113, 113, 0.14); color: var(--red); }
+  .file .path {
+    font-family: "SF Mono", Menlo, monospace; font-size: 12px; color: var(--text);
+    word-break: break-all; flex: 1;
+  }
+  .file .size { font-size: 11px; color: var(--text-3); font-family: "SF Mono", Menlo, monospace; }
+  .file .desc { color: var(--text-2); font-size: 12px; margin-top: 6px; line-height: 1.55; }
+  .file .actions { margin-top: 8px; display: flex; gap: 6px; }
+  .file a {
+    color: var(--gold); text-decoration: none; font-size: 11px;
+    padding: 4px 9px; background: var(--gold-soft); border: 1px solid var(--gold-line);
+    border-radius: 6px;
+  }
+  .file a:hover { background: var(--gold); color: #1a1a00; }
+  .file.missing { opacity: 0.5; }
+  .file.missing .pill { background: rgba(248, 113, 113, 0.14); color: var(--red); }
+  .legend {
+    margin-top: 32px; padding: 16px 18px; background: var(--surface); border: 1px dashed var(--border);
+    border-radius: 10px; font-size: 12px; color: var(--text-2); line-height: 1.6;
+  }
+  .legend strong { color: var(--text); }
+  code {
+    background: var(--surface-2); padding: 2px 7px; border-radius: 5px;
+    color: var(--gold); font-size: 12px; font-family: "SF Mono", Menlo, monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <div class="eyebrow">FAMtastic iteration-2 report</div>
+  <h1>Shay v2 architecture rebuild + capture flywheel MVP</h1>
+  <div class="meta">
+    <span><strong>Date:</strong> 2026-05-02</span>
+    <span><strong>Files touched:</strong> 25</span>
+    <span><strong>Categories:</strong> 8</span>
+    <span><strong>Duration:</strong> ~5 hours (across two sessions)</span>
+  </div>
+  <div class="summary">Iteration 2 of the FAMtastic total-ask plan. Shipped: Shay v2 architecture (6→2 surface consolidation, page-context registry, handoff contract), audit fixes (composer reflow, MutationObserver, layer isolation), Workshop rename + tighten, capture tool MVP (lib/famtastic/capture/), Web chat exporter (bookmarklet + userscript + manual fallback), Workshop tool rail (Cowork-pattern + 2 starter tools), this report generator. Nothing committed — Fritz reviews and commits manually.</div>
+</div>
+
+
+<h2>Architecture &amp; planning docs</h2>
+<div class="cat-desc">Living documents that describe the FAMtastic system. Read these first.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">docs/famtastic-total-ask-plan.md</span>
+      <span class="size">16.7 KB</span>
+    </div>
+    <div class="desc">The master plan. North Star, 4-layer architecture, 5 chunks (capture flywheel, Shay v2, ecosystem substrate, infrastructure wins, 18-test eval), iteration cadence. Read this first.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/famtastic-total-ask-plan.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">docs/shay-architecture-v2-proposal.md</span>
+      <span class="size">20.9 KB</span>
+    </div>
+    <div class="desc">Shay v2 architecture. Two surfaces (Shay-Shay + Workshop), one identity. Handoff contract, page-context registry, tool rail. Updated 2026-05-02b with explicit ecosystem framing (substrate scales to N Studios).</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/shay-architecture-v2-proposal.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">docs/captures/2026-05-02_cowork-session-01.md</span>
+      <span class="size">16.4 KB</span>
+    </div>
+    <div class="desc">First knowledge-capture artifact. 6 decisions, 5 breakthroughs, 7 gaps, 7 lessons, 3 contradictions, 2 patterns. Each item is PROPOSED — Fritz reviews and approves item-by-item.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/captures/2026-05-02_cowork-session-01.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>Visual mockups</h2>
+<div class="cat-desc">Static HTML targets that the implementation should converge on. Open each in browser.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">docs/mockups/mockup-a-shay-shay-on-media-studio.html</span>
+      <span class="size">20.4 KB</span>
+    </div>
+    <div class="desc">Mockup A: Shay-Shay on Media Studio. Page-context awareness, inline visual reasoning, action chips, Take-to-Workshop handoff trigger.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/mockups/mockup-a-shay-shay-on-media-studio.html" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">docs/mockups/mockup-b-shays-workshop.html</span>
+      <span class="size">28.3 KB</span>
+    </div>
+    <div class="desc">Mockup B: Shay&#39;s Workshop. Tool rail (Cowork-style), workbench with active artifact, docked chat, job queue, inherited handoff context.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/mockups/mockup-b-shays-workshop.html" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">docs/mockups/mockup-c-show-me-how.html</span>
+      <span class="size">21.0 KB</span>
+    </div>
+    <div class="desc">Mockup C: Show-Me-How routine. Spotlit UI elements, step counter, hand-back-control affordances.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/docs/mockups/mockup-c-show-me-how.html" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>Studio code — UI fixes &amp; v2 substrate</h2>
+<div class="cat-desc">Live changes to the running Studio. Refresh localhost:3334 in browser to see them.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/index.html</span>
+      <span class="size">118.4 KB</span>
+    </div>
+    <div class="desc">6→2 surface consolidation (sidebar nav row + sidebar pane removed). Desk → Workshop rename. Workshop tab tightened (max-width 920px, no full-width stretch, no extra cards). Input IDs renamed (shay-shay-input, shay-workshop-input, shay-workshop-shell). Three new script tags for v2 modules.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/index.html" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/css/studio-shell.css</span>
+      <span class="size">30.9 KB</span>
+    </div>
+    <div class="desc">Composer fix: padding-right is now fixed 96px instead of var(--shay-lite-safe-area). Kills the &#39;chat moves&#39; feeling caused by JS-driven width recalc.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/css/studio-shell.css" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/css/studio-orb.css</span>
+      <span class="size">28.8 KB</span>
+    </div>
+    <div class="desc">Layer isolation: isolation:isolate on #shay-lite-shell. Z-index races between orb, callout, mode popup, project picker, brain fallback bar resolved. Plus #pip-direct-input → #shay-shay-input rename.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/css/studio-orb.css" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/js/studio-orb.js</span>
+      <span class="size">91.7 KB</span>
+    </div>
+    <div class="desc">MutationObserver quieted (no more orb dancing on every chat append — debounced via rAF, only flips on real state transitions). getShayShayContext() now pulls page_context from ShayContextRegistry. All input ID references renamed.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/studio-orb.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">site-studio/public/js/studio-shell.js</span>
+      <span class="size">59.3 KB</span>
+    </div>
+    <div class="desc">Tab label &#39;Shay&#39; → &#39;Workshop&#39; (internal id stays &#39;shay&#39; for switchTab backwards compat). Input ID references renamed.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/studio-shell.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>v2 substrate — new modules</h2>
+<div class="cat-desc">New JS modules implementing the Shay v2 architecture primitives.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">site-studio/public/js/shay-context-registry.js</span>
+      <span class="size">5.6 KB</span>
+    </div>
+    <div class="desc">Browser-side page-context registry. Pages register; Shay-Shay pulls on demand. Studio-namespaced page IDs (e.g. media_studio.image_grid). Includes __debug.installFakeMediaStudio() for testing.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/shay-context-registry.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">site-studio/public/js/shay-handoff.js</span>
+      <span class="size">10.3 KB</span>
+    </div>
+    <div class="desc">Shay-Shay → Workshop handoff contract. Structured payload (source page, current artifact, intent, success criteria, follow-up jobs). Auto-renders &#39;Handoff from Shay-Shay&#39; banner when received. Includes __debug.demoHandoff() for testing.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/shay-handoff.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">site-studio/public/js/shay-workshop.js</span>
+      <span class="size">12.9 KB</span>
+    </div>
+    <div class="desc">Workshop tool rail (Cowork-pattern). Pluggable, additive, filters by appliesTo + active Studio. Built-in tools: Workbench (default), Active Job, Cost Tracker. Registration API: ShayWorkshop.registerTool({...}).</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/site-studio/public/js/shay-workshop.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>Capture flywheel (Layer 4)</h2>
+<div class="cat-desc">Ecosystem service for ingesting conversations and producing structured captures. Lives in lib/famtastic/, not lib/site-studio/.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/index.js</span>
+      <span class="size">7.5 KB</span>
+    </div>
+    <div class="desc">Main API. scanImports(), scanStudioConversations(), scaffoldCapture(), parseApprovedItems(), dryRunPromote(), summary().</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/index.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/cli.js</span>
+      <span class="size">5.5 KB</span>
+    </div>
+    <div class="desc">CLI: summary, scan, scaffold, dry-run, promote (last not yet implemented). Run with HOME=/path/to/famtastic prefix from sandbox; works natively on user&#39;s machine.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/cli.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/template.md</span>
+      <span class="size">2.3 KB</span>
+    </div>
+    <div class="desc">Scaffold template with item slots (Decision/Breakthrough/Gap/Lesson/Pattern/Contradiction). Each item has STATUS + LANDS IN headers.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/template.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/capture/README.md</span>
+      <span class="size">4.0 KB</span>
+    </div>
+    <div class="desc">Usage guide. Workflow: drop input → scaffold → fill in → dry-run → promote. ID conventions table. Status (MVP vs. iteration 3+).</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/capture/README.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>Web chat exporter</h2>
+<div class="cat-desc">Three install paths to export claude.ai chats into the capture flywheel. Open the HTML, install one, start exporting.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">tools/web-chat-exporter/README.md</span>
+      <span class="size">3.1 KB</span>
+    </div>
+    <div class="desc">Workflow doc. Three install paths (bookmarklet, userscript, manual paste). How outputs feed the capture tool.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/tools/web-chat-exporter/README.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">tools/web-chat-exporter/bookmarklet.html</span>
+      <span class="size">4.3 KB</span>
+    </div>
+    <div class="desc">Drag-to-bookmarks-bar installer. Zero install. Opens chat as markdown in new tab. Save and drop into ~/famtastic/imports/web-chats/.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/tools/web-chat-exporter/bookmarklet.html" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">tools/web-chat-exporter/userscript.js</span>
+      <span class="size">3.6 KB</span>
+    </div>
+    <div class="desc">Tampermonkey/Greasemonkey userscript. Adds Export button to claude.ai. Auto-downloads markdown file.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/tools/web-chat-exporter/userscript.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">tools/web-chat-exporter/normalize.js</span>
+      <span class="size">3.1 KB</span>
+    </div>
+    <div class="desc">Manual paste fallback. Takes raw text dump from claude.ai, heuristically detects message boundaries, normalizes to capture-ready markdown.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/tools/web-chat-exporter/normalize.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>Iteration report system</h2>
+<div class="cat-desc">Self-bootstrapping: this very report was generated by the report generator.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/iteration-report/generate.js</span>
+      <span class="size">9.6 KB</span>
+    </div>
+    <div class="desc">Report generator. Takes a manifest JSON, produces self-contained HTML index of every artifact touched in an iteration.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/iteration-report/generate.js" target="_blank">Open</a>
+      
+    </div>
+  </div>
+  <div class="file ">
+    <div class="row1">
+      <span class="pill new">new</span>
+      <span class="path">lib/famtastic/iteration-report/iteration-2-manifest.json</span>
+      <span class="size">8.4 KB</span>
+    </div>
+    <div class="desc">Manifest for THIS iteration. Hand-written for now; future iterations may auto-generate from git diff + chat transcript.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/lib/famtastic/iteration-report/iteration-2-manifest.json" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+<h2>Documentation updates (.wolf/)</h2>
+<div class="cat-desc">Living architectural memory.</div>
+<div class="files">
+
+  <div class="file ">
+    <div class="row1">
+      <span class="pill modified">modified</span>
+      <span class="path">.wolf/cerebrum.md</span>
+      <span class="size">38.9 KB</span>
+    </div>
+    <div class="desc">ORB_STATE_MACHINE rule updated to 5 valid states (SHAY_THINKING officially joins). Architectural memory of why state machine doc/code drifted, lesson recorded.</div>
+    <div class="actions">
+      <a href="file:///sessions/bold-dazzling-fermat/mnt/famtastic/.wolf/cerebrum.md" target="_blank">Open</a>
+      
+    </div>
+  </div>
+</div>
+
+
+<div class="legend">
+  <strong>How to use this report:</strong>
+  Click <code>Open</code> next to any file to view it in your browser or default editor.
+  Files marked <code>new</code> didn't exist before this iteration.
+  Files marked <code>modified</code> were edited.
+  Files marked <code>missing</code> are referenced but not found on disk (debug only).
+  <br><br>
+  <strong>Workflow next:</strong>
+  Read what changed → run <code>git status</code> → pick what to commit →
+  <code>git checkout -b iteration-2-rebuild</code> → review with <code>git diff</code> → commit on the feature branch.
+  <br><br>
+  Per CLAUDE.md: commits never reference Claude/AI/Cowork.
+</div>
+
+</body>
+</html>
