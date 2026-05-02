@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Claude Chat Exporter — Bookmarklet Installer</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0a0a0c; color: #f0f0f5; max-width: 720px; margin: 0 auto; padding: 40px 24px; line-height: 1.6; }
+  h1 { color: #f5c400; font-weight: 700; letter-spacing: -0.01em; }
+  h2 { margin-top: 28px; font-size: 16px; color: #f5c400; text-transform: uppercase; letter-spacing: 0.06em; }
+  .install-card { background: #14141a; border: 1px solid rgba(245,196,0,0.32); border-radius: 14px; padding: 24px; margin: 20px 0; text-align: center; }
+  .bookmark-btn {
+    display: inline-block;
+    padding: 14px 28px;
+    background: #f5c400;
+    color: #1a1a00;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 10px;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+  }
+  .bookmark-btn:hover { background: #ffd633; }
+  .hint { color: #a0a0aa; font-size: 13px; margin-top: 14px; }
+  ol { padding-left: 24px; }
+  li { margin: 8px 0; }
+  code { background: #1c1c24; padding: 2px 7px; border-radius: 5px; color: #f5c400; font-size: 13px; }
+  pre { background: #1c1c24; padding: 14px 16px; border-radius: 10px; overflow-x: auto; font-size: 12px; color: #a0a0aa; }
+</style>
+</head>
+<body>
+
+<h1>Claude Chat Exporter</h1>
+<p>One-click export of any claude.ai conversation to markdown for the FAMtastic capture flywheel.</p>
+
+<div class="install-card">
+  <a class="bookmark-btn" href="javascript:(function()%7Bvar%20T%3Dnew%20Date().toISOString()%2CU%3Dlocation.href%2CC%3Dnull%3Bvar%20S%3D%5B'%5Bdata-testid%3D%22message%22%5D'%2C'%5Brole%3D%22article%22%5D'%2C'div%5Bclass*%3D%22message%22%5D'%5D%3Bfor(var%20i%3D0%3Bi%3CS.length%3Bi%2B%2B)%7Bvar%20q%3Ddocument.querySelectorAll(S%5Bi%5D)%3Bif(q.length%3E1)%7BC%3DArray.from(q)%3Bbreak%3B%7D%7Dif(!C)%7Balert('No%20chat%20messages%20found.%20Try%20Option%20C%20(manual%20paste)%20in%20the%20README.')%3Breturn%3B%7Dvar%20md%3D'%23%20Claude%20Web%20Chat%20Export%5Cn%5Cn**Exported%3A**%20'%2BT%2B'%5Cn**URL%3A**%20'%2BU%2B'%5Cn**Conversation%20title%3A**%20'%2B(document.title%7C%7C'(unknown)')%2B'%5Cn**Message%20count%3A**%20'%2BC.length%2B'%5Cn**Source%3A**%20bookmarklet%5Cn%5Cn---%5Cn%5Cn'%3Bfor(var%20j%3D0%3Bj%3CC.length%3Bj%2B%2B)%7Bvar%20el%3DC%5Bj%5D%2Crole%3Del.getAttribute('data-message-author-role')%7C%7Cel.getAttribute('data-author')%7C%7C(j%252%3D%3D%3D0%3F'human'%3A'assistant')%2Ctxt%3D(el.innerText%7C%7C'').trim()%3Bmd%2B%3D'%23%23%20'%2B(role.charAt(0).toUpperCase()%2Brole.slice(1))%2B'%20(turn%20'%2B(Math.floor(j%2F2)%2B1)%2B')%5Cn%5Cn'%2Btxt%2B'%5Cn%5Cn---%5Cn%5Cn'%3B%7Dvar%20w%3Dwindow.open('about%3Ablank')%3Bw.document.write('%3Cpre%20style%3D%22white-space%3Apre-wrap%3Bfont-family%3Amonospace%3Bpadding%3A20px%3B%22%3E'%2Bmd.replace(%2F%3C%2Fg%2C'%26lt%3B').replace(%2F%3E%2Fg%2C'%26gt%3B')%2B'%3C%2Fpre%3E')%3Bw.document.title%3D'claude-chat-'%2BT.slice(0%2C10)%2B'.md'%3B%7D)()%3B">Export Claude Chat</a>
+  <div class="hint">↑ Drag this button to your bookmarks bar</div>
+</div>
+
+<h2>Use it</h2>
+<ol>
+  <li>Drag the button above to your bookmarks bar</li>
+  <li>Open any claude.ai conversation</li>
+  <li>Click the bookmark → a new tab opens with the full chat as markdown</li>
+  <li>Cmd+A, Cmd+C the markdown</li>
+  <li>Save to <code>~/famtastic/imports/web-chats/YYYY-MM-DD_&lt;slug&gt;.md</code></li>
+  <li>Run the capture tool: <code>node lib/famtastic/capture/cli.js scan</code></li>
+</ol>
+
+<h2>If it breaks</h2>
+<p>Claude Web's DOM updates over time. The bookmarklet tries three selector patterns. If none match, it shows an alert and you fall back to <strong>Option C</strong> in the README — manual select-all → copy → save → normalize.</p>
+
+<h2>What gets exported</h2>
+<pre># Claude Web Chat Export
+
+**Exported:** 2026-05-02T15:30:00Z
+**URL:** https://claude.ai/chat/...
+**Conversation title:** ...
+**Message count:** N
+**Source:** bookmarklet
+
+---
+
+## Human (turn 1)
+...
+
+---
+
+## Assistant (turn 1)
+...
+
+---
+</pre>
+
+<h2>Why a bookmarklet</h2>
+<p>Zero install. Works in any browser. No extension permission to approve. The tradeoff: limited capability vs. a real extension. For MVP that's the right tradeoff.</p>
+
+<p style="margin-top: 32px; color: #606068; font-size: 12px;">Part of FAMtastic capture flywheel. See <code>lib/famtastic/capture/README.md</code>.</p>
+
+</body>
+</html>

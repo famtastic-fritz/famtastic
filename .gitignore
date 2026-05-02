@@ -20,8 +20,10 @@ site-studio/.env
 # which can include inline env-var API keys. Never tracked.
 .claude/settings.local.json
 
-# Local tools (adb-mcp bridge etc) — machine-specific, not tracked
-tools/
+# Local tools (adb-mcp bridge etc) — machine-specific, not tracked.
+# web-chat-exporter is portable, shared code, so it's tracked.
+tools/adb-mcp/
+tools/cpanel-mcp/
 
 # Session 12 Phase 1 safety net: PENDING-REVIEW.md is supposed to live at
 # ~/PENDING-REVIEW.md (outside the repo). This entry catches the case where
