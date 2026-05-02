@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup C — Show-Me-How Routine</title>
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #14141a;
+    --surface-2: #1c1c24;
+    --surface-3: #25252f;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --gold: #f5c400;
+    --gold-soft: rgba(245, 196, 0, 0.14);
+    --gold-line: rgba(245, 196, 0, 0.32);
+    --gold-glow: rgba(245, 196, 0, 0.55);
+    --text: #f0f0f5;
+    --text-2: #a0a0aa;
+    --text-3: #606068;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ---------- mockup banner ---------- */
+  .mockup-banner {
+    background: linear-gradient(180deg, var(--gold-soft), transparent);
+    border-bottom: 1px solid var(--gold-line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .mockup-banner h1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .mockup-banner .meta {
+    color: var(--text-2);
+    font-size: 12px;
+  }
+  .mockup-banner .meta span { color: var(--text); }
+
+  /* ---------- studio shell (the underlying page being demonstrated) ---------- */
+  .studio-frame {
+    position: relative;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+  .studio {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    grid-template-rows: 48px 1fr 36px;
+    grid-template-areas:
+      "rail topbar"
+      "rail canvas"
+      "rail status";
+    height: 100%;
+    background: var(--bg);
+  }
+  /* dim everything during the routine */
+  .studio.routine-active::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 8, 0.72);
+    z-index: 90;
+    pointer-events: none;
+  }
+
+  .topbar {
+    grid-area: topbar;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+  }
+  .topbar .crumbs {
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .topbar .crumbs span.active { color: var(--text); }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn.primary {
+    background: var(--gold);
+    color: #1a1a00;
+    border-color: var(--gold);
+  }
+
+  /* ---------- rail ---------- */
+  .rail {
+    grid-area: rail;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 6px;
+  }
+  .rail-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 18px;
+  }
+  .rail-btn.active {
+    color: var(--gold);
+    background: var(--gold-soft);
+  }
+  .rail-spacer { flex: 1; }
+
+  /* ---------- canvas (Settings page being shown) ---------- */
+  .canvas {
+    grid-area: canvas;
+    overflow-y: auto;
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 24px;
+  }
+  .canvas h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .settings-rail {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+    height: fit-content;
+  }
+  .settings-rail h3 {
+    padding: 10px 12px 6px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    font-weight: 700;
+  }
+  .settings-rail a {
+    display: block;
+    padding: 8px 12px;
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .settings-rail a:hover { background: var(--surface-2); color: var(--text); }
+  .settings-rail a.active {
+    background: var(--gold-soft);
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .settings-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .settings-section {
+    margin-bottom: 24px;
+  }
+  .settings-section:last-child { margin-bottom: 0; }
+  .settings-section h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .settings-section .help {
+    color: var(--text-2);
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .field {
+    margin-bottom: 14px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input, .field select {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+  }
+  .field .hint {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 4px;
+  }
+  .save-row {
+    display: flex;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ---------- ROUTINE: spotlit target ---------- */
+  .spotlit {
+    position: relative;
+    z-index: 100;
+    background: var(--surface);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    box-shadow:
+      0 0 0 4px rgba(245,196,0,0.18),
+      0 0 60px var(--gold-glow),
+      0 0 0 9999px rgba(5, 5, 8, 0);
+    animation: spotlight-pulse 2s ease-in-out infinite;
+  }
+  @keyframes spotlight-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(245,196,0,0.18), 0 0 60px var(--gold-glow); }
+    50% { box-shadow: 0 0 0 6px rgba(245,196,0,0.25), 0 0 80px rgba(245,196,0,0.7); }
+  }
+  /* attach a step number to spotlit element */
+  .spotlit::before {
+    content: attr(data-step);
+    position: absolute;
+    top: -14px;
+    left: -14px;
+    width: 28px;
+    height: 28px;
+    background: var(--gold);
+    color: #1a1a00;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  }
+
+  /* ---------- ROUTINE: callout ---------- */
+  .callout {
+    position: absolute;
+    z-index: 110;
+    background: var(--surface);
+    border: 1px solid var(--gold-line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    width: 320px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+  }
+  .callout::before {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: var(--surface);
+    border-left: 1px solid var(--gold-line);
+    border-bottom: 1px solid var(--gold-line);
+    transform: rotate(45deg);
+  }
+  .callout.attach-right::before {
+    left: -8px;
+    top: 32px;
+  }
+  .callout.attach-left::before {
+    right: -8px;
+    top: 32px;
+    transform: rotate(-135deg);
+  }
+  .callout-eyebrow {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .callout h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .callout p {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+  .callout .row {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .callout .chip {
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .callout .chip.gold {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border-color: var(--gold-line);
+  }
+
+  /* position the callout for THIS step (Domain field) */
+  .callout-domain {
+    top: 220px;
+    right: 64px;
+  }
+  /* Shay's overall routine panel - where she lives during the demo */
+  .routine-panel {
+    position: fixed;
+    z-index: 200;
+    bottom: 60px;
+    right: 24px;
+    width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--gold-line);
+    border-radius: 14px;
+    box-shadow: 0 16px 50px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,196,0,0.18);
+    overflow: hidden;
+  }
+  .routine-header {
+    background: linear-gradient(180deg, var(--gold-soft), transparent);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .shay-orb {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe066, #f5c400 50%, #b8920a 100%);
+    box-shadow: 0 0 0 2px rgba(245,196,0,0.18), 0 0 24px rgba(245,196,0,0.5);
+    flex-shrink: 0;
+    animation: orb-active 2s ease-in-out infinite;
+  }
+  @keyframes orb-active {
+    0%, 100% { transform: translateY(0); box-shadow: 0 0 0 2px rgba(245,196,0,0.18), 0 0 24px rgba(245,196,0,0.4); }
+    50% { transform: translateY(-2px); box-shadow: 0 0 0 4px rgba(245,196,0,0.28), 0 0 36px rgba(245,196,0,0.6); }
+  }
+  .routine-header .title { font-size: 13px; font-weight: 600; }
+  .routine-header .state {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-2);
+    margin-top: 2px;
+  }
+  .routine-header .state .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .routine-step {
+    padding: 14px;
+  }
+  .step-counter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .step-counter .label {
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .step-counter .progress {
+    display: flex;
+    gap: 4px;
+  }
+  .step-counter .dot {
+    width: 24px;
+    height: 4px;
+    background: var(--surface-3);
+    border-radius: 2px;
+  }
+  .step-counter .dot.done { background: var(--gold); }
+  .step-counter .dot.current { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+  .step-task {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    margin-bottom: 12px;
+  }
+  .step-task .what {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .step-task .what strong { color: var(--gold); }
+  .step-controls {
+    display: flex;
+    gap: 6px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .ctrl-btn:hover { color: var(--text); border-color: var(--text-3); }
+  .ctrl-btn.primary {
+    background: var(--gold);
+    color: #1a1a00;
+    border-color: var(--gold);
+  }
+  .ctrl-btn.danger {
+    color: var(--text-3);
+  }
+  .original-question {
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-3);
+    font-style: italic;
+  }
+  .original-question strong { color: var(--text-2); font-style: normal; }
+
+  /* status bar */
+  .status {
+    grid-area: status;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 18px;
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .status .green { color: var(--green); }
+
+  /* Annotations */
+  .annotations {
+    padding: 18px 24px 28px;
+    background: linear-gradient(180deg, transparent, rgba(245,196,0,0.04));
+    border-top: 1px solid var(--border);
+  }
+  .annotations h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .annot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .annot {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .annot .num {
+    display: inline-block;
+    background: var(--gold);
+    color: #1a1a00;
+    font-weight: 700;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .annot .what {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .annot .why {
+    color: var(--text-2);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-banner">
+  <h1>Mockup C — Show-Me-How routine</h1>
+  <div class="meta">User asked: <span>"I don't know how to change the site domain, can you show me where?"</span></div>
+</div>
+
+<div class="studio-frame">
+  <div class="studio routine-active">
+
+    <!-- LEFT RAIL -->
+    <div class="rail">
+      <div class="rail-btn">⌂</div>
+      <div class="rail-btn">▦</div>
+      <div class="rail-btn">◷</div>
+      <div class="rail-btn">⊕</div>
+      <div class="rail-btn">⌕</div>
+      <div class="rail-spacer"></div>
+      <div class="rail-btn" style="color: var(--gold);" title="Shay-Shay">★</div>
+      <div class="rail-btn active" title="Settings">⚙</div>
+    </div>
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="crumbs">Site Studio / Settings / <span class="active">Site config</span></div>
+      <div class="actions" style="margin-left:auto;">
+        <button class="btn">Cancel</button>
+        <button class="btn primary">Save changes</button>
+      </div>
+    </div>
+
+    <!-- CANVAS: Settings page -->
+    <div class="canvas">
+      <!-- settings nav -->
+      <aside class="settings-rail">
+        <h3>Site</h3>
+        <a>General</a>
+        <a class="active">Site config</a>
+        <a>Brand</a>
+        <a>Components</a>
+        <h3 style="margin-top: 8px;">Deploy</h3>
+        <a>Staging</a>
+        <a>Production</a>
+        <a>Custom domain</a>
+        <h3 style="margin-top: 8px;">Advanced</h3>
+        <a>Memory</a>
+        <a>API keys</a>
+        <a>Cost limits</a>
+      </aside>
+
+      <!-- settings content -->
+      <div class="settings-content">
+        <h2 style="margin-bottom: 18px;">Site config</h2>
+
+        <div class="settings-section">
+          <h3>Identity</h3>
+          <p class="help">How this site identifies itself to the build pipeline and to the world.</p>
+          <div class="field">
+            <label>Site tag</label>
+            <input value="site-mbsh96reunion" disabled />
+            <div class="hint">Used in URLs and folder paths. Cannot be changed after creation.</div>
+          </div>
+          <div class="field">
+            <label>Display name</label>
+            <input value="MBSH Class of '96 — 30th Reunion" />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Domain</h3>
+          <p class="help">The custom domain this site will deploy to.</p>
+          <!-- THIS IS THE SPOTLIT FIELD -->
+          <div class="field spotlit" data-step="2" id="domain-field">
+            <label>Custom domain</label>
+            <input value="mbsh96reunion.com" />
+            <div class="hint">Must point to FAMtastic's Netlify CNAME. <a style="color:var(--gold);">Show DNS instructions</a></div>
+          </div>
+          <div class="field">
+            <label>Redirect www subdomain</label>
+            <select>
+              <option>Yes — redirect www → apex</option>
+              <option>No — keep separate</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Build</h3>
+          <p class="help">How the site is generated.</p>
+          <div class="field">
+            <label>Default brain</label>
+            <select>
+              <option>Sonnet (recommended)</option>
+              <option>Gemini Flash</option>
+              <option>Codex</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <button class="btn">Cancel</button>
+          <button class="btn primary">Save changes</button>
+        </div>
+      </div>
+
+      <!-- callout pointing at the domain field -->
+      <div class="callout attach-left callout-domain">
+        <div class="callout-eyebrow">Step 2 · Spotlight</div>
+        <h4>This is where you change it.</h4>
+        <p>The "Custom domain" field on the Site config page. Type the new domain here, then click Save changes at the bottom.</p>
+        <div class="row">
+          <span class="chip gold">I'll fill it in</span>
+          <span class="chip">Just show me</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="status">
+      <span class="green">★ Routine active · show_me_how:settings.domain</span>
+      <span style="margin-left:auto;">cowork pattern · navigation step 2/4</span>
+    </div>
+
+  </div>
+
+  <!-- SHAY-SHAY ROUTINE PANEL (her compact form during the demo) -->
+  <aside class="routine-panel">
+    <div class="routine-header">
+      <div class="shay-orb"></div>
+      <div>
+        <div class="title">Shay-Shay · running routine</div>
+        <div class="state"><span class="dot"></span>show_me_how:settings.domain</div>
+      </div>
+    </div>
+
+    <div class="routine-step">
+      <div class="step-counter">
+        <span class="label">Step 2 of 4</span>
+        <div class="progress">
+          <div class="dot done"></div>
+          <div class="dot current"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+
+      <div class="step-task">
+        <div class="what">
+          Brought you to <strong>Settings → Site config</strong> and highlighted the <strong>Custom domain</strong> field. The current value is <strong>mbsh96reunion.com</strong>.
+        </div>
+      </div>
+
+      <div class="step-controls">
+        <button class="ctrl-btn primary">Continue</button>
+        <button class="ctrl-btn">I'll take it from here</button>
+        <button class="ctrl-btn danger">Stop</button>
+      </div>
+    </div>
+
+    <div class="original-question">
+      Original question: <strong>"I don't know how to change the site domain, can you show me where?"</strong>
+    </div>
+  </aside>
+
+</div>
+
+<div class="annotations">
+  <h3>What this mockup shows</h3>
+  <div class="annot-grid">
+    <div class="annot">
+      <div class="what"><span class="num">1</span>Visible navigation, not a help link</div>
+      <div class="why">When the user asks "show me where", Shay-Shay actually navigates the UI to the right page, in front of the user. The page didn't just open — they saw it open. Same pattern Cowork uses to operate this very screen. Trust comes from watching her do it.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">2</span>Spotlit target with step number</div>
+      <div class="why">The Domain field is highlighted with a glow + step number "2". Everything else dims. The eye knows exactly where to look. The callout to the right reinforces with "this is where you change it" and offers two next moves.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">3</span>Shay's compact routine form</div>
+      <div class="why">During a routine she lives bottom-right in this compact panel. Step counter on top (2 of 4 with progress dots). What she just did in the middle. Three controls at the bottom. The original question is footnoted so the user remembers why we're here.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">4</span>Three controls, three intents</div>
+      <div class="why"><strong>Continue</strong> — Shay does the next step (e.g., she fills the value). <strong>I'll take it from here</strong> — clean handoff to the user, routine ends, page stays as-is. <strong>Stop</strong> — bail out, undo the spotlight. No "back" needed; the user is in the app, not a modal.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">5</span>Status bar names the routine</div>
+      <div class="why"><code>show_me_how:settings.domain</code> appears in green at the bottom. The user always knows when a routine is active. When it ends, the bar returns to normal status. Routines are explicit, not magic.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">6</span>This eliminates "two surfaces" thinking</div>
+      <div class="why">There's no Workshop here. There's no Site Studio Chat here. Shay just helped the user do the thing — same Shay you'd see anywhere else, just operating the screen. This is the multifunctional utility model. The two-surface thing only matters when work needs the bench. Most routines don't.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup B — Shay's Workshop</title>
+<style>
+  :root {
+    --bg: #08080a;
+    --surface: #131319;
+    --surface-2: #1c1c24;
+    --surface-3: #25252f;
+    --surface-4: #2f2f3a;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --gold: #f5c400;
+    --gold-soft: rgba(245, 196, 0, 0.14);
+    --gold-line: rgba(245, 196, 0, 0.32);
+    --copper: #e07a3c;
+    --text: #f0f0f5;
+    --text-2: #a0a0aa;
+    --text-3: #606068;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --purple: #c084fc;
+    --orange: #fb923c;
+    --red: #f87171;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  /* ---------- workbench texture ---------- */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(245,196,0,0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(224,122,60,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* ---------- mockup chrome ---------- */
+  .mockup-banner {
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(180deg, var(--gold-soft), transparent);
+    border-bottom: 1px solid var(--gold-line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .mockup-banner h1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .mockup-banner .meta {
+    color: var(--text-2);
+    font-size: 12px;
+  }
+  .mockup-banner .meta span { color: var(--text); }
+  /* ---------- workshop shell ---------- */
+  .workshop {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr 380px;
+    grid-template-rows: 52px 1fr 180px 36px;
+    grid-template-areas:
+      "tools header header"
+      "tools bench  chat"
+      "tools queue  chat"
+      "tools status status";
+    height: calc(100vh - 56px);
+  }
+  /* ---------- tool rail (Cowork-style) ---------- */
+  .tools {
+    grid-area: tools;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .tools-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tools-header .room-name {
+    font-size: 11px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .tools-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 2px;
+    letter-spacing: -0.01em;
+  }
+  .tools-header .session {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 4px;
+  }
+  .tool-section {
+    padding: 12px 8px 8px;
+  }
+  .tool-section h3 {
+    padding: 0 8px 6px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    font-weight: 700;
+  }
+  .tool {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-2);
+    font-size: 12px;
+    font-weight: 500;
+    position: relative;
+  }
+  .tool:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .tool.active {
+    background: var(--gold-soft);
+    color: var(--gold);
+  }
+  .tool.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background: var(--gold);
+    border-radius: 0 3px 3px 0;
+  }
+  .tool .icon {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-3);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-2);
+    flex-shrink: 0;
+  }
+  .tool.active .icon {
+    background: var(--gold);
+    color: #1a1a00;
+  }
+  .tool.disabled {
+    color: var(--text-3);
+    cursor: not-allowed;
+  }
+  .tool.disabled .icon { background: var(--surface-2); color: var(--text-3); }
+  .tool .meta {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-3);
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 99px;
+  }
+  .tool.active .meta {
+    background: var(--gold);
+    color: #1a1a00;
+    font-weight: 600;
+  }
+  .tool .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-left: auto;
+  }
+  .tools-footer {
+    margin-top: auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .tools-footer .add-tool {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-2);
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    margin: -6px -8px;
+  }
+  .tools-footer .add-tool:hover { background: var(--surface-2); color: var(--gold); }
+  /* ---------- workshop header ---------- */
+  .workshop-header {
+    grid-area: header;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .workshop-header .handoff-tag {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border: 1px solid var(--gold-line);
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .workshop-header .handoff-tag::before {
+    content: "↩";
+    font-size: 13px;
+  }
+  .workshop-header .breadcrumb {
+    color: var(--text-2);
+    font-size: 12px;
+  }
+  .workshop-header .breadcrumb strong { color: var(--text); font-weight: 600; }
+  .workshop-header .actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { color: var(--text); border-color: var(--text-3); }
+  .btn.primary {
+    background: var(--gold);
+    color: #1a1a00;
+    border-color: var(--gold);
+  }
+  .btn.primary:hover { background: #ffd633; }
+  /* ---------- bench (the artifact) ---------- */
+  .bench {
+    grid-area: bench;
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+  .bench-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .bench-title h2 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .bench-title .session-id {
+    color: var(--text-3);
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .bench-sub {
+    color: var(--text-2);
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .bench-sub code {
+    background: var(--surface-2);
+    color: var(--gold);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .bench-row {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    gap: 10px;
+    align-items: stretch;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .bench-original, .bench-attempt {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .bench-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    font-weight: 600;
+  }
+  .bench-original .bench-label { color: var(--text-2); }
+  .bench-attempt.winner .bench-label { color: var(--gold); }
+  .bench-thumb {
+    aspect-ratio: 16/10;
+    border-radius: 8px;
+  }
+  .img-002 { background: linear-gradient(140deg, #1a1f3a 0%, #5a4fcf 55%, #8b5cf6 100%); }
+  .img-warm-v1 { background: linear-gradient(140deg, #2a1810 0%, #ff7e3d 50%, #ffd166 100%); }
+  .img-warm-v2 { background: linear-gradient(140deg, #3d1a00 0%, #f59e0b 45%, #fde047 100%); }
+  .img-warm-v3 { background: linear-gradient(140deg, #2a0d05 0%, #ea580c 55%, #fb923c 100%); }
+  .bench-attempt.winner .bench-thumb {
+    box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(245,196,0,0.25);
+  }
+  .bench-divider {
+    width: 1px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+  .bench-mini-meta {
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+  .bench-arrow {
+    align-self: center;
+    color: var(--gold);
+    font-size: 18px;
+    padding: 0 4px;
+  }
+  /* ---------- handoff payload card ---------- */
+  .handoff-card {
+    background: var(--surface);
+    border: 1px solid var(--gold-line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 14px;
+    font-size: 12px;
+  }
+  .handoff-card .card-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .handoff-card dl {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 6px 12px;
+    font-size: 12px;
+  }
+  .handoff-card dt { color: var(--text-3); font-family: var(--mono); font-size: 11px; }
+  .handoff-card dd { color: var(--text); }
+  .handoff-card dd code {
+    background: var(--surface-2);
+    color: var(--gold);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  /* ---------- job queue ---------- */
+  .queue {
+    grid-area: queue;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    overflow-y: auto;
+  }
+  .queue-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+  }
+  .queue-header h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-2);
+    font-weight: 700;
+  }
+  .queue-header .count {
+    background: var(--surface-3);
+    color: var(--text-2);
+    padding: 1px 7px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .jobs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .job {
+    display: grid;
+    grid-template-columns: 18px 1fr auto auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+  }
+  .job .status-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+    font-size: 10px;
+  }
+  .job.running .status-icon {
+    background: var(--blue);
+    color: #fff;
+    animation: spin 1.4s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .job.done .status-icon { background: var(--green); color: #00200a; }
+  .job.queued .status-icon { background: var(--surface-4); }
+  .job .name { font-family: var(--mono); font-size: 11px; color: var(--text); }
+  .job .desc { color: var(--text-2); font-size: 11px; }
+  .job .duration { color: var(--text-3); font-size: 11px; font-family: var(--mono); }
+  .job .cost { color: var(--green); font-size: 11px; font-family: var(--mono); }
+  .job .actions { color: var(--text-3); cursor: pointer; }
+  /* ---------- chat (docked) ---------- */
+  .chat {
+    grid-area: chat;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .shay-orb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe066, #f5c400 50%, #b8920a 100%);
+    box-shadow: 0 0 0 2px rgba(245,196,0,0.18), 0 0 24px rgba(245,196,0,0.4);
+    flex-shrink: 0;
+    animation: orb-think 2.4s ease-in-out infinite;
+  }
+  @keyframes orb-think {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(245,196,0,0.18), 0 0 24px rgba(245,196,0,0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(245,196,0,0.28), 0 0 36px rgba(245,196,0,0.55); }
+  }
+  .chat-header .title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .chat-header .state {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 1px;
+  }
+  .chat-header .state .live-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .chat-stream {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .msg .who {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .msg.user .who { color: var(--blue); }
+  .msg.shay .who { color: var(--gold); }
+  .msg .body {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .msg.user .body {
+    background: rgba(96,165,250,0.06);
+    border-color: rgba(96,165,250,0.2);
+  }
+  .msg.shay .body {
+    background: linear-gradient(180deg, rgba(245,196,0,0.04), transparent);
+    border-color: var(--gold-line);
+  }
+  .msg .body strong { color: var(--gold); }
+  .msg .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .chip {
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 5px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { color: var(--text); border-color: var(--text-3); }
+  .chip.gold {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border-color: var(--gold-line);
+  }
+  .chip.danger {
+    color: var(--text-2);
+    border-color: var(--border-strong);
+  }
+  .chat-input-row {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    background: var(--surface);
+  }
+  .chat-input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    width: 100%;
+    resize: none;
+    outline: none;
+    transition: border 0.15s;
+  }
+  .chat-input:focus { border-color: var(--gold); }
+  .chat-input::placeholder { color: var(--text-3); }
+  .chat-input-meta {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .chat-send {
+    margin-left: auto;
+    background: var(--gold);
+    color: #1a1a00;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  /* ---------- status bar ---------- */
+  .status {
+    grid-area: status;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 18px;
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .status .green { color: var(--green); }
+  /* ---------- annotations ---------- */
+  .annotations {
+    position: relative;
+    z-index: 1;
+    padding: 18px 24px 28px;
+    background: linear-gradient(180deg, transparent, rgba(245,196,0,0.04));
+    border-top: 1px solid var(--border);
+  }
+  .annotations h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .annot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .annot {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .annot .num {
+    display: inline-block;
+    background: var(--gold);
+    color: #1a1a00;
+    font-weight: 700;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .annot .what {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .annot .why {
+    color: var(--text-2);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-banner">
+  <h1>Mockup B — Shay's Workshop</h1>
+  <div class="meta">Shows: <span>tool rail (Cowork-style)</span> · <span>workbench with active artifact</span> · <span>docked chat</span> · <span>job queue</span> · <span>inherited handoff context</span></div>
+</div>
+
+<div class="workshop">
+
+  <!-- TOOL RAIL -->
+  <aside class="tools">
+    <div class="tools-header">
+      <div class="room-name">Shay's Workshop</div>
+      <h2>Image Refinement</h2>
+      <div class="session">Session ws_2026-05-02_a3f9 · started 14:23</div>
+    </div>
+
+    <div class="tool-section">
+      <h3>Active</h3>
+      <div class="tool active">
+        <span class="icon">⚒</span>
+        <span>Workbench</span>
+        <span class="meta">2 jobs</span>
+      </div>
+      <div class="tool active">
+        <span class="icon">★</span>
+        <span>Shay (chat)</span>
+        <span class="badge-dot"></span>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <h3>Inspectors</h3>
+      <div class="tool">
+        <span class="icon">⊙</span>
+        <span>Memory</span>
+        <span class="meta">142</span>
+      </div>
+      <div class="tool">
+        <span class="icon">⚡</span>
+        <span>Capability</span>
+        <span class="meta">14/19</span>
+      </div>
+      <div class="tool">
+        <span class="icon">$</span>
+        <span>Cost tracker</span>
+        <span class="meta">$0.04</span>
+      </div>
+      <div class="tool">
+        <span class="icon">▣</span>
+        <span>Brain selector</span>
+        <span class="meta">Sonnet</span>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <h3>Editors</h3>
+      <div class="tool">
+        <span class="icon">⌥</span>
+        <span>Code surgery</span>
+      </div>
+      <div class="tool">
+        <span class="icon">⇄</span>
+        <span>Diff / preview</span>
+      </div>
+      <div class="tool">
+        <span class="icon">⊡</span>
+        <span>Job submitter</span>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <h3>Discovery</h3>
+      <div class="tool">
+        <span class="icon">⌕</span>
+        <span>Web research</span>
+      </div>
+      <div class="tool">
+        <span class="icon">⊞</span>
+        <span>Marketplace</span>
+      </div>
+      <div class="tool disabled">
+        <span class="icon">▶</span>
+        <span>Terminal</span>
+        <span class="meta">soon</span>
+      </div>
+    </div>
+
+    <div class="tools-footer">
+      <div class="add-tool">＋ <span>Add tool</span></div>
+    </div>
+  </aside>
+
+  <!-- HEADER (handoff banner) -->
+  <div class="workshop-header">
+    <div class="handoff-tag">Handoff from Shay-Shay</div>
+    <div class="breadcrumb">
+      <strong>Media Studio</strong> / Generated Images / <strong>img_002</strong>
+      &nbsp;·&nbsp; intent: <em>regenerate with warmer sunset feel</em>
+    </div>
+    <div class="actions">
+      <button class="btn">Park</button>
+      <button class="btn">Send back</button>
+      <button class="btn primary">Approve & save</button>
+    </div>
+  </div>
+
+  <!-- BENCH -->
+  <div class="bench">
+    <div class="bench-title">
+      <h2>Refining img_002 — warmer sunset</h2>
+      <span class="session-id">hf_2026-05-02_a3f9</span>
+    </div>
+    <div class="bench-sub">
+      Original was <code>cool tones, dusk</code>. Shay tried 3 warmer approaches. <code>warm_v3</code> matches "warm sunset feel" criteria.
+    </div>
+
+    <div class="bench-row">
+      <div class="bench-original">
+        <div class="bench-label">Original</div>
+        <div class="bench-thumb img-002"></div>
+        <div class="bench-mini-meta">img_002 · cool tones</div>
+      </div>
+      <div class="bench-arrow">→</div>
+      <div class="bench-attempt">
+        <div class="bench-label">Attempt 1</div>
+        <div class="bench-thumb img-warm-v1"></div>
+        <div class="bench-mini-meta">warm_v1 · too pastel</div>
+      </div>
+      <div class="bench-attempt">
+        <div class="bench-label">Attempt 2</div>
+        <div class="bench-thumb img-warm-v2"></div>
+        <div class="bench-mini-meta">warm_v2 · close</div>
+      </div>
+      <div class="bench-attempt winner">
+        <div class="bench-label">Match ★</div>
+        <div class="bench-thumb img-warm-v3"></div>
+        <div class="bench-mini-meta">warm_v3 · accepted</div>
+      </div>
+    </div>
+
+    <!-- HANDOFF PAYLOAD INSPECTOR -->
+    <div class="handoff-card">
+      <div class="card-label">Inherited from Shay-Shay (handoff payload)</div>
+      <dl>
+        <dt>source_page</dt>      <dd><code>media_studio.image_grid</code></dd>
+        <dt>current_artifact</dt> <dd><code>img_002</code> · cool tones, dusk</dd>
+        <dt>user_intent</dt>      <dd>"regenerate with warmer sunset feel; current is too bright"</dd>
+        <dt>prior_attempts</dt>   <dd>2 (within last 5 min)</dd>
+        <dt>success_criteria</dt> <dd>image matches warm sunset description · approves in ≤ 3 attempts</dd>
+        <dt>follow_up_jobs</dt>   <dd><code>save_to_assets</code> · <code>log_prompt_pattern</code></dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- JOB QUEUE -->
+  <div class="queue">
+    <div class="queue-header">
+      <h3>Active jobs</h3>
+      <span class="count">5</span>
+      <span style="margin-left:auto; color: var(--text-3); font-size: 11px;">via lib/job-queue.js · session cost <span style="color: var(--green); font-family: var(--mono);">$0.04</span></span>
+    </div>
+    <div class="jobs">
+      <div class="job done">
+        <div class="status-icon">✓</div>
+        <div class="name">regen_warm_v1</div>
+        <div class="desc">Imagen-4 · "warmer hazy"</div>
+        <div class="duration">2.4s</div>
+        <div class="cost">$0.004</div>
+        <div class="actions">⋯</div>
+      </div>
+      <div class="job done">
+        <div class="status-icon">✓</div>
+        <div class="name">regen_warm_v2</div>
+        <div class="desc">Imagen-4 · "warmer golden"</div>
+        <div class="duration">2.6s</div>
+        <div class="cost">$0.004</div>
+        <div class="actions">⋯</div>
+      </div>
+      <div class="job done">
+        <div class="status-icon">✓</div>
+        <div class="name">regen_warm_v3</div>
+        <div class="desc">Imagen-4 · "deep orange, low sun"</div>
+        <div class="duration">2.8s</div>
+        <div class="cost">$0.004</div>
+        <div class="actions">⋯</div>
+      </div>
+      <div class="job running">
+        <div class="status-icon">◌</div>
+        <div class="name">vision_score_attempts</div>
+        <div class="desc">Sonnet · ranking warmth match</div>
+        <div class="duration">running</div>
+        <div class="cost">$0.018</div>
+        <div class="actions">⋯</div>
+      </div>
+      <div class="job queued">
+        <div class="status-icon">⌛</div>
+        <div class="name">save_to_assets</div>
+        <div class="desc">queued · waits for approve</div>
+        <div class="duration">—</div>
+        <div class="cost">$0.000</div>
+        <div class="actions">⋯</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCKED CHAT (Shay interacting) -->
+  <aside class="chat">
+    <div class="chat-header">
+      <div class="shay-orb"></div>
+      <div>
+        <div class="title">Shay (in the Workshop)</div>
+        <div class="state"><span class="live-dot"></span>SHAY_THINKING · scoring attempts</div>
+      </div>
+    </div>
+
+    <div class="chat-stream">
+      <div class="msg shay">
+        <div class="who">Shay-Shay (handoff)</div>
+        <div class="body">
+          Took this to the Workshop. Inheriting your intent: <strong>warmer sunset feel</strong>. I'll run three approaches in parallel — pastel, golden, and deep orange — then score them against the warmth criteria.
+        </div>
+      </div>
+      <div class="msg user">
+        <div class="who">You</div>
+        <div class="body">also keep the mountain silhouette readable. img_002 lost it a bit.</div>
+      </div>
+      <div class="msg shay">
+        <div class="who">Shay</div>
+        <div class="body">
+          Noted — adding "preserve mountain silhouette" to the prompt for all three. Updating success criteria.
+          <div class="actions">
+            <span class="chip">✓ criteria updated</span>
+          </div>
+        </div>
+      </div>
+      <div class="msg shay">
+        <div class="who">Shay</div>
+        <div class="body">
+          Three attempts back. <strong>warm_v3</strong> is the match — deep orange, low sun, mountain silhouette intact. Want me to run a 4th hazier variant or save warm_v3 and move on?
+          <div class="actions">
+            <span class="chip gold">Save warm_v3</span>
+            <span class="chip">Try one more (hazier)</span>
+            <span class="chip">Compare side-by-side</span>
+            <span class="chip danger">Discard all</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-row">
+      <textarea class="chat-input" rows="2" placeholder="Talk to Shay about the bench…"></textarea>
+      <div class="chat-input-meta">
+        <span>Bench: 1 original + 3 attempts · 2 jobs done · 1 running</span>
+        <button class="chat-send">Send</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- STATUS -->
+  <div class="status">
+    <span style="color: var(--gold);">⚒ Workshop · session ws_2026-05-02_a3f9</span>
+    <span>Brain: Sonnet · routing tier: 3</span>
+    <span class="green">memory writes: 4 · gaps captured: 0</span>
+    <span style="margin-left:auto;">return path: <span class="green">→ Shay-Shay (Media Studio · image_grid)</span></span>
+  </div>
+
+</div>
+
+<div class="annotations">
+  <h3>What this mockup shows</h3>
+  <div class="annot-grid">
+    <div class="annot">
+      <div class="what"><span class="num">1</span>Tool rail (Cowork pattern)</div>
+      <div class="why">Left rail is pluggable. Tools register; rail accommodates. "Add tool" at the bottom is the discovery seam. Active tools (Workbench + Shay chat) are gold; inspectors and editors sit dim until the task needs them. Phase-3 tools (Terminal) appear with "soon" labels so the roadmap is visible without being noise.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">2</span>Handoff context inherited</div>
+      <div class="why">The "Handoff from Shay-Shay" pill at the top + the inherited payload card on the bench prove the contract works. Workshop opens with full context — source page, original artifact, intent, prior attempts, success criteria, follow-up jobs. Nothing has to be re-explained.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">3</span>The bench has the artifact</div>
+      <div class="why">Original image on the left, three attempts moving right, the winner marked. This is the "thing on the workbench" — the user can see exactly what's being worked on, not abstracted into chat messages.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">4</span>Shay docks near the chat</div>
+      <div class="why">The chat panel on the right is Shay-in-the-Workshop. Same Shay as Shay-Shay — different state (SHAY_THINKING). Her orb pulses while she works. She summarizes her actions in chat and offers next steps as chips, not paragraphs.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">5</span>Job queue is real, not decorative</div>
+      <div class="why">All jobs route through lib/job-queue.js (the existing system, per v2 doc). Real durations, real costs. Queued items show approval gates ("save_to_assets · queued · waits for approve") — nothing destructive runs without your nod.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">6</span>Return path is visible</div>
+      <div class="why">Status bar bottom right shows where this session ends — "→ Shay-Shay (Media Studio · image_grid)". When you approve, Shay-Shay on the original page hears about it and updates what she shows you next. The loop closes.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

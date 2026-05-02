@@ -221,10 +221,11 @@ registry before first use.
 
 ## Session 17 Do-Not-Repeat Rules
 
-### ORB_STATE_MACHINE (2026-04-20)
+### ORB_STATE_MACHINE (2026-04-20, updated 2026-05-02)
 - `#pip-dynamic-area` transitions go through `setOrbState(state, data)` ONLY — never write to the area directly from event listeners
-- Four valid states: `IDLE`, `BRIEF_PROGRESS`, `BRAINSTORM_ACTIVE`, `REVIEW_ACTIVE`
+- **Five valid states** (updated for Shay v2): `IDLE`, `BRIEF_PROGRESS`, `BRAINSTORM_ACTIVE`, `REVIEW_ACTIVE`, `SHAY_THINKING`
 - `currentOrbState` is the single source of truth (module-level var in `studio-orb.js`)
+- `SHAY_THINKING` was added in code on 2026-04-20 and formalized in the contract on 2026-05-02 (Shay architecture v2). Has a min-display window (`SHAY_THINKING_MIN_MS = 800`) so brief reasoning bursts don't flicker the orb.
 - When adding a new dynamic-area renderer, add a new state constant and route it through `setOrbState` — do not bypass
 
 ### TEST_RETURN_SHAPE_ASSERTIONS (2026-04-20)
