@@ -353,3 +353,30 @@ Fixed two high-visibility bugs. Bug 1: `site-the-daily-grind-in-atlanta` built p
 ## 2026-04-24 — Build layer GAP-1/2/3: palette defaults + skeleton injection
 
 Three build-layer gaps identified by the R-NEW audit (2026-04-24-build-layer-audit.md) are now closed. GAP-1: `FAMTASTIC_DEFAULT_PALETTE` constant added to `famtastic-skeletons.js`; when no client hex colors are found in decisions or brief, `buildPromptContext()` now injects all five FAMtastic defaults as a mandatory palette block — verified live on an accounting firm brief with zero specified colors. GAP-2/3: `heroSkeleton` and `navSkeleton` were returned by `buildPromptContext()` but not destructured in `handleChatMessage()`, silently discarding them on every single-page edit; wired both through the destructure and into the prompt string — `heroSkeleton` fires on build/layout_update, `navSkeleton` unconditionally. GAP-4 (`famtastic_mode` gate on logo skeleton) remains open, deferred to a separate session after investigation.
+
+## 2026-05-02 — MBSH audit + v2 build + platform layer (Cowork session)
+
+Cowork-driven audit of the MBSH reunion site produced eight deliverables at
+docs/sites/site-mbsh-reunion/cowork-audit-001/. Headline finding: Studio
+cannot produce MBSH at any fidelity today (gap report Section 0.11), proven
+visually when site-mbsh96reunion's hallucinated Myrtle Beach build was inspected.
+
+Built the full V1-BRIEF spec as a parallel deploy repo at
+~/famtastic-sites/mbsh-reunion-v2/ (84 files: 8 HTML, 8 CSS, 11 JS, 26 PHP
+backend, schema, configs). Hero matches canonical verbatim; sections 2-11,
+chatbot Phase 1, sponsor flow, admin pages, and cron scripts are net-new.
+
+Built ~/famtastic/platform/ — capability dispatcher + 10 operational primitives
+(site.add, db.add, db.apply-schema, dns.register-subdomain,
+email.verify-resend-domain, deploy.connect-netlify, deploy.backend,
+cron.register, cors.lockdown, smoke.test) + macOS-Keychain-backed vault +
+capability registry + per-day invocation log. Standing-approval model: agent
+reads vault, Fritz sees decision points only.
+
+Cleanup: trashed duplicate site-mbsh96reunion tag whose dist/ was misleading
+Studio's localhost:3333 preview with Myrtle Beach SC content. Symlinked
+sites/site-mbsh-reunion/dist → v2/frontend so Studio's site-preview serves v2.
+
+Deferred: Story section recovery, knowledge capture tool (Recommendation A.1,
+priority #1 next session), tag-uniqueness check in extractBriefFromMessage,
+backend deploy via setup-mbsh-backend.sh, Netlify connect, DNS cutover.

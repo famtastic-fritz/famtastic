@@ -4540,3 +4540,22 @@ Heredoc with quoted delimiter ('ENDOFSCRIPT') prevents ALL shell expansion. Node
 ### ✅ ALSO VALID: multi-step exec — write file first, run second
 If heredoc inline also fails, split into two bridge requests: one to write the file, one to run it.
 
+
+## MBSH Audit + Platform Layer (2026-05-02, Cowork session)
+
+**What happened:** Cowork-driven audit of the MBSH reunion site. Eight deliverables written to `docs/sites/site-mbsh-reunion/cowork-audit-001/`. Full v2 site built outside Studio at `~/famtastic-sites/mbsh-reunion-v2/`. Platform capability layer scaffolded at `~/famtastic/platform/`.
+
+**Headline finding — Studio cannot produce MBSH (gap 0.11):** Studio lacks chatbot skeleton, compass nav skeleton, two-nav-system spec field, layered CSS mode, PHP backend support, asset triage workflow, and brand mark generation pipeline. The V1-BRIEF is currently unbuildable by Studio at any fidelity. Proven visually when the duplicate `site-mbsh96reunion` tag's `dist/` showed a hallucinated "Myrtle Beach SC" build — Studio inferred the wrong city from "MBSH" and ignored the `spec.json` `goal` field specifying a six-font cinematic design system.
+
+**Repo-separation rule formalized:** Deploy repos live at `~/famtastic-sites/<site>/` (sibling to `~/famtastic/`). `~/famtastic/sites/<tag>/` is the Studio sandbox. The `dist/` subdirectory may hold builds, but the production artifact lives in the sibling repo. `dist/` at `sites/site-mbsh-reunion/dist` is now a symlink → `~/famtastic-sites/mbsh-reunion-v2/frontend`.
+
+**Platform layer pattern:** `~/famtastic/platform/capabilities/<class>/<verb>.sh`. Each capability reads from macOS Keychain via `vault.sh`, writes to `spec.json`, appends to `platform/invocations/<date>.jsonl`. Never silently degrades — surfaces `manual_required` when API coverage is incomplete. Standing-approval model: Fritz stores credentials once, agent reads on every invocation.
+
+**Duplicate tag cleanup:** `site-mbsh96reunion` trashed to `sites/.trash/site-mbsh96reunion-20260502-212214/`. `extractBriefFromMessage` needs a same-business-identity collision check before creating tags — task #23 queued.
+
+### Known Gaps (MBSH / Platform, 2026-05-02)
+- Story section (sections.css, IntersectionObserver fade, 6 story stills) uncommitted — decide commit-as-is or regenerate
+- `setup-mbsh-backend.sh` not yet run against prod — blocked on committee password
+- Tag-uniqueness check not yet added to `extractBriefFromMessage` — task #23
+- Platform API gaps: Netlify connect, cPanel cron, DNS Zone Editor record CRUD, Resend domain auto-loop — all manual today
+- Knowledge capture tool (Recommendation A.1) not yet built — hand-rolled SESSION-CAPTURE.md used as bridge

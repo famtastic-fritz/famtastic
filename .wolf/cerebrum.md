@@ -319,3 +319,14 @@ are message contracts, not function calls. Platform services
 (research, memory, learning capture, Pinecone, Perplexity) must
 live in a shared services namespace that Site Studio calls but
 does not own.
+
+### 2026-05-02 — MBSH Audit + Platform Layer (Cowork session)
+
+**Decision Log:**
+- [2026-05-02] REPO_SEPARATION_RULE: Site deploys live at `~/famtastic-sites/<site>/` (sibling to `~/famtastic/`, NOT nested). `~/famtastic/sites/<tag>/` is the Studio sandbox/asset-workshop. The `dist/` subdirectory under sandbox can hold builds, but the production deploy artifact lives in the sibling repo. `fam-hub site new` should default to creating the deploy repo at the correct sibling path.
+- [2026-05-02] PLATFORM_CAPABILITY_PATTERN: Operational primitives live at `~/famtastic/platform/capabilities/<class>/<verb>.sh`. Each capability reads credentials from the vault (`platform/vault/vault.sh`, macOS Keychain backed), reads/writes `spec.json` as single source of truth, appends to `platform/invocations/<date>.jsonl` for audit trail, surfaces `manual_required` explicitly when underlying API coverage is incomplete — NEVER silently degrades. Standing-approval model: store once, agent reads on every invocation, Fritz sees decision points only.
+- [2026-05-02] STUDIO_CANNOT_PRODUCE_MBSH: Audit gap report Section 0.11. The full V1-BRIEF asks for capabilities Studio doesn't have (no chatbot skeleton, no compass nav skeleton, no two-nav-system spec field, no layered CSS mode, no PHP backend support, no asset triage workflow, no commissioned brand mark generation pipeline). Recommendations B.1–B.8 + G.1 must land before any "Studio rebuilds MBSH" prompt is meaningful. Today's runnable v2 lives at `~/famtastic-sites/mbsh-reunion-v2/`.
+
+**DO-NOT-REPEAT:**
+- [2026-05-02] NO_DUPLICATE_TAGS: `extractBriefFromMessage` must compare proposed tags against existing `spec.json` tags using `normalizeBizName` + `checkSameBusinessIdentity`. Refuse/prompt-disambiguate when match. Evidence: `site-mbsh96reunion` vs `site-mbsh-reunion` coexisted, with the duplicate's `dist/` misleading Studio's preview with hallucinated Myrtle Beach SC content.
+- [2026-05-02] VERIFY_BRIEFING_CLAIMS: Always check briefing/doc claims against the actual repo before acting. Example: briefing said Drive sync action exists with a bug — it didn't exist at all. Wasted cycles diagnosing a phantom workflow.
