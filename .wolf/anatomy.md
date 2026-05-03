@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-02T14:28:42.708Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-02T22:10:19.791Z
 > Files: 596 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
@@ -125,13 +125,13 @@
 
 ## ./
 
-- `.gitignore` — Git ignore rules (~340 tok)
+- `.gitignore` — Git ignore rules (~531 tok)
 - `.mcp.json` (~47 tok)
 - `CHANGELOG.md` — FAMtastic Changelog (~22350 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2625 tok)
 - `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~11655 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~11861 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
@@ -762,9 +762,11 @@
 - `capability-manifest.js` — checkNetlify() — structured Netlify capability probe. (~2643 tok)
 - `client-interview.js` — Client Interview System — Phase 3 (~1907 tok)
 - `cost-monitor.js` — PRICE_IN_PER_M: getSpendLimit, calcCost, setBroadcast + 10 more (~1653 tok)
-- `db.js` — Database: getDb, _initSchema, createSession + 17 more (~3131 tok)
+- `build-trace.js` — build-trace.js — logTrace, getRunTrace, queryTraceEvents — writes to sites/<tag>/build-trace.jsonl + SQLite trace_events (~2200 tok)
+- `db.js` — Database: getDb, _initSchema, createSession + logAgentPerformance, getAgentPerformance, getAgentScorecard + trace_events + agent_performance tables (~3800 tok)
 - `famtastic-skeletons.js` — Declares names (~4600 tok)
-- `gap-logger.js` — fs: ensureDir, loadGaps, logGap + 4 more (~962 tok)
+- `fulfillment-ledger.js` — fulfillment-ledger.js — createLedger, addFulfillmentItem, finalizeLedger, readLedger — per-build capability tracking (~1400 tok)
+- `gap-logger.js` — fs: ensureDir, loadGaps, logGap + 4 more + GAP_DESTINATION routing map (~1300 tok)
 - `haiku-fallback.js` — haiku-fallback.js — SDK-based Haiku fallback for silence timeouts. (~777 tok)
 - `history-formatter.js` — history-formatter.js — Per-brain conversation history formatting (~1136 tok)
 - `job-queue.js` — fs: _assertStatus, createJob, approveJob + 6 more (~1032 tok)
@@ -774,6 +776,7 @@
 - `openai-image-adapter.js` — openai-image-adapter — gpt-image-2 generations + edits, mirroring the (~1308 tok)
 - `research-registry.js` — research-registry.js — Provider-agnostic research source registry (~3240 tok)
 - `research-router.js` — research-router.js — Routes research queries; exports appendToFeedIndex, appendToRunHistory, listFindings (Session 3-A) (~4200 tok)
+- `run-id.js` — run-id.js — generateRunId, generateTraceId, createRunContext — build run/trace ID generation (~400 tok)
 - `shay-shay-sessions.js` — shay-shay-sessions.js — Minimal per-conversation session state for Shay-Shay. (~1383 tok)
 - `spec-schema.js` — Formal spec.json schema (P0.2 baseline closure). (~1906 tok)
 - `studio-actions.js` — studio-actions.js — shared execution layer (~255 tok)

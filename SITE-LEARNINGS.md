@@ -4559,3 +4559,54 @@ If heredoc inline also fails, split into two bridge requests: one to write the f
 - Tag-uniqueness check not yet added to `extractBriefFromMessage` — task #23
 - Platform API gaps: Netlify connect, cPanel cron, DNS Zone Editor record CRUD, Resend domain auto-loop — all manual today
 - Knowledge capture tool (Recommendation A.1) not yet built — hand-rolled SESSION-CAPTURE.md used as bridge
+
+---
+
+## Build Orchestration Trace System (2026-05-03)
+
+Implements the infrastructure described in `docs/build-orchestration-trace-plan.md`. Additive — no existing behavior changed.
+
+### New Modules
+
+| File | Purpose |
+|---|---|
+| `site-studio/lib/run-id.js` | `generateRunId()`, `generateTraceId()`, `createRunContext()` — step counter factory for a build run |
+| `site-studio/lib/build-trace.js` | `logTrace(event, hubRoot)` — appends to `sites/<tag>/build-trace.jsonl` + `trace_events` SQLite table. `getRunTrace()`, `queryTraceEvents()` for reads |
+| `site-studio/lib/fulfillment-ledger.js` | `createLedger()`, `addFulfillmentItem()`, `finalizeLedger()`, `readLedger()` — per-build capability tracking written to `sites/<tag>/fulfillment-<runId>.json` |
+
+### db.js Changes
+
+Two new tables added to `_initSchema()`:
+
+- **`trace_events`** — every build decision step. Primary key: `trace_id`. Indexed by `run_id`, `site_tag`, `phase`, `status`.
+- **`agent_performance`** — per-agent/tool/provider scorecard rows. Indexed by `agent`, `task_type`, `run_id`.
+
+New exported functions: `logAgentPerformance()`, `getAgentPerformance()`, `getAgentScorecard()`, `getDb()` (now exported for use by build-trace.js).
+
+### gap-logger.js Changes
+
+`GAP_CATEGORIES` extended with 11 build-orchestration types: `unfulfilled_request`, `placeholder_used`, `specialized_asset_needed`, `component_needed`, `integration_needed`, `design_uncertainty`, `provider_failure`, `verification_failure`, `agent_weakness`, `prompt_pattern`, `missing_capability`.
+
+`GAP_DESTINATION` map added — routes each category to its recommended workspace (Think Tank, Media Studio, Component Studio, Site Editor, Platform, Job Queue). `logGap()` entries now include `destination` and `run_id` fields.
+
+### server.js Wiring
+
+- `createRunContext()` called at the top of `handleChatMessage()` — binds `ws._currentRunId` for downstream trace calls
+- `logTrace()` called at: classification, deterministic handler exit, verification outcome
+- `logAgentPerformance()` called after each parallel build completes
+- New REST endpoints (all read-only, no auth required for now):
+  - `GET /api/trace` — query trace events for current site
+  - `GET /api/trace/run/:runId` — JSONL events for a specific run
+  - `GET /api/agent/performance` — raw performance rows
+  - `GET /api/agent/scorecard` — aggregated scorecard by agent+task_type
+  - `GET /api/fulfillment` — latest fulfillment ledger for current site
+
+### Trace Event Shape
+
+Key fields: `trace_id`, `parent_trace_id`, `run_id`, `site_tag`, `phase`, `step_id`, `decision_type`, `selected_path`, `alternatives_considered`, `reason`, `agent`, `tool`, `provider`, `model`, `cost_type`, `input_tokens_actual`, `output_tokens_actual`, `cost_usd_actual`, `duration_ms`, `status`, `quality_score`, `created_jobs`, `gaps`.
+
+### Known Gaps (Build Trace, 2026-05-03)
+- Trace calls inside `parallelBuild()` per-page worker loop not yet added (only build-level verification is traced)
+- `handleChatMessage()` single-page build path logs classification + deterministic handler but not the Claude call itself (API call tokens/cost not yet captured into trace)
+- No UI panels yet for trace map, cost map, fulfillment ledger, or agent scorecard — data is available via REST endpoints only
+- `ws._currentRunId` is not passed through to `parallelBuild()` — the verification trace uses a fallback `'run_unknown'` for builds that route through `parallelBuild` before `handleChatMessage` sets the runId

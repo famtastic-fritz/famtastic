@@ -97,6 +97,60 @@ function _initSchema(db) {
       created_at  TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS trace_events (
+      trace_id                TEXT PRIMARY KEY,
+      parent_trace_id         TEXT,
+      run_id                  TEXT NOT NULL,
+      site_tag                TEXT,
+      phase                   TEXT NOT NULL,
+      step_id                 TEXT,
+      decision_type           TEXT,
+      requested_item          TEXT,
+      selected_path           TEXT,
+      alternatives_considered TEXT,
+      reason                  TEXT,
+      agent                   TEXT,
+      tool                    TEXT,
+      provider                TEXT,
+      model                   TEXT,
+      cost_type               TEXT,
+      prompt_hash             TEXT,
+      prompt_template_version TEXT,
+      input_tokens_estimated  INTEGER DEFAULT 0,
+      output_tokens_estimated INTEGER DEFAULT 0,
+      input_tokens_actual     INTEGER DEFAULT 0,
+      output_tokens_actual    INTEGER DEFAULT 0,
+      cost_usd_actual         REAL    DEFAULT 0,
+      duration_ms             INTEGER,
+      status                  TEXT    DEFAULT 'completed',
+      quality_score           INTEGER,
+      verification_refs       TEXT,
+      created_jobs            TEXT,
+      gaps                    TEXT,
+      error                   TEXT,
+      created_at              TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS agent_performance (
+      id                  TEXT PRIMARY KEY,
+      agent               TEXT NOT NULL,
+      tool                TEXT,
+      provider            TEXT,
+      model               TEXT,
+      task_type           TEXT NOT NULL,
+      site_tag            TEXT,
+      run_id              TEXT,
+      status              TEXT NOT NULL DEFAULT 'completed',
+      duration_ms         INTEGER,
+      cost_usd            REAL    DEFAULT 0,
+      input_tokens        INTEGER DEFAULT 0,
+      output_tokens       INTEGER DEFAULT 0,
+      verification_passed INTEGER DEFAULT 0,
+      human_accepted      INTEGER,
+      failure_reason      TEXT,
+      created_at          TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sessions_tag  ON sessions(site_tag);
     CREATE INDEX IF NOT EXISTS idx_builds_tag    ON builds(site_tag);
     CREATE INDEX IF NOT EXISTS idx_builds_sess   ON builds(session_id);
@@ -106,6 +160,13 @@ function _initSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_memories_cat    ON memories(category);
     CREATE INDEX IF NOT EXISTS idx_memory_links_from ON memory_links(from_type, from_id);
     CREATE INDEX IF NOT EXISTS idx_memory_links_to   ON memory_links(to_type, to_id);
+    CREATE INDEX IF NOT EXISTS idx_trace_run    ON trace_events(run_id);
+    CREATE INDEX IF NOT EXISTS idx_trace_site   ON trace_events(site_tag);
+    CREATE INDEX IF NOT EXISTS idx_trace_phase  ON trace_events(phase);
+    CREATE INDEX IF NOT EXISTS idx_trace_status ON trace_events(status);
+    CREATE INDEX IF NOT EXISTS idx_aperf_agent     ON agent_performance(agent);
+    CREATE INDEX IF NOT EXISTS idx_aperf_task_type ON agent_performance(task_type);
+    CREATE INDEX IF NOT EXISTS idx_aperf_run       ON agent_performance(run_id);
   `);
 }
 
@@ -261,6 +322,63 @@ function searchMemories(query, limit = 10) {
   ).all(term, limit);
 }
 
+function logAgentPerformance({
+  id, agent, tool, provider, model, task_type, site_tag, run_id,
+  status = 'completed', duration_ms, cost_usd = 0, input_tokens = 0,
+  output_tokens = 0, verification_passed = false, human_accepted = null,
+  failure_reason = null,
+}) {
+  getDb().prepare(`
+    INSERT INTO agent_performance (
+      id, agent, tool, provider, model, task_type, site_tag, run_id,
+      status, duration_ms, cost_usd, input_tokens, output_tokens,
+      verification_passed, human_accepted, failure_reason, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, agent, tool || null, provider || null, model || null,
+    task_type, site_tag || null, run_id || null,
+    status, duration_ms || null, cost_usd, input_tokens, output_tokens,
+    verification_passed ? 1 : 0,
+    human_accepted == null ? null : (human_accepted ? 1 : 0),
+    failure_reason || null,
+    new Date().toISOString()
+  );
+}
+
+function getAgentPerformance({ agent, task_type, provider, limit = 100 } = {}) {
+  let q = 'SELECT * FROM agent_performance';
+  const params = [];
+  const wheres = [];
+  if (agent)     { wheres.push('agent = ?');     params.push(agent); }
+  if (task_type) { wheres.push('task_type = ?'); params.push(task_type); }
+  if (provider)  { wheres.push('provider = ?');  params.push(provider); }
+  if (wheres.length) q += ' WHERE ' + wheres.join(' AND ');
+  q += ' ORDER BY created_at DESC LIMIT ?';
+  params.push(limit);
+  return getDb().prepare(q).all(...params);
+}
+
+function getAgentScorecard({ agent, task_type } = {}) {
+  // Returns aggregated pass rate, avg cost, avg duration per agent+task_type
+  let q = `
+    SELECT agent, task_type, provider,
+      COUNT(*) AS total_runs,
+      ROUND(AVG(CASE WHEN status = 'completed' THEN 1.0 ELSE 0.0 END), 3) AS success_rate,
+      ROUND(AVG(CASE WHEN verification_passed = 1 THEN 1.0 ELSE 0.0 END), 3) AS verification_pass_rate,
+      ROUND(AVG(cost_usd), 6) AS avg_cost_usd,
+      ROUND(AVG(duration_ms)) AS avg_duration_ms,
+      SUM(cost_usd) AS total_cost_usd
+    FROM agent_performance
+  `;
+  const params = [];
+  const wheres = [];
+  if (agent)     { wheres.push('agent = ?');     params.push(agent); }
+  if (task_type) { wheres.push('task_type = ?'); params.push(task_type); }
+  if (wheres.length) q += ' WHERE ' + wheres.join(' AND ');
+  q += ' GROUP BY agent, task_type, provider ORDER BY total_runs DESC';
+  return getDb().prepare(q).all(...params);
+}
+
 function addMemoryLink({ id, from_type, from_id, to_type, to_id, relation }) {
   getDb().prepare(`
     INSERT OR IGNORE INTO memory_links (id, from_type, from_id, to_type, to_id, relation, created_at)
@@ -297,6 +415,7 @@ module.exports = {
   createSession, updateSessionTokens, endSession,
   logBuild, getSessionHistory, getPortfolioStats,
   createJob, getJob, listJobs, updateJobStatus,
+  logAgentPerformance, getAgentPerformance, getAgentScorecard,
   addMemory, getMemories, searchMemories, addMemoryLink, getMemoryLinks,
-  _createTestDb, _closeDb,
+  _createTestDb, _closeDb, getDb,
 };

@@ -18,6 +18,9 @@ const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
 const surgicalEditor = require('./lib/surgical-editor');
 const gapLogger = require('./lib/gap-logger');
+const { logTrace, getRunTrace, queryTraceEvents } = require('./lib/build-trace');
+const { createRunContext } = require('./lib/run-id');
+const { createLedger, addFulfillmentItem, finalizeLedger, readLedger, FULFILLMENT_STATUS, DETECTED_TYPES, WORKSPACE } = require('./lib/fulfillment-ledger');
 const suggestionLogger = require('./lib/suggestion-logger');
 const brandTracker = require('./lib/brand-tracker');
 const { buildCapabilityManifest, loadManifest, checkNetlify } = require('./lib/capability-manifest');
@@ -11083,6 +11086,40 @@ app.get('/api/telemetry/sdk-cost-summary', (req, res) => {
   res.json({ ...sessionSummary, recentCalls: siteLog });
 });
 
+// Build trace — per-run or per-site event log
+app.get('/api/trace', (req, res) => {
+  const { runId, limit = 50 } = req.query;
+  const events = queryTraceEvents({ siteTag: TAG, runId: runId || undefined, limit: parseInt(limit, 10) });
+  res.json({ site_tag: TAG, run_id: runId || null, count: events.length, events });
+});
+
+app.get('/api/trace/run/:runId', (req, res) => {
+  const { runId } = req.params;
+  const events = getRunTrace(TAG, runId, HUB_ROOT);
+  res.json({ site_tag: TAG, run_id: runId, count: events.length, events });
+});
+
+// Agent performance scorecard
+app.get('/api/agent/performance', (req, res) => {
+  const { agent, task_type, provider } = req.query;
+  const rows = db.getAgentPerformance({ agent, task_type, provider });
+  res.json({ count: rows.length, rows });
+});
+
+app.get('/api/agent/scorecard', (req, res) => {
+  const { agent, task_type } = req.query;
+  const scorecard = db.getAgentScorecard({ agent, task_type });
+  res.json({ scorecard });
+});
+
+// Fulfillment ledger — latest for current site or specific run
+app.get('/api/fulfillment', (req, res) => {
+  const { runId } = req.query;
+  const ledger = readLedger(TAG, HUB_ROOT, runId || null);
+  if (!ledger) return res.json({ site_tag: TAG, ledger: null });
+  res.json({ site_tag: TAG, ledger });
+});
+
 // Upgrade /api/compare/generate — add validation + Claude fallback
 app.post('/api/compare/generate-v2', async (req, res) => {
   const { page } = req.body;
@@ -15606,6 +15643,50 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   } catch {}
   ws.send(JSON.stringify({ type: 'verification-result', ...verification }));
 
+  // --- Trace: verification outcome ---
+  try {
+    const _verifyRunId = ws._currentRunId || 'run_unknown';
+    const _verifyTraceId = `${_verifyRunId}.step_verify`;
+    logTrace({
+      trace_id:          _verifyTraceId,
+      parent_trace_id:   _verifyRunId,
+      run_id:            _verifyRunId,
+      site_tag:          TAG,
+      phase:             'verification',
+      step_id:           'run_build_verification',
+      decision_type:     'quality_gate',
+      selected_path:     verification.status,
+      agent:             'orchestrator',
+      tool:              'runBuildVerification',
+      provider:          'deterministic',
+      cost_type:         'zero_token',
+      duration_ms:       Math.round(Date.now() - startTime),
+      status:            verification.status === 'failed' ? 'failed' : 'completed',
+      quality_score:     verification.score || null,
+      gaps:              (verification.issues || []).map(i => i.slice(0, 80)),
+    }, HUB_ROOT);
+
+    // --- Agent performance: parallel build ---
+    db.logAgentPerformance({
+      id:                   require('crypto').randomUUID(),
+      agent:                'parallel_builder',
+      tool:                 'parallelBuild',
+      provider:             loadSettings().worker_brain || 'subscription',
+      model:                loadSettings().model || 'unknown',
+      task_type:            'multi_page_build',
+      site_tag:             TAG,
+      run_id:               _verifyRunId,
+      status:               verification.status === 'failed' ? 'completed' : 'completed',
+      duration_ms:          Math.round(Date.now() - startTime),
+      cost_usd:             sessionInputTokens * 0.000003 + sessionOutputTokens * 0.000015,
+      input_tokens:         sessionInputTokens,
+      output_tokens:        sessionOutputTokens,
+      verification_passed:  verification.status !== 'failed',
+    });
+  } catch (err) {
+    console.error('[trace] Failed to log verification trace:', err.message);
+  }
+
   // Log SEO warnings to build log
   if (seoResult && seoResult.warnings.length > 0) {
     try {
@@ -16008,11 +16089,49 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
     return;
   }
 
+  // --- Build Run Trace Setup ---
+  const _run = createRunContext();
+  ws._currentRunId = _run.runId;
+  const _buildLedger = createLedger(_run.runId, TAG, userMessage);
+
+  // Log: classification decision
+  logTrace({
+    trace_id:      _run.nextTraceId(),
+    run_id:        _run.runId,
+    site_tag:      TAG,
+    phase:         'classification',
+    step_id:       'classify_request',
+    decision_type: 'routing',
+    requested_item: userMessage.slice(0, 200),
+    selected_path:  requestType,
+    agent:         'orchestrator',
+    tool:          'classifyRequest',
+    provider:      'deterministic',
+    cost_type:     'zero_token',
+    status:        'completed',
+  }, HUB_ROOT);
+
   // Try deterministic handler first — simple CSS/HTML changes without AI
   if (requestType === 'layout_update' || requestType === 'content_update' || requestType === 'bug_fix') {
     const t0 = Date.now();
     if (tryDeterministicHandler(ws, userMessage, currentPage)) {
       logAgentCall({ agent: 'none', intent: requestType, page: currentPage, elapsed_ms: Date.now() - t0, success: true, output_size: 0 });
+      logTrace({
+        trace_id:      _run.nextTraceId(),
+        run_id:        _run.runId,
+        site_tag:      TAG,
+        phase:         'execution',
+        step_id:       'deterministic_handler',
+        decision_type: 'fulfillment_path',
+        selected_path:  'deterministic_edit',
+        reason:        'Simple structural edit handled without model call',
+        agent:         'deterministic',
+        provider:      'deterministic',
+        cost_type:     'zero_token',
+        duration_ms:   Date.now() - t0,
+        status:        'completed',
+      }, HUB_ROOT);
+      finalizeLedger(_buildLedger, HUB_ROOT);
       return; // Handled without Claude
     }
   }

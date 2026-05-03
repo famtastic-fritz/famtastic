@@ -3,10 +3,52 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Gap category taxonomy — covers both original Studio gaps and
+ * build-orchestration-level fulfillment gaps from the build-trace plan.
+ *
+ * Each category maps to a recommended destination workspace so the
+ * gap-routing logic can suggest where follow-up work belongs.
+ */
 const GAP_CATEGORIES = {
-  NOT_BUILT: 'not_built',
+  // Original Studio gap types
+  NOT_BUILT:     'not_built',
   NOT_CONNECTED: 'not_connected',
-  BROKEN: 'broken',
+  BROKEN:        'broken',
+
+  // Build-orchestration gap types (from build-trace plan)
+  UNFULFILLED_REQUEST:    'unfulfilled_request',    // User asked for something not completed
+  PLACEHOLDER_USED:       'placeholder_used',       // Temp asset or section used
+  SPECIALIZED_ASSET_NEEDED: 'specialized_asset_needed', // Character, animation, audio, video
+  COMPONENT_NEEDED:       'component_needed',       // Slideshow, assistant, booking, calc
+  INTEGRATION_NEEDED:     'integration_needed',     // PayPal, CRM, email, calendar
+  DESIGN_UNCERTAINTY:     'design_uncertainty',     // Prompt lacks brand/style direction
+  PROVIDER_FAILURE:       'provider_failure',       // Image/API/deploy provider failed
+  VERIFICATION_FAILURE:   'verification_failure',   // Nav/footer/SEO/accessibility failed
+  AGENT_WEAKNESS:         'agent_weakness',         // Agent repeatedly fails a task type
+  PROMPT_PATTERN:         'prompt_pattern',         // Prompt pattern improved or degraded output
+  MISSING_CAPABILITY:     'missing_capability',     // Studio lacks needed workflow/tool
+};
+
+/**
+ * Destination workspace routing per gap category.
+ * Used by gap consumers to decide where to surface the gap.
+ */
+const GAP_DESTINATION = {
+  not_built:                'Job Queue',
+  not_connected:            'Platform',
+  broken:                   'Site Editor',
+  unfulfilled_request:      'Job Queue',
+  placeholder_used:         'Job Queue',
+  specialized_asset_needed: 'Media Studio',
+  component_needed:         'Component Studio',
+  integration_needed:       'Platform',
+  design_uncertainty:       'Think Tank',
+  provider_failure:         'Platform',
+  verification_failure:     'Site Editor',
+  agent_weakness:           'Think Tank',
+  prompt_pattern:           'Think Tank',
+  missing_capability:       'Platform',
 };
 
 const GAPS_PATH = path.join(process.env.HOME, '.local', 'share', 'famtastic', 'gaps.jsonl');
@@ -53,6 +95,8 @@ function logGap(tag, message, category, details = {}) {
     message_preview: message.slice(0, 100),
     failure_category: category,
     capability_id: capId,
+    destination: GAP_DESTINATION[category] || 'Job Queue',
+    run_id: details.run_id || null,
     frequency: 1,
     status: 'open',
     ...details,
@@ -109,4 +153,4 @@ function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
 }
 
-module.exports = { logGap, resolveGap, loadGaps, GAP_CATEGORIES };
+module.exports = { logGap, resolveGap, loadGaps, GAP_CATEGORIES, GAP_DESTINATION };
