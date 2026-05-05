@@ -41,9 +41,16 @@
     "plan-task-run-intelligence",
     "build-intent-fulfillment-trace",
     "site-mbsh-reunion",
-    "plan_2026_05_05_ops_workspace_gui"
+    "plan_2026_05_05_ops_workspace_gui",
+    "plan_2026_05_05_platform_site_promotion"
   ],
   "labels": {
+    "plan_2026_05_05_platform_site_promotion": {
+      "label": "site-promotion",
+      "tags": ["platform-upgrades", "deploy", "release-management", "rollback"],
+      "role": "substrate",
+      "note": "Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven."
+    },
     "studio-workbench-foundation": {
       "label": "workbench-foundation",
       "tags": ["platform-upgrades", "studio-ui", "shell", "workbench"],

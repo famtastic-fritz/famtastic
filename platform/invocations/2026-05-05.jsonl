@@ -10,3 +10,5 @@
 {"ts":"2026-05-05T16:44:25Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":1}
 {"ts":"2026-05-05T16:44:26Z","capability":"studio.bootstrap-services","args":{"mode":"check"},"result":"manual_required","manual_required":1}
 {"ts":"2026-05-05T17:12:56Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed","blocked_checks":0}
+{"ts":"2026-05-05T17:35:48Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":1}
+{"ts":"2026-05-05T17:38:27Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-2026-05-05.json"},"result":"passed","blocked_checks":0}

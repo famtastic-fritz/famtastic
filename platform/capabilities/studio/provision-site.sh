@@ -26,15 +26,9 @@ done
 
 normalized="${SITE#site-}"
 hub_tag="site-$normalized"
-if [[ "$normalized" == "mbsh-reunion-v2" ]]; then
-  hub_tag="site-mbsh-reunion"
-fi
 
 SPEC="$HUB_ROOT/sites/$hub_tag/spec.json"
 DEPLOY_REPO="$HOME/famtastic-sites/$normalized"
-if [[ ! -d "$DEPLOY_REPO" && "$hub_tag" == "site-mbsh-reunion" && -d "$HOME/famtastic-sites/mbsh-reunion-v2" ]]; then
-  DEPLOY_REPO="$HOME/famtastic-sites/mbsh-reunion-v2"
-fi
 
 [[ -f "$SPEC" ]] || { echo "provision-site: spec not found: $SPEC" >&2; exit 1; }
 [[ -d "$DEPLOY_REPO" ]] || { echo "provision-site: deploy repo not found: $DEPLOY_REPO" >&2; exit 1; }

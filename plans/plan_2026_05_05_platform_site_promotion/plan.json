@@ -1,0 +1,138 @@
+{
+  "id": "plan_2026_05_05_platform_site_promotion",
+  "title": "Platform Site Promotion + Rollback (dev → staging → prod with release tags)",
+  "status": "proposed",
+  "label": "site-promotion",
+  "tags": ["platform-upgrades", "deploy", "release-management", "rollback"],
+  "created_at": "2026-05-05T00:00:00.000Z",
+  "owner": "Fritz",
+  "purpose": "Formalize the promotion ladder for FAMtastic sites so dev/staging/main branches map cleanly to local/Netlify-staging/Netlify-prod, and so any production deploy can be rolled back to a prior release tag in one command.",
+  "why_now": "MBSH canonicalization on 2026-05-05 surfaced that the promote/rollback flow exists in convention only — branches exist on every site but no command formalizes the transitions, no release tags are written, and no rollback path is wired. Without this, a bad prod deploy has no clean revert.",
+  "origin": {
+    "type": "conversation",
+    "trigger_record": "MBSH canonical rename + deploy-readiness conversation 2026-05-05",
+    "summary": "User asked to confirm site repos are isolated from Studio history, and to design promote-to-prod + rollback procedures with release tags or branches."
+  },
+  "success_signal": "Running `platform site promote mbsh-reunion --to prod` performs: merge staging→main, write release tag (date-based), push, wait for Netlify prod deploy, write proof. `platform site rollback mbsh-reunion` reverts main to the previous tag. Both work end-to-end against MBSH and at least one other site.",
+  "non_goals": [
+    "Replacing Netlify's deploy mechanism (Netlify still does the actual deploy on push).",
+    "Building a per-PR review-app system (deferred).",
+    "Automating DNS changes for new domains (handled by separate platform/dns/* capabilities)."
+  ],
+  "workstreams": [
+    {
+      "id": "ws_promote_command",
+      "title": "platform site promote <tag> --to <staging|prod>",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "platform/capabilities/site/promote.sh",
+        "Merges current branch → target branch (dev→staging or staging→main)",
+        "On --to prod: writes annotated release tag using date-based scheme (vYYYY.MM.DD-HHMM)",
+        "Pushes branch + tag to origin",
+        "Polls Netlify deploy status until success/failure",
+        "Writes proof to proofs/site-promote-<tag>-<env>-<date>.json",
+        "Refuses promotion if working tree is dirty or tests are failing (configurable)"
+      ],
+      "acceptance": [
+        "platform site promote mbsh-reunion --to staging merges dev→staging, pushes, and waits for staging Netlify deploy.",
+        "platform site promote mbsh-reunion --to prod merges staging→main, writes tag, pushes, waits for prod Netlify deploy.",
+        "Proof file records: source branch, target branch, merge commit SHA, tag, Netlify deploy URL, deploy status."
+      ]
+    },
+    {
+      "id": "ws_rollback_command",
+      "title": "platform site rollback <tag> [--to <tag-name>]",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "platform/capabilities/site/rollback.sh",
+        "Default behavior: revert main to the previous release tag",
+        "--to <tag-name>: revert main to a specific named tag",
+        "Implementation: git checkout <tag> -- frontend/ backend/ config/ → commit on main with revert message → push",
+        "Writes proof to proofs/site-rollback-<tag>-<date>.json with from/to tag SHAs"
+      ],
+      "acceptance": [
+        "Rollback reverts site to a named or implicit prior tag.",
+        "Rollback never deletes git history; it always creates a new revert commit.",
+        "Netlify auto-redeploys on the new commit and serves the prior version."
+      ]
+    },
+    {
+      "id": "ws_tag_scheme",
+      "title": "Release tag scheme — date-based for sites",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "Tag format: v<YYYY>.<MM>.<DD>-<HHMM> (UTC)",
+        "Tag message captures: site tag, branch, commit SHA, deployer (vault user), Netlify deploy id",
+        "Documented in docs/operating-rules/site-release-tags.md"
+      ],
+      "acceptance": [
+        "Every prod deploy writes exactly one tag.",
+        "Tags are pushable, listable, and addressable by rollback."
+      ]
+    },
+    {
+      "id": "ws_netlify_two_project_model",
+      "title": "Two Netlify projects per site: <tag>-staging and <tag>",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "Convention: every site has TWO Netlify projects: <tag>-staging (production_branch=staging) and <tag> (production_branch=main, custom domain)",
+        "platform/capabilities/deploy/connect-netlify.sh updated to create/configure both",
+        "Documented in docs/operating-rules/site-netlify-convention.md"
+      ],
+      "acceptance": [
+        "Running connect-netlify creates both projects and links each to the right branch.",
+        "Existing sites can be retroactively brought into compliance via a --reconcile flag."
+      ]
+    },
+    {
+      "id": "ws_proof_capture",
+      "title": "Promote/rollback proof capture (Ops integration)",
+      "status": "ready",
+      "priority": "P2",
+      "outputs": [
+        "Each promote/rollback writes a proof packet to proofs/ with type='site-promotion' or 'site-rollback'",
+        "Cross-link to plan and to the Ops Reviews tab (when Ops workspace ships)"
+      ]
+    },
+    {
+      "id": "ws_governance_gates",
+      "title": "Governance gates on prod promotion",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "Promotion to prod requires governance approval token matching plans/registry.json governance.hard_stop_conditions for production_deploy",
+        "Rollback bypasses the gate when --reason 'incident' is supplied (faster recovery), but writes a louder proof"
+      ],
+      "acceptance": [
+        "Prod promote without token is refused.",
+        "Rollback with --reason incident proceeds and writes proof flagged 'emergency'."
+      ]
+    }
+  ],
+  "mvp": {
+    "first_target": "MBSH",
+    "scope": [
+      "ws_promote_command working for staging and prod",
+      "ws_rollback_command working for default-prev-tag and named-tag",
+      "ws_tag_scheme implemented with date-based format",
+      "ws_netlify_two_project_model wired for MBSH",
+      "Manual one-time creation of the prod Netlify project for MBSH (Netlify git-link still requires UI)"
+    ],
+    "explicit_non_mvp": [
+      "Multi-site reconcile flag",
+      "Per-PR preview deploys",
+      "Automatic incident-mode escalation"
+    ]
+  },
+  "known_gaps_opened": [
+    "Netlify ↔ GitHub linking still requires manual UI step (Netlify API limitation, documented in connect-netlify.sh).",
+    "No prod Netlify project exists for MBSH yet — must be created (manually) before first prod promote.",
+    "platform/capabilities/site/promote.sh and rollback.sh do not exist yet."
+  ],
+  "depends_on": ["studio-workbench-foundation"],
+  "parent_plan": null
+}
