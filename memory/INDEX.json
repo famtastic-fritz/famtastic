@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-05T18:51:10.154Z",
+  "generated_at": "2026-05-05T23:15:44.002Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -487,6 +487,50 @@
       "lifecycle": "candidate",
       "confidence": 0.9,
       "path": "memory/anti-pattern/no-overflow-x-hidden-on-html-or-body.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra",
+      "type": "bug-pattern",
+      "title": "agent-checkin keyword overlap is too coarse — flags merged branches as conflicts",
+      "facets": [
+        "agents",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.88,
+      "path": "memory/bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda",
+      "type": "vendor-fact",
+      "title": "cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting",
+      "facets": [
+        "vendor:cpanel",
+        "vendor:godaddy",
+        "deploy",
+        "site-execution"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.9,
+      "path": "memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "do-not-repeat/do-not-mark-a-task-blocked-without-re-checking-when-external",
+      "type": "do-not-repeat",
+      "title": "Do not mark a task blocked without re-checking when external state changes",
+      "facets": [
+        "governance",
+        "ledgers"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.88,
+      "path": "memory/do-not-repeat/do-not-mark-a-task-blocked-without-re-checking-when-external.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }

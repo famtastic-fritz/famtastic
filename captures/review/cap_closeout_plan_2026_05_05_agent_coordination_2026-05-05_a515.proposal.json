@@ -1,0 +1,52 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_closeout_plan_2026_05_05_agent_coordination_2026-05-05_a515",
+  "from_capture": "cap_closeout_plan_2026_05_05_agent_coordination_2026-05-05_a515",
+  "created_at": "2026-05-05T23:15:43.733Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "rule/run-agent-checkin-js-before-any-non-trivial-work-in-the-famt",
+      "type": "rule",
+      "title": "Run agent-checkin.js before any non-trivial work in the FAMtastic repo",
+      "body": "Standing rule (CLAUDE.md, AGENTS.md): node scripts/agent-checkin.js --intent \"<short>\" before scaffolding new systems. Surfaces overlapping in-flight work to prevent the parallel-implementation problem.",
+      "facets": [
+        "governance",
+        "agents",
+        "platform"
+      ],
+      "confidence": 0.95,
+      "lifecycle": "active",
+      "source_capture": "cap_closeout_plan_2026_05_05_agent_coordination_2026-05-05_a515",
+      "evidence": [
+        "closeout:plan_2026_05_05_agent_coordination:2026-05-05T23:30:00.000Z",
+        "ec40894",
+        "AGENT-COORDINATION.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "type 'rule' not in allowlist {vendor-fact, do-not-repeat, bug-pattern}"
+    },
+    {
+      "canonical_id": "bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra",
+      "type": "bug-pattern",
+      "title": "agent-checkin keyword overlap is too coarse — flags merged branches as conflicts",
+      "body": "2026-05-05 audit: agent-checkin --intent \"Plan closeout mechanism\" flagged 7 branches as overlap based on generic keyword presence (plan, script, schema). All 7 were merged or stale. Need per-branch staleness check (already-merged? abandoned?) before flagging.",
+      "facets": [
+        "agents",
+        "governance"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_closeout_plan_2026_05_05_agent_coordination_2026-05-05_a515",
+      "evidence": [
+        "closeout:plan_2026_05_05_agent_coordination:2026-05-05T23:30:00.000Z",
+        "ec40894",
+        "AGENT-COORDINATION.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'bug-pattern' is in allowlist"
+    }
+  ],
+  "review_status": "partially_approved",
+  "approver": "auto-allowlist",
+  "approved_at": "2026-05-05T23:15:43.756Z"
+}

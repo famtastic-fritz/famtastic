@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_plan_2026_05_05_chat_capture_learn_optimize_2026-05-05_4d91",
+  "created_at": "2026-05-05T23:15:43.783Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/plan_2026_05_05_chat_capture_learn_optimize/closeouts/2026-05-05-checkpoint_complete.json",
+    "timestamp_range": {
+      "start": "2026-05-05T23:30:00.000Z",
+      "end": "2026-05-05T23:30:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for plan_2026_05_05_chat_capture_learn_optimize (verdict: checkpoint_complete). 2 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "rule",
+      "text": "Memory store uses per-entry markdown with YAML frontmatter, not SQLite",
+      "rationale": "Per D4 from chat-capture-learn-optimize plan: memory/<type>/<id>.md with YAML frontmatter is the canonical format. Git-friendly, diffable, human-readable. SQLite layer added only if query patterns demand it later.",
+      "evidence": [
+        "closeout:plan_2026_05_05_chat_capture_learn_optimize:2026-05-05T23:30:00.000Z",
+        "a9e6c5b",
+        "captures/SCHEMA.md",
+        "memory/TAXONOMY.md"
+      ],
+      "facets": [
+        "memory",
+        "platform"
+      ],
+      "confidence": 0.9,
+      "candidate_id": "rule/memory-store-uses-per-entry-markdown-with-yaml-frontmatter-n"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "rule",
+      "text": "Memory telemetry is local-only, configurable disable",
+      "rationale": "memory/usage.jsonl is append-only and never transmitted off-device. Disable entirely with MEMORY_TELEMETRY=off env var.",
+      "evidence": [
+        "closeout:plan_2026_05_05_chat_capture_learn_optimize:2026-05-05T23:30:00.000Z",
+        "a9e6c5b",
+        "captures/SCHEMA.md",
+        "memory/TAXONOMY.md"
+      ],
+      "facets": [
+        "memory",
+        "security",
+        "governance"
+      ],
+      "confidence": 0.92,
+      "candidate_id": "rule/memory-telemetry-is-local-only-configurable-disable"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "Cron schedule for memory-digest.js (Mon 9am)",
+    "Adversarial review loop applied to memory promotions",
+    "Smarter classifier to reduce near-duplicate type matches"
+  ]
+}

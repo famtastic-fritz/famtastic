@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_plan_2026_05_05_agent_coordination_2026-05-05_a515",
+  "created_at": "2026-05-05T23:15:43.715Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/plan_2026_05_05_agent_coordination/closeouts/2026-05-05-checkpoint_complete.json",
+    "timestamp_range": {
+      "start": "2026-05-05T23:30:00.000Z",
+      "end": "2026-05-05T23:30:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for plan_2026_05_05_agent_coordination (verdict: checkpoint_complete). 2 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "rule",
+      "text": "Run agent-checkin.js before any non-trivial work in the FAMtastic repo",
+      "rationale": "Standing rule (CLAUDE.md, AGENTS.md): node scripts/agent-checkin.js --intent \"<short>\" before scaffolding new systems. Surfaces overlapping in-flight work to prevent the parallel-implementation problem.",
+      "evidence": [
+        "closeout:plan_2026_05_05_agent_coordination:2026-05-05T23:30:00.000Z",
+        "ec40894",
+        "AGENT-COORDINATION.md"
+      ],
+      "facets": [
+        "governance",
+        "agents",
+        "platform"
+      ],
+      "confidence": 0.95,
+      "candidate_id": "rule/run-agent-checkin-js-before-any-non-trivial-work-in-the-famt"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "bug-pattern",
+      "text": "agent-checkin keyword overlap is too coarse — flags merged branches as conflicts",
+      "rationale": "2026-05-05 audit: agent-checkin --intent \"Plan closeout mechanism\" flagged 7 branches as overlap based on generic keyword presence (plan, script, schema). All 7 were merged or stale. Need per-branch staleness check (already-merged? abandoned?) before flagging.",
+      "evidence": [
+        "closeout:plan_2026_05_05_agent_coordination:2026-05-05T23:30:00.000Z",
+        "ec40894",
+        "AGENT-COORDINATION.md"
+      ],
+      "facets": [
+        "agents",
+        "governance"
+      ],
+      "confidence": 0.88,
+      "candidate_id": "bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "Per-surface branch naming convention enforcement",
+    "Pre-commit hook for agent-checkin auto-run",
+    "Promotion of 30 candidate entries to active (human review)",
+    "False-positive reduction in checkin script (today's run flagged 7 stale/merged branches as overlap)"
+  ]
+}

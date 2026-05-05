@@ -1,0 +1,70 @@
+{
+  "plan_id": "site-mbsh-reunion",
+  "verdict": "completed",
+  "fixed": [
+    "Story/gallery media blocker (7 missing JPGs) — closed 2026-05-05",
+    "task-2026-05-04-027 deploy proof — Codex completed via PR #5",
+    "task-2026-05-04-028 stale \"blocked\" status — actually completed (this packet corrects)"
+  ],
+  "added": [
+    "Production deploy of mbsh-reunion site (cPanel UAPI overwrite + DNS + TLS + smoke green)",
+    "Netlify staging branch link",
+    "Email + cron + CORS lockdown verified"
+  ],
+  "proved": [
+    "API DNS + TLS smoke green (proofs/mbsh-api-dns-tls-smoke-2026-05-05.log)",
+    "Smoke test green (proofs/mbsh-smoke-test-2026-05-05-green.log)",
+    "Backend deploy + schema apply + Resend domain + cron register all logged",
+    "Story assets present + rights manifest committed",
+    "RSVP and sponsor flows browser-verified"
+  ],
+  "remaining_work": [
+    "Monitor TLS cert renewal (separate platform task)",
+    "Domain registrar follow-up research"
+  ],
+  "evidence": [
+    {
+      "type": "commit",
+      "ref": "33ceea5",
+      "note": "PR #5 merge — Codex MBSH deploy completion"
+    },
+    {
+      "type": "doc",
+      "ref": "docs/sites/site-mbsh-reunion/DEPLOY-STRATEGY-VERIFICATION-2026-05-05.md",
+      "note": "verification doc"
+    },
+    {
+      "type": "doc",
+      "ref": "docs/sites/site-mbsh-reunion/CANONICAL-RENAME-2026-05-05.md",
+      "note": "v2 → mbsh-reunion canonical rename"
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "vendor-fact",
+      "title": "cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting",
+      "body": "Direct cPanel UAPI calls (vs. interactive cPanel UI) are the working programmatic path for backend file deployment to GoDaddy hosting. Codex used this for MBSH deploy.",
+      "facets": [
+        "vendor:cpanel",
+        "vendor:godaddy",
+        "deploy",
+        "site-execution"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "type": "do-not-repeat",
+      "title": "Do not mark a task blocked without re-checking when external state changes",
+      "body": "task-2026-05-04-028 stayed blocked in tasks.jsonl after the underlying media gap was closed by a separate session. Always re-audit blocked tasks at session start.",
+      "facets": [
+        "governance",
+        "ledgers"
+      ],
+      "confidence": 0.88
+    }
+  ],
+  "next_task_ids": [],
+  "schema_version": "1.0",
+  "verdict_at": "2026-05-05T23:30:00.000Z",
+  "verdict_by": "claude-code"
+}

@@ -15,3 +15,12 @@ scope. Respect scope-locks declared in AGENT-COORDINATION.md.
 This rule prevents the parallel-implementation problem where two agent
 surfaces independently solve the same problem in incompatible ways
 (observed 2026-05-05 with the .brain/ vs memory/ duplication).
+
+## Plan Closeout Rule (Non-Negotiable)
+
+No plan may stay `status: active` with zero open tasks for more than one
+session. Run `node scripts/plans/audit.js` at session end. Ship a closeout
+packet (`completed`/`parked`/`superseded`), a checkpoint packet
+(`checkpoint_complete`), or new tasks (`needs_tasking`) via
+`node scripts/plans/closeout.js apply <packet.json>`. Schema:
+`plans/CLOSEOUT-SCHEMA.md`.

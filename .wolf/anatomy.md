@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:01:13.046Z
-> Files: 635 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:17:37.208Z
+> Files: 638 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -679,6 +679,7 @@
 
 ## plans/
 
+- `CLOSEOUT-SCHEMA.md` — Plan Closeout / Checkpoint Schema (~929 tok)
 - `registry.json` (~5546 tok)
 - `registry.json` (~4403 tok)
 
@@ -769,6 +770,11 @@
 ## scripts/ops/
 
 - `inventory.js` — scripts/ops/inventory.js (~1866 tok)
+
+## scripts/plans/
+
+- `audit.js` — scripts/plans/audit.js — read-only plan/task ledger audit. (~1825 tok)
+- `closeout.js` — scripts/plans/closeout.js — write a closeout/checkpoint packet for a plan. (~2038 tok)
 
 ## site-studio/
 

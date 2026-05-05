@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_plan-task-run-intelligence_2026-05-05_1720",
+  "created_at": "2026-05-05T23:15:43.641Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/plan-task-run-intelligence/closeouts/2026-05-05-checkpoint_complete.json",
+    "timestamp_range": {
+      "start": "2026-05-05T23:30:00.000Z",
+      "end": "2026-05-05T23:30:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for plan-task-run-intelligence (verdict: checkpoint_complete). 1 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "decision",
+      "text": "Ledger substrate uses JSONL + JSON registry, not SQLite",
+      "rationale": "Plans live in plans/registry.json and per-plan plan.json files; tasks/runs/proofs live in JSONL files. Chosen for git-friendliness and human-readability over query speed.",
+      "evidence": [
+        "closeout:plan-task-run-intelligence:2026-05-05T23:30:00.000Z",
+        "plans/consolidated-execution-checklist-2026-05-04.md",
+        "FAMTASTIC-STATUS.md"
+      ],
+      "facets": [
+        "platform",
+        "ledgers"
+      ],
+      "confidence": 0.88,
+      "candidate_id": "decision/ledger-substrate-uses-jsonl-json-registry-not-sqlite"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "Automatic status-packet regeneration from source ledgers",
+    "Reviewed capture-packet promotion into canonical memory (PARTIALLY SOLVED by chat-capture-learn-optimize MVP)"
+  ]
+}

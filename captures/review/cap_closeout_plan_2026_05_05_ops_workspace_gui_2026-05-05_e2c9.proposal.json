@@ -1,0 +1,53 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-05_e2c9",
+  "from_capture": "cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-05_e2c9",
+  "created_at": "2026-05-05T23:15:43.860Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "decision/ops-freshness-is-derived-from-existing-status-age-not-stored",
+      "type": "decision",
+      "title": "Ops freshness is derived from existing status + age, not stored as parallel field",
+      "body": "Per Phase 0 state contract, freshness (live|idle|stale|parked|archived) is computed from (record_type, status, age_seconds) using the freshness_derivation_table baked into plan.json. Never stored alongside existing status fields.",
+      "facets": [
+        "ops",
+        "platform",
+        "ledgers"
+      ],
+      "confidence": 0.92,
+      "lifecycle": "active",
+      "source_capture": "cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-05_e2c9",
+      "evidence": [
+        "closeout:plan_2026_05_05_ops_workspace_gui:2026-05-05T23:30:00.000Z",
+        "3d76488",
+        "tests/ops/*.test.js"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "type 'decision' not in allowlist {vendor-fact, do-not-repeat, bug-pattern}"
+    },
+    {
+      "canonical_id": "rule/ops-command-endpoints-with-destructive-scope-require-governa",
+      "type": "rule",
+      "title": "Ops command endpoints with destructive scope require governance token",
+      "body": "POST /api/ops/command/{purge,cancel,archive,migrate,promote} return 403 without a governance approval token matching plans/registry.json governance.hard_stop_conditions.",
+      "facets": [
+        "ops",
+        "governance",
+        "security"
+      ],
+      "confidence": 0.9,
+      "lifecycle": "active",
+      "source_capture": "cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-05_e2c9",
+      "evidence": [
+        "closeout:plan_2026_05_05_ops_workspace_gui:2026-05-05T23:30:00.000Z",
+        "3d76488",
+        "tests/ops/*.test.js"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "type 'rule' not in allowlist {vendor-fact, do-not-repeat, bug-pattern}"
+    }
+  ],
+  "review_status": "pending",
+  "approver": "auto-allowlist",
+  "approved_at": "2026-05-05T23:15:43.880Z"
+}

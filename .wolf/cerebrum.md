@@ -425,3 +425,34 @@ or pick a different scope. Respect scope-locks declared in AGENT-COORDINATION.md
 This rule was installed after the 2026-05-05 incident where Cowork's `.brain/`
 and Claude Code's `memory/<type>/<id>.md` shipped in parallel as competing
 solutions to the same problem.
+
+### bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra — 2026-05-05 (auto-promoted)
+
+**Type:** `bug-pattern` | **Confidence:** 0.88 | **Facets:** agents, governance
+
+agent-checkin keyword overlap is too coarse — flags merged branches as conflicts
+
+_See `memory/bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra.md` for body and evidence._
+
+### vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda — 2026-05-05 (auto-promoted)
+
+**Type:** `vendor-fact` | **Confidence:** 0.9 | **Facets:** vendor:cpanel, vendor:godaddy, deploy, site-execution
+
+cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting
+
+_See `memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda.md` for body and evidence._
+
+### do-not-repeat/do-not-mark-a-task-blocked-without-re-checking-when-external — 2026-05-05 (auto-promoted)
+
+**Type:** `do-not-repeat` | **Confidence:** 0.88 | **Facets:** governance, ledgers
+
+Do not mark a task blocked without re-checking when external state changes
+
+_See `memory/do-not-repeat/do-not-mark-a-task-blocked-without-re-checking-when-external.md` for body and evidence._
+
+## Standing Rule — Plan Closeout (added 2026-05-05)
+
+No plan may stay `status: active` with zero open tasks for more than one
+session. Use `scripts/plans/audit.js` to detect drift and `scripts/plans/closeout.js`
+to ship packets. Memory candidates in closeout packets flow into the
+chat-capture pipeline automatically.

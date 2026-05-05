@@ -1,0 +1,52 @@
+{
+  "plan_id": "studio-workbench-foundation",
+  "verdict": "checkpoint_complete",
+  "phase": "foundation",
+  "fixed": [],
+  "added": [
+    "Frozen seven-domain Workbench shell",
+    "Workspace contracts for top-level domains",
+    "Plan mode reads registry/task/run/proof mirror data",
+    "Workbench registers as workbench.foundation Shay context provider"
+  ],
+  "proved": [
+    "Foundation browser-proven via Playwright",
+    "Workbench Shay context provider passed live UI proof"
+  ],
+  "remaining_work": [
+    "Default-shell cutover (replace old Studio shell with Workbench)",
+    "Media Studio control unification between prompt-first surface and production mini-app"
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "docs/STUDIO-UI-FOUNDATION.md",
+      "note": "frozen UI foundation"
+    },
+    {
+      "type": "doc",
+      "ref": "docs/sites/site-mbsh-reunion/cowork-audit-001/",
+      "note": "audit packet"
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "rule",
+      "title": "Workbench shell is the chassis; new domains mount as left-rail entries",
+      "body": "The frozen seven-domain Workbench shell is the canonical UI rulebook. Any new product domain (Ops, Build, Plan, etc.) mounts inside it as a left-rail entry rather than launching its own shell.",
+      "facets": [
+        "platform",
+        "ui-shell",
+        "workspace:workbench"
+      ],
+      "confidence": 0.92
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-05-06-001",
+    "task-2026-05-06-002"
+  ],
+  "schema_version": "1.0",
+  "verdict_at": "2026-05-05T23:30:00.000Z",
+  "verdict_by": "claude-code"
+}

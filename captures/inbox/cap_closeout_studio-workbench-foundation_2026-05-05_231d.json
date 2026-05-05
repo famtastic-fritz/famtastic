@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_studio-workbench-foundation_2026-05-05_231d",
+  "created_at": "2026-05-05T23:15:44.026Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/studio-workbench-foundation/closeouts/2026-05-05-checkpoint_complete.json",
+    "timestamp_range": {
+      "start": "2026-05-05T23:30:00.000Z",
+      "end": "2026-05-05T23:30:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for studio-workbench-foundation (verdict: checkpoint_complete). 1 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "rule",
+      "text": "Workbench shell is the chassis; new domains mount as left-rail entries",
+      "rationale": "The frozen seven-domain Workbench shell is the canonical UI rulebook. Any new product domain (Ops, Build, Plan, etc.) mounts inside it as a left-rail entry rather than launching its own shell.",
+      "evidence": [
+        "closeout:studio-workbench-foundation:2026-05-05T23:30:00.000Z",
+        "docs/STUDIO-UI-FOUNDATION.md",
+        "docs/sites/site-mbsh-reunion/cowork-audit-001/"
+      ],
+      "facets": [
+        "platform",
+        "ui-shell",
+        "workspace:workbench"
+      ],
+      "confidence": 0.92,
+      "candidate_id": "rule/workbench-shell-is-the-chassis-new-domains-mount-as-left-rai"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "Default-shell cutover (replace old Studio shell with Workbench)",
+    "Media Studio control unification between prompt-first surface and production mini-app"
+  ]
+}

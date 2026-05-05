@@ -1,0 +1,32 @@
+{
+  "plan_id": "build-intent-fulfillment-trace",
+  "verdict": "checkpoint_complete",
+  "phase": "phase_1",
+  "fixed": [],
+  "added": [
+    "Build intent classification, fulfillment trace, workflow data instrumentation",
+    "Workflow stage catalog and /api/workflow/stage-catalog endpoint",
+    "Workbench pipeline visualizer phase 1"
+  ],
+  "proved": [
+    "Pipeline visualizer browser-proven via Playwright"
+  ],
+  "remaining_work": [
+    "Phase 2: stage/event matching and proposed patch preview",
+    "Workflow-as-data phase 2 and fulfillment diagnostics"
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "docs/build-orchestration-trace-plan.md",
+      "note": "trace plan"
+    }
+  ],
+  "memory_candidates": [],
+  "next_task_ids": [
+    "task-2026-05-06-004"
+  ],
+  "schema_version": "1.0",
+  "verdict_at": "2026-05-05T23:30:00.000Z",
+  "verdict_by": "claude-code"
+}
