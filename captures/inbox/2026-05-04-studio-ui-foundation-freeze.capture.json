@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.1.0",
+  "capture_id": "capture_2026_05_04_studio_ui_foundation_freeze",
+  "created_at": "2026-05-04T21:30:00-04:00",
+  "source_surface": "Codex Desktop",
+  "source_type": "fritz_review_plus_local_repo",
+  "status": "approved_capture",
+  "needs_review": false,
+  "summary": "Fritz approved freezing the updated Studio UI Foundation. The foundation is now the canonical rulebook for Site Studio UI direction and supersedes earlier rigid dashboard/card workbench proposals.",
+  "approved_decisions": [
+    {
+      "id": "freeze_studio_ui_foundation",
+      "decision": "Freeze docs/STUDIO-UI-FOUNDATION.md as the canonical UI foundation for FAMtastic Site Studio.",
+      "promotion_target": "docs/decisions.jsonl"
+    },
+    {
+      "id": "left_nav_domain_only",
+      "decision": "Left navigation is domain-level only: Sites, Brainstorm, Plans, Components, Media, Research, Admin.",
+      "promotion_target": "docs/STUDIO-UI-FOUNDATION.md"
+    },
+    {
+      "id": "workspace_contract_required",
+      "decision": "Every production workspace must declare domain, route, parent, purpose, primary work surface, selected object model, contextual tools, Shay context, proof required, promotion targets, and anti-patterns before implementation.",
+      "promotion_target": "docs/STUDIO-UI-FOUNDATION.md"
+    },
+    {
+      "id": "shay_ambient_not_nav",
+      "decision": "Shay is ambient everywhere and invoked as Lite/Desk from the current workspace. Shay is not a left-nav domain.",
+      "promotion_target": "docs/STUDIO-UI-FOUNDATION.md"
+    },
+    {
+      "id": "media_studio_prompt_first",
+      "decision": "Media is Media Studio: prompt-first generation, comparison, promotion, and usage proof. Media Library is a supporting surface, not the domain purpose.",
+      "promotion_target": "docs/STUDIO-UI-FOUNDATION.md"
+    },
+    {
+      "id": "bench_is_the_work",
+      "decision": "The bench is the primary task surface. Cards may represent repeated items, but cards must not replace the workspace job.",
+      "promotion_target": "docs/STUDIO-UI-FOUNDATION.md"
+    },
+    {
+      "id": "contextual_tools_only",
+      "decision": "Tools appear because the selected object needs them. Tool order, visibility, and grouping are workspace state, not fixed global chrome.",
+      "promotion_target": "docs/STUDIO-UI-FOUNDATION.md"
+    },
+    {
+      "id": "plan_then_approve_universal",
+      "decision": "Canonical writes, brand-kit changes, deploys, expensive generations, and destructive actions propose first and apply only after approval.",
+      "promotion_target": "docs/STUDIO-UI-FOUNDATION.md"
+    }
+  ],
+  "files_updated": [
+    "docs/STUDIO-UI-FOUNDATION.md",
+    "docs/decisions.jsonl",
+    "SITE-LEARNINGS.md",
+    "FAMTASTIC-STATE.md",
+    "CHANGELOG.md"
+  ],
+  "open_gaps": [
+    "Production Workbench prototype remains a prototype and should not become the default shell until rebuilt from the frozen workspace contract.",
+    "Shay Desk overlay/right-edge context provider is conceptually frozen but not production-wired.",
+    "Media Studio prompt-first controls are not unified with the existing production Media mini-app.",
+    "Plan/Task/Run registry data is not yet rendered in Workbench."
+  ]
+}
