@@ -57,6 +57,10 @@ fam-hub plan show build-intent-fulfillment-trace
 
 ## Newly Available
 
+- `fam-hub report style`
+- `fam-hub report style compact`
+- `fam-hub report style standard`
+- `fam-hub report style detail`
 - `fam-hub plan review`
 - `fam-hub task promote --dry-run`
 - `fam-hub task promote --apply`

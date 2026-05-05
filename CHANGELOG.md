@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — Reporting density made configurable
+
+Added `config/reporting-preferences.json` as the project-level response/reporting density config and `docs/operating-rules/reporting-density.md` as the operating rule. Added `fam-hub report style` to show or set `compact`, `standard`, and `detail` density. Default is `compact`; proof standards and blocker visibility do not change.
+
 ## 2026-05-05 — MBSH launch blockers grouped
 
 Grouped the remaining MBSH work into one launch unblock packet at `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`. Closed the media/story blocker by adding all seven referenced story JPGs to the v2 deploy repo, adding `frontend/assets/story/RIGHTS-MANIFEST.md`, and saving Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete. Remaining MBSH launch work is the live deploy proof, blocked by external Netlify/DNS/GoDaddy/PHP/MySQL/Resend/backend config access and production `API_BASE_URL`.

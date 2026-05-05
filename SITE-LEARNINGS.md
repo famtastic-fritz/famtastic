@@ -5317,6 +5317,26 @@ stack.
 - Media Studio exists as a prompt-first Workbench surface and as a production mini-app, but generation/provider controls are not unified between the two yet.
 - Operations workspace GUI plan (`plan_2026_05_05_ops_workspace_gui`) is design-only — no Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These four prerequisites are tracked in the plan's `known_gaps_opened`.
 
+## Reporting Density Preference (2026-05-05)
+
+Response/reporting density is now explicit project configuration at
+`config/reporting-preferences.json`. Current/default density is `compact`.
+
+CLI:
+
+```bash
+fam-hub report style
+fam-hub report style compact
+fam-hub report style standard
+fam-hub report style detail
+```
+
+`compact` is the normal completion/status shape: result, commit/proof if
+relevant, and remaining blocker. `standard` is for multi-file summaries.
+`detail` is reserved for explicit review, audit, root-cause, incident, or
+"show me everything" requests. This setting changes report shape only; it does
+not reduce proof, testing, documentation, or blocker visibility requirements.
+
 ## Operations Workspace GUI Plan (2026-05-05)
 
 A new parent plan, `plan_2026_05_05_ops_workspace_gui`, was registered as the

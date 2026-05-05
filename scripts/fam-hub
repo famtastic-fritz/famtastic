@@ -979,6 +979,51 @@ STUDIOHELP
     esac
     ;;
 
+  report)
+    REPORTCMD="${2:-style}"
+    REPORT_PREFS="$HUB_ROOT/config/reporting-preferences.json"
+    case "$REPORTCMD" in
+      style|density)
+        NEW_DENSITY="${3:-}"
+        if [ ! -f "$REPORT_PREFS" ]; then
+          echo "Reporting preferences not found: $REPORT_PREFS" >&2
+          exit 1
+        fi
+        if [ -z "$NEW_DENSITY" ]; then
+          echo "Reporting density: $(jq -r '.current_density // .default_density // "compact"' "$REPORT_PREFS")"
+          echo "Config: config/reporting-preferences.json"
+          echo ""
+          jq -r '.densities | to_entries[] | "  - \(.key): \(.value.description)"' "$REPORT_PREFS"
+          exit 0
+        fi
+        case "$NEW_DENSITY" in
+          compact|standard|detail) ;;
+          *)
+            echo "Invalid reporting density: $NEW_DENSITY" >&2
+            echo "Use: compact, standard, or detail" >&2
+            exit 1
+            ;;
+        esac
+        tmp_report_prefs="$(mktemp)"
+        jq --arg density "$NEW_DENSITY" '.current_density = $density' "$REPORT_PREFS" > "$tmp_report_prefs"
+        mv "$tmp_report_prefs" "$REPORT_PREFS"
+        echo "Reporting density set to: $NEW_DENSITY"
+        ;;
+      help|*)
+        cat <<'REPORTHELP'
+fam-hub report — Reporting preferences
+
+Usage:
+  fam-hub report style              Show current response/reporting density
+  fam-hub report style compact      Short completion/status responses
+  fam-hub report style standard     Balanced summaries
+  fam-hub report style detail       Full audit-trail responses
+
+REPORTHELP
+        ;;
+    esac
+    ;;
+
   # --- Admin ---
   admin)
     ADMINCMD="${2:-help}"
@@ -1082,6 +1127,7 @@ Multi-Agent Workflow:
   fam-hub convo reconcile <tag>     Reconcile multi-agent conversation
   fam-hub ingest <tag> {md|json}    Ingest content
   fam-hub capture extract <file>     Produce review-only knowledge packet
+  fam-hub report style               Show/set response reporting density
 
 Admin:
   fam-hub admin doctor              Check dependencies

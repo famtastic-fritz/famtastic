@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0.0",
+  "default_density": "compact",
+  "current_density": "compact",
+  "densities": {
+    "compact": {
+      "description": "Short completion/status response.",
+      "default_for": [
+        "normal completion",
+        "quick status",
+        "commit summary",
+        "blocked/unblocked update"
+      ],
+      "target_shape": "Done. What changed. What remains blocked. Commit/proof if relevant.",
+      "max_lines": 8
+    },
+    "standard": {
+      "description": "Balanced response with key files, tests, and blockers.",
+      "default_for": [
+        "multi-file implementation",
+        "handoff summary",
+        "plan/task report"
+      ],
+      "target_shape": "Outcome, changes, verification, remaining work.",
+      "max_lines": 18
+    },
+    "detail": {
+      "description": "Full audit trail.",
+      "default_for": [
+        "explicit review",
+        "audit",
+        "incident/debug report",
+        "user asks for details"
+      ],
+      "target_shape": "Findings, evidence, files, commands, proof, risks, next steps.",
+      "max_lines": 60
+    }
+  },
+  "escalation_rules": [
+    {
+      "when": "User says show details, audit, review, root cause, compare, or full report.",
+      "density": "detail"
+    },
+    {
+      "when": "Work changes production, DNS, auth, payment, secrets, or deploy state.",
+      "density": "standard"
+    },
+    {
+      "when": "Work is simple, already committed, or just a status answer.",
+      "density": "compact"
+    }
+  ],
+  "final_response_contract": {
+    "compact": [
+      "Result",
+      "Commit or proof if relevant",
+      "Only remaining blocker"
+    ],
+    "standard": [
+      "Result",
+      "Files or areas changed",
+      "Verification",
+      "Remaining blockers"
+    ],
+    "detail": [
+      "Result",
+      "Context",
+      "Files changed",
+      "Verification",
+      "Proof",
+      "Risks",
+      "Next steps"
+    ]
+  }
+}

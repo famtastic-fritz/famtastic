@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-05-05 (MBSH media/story launch blocker closed; live deploy proof remains externally blocked.)
+**Last updated:** 2026-05-05 (reporting density is configurable; MBSH media/story launch blocker closed; live deploy proof remains externally blocked.)
 
 ---
 
@@ -12,6 +12,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Key recent milestones:**
 
+- **2026-05-05** — Configurable reporting density. Added `config/reporting-preferences.json` and `docs/operating-rules/reporting-density.md`. `scripts/fam-hub` now supports `fam-hub report style`, `fam-hub report style compact`, `fam-hub report style standard`, and `fam-hub report style detail`. Current/default density is `compact`; this changes response shape only, not proof standards, testing, or blocker visibility.
 - **2026-05-05** — MBSH launch unblock grouping. Added `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md` and closed the media/story blocker for launch-safe generated/derivative assets. The v2 deploy repo now has all seven referenced `frontend/assets/story/*.jpg` files, a `frontend/assets/story/RIGHTS-MANIFEST.md`, and Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete; `task-2026-05-04-027` remains blocked by external Netlify/DNS/GoDaddy/PHP/MySQL/Resend/backend config access and production `API_BASE_URL`. `plans/registry.json` is internally consistent again with five active parent records, including the 2026-05-05 Ops Workspace GUI parent.
 - **2026-05-04** — Four-plan registry execution substrate. `plans/registry.json` contains exactly four active parent plans: `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`. The prior 11-record registry is backed up at `plans/registry.backup-2026-05-04.json`; stale plans are recorded as absorbed/parked metadata instead of active records. Populated `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`, regenerated `FAMTASTIC-STATUS.md`, fixed `fam-hub task list` / `fam-hub run status`, and added `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start`. Workbench Plan mode renders a browser-safe consolidated state packet at `site-studio/public/data/workbench-plan-state.json`; Workbench also registers as `workbench.foundation` in `ShayContextRegistry` and has actual Shay-Shay UI proof that `context.page_context.domain = media` is seen and answered from. `fam-hub capture extract` creates review-only knowledge packets. Workflow-as-data phase 1 is cataloged, trace-instrumented, and visible through Workbench pipeline visualizer phase 1. MBSH backend inventory, RSVP/sponsor/chatbot browser proof, content delta, audit harness, and gap-promotion packets are complete; live deploy proof and media/story readiness are blocked by external access/config and missing story assets.
 - **2026-05-04** — Consolidated execution checklist. Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four-plan consolidation artifact. The surviving parent plans are `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`; `docs/famtastic-total-ask-plan.md` is parked as strategy context and mined for useful asks. Fritz marked Drive sync complete, so it is not carried as active work; workflow-as-data and the pipeline visualizer remain open under `build-intent-fulfillment-trace`. The registry rewrite, P0 task promotion, run/proof records, and status packet were applied in the follow-up four-plan registry milestone above.
@@ -79,7 +80,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy`. `runDeploy()` now runs `checkNetlify()` preflight before flag mutation, has `child.on('error')` handler, parses stderr for known patterns, resets `deployInProgress` on every early-return. |
 | Testing | Vitest 4.1.1 | Current: 161/161 passing across 3 files (`unit.test.js` 110, `gap4-tier-canonicality.test.js` 28, `baseline-closure.test.js` 23). Legacy node-script test suites still in `tests/` folder (~1,236 tests across 22 suites) — not gating. |
 | Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`. |
-| CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research`, `plan`, `task`, and `run` subcommands. Plan/task/run commands are read-only in the 2026-05-04 pilot substrate. |
+| CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research`, `plan`, `task`, `run`, and `report` subcommands. `fam-hub report style` shows/sets response density from `config/reporting-preferences.json`. |
 
 ---
 
@@ -414,7 +415,9 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 
 | File | Purpose |
 |------|---------|
-| `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research |
+| `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research, plan/task/run, and report style. |
+| `config/reporting-preferences.json` | Project-level response/reporting density preferences. Current/default density is `compact`; valid densities are `compact`, `standard`, and `detail`. |
+| `docs/operating-rules/reporting-density.md` | Operating rule for final-response density and CLI usage. |
 | `scripts/gemini-cli` | Gemini API CLI (Node.js, gemini-2.5-flash) |
 | `scripts/orchestrator-site` | Batch site generation |
 | `scripts/stock-photo` | 3-provider stock photo downloader |
