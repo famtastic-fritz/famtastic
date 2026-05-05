@@ -1,5 +1,38 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Plan Consolidation Verification (2026-05-04)
+
+Created `plans/consolidation-verification-2026-05-04.md` as a proposal to
+reduce the current registry from 11 same-level plan records into 4 active
+parent plans, 1 parked strategy context, and 6 merged/closed evidence records.
+The report verifies that all referenced source files exist, but the task,
+run, and proof ledgers are still empty and current registry source/proof
+fields are not rich enough for Workbench/Shay execution.
+
+### Consolidation recommendation
+
+- **Keep active:** `studio-workbench-foundation`,
+  `plan-task-run-intelligence`, `build-intent-fulfillment-trace`,
+  `site-mbsh-reunion`.
+- **Park:** `famtastic-total-ask-plan` as strategy context until Fritz reviews
+  and accepts/modifies it.
+- **Merge/close:** `multi-agent-resumable-plan-system`,
+  `build-orchestration-trace`, `baseline-closure-review`,
+  `canonical-build-intent-v2`, `outstanding-iterative-roadmap`,
+  `gap-123-4-closure`, and `p0-p1-diagnostics` should stop appearing as
+  same-level active plans after approval; they become child workstreams,
+  evidence, or promoted tasks.
+
+### Known Gaps opened or preserved
+
+- `plans/registry.json` is still unchanged pending Fritz approval.
+- `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`
+  remain empty.
+- No `fam-hub plan review`, `fam-hub task promote`, or `fam-hub run start`
+  commands exist yet.
+- Workbench Plan mode cannot show real execution state until the consolidation
+  is approved and task/run/proof records are promoted.
+
 ## Studio UI Foundation Freeze (2026-05-04)
 
 Fritz approved `docs/STUDIO-UI-FOUNDATION.md` as the frozen canonical rulebook

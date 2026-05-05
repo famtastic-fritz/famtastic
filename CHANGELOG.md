@@ -401,3 +401,7 @@ Added the Workbench Foundation screen at `site-studio/public/workbench-foundatio
 ## 2026-05-04 — Studio UI foundation freeze
 
 Fritz approved `docs/STUDIO-UI-FOUNDATION.md` as the frozen canonical Site Studio UI rulebook. Added a formal workspace contract, resolved the Shay ambient/Desk placement, locked Media as prompt-first Media Studio, and captured the freeze in `docs/decisions.jsonl`, a reviewed capture packet, and a handoff note. Deferred: rebuilding the production Workbench prototype from the frozen contract, wiring real registry data, registering Workbench as a Shay context provider, and unifying Media Studio controls.
+
+## 2026-05-04 — Plan consolidation verification proposal
+
+Added `plans/consolidation-verification-2026-05-04.md` after reviewing the 11-record plan registry, source-file existence, and empty task/run/proof ledgers. The proposal recommends 4 active parent plans, 1 parked strategy context, and 6 merged/closed evidence records so Workbench and Shay can reason from fewer authoritative plans. Deferred: mutating `plans/registry.json`, archiving merged records, and promoting task/run/proof ledger entries until Fritz approves the consolidation.
