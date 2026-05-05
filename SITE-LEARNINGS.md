@@ -5145,6 +5145,61 @@ passed the click event as `forcedText`, so Shay received `[object PointerEvent]`
 instead of the typed message; `studio-orb.js` now wraps the handler and calls
 `sendDirect()` with no event payload.
 
+### Workbench Shay Context Provider
+
+Workbench is now a real Shay page-context provider. The embedded Workbench
+iframe registers `page_id: workbench.foundation` with the parent
+`ShayContextRegistry` from `site-studio/public/js/workbench-foundation.js`.
+The provider exposes the selected domain, domain label, mode, scope, submode,
+selected object, workspace contract, plan-state summary, and available
+Workbench actions. `site-studio/public/js/studio-shell.js` marks
+`workbench.foundation` active only when the Workbench tab is foregrounded so
+hidden iframe state does not overwrite Shay context for other Studio pages.
+
+Actual proof used the Studio UI and Shay-Shay, not a direct API shortcut. The
+test opened Workbench through Studio, selected the Media domain, clicked the
+Shay orb, sent `What Workbench page context are you receiving? Answer with the
+page_id and domain only.`, observed a real `POST /api/shay-shay`, and verified
+the panel response: `page_id: workbench.foundation | domain: media`. Evidence:
+`proofs/workbench-shay-context-provider-2026-05-04.json` and
+`proofs/workbench-shay-context-provider-2026-05-04.png`.
+
+One server-side bug was found and fixed during the proof. `answerShayShayDirect`
+matched generic active-page questions before page-context questions, so the
+same prompt returned `index.html` even though `context.page_context` contained
+the correct Workbench payload. `site-studio/server.js` now checks page-context
+requests before the older active-page shortcut.
+
+### Site Workflow Modes
+
+The three site workflow modes are now captured as an architecture contract in
+`architecture/site-workflow-modes-2026-05-04.md`. The modes are
+`new_site_from_brief`, `adapt_existing_site`, and `rebuild_from_brief`. Each
+contract names required inputs, state ownership, permissions, config discovery,
+execution path, proof requirements, and known gaps.
+
+Current reality remains intentionally explicit: `new_site_from_brief` is the
+best-supported mode; `adapt_existing_site` and `rebuild_from_brief` are not yet
+first-class runtime modes. The doc is the boundary that prevents Studio from
+treating hand-built deploy repos, imported sites, and generated Studio sites as
+the same state problem.
+
+### MBSH Backend Endpoint Inventory
+
+The MBSH v2 backend inventory is complete at
+`docs/sites/site-mbsh-reunion/backend-endpoint-inventory-2026-05-04.md`. It
+documents the PHP/MySQL endpoints, methods, payloads, persistence tables,
+shared backend libraries, admin pages, cron scripts, frontend consumers,
+config/env requirements, local/staging assumptions, missing runtime files,
+blockers, and which follow-up tasks consume each endpoint.
+
+Important operational finding: endpoint code and schema exist, but meaningful
+local execution is blocked until one of `.env`, `.mbsh-config.local.php`, or
+`MBSH_CONFIG_PATH` is present with database, Resend, admin hash, CORS, and
+upload-path config. Production frontend config also still has
+`API_BASE_URL: null`, so deploy proof must verify that the public config points
+at the real backend origin before production smoke tests.
+
 ### Known Gaps Opened / Still Open
 
 - Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
@@ -5152,10 +5207,10 @@ instead of the typed message; `studio-orb.js` now wraps the handler and calls
 - `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` exist. `fam-hub plan graph` is still not implemented.
 - Capability Store broader than Media Studio is not implemented.
 - Pipeline visualizer inspect/trace/propose is still not implemented; it now has trace events and a workflow stage catalog to read from.
-- MBSH child tasks are split and scoped, but the backend/RSVP/sponsor/deploy/media/chatbot/content/audit execution tasks are not complete yet.
+- MBSH child tasks are split and scoped. Backend endpoint inventory is complete; RSVP/sponsor/deploy/media/chatbot/content/audit execution tasks are not complete yet.
+- MBSH local endpoint execution is blocked by missing runtime config/secrets; this is a deploy-proof blocker, not a source-code inventory blocker.
 - Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.
 - Media Studio exists as a prompt-first Workbench surface and as a production mini-app, but generation/provider controls are not unified between the two yet.
-- Workbench is not registered as a `ShayContextRegistry` provider yet, so Shay sees the embedded page only through coarse shell state.

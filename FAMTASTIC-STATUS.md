@@ -14,15 +14,18 @@
 - Workbench Plan mode now reads a browser-safe consolidated plan state packet at `site-studio/public/data/workbench-plan-state.json`.
 - Workbench Foundation now follows the frozen seven-domain left rail, exposes contract pills in the workspace chrome, and keeps Media as prompt-first **Media Studio**.
 - Actual Shay-Shay UI proof passed through Studio with the message `system status`; two UI bugs were fixed in the process.
+- Workbench is now registered as `workbench.foundation` in `ShayContextRegistry`; an actual Shay-Shay UI call received `context.page_context.domain = media` and answered from that context.
+- The three site workflow modes are defined in `architecture/site-workflow-modes-2026-05-04.md`: `new_site_from_brief`, `adapt_existing_site`, and `rebuild_from_brief`.
+- MBSH backend endpoint inventory is complete at `docs/sites/site-mbsh-reunion/backend-endpoint-inventory-2026-05-04.md`; endpoint execution remains blocked until runtime config/secrets are provisioned.
 
 ## Active Parent Plans
 
 | Plan | Status | Next action |
 |---|---|---|
-| `studio-workbench-foundation` | Active parent plan | Register Workbench as a Shay context provider after the frozen-contract rail/contracts and Plan mode wiring. |
+| `studio-workbench-foundation` | Active parent plan | Default-shell cutover, automatic status-packet regeneration, and Media Studio unification remain after the Workbench context provider proof. |
 | `plan-task-run-intelligence` | Active parent plan | Use the promoted task/run/proof ledgers as the operating checklist and build review/promote/start commands. |
-| `build-intent-fulfillment-trace` | Active parent plan | Use the new trace events and stage catalog before building visualizer inspect/trace/propose. |
-| `site-mbsh-reunion` | Site-scoped active parent plan | Execute the new site-scoped backend/RSVP/sponsor/deploy/media/chatbot/content/proof tasks and promote reusable gaps upward only when generalized. |
+| `build-intent-fulfillment-trace` | Active parent plan | Use the new trace events, stage catalog, and workflow-mode contracts before building visualizer inspect/trace/propose. |
+| `site-mbsh-reunion` | Site-scoped active parent plan | Execute RSVP, sponsor, deploy, media, chatbot, content, proof, and audit tasks; backend inventory is complete. |
 
 ## Current Run
 
@@ -39,11 +42,11 @@ fam-hub plan show build-intent-fulfillment-trace
 
 ## Remaining Priority
 
-1. P0: Use Playwright and actual Shay/Shay-Shay calls for Studio behavior proof.
-2. P0/P1: Execute MBSH backend, RSVP, sponsor, deploy, media, chatbot, content, and audit harness tasks.
-3. P1/P2: Build pipeline visualizer inspect + trace + propose from real trace events.
-4. P1: Register Workbench as a Shay context provider and automate status-packet regeneration.
-5. P1: Build the first usable knowledge-capture pass.
+1. P0: Execute MBSH RSVP, sponsor, and deploy proof tasks once local/production runtime config is available.
+2. P1: Build the first usable knowledge-capture pass.
+3. P1/P2: Build pipeline visualizer inspect + trace + propose from real trace events and workflow-mode contracts.
+4. P1: Complete MBSH media, chatbot, content deltas, Studio reproduction audit, and generalized gap promotion.
+5. P1: Automate status-packet regeneration and continue Workbench default-shell / Media Studio unification work.
 
 ## Newly Available
 
@@ -55,7 +58,7 @@ fam-hub plan show build-intent-fulfillment-trace
 ## Still Missing
 
 - Studio Plans panel rendering from registry/ledgers.
-- Workbench Shay context provider.
 - Automatic status-packet regeneration from code instead of manual update.
 - Media Studio controls are still not unified between the Workbench surface and the richer production mini-app.
+- MBSH local endpoint execution is blocked by missing `.env`, `.mbsh-config.local.php`, or `MBSH_CONFIG_PATH` runtime config.
 - Studio console still has non-blocking cleanup noise from the Shay proof: Tailwind CDN warning, unsupported preload `as`, and `/config/site-config.json` 404.

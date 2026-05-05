@@ -437,3 +437,7 @@ Added `docs/sites/site-mbsh-reunion/DEPLOY-STATE.md` to document the boundary be
 ## 2026-05-04 — Shay-Shay UI proof and send fixes
 
 Ran an actual Shay-Shay `system status` call through the Studio UI with Playwright and verified the rendered panel response plus real `POST /api/shay-shay`. Fixed two bugs found during the proof: open Shay Lite panels now restore pointer events, and the send button no longer passes the click `PointerEvent` as the message. Added `docs/operating-rules/studio-shay-ui-proof-2026-05-04.md` and screenshot proof at `proofs/shay-shay-system-status-ui-2026-05-04.png`. Deferred: broader console-health cleanup for existing non-blocking Studio warnings.
+
+## 2026-05-04 — Workbench context and workflow contracts
+
+Registered Workbench as the `workbench.foundation` Shay context provider and verified an actual Studio UI Shay-Shay call received `context.page_context.domain = media` and answered with `page_id: workbench.foundation | domain: media`. Added the three site workflow contract doc for `new_site_from_brief`, `adapt_existing_site`, and `rebuild_from_brief`, plus the MBSH backend endpoint inventory. Updated task/run/proof ledgers, the Workbench plan-state packet, `FAMTASTIC-STATUS.md`, `SITE-LEARNINGS.md`, and `FAMTASTIC-STATE.md`. Deferred: MBSH RSVP/sponsor/deploy runtime execution until config/secrets are available, first usable knowledge capture pass, and the pipeline visualizer.

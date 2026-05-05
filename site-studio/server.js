@@ -7137,6 +7137,30 @@ function answerShayShayDirect(lower, siteSnapshot, manifest) {
     return { intent: 'active_site', response: `The active site is ${siteLabel}.` };
   }
 
+  if (/\b(page\s+context|workbench\s+context|context\s+(are\s+you\s+)?receiv|registered\s+context|current\s+context)\b/.test(lower)) {
+    const pageContext = siteSnapshot.page_context && typeof siteSnapshot.page_context === 'object'
+      ? siteSnapshot.page_context
+      : null;
+    if (!pageContext) {
+      return {
+        intent: 'page_context_missing',
+        response: 'I do not have an active page-context provider in my payload yet.'
+      };
+    }
+    const contextBits = [
+      `page_id: ${pageContext.page_id || 'unknown'}`,
+      `domain: ${pageContext.domain || pageContext.studio || 'unknown'}`
+    ];
+    if (pageContext.submode) contextBits.push(`submode: ${pageContext.submode}`);
+    if (pageContext.selected_object && pageContext.selected_object.title) {
+      contextBits.push(`selected: ${pageContext.selected_object.title}`);
+    }
+    return {
+      intent: 'page_context',
+      response: contextBits.join(' | ')
+    };
+  }
+
   if (/\b(active\s+page|current\s+page|what\s+page|which\s+page)\b/.test(lower)) {
     return { intent: 'active_page', response: `The active page is ${siteSnapshot.active_page || 'unknown'}.` };
   }

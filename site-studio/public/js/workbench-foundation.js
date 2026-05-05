@@ -415,6 +415,7 @@
     state.submode = scope.submodes[0];
     state.selected = currentObjects()[0][0];
     render();
+    activateWorkbenchShayContext();
   }
 
   function setDomain(domainId) {
@@ -425,22 +426,108 @@
     state.submode = domain.submode;
     state.selected = currentObjects()[0][0];
     render();
+    activateWorkbenchShayContext();
+  }
+
+  function getShayContextRegistry() {
+    try {
+      if (window.parent && window.parent !== window && window.parent.ShayContextRegistry) return window.parent.ShayContextRegistry;
+    } catch (_) {}
+    return window.ShayContextRegistry || null;
+  }
+
+  function isEmbeddedWorkbenchVisible() {
+    try {
+      if (!window.parent || window.parent === window || !window.parent.document) return true;
+      const pane = window.parent.document.getElementById('tab-pane-workbench');
+      return !pane || !pane.classList.contains('hidden');
+    } catch (_) {
+      return true;
+    }
+  }
+
+  function buildWorkbenchShayContext() {
+    const object = currentObject();
+    const domain = domains[state.domain] || domains.sites;
+    return {
+      studio: 'workbench_foundation',
+      page_title: 'FAMtastic Workbench',
+      domain: state.domain,
+      domain_label: domain.label,
+      mode: state.mode,
+      scope: state.scope,
+      submode: state.submode,
+      selected_object: object ? { id: object[0], title: object[1], description: object[2] } : null,
+      contract: { purpose: domain.purpose, center_surface: domain.surface, proof: domain.proof },
+      plan_state: state.planData ? {
+        active_parent_count: state.planData.summary?.active_parent_count || 0,
+        task_count: state.planData.summary?.task_count || 0,
+        proof_count: state.planData.summary?.proof_count || 0,
+        current_run: state.planData.current_run?.id || null,
+        workflow_as_data_status: state.planData.summary?.workflow_as_data_status || null,
+        pipeline_visualizer_status: state.planData.summary?.pipeline_visualizer_status || null
+      } : null,
+      available_actions: [
+        { id: 'set_domain', label: 'Switch Workbench domain', applies_to: 'domain' },
+        { id: 'set_submode', label: 'Switch domain lane', applies_to: 'submode' },
+        { id: 'set_selected_object', label: 'Select object', applies_to: 'object' }
+      ]
+    };
+  }
+
+  function registerWorkbenchShayContext() {
+    const registry = getShayContextRegistry();
+    if (!registry || typeof registry.register !== 'function') return false;
+    registry.register({
+      page_id: 'workbench.foundation',
+      getContext: buildWorkbenchShayContext,
+      onAction: (actionId, payload) => {
+        if (actionId === 'set_domain' && payload?.domain) {
+          setDomain(payload.domain);
+          return buildWorkbenchShayContext();
+        }
+        if (actionId === 'set_submode' && payload?.submode) {
+          setSubmode(payload.submode);
+          return buildWorkbenchShayContext();
+        }
+        if (actionId === 'set_selected_object' && payload?.object_id) {
+          setSelected(payload.object_id);
+          return buildWorkbenchShayContext();
+        }
+        return { ignored: true, action_id: actionId };
+      }
+    });
+    activateWorkbenchShayContext();
+    return true;
+  }
+
+  function activateWorkbenchShayContext() {
+    const registry = getShayContextRegistry();
+    if (!registry || typeof registry.setActive !== 'function' || !isEmbeddedWorkbenchVisible()) return false;
+    if (typeof registry.listProviders === 'function') {
+      const hasProvider = registry.listProviders().some((provider) => provider.page_id === 'workbench.foundation');
+      if (!hasProvider) return false;
+    }
+    return registry.setActive('workbench.foundation');
   }
 
   function setSubmode(submode) {
     state.submode = submode;
     state.selected = currentObjects()[0][0];
     render();
+    activateWorkbenchShayContext();
   }
 
   function setSelected(id) {
     state.selected = id;
     render();
+    activateWorkbenchShayContext();
   }
 
   function setMode(mode) {
     state.mode = mode;
     render();
+    activateWorkbenchShayContext();
   }
 
   function render() {
@@ -988,4 +1075,5 @@
 
   render();
   loadPlanData();
+  registerWorkbenchShayContext();
 })();

@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1.0",
-  "generated_at": "2026-05-04T23:10:00.000-04:00",
+  "generated_at": "2026-05-04T23:45:00.000-04:00",
   "source_files": {
     "registry": "plans/registry.json",
     "tasks": "tasks/tasks.jsonl",
@@ -11,8 +11,9 @@
     "active_parent_count": 4,
     "absorbed_record_count": 10,
     "task_count": 33,
+    "open_task_count": 11,
     "run_count": 1,
-    "proof_count": 13,
+    "proof_count": 16,
     "current_run": "run-2026-05-04-consolidation-apply",
     "drive_sync_status": "complete",
     "workflow_as_data_status": "phase_1_cataloged",
@@ -25,8 +26,8 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "Frozen-contract rebuild and registry-backed Workbench",
-      "next_action": "Rebuild Workbench against the frozen workspace contract and wire Plan mode to real registry/task/run/proof data.",
-      "blocker": "Workbench still uses prototype/static data and is not registered as a Shay context provider.",
+      "next_action": "No ready tasks remain in this parent plan.",
+      "blocker": null,
       "proof_count": 4
     },
     {
@@ -35,9 +36,9 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "Executable registry, task/run/proof ledgers, and capture flywheel",
-      "next_action": "Use the promoted task/run/proof ledgers as the operating checklist and build review/promote/start commands.",
-      "blocker": "Studio Plan Board is not built yet; first slice is file-backed ledgers.",
-      "proof_count": 4
+      "next_action": "Create an ingest/extract/propose flow for designated conversations and docs with no canonical writes until approval.",
+      "blocker": null,
+      "proof_count": 7
     },
     {
       "id": "build-intent-fulfillment-trace",
@@ -45,9 +46,9 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "BuildIntent v2, workflow-as-data instrumentation, fulfillment proof, and visualizer prerequisites",
-      "next_action": "Instrument parallelBuild with stage boundaries, inputs, outputs, and proof events before changing execution order.",
-      "blocker": "Workflow-as-data and the pipeline visualizer are still open; Drive sync is complete.",
-      "proof_count": 4
+      "next_action": "Build the visualizer only after workflow data is trustworthy.",
+      "blocker": null,
+      "proof_count": 3
     },
     {
       "id": "site-mbsh-reunion",
@@ -55,105 +56,84 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "Site-scoped backend, RSVP, sponsor, media, chatbot, deploy, content, and proof",
-      "next_action": "Create site-scoped tasks and promote reusable platform gaps back to parent plans.",
-      "blocker": "Site execution and reusable platform learnings are not yet separated into task records.",
-      "proof_count": 4
+      "next_action": "Test RSVP form, persistence, validation, export, and email behavior.",
+      "blocker": null,
+      "proof_count": 2
     }
   ],
   "tasks_by_priority": {
     "P0": [
       {
-        "id": "task-2026-05-04-007",
-        "plan_id": "studio-workbench-foundation",
-        "status": "ready",
-        "title": "Rebuild Workbench against frozen UI foundation",
-        "next_action": "Audit current Workbench prototype against docs/STUDIO-UI-FOUNDATION.md and patch the shell/workspace data."
-      },
-      {
-        "id": "task-2026-05-04-008",
-        "plan_id": "studio-workbench-foundation",
-        "status": "ready",
-        "title": "Declare workspace contracts for all top-level domains",
-        "next_action": "Make contract data explicit and consume it in the Workbench UI."
-      },
-      {
-        "id": "task-2026-05-04-009",
-        "plan_id": "studio-workbench-foundation",
-        "status": "ready",
-        "title": "Make Media Studio prompt-first",
-        "next_action": "Replace media-library-first framing with a prompt-first creation surface."
-      },
-      {
-        "id": "task-2026-05-04-010",
-        "plan_id": "studio-workbench-foundation",
-        "status": "completed",
-        "title": "Wire Workbench Plan mode to real registry/task/run/proof data",
-        "next_action": "Keep the browser-safe plan state regenerated until automatic status export replaces it."
-      },
-      {
-        "id": "task-2026-05-04-016",
-        "plan_id": "build-intent-fulfillment-trace",
-        "status": "ready",
-        "title": "Declare BuildIntent v2 current",
-        "next_action": "Write the supersession record that makes v2 current and v1 archived/evidence."
-      },
-      {
-        "id": "task-2026-05-04-017",
-        "plan_id": "build-intent-fulfillment-trace",
-        "status": "ready",
-        "title": "Instrument parallelBuild before refactor",
-        "next_action": "Add stage boundary, input, output, duration, and proof-event logging without changing execution order."
-      },
-      {
-        "id": "task-2026-05-04-021",
+        "id": "task-2026-05-04-025",
         "plan_id": "site-mbsh-reunion",
         "status": "ready",
-        "title": "Create MBSH site-scoped task records",
-        "next_action": "Break backend, RSVP, sponsor, media, chatbot, deploy, content, and proof into explicit site tasks."
+        "title": "Verify MBSH RSVP flow",
+        "next_action": "Test RSVP form, persistence, validation, export, and email behavior."
       },
       {
-        "id": "task-2026-05-04-022",
+        "id": "task-2026-05-04-026",
         "plan_id": "site-mbsh-reunion",
         "status": "ready",
-        "title": "Separate MBSH deploy repo state from Studio state",
-        "next_action": "Verify current deploy repo, Studio tag, symlink/preview path, Netlify/GitHub status, and document mismatches."
+        "title": "Verify MBSH sponsor flow",
+        "next_action": "Test sponsor packages, submission, status, assets, and approval path."
+      },
+      {
+        "id": "task-2026-05-04-027",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Finish MBSH deploy proof",
+        "next_action": "Connect or verify Netlify/backend/DNS, smoke tests, rollback notes, and production approval state."
       }
     ],
     "P1": [
-      {
-        "id": "task-2026-05-04-011",
-        "plan_id": "studio-workbench-foundation",
-        "status": "ready",
-        "title": "Register Workbench as Shay context provider",
-        "next_action": "Expose domain, route, selected object, selected tool, proof state, and open plan/run to Shay."
-      },
       {
         "id": "task-2026-05-04-015",
         "plan_id": "plan-task-run-intelligence",
         "status": "ready",
         "title": "Build first usable knowledge-capture pass",
-        "next_action": "Create an ingest/extract/propose flow for designated conversations and docs."
-      },
-      {
-        "id": "task-2026-05-04-018",
-        "plan_id": "build-intent-fulfillment-trace",
-        "status": "ready",
-        "title": "Start workflow-as-data phase 1",
-        "next_action": "Define stage names, boundaries, inputs, outputs, and proof events as data."
-      },
-      {
-        "id": "task-2026-05-04-020",
-        "plan_id": "build-intent-fulfillment-trace",
-        "status": "ready",
-        "title": "Define three site workflows",
-        "next_action": "Make new_site_from_brief, adapt_existing_site, and rebuild_from_brief first-class modes."
+        "next_action": "Create an ingest/extract/propose flow for designated conversations and docs with no canonical writes until approval."
       },
       {
         "id": "task-2026-05-04-023",
         "plan_id": "site-mbsh-reunion",
         "status": "ready",
         "title": "Use MBSH as Studio audit harness",
-        "next_action": "Run a full-intent audit comparing MBSH brief/site against Studio reproduction."
+        "next_action": "Run a full-intent audit that compares existing MBSH brief/site against Studio's ability to reproduce it."
+      },
+      {
+        "id": "task-2026-05-04-028",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Complete MBSH media/story assets",
+        "next_action": "Recover or finish story section assets, mascot usage, gallery proof, and rights state."
+      },
+      {
+        "id": "task-2026-05-04-029",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Verify MBSH chatbot Phase 1",
+        "next_action": "Test chatbot content path, boundaries, fallback behavior, and reusable component lessons."
+      },
+      {
+        "id": "task-2026-05-04-030",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Close MBSH content deltas against V1 brief",
+        "next_action": "Compare V1 brief to current deploy repo and list any missing copy or section deltas."
+      },
+      {
+        "id": "task-2026-05-04-031",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Run MBSH Studio reproduction audit harness",
+        "next_action": "Use MBSH as Studio audit harness: reverse prompt, run full Studio path, compare, and promote generalized gaps."
+      },
+      {
+        "id": "task-2026-05-04-032",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Promote generalized MBSH platform gaps",
+        "next_action": "Move reusable backend, RSVP, sponsor, media, chatbot, deploy, and fulfillment gaps to parent platform plans only when they generalize."
       }
     ],
     "P2": [
@@ -162,7 +142,7 @@
         "plan_id": "build-intent-fulfillment-trace",
         "status": "ready",
         "title": "Build pipeline visualizer inspect/trace/propose",
-        "next_action": "Build only after workflow data is trustworthy."
+        "next_action": "Build the visualizer only after workflow data is trustworthy."
       }
     ]
   },
@@ -171,6 +151,6 @@
     "plan_id": "plan-task-run-intelligence",
     "status": "active",
     "target": "complete_p0_then_report",
-    "current_step": "Actual Shay-Shay UI call through Studio passed after fixing click-layer and PointerEvent message bugs; remaining work is execution of MBSH child tasks, knowledge capture, Workbench Shay context provider, three workflows, and visualizer."
+    "current_step": "Workbench Shay context provider, three site workflow contracts, and MBSH backend endpoint inventory are completed with proof. Remaining ready work: knowledge capture, pipeline visualizer, MBSH RSVP/sponsor/deploy/media/chatbot/content/audit/gap tasks."
   }
 }

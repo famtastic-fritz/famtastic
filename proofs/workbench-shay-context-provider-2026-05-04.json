@@ -1,0 +1,279 @@
+{
+  "screenshot": "/Users/famtasticfritz/famtastic/proofs/workbench-shay-context-provider-2026-05-04.png",
+  "registry_before_send": {
+    "active": "workbench.foundation",
+    "providers": [
+      {
+        "page_id": "workbench.foundation",
+        "registered_at": 1777949223912
+      },
+      {
+        "page_id": "site_studio.sites_home",
+        "registered_at": 1777949223930
+      }
+    ],
+    "context": {
+      "studio": "workbench_foundation",
+      "page_title": "FAMtastic Workbench",
+      "domain": "media",
+      "domain_label": "Media Studio",
+      "mode": "media",
+      "scope": "media",
+      "submode": "prompt",
+      "selected_object": {
+        "id": "media-prompt",
+        "title": "Prompt job",
+        "description": "Destination slot, reference, route, and quality target"
+      },
+      "contract": {
+        "purpose": "Generate and govern site media from prompt to usage.",
+        "center_surface": "Prompt-first creation surface",
+        "proof": "Route, cost, rights, quality, usage"
+      },
+      "plan_state": {
+        "active_parent_count": 4,
+        "task_count": 33,
+        "proof_count": 16,
+        "current_run": "run-2026-05-04-consolidation-apply",
+        "workflow_as_data_status": "phase_1_cataloged",
+        "pipeline_visualizer_status": "open"
+      },
+      "available_actions": [
+        {
+          "id": "set_domain",
+          "label": "Switch Workbench domain",
+          "applies_to": "domain"
+        },
+        {
+          "id": "set_submode",
+          "label": "Switch domain lane",
+          "applies_to": "submode"
+        },
+        {
+          "id": "set_selected_object",
+          "label": "Select object",
+          "applies_to": "object"
+        }
+      ],
+      "page_id": "workbench.foundation",
+      "captured_at": "2026-05-05T02:47:04.871Z"
+    }
+  },
+  "request_payload_context": {
+    "active_site": "site-mbsh-reunion",
+    "active_page": "index.html",
+    "active_tab": "workbench",
+    "fam_score": null,
+    "active_rail": "site",
+    "ui_state": {
+      "pip_badge_count": 0,
+      "worker_queue_pending_count": 9,
+      "worker_queue_badge_visible": true,
+      "context_job_count": null,
+      "context_diff_count": null,
+      "step_log_visible": false,
+      "step_log_items": [],
+      "intelligence_finding_cards_visible": 0,
+      "research_items_visible": 0,
+      "dismissed_prompt_keys": [],
+      "shay_mode": "idle",
+      "shay_orb_state": "SHAY_THINKING",
+      "shay_desk_has_transcript": true,
+      "validation": null
+    },
+    "workspace_state": {
+      "active_rail": "site",
+      "sidebar_collapsed": false,
+      "sidebar_visible": true,
+      "active_mode": "build",
+      "active_tab": "workbench",
+      "active_page": "index.html",
+      "workspace_layout": "compose",
+      "inspector_pinned": false,
+      "inspector_open": false,
+      "selected_context": null,
+      "return_stack": [],
+      "open_tabs": [
+        {
+          "id": "chat",
+          "label": "Chat",
+          "pane_id": "tab-pane-chat",
+          "closeable": false
+        },
+        {
+          "id": "sites",
+          "label": "Sites",
+          "pane_id": "tab-pane-sites",
+          "closeable": false
+        },
+        {
+          "id": "think-tank",
+          "label": "Think Tank",
+          "pane_id": "tab-pane-think-tank",
+          "closeable": false
+        },
+        {
+          "id": "brief",
+          "label": "Brief",
+          "pane_id": "tab-pane-brief",
+          "closeable": false
+        },
+        {
+          "id": "components",
+          "label": "Component Studio",
+          "pane_id": "tab-pane-components",
+          "closeable": false
+        },
+        {
+          "id": "assets",
+          "label": "Media",
+          "pane_id": "tab-pane-assets",
+          "closeable": false
+        },
+        {
+          "id": "platform",
+          "label": "Platform",
+          "pane_id": "tab-pane-platform",
+          "closeable": false
+        },
+        {
+          "id": "workbench",
+          "label": "Workbench",
+          "pane_id": "tab-pane-workbench",
+          "closeable": false
+        },
+        {
+          "id": "mc",
+          "label": "Mission Control",
+          "pane_id": "tab-pane-mc",
+          "closeable": false
+        },
+        {
+          "id": "shay",
+          "label": "Workshop",
+          "pane_id": "tab-pane-shay",
+          "closeable": false
+        },
+        {
+          "id": "deploy",
+          "label": "Deploy",
+          "pane_id": "tab-pane-deploy",
+          "closeable": false
+        }
+      ],
+      "hierarchy_summary": {
+        "pages": 8,
+        "sections": 0,
+        "components": 0,
+        "fields": 0,
+        "media": 0
+      }
+    },
+    "component_state": {
+      "selected_context": null,
+      "return_stack": [],
+      "media_workspace": {
+        "site_tag": null,
+        "active_tab": "home",
+        "selected_slot_id": null,
+        "selected_asset_filename": null,
+        "selected_brand_filename": null,
+        "search": "",
+        "role_filter": "all",
+        "return_context": null,
+        "slot_count": 0,
+        "upload_count": 0,
+        "empty_slot_count": 0,
+        "history_count": 0,
+        "generation": {
+          "prompt": "",
+          "videoPrompt": "",
+          "assetType": "slot-image",
+          "aspect": "slot",
+          "count": 1,
+          "quality": "balanced",
+          "destination": "selected-slot",
+          "motionIntent": "none",
+          "styleIntent": "bold",
+          "providerMode": "auto",
+          "showOptions": false,
+          "showAdvanced": false,
+          "referenceAssetFilename": null,
+          "brandFamilyId": ""
+        }
+      },
+      "brief_workspace": {
+        "answers": {},
+        "completion_pct": 0
+      }
+    },
+    "preview_state": {
+      "active_page": "index.html",
+      "current_view_mode": "chat",
+      "slot_mode_active": false,
+      "current_slot_target": null,
+      "preview_src": "http://localhost:3333/",
+      "preview_visible": false,
+      "device_mode": "desktop",
+      "preview_port": 3333
+    },
+    "page_context": {
+      "studio": "workbench_foundation",
+      "page_title": "FAMtastic Workbench",
+      "domain": "media",
+      "domain_label": "Media Studio",
+      "mode": "media",
+      "scope": "media",
+      "submode": "prompt",
+      "selected_object": {
+        "id": "media-prompt",
+        "title": "Prompt job",
+        "description": "Destination slot, reference, route, and quality target"
+      },
+      "contract": {
+        "purpose": "Generate and govern site media from prompt to usage.",
+        "center_surface": "Prompt-first creation surface",
+        "proof": "Route, cost, rights, quality, usage"
+      },
+      "plan_state": {
+        "active_parent_count": 4,
+        "task_count": 33,
+        "proof_count": 16,
+        "current_run": "run-2026-05-04-consolidation-apply",
+        "workflow_as_data_status": "phase_1_cataloged",
+        "pipeline_visualizer_status": "open"
+      },
+      "available_actions": [
+        {
+          "id": "set_domain",
+          "label": "Switch Workbench domain",
+          "applies_to": "domain"
+        },
+        {
+          "id": "set_submode",
+          "label": "Switch domain lane",
+          "applies_to": "submode"
+        },
+        {
+          "id": "set_selected_object",
+          "label": "Select object",
+          "applies_to": "object"
+        }
+      ],
+      "page_id": "workbench.foundation",
+      "captured_at": "2026-05-05T02:47:04.954Z"
+    },
+    "registered_context_providers": [
+      {
+        "page_id": "workbench.foundation",
+        "registered_at": 1777949223912
+      },
+      {
+        "page_id": "site_studio.sites_home",
+        "registered_at": 1777949223930
+      }
+    ]
+  },
+  "response_excerpt": "S\nSHAY LITE\nQuick Ask\nDock Right\nShow Me\n→ Workshop\nCharacter\nClassic Orb\nMini Panel\nWelcome back! Session #1763 for site-mbsh-reunion.\nPages: index.html, 404.html, capsule.html, memorial.html, playlist.html, rsvp.html, through-years.html, tickets.html (viewing: index.html)\nDesign brief: approved\nWhat Workbench page context are you receiving? Answer with the page_id and domain only.\npage_id: workbench.foundation | domain: media | submode: prompt | selected: Prompt job\n↑",
+  "message": "What Workbench page context are you receiving? Answer with the page_id and domain only."
+}
