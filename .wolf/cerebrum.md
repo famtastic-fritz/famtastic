@@ -388,3 +388,13 @@ Source-of-truth precedence:
 Disable telemetry with `MEMORY_TELEMETRY=off`.
 
 Retire (don't delete) entries that drift wrong: `fam-hub memory retire <id>` — the entry stays for history, lifecycle flips to `retired`, no longer surfaces.
+
+## Standing Rule — Agent Coordination (2026-05-05)
+
+Before scaffolding any new system, capability, or non-trivial workstream,
+run `node scripts/agent-checkin.js --intent "<short>"` from the repo root.
+If it reports overlapping in-flight work, coordinate with the listed branches
+or pick a different scope. Respect scope-locks declared in AGENT-COORDINATION.md.
+This rule was installed after the 2026-05-05 incident where Cowork's `.brain/`
+and Claude Code's `memory/<type>/<id>.md` shipped in parallel as competing
+solutions to the same problem.

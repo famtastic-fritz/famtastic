@@ -1,0 +1,72 @@
+{
+  "id": "plan_2026_05_05_agent_coordination",
+  "title": "Agent Coordination + brain→memory migration",
+  "status": "active",
+  "label": "agent-coordination",
+  "tags": ["platform-upgrades", "governance", "multi-agent"],
+  "created_at": "2026-05-05T00:00:00.000Z",
+  "owner": "Fritz",
+  "purpose": "Prevent parallel-implementation conflicts across agent surfaces (Claude Code, Cowork, Codex) and consolidate the cowork .brain/ knowledge base into the canonical memory/ pipeline so there is exactly one source of truth.",
+  "why_now": "On 2026-05-05 the same cross-session memory problem was solved twice in parallel: cowork built `.brain/`, Claude Code built `memory/<type>/<id>.md`. The duplication only became visible after both branches existed. We need a coordination gate up front and the duplicate content reconciled.",
+  "origin": {
+    "type": "conversation",
+    "trigger_record": "Session 2026-05-05 — Option A merge decision",
+    "summary": "Two agent surfaces independently shipped competing memory stores. Decision: keep canonical memory/ pipeline, migrate .brain/ entries in as lifecycle:candidate for human review, install a check-in gate to prevent recurrence."
+  },
+  "success_signal": "(1) `node scripts/agent-checkin.js --intent \"...\"` exits 2 when an active branch holds an overlapping scope. (2) AGENT-COORDINATION.md lists every active branch with surface + scope-locks. (3) All .brain entries appear under memory/<type>/ with lifecycle:candidate and source_capture=brain-migration-2026-05-05. (4) Both CLAUDE.md and AGENTS.md instruct agents to run agent-checkin.js before non-trivial work.",
+  "non_goals": [
+    "Auto-resolving overlap (humans/agents resolve, the script only detects)",
+    "Replacing .wolf/ context tooling — coexists with it",
+    "Promoting candidate entries — that goes through the existing memory-promote flow"
+  ],
+  "depends_on": ["plan_2026_05_05_chat_capture_learn_optimize"],
+  "feeds_into": [],
+  "workstreams": [
+    {
+      "id": "ws_coordination_doc",
+      "title": "AGENT-COORDINATION.md — single source of truth",
+      "status": "done",
+      "priority": "P0",
+      "outputs": ["AGENT-COORDINATION.md"],
+      "acceptance": ["Active branches table populated for the three current branches.", "Scope-lock + conflict-resolution protocol documented."]
+    },
+    {
+      "id": "ws_checkin_script",
+      "title": "scripts/agent-checkin.js — pre-flight gate",
+      "status": "done",
+      "priority": "P0",
+      "outputs": ["scripts/agent-checkin.js"],
+      "acceptance": ["Detects overlap by branch name, scope-lock, and changed-file keyword match.", "Logs every check-in to memory/usage.jsonl.", "--dry-run flag supported."]
+    },
+    {
+      "id": "ws_brain_migration",
+      "title": "Migrate .brain/ entries → memory/<type>/<slug>.md (candidate)",
+      "status": "done",
+      "priority": "P0",
+      "outputs": ["memory/anti-pattern/*.md (11)", "memory/bug-pattern/*.md (7 new)", "memory/decision/*.md (7)", "memory/learning/*.md (4)", "memory/rule/*.md (2)", "memory/INDEX.json updated"],
+      "acceptance": ["Every entry has lifecycle:candidate.", "source_capture=brain-migration-2026-05-05.", "references include cowork-branch:claude/check-running-agents-tuSFO."]
+    },
+    {
+      "id": "ws_rule_integration",
+      "title": "Wire the check-in rule into CLAUDE.md and AGENTS.md",
+      "status": "done",
+      "priority": "P0",
+      "outputs": ["CLAUDE.md (appended rule)", "AGENTS.md (created)"],
+      "acceptance": ["Both docs reference scripts/agent-checkin.js and AGENT-COORDINATION.md."]
+    },
+    {
+      "id": "ws_per_surface_branch_naming",
+      "title": "Per-surface branch naming convention",
+      "status": "deferred",
+      "priority": "P2",
+      "outputs": ["Convention doc + lint rule"],
+      "acceptance": ["Defer until 2+ agent surfaces ship a second collision; current 3-branch sample is too small to lock convention."]
+    }
+  ],
+  "mvp": "ws_coordination_doc + ws_checkin_script + ws_brain_migration + ws_rule_integration land in this branch.",
+  "decisions": [
+    "Scope-locks are declared *manually* in AGENT-COORDINATION.md; the check-in script reads them, it does not invent them.",
+    "agent-checkin.js is the gate, not a pre-commit hook — agents call it explicitly so the act of coordination is intentional.",
+    ".brain entries land as lifecycle:candidate so humans review before they become 'active' canonical memory."
+  ]
+}

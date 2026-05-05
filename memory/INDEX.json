@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-05T18:09:20.507Z",
+  "generated_at": "2026-05-05T18:51:10.154Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -52,6 +52,441 @@
       "lifecycle": "active",
       "confidence": 0.88,
       "path": "memory/vendor-fact/gap-netlifys-git-linking-still-requires-the-vendor-ui.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-use-echo-for-claude-prompts-use-printf",
+      "type": "anti-pattern",
+      "title": "Never use echo for Claude prompts — use printf",
+      "facets": [
+        "shell",
+        "prompting"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.92,
+      "path": "memory/anti-pattern/never-use-echo-for-claude-prompts-use-printf.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-set-spawnclaude-cwd-to-hub-root",
+      "type": "anti-pattern",
+      "title": "Never set spawnClaude cwd to HUB_ROOT",
+      "facets": [
+        "spawnclaude",
+        "build"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/anti-pattern/never-set-spawnclaude-cwd-to-hub-root.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-run-reapplyslotmappings-before-extractandregisterslots",
+      "type": "anti-pattern",
+      "title": "Never run reapplySlotMappings before extractAndRegisterSlots",
+      "facets": [
+        "slots",
+        "build"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/anti-pattern/never-run-reapplyslotmappings-before-extractandregisterslots.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-let-currentmode-persist-across-ws-connections",
+      "type": "anti-pattern",
+      "title": "Never let currentMode persist across WS connections",
+      "facets": [
+        "websocket",
+        "classifier"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/anti-pattern/never-let-currentmode-persist-across-ws-connections.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-put-revenue-or-business-operations-data-into-spec-json",
+      "type": "anti-pattern",
+      "title": "Never put revenue or business operations data into spec.json",
+      "facets": [
+        "spec",
+        "data-modeling"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/anti-pattern/never-put-revenue-or-business-operations-data-into-spec-json.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-increment-innercompleted-in-both-timeout-and-close-handlers",
+      "type": "anti-pattern",
+      "title": "Never increment innerCompleted in both timeout and close handlers",
+      "facets": [
+        "concurrency",
+        "spawnclaude"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.85,
+      "path": "memory/anti-pattern/never-increment-innercompleted-in-both-timeout-and-close-handlers.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-expose-raw-api-keys-via-get-api-settings",
+      "type": "anti-pattern",
+      "title": "Never expose raw API keys via GET /api/settings",
+      "facets": [
+        "security",
+        "settings"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/anti-pattern/never-expose-raw-api-keys-via-get-api-settings.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-add-new-css-to-the-index-html-style-block",
+      "type": "anti-pattern",
+      "title": "Never add new CSS to the index.html style block",
+      "facets": [
+        "studio-ui",
+        "css"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/anti-pattern/never-add-new-css-to-the-index-html-style-block.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-add-new-app-logic-as-inline-script-in-index-html",
+      "type": "anti-pattern",
+      "title": "Never add new app logic as inline script in index.html",
+      "facets": [
+        "studio-ui",
+        "js"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/anti-pattern/never-add-new-app-logic-as-inline-script-in-index-html.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/never-add-a-css-or-js-file-without-linking-it-in-index-html",
+      "type": "anti-pattern",
+      "title": "Never add a css or js file without linking it in index.html",
+      "facets": [
+        "studio-ui"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/anti-pattern/never-add-a-css-or-js-file-without-linking-it-in-index-html.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/zero-byte-spawnclaude-output-from-claude-md-in-cwd",
+      "type": "bug-pattern",
+      "title": "Zero-byte spawnClaude output from CLAUDE.md in cwd",
+      "facets": [
+        "spawnclaude",
+        "build"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/bug-pattern/zero-byte-spawnclaude-output-from-claude-md-in-cwd.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/nav-width-shifts-across-pages-from-wide-content",
+      "type": "bug-pattern",
+      "title": "Nav width shifts across pages from wide content",
+      "facets": [
+        "css",
+        "nav",
+        "layout"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/bug-pattern/nav-width-shifts-across-pages-from-wide-content.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/session-summaries-write-to-wrong-site-after-switch",
+      "type": "bug-pattern",
+      "title": "Session summaries write to wrong site after switch",
+      "facets": [
+        "session",
+        "tag"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.92,
+      "path": "memory/bug-pattern/session-summaries-write-to-wrong-site-after-switch.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/currentmode-persists-across-ws-reconnects",
+      "type": "bug-pattern",
+      "title": "currentMode persists across WS reconnects",
+      "facets": [
+        "websocket",
+        "classifier"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/bug-pattern/currentmode-persists-across-ws-reconnects.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/zombie-subprocesses-on-websocket-disconnect",
+      "type": "bug-pattern",
+      "title": "Zombie subprocesses on WebSocket disconnect",
+      "facets": [
+        "spawnclaude",
+        "websocket"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.92,
+      "path": "memory/bug-pattern/zombie-subprocesses-on-websocket-disconnect.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/server-unresponsive-after-10k-plus-character-input",
+      "type": "bug-pattern",
+      "title": "Server unresponsive after 10K-plus character input",
+      "facets": [
+        "classifier",
+        "limits"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/bug-pattern/server-unresponsive-after-10k-plus-character-input.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/message-flood-produces-0-20-responses",
+      "type": "bug-pattern",
+      "title": "Message flood produces 0/20 responses",
+      "facets": [
+        "websocket",
+        "concurrency"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.88,
+      "path": "memory/bug-pattern/message-flood-produces-0-20-responses.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/template-first-build-over-per-page-builds",
+      "type": "decision",
+      "title": "Template-first build over per-page builds",
+      "facets": [
+        "build",
+        "architecture"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/decision/template-first-build-over-per-page-builds.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/main-max-width-90-page-template-model",
+      "type": "decision",
+      "title": "main { max-width: 90% } page-template model",
+      "facets": [
+        "css",
+        "layout"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/decision/main-max-width-90-page-template-model.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/hero-breakout-via-100vw-width-and-negative-margin",
+      "type": "decision",
+      "title": "Hero breakout via 100vw width and negative margin",
+      "facets": [
+        "css",
+        "hero"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.85,
+      "path": "memory/decision/hero-breakout-via-100vw-width-and-negative-margin.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/slot-based-image-identity-using-data-slot-id",
+      "type": "decision",
+      "title": "Slot-based image identity using data-slot-id",
+      "facets": [
+        "slots",
+        "images"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/decision/slot-based-image-identity-using-data-slot-id.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/three-provider-stock-image-fallback-chain",
+      "type": "decision",
+      "title": "Three-provider stock image fallback chain",
+      "facets": [
+        "images",
+        "stock"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/decision/three-provider-stock-image-fallback-chain.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "learning/contextual-stock-queries-beat-generic-role-queries",
+      "type": "learning",
+      "title": "Contextual stock queries beat generic role queries",
+      "facets": [
+        "images",
+        "prompting"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.7,
+      "path": "memory/learning/contextual-stock-queries-beat-generic-role-queries.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/use-printf-not-echo-for-claude-prompts",
+      "type": "decision",
+      "title": "Use printf not echo for Claude prompts",
+      "facets": [
+        "shell",
+        "prompting"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/decision/use-printf-not-echo-for-claude-prompts.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/os-tmpdir-as-cwd-for-spawnclaude",
+      "type": "decision",
+      "title": "os.tmpdir() as cwd for spawnClaude",
+      "facets": [
+        "spawnclaude",
+        "build"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.95,
+      "path": "memory/decision/os-tmpdir-as-cwd-for-spawnclaude.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "learning/loadrecentconversation-15-gives-meaningful-continuity",
+      "type": "learning",
+      "title": "loadRecentConversation(15) gives meaningful continuity",
+      "facets": [
+        "session",
+        "context"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.85,
+      "path": "memory/learning/loadrecentconversation-15-gives-meaningful-continuity.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "learning/five-file-based-checks-catch-about-80-of-build-issues",
+      "type": "learning",
+      "title": "Five file-based checks catch about 80% of build issues",
+      "facets": [
+        "verification",
+        "build"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.7,
+      "path": "memory/learning/five-file-based-checks-catch-about-80-of-build-issues.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "learning/autotagmissingslots-keeps-the-slot-system-healthy",
+      "type": "learning",
+      "title": "autoTagMissingSlots keeps the slot system healthy",
+      "facets": [
+        "slots",
+        "verification"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.7,
+      "path": "memory/learning/autotagmissingslots-keeps-the-slot-system-healthy.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/new-site-build-procedure",
+      "type": "rule",
+      "title": "New site build procedure",
+      "facets": [
+        "build",
+        "procedure"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/rule/new-site-build-procedure.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/adding-a-new-feature-to-server-js",
+      "type": "rule",
+      "title": "Adding a new feature to server.js",
+      "facets": [
+        "process",
+        "procedure"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.85,
+      "path": "memory/rule/adding-a-new-feature-to-server-js.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/no-overflow-x-hidden-on-html-or-body",
+      "type": "anti-pattern",
+      "title": "Never set overflow-x: hidden on html or body",
+      "facets": [
+        "css",
+        "hero",
+        "layout"
+      ],
+      "lifecycle": "candidate",
+      "confidence": 0.9,
+      "path": "memory/anti-pattern/no-overflow-x-hidden-on-html-or-body.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }
