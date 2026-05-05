@@ -5112,6 +5112,21 @@ page inventory, template generation, template artifacts, page generation,
 post-processing, verification, and completion. The visualizer should not be
 built until real builds have produced trace events against this vocabulary.
 
+### MBSH Site Boundary
+
+MBSH has an explicit two-home state boundary as of 2026-05-04. Studio owns
+`sites/site-mbsh-reunion/` for the canonical site record, spec, memory,
+research, worker queue, and preview symlink. The deploy implementation remains
+in `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/` for frontend,
+backend PHP, schema, config, Netlify settings, and setup scripts. The boundary
+is documented in `docs/sites/site-mbsh-reunion/DEPLOY-STATE.md`.
+
+MBSH child tasks now live in `tasks/tasks.jsonl` under `site-mbsh-reunion`
+instead of being buried inside a broad plan note. The split is backend, RSVP,
+sponsor, deploy, media/story assets, chatbot, content deltas, Studio audit
+harness, and generalized gap promotion. Reusable lessons should be promoted
+upward only when they apply beyond MBSH.
+
 ### Known Gaps Opened / Still Open
 
 - Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
@@ -5119,6 +5134,7 @@ built until real builds have produced trace events against this vocabulary.
 - `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` exist. `fam-hub plan graph` is still not implemented.
 - Capability Store broader than Media Studio is not implemented.
 - Pipeline visualizer inspect/trace/propose is still not implemented; it now has trace events and a workflow stage catalog to read from.
+- MBSH child tasks are split and scoped, but the backend/RSVP/sponsor/deploy/media/chatbot/content/audit execution tasks are not complete yet.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.

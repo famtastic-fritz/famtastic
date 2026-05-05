@@ -452,6 +452,7 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 | `site-studio/public/data/workbench-plan-state.json` | Browser-safe consolidated plan state consumed by Workbench Plan mode. Mirrors four active parent plans, priority lanes, current run, and Drive/workflow/visualizer status. |
 | `site-studio/lib/workflow-stage-catalog.json` | Catalog-only workflow-as-data phase 1 defining build stage boundaries and proof event names for future trace and visualizer surfaces. |
 | `architecture/2026-05-04-build-intent-v2-current.md` | Declaration that BuildIntent V2 supersedes V1 as the current direction, while implementation remains phased. |
+| `docs/sites/site-mbsh-reunion/DEPLOY-STATE.md` | MBSH boundary document separating Studio canonical site state from the standalone deploy repo at `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/`. |
 
 ### OpenWolf Files
 

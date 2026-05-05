@@ -21,7 +21,7 @@
 | `studio-workbench-foundation` | Active parent plan | Register Workbench as a Shay context provider after the frozen-contract rail/contracts and Plan mode wiring. |
 | `plan-task-run-intelligence` | Active parent plan | Use the promoted task/run/proof ledgers as the operating checklist and build review/promote/start commands. |
 | `build-intent-fulfillment-trace` | Active parent plan | Use the new trace events and stage catalog before building visualizer inspect/trace/propose. |
-| `site-mbsh-reunion` | Site-scoped active parent plan | Split MBSH site work into backend/RSVP/sponsor/media/chatbot/deploy/content/proof tasks and promote reusable gaps upward. |
+| `site-mbsh-reunion` | Site-scoped active parent plan | Execute the new site-scoped backend/RSVP/sponsor/deploy/media/chatbot/content/proof tasks and promote reusable gaps upward only when generalized. |
 
 ## Current Run
 
@@ -39,7 +39,7 @@ fam-hub plan show build-intent-fulfillment-trace
 ## Remaining Priority
 
 1. P0: Use Playwright and actual Shay/Shay-Shay calls for Studio behavior proof.
-2. P0/P1: Split MBSH site work from reusable platform gaps.
+2. P0/P1: Execute MBSH backend, RSVP, sponsor, deploy, media, chatbot, content, and audit harness tasks.
 3. P1/P2: Build pipeline visualizer inspect + trace + propose from real trace events.
 4. P1: Register Workbench as a Shay context provider and automate status-packet regeneration.
 5. P1: Build the first usable knowledge-capture pass.

@@ -429,3 +429,7 @@ Rebuilt the Workbench Foundation prototype against the frozen UI foundation by r
 ## 2026-05-04 — BuildIntent V2 and workflow trace phase 1
 
 Declared `architecture/2026-04-24-canonical-build-intent-v2.md` as the current BuildIntent direction and added `architecture/2026-05-04-build-intent-v2-current.md` to remove V1/V2 ambiguity. Instrumented `parallelBuild()` with durable build-trace stage events for start, page inventory, template, page fanout/write/failure boundaries without changing execution order. Added `site-studio/lib/workflow-stage-catalog.json` as the catalog-only workflow-as-data phase 1 contract. Deferred: declarative pipeline refactor and pipeline visualizer inspect/trace/propose.
+
+## 2026-05-04 — MBSH site-scoped execution split
+
+Added `docs/sites/site-mbsh-reunion/DEPLOY-STATE.md` to document the boundary between Studio canonical state and the standalone deploy repo at `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/`. Added MBSH child tasks for backend, RSVP, sponsor, deploy, media/story assets, chatbot, content deltas, Studio audit harness, and generalized gap promotion while closing the parent split tasks. Deferred: executing those site-specific tasks and running the full MBSH Studio audit harness.

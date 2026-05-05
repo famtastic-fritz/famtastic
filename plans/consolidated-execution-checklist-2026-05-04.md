@@ -131,8 +131,8 @@ This follows the solution hierarchy:
 
 ### P1 — Move MBSH Without Losing Platform Learnings
 
-- [ ] Create site-scoped tasks for MBSH backend, RSVP, sponsor, media, chatbot, deploy, content, and proof.
-- [ ] Separate MBSH-specific asks from reusable Studio/platform gaps.
+- [x] Create site-scoped tasks for MBSH backend, RSVP, sponsor, media, chatbot, deploy, content, and proof.
+- [x] Separate MBSH-specific asks from reusable Studio/platform gaps.
 - [ ] Promote generalized gaps upward to the appropriate parent plan.
 - [ ] Keep deploy repo state separate from Studio repo state.
 
