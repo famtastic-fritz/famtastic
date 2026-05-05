@@ -417,3 +417,7 @@ Updated the consolidated execution checklist to reflect Fritz's correction that 
 ## 2026-05-04 — Four-plan registry applied
 
 Applied the consolidation instead of leaving it as a proposal: backed up the old 11-record registry, rewrote `plans/registry.json` to four active parent plans, populated task/run/proof ledgers, and regenerated `FAMTASTIC-STATUS.md`. Fixed `fam-hub task list` and `fam-hub run status` so JSONL listings no longer skip the first record, then added `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start`. Verified JSON/JSONL validity, shell syntax, compact plan output, ledger output, plan review, task promotion dry-run, and run-start dry-run. Deferred: Workbench registry rendering, Workbench Shay context provider, automatic status-packet regeneration, workflow-as-data instrumentation, and the pipeline visualizer.
+
+## 2026-05-04 — Workbench Plan mode registry wiring
+
+Added `site-studio/public/data/workbench-plan-state.json` as a browser-safe mirror of the consolidated registry/task/run/proof state and rewired Workbench Plan mode to render real parent plans, P0/P1/P2 lanes, current run state, and Drive/workflow/visualizer status. Verified through launchd-managed Studio at `localhost:3334` with Playwright by opening the Workbench, switching to Plan mode, checking required consolidated-plan text, confirming no console errors, and saving `proofs/workbench-plan-mode-2026-05-04.png`. Deferred: automatic generation of the browser-safe state packet and Shay context-provider registration.

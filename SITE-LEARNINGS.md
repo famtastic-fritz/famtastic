@@ -92,8 +92,37 @@ active parent plans only: `studio-workbench-foundation`,
 - Task, run, and proof ledgers are no longer empty.
 - `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` now
   exist.
+- Workbench Plan mode no longer uses only static demo data. It now loads
+  `site-studio/public/data/workbench-plan-state.json`, which mirrors the
+  consolidated registry, task, run, and proof state for browser use.
 - Automatic status-packet regeneration is still open; this pass updated the
   packet manually.
+
+## Workbench Plan Mode Registry Wiring (2026-05-04)
+
+Added a browser-safe consolidated plan state packet at
+`site-studio/public/data/workbench-plan-state.json` and wired
+`site-studio/public/js/workbench-foundation.js` Plan mode to render it. The
+Plan workspace now shows the four active parent plans, P0/P1/P2 task lanes,
+the active consolidation run, and status flags for Drive sync, workflow-as-data,
+and the pipeline visualizer.
+
+### Verification
+
+- `jq` validated `site-studio/public/data/workbench-plan-state.json`.
+- `node --check site-studio/public/js/workbench-foundation.js` passed.
+- `curl` against launchd-managed Studio confirmed
+  `http://localhost:3334/workbench-foundation.html` and
+  `/data/workbench-plan-state.json` were served.
+- Playwright opened the Workbench through Studio, clicked Plan mode, verified
+  required consolidated-plan text, found no console/page errors, and saved
+  `proofs/workbench-plan-mode-2026-05-04.png`.
+
+### Known Gaps changed
+
+- Workbench Plan mode is wired to a generated browser-safe JSON packet, not
+  direct live registry reads. Automatic packet generation remains open.
+- Workbench is still not registered as a Shay context provider.
 
 ## Plan Consolidation Verification (2026-05-04)
 

@@ -103,7 +103,7 @@ This follows the solution hierarchy:
 - [ ] Rebuild Workbench against `docs/STUDIO-UI-FOUNDATION.md`, not against the earlier generic prototype.
 - [ ] Make every workspace declare its workspace contract before implementation.
 - [ ] Keep Media as **Media Studio**, with prompt input as the primary center work surface and library/tooling as support.
-- [ ] Wire Workbench Plan mode to registry/task/run/proof data instead of static demo data.
+- [x] Wire Workbench Plan mode to registry/task/run/proof data instead of static demo data.
 
 ### P0 — Prove Builds Through Actual Studio
 

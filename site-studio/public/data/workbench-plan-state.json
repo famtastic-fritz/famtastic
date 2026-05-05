@@ -1,0 +1,176 @@
+{
+  "schema_version": "0.1.0",
+  "generated_at": "2026-05-04T23:10:00.000-04:00",
+  "source_files": {
+    "registry": "plans/registry.json",
+    "tasks": "tasks/tasks.jsonl",
+    "runs": "runs/runs.jsonl",
+    "proof": "proofs/proof-ledger.jsonl"
+  },
+  "summary": {
+    "active_parent_count": 4,
+    "absorbed_record_count": 10,
+    "task_count": 23,
+    "run_count": 1,
+    "proof_count": 9,
+    "current_run": "run-2026-05-04-consolidation-apply",
+    "drive_sync_status": "complete",
+    "workflow_as_data_status": "open",
+    "pipeline_visualizer_status": "open"
+  },
+  "active_parents": [
+    {
+      "id": "studio-workbench-foundation",
+      "title": "Studio Workbench Foundation",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "Frozen-contract rebuild and registry-backed Workbench",
+      "next_action": "Rebuild Workbench against the frozen workspace contract and wire Plan mode to real registry/task/run/proof data.",
+      "blocker": "Workbench still uses prototype/static data and is not registered as a Shay context provider.",
+      "proof_count": 4
+    },
+    {
+      "id": "plan-task-run-intelligence",
+      "title": "Plan, Task, Run, and Capture Intelligence",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "Executable registry, task/run/proof ledgers, and capture flywheel",
+      "next_action": "Use the promoted task/run/proof ledgers as the operating checklist and build review/promote/start commands.",
+      "blocker": "Studio Plan Board is not built yet; first slice is file-backed ledgers.",
+      "proof_count": 4
+    },
+    {
+      "id": "build-intent-fulfillment-trace",
+      "title": "Build Intent, Fulfillment Trace, and Workflow Data",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "BuildIntent v2, workflow-as-data instrumentation, fulfillment proof, and visualizer prerequisites",
+      "next_action": "Instrument parallelBuild with stage boundaries, inputs, outputs, and proof events before changing execution order.",
+      "blocker": "Workflow-as-data and the pipeline visualizer are still open; Drive sync is complete.",
+      "proof_count": 4
+    },
+    {
+      "id": "site-mbsh-reunion",
+      "title": "MBSH Reunion Site Execution",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "Site-scoped backend, RSVP, sponsor, media, chatbot, deploy, content, and proof",
+      "next_action": "Create site-scoped tasks and promote reusable platform gaps back to parent plans.",
+      "blocker": "Site execution and reusable platform learnings are not yet separated into task records.",
+      "proof_count": 4
+    }
+  ],
+  "tasks_by_priority": {
+    "P0": [
+      {
+        "id": "task-2026-05-04-007",
+        "plan_id": "studio-workbench-foundation",
+        "status": "ready",
+        "title": "Rebuild Workbench against frozen UI foundation",
+        "next_action": "Audit current Workbench prototype against docs/STUDIO-UI-FOUNDATION.md and patch the shell/workspace data."
+      },
+      {
+        "id": "task-2026-05-04-008",
+        "plan_id": "studio-workbench-foundation",
+        "status": "ready",
+        "title": "Declare workspace contracts for all top-level domains",
+        "next_action": "Make contract data explicit and consume it in the Workbench UI."
+      },
+      {
+        "id": "task-2026-05-04-009",
+        "plan_id": "studio-workbench-foundation",
+        "status": "ready",
+        "title": "Make Media Studio prompt-first",
+        "next_action": "Replace media-library-first framing with a prompt-first creation surface."
+      },
+      {
+        "id": "task-2026-05-04-010",
+        "plan_id": "studio-workbench-foundation",
+        "status": "completed",
+        "title": "Wire Workbench Plan mode to real registry/task/run/proof data",
+        "next_action": "Keep the browser-safe plan state regenerated until automatic status export replaces it."
+      },
+      {
+        "id": "task-2026-05-04-016",
+        "plan_id": "build-intent-fulfillment-trace",
+        "status": "ready",
+        "title": "Declare BuildIntent v2 current",
+        "next_action": "Write the supersession record that makes v2 current and v1 archived/evidence."
+      },
+      {
+        "id": "task-2026-05-04-017",
+        "plan_id": "build-intent-fulfillment-trace",
+        "status": "ready",
+        "title": "Instrument parallelBuild before refactor",
+        "next_action": "Add stage boundary, input, output, duration, and proof-event logging without changing execution order."
+      },
+      {
+        "id": "task-2026-05-04-021",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Create MBSH site-scoped task records",
+        "next_action": "Break backend, RSVP, sponsor, media, chatbot, deploy, content, and proof into explicit site tasks."
+      },
+      {
+        "id": "task-2026-05-04-022",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Separate MBSH deploy repo state from Studio state",
+        "next_action": "Verify current deploy repo, Studio tag, symlink/preview path, Netlify/GitHub status, and document mismatches."
+      }
+    ],
+    "P1": [
+      {
+        "id": "task-2026-05-04-011",
+        "plan_id": "studio-workbench-foundation",
+        "status": "ready",
+        "title": "Register Workbench as Shay context provider",
+        "next_action": "Expose domain, route, selected object, selected tool, proof state, and open plan/run to Shay."
+      },
+      {
+        "id": "task-2026-05-04-015",
+        "plan_id": "plan-task-run-intelligence",
+        "status": "ready",
+        "title": "Build first usable knowledge-capture pass",
+        "next_action": "Create an ingest/extract/propose flow for designated conversations and docs."
+      },
+      {
+        "id": "task-2026-05-04-018",
+        "plan_id": "build-intent-fulfillment-trace",
+        "status": "ready",
+        "title": "Start workflow-as-data phase 1",
+        "next_action": "Define stage names, boundaries, inputs, outputs, and proof events as data."
+      },
+      {
+        "id": "task-2026-05-04-020",
+        "plan_id": "build-intent-fulfillment-trace",
+        "status": "ready",
+        "title": "Define three site workflows",
+        "next_action": "Make new_site_from_brief, adapt_existing_site, and rebuild_from_brief first-class modes."
+      },
+      {
+        "id": "task-2026-05-04-023",
+        "plan_id": "site-mbsh-reunion",
+        "status": "ready",
+        "title": "Use MBSH as Studio audit harness",
+        "next_action": "Run a full-intent audit comparing MBSH brief/site against Studio reproduction."
+      }
+    ],
+    "P2": [
+      {
+        "id": "task-2026-05-04-019",
+        "plan_id": "build-intent-fulfillment-trace",
+        "status": "ready",
+        "title": "Build pipeline visualizer inspect/trace/propose",
+        "next_action": "Build only after workflow data is trustworthy."
+      }
+    ]
+  },
+  "current_run": {
+    "id": "run-2026-05-04-consolidation-apply",
+    "plan_id": "plan-task-run-intelligence",
+    "status": "active",
+    "target": "complete_p0_then_report",
+    "current_step": "Registry and ledgers applied; fam-hub review/promote/start commands verified; Workbench Plan mode now renders browser-safe consolidated plan state through Studio with Playwright proof."
+  }
+}
