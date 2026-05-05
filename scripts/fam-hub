@@ -354,6 +354,28 @@ IDEAHELP
     "$SCRIPT_DIR/fam-convo-promote" "$TAG" "$@"
     ;;
 
+  capture)
+    CAPTURECMD="${2:-help}"
+    case "$CAPTURECMD" in
+      extract)
+        shift 2 || true
+        node "$SCRIPT_DIR/capture-insights.js" extract "$@"
+        ;;
+      help|*)
+        cat <<'CAPTUREHELP'
+fam-hub capture — Review-only knowledge capture
+
+Usage:
+  fam-hub capture extract <source-file> [--out-dir captures/review] [--id capture-id]
+
+Extracts design decisions, breakthroughs, gaps, lessons, and contradictions
+into a review packet. It does not write canonical memory files.
+
+CAPTUREHELP
+        ;;
+    esac
+    ;;
+
   # --- Research ---
   research)
     RESCMD="${2:-help}"
@@ -1059,6 +1081,7 @@ Multi-Agent Workflow:
   fam-hub agent run <agent> <tag>   Run agent on a tag
   fam-hub convo reconcile <tag>     Reconcile multi-agent conversation
   fam-hub ingest <tag> {md|json}    Ingest content
+  fam-hub capture extract <file>     Produce review-only knowledge packet
 
 Admin:
   fam-hub admin doctor              Check dependencies

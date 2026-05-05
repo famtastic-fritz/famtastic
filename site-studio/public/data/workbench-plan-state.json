@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1.0",
-  "generated_at": "2026-05-04T23:45:00.000-04:00",
+  "generated_at": "2026-05-04T23:59:00.000-04:00",
   "source_files": {
     "registry": "plans/registry.json",
     "tasks": "tasks/tasks.jsonl",
@@ -11,9 +11,9 @@
     "active_parent_count": 4,
     "absorbed_record_count": 10,
     "task_count": 33,
-    "open_task_count": 11,
+    "open_task_count": 8,
     "run_count": 1,
-    "proof_count": 16,
+    "proof_count": 20,
     "current_run": "run-2026-05-04-consolidation-apply",
     "drive_sync_status": "complete",
     "workflow_as_data_status": "phase_1_cataloged",
@@ -36,9 +36,9 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "Executable registry, task/run/proof ledgers, and capture flywheel",
-      "next_action": "Create an ingest/extract/propose flow for designated conversations and docs with no canonical writes until approval.",
+      "next_action": "No ready tasks remain in this parent plan.",
       "blocker": null,
-      "proof_count": 7
+      "proof_count": 8
     },
     {
       "id": "build-intent-fulfillment-trace",
@@ -56,43 +56,22 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "Site-scoped backend, RSVP, sponsor, media, chatbot, deploy, content, and proof",
-      "next_action": "Test RSVP form, persistence, validation, export, and email behavior.",
-      "blocker": null,
-      "proof_count": 2
+      "next_action": "Provision deploy/runtime access for blocked production proof; continue ready media, chatbot, content, audit, and gap-promotion work.",
+      "blocker": "Live deploy proof blocked by missing Netlify/DNS/GoDaddy/PHP/MySQL/Resend access and production API_BASE_URL.",
+      "proof_count": 5
     }
   ],
   "tasks_by_priority": {
     "P0": [
       {
-        "id": "task-2026-05-04-025",
-        "plan_id": "site-mbsh-reunion",
-        "status": "ready",
-        "title": "Verify MBSH RSVP flow",
-        "next_action": "Test RSVP form, persistence, validation, export, and email behavior."
-      },
-      {
-        "id": "task-2026-05-04-026",
-        "plan_id": "site-mbsh-reunion",
-        "status": "ready",
-        "title": "Verify MBSH sponsor flow",
-        "next_action": "Test sponsor packages, submission, status, assets, and approval path."
-      },
-      {
         "id": "task-2026-05-04-027",
         "plan_id": "site-mbsh-reunion",
-        "status": "ready",
+        "status": "blocked",
         "title": "Finish MBSH deploy proof",
-        "next_action": "Connect or verify Netlify/backend/DNS, smoke tests, rollback notes, and production approval state."
+        "next_action": "Provision Netlify/DNS/GoDaddy/PHP/MySQL/Resend access and production API_BASE_URL, then run production smoke tests and rollback verification."
       }
     ],
     "P1": [
-      {
-        "id": "task-2026-05-04-015",
-        "plan_id": "plan-task-run-intelligence",
-        "status": "ready",
-        "title": "Build first usable knowledge-capture pass",
-        "next_action": "Create an ingest/extract/propose flow for designated conversations and docs with no canonical writes until approval."
-      },
       {
         "id": "task-2026-05-04-023",
         "plan_id": "site-mbsh-reunion",
@@ -151,6 +130,6 @@
     "plan_id": "plan-task-run-intelligence",
     "status": "active",
     "target": "complete_p0_then_report",
-    "current_step": "Workbench Shay context provider, three site workflow contracts, and MBSH backend endpoint inventory are completed with proof. Remaining ready work: knowledge capture, pipeline visualizer, MBSH RSVP/sponsor/deploy/media/chatbot/content/audit/gap tasks."
+    "current_step": "Knowledge capture, Workbench context provider, workflow-mode contracts, MBSH backend inventory, RSVP browser proof, and sponsor browser proof are complete. MBSH deploy proof is blocked by external access/config; remaining ready work is pipeline visualizer plus MBSH media/chatbot/content/audit/gap tasks."
   }
 }

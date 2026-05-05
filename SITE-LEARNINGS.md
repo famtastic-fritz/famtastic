@@ -5200,15 +5200,66 @@ upload-path config. Production frontend config also still has
 `API_BASE_URL: null`, so deploy proof must verify that the public config points
 at the real backend origin before production smoke tests.
 
+### Knowledge Capture First Pass
+
+`fam-hub capture extract <source-file>` is now the first usable knowledge
+capture pass. It is intentionally review-only: `scripts/capture-insights.js`
+reads a designated source document or conversation export and writes a JSON and
+Markdown packet under `captures/review/` with buckets for design decisions,
+breakthroughs, gaps, lessons, contradictions, and proposed destinations.
+
+The first run processed `/Users/famtasticfritz/Downloads/COWORK-BRIEFING.md`
+and wrote `captures/review/2026-05-04-cowork-briefing-first-pass.json` plus
+`.md`. It detected 13 design decisions, 4 breakthroughs, 3 gaps, 3 lessons,
+and 2 contradictions. This closes the first automation slice of the flywheel:
+conversation knowledge can now become a reviewable artifact without immediately
+mutating `.wolf/cerebrum.md`, `SITE-LEARNINGS.md`, `FAMTASTIC-STATE.md`, or
+`gaps.jsonl`.
+
+The extraction is heuristic, not semantic-agent grade yet. That is acceptable
+for slice one because the output is designed for review and approval before
+promotion. The next improvement should be a promote/apply command with explicit
+per-item approvals, duplicate detection, and better title/summary cleanup.
+
+### MBSH RSVP and Sponsor Browser Proof
+
+The MBSH v2 deploy repo now has browser-level proof for the public RSVP and
+sponsor submission paths. The proof used the actual pages under
+`/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/`, intercepted
+the outbound API requests, and saved evidence at
+`proofs/mbsh-rsvp-sponsor-browser-submit-2026-05-04.json`.
+
+Two frontend defects were fixed in the deploy repo. `frontend/js/main.js`
+now treats the anti-bot form timestamp as valid only after the minimum elapsed
+time, matching the backend helper instead of rejecting legitimate delayed
+submits. `frontend/js/rsvp.js` now explicitly serializes unchecked public
+attendee opt-out as `display_publicly: "0"` instead of omitting the field.
+
+The browser proof does not claim backend persistence/email/export are live.
+Those still require MBSH runtime config and external access: database, Resend,
+admin hash, upload path, CORS origin, Netlify, DNS, and GoDaddy/PHP/MySQL.
+
+### MBSH Deploy Proof Boundary
+
+`docs/sites/site-mbsh-reunion/deploy-proof-2026-05-04.md` is the deploy proof
+packet for MBSH. It documents the exact frontend/backend/DNS/config/smoke-test
+and rollback path, plus the blockers that prevent honest live proof in this
+session.
+
+Do not mark MBSH production deploy complete until the public frontend has a
+real `API_BASE_URL`, the backend is configured with production secrets, and
+the live RSVP/sponsor smoke tests pass against the actual deployed backend.
+
 ### Known Gaps Opened / Still Open
 
 - Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
 - Plan mode reads `site-studio/public/data/workbench-plan-state.json`, a browser-safe mirror of `plans/registry.json`, `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`; automatic regeneration from source ledgers is still missing.
 - `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` exist. `fam-hub plan graph` is still not implemented.
+- `fam-hub capture extract` exists, but promotion from review packet into canonical memory is still manual.
 - Capability Store broader than Media Studio is not implemented.
 - Pipeline visualizer inspect/trace/propose is still not implemented; it now has trace events and a workflow stage catalog to read from.
-- MBSH child tasks are split and scoped. Backend endpoint inventory is complete; RSVP/sponsor/deploy/media/chatbot/content/audit execution tasks are not complete yet.
-- MBSH local endpoint execution is blocked by missing runtime config/secrets; this is a deploy-proof blocker, not a source-code inventory blocker.
+- MBSH child tasks are split and scoped. Backend endpoint inventory plus RSVP/sponsor browser proof are complete; deploy live proof, media, chatbot, content, audit, and gap-promotion tasks remain.
+- MBSH backend runtime execution is blocked by missing runtime config/secrets and external deploy access; this is a deploy-proof blocker, not a source-code inventory or frontend-submit blocker.
 - Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
