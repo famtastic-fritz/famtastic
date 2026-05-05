@@ -31,6 +31,17 @@ Added `config/reporting-preferences.json` as the project-level response/reportin
 ## 2026-05-05 — MBSH launch blockers grouped
 
 Grouped the remaining MBSH work into one launch unblock packet at `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`. Closed the media/story blocker by adding all seven referenced story JPGs to the v2 deploy repo, adding `frontend/assets/story/RIGHTS-MANIFEST.md`, and saving Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete. Remaining MBSH launch work is the live deploy proof, blocked by external Netlify/DNS/GoDaddy/PHP/MySQL/Resend/backend config access and production `API_BASE_URL`.## 2026-05-05 — Chat Capture / Tag / Learn / Optimize pipeline (MVP shipped)
+## 2026-05-05 — Agent coordination + brain→memory migration
+Installed `AGENT-COORDINATION.md` and `scripts/agent-checkin.js` to prevent the
+parallel-implementation problem (today: cowork built `.brain/` while Claude Code
+built `memory/<type>/<id>.md`). Migrated 30 entries from cowork's `.brain/` into
+the canonical memory store as `lifecycle: candidate` (11 anti-pattern, 7
+bug-pattern, 7 decision, 4 learning, 2 rule) so they surface for human review
+before activation. Added the agent-coordination rule to `CLAUDE.md` and a new
+`AGENTS.md`. Per-surface branch naming convention and AGENT-COORDINATION.md
+auto-pruning are deferred.
+
+## 2026-05-05 — Chat Capture / Tag / Learn / Optimize pipeline (MVP shipped)
 
 Built a working capture → tag → promote → use → optimize loop end-to-end. New plan `plan_2026_05_05_chat_capture_learn_optimize` (label: `chat-capture-learn-optimize`, tags: platform-upgrades, memory, shay-shay, intelligence, ledgers). Capture adapters (manual, claude-code, cowork, codex), gated promoter with auto-allowlist (confidence>=0.85 + type in {vendor-fact, do-not-repeat, bug-pattern}), per-entry markdown store at `memory/<type>/<id>.md`, INDEX.json, append-only telemetry at `memory/usage.jsonl`, retriever, Shay context provider (with prefixed + bare facet matching), and weekly digest with auto-promote-to-candidate (NOT auto-active). Verified end-to-end against a synthetic transcript: 15 extracts → 4 auto-promoted → recall + Shay block return them with correct facets → digest produces a clean report. Deferred: cron schedule for digest; adversarial review loop for memory promotions (depends on Ops plan's loop); smarter extract classifier to reduce near-duplicate matches.
 

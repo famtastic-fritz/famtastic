@@ -1,5 +1,50 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Studio Boot Stubs for Missing Lib Modules (2026-05-05)
+
+Studio refused to boot under launchd because three modules required by
+`site-studio/server.js` had never been committed and were absent from the
+working tree:
+
+- `site-studio/lib/shay-shay-sessions.js` — required at server.js:36
+- `site-studio/lib/logger.js` — required at server.js:45
+- `site-studio/lib/openai-image-adapter.js` — required at server.js:11341
+
+Additionally, `site-studio/lib/tool-handlers.js` was missing four exports
+(`setPatchAppliedNotifier`, `setCurrentShayContext`, `isStudioTierAvailable`,
+`getStudioTierResolver`) referenced from server.js.
+
+Minimal stubs were written so Studio can boot. Each stub is marked
+`// TEMPORARY STUB — pending restoration of original implementation`.
+Behavioral notes:
+
+- `shay-shay-sessions.js`: in-memory `Map`, no persistence across restarts.
+  Sessions reset on every Studio restart.
+- `logger.js`: in-memory ring buffer of 1000 request lines, lost on restart;
+  no disk persistence.
+- `openai-image-adapter.js`: `pickProvider()` works; `editImage()` and
+  `generateImage()` throw a clear error — OpenAI image gen is non-functional
+  until the real adapter is restored. Google/Imagen path unaffected.
+- `tool-handlers.js`: appended no-op exports. `isStudioTierAvailable()`
+  returns `false`, so Studio Tier features behave as unavailable.
+
+Verified Studio boots: `curl http://localhost:3334/api/health` → 200 OK,
+`/api/ops/jobs` → 200 with seven-lane snapshot (PR #6 Ops MVP intact).
+
+### Known Gaps opened
+
+- **OpenAI image generation disabled.** `lib/openai-image-adapter.js` is a
+  stub; calls to `editImage`/`generateImage` throw. Restore the original
+  adapter implementation to re-enable the OpenAI image path.
+- **Shay-Shay sessions do not persist across Studio restarts.** Original
+  `lib/shay-shay-sessions.js` likely had richer state and persistence;
+  current stub is a plain in-memory Map.
+- **Studio Tier always reports unavailable.** `isStudioTierAvailable()` stub
+  returns false, gating off any Studio Tier-only branches in server.js.
+- **Patch-applied notifier and Shay context setter are no-ops.** Until the
+  real `tool-handlers.js` exports are restored, these signals are dropped
+  silently.
+
 ## Site Studio Resend Notifications (2026-05-05)
 
 Site Studio can now send its own notification emails through Resend. The
@@ -5583,3 +5628,48 @@ Any destructive command MUST refuse without a governance token.
   in a follow-up commit.
 - **Inspector "log tail" and dependency graph are placeholders.** Real
   log tail wiring depends on the deferred WS channel.
+---
+
+## 2026-05-05 — Agent coordination + brain→memory migration
+
+Two agent surfaces (Cowork on `feat/ops-workspace-gui`, Claude Code on
+`feat/chat-capture-learn-optimize`) independently shipped competing
+cross-session memory stores: `.brain/INDEX.md + .brain/{anti-patterns,
+bugs, patterns, procedures}.md` vs `memory/<type>/<id>.md` with the
+v0.2.0 capture/promote pipeline. Neither knew about the other until both
+branches existed.
+
+This session installs the coordination layer that prevents recurrence
+and merges cowork's `.brain/` content into the canonical store.
+
+**Shipped:**
+
+- `AGENT-COORDINATION.md` — single source of truth listing every active
+  branch, its owning surface, intent, and scope-locks. Conflict-resolution
+  protocol documented.
+- `scripts/agent-checkin.js` — pre-flight overlap detector. Run with
+  `--intent "<short>"`; exits 0 (logs a row to AGENT-COORDINATION.md) or 2
+  (prints the overlapping branches). Always writes a `memory/usage.jsonl`
+  `agent_checkin` event. Detects overlap by branch-name keywords,
+  scope-lock path globs, and changed-file keyword matches.
+- 30 new `memory/<type>/*.md` entries (11 anti-pattern, 7 bug-pattern,
+  7 decision, 4 learning, 2 rule) migrated from `.brain/` with
+  `lifecycle: candidate`, `source_capture: brain-migration-2026-05-05`,
+  references back to the cowork branch.
+- `CLAUDE.md` and new `AGENTS.md` now require running `agent-checkin.js`
+  before scaffolding any new system or non-trivial workstream.
+- Plan `plan_2026_05_05_agent_coordination` registered in
+  `plans/registry.json`.
+
+**Known gaps:**
+
+- All migrated entries are `candidate` — none have been human-promoted to
+  `active`. They will not be surfaced by `lib/famtastic/memory/recall.js`
+  filters that scope to `active` only until promoted.
+- AGENT-COORDINATION.md row-pruning is manual; merged branches need to
+  be removed by hand.
+- The check-in script uses simple keyword + substring matching, not
+  semantic similarity — false positives are likely on broad keywords
+  like "memory" until scope-locks are declared on every active branch.
+- Per-surface branch naming convention deferred — too small a sample to
+  lock today.

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T22:38:31.140Z
-> Files: 612 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:01:13.046Z
+> Files: 635 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -11,6 +11,7 @@
 
 ## ../../../tmp/
 
+- `migrate-brain.js` — One-shot migration: .brain entries → memory/<type>/<slug>.md (lifecycle: candidate) (~4104 tok)
 - `session7-plan.md` — FAMtastic Site Studio — Session 7 Prompt (~3122 tok)
 - `ws-build.js` — Declares WebSocket (~1028 tok)
 - `ws-build2.js` — WebSocket: sendBuildMessage (~1476 tok)
@@ -127,8 +128,12 @@
 
 - `.gitignore` — Git ignore rules (~531 tok)
 - `.mcp.json` (~47 tok)
+- `AGENT-COORDINATION.md` — Agent Coordination (~877 tok)
+- `AGENTS.md` — AGENTS.md (~196 tok)
 - `CHANGELOG.md` — FAMtastic Changelog (~27327 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~26622 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2625 tok)
+- `CLAUDE.md` — FAMtastic Global Rules (~2775 tok)
 - `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~11861 tok)
@@ -388,6 +393,22 @@
 ## .github/workflows/
 
 - `hub-ci.yml` — /*.sh scripts/* || true (~270 tok)
+
+## Ops Workspace (added 2026-05-05)
+
+- `docs/ops/inventory-2026-05-05.json` — First Ops debt inventory snapshot (~600 tok)
+- `docs/ops/state-contract.md` — Source-of-truth matrix + freshness derivation table mirror (~1200 tok)
+- `scripts/ops/inventory.js` — Scans every Ops ledger and writes dated snapshots (~600 tok)
+- `site-studio/lib/ops-api.js` — `/api/ops` Express router with destructive-action gate (~1200 tok)
+- `site-studio/lib/ops-freshness.js` — Single freshness derivation library (~700 tok)
+- `site-studio/public/css/ops-jobs.css` — Jobs tab swimlanes + drawer + inspector (~900 tok)
+- `site-studio/public/css/ops-tokens.css` — Record-type visual language tokens + chips (~600 tok)
+- `site-studio/public/js/ops-jobs.js` — Mounts Ops sub-tabs and Jobs lane UI (~2000 tok)
+- `tests/ops/cross-link-integrity.test.js` — `buildCrossLink` atomicity (~400 tok)
+- `tests/ops/destructive-action-gate.test.js` — Every destructive action 403 without token (~600 tok)
+- `tests/ops/fixtures/synthetic-ledgers.js` — Mixed live/idle/stale/parked records (~600 tok)
+- `tests/ops/freshness-derivation.test.js` — Pinned (type, status, age) freshness table (~700 tok)
+- `tests/ops/stale-cannot-inflate-live.test.js` — 1000-trial property regression (~500 tok)
 
 ## adapters/claude/
 
@@ -652,9 +673,19 @@
 - `package.json` — Node.js package manifest (~81 tok)
 - `server.js` — FAMtastic MCP Server (~5185 tok)
 
+## memory/anti-pattern/
+
+- `no-overflow-x-hidden-on-html-or-body.md` — Never set overflow-x: hidden on html or body (~199 tok)
+
 ## plans/
 
-- `registry.json` (~5398 tok)
+- `registry.json` (~5546 tok)
+- `registry.json` (~4403 tok)
+
+## plans/plan_2026_05_05_agent_coordination/
+
+- `plan.json` (~1269 tok)
+- `README.md` — Project documentation (~531 tok)
 
 ## schemas/
 
@@ -664,6 +695,7 @@
 
 ## scripts/
 
+- `agent-checkin.js` — agent-checkin.js — pre-flight coordination gate for agent surfaces. (~2231 tok)
 - `agents` — Declares yaml (~1329 tok)
 - `asset-generate` (~2542 tok)
 - `build-catalog` (~122 tok)
@@ -1106,19 +1138,3 @@
 ## tools/cpanel-mcp/src/types/
 
 - `cpanel.ts` — Exports CpanelConfig, CpanelResponse, CpanelErrorData, FileManagerItem + 11 more (~784 tok)
-
-## Ops Workspace (added 2026-05-05)
-
-- `docs/ops/state-contract.md` — Source-of-truth matrix + freshness derivation table mirror (~1200 tok)
-- `docs/ops/inventory-2026-05-05.json` — First Ops debt inventory snapshot (~600 tok)
-- `scripts/ops/inventory.js` — Scans every Ops ledger and writes dated snapshots (~600 tok)
-- `site-studio/lib/ops-freshness.js` — Single freshness derivation library (~700 tok)
-- `site-studio/lib/ops-api.js` — `/api/ops` Express router with destructive-action gate (~1200 tok)
-- `site-studio/public/css/ops-tokens.css` — Record-type visual language tokens + chips (~600 tok)
-- `site-studio/public/css/ops-jobs.css` — Jobs tab swimlanes + drawer + inspector (~900 tok)
-- `site-studio/public/js/ops-jobs.js` — Mounts Ops sub-tabs and Jobs lane UI (~2000 tok)
-- `tests/ops/freshness-derivation.test.js` — Pinned (type, status, age) freshness table (~700 tok)
-- `tests/ops/stale-cannot-inflate-live.test.js` — 1000-trial property regression (~500 tok)
-- `tests/ops/destructive-action-gate.test.js` — Every destructive action 403 without token (~600 tok)
-- `tests/ops/cross-link-integrity.test.js` — `buildCrossLink` atomicity (~400 tok)
-- `tests/ops/fixtures/synthetic-ledgers.js` — Mixed live/idle/stale/parked records (~600 tok)

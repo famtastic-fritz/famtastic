@@ -416,3 +416,12 @@ Standing rules introduced by `plan_2026_05_05_ops_workspace_gui` Phase 0:
    are referenced by server.js but have never been tracked in git. Until
    they are restored, in-Studio verification is impossible — verify Ops
    API changes by spinning up an isolated Express harness instead.
+## Standing Rule — Agent Coordination (2026-05-05)
+
+Before scaffolding any new system, capability, or non-trivial workstream,
+run `node scripts/agent-checkin.js --intent "<short>"` from the repo root.
+If it reports overlapping in-flight work, coordinate with the listed branches
+or pick a different scope. Respect scope-locks declared in AGENT-COORDINATION.md.
+This rule was installed after the 2026-05-05 incident where Cowork's `.brain/`
+and Claude Code's `memory/<type>/<id>.md` shipped in parallel as competing
+solutions to the same problem.
