@@ -191,6 +191,7 @@
       { id: 'components', label: 'Components', paneId: 'tab-pane-components', closeable: false },
       { id: 'assets',  label: 'Media',   paneId: 'tab-pane-assets',  closeable: false },
       { id: 'mc',      label: 'Mission Control', paneId: 'tab-pane-mc', closeable: false },
+      { id: 'ops',     label: 'Ops',     paneId: 'tab-pane-ops',     closeable: false },
       { id: 'shay',    label: 'Workshop', paneId: 'tab-pane-shay',   closeable: false }, // SHAY V2 (2026-05-02): label renamed Shay → Workshop; internal id kept for switchTab('shay') backwards compat
       { id: 'deploy',  label: 'Deploy',  paneId: 'tab-pane-deploy',  closeable: false },
     ];

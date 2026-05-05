@@ -34,6 +34,8 @@
   <link rel="stylesheet" href="css/studio-terminal.css">
   <link rel="stylesheet" href="css/studio-brain-selector.css">
   <link rel="stylesheet" href="css/fam-hero.css">
+  <link rel="stylesheet" href="css/ops-tokens.css">
+  <link rel="stylesheet" href="css/ops-jobs.css">
   <style>
     body { max-width: 1100px; margin: 0 auto; }
     #top-bar { max-width: 1100px; left: 50%; transform: translateX(-50%); }
@@ -139,6 +141,10 @@
         <div class="sidebar-nav-item" data-tab="mc" onclick="StudioShell.switchTab('mc')">
           <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13.5h12"/><path d="M3 11l3-4 2.2 2.2L13 3"/></svg>
           Mission Control
+        </div>
+        <div class="sidebar-nav-item" data-tab="ops" onclick="StudioShell.switchTab('ops')">
+          <svg class="sidebar-nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="8 2 14 5.5 14 10.5 8 14 2 10.5 2 5.5 8 2"/><polyline points="2 5.5 8 9 14 5.5"/><line x1="8" y1="9" x2="8" y2="14"/></svg>
+          Ops
         </div>
         <!-- SHAY V2 (2026-05-02): Sidebar nav row "Shay" removed.
              It duplicated the rail star button. Kept the rail entry as the single home for Shay-Shay. -->
@@ -374,6 +380,8 @@
             </div>
             <!-- Mission Control pane -->
             <div id="tab-pane-mc" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;"></div>
+            <!-- Ops Workspace pane (mounted by js/ops-jobs.js) -->
+            <div id="tab-pane-ops" class="ws-tab-pane hidden" style="height:100%;overflow:hidden;position:relative;"></div>
             <!-- SHAY V2 (2026-05-02 + tighten 2026-05-02b):
                  - Internal tab key stays 'shay' for backwards compat with switchTab('shay').
                  - Outer pane no longer scrolls; content fits.
@@ -644,6 +652,7 @@
   <script src="js/studio-shell.js"></script>
   <script src="js/brain-selector.js"></script>
   <script src="js/worker-queue-badge.js"></script>
+  <script src="js/ops-jobs.js"></script>
   <script src="js/shay-bridge-client.js"></script>
   <!-- SHAY V2 (2026-05-02): page-context registry (must load before studio-orb.js so getShayShayContext can read from it) -->
   <script src="js/shay-context-registry.js"></script>
