@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — Site Studio Resend notifications configured
+
+Configured Site Studio itself to send notification email through Resend using `notifications.email` in `~/.config/famtastic/studio-config.json` and the existing `vault://studio.resend.api_key`. Added `fam-hub platform configure-resend`, `fam-hub platform send-test-email`, reusable `site-studio/lib/studio-mailer.js`, and proof at `proofs/studio-resend-notification-2026-05-05.json`. A real test email was accepted by Resend from `FAMtastic Site Studio <studio@send.mbsh96reunion.com>` to the configured Studio email. Deferred: verify a FAMtastic-owned sender domain such as `send.famtastic.com`; the current domain is functional but temporary.
+
 ## 2026-05-05 — Site Studio service auth ownership
 
 Added Studio-owned service auth commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`. Existing local Resend, cPanel, and MBSH production DB credentials/refs were migrated into the platform vault without committing secrets, Resend API access was verified, and lower platform helpers now prefer `studio.*` provider vault IDs. MBSH deploy proof and task state now treat the reunion site as a consumer of Studio-provisioned services rather than the provider account owner. Remaining blockers are production `API_BASE_URL` generation, cPanel DNS/addon-domain automation coverage or provider UI fallback, and SSH host-key trust for backend deploy smoke.

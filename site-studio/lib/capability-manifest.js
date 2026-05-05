@@ -41,6 +41,18 @@ function hasVaultSecret(secretId) {
   }
 }
 
+function hasStudioNotificationEmail() {
+  try {
+    const settings = readStudioSettings();
+    return settings.notifications?.email?.provider === 'resend'
+      && settings.notifications.email.enabled === true
+      && Boolean(settings.notifications.email.from_email)
+      && hasVaultSecret('studio.resend.api_key');
+  } catch {
+    return false;
+  }
+}
+
 function resolveApiStatus(brainKey, envKey, settingsKey) {
   try {
     const verifier = require('./brain-verifier');
@@ -139,6 +151,7 @@ function buildBaseCapabilities(netlify) {
     adobe_premiere_mcp: 'partial',
     studio_service_auth: hasVaultSecret('studio.resend.api_key') || hasVaultSecret('studio.cpanel.api_token') ? 'partial' : 'unavailable',
     studio_resend: hasVaultSecret('studio.resend.api_key') ? 'available' : 'unavailable',
+    studio_email_notifications: hasStudioNotificationEmail() ? 'available' : 'unavailable',
     studio_database: hasVaultSecret('studio.db.admin_password') || hasVaultSecret('studio.cpanel.api_token') ? 'partial' : 'unavailable',
     studio_netlify: hasVaultSecret('studio.netlify.auth_token') || ((netlify && netlify.ok) ? true : false) ? 'available' : 'unavailable',
     studio_cpanel: hasVaultSecret('studio.cpanel.api_token') ? 'available' : 'unavailable',

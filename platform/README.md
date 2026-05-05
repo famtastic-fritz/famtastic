@@ -21,6 +21,8 @@ Stop thinking site-by-site. Think platform-by-capability. FAMtastic isn't a seri
 | `platform cors lockdown <site> <env>` | edits production secrets file via SSH | ✓ replaces allowed_origin_patterns |
 | `platform smoke test <site>` | curl synthetic POSTs | ✓ tests every endpoint, returns structured pass/fail |
 | `platform studio bootstrap-services` | Site Studio service auth + vault | ✓ checks/migrates provider auth into Studio-owned service refs |
+| `platform studio configure-resend` | Site Studio notification email | ✓ configures Studio's own Resend sender identity |
+| `platform studio send-test-email` | Site Studio notification email | ✓ sends a test notification through Studio Resend |
 | `platform studio provision-site <site>` | Studio service layer → generated site | ✓ verifies a site consumes Studio-owned DB/email/deploy services |
 | `platform vault read <secret-id>` | macOS keychain | ✓ standing-approval store for credentials |
 | `platform vault write <secret-id> <value>` | macOS keychain | ✓ |
@@ -47,14 +49,18 @@ Use:
 
 ```bash
 platform studio bootstrap-services
+platform studio configure-resend
+platform studio send-test-email fritz.medine@gmail.com
 platform studio provision-site mbsh-reunion-v2 --check --proof
 ```
 
 `bootstrap-services` migrates discoverable local values into the vault without
 printing them and writes non-secret service references into
-`~/.config/famtastic/studio-config.json`. `provision-site` verifies the generated
-site consumes those services and emits proof; it does not make the site the owner
-of Resend, Netlify, DNS, or database provider accounts.
+`~/.config/famtastic/studio-config.json`. `configure-resend` configures the
+Studio-owned notification sender at `notifications.email`, so Site Studio can
+send its own approval/job/proof emails through Resend. `provision-site` verifies
+the generated site consumes those services and emits proof; it does not make the
+site the owner of Resend, Netlify, DNS, or database provider accounts.
 
 ## Invocation log
 
@@ -80,6 +86,7 @@ Or via `fam-hub platform <capability> <subcommand>` once wired into the unified 
 - cPanel cron registration via API (today: manual UI flow)
 - DNS Zone Editor/addon-domain CRUD through cPanel UAPI/MCP (today: manual wrapper gap)
 - Resend domain create+verify auto-loop with DKIM record auto-add (today: manual DKIM dance)
+- FAMTastic-owned Studio sending domain verification (today: Studio can use an existing verified domain until `send.famtastic.com` or equivalent is verified)
 - Per-site quotas and budget enforcement (today: trust-based)
 - Capability authorization model — who/what can invoke which capability against which site
 - Per-account introspection (what subdomains exist on apex, what other domains we own, what's the Resend send volume across sites)

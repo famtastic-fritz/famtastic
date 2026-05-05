@@ -31,6 +31,8 @@ Capabilities:
   cors lockdown <site> <env>                        Tighten CORS regex post-deploy
   smoke test <site>                                 Smoke-test all endpoints
   studio bootstrap-services [--check]               Bootstrap Studio-owned provider auth
+  studio configure-resend [--check]                 Configure Studio notification email via Resend
+  studio send-test-email <to>                       Send a Studio notification test email
   studio provision-site <site> [--check] [--proof]  Check a site as Studio service consumer
   vault read <secret-id>                            Read secret from keychain
   vault write <secret-id> <value>                   Store secret in keychain
@@ -110,6 +112,8 @@ case "${1:-help}" in
   studio)
     case "${2:-}" in
       bootstrap-services) "$PLATFORM_ROOT/capabilities/studio/bootstrap-services.sh" "${@:3}" ;;
+      configure-resend)   "$PLATFORM_ROOT/capabilities/studio/configure-resend.sh" "${@:3}" ;;
+      send-test-email)    "$PLATFORM_ROOT/capabilities/studio/send-test-email.sh" "${@:3}" ;;
       provision-site)     "$PLATFORM_ROOT/capabilities/studio/provision-site.sh" "${@:3}" ;;
       *) echo "Unknown studio subcommand: ${2:-}"; usage; exit 1 ;;
     esac
@@ -119,6 +123,12 @@ case "${1:-help}" in
     ;;
   bootstrap-services)
     "$PLATFORM_ROOT/capabilities/studio/bootstrap-services.sh" "${@:2}"
+    ;;
+  configure-resend)
+    "$PLATFORM_ROOT/capabilities/studio/configure-resend.sh" "${@:2}"
+    ;;
+  send-test-email)
+    "$PLATFORM_ROOT/capabilities/studio/send-test-email.sh" "${@:2}"
     ;;
   provision-site)
     "$PLATFORM_ROOT/capabilities/studio/provision-site.sh" "${@:2}"

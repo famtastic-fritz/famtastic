@@ -135,6 +135,30 @@
       "manual_steps": ["Only provider-enforced login/token actions when no reusable session or token exists"]
     },
     {
+      "id": "studio.configure-resend",
+      "invocation": "platform studio configure-resend [--check]",
+      "implementation": "capabilities/studio/configure-resend.sh",
+      "backing_service": "Site Studio notification email via Resend",
+      "status": "v1",
+      "reads_from_vault": ["studio.resend.api_key"],
+      "writes_to_vault": [],
+      "spec_fields_read": ["Resend verified domains"],
+      "spec_fields_written": ["~/.config/famtastic/studio-config.json notifications.email", "~/.config/famtastic/studio-config.json service_auth.resend.studio_sender"],
+      "manual_steps": ["Verify a FAMTastic-owned sending domain later if the current verified domain is site-specific"]
+    },
+    {
+      "id": "studio.send-test-email",
+      "invocation": "platform studio send-test-email <recipient>",
+      "implementation": "capabilities/studio/send-test-email.sh",
+      "backing_service": "Site Studio notification email via Resend",
+      "status": "v1",
+      "reads_from_vault": ["studio.resend.api_key"],
+      "writes_to_vault": [],
+      "spec_fields_read": ["~/.config/famtastic/studio-config.json notifications.email"],
+      "spec_fields_written": [],
+      "manual_steps": []
+    },
+    {
       "id": "studio.provision-site",
       "invocation": "platform studio provision-site <site> [--check] [--proof]",
       "implementation": "capabilities/studio/provision-site.sh",

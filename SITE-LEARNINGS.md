@@ -1,5 +1,26 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Site Studio Resend Notifications (2026-05-05)
+
+Site Studio can now send its own notification emails through Resend. The
+platform command `fam-hub platform configure-resend` writes
+`notifications.email` into `~/.config/famtastic/studio-config.json` with
+`provider: resend`, `api_key_ref: vault://studio.resend.api_key`, and sender
+identity `FAMtastic Site Studio`. `fam-hub platform send-test-email` uses
+`site-studio/lib/studio-mailer.js` and
+`site-studio/scripts/send-studio-test-email.js` to send through Resend without
+printing or committing the API key.
+
+Proof: `proofs/studio-resend-notification-2026-05-05.json`. Resend accepted a
+real test email from `FAMtastic Site Studio <studio@send.mbsh96reunion.com>` to
+the configured Studio email address.
+
+Known gap: the only verified Resend sending domain currently available is
+`send.mbsh96reunion.com`, so Studio notifications are functional but using a
+temporary sender domain. Long-term Studio/platform notifications should verify a
+FAMtastic-owned domain such as `send.famtastic.com` and rerun
+`fam-hub platform configure-resend --domain send.famtastic.com`.
+
 ## Site Studio Service Auth Ownership (2026-05-05)
 
 Provider authentication now belongs to Site Studio/platform, not to generated

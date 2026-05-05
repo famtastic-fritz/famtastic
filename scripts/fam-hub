@@ -1031,6 +1031,14 @@ REPORTHELP
         shift 2 || true
         "$HUB_ROOT/platform/famtastic-platform" studio bootstrap-services "$@"
         ;;
+      configure-resend)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio configure-resend "$@"
+        ;;
+      send-test-email)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio send-test-email "$@"
+        ;;
       provision-site)
         SITE_ARG="${3:-}"
         if [ -z "$SITE_ARG" ]; then
@@ -1054,6 +1062,12 @@ fam-hub platform — Site Studio service capabilities
 Usage:
   fam-hub platform bootstrap-services [--check]
       Check or bootstrap Studio-owned Netlify, Resend, DB, DNS, cPanel, and SSH auth.
+
+  fam-hub platform configure-resend [--check]
+      Configure Site Studio's own Resend sender for notifications.
+
+  fam-hub platform send-test-email [recipient]
+      Send a Site Studio notification test email through Resend.
 
   fam-hub platform provision-site <site> [--check] [--proof]
       Verify a generated site consumes Studio-owned services instead of owning providers.
@@ -1171,6 +1185,8 @@ Multi-Agent Workflow:
   fam-hub capture extract <file>     Produce review-only knowledge packet
   fam-hub report style               Show/set response reporting density
   fam-hub platform bootstrap-services Check Studio-owned service auth
+  fam-hub platform configure-resend   Configure Studio notification email
+  fam-hub platform send-test-email    Send Studio notification test
   fam-hub platform provision-site <s> Check generated-site service wiring
 
 Admin:
