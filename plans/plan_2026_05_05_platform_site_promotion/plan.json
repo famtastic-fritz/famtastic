@@ -29,15 +29,15 @@
         "platform/capabilities/site/promote.sh",
         "Merges current branch → target branch (dev→staging or staging→main)",
         "On --to prod: writes annotated release tag using date-based scheme (vYYYY.MM.DD-HHMM)",
-        "Pushes branch + tag to origin",
-        "Polls Netlify deploy status until success/failure",
+        "Pushes branch + tag to origin (single Netlify project handles both via branch deploys + production branch)",
+        "Polls Netlify deploy status until success/failure (uses Netlify Deploys API filtered by branch)",
         "Writes proof to proofs/site-promote-<tag>-<env>-<date>.json",
         "Refuses promotion if working tree is dirty or tests are failing (configurable)"
       ],
       "acceptance": [
-        "platform site promote mbsh-reunion --to staging merges dev→staging, pushes, and waits for staging Netlify deploy.",
-        "platform site promote mbsh-reunion --to prod merges staging→main, writes tag, pushes, waits for prod Netlify deploy.",
-        "Proof file records: source branch, target branch, merge commit SHA, tag, Netlify deploy URL, deploy status."
+        "platform site promote mbsh-reunion --to staging merges dev→staging, pushes, Netlify branch-deploys to <tag>--staging.netlify.app.",
+        "platform site promote mbsh-reunion --to prod merges staging→main, writes tag, pushes, Netlify production-deploys to custom domain.",
+        "Proof file records: source branch, target branch, merge commit SHA, tag, Netlify deploy id + URL, deploy status."
       ]
     },
     {
@@ -74,18 +74,45 @@
       ]
     },
     {
-      "id": "ws_netlify_two_project_model",
-      "title": "Two Netlify projects per site: <tag>-staging and <tag>",
+      "id": "ws_netlify_single_project_branch_deploys",
+      "title": "ONE Netlify project per site with branch deploys",
       "status": "ready",
-      "priority": "P1",
+      "priority": "P0",
+      "description": "Replaces the earlier 'two Netlify projects per site' design. One Netlify project per site is simpler and matches how Netlify is built to be used. Branch deploys handle staging; production branch + custom domain handle prod.",
       "outputs": [
-        "Convention: every site has TWO Netlify projects: <tag>-staging (production_branch=staging) and <tag> (production_branch=main, custom domain)",
-        "platform/capabilities/deploy/connect-netlify.sh updated to create/configure both",
+        "Convention: ONE Netlify project per site, named <tag>",
+        "Production branch: main → serves custom domain (e.g. mbsh96reunion.com)",
+        "Branch deploys enabled for: staging → serves <tag>--staging.netlify.app",
+        "Branch deploys disabled for: dev (local only, no Netlify build)",
+        "platform/capabilities/deploy/connect-netlify.sh updated to configure this single-project model",
         "Documented in docs/operating-rules/site-netlify-convention.md"
       ],
       "acceptance": [
-        "Running connect-netlify creates both projects and links each to the right branch.",
-        "Existing sites can be retroactively brought into compliance via a --reconcile flag."
+        "Running connect-netlify creates ONE Netlify project linked to the site GitHub repo.",
+        "Pushing to staging triggers a branch deploy at <tag>--staging.netlify.app.",
+        "Pushing to main triggers a production deploy at <custom-domain> (or <tag>.netlify.app pre-domain).",
+        "Existing sites can be retroactively brought into compliance via a --reconcile flag.",
+        "MBSH is the first site reconciled to this model."
+      ]
+    },
+    {
+      "id": "ws_assisted_manual_capability",
+      "title": "Assisted-Manual Capability Pattern (open vendor UI + auto-detect completion)",
+      "status": "ready",
+      "priority": "P0",
+      "description": "Generalizes the 'this step requires the vendor UI' problem. Instead of leaving the user with a copy-paste URL, Site Studio renders an Open <Vendor> button that launches the exact deep-link URL, then polls the vendor API until the manual step is detected as complete, then auto-advances. Applies to Netlify git-link, Resend domain verify, GoDaddy DNS confirmation, Stripe webhook setup, etc.",
+      "outputs": [
+        "Pattern doc: docs/operating-rules/assisted-manual-capability.md",
+        "Shared UI component: site-studio/public/js/assisted-manual-step.js — renders [Open <Vendor> →] button + status pill + polling indicator",
+        "Shared CSS: site-studio/public/css/assisted-manual-step.css",
+        "Per-vendor adapters: site-studio/lib/assisted-manual/{netlify,resend,godaddy}.js — each exports {deepLink(ctx), poll(ctx) → 'pending'|'done'|'failed'}",
+        "First applied to Netlify git-link in connect-netlify.sh"
+      ],
+      "acceptance": [
+        "Clicking [Open Netlify →] opens the exact site-deploys-settings URL in a new tab (window.open with _blank).",
+        "Studio polls the vendor API every 5s, surfaces a status pill ('waiting for repo link…' → '✓ linked').",
+        "On detection, Studio auto-runs the next dependent step (e.g., trigger first staging deploy) and writes a proof.",
+        "Pattern is reused for at least one non-Netlify vendor in the same plan cycle to prove generalizability."
       ]
     },
     {
@@ -119,19 +146,29 @@
       "ws_promote_command working for staging and prod",
       "ws_rollback_command working for default-prev-tag and named-tag",
       "ws_tag_scheme implemented with date-based format",
-      "ws_netlify_two_project_model wired for MBSH",
-      "Manual one-time creation of the prod Netlify project for MBSH (Netlify git-link still requires UI)"
+      "ws_netlify_single_project_branch_deploys wired for MBSH (one project, branch deploys for staging, production branch + custom domain for prod)",
+      "ws_assisted_manual_capability — pattern shipped, used for the one-time Netlify git-link step",
+      "Custom domain (mbsh96reunion.com) bound to main-branch deploys via the assisted-manual flow for GoDaddy DNS"
     ],
     "explicit_non_mvp": [
-      "Multi-site reconcile flag",
+      "Multi-site reconcile flag (one site is enough to prove the pattern)",
       "Per-PR preview deploys",
       "Automatic incident-mode escalation"
     ]
   },
   "known_gaps_opened": [
-    "Netlify ↔ GitHub linking still requires manual UI step (Netlify API limitation, documented in connect-netlify.sh).",
-    "No prod Netlify project exists for MBSH yet — must be created (manually) before first prod promote.",
-    "platform/capabilities/site/promote.sh and rollback.sh do not exist yet."
+    "Netlify ↔ GitHub linking still requires the vendor UI (Netlify API limitation). Mitigated by the assisted-manual capability pattern (ws_assisted_manual_capability) — Studio opens the right URL and polls for completion.",
+    "platform/capabilities/site/promote.sh and rollback.sh do not exist yet.",
+    "No assisted-manual UI components exist yet (site-studio/public/js/assisted-manual-step.js + adapters).",
+    "Existing Netlify project mbsh-reunion-staging was renamed but lost its repo link in the API rename — must be re-linked via UI as the first proof of the assisted-manual pattern."
+  ],
+  "design_corrections": [
+    {
+      "date": "2026-05-05",
+      "from": "Two Netlify projects per site (<tag>-staging and <tag>)",
+      "to": "ONE Netlify project per site with branch deploys (staging branch → branch deploy URL, main branch → production + custom domain)",
+      "why": "Simpler, native to how Netlify works, fewer projects to manage. User caught the over-engineering during plan review."
+    }
   ],
   "depends_on": ["studio-workbench-foundation"],
   "parent_plan": null
