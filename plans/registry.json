@@ -1,0 +1,289 @@
+{
+  "schema_version": "0.2.0",
+  "generated_from": [
+    "plans/consolidated-execution-checklist-2026-05-04.md",
+    "plans/consolidation-verification-2026-05-04.md",
+    "docs/famtastic-total-ask-plan.md",
+    "docs/STUDIO-UI-FOUNDATION.md",
+    "plans/plan_2026_05_04_shay_process_intelligence/plan.json"
+  ],
+  "updated_at": "2026-05-04T23:00:00.000-04:00",
+  "status": "consolidated_active",
+  "approval": {
+    "approved_by": "Fritz",
+    "approval_mode": "auto_approve_everything",
+    "source": "2026-05-04 Codex Desktop instruction",
+    "scope": "Apply four-plan consolidation, create executable task/run/proof substrate, and stop carrying stale plans as active work."
+  },
+  "governance": {
+    "mode": "generous",
+    "default_behavior": "warn_log_notify",
+    "auto_approved_execution": true,
+    "hard_stop_conditions": [
+      "destructive_file_delete",
+      "production_deploy",
+      "payment_or_auth_change",
+      "dns_or_domain_change",
+      "expensive_media_or_api_generation",
+      "parallel_write_scope_conflict",
+      "secret_bearing_config_change"
+    ]
+  },
+  "densities": {
+    "compact": "plans/templates/density-compact.md",
+    "standard": "plans/templates/density-standard.md",
+    "detail": "plans/templates/density-detail.md"
+  },
+  "registry_backup": "plans/registry.backup-2026-05-04.json",
+  "active_parent_ids": [
+    "studio-workbench-foundation",
+    "plan-task-run-intelligence",
+    "build-intent-fulfillment-trace",
+    "site-mbsh-reunion"
+  ],
+  "absorbed_records": [
+    {
+      "id": "famtastic-total-ask-plan",
+      "disposition": "parked_strategy_context",
+      "destination": "all_four_parent_plans",
+      "note": "Drive sync is complete; useful doctrine was mined into the active parents."
+    },
+    {
+      "id": "studio-master-plan",
+      "disposition": "absorbed",
+      "destination": "studio-workbench-foundation"
+    },
+    {
+      "id": "multi-agent-resumable-plan-system",
+      "disposition": "absorbed",
+      "destination": "plan-task-run-intelligence"
+    },
+    {
+      "id": "shay-process-intelligence",
+      "disposition": "absorbed_as_source_packet",
+      "destination": "plan-task-run-intelligence"
+    },
+    {
+      "id": "build-orchestration-trace",
+      "disposition": "absorbed",
+      "destination": "build-intent-fulfillment-trace"
+    },
+    {
+      "id": "canonical-build-intent-v2",
+      "disposition": "absorbed",
+      "destination": "build-intent-fulfillment-trace"
+    },
+    {
+      "id": "baseline-closure-review",
+      "disposition": "evidence_and_task_source",
+      "destination": "build-intent-fulfillment-trace"
+    },
+    {
+      "id": "gap-123-4-closure",
+      "disposition": "closure_evidence",
+      "destination": "build-intent-fulfillment-trace"
+    },
+    {
+      "id": "p0-p1-diagnostics",
+      "disposition": "diagnostic_evidence",
+      "destination": "build-intent-fulfillment-trace"
+    },
+    {
+      "id": "outstanding-iterative-roadmap",
+      "disposition": "dissolved_into_tasks",
+      "destination": "all_four_parent_plans"
+    }
+  ],
+  "plans": [
+    {
+      "id": "studio-workbench-foundation",
+      "title": "Studio Workbench Foundation",
+      "status": "active",
+      "status_label": "Active parent plan",
+      "group": "studio_shell_workspace",
+      "plan_path": "docs/STUDIO-UI-FOUNDATION.md",
+      "current_workstream": "Frozen-contract rebuild and registry-backed Workbench",
+      "next_action": "Rebuild the Workbench prototype against the frozen workspace contract and wire Plan mode to real registry/task/run/proof data.",
+      "open_blockers": "Workbench still uses prototype/static data and is not registered as a Shay context provider.",
+      "originator": "Fritz plus consolidated planning",
+      "origin_surface": "Codex Desktop",
+      "current_runner": "Codex",
+      "runner_surface": "Codex Desktop",
+      "run_target": "complete_p0_then_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "frozen UI foundation",
+          "path": "docs/STUDIO-UI-FOUNDATION.md"
+        },
+        {
+          "label": "consolidated checklist",
+          "path": "plans/consolidated-execution-checklist-2026-05-04.md"
+        },
+        {
+          "label": "freeze capture",
+          "path": "captures/inbox/2026-05-04-studio-ui-foundation-freeze.capture.json"
+        },
+        {
+          "label": "workbench prototype",
+          "path": "site-studio/public/workbench-foundation.html"
+        }
+      ],
+      "tasks": [
+        "Rebuild Workbench against docs/STUDIO-UI-FOUNDATION.md instead of the earlier generic prototype",
+        "Make every workspace declare its workspace contract before implementation",
+        "Keep Media as Media Studio with prompt input as the primary center work surface",
+        "Wire Workbench Plan mode to registry/task/run/proof data",
+        "Register Workbench as a Shay context provider",
+        "Run Playwright UI verification after each user-facing Workbench slice"
+      ],
+      "assumptions": [
+        "The frozen foundation is the canonical UI rulebook.",
+        "Media Library is a support surface inside Media Studio, not the parent domain."
+      ]
+    },
+    {
+      "id": "plan-task-run-intelligence",
+      "title": "Plan, Task, Run, and Capture Intelligence",
+      "status": "active",
+      "status_label": "Active parent plan",
+      "group": "plan_task_run_intelligence",
+      "plan_path": "plans/consolidated-execution-checklist-2026-05-04.md",
+      "current_workstream": "Executable registry, task/run/proof ledgers, and capture flywheel",
+      "next_action": "Promote consolidated tasks into ledgers, create run/proof records, and expose the status packet for web/phone/Workbench consumption.",
+      "open_blockers": "CLI mutations and Studio Plan Board are not built yet; first slice is file-backed ledgers.",
+      "originator": "Fritz plus consolidated planning",
+      "origin_surface": "Codex Desktop",
+      "current_runner": "Codex",
+      "runner_surface": "Codex Desktop",
+      "run_target": "complete_p0_then_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "consolidated checklist",
+          "path": "plans/consolidated-execution-checklist-2026-05-04.md"
+        },
+        {
+          "label": "plan packet",
+          "path": "plans/plan_2026_05_04_shay_process_intelligence/plan.json"
+        },
+        {
+          "label": "multi-agent plan system",
+          "path": "docs/multi-agent-resumable-plan-system.md"
+        },
+        {
+          "label": "status packet",
+          "path": "FAMTASTIC-STATUS.md"
+        }
+      ],
+      "tasks": [
+        "Promote embedded plan tasks into tasks/tasks.jsonl",
+        "Create run records with targets and report-back rules",
+        "Create proof records for consolidation, freeze, and closure evidence",
+        "Regenerate FAMTASTIC-STATUS.md from the consolidated registry",
+        "Add fam-hub plan review, task promote, and run start commands",
+        "Build first usable knowledge-capture pass for designated conversations and docs"
+      ],
+      "assumptions": [
+        "Plan packets sit above jobs.",
+        "Capture is always available; approval controls promotion, not observation."
+      ]
+    },
+    {
+      "id": "build-intent-fulfillment-trace",
+      "title": "Build Intent, Fulfillment Trace, and Workflow Data",
+      "status": "active",
+      "status_label": "Active parent plan",
+      "group": "build_orchestration_trace",
+      "plan_path": "docs/build-orchestration-trace-plan.md",
+      "current_workstream": "BuildIntent v2, workflow-as-data instrumentation, fulfillment proof, and visualizer prerequisites",
+      "next_action": "Instrument parallelBuild with stage boundaries, inputs, outputs, and proof events before changing execution order.",
+      "open_blockers": "Workflow-as-data and the pipeline visualizer are still open; Drive sync is complete and no longer active work.",
+      "originator": "Fritz plus consolidated planning",
+      "origin_surface": "Codex Desktop",
+      "current_runner": "Codex",
+      "runner_surface": "Codex Desktop",
+      "run_target": "complete_p0_then_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "build trace plan",
+          "path": "docs/build-orchestration-trace-plan.md"
+        },
+        {
+          "label": "BuildIntent v2",
+          "path": "architecture/2026-04-24-canonical-build-intent-v2.md"
+        },
+        {
+          "label": "baseline review",
+          "path": "architecture/2026-04-25-baseline-closure-review.md"
+        },
+        {
+          "label": "gap closure proof",
+          "path": "architecture/2026-04-24-gap123-live-verification.md"
+        }
+      ],
+      "tasks": [
+        "Declare BuildIntent v2 current and archive or supersede v1",
+        "Attach baseline closure, gap 1/2/3/4, and P0/P1 diagnostics as evidence",
+        "Promote only unresolved diagnostics into active tasks",
+        "Surface fulfillment status in Workbench",
+        "Instrument parallelBuild before refactoring it",
+        "Define workflow-as-data stage names, boundaries, inputs, outputs, and proof events",
+        "Build pipeline visualizer inspect, trace, and propose after workflow data is trustworthy",
+        "Define three site workflows: new_site_from_brief, adapt_existing_site, rebuild_from_brief",
+        "Keep long-context fixes on the backlog until stage handoffs are explicit"
+      ],
+      "assumptions": [
+        "Instrument first, refactor second.",
+        "The visualizer should not be built before trustworthy trace/workflow data exists."
+      ]
+    },
+    {
+      "id": "site-mbsh-reunion",
+      "title": "MBSH Reunion Site Execution",
+      "status": "active",
+      "status_label": "Site-scoped active parent plan",
+      "group": "site_plan",
+      "plan_path": "docs/sites/site-mbsh-reunion/V1-BRIEF.md",
+      "current_workstream": "Site-scoped backend, RSVP, sponsor, media, chatbot, deploy, content, and proof",
+      "next_action": "Create site-scoped tasks and promote reusable platform gaps back to the parent plans instead of mixing site execution with platform execution.",
+      "open_blockers": "Site execution and reusable platform learnings are not yet separated into task records.",
+      "originator": "Fritz plus Claude/Cowork/Codex sessions",
+      "origin_surface": "mixed",
+      "current_runner": "mixed",
+      "runner_surface": "mixed",
+      "run_target": "complete_site_scoped_p0_then_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "brief",
+          "path": "docs/sites/site-mbsh-reunion/V1-BRIEF.md"
+        },
+        {
+          "label": "discovery",
+          "path": "docs/sites/site-mbsh-reunion/DISCOVERY.md"
+        },
+        {
+          "label": "audit",
+          "path": "docs/sites/site-mbsh-reunion/cowork-audit-001"
+        },
+        {
+          "label": "deploy repo",
+          "path": "../famtastic-sites/mbsh-reunion"
+        }
+      ],
+      "tasks": [
+        "Create site-scoped task records for backend, RSVP, sponsor, media, chatbot, deploy, content, and proof",
+        "Separate MBSH-specific asks from reusable Studio/platform gaps",
+        "Promote generalized gaps upward to the appropriate parent plan",
+        "Keep deploy repo state separate from Studio repo state",
+        "Use MBSH as an audit harness for Studio reproduction from intent"
+      ],
+      "assumptions": [
+        "MBSH is the near-term revenue/proof site.",
+        "Reusable platform discoveries should move upward instead of bloating the site plan."
+      ]
+    }
+  ]
+}

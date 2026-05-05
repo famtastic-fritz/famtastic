@@ -114,9 +114,9 @@ This follows the solution hierarchy:
 
 ### P1 — Make Shay/Plans Resumable
 
-- [ ] Add `fam-hub plan review` for consolidation/drift checks.
-- [ ] Add `fam-hub task promote` to move plan tasks into the task ledger.
-- [ ] Add `fam-hub run start` with targets like `complete`, `timebox`, `until_blocked`, and report-back rules.
+- [x] Add `fam-hub plan review` for consolidation/drift checks.
+- [x] Add `fam-hub task promote` to move plan tasks into the task ledger.
+- [x] Add `fam-hub run start` with targets like `complete`, `timebox`, `until_blocked`, and report-back rules.
 - [ ] Add automatic status export from registry and ledgers.
 - [ ] Register Workbench as a Shay context provider: domain, route, selected object, selected tool, proof state, open plan/run.
 

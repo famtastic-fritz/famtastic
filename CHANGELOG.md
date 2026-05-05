@@ -413,3 +413,7 @@ Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four
 ## 2026-05-04 — Consolidation status correction
 
 Updated the consolidated execution checklist to reflect Fritz's correction that Drive sync is complete and should not be carried as active work. Workflow-as-data and the pipeline visualizer remain open under `build-intent-fulfillment-trace`, with workflow instrumentation explicitly preceding any declarative pipeline refactor or visualizer build.
+
+## 2026-05-04 — Four-plan registry applied
+
+Applied the consolidation instead of leaving it as a proposal: backed up the old 11-record registry, rewrote `plans/registry.json` to four active parent plans, populated task/run/proof ledgers, and regenerated `FAMTASTIC-STATUS.md`. Fixed `fam-hub task list` and `fam-hub run status` so JSONL listings no longer skip the first record, then added `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start`. Verified JSON/JSONL validity, shell syntax, compact plan output, ledger output, plan review, task promotion dry-run, and run-start dry-run. Deferred: Workbench registry rendering, Workbench Shay context provider, automatic status-packet regeneration, workflow-as-data instrumentation, and the pipeline visualizer.

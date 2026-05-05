@@ -30,17 +30,70 @@ not as a fifth active plan.
 
 ### Known Gaps opened or preserved
 
-- `plans/registry.json` still needs the actual four-parent rewrite.
+- `plans/registry.json` has been rewritten to the four active parent plans.
 - `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`
   still need promoted records.
-- `FAMTASTIC-STATUS.md` still needs automatic regeneration from the
-  consolidated registry and ledgers.
+- `FAMTASTIC-STATUS.md` still needs automatic regeneration from code; it was
+  manually regenerated from the consolidated registry and ledgers for the first
+  applied slice.
 - The Workbench prototype still needs to be rebuilt against the frozen
   workspace contract before it becomes the default shell.
 - Workflow-as-data still needs the first instrumentation pass before
   declarative pipeline stages can be introduced.
 - The pipeline visualizer remains unbuilt and depends on trustworthy trace and
   workflow data.
+
+## Applied Four-Plan Registry (2026-05-04)
+
+Fritz approved the consolidation for execution with auto-approval for the
+remaining consolidated work. `plans/registry.json` is now rewritten to four
+active parent plans only: `studio-workbench-foundation`,
+`plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and
+`site-mbsh-reunion`. The pre-consolidation registry was backed up to
+`plans/registry.backup-2026-05-04.json`.
+
+### Files and commands created or changed
+
+- `plans/registry.json` — schema `0.2.0`, four active parent plans, approval
+  metadata, and absorbed-record dispositions for stale/parked plan documents.
+- `plans/registry.backup-2026-05-04.json` — rollback/comparison copy of the
+  prior 11-record registry.
+- `tasks/tasks.jsonl` — first promoted task ledger records. P0 consolidation
+  substrate tasks and P1 CLI command tasks are marked completed; remaining
+  Workbench, BuildIntent, workflow-data, visualizer, and MBSH tasks are ready.
+- `runs/runs.jsonl` — active `run-2026-05-04-consolidation-apply` record.
+- `proofs/proof-ledger.jsonl` — proof records for the registry backup/rewrite,
+  task ledger, run ledger, Drive-sync status correction, and CLI command
+  verification.
+- `scripts/fam-hub` — fixed JSONL list commands so they no longer skip the
+  first task/run record; added `fam-hub plan review`,
+  `fam-hub task promote --dry-run|--apply`, and
+  `fam-hub run start <plan-id> [target] [--dry-run]`.
+- `FAMTASTIC-STATUS.md` — manually regenerated status packet with the four
+  active parent plans and current run.
+
+### Verification
+
+- `jq` validated `plans/registry.json`, `tasks/tasks.jsonl`,
+  `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`.
+- `bash -n scripts/fam-hub` passed.
+- `fam-hub plan list --compact` shows exactly four active parent plans.
+- `fam-hub plan review` reports 4 plans, 4 active parents, 10 absorbed records,
+  23 task records, 1 run record, 8 proof records, and no warnings.
+- `fam-hub task list` now includes the first JSONL task record.
+- `fam-hub run status` now includes the one-line run ledger.
+- `fam-hub task promote --dry-run` previews registry task promotion.
+- `fam-hub run start studio-workbench-foundation complete_p0 --dry-run`
+  returns a valid JSON run record without writing.
+
+### Known Gaps closed or changed
+
+- The four-parent registry rewrite is no longer pending; it is applied.
+- Task, run, and proof ledgers are no longer empty.
+- `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` now
+  exist.
+- Automatic status-packet regeneration is still open; this pass updated the
+  packet manually.
 
 ## Plan Consolidation Verification (2026-05-04)
 
@@ -65,15 +118,16 @@ fields are not rich enough for Workbench/Shay execution.
   same-level active plans after approval; they become child workstreams,
   evidence, or promoted tasks.
 
-### Known Gaps opened or preserved
+### Historical gaps from this proposal
 
-- `plans/registry.json` is still unchanged pending Fritz approval.
-- `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`
-  remain empty.
-- No `fam-hub plan review`, `fam-hub task promote`, or `fam-hub run start`
-  commands exist yet.
-- Workbench Plan mode cannot show real execution state until the consolidation
-  is approved and task/run/proof records are promoted.
+- `plans/registry.json` was initially unchanged pending Fritz approval; this is
+  closed by the applied four-plan registry slice below.
+- `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl` were
+  initially empty; this is closed by the first promoted ledger records.
+- `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` were
+  initially missing; these now exist.
+- Workbench Plan mode still cannot show real execution state until it consumes
+  the registry and ledgers from the UI.
 
 ## Studio UI Foundation Freeze (2026-05-04)
 
@@ -185,7 +239,9 @@ Created `docs/active-plan-pipeline-report-2026-05-04.md` as a review artifact fo
 ### Known Gaps closed or changed by the registry slice
 
 - `plans/registry.json` now exists as a pilot canonical registry.
-- Append-only `tasks/`, `runs/`, proof, and research ledgers now exist as empty files.
+- Append-only `tasks/`, `runs/`, proof, and research ledgers were created as
+  empty files in the initial slice; task/run/proof ledgers now have first
+  records after the applied four-plan registry pass.
 - `fam-hub plan status`, `fam-hub task list`, and `fam-hub run status` now exist as read-only commands.
 - `FAMTASTIC-STATUS.md` now exists as a web/phone-safe mirror.
 
