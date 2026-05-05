@@ -11123,6 +11123,16 @@ app.get('/api/trace/run/:runId', (req, res) => {
   res.json({ site_tag: TAG, run_id: runId, count: events.length, events });
 });
 
+app.get('/api/workflow/stage-catalog', (req, res) => {
+  try {
+    const catalogPath = path.join(__dirname, 'lib', 'workflow-stage-catalog.json');
+    const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+    res.json(catalog);
+  } catch (err) {
+    res.status(500).json({ error: 'workflow_stage_catalog_unavailable', message: err.message });
+  }
+});
+
 // Agent performance scorecard
 app.get('/api/agent/performance', (req, res) => {
   const { agent, task_type, provider } = req.query;

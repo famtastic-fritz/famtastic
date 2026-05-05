@@ -445,3 +445,7 @@ Registered Workbench as the `workbench.foundation` Shay context provider and ver
 ## 2026-05-04 — MBSH RSVP and sponsor browser proof
 
 Verified the MBSH RSVP and sponsor frontend submission paths in a real browser against the actual deploy repo pages, with intercepted API payload proof saved under `proofs/`. Fixed the deploy repo anti-bot timing helper and RSVP public-attendee opt-out serialization, then updated the site-scoped proof docs and ledgers. Deploy proof is documented but blocked until Netlify, DNS, GoDaddy/PHP/MySQL, Resend, backend secrets, and production `API_BASE_URL` access are available.
+
+## 2026-05-04 — Pipeline visualizer and MBSH proof closure
+
+Added Workbench pipeline visualizer phase 1 with inspect, trace, and propose lanes backed by the workflow stage catalog and `/api/trace`, plus a new `/api/workflow/stage-catalog` endpoint. Verified it through launchd-managed Studio with Playwright and saved screenshot/JSON proof. Completed the remaining MBSH proof packets for media/story readiness, Chatbot Phase 1, content deltas, Studio reproduction audit harness, and generalized platform gaps. Remaining work is honestly blocked, not open-ended: MBSH production deploy needs external access/config, and story/gallery readiness needs seven missing image assets plus rights proof.

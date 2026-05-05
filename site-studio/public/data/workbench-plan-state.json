@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1.0",
-  "generated_at": "2026-05-04T23:59:00.000-04:00",
+  "generated_at": "2026-05-04T23:59:59.000-04:00",
   "source_files": {
     "registry": "plans/registry.json",
     "tasks": "tasks/tasks.jsonl",
@@ -11,13 +11,13 @@
     "active_parent_count": 4,
     "absorbed_record_count": 10,
     "task_count": 33,
-    "open_task_count": 8,
+    "open_task_count": 2,
     "run_count": 1,
-    "proof_count": 20,
+    "proof_count": 26,
     "current_run": "run-2026-05-04-consolidation-apply",
     "drive_sync_status": "complete",
     "workflow_as_data_status": "phase_1_cataloged",
-    "pipeline_visualizer_status": "open"
+    "pipeline_visualizer_status": "phase_1_live"
   },
   "active_parents": [
     {
@@ -46,9 +46,9 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "BuildIntent v2, workflow-as-data instrumentation, fulfillment proof, and visualizer prerequisites",
-      "next_action": "Build the visualizer only after workflow data is trustworthy.",
+      "next_action": "Use live visualizer proof to add stage/event matching and missing-stage detection.",
       "blocker": null,
-      "proof_count": 3
+      "proof_count": 4
     },
     {
       "id": "site-mbsh-reunion",
@@ -56,9 +56,9 @@
       "status": "active",
       "priority": "P0",
       "current_workstream": "Site-scoped backend, RSVP, sponsor, media, chatbot, deploy, content, and proof",
-      "next_action": "Provision deploy/runtime access for blocked production proof; continue ready media, chatbot, content, audit, and gap-promotion work.",
-      "blocker": "Live deploy proof blocked by missing Netlify/DNS/GoDaddy/PHP/MySQL/Resend access and production API_BASE_URL.",
-      "proof_count": 5
+      "next_action": "Resolve blocked deploy access/config and missing story/gallery media assets.",
+      "blocker": "Live deploy proof and complete media/story readiness are blocked by external access/config and missing story image assets.",
+      "proof_count": 10
     }
   ],
   "tasks_by_priority": {
@@ -73,63 +73,20 @@
     ],
     "P1": [
       {
-        "id": "task-2026-05-04-023",
-        "plan_id": "site-mbsh-reunion",
-        "status": "ready",
-        "title": "Use MBSH as Studio audit harness",
-        "next_action": "Run a full-intent audit that compares existing MBSH brief/site against Studio's ability to reproduce it."
-      },
-      {
         "id": "task-2026-05-04-028",
         "plan_id": "site-mbsh-reunion",
-        "status": "ready",
+        "status": "blocked",
         "title": "Complete MBSH media/story assets",
-        "next_action": "Recover or finish story section assets, mascot usage, gallery proof, and rights state."
-      },
-      {
-        "id": "task-2026-05-04-029",
-        "plan_id": "site-mbsh-reunion",
-        "status": "ready",
-        "title": "Verify MBSH chatbot Phase 1",
-        "next_action": "Test chatbot content path, boundaries, fallback behavior, and reusable component lessons."
-      },
-      {
-        "id": "task-2026-05-04-030",
-        "plan_id": "site-mbsh-reunion",
-        "status": "ready",
-        "title": "Close MBSH content deltas against V1 brief",
-        "next_action": "Compare V1 brief to current deploy repo and list any missing copy or section deltas."
-      },
-      {
-        "id": "task-2026-05-04-031",
-        "plan_id": "site-mbsh-reunion",
-        "status": "ready",
-        "title": "Run MBSH Studio reproduction audit harness",
-        "next_action": "Use MBSH as Studio audit harness: reverse prompt, run full Studio path, compare, and promote generalized gaps."
-      },
-      {
-        "id": "task-2026-05-04-032",
-        "plan_id": "site-mbsh-reunion",
-        "status": "ready",
-        "title": "Promote generalized MBSH platform gaps",
-        "next_action": "Move reusable backend, RSVP, sponsor, media, chatbot, deploy, and fulfillment gaps to parent platform plans only when they generalize."
+        "next_action": "Add or generate the seven missing story/timeline image files and produce rights/approval manifest for archival or crowd-sourced gallery assets."
       }
     ],
-    "P2": [
-      {
-        "id": "task-2026-05-04-019",
-        "plan_id": "build-intent-fulfillment-trace",
-        "status": "ready",
-        "title": "Build pipeline visualizer inspect/trace/propose",
-        "next_action": "Build the visualizer only after workflow data is trustworthy."
-      }
-    ]
+    "P2": []
   },
   "current_run": {
     "id": "run-2026-05-04-consolidation-apply",
     "plan_id": "plan-task-run-intelligence",
     "status": "active",
     "target": "complete_p0_then_report",
-    "current_step": "Knowledge capture, Workbench context provider, workflow-mode contracts, MBSH backend inventory, RSVP browser proof, and sponsor browser proof are complete. MBSH deploy proof is blocked by external access/config; remaining ready work is pipeline visualizer plus MBSH media/chatbot/content/audit/gap tasks."
+    "current_step": "Pipeline visualizer phase 1, knowledge capture, Workbench context, MBSH backend inventory, RSVP/sponsor/chatbot browser proof, content delta, audit harness, and generalized gap promotion are complete. Remaining blocked work: MBSH live deploy proof and missing media/story assets, both waiting on external access/content assets."
   }
 }

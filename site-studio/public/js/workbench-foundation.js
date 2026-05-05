@@ -11,7 +11,10 @@
     themeIndex: 0,
     toolOrder: readToolOrder(),
     planData: null,
-    planDataError: null
+    planDataError: null,
+    workflowCatalog: null,
+    traceData: null,
+    workflowDataError: null
   };
 
   const themes = ['malachite', 'electric', 'paper'];
@@ -678,6 +681,8 @@
         ${priorityLane('P2', 'Only after proof', p2)}
       </section>
 
+      ${buildPipelineVisualizer()}
+
       <section class="plan-run-strip">
         <div>
           <div class="eyebrow">Current Run</div>
@@ -691,6 +696,72 @@
         </div>
       </section>
     </div>`;
+  }
+
+  function buildPipelineVisualizer() {
+    const catalog = state.workflowCatalog;
+    const traces = state.traceData?.events || [];
+    if (!catalog) {
+      return `<section class="pipeline-visualizer pipeline-empty">
+        <div class="pipeline-head">
+          <div><div class="eyebrow">Pipeline Visualizer</div><h3>Inspect, trace, propose</h3></div>
+          <span>${escapeHtml(state.workflowDataError || 'Loading workflow catalog')}</span>
+        </div>
+      </section>`;
+    }
+    const stages = catalog.stages || [];
+    return `<section class="pipeline-visualizer">
+      <div class="pipeline-head">
+        <div>
+          <div class="eyebrow">Pipeline Visualizer / Phase 1</div>
+          <h3>Inspect the build contract, trace real events, propose the next safe change.</h3>
+        </div>
+        <span>${escapeHtml(catalog.status || 'unknown')}</span>
+      </div>
+      <div class="pipeline-grid">
+        <div class="pipeline-column inspect">
+          <header><b>Inspect</b><small>${stages.length} stages</small></header>
+          <div class="stage-rail">
+            ${stages.map(stageCard).join('')}
+          </div>
+        </div>
+        <div class="pipeline-column trace-live">
+          <header><b>Trace</b><small>${traces.length} live events</small></header>
+          <div class="trace-rail">
+            ${traces.slice(0, 7).map(traceCard).join('') || '<p class="empty-lane">No live trace events found for the active site yet. Run a Studio build to populate this lane.</p>'}
+          </div>
+        </div>
+        <div class="pipeline-column propose">
+          <header><b>Propose</b><small>review-first</small></header>
+          ${proposalCard('1', 'Keep phase 1 read-only', 'Use catalog + trace visibility before changing execution order.')}
+          ${proposalCard('2', traces.length ? 'Bind trace events to stages' : 'Generate a fresh trace run', traces.length ? 'Map latest step_id values against catalog proof_events and show gaps.' : 'Run a small build, then verify every catalog stage has at least one proof event.')}
+          ${proposalCard('3', 'Promote to declarative data stage by stage', 'Start with page_inventory because it has bounded inputs, outputs, and proof events.')}
+        </div>
+      </div>
+    </section>`;
+  }
+
+  function stageCard(stage) {
+    return `<article class="stage-card">
+      <span>${escapeHtml(stage.stage_id)}</span>
+      <strong>${escapeHtml(stage.boundary)}</strong>
+      <small>${escapeHtml((stage.proof_events || []).join(', ') || 'No proof event')}</small>
+    </article>`;
+  }
+
+  function traceCard(event) {
+    return `<article class="trace-card status-${escapeHtml(String(event.status || 'unknown').toLowerCase())}">
+      <span>${escapeHtml(event.phase || 'trace')}</span>
+      <strong>${escapeHtml(event.step_id || event.trace_id || 'event')}</strong>
+      <small>${escapeHtml(event.status || 'unknown')} ${event.created_at ? `- ${new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}</small>
+    </article>`;
+  }
+
+  function proposalCard(number, title, copy) {
+    return `<article class="proposal-card">
+      <span>${escapeHtml(number)}</span>
+      <div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(copy)}</p></div>
+    </article>`;
   }
 
   function metric(label, value) {
@@ -934,9 +1005,12 @@
       ]];
     }
     if (consoleKey === 'trace') {
+      const traceCount = state.traceData?.events?.length || 0;
+      const stageCount = state.workflowCatalog?.stages?.length || 0;
       return [
         ['TRACE', `Workflow-as-data: ${data.summary?.workflow_as_data_status || 'unknown'}`, 'open', 'gold'],
         ['TRACE', `Pipeline visualizer: ${data.summary?.pipeline_visualizer_status || 'unknown'}`, 'open', 'cyan'],
+        ['TRACE', `${stageCount} catalog stages and ${traceCount} live events available to Workbench.`, 'now', traceCount ? 'green' : 'gold'],
         ['TRACE', 'Drive sync: complete, no active task carried forward.', 'done', 'green']
       ];
     }
@@ -1060,12 +1134,26 @@
     if (event.key === 'Escape') closeModal();
   });
 
-  async function loadPlanData() {
+  async function loadWorkbenchData() {
     try {
-      const response = await fetch('data/workbench-plan-state.json', { cache: 'no-store' });
-      if (!response.ok) throw new Error(`Plan state ${response.status}`);
-      state.planData = await response.json();
+      const [planResponse, catalogResponse, traceResponse] = await Promise.all([
+        fetch('data/workbench-plan-state.json', { cache: 'no-store' }),
+        fetch('/api/workflow/stage-catalog', { cache: 'no-store' }),
+        fetch('/api/trace?limit=24', { cache: 'no-store' })
+      ]);
+      if (!planResponse.ok) throw new Error(`Plan state ${planResponse.status}`);
+      state.planData = await planResponse.json();
       state.planDataError = null;
+      if (catalogResponse.ok) {
+        state.workflowCatalog = await catalogResponse.json();
+      } else {
+        state.workflowDataError = `Workflow catalog ${catalogResponse.status}`;
+      }
+      if (traceResponse.ok) {
+        state.traceData = await traceResponse.json();
+      } else {
+        state.workflowDataError = state.workflowDataError || `Trace ${traceResponse.status}`;
+      }
       render();
     } catch (error) {
       state.planDataError = error.message || 'Plan state unavailable';
@@ -1074,6 +1162,6 @@
   }
 
   render();
-  loadPlanData();
+  loadWorkbenchData();
   registerWorkbenchShayContext();
 })();

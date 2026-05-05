@@ -5250,6 +5250,47 @@ Do not mark MBSH production deploy complete until the public frontend has a
 real `API_BASE_URL`, the backend is configured with production secrets, and
 the live RSVP/sponsor smoke tests pass against the actual deployed backend.
 
+### Pipeline Visualizer Phase 1
+
+Workbench Plan mode now includes the first live pipeline visualizer surface.
+`GET /api/workflow/stage-catalog` serves
+`site-studio/lib/workflow-stage-catalog.json`; the Workbench reads that catalog
+plus `/api/trace?limit=24` and renders three lanes: Inspect, Trace, and
+Propose.
+
+This is deliberately read-first. Inspect shows the nine workflow stages and
+their proof events. Trace shows live trace events when a build has produced
+them, with an explicit empty state when no active-site trace exists. Propose
+lists review-first next changes: keep phase one read-only, bind trace events
+to stages, then migrate one declarative stage at a time.
+
+Evidence: `proofs/workbench-pipeline-visualizer-2026-05-04.json` and
+`proofs/workbench-pipeline-visualizer-2026-05-04.png`.
+
+### MBSH Chatbot, Content, Audit, and Gap Proof
+
+Hi-Tide Harry Chatbot Phase 1 is browser-verified at
+`docs/sites/site-mbsh-reunion/chatbot-phase1-verification-2026-05-04.md`.
+The proof opened the actual v2 frontend, asked the eight V1 FAQ questions, and
+confirmed the fallback collector emits a payload. A CSS hidden-state bug was
+fixed in the deploy repo: `.chatbot__panel[hidden] { display: none; }`.
+
+The MBSH content delta packet is at
+`docs/sites/site-mbsh-reunion/content-delta-verification-2026-05-04.md`.
+The seven-page architecture is present, but launch content still needs final
+date/venue/payment values, story/gallery assets, playlist ID, seed data, and
+backend proof.
+
+The MBSH Studio reproduction harness is at
+`docs/sites/site-mbsh-reunion/studio-reproduction-audit-harness-2026-05-04.md`.
+It defines the exact single prompt to send through Studio, required checks, and
+which gaps should be promoted only after a real Studio reproduction run.
+
+Reusable MBSH-derived gaps are separated at
+`docs/sites/site-mbsh-reunion/generalized-platform-gaps-2026-05-04.md`. They
+map back into the existing four parent plans instead of creating another plan
+stack.
+
 ### Known Gaps Opened / Still Open
 
 - Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
@@ -5257,9 +5298,10 @@ the live RSVP/sponsor smoke tests pass against the actual deployed backend.
 - `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` exist. `fam-hub plan graph` is still not implemented.
 - `fam-hub capture extract` exists, but promotion from review packet into canonical memory is still manual.
 - Capability Store broader than Media Studio is not implemented.
-- Pipeline visualizer inspect/trace/propose is still not implemented; it now has trace events and a workflow stage catalog to read from.
-- MBSH child tasks are split and scoped. Backend endpoint inventory plus RSVP/sponsor browser proof are complete; deploy live proof, media, chatbot, content, audit, and gap-promotion tasks remain.
+- Pipeline visualizer phase 1 is implemented in Workbench Plan mode; stage/event matching and proposed patch preview are still missing.
+- MBSH child tasks are split and scoped. Backend endpoint inventory, RSVP/sponsor browser proof, chatbot Phase 1 proof, content delta, audit harness, and generalized gap promotion are complete.
 - MBSH backend runtime execution is blocked by missing runtime config/secrets and external deploy access; this is a deploy-proof blocker, not a source-code inventory or frontend-submit blocker.
+- MBSH media/story readiness is blocked by seven missing `frontend/assets/story/*.jpg` files and missing archival/gallery rights proof.
 - Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
