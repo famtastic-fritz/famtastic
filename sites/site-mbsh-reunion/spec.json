@@ -573,10 +573,10 @@
     }
   ],
   "last_smoke_test": {
-    "timestamp": "2026-05-05T18:55:54.386387Z",
+    "timestamp": "2026-05-05T20:42:47.390074Z",
     "passed": 7,
     "failed": 0,
-    "dns_fallback": true,
+    "dns_fallback": false,
     "results": [
       {
         "name": "rsvp",

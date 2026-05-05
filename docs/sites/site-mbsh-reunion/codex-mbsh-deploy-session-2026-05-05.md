@@ -116,8 +116,22 @@ Proof: `proofs/mbsh-smoke-test-2026-05-05-green.log`
 ## Remaining Blockers
 
 1. Complete Netlify Git-provider linking in the UI for `mbsh-reunion-staging`.
-2. Add or repair DNS for `api.mbsh96reunion.com`.
-3. Rerun smoke against `https://api.mbsh96reunion.com` after DNS resolves.
+2. Rerun frontend deploy proof from the linked staging project.
+
+## 2026-05-05 API DNS/TLS Follow-Up
+
+`api.mbsh96reunion.com` was repaired after the initial deploy proof. The domain uses GoDaddy DNS (`ns23.domaincontrol.com` / `ns24.domaincontrol.com`), not a cPanel-owned zone. Creating the cPanel addon/vhost for `api.mbsh96reunion.com` also created the authoritative A record to `107.180.51.234`.
+
+The cPanel account does not expose AutoSSL, so a certificate was issued through Let's Encrypt HTTP-01 using cPanel Fileman upload hooks for the challenge file. The issued certificate was installed through cPanel `SSL/install_ssl` for `api.mbsh96reunion.com`.
+
+Final verification passed against the canonical API origin:
+
+- DNS: `api.mbsh96reunion.com` resolves to `107.180.51.234` through GoDaddy authoritative DNS, Cloudflare DNS, and Google DNS.
+- TLS: certificate subject/SAN is `api.mbsh96reunion.com`, issuer is Let's Encrypt `E8`, expiry is `2026-08-03`.
+- Runtime: `https://api.mbsh96reunion.com/attendees.php` returns `200` with production CORS.
+- Platform smoke: `platform smoke test mbsh-reunion` passes `7/7` with `dns_fallback=false`.
+
+Proof: `proofs/mbsh-api-dns-tls-smoke-2026-05-05.log`.
 
 ## Task State
 

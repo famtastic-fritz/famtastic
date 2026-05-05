@@ -39,7 +39,7 @@ if [[ "$DNS_FALLBACK" == true ]]; then
   echo "smoke.test: DNS unresolved for $API_HOST; falling back to https://FAMTASTICINC.COM for backend runtime proof"
   API="https://FAMTASTICINC.COM"
 fi
-CURL_SSL_ARGS=()
+CURL_SSL_ARGS=(-q)
 if [[ "$API" == "https://FAMTASTICINC.COM" ]]; then
   CURL_SSL_ARGS=(-k)
 fi
