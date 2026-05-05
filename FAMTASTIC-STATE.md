@@ -69,6 +69,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Layout Registry | `site-studio/lib/layout-registry.js` | 5 layout variants + vertical map. |
 | Multi-Layer Hero CSS | `site-studio/public/css/fam-hero.css` | 7-layer hero composition vocabulary. Auto-linked by head-guardrail. |
 | Worker Queue | `.worker-queue.jsonl` | `dispatch_worker` tool writes task entries. No live consumer. Startup cleanup removes terminal-status and 7d-old entries. Visibility badge in sidebar polled every 15s. |
+| Workflow Stage Catalog | `site-studio/lib/workflow-stage-catalog.json` | Catalog-only workflow-as-data phase 1. Declares build stage IDs, boundaries, inputs, outputs, and proof events without changing execution order. |
 | Context Writer | `site-studio/lib/studio-context-writer.js` | Generates `STUDIO-CONTEXT.md` per site on every studio event. 10 sections. |
 | Brain Injector | `site-studio/lib/brain-injector.js` | Per-brain context injection. Claude: `@-include`. Gemini/Codex: sidecar file. `reinject()` on brain switch. |
 | Research Registry | `site-studio/lib/research-registry.js` | 4 provider-agnostic research sources. Auto-effectiveness scoring from build metrics. |
@@ -255,8 +256,8 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | server.js decomposition | Tier 3 | ~18,400 lines after baseline closure. Plan: thin assembler + modules in lib/. |
 | Deferred Tier-1 hot list (UX polish) | Tier 3 | Shay Desk chat scroll, max-width, redundant buttons. Batch in dedicated UI session per outstanding plan. |
 | Plan packets / multi-agent plan board | Tier 1 | File-based first plan exists at `plans/plan_2026_05_04_shay_process_intelligence/`, and file-backed task/run/proof ledgers are now populated. Studio still has no first-class Plan Builder / Plan Board UI, no SQLite `plan_id` / `workstream_id` fields, and no automatic conversion from captured conversation to grouped jobs. |
-| Workflow-as-data instrumentation | Tier 1 | Still open. `parallelBuild()` needs stage names, boundaries, inputs, outputs, and proof events captured before any declarative pipeline refactor. |
-| Process Map / Recipe Map visualization | Tier 1 | Build trace and fulfillment ledger foundations exist, but no visual surface yet shows recipe steps, run traces, decision provenance, provider/model choices, token/cost details, research refs, verification, and follow-up jobs. |
+| Workflow-as-data instrumentation | Tier 1 | Phase 1 catalog exists at `site-studio/lib/workflow-stage-catalog.json`, and `parallelBuild()` now emits durable trace events for start, page inventory, template, page fanout/write/failure boundaries. Declarative execution refactor remains open. |
+| Process Map / Recipe Map visualization | Tier 1 | Build trace and workflow catalog foundations exist, but no visual surface yet shows recipe steps, run traces, decision provenance, provider/model choices, token/cost details, research refs, verification, and follow-up jobs. |
 | Workbench default shell cutover | Tier 1 | The production-linked Workbench prototype now follows the frozen seven-domain contract and has Playwright proof, but it is not yet the default Studio shell. |
 | Workbench live registry generation | Tier 1 | Workbench Plan mode now reads `site-studio/public/data/workbench-plan-state.json`, a browser-safe mirror of registry/task/run/proof state. Automatic generation from source ledgers is still missing. |
 | Workbench Shay context provider | Tier 2 | Workbench is not registered in `ShayContextRegistry` yet, so Shay cannot directly act on selected Workbench scope/object/tool state. |
@@ -449,6 +450,8 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 | `handoffs/studio-ui-foundation-freeze-2026-05-04.md` | Freeze handoff for future implementation work, including build order and hard stops. |
 | `site-studio/public/data/workbench-workspaces.json` | Workbench domain contract defining purpose, center surface, primary objects, capabilities, proof requirements, and anti-patterns for Sites, Brainstorm, Plans, Components, Media Studio, Research, and Admin. |
 | `site-studio/public/data/workbench-plan-state.json` | Browser-safe consolidated plan state consumed by Workbench Plan mode. Mirrors four active parent plans, priority lanes, current run, and Drive/workflow/visualizer status. |
+| `site-studio/lib/workflow-stage-catalog.json` | Catalog-only workflow-as-data phase 1 defining build stage boundaries and proof event names for future trace and visualizer surfaces. |
+| `architecture/2026-05-04-build-intent-v2-current.md` | Declaration that BuildIntent V2 supersedes V1 as the current direction, while implementation remains phased. |
 
 ### OpenWolf Files
 

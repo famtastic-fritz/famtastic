@@ -5090,12 +5090,35 @@ Capability Store covering brains, tools, providers, recipes, permissions,
 cost class, latency expectations, evidence tier, validation date, and current
 state. The existing seed is `site-studio/config/studio-capabilities.json`.
 
+### BuildIntent / Workflow Trace Current State
+
+As of 2026-05-04, `architecture/2026-04-24-canonical-build-intent-v2.md` is
+the current BuildIntent direction. V1 remains historical only. The V2
+interpreter is not implemented yet; the closed work is the ambiguity removal
+and evidence attachment captured in
+`architecture/2026-05-04-build-intent-v2-current.md`.
+
+`parallelBuild()` in `site-studio/server.js` now emits durable trace events via
+`site-studio/lib/build-trace.js` for `start`, `page_inventory`,
+`template_start`, `template_written`, `template_failed`, `template_empty`,
+`template_incomplete`, `pages_start`, `page_written`, and `page_failed`. This
+is instrumentation only: no build order, prompt, model routing, or file-writing
+behavior was changed.
+
+Workflow-as-data phase 1 exists as a catalog-only contract at
+`site-studio/lib/workflow-stage-catalog.json`. It declares stage IDs,
+boundaries, inputs, outputs, and proof events for intake, parallel build start,
+page inventory, template generation, template artifacts, page generation,
+post-processing, verification, and completion. The visualizer should not be
+built until real builds have produced trace events against this vocabulary.
+
 ### Known Gaps Opened / Still Open
 
 - Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
 - Plan mode reads `site-studio/public/data/workbench-plan-state.json`, a browser-safe mirror of `plans/registry.json`, `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`; automatic regeneration from source ledgers is still missing.
 - `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` exist. `fam-hub plan graph` is still not implemented.
 - Capability Store broader than Media Studio is not implemented.
+- Pipeline visualizer inspect/trace/propose is still not implemented; it now has trace events and a workflow stage catalog to read from.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.

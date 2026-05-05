@@ -12,10 +12,10 @@
     "absorbed_record_count": 10,
     "task_count": 23,
     "run_count": 1,
-    "proof_count": 10,
+    "proof_count": 11,
     "current_run": "run-2026-05-04-consolidation-apply",
     "drive_sync_status": "complete",
-    "workflow_as_data_status": "open",
+    "workflow_as_data_status": "phase_1_cataloged",
     "pipeline_visualizer_status": "open"
   },
   "active_parents": [
@@ -171,6 +171,6 @@
     "plan_id": "plan-task-run-intelligence",
     "status": "active",
     "target": "complete_p0_then_report",
-    "current_step": "Workbench frozen-contract rail, workspace contracts, and prompt-first Media Studio verified through Playwright; next remaining P0s are Studio/Shay behavior proof and BuildIntent/parallelBuild instrumentation."
+    "current_step": "BuildIntent V2 current declaration, parallelBuild trace instrumentation, and workflow stage catalog are complete; remaining P0 is MBSH scoped ledger split plus actual Shay/Studio behavior proof."
   }
 }

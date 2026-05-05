@@ -122,12 +122,12 @@ This follows the solution hierarchy:
 
 ### P1 — Make Build Intent Auditable
 
-- [ ] Declare BuildIntent v2 current and archive/supersede v1.
+- [x] Declare BuildIntent v2 current and archive/supersede v1.
 - [ ] Attach baseline closure, gap 1/2/3/4, and P0/P1 diagnostics as evidence.
 - [ ] Promote only unresolved diagnostics into active tasks.
 - [ ] Surface fulfillment status in Workbench: requested, completed, deferred, placeholdered, proof.
-- [ ] Instrument `parallelBuild()` before refactoring it.
-- [ ] Start workflow-as-data phase 1: define stage names, boundaries, inputs, outputs, and proof events without changing execution order.
+- [x] Instrument `parallelBuild()` before refactoring it.
+- [x] Start workflow-as-data phase 1: define stage names, boundaries, inputs, outputs, and proof events without changing execution order.
 
 ### P1 — Move MBSH Without Losing Platform Learnings
 

@@ -13722,6 +13722,40 @@ function emitPhase(ws, phase, status, progress) {
 async function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
   if (!buildInProgress) setBuildInProgress(true, ws);
   const startTime = Date.now();
+  const parallelTraceRunId = ws._currentRunId || `run_parallel_${Date.now()}`;
+  let parallelTraceStep = 0;
+  const traceParallelBuild = (stepId, fields = {}) => {
+    try {
+      parallelTraceStep += 1;
+      logTrace({
+        trace_id: `${parallelTraceRunId}.parallel_${String(parallelTraceStep).padStart(2, '0')}_${stepId}`,
+        parent_trace_id: parallelTraceRunId,
+        run_id: parallelTraceRunId,
+        site_tag: TAG,
+        phase: fields.phase || 'build',
+        step_id: stepId,
+        decision_type: fields.decision_type || 'workflow_stage',
+        requested_item: fields.requested_item || userMessage?.slice(0, 200) || null,
+        selected_path: fields.selected_path || null,
+        alternatives_considered: fields.alternatives_considered || [],
+        reason: fields.reason || null,
+        agent: 'orchestrator',
+        tool: 'parallelBuild',
+        provider: fields.provider || 'deterministic',
+        model: fields.model || null,
+        cost_type: fields.cost_type || 'zero_token',
+        duration_ms: Math.round(Date.now() - startTime),
+        status: fields.status || 'completed',
+        error: fields.error || null,
+      }, HUB_ROOT);
+    } catch (err) {
+      console.error('[parallel-build-trace] failed:', err.message);
+    }
+  };
+  traceParallelBuild('start', {
+    selected_path: 'template_first_parallel_build',
+    reason: 'parallelBuild entered; record stage boundaries before workflow-as-data refactor.',
+  });
 
   // Detect logo file
   const logoSvg = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.svg'));
@@ -13743,6 +13777,10 @@ async function parallelBuild(ws, spec, specPages, userMessage, briefContext, dec
     return finalSlug + '.html';
   });
   const allPageLinks = pageFiles.map(f => f).join(', ');
+  traceParallelBuild('page_inventory', {
+    selected_path: pageFiles.join(', '),
+    reason: `${pageFiles.length} page file(s) normalized from specPages before template generation.`,
+  });
 
   const siteContext = `
 SITE SPEC:
@@ -13944,7 +13982,19 @@ ${sharedRules}`;
   }
 
   async function spawnAllPages(templateContext) {
+    traceParallelBuild('pages_start', {
+      provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+      model: hasAnthropicKey() ? (loadSettings().model || 'claude-sonnet-4-6') : 'claude-cli',
+      cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+      selected_path: templateContext ? 'template_context' : 'legacy_no_template',
+      reason: `Launching ${pageFiles.length} page build(s).`,
+    });
     if (pageFiles.length === 0) {
+      traceParallelBuild('pages_skipped', {
+        selected_path: 'no_pages',
+        status: 'skipped',
+        reason: 'No normalized page files were available.',
+      });
       finishParallelBuild(ws, writtenPages, startTime, spec);
       return;
     }
@@ -14002,9 +14052,24 @@ ${sharedRules}`;
           versionFile(pageFileSub, 'build');
           fs.writeFileSync(path.join(DIST_DIR(), pageFileSub), responseSub);
           writtenPages.push(pageFileSub);
+          traceParallelBuild('page_written', {
+            selected_path: pageFileSub,
+            provider: 'subscription',
+            model: 'claude-cli',
+            cost_type: 'subscription',
+            reason: `${pageFileSub} written from subprocess result (${responseSub.length} bytes).`,
+          });
           console.log(`[parallel-build-sub] ${pageFileSub} done (${responseSub.length} bytes)`);
         } else {
           const failedPage = result.value ? result.value.page : `page-${completedSub}`;
+          traceParallelBuild('page_failed', {
+            selected_path: failedPage,
+            provider: 'subscription',
+            model: 'claude-cli',
+            cost_type: 'subscription',
+            status: 'failed',
+            error: 'empty response after retry',
+          });
           console.error(`[parallel-build-sub] ${failedPage} failed after retry`);
           if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `⚠️ ${failedPage} failed after retry — re-run build` }));
         }
@@ -14069,10 +14134,25 @@ ${sharedRules}`;
         versionFile(pageFile, 'build');
         fs.writeFileSync(path.join(DIST_DIR(), pageFile), response);
         writtenPages.push(pageFile);
+        traceParallelBuild('page_written', {
+          selected_path: pageFile,
+          provider: 'anthropic',
+          model: pageModel,
+          cost_type: 'api_billed',
+          reason: `${pageFile} written from SDK result (${response.length} bytes).`,
+        });
         console.log(`[parallel-build] ${pageFile} done (${response.length} bytes)`);
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} built (${completed}/${total} — ${Math.round((Date.now() - startTime) / 1000)}s)` }));
       } else {
         const pageFile = result.status === 'fulfilled' ? result.value.page : `page-${completed}`;
+        traceParallelBuild('page_failed', {
+          selected_path: pageFile,
+          provider: 'anthropic',
+          model: pageModel,
+          cost_type: 'api_billed',
+          status: 'failed',
+          error: result.reason?.message || 'empty response',
+        });
         console.error(`[parallel-build] ${pageFile} failed:`, result.reason?.message || 'empty response');
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} failed — will retry on next build` }));
       }
@@ -14093,6 +14173,13 @@ ${sharedRules}`;
   // Fallback — If template build fails, fall back to legacy no-seed parallel build.
   ws.send(JSON.stringify({ type: 'status', content: 'Building design template (header, nav, footer, shared CSS)...' }));
   emitPhase(ws, 'generating', 'active', 10);
+  traceParallelBuild('template_start', {
+    provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+    model: hasAnthropicKey() ? (loadSettings().model || 'claude-sonnet-4-6') : 'claude-cli',
+    cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+    selected_path: 'template_first',
+    reason: 'Template-first stage builds shared head/header/footer/CSS before page fanout.',
+  });
 
   const templatePrompt = buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction);
   ws.currentChild = null;
@@ -14136,6 +14223,14 @@ ${sharedRules}`;
     if (!templateSpawned) {
       templateSpawned = true;
       console.warn('[template-build] SDK failed — falling back to legacy build:', err.message);
+      traceParallelBuild('template_failed', {
+        provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+        model: hasAnthropicKey() ? sdkModel : 'claude-cli',
+        cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+        selected_path: 'legacy_no_template_fallback',
+        status: 'failed',
+        error: err.message,
+      });
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'Template failed — building pages without template (legacy mode).' }));
       spawnAllPages('');
     }
@@ -14167,6 +14262,13 @@ ${sharedRules}`;
     if (templateHtml.length > 50) {
       // Write _template.html to dist
       fs.writeFileSync(path.join(DIST_DIR(), '_template.html'), templateHtml);
+      traceParallelBuild('template_written', {
+        provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+        model: hasAnthropicKey() ? sdkModel : 'claude-cli',
+        cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+        selected_path: '_template.html',
+        reason: `Template written (${templateHtml.length} bytes).`,
+      });
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Template built (${Math.round((Date.now() - startTime) / 1000)}s) — writing artifacts...` }));
 
       // Extract components and write artifacts (styles.css, _partials/)
@@ -14179,11 +14281,21 @@ ${sharedRules}`;
         spawnAllPages(templateContext);
       } else {
         console.warn('[parallel-build] Template parsed but no usable components — falling back to legacy build');
+        traceParallelBuild('template_incomplete', {
+          selected_path: 'legacy_no_template_fallback',
+          status: 'skipped',
+          reason: 'Template parsed but no reusable components were extracted.',
+        });
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Template incomplete — building pages without template.' }));
         spawnAllPages('');
       }
     } else {
       console.warn('[template-build] Empty template response — falling back to legacy build');
+      traceParallelBuild('template_empty', {
+        selected_path: 'legacy_no_template_fallback',
+        status: 'failed',
+        error: 'empty template response',
+      });
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Template failed — building pages without template (legacy mode).' }));
       spawnAllPages('');
     }

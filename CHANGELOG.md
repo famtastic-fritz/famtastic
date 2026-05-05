@@ -425,3 +425,7 @@ Added `site-studio/public/data/workbench-plan-state.json` as a browser-safe mirr
 ## 2026-05-04 — Workbench frozen-contract domain rail
 
 Rebuilt the Workbench Foundation prototype against the frozen UI foundation by replacing the scope-initial left rail with the seven locked domains, replacing the duplicate mode strip with workspace contract pills, and updating `workbench-workspaces.json` to declare contracts for all top-level domains. Verified through launchd-managed Studio with Playwright by clicking Sites, Brainstorm, Plans, Components, Media, Research, and Admin, confirming the active domain/contract text, checking Plan and Media surfaces, and saving `proofs/workbench-domain-contracts-2026-05-04.png`. Deferred: making Workbench the default Studio shell, automatic status-packet generation, and Shay context-provider registration.
+
+## 2026-05-04 — BuildIntent V2 and workflow trace phase 1
+
+Declared `architecture/2026-04-24-canonical-build-intent-v2.md` as the current BuildIntent direction and added `architecture/2026-05-04-build-intent-v2-current.md` to remove V1/V2 ambiguity. Instrumented `parallelBuild()` with durable build-trace stage events for start, page inventory, template, page fanout/write/failure boundaries without changing execution order. Added `site-studio/lib/workflow-stage-catalog.json` as the catalog-only workflow-as-data phase 1 contract. Deferred: declarative pipeline refactor and pipeline visualizer inspect/trace/propose.
