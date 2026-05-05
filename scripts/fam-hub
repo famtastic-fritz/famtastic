@@ -1024,6 +1024,48 @@ REPORTHELP
     esac
     ;;
 
+  platform)
+    PLATFORMCMD="${2:-help}"
+    case "$PLATFORMCMD" in
+      bootstrap-services)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio bootstrap-services "$@"
+        ;;
+      provision-site)
+        SITE_ARG="${3:-}"
+        if [ -z "$SITE_ARG" ]; then
+          echo "Usage: fam-hub platform provision-site <site> [--check] [--proof]" >&2
+          exit 1
+        fi
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio provision-site "$@"
+        ;;
+      list|capabilities)
+        "$HUB_ROOT/platform/famtastic-platform" list
+        ;;
+      vault)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" vault "$@"
+        ;;
+      help|*)
+        cat <<'PLATFORMHELP'
+fam-hub platform — Site Studio service capabilities
+
+Usage:
+  fam-hub platform bootstrap-services [--check]
+      Check or bootstrap Studio-owned Netlify, Resend, DB, DNS, cPanel, and SSH auth.
+
+  fam-hub platform provision-site <site> [--check] [--proof]
+      Verify a generated site consumes Studio-owned services instead of owning providers.
+
+  fam-hub platform vault <read|write|list|remove> ...
+      Access the platform vault through the unified CLI.
+
+PLATFORMHELP
+        ;;
+    esac
+    ;;
+
   # --- Admin ---
   admin)
     ADMINCMD="${2:-help}"
@@ -1128,6 +1170,8 @@ Multi-Agent Workflow:
   fam-hub ingest <tag> {md|json}    Ingest content
   fam-hub capture extract <file>     Produce review-only knowledge packet
   fam-hub report style               Show/set response reporting density
+  fam-hub platform bootstrap-services Check Studio-owned service auth
+  fam-hub platform provision-site <s> Check generated-site service wiring
 
 Admin:
   fam-hub admin doctor              Check dependencies

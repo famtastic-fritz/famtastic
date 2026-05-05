@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-05-05T16:39:20.257Z",
+  "site": "mbsh-reunion-v2",
+  "hub_tag": "site-mbsh-reunion",
+  "deploy_repo": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2",
+  "verdict": "passed_with_blockers",
+  "blocked_checks": 2,
+  "service_owner": "site_studio",
+  "site_role": "generated_product_consumer",
+  "production_domain": "mbsh96reunion.com",
+  "api_origin": "https://api.mbsh96reunion.com",
+  "email_sending_domain": "send.mbsh96reunion.com",
+  "checks": [
+    {
+      "id": "studio.resend.api_key",
+      "state": "present",
+      "detail": "Studio owns the Resend provider credential"
+    },
+    {
+      "id": "site.db_password.production",
+      "state": "present",
+      "detail": "Site DB credential is vaulted under Studio ownership"
+    },
+    {
+      "id": "site.db_ref.production",
+      "state": "present",
+      "detail": "Studio-owned DB reference is vaulted"
+    },
+    {
+      "id": "site.schema",
+      "state": "ready",
+      "detail": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/backend/schema.sql"
+    },
+    {
+      "id": "site.backend_config_loader",
+      "state": "ready",
+      "detail": "backend reads generated secrets/config"
+    },
+    {
+      "id": "site.API_BASE_URL",
+      "state": "blocked",
+      "detail": "current value is null; expected https://api.mbsh96reunion.com"
+    },
+    {
+      "id": "site.netlify_csp",
+      "state": "ready",
+      "detail": "CSP allows https://api.mbsh96reunion.com"
+    },
+    {
+      "id": "studio.netlify.session",
+      "state": "present",
+      "detail": "Netlify CLI session exists"
+    },
+    {
+      "id": "studio.cpanel.api_token",
+      "state": "present",
+      "detail": "Studio can use cPanel MCP/API token"
+    },
+    {
+      "id": "studio.godaddy.dns_api",
+      "state": "missing",
+      "detail": "DNS may remain provider/manual until API credentials exist"
+    },
+    {
+      "id": "site.email_sending_domain",
+      "state": "ready",
+      "detail": "send.mbsh96reunion.com consumes Studio Resend"
+    },
+    {
+      "id": "site.raw_provider_secrets_required",
+      "state": "ready",
+      "detail": "deploy repo source does not require committed provider secrets"
+    }
+  ]
+}

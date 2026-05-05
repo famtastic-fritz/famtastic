@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — Site Studio service auth ownership
+
+Added Studio-owned service auth commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`. Existing local Resend, cPanel, and MBSH production DB credentials/refs were migrated into the platform vault without committing secrets, Resend API access was verified, and lower platform helpers now prefer `studio.*` provider vault IDs. MBSH deploy proof and task state now treat the reunion site as a consumer of Studio-provisioned services rather than the provider account owner. Remaining blockers are production `API_BASE_URL` generation, DNS API/manual DNS, and SSH host-key trust for backend deploy smoke.
+
 ## 2026-05-05 — Reporting density made configurable
 
 Added `config/reporting-preferences.json` as the project-level response/reporting density config and `docs/operating-rules/reporting-density.md` as the operating rule. Added `fam-hub report style` to show or set `compact`, `standard`, and `detail` density. Default is `compact`; proof standards and blocker visibility do not change.

@@ -5,7 +5,7 @@
 The MBSH leftovers are now one grouped launch unblock lane with two parts:
 
 1. **Media/story readiness:** resolved locally.
-2. **Live deploy proof:** still blocked by external access and production config.
+2. **Live deploy proof:** still blocked by Studio-level service auth/provisioning.
 
 ## Media / Story Readiness
 
@@ -34,14 +34,15 @@ Proof:
 
 Status: **still externally blocked.**
 
-The remaining hard blocker is production access/config, not local source code:
+The remaining hard blocker is Studio service provisioning, not local source
+code and not MBSH owning provider accounts. MBSH is a generated site product;
+Site Studio/platform owns Netlify, Resend, GoDaddy/cPanel, DNS, SSH, and DB
+provider relationships.
 
-- Netlify project/domain access
-- DNS access for apex, `www`, `api`, and Resend sender domain records
-- GoDaddy/PHP/MySQL access
-- Resend API key and verified sender domain
-- Production backend config/secrets
-- Production `API_BASE_URL`
+- `fam-hub platform bootstrap-services` must verify or migrate Studio-owned provider auth.
+- `fam-hub platform provision-site mbsh-reunion-v2 --check --proof` must verify MBSH consumes Studio services.
+- Studio must generate the production backend secrets/config and production `API_BASE_URL`.
+- Any remaining human step should be provider-enforced only: OAuth/login, token creation, DNS UI if API credentials are unavailable, or SSH host trust.
 
 Until those are available, `task-2026-05-04-027` remains blocked.
 
@@ -49,9 +50,11 @@ Until those are available, `task-2026-05-04-027` remains blocked.
 
 | Task | Status | Decision |
 |---|---|---|
-| `task-2026-05-04-027` Finish MBSH deploy proof | Blocked | Keep open; this is the only real MBSH launch blocker left. |
+| `task-2026-05-04-027` Finish MBSH deploy proof | Blocked | Keep open; blocked by Studio service provisioning, not MBSH-owned provider setup. |
 | `task-2026-05-04-028` Complete MBSH media/story assets | Completed | Seven referenced files and rights manifest exist; Playwright file render proof passed. |
 
 ## Next Action
 
-Collect the production deploy access/config bundle, then run the smoke and rollback checklist from `docs/sites/site-mbsh-reunion/deploy-proof-2026-05-04.md`.
+Bootstrap Studio services, provision-check MBSH as a generated site consumer,
+then run the smoke and rollback checklist from
+`docs/sites/site-mbsh-reunion/deploy-proof-2026-05-04.md`.

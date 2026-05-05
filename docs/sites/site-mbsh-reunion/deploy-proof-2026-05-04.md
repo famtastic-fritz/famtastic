@@ -3,7 +3,26 @@
 Date: 2026-05-04  
 Site: `site-mbsh-reunion`  
 Deploy implementation inspected: `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2`  
-Status: deploy plan and requirements are proven from repo state; live production deploy remains blocked by access, DNS, and secrets.
+Status: deploy plan and requirements are proven from repo state; live production deploy remains blocked by Studio-level service provisioning, not by MBSH owning provider accounts.
+
+## Corrected Ownership Model
+
+MBSH is a generated site product. Site Studio/platform owns the provider
+relationships for Netlify, Resend, GoDaddy/cPanel, DNS, SSH, and database
+provisioning. MBSH consumes generated runtime config from those Studio services:
+database references, sender-domain config, API origin, backend secrets, and
+Netlify site IDs.
+
+The launch proof should therefore be driven through:
+
+```bash
+fam-hub platform bootstrap-services
+fam-hub platform provision-site mbsh-reunion-v2 --check --proof
+```
+
+The site-specific deploy proof remains valid as a smoke checklist, but the
+missing work is now tracked as Studio service auth/provisioning instead of
+MBSH-specific account setup.
 
 ## Scope Inspected
 
@@ -228,18 +247,19 @@ DNS rollback:
 
 ## Exact Blockers
 
-Production deployment cannot be proven from this workspace alone because these items are missing or require external access:
+Production deployment cannot be proven from this workspace alone because the
+Site Studio service layer is not fully provisioned yet:
 
-- Netlify account/team access to create or update the MBSH site and attach `mbsh96reunion.com` / `www.mbsh96reunion.com`.
-- DNS registrar access for `mbsh96reunion.com`, including apex, `www`, `api`, and `send` records.
-- GoDaddy cPanel/SSH access for `nineoo@FAMTASTICINC.COM`.
-- Production MariaDB password for `nineoo_mbsh_user` on `nineoo_mbsh96_reunion_v2`.
-- Resend API key and verified sender-domain DNS for `send.mbsh96reunion.com`.
-- Admin password decision so `admin_password_hash` can be generated.
-- Confirmation that `/home/nineoo/.config/mbsh-config.php` exists or permission to generate it via setup script.
+- Studio-owned Netlify service auth/linking must create or update the MBSH generated site and attach `mbsh96reunion.com` / `www.mbsh96reunion.com`.
+- Studio-owned DNS service auth must manage apex, `www`, `api`, and `send` records, or mark the exact provider-enforced manual records.
+- Studio-owned GoDaddy/cPanel service auth must verify cPanel API token, SSH trust, and SSH access for `nineoo@FAMTASTICINC.COM`.
+- Studio-owned database provisioning must create or reference the MBSH logical production database/user and vault the site DB credential under `sites/mbsh-reunion-v2/db_password.production`.
+- Studio-owned Resend service auth must verify or provision `send.mbsh96reunion.com` and expose sender config to the site.
+- MBSH-specific admin password must be converted into `admin_password_hash` by the Studio backend-secret generator.
+- Confirmation that `/home/nineoo/.config/mbsh-config.php` exists or permission for Studio/platform to generate it.
 - Confirmation that `/home/nineoo/public_html` is the correct document root for `api.mbsh96reunion.com`.
 - Confirmation that SSL is active for `https://api.mbsh96reunion.com`.
-- Production public config update: `config/site-config.json` still has `API_BASE_URL: null`.
+- Production public config update generated from Studio service state: `config/site-config.json` still has `API_BASE_URL: null`.
 - Live external smoke tests are blocked until DNS, SSL, backend upload, DB schema, secrets, and CORS are all in place.
 
 Known implementation risks that should be handled before final production sign-off:
@@ -252,6 +272,14 @@ Known implementation risks that should be handled before final production sign-o
 
 ## Proof Conclusion
 
-The repo contains enough deploy structure to complete manual deployment once external access is available: static frontend on Netlify from `frontend/`, PHP backend on GoDaddy cPanel under `/home/nineoo/public_html`, MariaDB schema via `backend/schema.sql`, secrets outside web root, CORS allow-listing for the production frontend, CSP allowing `https://api.mbsh96reunion.com`, and cPanel cron definitions.
+The repo contains enough deploy structure to complete deployment once Studio
+service provisioning is available: static frontend on Netlify from `frontend/`,
+PHP backend on GoDaddy cPanel under `/home/nineoo/public_html`, MariaDB schema
+via `backend/schema.sql`, secrets outside web root, CORS allow-listing for the
+production frontend, CSP allowing `https://api.mbsh96reunion.com`, and cPanel
+cron definitions.
 
-The live deploy itself is not proven yet. The proof that can be completed now is a deploy readiness and blocker artifact; final proof requires Netlify publish, DNS/SSL confirmation, backend upload, production secrets, schema application, and successful external smoke tests.
+The live deploy itself is not proven yet. The proof that can be completed now
+is a Studio-service readiness and blocker artifact; final proof requires
+Netlify publish, DNS/SSL confirmation, backend upload, generated production
+secrets, schema application, and successful external smoke tests.

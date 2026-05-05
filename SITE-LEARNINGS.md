@@ -1,5 +1,37 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Site Studio Service Auth Ownership (2026-05-05)
+
+Provider authentication now belongs to Site Studio/platform, not to generated
+sites. `fam-hub platform bootstrap-services` wraps
+`platform/capabilities/studio/bootstrap-services.sh` to check Netlify, Resend,
+cPanel/GoDaddy, DNS, DB, and SSH readiness; it migrates discoverable local
+secrets into the platform vault without printing values and writes non-secret
+`service_auth` references into `~/.config/famtastic/studio-config.json`.
+
+`fam-hub platform provision-site <site> --check --proof` wraps
+`platform/capabilities/studio/provision-site.sh` and verifies that a generated
+site consumes Studio-owned services instead of owning provider accounts. MBSH
+is the first proof: Resend API, cPanel API token, the MBSH production DB
+password, and the MBSH production DB reference were migrated into
+Studio/platform vault IDs; Resend verified via API; the proof packet lives at
+`proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json`.
+
+Lower-level platform helpers now prefer Studio-owned vault IDs (`studio.*`) for
+Resend, GoDaddy DNS, and Netlify auth, with legacy ID fallback only for old
+local setups. New provider wiring should use Studio IDs exclusively.
+
+### Known Gaps opened or preserved
+
+- `config/site-config.json` in the MBSH v2 deploy repo still has
+  `API_BASE_URL: null` until Studio generates it from the provisioned backend
+  origin.
+- GoDaddy DNS API credentials are not vaulted, so DNS may remain a necessary
+  provider/manual step until `studio.godaddy.api_key` and
+  `studio.godaddy.api_secret` exist.
+- SSH to `nineoo@FAMTASTICINC.COM` is blocked by host-key verification and
+  must be repaired once outside generated site ownership.
+
 ## Consolidated Execution Checklist (2026-05-04)
 
 Created `plans/consolidated-execution-checklist-2026-05-04.md` as the working
