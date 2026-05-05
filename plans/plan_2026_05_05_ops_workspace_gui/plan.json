@@ -29,36 +29,112 @@
   ],
   "workstreams": [
     {
+      "id": "ws_phase0_state_contract",
+      "title": "Phase 0 — Ops State Contract (must precede all UI work)",
+      "status": "ready",
+      "priority": "P0",
+      "description": "Foundational contracts that prevent the original 'false agents waiting' bug from recurring under a different surface. No UI work begins until Phase 0 acceptance is met.",
+      "outputs": [
+        "Source-of-truth matrix — concrete table baked into this plan (see source_of_truth_matrix below); docs/ops/state-contract.md mirrors it for human reading",
+        "Current debt inventory — actual counts at time of build, not historical estimates (snapshot script in scripts/ops/inventory.js, output committed to docs/ops/inventory-YYYY-MM-DD.json)",
+        "Freshness derivation rules — concrete table baked into this plan (see freshness_derivation_table below); freshness is always computed from (status, age_seconds), never stored.",
+        "Destructive-action policy — Purge, Cancel-running, Archive-with-data-loss, Promote-to-Task, and any /api/ops/command/* that mutates >1 record require gate matching plans/registry.json governance.hard_stop_conditions",
+        "API snapshot schema — every GET /api/ops/* response includes {snapshot_version, generated_at, source_ledgers[], record_count}",
+        "WS reconcile contract — every /ws/ops topic includes {snapshot_version, sequence_id}; client reconciles against GET /api/ops/* on reconnect or sequence gap",
+        "Cross-link schema additions — task records gain origin_job_id and promoted_from; job records gain promoted_to_task_id; review records gain reviews_record_id and reviews_record_type; gap records gain converted_to_task_id"
+      ],
+      "source_of_truth_matrix": {
+        "plan":   { "authoritative_file": "plans/registry.json",                  "precedence_rule": "registry.json wins; plan_*/plan.json is detail-only and merged in", "writers_allowed": ["fam-hub plan *", "Ops API command/plan/*"] },
+        "task":   { "authoritative_file": "tasks/tasks.jsonl",                    "precedence_rule": "tasks.jsonl wins; site-studio/public/data/workbench-plan-state.json is a derived mirror, never authoritative", "writers_allowed": ["fam-hub task *", "Ops API command/task/*"] },
+        "job":    { "authoritative_file": "jobs/jobs.jsonl + site-studio SQLite",  "precedence_rule": "SQLite wins for live state; jobs.jsonl is the durable append log; on conflict, replay log into SQLite and snapshot", "writers_allowed": ["site-studio dispatcher", "Ops API command/job/*"] },
+        "run":    { "authoritative_file": "runs/runs.jsonl",                      "precedence_rule": "runs.jsonl is append-only; never mutated", "writers_allowed": ["site-studio runner", "Ops API command/run/*"] },
+        "proof":  { "authoritative_file": "proofs/proof-ledger.jsonl",            "precedence_rule": "proof-ledger.jsonl wins; physical artifacts under proofs/ are immutable", "writers_allowed": ["fam-hub proof attach", "Ops API command/proof/*"] },
+        "gap":    { "authoritative_file": "docs/ops/gaps.jsonl (new)",            "precedence_rule": "gaps.jsonl wins; SITE-LEARNINGS.md known-gaps section is a derived human view", "writers_allowed": ["fam-hub gap log", "Ops API command/gap/*"] },
+        "memory": { "authoritative_file": ".wolf/cerebrum.md + memory/*.md",       "precedence_rule": "cerebrum.md wins for Do-Not-Repeat and Decisions; memory/*.md wins for typed entries; conflict surfaces a Review", "writers_allowed": ["fam-hub memory *", "Ops API command/memory/*"] },
+        "review": { "authoritative_file": "reviews/reviews.jsonl (new)",          "precedence_rule": "reviews.jsonl wins; per-round review packets stored under proofs/reviews/", "writers_allowed": ["adversarial review loop", "fam-hub review *"] },
+        "debt":   { "authoritative_file": "docs/ops/debt-inventory-YYYY-MM-DD.json","precedence_rule": "Latest dated inventory wins; older snapshots are historical only", "writers_allowed": ["scripts/ops/inventory.js"] },
+        "legacy_queue": { "authoritative_file": ".worker-queue.backup-*.jsonl",   "precedence_rule": "Read-only; lives only in Stale Debt drawer; never enters live lanes", "writers_allowed": [] }
+      },
+      "freshness_derivation_table": {
+        "_inputs": "(record_type, status, age_seconds_since_last_update)",
+        "_outputs": "freshness ∈ {live, idle, stale, parked, archived}",
+        "_age_thresholds_seconds": { "idle": 600, "stale": 604800, "archived": 7776000 },
+        "_age_thresholds_human": { "idle": "10 minutes", "stale": "7 days", "archived": "90 days" },
+        "rules": [
+          { "record_type": "job",   "status": "running",         "freshness": "live" },
+          { "record_type": "job",   "status": "pending",         "age_lt_idle": "live", "age_lt_stale": "idle", "age_gte_stale": "stale" },
+          { "record_type": "job",   "status": "approved",        "age_lt_idle": "live", "age_lt_stale": "idle", "age_gte_stale": "stale" },
+          { "record_type": "job",   "status": "blocked",         "age_lt_stale": "live", "age_gte_stale": "stale" },
+          { "record_type": "job",   "status": "done",            "age_lt_stale": "idle", "age_gte_stale": "archived" },
+          { "record_type": "job",   "status": "failed",          "age_lt_stale": "live", "age_gte_stale": "stale" },
+          { "record_type": "job",   "status": "parked",          "freshness": "parked" },
+          { "record_type": "task",  "status": "in_progress",     "freshness": "live" },
+          { "record_type": "task",  "status": "ready|backlog",   "age_lt_stale": "live", "age_gte_stale": "stale" },
+          { "record_type": "task",  "status": "waiting_on_me",   "freshness": "live" },
+          { "record_type": "task",  "status": "waiting_on_agent","freshness": "live" },
+          { "record_type": "task",  "status": "blocked",         "age_lt_stale": "live", "age_gte_stale": "stale" },
+          { "record_type": "task",  "status": "completed",       "age_lt_stale": "idle", "age_gte_stale": "archived" },
+          { "record_type": "run",   "status": "active",          "freshness": "live" },
+          { "record_type": "run",   "status": "done|failed",     "age_lt_stale": "idle", "age_gte_stale": "archived" },
+          { "record_type": "proof", "status": "passed|recorded|passed_with_blockers", "age_lt_archived": "live", "age_gte_archived": "archived" },
+          { "record_type": "proof", "status": "blocked",         "freshness": "stale" },
+          { "record_type": "plan",  "status": "active",          "freshness": "live" },
+          { "record_type": "plan",  "status": "proposed",        "age_lt_stale": "live", "age_gte_stale": "stale" },
+          { "record_type": "plan",  "status": "paused",          "freshness": "parked" },
+          { "record_type": "plan",  "status": "absorbed|completed","freshness": "archived" },
+          { "record_type": "legacy_queue", "status": "*",         "freshness": "parked" }
+        ],
+        "invariant": "freshness in {parked, archived, stale} can NEVER appear in any 'live' count, lane, or KPI tile. Enforced by tests/ops/stale-cannot-inflate-live.test.js."
+      },
+      "acceptance": [
+        "source_of_truth_matrix above is the contract — docs/ops/state-contract.md is generated from it.",
+        "freshness_derivation_table above is the contract — tests/ops/freshness-derivation.test.js asserts every (type, status, age) tuple matches.",
+        "scripts/ops/inventory.js produces a JSON snapshot of every ledger with real counts (not stubs).",
+        "tests/ops/stale-cannot-inflate-live.test.js proves no stale or parked record can appear in live counts under any sequence of mutations.",
+        "tests/ops/ws-reconcile.test.js simulates WS disconnect + sequence gap and proves client recovers without count drift.",
+        "Every /api/ops/command/* destructive action errors when called without matching governance approval token."
+      ]
+    },
+    {
       "id": "ws_ops_api_surface",
       "title": "Ops API Surface (read + command + stream)",
       "status": "ready",
       "priority": "P0",
+      "depends_on": ["ws_phase0_state_contract"],
       "outputs": [
-        "GET /api/ops/* read endpoints (jobs, runs, tasks, plans, proofs, gaps, memory, reviews, debt, needsMe)",
-        "POST /api/ops/command/* command endpoints (approve, reroute, park, retry, cancel, promote)",
-        "WS /ws/ops topic stream (lane changes, run logs, agent status, ticker)"
+        "GET /api/ops/* read endpoints (jobs, runs, tasks, plans, proofs, gaps, memory, reviews, debt, needsMe) — every response carries snapshot_version + generated_at + source_ledgers + record_count",
+        "POST /api/ops/command/* command endpoints (approve, reroute, park, retry, cancel, promote, archive, purge, migrate) — destructive actions require governance approval token",
+        "WS /ws/ops topic stream with snapshot_version + sequence_id on every message; reconnect/replay/snapshot-fetch contract documented",
+        "needsMe endpoint backed by reviews/* ledger; reviews endpoint backed by reviews/* ledger; gaps endpoint backed by docs/ops/gaps.jsonl; memory endpoint backed by .wolf/cerebrum.md + memory/* — each declared in the source-of-truth matrix",
+        "Per-endpoint contract test asserting it reads the ledger named in the source-of-truth matrix and no other"
       ],
       "acceptance": [
         "Every UI action has a CLI-equivalent command hitting the same endpoint.",
-        "Freshness field present on every record (live|idle|stale|parked|archived)."
+        "Freshness field appears on every record but is computed via Phase 0 derivation rules — never stored.",
+        "WS client reconnects after sleep without any lane count drift, verified by tests/ops/ws-reconcile.test.js.",
+        "No /api/ops/command/* destructive endpoint can run without the governance approval token."
       ]
     },
     {
       "id": "ws_jobs_tab_mvp",
-      "title": "Jobs Tab MVP (six lanes + Stale Debt drawer)",
+      "title": "Jobs Tab MVP (seven lanes + Stale Debt drawer)",
       "status": "ready",
       "priority": "P0",
+      "depends_on": ["ws_phase0_state_contract", "ws_ops_api_surface"],
       "outputs": [
-        "Six swimlanes: Queued, Approving, Running, Blocked, Done, Parked",
-        "Stale Debt drawer (collapsed bottom) with Migrate/Archive/Purge",
+        "Seven swimlanes mapped 1:1 to existing job DB statuses (no new stored statuses introduced): Queued ← pending, Approving ← approved, Running ← running, Blocked ← blocked, Done ← done, Failed ← failed, Parked ← parked. 'Approving' is a UI label for the existing 'approved' status, not a new state.",
+        "Stale Debt drawer (collapsed bottom) with Migrate, Archive, and Purge — all three required in MVP, all three gated by destructive-action policy",
         "Job inspector (right slide-over) with cost, deps, log tail, cancel/park/promote-to-task",
-        "WebSocket live updates for lane counts and card status",
-        "Shay-Shay one-sentence queue summary in drawer"
+        "Promote-to-Task writes task with origin_job_id; job updates promoted_to_task_id; both visible in inspector",
+        "WebSocket live updates with reconcile contract; Shay-Shay one-sentence queue summary refreshed against API on reconnect, never from cached WS"
       ],
       "acceptance": [
-        "448 stale legacy-queue jobs render in Stale Debt drawer, never in live lanes.",
-        "Approve/Park/Cancel reflect optimistically and reconcile with server.",
-        "Promote-to-Task converts a misclassified job into a Task with link preserved."
+        "Stale Debt drawer count matches docs/ops/inventory-YYYY-MM-DD.json snapshot for legacy queue source — no hardcoded numbers in code or docs.",
+        "Failed jobs render in Failed lane, not silently dropped or merged into Done.",
+        "Approve/Park/Cancel reflect optimistically and reconcile with server within one round-trip.",
+        "Promote-to-Task is reversible: task gains origin_job_id, job gains promoted_to_task_id, undo restores both.",
+        "tests/ops/stale-cannot-inflate-live.test.js passes against the live Jobs API.",
+        "Manual Playwright proof: disconnect WS for 60s, reconnect, lane counts match GET /api/ops/jobs exactly."
       ]
     },
     {
@@ -200,6 +276,80 @@
       ]
     },
     {
+      "id": "ws_ops_test_substrate",
+      "title": "Ops Test Substrate (regression-proofing the original bug)",
+      "status": "ready",
+      "priority": "P0",
+      "depends_on": ["ws_phase0_state_contract"],
+      "description": "Tests that prove the 'false agents waiting' bug cannot recur under any sequence of mutations. Required because the origin of this entire plan was a false-positive indicator.",
+      "outputs": [
+        "tests/ops/fixtures/ — synthetic ledger fixtures including stale, parked, archived, and live records of every type",
+        "tests/ops/stale-cannot-inflate-live.test.js — property tests asserting freshness derivation never marks parked/archived as live across 1000+ mutation sequences",
+        "tests/ops/freshness-derivation.test.js — pinned table of (status, age) → freshness for every record type",
+        "tests/ops/ws-reconcile.test.js — disconnect/replay/snapshot-fetch correctness",
+        "tests/ops/destructive-action-gate.test.js — every command endpoint refuses without governance approval token",
+        "tests/ops/cross-link-integrity.test.js — promote/convert actions write both sides of the link or fail atomically"
+      ],
+      "acceptance": [
+        "All Ops test files run in CI; failure blocks merge.",
+        "No Ops UI workstream may declare 'done' without its corresponding test in this substrate passing."
+      ]
+    },
+    {
+      "id": "ws_adversarial_review_loop",
+      "title": "Adversarial Review Loop (Reviews tab feature)",
+      "status": "ready",
+      "priority": "P1",
+      "description": "Cross-agent adversarial review of plans, specs, diffs, and proofs. If Claude authored, Codex reviews. If Codex authored, Claude reviews. Optional third pass by Gemini. Loop continues until stop condition met. Fully configurable, fully optional — single toggle disables it system-wide.",
+      "outputs": [
+        "Reviews tab 'Run adversarial review' action on any reviewable record (plan, spec, diff, proof, research packet)",
+        "Reviewer assignment rules: author_agent != reviewer_agent (configurable matrix)",
+        "Loop runner with rounds, amendments, re-reviews, and convergence detection",
+        "Per-record review history pane showing each round's findings + amendments + diff",
+        "Final verdict surfaced on the original record (ship | amend | reject)"
+      ],
+      "configuration": {
+        "enabled_default": true,
+        "global_toggle": "settings.reviews.adversarial_loop.enabled",
+        "per_record_override": "record can opt out via skip_adversarial_review: true",
+        "stop_conditions": {
+          "max_rounds": { "default": 3, "min": 1, "max": 10 },
+          "convergence": "stop when reviewer says ship-as-is OR no new critical issues",
+          "manual_halt": "user can stop the loop at any round from the Reviews tab"
+        },
+        "reviewer_matrix": {
+          "default": {
+            "claude": ["codex", "gemini"],
+            "codex": ["claude", "gemini"],
+            "gemini": ["claude", "codex"]
+          },
+          "configurable": true,
+          "note": "Pairs and order are user-configurable per record type"
+        },
+        "amendment_policy": {
+          "auto_amend_default": true,
+          "require_human_approval_for": [
+            "scope_change_beyond_original_goals",
+            "destructive_changes_to_existing_ledgers",
+            "reviewer_says_reject_and_rethink"
+          ]
+        },
+        "scope": {
+          "supported_record_types": ["plan", "spec", "diff", "proof", "research_packet", "memory_promotion"],
+          "opt_in_per_type": true
+        }
+      },
+      "acceptance": [
+        "Global toggle disables the entire loop in one setting; no review jobs created when off.",
+        "Per-record opt-out respected even when global toggle is on.",
+        "Loop never runs author == reviewer; runtime errors instead of silently passing.",
+        "Each round writes a review packet to proofs/ and links back to the source record.",
+        "Final verdict and full round history visible on the source record forever.",
+        "Manual halt from Reviews tab stops the loop within one round.",
+        "CLI parity: fam-hub review run <record-id> --rounds N --reviewers codex,gemini"
+      ]
+    },
+    {
       "id": "ws_shay_shay_drawer_integration",
       "title": "Shay-Shay Drawer Integration (read-only first)",
       "status": "ready",
@@ -212,14 +362,16 @@
     }
   ],
   "mvp": {
+    "phase_0_required_first": "ws_phase0_state_contract and ws_ops_test_substrate must complete before MVP work begins. No exceptions.",
     "first_screen": "Jobs Tab",
-    "rationale": "Directly resolves the 448 stale-job confusion, validates the swimlane + inspector + WebSocket pattern reused across every other tab, and exposes the SQLite jobs + legacy worker-queue seam through a single visual.",
+    "rationale": "Resolves the legacy worker-queue stale-state confusion (current real inventory: see docs/ops/inventory snapshot, not the historical 448 figure), validates the swimlane + inspector + WebSocket reconcile pattern reused across every other tab, and exposes the SQLite jobs + legacy worker-queue seam through a single visual with regression tests preventing the original 'false agents waiting' bug.",
     "scope": [
-      "Six lanes wired live",
-      "Stale Debt drawer with Archive + Purge",
-      "Job inspector with Cancel/Park/Promote-to-Task",
-      "WebSocket lane updates",
-      "Shay-Shay one-sentence queue summary"
+      "Seven lanes wired live (Queued, Approving, Running, Blocked, Done, Failed, Parked)",
+      "Stale Debt drawer with Migrate, Archive, and Purge — all three required, all gated by destructive-action policy",
+      "Job inspector with Cancel/Park/Promote-to-Task (Promote writes both sides of cross-link)",
+      "WebSocket lane updates with reconcile contract (snapshot_version + sequence_id)",
+      "Shay-Shay one-sentence queue summary refreshed against API on reconnect, never from cached WS",
+      "All ws_ops_test_substrate tests green against the live Jobs API"
     ]
   },
   "deliverables_already_produced": [
@@ -233,9 +385,35 @@
   ],
   "known_gaps_opened": [
     "No ops API surface exists yet — must be built before any Ops tab.",
-    "Freshness field not yet present on jobs/runs records.",
-    "No WebSocket /ws/ops channel exists.",
-    "Record-type visual language not yet codified in design tokens."
+    "Source-of-truth matrix is defined in ws_phase0_state_contract.source_of_truth_matrix; docs/ops/state-contract.md (the human-readable mirror) does not yet exist — Phase 0 must generate it.",
+    "Real current ledger inventory (2026-05-05): tasks 34, runs 1, proofs 27, legacy worker-queue backup 9 lines. The historical '448 stale jobs' figure is no longer accurate; UI must read the live inventory snapshot, never a hardcoded number.",
+    "Freshness must be derived from existing status + age, not stored as a parallel field. Existing statuses: tasks (completed|blocked), proofs (passed|recorded|passed_with_blockers|blocked), runs (active), jobs (pending|blocked|approved|parked|running|done|failed).",
+    "No WebSocket /ws/ops channel is implemented yet (the reconcile/replay/snapshot contract is now defined in ws_phase0_state_contract — implementation remains).",
+    "Cross-link fields (origin_job_id, promoted_to_task_id, promoted_from, converted_to_task_id, reviews_record_id) do not yet exist in any ledger schema.",
+    "No destructive-action gate matches plans/registry.json governance.hard_stop_conditions for Ops command endpoints.",
+    "No regression tests exist proving stale/parked records cannot inflate live counts — required before any UI ships.",
+    "Record-type visual language not yet codified in design tokens.",
+    "Job lane to DB-status mapping was incomplete in v1 (no Failed lane); now corrected to seven lanes."
+  ],
+  "amendments": [
+    {
+      "round": 1,
+      "date": "2026-05-05",
+      "reviewer": "codex",
+      "summary": "Added Phase 0 state contract (ws_phase0_state_contract) and Ops test substrate (ws_ops_test_substrate) as P0 dependencies before any UI work. Added Failed lane (seven total). Replaced hardcoded 448 with live inventory snapshot. Added Migrate to MVP scope. Added cross-link schema fields. Added destructive-action gate. Added WS reconcile contract. Made freshness derived not stored. Updated known_gaps_opened with real inventory numbers."
+    },
+    {
+      "round": 2,
+      "date": "2026-05-05",
+      "reviewer": "codex",
+      "summary": "Baked the source_of_truth_matrix and freshness_derivation_table directly into the Phase 0 workstream — they are now contracts inside plan.json, not aspirational outputs. Clarified that 'Approving' is a UI label for the existing 'approved' job status, not a new stored state. Reworded WS gap to distinguish 'not implemented' from 'not defined'."
+    },
+    {
+      "round": 3,
+      "date": "2026-05-05",
+      "reviewer": "codex",
+      "summary": "All round-2 issues confirmed addressed. Removed self-contradicting known_gaps_opened entry that still claimed 'no source-of-truth matrix exists' after the matrix was added in round 2. Loop reached 3-round default cap; remaining concerns are cosmetic, not architectural. Plan is implementation-ready pending the planned Phase 0 work."
+    }
   ],
   "links": {
     "design_conversation": "session 2026-05-05 — Ops Workspace GUI design",
