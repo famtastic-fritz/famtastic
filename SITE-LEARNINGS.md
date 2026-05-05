@@ -5500,3 +5500,49 @@ Known gaps opened:
   (a "do-not-repeat" sentence got tagged as both `do-not-repeat` and `rule`
   on the second match) — first-match-wins works, but a smarter classifier
   could eliminate near-duplicates.
+
+---
+
+## 2026-05-05 — Agent coordination + brain→memory migration
+
+Two agent surfaces (Cowork on `feat/ops-workspace-gui`, Claude Code on
+`feat/chat-capture-learn-optimize`) independently shipped competing
+cross-session memory stores: `.brain/INDEX.md + .brain/{anti-patterns,
+bugs, patterns, procedures}.md` vs `memory/<type>/<id>.md` with the
+v0.2.0 capture/promote pipeline. Neither knew about the other until both
+branches existed.
+
+This session installs the coordination layer that prevents recurrence
+and merges cowork's `.brain/` content into the canonical store.
+
+**Shipped:**
+
+- `AGENT-COORDINATION.md` — single source of truth listing every active
+  branch, its owning surface, intent, and scope-locks. Conflict-resolution
+  protocol documented.
+- `scripts/agent-checkin.js` — pre-flight overlap detector. Run with
+  `--intent "<short>"`; exits 0 (logs a row to AGENT-COORDINATION.md) or 2
+  (prints the overlapping branches). Always writes a `memory/usage.jsonl`
+  `agent_checkin` event. Detects overlap by branch-name keywords,
+  scope-lock path globs, and changed-file keyword matches.
+- 30 new `memory/<type>/*.md` entries (11 anti-pattern, 7 bug-pattern,
+  7 decision, 4 learning, 2 rule) migrated from `.brain/` with
+  `lifecycle: candidate`, `source_capture: brain-migration-2026-05-05`,
+  references back to the cowork branch.
+- `CLAUDE.md` and new `AGENTS.md` now require running `agent-checkin.js`
+  before scaffolding any new system or non-trivial workstream.
+- Plan `plan_2026_05_05_agent_coordination` registered in
+  `plans/registry.json`.
+
+**Known gaps:**
+
+- All migrated entries are `candidate` — none have been human-promoted to
+  `active`. They will not be surfaced by `lib/famtastic/memory/recall.js`
+  filters that scope to `active` only until promoted.
+- AGENT-COORDINATION.md row-pruning is manual; merged branches need to
+  be removed by hand.
+- The check-in script uses simple keyword + substring matching, not
+  semantic similarity — false positives are likely on broad keywords
+  like "memory" until scope-locks are declared on every active branch.
+- Per-surface branch naming convention deferred — too small a sample to
+  lock today.

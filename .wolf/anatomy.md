@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-02T22:10:19.791Z
-> Files: 596 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T18:55:20.088Z
+> Files: 607 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -11,6 +11,7 @@
 
 ## ../../../tmp/
 
+- `migrate-brain.js` — One-shot migration: .brain entries → memory/<type>/<slug>.md (lifecycle: candidate) (~4104 tok)
 - `session7-plan.md` — FAMtastic Site Studio — Session 7 Prompt (~3122 tok)
 - `ws-build.js` — Declares WebSocket (~1028 tok)
 - `ws-build2.js` — WebSocket: sendBuildMessage (~1476 tok)
@@ -127,8 +128,10 @@
 
 - `.gitignore` — Git ignore rules (~531 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~22350 tok)
-- `CLAUDE.md` — FAMtastic Global Rules (~2625 tok)
+- `AGENT-COORDINATION.md` — Agent Coordination (~877 tok)
+- `AGENTS.md` — AGENTS.md (~196 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~26622 tok)
+- `CLAUDE.md` — FAMtastic Global Rules (~2775 tok)
 - `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
 - `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~11861 tok)
@@ -648,6 +651,19 @@
 - `package.json` — Node.js package manifest (~81 tok)
 - `server.js` — FAMtastic MCP Server (~5185 tok)
 
+## memory/anti-pattern/
+
+- `no-overflow-x-hidden-on-html-or-body.md` — Never set overflow-x: hidden on html or body (~199 tok)
+
+## plans/
+
+- `registry.json` (~4403 tok)
+
+## plans/plan_2026_05_05_agent_coordination/
+
+- `plan.json` (~1269 tok)
+- `README.md` — Project documentation (~531 tok)
+
 ## schemas/
 
 - `manifest.schema.json` (~236 tok)
@@ -656,6 +672,7 @@
 
 ## scripts/
 
+- `agent-checkin.js` — agent-checkin.js — pre-flight coordination gate for agent surfaces. (~2231 tok)
 - `agents` — Declares yaml (~1329 tok)
 - `asset-generate` (~2542 tok)
 - `build-catalog` (~122 tok)
@@ -759,10 +776,10 @@
 - `brain-sessions.js` — brain-sessions.js — Brain authentication and session management. (~1695 tok)
 - `brand-tracker.js` — brand-tracker.js — Extract and persist brand tokens after every build. (~923 tok)
 - `bridge-routes.js` — API routes: GET, POST (5 endpoints) (~1254 tok)
+- `build-trace.js` — build-trace.js — logTrace, getRunTrace, queryTraceEvents — writes to sites/<tag>/build-trace.jsonl + SQLite trace_events (~2200 tok)
 - `capability-manifest.js` — checkNetlify() — structured Netlify capability probe. (~2643 tok)
 - `client-interview.js` — Client Interview System — Phase 3 (~1907 tok)
 - `cost-monitor.js` — PRICE_IN_PER_M: getSpendLimit, calcCost, setBroadcast + 10 more (~1653 tok)
-- `build-trace.js` — build-trace.js — logTrace, getRunTrace, queryTraceEvents — writes to sites/<tag>/build-trace.jsonl + SQLite trace_events (~2200 tok)
 - `db.js` — Database: getDb, _initSchema, createSession + logAgentPerformance, getAgentPerformance, getAgentScorecard + trace_events + agent_performance tables (~3800 tok)
 - `famtastic-skeletons.js` — Declares names (~4600 tok)
 - `fulfillment-ledger.js` — fulfillment-ledger.js — createLedger, addFulfillmentItem, finalizeLedger, readLedger — per-build capability tracking (~1400 tok)

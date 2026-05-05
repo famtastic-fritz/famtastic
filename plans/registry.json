@@ -42,7 +42,8 @@
     "build-intent-fulfillment-trace",
     "site-mbsh-reunion",
     "plan_2026_05_05_ops_workspace_gui",
-    "plan_2026_05_05_chat_capture_learn_optimize"
+    "plan_2026_05_05_chat_capture_learn_optimize",
+    "plan_2026_05_05_agent_coordination"
   ],
   "labels": {
     "plan_2026_05_05_ops_workspace_gui": {
@@ -67,6 +68,17 @@
       "role": "substrate",
       "feeds_into": ["plan_2026_05_05_ops_workspace_gui"],
       "note": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read."
+    },
+    "plan_2026_05_05_agent_coordination": {
+      "label": "agent-coordination",
+      "tags": [
+        "platform-upgrades",
+        "governance",
+        "multi-agent"
+      ],
+      "role": "governance",
+      "depends_on": ["plan_2026_05_05_chat_capture_learn_optimize"],
+      "note": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate."
     }
   },
   "absorbed_records": [
