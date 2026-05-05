@@ -5278,8 +5278,16 @@ fixed in the deploy repo: `.chatbot__panel[hidden] { display: none; }`.
 The MBSH content delta packet is at
 `docs/sites/site-mbsh-reunion/content-delta-verification-2026-05-04.md`.
 The seven-page architecture is present, but launch content still needs final
-date/venue/payment values, story/gallery assets, playlist ID, seed data, and
-backend proof.
+date/venue/payment values, playlist ID, seed data, and backend proof.
+
+The MBSH launch unblock packet is at
+`docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`.
+The local media/story blocker is closed for launch-safe generated/derivative
+assets: all seven referenced `frontend/assets/story/*.jpg` files exist in the
+v2 deploy repo, provenance is recorded in
+`frontend/assets/story/RIGHTS-MANIFEST.md`, and Playwright proof is saved at
+`proofs/mbsh-story-assets-2026-05-05.json` plus `.png`. Future archival or
+crowd-sourced replacements still require attribution and approval before use.
 
 The MBSH Studio reproduction harness is at
 `docs/sites/site-mbsh-reunion/studio-reproduction-audit-harness-2026-05-04.md`.
@@ -5301,7 +5309,7 @@ stack.
 - Pipeline visualizer phase 1 is implemented in Workbench Plan mode; stage/event matching and proposed patch preview are still missing.
 - MBSH child tasks are split and scoped. Backend endpoint inventory, RSVP/sponsor browser proof, chatbot Phase 1 proof, content delta, audit harness, and generalized gap promotion are complete.
 - MBSH backend runtime execution is blocked by missing runtime config/secrets and external deploy access; this is a deploy-proof blocker, not a source-code inventory or frontend-submit blocker.
-- MBSH media/story readiness is blocked by seven missing `frontend/assets/story/*.jpg` files and missing archival/gallery rights proof.
+- MBSH launch-safe media/story readiness is complete. Future archival/crowd-sourced replacement media still needs source attribution, permission, and approval logging before replacing the generated/derivative launch assets.
 - Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.

@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — MBSH launch blockers grouped
+
+Grouped the remaining MBSH work into one launch unblock packet at `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`. Closed the media/story blocker by adding all seven referenced story JPGs to the v2 deploy repo, adding `frontend/assets/story/RIGHTS-MANIFEST.md`, and saving Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete. Remaining MBSH launch work is the live deploy proof, blocked by external Netlify/DNS/GoDaddy/PHP/MySQL/Resend/backend config access and production `API_BASE_URL`.
+
 ## 2026-05-05 — Operations Workspace GUI plan registered
 
 Registered new parent plan `plan_2026_05_05_ops_workspace_gui` (label `ops-workspace-gui`, tags `platform-upgrades`, `studio-ui`, `ops`, `shay-shay`, `agent-management`) capturing the design for an 11-tab Operations workspace inside the Workbench shell (Pulse · Plans · Tasks · Jobs · Runs · Proofs · Agents · Reviews · Gaps · Memory · Debt). Plan defines a record-type visual language for PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW, freshness as a first-class field, and quarantines stale legacy queue items in a dedicated drawer. MVP is the Jobs tab (six lanes + Stale Debt drawer + inspector + WebSocket). Added `plans/plan_2026_05_05_ops_workspace_gui/{plan.json,README.md}`, added the plan to `plans/registry.json` `active_parent_ids` with a new `labels` block, and updated SITE-LEARNINGS.md with the plan summary plus four prerequisite known gaps (no `/api/ops/*`, no `/ws/ops`, no record `freshness` field, no record-type visual tokens). Design-only — no API, UI, or schema changes shipped.

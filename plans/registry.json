@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-05-05T12:00:00.000-04:00",
+  "updated_at": "2026-05-05T16:20:00.000-04:00",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -341,6 +341,49 @@
         "task-2026-05-05-007",
         "task-2026-05-04-027",
         "task-2026-05-04-028"
+      ]
+    },
+    {
+      "id": "plan_2026_05_05_ops_workspace_gui",
+      "title": "FAMtastic Studio Operations Workspace GUI",
+      "status": "active",
+      "status_label": "Active parent plan",
+      "group": "ops_workspace_gui",
+      "plan_path": "plans/plan_2026_05_05_ops_workspace_gui/plan.json",
+      "current_workstream": "Design-only Ops workspace packet actionized toward read/freshness substrate and Jobs tab MVP",
+      "next_action": "Build the Ops read/freshness substrate before command mutations or Jobs tab UI implementation.",
+      "open_blockers": "No Ops API surface, /ws/ops stream, record freshness field, or record-type visual tokens exist yet.",
+      "originator": "Fritz plus consolidated planning",
+      "origin_surface": "Codex Desktop",
+      "current_runner": "Codex",
+      "runner_surface": "Codex Desktop",
+      "run_target": "define_mvp_then_build_read_first",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "plan packet",
+          "path": "plans/plan_2026_05_05_ops_workspace_gui/plan.json"
+        },
+        {
+          "label": "human summary",
+          "path": "plans/plan_2026_05_05_ops_workspace_gui/README.md"
+        }
+      ],
+      "tasks": [
+        "Define Ops read endpoints and freshness semantics before command mutations",
+        "Codify record-type visual language for PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW",
+        "Build Jobs tab MVP with stale debt drawer after read data is trustworthy",
+        "Add /ws/ops only after read model and lane semantics are stable"
+      ],
+      "assumptions": [
+        "Ops is an operating workspace inside Workbench, not a replacement shell.",
+        "Stale debt must be quarantined and never displayed as live work."
+      ],
+      "known_gaps": [
+        "No ops API surface exists yet — must be built before any Ops tab.",
+        "Freshness field not yet present on jobs/runs records.",
+        "No WebSocket /ws/ops channel exists.",
+        "Record-type visual language not yet codified in design tokens."
       ]
     }
   ],
