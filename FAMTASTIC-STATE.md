@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-05-04 (Workbench pipeline visualizer phase 1, knowledge capture, and MBSH proof packets added to the four-plan execution substrate.)
+**Last updated:** 2026-05-05 (Site Studio service auth ownership added; reporting density configurable; MBSH media/story blocker closed.)
 
 ---
 
@@ -12,6 +12,10 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Key recent milestones:**
 
+- **2026-05-05** — Site Studio Resend notifications. Configured Site Studio itself to send notification email through Resend with `fam-hub platform configure-resend`, `fam-hub platform send-test-email`, `site-studio/lib/studio-mailer.js`, and `site-studio/scripts/send-studio-test-email.js`. The Studio sender is `FAMtastic Site Studio`; the API key remains in `vault://studio.resend.api_key`, and a real test email was accepted by Resend. Known gap: the sender currently uses the only verified domain available, `send.mbsh96reunion.com`, until a FAMtastic-owned sending domain such as `send.famtastic.com` is verified.
+- **2026-05-05** — Site Studio service auth ownership. Added Studio-owned service commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`, backed by `platform/capabilities/studio/bootstrap-services.sh` and `platform/capabilities/studio/provision-site.sh`. Provider auth for Netlify, Resend, cPanel/GoDaddy, DNS, SSH, and DB now belongs to Site Studio/platform; generated sites consume vault refs and generated config. Bootstrap migrated existing local Resend API, cPanel API token, MBSH production DB password, and MBSH DB ref into the platform vault; Resend verified via API. MBSH deploy proof is reframed as blocked by Studio service provisioning: production `API_BASE_URL` is still null, cPanel DNS/addon-domain automation needs wrapper coverage, and SSH host-key verification blocks `nineoo@FAMTASTICINC.COM`.
+- **2026-05-05** — Configurable reporting density. Added `config/reporting-preferences.json` and `docs/operating-rules/reporting-density.md`. `scripts/fam-hub` now supports `fam-hub report style`, `fam-hub report style compact`, `fam-hub report style standard`, and `fam-hub report style detail`. Current/default density is `compact`; this changes response shape only, not proof standards, testing, or blocker visibility.
+- **2026-05-05** — MBSH launch unblock grouping. Added `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md` and closed the media/story blocker for launch-safe generated/derivative assets. The v2 deploy repo now has all seven referenced `frontend/assets/story/*.jpg` files, a `frontend/assets/story/RIGHTS-MANIFEST.md`, and Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete; `task-2026-05-04-027` remains blocked by Studio service provisioning and generated production config/API origin. `plans/registry.json` is internally consistent again with five active parent records, including the 2026-05-05 Ops Workspace GUI parent.
 - **2026-05-04** — Four-plan registry execution substrate. `plans/registry.json` contains exactly four active parent plans: `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`. The prior 11-record registry is backed up at `plans/registry.backup-2026-05-04.json`; stale plans are recorded as absorbed/parked metadata instead of active records. Populated `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`, regenerated `FAMTASTIC-STATUS.md`, fixed `fam-hub task list` / `fam-hub run status`, and added `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start`. Workbench Plan mode renders a browser-safe consolidated state packet at `site-studio/public/data/workbench-plan-state.json`; Workbench also registers as `workbench.foundation` in `ShayContextRegistry` and has actual Shay-Shay UI proof that `context.page_context.domain = media` is seen and answered from. `fam-hub capture extract` creates review-only knowledge packets. Workflow-as-data phase 1 is cataloged, trace-instrumented, and visible through Workbench pipeline visualizer phase 1. MBSH backend inventory, RSVP/sponsor/chatbot browser proof, content delta, audit harness, and gap-promotion packets are complete; live deploy proof and media/story readiness are blocked by external access/config and missing story assets.
 - **2026-05-04** — Consolidated execution checklist. Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four-plan consolidation artifact. The surviving parent plans are `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`; `docs/famtastic-total-ask-plan.md` is parked as strategy context and mined for useful asks. Fritz marked Drive sync complete, so it is not carried as active work; workflow-as-data and the pipeline visualizer remain open under `build-intent-fulfillment-trace`. The registry rewrite, P0 task promotion, run/proof records, and status packet were applied in the follow-up four-plan registry milestone above.
 - **2026-05-04** — Plan consolidation verification proposal. Added `plans/consolidation-verification-2026-05-04.md` to reduce the current 11 same-level plan records into 4 active parent plans, 1 parked strategy context, and 6 merged/closed evidence records. The registry itself is not mutated yet; approval is required before rewriting `plans/registry.json`, archiving merged records, or promoting embedded tasks into `tasks/tasks.jsonl`.
@@ -55,7 +59,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | HTML Skeletons | `lib/famtastic-skeletons.js` | `HERO_SKELETON_TEMPLATE` (BEM double-dash vocabulary), `LOGO_SKELETON_TEMPLATE` (nav logo wiring), `LOGO_NOTE_PAGE` (parallel page logo reference), `NAV_SKELETON` (mandated nav class names). `FAMTASTIC_DEFAULT_PALETTE` (5 hex values: primary `#00A79D`, accent `#F5B800`, navy `#001F3F`, coral `#FF6B6B`, background `#FDF4E3`). |
 | Build DNA | `famtastic-dna.md` | Auto-updated by `updateFamtasticDna()` after every build. Cross-session build memory injected via CLAUDE.md `@famtastic-dna.md`. |
 | Brain Verifier | `lib/brain-verifier.js` | Startup API probes for all 3 APIs + Codex CLI. Results cached, served via `/api/brain-status`. |
-| Capability Manifest | `lib/capability-manifest.js` | `buildCapabilityManifest()` checks all env vars + CLI. `checkNetlify()` returns structured `{ ok, reason, details }` *(2026-04-25)* — `cli_missing` / `credentials_missing` / `config_unreadable` / `other`. Exported for direct use by `runDeploy` preflight. |
+| Capability Manifest | `lib/capability-manifest.js` | `buildCapabilityManifest()` checks all env vars + CLI. `checkNetlify()` returns structured `{ ok, reason, details }` *(2026-04-25)*. Also reports Studio-owned service auth states for Resend, Studio email notifications, database, Netlify, cPanel, and DNS from platform vault/config refs. |
 | Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~18,400 lines after baseline closure). |
 | Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html`. VS Code-inspired layout. Brain/Worker split panel. CSS: `public/css/` (8+ files). JS: `public/js/`. |
 | Workbench Foundation Prototype | Static HTML + component CSS/JS, embedded in Studio | `site-studio/public/workbench-foundation.html`, `public/css/workbench-foundation.css`, `public/js/workbench-foundation.js`, `public/data/workbench-workspaces.json`, plus `#tab-pane-workbench` in `site-studio/public/index.html`. Follows the frozen seven-domain left rail (Sites, Brainstorm, Plans, Components, Media, Research, Admin), contract strip, collapsible domain object navigator, dynamic center workbench, live preview with translucent metadata/Shay/evidence overlays, registry-backed Plan mode, prompt-first Media Studio surface, contextual draggable/reorderable tool shelf with persisted order, bottom runs/logs/trace/approvals/proof panel, theme tokens, and modal shell. Registers `workbench.foundation` with `ShayContextRegistry`; actual Shay-Shay UI proof confirms `context.page_context` includes Workbench domain/object state. Linked from production Studio but not yet the default shell. |
@@ -77,8 +81,9 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | WebSocket | `ws` 8.18 | Real-time: chat, build progress, preview reload, brain-changed, brain-status, brain-fallback, set-brain-model, site-switched (now triggers chat session-break divider). |
 | Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy`. `runDeploy()` now runs `checkNetlify()` preflight before flag mutation, has `child.on('error')` handler, parses stderr for known patterns, resets `deployInProgress` on every early-return. |
 | Testing | Vitest 4.1.1 | Current: 161/161 passing across 3 files (`unit.test.js` 110, `gap4-tier-canonicality.test.js` 28, `baseline-closure.test.js` 23). Legacy node-script test suites still in `tests/` folder (~1,236 tests across 22 suites) — not gating. |
-| Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`. |
-| CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research`, `plan`, `task`, and `run` subcommands. Plan/task/run commands are read-only in the 2026-05-04 pilot substrate. |
+| Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`, `service_auth` non-secret vault refs, and `notifications.email` for Studio-owned Resend notifications. |
+| Platform Service Auth | `platform/capabilities/studio/` | `bootstrap-services.sh` checks/migrates Studio-owned provider auth into platform vault refs; `configure-resend.sh` configures Studio notification email; `send-test-email.sh` proves Studio can send; `provision-site.sh` verifies generated sites consume Studio-owned DB/email/deploy services and emits proof packets. |
+| CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research`, `plan`, `task`, `run`, `report`, and `platform` subcommands. `fam-hub platform bootstrap-services`, `configure-resend`, `send-test-email`, and `provision-site <site>` expose Studio service auth. |
 
 ---
 
@@ -261,8 +266,9 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Workbench default shell cutover | Tier 1 | The production-linked Workbench prototype now follows the frozen seven-domain contract and has Playwright proof, but it is not yet the default Studio shell. |
 | Workbench live registry generation | Tier 1 | Workbench Plan mode now reads `site-studio/public/data/workbench-plan-state.json`, a browser-safe mirror of registry/task/run/proof state. Automatic generation from source ledgers is still missing. |
 | Media Studio unification | Tier 2 | Workbench has a prompt-first Media Studio surface and production Studio has the richer mini-app in `studio-screens.js`; generation/provider controls are not unified between them yet. |
-| MBSH runtime endpoint execution | Tier 1 | Backend inventory and browser-level RSVP/sponsor submission proof are complete, but backend runtime execution is blocked until `.env`, `.mbsh-config.local.php`, or `MBSH_CONFIG_PATH` provides DB, Resend, admin hash, CORS, and upload-path config. Production deploy proof must also set `API_BASE_URL` away from `null` and requires Netlify/DNS/GoDaddy/Resend access. |
-| MBSH media/story readiness | Tier 1 | Brand, mascot, and hero/background assets are present, but seven referenced `frontend/assets/story/*.jpg` files are missing and archival/gallery rights proof is not discoverable. |
+| Studio notification sender domain | Tier 2 | Site Studio can send through Resend now, but the configured sender currently uses `studio@send.mbsh96reunion.com` because it is the only verified Resend sending domain. Verify `send.famtastic.com` or another FAMtastic-owned sending domain for long-term platform notifications. |
+| MBSH runtime endpoint execution | Tier 1 | Backend inventory and browser-level RSVP/sponsor submission proof are complete. Runtime execution now depends on Studio-managed service provisioning: vaulted Studio Resend/cPanel/site DB refs exist, but production `API_BASE_URL` remains `null` until backend origin generation, cPanel DNS/addon-domain automation still needs wrapper coverage or manual UI, and SSH host-key trust blocks backend deploy/smoke. |
+| MBSH archival/crowd-sourced media replacement | Tier 2 | Launch-safe generated/derivative story assets now exist and have a rights manifest. Future real archival/crowd-sourced replacements still need source attribution, permission, and approval logging before publishing. |
 | Pipeline visualizer depth | Tier 1 | Workbench phase 1 renders inspect/trace/propose from the workflow catalog and trace API. Stage/event matching, missing-stage detection, and proposed patch preview are still missing. |
 
 ### Closed 2026-04-25 — Baseline failure closure
@@ -413,7 +419,9 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 
 | File | Purpose |
 |------|---------|
-| `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research |
+| `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research, plan/task/run, and report style. |
+| `config/reporting-preferences.json` | Project-level response/reporting density preferences. Current/default density is `compact`; valid densities are `compact`, `standard`, and `detail`. |
+| `docs/operating-rules/reporting-density.md` | Operating rule for final-response density and CLI usage. |
 | `scripts/gemini-cli` | Gemini API CLI (Node.js, gemini-2.5-flash) |
 | `scripts/orchestrator-site` | Batch site generation |
 | `scripts/stock-photo` | 3-provider stock photo downloader |
@@ -549,9 +557,14 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
   repoint the local clone's `origin` at the fork, and record the fork URL
   in `~/famtastic/tools/cpanel-mcp/PATCHES.md`. This stops every fresh
   clone or upstream pull from silently wiping the fix.
-- **MBSH addon domain (manual):** add `mbsh96reunion.com` in cPanel by hand
-  — the MCP does not yet expose `create_addon_domain`. Tracked as the #1
-  Layer-2 extension in `docs/operating-rules/godaddy-mcp-spike.md`.
+- **MBSH service provisioning blockers:** generate production `API_BASE_URL`
+  after backend provisioning, add cPanel UAPI/MCP DNS/addon-domain wrappers or
+  complete provider/manual DNS records, and repair SSH host-key trust for
+  `nineoo@FAMTASTICINC.COM`.
+- **MBSH addon domain (provider/manual unless API is extended):** add
+  `mbsh96reunion.com` in cPanel by hand if Studio cannot automate it — the MCP
+  does not yet expose `create_addon_domain`. Tracked as the #1 Layer-2
+  extension in `docs/operating-rules/godaddy-mcp-spike.md`.
 
 ---
 

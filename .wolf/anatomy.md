@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T18:55:20.088Z
-> Files: 607 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:01:13.046Z
+> Files: 635 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -130,7 +130,9 @@
 - `.mcp.json` (~47 tok)
 - `AGENT-COORDINATION.md` — Agent Coordination (~877 tok)
 - `AGENTS.md` — AGENTS.md (~196 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~27327 tok)
 - `CHANGELOG.md` — FAMtastic Changelog (~26622 tok)
+- `CLAUDE.md` — FAMtastic Global Rules (~2625 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2775 tok)
 - `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
@@ -392,6 +394,22 @@
 
 - `hub-ci.yml` — /*.sh scripts/* || true (~270 tok)
 
+## Ops Workspace (added 2026-05-05)
+
+- `docs/ops/inventory-2026-05-05.json` — First Ops debt inventory snapshot (~600 tok)
+- `docs/ops/state-contract.md` — Source-of-truth matrix + freshness derivation table mirror (~1200 tok)
+- `scripts/ops/inventory.js` — Scans every Ops ledger and writes dated snapshots (~600 tok)
+- `site-studio/lib/ops-api.js` — `/api/ops` Express router with destructive-action gate (~1200 tok)
+- `site-studio/lib/ops-freshness.js` — Single freshness derivation library (~700 tok)
+- `site-studio/public/css/ops-jobs.css` — Jobs tab swimlanes + drawer + inspector (~900 tok)
+- `site-studio/public/css/ops-tokens.css` — Record-type visual language tokens + chips (~600 tok)
+- `site-studio/public/js/ops-jobs.js` — Mounts Ops sub-tabs and Jobs lane UI (~2000 tok)
+- `tests/ops/cross-link-integrity.test.js` — `buildCrossLink` atomicity (~400 tok)
+- `tests/ops/destructive-action-gate.test.js` — Every destructive action 403 without token (~600 tok)
+- `tests/ops/fixtures/synthetic-ledgers.js` — Mixed live/idle/stale/parked records (~600 tok)
+- `tests/ops/freshness-derivation.test.js` — Pinned (type, status, age) freshness table (~700 tok)
+- `tests/ops/stale-cannot-inflate-live.test.js` — 1000-trial property regression (~500 tok)
+
 ## adapters/claude/
 
 - `cj-get-convo-claude` (~43 tok)
@@ -616,6 +634,10 @@
 - `studio-multipage-discovery-2026-04-29.md` — Studio Multi-Page Discovery — 2026-04-29 (~7808 tok)
 - `studio-vs-eleventy-evaluation-2026-04-29.md` — Studio vs. Eleventy — Strategic Technical Evaluation (~10800 tok)
 
+## docs/ops/
+
+- `state-contract.md` — Ops State Contract (~1601 tok)
+
 ## docs/sites/
 
 - `README.md` — Project documentation (~161 tok)
@@ -657,6 +679,7 @@
 
 ## plans/
 
+- `registry.json` (~5546 tok)
 - `registry.json` (~4403 tok)
 
 ## plans/plan_2026_05_05_agent_coordination/
@@ -743,12 +766,16 @@
 - `hub-common` (~1321 tok)
 - `studio-tier-validate.js` — studio-tier-validate.js — Re-validate a Studio Tier patch at apply time. (~1344 tok)
 
+## scripts/ops/
+
+- `inventory.js` — scripts/ops/inventory.js (~1866 tok)
+
 ## site-studio/
 
 - `inject-mbsh-creds.sh` — One-shot credential injector for MBSH reunion .env (~582 tok)
 - `package-lock.json` — npm lock file (~30797 tok)
 - `package.json` — Node.js package manifest (~260 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 13 more (~251730 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 13 more (~255365 tok)
 - `SHAY_CONTEXT.md` — SHAY_CONTEXT.md (~764 tok)
 
 ## site-studio/agent-cards/
@@ -791,10 +818,12 @@
 - `memory.js` — memory.js — cross-session memory for Shay-Shay (Mem0 + Kuzu semantics) (~819 tok)
 - `model-config.json` (~147 tok)
 - `openai-image-adapter.js` — openai-image-adapter — gpt-image-2 generations + edits, mirroring the (~1308 tok)
+- `ops-api.js` — site-studio/lib/ops-api.js (~3140 tok)
+- `ops-freshness.js` — site-studio/lib/ops-freshness.js (~1284 tok)
 - `research-registry.js` — research-registry.js — Provider-agnostic research source registry (~3240 tok)
 - `research-router.js` — research-router.js — Routes research queries; exports appendToFeedIndex, appendToRunHistory, listFindings (Session 3-A) (~4200 tok)
 - `run-id.js` — run-id.js — generateRunId, generateTraceId, createRunContext — build run/trace ID generation (~400 tok)
-- `shay-shay-sessions.js` — shay-shay-sessions.js — Minimal per-conversation session state for Shay-Shay. (~1383 tok)
+- `shay-shay-sessions.js` — site-studio/lib/shay-shay-sessions.js (~348 tok)
 - `spec-schema.js` — Formal spec.json schema (P0.2 baseline closure). (~1906 tok)
 - `studio-actions.js` — studio-actions.js — shared execution layer (~255 tok)
 - `studio-context-writer.js` — studio-context-writer.js — Generates STUDIO-CONTEXT.md (~3039 tok)
@@ -815,10 +844,12 @@
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~32856 tok)
+- `index.html` — FAMtastic Site Studio (~32710 tok)
 
 ## site-studio/public/css/
 
+- `ops-jobs.css` — tab-pane-ops { (~1924 tok)
+- `ops-tokens.css` — Styles: 16 rules, 16 vars (~926 tok)
 - `studio-brain-selector.css` — Styles: 33 rules, 3 vars (~1229 tok)
 - `studio-canvas.css` — canvas-tab-bar { (~4175 tok)
 - `studio-chat.css` — chat-messages { (~2128 tok)
@@ -834,10 +865,11 @@
 ## site-studio/public/js/
 
 - `brain-selector.js` — brain-selector.js — Brain/Worker split selector for FAMtastic Studio. (~1314 tok)
+- `ops-jobs.js` — site-studio/public/js/ops-jobs.js (~4123 tok)
 - `studio-brief.js` — studio-brief.js — Revenue-first brief interview screen (~6057 tok)
 - `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~25582 tok)
 - `studio-screens.js` — studio-screens.js — Assets/Components, Settings, Mission Control, Deploy (~56314 tok)
-- `studio-shell.js` — studio-shell.js — Activity rail, sidebar, tab system, mode switching (~6440 tok)
+- `studio-shell.js` — studio-shell.js — Activity rail, sidebar, tab system, mode switching (~17363 tok)
 
 ## site-studio/scripts/
 
@@ -1080,6 +1112,17 @@
 
 - `firefly-web-test-checklist.md` — Adobe Firefly Web App Test Checklist (~748 tok)
 - `firefly-web-test-results.json` (~1181 tok)
+
+## tests/ops/
+
+- `cross-link-integrity.test.js` — tests/ops/cross-link-integrity.test.js (~495 tok)
+- `destructive-action-gate.test.js` — tests/ops/destructive-action-gate.test.js (~876 tok)
+- `freshness-derivation.test.js` — tests/ops/freshness-derivation.test.js (~1205 tok)
+- `stale-cannot-inflate-live.test.js` — tests/ops/stale-cannot-inflate-live.test.js (~874 tok)
+
+## tests/ops/fixtures/
+
+- `synthetic-ledgers.js` — tests/ops/fixtures/synthetic-ledgers.js (~923 tok)
 
 ## tools/cpanel-mcp/
 

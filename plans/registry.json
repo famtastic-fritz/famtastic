@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-05-05T12:00:00.000-04:00",
+  "updated_at": "2026-05-05T16:20:00.000-04:00",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -42,29 +42,52 @@
     "build-intent-fulfillment-trace",
     "site-mbsh-reunion",
     "plan_2026_05_05_ops_workspace_gui",
+    "plan_2026_05_05_platform_site_promotion",
     "plan_2026_05_05_chat_capture_learn_optimize",
     "plan_2026_05_05_agent_coordination"
   ],
   "labels": {
+    "plan_2026_05_05_platform_site_promotion": {
+      "label": "site-promotion",
+      "tags": ["platform-upgrades", "deploy", "release-management", "rollback"],
+      "role": "substrate",
+      "note": "Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven."
+    },
+    "studio-workbench-foundation": {
+      "label": "workbench-foundation",
+      "tags": ["platform-upgrades", "studio-ui", "shell", "workbench"],
+      "role": "chassis",
+      "note": "The Workbench shell (left rail, center workspace, Shay-Shay drawer) hosting all domain workspaces."
+    },
+    "plan-task-run-intelligence": {
+      "label": "plan-task-run",
+      "tags": ["platform-upgrades", "ledgers", "intelligence", "capture"],
+      "role": "substrate",
+      "note": "Plan/task/run/proof ledger substrate and capture promotion. Underlies every domain that needs durable state."
+    },
+    "build-intent-fulfillment-trace": {
+      "label": "build-trace",
+      "tags": ["platform-upgrades", "build-pipeline", "tracing"],
+      "role": "substrate",
+      "note": "Build intent classification, fulfillment trace, and workflow data for the Build domain."
+    },
+    "site-mbsh-reunion": {
+      "label": "site-mbsh",
+      "tags": ["site-execution", "reunion"],
+      "role": "site-project",
+      "note": "Per-site execution plan; consumes the platform substrates above."
+    },
     "plan_2026_05_05_ops_workspace_gui": {
       "label": "ops-workspace-gui",
-      "tags": [
-        "platform-upgrades",
-        "studio-ui",
-        "ops",
-        "shay-shay",
-        "agent-management"
-      ]
+      "tags": ["platform-upgrades", "studio-ui", "ops", "shay-shay", "agent-management"],
+      "role": "domain",
+      "parent_plan": "studio-workbench-foundation",
+      "depends_on": ["plan-task-run-intelligence"],
+      "note": "Ops domain mounted inside the Workbench shell as the ◆ Ops left-rail entry. Shell from workbench-foundation; ledgers from plan-task-run."
     },
     "plan_2026_05_05_chat_capture_learn_optimize": {
       "label": "chat-capture-learn-optimize",
-      "tags": [
-        "platform-upgrades",
-        "memory",
-        "shay-shay",
-        "intelligence",
-        "ledgers"
-      ],
+      "tags": ["platform-upgrades", "memory", "shay-shay", "intelligence", "ledgers"],
       "role": "substrate",
       "feeds_into": ["plan_2026_05_05_ops_workspace_gui"],
       "note": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read."
@@ -80,6 +103,12 @@
       "depends_on": ["plan_2026_05_05_chat_capture_learn_optimize"],
       "note": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate."
     }
+  },
+  "_label_role_legend": {
+    "chassis": "The shell that hosts other workspaces.",
+    "substrate": "Cross-cutting platform capability that other plans consume.",
+    "domain": "A workspace that mounts inside the shell.",
+    "site-project": "Per-site execution plan that consumes platform capabilities."
   },
   "absorbed_records": [
     {
@@ -367,6 +396,49 @@
         "task-2026-05-05-007",
         "task-2026-05-04-027",
         "task-2026-05-04-028"
+      ]
+    },
+    {
+      "id": "plan_2026_05_05_ops_workspace_gui",
+      "title": "FAMtastic Studio Operations Workspace GUI",
+      "status": "active",
+      "status_label": "Active parent plan",
+      "group": "ops_workspace_gui",
+      "plan_path": "plans/plan_2026_05_05_ops_workspace_gui/plan.json",
+      "current_workstream": "Design-only Ops workspace packet actionized toward read/freshness substrate and Jobs tab MVP",
+      "next_action": "Build the Ops read/freshness substrate before command mutations or Jobs tab UI implementation.",
+      "open_blockers": "No Ops API surface, /ws/ops stream, record freshness field, or record-type visual tokens exist yet.",
+      "originator": "Fritz plus consolidated planning",
+      "origin_surface": "Codex Desktop",
+      "current_runner": "Codex",
+      "runner_surface": "Codex Desktop",
+      "run_target": "define_mvp_then_build_read_first",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "plan packet",
+          "path": "plans/plan_2026_05_05_ops_workspace_gui/plan.json"
+        },
+        {
+          "label": "human summary",
+          "path": "plans/plan_2026_05_05_ops_workspace_gui/README.md"
+        }
+      ],
+      "tasks": [
+        "Define Ops read endpoints and freshness semantics before command mutations",
+        "Codify record-type visual language for PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW",
+        "Build Jobs tab MVP with stale debt drawer after read data is trustworthy",
+        "Add /ws/ops only after read model and lane semantics are stable"
+      ],
+      "assumptions": [
+        "Ops is an operating workspace inside Workbench, not a replacement shell.",
+        "Stale debt must be quarantined and never displayed as live work."
+      ],
+      "known_gaps": [
+        "No ops API surface exists yet — must be built before any Ops tab.",
+        "Freshness field not yet present on jobs/runs records.",
+        "No WebSocket /ws/ops channel exists.",
+        "Record-type visual language not yet codified in design tokens."
       ]
     }
   ],

@@ -5379,8 +5379,16 @@ fixed in the deploy repo: `.chatbot__panel[hidden] { display: none; }`.
 The MBSH content delta packet is at
 `docs/sites/site-mbsh-reunion/content-delta-verification-2026-05-04.md`.
 The seven-page architecture is present, but launch content still needs final
-date/venue/payment values, story/gallery assets, playlist ID, seed data, and
-backend proof.
+date/venue/payment values, playlist ID, seed data, and backend proof.
+
+The MBSH launch unblock packet is at
+`docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`.
+The local media/story blocker is closed for launch-safe generated/derivative
+assets: all seven referenced `frontend/assets/story/*.jpg` files exist in the
+v2 deploy repo, provenance is recorded in
+`frontend/assets/story/RIGHTS-MANIFEST.md`, and Playwright proof is saved at
+`proofs/mbsh-story-assets-2026-05-05.json` plus `.png`. Future archival or
+crowd-sourced replacements still require attribution and approval before use.
 
 The MBSH Studio reproduction harness is at
 `docs/sites/site-mbsh-reunion/studio-reproduction-audit-harness-2026-05-04.md`.
@@ -5402,13 +5410,33 @@ stack.
 - Pipeline visualizer phase 1 is implemented in Workbench Plan mode; stage/event matching and proposed patch preview are still missing.
 - MBSH child tasks are split and scoped. Backend endpoint inventory, RSVP/sponsor browser proof, chatbot Phase 1 proof, content delta, audit harness, and generalized gap promotion are complete.
 - MBSH backend runtime execution is blocked by missing runtime config/secrets and external deploy access; this is a deploy-proof blocker, not a source-code inventory or frontend-submit blocker.
-- MBSH media/story readiness is blocked by seven missing `frontend/assets/story/*.jpg` files and missing archival/gallery rights proof.
+- MBSH launch-safe media/story readiness is complete. Future archival/crowd-sourced replacement media still needs source attribution, permission, and approval logging before replacing the generated/derivative launch assets.
 - Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.
 - Media Studio exists as a prompt-first Workbench surface and as a production mini-app, but generation/provider controls are not unified between the two yet.
 - Operations workspace GUI plan (`plan_2026_05_05_ops_workspace_gui`) is design-only — no Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These four prerequisites are tracked in the plan's `known_gaps_opened`.
+
+## Reporting Density Preference (2026-05-05)
+
+Response/reporting density is now explicit project configuration at
+`config/reporting-preferences.json`. Current/default density is `compact`.
+
+CLI:
+
+```bash
+fam-hub report style
+fam-hub report style compact
+fam-hub report style standard
+fam-hub report style detail
+```
+
+`compact` is the normal completion/status shape: result, commit/proof if
+relevant, and remaining blocker. `standard` is for multi-file summaries.
+`detail` is reserved for explicit review, audit, root-cause, incident, or
+"show me everything" requests. This setting changes report shape only; it does
+not reduce proof, testing, documentation, or blocker visibility requirements.
 
 ## Operations Workspace GUI Plan (2026-05-05)
 
@@ -5501,6 +5529,105 @@ Known gaps opened:
   on the second match) — first-match-wins works, but a smarter classifier
   could eliminate near-duplicates.
 
+## Ops Workspace MVP — Phase 0 Shipped (2026-05-05)
+
+Shipped Phase 0 of `plan_2026_05_05_ops_workspace_gui` plus the Jobs tab MVP.
+All numbers below are reproducible from the inventory snapshot, not
+hardcoded.
+
+### What landed
+
+- **State contract** — `docs/ops/state-contract.md` mirrors the
+  source-of-truth matrix and freshness derivation table from `plan.json`.
+  The plan is the contract; the doc is a human mirror.
+- **Inventory script** — `scripts/ops/inventory.js` scans every Ops ledger
+  and writes `docs/ops/inventory-YYYY-MM-DD.json`. First snapshot committed
+  for 2026-05-05: 71 records (live=15 stale=4 parked=0 archived=52).
+- **Freshness library** — `site-studio/lib/ops-freshness.js` is the **single**
+  implementation of the (record_type, status, age) → freshness derivation.
+  Consumed by inventory script, ops-api, and tests so they cannot drift.
+- **Ops API surface** — `site-studio/lib/ops-api.js` mounted at
+  `/api/ops` (server.js line 1086, BEFORE any `/api/:param` route per the
+  static-routes-first cerebrum rule).
+  - GET `/api/ops/{jobs,runs,tasks,plans,proofs,gaps,memory,reviews,debt,needsMe}`
+    — every response wrapped `{snapshot_version, generated_at, source_ledgers, record_count, data}`.
+  - POST `/api/ops/command/:action` — destructive actions (purge, cancel,
+    archive, promote, migrate) return 403 without `x-ops-governance-token`.
+    Token issuance is deferred; the only accepted token in MVP is the
+    `OPS_DEV_BYPASS_DO_NOT_SHIP` constant (documented in state-contract.md).
+- **Ops tab in Workbench** — added "Ops" entry to the sidebar nav and a
+  matching tab (`tab-pane-ops`) in `index.html`. `js/ops-jobs.js` mounts
+  11 sub-tabs (only Jobs functional in MVP); `css/ops-jobs.css` and
+  `css/ops-tokens.css` link from `<head>`.
+- **Visual language tokens** — `css/ops-tokens.css` defines CSS custom
+  properties and `.ops-chip--{plan,task,job,run,proof,gap,memory,review}`
+  with the per-plan color palette (PLAN ◇ indigo, TASK ☐ slate, JOB ▶ amber,
+  RUN ● cyan, PROOF ▣ emerald, GAP △ coral, MEMORY ✦ violet, REVIEW ⛔
+  red-orange) plus freshness dots.
+- **Jobs tab** — seven swimlanes (Queued ← pending, Approving ← approved,
+  Running, Blocked, Done, Failed, Parked) polled every 5s. Stale Debt
+  drawer at the bottom shows count + Migrate / Archive / Purge (Purge
+  needs confirm); source line shows the dated inventory file driving the
+  count. Slide-over inspector with Cancel / Park / Promote-to-Task.
+  Shay-Shay one-line summary refreshed against the API snapshot, never
+  from cached state.
+- **Test substrate** — `tests/ops/` runs under `node --test` (no new deps):
+  - `freshness-derivation.test.js` — pinned (type, status, age) table
+  - `stale-cannot-inflate-live.test.js` — 1000-trial property test
+  - `destructive-action-gate.test.js` — every destructive action 403 without token
+  - `cross-link-integrity.test.js` — `buildCrossLink` writes both sides or throws
+  - `fixtures/synthetic-ledgers.js` — mixed live/idle/stale/parked records
+  - All 15 tests green: `node --test tests/ops/*.test.js`
+
+### Files added
+
+- `docs/ops/state-contract.md`
+- `docs/ops/inventory-2026-05-05.json`
+- `scripts/ops/inventory.js`
+- `site-studio/lib/ops-freshness.js`
+- `site-studio/lib/ops-api.js`
+- `site-studio/public/css/ops-tokens.css`
+- `site-studio/public/css/ops-jobs.css`
+- `site-studio/public/js/ops-jobs.js`
+- `tests/ops/{freshness-derivation,stale-cannot-inflate-live,destructive-action-gate,cross-link-integrity}.test.js`
+- `tests/ops/fixtures/synthetic-ledgers.js`
+
+### Files modified
+
+- `site-studio/server.js` — mounts `/api/ops` router
+- `site-studio/public/index.html` — links new CSS, adds sidebar nav item, adds tab pane, loads ops-jobs.js
+- `site-studio/public/js/studio-shell.js` — registers `ops` tab in `initTabs()`
+
+### Standing rule introduced
+
+Any read endpoint under `/api/ops/*` MUST wrap its data in the snapshot
+envelope `{snapshot_version, generated_at, source_ledgers, record_count, data}`.
+Any destructive command MUST refuse without a governance token.
+
+### Known gaps opened
+
+- **Studio launchd boot is broken on this branch** — `site-studio/server.js`
+  requires `./lib/{shay-shay-sessions,logger,openai-image-adapter}.js` which
+  have never been tracked in git and don't exist in the working tree.
+  Studio cannot start under launchd until someone restores them. The
+  Ops API and Jobs tab were verified by spinning up an isolated Express
+  server in-process; live in-Studio verification + Playwright proof are
+  blocked on this pre-existing breakage. NOT caused by this work.
+- **WebSocket `/ws/ops` not implemented.** Reconcile contract is documented
+  in `state-contract.md`; Jobs tab polls every 5s in MVP.
+- **Real governance token issuance deferred.** Destructive endpoints accept
+  the placeholder `OPS_DEV_BYPASS_DO_NOT_SHIP` only; production token
+  flow comes in a later commit.
+- **Cross-link schema not back-filled.** `origin_job_id`, `promoted_to_task_id`,
+  `promoted_from`, `converted_to_task_id`, `reviews_record_id` will be
+  written by new commands; existing records do not have them.
+- **Sub-tabs other than Jobs render placeholder text.** Pulse, Plans,
+  Tasks, Runs, Proofs, Agents, Reviews, Gaps, Memory, Debt all show
+  "coming soon" in MVP per plan scope.
+- **Memory tab is a stub.** Will consume `lib/famtastic/memory/recall.js`
+  in a follow-up commit.
+- **Inspector "log tail" and dependency graph are placeholders.** Real
+  log tail wiring depends on the deferred WS channel.
 ---
 
 ## 2026-05-05 — Agent coordination + brain→memory migration

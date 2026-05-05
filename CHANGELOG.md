@@ -1,5 +1,36 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — Ops Workspace MVP shipped
+
+Shipped Phase 0 of the Operations Workspace inside the Workbench shell:
+the source-of-truth matrix and freshness derivation table now live as
+contracts in `docs/ops/state-contract.md` plus the single implementation in
+`site-studio/lib/ops-freshness.js`, and `scripts/ops/inventory.js` writes
+dated debt snapshots (first one committed for 2026-05-05). Wired
+`/api/ops/{jobs,runs,tasks,plans,proofs,gaps,memory,reviews,debt,needsMe}`
+read endpoints with snapshot-versioned envelopes, plus a destructive-action
+gate on `POST /api/ops/command/:action`. Built the Jobs tab UI (seven
+swimlanes, Stale Debt drawer, slide-over inspector) — polls every 5s; WS
+deferred. 15 ops tests green (`tests/ops/`). Pre-existing breakage on the
+branch — `site-studio/lib/{shay-shay-sessions,logger,openai-image-adapter}.js`
+have never been tracked in git and Studio refuses to boot under launchd
+without them — blocks live UI verification; logged as a known gap.
+
+## 2026-05-05 — Site Studio Resend notifications configured
+
+Configured Site Studio itself to send notification email through Resend using `notifications.email` in `~/.config/famtastic/studio-config.json` and the existing `vault://studio.resend.api_key`. Added `fam-hub platform configure-resend`, `fam-hub platform send-test-email`, reusable `site-studio/lib/studio-mailer.js`, and proof at `proofs/studio-resend-notification-2026-05-05.json`. A real test email was accepted by Resend from `FAMtastic Site Studio <studio@send.mbsh96reunion.com>` to the configured Studio email. Deferred: verify a FAMtastic-owned sender domain such as `send.famtastic.com`; the current domain is functional but temporary.
+
+## 2026-05-05 — Site Studio service auth ownership
+
+Added Studio-owned service auth commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`. Existing local Resend, cPanel, and MBSH production DB credentials/refs were migrated into the platform vault without committing secrets, Resend API access was verified, and lower platform helpers now prefer `studio.*` provider vault IDs. MBSH deploy proof and task state now treat the reunion site as a consumer of Studio-provisioned services rather than the provider account owner. Remaining blockers are production `API_BASE_URL` generation, cPanel DNS/addon-domain automation coverage or provider UI fallback, and SSH host-key trust for backend deploy smoke.
+
+## 2026-05-05 — Reporting density made configurable
+
+Added `config/reporting-preferences.json` as the project-level response/reporting density config and `docs/operating-rules/reporting-density.md` as the operating rule. Added `fam-hub report style` to show or set `compact`, `standard`, and `detail` density. Default is `compact`; proof standards and blocker visibility do not change.
+
+## 2026-05-05 — MBSH launch blockers grouped
+
+Grouped the remaining MBSH work into one launch unblock packet at `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`. Closed the media/story blocker by adding all seven referenced story JPGs to the v2 deploy repo, adding `frontend/assets/story/RIGHTS-MANIFEST.md`, and saving Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete. Remaining MBSH launch work is the live deploy proof, blocked by external Netlify/DNS/GoDaddy/PHP/MySQL/Resend/backend config access and production `API_BASE_URL`.## 2026-05-05 — Chat Capture / Tag / Learn / Optimize pipeline (MVP shipped)
 ## 2026-05-05 — Agent coordination + brain→memory migration
 Installed `AGENT-COORDINATION.md` and `scripts/agent-checkin.js` to prevent the
 parallel-implementation problem (today: cowork built `.brain/` while Claude Code
@@ -13,7 +44,6 @@ auto-pruning are deferred.
 ## 2026-05-05 — Chat Capture / Tag / Learn / Optimize pipeline (MVP shipped)
 
 Built a working capture → tag → promote → use → optimize loop end-to-end. New plan `plan_2026_05_05_chat_capture_learn_optimize` (label: `chat-capture-learn-optimize`, tags: platform-upgrades, memory, shay-shay, intelligence, ledgers). Capture adapters (manual, claude-code, cowork, codex), gated promoter with auto-allowlist (confidence>=0.85 + type in {vendor-fact, do-not-repeat, bug-pattern}), per-entry markdown store at `memory/<type>/<id>.md`, INDEX.json, append-only telemetry at `memory/usage.jsonl`, retriever, Shay context provider (with prefixed + bare facet matching), and weekly digest with auto-promote-to-candidate (NOT auto-active). Verified end-to-end against a synthetic transcript: 15 extracts → 4 auto-promoted → recall + Shay block return them with correct facets → digest produces a clean report. Deferred: cron schedule for digest; adversarial review loop for memory promotions (depends on Ops plan's loop); smarter extract classifier to reduce near-duplicate matches.
-
 
 ## 2026-05-05 — Operations Workspace GUI plan registered
 

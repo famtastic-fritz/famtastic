@@ -7,6 +7,7 @@ const { execFileSync } = require('child_process');
 const MANIFEST_PATH = path.join(process.env.HOME, '.local', 'share', 'famtastic', 'capability-manifest.json');
 const REGISTRY_PATH = path.join(__dirname, '..', 'config', 'studio-capabilities.json');
 const SETTINGS_PATH = path.join(process.env.HOME || '~', '.config', 'famtastic', 'studio-config.json');
+const PLATFORM_VAULT = path.join(process.env.HOME || '~', 'famtastic', 'platform', 'vault', 'vault.sh');
 
 function readStudioSettings() {
   try {
@@ -28,6 +29,28 @@ function getConfiguredSecret(envKeys, settingsKeys) {
     if (key && settings && settings[key]) return settings[key];
   }
   return '';
+}
+
+function hasVaultSecret(secretId) {
+  try {
+    if (!fs.existsSync(PLATFORM_VAULT)) return false;
+    execFileSync(PLATFORM_VAULT, ['read', secretId], { stdio: 'ignore', timeout: 3000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function hasStudioNotificationEmail() {
+  try {
+    const settings = readStudioSettings();
+    return settings.notifications?.email?.provider === 'resend'
+      && settings.notifications.email.enabled === true
+      && Boolean(settings.notifications.email.from_email)
+      && hasVaultSecret('studio.resend.api_key');
+  } catch {
+    return false;
+  }
 }
 
 function resolveApiStatus(brainKey, envKey, settingsKey) {
@@ -126,6 +149,13 @@ function buildBaseCapabilities(netlify) {
     firefly_web: 'partial',
     adobe_photoshop_mcp: 'partial',
     adobe_premiere_mcp: 'partial',
+    studio_service_auth: hasVaultSecret('studio.resend.api_key') || hasVaultSecret('studio.cpanel.api_token') ? 'partial' : 'unavailable',
+    studio_resend: hasVaultSecret('studio.resend.api_key') ? 'available' : 'unavailable',
+    studio_email_notifications: hasStudioNotificationEmail() ? 'available' : 'unavailable',
+    studio_database: hasVaultSecret('studio.db.admin_password') || hasVaultSecret('studio.cpanel.api_token') ? 'partial' : 'unavailable',
+    studio_netlify: hasVaultSecret('studio.netlify.auth_token') || ((netlify && netlify.ok) ? true : false) ? 'available' : 'unavailable',
+    studio_cpanel: hasVaultSecret('studio.cpanel.api_token') ? 'available' : 'unavailable',
+    studio_dns: hasVaultSecret('studio.godaddy.api_key') && hasVaultSecret('studio.godaddy.api_secret') ? 'available' : 'unavailable',
     surgical_editor: 'available',
     revenue_brief: 'available',
     gap_logger: 'available',

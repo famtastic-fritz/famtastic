@@ -1,0 +1,14 @@
+{"ts":"2026-05-05T16:31:50Z","capability":"studio.bootstrap-services","args":{"mode":"check"},"result":"manual_required","manual_required":3}
+{"ts":"2026-05-05T16:32:01Z","capability":"studio.bootstrap-services","args":{"mode":"apply"},"result":"manual_required","manual_required":2}
+{"ts":"2026-05-05T16:32:26Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":3}
+{"ts":"2026-05-05T16:32:46Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":2}
+{"ts":"2026-05-05T16:36:23Z","capability":"studio.bootstrap-services","args":{"mode":"apply"},"result":"manual_required","manual_required":2}
+{"ts":"2026-05-05T16:36:41Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":2}
+{"ts":"2026-05-05T16:36:42Z","capability":"studio.bootstrap-services","args":{"mode":"check"},"result":"manual_required","manual_required":2}
+{"ts":"2026-05-05T16:39:20Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":2}
+{"ts":"2026-05-05T16:39:20Z","capability":"studio.bootstrap-services","args":{"mode":"check"},"result":"manual_required","manual_required":2}
+{"ts":"2026-05-05T16:44:25Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":1}
+{"ts":"2026-05-05T16:44:26Z","capability":"studio.bootstrap-services","args":{"mode":"check"},"result":"manual_required","manual_required":1}
+{"ts":"2026-05-05T17:12:56Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion-v2","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json"},"result":"passed","blocked_checks":0}
+{"ts":"2026-05-05T17:35:48Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-2026-05-05.json"},"result":"passed_with_blockers","blocked_checks":1}
+{"ts":"2026-05-05T17:38:27Z","capability":"studio.provision-site","args":{"site":"mbsh-reunion","mode":"check","proof":"/Users/famtasticfritz/famtastic/proofs/studio-service-auth-mbsh-reunion-2026-05-05.json"},"result":"passed","blocked_checks":0}

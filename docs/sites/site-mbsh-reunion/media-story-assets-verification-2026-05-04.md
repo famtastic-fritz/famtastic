@@ -4,7 +4,23 @@ Task: `task-2026-05-04-028`
 Scope: `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2` plus MBSH docs/briefs.  
 Write boundary: this proof artifact only.
 
-## Verdict
+## 2026-05-05 Update
+
+**Resolved for launch-safe generated/derivative media.** The seven referenced
+`frontend/assets/story/*.jpg` files now exist in the v2 deploy repo, and
+rights/provenance are documented at
+`/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/RIGHTS-MANIFEST.md`.
+
+Proof:
+
+- `/Users/famtasticfritz/famtastic/proofs/mbsh-story-assets-2026-05-05.json`
+- `/Users/famtasticfritz/famtastic/proofs/mbsh-story-assets-2026-05-05.png`
+
+This closes the missing-file launch blocker for `task-2026-05-04-028`. Future
+archival/crowd-sourced replacement media still needs its own attribution and
+approval log.
+
+## Original 2026-05-04 Verdict
 
 **Blocked for complete story/gallery/media readiness.** The v2 site has verified brand, mascot, and hero/background media assets, and those assets are wired into the hero, shared footer/header marks, chatbot, RSVP, ticket, and 404 surfaces. However, the active Story and Through the Years gallery/timeline markup references seven `frontend/assets/story/*.jpg` files that do not exist in v2. The story directory is intentionally empty except for `.gitkeep`, and `.gitignore` excludes story still image work, so these visuals will render blank/broken until generated/copied and committed or otherwise deployed.
 

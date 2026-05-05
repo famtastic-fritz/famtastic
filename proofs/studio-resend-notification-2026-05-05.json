@@ -1,0 +1,18 @@
+{
+  "proof_id": "proof-2026-05-05-003",
+  "type": "studio_resend_notification",
+  "status": "passed_with_domain_gap",
+  "verified_at": "2026-05-05",
+  "commands": [
+    "fam-hub platform configure-resend",
+    "fam-hub platform send-test-email"
+  ],
+  "service_owner": "site_studio",
+  "provider": "resend",
+  "api_key_ref": "vault://studio.resend.api_key",
+  "configured_sender": "FAMtastic Site Studio <studio@send.mbsh96reunion.com>",
+  "reply_to": "fritz.medine@gmail.com",
+  "test_recipient": "fritz.medine@gmail.com",
+  "resend_message_id": "05555add-5e3f-41fd-baec-b5c4c3cf82c4",
+  "current_gap": "Studio can send through Resend now, but it is temporarily using the only verified sending domain available in Resend. Verify a FAMtastic-owned sending domain such as send.famtastic.com for long-term Studio notifications."
+}

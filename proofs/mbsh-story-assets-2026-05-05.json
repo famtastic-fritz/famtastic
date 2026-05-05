@@ -1,0 +1,59 @@
+{
+  "checked_at": "2026-05-05T16:03:40.766Z",
+  "root": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend",
+  "pages": [
+    {
+      "file": "index.html",
+      "refs": [
+        {
+          "ref": "assets/story/then-1996-hallway.jpg",
+          "width": 1366,
+          "height": 900,
+          "backgroundImage": "url(\"file:///Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/then-1996-hallway.jpg\")"
+        },
+        {
+          "ref": "assets/story/now-miami-beach.jpg",
+          "width": 1366,
+          "height": 900,
+          "backgroundImage": "url(\"file:///Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/now-miami-beach.jpg\")"
+        }
+      ]
+    },
+    {
+      "file": "through-years.html",
+      "refs": [
+        {
+          "ref": "assets/story/era-1926-1959.jpg",
+          "width": 776,
+          "height": 485,
+          "backgroundImage": "url(\"file:///Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/era-1926-1959.jpg\")"
+        },
+        {
+          "ref": "assets/story/era-1960-1979.jpg",
+          "width": 776,
+          "height": 485,
+          "backgroundImage": "url(\"file:///Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/era-1960-1979.jpg\")"
+        },
+        {
+          "ref": "assets/story/era-1980s.jpg",
+          "width": 776,
+          "height": 485,
+          "backgroundImage": "url(\"file:///Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/era-1980s.jpg\")"
+        },
+        {
+          "ref": "assets/story/era-1996.jpg",
+          "width": 776,
+          "height": 485,
+          "backgroundImage": "url(\"file:///Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/era-1996.jpg\")"
+        },
+        {
+          "ref": "assets/story/era-2026.jpg",
+          "width": 776,
+          "height": 485,
+          "backgroundImage": "url(\"file:///Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/assets/story/era-2026.jpg\")"
+        }
+      ]
+    }
+  ],
+  "missing": []
+}

@@ -1,0 +1,62 @@
+/* site-studio/public/css/ops-tokens.css
+ * Record-type visual language for the Ops Workspace.
+ * One color, one glyph, one chip class per record type.
+ * See plan.json ws_record_visual_language.
+ */
+:root {
+  --ops-color-plan:    #6366f1; /* indigo */
+  --ops-color-task:    #64748b; /* slate  */
+  --ops-color-job:     #f59e0b; /* amber  */
+  --ops-color-run:     #06b6d4; /* cyan   */
+  --ops-color-proof:   #10b981; /* emerald*/
+  --ops-color-gap:     #fb7185; /* coral  */
+  --ops-color-memory:  #8b5cf6; /* violet */
+  --ops-color-review:  #f97316; /* red-orange */
+
+  --ops-bg-elevated: #14171c;
+  --ops-bg-card:     #1a1d23;
+  --ops-border:      #2a2e36;
+  --ops-text:        #e6e7eb;
+  --ops-text-2:      #9ba1a8;
+  --ops-text-3:      #6b7079;
+
+  --ops-radius:      8px;
+  --ops-radius-sm:   4px;
+}
+
+.ops-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.04);
+  color: var(--ops-text-2);
+  line-height: 1;
+}
+.ops-chip-glyph { font-size: 11px; line-height: 1; }
+
+.ops-chip--plan   { color: var(--ops-color-plan);   border-color: color-mix(in srgb, var(--ops-color-plan) 35%, transparent); background: color-mix(in srgb, var(--ops-color-plan) 12%, transparent); }
+.ops-chip--task   { color: var(--ops-color-task);   border-color: color-mix(in srgb, var(--ops-color-task) 35%, transparent); background: color-mix(in srgb, var(--ops-color-task) 12%, transparent); }
+.ops-chip--job    { color: var(--ops-color-job);    border-color: color-mix(in srgb, var(--ops-color-job) 35%, transparent);  background: color-mix(in srgb, var(--ops-color-job) 12%,  transparent); }
+.ops-chip--run    { color: var(--ops-color-run);    border-color: color-mix(in srgb, var(--ops-color-run) 35%, transparent);  background: color-mix(in srgb, var(--ops-color-run) 12%,  transparent); }
+.ops-chip--proof  { color: var(--ops-color-proof);  border-color: color-mix(in srgb, var(--ops-color-proof) 35%, transparent);background: color-mix(in srgb, var(--ops-color-proof) 12%,transparent); }
+.ops-chip--gap    { color: var(--ops-color-gap);    border-color: color-mix(in srgb, var(--ops-color-gap) 35%, transparent);  background: color-mix(in srgb, var(--ops-color-gap) 12%,  transparent); }
+.ops-chip--memory { color: var(--ops-color-memory); border-color: color-mix(in srgb, var(--ops-color-memory) 35%, transparent); background: color-mix(in srgb, var(--ops-color-memory) 12%, transparent); }
+.ops-chip--review { color: var(--ops-color-review); border-color: color-mix(in srgb, var(--ops-color-review) 35%, transparent); background: color-mix(in srgb, var(--ops-color-review) 12%, transparent); }
+
+.ops-freshness-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  display: inline-block;
+  background: var(--ops-text-3);
+}
+.ops-freshness-dot--live     { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+.ops-freshness-dot--idle     { background: #facc15; }
+.ops-freshness-dot--stale    { background: #fb923c; }
+.ops-freshness-dot--parked   { background: #94a3b8; }
+.ops-freshness-dot--archived { background: #475569; }
