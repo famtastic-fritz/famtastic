@@ -1,5 +1,106 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Studio Boot Stubs for Missing Lib Modules (2026-05-05)
+
+Studio refused to boot under launchd because three modules required by
+`site-studio/server.js` had never been committed and were absent from the
+working tree:
+
+- `site-studio/lib/shay-shay-sessions.js` — required at server.js:36
+- `site-studio/lib/logger.js` — required at server.js:45
+- `site-studio/lib/openai-image-adapter.js` — required at server.js:11341
+
+Additionally, `site-studio/lib/tool-handlers.js` was missing four exports
+(`setPatchAppliedNotifier`, `setCurrentShayContext`, `isStudioTierAvailable`,
+`getStudioTierResolver`) referenced from server.js.
+
+Minimal stubs were written so Studio can boot. Each stub is marked
+`// TEMPORARY STUB — pending restoration of original implementation`.
+Behavioral notes:
+
+- `shay-shay-sessions.js`: in-memory `Map`, no persistence across restarts.
+  Sessions reset on every Studio restart.
+- `logger.js`: in-memory ring buffer of 1000 request lines, lost on restart;
+  no disk persistence.
+- `openai-image-adapter.js`: `pickProvider()` works; `editImage()` and
+  `generateImage()` throw a clear error — OpenAI image gen is non-functional
+  until the real adapter is restored. Google/Imagen path unaffected.
+- `tool-handlers.js`: appended no-op exports. `isStudioTierAvailable()`
+  returns `false`, so Studio Tier features behave as unavailable.
+
+Verified Studio boots: `curl http://localhost:3334/api/health` → 200 OK,
+`/api/ops/jobs` → 200 with seven-lane snapshot (PR #6 Ops MVP intact).
+
+### Known Gaps opened
+
+- **OpenAI image generation disabled.** `lib/openai-image-adapter.js` is a
+  stub; calls to `editImage`/`generateImage` throw. Restore the original
+  adapter implementation to re-enable the OpenAI image path.
+- **Shay-Shay sessions do not persist across Studio restarts.** Original
+  `lib/shay-shay-sessions.js` likely had richer state and persistence;
+  current stub is a plain in-memory Map.
+- **Studio Tier always reports unavailable.** `isStudioTierAvailable()` stub
+  returns false, gating off any Studio Tier-only branches in server.js.
+- **Patch-applied notifier and Shay context setter are no-ops.** Until the
+  real `tool-handlers.js` exports are restored, these signals are dropped
+  silently.
+
+## Site Studio Resend Notifications (2026-05-05)
+
+Site Studio can now send its own notification emails through Resend. The
+platform command `fam-hub platform configure-resend` writes
+`notifications.email` into `~/.config/famtastic/studio-config.json` with
+`provider: resend`, `api_key_ref: vault://studio.resend.api_key`, and sender
+identity `FAMtastic Site Studio`. `fam-hub platform send-test-email` uses
+`site-studio/lib/studio-mailer.js` and
+`site-studio/scripts/send-studio-test-email.js` to send through Resend without
+printing or committing the API key.
+
+Proof: `proofs/studio-resend-notification-2026-05-05.json`. Resend accepted a
+real test email from `FAMtastic Site Studio <studio@send.mbsh96reunion.com>` to
+the configured Studio email address.
+
+Known gap: the only verified Resend sending domain currently available is
+`send.mbsh96reunion.com`, so Studio notifications are functional but using a
+temporary sender domain. Long-term Studio/platform notifications should verify a
+FAMtastic-owned domain such as `send.famtastic.com` and rerun
+`fam-hub platform configure-resend --domain send.famtastic.com`.
+
+## Site Studio Service Auth Ownership (2026-05-05)
+
+Provider authentication now belongs to Site Studio/platform, not to generated
+sites. `fam-hub platform bootstrap-services` wraps
+`platform/capabilities/studio/bootstrap-services.sh` to check Netlify, Resend,
+cPanel/GoDaddy, DNS, DB, and SSH readiness; it migrates discoverable local
+secrets into the platform vault without printing values and writes non-secret
+`service_auth` references into `~/.config/famtastic/studio-config.json`.
+
+`fam-hub platform provision-site <site> --check --proof` wraps
+`platform/capabilities/studio/provision-site.sh` and verifies that a generated
+site consumes Studio-owned services instead of owning provider accounts. MBSH
+is the first proof: Resend API, cPanel API token, the MBSH production DB
+password, and the MBSH production DB reference were migrated into
+Studio/platform vault IDs; Resend verified via API; the proof packet lives at
+`proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json`.
+
+For the current GoDaddy-hosted stack, cPanel UAPI/MCP is the primary
+hosting/DB/DNS control plane. GoDaddy developer API keys are optional
+registrar/direct-DNS fallback, not the credential to chase by default. Lower
+platform helpers now prefer Studio-owned vault IDs (`studio.*`) for Resend,
+cPanel/GoDaddy, and Netlify auth, with legacy ID fallback only for old local
+setups. New provider wiring should use Studio IDs exclusively.
+
+### Known Gaps opened or preserved
+
+- `config/site-config.json` in the MBSH v2 deploy repo still has
+  `API_BASE_URL: null` until Studio generates it from the provisioned backend
+  origin.
+- DNS/addon-domain automation still needs cPanel UAPI/MCP wrapper coverage; do
+  not block on GoDaddy developer API keys unless direct registrar DNS becomes
+  the chosen fallback.
+- SSH to `nineoo@FAMTASTICINC.COM` is blocked by host-key verification and
+  must be repaired once outside generated site ownership.
+
 ## Consolidated Execution Checklist (2026-05-04)
 
 Created `plans/consolidated-execution-checklist-2026-05-04.md` as the working

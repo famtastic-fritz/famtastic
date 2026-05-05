@@ -270,4 +270,22 @@ async function handleLogGap(input) {
   }
 }
 
-module.exports = { handleToolCall, initToolHandlers };
+// TEMPORARY STUB ADDITIONS — pending restoration of original implementation.
+// These exports are referenced by server.js but were never present in the
+// committed version of this file. They are no-ops that preserve the call
+// surface so Studio can boot. See SITE-LEARNINGS.md "Known Gaps".
+let _patchAppliedNotifier = null;
+let _currentShayContext = null;
+function setPatchAppliedNotifier(fn) { _patchAppliedNotifier = typeof fn === 'function' ? fn : null; }
+function setCurrentShayContext(ctx) { _currentShayContext = ctx || null; }
+function isStudioTierAvailable() { return false; }
+function getStudioTierResolver() { return () => ({ tier: 'lite', available: false }); }
+
+module.exports = {
+  handleToolCall,
+  initToolHandlers,
+  setPatchAppliedNotifier,
+  setCurrentShayContext,
+  isStudioTierAvailable,
+  getStudioTierResolver,
+};
