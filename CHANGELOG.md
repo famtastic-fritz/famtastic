@@ -2,7 +2,7 @@
 
 ## 2026-05-05 — Site Studio service auth ownership
 
-Added Studio-owned service auth commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`. Existing local Resend, cPanel, and MBSH production DB credentials/refs were migrated into the platform vault without committing secrets, Resend API access was verified, and lower platform helpers now prefer `studio.*` provider vault IDs. MBSH deploy proof and task state now treat the reunion site as a consumer of Studio-provisioned services rather than the provider account owner. Remaining blockers are production `API_BASE_URL` generation, DNS API/manual DNS, and SSH host-key trust for backend deploy smoke.
+Added Studio-owned service auth commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`. Existing local Resend, cPanel, and MBSH production DB credentials/refs were migrated into the platform vault without committing secrets, Resend API access was verified, and lower platform helpers now prefer `studio.*` provider vault IDs. MBSH deploy proof and task state now treat the reunion site as a consumer of Studio-provisioned services rather than the provider account owner. Remaining blockers are production `API_BASE_URL` generation, cPanel DNS/addon-domain automation coverage or provider UI fallback, and SSH host-key trust for backend deploy smoke.
 
 ## 2026-05-05 — Reporting density made configurable
 

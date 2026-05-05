@@ -29,9 +29,12 @@ Studio-level provider secrets use Studio IDs:
 - `studio.resend.api_key`
 - `studio.cpanel.api_token`
 - `studio.netlify.auth_token`
-- `studio.godaddy.api_key`
-- `studio.godaddy.api_secret`
 - `studio.db.admin_password`
+
+For the current GoDaddy-hosted stack, `studio.cpanel.api_token` is the primary
+hosting/DB/DNS control credential. `studio.godaddy.api_key` and
+`studio.godaddy.api_secret` are optional registrar/direct-DNS fallback refs, not
+the required default path.
 
 Generated site credentials use site references:
 
@@ -57,12 +60,14 @@ Remaining blockers:
 
 - `config/site-config.json` still has `API_BASE_URL: null` until Studio
   generates the production API origin after backend provisioning.
-- GoDaddy DNS API credentials are not vaulted; DNS may remain a necessary
-  provider/manual step.
+- DNS/addon-domain automation still needs cPanel UAPI/MCP wrapper coverage;
+  until then, DNS may remain a necessary cPanel/GoDaddy UI step.
 - SSH to `nineoo@FAMTASTICINC.COM` is blocked by host-key verification.
 
 ## Rule
 
 Do not create future site-specific provider ownership plans for Netlify,
-Resend, DNS, cPanel, SSH, or database admin credentials. Add capability gaps to
-the Studio/platform layer, then let generated sites consume those capabilities.
+Resend, DNS, cPanel, SSH, or database admin credentials. Do not ask for GoDaddy
+developer API keys when cPanel is the working control plane. Add capability gaps
+to the Studio/platform layer, then let generated sites consume those
+capabilities.

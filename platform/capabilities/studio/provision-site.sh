@@ -150,10 +150,12 @@ else
   manual_required "Store or migrate the Studio cPanel API token."
 fi
 
-if vault_has "studio.godaddy.api_key" && vault_has "studio.godaddy.api_secret"; then
-  add_check "studio.godaddy.dns_api" "present" "DNS records can be automated"
+if vault_has "studio.cpanel.api_token"; then
+  add_check "studio.dns_control" "primary" "Use cPanel UAPI/MCP for DNS/hosting operations; GoDaddy API is optional fallback"
+elif vault_has "studio.godaddy.api_key" && vault_has "studio.godaddy.api_secret"; then
+  add_check "studio.dns_control" "fallback" "Direct GoDaddy DNS API refs are vaulted"
 else
-  add_check "studio.godaddy.dns_api" "missing" "DNS may remain provider/manual until API credentials exist"
+  add_check "studio.dns_control" "missing" "No cPanel token or direct DNS fallback refs found"
 fi
 
 if [[ -n "$email_domain" ]]; then

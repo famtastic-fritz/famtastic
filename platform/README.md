@@ -13,7 +13,7 @@ Stop thinking site-by-site. Think platform-by-capability. FAMtastic isn't a seri
 | `platform site add <tag>` | local fs + git | ✓ orchestrates the others below |
 | `platform db add <site> <env>` | GoDaddy MariaDB via cpanel-mcp | ✓ wraps cpanel-mcp + helper script |
 | `platform db apply-schema <site> <env>` | SSH → mysql CLI on GoDaddy | ✓ skips phpMyAdmin entirely |
-| `platform dns register-subdomain <site> <subdomain>` | GoDaddy Zone Editor | ⚠ stub — manual step printed (cpanel-mcp coverage gap) |
+| `platform dns register-subdomain <site> <subdomain>` | cPanel UAPI / GoDaddy Zone Editor | ⚠ stub — manual step printed until cPanel DNS wrapper is added |
 | `platform email verify-resend-domain <site>` | Resend API | ⚠ stub — manual DKIM dance until Resend domain create+verify auto-loops |
 | `platform deploy connect-netlify <site>` | Netlify | ⚠ stub — manual UI flow today (Netlify connect step has no clean API) |
 | `platform deploy backend <site>` | rsync + SSH | ✓ rsync to public_html + verify endpoint reachable |
@@ -34,12 +34,14 @@ Fritz only sees decision points (which committee password to use, which DB tier,
 ## Site Studio service ownership
 
 Provider relationships belong to Site Studio/platform, not to generated sites.
-Netlify, Resend, cPanel/GoDaddy, DNS, SSH, and DB administrator credentials are
-stored as Studio-owned service refs such as `studio.resend.api_key`,
-`studio.cpanel.api_token`, `studio.netlify.auth_token`, and
-`studio.godaddy.api_key`. A site receives only logical references and generated
-runtime config, for example `sites/<tag>/db_password.production` and
-`sites/<tag>/netlify_site_id`.
+Netlify, Resend, cPanel, DNS, SSH, and DB administrator credentials are stored
+as Studio-owned service refs such as `studio.resend.api_key`,
+`studio.cpanel.api_token`, and `studio.netlify.auth_token`. For the current
+GoDaddy-hosted stack, cPanel UAPI/MCP is the primary hosting/DB/DNS control
+plane; GoDaddy developer API keys are optional registrar/direct-DNS fallback,
+not the default credential to chase. A site receives only logical references
+and generated runtime config, for example `sites/<tag>/db_password.production`
+and `sites/<tag>/netlify_site_id`.
 
 Use:
 
@@ -76,7 +78,7 @@ Or via `fam-hub platform <capability> <subcommand>` once wired into the unified 
 - 1Password integration (today: macOS keychain)
 - Netlify connect via API (today: manual UI flow)
 - cPanel cron registration via API (today: manual UI flow)
-- DNS Zone Editor record CRUD via API (today: manual + cpanel-mcp partial)
+- DNS Zone Editor/addon-domain CRUD through cPanel UAPI/MCP (today: manual wrapper gap)
 - Resend domain create+verify auto-loop with DKIM record auto-add (today: manual DKIM dance)
 - Per-site quotas and budget enforcement (today: trust-based)
 - Capability authorization model — who/what can invoke which capability against which site

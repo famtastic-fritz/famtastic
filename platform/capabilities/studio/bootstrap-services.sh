@@ -109,9 +109,18 @@ config.service_auth = {
     site_id_ref_pattern: 'vault://sites/<tag>/netlify_site_id',
   },
   godaddy: {
+    role: 'registrar_or_direct_dns_fallback',
     api_key_ref: 'vault://studio.godaddy.api_key',
     api_secret_ref: 'vault://studio.godaddy.api_secret',
     cpanel_api_token_ref: 'vault://studio.cpanel.api_token',
+  },
+  dns: {
+    primary_control_plane: 'cpanel_uapi',
+    primary_token_ref: 'vault://studio.cpanel.api_token',
+    direct_registrar_fallback_refs: [
+      'vault://studio.godaddy.api_key',
+      'vault://studio.godaddy.api_secret',
+    ],
   },
   ssh: {
     identity_ref_pattern: 'vault://studio.ssh.<host>.identity_file',
@@ -162,14 +171,19 @@ check_resend() {
 }
 
 check_cpanel_and_dns() {
-  check_or_migrate_secret "studio.cpanel.api_token" "$CPANEL_ENV" "CPANEL_API_TOKEN" || {
-    manual_required "Create or retrieve one cPanel API token for Site Studio, then store it as studio.cpanel.api_token."
-  }
-  if vault_has "studio.godaddy.api_key" && vault_has "studio.godaddy.api_secret"; then
-    emit_status "studio.godaddy.dns_api" "present" "platform vault"
+  local has_cpanel=false
+  if check_or_migrate_secret "studio.cpanel.api_token" "$CPANEL_ENV" "CPANEL_API_TOKEN"; then
+    has_cpanel=true
   else
-    emit_status "studio.godaddy.dns_api" "missing" "DNS API credentials not vaulted"
-    manual_required "If GoDaddy API access is available, store studio.godaddy.api_key and studio.godaddy.api_secret; otherwise DNS stays manual."
+    manual_required "Create or retrieve one cPanel API token for Site Studio, then store it as studio.cpanel.api_token."
+  fi
+  if [[ "$has_cpanel" == true || $(vault_has "studio.cpanel.api_token" && echo yes || echo no) == "yes" ]]; then
+    emit_status "studio.cpanel.dns_control" "primary" "cPanel UAPI/MCP token is the preferred DNS/hosting control path"
+  fi
+  if vault_has "studio.godaddy.api_key" && vault_has "studio.godaddy.api_secret"; then
+    emit_status "studio.godaddy.dns_api" "optional_present" "registrar/direct-DNS fallback"
+  else
+    emit_status "studio.godaddy.dns_api" "optional_missing" "not required when cPanel is the working control plane"
   fi
 }
 

@@ -17,18 +17,21 @@ password, and the MBSH production DB reference were migrated into
 Studio/platform vault IDs; Resend verified via API; the proof packet lives at
 `proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json`.
 
-Lower-level platform helpers now prefer Studio-owned vault IDs (`studio.*`) for
-Resend, GoDaddy DNS, and Netlify auth, with legacy ID fallback only for old
-local setups. New provider wiring should use Studio IDs exclusively.
+For the current GoDaddy-hosted stack, cPanel UAPI/MCP is the primary
+hosting/DB/DNS control plane. GoDaddy developer API keys are optional
+registrar/direct-DNS fallback, not the credential to chase by default. Lower
+platform helpers now prefer Studio-owned vault IDs (`studio.*`) for Resend,
+cPanel/GoDaddy, and Netlify auth, with legacy ID fallback only for old local
+setups. New provider wiring should use Studio IDs exclusively.
 
 ### Known Gaps opened or preserved
 
 - `config/site-config.json` in the MBSH v2 deploy repo still has
   `API_BASE_URL: null` until Studio generates it from the provisioned backend
   origin.
-- GoDaddy DNS API credentials are not vaulted, so DNS may remain a necessary
-  provider/manual step until `studio.godaddy.api_key` and
-  `studio.godaddy.api_secret` exist.
+- DNS/addon-domain automation still needs cPanel UAPI/MCP wrapper coverage; do
+  not block on GoDaddy developer API keys unless direct registrar DNS becomes
+  the chosen fallback.
 - SSH to `nineoo@FAMTASTICINC.COM` is blocked by host-key verification and
   must be repaired once outside generated site ownership.
 
