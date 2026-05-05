@@ -1,5 +1,40 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Consolidated Execution Checklist (2026-05-04)
+
+Created `plans/consolidated-execution-checklist-2026-05-04.md` as the working
+plan consolidation artifact after Fritz rejected the stale Total Ask shape as
+daily operating truth. The checklist keeps four active parent plans:
+`studio-workbench-foundation`, `plan-task-run-intelligence`,
+`build-intent-fulfillment-trace`, and `site-mbsh-reunion`. The stale
+`docs/famtastic-total-ask-plan.md` is now treated as strategy context to mine,
+not as a fifth active plan.
+
+### Product/process decisions captured
+
+- **Four parent plans are enough.** Extra documents become evidence,
+  child workstreams, promoted tasks, or parked context.
+- **Total Ask is cannibalized, not obeyed.** Keep the capture flywheel,
+  Shay identity/context, Studio family model, workflow-as-data, pipeline
+  visualizer, three site workflows, long-context fixes, and audit harnesses;
+  discard stale completion claims as execution authority.
+- **Media is Media Studio.** The checklist reinforces the frozen UI rule:
+  prompt-first creation is the primary center work surface, with the library
+  and tools supporting the work rather than becoming the work.
+- **Real Studio testing is mandatory.** Studio behavior must be verified via
+  Playwright-driven Site Studio UI flows and actual Shay/Shay-Shay calls where
+  the feature is a Shay behavior.
+
+### Known Gaps opened or preserved
+
+- `plans/registry.json` still needs the actual four-parent rewrite.
+- `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`
+  still need promoted records.
+- `FAMTASTIC-STATUS.md` still needs automatic regeneration from the
+  consolidated registry and ledgers.
+- The Workbench prototype still needs to be rebuilt against the frozen
+  workspace contract before it becomes the default shell.
+
 ## Plan Consolidation Verification (2026-05-04)
 
 Created `plans/consolidation-verification-2026-05-04.md` as a proposal to

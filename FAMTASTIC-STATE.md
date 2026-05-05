@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-05-04 (Studio UI Foundation frozen — canonical rulebook, workspace contract, decision ledger entry, approved capture packet, and freeze handoff.)
+**Last updated:** 2026-05-04 (Consolidated execution checklist added — four active parent plans, Total Ask absorbed as strategy context, and registry rewrite still pending.)
 
 ---
 
@@ -12,6 +12,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Key recent milestones:**
 
+- **2026-05-04** — Consolidated execution checklist. Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four-plan consolidation artifact. The surviving parent plans are `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`; `docs/famtastic-total-ask-plan.md` is parked as strategy context and mined for useful asks. Deferred: actually rewriting `plans/registry.json`, promoting P0 tasks into `tasks/tasks.jsonl`, adding run/proof records, and regenerating `FAMTASTIC-STATUS.md`.
 - **2026-05-04** — Plan consolidation verification proposal. Added `plans/consolidation-verification-2026-05-04.md` to reduce the current 11 same-level plan records into 4 active parent plans, 1 parked strategy context, and 6 merged/closed evidence records. The registry itself is not mutated yet; approval is required before rewriting `plans/registry.json`, archiving merged records, or promoting embedded tasks into `tasks/tasks.jsonl`.
 - **2026-05-04** — Studio UI Foundation freeze. Fritz approved `docs/STUDIO-UI-FOUNDATION.md` as the canonical Site Studio UI rulebook. The freeze locks the domain-level left nav, purpose-reactive workspaces, ambient Shay model, Fritz filter, Night visual system, page rule, required workspace contract, prompt-first Media Studio direction, contextual tools, and plan-then-approve pattern. Added `docs/decisions.jsonl`, `captures/inbox/2026-05-04-studio-ui-foundation-freeze.capture.json`, and `handoffs/studio-ui-foundation-freeze-2026-05-04.md`. Deferred: rebuilding the Workbench prototype from the frozen contract, registry-backed Plan mode, Shay context provider registration, and Media Studio unification.
 - **2026-05-04** — Plan registry CLI substrate. Added `plans/registry.json` as the pilot canonical plan registry, three density contracts under `plans/templates/`, empty append-only ledgers for tasks/runs/jobs/proof/research, `FAMTASTIC-STATUS.md` for web/phone mirrors, and `docs/plan-registry-build-report-2026-05-04.md`. `scripts/fam-hub` now has read-only `plan`, `task`, and `run` status commands: `fam-hub plan list`, `fam-hub plan list --compact`, `fam-hub plan list --json`, `fam-hub plan show <id>`, `fam-hub task list`, and `fam-hub run status`. Deferred: task promotion, run creation, automatic status export, schema validation, and Studio Plans panel rendering.
@@ -254,7 +255,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Deferred Tier-1 hot list (UX polish) | Tier 3 | Shay Desk chat scroll, max-width, redundant buttons. Batch in dedicated UI session per outstanding plan. |
 | Plan packets / multi-agent plan board | Tier 1 | File-based first plan exists at `plans/plan_2026_05_04_shay_process_intelligence/`, but Studio has no first-class Plan Builder / Plan Board UI, no SQLite `plan_id` / `workstream_id` fields, and no automatic conversion from captured conversation to grouped jobs. |
 | Process Map / Recipe Map visualization | Tier 1 | Build trace and fulfillment ledger foundations exist, but no visual surface yet shows recipe steps, run traces, decision provenance, provider/model choices, token/cost details, research refs, verification, and follow-up jobs. |
-| Plan consolidation approval | Tier 1 | `plans/consolidation-verification-2026-05-04.md` proposes reducing 11 plan records to 4 active parent plans plus parked/evidence records, but `plans/registry.json` is intentionally unchanged until Fritz approves the rewrite. |
+| Plan consolidation registry rewrite | Tier 1 | `plans/consolidated-execution-checklist-2026-05-04.md` defines the desired four active parent plans and absorbs useful Total Ask items, but `plans/registry.json` is intentionally unchanged until Fritz approves applying the rewrite. |
 | Workbench frozen-contract rebuild | Tier 1 | `docs/STUDIO-UI-FOUNDATION.md` is frozen, but the production-linked Workbench prototype still needs to be rebuilt against the required workspace contract before it can become the default Studio shell. |
 | Workbench registry wiring | Tier 1 | Workbench Foundation is reachable from production Studio and standalone, but Plan mode still uses static data instead of `plans/registry.json`, task/run ledgers, or live job state. |
 | Workbench Shay context provider | Tier 2 | Workbench is not registered in `ShayContextRegistry` yet, so Shay cannot directly act on selected Workbench scope/object/tool state. |
@@ -435,6 +436,7 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 | `.local/research-effectiveness.json` | Research source effectiveness scores. |
 | `plans/consolidation-2026-05-04.json` | Proposed parent-lane consolidation for active plans; not yet applied to `plans/registry.json`. |
 | `plans/consolidation-verification-2026-05-04.md` | Verification proposal to reduce 11 same-level plan records into 4 active parent plans, 1 parked strategy context, and merged/closed evidence records. Pending Fritz approval before registry mutation. |
+| `plans/consolidated-execution-checklist-2026-05-04.md` | Working four-plan execution checklist that parks the stale Total Ask as strategy context and maps remaining P0/P1/P2 asks to `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`. |
 | `docs/STUDIO-UI-FOUNDATION.md` | Frozen canonical Site Studio UI foundation and required workspace contract. Supersedes prior shell/layout proposals that conflict with the domain-level left nav, purpose-reactive workspaces, ambient Shay, Fritz filter, Night visual system, prompt-first Media Studio, contextual tools, or plan-then-approve. |
 | `docs/decisions.jsonl` | Append-only UI/product decision ledger seeded with the Studio UI Foundation freeze decision. |
 | `captures/inbox/2026-05-04-workbench-foundation.capture.json` | Proposed intelligence-loop capture packet for Workbench foundation decisions, complaints, research sources, gaps, and promotion targets. |

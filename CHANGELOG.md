@@ -405,3 +405,7 @@ Fritz approved `docs/STUDIO-UI-FOUNDATION.md` as the frozen canonical Site Studi
 ## 2026-05-04 — Plan consolidation verification proposal
 
 Added `plans/consolidation-verification-2026-05-04.md` after reviewing the 11-record plan registry, source-file existence, and empty task/run/proof ledgers. The proposal recommends 4 active parent plans, 1 parked strategy context, and 6 merged/closed evidence records so Workbench and Shay can reason from fewer authoritative plans. Deferred: mutating `plans/registry.json`, archiving merged records, and promoting task/run/proof ledger entries until Fritz approves the consolidation.
+
+## 2026-05-04 — Consolidated execution checklist
+
+Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four-plan consolidation artifact. The checklist parks the stale Total Ask Plan as strategy context, maps useful asks into `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`, and prioritizes remaining work into P0/P1/P2 buckets. Deferred: applying the registry rewrite, promoting ledger tasks, adding run/proof records, and regenerating the status mirror.
