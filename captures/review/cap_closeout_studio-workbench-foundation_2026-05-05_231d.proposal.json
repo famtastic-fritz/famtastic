@@ -1,0 +1,32 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_closeout_studio-workbench-foundation_2026-05-05_231d",
+  "from_capture": "cap_closeout_studio-workbench-foundation_2026-05-05_231d",
+  "created_at": "2026-05-05T23:15:44.041Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "rule/workbench-shell-is-the-chassis-new-domains-mount-as-left-rai",
+      "type": "rule",
+      "title": "Workbench shell is the chassis; new domains mount as left-rail entries",
+      "body": "The frozen seven-domain Workbench shell is the canonical UI rulebook. Any new product domain (Ops, Build, Plan, etc.) mounts inside it as a left-rail entry rather than launching its own shell.",
+      "facets": [
+        "platform",
+        "ui-shell",
+        "workspace:workbench"
+      ],
+      "confidence": 0.92,
+      "lifecycle": "active",
+      "source_capture": "cap_closeout_studio-workbench-foundation_2026-05-05_231d",
+      "evidence": [
+        "closeout:studio-workbench-foundation:2026-05-05T23:30:00.000Z",
+        "docs/STUDIO-UI-FOUNDATION.md",
+        "docs/sites/site-mbsh-reunion/cowork-audit-001/"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "type 'rule' not in allowlist {vendor-fact, do-not-repeat, bug-pattern}"
+    }
+  ],
+  "review_status": "pending",
+  "approver": "auto-allowlist",
+  "approved_at": "2026-05-05T23:15:44.060Z"
+}

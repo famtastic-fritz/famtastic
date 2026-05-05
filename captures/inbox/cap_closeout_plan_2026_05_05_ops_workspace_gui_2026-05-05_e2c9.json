@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-05_e2c9",
+  "created_at": "2026-05-05T23:15:43.843Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/plan_2026_05_05_ops_workspace_gui/closeouts/2026-05-05-checkpoint_complete.json",
+    "timestamp_range": {
+      "start": "2026-05-05T23:30:00.000Z",
+      "end": "2026-05-05T23:30:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for plan_2026_05_05_ops_workspace_gui (verdict: checkpoint_complete). 2 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "decision",
+      "text": "Ops freshness is derived from existing status + age, not stored as parallel field",
+      "rationale": "Per Phase 0 state contract, freshness (live|idle|stale|parked|archived) is computed from (record_type, status, age_seconds) using the freshness_derivation_table baked into plan.json. Never stored alongside existing status fields.",
+      "evidence": [
+        "closeout:plan_2026_05_05_ops_workspace_gui:2026-05-05T23:30:00.000Z",
+        "3d76488",
+        "tests/ops/*.test.js"
+      ],
+      "facets": [
+        "ops",
+        "platform",
+        "ledgers"
+      ],
+      "confidence": 0.92,
+      "candidate_id": "decision/ops-freshness-is-derived-from-existing-status-age-not-stored"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "rule",
+      "text": "Ops command endpoints with destructive scope require governance token",
+      "rationale": "POST /api/ops/command/{purge,cancel,archive,migrate,promote} return 403 without a governance approval token matching plans/registry.json governance.hard_stop_conditions.",
+      "evidence": [
+        "closeout:plan_2026_05_05_ops_workspace_gui:2026-05-05T23:30:00.000Z",
+        "3d76488",
+        "tests/ops/*.test.js"
+      ],
+      "facets": [
+        "ops",
+        "governance",
+        "security"
+      ],
+      "confidence": 0.9,
+      "candidate_id": "rule/ops-command-endpoints-with-destructive-scope-require-governa"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "WebSocket /ws/ops channel with reconcile contract",
+    "Real governance token issuance (currently dev-bypass token only)",
+    "Pulse, Plans, Tasks, Runs, Proofs, Agents, Reviews, Gaps, Memory, Debt sub-tabs (placeholders only in MVP)",
+    "Memory tab consumes lib/famtastic/memory/recall.js",
+    "Cross-link schema migrations (origin_job_id, promoted_to_task_id) on existing ledger records"
+  ]
+}

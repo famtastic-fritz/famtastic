@@ -1,0 +1,31 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_closeout_plan-task-run-intelligence_2026-05-05_1720",
+  "from_capture": "cap_closeout_plan-task-run-intelligence_2026-05-05_1720",
+  "created_at": "2026-05-05T23:15:43.661Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "decision/ledger-substrate-uses-jsonl-json-registry-not-sqlite",
+      "type": "decision",
+      "title": "Ledger substrate uses JSONL + JSON registry, not SQLite",
+      "body": "Plans live in plans/registry.json and per-plan plan.json files; tasks/runs/proofs live in JSONL files. Chosen for git-friendliness and human-readability over query speed.",
+      "facets": [
+        "platform",
+        "ledgers"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_closeout_plan-task-run-intelligence_2026-05-05_1720",
+      "evidence": [
+        "closeout:plan-task-run-intelligence:2026-05-05T23:30:00.000Z",
+        "plans/consolidated-execution-checklist-2026-05-04.md",
+        "FAMTASTIC-STATUS.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "type 'decision' not in allowlist {vendor-fact, do-not-repeat, bug-pattern}"
+    }
+  ],
+  "review_status": "pending",
+  "approver": "auto-allowlist",
+  "approved_at": "2026-05-05T23:15:43.683Z"
+}

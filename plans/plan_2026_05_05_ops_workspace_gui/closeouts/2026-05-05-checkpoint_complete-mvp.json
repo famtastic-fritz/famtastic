@@ -1,0 +1,70 @@
+{
+  "plan_id": "plan_2026_05_05_ops_workspace_gui",
+  "verdict": "checkpoint_complete",
+  "phase": "mvp",
+  "fixed": [],
+  "added": [
+    "Phase 0 state contract + source-of-truth matrix + freshness derivation table",
+    "Inventory script (scripts/ops/inventory.js) + first snapshot",
+    "Test substrate: 5 test files, 15/15 passing under node --test",
+    "API surface: 10 GET endpoints + command gate with destructive-action policy",
+    "Jobs tab UI: 7 swimlanes + Stale Debt drawer + slide-over inspector + 5s polling",
+    "Record-type visual language tokens (8 types: PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW)"
+  ],
+  "proved": [
+    "15/15 tests passing under node --test",
+    "API endpoints return wrapped envelope with snapshot_version + generated_at + source_ledgers + record_count",
+    "Three-round adversarial review (Claude author / Codex reviewer) ran on the plan before implementation"
+  ],
+  "remaining_work": [
+    "WebSocket /ws/ops channel with reconcile contract",
+    "Real governance token issuance (currently dev-bypass token only)",
+    "Pulse, Plans, Tasks, Runs, Proofs, Agents, Reviews, Gaps, Memory, Debt sub-tabs (placeholders only in MVP)",
+    "Memory tab consumes lib/famtastic/memory/recall.js",
+    "Cross-link schema migrations (origin_job_id, promoted_to_task_id) on existing ledger records"
+  ],
+  "evidence": [
+    {
+      "type": "commit",
+      "ref": "3d76488",
+      "note": "PR #6 merge — Ops MVP"
+    },
+    {
+      "type": "test_run",
+      "ref": "tests/ops/*.test.js",
+      "note": "15 tests passing"
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "decision",
+      "title": "Ops freshness is derived from existing status + age, not stored as parallel field",
+      "body": "Per Phase 0 state contract, freshness (live|idle|stale|parked|archived) is computed from (record_type, status, age_seconds) using the freshness_derivation_table baked into plan.json. Never stored alongside existing status fields.",
+      "facets": [
+        "ops",
+        "platform",
+        "ledgers"
+      ],
+      "confidence": 0.92
+    },
+    {
+      "type": "rule",
+      "title": "Ops command endpoints with destructive scope require governance token",
+      "body": "POST /api/ops/command/{purge,cancel,archive,migrate,promote} return 403 without a governance approval token matching plans/registry.json governance.hard_stop_conditions.",
+      "facets": [
+        "ops",
+        "governance",
+        "security"
+      ],
+      "confidence": 0.9
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-05-06-005",
+    "task-2026-05-06-006",
+    "task-2026-05-06-007"
+  ],
+  "schema_version": "1.0",
+  "verdict_at": "2026-05-05T23:30:00.000Z",
+  "verdict_by": "claude-code"
+}

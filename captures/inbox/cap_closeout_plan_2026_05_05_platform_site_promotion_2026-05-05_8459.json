@@ -1,0 +1,44 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_plan_2026_05_05_platform_site_promotion_2026-05-05_8459",
+  "created_at": "2026-05-05T23:15:43.905Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/plan_2026_05_05_platform_site_promotion/closeouts/2026-05-05-needs_tasking.json",
+    "timestamp_range": {
+      "start": "2026-05-05T23:30:00.000Z",
+      "end": "2026-05-05T23:30:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for plan_2026_05_05_platform_site_promotion (verdict: needs_tasking). 1 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "decision",
+      "text": "Single Netlify project per site (not two) — branch deploys handle staging",
+      "rationale": "Decided against a separate <tag>-staging Netlify project. One Netlify project per site, with native branch deploys serving staging at <tag>--staging.netlify.app and the production branch (main) serving the custom domain. Simpler, matches Netlify native pattern.",
+      "evidence": [
+        "closeout:plan_2026_05_05_platform_site_promotion:2026-05-05T23:30:00.000Z",
+        "plans/plan_2026_05_05_platform_site_promotion/plan.json"
+      ],
+      "facets": [
+        "vendor:netlify",
+        "deploy",
+        "platform"
+      ],
+      "confidence": 0.92,
+      "candidate_id": "decision/single-netlify-project-per-site-not-two-branch-deploys-handl"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "platform/capabilities/site/promote.sh — dev→staging→main with date-based release tags",
+    "platform/capabilities/site/rollback.sh — revert to previous or named tag",
+    "Assisted-manual UI pattern (open vendor URL + poll for completion)",
+    "Apply to MBSH as first user"
+  ]
+}

@@ -40,7 +40,6 @@
     "studio-workbench-foundation",
     "plan-task-run-intelligence",
     "build-intent-fulfillment-trace",
-    "site-mbsh-reunion",
     "plan_2026_05_05_ops_workspace_gui",
     "plan_2026_05_05_platform_site_promotion",
     "plan_2026_05_05_chat_capture_learn_optimize",
@@ -49,47 +48,85 @@
   "labels": {
     "plan_2026_05_05_platform_site_promotion": {
       "label": "site-promotion",
-      "tags": ["platform-upgrades", "deploy", "release-management", "rollback"],
+      "tags": [
+        "platform-upgrades",
+        "deploy",
+        "release-management",
+        "rollback"
+      ],
       "role": "substrate",
       "note": "Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven."
     },
     "studio-workbench-foundation": {
       "label": "workbench-foundation",
-      "tags": ["platform-upgrades", "studio-ui", "shell", "workbench"],
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "shell",
+        "workbench"
+      ],
       "role": "chassis",
       "note": "The Workbench shell (left rail, center workspace, Shay-Shay drawer) hosting all domain workspaces."
     },
     "plan-task-run-intelligence": {
       "label": "plan-task-run",
-      "tags": ["platform-upgrades", "ledgers", "intelligence", "capture"],
+      "tags": [
+        "platform-upgrades",
+        "ledgers",
+        "intelligence",
+        "capture"
+      ],
       "role": "substrate",
       "note": "Plan/task/run/proof ledger substrate and capture promotion. Underlies every domain that needs durable state."
     },
     "build-intent-fulfillment-trace": {
       "label": "build-trace",
-      "tags": ["platform-upgrades", "build-pipeline", "tracing"],
+      "tags": [
+        "platform-upgrades",
+        "build-pipeline",
+        "tracing"
+      ],
       "role": "substrate",
       "note": "Build intent classification, fulfillment trace, and workflow data for the Build domain."
     },
     "site-mbsh-reunion": {
       "label": "site-mbsh",
-      "tags": ["site-execution", "reunion"],
+      "tags": [
+        "site-execution",
+        "reunion"
+      ],
       "role": "site-project",
       "note": "Per-site execution plan; consumes the platform substrates above."
     },
     "plan_2026_05_05_ops_workspace_gui": {
       "label": "ops-workspace-gui",
-      "tags": ["platform-upgrades", "studio-ui", "ops", "shay-shay", "agent-management"],
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "ops",
+        "shay-shay",
+        "agent-management"
+      ],
       "role": "domain",
       "parent_plan": "studio-workbench-foundation",
-      "depends_on": ["plan-task-run-intelligence"],
+      "depends_on": [
+        "plan-task-run-intelligence"
+      ],
       "note": "Ops domain mounted inside the Workbench shell as the ◆ Ops left-rail entry. Shell from workbench-foundation; ledgers from plan-task-run."
     },
     "plan_2026_05_05_chat_capture_learn_optimize": {
       "label": "chat-capture-learn-optimize",
-      "tags": ["platform-upgrades", "memory", "shay-shay", "intelligence", "ledgers"],
+      "tags": [
+        "platform-upgrades",
+        "memory",
+        "shay-shay",
+        "intelligence",
+        "ledgers"
+      ],
       "role": "substrate",
-      "feeds_into": ["plan_2026_05_05_ops_workspace_gui"],
+      "feeds_into": [
+        "plan_2026_05_05_ops_workspace_gui"
+      ],
       "note": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read."
     },
     "plan_2026_05_05_agent_coordination": {
@@ -100,7 +137,9 @@
         "multi-agent"
       ],
       "role": "governance",
-      "depends_on": ["plan_2026_05_05_chat_capture_learn_optimize"],
+      "depends_on": [
+        "plan_2026_05_05_chat_capture_learn_optimize"
+      ],
       "note": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate."
     }
   },
@@ -442,5 +481,11 @@
       ]
     }
   ],
-  "latest_triage": "plans/remaining-plan-triage-2026-05-05.md"
+  "latest_triage": "plans/remaining-plan-triage-2026-05-05.md",
+  "terminated_parent_ids": {
+    "site-mbsh-reunion": {
+      "verdict": "completed",
+      "terminated_at": "2026-05-05T23:15:43.966Z"
+    }
+  }
 }

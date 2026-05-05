@@ -213,3 +213,18 @@ surfaces independently solve the same problem in incompatible ways
 
 <!-- studio-context-include -->
 @STUDIO-CONTEXT.md
+
+## Plan Closeout Rule (Non-Negotiable)
+
+No plan may stay `status: active` with zero open tasks for more than one
+session. At session end, run `node scripts/plans/audit.js`. For every plan
+in drift, ship one of:
+- A closeout packet (`completed`, `parked`, `superseded`) via
+  `node scripts/plans/closeout.js apply <packet.json>`
+- A checkpoint packet (`checkpoint_complete`) — phase ended, plan continues
+- New tasks (`needs_tasking`) — packet must include `next_task_ids[]`
+
+Schema: `plans/CLOSEOUT-SCHEMA.md`. Packets land at
+`plans/<plan-id>/closeouts/<date>-<verdict>.json`. Terminal verdicts
+auto-remove the plan from `active_parent_ids`. Memory candidates in the
+packet auto-flow into the chat-capture pipeline.

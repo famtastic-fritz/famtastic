@@ -1,0 +1,49 @@
+{
+  "plan_id": "plan-task-run-intelligence",
+  "verdict": "checkpoint_complete",
+  "phase": "substrate",
+  "fixed": [],
+  "added": [
+    "Four-parent registry, task ledger, run ledger, proof ledger",
+    "fam-hub plan review, task promote, run start commands",
+    "fam-hub capture extract for review-only capture packets",
+    "FAMTASTIC-STATUS.md and Workbench plan-state mirror as manual status packets"
+  ],
+  "proved": [
+    "Ledger substrate populated with real records (34 tasks, 1 run, 28 proofs as of 2026-05-05)"
+  ],
+  "remaining_work": [
+    "Automatic status-packet regeneration from source ledgers",
+    "Reviewed capture-packet promotion into canonical memory (PARTIALLY SOLVED by chat-capture-learn-optimize MVP)"
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/consolidated-execution-checklist-2026-05-04.md",
+      "note": "consolidated checklist"
+    },
+    {
+      "type": "doc",
+      "ref": "FAMTASTIC-STATUS.md",
+      "note": "status packet"
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "decision",
+      "title": "Ledger substrate uses JSONL + JSON registry, not SQLite",
+      "body": "Plans live in plans/registry.json and per-plan plan.json files; tasks/runs/proofs live in JSONL files. Chosen for git-friendliness and human-readability over query speed.",
+      "facets": [
+        "platform",
+        "ledgers"
+      ],
+      "confidence": 0.88
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-05-06-003"
+  ],
+  "schema_version": "1.0",
+  "verdict_at": "2026-05-05T23:30:00.000Z",
+  "verdict_by": "claude-code"
+}

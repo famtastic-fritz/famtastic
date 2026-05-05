@@ -5673,3 +5673,11 @@ and merges cowork's `.brain/` content into the canonical store.
   like "memory" until scope-locks are declared on every active branch.
 - Per-surface branch naming convention deferred — too small a sample to
   lock today.
+
+## Memory promotion (2026-05-05) — vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda
+
+**Type:** vendor-fact | **Facets:** vendor:cpanel, vendor:godaddy, deploy, site-execution
+
+cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting
+
+See `memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda.md`.

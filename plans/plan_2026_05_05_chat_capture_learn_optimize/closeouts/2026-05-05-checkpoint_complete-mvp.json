@@ -1,0 +1,73 @@
+{
+  "plan_id": "plan_2026_05_05_chat_capture_learn_optimize",
+  "verdict": "checkpoint_complete",
+  "phase": "mvp",
+  "fixed": [],
+  "added": [
+    "Capture pipeline: 4 source adapters (manual, claude-code, cowork, codex)",
+    "Memory taxonomy: 9 types + facet vocabulary + lifecycle states",
+    "Promoter with auto-allowlist (confidence>=0.85 + type in {vendor-fact, do-not-repeat, bug-pattern})",
+    "Per-entry markdown store at memory/<type>/<id>.md",
+    "Retriever (lib/famtastic/memory/recall.js) and Shay context provider (lib/shay/memory-context.js)",
+    "Telemetry log at memory/usage.jsonl",
+    "Weekly digest (scripts/memory-digest.js) with auto-promote-to-candidate for high-recurrence patterns"
+  ],
+  "proved": [
+    "4 entries auto-promoted to active from synthetic transcript (test-session 2026-05-05)",
+    "30 brain-migration entries land as candidates per agent-coordination work",
+    "Recall returns scoped entries; Shay context block populates correctly for site/plan/workspace facets",
+    "Digest produces clean ~/PENDING-REVIEW.md report with no false-stale flags"
+  ],
+  "remaining_work": [
+    "Cron schedule for memory-digest.js (Mon 9am)",
+    "Adversarial review loop applied to memory promotions",
+    "Smarter classifier to reduce near-duplicate type matches"
+  ],
+  "evidence": [
+    {
+      "type": "commit",
+      "ref": "a9e6c5b",
+      "note": "PR #3 merge — chat-capture pipeline"
+    },
+    {
+      "type": "doc",
+      "ref": "captures/SCHEMA.md",
+      "note": "v0.2 capture-packet schema"
+    },
+    {
+      "type": "doc",
+      "ref": "memory/TAXONOMY.md",
+      "note": "type + facet + lifecycle taxonomy"
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "rule",
+      "title": "Memory store uses per-entry markdown with YAML frontmatter, not SQLite",
+      "body": "Per D4 from chat-capture-learn-optimize plan: memory/<type>/<id>.md with YAML frontmatter is the canonical format. Git-friendly, diffable, human-readable. SQLite layer added only if query patterns demand it later.",
+      "facets": [
+        "memory",
+        "platform"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "type": "rule",
+      "title": "Memory telemetry is local-only, configurable disable",
+      "body": "memory/usage.jsonl is append-only and never transmitted off-device. Disable entirely with MEMORY_TELEMETRY=off env var.",
+      "facets": [
+        "memory",
+        "security",
+        "governance"
+      ],
+      "confidence": 0.92
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-05-06-011",
+    "task-2026-05-06-012"
+  ],
+  "schema_version": "1.0",
+  "verdict_at": "2026-05-05T23:30:00.000Z",
+  "verdict_by": "claude-code"
+}

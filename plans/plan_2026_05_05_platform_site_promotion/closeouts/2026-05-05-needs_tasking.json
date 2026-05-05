@@ -1,0 +1,43 @@
+{
+  "plan_id": "plan_2026_05_05_platform_site_promotion",
+  "verdict": "needs_tasking",
+  "fixed": [],
+  "added": [
+    "Plan registered with corrected single-Netlify-project model and assisted-manual capability pattern (caught during plan review)"
+  ],
+  "proved": [],
+  "remaining_work": [
+    "platform/capabilities/site/promote.sh — dev→staging→main with date-based release tags",
+    "platform/capabilities/site/rollback.sh — revert to previous or named tag",
+    "Assisted-manual UI pattern (open vendor URL + poll for completion)",
+    "Apply to MBSH as first user"
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/plan_2026_05_05_platform_site_promotion/plan.json",
+      "note": "plan with design corrections logged"
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "decision",
+      "title": "Single Netlify project per site (not two) — branch deploys handle staging",
+      "body": "Decided against a separate <tag>-staging Netlify project. One Netlify project per site, with native branch deploys serving staging at <tag>--staging.netlify.app and the production branch (main) serving the custom domain. Simpler, matches Netlify native pattern.",
+      "facets": [
+        "vendor:netlify",
+        "deploy",
+        "platform"
+      ],
+      "confidence": 0.92
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-05-06-008",
+    "task-2026-05-06-009",
+    "task-2026-05-06-010"
+  ],
+  "schema_version": "1.0",
+  "verdict_at": "2026-05-05T23:30:00.000Z",
+  "verdict_by": "claude-code"
+}
