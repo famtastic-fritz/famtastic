@@ -359,7 +359,11 @@ IDEAHELP
     case "$CAPTURECMD" in
       extract)
         shift 2 || true
-        node "$SCRIPT_DIR/capture-insights.js" extract "$@"
+        if [[ "${1:-}" == "--source" ]]; then
+          node "$SCRIPT_DIR/session-capture.js" "$@"
+        else
+          node "$SCRIPT_DIR/capture-insights.js" extract "$@"
+        fi
         ;;
       help|*)
         cat <<'CAPTUREHELP'
@@ -367,11 +371,44 @@ fam-hub capture — Review-only knowledge capture
 
 Usage:
   fam-hub capture extract <source-file> [--out-dir captures/review] [--id capture-id]
+  fam-hub capture extract --source <claude-code|cowork|codex|manual> --input <path> [--session-id <id>]
 
 Extracts design decisions, breakthroughs, gaps, lessons, and contradictions
 into a review packet. It does not write canonical memory files.
 
 CAPTUREHELP
+        ;;
+    esac
+    ;;
+
+  memory)
+    MEMCMD="${2:-help}"
+    case "$MEMCMD" in
+      review)
+        shift 2 || true
+        node "$SCRIPT_DIR/memory-promote.js" review "$@"
+        ;;
+      promote)
+        shift 2 || true
+        node "$SCRIPT_DIR/memory-promote.js" promote "$@"
+        ;;
+      list-auto-eligible)
+        shift 2 || true
+        node "$SCRIPT_DIR/memory-promote.js" list-auto-eligible "$@"
+        ;;
+      help|*)
+        cat <<'MEMORYHELP'
+fam-hub memory — Review and promote captured knowledge
+
+Usage:
+  fam-hub memory review <capture-id-or-path>
+  fam-hub memory promote <proposal-id-or-path> [--auto] [--dry-run]
+  fam-hub memory list-auto-eligible <proposal-id-or-path>
+
+Capture packets live in captures/inbox/. Review writes proposals to captures/review/.
+Promotion writes canonical memory entries only after the promoter gate allows it.
+
+MEMORYHELP
         ;;
     esac
     ;;
@@ -979,6 +1016,84 @@ STUDIOHELP
     esac
     ;;
 
+  platform)
+    PLATFORMCMD="${2:-help}"
+    case "$PLATFORMCMD" in
+      bootstrap-services)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio bootstrap-services "$@"
+        ;;
+      configure-resend)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio configure-resend "$@"
+        ;;
+      send-test-email)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio send-test-email "$@"
+        ;;
+      provision-site)
+        SITE_ARG="${3:-}"
+        if [ -z "$SITE_ARG" ]; then
+          echo "Usage: fam-hub platform provision-site <site> [--check] [--proof]" >&2
+          exit 1
+        fi
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" studio provision-site "$@"
+        ;;
+      list|capabilities)
+        "$HUB_ROOT/platform/famtastic-platform" list
+        ;;
+      vault)
+        shift 2 || true
+        "$HUB_ROOT/platform/famtastic-platform" vault "$@"
+        ;;
+      site|db|dns|email|deploy|cron|cors|smoke)
+        shift 1 || true
+        "$HUB_ROOT/platform/famtastic-platform" "$@"
+        ;;
+      help|*)
+        cat <<'PLATFORMHELP'
+fam-hub platform — Site Studio service capabilities
+
+Usage:
+  fam-hub platform deploy backend <site>
+      Deploy a site's backend to the configured hosting target.
+
+  fam-hub platform db apply-schema <site> <env>
+      Apply a site's schema to the configured database.
+
+  fam-hub platform email verify-resend-domain <site>
+      Verify the site's Resend sender domain.
+
+  fam-hub platform cron register <site>
+      Register site cron jobs.
+
+  fam-hub platform cors lockdown <site> <env>
+      Lock backend CORS to known production/staging origins.
+
+  fam-hub platform smoke test <site>
+      Smoke-test deployed backend endpoints.
+
+  fam-hub platform bootstrap-services [--check]
+      Check or bootstrap Studio-owned Netlify, Resend, DB, DNS, cPanel, and SSH auth.
+
+  fam-hub platform configure-resend [--check]
+      Configure Site Studio's own Resend sender for notifications.
+
+  fam-hub platform send-test-email [recipient]
+      Send a Site Studio notification test email through Resend.
+
+  fam-hub platform provision-site <site> [--check] [--proof]
+      Verify a generated site consumes Studio-owned services instead of owning providers.
+
+  fam-hub platform vault <read|write|list|remove> ...
+      Access the platform vault through the unified CLI.
+
+PLATFORMHELP
+        ;;
+    esac
+    ;;
+
   # --- Admin ---
   admin)
     ADMINCMD="${2:-help}"
@@ -1082,6 +1197,8 @@ Multi-Agent Workflow:
   fam-hub convo reconcile <tag>     Reconcile multi-agent conversation
   fam-hub ingest <tag> {md|json}    Ingest content
   fam-hub capture extract <file>     Produce review-only knowledge packet
+  fam-hub platform bootstrap-services Check Studio-owned service auth
+  fam-hub platform provision-site <s> Check generated-site service wiring
 
 Admin:
   fam-hub admin doctor              Check dependencies

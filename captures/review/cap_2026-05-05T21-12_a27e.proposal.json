@@ -1,0 +1,284 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_2026-05-05T21-12_a27e",
+  "from_capture": "cap_2026-05-05T21-12_a27e",
+  "created_at": "2026-05-05T21:12:14.763Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "decision/decision-persistent-staging-and-production-environments",
+      "type": "decision",
+      "title": "## Decision: persistent staging and production environments",
+      "body": "## Decision: persistent staging and production environments",
+      "facets": [],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "decision/we-decided-that-mbsh-should-keep-persistent-staging-and-production-netlify-envir",
+      "type": "decision",
+      "title": "We decided that MBSH should keep persistent staging and production Netlify environments",
+      "body": "We decided that MBSH should keep persistent staging and production Netlify environments. Staging deploys the `staging` branch to `mbsh-reunion-staging`; production deploys the `main` branch to the public production Netlify project and custom domain. Promotion should happen by branch flow and Netlify deploy history, not by deleting staging or changing DNS for frontend rollbacks.",
+      "facets": [
+        "vendor:netlify",
+        "deploy"
+      ],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "decision/decision-site-studio-owns-service-capability-relationships",
+      "type": "decision",
+      "title": "## Decision: Site Studio owns service capability relationships",
+      "body": "## Decision: Site Studio owns service capability relationships",
+      "facets": [],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "learning/learning-netlify-project-names-can-mislead-deploy-reasoning",
+      "type": "learning",
+      "title": "## Learning: Netlify project names can mislead deploy reasoning",
+      "body": "## Learning: Netlify project names can mislead deploy reasoning",
+      "facets": [
+        "vendor:netlify",
+        "deploy"
+      ],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "rule/the-production-project-was-named-loquacious-valkyrie-37d5f8-while-the-staging-pr",
+      "type": "rule",
+      "title": "The production project was named `loquacious-valkyrie-37d5f8`, while the staging project was named `",
+      "body": "The production project was named `loquacious-valkyrie-37d5f8`, while the staging project was named `mbsh-reunion-staging`. The production project was already GitHub-linked to `famtastic-fritz/mbsh-reunion` on `main`; the staging project was initially unlinked and later connected to the same repo on `staging`. Deploy verification must key off site id, repo path, repo branch, and latest deploy commit, not project name alone.",
+      "facets": [
+        "vendor:github",
+        "deploy"
+      ],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "vendor-fact/vendor-fact-cpanel-addon-domain-repaired-api-dns-and-vhost-routing-in-this-godad",
+      "type": "vendor-fact",
+      "title": "## Vendor fact: cPanel addon domain repaired API DNS and vhost routing in this GoDaddy-hosted accoun",
+      "body": "## Vendor fact: cPanel addon domain repaired API DNS and vhost routing in this GoDaddy-hosted account",
+      "facets": [
+        "vendor:godaddy",
+        "vendor:cpanel"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    },
+    {
+      "canonical_id": "vendor-fact/api",
+      "type": "vendor-fact",
+      "title": "`api",
+      "body": "`api.mbsh96reunion.com` initially did not resolve and forced backend smoke to fall back to `https://FAMTASTICINC.COM`. Creating the cPanel addon/vhost for `api.mbsh96reunion.com` mapped it to `/home/nineoo/public_html` and caused GoDaddy authoritative DNS to return `107.180.51.234`. The repair required both DNS and Apache vhost routing; an A record alone would have hit the wrong vhost.",
+      "facets": [
+        "vendor:godaddy",
+        "vendor:cpanel"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    },
+    {
+      "canonical_id": "vendor-fact/vendor-fact-this-cpanel-account-does-not-expose-autossl",
+      "type": "vendor-fact",
+      "title": "## Vendor fact: this cPanel account does not expose AutoSSL",
+      "body": "## Vendor fact: this cPanel account does not expose AutoSSL",
+      "facets": [
+        "vendor:cpanel"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    },
+    {
+      "canonical_id": "vendor-fact/cpanel-returned-you-do-not-have-the-feature-autossl-for-autossl-checks",
+      "type": "vendor-fact",
+      "title": "cPanel returned `You do not have the feature \"autossl\"` for AutoSSL checks",
+      "body": "cPanel returned `You do not have the feature \"autossl\"` for AutoSSL checks. The working path was Let's Encrypt HTTP-01 through temporary challenge files uploaded by cPanel Fileman, followed by cPanel `SSL/install_ssl` for `api.mbsh96reunion.com`.",
+      "facets": [
+        "vendor:cpanel"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    },
+    {
+      "canonical_id": "bug-pattern/bug-pattern-platform-smoke-runner-failed-only-after-canonical-dns-succeeded",
+      "type": "bug-pattern",
+      "title": "## Bug pattern: platform smoke runner failed only after canonical DNS succeeded",
+      "body": "## Bug pattern: platform smoke runner failed only after canonical DNS succeeded",
+      "facets": [
+        "platform"
+      ],
+      "confidence": 0.85,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'bug-pattern' is in allowlist"
+    },
+    {
+      "canonical_id": "bug-pattern/when-smoke-no-longer-fell-back-to-httpsfamtasticinc",
+      "type": "bug-pattern",
+      "title": "When smoke no longer fell back to `https://FAMTASTICINC",
+      "body": "When smoke no longer fell back to `https://FAMTASTICINC.COM`, `platform/capabilities/smoke/test-endpoints.sh` hit `CURL_SSL_ARGS[@]: unbound variable` on macOS Bash with `set -u`. The fix was to initialize the array with a harmless curl arg (`-q`) and override to `-k` only for the fallback host.",
+      "facets": [
+        "platform"
+      ],
+      "confidence": 0.85,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'bug-pattern' is in allowlist"
+    },
+    {
+      "canonical_id": "gap/gap-api-certificate-renewal-is-not-automated",
+      "type": "gap",
+      "title": "## Gap: API certificate renewal is not automated",
+      "body": "## Gap: API certificate renewal is not automated",
+      "facets": [],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "vendor-fact/the-manually-issued-lets-encrypt-certificate-for-api",
+      "type": "vendor-fact",
+      "title": "The manually issued Let's Encrypt certificate for `api",
+      "body": "The manually issued Let's Encrypt certificate for `api.mbsh96reunion.com` expires on `2026-08-03`. Site Studio needs a certificate-renewal capability for cPanel-backed APIs or a documented renewal runbook that can be executed before expiry.",
+      "facets": [
+        "vendor:cpanel"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    },
+    {
+      "canonical_id": "gap/gap-session-management-is-separate-from-capture-extraction",
+      "type": "gap",
+      "title": "## Gap: session management is separate from capture extraction",
+      "body": "## Gap: session management is separate from capture extraction",
+      "facets": [
+        "capture"
+      ],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "gap/gap-deploy-environments-need-structured-project-linkage",
+      "type": "gap",
+      "title": "## Gap: deploy environments need structured project linkage",
+      "body": "## Gap: deploy environments need structured project linkage",
+      "facets": [
+        "deploy"
+      ],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "vendor-fact/the-deploy-strategy-is-now-clear-for-mbsh-but-site-studio-needs-a-reusable-envir",
+      "type": "vendor-fact",
+      "title": "The deploy strategy is now clear for MBSH, but Site Studio needs a reusable environment model with f",
+      "body": "The deploy strategy is now clear for MBSH, but Site Studio needs a reusable environment model with fields for local repo path, remote repo, local branch, staging Netlify project id, production Netlify project id, custom domain, API origin, latest deploy commit, and promotion state. This should become platform data rather than prose per site.",
+      "facets": [
+        "vendor:netlify",
+        "platform",
+        "deploy"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T21-12_a27e",
+      "evidence": [
+        "source:mbsh-deploy-discoveries-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    }
+  ],
+  "review_status": "pending",
+  "approver": null,
+  "approved_at": null
+}

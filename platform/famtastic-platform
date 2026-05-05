@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# famtastic-platform — capability dispatcher.
+# Usage: platform <capability> <subcommand> [args...]
+# Examples:
+#   platform site add mbsh-reunion-v2
+#   platform db add mbsh-reunion-v2 dev
+#   platform db apply-schema mbsh-reunion-v2 production
+#   platform smoke test mbsh-reunion-v2
+#   platform vault read sites/mbsh-reunion-v2/db_password.dev
+
+set -euo pipefail
+
+PLATFORM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INVOCATIONS_DIR="$PLATFORM_ROOT/invocations"
+mkdir -p "$INVOCATIONS_DIR"
+
+usage() {
+  cat <<EOF
+Usage: platform <capability> <subcommand> [args...]
+
+Capabilities:
+  site add <tag>                                    Create + register a new site
+  site remove <tag>                                 (TODO) Deprovision a site
+  db add <site> <env>                               Provision DB for site/env
+  db apply-schema <site> <env>                      Apply schema.sql via SSH
+  dns register-subdomain <site> <sub> <type> <val>  Register DNS subdomain
+  email verify-resend-domain <site>                 Verify Resend sending domain
+  deploy connect-netlify <site>                     Connect Netlify to GitHub
+  deploy backend <site>                             rsync backend/ to cPanel
+  cron register <site>                              Register cron jobs
+  cors lockdown <site> <env>                        Tighten CORS regex post-deploy
+  smoke test <site>                                 Smoke-test all endpoints
+  studio bootstrap-services [--check]               Bootstrap Studio-owned provider auth
+  studio configure-resend [--check]                 Configure Studio notification email via Resend
+  studio send-test-email <to>                       Send a Studio notification test email
+  studio provision-site <site> [--check] [--proof]  Check a site as Studio service consumer
+  vault read <secret-id>                            Read secret from keychain
+  vault write <secret-id> <value>                   Store secret in keychain
+  list                                              Show capability registry
+  help                                              This help
+EOF
+}
+
+log_invocation() {
+  local capability="$1" result="$2" duration_ms="$3"; shift 3
+  local args_json="${1:-{}}"
+  local day=$(date +%Y-%m-%d)
+  local entry=$(printf '{"ts":"%s","capability":"%s","args":%s,"result":"%s","duration_ms":%d}\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$capability" "$args_json" "$result" "$duration_ms")
+  echo "$entry" >> "$INVOCATIONS_DIR/$day.jsonl"
+}
+
+if [[ $# -lt 1 ]]; then usage; exit 1; fi
+
+case "${1:-help}" in
+  help|--help|-h) usage; exit 0 ;;
+  list)
+    cat "$PLATFORM_ROOT/registry/capabilities.json" | python3 -m json.tool 2>/dev/null || cat "$PLATFORM_ROOT/registry/capabilities.json"
+    exit 0
+    ;;
+  site)
+    case "${2:-}" in
+      add)    "$PLATFORM_ROOT/capabilities/site/add-site.sh" "${@:3}" ;;
+      remove) echo "TODO: site remove" ; exit 1 ;;
+      *)      echo "Unknown site subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  db)
+    case "${2:-}" in
+      add)         "$PLATFORM_ROOT/capabilities/db/add-db.sh" "${@:3}" ;;
+      apply-schema) "$PLATFORM_ROOT/capabilities/db/apply-schema.sh" "${@:3}" ;;
+      *)           echo "Unknown db subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  dns)
+    case "${2:-}" in
+      register-subdomain) "$PLATFORM_ROOT/capabilities/dns/register-subdomain.sh" "${@:3}" ;;
+      *) echo "Unknown dns subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  email)
+    case "${2:-}" in
+      verify-resend-domain) "$PLATFORM_ROOT/capabilities/email/verify-resend-domain.sh" "${@:3}" ;;
+      *) echo "Unknown email subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  deploy)
+    case "${2:-}" in
+      connect-netlify) "$PLATFORM_ROOT/capabilities/deploy/connect-netlify.sh" "${@:3}" ;;
+      backend)         "$PLATFORM_ROOT/capabilities/deploy/deploy-backend.sh" "${@:3}" ;;
+      *) echo "Unknown deploy subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  cron)
+    case "${2:-}" in
+      register) "$PLATFORM_ROOT/capabilities/cron/register-crons.sh" "${@:3}" ;;
+      *)        echo "Unknown cron subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  cors)
+    case "${2:-}" in
+      lockdown) "$PLATFORM_ROOT/capabilities/cors/lockdown.sh" "${@:3}" ;;
+      *)        echo "Unknown cors subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  smoke)
+    case "${2:-}" in
+      test) "$PLATFORM_ROOT/capabilities/smoke/test-endpoints.sh" "${@:3}" ;;
+      *)    echo "Unknown smoke subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  studio)
+    case "${2:-}" in
+      bootstrap-services) "$PLATFORM_ROOT/capabilities/studio/bootstrap-services.sh" "${@:3}" ;;
+      configure-resend)   "$PLATFORM_ROOT/capabilities/studio/configure-resend.sh" "${@:3}" ;;
+      send-test-email)    "$PLATFORM_ROOT/capabilities/studio/send-test-email.sh" "${@:3}" ;;
+      provision-site)     "$PLATFORM_ROOT/capabilities/studio/provision-site.sh" "${@:3}" ;;
+      *) echo "Unknown studio subcommand: ${2:-}"; usage; exit 1 ;;
+    esac
+    ;;
+  vault)
+    "$PLATFORM_ROOT/vault/vault.sh" "${@:2}"
+    ;;
+  bootstrap-services)
+    "$PLATFORM_ROOT/capabilities/studio/bootstrap-services.sh" "${@:2}"
+    ;;
+  configure-resend)
+    "$PLATFORM_ROOT/capabilities/studio/configure-resend.sh" "${@:2}"
+    ;;
+  send-test-email)
+    "$PLATFORM_ROOT/capabilities/studio/send-test-email.sh" "${@:2}"
+    ;;
+  provision-site)
+    "$PLATFORM_ROOT/capabilities/studio/provision-site.sh" "${@:2}"
+    ;;
+  *) echo "Unknown capability: $1"; usage; exit 1 ;;
+esac

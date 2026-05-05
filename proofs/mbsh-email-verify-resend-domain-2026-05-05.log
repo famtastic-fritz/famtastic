@@ -1,0 +1,9 @@
+# MBSH Resend domain verification proof
+timestamp=2026-05-05T18:51:13Z
+cwd=/Users/famtasticfritz/famtastic-mbsh-deploy
+command=platform/famtastic-platform email verify-resend-domain mbsh-reunion
+
+verify-resend: ensuring domain send.mbsh96reunion.com exists at Resend
+verify-resend: send.mbsh96reunion.com already verified ✓
+
+exit_code=0

@@ -1,0 +1,40 @@
+# MBSH API DNS/TLS proof — 2026-05-05T20:42:43Z
+
+## DNS
+ns23.domaincontrol.com.
+ns24.domaincontrol.com.
+107.180.51.234
+107.180.51.234
+107.180.51.234
+
+## TLS
+subject= ((('commonName', 'api.mbsh96reunion.com'),),)
+issuer= ((('countryName', 'US'),), (('organizationName', "Let's Encrypt"),), (('commonName', 'E8'),))
+notAfter= Aug  3 19:42:47 2026 GMT
+subjectAltName= (('DNS', 'api.mbsh96reunion.com'),)
+
+## HTTPS endpoint
+HTTP/2 200 
+x-powered-by: PHP/8.3.30
+access-control-allow-origin: https://mbsh96reunion.com
+access-control-allow-methods: POST, GET, OPTIONS
+access-control-allow-headers: Content-Type, X-CSRF-Token
+vary: Origin,Accept-Encoding
+content-type: application/json; charset=utf-8
+date: Tue, 05 May 2026 20:42:43 GMT
+server: Apache
+
+[{"first_name":"Test","last_name":"Smoke","maiden_name":null,"city_state":null,"attending":"yes"},{"first_name":"Test","last_name":"Smoke","maiden_name":null,"city_state":null,"attending":"yes"},{"first_name":"Test","last_name":"Smoke","maiden_name":null,"city_state":null,"attending":"yes"},{"first_name":"Test","last_name":"Smoke","maiden_name":null,"city_state":null,"attending":"yes"},{"first_name":"Test","last_name":"Smoke","maiden_name":null,"city_state":null,"attending":"yes"},{"first_name":"Test","last_name":"Smoke","maiden_name":null,"city_state":null,"attending":"yes"}]
+## Platform smoke
+smoke.test: API base = https://api.mbsh96reunion.com
+smoke.test: Origin    = https://mbsh96reunion.com
+
+  -> rsvp ... PASS (200)
+  -> capsule ... PASS (200)
+  -> chatbot-question ... PASS (200)
+  -> attendees ... PASS (200)
+  -> sponsors ... PASS (200)
+  -> in-memory ... PASS (200)
+  -> cors-reject ... PASS (403)
+
+smoke.test: PASS=7 FAIL=0
