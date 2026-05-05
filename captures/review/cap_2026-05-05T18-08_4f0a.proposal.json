@@ -1,0 +1,258 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_2026-05-05T18-08_4f0a",
+  "from_capture": "cap_2026-05-05T18-08_4f0a",
+  "created_at": "2026-05-05T18:09:12.281Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "vendor-fact/netlify-cannot-link-a-project-to-a-git-repository-via-api",
+      "type": "vendor-fact",
+      "title": "Netlify cannot link a project to a Git repository via API",
+      "body": "Netlify cannot link a project to a Git repository via API. The `netlify api updateSite` call can rename a project, change build settings, and modify deploy hooks, but it does not expose project-to-repo linking. The \"Connect to Git\" flow requires the vendor UI. This is a vendor fact about Netlify's API surface confirmed by today's attempt to repoint the mbsh-reunion-staging project programmatically.",
+      "facets": [
+        "vendor:netlify",
+        "deploy"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    },
+    {
+      "canonical_id": "decision/decision-single-netlify-project-per-site-not-two",
+      "type": "decision",
+      "title": "## Decision: single Netlify project per site, not two",
+      "body": "## Decision: single Netlify project per site, not two",
+      "facets": [
+        "vendor:netlify"
+      ],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "decision/we-decided-on-one-netlify-project-per-site-over-the-earlier-two-project-model",
+      "type": "decision",
+      "title": "We decided on one Netlify project per site over the earlier two-project model",
+      "body": "We decided on one Netlify project per site over the earlier two-project model. Netlify's native branch deploys handle staging — push to the staging branch and Netlify serves it at <tag>--staging.netlify.app. The production branch (main) serves the custom domain. Chose this over a separate <tag>-staging Netlify project because it's simpler, native to how Netlify is built, and there is less to manage.",
+      "facets": [
+        "vendor:netlify",
+        "deploy"
+      ],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "rule/rule-sites-never-commit-to-studio-history",
+      "type": "rule",
+      "title": "## Rule: sites never commit to Studio history",
+      "body": "## Rule: sites never commit to Studio history",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/sites-must-never-commit-to-the-studio-repo-history",
+      "type": "rule",
+      "title": "Sites must never commit to the Studio repo history",
+      "body": "Sites must never commit to the Studio repo history. Each site lives at ~/famtastic-sites/<tag>/ as its own git repo. The Studio repo at ~/famtastic/ has a /sites/ gitignore entry. Today we found 25 leaked site files that predated this gitignore and removed them with git rm --cached. Going forward, every site has its own remote on github.com/famtastic-fritz/<tag>.",
+      "facets": [
+        "vendor:github"
+      ],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "bug-pattern/bug-pattern-cowork-ghost-session-silent-failure",
+      "type": "bug-pattern",
+      "title": "## Bug pattern: cowork ghost-session silent failure",
+      "body": "## Bug pattern: cowork ghost-session silent failure",
+      "facets": [],
+      "confidence": 0.85,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'bug-pattern' is in allowlist"
+    },
+    {
+      "canonical_id": "rule/bug-pattern-cowork-session-was-reported-as-running-by-the-cowork-orchestrator-bu",
+      "type": "rule",
+      "title": "Bug pattern: cowork session was reported as running by the cowork orchestrator but produced zero sta",
+      "body": "Bug pattern: cowork session was reported as running by the cowork orchestrator but produced zero status log entries and zero commits over 80 minutes. Root cause unconfirmed but likely: cowork worked in an isolated worktree without pushing, or skipped the handshake protocol entirely, or the session never actually started despite verbal confirmation. Fix going forward: bold the handshake protocol as the literal first action in cowork handoffs and add a 60-second timeout with auto-restart if the st",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "anti-pattern/anti-pattern-hardcoded-counts-in-plan-acceptance-criteria",
+      "type": "anti-pattern",
+      "title": "## Anti-pattern: hardcoded counts in plan acceptance criteria",
+      "body": "## Anti-pattern: hardcoded counts in plan acceptance criteria",
+      "facets": [],
+      "confidence": 0.75,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.75 < 0.85"
+    },
+    {
+      "canonical_id": "rule/anti-pattern-writing-acceptance-criteria-like-448-stale-legacy-queue-jobs-render",
+      "type": "rule",
+      "title": "Anti-pattern: writing acceptance criteria like \"448 stale legacy-queue jobs render in Stale Debt dra",
+      "body": "Anti-pattern: writing acceptance criteria like \"448 stale legacy-queue jobs render in Stale Debt drawer\" is wrong — it bakes a transient inventory snapshot into the plan as if it were a contract. Real current inventory should be read from a snapshot script (docs/ops/inventory-YYYY-MM-DD.json) and never hardcoded. Today's adversarial review caught this in the ops-workspace-gui plan.",
+      "facets": [
+        "ops"
+      ],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "learning/learning-adversarial-review-loops-are-valuable-but-bounded",
+      "type": "learning",
+      "title": "## Learning: adversarial review loops are valuable but bounded",
+      "body": "## Learning: adversarial review loops are valuable but bounded",
+      "facets": [
+        "ops"
+      ],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "learning/learning-from-today-a-3-round-adversarial-review-loop-on-a-plan-caught-real-issu",
+      "type": "learning",
+      "title": "Learning from today: a 3-round adversarial review loop on a plan caught real issues each round (10 c",
+      "body": "Learning from today: a 3-round adversarial review loop on a plan caught real issues each round (10 critical issues round 1, 4 critical round 2, 1 cosmetic round 3) and converged. Keep the default cap at 3 rounds. Stop conditions need to be: ship-as-is, OR no new architectural issues, OR cap reached.",
+      "facets": [],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "do-not-repeat/do-not-repeat-do-not-skip-handshake-protocols",
+      "type": "do-not-repeat",
+      "title": "## Do-not-repeat: do not skip handshake protocols",
+      "body": "## Do-not-repeat: do not skip handshake protocols",
+      "facets": [],
+      "confidence": 0.85,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'do-not-repeat' is in allowlist"
+    },
+    {
+      "canonical_id": "rule/do-not-repeat-the-cowork-ghost-session-pattern",
+      "type": "rule",
+      "title": "Do not repeat the cowork ghost-session pattern",
+      "body": "Do not repeat the cowork ghost-session pattern. When delegating to a fresh agent session, the handshake confirmation must be the literal first instruction in the handoff document, bolded, and include a deadline (60 seconds). If the handshake doesn't land, the orchestrator must treat the agent as dead and pivot, not wait.",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "gap/gap-no-netlify-github-link-automation",
+      "type": "gap",
+      "title": "## Gap: no Netlify ↔ GitHub link automation",
+      "body": "## Gap: no Netlify ↔ GitHub link automation",
+      "facets": [
+        "vendor:netlify",
+        "vendor:github"
+      ],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "vendor-fact/gap-netlifys-git-linking-still-requires-the-vendor-ui",
+      "type": "vendor-fact",
+      "title": "Gap: Netlify's git linking still requires the vendor UI",
+      "body": "Gap: Netlify's git linking still requires the vendor UI. We need an \"assisted-manual capability\" pattern that opens the deep-link URL and polls the API to detect completion. The pattern should generalize to Resend domain verify, GoDaddy DNS confirmation, Stripe webhook setup, and other vendor flows that don't have programmatic equivalents.",
+      "facets": [
+        "vendor:netlify",
+        "vendor:godaddy",
+        "vendor:resend",
+        "vendor:stripe"
+      ],
+      "confidence": 0.88,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-05T18-08_4f0a",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "auto_promote_eligible": true,
+      "auto_promote_reason": "confidence >= 0.85 AND type 'vendor-fact' is in allowlist"
+    }
+  ],
+  "review_status": "partially_approved",
+  "approver": "auto-allowlist",
+  "approved_at": "2026-05-05T18:09:20.507Z"
+}

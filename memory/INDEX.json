@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.2.0",
+  "generated_at": "2026-05-05T18:09:20.507Z",
+  "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
+  "entries": [
+    {
+      "canonical_id": "vendor-fact/netlify-cannot-link-a-project-to-a-git-repository-via-api",
+      "type": "vendor-fact",
+      "title": "Netlify cannot link a project to a Git repository via API",
+      "facets": [
+        "vendor:netlify",
+        "deploy"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.88,
+      "path": "memory/vendor-fact/netlify-cannot-link-a-project-to-a-git-repository-via-api.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/bug-pattern-cowork-ghost-session-silent-failure",
+      "type": "bug-pattern",
+      "title": "## Bug pattern: cowork ghost-session silent failure",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.85,
+      "path": "memory/bug-pattern/bug-pattern-cowork-ghost-session-silent-failure.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "do-not-repeat/do-not-repeat-do-not-skip-handshake-protocols",
+      "type": "do-not-repeat",
+      "title": "## Do-not-repeat: do not skip handshake protocols",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.85,
+      "path": "memory/do-not-repeat/do-not-repeat-do-not-skip-handshake-protocols.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "vendor-fact/gap-netlifys-git-linking-still-requires-the-vendor-ui",
+      "type": "vendor-fact",
+      "title": "Gap: Netlify's git linking still requires the vendor UI",
+      "facets": [
+        "vendor:netlify",
+        "vendor:godaddy",
+        "vendor:resend",
+        "vendor:stripe"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.88,
+      "path": "memory/vendor-fact/gap-netlifys-git-linking-still-requires-the-vendor-ui.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    }
+  ]
+}
