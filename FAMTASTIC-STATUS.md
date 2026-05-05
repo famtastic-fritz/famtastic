@@ -1,6 +1,6 @@
 # FAMTastic Status Packet
 
-**Updated:** 2026-05-04  
+**Updated:** 2026-05-05
 **Source of truth:** `plans/registry.json`  
 **Purpose:** Read-only status mirror for Claude Web, phone, and other surfaces that may not have direct filesystem access.
 
@@ -9,8 +9,10 @@
 - The plan stack is consolidated to four active parent plans.
 - `docs/famtastic-total-ask-plan.md` is parked as strategy context, not active execution truth.
 - Drive sync is marked complete and should not be carried as open work.
-- Workflow-as-data phase 1 is cataloged and `parallelBuild()` now emits trace stage events; the pipeline visualizer remains open under `build-intent-fulfillment-trace`.
+- Workflow-as-data phase 1 is cataloged and `parallelBuild()` now emits trace stage events; pipeline visualizer phase 1 is live, and phase 2 is now a ready action-item-development task.
 - Task, run, and proof ledgers now contain first records.
+- `plans/remaining-plan-triage-2026-05-05.md` separates completed plan-shaped work, blocked work, and plan-shaped asks. Seven checklist docs now turn those plan-shaped asks into executable or blocked follow-up tasks.
+- `plans/plan_2026_05_05_ops_workspace_gui/plan.json` is treated as a proposed design packet, not a fifth active parent; `plans/ops-workspace-gui-actionization-checklist.md` maps it into existing-parent tasks.
 - Workbench Plan mode now reads a browser-safe consolidated plan state packet at `site-studio/public/data/workbench-plan-state.json`.
 - Workbench Foundation now follows the frozen seven-domain left rail, exposes contract pills in the workspace chrome, and keeps Media as prompt-first **Media Studio**.
 - Actual Shay-Shay UI proof passed through Studio with the message `system status`; two UI bugs were fixed in the process.
@@ -29,10 +31,10 @@
 
 | Plan | Status | Next action |
 |---|---|---|
-| `studio-workbench-foundation` | Active parent plan | Default-shell cutover, automatic status-packet regeneration, and Media Studio unification remain after the Workbench context provider proof. |
-| `plan-task-run-intelligence` | Active parent plan | Use the promoted task/run/proof ledgers as the operating checklist and build review/promote/start commands. |
-| `build-intent-fulfillment-trace` | Active parent plan | Pipeline visualizer phase 1 is live; next work is stage/event matching and missing-stage detection. |
-| `site-mbsh-reunion` | Site-scoped active parent plan | RSVP, sponsor, chatbot, content delta, audit harness, and gap promotion proof are complete; deploy proof and media/story readiness are blocked. |
+| `studio-workbench-foundation` | Active parent plan | Execute Workbench default-shell cutover, Media Studio unification, and Ops Jobs tab UI work from completed checklists. |
+| `plan-task-run-intelligence` | Active parent plan | Implement automatic status-packet regeneration, capture-packet promotion, and Ops read/freshness substrate. |
+| `build-intent-fulfillment-trace` | Active parent plan | Implement pipeline visualizer stage/event matching and missing-stage detection from completed phase-two checklist. |
+| `site-mbsh-reunion` | Site-scoped active parent plan | Wait on deploy access/config and story media/rights inputs; execute live proof and media completion after blockers clear. |
 
 ## Current Run
 
@@ -49,11 +51,18 @@ fam-hub plan show build-intent-fulfillment-trace
 
 ## Remaining Priority
 
-1. P0 blocked: Provision MBSH live deploy access/config and run production smoke + rollback proof.
-2. P1 blocked: Add or generate MBSH story/gallery media assets and rights/approval manifest.
-3. P1/P2: Extend pipeline visualizer from phase-one inspect/trace/propose into stage/event matching and missing-stage detection.
-4. P1: Add reviewed promotion from capture packets into canonical memory.
-5. P1: Automate status-packet regeneration and continue Workbench default-shell / Media Studio unification work.
+1. P1 ready: `task-2026-05-05-008` implement automatic status-packet regeneration.
+2. P1 ready: `task-2026-05-05-009` implement capture-packet promotion dry-run/apply.
+3. P1 ready: `task-2026-05-05-010` prepare Workbench default-shell cutover patch.
+4. P1 ready: `task-2026-05-05-011` prepare Media Studio unification patch.
+5. P1 ready: `task-2026-05-05-012` implement pipeline visualizer stage matching.
+6. P1 ready: `task-2026-05-05-016` implement Ops read model and freshness substrate.
+7. P1 ready: `task-2026-05-05-017` define Ops command and stream boundaries after read model.
+8. P1 ready: `task-2026-05-05-018` build Ops Jobs tab MVP shell.
+9. P0 blocked: `task-2026-05-04-027` finish MBSH live deploy proof.
+10. P0 blocked: `task-2026-05-05-013` collect MBSH deploy access/config.
+11. P1 blocked: `task-2026-05-04-028` complete MBSH media/story assets.
+12. P1 blocked: `task-2026-05-05-014` produce MBSH story media assets and rights manifest.
 
 ## Newly Available
 
@@ -61,11 +70,15 @@ fam-hub plan show build-intent-fulfillment-trace
 - `fam-hub task promote --dry-run`
 - `fam-hub task promote --apply`
 - `fam-hub run start <plan-id> [target] [--dry-run]`
+- `plans/remaining-plan-triage-2026-05-05.md`
+- Completed action checklists under `plans/*-checklist.md` for Workbench cutover, Media Studio unification, status regeneration, capture promotion, pipeline visualizer phase 2, MBSH deploy access, and MBSH media/story readiness.
+- `plans/ops-workspace-gui-actionization-checklist.md` for converting the proposed Ops Workspace GUI design packet into existing-parent work.
 
 ## Still Missing
 
 - Studio Plans panel rendering from registry/ledgers.
 - Automatic status-packet regeneration from code instead of manual update.
+- Capture-packet promotion from review packets into canonical memory.
 - Media Studio controls are still not unified between the Workbench surface and the richer production mini-app.
 - Pipeline visualizer phase 1 is live, but stage/event matching and proposed patch preview are not implemented.
 - MBSH backend runtime execution is blocked by missing `.env`, `.mbsh-config.local.php`, or `MBSH_CONFIG_PATH` runtime config, plus external Netlify/DNS/GoDaddy/Resend access for live proof.

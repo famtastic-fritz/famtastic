@@ -5307,11 +5307,43 @@ stack.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.
 - Media Studio exists as a prompt-first Workbench surface and as a production mini-app, but generation/provider controls are not unified between the two yet.
-- Operations workspace GUI plan (`plan_2026_05_05_ops_workspace_gui`) is design-only — no Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These four prerequisites are tracked in the plan's `known_gaps_opened`.
+- Operations workspace GUI packet (`plan_2026_05_05_ops_workspace_gui`) is design-only and is not a fifth active parent plan. No Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These prerequisites are actionized under existing parent plans instead of expanding the registry prematurely.
+
+## Remaining Plan Triage (2026-05-05)
+
+`plans/remaining-plan-triage-2026-05-05.md` is the current correction pass for
+the plan pile. It separates completed plan-shaped work, externally blocked
+work, and plan-shaped asks that needed executable checklist docs.
+
+Completed/closed work includes Drive sync, four-plan consolidation, Workbench
+frozen foundation, Workbench Shay context provider proof, knowledge capture
+pass one, workflow-as-data phase one, pipeline visualizer phase one, three site
+workflow modes, and MBSH backend/RSVP/sponsor/chatbot/content/audit/gap proof.
+
+The actionization pass added checklist docs for Workbench default-shell cutover,
+Media Studio unification, status-packet regeneration, capture promotion,
+pipeline visualizer phase two, MBSH deploy access, MBSH media/story readiness,
+and Ops Workspace GUI actionization. The checklists are not implementation
+proof; they convert broad asks into task-ledger rows so the next work is
+explicitly executable or honestly blocked.
+
+Open ready tasks after this pass are:
+`task-2026-05-05-008` status-packet regeneration,
+`task-2026-05-05-009` capture promotion,
+`task-2026-05-05-010` Workbench default-shell cutover,
+`task-2026-05-05-011` Media Studio unification,
+`task-2026-05-05-012` pipeline visualizer stage matching,
+`task-2026-05-05-016` Ops read/freshness substrate,
+`task-2026-05-05-017` Ops command/stream boundary definition, and
+`task-2026-05-05-018` Ops Jobs tab MVP shell.
+
+Blocked work remains MBSH deploy access/config and MBSH story/media assets:
+`task-2026-05-04-027`, `task-2026-05-04-028`,
+`task-2026-05-05-013`, and `task-2026-05-05-014`.
 
 ## Operations Workspace GUI Plan (2026-05-05)
 
-A new parent plan, `plan_2026_05_05_ops_workspace_gui`, was registered as the
+The proposed plan packet `plan_2026_05_05_ops_workspace_gui` captures the
 design spec for an Operations workspace inside the Workbench shell. It defines
 an 11-tab Ops sub-nav (Pulse, Plans, Tasks, Jobs, Runs, Proofs, Agents,
 Reviews, Gaps, Memory, Debt) and a record-type visual language so PLAN, TASK,
@@ -5322,9 +5354,10 @@ Files:
 - `plans/plan_2026_05_05_ops_workspace_gui/plan.json` — 14 workstreams, MVP
   scope, known gaps, links.
 - `plans/plan_2026_05_05_ops_workspace_gui/README.md` — human summary.
-- `plans/registry.json` — added to `active_parent_ids`; new `labels` block
-  introduced (label `ops-workspace-gui`, tags `platform-upgrades`,
-  `studio-ui`, `ops`, `shay-shay`, `agent-management`).
+- `plans/registry.json` — keeps exactly four active parent plans; the Ops GUI
+  packet is a proposed record/action source, not an active fifth parent.
+- `plans/ops-workspace-gui-actionization-checklist.md` — maps the proposed Ops
+  GUI packet into existing-parent action items.
 
 Origin: a debug session showed the UI claiming "agents waiting" while the
 real task ledger had no active work — 448 stale legacy worker-queue items
@@ -5338,4 +5371,4 @@ inspector with Cancel/Park/Promote-to-Task. WebSocket lane updates.
 Shay-Shay one-sentence queue summary. This validates the swimlane +
 inspector + WebSocket pattern every other Ops tab reuses.
 
-Status: design-only. No API, UI, or schema changes shipped yet.
+Status: design-only/actionized. No Ops API, UI, or schema changes shipped yet.
