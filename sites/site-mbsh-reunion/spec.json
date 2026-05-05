@@ -1,0 +1,618 @@
+{
+  "tag": "site-mbsh-reunion",
+  "site_name": "MBSH Class of '96 30th Reunion",
+  "business_type": "reunion",
+  "state": "scaffolded",
+  "deployed_url": null,
+  "deploy_provider": "netlify",
+  "created_at": "2026-04-29T17:16:44.000Z",
+  "registered_in_studio_at": "2026-05-02T18:30:00.000Z",
+  "_audit_provenance": "cowork-audit-001 \u2014 registered after the audit identified that MBSH lived in two locations (asset workshop at ~/famtastic/sites/site-mbsh-reunion/ + deploy repo at ~/famtastic-sites/mbsh-reunion/) but had no Studio spec.json. This file makes Studio aware of MBSH as a buildable spec without violating the repo-separation rule (deploy artifacts stay in the sibling repo).",
+  "design_brief": {
+    "goal": "Convert reunion classmates into RSVPs and create the FAMtastic public showcase build. Every alum who sees this site is a potential FAMtastic client. Quality bar: would the most prominent alum text their network to say 'this is fire.'",
+    "audience": "MBSH Class of '96 alumni, primarily ages ~46-50, encountering the site first on mobile (most likely at 11pm in bed). Secondary audience: visiting alums from other classes (the 100th anniversary frame), prospective FAMtastic clients evaluating the showcase quality.",
+    "tone": [
+      "cinematic",
+      "elegant",
+      "black-tie",
+      "reverent-when-needed",
+      "warm-but-restrained"
+    ],
+    "visual_direction": {
+      "layout": "Cinematic full-bleed hero with layered composition (background loop + brand mark top-left + center typography stack + Hi-Tide Harry bottom-right + scroll-tease bottom-center). Slow deliberate animations. Generous whitespace. High-contrast imagery treated like film stills. Mobile-first.",
+      "typography": "Six-font system: Playfair Display 900 (display), Cormorant Garamond italic (body/captions), Allura cursive (overlay statements), Great Vibes (taglines), Inter 400/600 (UI), JetBrains Mono (data). Five fonts per page maximum.",
+      "color_usage": "Red and white lead, silver and cream accent. Silver is metallic gradient NOT flat gray. Off-black #0A0A0A NOT pure black. Cream #F8F4EC for sections needing air.",
+      "motion": "Hero background video loops silently. Story moments fade in on scroll via IntersectionObserver. 30+100 brand mark on Forever moment has subtle pulse animation. No autoplay audio.",
+      "density": "spacious"
+    },
+    "content_priorities": [
+      "Make the first 5 seconds produce awe and pride",
+      "Reduce RSVP friction",
+      "Sponsor track funds the event (donation tiers + manual approval gate)",
+      "Honor classmates lost (In Memory section, reverent restraint)",
+      "Surprise emotional payoff (Time Capsule sends to classmates' future selves on July 12)",
+      "Living soundtrack (Spotify playlist, embedded)",
+      "First branded AI chatbot built through Studio (Hi-Tide Harry, Phase 1 = FAQ + fallback)"
+    ],
+    "must_have_sections": [
+      "home",
+      "rsvp",
+      "tickets",
+      "through-years",
+      "memorial",
+      "capsule",
+      "playlist"
+    ],
+    "avoid": [
+      "Generic stock imagery (use generated atmospherics + archival sources)",
+      "Single-page architecture (committee explicitly rejected last time \u2014 captured 2026-04-29)",
+      "Provider names in user-facing UI strings",
+      "Name-dropping of celebrity alumni",
+      "Emoji except \ud83c\udf0a (Hi-Tide wave)",
+      "Autoplay audio",
+      "More than 5 fonts on any page",
+      "Pure black #000 (use #0A0A0A off-black)",
+      "Flat silver (use metallic gradient)",
+      "SVG uploads in any user-facing form (security: SVG can carry executable JS)",
+      "Auth tokens via URL parameters",
+      "Force pushes to git",
+      "AI references in commit messages"
+    ],
+    "approved": true,
+    "tier": "famtastic",
+    "audience_gating": "flagship",
+    "v1_brief_canonical_path": "/Users/famtasticfritz/famtastic/docs/sites/site-mbsh-reunion/V1-BRIEF.md",
+    "decision_arc_path": "/Users/famtasticfritz/famtastic/docs/sites/site-mbsh-reunion/cowork-audit-001/",
+    "terminology": {
+      "mascot_internal": "Sonic-style bipedal cartoon character",
+      "mascot_external": "Original cartoon hero with athletic proportions",
+      "rationale": "IP safety on published descriptions; design shorthand internally"
+    },
+    "committee_history": {
+      "prior_site_existed": true,
+      "explicitly_rejected_patterns": [
+        "single-page architecture"
+      ],
+      "lesson": "Always validate architectural assumptions against committee historical objections during interview phase. Source: MBSH single\u2192multi-page mid-build pivot 2026-04-29."
+    }
+  },
+  "tier": "famtastic",
+  "famtastic_mode": true,
+  "style_fingerprint": {
+    "palette": {
+      "primary": "#C8102E",
+      "secondary": "#FFFFFF",
+      "accent": "#C0C0C0",
+      "neutral": "#0A0A0A",
+      "background": "#F8F4EC"
+    },
+    "palette_notes": "Silver #C0C0C0 must render as metallic gradient, NOT flat. Off-black #0A0A0A only \u2014 NEVER pure #000.",
+    "typography": {
+      "heading_family": "Playfair Display",
+      "body_family": "Cormorant Garamond",
+      "scale": "cinematic",
+      "system": [
+        {
+          "family": "Playfair Display",
+          "weights": [
+            400,
+            700,
+            900
+          ],
+          "role": "display headlines, section heads, milestone callouts"
+        },
+        {
+          "family": "Cormorant Garamond",
+          "weights": [
+            400,
+            500,
+            700
+          ],
+          "italic": true,
+          "role": "body, captions, event-detail labels"
+        },
+        {
+          "family": "Allura",
+          "weights": [
+            400
+          ],
+          "role": "overlay statements (Welcome back, In Memory, attendee counter)"
+        },
+        {
+          "family": "Great Vibes",
+          "weights": [
+            400
+          ],
+          "role": "taglines (Let us be known for our deeds)"
+        },
+        {
+          "family": "Inter",
+          "weights": [
+            400,
+            500,
+            600,
+            700
+          ],
+          "role": "buttons, form labels, navigation, sponsor tier labels, chatbot UI"
+        },
+        {
+          "family": "JetBrains Mono",
+          "weights": [
+            400
+          ],
+          "role": "countdown numerals, ticket prices, RSVP confirmation codes"
+        }
+      ],
+      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Allura&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap",
+      "fonts_per_page_max": 5
+    },
+    "mood": "cinematic black-tie elegance with silver accents on red foundation; award-show / red-carpet energy",
+    "source": "v1_brief_locked",
+    "vertical": "reunion",
+    "generated_at": "2026-05-02T18:30:00.000Z"
+  },
+  "site_repo": {
+    "path": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion",
+    "remote": "https://github.com/famtastic-fritz/mbsh-reunion",
+    "current_branch": "main",
+    "archive_branch": "archive/v0-placeholder",
+    "deploy_target_role": "Studio's per-tag directory at ~/famtastic/sites/site-mbsh-reunion/ is the SANDBOX (asset workshop). The deploy artifact lives in the sibling repo above. Per repo-separation rule (Recommendation 0.9 + G.4)."
+  },
+  "environments": {
+    "staging": {
+      "provider": "netlify",
+      "site_id": "3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf",
+      "url": "https://mbsh-reunion-staging.netlify.app",
+      "state": "netlify_project_exists_git_link_pending",
+      "deferral_note": "Netlify connection deferred to Session 8 per V1-BRIEF (when site is staging-ready and committee can review). Until then, pushes to main do not deploy.",
+      "custom_domain": null,
+      "production_branch": "staging"
+    },
+    "production": {
+      "provider": "netlify",
+      "site_id": null,
+      "url": null,
+      "state": "deferred",
+      "deferral_note": "Production cutover deferred to Session 9. Custom domain mbsh96reunion.com points to Netlify via GoDaddy DNS at cutover time.",
+      "custom_domain": "mbsh96reunion.com",
+      "custom_domain_aliases": [
+        "www.mbsh96reunion.com"
+      ],
+      "ssl": "letsencrypt-via-netlify",
+      "repo": {
+        "path": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion",
+        "remote": "https://github.com/famtastic-fritz/mbsh-reunion"
+      }
+    }
+  },
+  "backend": {
+    "enabled": true,
+    "type": "php-mysql",
+    "host_provider": "godaddy_web_hosting_deluxe",
+    "cpanel_account": "nineoo",
+    "cpanel_host": "FAMTASTICINC.COM",
+    "subdomain": "api.mbsh96reunion.com",
+    "subdomain_dns_state": "deferred_to_session_8",
+    "endpoints": [
+      {
+        "path": "/rsvp.php",
+        "method": "POST",
+        "purpose": "RSVP submissions"
+      },
+      {
+        "path": "/sponsor.php",
+        "method": "POST",
+        "purpose": "Sponsor inquiry + logo upload to pending"
+      },
+      {
+        "path": "/memory.php",
+        "method": "POST",
+        "purpose": "Memory submission + photo upload to pending"
+      },
+      {
+        "path": "/capsule.php",
+        "method": "POST",
+        "purpose": "Time capsule form, queues for July 12 send"
+      },
+      {
+        "path": "/chatbot-question.php",
+        "method": "POST",
+        "purpose": "Chatbot fallback question collector"
+      },
+      {
+        "path": "/attendees.php",
+        "method": "GET",
+        "purpose": "Who's Coming JSON feed (display_publicly only)"
+      },
+      {
+        "path": "/sponsors.php",
+        "method": "GET",
+        "purpose": "Approved sponsor wall JSON feed"
+      },
+      {
+        "path": "/in-memory.php",
+        "method": "GET",
+        "purpose": "In Memory JSON feed (active only)"
+      },
+      {
+        "path": "/admin/*.php",
+        "method": "POST",
+        "purpose": "Committee admin pages (session+CSRF)"
+      }
+    ],
+    "database": {
+      "type": "mariadb",
+      "version": "10.6.24",
+      "host": "localhost",
+      "name": "mbsh96_reunion",
+      "user": "mbsh_user",
+      "schema_path": "backend/schema.sql",
+      "schema_apply_state": "pending_via_phpmyadmin_OR_ssh",
+      "tables": [
+        "rsvps",
+        "sponsors_pending",
+        "sponsors_approved",
+        "memories",
+        "in_memory",
+        "time_capsules",
+        "chatbot_questions",
+        "rate_limits",
+        "admin_login_attempts",
+        "admin_audit_log"
+      ],
+      "charset": "utf8mb4",
+      "collation": "utf8mb4_unicode_ci",
+      "production": {
+        "schema_applied_at": "2026-05-05T18:50:48.952374Z",
+        "tables_count": 10
+      }
+    },
+    "email_provider": "resend",
+    "email_sending_domain": "send.mbsh96reunion.com",
+    "email_sending_domain_state": "ok",
+    "email_senders": {
+      "noreply": "noreply@send.mbsh96reunion.com",
+      "committee": "committee@send.mbsh96reunion.com",
+      "harry": "harry@send.mbsh96reunion.com"
+    },
+    "email_reply_to": "mbsh96reunion@gmail.com",
+    "production_secrets_path": "/home/nineoo/.config/mbsh-config.php",
+    "production_secrets_mode": "0600",
+    "pending_uploads_path": "/home/nineoo/uploads-pending",
+    "approved_uploads_path": "/home/nineoo/public_html/uploads/approved",
+    "cron": [
+      {
+        "script": "cron/send-capsules.php",
+        "schedule": "0 7 * * *",
+        "tz": "UTC",
+        "activates_at": "session_6"
+      },
+      {
+        "script": "cron/cleanup-rate-limits.php",
+        "schedule": "0 3 * * *",
+        "tz": "UTC",
+        "activates_at": "session_8"
+      }
+    ],
+    "security_rules": {
+      "cors_allowlist_origins": [
+        "https://mbsh96reunion.com",
+        "https://www.mbsh96reunion.com",
+        "http://localhost:8080"
+      ],
+      "cors_pattern_origins": [
+        "/^https:\\/\\/[a-z0-9-]+--[a-z0-9-]+\\.netlify\\.app$/",
+        "/^https:\\/\\/[a-z0-9-]+\\.netlify\\.app$/"
+      ],
+      "cors_pattern_lockdown_session": "session_9",
+      "rate_limits": {
+        "public_per_min": 5,
+        "public_per_hour": 20,
+        "admin_login_per_15min": 5,
+        "admin_lockout_min": 60
+      },
+      "upload_mime_allow": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "upload_mime_reject": [
+        "image/svg+xml"
+      ],
+      "upload_max_bytes": 2097152,
+      "upload_max_dimensions": [
+        4000,
+        4000
+      ],
+      "csrf_required_for_state_change": true,
+      "auth_via_session_cookie_only": true,
+      "no_auth_tokens_in_url": true,
+      "cors_locked_at": "2026-05-05T18:53:14.441713Z",
+      "cors_locked_to": "mbsh-reunion-staging"
+    },
+    "deployed_at": "2026-05-05T18:40:56.367903Z",
+    "deploy_revision": "cdf8921",
+    "email_sending_domain_verified_at": "2026-05-05T18:51:13.859840Z"
+  },
+  "character_sets": [
+    {
+      "id": "hi-tide-harry-v1",
+      "name": "Hi-Tide Harry",
+      "description_internal": "Sonic-style bipedal cartoon character \u2014 scarlet body, white shirt with 'Hi-Tide Harry' text, white sneakers, energy and Miami Beach attitude",
+      "description_external": "Original cartoon hero with athletic proportions; reunion mascot for MBSH Class of '96 30th reunion",
+      "style": "illustrated",
+      "anchor_image_path": "/Users/famtasticfritz/famtastic/sites/site-mbsh-reunion/assets/mascot/canonical-reference.png",
+      "anchor_md5": "27204d3e1a53fa0af7295fa786aecc30",
+      "deploy_mirror_path": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion/frontend/assets/mascot/",
+      "poses": [
+        {
+          "index": 1,
+          "pose_name": "wave-hello",
+          "image_path": "assets/mascot/poses/01-wave-hello.png",
+          "default_position": "hero-right",
+          "status": "approved"
+        },
+        {
+          "index": 2,
+          "pose_name": "thumbs-up",
+          "image_path": "assets/mascot/poses/02-thumbs-up.png",
+          "default_position": "card-badge",
+          "status": "approved"
+        },
+        {
+          "index": 3,
+          "pose_name": "thinking",
+          "image_path": "assets/mascot/poses/03-thinking.png",
+          "default_position": "section-peek-left",
+          "status": "approved"
+        },
+        {
+          "index": 4,
+          "pose_name": "excited-cheer",
+          "image_path": "assets/mascot/poses/04-excited-cheer.png",
+          "default_position": "footer-right",
+          "status": "approved"
+        },
+        {
+          "index": 5,
+          "pose_name": "disappointed",
+          "image_path": "assets/mascot/poses/05-disappointed.png",
+          "default_position": "fallback-state",
+          "status": "approved"
+        },
+        {
+          "index": 6,
+          "pose_name": "listening",
+          "image_path": "assets/mascot/poses/06-listening.png",
+          "default_position": "chatbot-idle",
+          "status": "approved_implicitly"
+        },
+        {
+          "index": 7,
+          "pose_name": "confirming",
+          "image_path": "assets/mascot/poses/07-confirming.png",
+          "default_position": "hero-right-alt",
+          "status": "approved_implicitly"
+        },
+        {
+          "index": 8,
+          "pose_name": "pointing",
+          "image_path": "assets/mascot/poses/08-pointing.png",
+          "default_position": "section-peek-right",
+          "status": "approved_implicitly"
+        },
+        {
+          "index": 9,
+          "pose_name": "confused",
+          "image_path": "assets/mascot/poses/09-confused.png",
+          "default_position": "chatbot-fallback",
+          "status": "approved_implicitly"
+        },
+        {
+          "index": 10,
+          "pose_name": "running",
+          "image_path": "assets/mascot/poses/10-running.png",
+          "default_position": "footer-left",
+          "status": "approved_implicitly"
+        }
+      ],
+      "target_pose_count": 25,
+      "remaining_poses_to_generate": 15,
+      "provider_chosen": "chatgpt-manual",
+      "provider_alternatives_tried": [
+        "leonardo-lightning-xl-init",
+        "leonardo-lightning-xl-charref",
+        "gpt-image-2-edits",
+        "imagen-4-vertex",
+        "leonardo-phoenix-1.0-pose-from-pose",
+        "openai-responses-input-image"
+      ],
+      "provider_notes": "FLUX too consistency-locked for pose variation; Imagen-4 Vertex AI access blocked at account level; ChatGPT-manual produced 5/5 canonical pass. Once gpt-image-2 / Imagen-4 access stable, scripted pipeline becomes default.",
+      "recipe_path": "/Users/famtasticfritz/famtastic/docs/sites/site-mbsh-reunion/cowork-audit-001/06-media-recipes.md#recipe-2",
+      "created_at": "2026-04-28"
+    }
+  ],
+  "character_branding": {
+    "home": [
+      {
+        "pose": "wave-hello",
+        "position": "hero-right",
+        "size": "280px-desktop, 150px-mobile"
+      }
+    ],
+    "rsvp": [
+      {
+        "pose": "pointing",
+        "position": "section-peek-right",
+        "context": "near-submit-button"
+      }
+    ],
+    "tickets": [
+      {
+        "pose": "running",
+        "position": "footer-left",
+        "context": "speed-and-energy-personality-moment"
+      }
+    ],
+    "chatbot": [
+      {
+        "pose": "listening",
+        "position": "chatbot-idle",
+        "size": "64px"
+      },
+      {
+        "pose": "wave-hello",
+        "position": "chatbot-greeting",
+        "size": "120px"
+      },
+      {
+        "pose": "confused",
+        "position": "chatbot-fallback",
+        "context": "no-faq-match"
+      }
+    ]
+  },
+  "brand_mark": {
+    "type": "famtastic-commissioned",
+    "milestone": "30+100",
+    "image_path": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion/frontend/assets/brand-mark/brand-mark.png",
+    "workshop_path": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion/frontend/assets/brand-mark/rejected/",
+    "evaluation_path": "/Users/famtasticfritz/famtastic/docs/sites/site-mbsh-reunion/cowork-audit-001/08-brand-mark-evaluation.md",
+    "rounds_run": 2,
+    "candidates_total": 6,
+    "promoted": "round-02-candidate-01",
+    "provider": "openai-responses-gpt-image-1",
+    "cost_total_usd": 0.3,
+    "placements": [
+      {
+        "context": "hero-top-left",
+        "size": "120px-desktop, 80px-mobile",
+        "treatment": "stamp-of-authority"
+      },
+      {
+        "context": "story-forever-moment",
+        "size": "centered-large",
+        "treatment": "subtle-pulse-animation"
+      },
+      {
+        "context": "footer-left",
+        "size": "80px"
+      }
+    ],
+    "iteration_2_path": "Pursue written permission from MBSH school admin for the official 100 Years of Excellence medallion. If granted, swap commissioned mark for official one in iteration 2.",
+    "v1_status": "approved_and_deployed_in_hero"
+  },
+  "background_loops": [
+    {
+      "slug": "01-yearbook-pages",
+      "concept": "1996 yearbook pages softly flipping",
+      "mood": "calm cinematic, page flip in breeze, dust motes",
+      "size_bytes": 3500000,
+      "selected_for": null
+    },
+    {
+      "slug": "02-rebuilt-school-push-in",
+      "concept": "Rebuilt school exterior, slow camera push-in",
+      "mood": "architectural pull-in",
+      "size_bytes": 4400000,
+      "selected_for": null
+    },
+    {
+      "slug": "03-vhs-to-modern-transition",
+      "concept": "VHS-to-modern era transition",
+      "mood": "time-jump treatment",
+      "size_bytes": 5200000,
+      "selected_for": null
+    },
+    {
+      "slug": "04-red-silver-mascot-energy",
+      "concept": "Red/silver mascot energy",
+      "mood": "mascot-themed motion",
+      "size_bytes": 7600000,
+      "selected_for": null
+    },
+    {
+      "slug": "05-dancefloor-confetti",
+      "concept": "Dancefloor confetti",
+      "mood": "event-class celebration",
+      "size_bytes": 6100000,
+      "selected_for": "hero",
+      "promoted": true
+    }
+  ],
+  "audio_assets": {
+    "voice_candidates_path": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-005-*",
+    "voice_selection_state": "5_candidates_generated_none_selected",
+    "voice_selected": null,
+    "sfx_candidates_path": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-006-*",
+    "sfx_selection_state": "5_candidates_generated_deferred_to_session_6",
+    "music_candidate_path": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-007-music-east-coast-boombap-reunion-bed.mp3",
+    "music_state": "1_candidate_generated_spotify_embed_is_actual_vehicle"
+  },
+  "deployment_pipeline": {
+    "stage_target": "session_8",
+    "production_target": "session_9",
+    "reunion_date": "2026-07-12",
+    "timeline_path": "/Users/famtasticfritz/famtastic/docs/sites/site-mbsh-reunion/cowork-audit-001/07-infrastructure-pipeline.md",
+    "credentials_helper": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion/scripts/setup-mbsh-backend.sh"
+  },
+  "config_path": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion/config/site-config.json",
+  "interview_state": {
+    "mode": "skipped",
+    "rationale": "V1-BRIEF was authored manually and loaded as authoritative spec.client_brief per discovery doc recommendation (the chat-driven interview is wrong-shaped for a Tier C flagship of this complexity).",
+    "completed_at": "2026-04-29T17:10:00.000Z"
+  },
+  "_revision": 1,
+  "_last_modified": "2026-05-02T18:30:00.000Z",
+  "_audit_sessions": [
+    {
+      "audit_id": "cowork-audit-001",
+      "date": "2026-05-02",
+      "deliverables_path": "/Users/famtasticfritz/famtastic/docs/sites/site-mbsh-reunion/cowork-audit-001/",
+      "headline_finding": "Studio cannot produce MBSH at all today; build is forward-looking artifact for post-recommendations world. Recipes-as-product framing is the actual moat. Briefing-vs-repo drift is exhibit A for the knowledge capture tool case."
+    }
+  ],
+  "last_smoke_test": {
+    "timestamp": "2026-05-05T18:55:54.386387Z",
+    "passed": 7,
+    "failed": 0,
+    "dns_fallback": true,
+    "results": [
+      {
+        "name": "rsvp",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "name": "capsule",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "name": "chatbot-question",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "name": "attendees",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "name": "sponsors",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "name": "in-memory",
+        "status": 200,
+        "result": "pass"
+      },
+      {
+        "name": "cors-reject",
+        "status": 403,
+        "result": "pass"
+      }
+    ]
+  }
+}

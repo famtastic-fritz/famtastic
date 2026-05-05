@@ -1,0 +1,11 @@
+# MBSH cron register proof
+timestamp=2026-05-05T18:52:31Z
+cwd=/Users/famtasticfritz/famtastic-mbsh-deploy
+command=platform/famtastic-platform cron register mbsh-reunion
+
+cron.register: mbsh-reunion has 2 cron job(s) declared in spec
+
+cron.register: adding 0 7 * * * /usr/bin/php /home/nineoo/public_html/cron/send-capsules.php
+cron.register: adding 0 3 * * * /usr/bin/php /home/nineoo/public_html/cron/cleanup-rate-limits.php
+
+exit_code=0

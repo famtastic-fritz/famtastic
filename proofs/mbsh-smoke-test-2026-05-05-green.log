@@ -1,0 +1,20 @@
+# MBSH smoke test proof green
+timestamp=2026-05-05T18:55:50Z
+cwd=/Users/famtasticfritz/famtastic-mbsh-deploy
+command=platform/famtastic-platform smoke test mbsh-reunion
+
+smoke.test: API base = https://api.mbsh96reunion.com
+smoke.test: Origin    = https://mbsh96reunion.com
+smoke.test: DNS unresolved for api.mbsh96reunion.com; falling back to https://FAMTASTICINC.COM for backend runtime proof
+
+  -> rsvp ... PASS (200)
+  -> capsule ... PASS (200)
+  -> chatbot-question ... PASS (200)
+  -> attendees ... PASS (200)
+  -> sponsors ... PASS (200)
+  -> in-memory ... PASS (200)
+  -> cors-reject ... PASS (403)
+
+smoke.test: PASS=7 FAIL=0
+
+exit_code=0
