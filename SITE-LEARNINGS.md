@@ -24,6 +24,9 @@ not as a fifth active plan.
 - **Real Studio testing is mandatory.** Studio behavior must be verified via
   Playwright-driven Site Studio UI flows and actual Shay/Shay-Shay calls where
   the feature is a Shay behavior.
+- **Drive sync is not active work in this checklist.** Fritz marked Drive sync
+  complete, so it remains context/proof only. Workflow-as-data and the pipeline
+  visualizer remain open under `build-intent-fulfillment-trace`.
 
 ### Known Gaps opened or preserved
 
@@ -34,6 +37,10 @@ not as a fifth active plan.
   consolidated registry and ledgers.
 - The Workbench prototype still needs to be rebuilt against the frozen
   workspace contract before it becomes the default shell.
+- Workflow-as-data still needs the first instrumentation pass before
+  declarative pipeline stages can be introduced.
+- The pipeline visualizer remains unbuilt and depends on trustworthy trace and
+  workflow data.
 
 ## Plan Consolidation Verification (2026-05-04)
 

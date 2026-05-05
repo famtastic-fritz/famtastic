@@ -409,3 +409,7 @@ Added `plans/consolidation-verification-2026-05-04.md` after reviewing the 11-re
 ## 2026-05-04 — Consolidated execution checklist
 
 Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four-plan consolidation artifact. The checklist parks the stale Total Ask Plan as strategy context, maps useful asks into `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`, and prioritizes remaining work into P0/P1/P2 buckets. Deferred: applying the registry rewrite, promoting ledger tasks, adding run/proof records, and regenerating the status mirror.
+
+## 2026-05-04 — Consolidation status correction
+
+Updated the consolidated execution checklist to reflect Fritz's correction that Drive sync is complete and should not be carried as active work. Workflow-as-data and the pipeline visualizer remain open under `build-intent-fulfillment-trace`, with workflow instrumentation explicitly preceding any declarative pipeline refactor or visualizer build.

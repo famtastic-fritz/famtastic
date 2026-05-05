@@ -3,6 +3,7 @@
 **Status:** Working consolidation for Fritz review  
 **Inputs reviewed:** `plans/registry.json`, `plans/consolidation-verification-2026-05-04.md`, `docs/famtastic-total-ask-plan.md`, `plans/plan_2026_05_04_shay_process_intelligence/plan.json`, `docs/STUDIO-UI-FOUNDATION.md`  
 **Registry mutation:** Not applied yet. This checklist is the authority proposal for the rewrite.
+**Status correction:** Drive sync is marked complete; workflow-as-data and the pipeline visualizer remain open.
 
 ---
 
@@ -49,6 +50,10 @@ This follows the solution hierarchy:
 
 ## Total Ask Items To Keep
 
+### Do Not Carry Forward As Open Work
+
+- Drive sync fix and Drive diff report: marked complete. Keep as proof/context only, not as an active task.
+
 ### Keep Under `studio-workbench-foundation`
 
 - Shay v2 as an ambient operator surface, not a disconnected widget.
@@ -67,8 +72,8 @@ This follows the solution hierarchy:
 
 ### Keep Under `build-intent-fulfillment-trace`
 
-- Workflow-as-data, phased from instrumentation first to declarative stages later.
-- Pipeline visualizer functions: inspect, trace, propose first; reorder, swap, compare, history later.
+- Workflow-as-data: still open. Phase it from instrumentation first to declarative stages later.
+- Pipeline visualizer: still open. Build inspect, trace, and propose first; reorder, swap, compare, and history later.
 - Long-context fixes: prompt caching for injection bloat, structured stage handoffs for accumulation bloat, isolated sub-agents for monolithic-context bloat.
 - Evaluation/audit harnesses that output both a verdict and a system-improvement backlog.
 - Three site workflows: `new_site_from_brief`, `adapt_existing_site`, `rebuild_from_brief`.
@@ -122,6 +127,7 @@ This follows the solution hierarchy:
 - [ ] Promote only unresolved diagnostics into active tasks.
 - [ ] Surface fulfillment status in Workbench: requested, completed, deferred, placeholdered, proof.
 - [ ] Instrument `parallelBuild()` before refactoring it.
+- [ ] Start workflow-as-data phase 1: define stage names, boundaries, inputs, outputs, and proof events without changing execution order.
 
 ### P1 — Move MBSH Without Losing Platform Learnings
 
@@ -143,6 +149,7 @@ This follows the solution hierarchy:
 ## What Is Not Needed Now
 
 - A fifth active Total Ask plan.
+- Drive sync as an active task; it is complete and should only appear as proof/context.
 - More wave documents.
 - More generic Workbench layout passes before page/workspace discovery.
 - A visualizer before instrumentation exists.
@@ -161,4 +168,3 @@ If this shape is approved, apply it in this order:
 5. Regenerate `FAMTASTIC-STATUS.md`.
 6. Update `SITE-LEARNINGS.md`, `FAMTASTIC-STATE.md`, and `CHANGELOG.md`.
 7. Commit with a human-readable docs message.
-
