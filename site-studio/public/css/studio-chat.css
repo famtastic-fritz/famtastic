@@ -43,6 +43,39 @@
   max-width: 80% !important;
 }
 
+/* Session/site break divider — appears when TAG changes or new session boundary */
+.chat-session-break {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 8px;
+  font-size: 11px;
+  color: var(--fam-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  width: 100%;
+  align-self: stretch;
+  max-width: 100% !important;
+}
+.chat-session-break::before,
+.chat-session-break::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--fam-border);
+}
+.chat-session-break .break-site {
+  color: var(--fam-text-1);
+}
+.chat-session-break .break-time {
+  font-size: 10px;
+  color: var(--fam-text-3, var(--fam-text-2));
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
 /* ── Plan card ────────────────────────────────────────────────────────────── */
 
 .plan-card {

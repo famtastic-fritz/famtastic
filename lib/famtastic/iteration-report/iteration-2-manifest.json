@@ -1,0 +1,82 @@
+{
+  "iteration": "iteration-2",
+  "date": "2026-05-02",
+  "title": "Shay v2 architecture rebuild + capture flywheel MVP",
+  "duration": "~5 hours (across two sessions)",
+  "summary": "Iteration 2 of the FAMtastic total-ask plan. Shipped: Shay v2 architecture (6→2 surface consolidation, page-context registry, handoff contract), audit fixes (composer reflow, MutationObserver, layer isolation), Workshop rename + tighten, capture tool MVP (lib/famtastic/capture/), Web chat exporter (bookmarklet + userscript + manual fallback), Workshop tool rail (Cowork-pattern + 2 starter tools), this report generator. Nothing committed — Fritz reviews and commits manually.",
+  "categories": [
+    {
+      "title": "Architecture & planning docs",
+      "description": "Living documents that describe the FAMtastic system. Read these first.",
+      "items": [
+        { "path": "docs/famtastic-total-ask-plan.md", "status": "new", "description": "The master plan. North Star, 4-layer architecture, 5 chunks (capture flywheel, Shay v2, ecosystem substrate, infrastructure wins, 18-test eval), iteration cadence. Read this first." },
+        { "path": "docs/shay-architecture-v2-proposal.md", "status": "modified", "description": "Shay v2 architecture. Two surfaces (Shay-Shay + Workshop), one identity. Handoff contract, page-context registry, tool rail. Updated 2026-05-02b with explicit ecosystem framing (substrate scales to N Studios)." },
+        { "path": "docs/captures/2026-05-02_cowork-session-01.md", "status": "new", "description": "First knowledge-capture artifact. 6 decisions, 5 breakthroughs, 7 gaps, 7 lessons, 3 contradictions, 2 patterns. Each item is PROPOSED — Fritz reviews and approves item-by-item." }
+      ]
+    },
+    {
+      "title": "Visual mockups",
+      "description": "Static HTML targets that the implementation should converge on. Open each in browser.",
+      "items": [
+        { "path": "docs/mockups/mockup-a-shay-shay-on-media-studio.html", "status": "new", "description": "Mockup A: Shay-Shay on Media Studio. Page-context awareness, inline visual reasoning, action chips, Take-to-Workshop handoff trigger." },
+        { "path": "docs/mockups/mockup-b-shays-workshop.html", "status": "new", "description": "Mockup B: Shay's Workshop. Tool rail (Cowork-style), workbench with active artifact, docked chat, job queue, inherited handoff context." },
+        { "path": "docs/mockups/mockup-c-show-me-how.html", "status": "new", "description": "Mockup C: Show-Me-How routine. Spotlit UI elements, step counter, hand-back-control affordances." }
+      ]
+    },
+    {
+      "title": "Studio code — UI fixes & v2 substrate",
+      "description": "Live changes to the running Studio. Refresh localhost:3334 in browser to see them.",
+      "items": [
+        { "path": "site-studio/public/index.html", "status": "modified", "description": "6→2 surface consolidation (sidebar nav row + sidebar pane removed). Desk → Workshop rename. Workshop tab tightened (max-width 920px, no full-width stretch, no extra cards). Input IDs renamed (shay-shay-input, shay-workshop-input, shay-workshop-shell). Three new script tags for v2 modules." },
+        { "path": "site-studio/public/css/studio-shell.css", "status": "modified", "description": "Composer fix: padding-right is now fixed 96px instead of var(--shay-lite-safe-area). Kills the 'chat moves' feeling caused by JS-driven width recalc." },
+        { "path": "site-studio/public/css/studio-orb.css", "status": "modified", "description": "Layer isolation: isolation:isolate on #shay-lite-shell. Z-index races between orb, callout, mode popup, project picker, brain fallback bar resolved. Plus #pip-direct-input → #shay-shay-input rename." },
+        { "path": "site-studio/public/js/studio-orb.js", "status": "modified", "description": "MutationObserver quieted (no more orb dancing on every chat append — debounced via rAF, only flips on real state transitions). getShayShayContext() now pulls page_context from ShayContextRegistry. All input ID references renamed." },
+        { "path": "site-studio/public/js/studio-shell.js", "status": "modified", "description": "Tab label 'Shay' → 'Workshop' (internal id stays 'shay' for switchTab backwards compat). Input ID references renamed." }
+      ]
+    },
+    {
+      "title": "v2 substrate — new modules",
+      "description": "New JS modules implementing the Shay v2 architecture primitives.",
+      "items": [
+        { "path": "site-studio/public/js/shay-context-registry.js", "status": "new", "description": "Browser-side page-context registry. Pages register; Shay-Shay pulls on demand. Studio-namespaced page IDs (e.g. media_studio.image_grid). Includes __debug.installFakeMediaStudio() for testing." },
+        { "path": "site-studio/public/js/shay-handoff.js", "status": "new", "description": "Shay-Shay → Workshop handoff contract. Structured payload (source page, current artifact, intent, success criteria, follow-up jobs). Auto-renders 'Handoff from Shay-Shay' banner when received. Includes __debug.demoHandoff() for testing." },
+        { "path": "site-studio/public/js/shay-workshop.js", "status": "new", "description": "Workshop tool rail (Cowork-pattern). Pluggable, additive, filters by appliesTo + active Studio. Built-in tools: Workbench (default), Active Job, Cost Tracker. Registration API: ShayWorkshop.registerTool({...})." }
+      ]
+    },
+    {
+      "title": "Capture flywheel (Layer 4)",
+      "description": "Ecosystem service for ingesting conversations and producing structured captures. Lives in lib/famtastic/, not lib/site-studio/.",
+      "items": [
+        { "path": "lib/famtastic/capture/index.js", "status": "new", "description": "Main API. scanImports(), scanStudioConversations(), scaffoldCapture(), parseApprovedItems(), dryRunPromote(), summary()." },
+        { "path": "lib/famtastic/capture/cli.js", "status": "new", "description": "CLI: summary, scan, scaffold, dry-run, promote (last not yet implemented). Run with HOME=/path/to/famtastic prefix from sandbox; works natively on user's machine." },
+        { "path": "lib/famtastic/capture/template.md", "status": "new", "description": "Scaffold template with item slots (Decision/Breakthrough/Gap/Lesson/Pattern/Contradiction). Each item has STATUS + LANDS IN headers." },
+        { "path": "lib/famtastic/capture/README.md", "status": "new", "description": "Usage guide. Workflow: drop input → scaffold → fill in → dry-run → promote. ID conventions table. Status (MVP vs. iteration 3+)." }
+      ]
+    },
+    {
+      "title": "Web chat exporter",
+      "description": "Three install paths to export claude.ai chats into the capture flywheel. Open the HTML, install one, start exporting.",
+      "items": [
+        { "path": "tools/web-chat-exporter/README.md", "status": "new", "description": "Workflow doc. Three install paths (bookmarklet, userscript, manual paste). How outputs feed the capture tool." },
+        { "path": "tools/web-chat-exporter/bookmarklet.html", "status": "new", "description": "Drag-to-bookmarks-bar installer. Zero install. Opens chat as markdown in new tab. Save and drop into ~/famtastic/imports/web-chats/." },
+        { "path": "tools/web-chat-exporter/userscript.js", "status": "new", "description": "Tampermonkey/Greasemonkey userscript. Adds Export button to claude.ai. Auto-downloads markdown file." },
+        { "path": "tools/web-chat-exporter/normalize.js", "status": "new", "description": "Manual paste fallback. Takes raw text dump from claude.ai, heuristically detects message boundaries, normalizes to capture-ready markdown." }
+      ]
+    },
+    {
+      "title": "Iteration report system",
+      "description": "Self-bootstrapping: this very report was generated by the report generator.",
+      "items": [
+        { "path": "lib/famtastic/iteration-report/generate.js", "status": "new", "description": "Report generator. Takes a manifest JSON, produces self-contained HTML index of every artifact touched in an iteration." },
+        { "path": "lib/famtastic/iteration-report/iteration-2-manifest.json", "status": "new", "description": "Manifest for THIS iteration. Hand-written for now; future iterations may auto-generate from git diff + chat transcript." }
+      ]
+    },
+    {
+      "title": "Documentation updates (.wolf/)",
+      "description": "Living architectural memory.",
+      "items": [
+        { "path": ".wolf/cerebrum.md", "status": "modified", "description": "ORB_STATE_MACHINE rule updated to 5 valid states (SHAY_THINKING officially joins). Architectural memory of why state machine doc/code drifted, lesson recorded." }
+      ]
+    }
+  ]
+}

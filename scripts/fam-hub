@@ -354,6 +354,28 @@ IDEAHELP
     "$SCRIPT_DIR/fam-convo-promote" "$TAG" "$@"
     ;;
 
+  capture)
+    CAPTURECMD="${2:-help}"
+    case "$CAPTURECMD" in
+      extract)
+        shift 2 || true
+        node "$SCRIPT_DIR/capture-insights.js" extract "$@"
+        ;;
+      help|*)
+        cat <<'CAPTUREHELP'
+fam-hub capture — Review-only knowledge capture
+
+Usage:
+  fam-hub capture extract <source-file> [--out-dir captures/review] [--id capture-id]
+
+Extracts design decisions, breakthroughs, gaps, lessons, and contradictions
+into a review packet. It does not write canonical memory files.
+
+CAPTUREHELP
+        ;;
+    esac
+    ;;
+
   # --- Research ---
   research)
     RESCMD="${2:-help}"
@@ -380,6 +402,580 @@ IDEAHELP
         echo "  query <v> \"q\"     Query research for a vertical"
         echo "  intel-loop        Run intelligence loop across all sites"
         echo "                    → ~/PENDING-REVIEW.md" ;;
+    esac
+    ;;
+
+  # --- Plan / Task / Run Intelligence ---
+  plan)
+    PLANCMD="${2:-list}"
+    REGISTRY="$HUB_ROOT/plans/registry.json"
+
+    require_plan_registry() {
+      if [ ! -f "$REGISTRY" ]; then
+        echo "Plan registry not found: $REGISTRY" >&2
+        echo "Create plans/registry.json before using fam-hub plan." >&2
+        return 1
+      fi
+      return 0
+    }
+
+    plan_list_standard() {
+      jq -r '
+        def proof_links:
+          (.proof // [])
+          | map(if .path then "[\(.label // .path)](\(.path))" else (.label // "-") end)
+          | if length == 0 then "-" else join("<br>") end;
+        "| Active plan | Status | Current workstream | Next action | Proof | Open blockers |",
+        "|---|---|---|---|---|---|",
+        (
+          .plans[]
+          | "| [`\(.id)`](\(.plan_path // "#")) - \(.title) | \(.status_label // .status // "unknown") | \(.current_workstream // "unknown") | \(.next_action // "unknown") | \(proof_links) | \(.open_blockers // "none") |"
+        )
+      ' "$REGISTRY"
+    }
+
+    plan_list_compact() {
+      jq -r '
+        .plans[]
+        | "\(.id)\t\(.status_label // .status // "unknown")\t\(.current_workstream // "unknown")\t\(.next_action // "unknown")"
+      ' "$REGISTRY" | awk -F '\t' '{ printf "%-36s %-34s %-48s %s\n", $1, $2, $3, $4 }'
+    }
+
+    plan_show_detail() {
+      local plan_id="$1"
+      jq -r --arg id "$plan_id" '
+        def bullets($items):
+          if ($items // []) | length == 0 then "- none"
+          else ($items // []) | map("- " + .) | join("\n")
+          end;
+        def proof_bullets:
+          if (.proof // []) | length == 0 then "- none"
+          else
+            (.proof // [])
+            | map("- [" + (.label // .path // "proof") + "](" + (.path // "#") + ")")
+            | join("\n")
+          end;
+        .plans[] | select(.id == $id) |
+          "# " + .id + " - " + .title + "\n\n" +
+          "| Field | Value |\n|---|---|\n" +
+          "| Status | " + (.status_label // .status // "unknown") + " |\n" +
+          "| Group | " + (.group // "unknown") + " |\n" +
+          "| Source plan | " + (.plan_path // "unknown") + " |\n" +
+          "| Originator | " + (.originator // "unknown") + " |\n" +
+          "| Origin surface | " + (.origin_surface // "unknown") + " |\n" +
+          "| Current runner | " + (.current_runner // "unknown") + " |\n" +
+          "| Runner surface | " + (.runner_surface // "unknown") + " |\n" +
+          "| Run target | " + (.run_target // "unknown") + " |\n" +
+          "| Handling | " + (.handling // "unknown") + " |\n" +
+          "| Current workstream | " + (.current_workstream // "unknown") + " |\n" +
+          "| Next action | " + (.next_action // "unknown") + " |\n" +
+          "| Open blockers | " + (.open_blockers // "none") + " |\n\n" +
+          "## Proof\n\n" + proof_bullets + "\n\n" +
+          "## Tasks\n\n" + bullets(.tasks) + "\n\n" +
+          "## Assumptions\n\n" + bullets(.assumptions)
+      ' "$REGISTRY"
+    }
+
+    case "$PLANCMD" in
+      list|status)
+        require_plan_registry || exit 1
+        FORMAT="standard"
+        if [ "${3:-}" = "--compact" ]; then
+          FORMAT="compact"
+        elif [ "${3:-}" = "--json" ] || [ "${3:-}" = "--format=json" ]; then
+          FORMAT="json"
+        elif [ "${3:-}" = "--standard" ]; then
+          FORMAT="standard"
+        fi
+        case "$FORMAT" in
+          compact) plan_list_compact ;;
+          json) jq '.' "$REGISTRY" ;;
+          standard) plan_list_standard ;;
+        esac
+        ;;
+      show)
+        require_plan_registry || exit 1
+        PLAN_ID="${3:-}"
+        if [ -z "$PLAN_ID" ]; then
+          echo "Usage: fam-hub plan show <plan-id>" >&2
+          exit 1
+        fi
+        if ! jq -e --arg id "$PLAN_ID" '.plans[] | select(.id == $id)' "$REGISTRY" >/dev/null; then
+          echo "Plan not found: $PLAN_ID" >&2
+          echo "Run: fam-hub plan list --compact" >&2
+          exit 1
+        fi
+        plan_show_detail "$PLAN_ID"
+        ;;
+      review)
+        require_plan_registry || exit 1
+        TASK_LEDGER="$HUB_ROOT/tasks/tasks.jsonl"
+        RUN_LEDGER="$HUB_ROOT/runs/runs.jsonl"
+        PROOF_LEDGER="$HUB_ROOT/proofs/proof-ledger.jsonl"
+        plan_count=$(jq '.plans | length' "$REGISTRY")
+        active_count=$(jq '[.plans[] | select(.status == "active")] | length' "$REGISTRY")
+        parent_count=$(jq '.active_parent_ids | length' "$REGISTRY")
+        absorbed_count=$(jq '.absorbed_records | length' "$REGISTRY")
+        task_count=0
+        run_count=0
+        proof_count=0
+        [ -f "$TASK_LEDGER" ] && task_count=$(grep -c '[^[:space:]]' "$TASK_LEDGER" || true)
+        [ -f "$RUN_LEDGER" ] && run_count=$(grep -c '[^[:space:]]' "$RUN_LEDGER" || true)
+        [ -f "$PROOF_LEDGER" ] && proof_count=$(grep -c '[^[:space:]]' "$PROOF_LEDGER" || true)
+
+        echo "Plan Registry Review"
+        echo "===================="
+        echo ""
+        printf "Registry:          %s\n" "$REGISTRY"
+        printf "Plans shown:       %s\n" "$plan_count"
+        printf "Active parents:    %s / expected %s\n" "$active_count" "$parent_count"
+        printf "Absorbed records:  %s\n" "$absorbed_count"
+        printf "Task records:      %s\n" "$task_count"
+        printf "Run records:       %s\n" "$run_count"
+        printf "Proof records:     %s\n" "$proof_count"
+        echo ""
+        echo "Active parent IDs:"
+        jq -r '.active_parent_ids[] | "  - " + .' "$REGISTRY"
+        echo ""
+        echo "Warnings:"
+        warn=0
+        if [ "$plan_count" -ne "$parent_count" ]; then
+          echo "  - .plans length does not match active_parent_ids length"
+          warn=1
+        fi
+        if [ "$active_count" -ne "$parent_count" ]; then
+          echo "  - active plan count does not match active_parent_ids length"
+          warn=1
+        fi
+        if [ "$task_count" -eq 0 ]; then
+          echo "  - task ledger is empty"
+          warn=1
+        fi
+        if [ "$run_count" -eq 0 ]; then
+          echo "  - run ledger is empty"
+          warn=1
+        fi
+        if [ "$proof_count" -eq 0 ]; then
+          echo "  - proof ledger is empty"
+          warn=1
+        fi
+        if [ "$warn" -eq 0 ]; then
+          echo "  none"
+        fi
+        ;;
+      help|*)
+        cat <<'PLANHELP'
+fam-hub plan — Plan / task / run intelligence
+
+Usage:
+  fam-hub plan list                 Show the standard six-field plan list
+  fam-hub plan list --compact       Show one-line compact plan statuses
+  fam-hub plan list --json          Print raw plans/registry.json
+  fam-hub plan status               Alias for plan list
+  fam-hub plan show <plan-id>       Show detail for one plan
+  fam-hub plan review               Review registry/ledger health
+
+PLANHELP
+        ;;
+    esac
+    ;;
+
+  task)
+    TASKCMD="${2:-list}"
+    TASK_LEDGER="$HUB_ROOT/tasks/tasks.jsonl"
+    case "$TASKCMD" in
+      list|status)
+        PLAN_FILTER=""
+        if [ "${3:-}" = "--plan" ]; then
+          PLAN_FILTER="${4:-}"
+        fi
+        if [ ! -f "$TASK_LEDGER" ] || ! grep -q '[^[:space:]]' "$TASK_LEDGER"; then
+          echo "No task records yet."
+          echo "Seed source: plans/registry.json"
+          echo "Next: promote plan tasks into tasks/tasks.jsonl with plan_id, task_id, runner, status, proof_required."
+          exit 0
+        fi
+        if [ -n "$PLAN_FILTER" ]; then
+          echo "| Task | Status | Title | Runner | Next action |"
+          echo "|---|---|---|---|---|"
+          jq -r --arg plan "$PLAN_FILTER" '
+            select(.plan_id == $plan)
+            | "| `\(.task_id // .id)` | \(.status // "unknown") | \(.title // .summary // "untitled") | \(.runner // "unassigned") | \(.next_action // "-") |"
+          ' "$TASK_LEDGER"
+        else
+          echo "| Task | Plan | Status | Runner | Next action |"
+          echo "|---|---|---|---|---|"
+          jq -r '
+            "| `\(.task_id // .id)` | \(.plan_id // "unknown") | \(.status // "unknown") | \(.runner // "unassigned") | \(.next_action // "-") |"
+          ' "$TASK_LEDGER"
+        fi
+        ;;
+      promote)
+        REGISTRY="$HUB_ROOT/plans/registry.json"
+        MODE="dry-run"
+        PLAN_FILTER=""
+        for arg in "${@:3}"; do
+          case "$arg" in
+            --apply) MODE="apply" ;;
+            --dry-run) MODE="dry-run" ;;
+            --plan=*) PLAN_FILTER="${arg#--plan=}" ;;
+          esac
+        done
+        if [ ! -f "$REGISTRY" ]; then
+          echo "Plan registry not found: $REGISTRY" >&2
+          exit 1
+        fi
+        mkdir -p "$(dirname "$TASK_LEDGER")"
+        tmp_promote=$(mktemp)
+        jq -c --arg plan "$PLAN_FILTER" '
+          .plans[]
+          | select($plan == "" or .id == $plan)
+          | . as $p
+          | ($p.tasks // [])
+          | to_entries[]
+          | {
+              task_id: ("task-" + $p.id + "-" + ((.key + 1) | tostring)),
+              plan_id: $p.id,
+              priority: "P2",
+              status: "ready",
+              title: .value,
+              runner: ($p.current_runner // "unassigned"),
+              next_action: .value,
+              acceptance: "Promoted from plans/registry.json task array.",
+              proof_required: [($p.plan_path // "plans/registry.json")],
+              source: "plans/registry.json",
+              auto_approved: true
+            }
+        ' "$REGISTRY" > "$tmp_promote"
+        if [ "$MODE" = "dry-run" ]; then
+          echo "Dry run: would promote these tasks if not already present:"
+          jq -r '"  - \(.task_id) [\(.plan_id)] \(.title)"' "$tmp_promote"
+          rm -f "$tmp_promote"
+          exit 0
+        fi
+        touch "$TASK_LEDGER"
+        promoted=0
+        while IFS= read -r record; do
+          [ -n "$record" ] || continue
+          task_id=$(printf '%s\n' "$record" | jq -r '.task_id')
+          if grep -q "\"task_id\":\"$task_id\"" "$TASK_LEDGER"; then
+            continue
+          fi
+          printf '%s\n' "$record" >> "$TASK_LEDGER"
+          promoted=$((promoted + 1))
+        done < "$tmp_promote"
+        rm -f "$tmp_promote"
+        echo "Promoted $promoted task(s)."
+        ;;
+      help|*)
+        cat <<'TASKHELP'
+fam-hub task — Task ledger status
+
+Usage:
+  fam-hub task list                 Show all task records
+  fam-hub task list --plan <id>     Show task records for one plan
+  fam-hub task promote --dry-run    Preview task promotion from registry
+  fam-hub task promote --apply      Append missing promoted task records
+
+TASKHELP
+        ;;
+    esac
+    ;;
+
+  run)
+    RUNCMD="${2:-status}"
+    RUN_LEDGER="$HUB_ROOT/runs/runs.jsonl"
+    case "$RUNCMD" in
+      status|list)
+        PLAN_FILTER=""
+        if [ "${3:-}" = "--plan" ]; then
+          PLAN_FILTER="${4:-}"
+        fi
+        if [ ! -f "$RUN_LEDGER" ] || ! grep -q '[^[:space:]]' "$RUN_LEDGER"; then
+          echo "No run records yet."
+          echo "Next: create runs/runs.jsonl entries when a plan is started with a target like complete, 50%, timebox, or until_blocked."
+          exit 0
+        fi
+        if [ -n "$PLAN_FILTER" ]; then
+          echo "| Run | Status | Target | Runner | Current step | Report back |"
+          echo "|---|---|---|---|---|---|"
+          jq -r --arg plan "$PLAN_FILTER" '
+            select(.plan_id == $plan)
+            | "| `\(.run_id // .id)` | \(.status // "unknown") | \(.target // "unknown") | \(.runner // "unassigned") | \(.current_step // "-") | \(.report_back // "-") |"
+          ' "$RUN_LEDGER"
+        else
+          echo "| Run | Plan | Status | Target | Runner | Current step | Report back |"
+          echo "|---|---|---|---|---|---|---|"
+          jq -r '
+            "| `\(.run_id // .id)` | \(.plan_id // "unknown") | \(.status // "unknown") | \(.target // "unknown") | \(.runner // "unassigned") | \(.current_step // "-") | \(.report_back // "-") |"
+          ' "$RUN_LEDGER"
+        fi
+        ;;
+      start)
+        PLAN_ID="${3:-}"
+        TARGET="${4:-complete}"
+        MODE="apply"
+        if [ "${5:-}" = "--dry-run" ] || [ "${3:-}" = "--dry-run" ]; then
+          MODE="dry-run"
+        fi
+        if [ -z "$PLAN_ID" ] || [ "$PLAN_ID" = "--dry-run" ]; then
+          echo "Usage: fam-hub run start <plan-id> [target] [--dry-run]" >&2
+          exit 1
+        fi
+        REGISTRY="$HUB_ROOT/plans/registry.json"
+        if [ ! -f "$REGISTRY" ]; then
+          echo "Plan registry not found: $REGISTRY" >&2
+          exit 1
+        fi
+        if ! jq -e --arg id "$PLAN_ID" '.plans[] | select(.id == $id)' "$REGISTRY" >/dev/null; then
+          echo "Plan not found: $PLAN_ID" >&2
+          exit 1
+        fi
+        ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        safe_ts=$(date -u +"%Y%m%d%H%M%S")
+        run_id="run-$safe_ts-$PLAN_ID"
+        record=$(jq -cn \
+          --arg run_id "$run_id" \
+          --arg plan_id "$PLAN_ID" \
+          --arg target "$TARGET" \
+          --arg started_at "$ts" \
+          '{
+            run_id: $run_id,
+            plan_id: $plan_id,
+            status: "active",
+            target: $target,
+            runner: "Codex",
+            started_at: $started_at,
+            current_step: "started",
+            report_back: "Report progress at committed checkpoints.",
+            background_allowed: true,
+            auto_approved: true,
+            source: "fam-hub run start"
+          }')
+        if [ "$MODE" = "dry-run" ]; then
+          printf '%s\n' "$record" | jq '.'
+          exit 0
+        fi
+        mkdir -p "$(dirname "$RUN_LEDGER")"
+        printf '%s\n' "$record" >> "$RUN_LEDGER"
+        echo "Started run: $run_id"
+        ;;
+      help|*)
+        cat <<'RUNHELP'
+fam-hub run — Active run ledger status
+
+Usage:
+  fam-hub run status                Show all run records
+  fam-hub run status --plan <id>    Show runs for one plan
+  fam-hub run start <plan-id> [target] [--dry-run]
+
+RUNHELP
+        ;;
+    esac
+    ;;
+
+  # --- Studio Tier patches ---
+  studio)
+    STUDIOCMD="${2:-help}"
+    case "$STUDIOCMD" in
+      patches)
+        ACTION="${3:-list}"
+        PATCH_ID="${4:-}"
+        PENDING_DIR="$HUB_ROOT/.studio-patches/pending"
+        APPLIED_DIR="$HUB_ROOT/.studio-patches/applied"
+        REJECTED_DIR="$HUB_ROOT/.studio-patches/rejected"
+
+        # Strict patch-id regex: ISO-timestamp-shape + 6-hex suffix.
+        # No path separators, no '..', no shell metacharacters.
+        validate_patch_id() {
+          local id="$1"
+          if [[ ! "$id" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{3}Z-[0-9a-f]{6}$ ]]; then
+            echo "Error: invalid patch id format: $id" >&2
+            echo "       expected ISO-timestamp + 6-hex suffix (e.g. 2026-04-30T19-13-55-073Z-8669e6)" >&2
+            return 1
+          fi
+          return 0
+        }
+
+        # Strip ANSI escapes and other terminal control bytes from a string,
+        # so a patch description can't smuggle escape sequences into the
+        # operator's terminal.
+        sanitize_terminal() {
+          # Filter ESC [ ... letter sequences plus bare control bytes (except \t \n).
+          tr -d '\001-\010\013\014\016-\037\177' | sed -E $'s/\x1b\\[[0-9;?]*[A-Za-z]//g'
+        }
+
+        case "$ACTION" in
+          list)
+            if [ ! -d "$PENDING_DIR" ] || [ -z "$(ls -A "$PENDING_DIR" 2>/dev/null)" ]; then
+              echo "No pending patches."
+              exit 0
+            fi
+            echo "Pending patches:"
+            for f in "$PENDING_DIR"/*.json; do
+              [ -f "$f" ] || continue
+              id=$(basename "$f" .json)
+              target=$(jq -r '.path' "$f" | sanitize_terminal)
+              desc=$(jq -r '.description' "$f" | sanitize_terminal)
+              flagged=$(jq -r '.flagged_secret // false' "$f")
+              policy=$(jq -r '.policy_at_propose // "?"' "$f")
+              if [ "$flagged" = "true" ]; then
+                printf "  ⚠  %s  →  %s  [%s]\n" "$id" "$target" "$policy"
+                printf "     %s\n" "$desc"
+                printf "     ⚠ TOUCHES SECRET-BEARING FILE\n"
+              else
+                printf "     %s  →  %s  [%s]\n" "$id" "$target" "$policy"
+                printf "     %s\n" "$desc"
+              fi
+            done
+            ;;
+          show)
+            if [ -z "$PATCH_ID" ]; then
+              echo "Usage: fam-hub studio patches show <id>" >&2
+              exit 1
+            fi
+            validate_patch_id "$PATCH_ID" || exit 1
+            f="$PENDING_DIR/$PATCH_ID.json"
+            if [ ! -f "$f" ]; then
+              echo "Patch not found in pending: $PATCH_ID" >&2
+              exit 1
+            fi
+            target=$(jq -r '.path' "$f" | sanitize_terminal)
+            desc=$(jq -r '.description' "$f" | sanitize_terminal)
+            flagged=$(jq -r '.flagged_secret // false' "$f")
+            policy=$(jq -r '.policy_at_propose // "?"' "$f")
+            old_str=$(jq -r '.old_str' "$f")
+            new_str=$(jq -r '.new_str' "$f")
+            echo "Patch:       $PATCH_ID"
+            echo "Target:      $target"
+            echo "Policy:      $policy"
+            echo "Description: $desc"
+            if [ "$flagged" = "true" ]; then
+              echo "⚠ Flagged:    touches a secret-bearing file (override was acknowledged at proposal)"
+            fi
+            echo ""
+            echo "--- old"
+            printf "%s\n" "$old_str" | sanitize_terminal
+            echo "+++ new"
+            printf "%s\n" "$new_str" | sanitize_terminal
+            ;;
+          apply)
+            if [ -z "$PATCH_ID" ]; then
+              echo "Usage: fam-hub studio patches apply <id>" >&2
+              exit 1
+            fi
+            validate_patch_id "$PATCH_ID" || exit 1
+            f="$PENDING_DIR/$PATCH_ID.json"
+            if [ ! -f "$f" ]; then
+              echo "Patch not found in pending: $PATCH_ID" >&2
+              exit 1
+            fi
+
+            # Re-validate via the Node helper. It re-resolves path against the
+            # current inventory and re-checks old_str uniqueness.
+            VALIDATE_OUT=$(HUB_ROOT="$HUB_ROOT" node "$HUB_ROOT/scripts/lib/studio-tier-validate.js" "$f")
+            VALIDATE_RC=$?
+            if [ $VALIDATE_RC -ne 0 ]; then
+              echo "Apply refused — validation failed:" >&2
+              echo "$VALIDATE_OUT" | jq -r '.error' >&2
+              policy_change=$(echo "$VALIDATE_OUT" | jq -r '"\(.current_policy)|\(.policy_at_propose)"')
+              if [ -n "$policy_change" ] && [ "$policy_change" != "null|null" ]; then
+                echo "Policy at propose: $(echo "$VALIDATE_OUT" | jq -r '.policy_at_propose // "n/a"')" >&2
+                echo "Policy now:        $(echo "$VALIDATE_OUT" | jq -r '.current_policy // "n/a"')" >&2
+              fi
+              exit 1
+            fi
+
+            FLAGGED=$(echo "$VALIDATE_OUT" | jq -r '.flagged_secret')
+            if [ "$FLAGGED" = "true" ]; then
+              TARGET=$(jq -r '.path' "$f" | sanitize_terminal)
+              echo "⚠  This patch modifies a flagged secret-bearing file: $TARGET" >&2
+              echo "   The patch was proposed with explicit acknowledgment." >&2
+              echo "   Proceeding with apply." >&2
+            fi
+
+            ABS=$(echo "$VALIDATE_OUT" | jq -r '.abs')
+
+            # Use Python to perform the literal replacement — handles multiline
+            # strings safely without shell quoting hazards.
+            python3 - "$f" "$ABS" <<'PYEOF'
+import json, sys, pathlib
+patch  = json.load(open(sys.argv[1]))
+target = pathlib.Path(sys.argv[2])
+content = target.read_text()
+count   = content.count(patch['old_str'])
+if count == 0:
+    print(f"ERROR: old_str no longer in file (file changed since validation)", file=sys.stderr)
+    sys.exit(1)
+if count > 1:
+    print(f"ERROR: old_str matches {count} times — ambiguous", file=sys.stderr)
+    sys.exit(1)
+target.write_text(content.replace(patch['old_str'], patch['new_str']))
+print(f"Applied to {target}")
+PYEOF
+            APPLY_RC=$?
+            if [ $APPLY_RC -ne 0 ]; then
+              echo "Apply failed — patch left in pending." >&2
+              exit 1
+            fi
+
+            mkdir -p "$APPLIED_DIR"
+            mv "$f" "$APPLIED_DIR/"
+            echo "Patch $PATCH_ID applied and archived to $APPLIED_DIR"
+
+            # Notify Studio so it can broadcast patch-applied to the proposing
+            # convId and queue a verification reminder. Best-effort — silence
+            # curl errors so a stopped Studio doesn't fail the apply.
+            STUDIO_PORT="${STUDIO_PORT:-3334}"
+            APPLIED_BODY=$(jq -n --arg id "$PATCH_ID" --arg status "applied" '{id:$id, status:$status}')
+            curl -s -m 3 -X POST "http://localhost:$STUDIO_PORT/api/studio-patches/applied" \
+              -H "Content-Type: application/json" \
+              -H "Origin: http://localhost:$STUDIO_PORT" \
+              -d "$APPLIED_BODY" >/dev/null 2>&1 \
+              && echo "Notified Studio of patch apply." \
+              || echo "Note: Studio notify skipped (Studio not running on :$STUDIO_PORT)."
+            ;;
+          reject)
+            if [ -z "$PATCH_ID" ]; then
+              echo "Usage: fam-hub studio patches reject <id>" >&2
+              exit 1
+            fi
+            validate_patch_id "$PATCH_ID" || exit 1
+            f="$PENDING_DIR/$PATCH_ID.json"
+            if [ ! -f "$f" ]; then
+              echo "Patch not found in pending: $PATCH_ID" >&2
+              exit 1
+            fi
+            mkdir -p "$REJECTED_DIR"
+            mv "$f" "$REJECTED_DIR/"
+            echo "Patch $PATCH_ID rejected and archived to $REJECTED_DIR"
+            ;;
+          *)
+            cat <<'PHELP'
+fam-hub studio patches — Studio Tier patch review
+
+Usage:
+  fam-hub studio patches list                 List pending patches
+  fam-hub studio patches show <id>            Show patch metadata + diff
+  fam-hub studio patches apply <id>           Re-validate and apply a pending patch
+  fam-hub studio patches reject <id>          Move patch to rejected/
+
+PHELP
+            ;;
+        esac
+        ;;
+      *)
+        cat <<'STUDIOHELP'
+fam-hub studio — Studio Tier mode
+
+Usage:
+  fam-hub studio patches [list|show|apply|reject] [id]
+                                              Review and apply patches that
+                                              Shay-Shay proposed via the
+                                              Studio Tier tools.
+
+STUDIOHELP
+        ;;
     esac
     ;;
 
@@ -485,6 +1081,7 @@ Multi-Agent Workflow:
   fam-hub agent run <agent> <tag>   Run agent on a tag
   fam-hub convo reconcile <tag>     Reconcile multi-agent conversation
   fam-hub ingest <tag> {md|json}    Ingest content
+  fam-hub capture extract <file>     Produce review-only knowledge packet
 
 Admin:
   fam-hub admin doctor              Check dependencies

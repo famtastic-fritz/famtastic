@@ -1,0 +1,423 @@
+{
+  "schema_version": "0.1.0",
+  "generated_from": [
+    "docs/active-plan-pipeline-report-2026-05-04.md",
+    "plans/plan_2026_05_04_shay_process_intelligence/plan.json"
+  ],
+  "updated_at": "2026-05-04T00:00:00.000Z",
+  "status": "pilot",
+  "governance": {
+    "mode": "generous",
+    "default_behavior": "warn_log_notify",
+    "hard_stop_conditions": [
+      "destructive_file_delete",
+      "production_deploy",
+      "payment_or_auth_change",
+      "dns_or_domain_change",
+      "expensive_media_or_api_generation",
+      "parallel_write_scope_conflict",
+      "secret_bearing_config_change"
+    ]
+  },
+  "densities": {
+    "compact": "plans/templates/density-compact.md",
+    "standard": "plans/templates/density-standard.md",
+    "detail": "plans/templates/density-detail.md"
+  },
+  "plans": [
+    {
+      "id": "studio-master-plan",
+      "title": "Make Studio Feel Like Studio",
+      "status": "active",
+      "status_label": "Active execution plan",
+      "group": "studio_shell_workspace",
+      "plan_path": "docs/STUDIO-MASTER-PLAN.md",
+      "current_workstream": "Wave 0 appears complete; closure proof needed",
+      "next_action": "Close Wave 0 or document exact remaining proof, then start Wave 1 Workspace Substrate",
+      "open_blockers": "Wave 0 status stale until closure is recorded",
+      "originator": "Fritz plus prior planning sessions",
+      "origin_surface": "mixed",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "plan",
+          "path": "docs/STUDIO-MASTER-PLAN.md"
+        }
+      ],
+      "tasks": [
+        "Close Wave 0 or document remaining proof",
+        "Define canonical workspace state",
+        "Persist workspace/session state across reload",
+        "Make layout presets real",
+        "Split Inspect from Project",
+        "Make bottom dock a real status/log/queue/terminal surface"
+      ],
+      "assumptions": [
+        "Wave 0 checklist appears complete from the report but needs direct closure proof."
+      ]
+    },
+    {
+      "id": "build-orchestration-trace",
+      "title": "Build as Traceable Fulfillment System",
+      "status": "partially_shipped",
+      "status_label": "Partially shipped",
+      "group": "build_orchestration_trace",
+      "plan_path": "docs/build-orchestration-trace-plan.md",
+      "current_workstream": "Trace infrastructure shipped; fulfillment UI pending",
+      "next_action": "Surface fulfillment status in Studio so unusual requests are not silently flattened",
+      "open_blockers": "No active blocker; UI surfacing is pending",
+      "originator": "planning and handoff session",
+      "origin_surface": "mixed",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "plan",
+          "path": "docs/build-orchestration-trace-plan.md"
+        },
+        {
+          "label": "changelog",
+          "path": "CHANGELOG.md"
+        }
+      ],
+      "tasks": [
+        "Surface fulfillment status in Studio",
+        "Show requested versus completed versus deferred features",
+        "Add trace and fulfillment panels for run id, decisions, provider, cost, verification, and follow-up work",
+        "Connect build trace outcomes to learning and capture promotion"
+      ],
+      "assumptions": [
+        "Trace infrastructure landed before the UI fully exposed it."
+      ]
+    },
+    {
+      "id": "baseline-closure-review",
+      "title": "Baseline Failure Closure Review",
+      "status": "needs_review",
+      "status_label": "Needs review / blocked",
+      "group": "baseline_closure",
+      "plan_path": "architecture/2026-04-25-baseline-closure-review.md",
+      "current_workstream": "WS1 routing permissions, WS2 planning fence, WS3 deploy preflight",
+      "next_action": "Revise or supersede serious findings before execution",
+      "open_blockers": "Serious review findings remain unresolved",
+      "originator": "adversarial review session",
+      "origin_surface": "mixed",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "hard_stop_for_execution",
+      "proof": [
+        {
+          "label": "review",
+          "path": "architecture/2026-04-25-baseline-closure-review.md"
+        },
+        {
+          "label": "diagnostic",
+          "path": "architecture/2026-04-25-baseline-failure-diagnostic.md"
+        }
+      ],
+      "tasks": [
+        "Resolve Developer Mode precondition in Shay Desk build path",
+        "Prevent slug collision overwrite",
+        "Avoid divergent site creation through handlePlanning",
+        "Preserve or extract shared site creation and switching helper",
+        "Add deploy preflight and child-process spawn-error handling",
+        "Add regression tests for wrong active site, collision, competitor mentions, and deploy commands"
+      ],
+      "assumptions": [
+        "This plan should not run unchanged because review findings are execution-risky."
+      ]
+    },
+    {
+      "id": "canonical-build-intent-v2",
+      "title": "Canonical BuildIntent v2",
+      "status": "unclear",
+      "status_label": "Proposal with version ambiguity",
+      "group": "canonical_build_intent",
+      "plan_path": "architecture/2026-04-24-canonical-build-intent-v2.md",
+      "current_workstream": "Unknown",
+      "next_action": "Declare v2 current and archive v1, or document why both remain active",
+      "open_blockers": "v1 and v2 both present with no supersession record",
+      "originator": "architecture session",
+      "origin_surface": "mixed",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "v2",
+          "path": "architecture/2026-04-24-canonical-build-intent-v2.md"
+        },
+        {
+          "label": "v1",
+          "path": "architecture/2026-04-24-canonical-build-intent.md"
+        }
+      ],
+      "tasks": [
+        "Declare v2 current or archive it",
+        "Decide what happens to v1",
+        "Define identity, goal, pages, features, design direction, blockers, and confidence",
+        "Map Studio Chat, Shay, pasted briefs, and autonomous build onto the same intent",
+        "Attach P0/P1 diagnostics as evidence"
+      ],
+      "assumptions": [
+        "v2 is probably intended to supersede v1, but the repo does not yet say that canonically."
+      ]
+    },
+    {
+      "id": "outstanding-iterative-roadmap",
+      "title": "Iterative Roadmap Forward",
+      "status": "working_roadmap",
+      "status_label": "Working roadmap, not plan-of-record",
+      "group": "roadmap_backlog",
+      "plan_path": "architecture/2026-04-25-outstanding-plan.md",
+      "current_workstream": "Immediate tier: JJ B&A rebuild, header links, build confirmation",
+      "next_action": "Convert immediate roadmap items into task records",
+      "open_blockers": "Roadmap items are not normalized into tasks",
+      "originator": "prior session",
+      "origin_surface": "mixed",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "roadmap",
+          "path": "architecture/2026-04-25-outstanding-plan.md"
+        },
+        {
+          "label": "buglog",
+          "path": ".wolf/buglog.json"
+        }
+      ],
+      "tasks": [
+        "Convert JJ B&A rebuild into a verification task",
+        "Convert header-link bug into a task or close it",
+        "Convert build-confirmation UX into a task or close it",
+        "Convert edge-case suite into a plan/task group",
+        "Mark roadmap items active, closed, superseded, stale, or backlog"
+      ],
+      "assumptions": [
+        "The roadmap is useful as intake, but should not be treated as executable truth."
+      ]
+    },
+    {
+      "id": "multi-agent-resumable-plan-system",
+      "title": "Multi-Agent Resumable Plan System",
+      "status": "proposal",
+      "status_label": "Planning capture",
+      "group": "plan_task_run_intelligence",
+      "plan_path": "docs/multi-agent-resumable-plan-system.md",
+      "current_workstream": "Plan packet schema and coordination rules",
+      "next_action": "Merge into or mark superseded by Shay Process Intelligence after review",
+      "open_blockers": "Overlaps directly with shay-process-intelligence",
+      "originator": "Codex Desktop conversation",
+      "origin_surface": "Codex Desktop",
+      "current_runner": "Codex",
+      "runner_surface": "Codex Desktop",
+      "run_target": "pilot_build",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "doc",
+          "path": "docs/multi-agent-resumable-plan-system.md"
+        }
+      ],
+      "tasks": [
+        "Define plan packet schema",
+        "Define workstream schema",
+        "Define job grouping rules",
+        "Define agent assignment rules",
+        "Define resumability rules"
+      ],
+      "assumptions": [
+        "This document becomes either the design note under the parent plan or gets superseded by the registry model."
+      ]
+    },
+    {
+      "id": "shay-process-intelligence",
+      "title": "Shay Process Intelligence, Artifact Memory, and Multi-Agent Work System",
+      "status": "proposed",
+      "status_label": "Proposed parent plan",
+      "group": "plan_task_run_intelligence",
+      "plan_path": "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
+      "current_workstream": "ws_plan_packet_coordination",
+      "next_action": "Use this as the parent for plan/task/run intelligence if Fritz accepts it",
+      "open_blockers": "Relationship to multi-agent resumable plan system still needs review",
+      "originator": "Fritz plus Codex Desktop conversation",
+      "origin_surface": "Codex Desktop",
+      "current_runner": "Codex",
+      "runner_surface": "Codex Desktop",
+      "run_target": "build_until_report",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "plan packet",
+          "path": "plans/plan_2026_05_04_shay_process_intelligence/plan.json"
+        },
+        {
+          "label": "readme",
+          "path": "plans/plan_2026_05_04_shay_process_intelligence/README.md"
+        }
+      ],
+      "tasks": [
+        "Create plans/registry.json",
+        "Create task, job, run, handoff, capture, proof, and research ledgers",
+        "Add fam-hub plan status, task list, and run status",
+        "Create offline/web capture packet format",
+        "Build reusable FAMTastic project context pack",
+        "Expose the same model in Shay and Studio later"
+      ],
+      "assumptions": [
+        "This is the right parent for process intelligence unless Fritz chooses a different parent."
+      ]
+    },
+    {
+      "id": "famtastic-total-ask-plan",
+      "title": "FAMtastic Total Ask / Empire Synthesis",
+      "status": "needs_fritz_review",
+      "status_label": "Proposal pending Fritz review",
+      "group": "empire_synthesis",
+      "plan_path": "docs/famtastic-total-ask-plan.md",
+      "current_workstream": "Review and acceptance",
+      "next_action": "Accept, modify, or supersede before downstream plans treat it as authority",
+      "open_blockers": "Awaiting Fritz review",
+      "originator": "Cowork synthesis",
+      "origin_surface": "Cowork",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "proposal",
+          "path": "docs/famtastic-total-ask-plan.md"
+        },
+        {
+          "label": "capture",
+          "path": "docs/captures/2026-05-02_cowork-session-01.md"
+        }
+      ],
+      "tasks": [
+        "Review the proposal",
+        "Accept, modify, or supersede",
+        "Record downstream authority rules"
+      ],
+      "assumptions": [
+        "Downstream plans may cite this as inspiration, not ratified authority, until reviewed."
+      ]
+    },
+    {
+      "id": "gap-123-4-closure",
+      "title": "Gap 1/2/3 and Gap 4 Closure",
+      "status": "likely_closed",
+      "status_label": "Likely closed with verification residue",
+      "group": "gap_closure",
+      "plan_path": "architecture/2026-04-24-gap123-live-verification.md",
+      "current_workstream": "Verification rebuild remains as proof path",
+      "next_action": "Link as evidence under BuildIntent or baseline closure, then archive or close",
+      "open_blockers": "Closure proof is scattered across multiple docs",
+      "originator": "diagnostic sessions",
+      "origin_surface": "mixed",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "gap123",
+          "path": "architecture/2026-04-24-gap123-live-verification.md"
+        },
+        {
+          "label": "gap4",
+          "path": "architecture/2026-04-24-gap4-plan.md"
+        },
+        {
+          "label": "gap4 review",
+          "path": "architecture/2026-04-24-gap4-review-summary.md"
+        }
+      ],
+      "tasks": [
+        "Link closure docs as evidence",
+        "Run or record JJ B&A verification proof",
+        "Archive or mark closed after evidence attachment"
+      ],
+      "assumptions": [
+        "The gaps are probably closed, but proof needs a canonical parent."
+      ]
+    },
+    {
+      "id": "p0-p1-diagnostics",
+      "title": "P0 / P1 Diagnostics",
+      "status": "orphaned_evidence",
+      "status_label": "Execution diagnostics / evidence",
+      "group": "diagnostics",
+      "plan_path": "architecture/2026-04-27-p1.1-round2-results.md",
+      "current_workstream": "P1.1 Round 2 says 95% and closes",
+      "next_action": "Attach diagnostics to parent plan and close as evidence",
+      "open_blockers": "Diagnostics are not linked to a parent plan",
+      "originator": "smoke-test sessions",
+      "origin_surface": "mixed",
+      "current_runner": "unassigned",
+      "runner_surface": "none",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "round2",
+          "path": "architecture/2026-04-27-p1.1-round2-results.md"
+        }
+      ],
+      "tasks": [
+        "Attach P0/P1 diagnostics to the owning parent",
+        "Close accepted diagnostic files as evidence",
+        "Promote remaining issues into tasks"
+      ],
+      "assumptions": [
+        "These are evidence artifacts rather than standalone plans."
+      ]
+    },
+    {
+      "id": "site-mbsh-reunion",
+      "title": "MBSH Reunion Site Plan",
+      "status": "site_scoped_active",
+      "status_label": "Site-scoped active plan set",
+      "group": "site_plan",
+      "plan_path": "docs/sites/site-mbsh-reunion/V1-BRIEF.md",
+      "current_workstream": "V1 reunion backend, media, ops, and deployment tasks",
+      "next_action": "Create site-scoped registry and promote reusable platform learnings back to platform plans",
+      "open_blockers": "Site execution is not separated from platform execution in the registry yet",
+      "originator": "Fritz plus Claude/Cowork sessions",
+      "origin_surface": "mixed",
+      "current_runner": "mixed",
+      "runner_surface": "mixed",
+      "run_target": "not_running",
+      "handling": "warn_log_notify",
+      "proof": [
+        {
+          "label": "brief",
+          "path": "docs/sites/site-mbsh-reunion/V1-BRIEF.md"
+        },
+        {
+          "label": "discovery",
+          "path": "docs/sites/site-mbsh-reunion/DISCOVERY.md"
+        }
+      ],
+      "tasks": [
+        "Create site-scoped plan registry entry",
+        "Track backend, RSVP, sponsor, media, chatbot, deployment, and content tasks separately",
+        "Promote reusable platform learnings into the platform registry",
+        "Keep deploy repo state separate from Studio repo state"
+      ],
+      "assumptions": [
+        "MBSH should pilot site-scoped task tracking without contaminating platform plan status."
+      ]
+    }
+  ]
+}

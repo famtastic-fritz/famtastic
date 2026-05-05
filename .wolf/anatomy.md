@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T19:57:20.266Z
-> Files: 481 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-02T22:10:19.791Z
+> Files: 596 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -44,20 +44,99 @@
 
 - `studio-config.json` (~264 tok)
 
+## ../Library/Application Support/Claude/
+
+- `claude_desktop_config.json` (~621 tok)
+
+## ../Library/LaunchAgents/
+
+- `com.famtastic.studio.plist` (~606 tok)
+
+## ../famtastic-sites/mbsh-reunion/
+
+- `.gitignore` — Git ignore rules (~158 tok)
+- `DATA-PERSISTENCE.md` — Data Persistence — MBSH Reunion Site (~4020 tok)
+- `netlify.toml` (~83 tok)
+- `README.md` — Project documentation (~1892 tok)
+
+## ../famtastic-sites/mbsh-reunion/backend/
+
+- `rsvp.php` — rsvp.php — POST endpoint for Section 3 RSVP form submissions. (~2908 tok)
+
+## ../famtastic-sites/mbsh-reunion/backend/lib/
+
+- `config.php` — lib/config.php — dual-source config loader. (~620 tok)
+- `cors.php` — Validate the request Origin against allow-list + regex patterns. (~631 tok)
+- `db.php` — lib/db.php — MySQL/MariaDB PDO connection factory. (~221 tok)
+- `rate-limit.php` — Check if the request from $ip to $endpoint is allowed by rate limits. (~416 tok)
+- `resend.php` — Send a single email via Resend. (~514 tok)
+- `validate.php` — lib/validate.php — input validation helpers. (~651 tok)
+
+## ../famtastic-sites/mbsh-reunion/backend/scripts/
+
+- `verify-rsvp.php` — scripts/verify-rsvp.php — diagnostic CLI tool to inspect rsvps table state. (~492 tok)
+
+## ../famtastic-sites/mbsh-reunion/backend/uploads/
+
+- `README.md` — Project documentation (~484 tok)
+
+## ../famtastic-sites/mbsh-reunion/backend/uploads/approved/
+
+- `.htaccess` — Disable PHP execution in upload directories (~125 tok)
+
+## ../famtastic-sites/mbsh-reunion/config/
+
+- `site-config.json` (~137 tok)
+
+## ../famtastic-sites/mbsh-reunion/frontend/
+
+- `index.html` — MBSH Class of &rsquo;96 — 30th Reunion (~981 tok)
+- `rsvp.html` — RSVP — MBSH Class of &rsquo;96 30th Reunion (~2243 tok)
+
+## ../famtastic-sites/mbsh-reunion/frontend/assets/brand-mark/rejected/
+
+- `rejection-notes.md` — Brand Mark — Rejection Notes (~546 tok)
+
+## ../famtastic-sites/mbsh-reunion/frontend/assets/story/rejected/
+
+- `selection-notes.md` — Story Stills — Selection Notes (~500 tok)
+
+## ../famtastic-sites/mbsh-reunion/frontend/css/
+
+- `base.css` — Stylesheet (~12 tok)
+- `hero.css` — Stylesheet (~12 tok)
+- `rsvp.css` — Styles: 53 rules (~2649 tok)
+- `sections.css` — Styles: 20 rules (~1275 tok)
+- `typography.css` — Stylesheet (~14 tok)
+
+## ../famtastic-sites/mbsh-reunion/frontend/js/
+
+- `countdown.js` — countdown.js — live countdown to REUNION_DATE 7:00 PM ET (~534 tok)
+- `main.js` — main.js — bootstrap + cross-section orchestration (~385 tok)
+- `rsvp-form.js` — rsvp-form.js — RSVP form handling (~1528 tok)
+
+## ../famtastic-sites/mbsh-reunion/scripts/
+
+- `dev-backend.sh` — dev-backend.sh — local PHP dev server for backend/ on port 8081. (~202 tok)
+- `generate-brand-mark.js` — generate-brand-mark.js — Generate 3 candidate FAMtastic 30+100 brand marks. (~1450 tok)
+- `generate-story-stills.js` — generate-story-stills.js — Generate 6 atmospheric stills (3 Then + 3 Now) (~1510 tok)
+- `screenshot-hero.js` — screenshot-hero.js — Capture hero at iPhone 14 (390x844) and desktop (1440x900). (~584 tok)
+- `screenshot-story.js` — screenshot-story.js — Capture each Story moment + event details panel (~630 tok)
+
 ## ./
 
-- `.gitignore` — Git ignore rules (~292 tok)
+- `.gitignore` — Git ignore rules (~531 tok)
 - `.mcp.json` (~47 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~18532 tok)
-- `CLAUDE.md` — FAMtastic Global Rules (~2093 tok)
+- `CHANGELOG.md` — FAMtastic Changelog (~22350 tok)
+- `CLAUDE.md` — FAMtastic Global Rules (~2625 tok)
 - `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
-- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~10946 tok)
+- `FAMTASTIC-STATE.md` — FAMTASTIC-STATE.md — Canonical Project Reference (~11861 tok)
 - `FAMTASTIC-VISION.md` — FAMtastic Vision — The North Star (~2540 tok)
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~62897 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~75376 tok)
 
 ## .claude/
 
@@ -338,6 +417,27 @@
 
 - `catalog.json` (~66 tok)
 
+## architecture/
+
+- `2026-04-24-build-layer-audit.md` — FAMtastic Studio — R-NEW Build Layer Default Audit (~4605 tok)
+- `2026-04-24-canonical-build-intent-v2.md` — FAMtastic Studio — Canonical BuildIntent Architecture Proposal V2 (~15467 tok)
+- `2026-04-24-canonical-build-intent.md` — FAMtastic Studio — Canonical BuildIntent Architecture Proposal (~12072 tok)
+- `2026-04-24-gap123-live-verification.md` — FAMtastic Studio — GAP-1/2/3 Live Verification Report (~2079 tok)
+- `2026-04-24-gap4-plan.md` — FAMtastic Studio — GAP-4 Implementation Plan (~2799 tok)
+- `2026-04-24-gap4-review-summary.md` — FAMtastic Studio — GAP-4 Adversarial Review Summary (~2354 tok)
+- `2026-04-24-schema-audit-followup.md` — Schema Audit Follow-up — colors/pages Required-Field Mismatch (~690 tok)
+- `2026-04-25-baseline-closure-verification.md` — Baseline Failure Closure — Verification Report (~4305 tok)
+- `2026-04-25-baseline-failure-diagnostic.md` — Baseline Failure Diagnostic — 2026-04-25 (~4411 tok)
+- `2026-04-25-outstanding-plan.md` — Outstanding Plan — Iterative Roadmap Forward (~3690 tok)
+- `2026-04-27-p0-exit-gate-results.md` — P0 Exit Gate Results — 2026-04-27 (~4824 tok)
+- `2026-04-27-p0.1-diagnostic.md` — P0.1 — Diagnostic Pass (~7408 tok)
+- `2026-04-27-p0.4-gate-rerun.md` — P0.4 Hotfix — Gate Re-run Report (~1936 tok)
+- `2026-04-27-p0.5-diagnostic.md` — P0.5 Diagnostic — `design_brief.approved` flag not flipping on Shay-driven builds (~3192 tok)
+- `2026-04-27-p0.6-diagnostic.md` — P0.6 Diagnostic — Three Silent-Dispatch Failures (~5435 tok)
+- `2026-04-27-p1.1-edge-case-results.md` — P1.1 — Edge Case Smoke (Round 1) (~4377 tok)
+- `2026-04-27-p1.1-round2-results.md` — P1.1 — Edge Case Smoke (Round 2, post-P1.1.1 hotfix) (~2270 tok)
+- `2026-04-27-smoke-suite.md` — FAMtastic Studio — Smoke Suite (P0.0) (~6353 tok)
+
 ## cli/idea/
 
 - `blueprint.py` — blueprint — Move an idea from incubation to structured plan. (~1206 tok)
@@ -449,6 +549,10 @@
 - `latest-convo__20250923-1200.md` — FAMtastic Agent Hub Summary (~289 tok)
 - `site-fritz-fitness__20250923-1100.md` — Fritz Fitness Site Development Summary (~223 tok)
 
+## diagnostics/
+
+- `2026-04-24-jjba-postmortem.md` — FAMtastic Studio — Diagnostic Report (~3036 tok)
+
 ## docs/
 
 - `adobe-mcp-integration.md` — Adobe MCP Integration (adb-mcp) (~1000 tok)
@@ -459,7 +563,11 @@
 - `cli-usage.md` — FAMtastic Hub CLI Usage Guide (~892 tok)
 - `CONFIG_OWNERSHIP.md` — Config Ownership — FAMtastic Agent‑Hub (~618 tok)
 - `cross-system-architecture.md` — Cross-System Architecture (~10609 tok)
+- `current-state-snapshot.md` — FAMtastic Current-State Snapshot (~3236 tok)
 - `dev-log-20250923.draft.md` — Daily Dev Log — 2025-09-23 (~51 tok)
+- `famtastic-root-inventory.json` (~3033 tok)
+- `famtastic-root-inventory.md` — FAMtastic Root Directory Inventory (~4601 tok)
+- `FAMTASTIC-VISION-CAPTURE-2026-04-24.md` — FAMtastic Knowledge Capture — Vision Alignment Audit (~8705 tok)
 - `latest-convo.draft.md` — Default Tag Test (~20 tok)
 - `meeting-discovery.md` — Meeting Notes - Client Discovery (~68 tok)
 - `meeting-team.md` — Team Standup Meeting - Sept 23 (~126 tok)
@@ -490,12 +598,31 @@
 - `shay-shay-architecture.md` — Shay-Shay Architecture (~8680 tok)
 - `spawn-claude-migration-map.md` — spawnClaude() Migration Map (~6729 tok)
 - `studio-cli-handoff-pattern.md` — Studio → CLI Handoff Pattern (~1432 tok)
+- `sync-checklist.md` — Claude Web Project Knowledge — Sync Checklist (~2452 tok)
 - `test-manual.md` — Test Manual Promotion (~21 tok)
 - `test-notes.draft.md` — Draft Notes from ChatGPT (~112 tok)
 - `wrapper-test.draft.md` — Test Content from Wrapper (~70 tok)
 
 ## docs/intelligence-reports/
 
+
+## docs/operating-rules/
+
+- `godaddy-mcp-spike.md` — GoDaddy / cPanel MCP Capability Spike (~2162 tok)
+- `mbsh-rsvp-integration-notes-2026-04-29.md` — MBSH RSVP Integration Notes — 2026-04-29 (~2812 tok)
+- `studio-multipage-discovery-2026-04-29.md` — Studio Multi-Page Discovery — 2026-04-29 (~7808 tok)
+- `studio-vs-eleventy-evaluation-2026-04-29.md` — Studio vs. Eleventy — Strategic Technical Evaluation (~10800 tok)
+
+## docs/sites/
+
+- `README.md` — Project documentation (~161 tok)
+
+## docs/sites/site-mbsh-reunion/
+
+- `character-sheet.md` — Hi-Tide Harry — Character Sheet Spec (~2572 tok)
+- `DISCOVERY.md` — MBSH Pre-Build Discovery Report (~5592 tok)
+- `planning-consolidated.md` — MBSH Class of '96 Reunion Site — Consolidated Planning Doc (~2309 tok)
+- `SESSION-1A-SCAFFOLD-PROPOSAL.md` — MBSH Reunion Site — Session 1A Scaffold Proposal (~6996 tok)
 
 ## ideas/capture/20250924-1743_my-first-spark-idea/
 
@@ -519,7 +646,7 @@
 ## mcp-server/
 
 - `package.json` — Node.js package manifest (~81 tok)
-- `server.js` — FAMtastic MCP Server (~3368 tok)
+- `server.js` — FAMtastic MCP Server (~5185 tok)
 
 ## schemas/
 
@@ -547,14 +674,14 @@
 - `fam-convo-promote` (~39 tok)
 - `fam-convo-reconcile` (~287 tok)
 - `fam-convo-tag` — fam-convo-tag — Apply classification tags to messages in a canonical conversation file. (~679 tok)
-- `fam-hub` — fam-hub — Unified CLI for FAMtastic (~3826 tok)
+- `fam-hub` — fam-hub — Unified CLI for FAMtastic (~6858 tok)
 - `firefly-batch-street-reunion.json` (~353 tok)
 - `firefly-generate` (~2062 tok)
 - `gemini-cli` (~202 tok)
 - `generate-seo-files` — Standalone SEO file generator for existing sites (~411 tok)
 - `google-media-batch-auntie-gale.json` (~1391 tok)
 - `google-media-batch-street-reunion.json` (~1002 tok)
-- `google-media-generate` (~3510 tok)
+- `google-media-generate` (~6479 tok)
 - `install-codex-cli` (~99 tok)
 - `install-completions` — Install bash and zsh completions for fam-hub CLI (~886 tok)
 - `install.sh` — Agent-centric installer: Claude (native), Gemini (native), Codex via LiteLLM code-free only (~994 tok)
@@ -573,34 +700,39 @@
 - `site-import` — site-import — Import an existing site into Studio (~767 tok)
 - `site-preview` — http: checkMod (~865 tok)
 - `site-template` (~536 tok)
+- `smoke-assert-built-spec` — P0.4 — post-build spec invariant assertion. (~783 tok)
 - `smoke-claude` (~65 tok)
 - `smoke-codex` (~65 tok)
+- `smoke-distinct-palette` — Distinctiveness sentinel — P1.2 exit gate. (~2069 tok)
+- `smoke-eaddrinuse-50` — P0 exit gate #3 — 50 consecutive Studio start/stop cycles without EADDRINUSE. (~945 tok)
 - `smoke-gemini` (~61 tok)
 - `smoke-secrets` (~55 tok)
+- `smoke-validate-all-specs` — P0 exit gate #5 — every site spec validates against the runtime schema. (~742 tok)
+- `spec-repair-all` — One-shot migration — bring legacy site specs into compliance with the (~1812 tok)
 - `stock-photo` — stock-photo — Download a stock photo from Unsplash, Pexels, or Pixabay (~790 tok)
 - `studio-chat` — studio-chat — Send a message to Studio's WebSocket chat and collect the response. (~837 tok)
 - `studio-server` (~148 tok)
+- `tier-comparison` — tier-comparison — Six-tier character generation benchmark. (~10209 tok)
+- `tier1-test` — tier1-test — Run only Tier 1 (Leonardo) against the existing anchor. (~1821 tok)
+- `tier3-ps-driver.py` — configure, send, run, find_layer (~1539 tok)
 - `tts-cli` (~1073 tok)
 - `update-setup-doc` — update-setup-doc — Refresh FAMTASTIC-SETUP.md with current system state (~1302 tok)
 - `verify` (~58 tok)
+- `verify-character-pipeline` — verify-character-pipeline — Pre-work gate for MVP-B1. (~661 tok)
 
 ## scripts/lib/
 
 - `gemini-generate.mjs` — gemini-generate.mjs — Called by scripts/gemini-cli (~308 tok)
 - `hub-common` (~1321 tok)
+- `studio-tier-validate.js` — studio-tier-validate.js — Re-validate a Studio Tier patch at apply time. (~1344 tok)
 
 ## site-studio/
 
+- `inject-mbsh-creds.sh` — One-shot credential injector for MBSH reunion .env (~582 tok)
 - `package-lock.json` — npm lock file (~30797 tok)
-- `package.json` — Node.js package manifest (~220 tok)
-- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 12 more (~192000 tok)
-
-## site-studio/intelligence/
-
-- `research-feed-index.json` — Append-only chronological feed of all research runs and manual ingests (newest first, 500-entry cap) — Session 3-A
-- `research-run-history.json` — Lightweight audit trail of run-research calls (no answer field, 200-entry cap) — Session 3-A
-- `validation-plan.json` (~2510 tok)
-- `vitest.config.js` (~33 tok)
+- `package.json` — Node.js package manifest (~260 tok)
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 13 more (~251730 tok)
+- `SHAY_CONTEXT.md` — SHAY_CONTEXT.md (~764 tok)
 
 ## site-studio/agent-cards/
 
@@ -608,31 +740,55 @@
 - `codex.agent-card.json` (~112 tok)
 - `gemini.agent-card.json` (~114 tok)
 
+## site-studio/intelligence/
+
+- `validation-plan.json` (~2510 tok)
+- `vitest.config.js` (~33 tok)
+
+## site-studio/launchd/
+
+- `com.famtastic.studio.plist` (~726 tok)
+
 ## site-studio/lib/
 
 - `api-cost-tracker.js` — api-cost-tracker.js — Lightweight cost calculation and API call logging. (~922 tok)
 - `api-telemetry.js` — api-telemetry.js — Per-call SDK cost logging. (~1443 tok)
 - `brain-adapter-factory.js` — BrainAdapterFactory — creates the correct adapter for the active brain. (~366 tok)
 - `brain-injector.js` — brain-injector.js — Injects STUDIO-CONTEXT.md into each brain's session (~1486 tok)
-- `brain-interface.js` — BrainInterface — the universal Studio-to-Brain communication layer. (~2173 tok)
-- `brain-sessions.js` — brain-sessions.js — Brain authentication and session management. (~1563 tok)
+- `brain-interface.js` — BrainInterface — the universal Studio-to-Brain communication layer. (~3512 tok)
+- `brain-sessions.js` — brain-sessions.js — Brain authentication and session management. (~1695 tok)
 - `brand-tracker.js` — brand-tracker.js — Extract and persist brand tokens after every build. (~923 tok)
-- `capability-manifest.js` — fs: resolveApiStatus, checkNetlify, buildCapabilityManifest, loadManifest, diffStateVsManifest (~928 tok)
+- `bridge-routes.js` — API routes: GET, POST (5 endpoints) (~1254 tok)
+- `capability-manifest.js` — checkNetlify() — structured Netlify capability probe. (~2643 tok)
 - `client-interview.js` — Client Interview System — Phase 3 (~1907 tok)
 - `cost-monitor.js` — PRICE_IN_PER_M: getSpendLimit, calcCost, setBroadcast + 10 more (~1653 tok)
-- `famtastic-skeletons.js` — Extract the three FAMtastic logo SVG blocks from a Claude template response. (~2752 tok)
-- `gap-logger.js` — fs: ensureDir, loadGaps, logGap + 4 more (~962 tok)
+- `build-trace.js` — build-trace.js — logTrace, getRunTrace, queryTraceEvents — writes to sites/<tag>/build-trace.jsonl + SQLite trace_events (~2200 tok)
+- `db.js` — Database: getDb, _initSchema, createSession + logAgentPerformance, getAgentPerformance, getAgentScorecard + trace_events + agent_performance tables (~3800 tok)
+- `famtastic-skeletons.js` — Declares names (~4600 tok)
+- `fulfillment-ledger.js` — fulfillment-ledger.js — createLedger, addFulfillmentItem, finalizeLedger, readLedger — per-build capability tracking (~1400 tok)
+- `gap-logger.js` — fs: ensureDir, loadGaps, logGap + 4 more + GAP_DESTINATION routing map (~1300 tok)
 - `haiku-fallback.js` — haiku-fallback.js — SDK-based Haiku fallback for silence timeouts. (~777 tok)
 - `history-formatter.js` — history-formatter.js — Per-brain conversation history formatting (~1136 tok)
+- `job-queue.js` — fs: _assertStatus, createJob, approveJob + 6 more (~1032 tok)
 - `media-telemetry.js` — media-telemetry.js — Append-only telemetry log for all AI media operations. (~3084 tok)
+- `memory.js` — memory.js — cross-session memory for Shay-Shay (Mem0 + Kuzu semantics) (~819 tok)
 - `model-config.json` (~147 tok)
+- `openai-image-adapter.js` — openai-image-adapter — gpt-image-2 generations + edits, mirroring the (~1308 tok)
 - `research-registry.js` — research-registry.js — Provider-agnostic research source registry (~3240 tok)
 - `research-router.js` — research-router.js — Routes research queries; exports appendToFeedIndex, appendToRunHistory, listFindings (Session 3-A) (~4200 tok)
+- `run-id.js` — run-id.js — generateRunId, generateTraceId, createRunContext — build run/trace ID generation (~400 tok)
+- `shay-shay-sessions.js` — shay-shay-sessions.js — Minimal per-conversation session state for Shay-Shay. (~1383 tok)
+- `spec-schema.js` — Formal spec.json schema (P0.2 baseline closure). (~1906 tok)
+- `studio-actions.js` — studio-actions.js — shared execution layer (~255 tok)
 - `studio-context-writer.js` — studio-context-writer.js — Generates STUDIO-CONTEXT.md (~3039 tok)
 - `studio-events.js` — studio-events.js — Studio event bus (~428 tok)
-- `studio-tools.js` — studio-tools.js — Anthropic-format tool definitions for ClaudeAdapter. (~769 tok)
+- `studio-tier-resolver.js` — studio-tier-resolver.js — Path resolution and policy lookup for Studio Tier mode. (~2302 tok)
+- `studio-tools.js` — studio-tools.js — Anthropic-format tool definitions for ClaudeAdapter. (~1552 tok)
+- `style-fingerprint.js` — Per-site style fingerprint (P1.2 — Visual Distinctiveness). (~5149 tok)
 - `suggestion-logger.js` — fs: ensureDir, loadSuggestions, logSuggestion + 4 more (~1020 tok)
-- `tool-handlers.js` — fs: initToolHandlers, handleToolCall, getSiteContext + 7 more (~2187 tok)
+- `tier-gates.js` — Pure gate helpers for FAMtastic logo-mode prompt assembly. (~456 tok)
+- `tier.js` — Tier canonicalization for FAMtastic Studio. (~1001 tok)
+- `tool-handlers.js` — fs: setCurrentShayContext, getCurrentShayContext, setPatchAppliedNotifier + 19 more (~7292 tok)
 
 ## site-studio/lib/adapters/
 
@@ -642,32 +798,48 @@
 
 ## site-studio/public/
 
-- `index.html` — FAMtastic Site Studio (~24822 tok)
+- `index.html` — FAMtastic Site Studio (~32856 tok)
 
 ## site-studio/public/css/
 
 - `studio-brain-selector.css` — Styles: 33 rules, 3 vars (~1229 tok)
 - `studio-canvas.css` — canvas-tab-bar { (~4175 tok)
+- `studio-chat.css` — chat-messages { (~2128 tok)
 - `studio-cli.css` — cli-bar { (~886 tok)
 - `studio-orb.css` — Styles: 63 rules (~3030 tok)
-- `studio-shell.css` — Styles: 63 rules, 37 vars (~6062 tok)
+- `studio-screens.css` — Styles: 102 rules (~13946 tok)
+- `studio-shell.css` — Styles: 63 rules, 37 vars (~6109 tok)
+
+## site-studio/public/img/
+
+- `famtastic-logo.svg` (~256 tok)
 
 ## site-studio/public/js/
 
 - `brain-selector.js` — brain-selector.js — Brain/Worker split selector for FAMtastic Studio. (~1314 tok)
 - `studio-brief.js` — studio-brief.js — Revenue-first brief interview screen (~6057 tok)
-- `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~10837 tok)
-- `studio-shell.js` — studio-shell.js — Activity rail, sidebar, tab system, mode switching (~4860 tok)
+- `studio-orb.js` — studio-orb.js — FAMtastic Pip assistant orb (~25582 tok)
+- `studio-screens.js` — studio-screens.js — Assets/Components, Settings, Mission Control, Deploy (~56314 tok)
+- `studio-shell.js` — studio-shell.js — Activity rail, sidebar, tab system, mode switching (~6440 tok)
+
+## site-studio/scripts/
+
+- `test-hi-tide-harry-poses-imagen.js` — runHarryPoseTestImagen4 — 5-pose test for Hi-Tide Harry via (~2069 tok)
+- `test-hi-tide-harry-poses-leonardo.js` — runHarryPoseTestLeonardo — 5-pose test for Hi-Tide Harry via Leonardo.ai (~3616 tok)
+- `test-hi-tide-harry-poses.js` — One-shot 5-pose test for Hi-Tide Harry per (~1514 tok)
 
 ## site-studio/shay-shay/
 
-- `instructions.md` — Shay-Shay — FAMtastic Studio Orchestrator (~612 tok)
-- `skill.json` (~621 tok)
+- `instructions.md` — Shay-Shay — FAMtastic Studio Orchestrator (~1478 tok)
+- `skill.json` (~769 tok)
 
 ## site-studio/tests/
 
+- `baseline-closure.test.js` — Baseline Failure Closure — unit tests (~2134 tok)
+- `gap4-tier-canonicality.test.js` — GAP-4 Tier Canonicality — unit tests (~2326 tok)
 - `setup.js` — Set SITE_TAG before any module imports — server.js reads it at require time (~40 tok)
-- `unit.test.js` — Must set before requiring server.js — TAG reads from SITE_TAG at module load (~5520 tok)
+- `spec-schema.test.js` — P0.2 Thread 6 — spec-schema unit tests (~1974 tok)
+- `unit.test.js` — Must set before requiring server.js — TAG reads from SITE_TAG at module load (~13436 tok)
 
 ## sites/.trash/site-beta-biz-1774033104576/
 
@@ -753,6 +925,18 @@
 
 - `spec.json` (~1232 tok)
 
+## sites/site-famtastic-com/
+
+- `spec.json` (~799 tok)
+
+## sites/site-famtastic-com/dist/
+
+- `index.html` — FAMtastic — Sites That Stand Apart (~2158 tok)
+
+## sites/site-famtastic-com/dist/assets/
+
+- `styles.css` — Styles: 72 rules, 7 vars (~2361 tok)
+
 ## sites/site-lawn-company/
 
 - `.studio.json` (~152 tok)
@@ -822,6 +1006,10 @@
 
 - `classifier-regression.json` (~1363 tok)
 - `codex-high-fixes-tests.js` — Codex Adversarial Review — HIGH severity fix verification (~2447 tok)
+- `gap123-verification.js` — GAP-1/2/3 Pre-Phase-1 fix verification. (~1408 tok)
+- `gap23-prompt-assembly.js` — GAP-2/3 prompt assembly verification. (~1492 tok)
+- `gap23-ws-chat-test.js` — GAP-2/3 live test via WebSocket. (~2042 tok)
+- `p1.2-style-fingerprint.test.js` — P1.2 — Style fingerprint static tests. (~2170 tok)
 - `phase0-content-layer-tests.js` — Phase 0 — Content Data Layer Tests (~4782 tok)
 - `phase1-component-skills-tests.js` — Phase 1 — Component Skills Foundation Tests (~4470 tok)
 - `phase2-ui-shell-tests.js` — Phase 2 — UI Shell + Editable Canvas Tests (~4209 tok)
@@ -875,3 +1063,18 @@
 
 - `firefly-web-test-checklist.md` — Adobe Firefly Web App Test Checklist (~748 tok)
 - `firefly-web-test-results.json` (~1181 tok)
+
+## tools/cpanel-mcp/
+
+- `inject-token.sh` — One-shot helper: prompts for cPanel API token, injects into .env, (~259 tok)
+- `PATCHES.md` — Local Patches to cpanel-mcp (~987 tok)
+- `provision-mbsh.js` — Provision the MBSH reunion database, user, and privileges via cpanel-mcp. (~1059 tok)
+- `test-connection.js` — Test client: spawns the cpanel-mcp server over stdio, lists tools, (~602 tok)
+
+## tools/cpanel-mcp/src/
+
+- `cpanel-client.ts` — API routes: GET (1 endpoints) (~3526 tok)
+
+## tools/cpanel-mcp/src/types/
+
+- `cpanel.ts` — Exports CpanelConfig, CpanelResponse, CpanelErrorData, FileManagerItem + 11 more (~784 tok)

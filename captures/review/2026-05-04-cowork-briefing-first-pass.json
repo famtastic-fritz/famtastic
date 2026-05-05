@@ -1,0 +1,231 @@
+{
+  "schema_version": "0.1.0",
+  "capture_id": "2026-05-04-cowork-briefing-first-pass",
+  "created_at": "2026-05-05T02:50:06.926Z",
+  "source": {
+    "path": "../Downloads/COWORK-BRIEFING.md",
+    "sha256": "4f92f05fec6465752a7eb70dd7457657d1b31c95223644b37057aa6902e8f348",
+    "bytes": 17038
+  },
+  "status": "review_required",
+  "write_policy": "review_packet_only",
+  "proposed_destinations": {
+    "design_decisions": ".wolf/cerebrum.md",
+    "breakthroughs": "SITE-LEARNINGS.md",
+    "gaps": "gaps.jsonl",
+    "lessons": "SITE-LEARNINGS.md",
+    "contradictions": "FAMTASTIC-STATE.md"
+  },
+  "extractions": {
+    "design_decisions": [
+      {
+        "title": "The canonical definition is fixed and not up for revision:",
+        "source_heading": "What FAMtastic is",
+        "summary": "The canonical definition is fixed and not up for revision:",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "The north star: site #1,000 must benefit from everything learned building sites #1 through #999",
+        "source_heading": "What FAMtastic is",
+        "summary": "The north star: site #1,000 must benefit from everything learned building sites #1 through #999. Every rebuild, every gap, every lesson compounds. Anything that doesn't compound is leakage.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical state: lives locally at `~/famtastic/`",
+        "source_heading": "The system you are joining",
+        "summary": "**Canonical state** lives locally at `~/famtastic/`. Trust these files over Google Drive, over project knowledge, over memory. They include `FAMTASTIC-STATE.md`, `CHANGELOG.md`, and the `.wolf/` intelligence directory (`cerebrum.md`, `anatomy.md`, `buglog.json`). Read these first, every session, before doing anything else. The `cerebrum.md` Do-Not-Repeat section is hard-won knowledge — treat it as standing constraints.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "When a task lands in your lap, the first question is whether you should execute it yourself or hand off a clean prompt t",
+        "source_heading": "Where you fit",
+        "summary": "When a task lands in your lap, the first question is whether you should execute it yourself or hand off a clean prompt to Claude Code. Text/copy/CSS-only changes you handle. Anything touching `server.js`, classifier logic, WebSocket handlers, or more than ~50 lines: you draft the Claude Code prompt and stop. Don't shell out to invoke Claude Code with `--print` — that loses session memory and tool use.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Studio Chat / Shay Desk / Shay Lite should be three views into one Shay engine, not three quasi-separate agents — and th",
+        "source_heading": "The knowledge capture problem (the reason you are here)",
+        "summary": "Studio Chat / Shay Desk / Shay Lite should be three views into one Shay engine, not three quasi-separate agents — and that's where the logic confusion lives",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Structure: append to appropriate canonical files (`.wolf/cerebrum.md` for decisions and Do-Not-Repeat rules, `.wolf/bugl",
+        "source_heading": "The knowledge capture problem (the reason you are here)",
+        "summary": "Structure: append to appropriate canonical files (`.wolf/cerebrum.md` for decisions and Do-Not-Repeat rules, `.wolf/buglog.json` for bug patterns, `gaps.jsonl` for system gaps, `FAMTASTIC-STATE.md` for state changes)",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "This tool grows",
+        "source_heading": "The knowledge capture problem (the reason you are here)",
+        "summary": "This tool grows. Every conversation it processes adds to its training data on what counts as a captured insight. Over time it should get better at noticing patterns Fritz himself might miss. The endpoint is a system where Fritz can ask Shay any question about FAMtastic and the answer is not \"I don't know, check the chat\" but \"here's what we decided, here's why, and here's what changed our minds.\"",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Recurring failure modes that should have been prevented but keep recurring.: Brief colors and fonts ignored during build",
+        "source_heading": "Real pain points (not a test list — actual issues)",
+        "summary": "**Recurring failure modes that should have been prevented but keep recurring.** Brief colors and fonts ignored during build. Empty `ANTHROPIC_API_KEY` causing silent failure. Bridge command quoting bug breaking on any argument with spaces or shell syntax. `spec.pages` empty fallback producing single-page sites when the brief said five. Gemini brain selector not actually routing to Gemini. Each of these has been diagnosed and fixed in the moment — none of them produced a guard or proactive check that would prevent the *category* from happening again.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Drive sync blocker.: A GitHub Action was supposed to push canonical files to Drive on every commit so Claude Web project",
+        "source_heading": "Real pain points (not a test list — actual issues)",
+        "summary": "**Drive sync blocker.** A GitHub Action was supposed to push canonical files to Drive on every commit so Claude Web project knowledge stayed fresh. The action runs but lacks delete-before-upload logic, so duplicate Google Docs accumulate on each push. As of this writing, project notes are stale, which Fritz suspects but can't easily verify. Cowork is uniquely positioned to fix this — Drive connector access plus filesystem access plus the ability to run a sync task on demand.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Plan-then-approve is the universal pattern.: Every action that changes something produces a proposed change, not an appl",
+        "source_heading": "Breakthroughs to implement (from this conversation)",
+        "summary": "**Plan-then-approve is the universal pattern.** Every action that changes something produces a proposed change, not an applied change. Show the diff, get the approval, then commit. This is how Cowork works, how Shay-Shay should work, and how the pipeline editor should work.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Commit policy:: Commits never reference AI, Claude, Cowork, or any automated tool",
+        "source_heading": "Standing context (the cheat codes)",
+        "summary": "**Commit policy:** Commits never reference AI, Claude, Cowork, or any automated tool. They read as if a human developer wrote them. This is non-negotiable.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "File source of truth:: `~/famtastic/` is canonical",
+        "source_heading": "Standing context (the cheat codes)",
+        "summary": "**File source of truth:** `~/famtastic/` is canonical. Drive may be stale. Project knowledge in Claude Web may be stale. When in doubt, read the local file.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "1",
+        "source_heading": "Your first task",
+        "summary": "1. Read this document and confirm you understand the FAMtastic anchor, the solution hierarchy, the three pillars, and your role 2. Read the canonical files in `~/famtastic/` and confirm what you found vs. what this document says (if there's drift, report it — that's your first useful output) 3. Pick three recent chat conversations (Fritz will identify which) and produce a structured extraction: design decisions, breakthroughs, gaps, lessons, contradictions to prior assumptions 4. Propose where each extracted item should land in the canonical file structure 5. Wait for Fritz's approval before writing anything 6. After the first run, propose how the tool itself should evolve based on what was ",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "breakthroughs": [
+      {
+        "title": "The \"workflow-as-data\" refactor as the keystone that unlocks every visualization, audit, and tunability feature",
+        "source_heading": "The knowledge capture problem (the reason you are here)",
+        "summary": "The \"workflow-as-data\" refactor as the keystone that unlocks every visualization, audit, and tunability feature",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "This is the flywheel",
+        "source_heading": "The knowledge capture problem (the reason you are here)",
+        "summary": "This is the flywheel. Build this first. Everything else gets easier once it's running.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Workflow-as-data is the keystone refactor.: `parallelBuild()` today is imperative — stages exist in the developer's head",
+        "source_heading": "Breakthroughs to implement (from this conversation)",
+        "summary": "**Workflow-as-data is the keystone refactor.** `parallelBuild()` today is imperative — stages exist in the developer's head. Migrating stage definitions into a declarative pipeline data structure is what unlocks visualization, A/B testing, Shay-proposed pipeline edits, history, and audit-against-intent. Phase it: instrument the existing imperative code first (low risk, immediate observability), then migrate stage by stage. Never big-bang.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "The flywheel starts the moment this tool runs once",
+        "source_heading": "Your first task",
+        "summary": "The flywheel starts the moment this tool runs once. Every subsequent run gets cheaper, smarter, and more valuable. Every conversation FAMtastic has from this point forward becomes input for system improvement instead of being lost when the chat closes.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "gaps": [
+      {
+        "title": "Extract: design decisions, breakthroughs, recurring pain patterns, gap discoveries, architectural pivots, lessons that c",
+        "source_heading": "The knowledge capture problem (the reason you are here)",
+        "summary": "Extract: design decisions, breakthroughs, recurring pain patterns, gap discoveries, architectural pivots, lessons that contradict prior assumptions",
+        "proposed_destination": "gaps.jsonl",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Three site workflows, only one supported.: Studio handles `new_site_from_brief` well",
+        "source_heading": "Real pain points (not a test list — actual issues)",
+        "summary": "**Three site workflows, only one supported.** Studio handles `new_site_from_brief` well. It does not have first-class support for `adapt_existing_site` (working with hand-built sites) or `rebuild_from_brief` (recreating a site from an existing brief). Different state, permissions, and config-discovery needs per mode. This is a captured architectural gap from the MBSH session and it is real.",
+        "proposed_destination": "gaps.jsonl",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Testing rule:: All Studio testing goes through Playwright browser automation, never WebSocket shortcuts",
+        "source_heading": "Standing context (the cheat codes)",
+        "summary": "**Testing rule:** All Studio testing goes through Playwright browser automation, never WebSocket shortcuts. Every gap found gets logged with: exact Studio message sent, what failed, what the CLI workaround was, suggested GUI solution.",
+        "proposed_destination": "gaps.jsonl",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "lessons": [
+      {
+        "title": "When you propose a solution, name where it falls on this hierarchy",
+        "source_heading": "The solution hierarchy",
+        "summary": "When you propose a solution, name where it falls on this hierarchy. Always surface a more efficient alternative even when a working solution already exists. \"It works\" is the trap that produces site #6 not benefiting from site #5's lessons.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "The \"it works\" trap.: Fritz's solution hierarchy puts \"it works\" at the bottom on purpose",
+        "source_heading": "Real pain points (not a test list — actual issues)",
+        "summary": "**The \"it works\" trap.** Fritz's solution hierarchy puts \"it works\" at the bottom on purpose. The system has accumulated working-but-suboptimal decisions because the next thing was always urgent. Part of your job is to surface those without being asked.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Read order at session start:: `FAMTASTIC-STATE.md` → `CHANGELOG.md` → `.wolf/cerebrum.md` (especially Do-Not-Repeat) → `",
+        "source_heading": "Standing context (the cheat codes)",
+        "summary": "**Read order at session start:** `FAMTASTIC-STATE.md` → `CHANGELOG.md` → `.wolf/cerebrum.md` (especially Do-Not-Repeat) → `.wolf/anatomy.md` → `.wolf/buglog.json`. Then orient.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "contradictions": [
+      {
+        "title": "He values honest, direct assessment over agreement",
+        "source_heading": "Who you're working with",
+        "summary": "He values honest, direct assessment over agreement. He pushes back when something is wrong and expects the same in return. He prefers concrete over vague, phased implementation over all-at-once, and root causes over symptoms. When you suggest something, expect to defend it. When he pushes back, take it seriously — he is usually right about the system because he built it.",
+        "proposed_destination": "FAMTASTIC-STATE.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Shay context confusion on reload.: Symptom of the legacy `claude --print` calling pattern — every call was a fresh, tool",
+        "source_heading": "Real pain points (not a test list — actual issues)",
+        "summary": "**Shay context confusion on reload.** Symptom of the legacy `claude --print` calling pattern — every call was a fresh, tool-disabled completion with no session memory. The Anthropic SDK migration is supposedly underway but project notes are stale (Fritz believes she's on SDK now; the documentation hasn't caught up). One of the first things to verify.",
+        "proposed_destination": "FAMTASTIC-STATE.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ]
+  }
+}

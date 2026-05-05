@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.11
+#!/opt/homebrew/opt/python@3.11/bin/python3.11
 """google-media-generate — Generate images and videos via Google Imagen 4 + Veo 2.
 
 Usage:

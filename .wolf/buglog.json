@@ -3002,6 +3002,321 @@
         "subprocess-retry",
         "spawnAllPages"
       ]
+    },
+    {
+      "id": "bug-gap1-palette-default",
+      "timestamp": "2026-04-24T00:00:00.000Z",
+      "error_message": "Sites built with no client-specified hex colors received generic industry palette instead of FAMtastic defaults",
+      "file": "site-studio/server.js \u2014 buildPromptContext() visualRequirements block",
+      "root_cause": "visualRequirements block only injected colors found in decisions[], visual_direction, or userMessage. When all three sources were empty, visualRequirements stayed '' and no palette guidance reached Claude. Claude defaulted to vertical-inference colors (e.g. accounting blue/gray instead of FAMtastic aquamarine/gold).",
+      "fix": "Added else branch: when colorHexes is empty, inject FAMTASTIC_DEFAULT_PALETTE from famtastic-skeletons.js as 'FAMTASTIC DEFAULT PALETTE \u2014 you MUST use these exact hex values' block. All five defaults (#00A79D, #F5B800, #001F3F, #FF6B6B, #FDF4E3) appear as CSS custom properties. Verified live: accounting firm built with zero brief colors, all five --color-* properties in output.",
+      "tags": [
+        "build-layer",
+        "palette",
+        "gap-1",
+        "r-new-audit",
+        "2026-04-24"
+      ]
+    },
+    {
+      "id": "bug-gap2-hero-skeleton-dead-variable",
+      "timestamp": "2026-04-24T00:00:00.000Z",
+      "error_message": "heroSkeleton returned by buildPromptContext() was silently discarded \u2014 never injected into single-page build prompt",
+      "file": "site-studio/server.js \u2014 handleChatMessage() destructure at ~L14149, prompt string at ~L14320",
+      "root_cause": "buildPromptContext() returned heroSkeleton in its return object (L11332). handleChatMessage() destructured the return but did not include heroSkeleton in the destructure list. The variable was never referenced. Single-page build and layout_update prompts received no MANDATORY HERO STRUCTURE block with BEM double-dash layer names. Parallel build path was unaffected (injected heroSkeleton directly via famSkeletonBlock).",
+      "fix": "Added heroSkeleton and navSkeleton to handleChatMessage() destructure. Injected heroSkeleton conditionally (build/layout_update only) and navSkeleton unconditionally into the prompt string between _slotStabilityInstruction and briefContext. Verified live: hero headline edit preserved all four fam-hero-layer--* double-dash class names with zero single-dash regressions.",
+      "tags": [
+        "build-layer",
+        "hero-skeleton",
+        "gap-2",
+        "dead-variable",
+        "r-new-audit",
+        "2026-04-24"
+      ]
+    },
+    {
+      "id": "bug-gap3-nav-skeleton-dead-variable",
+      "timestamp": "2026-04-24T00:00:00.000Z",
+      "error_message": "navSkeleton returned by buildPromptContext() was silently discarded \u2014 never injected into single-page build prompt",
+      "file": "site-studio/server.js \u2014 handleChatMessage() \u2014 same location as GAP-2",
+      "root_cause": "Same root cause as GAP-2: navSkeleton was in buildPromptContext() return but not in handleChatMessage() destructure. Single-page prompts received no MANDATORY NAV CLASS NAMES block, so nav edits could produce arbitrary class names (desktop-nav, mobile-nav-toggle, hamburger) instead of mandated vocabulary (.nav-links, .nav-toggle-label, .nav-mobile-menu, #nav-toggle, .nav-cta). Parallel build path was unaffected.",
+      "fix": "Covered by same fix as GAP-2. navSkeleton now injected unconditionally (all request types) into single-page prompt. Verified live: nav 'add Team page link' request on site built after fix preserved all five mandated class names with zero drift.",
+      "tags": [
+        "build-layer",
+        "nav-skeleton",
+        "gap-3",
+        "dead-variable",
+        "r-new-audit",
+        "2026-04-24"
+      ]
+    },
+    {
+      "id": "bug-jjba-rnew-audit-2026-04-24",
+      "timestamp": "2026-04-24T20:00:00.000Z",
+      "error_message": "JJ Barbershop B&A site failed FAMtastic visual standard — generic industry palette, no FAMtastic default, missing nav skeleton + multi-part logo",
+      "file": "site-studio/server.js",
+      "root_cause": "Four R-NEW build-layer gaps stacked. GAP-1: buildPromptContext() did not inject the FAMtastic default palette when no client colors were specified, so Claude fell back to vertical-generic colors. GAP-2/3: heroSkeleton and navSkeleton were dead variables on the single-page path — destructured but never included in the prompt string. GAP-4: spec.famtastic_mode was a tacit toggle never set by code, gating the multi-part logo emission and LOGO_SKELETON_TEMPLATE off for every new site by default.",
+      "fix": "GAP-1/2/3 closed in commit 8536a4a (2026-04-24): visualRequirements injects FAMTASTIC_DEFAULT_PALETTE; heroSkeleton/navSkeleton inserted into the single-page prompt with appropriate gating. GAP-4 closed in commit 2c5e358 (2026-04-24) by promoting spec.tier to canonical and deriving famtastic_mode from it via normalizeTierAndMode() on every readSpec. Lib modules: site-studio/lib/tier.js, site-studio/lib/tier-gates.js. 28 new tests in tests/gap4-tier-canonicality.test.js.",
+      "tags": [
+        "build-layer",
+        "r-new-audit",
+        "famtastic-default-palette",
+        "hero-skeleton",
+        "nav-skeleton",
+        "famtastic-mode",
+        "tier-canonical",
+        "2026-04-24"
+      ],
+      "related_bugs": [
+        "bug-buildlayer-gap1-fam-palette-default",
+        "bug-buildlayer-gap2-hero-skeleton-dead",
+        "bug-buildlayer-gap3-nav-skeleton-dead"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-24T20:00:00.000Z"
+    },
+    {
+      "id": "bug-baseline-2026-04-25",
+      "timestamp": "2026-04-25T01:00:00.000Z",
+      "error_message": "Baseline test FAILED: Shay Desk church prompt did not create a new site. Studio Chat appeared to update site-small-accounting-firm and triggered an index.html rewrite (179s). Browser console errors observed.",
+      "file": "site-studio/server.js",
+      "root_cause": "Six stacked sub-gaps. (1) Shay Desk's classifyShayShayTier0 matched 'build_request' but routed via 'route_to_chat' which forwards the message to Studio Chat as a plain user input — there is no new-site flag in the payload. (2) Studio Chat's classifyRequest had a hijack at L10788 — '\\bdeploy\\b' matched the prompt's trailing 'deploy it so I can see it live' and returned 'deploy' before the !hasBrief fallback at L10802 could fire. (3) Studio Chat's strong-build-signals regex required exact 'build [a/the] [full] website for' word order and missed 'build me a 3-page website for' — Shay Desk's equivalent regex had the .{0,30} flexibility and matched, so the same prompt classified differently between the two layers. (4) handlePlanning was a brief-editor-only function — it could not create a new site directory and would have written a church brief into site-small-accounting-firm/spec.json had it run. (5) extractBriefFromMessage silently fell back to business_name='New Business' / tag='site-new-site' for any input it could not parse, hiding the real problem. (6) runAutonomousBuild dispatched the build via routeToHandler BEFORE checking if any WS clients were connected — orphaned builds with no observer.",
+      "fix": "Three workstream commits implemented the V9 closure plan. WS2 (a690ce4): canonical createSite(brief, options) helper with caller-owned auth, helper-owned TAG switch, three on_collision modes gated by same-business identity comparison; classifier reorder — new_site_create above strong-build-signals, !hasBrief above deploy keyword; extractBriefFromMessage hardened to return insufficient_identity instead of silent fallback; type+location synthesis (e.g. site-church-atlanta-ga); /api/new-site and runAutonomousBuild refactored onto the helper; Studio Chat new_site_create case added. WS1 (8ef7411): handleShayBuildRequest async chain (auth → extract → createSite → synthesize → triggerSiteBuild) with shay_response replacing route_to_chat. WS3 (35d73b9): triggerSiteBuild gates on WS clients before dispatch. New test file: tests/baseline-closure.test.js (23 tests). Verification: 28/28 scenarios PASS in architecture/2026-04-25-baseline-closure-verification.md.",
+      "tags": [
+        "baseline",
+        "shay-desk",
+        "classifier",
+        "deploy-keyword-hijack",
+        "createsite",
+        "site-creation-contract",
+        "v9-closure",
+        "2026-04-25"
+      ],
+      "related_bugs": [
+        "bug-jjba-rnew-audit-2026-04-24"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-25T01:00:00.000Z"
+    },
+    {
+      "id": "bug-shay-auto-build-no-confirmation-2026-04-25",
+      "timestamp": "2026-04-25T02:00:00.000Z",
+      "error_message": "Shay Desk auto-fires the build immediately after createSite succeeds — user has no opportunity to confirm the extracted brief, the suggested tag, or the synthesized design_brief before parallelBuild runs.",
+      "file": "site-studio/server.js",
+      "root_cause": "handleShayBuildRequest implemented the V9 spec literally: auth → extract → createSite → synthesizeDesignBriefForBuild → triggerSiteBuild, with triggerSiteBuild calling routeToHandler synchronously inside the same chain. There is no human-in-the-loop checkpoint between extraction and build dispatch. The V9 spec did not require one; it became visible only after live testing against the corrected baseline.",
+      "fix": "CLOSED 2026-04-27 in P0.3. Approach (a) implemented: introduced 'confirm_build_request' / 'cancel_build_request' Shay tier-0 intents. handleShayBuildRequest now extracts brief and stores in pendingBuildConfirmations Map (5-min TTL, single 'shay-default' key for single-user system). User sees a preview of the extracted brief + pages + tier and must reply yes/build it/proceed (or cancel) to trigger the deferred build. New handleShayBuildConfirmation function runs createSite → synthesize → triggerSiteBuild only on confirm. Re-checks auth at confirmation time (defence-in-depth). hasPendingBuildConfirmation gates the tier-0 yes/cancel patterns so a bare 'yes' outside the build flow doesn't get hijacked.",
+      "tags": [
+        "ux",
+        "shay-desk",
+        "build-trigger",
+        "post-baseline-finding",
+        "2026-04-25",
+        "closed-p0.3"
+      ],
+      "related_bugs": [
+        "bug-baseline-2026-04-25"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-25T02:00:00.000Z"
+    },
+    {
+      "id": "bug-eaddrinuse-crash-loop-2026-04-27",
+      "timestamp": "2026-04-27T11:35:00.000Z",
+      "error_message": "Studio in continuous launchd-driven crash loop. /tmp/studio.log shows recurring [fatal] uncaughtException: Error: listen EADDRINUSE on ports 3333 and 3334. Studio fully unavailable during the loop window (~60 cycles before TIME_WAIT clears).",
+      "file": "~/Library/LaunchAgents/com.famtastic.studio.plist, site-studio/server.js (server.listen at L18483, previewServer.listen at L18462)",
+      "root_cause": "P0.1 diagnostic Thread 7. Plist ThrottleInterval=2 (seconds) was far too short for macOS TCP TIME_WAIT period (typically 30-60s). When Studio crashed for any reason, launchd auto-restarted after 2s, the new bind failed because the previous instance's port was still in TIME_WAIT, the new process crashed, launchd waited 2s, restarted, etc. Self-perpetuating loop.",
+      "fix": "CLOSED 2026-04-27 in P0.3 (subject to operator reload). Three changes: (1) Plist ThrottleInterval raised from 2 to 30 seconds (live ~/Library/LaunchAgents/ copy and tracked template at site-studio/launchd/com.famtastic.studio.plist). (2) server.on('error') and previewServer.on('error') handlers added to convert raw EADDRINUSE uncaughtException into a single-line operator-actionable message and clean exit(1) so launchd restart cycle is deterministic. (3) NEW scripts/smoke-eaddrinuse-50 wrapper implements the smoke-suite contract: stops studio, probes ports, restarts via launchd, polls /api/health, verifies fresh uptime, repeats N cycles. P0 exit gate #3 verification. Operator MUST reload launchd to pick up new plist: launchctl unload ~/Library/LaunchAgents/com.famtastic.studio.plist && launchctl load ~/Library/LaunchAgents/com.famtastic.studio.plist.",
+      "tags": [
+        "studio-uptime",
+        "launchd",
+        "eaddrinuse",
+        "throttle-interval",
+        "p0-exit-gate-3",
+        "2026-04-27",
+        "closed-p0.3"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:35:00.000Z"
+    },
+    {
+      "id": "bug-preview-stale-on-site-switch-2026-04-27",
+      "timestamp": "2026-04-27T11:35:00.000Z",
+      "error_message": "Preview iframe shows 'Not found' or stale content after switching sites via the site picker, even though new site dist/ exists.",
+      "file": "site-studio/public/index.html (handleSiteSwitch)",
+      "root_cause": "P0.1 diagnostic Thread 5. Server side correctly re-evaluates DIST_DIR() per request (live TAG mutation propagates). The bug was browser-side: iframe.src = sameUrl is a no-op in many browser engines. Session 17 stripped query strings to fix preview server lookups; that fix removed the cache-busting effect that previously forced reload.",
+      "fix": "CLOSED 2026-04-27 in P0.3. handleSiteSwitch in public/index.html now sets preview-frame.src to buildPreviewUrl(currentPage) + '?_switch=' + Date.now() — preview server's existing query-string strip (server.js:18040 urlPath = req.url.split('?')[0]) handles the buster cleanly so no 404. Site switches now force a fresh fetch of the new TAG's dist content.",
+      "tags": [
+        "preview",
+        "site-switch",
+        "iframe",
+        "cache-buster",
+        "2026-04-27",
+        "closed-p0.3"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:35:00.000Z"
+    },
+    {
+      "id": "bug-design-brief-approved-never-set-2026-04-27",
+      "timestamp": "2026-04-27T13:00:00.000Z",
+      "error_message": "After a successful Shay-confirmed build, spec.design_brief.approved stays false (or undefined). Every subsequent chat message hits the classifier's hasBrief gate at server.js:11308 and falls through to new_site, blocking content edits, deploys, and restyle. Caused P0 exit gates 1, 2, and 4 to fail.",
+      "file": "site-studio/server.js (synthesizeDesignBriefForBuild at L7599), pre-existing built-site spec.json files",
+      "root_cause": "P0 exit gate diagnostic at architecture/2026-04-27-p0-exit-gate-results.md. P0.3 introduced the Shay confirm flow (handleShayBuildRequest → pending → handleShayBuildConfirmation → synthesizeDesignBriefForBuild → triggerSiteBuild). synthesizeDesignBriefForBuild constructed the design_brief object but never set approved=true. The pre-P0.3 autonomous-build path also never set it. So every site ever built ended up with approved=false (or undefined), and the chat classifier's hasBrief gate became permanently false post-build.",
+      "fix": "CLOSED 2026-04-27 in P0.4 hotfix. Three changes: (1) synthesizeDesignBriefForBuild now sets approved=true at synthesis time (Path A: new brief gets approved=true in the synthesised object; Path B: existing brief gets approved=true via flip if not already set). Confirmation IS the approval. (2) NEW scripts/smoke-assert-built-spec asserts the post-build invariants (state in {built, deployed, client_approved}, design_brief.approved===true, interview_completed===true, non-empty pages). (3) Migration: scripts/spec-repair-all extended to backfill design_brief.approved=true for built/deployed/client_approved sites with interview_completed=true. Migration ran: 7 sites backfilled.",
+      "tags": [
+        "classifier",
+        "design-brief",
+        "approved-flag",
+        "post-build-regression",
+        "p0-exit-gate-blocker",
+        "2026-04-27",
+        "closed-p0.4"
+      ],
+      "related_bugs": [
+        "bug-baseline-2026-04-25",
+        "bug-shay-auto-build-no-confirmation-2026-04-25"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:00:00.000Z"
+    },
+    {
+      "id": "bug-gh-enoent-post-build-2026-04-27",
+      "timestamp": "2026-04-27T13:00:00.000Z",
+      "error_message": "[fatal] uncaughtException: Error: spawn gh ENOENT after successful build. Studio crashes (respawned by while-true wrapper); build itself completes but the launchd-supervised process takes an unscheduled exit and the post-build push step is silently dropped.",
+      "file": "site-studio/server.js (post-build push step — exact location TBD)",
+      "root_cause": "P0 exit gate run surfaced this. The post-build production-repo push expects the GitHub CLI (gh) in PATH. On the current machine gh is not installed. The spawn call has no preflight check or graceful fallback — the ENOENT bubbles to uncaughtException.",
+      "fix": "DEFERRED — log only per P0.4 scope. Two candidate approaches: (a) preflight check at startup (which gh) that downgrades the post-build push to a no-op with a structured chat message when gh is missing, (b) document gh as a hard prereq in setup. Option (a) preferred — keeps Studio operable on machines without gh. Severity: medium (Studio recovers via respawn but post-build push is silently dropped).",
+      "tags": [
+        "post-build",
+        "git-cli",
+        "spawn-enoent",
+        "deferred",
+        "medium-severity",
+        "2026-04-27"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:00:00.000Z"
+    },
+    {
+      "id": "bug-business-type-truncation-2026-04-27",
+      "timestamp": "2026-04-27T13:00:00.000Z",
+      "error_message": "business_type extracted from the brief gets truncated mid-phrase, e.g. 'A bold and' instead of 'A bold and confident barber shop'. Surfaced via image-prompt template that read 'kids cut service photograph for A bold and business' which Imagen-4 safety-filtered.",
+      "file": "site-studio/server.js (extractBriefFromMessage / brief synthesis)",
+      "root_cause": "P0 exit gate run surfaced this. The brief extractor or synthesisDesignBriefForBuild truncates business_type to the first three space-separated words (or similar). When the business description starts with a leading adjective phrase ('A bold and confident barber shop'), the truncation lops off the actual business noun, leaving a fragment that's syntactically incomplete.",
+      "fix": "DEFERRED — log only per P0.4 scope. Likely lives in createSite at server.js (when business_type is derived from business_description.split(' ').slice(0, 3).join(' ')). Fix would either: (a) skip leading articles/adjectives before slicing, or (b) require the noun phrase to include a recognisable business-type word from GENERIC_BUSINESS_TYPES. Severity: low (safety filter recovers via Unsplash fallback; image still produced).",
+      "tags": [
+        "brief-extraction",
+        "business-type",
+        "truncation",
+        "imagen-safety",
+        "deferred",
+        "low-severity",
+        "2026-04-27"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:00:00.000Z"
+    },
+    {
+      "id": "bug-restyle-dead-mode-instruction-2026-04-27",
+      "timestamp": "2026-04-27T11:35:00.000Z",
+      "error_message": "Restyle classification fires correctly (classifier returns 'restyle', routing sends to handleChatMessage) but the resulting Claude prompt has no restyle-specific instruction. Output is generic, indistinguishable from a vague edit.",
+      "file": "site-studio/server.js (modeInstruction switch at L14713)",
+      "root_cause": "P0.1 diagnostic Thread 8. Session 13 partially fixed restyle: added htmlContext branch (correct HTML to Claude) and routing fix (case 'restyle' in routeToHandler dispatches to handleChatMessage). But Session 13 never added a corresponding case 'restyle' to the modeInstruction switch in handleChatMessage. So Claude saw the right HTML but a generic 'Process the user request and update the site accordingly' default instruction.",
+      "fix": "CLOSED 2026-04-27 in P0.3. Added case 'restyle' to the modeInstruction switch with explicit instruction: 'Change visual design (colors, fonts, layout, motion, decorative shapes) while preserving all content (headings, body copy, links, images, structure). Do NOT rewrite copy. Do NOT add or remove sections. Do NOT change navigation or CTAs. Honor FAMtastic Tier B identity unless brief says otherwise. Return COMPLETE updated page as HTML_UPDATE: — not a diff.'",
+      "tags": [
+        "classifier",
+        "restyle",
+        "mode-instruction",
+        "session-13-incomplete-fix",
+        "2026-04-27",
+        "closed-p0.3"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:35:00.000Z"
+    },
+    {
+      "id": "bug-broken-header-links-2026-04-25",
+      "timestamp": "2026-04-25T02:30:00.000Z",
+      "error_message": "Generated site has 'broken' header — duplicate logo region (image anchor + redundant text anchor) with inline styles. Visually broken, two clickable brand links.",
+      "file": "site-studio/server.js (applyLogoV at L560-615)",
+      "root_cause": "P0.1 diagnostic Thread 3 confirmed: applyLogoV used regex /i (case-insensitive, single match). When Claude emitted two <a data-logo-v> elements (image-form and text-form, despite prompt instruction otherwise), only the first was normalised. The second kept Claude's original text content and inline styles. Result: image logo + redundant brand-name text anchor on every Tier-B build using FAMtastic logo mode.",
+      "fix": "CLOSED 2026-04-27 in P0.2 (commit pending). Rewrote applyLogoV with normalizeLogoMarkup() helper: (A) regex /gi swaps content of every data-logo-v anchor to canonical newContent, (B) dedup pass keeps only the first data-logo-v anchor and removes the rest, (C) strips inline style=\"...\" attribute from any surviving data-logo-v anchor. Applied to both _partials/_nav.html and per-page HTML.",
+      "tags": [
+        "build-output",
+        "nav",
+        "broken-links",
+        "applylogov",
+        "post-baseline-finding",
+        "2026-04-25",
+        "closed-p0.2"
+      ],
+      "related_bugs": [
+        "bug-baseline-2026-04-25"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-25T02:30:00.000Z"
+    },
+    {
+      "id": "bug-css-vars-dual-default-2026-04-27",
+      "timestamp": "2026-04-27T11:00:00.000Z",
+      "error_message": "Two different default palettes coexist; sites built minutes apart can render with #00A79D (FAMtastic teal) OR #1a5c2e (legacy dark green) depending on which template path executes.",
+      "file": "site-studio/server.js (L3524-3528 and L12413)",
+      "root_cause": "P0.1 diagnostic Thread 4. GAP-1 fix on 2026-04-24 added FAMTASTIC_DEFAULT_PALETTE injection at the brief level but did not update the literal :root block embedded in the template prompts. Those blocks hardcoded #1a5c2e/#d4a843/#f0f4f0 from a pre-GAP-1 era. Claude sometimes followed the brief-level palette, sometimes followed the literal :root, producing visible inconsistency.",
+      "fix": "CLOSED 2026-04-27 in P0.2 (commit pending). Replaced hardcoded fallbacks at L3524 and L12413 with famSkeletons.FAMTASTIC_DEFAULT_PALETTE.{primary,accent,background} references — single source of truth.",
+      "tags": [
+        "build-output",
+        "css-variables",
+        "palette",
+        "single-source-of-truth",
+        "2026-04-27",
+        "closed-p0.2"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:00:00.000Z"
+    },
+    {
+      "id": "bug-spec-schema-drift-2026-04-27",
+      "timestamp": "2026-04-27T11:00:00.000Z",
+      "error_message": "Site spec.json files have drifting key sets across the portfolio. Some sites missing tier (pre-GAP-4), some missing famtastic_mode, some missing created_at, one with tag: null. Implicit schema; no validator at write or read time.",
+      "file": "site-studio/server.js (readSpec at L145), sites/*/spec.json",
+      "root_cause": "P0.1 diagnostic Thread 6. No formal schema. Each writer (api/new-site, runAutonomousBuild, build verifier, brand tracker, logo extraction, etc.) added the fields it cared about. Older sites accumulated fields slowly; newer sites got the post-baseline-closure superset. The audit followup at architecture/2026-04-24-schema-audit-followup.md identified colors/pages required-but-not-written; P0.1 diagnostic Thread 6 confirmed and broadened the issue.",
+      "fix": "CLOSED 2026-04-27 in P0.2 (commit pending). Three changes: (1) NEW lib/spec-schema.js with REQUIRED_FIELDS, DEFAULT_FIELDS, validateSpec(), normalizeRequiredFields(). colors/pages decided as OPTIONAL per the audit followup. (2) Wired normalizeRequiredFields into readSpec next to normalizeTierAndMode (repair-on-read). (3) Two scripts: smoke-validate-all-specs (validator, P0 exit gate #5), spec-repair-all (one-shot migration, idempotent, optional --dry-run). Migration ran across 25 sites; 22 repaired, 3 already valid (post-fix). Validator now exits 0 on full portfolio.",
+      "tags": [
+        "schema-drift",
+        "spec-schema",
+        "validator",
+        "migration",
+        "p0-exit-gate-5",
+        "2026-04-27",
+        "closed-p0.2"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:00:00.000Z"
+    },
+    {
+      "id": "bug-template-sameness-2026-04-27",
+      "timestamp": "2026-04-27T11:00:00.000Z",
+      "error_message": "Sentinel: every Tier-B site without explicit spec.colors converges to the FAMtastic default palette (#00A79D primary). Two unrelated businesses (e.g. JJ B&A Transport vs Small Accounting Firm) render with identical primaries.",
+      "file": "site-studio/lib/famtastic-skeletons.js (FAMTASTIC_DEFAULT_PALETTE), site-studio/server.js (visualRequirements injection)",
+      "root_cause": "P0.1 diagnostic Thread 1. GAP-1 fix on 2026-04-24 made FAMTASTIC_DEFAULT_PALETTE a strong default. The fix solved the prior failure mode (sites used a generic industry palette) but introduced its inverse: every Tier-B site without explicit colors converges to the same five colors. The font-registry produces narrow variation. Visual sameness is the structural cost of the FAMtastic identity strong-default approach.",
+      "fix": "P0.2 sentinel-only. Added scripts/smoke-distinct-palette which exits 1 when two sites' --color-primary match each other AND match the FAMtastic default. Added documentation block at top of FAMTASTIC_DEFAULT_PALETTE pointing to the P1.2 work. Real fix is P1.2 (Visual Distinctiveness): per-site style fingerprint, Global Style Object, design tokens.",
+      "tags": [
+        "visual-quality",
+        "template-sameness",
+        "sentinel-only",
+        "p1.2-deferred",
+        "2026-04-27"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T11:00:00.000Z"
     }
   ]
 }

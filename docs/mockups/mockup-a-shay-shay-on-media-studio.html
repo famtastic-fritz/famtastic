@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup A — Shay-Shay on Media Studio</title>
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #14141a;
+    --surface-2: #1c1c24;
+    --surface-3: #24242e;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --gold: #f5c400;
+    --gold-soft: rgba(245, 196, 0, 0.14);
+    --gold-line: rgba(245, 196, 0, 0.32);
+    --text: #f0f0f5;
+    --text-2: #a0a0aa;
+    --text-3: #606068;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --purple: #c084fc;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow-1: 0 1px 2px rgba(0,0,0,0.6), 0 4px 14px rgba(0,0,0,0.45);
+    --shadow-2: 0 12px 40px rgba(0,0,0,0.6);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  /* ---------- mockup chrome ---------- */
+  .mockup-banner {
+    background: linear-gradient(180deg, var(--gold-soft), transparent);
+    border-bottom: 1px solid var(--gold-line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .mockup-banner h1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .mockup-banner .meta {
+    color: var(--text-2);
+    font-size: 12px;
+  }
+  .mockup-banner .meta span { color: var(--text); }
+  /* ---------- studio shell ---------- */
+  .studio {
+    display: grid;
+    grid-template-columns: 56px 1fr 380px;
+    grid-template-rows: 48px 1fr 36px;
+    grid-template-areas:
+      "rail topbar topbar"
+      "rail canvas shay"
+      "rail status status";
+    height: calc(100vh - 56px);
+    background: var(--bg);
+  }
+  .topbar {
+    grid-area: topbar;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+  }
+  .topbar .crumbs {
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .topbar .crumbs span.active { color: var(--text); }
+  .topbar .actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { color: var(--text); border-color: var(--text-3); }
+  .btn.primary {
+    background: var(--gold);
+    color: #1a1a00;
+    border-color: var(--gold);
+  }
+  .btn.primary:hover { background: #ffd633; }
+  /* ---------- rail ---------- */
+  .rail {
+    grid-area: rail;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 6px;
+  }
+  .rail-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 18px;
+  }
+  .rail-btn:hover { color: var(--text); background: var(--surface-2); }
+  .rail-btn.active {
+    color: var(--gold);
+    background: var(--gold-soft);
+  }
+  .rail-spacer { flex: 1; }
+  /* ---------- canvas ---------- */
+  .canvas {
+    grid-area: canvas;
+    overflow-y: auto;
+    padding: 24px 28px;
+  }
+  .canvas-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 4px;
+  }
+  .canvas-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .canvas-header .pill {
+    background: var(--surface-2);
+    color: var(--text-2);
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .canvas-sub {
+    color: var(--text-2);
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .canvas-sub code {
+    background: var(--surface-2);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: var(--gold);
+  }
+  .img-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .img-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.18s;
+    cursor: pointer;
+    position: relative;
+  }
+  .img-card:hover {
+    border-color: var(--text-3);
+    transform: translateY(-2px);
+  }
+  .img-card.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-soft);
+  }
+  .img-thumb {
+    aspect-ratio: 16/10;
+    width: 100%;
+  }
+  .img-001 { background: linear-gradient(140deg, #2a1810 0%, #ff7e3d 50%, #ffd166 100%); }
+  .img-002 { background: linear-gradient(140deg, #1a1f3a 0%, #5a4fcf 55%, #8b5cf6 100%); }
+  .img-003 { background: linear-gradient(140deg, #3d1a00 0%, #f59e0b 45%, #fde047 100%); }
+  .img-004 { background: linear-gradient(140deg, #0d0808 0%, #7f1d1d 50%, #b45309 100%); }
+  .img-005 { background: linear-gradient(140deg, #4c1d3d 0%, #ec4899 50%, #fbcfe8 100%); }
+  .img-006 { background: linear-gradient(140deg, #0f172a 0%, #1e3a8a 45%, #f5c400 100%); }
+  .img-meta {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .img-meta .prompt {
+    color: var(--text);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+  .img-meta .stats {
+    color: var(--text-3);
+    font-size: 11px;
+    display: flex;
+    gap: 10px;
+  }
+  .img-meta .stats .cost { color: var(--green); }
+  .img-card .badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(10,10,12,0.8);
+    backdrop-filter: blur(6px);
+    color: var(--text-2);
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .img-card.selected .badge {
+    background: var(--gold);
+    color: #1a1a00;
+  }
+  /* ---------- status bar ---------- */
+  .status {
+    grid-area: status;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 18px;
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .status .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    margin-right: 6px;
+  }
+  /* ---------- shay-shay panel ---------- */
+  .shay {
+    grid-area: shay;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .shay-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .shay-orb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe066, #f5c400 50%, #b8920a 100%);
+    box-shadow: 0 0 0 2px rgba(245,196,0,0.18), 0 0 24px rgba(245,196,0,0.4);
+    flex-shrink: 0;
+  }
+  .shay-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .shay-state {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 1px;
+  }
+  .shay-state .live-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .shay-header .ctrls {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+  }
+  .shay-header .ctrl {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .shay-header .ctrl:hover { background: var(--surface-2); color: var(--text); }
+  .shay-context-strip {
+    padding: 10px 16px;
+    background: linear-gradient(180deg, var(--gold-soft), transparent);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .shay-context-strip .label {
+    color: var(--gold);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .shay-context-strip strong { color: var(--text); font-weight: 600; }
+  .shay-context-strip code {
+    background: var(--surface-2);
+    color: var(--gold);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+  .shay-stream {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .msg .who {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .msg.user .who { color: var(--blue); }
+  .msg.shay .who { color: var(--gold); }
+  .msg .body {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .msg.user .body {
+    background: rgba(96,165,250,0.06);
+    border-color: rgba(96,165,250,0.2);
+  }
+  .msg.shay .body {
+    background: linear-gradient(180deg, rgba(245,196,0,0.04), transparent);
+    border-color: var(--gold-line);
+  }
+  .shay-pick {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    background: var(--surface-3);
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+  .shay-pick .mini-thumb {
+    width: 56px;
+    height: 36px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .shay-pick .pick-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .shay-pick .pick-id {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+  }
+  .shay-pick .pick-reason {
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 2px;
+  }
+  .shay-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .chip {
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 5px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { color: var(--text); border-color: var(--text-3); }
+  .chip.workshop {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border-color: var(--gold-line);
+  }
+  .chip.workshop::before {
+    content: "→ ";
+    margin-right: 2px;
+  }
+  .shay-input-row {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    background: var(--surface);
+  }
+  .shay-input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    width: 100%;
+    resize: none;
+    outline: none;
+    transition: border 0.15s;
+  }
+  .shay-input:focus { border-color: var(--gold); }
+  .shay-input::placeholder { color: var(--text-3); }
+  .shay-input-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    gap: 8px;
+  }
+  .shay-send {
+    margin-left: auto;
+    background: var(--gold);
+    color: #1a1a00;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  /* ---------- annotations ---------- */
+  .annotations {
+    padding: 18px 24px 28px;
+    background: linear-gradient(180deg, transparent, rgba(245,196,0,0.04));
+    border-top: 1px solid var(--border);
+  }
+  .annotations h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .annot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .annot {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .annot .num {
+    display: inline-block;
+    background: var(--gold);
+    color: #1a1a00;
+    font-weight: 700;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .annot .what {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .annot .why {
+    color: var(--text-2);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-banner">
+  <h1>Mockup A — Shay-Shay on Media Studio</h1>
+  <div class="meta">Shows: <span>page-context awareness</span> · <span>inline actions</span> · <span>"Take to Workshop" handoff</span></div>
+</div>
+
+<div class="studio">
+
+  <!-- LEFT RAIL -->
+  <div class="rail">
+    <div class="rail-btn">⌂</div>
+    <div class="rail-btn">▦</div>
+    <div class="rail-btn active" title="Media Studio">◷</div>
+    <div class="rail-btn">⊕</div>
+    <div class="rail-btn">⌕</div>
+    <div class="rail-spacer"></div>
+    <div class="rail-btn" style="color: var(--gold);" title="Shay-Shay">★</div>
+    <div class="rail-btn">⚙</div>
+  </div>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="crumbs">Media Studio / <span class="active">Generated Images</span></div>
+    <div class="actions">
+      <button class="btn">Compare</button>
+      <button class="btn">Save selected</button>
+      <button class="btn primary">Generate more</button>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas">
+    <div class="canvas-header">
+      <h2>Sunset over mountains</h2>
+      <span class="pill">6 images · prompt set 001</span>
+    </div>
+    <div class="canvas-sub">
+      Generated <code>2026-05-02 14:18</code> · model <code>imagen-4.0</code> · total cost <code>$0.024</code>
+    </div>
+
+    <div class="img-grid">
+      <div class="img-card">
+        <div class="badge">img_001</div>
+        <div class="img-thumb img-001"></div>
+        <div class="img-meta">
+          <div class="prompt">warm tones, hazy</div>
+          <div class="stats"><span>1024×640</span><span class="cost">$0.004</span></div>
+        </div>
+      </div>
+      <div class="img-card selected">
+        <div class="badge">img_002 · selected</div>
+        <div class="img-thumb img-002"></div>
+        <div class="img-meta">
+          <div class="prompt">cool tones, dusk</div>
+          <div class="stats"><span>1024×640</span><span class="cost">$0.004</span></div>
+        </div>
+      </div>
+      <div class="img-card">
+        <div class="badge">img_003</div>
+        <div class="img-thumb img-003"></div>
+        <div class="img-meta">
+          <div class="prompt">golden hour, low sun</div>
+          <div class="stats"><span>1024×640</span><span class="cost">$0.004</span></div>
+        </div>
+      </div>
+      <div class="img-card">
+        <div class="badge">img_004</div>
+        <div class="img-thumb img-004"></div>
+        <div class="img-meta">
+          <div class="prompt">dramatic, dark</div>
+          <div class="stats"><span>1024×640</span><span class="cost">$0.004</span></div>
+        </div>
+      </div>
+      <div class="img-card">
+        <div class="badge">img_005</div>
+        <div class="img-thumb img-005"></div>
+        <div class="img-meta">
+          <div class="prompt">soft pink, hazy</div>
+          <div class="stats"><span>1024×640</span><span class="cost">$0.004</span></div>
+        </div>
+      </div>
+      <div class="img-card">
+        <div class="badge">img_006</div>
+        <div class="img-thumb img-006"></div>
+        <div class="img-meta">
+          <div class="prompt">cinematic, deep blue + gold</div>
+          <div class="stats"><span>1024×640</span><span class="cost">$0.004</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHAY-SHAY PANEL -->
+  <aside class="shay">
+    <div class="shay-header">
+      <div class="shay-orb"></div>
+      <div>
+        <div class="shay-title">Shay-Shay</div>
+        <div class="shay-state"><span class="live-dot"></span>Watching this page</div>
+      </div>
+      <div class="ctrls">
+        <div class="ctrl" title="Dock">⇲</div>
+        <div class="ctrl" title="Hide">×</div>
+      </div>
+    </div>
+
+    <div class="shay-context-strip">
+      <span class="label">Page context</span>
+      <strong>6 images</strong> in this set · <code>img_002</code> selected · prompt theme: <em>sunset over mountains</em>
+    </div>
+
+    <div class="shay-stream">
+      <div class="msg user">
+        <div class="who">You</div>
+        <div class="body">which one looks the warmest?</div>
+      </div>
+      <div class="msg shay">
+        <div class="who">Shay-Shay</div>
+        <div class="body">
+          <strong>img_003</strong> reads warmest of the six — golden-hour palette, low sun, no cool blue cast. <strong>img_001</strong> is close but hazier.
+          <div class="shay-pick">
+            <div class="mini-thumb img-003"></div>
+            <div class="pick-info">
+              <div class="pick-id">img_003 — golden hour, low sun</div>
+              <div class="pick-reason">Warm color rank: 003 &gt; 001 &gt; 005</div>
+            </div>
+          </div>
+          <div class="shay-actions">
+            <span class="chip">Select img_003</span>
+            <span class="chip">Show me the warm trio</span>
+            <span class="chip">Refine prompt for warmer</span>
+            <span class="chip workshop">Take to Workshop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="shay-input-row">
+      <textarea class="shay-input" rows="2" placeholder="Ask Shay-Shay about this page…"></textarea>
+      <div class="shay-input-actions">
+        <span style="font-size: 11px; color: var(--text-3);">Sees: 6 images · Knows: prompt history</span>
+        <button class="shay-send">Send</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- STATUS BAR -->
+  <div class="status">
+    <span><span class="dot"></span>Live · localhost:3334</span>
+    <span style="color:var(--text-3);">Brain: Sonnet</span>
+    <span style="color:var(--text-3);">Session cost: $0.024</span>
+    <span style="color:var(--text-3); margin-left:auto;">Shay-Shay context provider: <span style="color:var(--green)">media_studio.image_grid ✓</span></span>
+  </div>
+
+</div>
+
+<div class="annotations">
+  <h3>What this mockup shows</h3>
+  <div class="annot-grid">
+    <div class="annot">
+      <div class="what"><span class="num">1</span>Page-context strip</div>
+      <div class="why">The gold strip near the top of Shay's panel proves she sees the page. Not "I'm a chatbot, ask me anything" — "I see 6 images, img_002 is selected." That string is generated from the page's registered context provider, not from the user's question.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">2</span>Inline visual reasoning</div>
+      <div class="why">When she answers "which is warmest", she returns a thumbnail of her pick + ranked reasoning. She's not just text — she shows the actual image she's recommending because she can see it.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">3</span>Action chips, not advice</div>
+      <div class="why">"Select img_003" / "Refine prompt for warmer" are real buttons. Click and the action runs on the page. That's the multifunctional utility — she does, she doesn't just describe.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">4</span>"Take to Workshop" CTA</div>
+      <div class="why">The gold chip with the arrow is the handoff trigger. Click and the structured payload (page, artifact, intent, recent actions, success criteria) travels with her to the Workshop. The Workshop opens with full context — no re-asking.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">5</span>Status bar shows the wiring</div>
+      <div class="why">"Shay-Shay context provider: media_studio.image_grid ✓" — explicit confirmation that this page registered with Shay's context registry. When this is missing on a page, you'll see a red x. That's how we know the wiring landed.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">6</span>One panel, one composer</div>
+      <div class="why">No floating orb fighting with this panel. No second composer somewhere else. Shay lives in one consistent place per page. The orb identity (animated, personality) is a future visual phase — this is the structural baseline.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -36,7 +36,7 @@
     "visual_direction": {
       "layout": "Centered, grid-based gallery with generous margins and white space. Navigation pinned and subtle. Three-column or masonry grid for photos depending on format mix.",
       "typography": "Single modern sans-serif (e.g., Inter, Grotesk). Limited hierarchy: small, restrained body text for navigation and captions; minimal hero text. Let images dominate vertical real estate.",
-      "color_usage": "Palette is too rich for minimal design. Use white/off-white as primary. Reserve the blue primary (#1e40af) only for interactive states (hover, links, contact button). Retire the secondary and accent colors entirely\u2014they compete with photos.",
+      "color_usage": "Palette is too rich for minimal design. Use white/off-white as primary. Reserve the blue primary (#1e40af) only for interactive states (hover, links, contact button). Retire the secondary and accent colors entirely—they compete with photos.",
       "motion": "None, or extremely subtle (fade-in on scroll, no bounce/easing). Animations distract from photography. Keep interactions instant or imperceptibly smooth.",
       "density": "Spacious. Every gallery item should breathe. Large vertical gaps between sections. Aim for 40-50% white space on desktop."
     },
@@ -54,11 +54,11 @@
     "avoid": [
       "Carousels or sliders (static grids show more work at once)",
       "Auto-playing media or sound",
-      "Multiple competing colors\u2014gallery competes with brand colors, brand colors lose",
+      "Multiple competing colors—gallery competes with brand colors, brand colors lose",
       "Large text blocks or artist biography on home page (link to separate About if needed)",
-      "Decorative graphics, shapes, or patterns\u2014they distract from photos",
+      "Decorative graphics, shapes, or patterns—they distract from photos",
       "Stock photography that isn't part of the portfolio",
-      "Heavy shadows or gradients\u2014keep backgrounds pure white or off-white",
+      "Heavy shadows or gradients—keep backgrounds pure white or off-white",
       "Sidebar, complex navigation, or multi-column layouts"
     ],
     "open_questions": [],
@@ -74,7 +74,7 @@
     {
       "category": "hosting",
       "suggestion": "Netlify",
-      "reason": "Already configured \u2014 free tier, CDN, instant deploys"
+      "reason": "Already configured — free tier, CDN, instant deploys"
     },
     {
       "category": "forms",
@@ -211,5 +211,26 @@
       "--color-accent missing from :root"
     ],
     "timestamp": "2026-04-06T19:05:17.977Z"
+  },
+  "tier": "famtastic",
+  "famtastic_mode": true,
+  "created_at": "2026-04-27T15:21:07.933Z",
+  "style_fingerprint": {
+    "palette": {
+      "primary": "#1e40af",
+      "secondary": "#001F3F",
+      "accent": "#F5B800",
+      "neutral": "#FF6B6B",
+      "background": "#FDF4E3"
+    },
+    "typography": {
+      "heading_family": "Montserrat",
+      "body_family": "Open Sans",
+      "scale": "famtastic"
+    },
+    "mood": "bold and confidently different — the FAMtastic default",
+    "source": "brief_extracted",
+    "vertical": null,
+    "generated_at": "2026-04-27T19:26:19.346Z"
   }
 }

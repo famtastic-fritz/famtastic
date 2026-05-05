@@ -1,0 +1,244 @@
+{
+  "id": "plan_2026_05_05_ops_workspace_gui",
+  "title": "FAMtastic Studio Operations Workspace GUI",
+  "status": "proposed",
+  "label": "ops-workspace-gui",
+  "tags": ["platform-upgrades", "studio-ui", "ops", "shay-shay", "agent-management"],
+  "created_at": "2026-05-05T00:00:00.000Z",
+  "owner": "Fritz",
+  "source": {
+    "type": "conversation",
+    "summary": "Design session covering Agent Management + Job Management GUI for FAMtastic Studio. Produced UX strategy, IA, screen specs for 11 Ops tabs (Pulse, Plans, Tasks, Jobs, Runs, Proofs, Agents, Reviews, Gaps, Memory, Debt), record-type visual language (PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW), CLI/ledger seam, ASCII wireframes, and MVP recommendation.",
+    "source_refs": [
+      "Conversation 2026-05-05 — Ops Workspace GUI design",
+      "docs/STUDIO-UI-FOUNDATION.md",
+      "plans/plan_2026_05_04_shay_process_intelligence/plan.json"
+    ]
+  },
+  "goals": [
+    "Add an Operations workspace to the Workbench shell that unifies agent, job, plan, task, run, proof, gap, memory, review, and debt surfaces.",
+    "Resolve the stale-debt confusion by physically quarantining legacy queue items from live work.",
+    "Establish a record-type visual language (color, glyph, shape, route) so PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW are instantly distinguishable.",
+    "Wire the GUI to existing ledgers and CLI via a single ops API surface so CLI and UI stay in lock-step.",
+    "Make Shay-Shay a context-aware narrator on top of visible state, never a replacement for it."
+  ],
+  "non_goals": [
+    "Replacing the existing Workbench shell.",
+    "Building a marketing-style landing page.",
+    "Hiding state inside chat-only interactions."
+  ],
+  "workstreams": [
+    {
+      "id": "ws_ops_api_surface",
+      "title": "Ops API Surface (read + command + stream)",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "GET /api/ops/* read endpoints (jobs, runs, tasks, plans, proofs, gaps, memory, reviews, debt, needsMe)",
+        "POST /api/ops/command/* command endpoints (approve, reroute, park, retry, cancel, promote)",
+        "WS /ws/ops topic stream (lane changes, run logs, agent status, ticker)"
+      ],
+      "acceptance": [
+        "Every UI action has a CLI-equivalent command hitting the same endpoint.",
+        "Freshness field present on every record (live|idle|stale|parked|archived)."
+      ]
+    },
+    {
+      "id": "ws_jobs_tab_mvp",
+      "title": "Jobs Tab MVP (six lanes + Stale Debt drawer)",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "Six swimlanes: Queued, Approving, Running, Blocked, Done, Parked",
+        "Stale Debt drawer (collapsed bottom) with Migrate/Archive/Purge",
+        "Job inspector (right slide-over) with cost, deps, log tail, cancel/park/promote-to-task",
+        "WebSocket live updates for lane counts and card status",
+        "Shay-Shay one-sentence queue summary in drawer"
+      ],
+      "acceptance": [
+        "448 stale legacy-queue jobs render in Stale Debt drawer, never in live lanes.",
+        "Approve/Park/Cancel reflect optimistically and reconcile with server.",
+        "Promote-to-Task converts a misclassified job into a Task with link preserved."
+      ]
+    },
+    {
+      "id": "ws_pulse_tab",
+      "title": "Pulse Tab (home view)",
+      "status": "planned",
+      "priority": "P1",
+      "outputs": [
+        "Needs Me strip (left)",
+        "KPI tiles + Live Activity ticker (middle)",
+        "In Flight plans (right)",
+        "Recent proofs footer strip"
+      ]
+    },
+    {
+      "id": "ws_tasks_tab",
+      "title": "Tasks Tab (kanban with Waiting-on-me / Waiting-on-agent split)",
+      "status": "planned",
+      "priority": "P1",
+      "outputs": [
+        "Seven-column board with distinct amber/blue stripes for Waiting columns",
+        "Task inspector with acceptance criteria + proof attachment",
+        "Done-without-proof yellow badge"
+      ]
+    },
+    {
+      "id": "ws_agents_tab",
+      "title": "Agents Tab (Command Center)",
+      "status": "planned",
+      "priority": "P1",
+      "outputs": [
+        "Roster with avatars, role badges, status dots, today's stats",
+        "Detail tabs: Now, Skills, History, Reliability, Approvals, Policy",
+        "Live log tail for selected agent",
+        "Autonomy slider + budget caps + permission revoke"
+      ]
+    },
+    {
+      "id": "ws_reviews_tab",
+      "title": "Reviews Tab (approval gates)",
+      "status": "planned",
+      "priority": "P1",
+      "outputs": [
+        "Polymorphic preview (diff, screenshot pair, research packet, deploy plan)",
+        "Approve / Reject / Approve-with-edits / Send-back / Convert-to-rule"
+      ]
+    },
+    {
+      "id": "ws_proofs_tab",
+      "title": "Proofs Tab (evidence library)",
+      "status": "planned",
+      "priority": "P2",
+      "outputs": [
+        "Faceted masonry gallery",
+        "Compare-two viewer",
+        "Promote-to-reference, attach-to-task"
+      ]
+    },
+    {
+      "id": "ws_runs_tab",
+      "title": "Runs Tab (execution history)",
+      "status": "planned",
+      "priority": "P2",
+      "outputs": [
+        "Dense virtualized table",
+        "Run inspector with streaming log + cost-per-step",
+        "Rerun and rerun-with-edits"
+      ]
+    },
+    {
+      "id": "ws_plans_tab",
+      "title": "Plans Tab (registry + roadmap)",
+      "status": "planned",
+      "priority": "P2",
+      "outputs": [
+        "Card grid + Roadmap timeline toggle",
+        "Plan inspector with milestones, nested tasks, proof strip"
+      ]
+    },
+    {
+      "id": "ws_gaps_tab",
+      "title": "Gaps Tab",
+      "status": "planned",
+      "priority": "P2",
+      "outputs": [
+        "Grouped list with recurrence sparklines",
+        "Convert-to-task and Promote-to-Do-Not-Repeat"
+      ]
+    },
+    {
+      "id": "ws_memory_tab",
+      "title": "Memory Tab (learning library)",
+      "status": "planned",
+      "priority": "P2",
+      "outputs": [
+        "Type tabs: Facts, Decisions, Preferences, Bugs, Gaps-resolved, Do-Not-Repeat, Rules",
+        "Still-true / Correct / Retire lifecycle controls",
+        "Weekly digest pinned by Shay-Shay"
+      ]
+    },
+    {
+      "id": "ws_debt_tab",
+      "title": "Debt Tab (migration + cleanup)",
+      "status": "planned",
+      "priority": "P1",
+      "outputs": [
+        "Source tiles (legacy queue, schema drift, deprecated formats, orphaned proofs)",
+        "Dry-run preview + Migrate/Archive/Purge actions"
+      ]
+    },
+    {
+      "id": "ws_record_visual_language",
+      "title": "Record-Type Visual Language",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "Glyph + accent color + card shape + route prefix per type (PLAN ◇ indigo, TASK ☐ slate, JOB ▶ amber, RUN ● cyan, PROOF ▣ emerald, GAP △ coral, MEMORY ✦ violet, REVIEW ⛔ red-orange)",
+        "Cross-reference chip component shared across inspectors"
+      ]
+    },
+    {
+      "id": "ws_plan_create_flow",
+      "title": "Plan Creation GUI + Purpose Capture",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "'New Plan' action on Plans tab opens a right-side composer (not a modal)",
+        "Required fields: title, purpose (why this exists), origin (conversation|gap|proof|manual), success_signal, owner",
+        "Optional fields: why_now, initial workstreams, tags, label",
+        "Auto-link to trigger record when launched from a gap/proof/conversation card",
+        "Plan record schema additions: purpose, why_now, origin.trigger_record, success_signal",
+        "Same composer reachable from Pulse 'Needs Me', Gaps 'Convert to Plan', and Shay-Shay 'Draft a plan'"
+      ],
+      "acceptance": [
+        "No plan can be saved without a non-empty purpose.",
+        "Plans converted from a gap auto-populate origin.trigger_record with the gap id.",
+        "Shay-Shay can narrate any plan in one sentence using purpose + success_signal.",
+        "CLI parity: `fam-hub plan new` accepts the same fields and writes the same shape."
+      ]
+    },
+    {
+      "id": "ws_shay_shay_drawer_integration",
+      "title": "Shay-Shay Drawer Integration (read-only first)",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "Per-tab context briefings driven by same ops APIs the UI uses",
+        "Recommendation chips (no auto-actions in MVP)",
+        "Inspector-collapses-Shay rail behavior"
+      ]
+    }
+  ],
+  "mvp": {
+    "first_screen": "Jobs Tab",
+    "rationale": "Directly resolves the 448 stale-job confusion, validates the swimlane + inspector + WebSocket pattern reused across every other tab, and exposes the SQLite jobs + legacy worker-queue seam through a single visual.",
+    "scope": [
+      "Six lanes wired live",
+      "Stale Debt drawer with Archive + Purge",
+      "Job inspector with Cancel/Park/Promote-to-Task",
+      "WebSocket lane updates",
+      "Shay-Shay one-sentence queue summary"
+    ]
+  },
+  "deliverables_already_produced": [
+    "UX strategy (5 operating laws)",
+    "Information architecture (11-tab Ops sub-nav)",
+    "Per-screen layout specs (regions, panels, components, sample content, empty states, actions, Shay-Shay role)",
+    "CLI/ledger/job-data seam diagram",
+    "Record-type distinction table (color/glyph/shape/route)",
+    "ASCII wireframes for Pulse, Jobs, Tasks",
+    "MVP recommendation (Jobs Tab first)"
+  ],
+  "known_gaps_opened": [
+    "No ops API surface exists yet — must be built before any Ops tab.",
+    "Freshness field not yet present on jobs/runs records.",
+    "No WebSocket /ws/ops channel exists.",
+    "Record-type visual language not yet codified in design tokens."
+  ],
+  "links": {
+    "design_conversation": "session 2026-05-05 — Ops Workspace GUI design",
+    "related_plan": "plans/plan_2026_05_04_shay_process_intelligence/plan.json"
+  }
+}

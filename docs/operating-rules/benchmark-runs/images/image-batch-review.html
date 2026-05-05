@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Image Benchmark Review - B-001/B-002/B-004</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 28px;
+      background: #101114;
+      color: #f4f0e8;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    h1, h2 {
+      margin: 0 0 14px;
+      font-weight: 700;
+    }
+    p {
+      color: #c9c1b4;
+      line-height: 1.5;
+      max-width: 980px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin: 22px 0 36px;
+    }
+    .kontext {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    figure {
+      margin: 0;
+      padding: 14px;
+      background: #181a1f;
+      border: 1px solid #343944;
+      border-radius: 14px;
+    }
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+      background: #07080a;
+    }
+    figcaption {
+      margin-top: 10px;
+      color: #f5c96b;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+    code {
+      color: #9dd6ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Image Benchmark Review</h1>
+  <p>
+    Practical hero comparison: OpenAI native landscape output is 3:2
+    (<code>1536x1024</code>); Imagen 4 native landscape output is 16:9.
+    Fritz judges visual quality, composition, and overlay-safe negative space.
+  </p>
+
+  <h2>B-001 vs B-002 Hero Still</h2>
+  <section class="grid">
+    <figure>
+      <img src="B-001-OPENAI-yearbook-hero.png" alt="OpenAI yearbook hero still">
+      <figcaption>B-001 - OpenAI Responses hero still, 3:2</figcaption>
+    </figure>
+    <figure>
+      <img src="B-002-IMAGEN-yearbook-hero.png" alt="Imagen yearbook hero still">
+      <figcaption>B-002 - Imagen 4 hero still, 16:9</figcaption>
+    </figure>
+  </section>
+
+  <h2>B-004 fal.ai FLUX Kontext Style Variations</h2>
+  <section class="grid kontext">
+    <figure>
+      <img src="B-004-FAL-Kontext-01-warm-yearbook-print.png" alt="fal Kontext warm yearbook print">
+      <figcaption>B-004.1 - warm yearbook print</figcaption>
+    </figure>
+    <figure>
+      <img src="B-004-FAL-Kontext-02-flashback-vhs-yearbook.png" alt="fal Kontext flashback VHS yearbook">
+      <figcaption>B-004.2 - flashback VHS yearbook</figcaption>
+    </figure>
+    <figure>
+      <img src="B-004-FAL-Kontext-03-archival-school-memory.png" alt="fal Kontext archival school memory">
+      <figcaption>B-004.3 - archival school memory</figcaption>
+    </figure>
+  </section>
+</body>
+</html>

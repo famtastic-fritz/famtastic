@@ -1,0 +1,92 @@
+{
+  "schema_version": "0.1.0",
+  "generated_at": "2026-05-04T23:59:59.000-04:00",
+  "source_files": {
+    "registry": "plans/registry.json",
+    "tasks": "tasks/tasks.jsonl",
+    "runs": "runs/runs.jsonl",
+    "proof": "proofs/proof-ledger.jsonl"
+  },
+  "summary": {
+    "active_parent_count": 4,
+    "absorbed_record_count": 10,
+    "task_count": 33,
+    "open_task_count": 2,
+    "run_count": 1,
+    "proof_count": 26,
+    "current_run": "run-2026-05-04-consolidation-apply",
+    "drive_sync_status": "complete",
+    "workflow_as_data_status": "phase_1_cataloged",
+    "pipeline_visualizer_status": "phase_1_live"
+  },
+  "active_parents": [
+    {
+      "id": "studio-workbench-foundation",
+      "title": "Studio Workbench Foundation",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "Frozen-contract rebuild and registry-backed Workbench",
+      "next_action": "No ready tasks remain in this parent plan.",
+      "blocker": null,
+      "proof_count": 4
+    },
+    {
+      "id": "plan-task-run-intelligence",
+      "title": "Plan, Task, Run, and Capture Intelligence",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "Executable registry, task/run/proof ledgers, and capture flywheel",
+      "next_action": "No ready tasks remain in this parent plan.",
+      "blocker": null,
+      "proof_count": 8
+    },
+    {
+      "id": "build-intent-fulfillment-trace",
+      "title": "Build Intent, Fulfillment Trace, and Workflow Data",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "BuildIntent v2, workflow-as-data instrumentation, fulfillment proof, and visualizer prerequisites",
+      "next_action": "Use live visualizer proof to add stage/event matching and missing-stage detection.",
+      "blocker": null,
+      "proof_count": 4
+    },
+    {
+      "id": "site-mbsh-reunion",
+      "title": "MBSH Reunion Site Execution",
+      "status": "active",
+      "priority": "P0",
+      "current_workstream": "Site-scoped backend, RSVP, sponsor, media, chatbot, deploy, content, and proof",
+      "next_action": "Resolve blocked deploy access/config and missing story/gallery media assets.",
+      "blocker": "Live deploy proof and complete media/story readiness are blocked by external access/config and missing story image assets.",
+      "proof_count": 10
+    }
+  ],
+  "tasks_by_priority": {
+    "P0": [
+      {
+        "id": "task-2026-05-04-027",
+        "plan_id": "site-mbsh-reunion",
+        "status": "blocked",
+        "title": "Finish MBSH deploy proof",
+        "next_action": "Provision Netlify/DNS/GoDaddy/PHP/MySQL/Resend access and production API_BASE_URL, then run production smoke tests and rollback verification."
+      }
+    ],
+    "P1": [
+      {
+        "id": "task-2026-05-04-028",
+        "plan_id": "site-mbsh-reunion",
+        "status": "blocked",
+        "title": "Complete MBSH media/story assets",
+        "next_action": "Add or generate the seven missing story/timeline image files and produce rights/approval manifest for archival or crowd-sourced gallery assets."
+      }
+    ],
+    "P2": []
+  },
+  "current_run": {
+    "id": "run-2026-05-04-consolidation-apply",
+    "plan_id": "plan-task-run-intelligence",
+    "status": "active",
+    "target": "complete_p0_then_report",
+    "current_step": "Pipeline visualizer phase 1, knowledge capture, Workbench context, MBSH backend inventory, RSVP/sponsor/chatbot browser proof, content delta, audit harness, and generalized gap promotion are complete. Remaining blocked work: MBSH live deploy proof and missing media/story assets, both waiting on external access/content assets."
+  }
+}

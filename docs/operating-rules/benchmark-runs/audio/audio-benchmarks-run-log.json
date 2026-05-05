@@ -1,0 +1,431 @@
+{
+  "ranAt": "2026-04-28T19:13:59.265Z",
+  "provider": "elevenlabs",
+  "outputDir": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio",
+  "totalEstimatedCostUsd": null,
+  "benchmarks": {
+    "b005_voice_candidates": {
+      "status": "ok",
+      "results": [
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-005",
+          "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+          "voice_name": "Roger - Laid-Back, Casual, Resonant",
+          "category": "premade",
+          "prompt": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-005-harry-voice-01-roger-laid-back-casual-resonant.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/text-to-speech/CwhRBWXzGAHq8TQ4Fs17",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+              "model_id": "eleven_multilingual_v2",
+              "voice_settings": {
+                "stability": 0.42,
+                "similarity_boost": 0.75,
+                "style": 0.25,
+                "use_speaker_boost": true
+              }
+            }
+          },
+          "status": "ok",
+          "durationMs": 1597,
+          "contentType": "audio/mpeg",
+          "characterCost": "28",
+          "byteCount": 90323
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-005",
+          "voice_id": "EXAVITQu4vr4xnSDxMaL",
+          "voice_name": "Sarah - Mature, Reassuring, Confident",
+          "category": "premade",
+          "prompt": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-005-harry-voice-02-sarah-mature-reassuring-confident.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+              "model_id": "eleven_multilingual_v2",
+              "voice_settings": {
+                "stability": 0.42,
+                "similarity_boost": 0.75,
+                "style": 0.25,
+                "use_speaker_boost": true
+              }
+            }
+          },
+          "status": "ok",
+          "durationMs": 1131,
+          "contentType": "audio/mpeg",
+          "characterCost": "28",
+          "byteCount": 91159
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-005",
+          "voice_id": "FGY2WhTYpPnrIDTdsKH5",
+          "voice_name": "Laura - Enthusiast, Quirky Attitude",
+          "category": "premade",
+          "prompt": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-005-harry-voice-03-laura-enthusiast-quirky-attitude.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/text-to-speech/FGY2WhTYpPnrIDTdsKH5",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+              "model_id": "eleven_multilingual_v2",
+              "voice_settings": {
+                "stability": 0.42,
+                "similarity_boost": 0.75,
+                "style": 0.25,
+                "use_speaker_boost": true
+              }
+            }
+          },
+          "status": "ok",
+          "durationMs": 1215,
+          "contentType": "audio/mpeg",
+          "characterCost": "28",
+          "byteCount": 91577
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-005",
+          "voice_id": "IKne3meq5aSn9XLyUdCD",
+          "voice_name": "Charlie - Deep, Confident, Energetic",
+          "category": "premade",
+          "prompt": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-005-harry-voice-04-charlie-deep-confident-energetic.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/text-to-speech/IKne3meq5aSn9XLyUdCD",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+              "model_id": "eleven_multilingual_v2",
+              "voice_settings": {
+                "stability": 0.42,
+                "similarity_boost": 0.75,
+                "style": 0.25,
+                "use_speaker_boost": true
+              }
+            }
+          },
+          "status": "ok",
+          "durationMs": 1394,
+          "contentType": "audio/mpeg",
+          "characterCost": "28",
+          "byteCount": 104533
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-005",
+          "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+          "voice_name": "George - Warm, Captivating Storyteller",
+          "category": "premade",
+          "prompt": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-005-harry-voice-05-george-warm-captivating-storyteller.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "Hey Tide family, Harry here. The reunion is coming up fast, and I saved you a seat by the dance floor.",
+              "model_id": "eleven_multilingual_v2",
+              "voice_settings": {
+                "stability": 0.42,
+                "similarity_boost": 0.75,
+                "style": 0.25,
+                "use_speaker_boost": true
+              }
+            }
+          },
+          "status": "ok",
+          "durationMs": 1330,
+          "contentType": "audio/mpeg",
+          "characterCost": "28",
+          "byteCount": 95338
+        }
+      ],
+      "availableVoiceCount": 21,
+      "selectedVoices": [
+        {
+          "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+          "name": "Roger - Laid-Back, Casual, Resonant",
+          "category": "premade",
+          "labels": {
+            "use_case": "conversational",
+            "gender": "male",
+            "accent": "american",
+            "age": "middle_aged",
+            "language": "en",
+            "descriptive": "classy"
+          }
+        },
+        {
+          "voice_id": "EXAVITQu4vr4xnSDxMaL",
+          "name": "Sarah - Mature, Reassuring, Confident",
+          "category": "premade",
+          "labels": {
+            "use_case": "entertainment_tv",
+            "gender": "female",
+            "accent": "american",
+            "age": "young",
+            "language": "en",
+            "descriptive": "professional"
+          }
+        },
+        {
+          "voice_id": "FGY2WhTYpPnrIDTdsKH5",
+          "name": "Laura - Enthusiast, Quirky Attitude",
+          "category": "premade",
+          "labels": {
+            "use_case": "social_media",
+            "gender": "female",
+            "accent": "american",
+            "age": "young",
+            "language": "en",
+            "descriptive": "sassy"
+          }
+        },
+        {
+          "voice_id": "IKne3meq5aSn9XLyUdCD",
+          "name": "Charlie - Deep, Confident, Energetic",
+          "category": "premade",
+          "labels": {
+            "use_case": "conversational",
+            "gender": "male",
+            "accent": "australian",
+            "age": "young",
+            "language": "en",
+            "descriptive": "hyped"
+          }
+        },
+        {
+          "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+          "name": "George - Warm, Captivating Storyteller",
+          "category": "premade",
+          "labels": {
+            "use_case": "narrative_story",
+            "gender": "male",
+            "accent": "british",
+            "age": "middle_aged",
+            "language": "en",
+            "descriptive": "mature"
+          }
+        }
+      ],
+      "listVoicesCall": {
+        "method": "GET",
+        "url": "https://api.elevenlabs.io/v1/voices",
+        "headers": {
+          "xi-api-key": "<redacted>",
+          "Accept": "application/json"
+        }
+      }
+    },
+    "b006_sfx_pack": {
+      "status": "ok",
+      "results": [
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-006",
+          "slug": "vhs-tape-hiss",
+          "prompt": "subtle VHS tape hiss loop, nostalgic 1990s texture, low volume",
+          "durationSeconds": 4,
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-006-sfx-vhs-tape-hiss.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/sound-generation",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "subtle VHS tape hiss loop, nostalgic 1990s texture, low volume",
+              "duration_seconds": 4,
+              "prompt_influence": 0.35
+            }
+          },
+          "status": "ok",
+          "durationMs": 2040,
+          "contentType": "audio/mpeg",
+          "characterCost": "44",
+          "byteCount": 65245
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-006",
+          "slug": "vinyl-crackle",
+          "prompt": "vinyl crackle over dusty warm silence, subtle background texture",
+          "durationSeconds": 4,
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-006-sfx-vinyl-crackle.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/sound-generation",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "vinyl crackle over dusty warm silence, subtle background texture",
+              "duration_seconds": 4,
+              "prompt_influence": 0.35
+            }
+          },
+          "status": "ok",
+          "durationMs": 1638,
+          "contentType": "audio/mpeg",
+          "characterCost": "44",
+          "byteCount": 65245
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-006",
+          "slug": "distant-gym-cheer",
+          "prompt": "distant high school gym crowd cheer, muffled and nostalgic",
+          "durationSeconds": 3,
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-006-sfx-distant-gym-cheer.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/sound-generation",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "distant high school gym crowd cheer, muffled and nostalgic",
+              "duration_seconds": 3,
+              "prompt_influence": 0.35
+            }
+          },
+          "status": "ok",
+          "durationMs": 2156,
+          "contentType": "audio/mpeg",
+          "characterCost": "33",
+          "byteCount": 48945
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-006",
+          "slug": "locker-slam",
+          "prompt": "metal school locker closing with hallway reverb",
+          "durationSeconds": 2,
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-006-sfx-locker-slam.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/sound-generation",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "metal school locker closing with hallway reverb",
+              "duration_seconds": 2,
+              "prompt_influence": 0.35
+            }
+          },
+          "status": "ok",
+          "durationMs": 1790,
+          "contentType": "audio/mpeg",
+          "characterCost": "22",
+          "byteCount": 33062
+        },
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-006",
+          "slug": "answering-machine",
+          "prompt": "1990s answering machine beep and room tone",
+          "durationSeconds": 3,
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-006-sfx-answering-machine.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/sound-generation",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "text": "1990s answering machine beep and room tone",
+              "duration_seconds": 3,
+              "prompt_influence": 0.35
+            }
+          },
+          "status": "ok",
+          "durationMs": 1616,
+          "contentType": "audio/mpeg",
+          "characterCost": "33",
+          "byteCount": 48945
+        }
+      ]
+    },
+    "b007_music": {
+      "status": "ok",
+      "results": [
+        {
+          "provider": "elevenlabs",
+          "benchmark": "B-007",
+          "slug": "east-coast-boombap-reunion-bed",
+          "prompt": "Instrumental 1990s East Coast boom-bap inspired reunion bed, dusty piano chords, warm vinyl crackle, laid-back drums, celebratory but nostalgic, no vocals, no copyrighted artist references.",
+          "durationSeconds": 20,
+          "outputPath": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/audio/B-007-music-east-coast-boombap-reunion-bed.mp3",
+          "request": {
+            "method": "POST",
+            "url": "https://api.elevenlabs.io/v1/music",
+            "headers": {
+              "xi-api-key": "<redacted>",
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            "body": {
+              "prompt": "Instrumental 1990s East Coast boom-bap inspired reunion bed, dusty piano chords, warm vinyl crackle, laid-back drums, celebratory but nostalgic, no vocals, no copyrighted artist references.",
+              "music_length_ms": 20000
+            }
+          },
+          "status": "ok",
+          "durationMs": 9230,
+          "contentType": "audio/mpeg",
+          "characterCost": null,
+          "byteCount": 321037
+        }
+      ],
+      "docsStatus": {
+        "docsUrl": "https://elevenlabs.io/docs/api-reference/music/compose",
+        "endpoint": "https://api.elevenlabs.io/v1/music",
+        "accountSurfaceCheck": "attempt one short request only; access errors mark backlog"
+      }
+    }
+  },
+  "status": "complete"
+}

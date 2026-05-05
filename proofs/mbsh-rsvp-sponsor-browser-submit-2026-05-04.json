@@ -1,0 +1,38 @@
+{
+  "proof_id": "proof-2026-05-04-018-browser",
+  "verified_at": "2026-05-04",
+  "type": "playwright_local_frontend_intercept",
+  "scope": "MBSH RSVP and sponsor browser submission",
+  "source_repo": "/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2",
+  "files_changed": [
+    "/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/js/main.js",
+    "/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/js/rsvp.js"
+  ],
+  "checks": [
+    {
+      "name": "shared anti-bot timestamp helper",
+      "result": "passed",
+      "detail": "frontend helper now allows submit only when form_loaded_at is at least 3000ms old, matching backend fam_form_loaded_at_check()."
+    },
+    {
+      "name": "RSVP public display opt-out",
+      "result": "passed",
+      "detail": "browser submission with the public attendee checkbox unchecked posted display_publicly = \"0\"."
+    },
+    {
+      "name": "RSVP delayed browser submit",
+      "result": "passed",
+      "detail": "actual rsvp.html form submitted after 3200ms and posted JSON to /api/rsvp.php through frontend JavaScript."
+    },
+    {
+      "name": "Sponsor delayed browser submit",
+      "result": "passed",
+      "detail": "actual tickets.html sponsor modal submitted after 3200ms and posted multipart FormData to /api/sponsor.php with tier_interest captain."
+    }
+  ],
+  "blocked_runtime_checks": [
+    "Database persistence could not be executed because local/production backend config is missing.",
+    "Resend email delivery could not be executed because runtime secrets are missing.",
+    "Production deploy smoke could not be executed because Netlify/DNS/GoDaddy/Resend access is not available in this workspace."
+  ]
+}

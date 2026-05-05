@@ -1,5 +1,44 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — Operations Workspace GUI plan registered
+
+Registered new parent plan `plan_2026_05_05_ops_workspace_gui` (label `ops-workspace-gui`, tags `platform-upgrades`, `studio-ui`, `ops`, `shay-shay`, `agent-management`) capturing the design for an 11-tab Operations workspace inside the Workbench shell (Pulse · Plans · Tasks · Jobs · Runs · Proofs · Agents · Reviews · Gaps · Memory · Debt). Plan defines a record-type visual language for PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW, freshness as a first-class field, and quarantines stale legacy queue items in a dedicated drawer. MVP is the Jobs tab (six lanes + Stale Debt drawer + inspector + WebSocket). Added `plans/plan_2026_05_05_ops_workspace_gui/{plan.json,README.md}`, added the plan to `plans/registry.json` `active_parent_ids` with a new `labels` block, and updated SITE-LEARNINGS.md with the plan summary plus four prerequisite known gaps (no `/api/ops/*`, no `/ws/ops`, no record `freshness` field, no record-type visual tokens). Design-only — no API, UI, or schema changes shipped.
+
+## 2026-05-04 — Plan registry CLI substrate
+Built the first read-only plan/task/run status substrate: `plans/registry.json`, three density contracts under `plans/templates/`, empty append-only ledgers, `FAMTASTIC-STATUS.md`, and a build report at `docs/plan-registry-build-report-2026-05-04.md`. Added `fam-hub plan list`, `fam-hub plan list --compact`, `fam-hub plan list --json`, `fam-hub plan show <id>`, `fam-hub task list`, and `fam-hub run status`. Verified JSON validity, shell syntax, standard/compact/detail plan output, and empty-ledger behavior. Deferred: task promotion, run creation, automatic status export, schema validation, and Studio Plans panel rendering.
+
+## 2026-05-04 — Active plan pipeline pilot report
+Created `docs/active-plan-pipeline-report-2026-05-04.md` as a reviewable pilot of the proposed plan/task/run reporting model. The report inventories current Studio and platform plan clusters, groups tasks, identifies inferred originators/runners/proof, and captures gaps around stale status, overlapping plans, orphaned diagnostics, missing supersession links, and missing task/run registries. Updated `SITE-LEARNINGS.md` with the generous-governance decision: warn/log/notify by default, hard-stop only for destructive, production, auth/payment/DNS/domain, expensive API/media, or write-conflict cases. Deferred: creating the canonical `plans/registry.json`, append-only ledgers, CLI commands, and web/phone status export.
+
+## 2026-05-04 — Multi-agent resumable plan capture
+Captured the Shay process-intelligence conversation as a first-class multi-agent planning artifact instead of a loose roadmap. Added `docs/multi-agent-resumable-plan-system.md` and the first file-based plan packet under `plans/plan_2026_05_04_shay_process_intelligence/` with ten workstreams covering conversation capture, plan coordination, artifact/component schemas, process maps, Shay ambient presence, component/media integration, capability graph, evaluator proof, and Studio workspace planning. Updated `SITE-LEARNINGS.md` with the plan-packet decisions and known gaps. Deferred: Studio UI for Plan Builder/Plan Board, SQLite `plan_id`/`workstream_id` fields, automatic conversation capture, and Process Map visualization.
+
+## 2026-05-03 — Build Orchestration Trace System
+
+Added the foundational build tracing, fulfillment ledger, and agent performance infrastructure described in docs/build-orchestration-trace-plan.md. New modules: `lib/run-id.js` (run/trace ID generation with step counter), `lib/build-trace.js` (appends structured decision events to `sites/<tag>/build-trace.jsonl` and `trace_events` SQLite table), `lib/fulfillment-ledger.js` (per-run ledger tracking what was completed vs. deferred vs. placeholdered, written to `sites/<tag>/fulfillment-<runId>.json`). Extended `lib/gap-logger.js` with 11 new build-orchestration gap types and a `GAP_DESTINATION` routing map. Extended `lib/db.js` with `trace_events` and `agent_performance` tables plus `logAgentPerformance()`, `getAgentPerformance()`, and `getAgentScorecard()` functions. Wired `createRunContext()` and `logTrace()` into `handleChatMessage()` at classification, deterministic handler, and verification phases; added `logAgentPerformance()` call after each parallel build. Added REST endpoints: `GET /api/trace`, `GET /api/trace/run/:runId`, `GET /api/agent/performance`, `GET /api/agent/scorecard`, `GET /api/fulfillment`. All 16 new tests pass (SQLite schema tests skip gracefully in Linux sandbox due to native binary platform mismatch — runs correctly on Mac). Deferred: enriching parallelBuild page-level trace events, UI views for trace map/cost map/fulfillment ledger panels.
+
+## 2026-04-30 — Studio Tier mode for Shay-Shay self-modify
+
+Added per-Shay-Shay-conversation Studio Tier mode that grants `read_studio_file` and `propose_studio_patch` tools when active. Tier toggles via `/studio on|off|status` slash commands on the `POST /api/shay-shay` surface; never on the build-chat WebSocket. Per-path access policy lives in a new hand-maintained `docs/famtastic-root-inventory.json` sidecar (70 entries today) loaded by `lib/studio-tier-resolver.js`; four classes (ALLOW / READ_ONLY / BLOCK / REVIEW) with longest-prefix trailing-slash boundary semantics; default policy for unmatched paths is REVIEW (fail-closed). BLOCK can be overridden via `acknowledge_secrets=true` only when the entry has `override_allowed: true` (today: `config/litellm/cj-litellm.yaml`, `site-studio/.env`); READ_ONLY and REVIEW are not overridable. Patches go to `~/famtastic/.studio-patches/pending/` as JSON with `flagged_secret` and `policy_at_propose`; reviewable via `fam-hub studio patches list|show|apply|reject`. Apply re-validates path policy and old_str uniqueness via `scripts/lib/studio-tier-validate.js` before performing the literal Python replacement. New per-conversation session map in `lib/shay-shay-sessions.js` carries `studioTier` and `forcedBrain='claude'`; threaded into `BrainInterface.execute({ studioTier })` so the tool-assembly gate at `lib/brain-interface.js:92` can attach `STUDIO_TIER_TOOLS` (and the base `STUDIO_TOOLS` regardless of mode) when Studio Tier is on. Site switch resets all tier state via `shayShaySessions.resetAll()` at the three site-switch sites. Acceptance suite of 24 cases passed including runtime threading verification, hard-block override-refusal, line-ending mismatch detection, corrupted-inventory fail-closed, and full propose→apply round-trip. All 181 existing vitest tests still pass.
+
+## 2026-04-29 — GoDaddy / cPanel MCP capability spike
+
+Installed `ringo380/cpanel-mcp` v1.1.0 at `~/famtastic/tools/cpanel-mcp/`, patched a UAPI v3 response-parser bug in `src/cpanel-client.ts` and `src/types/cpanel.ts` (was parsing legacy `cpanelresult.event.result` against the modern `/execute/<Module>/<func>` endpoint — every call failed before the fix), rebuilt, and used the MCP to provision the MBSH reunion database, user, and `ALL PRIVILEGES` grant end-to-end. 37 tools registered; 4 verified (`list_databases`, `create_database`, `create_database_user`, `set_database_privileges`). Documented findings in `docs/operating-rules/godaddy-mcp-spike.md` and `tools/cpanel-mcp/PATCHES.md`. Deferred: `mbsh96reunion.com` addon domain stays manual (MCP exposes no `create_addon_domain` — the #1 Layer-2 extension), Studio integration (Layer 3), and the upstream PR / fork-fallback are tracked under `FAMTASTIC-STATE.md` → Pending Tasks with a 2026-05-13 fork check-in date.
+
+## 2026-04-25 — Baseline closure: shared site-creation helper, Shay full build chain, deploy visibility
+
+Closed the baseline failure surfaced in last night's test (commit `f276730` audit + `2026-04-25-baseline-failure-diagnostic.md`). Three workstream commits, in order: WS2 `a690ce4` introduced the canonical `createSite(brief, options)` helper with caller-owned authorization and helper-owned TAG switch, three `on_collision` modes (`error`/`update`/`return_collision`) gated by a same-business identity check that strips noise words ("the/inc/llc/church/barber/...") before comparison; refactored `/api/new-site` and `runAutonomousBuild` onto the helper; added a `new_site_create` classifier intent above the strong-build-signals gate; moved the `!hasBrief` fallback above the deploy keyword gate (the exact gate that hijacked the church prompt); hardened `extractBriefFromMessage` to return `{ status: 'extracted', extraction_method }` or `{ status: 'insufficient_identity', clarification_question }` — no more silent "New Business" / "site-new-site" fallbacks; added type+location synthesis (e.g. `site-church-atlanta-ga`); added a Studio Chat case for `new_site_create`. WS1 `8ef7411` made the Shay Desk `build_request` path async with `handleShayBuildRequest`: auth → extract → createSite → synthesize → triggerSiteBuild — with `triggerSiteBuild` gating on WS client presence BEFORE dispatch (corrects the prior orphaned-job order); replaced the `route_to_chat` injection pattern with `shay_response` returned to the orb. WS3 `35d73b9` extended `checkNetlify()` to return `{ ok, reason, details }` covering `cli_missing` / `credentials_missing` / `config_unreadable`; rewrote `runDeploy` with preflight before the `deployInProgress` flag, `child.on('error')` handler, stderr pattern parsing for known failure modes, and a `settle()` invariant resetting the flag on every early-return path; added `.chat-session-break` divider to studio-chat.css and called it from `handleSiteSwitch` and on WS reconnect.
+
+Implementation followed a 9-round adversarial review trajectory (Codex + self-review). Final verification (`2026-04-25-baseline-closure-verification.md`) recorded 28/28 scenarios PASS via a mix of unit tests and code review. Test count: 161/161 (3 files: `unit.test.js` 110, `gap4-tier-canonicality.test.js` 28, new `baseline-closure.test.js` 23). Live test of the corrected baseline confirmed end-to-end success — the Shay Desk church prompt now creates `site-church-atlanta-ga`, synthesizes the design brief, and dispatches the build. Two new findings logged for future sessions: (a) build auto-fires from Shay Desk without a confirmation step — UX issue, not a correctness bug; (b) the generated site has broken header links in the rendered output — investigation needed.
+
+## 2026-04-25 — Canonical vision capture + tier as canonical (GAP-4)
+
+Created `docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md` as the single canonical home for FAMtastic vision/architecture decisions. Combines the 11-section vision audit and Addendum A (the Adobe Creative Cloud pattern: separate full-identity studios — Site, Component, Media, Think Tank — atop shared Platform services). Appended the Tier-as-Canonical decision (GAP-4) to it as the first architectural decision entry. Closed GAP-4 in commit `2c5e358`: introduced `spec.tier` ('famtastic' | 'clean') as the single source of truth with precedence `explicit > client_brief > extracted > existing > default`; invalid values at any precedence slot are SKIPPED with a warning rather than corrupting an existing Tier-A spec; `famtastic_mode` is now a derived boolean (`tier === 'famtastic'`) computed via `normalizeTierAndMode()` on every read site. Created `site-studio/lib/tier.js` (resolveTier, normalizeTierAndMode) and `site-studio/lib/tier-gates.js` (getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode). 18 server.js edits wired the helpers in. New test file `tests/gap4-tier-canonicality.test.js` (28 tests) plus 3 brief-parity tests added to `unit.test.js`. Pre-existing schema coherence issue (colors/pages required but not written) deferred — tracked in `architecture/2026-04-24-schema-audit-followup.md`.
+
+## 2026-04-24 — Build layer GAP-1/2/3 fixes (palette defaults + skeleton injection on single-page path)
+
+Closed three R-NEW gaps in commit `8536a4a`. GAP-1: `buildPromptContext()` `visualRequirements` block now injects the FAMtastic default palette (5 hex values: primary `#00A79D`, accent `#F5B800`, navy `#001F3F`, coral `#FF6B6B`, background `#FDF4E3`) when no client colors are specified, with mandatory-language framing that prevents Claude from substituting a generic industry palette. GAP-2: `heroSkeleton` was a dead variable on the single-page path — `handleChatMessage()` now destructures and includes it (gated to `build`/`layout_update` request types). GAP-3: `navSkeleton` was the same — now injected unconditionally into the single-page prompt so the five mandated nav class names survive nav edits. All three verified live.
+
 ## 2026-04-21 — Shay Lite system pass + Media Studio mini-app redesign
 
 Shipped a substantial Studio shell and media workflow pass. Shay Lite now has a real persisted settings contract in `server.js` (`shay_lite_settings`) with identity mode, default identity, remember-last, proactive behavior, event reaction intensity, and character placeholders. On the client, Lite identities are now mutually exclusive (`character`, `orb_classic`, `mini_panel`) with Character as the first-run default, Classic Orb preserved as a fallback, explicit quick-ask behavior, a shared Lite surface state machine (`idle`, `prompting`, `thinking`, `responding`, `alerting`, `show_me`), and proactive nudges gated through settings rather than always firing. Mission Control was restored as a visible workspace alongside Intelligence. Shay Lite can now also be dragged and its position persists locally.
@@ -327,3 +366,90 @@ Added `POST /api/autonomous-build` endpoint that drives the full site-building p
 ## 2026-04-20 — Double nav fix + preview site-switch fix
 
 Fixed two high-visibility bugs. Bug 1: `site-the-daily-grind-in-atlanta` built pages used `.nav-desktop` / `.nav-mobile` class names but `assets/styles.css` only had CSS for `.desktop-nav` / `.mobile-nav` (the template's class names) — both navs and the bare `#mobile-menu-checkbox` input were visible simultaneously. Fixed by appending a nav-visibility block to `assets/styles.css`: header flex layout targeting `header[data-template="header"]`, `#mobile-menu-checkbox { display: none }`, `.nav-desktop` / `.nav-mobile` responsive show/hide rules, and CSS checkbox toggle for mobile menu open state. Bug 2: `handleSiteSwitch()` in `public/index.html` called `reloadPreview()` which blindly reused the current iframe URL path — if the new site didn't have that page (e.g., switching from Mario's Pizza `/menu.html` to Daily Grind which has no `menu.html`), the preview returned "Not found". Fixed by replacing `reloadPreview()` with `navigateToPage(currentPage || 'index.html')` in the site-switch handler, so the preview always navigates to the new site's starting page.
+
+## 2026-04-24 — Build layer GAP-1/2/3: palette defaults + skeleton injection
+
+Three build-layer gaps identified by the R-NEW audit (2026-04-24-build-layer-audit.md) are now closed. GAP-1: `FAMTASTIC_DEFAULT_PALETTE` constant added to `famtastic-skeletons.js`; when no client hex colors are found in decisions or brief, `buildPromptContext()` now injects all five FAMtastic defaults as a mandatory palette block — verified live on an accounting firm brief with zero specified colors. GAP-2/3: `heroSkeleton` and `navSkeleton` were returned by `buildPromptContext()` but not destructured in `handleChatMessage()`, silently discarding them on every single-page edit; wired both through the destructure and into the prompt string — `heroSkeleton` fires on build/layout_update, `navSkeleton` unconditionally. GAP-4 (`famtastic_mode` gate on logo skeleton) remains open, deferred to a separate session after investigation.
+
+## 2026-05-02 — MBSH audit + v2 build + platform layer (Cowork session)
+
+Cowork-driven audit of the MBSH reunion site produced eight deliverables at
+docs/sites/site-mbsh-reunion/cowork-audit-001/. Headline finding: Studio
+cannot produce MBSH at any fidelity today (gap report Section 0.11), proven
+visually when site-mbsh96reunion's hallucinated Myrtle Beach build was inspected.
+
+Built the full V1-BRIEF spec as a parallel deploy repo at
+~/famtastic-sites/mbsh-reunion-v2/ (84 files: 8 HTML, 8 CSS, 11 JS, 26 PHP
+backend, schema, configs). Hero matches canonical verbatim; sections 2-11,
+chatbot Phase 1, sponsor flow, admin pages, and cron scripts are net-new.
+
+Built ~/famtastic/platform/ — capability dispatcher + 10 operational primitives
+(site.add, db.add, db.apply-schema, dns.register-subdomain,
+email.verify-resend-domain, deploy.connect-netlify, deploy.backend,
+cron.register, cors.lockdown, smoke.test) + macOS-Keychain-backed vault +
+capability registry + per-day invocation log. Standing-approval model: agent
+reads vault, Fritz sees decision points only.
+
+Cleanup: trashed duplicate site-mbsh96reunion tag whose dist/ was misleading
+Studio's localhost:3333 preview with Myrtle Beach SC content. Symlinked
+sites/site-mbsh-reunion/dist → v2/frontend so Studio's site-preview serves v2.
+
+Deferred: Story section recovery, knowledge capture tool (Recommendation A.1,
+priority #1 next session), tag-uniqueness check in extractBriefFromMessage,
+backend deploy via setup-mbsh-backend.sh, Netlify connect, DNS cutover.
+
+## 2026-05-04 — Workbench foundation screen and intelligence packets
+
+Added the Workbench Foundation screen at `site-studio/public/workbench-foundation.html` with separate CSS/JS, mode-aware Sites/Plan/Components/Media/Research/Deploy surfaces, object-aware overlays, bottom runs/logs/trace/approvals/proof panel, theme cycling, reusable modal styling, and a persisted draggable tool shelf. Linked it into production Studio through a Workbench top-bar launcher, Sites-sidebar launcher, and embedded `#tab-pane-workbench` iframe while keeping the standalone page as the full-screen fallback. Added handoff, research note, plan consolidation packet, structured capture packet, and `site-studio/public/data/workbench-workspaces.json` so the Workbench decisions can flow through the intelligence loop instead of living only in chat. Deferred: making Workbench the default shell, registry-backed Plan mode, broader Capability Store, FAMtastic brand asset pack, unified Media Studio controls, Shay context provider registration, and worker queue consumer.
+
+## 2026-05-04 — Studio UI foundation freeze
+
+Fritz approved `docs/STUDIO-UI-FOUNDATION.md` as the frozen canonical Site Studio UI rulebook. Added a formal workspace contract, resolved the Shay ambient/Desk placement, locked Media as prompt-first Media Studio, and captured the freeze in `docs/decisions.jsonl`, a reviewed capture packet, and a handoff note. Deferred: rebuilding the production Workbench prototype from the frozen contract, wiring real registry data, registering Workbench as a Shay context provider, and unifying Media Studio controls.
+
+## 2026-05-04 — Plan consolidation verification proposal
+
+Added `plans/consolidation-verification-2026-05-04.md` after reviewing the 11-record plan registry, source-file existence, and empty task/run/proof ledgers. The proposal recommends 4 active parent plans, 1 parked strategy context, and 6 merged/closed evidence records so Workbench and Shay can reason from fewer authoritative plans. Deferred: mutating `plans/registry.json`, archiving merged records, and promoting task/run/proof ledger entries until Fritz approves the consolidation.
+
+## 2026-05-04 — Consolidated execution checklist
+
+Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four-plan consolidation artifact. The checklist parks the stale Total Ask Plan as strategy context, maps useful asks into `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`, and prioritizes remaining work into P0/P1/P2 buckets. Deferred: applying the registry rewrite, promoting ledger tasks, adding run/proof records, and regenerating the status mirror.
+
+## 2026-05-04 — Consolidation status correction
+
+Updated the consolidated execution checklist to reflect Fritz's correction that Drive sync is complete and should not be carried as active work. Workflow-as-data and the pipeline visualizer remain open under `build-intent-fulfillment-trace`, with workflow instrumentation explicitly preceding any declarative pipeline refactor or visualizer build.
+
+## 2026-05-04 — Four-plan registry applied
+
+Applied the consolidation instead of leaving it as a proposal: backed up the old 11-record registry, rewrote `plans/registry.json` to four active parent plans, populated task/run/proof ledgers, and regenerated `FAMTASTIC-STATUS.md`. Fixed `fam-hub task list` and `fam-hub run status` so JSONL listings no longer skip the first record, then added `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start`. Verified JSON/JSONL validity, shell syntax, compact plan output, ledger output, plan review, task promotion dry-run, and run-start dry-run. Deferred: Workbench registry rendering, Workbench Shay context provider, automatic status-packet regeneration, workflow-as-data instrumentation, and the pipeline visualizer.
+
+## 2026-05-04 — Workbench Plan mode registry wiring
+
+Added `site-studio/public/data/workbench-plan-state.json` as a browser-safe mirror of the consolidated registry/task/run/proof state and rewired Workbench Plan mode to render real parent plans, P0/P1/P2 lanes, current run state, and Drive/workflow/visualizer status. Verified through launchd-managed Studio at `localhost:3334` with Playwright by opening the Workbench, switching to Plan mode, checking required consolidated-plan text, confirming no console errors, and saving `proofs/workbench-plan-mode-2026-05-04.png`. Deferred: automatic generation of the browser-safe state packet and Shay context-provider registration.
+
+## 2026-05-04 — Workbench frozen-contract domain rail
+
+Rebuilt the Workbench Foundation prototype against the frozen UI foundation by replacing the scope-initial left rail with the seven locked domains, replacing the duplicate mode strip with workspace contract pills, and updating `workbench-workspaces.json` to declare contracts for all top-level domains. Verified through launchd-managed Studio with Playwright by clicking Sites, Brainstorm, Plans, Components, Media, Research, and Admin, confirming the active domain/contract text, checking Plan and Media surfaces, and saving `proofs/workbench-domain-contracts-2026-05-04.png`. Deferred: making Workbench the default Studio shell, automatic status-packet generation, and Shay context-provider registration.
+
+## 2026-05-04 — BuildIntent V2 and workflow trace phase 1
+
+Declared `architecture/2026-04-24-canonical-build-intent-v2.md` as the current BuildIntent direction and added `architecture/2026-05-04-build-intent-v2-current.md` to remove V1/V2 ambiguity. Instrumented `parallelBuild()` with durable build-trace stage events for start, page inventory, template, page fanout/write/failure boundaries without changing execution order. Added `site-studio/lib/workflow-stage-catalog.json` as the catalog-only workflow-as-data phase 1 contract. Deferred: declarative pipeline refactor and pipeline visualizer inspect/trace/propose.
+
+## 2026-05-04 — MBSH site-scoped execution split
+
+Added `docs/sites/site-mbsh-reunion/DEPLOY-STATE.md` to document the boundary between Studio canonical state and the standalone deploy repo at `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/`. Added MBSH child tasks for backend, RSVP, sponsor, deploy, media/story assets, chatbot, content deltas, Studio audit harness, and generalized gap promotion while closing the parent split tasks. Deferred: executing those site-specific tasks and running the full MBSH Studio audit harness.
+
+## 2026-05-04 — Shay-Shay UI proof and send fixes
+
+Ran an actual Shay-Shay `system status` call through the Studio UI with Playwright and verified the rendered panel response plus real `POST /api/shay-shay`. Fixed two bugs found during the proof: open Shay Lite panels now restore pointer events, and the send button no longer passes the click `PointerEvent` as the message. Added `docs/operating-rules/studio-shay-ui-proof-2026-05-04.md` and screenshot proof at `proofs/shay-shay-system-status-ui-2026-05-04.png`. Deferred: broader console-health cleanup for existing non-blocking Studio warnings.
+
+## 2026-05-04 — Workbench context and workflow contracts
+
+Registered Workbench as the `workbench.foundation` Shay context provider and verified an actual Studio UI Shay-Shay call received `context.page_context.domain = media` and answered with `page_id: workbench.foundation | domain: media`. Added the first usable review-only knowledge-capture pass through `fam-hub capture extract`, plus the three site workflow contract doc for `new_site_from_brief`, `adapt_existing_site`, and `rebuild_from_brief`, and the MBSH backend endpoint inventory. Updated task/run/proof ledgers, the Workbench plan-state packet, `FAMTASTIC-STATUS.md`, `SITE-LEARNINGS.md`, and `FAMTASTIC-STATE.md`. Deferred: MBSH RSVP/sponsor/deploy runtime execution until config/secrets are available, capture-packet promotion, and the pipeline visualizer.
+
+## 2026-05-04 — MBSH RSVP and sponsor browser proof
+
+Verified the MBSH RSVP and sponsor frontend submission paths in a real browser against the actual deploy repo pages, with intercepted API payload proof saved under `proofs/`. Fixed the deploy repo anti-bot timing helper and RSVP public-attendee opt-out serialization, then updated the site-scoped proof docs and ledgers. Deploy proof is documented but blocked until Netlify, DNS, GoDaddy/PHP/MySQL, Resend, backend secrets, and production `API_BASE_URL` access are available.
+
+## 2026-05-04 — Pipeline visualizer and MBSH proof closure
+
+Added Workbench pipeline visualizer phase 1 with inspect, trace, and propose lanes backed by the workflow stage catalog and `/api/trace`, plus a new `/api/workflow/stage-catalog` endpoint. Verified it through launchd-managed Studio with Playwright and saved screenshot/JSON proof. Completed the remaining MBSH proof packets for media/story readiness, Chatbot Phase 1, content deltas, Studio reproduction audit harness, and generalized platform gaps. Remaining work is honestly blocked, not open-ended: MBSH production deploy needs external access/config, and story/gallery readiness needs seven missing image assets plus rights proof.

@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+#
+# P0 exit gate #3 — 50 consecutive Studio start/stop cycles without EADDRINUSE.
+#
+# Per the smoke-suite contract (architecture/2026-04-27-smoke-suite.md):
+#   1. Stop via launchctl stop, wait up to 10s for exit
+#   2. TCP probe ports 3334 + 3333 until both refused or 5s timeout
+#   3. Start via launchctl start, wait for /api/health 200 within 30s
+#   4. Health check: status==='ok', uptime<30
+#   5. Stop again, increment counter
+#   6. On any failure: log cycle number + last log lines, abort
+#
+# Exit codes:
+#   0  — 50 consecutive cycles passed
+#   1  — a cycle failed (cycle number printed)
+#   2  — input/setup error
+#
+# Usage:
+#   scripts/smoke-eaddrinuse-50              # 50 cycles (default)
+#   scripts/smoke-eaddrinuse-50 N            # N cycles
+
+set -u
+
+LABEL='com.famtastic.studio'
+PORT_STUDIO=3334
+PORT_PREVIEW=3333
+HEALTH_URL="http://localhost:${PORT_STUDIO}/api/health"
+TARGET_CYCLES="${1:-50}"
+LOG_FILE='/tmp/studio.log'
+
+# Sanity: the launchd job must be loaded already
+if ! launchctl list | grep -q "${LABEL}"; then
+  echo "[error] ${LABEL} not loaded. Run: launchctl load ~/Library/LaunchAgents/${LABEL}.plist"
+  exit 2
+fi
+
+probe_port_refused() {
+  # Returns 0 if port is closed (refused), 1 if still listening
+  local port="$1"
+  local timeout_s="${2:-5}"
+  local elapsed=0
+  while [ "$elapsed" -lt "$timeout_s" ]; do
+    if ! nc -z -w 1 localhost "$port" 2>/dev/null; then
+      return 0
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  return 1
+}
+
+wait_for_health() {
+  local timeout_s="${1:-30}"
+  local elapsed=0
+  while [ "$elapsed" -lt "$timeout_s" ]; do
+    local body
+    body=$(curl -s -m 2 "$HEALTH_URL" 2>/dev/null || true)
+    if echo "$body" | grep -q '"status":"ok"'; then
+      echo "$body"
+      return 0
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+  return 1
+}
+
+abort() {
+  local cycle="$1"
+  local reason="$2"
+  echo "[abort] cycle ${cycle}: ${reason}"
+  echo "[abort] last 30 lines of ${LOG_FILE}:"
+  tail -30 "$LOG_FILE" 2>/dev/null || echo "(log not readable)"
+  exit 1
+}
+
+echo "[smoke-eaddrinuse-50] target cycles: ${TARGET_CYCLES}"
+echo "[smoke-eaddrinuse-50] starting at $(date '+%Y-%m-%d %H:%M:%S')"
+
+for i in $(seq 1 "$TARGET_CYCLES"); do
+  # Step 1: stop
+  launchctl stop "$LABEL"
+
+  # Step 2: ports release
+  if ! probe_port_refused "$PORT_STUDIO" 10; then
+    abort "$i" "port ${PORT_STUDIO} still bound after stop+10s"
+  fi
+  if ! probe_port_refused "$PORT_PREVIEW" 5; then
+    abort "$i" "port ${PORT_PREVIEW} still bound after stop+5s"
+  fi
+
+  # Step 3: launchd will auto-restart due to KeepAlive after ThrottleInterval (30s)
+  # Wait for /api/health 200 within 60s (allows for full ThrottleInterval + boot)
+  body=$(wait_for_health 60)
+  if [ -z "${body:-}" ]; then
+    abort "$i" "health check did not return 200 within 60s after restart"
+  fi
+
+  # Step 4: confirm uptime is fresh
+  uptime_value=$(echo "$body" | sed -n 's/.*"uptime":\([0-9.]*\).*/\1/p')
+  if [ -z "${uptime_value:-}" ]; then
+    abort "$i" "/api/health returned malformed body: ${body}"
+  fi
+  # uptime is in seconds; compare to 30 via awk (bash floats need awk)
+  fresh=$(awk -v u="$uptime_value" 'BEGIN { print (u < 30) ? "yes" : "no" }')
+  if [ "$fresh" != "yes" ]; then
+    abort "$i" "uptime ${uptime_value} >= 30 — possible stale instance"
+  fi
+
+  echo "[cycle ${i}/${TARGET_CYCLES}] OK (uptime=${uptime_value}s)"
+done
+
+echo "[smoke-eaddrinuse-50] completed at $(date '+%Y-%m-%d %H:%M:%S')"
+echo "[smoke-eaddrinuse-50] PASS — ${TARGET_CYCLES} consecutive cycles"
+exit 0

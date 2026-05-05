@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Canonical Studio launchd template.
+  Live copy lives at: ~/Library/LaunchAgents/com.famtastic.studio.plist
+
+  To install or update the live copy:
+    cp site-studio/launchd/com.famtastic.studio.plist ~/Library/LaunchAgents/
+    launchctl unload  ~/Library/LaunchAgents/com.famtastic.studio.plist 2>/dev/null
+    launchctl load    ~/Library/LaunchAgents/com.famtastic.studio.plist
+
+  Note: this file is the source of truth. Edits to the live copy that don't
+  flow back here will be lost the next time someone reinstalls.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.famtastic.studio</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-c</string>
+    <string>source /Users/famtasticfritz/.nvm/nvm.sh &amp;&amp; cd /Users/famtasticfritz/famtastic/site-studio &amp;&amp; npm run studio</string>
+  </array>
+
+  <!-- Restart automatically on any exit — clean or crash -->
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Wait 30 seconds before restarting so ports fully release.
+       Previous value of 2 was too short for macOS TCP TIME_WAIT (typically
+       30-60s) and caused a self-perpetuating EADDRINUSE crash loop.
+       Raised to 30 in P0.3 (2026-04-27, diagnostic Thread 7). -->
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <!-- Start on login -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Log stdout/stderr to a known location -->
+  <key>StandardOutPath</key>
+  <string>/tmp/studio.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/studio.log</string>
+
+  <!-- Inherit the user environment (PATH, NVM, API keys) -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/famtasticfritz</string>
+    <key>NVM_DIR</key>
+    <string>/Users/famtasticfritz/.nvm</string>
+  </dict>
+</dict>
+</plist>

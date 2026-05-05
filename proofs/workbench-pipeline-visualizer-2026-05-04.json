@@ -1,0 +1,14 @@
+{
+  "url": "http://localhost:3334/workbench-foundation.html",
+  "visible": true,
+  "missing": [],
+  "apiCatalog": {
+    "status": "phase_1_catalog_only",
+    "stages": 9
+  },
+  "apiTrace": {
+    "count": 0
+  },
+  "visualizerText": "PIPELINE VISUALIZER / PHASE 1\nInspect the build contract, trace real events, propose the next safe change.\nPHASE_1_CATALOG_ONLY\nInspect\n9 STAGES\nINTAKE\nrequest enters Studio build path before parallelBuild\nclassification\nPARALLEL_BUILD_START\nparallelBuild() entry\nstart\nPAGE_INVENTORY\nspecPages normalized into output filenames\npage_inventory\nTEMPLATE_GENERATION\nshared template prompt built and executed\ntemplate_start, template_written, template_failed, template_empty\nTEMPLATE_ARTIFACTS\ntemplate parsed into reusable context\ntemplate_written, template_incomplete\nPAGE_GENERATION\npage prompts fan out through SDK or subscription route\npages_start, page_written, page_failed\nPOST_PROCESSING\ngenerated files are normalized after page writes\npost_process, slot_registration, seo_validation\nVERIFICATION\nbuild verification runs and result is persisted\nrun_build_verification\nCOMPLETION\nStudio sends completion messages and optional repo creation\nassistant_complete, repo_create\nTrace\n0 LIVE EVENTS\n\nNo live trace events found for the active site yet. Run a Studio build to populate this lane.\n\nPropose\nREVIEW-FIRST\n1\nKeep phase 1 read-only\n\nUse catalog + trace visibility before changing execution order.\n\n2\nGenerate a fresh trace run\n\nRun a small build, then verify every catalog stage has at least one proof event.\n\n3\nPromote to declarative data stage by stage\n\nStart with page_inventory because it has bounded inputs, outputs, and proof events.",
+  "consoleMessages": []
+}

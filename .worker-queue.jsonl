@@ -1,4 +1,0 @@
-{"worker":"claude-code","task":"test task for phase 2 tests","context":{},"queued_at":"2026-04-16T15:16:46.132Z","status":"pending"}
-{"worker":"claude-code","task":"queue write test","context":{},"queued_at":"2026-04-16T15:16:46.133Z","status":"pending"}
-{"worker":"claude-code","task":"test task for phase 2 tests","context":{},"queued_at":"2026-04-16T15:21:05.088Z","status":"pending"}
-{"worker":"claude-code","task":"queue write test","context":{},"queued_at":"2026-04-16T15:21:05.089Z","status":"pending"}

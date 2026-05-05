@@ -3,18 +3,15 @@
 // 5 proactive triggers, session-permanent dismiss, Show Me / Do It modes.
 
 (function () {
-  // Generate a stable UUID for per-surface conversation separation
-  function generateConvId() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-    return 'conv-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36);
-  }
+  // Conversation id is server-issued via httpOnly cookie (per surface).
+  // Frontend no longer mints, stores, or sends conversation_id — fetch carries
+  // the cookie automatically. Server is the source of truth.
 
   function createLocalShayBridgeClient(surfaceName) {
     var pendingResult = null;
-    var convId = generateConvId();
+    var surface = surfaceName || 'lite';
     var inFlight = false;
     var queue = [];
-    var surface = surfaceName || 'lite';
 
     function _drainQueue() {
       if (inFlight || queue.length === 0) return;
@@ -25,7 +22,7 @@
 
     return {
       surface: surface,
-      convId: convId,
+      clearPending: function () { pendingResult = null; },
       prepareRequestPayload: function (message, context) {
         var outgoingBridge = pendingResult;
         pendingResult = null;
@@ -33,7 +30,6 @@
           message: message,
           context: context || {},
           surface: surface,
-          conversation_id: convId,
           bridge_result: outgoingBridge || null,
         };
       },
@@ -75,6 +71,28 @@
   // Per-surface bridge clients — separate conversation histories
   let liteBridgeClient = createLocalShayBridgeClient('lite');
   let deskBridgeClient = createLocalShayBridgeClient('desk');
+
+  // Expose a "new conversation" helper for explicit user-initiated resets.
+  // Pass 'lite', 'desk', or 'all' (default 'all'). Calls the server endpoint
+  // which clears the session cookie(s); next request mints a fresh id.
+  // Returns the fetch promise so callers can await.
+  window.shayShayNewConversation = function (which) {
+    var target = which || 'all';
+    if (target === 'lite' || target === 'all') liteBridgeClient.clearPending();
+    if (target === 'desk' || target === 'all') deskBridgeClient.clearPending();
+    return fetch('/api/shay-shay/new-conversation', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ surface: target }),
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      console.log('[shay-shay] newConversation cleared=' + JSON.stringify(data && data.cleared));
+      return data;
+    }).catch(function (err) {
+      console.error('[shay-shay] newConversation failed: ' + err.message);
+      return { ok: false, error: err.message };
+    });
+  };
   let shayDeskHasTranscript = false;
   let liteTurnCount = 0; // track Lite turns for "Open in Desk" affordance
   let liteSurfaceState = 'idle'; // idle | prompting | thinking | responding | alerting | show_me
@@ -175,18 +193,35 @@
       syncDeskModeSummary();
     });
 
-    // Watch step-log appearance to toggle active glow
-    const observer = new MutationObserver(() => {
+    // SHAY V2 (2026-05-02): Quieted observer.
+    // Old behavior: fired on EVERY child mutation in #chat-messages and re-classed the orb
+    // on each fire, restarting CSS keyframe animations even when state hadn't changed.
+    // The user perceived this as "the orb dancing on every chat append" — a peripheral-motion
+    // distraction that pulled the eye off the chat content.
+    // New behavior: track the orb's active state explicitly; only flip classes on real
+    // transitions (idle → active or active → idle). Debounced via rAF so rapid mutations
+    // collapse to one check per frame.
+    let lastOrbState = null;
+    let rafToken = null;
+    function checkStepLogState() {
+      rafToken = null;
       const log = document.getElementById('step-log');
       const orbEl = document.getElementById('pip-orb');
       if (!orbEl) return;
-      if (log) {
+      const nextState = log ? 'active' : 'idle';
+      if (nextState === lastOrbState) return; // no transition — don't touch classes
+      lastOrbState = nextState;
+      if (nextState === 'active') {
         orbEl.classList.add('pip-active');
         orbEl.classList.remove('pip-idle');
       } else {
         orbEl.classList.remove('pip-active');
         orbEl.classList.add('pip-idle');
       }
+    }
+    const observer = new MutationObserver(() => {
+      if (rafToken !== null) return;
+      rafToken = requestAnimationFrame(checkStepLogState);
     });
     const messages = document.getElementById('chat-messages');
     if (messages) observer.observe(messages, { childList: true });
@@ -421,12 +456,123 @@
     appendShayDeskMessage('assistant', 'Shay is on it…', { id: 'shay-desk-typing-row', typing: true, subtle: true });
   }
 
+  // Vision: pending image attachments (per-surface) that get sent with the
+  // next askFromDesk / askFromLite call. Each entry: { media_type, data (b64) }.
+  var deskPendingImages = [];
+
+  function readFileAsBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var s = String(reader.result || '');
+        var idx = s.indexOf('base64,');
+        if (idx < 0) return reject(new Error('not a data URL'));
+        resolve({ media_type: file.type || 'image/png', data: s.slice(idx + 7) });
+      };
+      reader.onerror = function () { reject(reader.error || new Error('read failed')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderShayImageChips(surface) {
+    var pending = surface === 'desk' ? deskPendingImages : [];
+    var inputEl = document.getElementById(surface === 'desk' ? 'shay-workshop-input' : 'shay-lite-input');
+    if (!inputEl || !inputEl.parentNode) return;
+    var chipBarId = 'shay-' + surface + '-image-chips';
+    var bar = document.getElementById(chipBarId);
+    if (pending.length === 0) {
+      if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+      return;
+    }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = chipBarId;
+      bar.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:6px 10px;font-size:11px;color:var(--fam-text-soft,#888);';
+      inputEl.parentNode.insertBefore(bar, inputEl);
+    }
+    while (bar.firstChild) bar.removeChild(bar.firstChild);
+    pending.forEach(function (img, i) {
+      var chip = document.createElement('span');
+      chip.style.cssText = 'background:rgba(167,139,250,0.12);border:1px solid var(--fam-border);border-radius:10px;padding:2px 8px;display:inline-flex;align-items:center;gap:6px;';
+      chip.textContent = '\ud83d\uddbc ' + img.media_type.replace('image/', '') + ' (' + Math.round(img.data.length * 0.75 / 1024) + 'KB)';
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.textContent = '\u00d7';
+      x.style.cssText = 'background:none;border:none;cursor:pointer;color:inherit;padding:0;font-size:14px;line-height:1;';
+      x.addEventListener('click', function () {
+        pending.splice(i, 1);
+        renderShayImageChips(surface);
+      });
+      chip.appendChild(x);
+      bar.appendChild(chip);
+    });
+  }
+
+  function bindShayImagePaste(inputEl, surface) {
+    if (!inputEl) return;
+    function ingest(files) {
+      var pending = surface === 'desk' ? deskPendingImages : null;
+      if (!pending) return;
+      Array.prototype.forEach.call(files, function (f) {
+        if (!f || !f.type || f.type.indexOf('image/') !== 0) return;
+        if (pending.length >= 6) return;
+        readFileAsBase64(f).then(function (entry) {
+          pending.push(entry);
+          renderShayImageChips(surface);
+        }).catch(function (err) { console.error('[shay-shay] image read failed: ' + err.message); });
+      });
+    }
+    inputEl.addEventListener('paste', function (e) {
+      if (!e.clipboardData || !e.clipboardData.items) return;
+      var imgs = [];
+      Array.prototype.forEach.call(e.clipboardData.items, function (it) {
+        if (it && it.kind === 'file' && it.type && it.type.indexOf('image/') === 0) {
+          var f = it.getAsFile();
+          if (f) imgs.push(f);
+        }
+      });
+      if (imgs.length > 0) {
+        e.preventDefault();
+        ingest(imgs);
+      }
+    });
+    inputEl.addEventListener('dragover', function (e) { e.preventDefault(); });
+    inputEl.addEventListener('drop', function (e) {
+      if (!e.dataTransfer || !e.dataTransfer.files) return;
+      var hasImage = Array.prototype.some.call(e.dataTransfer.files, function (f) { return f && f.type && f.type.indexOf('image/') === 0; });
+      if (!hasImage) return;
+      e.preventDefault();
+      ingest(e.dataTransfer.files);
+    });
+  }
+
+  // Defensive: if the response field still looks like a JSON envelope
+  // (server-side normalization failed), peel one layer client-side so the
+  // user never sees raw {"response":"..."} text in chat.
+  function peelShayResponseEnvelope(s) {
+    var text = String(s || '');
+    if (!/^\s*\{\s*"response"\s*:/.test(text)) return text;
+    try {
+      var parsed = JSON.parse(text);
+      if (parsed && typeof parsed.response === 'string') {
+        console.log('[shay-shay] client peeled nested envelope from response');
+        return parsed.response;
+      }
+    } catch (e) {
+      var m = text.match(/^\s*\{\s*"response"\s*:\s*"([\s\S]*?)"\s*[,}]/);
+      if (m) return m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    }
+    return text;
+  }
+
   function bindShayDeskControls() {
-    var input = document.getElementById('shay-desk-input');
+    var input = document.getElementById('shay-workshop-input');
     var sendBtn = document.getElementById('shay-desk-send-btn');
     var liteBtn = document.getElementById('shay-desk-lite-btn');
     var showMeBtn = document.getElementById('shay-desk-showme-btn');
     var chatBtn = document.getElementById('shay-desk-chat-btn');
+
+    bindShayImagePaste(input, 'desk');
 
     function setDeskThinking(on) {
       var btn = document.getElementById('shay-desk-send-btn');
@@ -437,19 +583,24 @@
 
     function askFromDesk() {
       var text = input && input.value ? input.value.trim() : '';
-      if (!text) {
+      var attached = deskPendingImages.slice();
+      if (!text && attached.length === 0) {
         if (input) input.focus();
         return;
       }
-      appendShayDeskMessage('user', text);
+      appendShayDeskMessage('user', text + (attached.length > 0 ? '\n\n[' + attached.length + ' image' + (attached.length === 1 ? '' : 's') + ' attached]' : ''));
       if (input) input.value = '';
+      // Snapshot + clear pending images so they ship with this request only.
+      deskPendingImages = [];
+      renderShayImageChips('desk');
 
       function doRequest() {
         var thinkStart = beginShayThinking();
         setDeskThinking(true);
         showShayDeskTyping(true);
         var context = getShayShayContext();
-        var payload = deskBridgeClient.prepareRequestPayload(text, context);
+        var payload = deskBridgeClient.prepareRequestPayload(text || '(see attached image)', context);
+        if (attached.length > 0) payload.images = attached;
         // Attach handoff context if coming from Lite
         if (deskBridgeClient._pendingHandoff) {
           payload.handoff_context = deskBridgeClient._pendingHandoff;
@@ -457,6 +608,7 @@
         }
         fetch('/api/shay-shay', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
@@ -477,7 +629,13 @@
               showShayDeskTyping(false);
               setDeskThinking(false);
               endShayThinking();
-              appendShayDeskMessage('assistant', data.response || data.error || 'No response.');
+              clearPipelineBanner();
+              appendShayDeskMessage('assistant', peelShayResponseEnvelope(data.response) || data.error || 'No response.');
+              // Iteration trail when the brain made multiple bridge calls
+              if (data.bridge_iterations && data.bridge_iterations > 0) {
+                var iterLine = '\u21b3 ' + data.bridge_iterations + ' bridge iteration' + (data.bridge_iterations === 1 ? '' : 's') + (data.bridge_truncated ? ' (truncated at cap)' : '');
+                appendShayDeskMessage('system', iterLine, { subtle: true });
+              }
               // Usage metadata
               if (data.usage) {
                 var usageLine = '\u21b3 ' + (data.usage.input_tokens || 0) + '\u2192' + (data.usage.output_tokens || 0) + ' tokens' + (data.usage.cost_usd ? ' \u00b7 $' + Number(data.usage.cost_usd).toFixed(4) : '');
@@ -490,6 +648,7 @@
             completeShayThinkingWindow(thinkStart, function () {
               showShayDeskTyping(false);
               setDeskThinking(false);
+              clearPipelineBanner();
               applyLiteSurfaceState('alerting');
               setOrbState('IDLE');
               appendShayDeskMessage('system', 'Error: ' + err.message, { subtle: true });
@@ -505,7 +664,7 @@
     if (input && !input.dataset.boundDeskEnter) {
       input.dataset.boundDeskEnter = 'true';
       input.addEventListener('keydown', function (event) {
-        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        if (event.key === 'Enter' && !event.shiftKey) {
           event.preventDefault();
           askFromDesk();
         }
@@ -607,7 +766,7 @@
     if (!opts.silent) applyLiteSurfaceState(liteSurfaceState === 'idle' ? 'prompting' : liteSurfaceState);
     if (opts.focusInput) {
       setTimeout(function () {
-        var input = document.getElementById('pip-direct-input');
+        var input = document.getElementById('shay-shay-input');
         if (input) input.focus();
       }, 30);
     }
@@ -657,19 +816,24 @@
   // ── Trigger: build complete with low score ───────────────────────────────
   function onBuildComplete(e) {
     if (!shouldShowProactiveMessages()) return;
-    const score = e.detail && e.detail.score;
-    const total = (e.detail && e.detail.total) || 5;
+    var eventScore = e.detail && e.detail.score;
+    var total = (e.detail && e.detail.total) || 5;
+    var cachedScore = window.cachedStudioState && window.cachedStudioState.fam_score;
+    var score = (eventScore != null && eventScore > 0) ? eventScore : (cachedScore != null ? cachedScore : eventScore);
+    if (cachedScore != null && total <= 10 && cachedScore > total) {
+      score = Math.round(cachedScore / 100 * total);
+    }
     if (score != null && score < total && !isDismissed(TRIGGERS.build_warn)) {
-      const issues = total - score;
+      var issues = total - score;
       showMessage(
-        'FAMtastic Score: ' + score + '/' + total + ' — ' + issues + ' issue' + (issues > 1 ? 's' : '') + ' found.',
+        'FAMtastic Score: ' + score + '/' + total + ' \u2014 ' + issues + ' issue' + (issues > 1 ? 's' : '') + ' found.',
         [
-          { label: 'Auto-fix', action: () => { sendToChat('fix the verification issues'); closeCallout(); } },
-          { label: 'View details', action: () => { window.StudioShell && StudioShell.switchTab('deploy'); closeCallout(); } },
-          { label: 'Dismiss', action: () => dismiss(TRIGGERS.build_warn), secondary: true },
+          { label: 'Auto-fix', action: function () { sendToChat('fix the verification issues'); closeCallout(); } },
+          { label: 'View details', action: function () { window.StudioShell && StudioShell.switchTab('deploy'); closeCallout(); } },
+          { label: 'Dismiss', action: function () { dismiss(TRIGGERS.build_warn); }, secondary: true },
         ]
       );
-    } else if (score != null && score === total) {
+    } else if (score != null && score >= total) {
       flashCallout('FAMtastic Score: ' + score + '/' + total + ' \u2713', 2500);
     }
   }
@@ -933,6 +1097,19 @@
       if (window.cachedStudioState.fam_score != null) famScore = window.cachedStudioState.fam_score;
       else if (window.cachedStudioState.spec && window.cachedStudioState.spec.fam_score != null) famScore = window.cachedStudioState.spec.fam_score;
     }
+    // SHAY V2 (2026-05-02): pull page-context from the registry if a page has registered.
+    // Pages register via ShayContextRegistry.register(...) and call setActive() when shown.
+    // See site-studio/public/js/shay-context-registry.js + docs/shay-architecture-v2-proposal.md.
+    var pageContext = null;
+    var registeredProviders = null;
+    if (window.ShayContextRegistry) {
+      try {
+        pageContext = window.ShayContextRegistry.getContext();
+        registeredProviders = window.ShayContextRegistry.listProviders();
+      } catch (err) {
+        console.warn('[shay] context registry read failed', err);
+      }
+    }
     return {
       active_site: (window.config && window.config.tag) || null,
       active_page: ctxPage,
@@ -943,12 +1120,15 @@
       workspace_state: clientSnapshot.workspace_state || null,
       component_state: clientSnapshot.component_state || null,
       preview_state: clientSnapshot.preview_state || null,
+      // SHAY V2: page_context is what Shay-Shay can actually SEE on the active page
+      page_context: pageContext,
+      registered_context_providers: registeredProviders,
     };
   }
 
   // ── Column: direct input wiring ─────────────────────────────────────────
   function initDirectInput() {
-    var input = document.getElementById('pip-direct-input');
+    var input = document.getElementById('shay-shay-input');
     var sendBtn = document.getElementById('pip-send-btn');
     if (!input) return;
 
@@ -973,6 +1153,7 @@
 
         fetch('/api/shay-shay', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
@@ -1025,7 +1206,7 @@
                 showJobPlanCard(data.jobs || [], data.response || 'Job plan created.');
                 showColumnActions([]);
               } else {
-                showColumnResponse(data.response || data.error || 'No response.', false);
+                showColumnResponse(peelShayResponseEnvelope(data.response) || data.error || 'No response.', false);
                 showColumnActions([]);
               }
               // Usage metadata
@@ -1057,7 +1238,7 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDirect(); }
     });
 
-    if (sendBtn) sendBtn.addEventListener('click', sendDirect);
+    if (sendBtn) sendBtn.addEventListener('click', function () { sendDirect(); });
 
     window.__pipSendDirect = sendDirect;
   }
@@ -1543,7 +1724,7 @@
     var hint = document.getElementById('shay-status-hint');
     if (!hint) {
       // Try to create it in the Desk panel if it doesn't exist
-      var deskShell = document.getElementById('shay-desk-shell');
+      var deskShell = document.getElementById('shay-workshop-shell');
       if (deskShell) {
         hint = document.createElement('div');
         hint.id = 'shay-status-hint';
@@ -1648,6 +1829,170 @@
     scrollShayDeskTranscriptToBottom();
   }
 
+  /* STANDING RULE: Every new WebSocket event added to server.js MUST have a
+     corresponding UI handler here that renders visible feedback in Shay Desk.
+     No silent events. No unhandled message types. */
+
+  var _pipelineBannerTimer = null;
+
+  function setPipelineBanner(text, opts) {
+    var done = opts && opts.done;
+    var transcript = document.getElementById('shay-desk-transcript');
+    console.log('[pipeline-banner] setPipelineBanner called — text:', text, '| transcript el:', transcript, '| parent:', transcript && transcript.parentNode);
+    if (!transcript) return;
+
+    var banner = document.getElementById('shay-desk-pipeline-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'shay-desk-pipeline-banner';
+      banner.style.cssText = 'padding:8px 14px;font-size:12px;font-weight:500;border-bottom:1px solid var(--fam-border);background:rgba(167,139,250,0.08);color:var(--fam-purple,#a78bfa);flex:0 0 auto;opacity:1;transition:opacity 0.4s;';
+      transcript.parentNode.insertBefore(banner, transcript);
+    }
+
+    if (_pipelineBannerTimer) { clearTimeout(_pipelineBannerTimer); _pipelineBannerTimer = null; }
+    banner.style.opacity = '1';
+    banner.textContent = text;
+
+    if (done) {
+      _pipelineBannerTimer = setTimeout(function () {
+        if (banner.parentNode) banner.parentNode.removeChild(banner);
+      }, 3000);
+    }
+  }
+
+  function clearPipelineBanner() {
+    if (_pipelineBannerTimer) { clearTimeout(_pipelineBannerTimer); _pipelineBannerTimer = null; }
+    var banner = document.getElementById('shay-desk-pipeline-banner');
+    if (banner && banner.parentNode) banner.parentNode.removeChild(banner);
+  }
+
+  // Bridge-loop progress indicator. Server emits one message per iteration
+  // with phase=executing (op running) and phase=thinking (brain re-thinking
+  // on the result). We render into the existing "thinking" indicator surface
+  // — Lite uses the status hint, Desk uses the typing/banner area.
+  function handleShayShayProgress(msg) {
+    if (!msg) return;
+    var msgSurface = msg.surface || 'lite';
+    var matchesLite = msgSurface === 'lite';
+    var matchesDesk = msgSurface === 'desk';
+    if (!matchesLite && !matchesDesk) return;
+
+    var op = String(msg.op || 'unknown');
+    var target = String(msg.target || '').slice(0, 80);
+    var iter = msg.iteration || 0;
+    var max = msg.max || 50;
+    var phase = msg.phase || 'executing';
+
+    var verb;
+    if (phase === 'thinking') {
+      verb = 'thinking';
+    } else if (op === 'read') {
+      verb = 'reading';
+    } else if (op === 'write') {
+      verb = 'writing';
+    } else if (op === 'exec') {
+      verb = 'running';
+    } else if (op === 'diff') {
+      verb = 'diffing';
+    } else {
+      verb = op;
+    }
+
+    var label = 'Iteration ' + iter + '/' + max + ': ' + verb + (target ? ' ' + target : '');
+    console.log('[shay-shay-progress] ' + label + ' (surface=' + msgSurface + ')');
+
+    if (matchesDesk) {
+      setPipelineBanner('\u2699 Shay is working \u2014 ' + label);
+    }
+    setShayStatusHint(label);
+  }
+
+  // Patch-applied loop notification — shown as a system message in the chat.
+  // The server has already queued a corresponding system note for Shay so her
+  // next turn knows to re-screenshot and verify; this is the user-facing half.
+  function handlePatchApplied(msg) {
+    if (!msg || !msg.id) return;
+    var status = String(msg.status || 'applied');
+    var pathLabel = msg.path ? msg.path : '(unknown path)';
+    var icon = status === 'applied' ? '\u2713' : status === 'failed' ? '\u2717' : '\u25cf';
+    var line = icon + ' Patch ' + msg.id + ' ' + status + ' to ' + pathLabel;
+    if (status === 'failed' && msg.error) line += ' \u2014 ' + msg.error;
+    console.log('[patch-loop] received: ' + line);
+    appendShayDeskMessage('system', line, { subtle: true });
+    setShayStatusHint(line);
+  }
+
+  function handlePipelineWsEvent(msg) {
+    if (!msg || !msg.type) return;
+    console.log('[pipeline-ws] handlePipelineWsEvent:', msg.type, msg);
+    var ts = new Date().toTimeString().slice(0, 8);
+    var t = msg.type;
+    var label, detail, lbl, bannerText;
+
+    switch (t) {
+      case 'character-pipeline-step':
+        lbl = msg.label || '';
+        if (lbl === 'anchor:start')                bannerText = '\u2699 Shay is working \u2014 Generating anchor...';
+        else if (lbl === 'anchor:complete')         bannerText = '\u2699 Shay is working \u2014 Anchor done, starting poses...';
+        else if (lbl === 'poses:start')             bannerText = '\u2699 Shay is working \u2014 Generating poses...';
+        else if (lbl === 'video:start'
+              || lbl === 'video:queued')            bannerText = '\u2699 Shay is working \u2014 Creating hero video...';
+        else if (lbl === 'promo:start'
+              || lbl === 'promo:queued')            bannerText = '\u2699 Shay is working \u2014 Building promo...';
+        else                                        bannerText = '\u2699 Shay is working \u2014 ' + lbl;
+        setPipelineBanner(bannerText);
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] ' + t + ': ' + lbl, { subtle: true });
+        break;
+      case 'character-pipeline-complete':
+        setPipelineBanner('\u2713 Pipeline complete', { done: true });
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] character pipeline complete \u2014 ' + (msg.assessment || ''), { subtle: true });
+        break;
+      case 'character-pipeline-error':
+        clearPipelineBanner();
+        appendShayDeskMessage('system', '\u2717 [' + ts + '] character pipeline error: ' + (msg.error || 'unknown'), { subtle: true });
+        break;
+      case 'pose-generated':
+        setPipelineBanner('\u2699 Shay is working \u2014 Generating poses (' + (msg.pose_index || '?') + '/12)...');
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] pose-generated: pose ' + (msg.pose_index || '') + ' saved', { subtle: true });
+        break;
+      case 'poses-complete':
+        label = msg.results ? msg.results.length + ' pose(s)' : 'done';
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] poses-complete \u2014 ' + label, { subtle: true });
+        break;
+      case 'video-progress':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] video-progress: ' + (msg.status || msg.message || 'generating'), { subtle: true });
+        break;
+      case 'video-complete':
+        detail = msg.size ? ' (' + (msg.size / 1024).toFixed(0) + 'KB)' : '';
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] video-complete' + detail, { subtle: true });
+        break;
+      case 'video-error':
+        appendShayDeskMessage('system', '\u2717 [' + ts + '] video error: ' + (msg.error || 'unknown'), { subtle: true });
+        break;
+      case 'promo-step':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] promo-step: ' + (msg.step || msg.status || ''), { subtle: true });
+        break;
+      case 'promo-complete':
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] promo-complete', { subtle: true });
+        break;
+      case 'promo-error':
+        appendShayDeskMessage('system', '\u2717 [' + ts + '] promo error: ' + (msg.error || 'unknown'), { subtle: true });
+        break;
+      case 'build-progress':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] build-progress: ' + (msg.content || msg.message || ''), { subtle: true });
+        break;
+      case 'build-complete':
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] build-complete', { subtle: true });
+        break;
+      case 'deploy-progress':
+        appendShayDeskMessage('system', '\u2699 [' + ts + '] deploy-progress: ' + (msg.content || msg.message || ''), { subtle: true });
+        break;
+      case 'deploy-complete':
+        appendShayDeskMessage('system', '\u2713 [' + ts + '] deploy-complete', { subtle: true });
+        break;
+    }
+  }
+
   window.PipOrb = {
     show:               showMessage,
     flash:              flashCallout,
@@ -1655,7 +2000,7 @@
     close:              closeCallout,
     openLitePanel:      openLitePanel,
     askLite:            function (text, opts) {
-      var input = document.getElementById('pip-direct-input');
+      var input = document.getElementById('shay-shay-input');
       openLitePanel({ focusInput: !(opts && opts.skipFocus) });
       if (input) input.value = text || '';
       if (opts && opts.sendNow && window.__pipSendDirect) window.__pipSendDirect(text || '');
@@ -1673,6 +2018,9 @@
     send:               sendToChat,
     showColumnResponse: showColumnResponse,
     appendDeskMessage: appendDeskMessage,
+    handlePipelineEvent: handlePipelineWsEvent,
+    handleShayShayProgress: handleShayShayProgress,
+    handlePatchApplied: handlePatchApplied,
     showColumnActions:  showColumnActions,
     reloadTodos:        function () { setOrbState('IDLE'); },
     setOrbState:        setOrbState,

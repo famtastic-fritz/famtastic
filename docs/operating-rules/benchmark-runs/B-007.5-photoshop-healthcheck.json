@@ -1,0 +1,56 @@
+{
+  "benchmark": "B-007.5 Photoshop adb-mcp Healthcheck",
+  "ran_at": "2026-04-28T14:29:35-04:00",
+  "status": "FAIL",
+  "paid_calls": false,
+  "marginal_cost_usd": 0,
+  "rerun_reason": "User started/restarted the Photoshop plugin and requested retry.",
+  "inputs": {
+    "test_png": "/Users/famtasticfritz/famtastic/sites/site-mbsh-reunion/assets/mascot/poses/01-wave-hello.png",
+    "intended_output": "/Users/famtasticfritz/famtastic/docs/operating-rules/benchmark-runs/B-007.5-photoshop-healthcheck-copy.png"
+  },
+  "steps": [
+    {
+      "step": "start_adb_mcp_proxy",
+      "status": "PASS",
+      "evidence": "node proxy.js started successfully; proxy printed adb-mcp Command proxy server running on ws://localhost:3001"
+    },
+    {
+      "step": "confirm_photoshop_plugin_connects",
+      "status": "PASS",
+      "evidence": "getDocuments command returned SUCCESS through proxy with active Photoshop document 01-wave-chatgpt.png and layer list"
+    },
+    {
+      "step": "open_test_png",
+      "status": "FAIL",
+      "command": {
+        "application": "photoshop",
+        "action": "openFile",
+        "options": {
+          "filePath": "/Users/famtasticfritz/famtastic/sites/site-mbsh-reunion/assets/mascot/poses/01-wave-hello.png"
+        }
+      },
+      "error": "Error returned from photoshop: Error calling openFile : Error: Error executing command [modal] : Error: openFile: Could not create file entry. File probably does not exist."
+    },
+    {
+      "step": "save_export_copy",
+      "status": "SKIPPED",
+      "reason": "Skipped because open_test_png failed and benchmark rules require stop-on-fail."
+    },
+    {
+      "step": "confirm_export_landed",
+      "status": "SKIPPED",
+      "reason": "Skipped because save_export_copy did not run."
+    }
+  ],
+  "decision": {
+    "adobe_benchmarks_b008_b009_b010": "DEFER",
+    "reason": "adb-mcp proxy and plugin connection work after plugin restart, but Photoshop UXP openFile still fails on a valid local PNG path. Per B-007.5 rules, do not attempt fixes in this pass."
+  },
+  "notes": [
+    "The plugin is connected; this is not a plugin-not-started failure.",
+    "The file exists on disk, so the failure appears to be UXP local file access, file URL handling, permissions, or adb-mcp openFile implementation compatibility.",
+    "Proxy was stopped after the failed healthcheck.",
+    "No Photoshop integration fixes were attempted."
+  ]
+}

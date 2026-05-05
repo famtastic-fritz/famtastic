@@ -191,7 +191,7 @@
       { id: 'components', label: 'Components', paneId: 'tab-pane-components', closeable: false },
       { id: 'assets',  label: 'Media',   paneId: 'tab-pane-assets',  closeable: false },
       { id: 'mc',      label: 'Mission Control', paneId: 'tab-pane-mc', closeable: false },
-      { id: 'shay',    label: 'Shay',    paneId: 'tab-pane-shay',    closeable: false },
+      { id: 'shay',    label: 'Workshop', paneId: 'tab-pane-shay',   closeable: false }, // SHAY V2 (2026-05-02): label renamed Shay → Workshop; internal id kept for switchTab('shay') backwards compat
       { id: 'deploy',  label: 'Deploy',  paneId: 'tab-pane-deploy',  closeable: false },
     ];
     renderTabs();
@@ -255,7 +255,7 @@
     syncWorkspaceChrome();
     // Focus chat input when switching to chat tab
     if (tabId === 'chat') setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
-    if (tabId === 'shay') setTimeout(() => document.getElementById('pip-direct-input')?.focus(), 50);
+    if (tabId === 'shay') setTimeout(() => (document.getElementById('shay-workshop-input') || document.getElementById('shay-shay-input'))?.focus(), 50);
     if (window.StudioScreens) {
       if (tabId === 'components' && typeof window.StudioScreens.mountComponents === 'function') {
         setTimeout(() => window.StudioScreens.mountComponents(), 20);

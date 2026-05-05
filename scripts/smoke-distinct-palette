@@ -1,0 +1,198 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * Distinctiveness sentinel — P1.2 exit gate.
+ *
+ * Was a P0.2 warn-only signal that two sites had converged onto the FAMtastic
+ * default palette (architecture/2026-04-27-p0.1-diagnostic.md Thread 1). P1.2
+ * promotes it to a hard gate: no two sites may share an identical primary
+ * palette unless one of:
+ *
+ *   1. They are in the same vertical (e.g., two transport sites). Same-vertical
+ *      duplicates are an intentional consequence of the vertical-default table
+ *      in lib/style-fingerprint.js and are allowed.
+ *
+ *   2. The fingerprint source is 'operator_override'. Operators can pin a
+ *      palette explicitly even if it duplicates another site's.
+ *
+ * Anything else — especially two sites in DIFFERENT verticals sharing a palette,
+ * or any site still resolving to the FAMtastic default — is a fail.
+ *
+ * Two modes:
+ *   scripts/smoke-distinct-palette                 # portfolio scan (P1.2 exit gate)
+ *   scripts/smoke-distinct-palette <tag-a> <tag-b> # legacy 2-site comparison
+ *
+ * Exit codes:
+ *   0  — all distinct (or same-vertical / operator_override duplicates only)
+ *   1  — found a disallowed duplicate or a famtastic_default site
+ *   2  — input/setup error (file not found, unparseable spec, etc.)
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const { FAMTASTIC_DEFAULT_PALETTE } = require('../site-studio/lib/famtastic-skeletons');
+
+const SITES_ROOT = path.join(__dirname, '..', 'sites');
+const args = process.argv.slice(2);
+
+function tagPath(tag) {
+  return tag.startsWith('site-') ? tag : `site-${tag}`;
+}
+
+function readSpec(tag) {
+  const specPath = path.join(SITES_ROOT, tagPath(tag), 'spec.json');
+  if (!fs.existsSync(specPath)) return null;
+  try { return JSON.parse(fs.readFileSync(specPath, 'utf8')); }
+  catch { return null; }
+}
+
+function paletteKey(palette) {
+  if (!palette) return null;
+  return [palette.primary, palette.secondary, palette.accent, palette.neutral, palette.background]
+    .map(s => (s || '').toLowerCase())
+    .join('|');
+}
+
+function isBuiltState(state) {
+  return state === 'built' || state === 'deployed' || state === 'client_approved';
+}
+
+// Legacy 2-site mode preserved for ad-hoc operator use.
+if (args.length === 2) {
+  const a = readSpec(args[0]);
+  const b = readSpec(args[1]);
+  if (!a || !b) {
+    if (!a) console.log(`[error] could not read spec for ${args[0]}`);
+    if (!b) console.log(`[error] could not read spec for ${args[1]}`);
+    process.exit(2);
+  }
+  const aFp = a.style_fingerprint;
+  const bFp = b.style_fingerprint;
+  const aKey = paletteKey(aFp && aFp.palette);
+  const bKey = paletteKey(bFp && bFp.palette);
+  console.log(`${args[0]}: primary=${aFp && aFp.palette && aFp.palette.primary} (source=${aFp && aFp.source}, vertical=${aFp && aFp.vertical || 'none'})`);
+  console.log(`${args[1]}: primary=${bFp && bFp.palette && bFp.palette.primary} (source=${bFp && bFp.source}, vertical=${bFp && bFp.vertical || 'none'})`);
+  if (!aKey || !bKey) {
+    console.log('\n[sentinel] FAIL — at least one site is missing a style_fingerprint. Run scripts/spec-repair-all.');
+    process.exit(1);
+  }
+  if (aKey === bKey) {
+    const sameVertical = aFp.vertical && bFp.vertical && aFp.vertical === bFp.vertical;
+    const operatorOverride = aFp.source === 'operator_override' || bFp.source === 'operator_override';
+    if (sameVertical || operatorOverride) {
+      console.log(`\n[sentinel] OK — palettes identical but ${sameVertical ? 'same vertical (allowed)' : 'operator_override (allowed)'}.`);
+      process.exit(0);
+    }
+    console.log('\n[sentinel] FAIL — palettes identical across different verticals.');
+    process.exit(1);
+  }
+  console.log('\n[sentinel] OK — distinct palettes.');
+  process.exit(0);
+}
+
+// Portfolio-wide mode (P1.2 exit gate)
+if (args.length !== 0) {
+  console.log('Usage:');
+  console.log('  smoke-distinct-palette                  # portfolio scan');
+  console.log('  smoke-distinct-palette <tag-a> <tag-b>  # 2-site comparison');
+  process.exit(2);
+}
+
+const dirs = fs.readdirSync(SITES_ROOT, { withFileTypes: true })
+  .filter(d => d.isDirectory() && d.name.startsWith('site-'))
+  .map(d => d.name)
+  .sort();
+
+const builtSites = [];
+const skipped = [];
+let setupErrors = 0;
+
+for (const tag of dirs) {
+  const spec = readSpec(tag);
+  if (!spec) { skipped.push({ tag, reason: 'unreadable spec' }); continue; }
+  if (!isBuiltState(spec.state)) { skipped.push({ tag, reason: `state=${spec.state}` }); continue; }
+  const fp = spec.style_fingerprint;
+  if (!fp || !fp.palette) {
+    setupErrors++;
+    console.log(`[error] ${tag}: state=${spec.state} but no style_fingerprint. Run scripts/spec-repair-all.`);
+    continue;
+  }
+  builtSites.push({ tag, fp });
+}
+
+console.log(`Scanned ${dirs.length} site dirs, ${builtSites.length} built (with fingerprint), ${skipped.length} skipped, ${setupErrors} fingerprint-missing.`);
+
+if (setupErrors > 0) {
+  console.log('\n[sentinel] FAIL — built sites missing style_fingerprint. spec-repair-all should backfill these.');
+  process.exit(1);
+}
+
+const famPaletteKey = [
+  FAMTASTIC_DEFAULT_PALETTE.primary,
+  FAMTASTIC_DEFAULT_PALETTE.navy,
+  FAMTASTIC_DEFAULT_PALETTE.accent,
+  FAMTASTIC_DEFAULT_PALETTE.coral,
+  FAMTASTIC_DEFAULT_PALETTE.background,
+].map(s => s.toLowerCase()).join('|');
+
+// Group by palette key
+const byPalette = new Map();
+for (const site of builtSites) {
+  const key = paletteKey(site.fp.palette);
+  if (!byPalette.has(key)) byPalette.set(key, []);
+  byPalette.get(key).push(site);
+}
+
+let failures = 0;
+const violations = [];
+
+// Rule 1: any built site whose palette equals FAMtastic default fails (the
+// convergence pattern P1.2 was created to break). Operator overrides escape.
+for (const site of builtSites) {
+  const key = paletteKey(site.fp.palette);
+  if (key === famPaletteKey && site.fp.source !== 'operator_override') {
+    violations.push({
+      kind: 'famtastic_default_convergence',
+      tag: site.tag,
+      source: site.fp.source,
+      vertical: site.fp.vertical,
+    });
+    failures++;
+  }
+}
+
+// Rule 2: any palette shared by 2+ sites in DIFFERENT verticals fails.
+for (const [key, sites] of byPalette.entries()) {
+  if (sites.length < 2) continue;
+  // Skip operator_override duplicates (allowed)
+  const allOperatorOverride = sites.every(s => s.fp.source === 'operator_override');
+  if (allOperatorOverride) continue;
+  const verticals = new Set(sites.map(s => s.fp.vertical || '__none__'));
+  const sameVertical = verticals.size === 1 && !verticals.has('__none__');
+  if (sameVertical) continue; // allowed — same vertical produces same default
+  // Cross-vertical (or vertical=null) duplicate
+  violations.push({
+    kind: 'cross_vertical_duplicate',
+    palette_key: key,
+    sites: sites.map(s => ({ tag: s.tag, vertical: s.fp.vertical, source: s.fp.source })),
+  });
+  failures++;
+}
+
+if (violations.length === 0) {
+  console.log('\n[sentinel] OK — every built site has a distinct palette (or shares only with same-vertical / operator-override siblings).');
+  process.exit(0);
+}
+
+console.log('\n[sentinel] FAIL — distinctiveness violations found:');
+for (const v of violations) {
+  if (v.kind === 'famtastic_default_convergence') {
+    console.log(`  ${v.tag}: still resolves to FAMtastic default palette (source=${v.source}, vertical=${v.vertical || 'none'})`);
+  } else if (v.kind === 'cross_vertical_duplicate') {
+    console.log(`  cross-vertical duplicate: ${v.sites.map(s => `${s.tag} (vertical=${s.vertical || 'none'}, source=${s.source})`).join(' = ')}`);
+  }
+}
+console.log('\nFix: rebuild affected sites so spec-repair-all + the build path pick up a vertical-specific fingerprint, OR set spec.style_fingerprint.source = "operator_override" for an intentional duplicate.');
+process.exit(1);

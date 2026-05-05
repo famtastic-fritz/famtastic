@@ -1,5 +1,410 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Consolidated Execution Checklist (2026-05-04)
+
+Created `plans/consolidated-execution-checklist-2026-05-04.md` as the working
+plan consolidation artifact after Fritz rejected the stale Total Ask shape as
+daily operating truth. The checklist keeps four active parent plans:
+`studio-workbench-foundation`, `plan-task-run-intelligence`,
+`build-intent-fulfillment-trace`, and `site-mbsh-reunion`. The stale
+`docs/famtastic-total-ask-plan.md` is now treated as strategy context to mine,
+not as a fifth active plan.
+
+### Product/process decisions captured
+
+- **Four parent plans are enough.** Extra documents become evidence,
+  child workstreams, promoted tasks, or parked context.
+- **Total Ask is cannibalized, not obeyed.** Keep the capture flywheel,
+  Shay identity/context, Studio family model, workflow-as-data, pipeline
+  visualizer, three site workflows, long-context fixes, and audit harnesses;
+  discard stale completion claims as execution authority.
+- **Media is Media Studio.** The checklist reinforces the frozen UI rule:
+  prompt-first creation is the primary center work surface, with the library
+  and tools supporting the work rather than becoming the work.
+- **Real Studio testing is mandatory.** Studio behavior must be verified via
+  Playwright-driven Site Studio UI flows and actual Shay/Shay-Shay calls where
+  the feature is a Shay behavior.
+- **Drive sync is not active work in this checklist.** Fritz marked Drive sync
+  complete, so it remains context/proof only. Workflow-as-data and the pipeline
+  visualizer remain open under `build-intent-fulfillment-trace`.
+
+### Known Gaps opened or preserved
+
+- `plans/registry.json` has been rewritten to the four active parent plans.
+- `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`
+  still need promoted records.
+- `FAMTASTIC-STATUS.md` still needs automatic regeneration from code; it was
+  manually regenerated from the consolidated registry and ledgers for the first
+  applied slice.
+- The Workbench prototype still needs to be rebuilt against the frozen
+  workspace contract before it becomes the default shell.
+- Workflow-as-data still needs the first instrumentation pass before
+  declarative pipeline stages can be introduced.
+- The pipeline visualizer remains unbuilt and depends on trustworthy trace and
+  workflow data.
+
+## Applied Four-Plan Registry (2026-05-04)
+
+Fritz approved the consolidation for execution with auto-approval for the
+remaining consolidated work. `plans/registry.json` is now rewritten to four
+active parent plans only: `studio-workbench-foundation`,
+`plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and
+`site-mbsh-reunion`. The pre-consolidation registry was backed up to
+`plans/registry.backup-2026-05-04.json`.
+
+### Files and commands created or changed
+
+- `plans/registry.json` — schema `0.2.0`, four active parent plans, approval
+  metadata, and absorbed-record dispositions for stale/parked plan documents.
+- `plans/registry.backup-2026-05-04.json` — rollback/comparison copy of the
+  prior 11-record registry.
+- `tasks/tasks.jsonl` — first promoted task ledger records. P0 consolidation
+  substrate tasks and P1 CLI command tasks are marked completed; remaining
+  Workbench, BuildIntent, workflow-data, visualizer, and MBSH tasks are ready.
+- `runs/runs.jsonl` — active `run-2026-05-04-consolidation-apply` record.
+- `proofs/proof-ledger.jsonl` — proof records for the registry backup/rewrite,
+  task ledger, run ledger, Drive-sync status correction, and CLI command
+  verification.
+- `scripts/fam-hub` — fixed JSONL list commands so they no longer skip the
+  first task/run record; added `fam-hub plan review`,
+  `fam-hub task promote --dry-run|--apply`, and
+  `fam-hub run start <plan-id> [target] [--dry-run]`.
+- `FAMTASTIC-STATUS.md` — manually regenerated status packet with the four
+  active parent plans and current run.
+
+### Verification
+
+- `jq` validated `plans/registry.json`, `tasks/tasks.jsonl`,
+  `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`.
+- `bash -n scripts/fam-hub` passed.
+- `fam-hub plan list --compact` shows exactly four active parent plans.
+- `fam-hub plan review` reports 4 plans, 4 active parents, 10 absorbed records,
+  23 task records, 1 run record, 8 proof records, and no warnings.
+- `fam-hub task list` now includes the first JSONL task record.
+- `fam-hub run status` now includes the one-line run ledger.
+- `fam-hub task promote --dry-run` previews registry task promotion.
+- `fam-hub run start studio-workbench-foundation complete_p0 --dry-run`
+  returns a valid JSON run record without writing.
+
+### Known Gaps closed or changed
+
+- The four-parent registry rewrite is no longer pending; it is applied.
+- Task, run, and proof ledgers are no longer empty.
+- `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` now
+  exist.
+- Workbench Plan mode no longer uses only static demo data. It now loads
+  `site-studio/public/data/workbench-plan-state.json`, which mirrors the
+  consolidated registry, task, run, and proof state for browser use.
+- Automatic status-packet regeneration is still open; this pass updated the
+  packet manually.
+
+## Workbench Plan Mode Registry Wiring (2026-05-04)
+
+Added a browser-safe consolidated plan state packet at
+`site-studio/public/data/workbench-plan-state.json` and wired
+`site-studio/public/js/workbench-foundation.js` Plan mode to render it. The
+Plan workspace now shows the four active parent plans, P0/P1/P2 task lanes,
+the active consolidation run, and status flags for Drive sync, workflow-as-data,
+and the pipeline visualizer.
+
+### Verification
+
+- `jq` validated `site-studio/public/data/workbench-plan-state.json`.
+- `node --check site-studio/public/js/workbench-foundation.js` passed.
+- `curl` against launchd-managed Studio confirmed
+  `http://localhost:3334/workbench-foundation.html` and
+  `/data/workbench-plan-state.json` were served.
+- Playwright opened the Workbench through Studio, clicked Plan mode, verified
+  required consolidated-plan text, found no console/page errors, and saved
+  `proofs/workbench-plan-mode-2026-05-04.png`.
+
+### Known Gaps changed
+
+- Workbench Plan mode is wired to a generated browser-safe JSON packet, not
+  direct live registry reads. Automatic packet generation remains open.
+- Workbench is still not registered as a Shay context provider.
+
+## Plan Consolidation Verification (2026-05-04)
+
+Created `plans/consolidation-verification-2026-05-04.md` as a proposal to
+reduce the current registry from 11 same-level plan records into 4 active
+parent plans, 1 parked strategy context, and 6 merged/closed evidence records.
+The report verifies that all referenced source files exist, but the task,
+run, and proof ledgers are still empty and current registry source/proof
+fields are not rich enough for Workbench/Shay execution.
+
+### Consolidation recommendation
+
+- **Keep active:** `studio-workbench-foundation`,
+  `plan-task-run-intelligence`, `build-intent-fulfillment-trace`,
+  `site-mbsh-reunion`.
+- **Park:** `famtastic-total-ask-plan` as strategy context until Fritz reviews
+  and accepts/modifies it.
+- **Merge/close:** `multi-agent-resumable-plan-system`,
+  `build-orchestration-trace`, `baseline-closure-review`,
+  `canonical-build-intent-v2`, `outstanding-iterative-roadmap`,
+  `gap-123-4-closure`, and `p0-p1-diagnostics` should stop appearing as
+  same-level active plans after approval; they become child workstreams,
+  evidence, or promoted tasks.
+
+### Historical gaps from this proposal
+
+- `plans/registry.json` was initially unchanged pending Fritz approval; this is
+  closed by the applied four-plan registry slice below.
+- `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl` were
+  initially empty; this is closed by the first promoted ledger records.
+- `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` were
+  initially missing; these now exist.
+- Workbench Plan mode still cannot show real execution state until it consumes
+  the registry and ledgers from the UI.
+
+## Studio UI Foundation Freeze (2026-05-04)
+
+Fritz approved `docs/STUDIO-UI-FOUNDATION.md` as the frozen canonical rulebook
+for FAMtastic Site Studio UI work. The freeze supersedes prior proposals that
+make Studio feel like a generic dashboard, IDE, fixed three-column shell, or
+card-first workspace. The application identity is now locked as an AI Creation
+Workbench for one operator running the FAMtastic site empire.
+
+### Files added or updated in this freeze
+
+- `docs/STUDIO-UI-FOUNDATION.md` — canonical UI foundation with frozen R1-R4,
+  Night visual tokens, page rule, workspace discovery, workspace contract,
+  frozen decisions, remaining open questions, and update procedure.
+- `docs/decisions.jsonl` — append-only decision ledger, seeded with
+  `decision_2026_05_04_studio_ui_foundation_freeze`.
+- `captures/inbox/2026-05-04-studio-ui-foundation-freeze.capture.json` —
+  reviewed intelligence-loop capture packet for the freeze decision.
+- `handoffs/studio-ui-foundation-freeze-2026-05-04.md` — implementation handoff
+  that tells future builders what is frozen, what remains prototype-only, and
+  what order to build next.
+
+### Product decisions captured
+
+- **Left nav is domain-level only.** The frozen list is Sites, Brainstorm,
+  Plans, Components, Media, Research, Admin. Adding a left-nav domain requires
+  the page rule and Fritz filter.
+- **Workspaces are purpose-reactive.** A selected domain renders a workspace
+  shaped around that domain's job. There is no universal tool shelf and no
+  static three-column layout that applies everywhere.
+- **Every workspace has a contract.** Production screens must declare domain,
+  route, parent, purpose, primary work surface, selected object model,
+  contextual tools, Shay context, proof required, promotion targets, and
+  anti-patterns before implementation.
+- **Shay is ambient, not a domain.** Shay Lite is presence/orb behavior and
+  Shay Desk is invoked from the active workspace as an overlay/right-edge
+  threaded surface with page context.
+- **Media is Media Studio.** The primary job is prompt-first generation,
+  comparison, approval, promotion, and usage proof. Media Library is a
+  supporting surface, not the domain identity.
+- **The bench is the work.** Cards can represent repeated items, but cards do
+  not replace the primary task surface. The center surface must become a
+  preview, prompt console, graph, component canvas, source board, or deploy
+  board based on the job.
+- **Tools are contextual.** Tool order, grouping, and visibility belong to
+  workspace/object state. Fixed tools are allowed only when the selected
+  workspace or object state makes them continuously relevant.
+- **Plan-then-approve is universal.** Canonical writes, brand-kit changes,
+  deploys, expensive generations, and destructive changes propose first and
+  apply only after approval.
+
+### Known Gaps opened or preserved
+
+- `site-studio/public/workbench-foundation.html` remains a prototype and should
+  not become the default shell until rebuilt against the frozen workspace
+  contract and real state sources.
+- Workbench Plan mode is not yet backed by `plans/registry.json`,
+  `tasks/tasks.jsonl`, `runs/runs.jsonl`, or `proofs/proof-ledger.jsonl`.
+- Workbench is not yet registered as a Shay context provider, so Shay cannot
+  reliably see selected domain/route/object/tool/proof state.
+- Media Studio prompt-first generation controls are not unified with the
+  existing production Media mini-app.
+- The remaining naming/routing questions in `docs/STUDIO-UI-FOUNDATION.md`
+  Section 10 still need decisions before those areas are implemented.
+
+## Plan Registry and CLI Status Substrate (2026-05-04)
+
+Built the first working slice of the plan/task/run intelligence substrate. `plans/registry.json` is now the canonical local data source for active plan status, seeded from `docs/active-plan-pipeline-report-2026-05-04.md` and the Shay process-intelligence plan packet. `scripts/fam-hub` now includes read-only status commands: `fam-hub plan list`, `fam-hub plan list --compact`, `fam-hub plan list --json`, `fam-hub plan status`, `fam-hub plan show <plan-id>`, `fam-hub task list`, and `fam-hub run status`.
+
+### Files added in this session
+
+- `plans/registry.json` — pilot registry with 11 plan records, generous governance defaults, source refs, originator/current-runner fields, proof links, task arrays, assumptions, and density pointers.
+- `plans/templates/density-compact.md` — canonical one-line plan density contract.
+- `plans/templates/density-standard.md` — canonical six-field plan list contract.
+- `plans/templates/density-detail.md` — canonical single-plan drilldown contract.
+- `tasks/tasks.jsonl`, `runs/runs.jsonl`, `jobs/jobs.jsonl` — append-only ledgers reserved for promoted tasks, active/completed runs, and future job registry records.
+- `proofs/proof-ledger.jsonl`, `research/research-ledger.jsonl` — append-only ledgers reserved for proof and research evidence.
+- `captures/inbox/`, `handoffs/` — intake folders for future no-filesystem capture packets and cross-agent handoff notes.
+- `FAMTASTIC-STATUS.md` — read-only mirror/status packet for Claude Web, phone, and other surfaces that cannot read `~/famtastic/` directly.
+- `docs/plan-registry-build-report-2026-05-04.md` — implementation report and verification record.
+
+### Process decisions captured
+
+- **Source of truth is data, not a CLI table.** The registry is canonical. CLI, Shay, Studio, Cowork, Claude Web, and phone mirrors choose a density from the same fields rather than inventing surface-specific templates.
+- **One format, three densities.** Compact, standard, and detail are density variants over the same registry values. Field names, field order, and value wording stay stable.
+- **Read-only first.** The first implementation slice lists and drills into plans but does not mutate statuses, auto-close plans, or promote tasks into ledgers.
+- **Empty ledgers should explain the next step.** `fam-hub task list` and `fam-hub run status` currently report that no records exist yet and name the promotion/start records required next.
+
+### Known Gaps opened
+
+- `tasks/tasks.jsonl` and `runs/runs.jsonl` exist but are not populated.
+- No command exists yet to promote a plan's embedded `tasks[]` into task ledger records.
+- No command exists yet to start a run with targets such as `complete`, `50%`, `timebox`, or `until_blocked`.
+- `FAMTASTIC-STATUS.md` is hand-written and not regenerated from `plans/registry.json` yet.
+- No JSON schema validator exists yet for registry/task/run ledgers.
+- Studio does not yet render `plans/registry.json` as a clickable Plans panel.
+
+## Active Plan Pipeline Pilot Report (2026-05-04)
+
+Created `docs/active-plan-pipeline-report-2026-05-04.md` as a review artifact for the proposed plan/task/run intelligence model. The report inventories current Studio and platform plans, groups their tasks, names inferred originators/runners/proof, and marks gaps such as stale wave status, overlapping plan documents, orphaned diagnostics, missing supersession links, and the absence of a task/run registry. It intentionally does not mutate canonical plan status; it is a seed for a future `plans/registry.json`.
+
+### Process decisions captured
+
+- **Generous governance first.** Missing owners, missing proof, stale plans, and ambiguous tasks should warn/log/notify before they block. Hard stops are reserved for destructive actions, production deploys, auth/payment/DNS/domain work, expensive API/media runs, and parallel write-scope conflicts.
+- **Owner is current runner, not permanent possession.** Tasks should support handoff for session limits, cost, better-tool fit, blockers, user redirection, or context loss.
+- **Runs are distinct from plans and tasks.** A run records a target such as complete, 50%, timebox, or until-blocked, plus background permission and report-back rules.
+- **Phone/web sessions need capture packets or status exports.** No-filesystem surfaces should not pretend to read `~/famtastic/`; they either consume a synced status packet or emit proposed captures for local import.
+
+### Known Gaps closed or changed by the registry slice
+
+- `plans/registry.json` now exists as a pilot canonical registry.
+- Append-only `tasks/`, `runs/`, proof, and research ledgers were created as
+  empty files in the initial slice; task/run/proof ledgers now have first
+  records after the applied four-plan registry pass.
+- `fam-hub plan status`, `fam-hub task list`, and `fam-hub run status` now exist as read-only commands.
+- `FAMTASTIC-STATUS.md` now exists as a web/phone-safe mirror.
+
+### Known Gaps remaining
+
+- The registry is seeded from a report and still needs Fritz review before statuses become ratified.
+- Task/run/proof/research ledgers exist but are not populated.
+- No promotion/import commands exist yet.
+- The web/phone status packet is not regenerated automatically from the registry yet.
+
+## Multi-Agent Resumable Plan System (2026-05-04)
+
+FAMtastic needs a planning object above individual worker jobs. A single strategic conversation can produce architecture decisions, schemas, UI surfaces, research questions, implementation tasks, and documentation updates. The existing job queue can track individual tasks, but it does not preserve the source conversation, workstream ownership, agent access scopes, acceptance criteria, or promotion targets needed to resume the larger initiative across Codex, CLI, Cowork, Shay-Shay, and future workers.
+
+### Files added in this session
+
+- `docs/multi-agent-resumable-plan-system.md` — defines the plan-packet model, workstream schema, job grouping rules, agent assignment rules, lifecycle states, Studio surfaces, trigger model, capture intensity modes, and enforcement rules.
+- `plans/plan_2026_05_04_shay_process_intelligence/README.md` — human-readable parent plan for the Shay process intelligence initiative that came out of the Codex Pets / Shay-Shay / intelligence-loop conversation.
+- `plans/plan_2026_05_04_shay_process_intelligence/plan.json` — machine-readable plan packet with ten workstreams: conversation capture, plan coordination, artifact/component schema, process map visualizer, Shay ambient presence, component library enforcement, Media Studio integration, capability graph, evaluator/proof system, and Studio workspace plan.
+
+### Process decisions captured
+
+- **Plan packets sit above jobs.** `site-studio/lib/job-queue.js` and `/api/jobs` remain the execution queue for individual tasks, but plan packets group jobs into resumable cross-agent initiatives. Jobs should eventually gain optional `plan_id` and `workstream_id` fields, either in the SQLite schema or in their payload until the schema is extended.
+- **Capture is toggleable by intensity, not by existence.** The baseline should preserve source context and summaries. Fritz can elevate a conversation into `standard_capture`, `full_plan_packet`, or `auto_queue_allowed` behavior when he says phrases like "capture this as a plan", "turn this into workstreams", or "queue this up".
+- **Parallel work requires explicit write scopes.** Workstreams can run in parallel only when they are read-only or have disjoint write scopes. Overlapping writes require a dependency or a human integration step.
+- **Every worker needs a handoff note.** A workstream is not done until it records what was read, what changed, what decisions were made, how to verify, what remains unknown, and what should happen next.
+- **Visual process intelligence needs two maps.** Recipe Maps show how a workflow should operate; Run Trace Maps show what happened in a specific execution, with drilldown into decisions, prompts, tools, providers, tokens/cost, research, verification, and gaps.
+
+### Known Gaps opened
+
+- No first-class Plan Builder or Plan Board UI exists. Current plan packets are file-based and not yet surfaced in Studio.
+- Existing jobs do not yet carry first-class `plan_id` / `workstream_id` fields in the SQLite schema.
+- Conversation capture is still manual. There is no automatic chunking, extraction, review, or promotion workflow for cross-tool conversations.
+- Process Map / Recipe Map UI is not built. The existing build trace and fulfillment ledger are foundations, but the visual drilldown surface is missing.
+
+## Studio Tier mode for Shay-Shay self-modify (2026-04-30)
+
+Studio Tier is a per-conversation flag on the Shay-Shay HTTP surface (`POST /api/shay-shay`) that grants two new Claude-only tools — `read_studio_file` and `propose_studio_patch` — for editing Studio's own source. Patches go to a review queue and never apply automatically; Fritz approves each one through the `fam-hub studio patches` CLI.
+
+### Files added in this session
+
+- `docs/famtastic-root-inventory.json` — hand-maintained per-path policy sidecar (70 entries). Companion to the human-facing `docs/famtastic-root-inventory.md`.
+- `site-studio/lib/studio-tier-resolver.js` — `createStudioTierResolver({ hubRoot, inventoryPath })`. Validates inventory at load time (rejects malformed entries, missing trailing slash on dir entries, duplicate paths). Exposes `resolveStudioPath(rel)`, `getPolicyForPath(rel)`, `isAvailable()`, `getLoadError()`. Path resolution uses `fs.realpathSync` on both hubRoot and the requested path, rejects `..`, and verifies descendancy. Policy lookup: exact match wins; otherwise longest matching directory prefix with trailing-slash boundary semantics (so `site-studio/lib/` matches `site-studio/lib` and `site-studio/lib/foo.js` but NOT `site-studio/library-old/`). Diagnostic logs go to stderr so the validate script's stdout stays a clean single JSON line.
+- `site-studio/lib/shay-shay-sessions.js` — `Map<conversation_id, { studioTier, forcedBrain, lastSeen }>`. Idle eviction at 6h via an unref'd interval. Exposes `getOrCreate`, `get`, `reset`, `resetAll`, `snapshot`. Returns `null` for missing conversation_id (callers must check) so tier state is never stored under a shared "surface" fallback key.
+- `scripts/lib/studio-tier-validate.js` — invoked by `fam-hub studio patches apply`. Re-resolves the patch path against the CURRENT inventory (does not trust the patch JSON path field), re-checks `old_str` uniqueness, exits 0/1 with structured JSON on stdout. Refuses if current policy is READ_ONLY or REVIEW; refuses BLOCK unless `override_allowed` is true AND the patch was proposed with `flagged_secret: true`.
+
+### Files modified in this session
+
+- `site-studio/lib/studio-tools.js` — added `STUDIO_TIER_TOOLS` array (two tool definitions: `read_studio_file`, `propose_studio_patch`). `STUDIO_TOOLS` length unchanged at 5. Both arrays exported separately so the gate decides which to attach at runtime.
+- `site-studio/lib/tool-handlers.js` — added two `case` arms to the existing `switch` dispatch (the dispatch is a switch, not a map), plus `handleReadStudioFile` and `handleProposeStudioPatch`. Resolver bootstrap is lazy and memoized; `_HUB_ROOT` is the already-injected value (no recomputation). Exported `isStudioTierAvailable()` and `getStudioTierResolver()` so server.js can check availability for the slash command. Patch IDs use ISO-timestamp shape + `crypto.randomBytes(3).toString('hex')` suffix to prevent burst-collision. Old_str line-ending mismatch (CRLF vs LF) detected and surfaced in the error message rather than producing a confusing "not found".
+- `site-studio/lib/brain-interface.js:92` — tool-list assembly. Was: `(claude && (mode === 'build' || mode === 'brainstorm'))`. Now: also attaches `STUDIO_TOOLS` when `studioTier && tierAvailable`, and additionally appends `STUDIO_TIER_TOOLS` only in that case. Logs `[studio-tier] tool-assembly studioTier=… brain=… mode=… tierAvailable=… tools=… (base=… tier=…)` whenever `studioTier=true` is observed at this point. New `studioTier` opt threaded through from callers.
+- `site-studio/server.js` — slash command parser inserted into `POST /api/shay-shay` after manifest/instructions load and BEFORE `classifyShayShayTier0`. Recognizes `/studio on|off|tier on|tier off|status`. `/studio on` checks Claude availability via `manifest.capabilities.claude_api === 'available'` and refuses with explanation if Claude is not available, the resolver is not available, or `conversation_id` is missing. On success sets `session.studioTier = true` and `session.forcedBrain = 'claude'`. `executeShayShayBrainCall` now accepts `studioTier` and threads it into `session.execute({ studioTier })`. The main handler reads `tierSession`, overrides `selection.brain` to Claude when tier is on, and refuses (HTTP 503) if Claude becomes unavailable mid-session rather than silently falling back to Codex/Gemini — `suppressFallback` skips the `catch` fallback in that case. `shayShaySessions.resetAll()` called at three site-switch sites: `app.post('/api/switch-site')` (~4344), `createSite` updated_existing branch (~7728), `createSite` fresh-creation branch (~7786).
+- `scripts/fam-hub` — new `studio` command group with `patches list|show|apply|reject` actions. Uses `$HUB_ROOT` (NOT a non-existent `$FAMTASTIC_HOME`). Patch ID strict regex: `^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-[0-9a-f]{6}$`. Description and target-path output run through a `sanitize_terminal` filter that strips ANSI escapes and bare control bytes. Apply re-validates via the Node helper before performing replacement; on `flagged_secret=true` prints a warning and proceeds without re-asking; on policy-mismatch refuses and shows policy_at_propose vs current_policy.
+
+### How the four-class policy actually behaves
+
+| Policy | Read | Patch | acknowledge_secrets effect |
+|--------|------|-------|----------------------------|
+| ALLOW | Returns contents | Queues patch | n/a |
+| READ_ONLY | Returns contents | Refused | None — flag does NOT bypass |
+| BLOCK + override_allowed=true | Refused; override available | Refused; override available | When `true`, returns contents / queues patch; patch is tagged `flagged_secret: true` |
+| BLOCK + override_allowed=false | Refused; hard block noted | Refused; hard block noted | None — explicit `attempted_override + override_refused` markers |
+| REVIEW | Refused; inventory must be updated | Refused; inventory must be updated | None — flag does NOT bypass |
+
+### Known Gaps for Studio Tier
+
+- `STUDIO-CONTEXT.md` is REGENERATED on every Shay-Shay session start (overwriting the entire file via `studio-context-writer`). Patches against this file via Studio Tier are blocked at the policy layer (READ_ONLY) because they would be clobbered immediately. Documented as the intended behavior.
+- `script.py` at the repo root is empty and classified REVIEW. Recommended action is deletion, not patching. No automated cleanup.
+- The validate-script-runs-resolver path means apply is slower than necessary (one Node spawn per apply). Acceptable for day-one volumes; revisit if patch volume grows.
+- No automated test running on patch apply. If a patch breaks tests, the operator finds out by running tests after applying. Spec-deferred per non-goal #1.
+- `tools/`, `sites/`, `node_modules/`, `.git/`, `.studio-patches/applied|rejected/`, `.netlify/`, `.local/`, `.playwright-mcp/`, `.worker-queue.jsonl`, `.claude/` are all hard-blocked (`override_allowed=false`) and cannot be opened by Studio Tier even with acknowledgment. This is intentional. If a future workflow needs access to one of these (e.g. patching a vendored MCP), the inventory must be updated to reclassify the path — there is no programmatic backdoor.
+
+## GoDaddy / cPanel MCP capability spike (2026-04-29)
+
+Installed [`ringo380/cpanel-mcp`](https://github.com/ringo380/cpanel-mcp)
+v1.1.0 at `~/famtastic/tools/cpanel-mcp/` to replace manual cPanel clicking
+in the factory pipeline. **First proof-of-concept:** provisioned the MBSH
+reunion database (`nineoo_mbsh96_reunion`), user (`nineoo_mbsh_user`), and
+`ALL PRIVILEGES` grant via the MCP end-to-end. Auth uses an API token
+(`CPANEL_API_TOKEN` in `.env`, mode 0600) — no password.
+
+**Upstream bug fixed locally** (see `tools/cpanel-mcp/PATCHES.md`): the
+shipped `src/cpanel-client.ts` parses responses as the legacy
+`response.data.cpanelresult.event.result` shape but actually requests the
+modern UAPI v3 endpoint `/execute/<Module>/<func>`, which returns
+`{ status, data, errors, messages, warnings, metadata }` at the top level.
+Every tool call failed with `Cannot read properties of undefined (reading
+'event')` until the parser and the `CpanelResponse` type were rewritten to
+UAPI v3. PR pending; fork-fallback check-in 2026-05-13 in
+`FAMTASTIC-STATE.md` → Pending Tasks.
+
+**Working tools (37 registered, 4 verified end-to-end this session):**
+`list_databases`, `create_database`, `create_database_user`,
+`set_database_privileges`. Available but not yet exercised: subdomain CRUD,
+DNS record CRUD, SSL upload/install, file upload/download, email/FTP/cron,
+backups, disk usage. Full inventory in
+`docs/operating-rules/godaddy-mcp-spike.md`.
+
+**Biggest factory gap: no `create_addon_domain` tool.** Addon-domain
+creation is the operation that ties a fresh site to its public domain;
+until we extend the MCP (UAPI module `AddonDomain`, function
+`addaddondomain`), every new site requires one manual cPanel click.
+`mbsh96reunion.com` will be added by hand for now. Layer-2 priority list
+in the spike doc: `create_addon_domain` (P1), `delete_addon_domain`,
+`issue_autossl_certificate`, `set_php_version`.
+
+**Harness constraint discovered (architectural):** the Claude Code Bash
+tool cannot accept interactive stdin from the user's TTY. Spawned
+subprocesses inherit harness stdin, so `read -rsp` returns immediately
+with empty input even when prompts go to stderr. Pattern used in this
+session: assistant wrote `inject-token.sh` (mode 0700) and the user ran
+it themselves in their own terminal; the script `read -rsp`'d the token,
+sed-injected into `.env`, `unset`'d the variable, and self-deleted.
+**Implication for Studio (Layer 3):** Studio cannot prompt the user for
+secrets mid-flow through Claude Code. cPanel credentials must be
+pre-provisioned (env file written outside the harness, macOS keychain,
+or a secrets manager) before Studio invokes the MCP. Any provisioning
+intent (future `provision_hosting`) must hard-fail with a clear
+"run this bootstrap script in your terminal" message if `.env` is
+missing or unreadable.
+
+**Files added:**
+- `tools/cpanel-mcp/` (vendored upstream + local patches)
+- `tools/cpanel-mcp/.env` (0600, secrets, gitignored)
+- `tools/cpanel-mcp/test-connection.js` (stdio MCP smoke test)
+- `tools/cpanel-mcp/provision-mbsh.js` (MBSH provisioning one-shot)
+- `tools/cpanel-mcp/PATCHES.md` (re-apply procedure for the parser fix)
+- `docs/operating-rules/godaddy-mcp-spike.md` (gap analysis + Layer 2/3
+  recommendations)
+
+This spike explicitly did **not** add the addon domain, configure DNS,
+modify any Studio code, or touch the MBSH scaffold. It is a capability
+spike only; Studio integration is Layer 3 and tracked separately.
+
 ## Platform audit fixes (2026-04-17)
 
 13 audit findings from `docs/platform-audit-report.md` closed in one sweep.
@@ -4299,3 +4704,638 @@ Spec brief: platform marketing site — hero, how-it-works, portfolio proof, pri
 - Logo SVG text uses system fonts — logo rendering may vary slightly across browsers; a future pass should convert text to paths for pixel-perfect consistency
 - `site-famtastic-com` is in `draft` state and has never been built through the Studio pipeline — `fam_score` is null, no post-processing has run (no logo extraction, no divider injection)
 - CTA links to mailto: — should eventually link to a Calendly or booking page
+
+---
+
+## Canonical Vision Capture (2026-04-24)
+
+The full FAMtastic vision and current-state gap map is captured in
+`docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md`. Future sessions should
+read that document before any architectural or product decision.
+The most important framings it establishes:
+
+- FAMtastic follows the Adobe Creative Cloud pattern: separate
+  full-identity studios (Site, Component, Media, Think Tank) with
+  shared Platform services
+- The Platform is the substrate hosting research, memory,
+  intelligence loop, conversation-based learning, and cross-studio
+  dispatching — not a studio itself
+- Two-tier FAMtastic output is deliberate design: Tier A
+  clean-competent, Tier B FAMtastic-WOW
+- Research must be FAMtastic-applied, not generic
+- The conversation-based learning loop is how FAMtastic principle
+  becomes operationalizable over time
+
+---
+
+## Baseline Closure Lessons (2026-04-25)
+
+The April 25 session closed the JJ B&A R-NEW audit (4 build-layer
+gaps), captured the canonical vision, ran a baseline test, diagnosed
+6 stacked sub-gaps, produced a 9-round-reviewed closure plan, and
+shipped the implementation in three commits. Lessons distilled from
+that arc, ordered by how often they're likely to recur:
+
+**1. Adversarial review with multiple AI tools beats single-tool
+review.** The closure plan went through nine rounds: V1 → V9. V1 had
+8 findings raised against it (Codex Round 1: dead seam, missing
+parity tests, schema mismatch, etc.). V9 returned MINOR-ONLY. Each
+round caught real bugs, not aesthetic objections. Lesson: before
+shipping anything structural, run the plan past at least one
+independent reviewer (Codex, Gemini, or a fresh Claude session
+with no shared context) and iterate until the verdict is clean.
+The cost is hours; the cost of NOT doing it is shipping a bad
+contract that has to be re-shipped.
+
+**2. Implementation order matters when workstreams share helpers.**
+Workstream 2 had to ship before Workstream 1 because both Studio
+Chat (`new_site_create` case) and Shay Desk (`handleShayBuildRequest`)
+depend on the shared `createSite()` helper, `triggerSiteBuild()`
+helper, and the new return shape of `extractBriefFromMessage`. If
+WS1 had been implemented first, it would have either duplicated
+those helpers or shipped against a target that didn't exist yet.
+Lesson: when planning multi-commit closure, identify which workstream
+introduces the shared substrate and ship that first.
+
+**3. "Caller-owned vs helper-owned" is a recurring contract
+question — document it in JSDoc.** `createSite()` had to make four
+explicit ownership decisions: (a) authorization is caller-owned,
+(b) TAG switch is helper-owned, (c) WS notification is helper-owned,
+(d) downstream build trigger is caller-owned. Each of these was
+worth a Codex round. The final JSDoc on `createSite` documents all
+four invariants explicitly. Lesson: any helper that mutates shared
+state across module boundaries needs ownership invariants written
+in JSDoc, not just inferred from the function name. Future helpers
+should adopt the same comment pattern as the canonical example.
+
+**4. Identity check before destructive operations prevents data
+corruption.** `createSite()` runs an identity check (lowercase,
+strip punctuation, strip common business words like
+"the/inc/llc/church/barber/...") against the existing
+`spec.site_name` BEFORE deciding what to do with a tag collision.
+Different-business collisions ALWAYS return `'collision'` regardless
+of the caller's `on_collision` setting — this is the gate that
+prevents Shay Desk's autonomous-build path from clobbering an
+unrelated site that happens to slug-collide. Same pattern applies
+anywhere a call site could "update" something it doesn't actually
+own. Lesson: the identity check is a single-line investment that
+makes the helper safe to use in autonomous contexts.
+
+**5. Wizard-of-Oz orchestration is the right way to discover
+capability gaps before building automation.** The baseline test
+itself was a Wizard-of-Oz pattern: a human typed a single prompt
+into Shay Desk and observed what the system did with no manual
+nudging. The failure exposed all six sub-gaps at once. If the
+gaps had been discovered by adding automation incrementally, each
+would have been hidden behind workarounds and never surfaced as a
+single coherent diagnosis. Lesson: when designing a new capability,
+do the orchestration manually first (typing real prompts, narrating
+the decision tree), capture every orchestration decision as
+training data, and only build automation against the recorded
+playbook. This pattern is now part of the FAMtastic build process
+and is being used to shape the V2 BuildIntent architecture.
+
+**6. The classifier-keyword-collision class of bug is a recurring
+shape.** The deploy keyword at `classifyRequest` L10788 hijacked the
+church prompt because the prompt contained "deploy" in a sentence
+about deployment-after-build. The fix was structural — move the
+`!hasBrief` fallback above the deploy gate so an unbriefed site
+can't be deployed by accident. The same shape (low-precedence
+keyword fires before higher-precedence intent matcher) is likely
+hiding in other places. Future classifier audits should test
+prompts that contain trailing or incidental keywords for every
+intent gate.
+
+**7. Documentation is part of the work, not a follow-up to it.**
+Every commit in this session shipped with the relevant docs
+updated in the same commit: WS2 with the createSite contract added
+to the vision capture doc, WS1 with handler invariants in JSDoc,
+WS3 with deploy reason taxonomy in JSDoc. The verification report
+shipped as a fourth commit on the same day. Lesson: the rule "no
+session ends without docs updates" applies at the workstream level
+too — if a workstream commits without documentation, the next
+session has to reverse-engineer what was decided.
+
+## Bridge Exec Patterns — Learned the Hard Way
+
+### ❌ NEVER DO: inline node -e with nested quotes
+```
+bash -c "node -e \"...code with 'quotes'...\""
+```
+This always fails. Quote escaping breaks across bash/JSON/node layers.
+
+### ❌ NEVER DO: sed with complex patterns containing quotes
+```
+sed -i 's/if ((event.metaKey...)/replacement/' file.js
+```
+Parentheses and quotes in sed patterns cause silent failures or syntax errors.
+
+### ✅ ALWAYS DO: heredoc to write a .js file, then run it
+```
+cat > patch.js << 'ENDOFSCRIPT'
+const fs = require('fs');
+let content = fs.readFileSync('path/to/file', 'utf8');
+content = content.replace('exact string', 'replacement');
+fs.writeFileSync('path/to/file', content);
+console.log('patched:', content.includes('replacement') ? 'YES' : 'NO');
+ENDOFSCRIPT
+node patch.js
+```
+Heredoc with quoted delimiter ('ENDOFSCRIPT') prevents ALL shell expansion. Node handles its own string logic. Always verify with console.log after.
+
+### ✅ ALSO VALID: multi-step exec — write file first, run second
+If heredoc inline also fails, split into two bridge requests: one to write the file, one to run it.
+
+
+## MBSH Audit + Platform Layer (2026-05-02, Cowork session)
+
+**What happened:** Cowork-driven audit of the MBSH reunion site. Eight deliverables written to `docs/sites/site-mbsh-reunion/cowork-audit-001/`. Full v2 site built outside Studio at `~/famtastic-sites/mbsh-reunion-v2/`. Platform capability layer scaffolded at `~/famtastic/platform/`.
+
+**Headline finding — Studio cannot produce MBSH (gap 0.11):** Studio lacks chatbot skeleton, compass nav skeleton, two-nav-system spec field, layered CSS mode, PHP backend support, asset triage workflow, and brand mark generation pipeline. The V1-BRIEF is currently unbuildable by Studio at any fidelity. Proven visually when the duplicate `site-mbsh96reunion` tag's `dist/` showed a hallucinated "Myrtle Beach SC" build — Studio inferred the wrong city from "MBSH" and ignored the `spec.json` `goal` field specifying a six-font cinematic design system.
+
+**Repo-separation rule formalized:** Deploy repos live at `~/famtastic-sites/<site>/` (sibling to `~/famtastic/`). `~/famtastic/sites/<tag>/` is the Studio sandbox. The `dist/` subdirectory may hold builds, but the production artifact lives in the sibling repo. `dist/` at `sites/site-mbsh-reunion/dist` is now a symlink → `~/famtastic-sites/mbsh-reunion-v2/frontend`.
+
+**Platform layer pattern:** `~/famtastic/platform/capabilities/<class>/<verb>.sh`. Each capability reads from macOS Keychain via `vault.sh`, writes to `spec.json`, appends to `platform/invocations/<date>.jsonl`. Never silently degrades — surfaces `manual_required` when API coverage is incomplete. Standing-approval model: Fritz stores credentials once, agent reads on every invocation.
+
+**Duplicate tag cleanup:** `site-mbsh96reunion` trashed to `sites/.trash/site-mbsh96reunion-20260502-212214/`. `extractBriefFromMessage` needs a same-business-identity collision check before creating tags — task #23 queued.
+
+### Known Gaps (MBSH / Platform, 2026-05-02)
+- Story section (sections.css, IntersectionObserver fade, 6 story stills) uncommitted — decide commit-as-is or regenerate
+- `setup-mbsh-backend.sh` not yet run against prod — blocked on committee password
+- Tag-uniqueness check not yet added to `extractBriefFromMessage` — task #23
+- Platform API gaps: Netlify connect, cPanel cron, DNS Zone Editor record CRUD, Resend domain auto-loop — all manual today
+- Knowledge capture tool (Recommendation A.1) not yet built — hand-rolled SESSION-CAPTURE.md used as bridge
+
+---
+
+## Build Orchestration Trace System (2026-05-03)
+
+Implements the infrastructure described in `docs/build-orchestration-trace-plan.md`. Additive — no existing behavior changed.
+
+### New Modules
+
+| File | Purpose |
+|---|---|
+| `site-studio/lib/run-id.js` | `generateRunId()`, `generateTraceId()`, `createRunContext()` — step counter factory for a build run |
+| `site-studio/lib/build-trace.js` | `logTrace(event, hubRoot)` — appends to `sites/<tag>/build-trace.jsonl` + `trace_events` SQLite table. `getRunTrace()`, `queryTraceEvents()` for reads |
+| `site-studio/lib/fulfillment-ledger.js` | `createLedger()`, `addFulfillmentItem()`, `finalizeLedger()`, `readLedger()` — per-build capability tracking written to `sites/<tag>/fulfillment-<runId>.json` |
+
+### db.js Changes
+
+Two new tables added to `_initSchema()`:
+
+- **`trace_events`** — every build decision step. Primary key: `trace_id`. Indexed by `run_id`, `site_tag`, `phase`, `status`.
+- **`agent_performance`** — per-agent/tool/provider scorecard rows. Indexed by `agent`, `task_type`, `run_id`.
+
+New exported functions: `logAgentPerformance()`, `getAgentPerformance()`, `getAgentScorecard()`, `getDb()` (now exported for use by build-trace.js).
+
+### gap-logger.js Changes
+
+`GAP_CATEGORIES` extended with 11 build-orchestration types: `unfulfilled_request`, `placeholder_used`, `specialized_asset_needed`, `component_needed`, `integration_needed`, `design_uncertainty`, `provider_failure`, `verification_failure`, `agent_weakness`, `prompt_pattern`, `missing_capability`.
+
+`GAP_DESTINATION` map added — routes each category to its recommended workspace (Think Tank, Media Studio, Component Studio, Site Editor, Platform, Job Queue). `logGap()` entries now include `destination` and `run_id` fields.
+
+### server.js Wiring
+
+- `createRunContext()` called at the top of `handleChatMessage()` — binds `ws._currentRunId` for downstream trace calls
+- `logTrace()` called at: classification, deterministic handler exit, verification outcome
+- `logAgentPerformance()` called after each parallel build completes
+- New REST endpoints (all read-only, no auth required for now):
+  - `GET /api/trace` — query trace events for current site
+  - `GET /api/trace/run/:runId` — JSONL events for a specific run
+  - `GET /api/agent/performance` — raw performance rows
+  - `GET /api/agent/scorecard` — aggregated scorecard by agent+task_type
+  - `GET /api/fulfillment` — latest fulfillment ledger for current site
+
+### Trace Event Shape
+
+Key fields: `trace_id`, `parent_trace_id`, `run_id`, `site_tag`, `phase`, `step_id`, `decision_type`, `selected_path`, `alternatives_considered`, `reason`, `agent`, `tool`, `provider`, `model`, `cost_type`, `input_tokens_actual`, `output_tokens_actual`, `cost_usd_actual`, `duration_ms`, `status`, `quality_score`, `created_jobs`, `gaps`.
+
+### Known Gaps (Build Trace, 2026-05-03)
+- Trace calls inside `parallelBuild()` per-page worker loop not yet added (only build-level verification is traced)
+- `handleChatMessage()` single-page build path logs classification + deterministic handler but not the Claude call itself (API call tokens/cost not yet captured into trace)
+- No UI panels yet for trace map, cost map, fulfillment ledger, or agent scorecard — data is available via REST endpoints only
+- `ws._currentRunId` is not passed through to `parallelBuild()` — the verification trace uses a fallback `'run_unknown'` for builds that route through `parallelBuild` before `handleChatMessage` sets the runId
+
+---
+
+## Workbench Foundation Screen + Intelligence Packets (2026-05-04)
+
+Fritz's core Workbench complaint was captured as a product requirement:
+jobs/tasks are visible, but they do not explain the bigger picture — why the
+work exists, what it unlocks, what is stale or duplicate, what blocks what,
+or whether completion moves FAMtastic forward. The solution is not a prettier
+task list; it is a plan intelligence layer rendered in the Workbench.
+
+### New Workbench Foundation Surface
+
+New files:
+
+| File | Purpose |
+|---|---|
+| `site-studio/public/workbench-foundation.html` | Workbench Foundation screen served by the Studio static server. It can run standalone and is embedded in the production shell. |
+| `site-studio/public/css/workbench-foundation.css` | Tokenized Workbench styling, theme modes, Sites/Plan/Components/Media/Research/Deploy surfaces, edge panels, bottom panel, modal shell, and rounded glass/button styling. |
+| `site-studio/public/js/workbench-foundation.js` | Static mode data, domain switching, mode switching, object selection, Sites surface, prompt-first Media Studio, tool-shelf reordering with persisted order, bottom tabs, modal interactions, and theme cycling. |
+| `site-studio/public/data/workbench-workspaces.json` | Workspace-purpose contract defining each mode's purpose, center surface, primary objects, capabilities, proof, and anti-patterns. |
+
+Production shell integration:
+
+| File | Detail |
+|---|---|
+| `site-studio/public/index.html` | Adds a top-bar Workbench launcher, a Sites-sidebar Workbench launcher, and `#tab-pane-workbench` with an embedded `/workbench-foundation.html` iframe plus full-screen fallback link. |
+| `site-studio/public/js/studio-shell.js` | Adds the non-closeable `workbench` tab to the Studio tab model and visible tab strip. |
+| `site-studio/public/css/studio-shell.css` | Styles the Workbench launch controls and embedded Workbench pane without adding inline CSS. |
+
+The screen implements the intended shell model:
+
+- Left rail = site/domain/system scope (`All Sites`, specific sites, `Studio System`, `Platform`, `Admin`)
+- Top mode strip = `Sites`, `Plan`, `Components`, `Media`, `Research`, `Deploy`
+- Collapsible left object navigator = scope-specific submenus and selected work objects
+- Center surface = dynamic workbench tied to selected scope/subscope/object
+- Right edge = contextual, draggable/reorderable tool shelf with order persisted per mode in localStorage
+- Bottom panel = `Runs`, `Logs`, `Trace`, `Approvals`, `Proof`
+- Modal shell demonstrates admin/capability panels
+- Theme button demonstrates tokenized mode switching (`night`, `focus`, `paper`)
+
+Follow-up product correction from Fritz: the rail is not "departments" in the
+abstract; it is site/domain scope. "Sites" means all pages and functions for
+those sites. Every child object below a site — page, section, asset,
+component, task, run, and tool — must answer how it helps execute the parent
+goal above it. The Workbench must expose this recursive execution contract
+instead of only listing objects.
+
+Follow-up visual correction from Fritz: the first repo-native screen captured
+the logic but was too black, too rectangular, and not visibly FAMtastic. The
+design direction is rounded, classy, button-like, tactile, and branded with
+FAMtastic red/gold/cyan/violet accents. Dark background alone is not a brand
+system.
+
+Second follow-up product correction from Fritz: the center is the actual
+workbench, not a website-like card grid. The left side selects scope,
+subscope, and object; the center must become the working surface for that
+object. For `Sites`, the Workbench must support pages, functions, meta,
+images, templates, runs, proof, and reviews. Build mode needs a live preview
+pane plus translucent metadata, Shay/chat, and evidence overlays. Other modes
+need different canvases: plan graph/why view, component canvas, media asset
+grid, research source board, and deploy/environment board.
+
+Tool rule from Fritz: tools are not static links and should not be modeled as
+ordinary cards. Tools should be contextual, movable, reorderable, draggable,
+and available as needed. Fixed tools are allowed only when a workspace or
+object state makes them always relevant. Edge-native surfaces should be
+darker; secondary navigation should be more translucent; overlays covering
+the workbench should be most translucent so the center remains dominant.
+
+Media correction from Fritz: Wave 5 is **Media Studio**, not Media Library.
+The library is one landing/results surface inside the Media Studio, but the
+purpose is site media creation. Media Studio should be prompt-first: the
+center workspace should focus on text-to-image, text-to-video, logo/brand,
+background loop, blueprint, upscaling, canvas, and draw workflows, with
+library/results below or adjacent instead of replacing the workspace. Each
+media sub-workspace must start from purpose and capability: what asset is
+being created, for which site/page/slot, with which references, route, proof,
+cost, rights, and replacement behavior.
+
+The first structured expression of that rule is
+`site-studio/public/data/workbench-workspaces.json`. It is not a runtime source
+of truth yet, but it records the intended contract every Workbench mode must
+answer before implementation: purpose, center surface, primary objects,
+capabilities, proof required, and anti-patterns.
+
+2026-05-04 implementation update: the Workbench Foundation prototype now
+follows the frozen domain rail instead of the earlier scope-initial rail. The
+left nav is the locked domain list from `docs/STUDIO-UI-FOUNDATION.md`: Sites,
+Brainstorm, Plans, Components, Media, Research, and Admin. The former mode
+strip is replaced with a workspace contract strip that shows the selected
+domain's purpose, center surface, and proof rule. `workbench-workspaces.json`
+is now schema `0.2.0` with contracts for all seven domains; this closes the
+first-pass frozen-contract rebuild, workspace-contract declaration, and
+prompt-first Media Studio tasks for the prototype.
+
+Playwright proof: `http://localhost:3334/workbench-foundation.html` was opened
+through launchd-managed Studio, every domain button was clicked, each active
+domain and contract purpose was verified, Plan mode rendered
+`.plan-intel-surface`, Media rendered `.media-studio`, and no console errors
+were observed. Screenshot:
+`proofs/workbench-domain-contracts-2026-05-04.png`.
+
+Existing implementation note: the current production Studio already has a
+Media Studio mini-app in `site-studio/public/js/studio-screens.js` and
+`site-studio/public/css/studio-screens.css` with Create, Image, Motion,
+Library, Brand, Queue / History, and Providers screens. The Workbench
+replacement should reuse that product learning instead of flattening Media
+back into a generic asset/library panel.
+
+Playwright proof: the page rendered through the Studio static server at
+`http://localhost:3334/workbench-foundation.html`, and the embedded production
+tab rendered through `#tab-pane-workbench`. Mode switching to Media Studio and
+Sites was exercised. Tool-shelf drag/reorder was verified and persisted across
+reload. Proof screenshots were saved during the session at
+`/tmp/workbench-foundation-standalone.png`,
+`/tmp/workbench-foundation-media.png`, and
+`/tmp/workbench-foundation-in-studio.png`.
+
+### Intelligence Artifacts
+
+New files:
+
+| File | Purpose |
+|---|---|
+| `handoffs/claude-workbench-foundation-2026-05-04.md` | Claude execution handoff with objectives, file ownership, non-negotiable product decisions, workspace tool map, stop conditions, and acceptance criteria. |
+| `research/workbench-foundation-research-2026-05-04.md` | Research note grounding the approach in current patterns from Cursor, Figma, Linear, Notion, LangGraph, and Dagger. |
+| `plans/consolidation-2026-05-04.json` | Proposed parent-lane consolidation for the active plan pile. |
+| `captures/inbox/2026-05-04-workbench-foundation.capture.json` | Structured capture packet for the intelligence loop. |
+
+### Proposed Parent Plan Lanes
+
+`plans/consolidation-2026-05-04.json` proposes six parent lanes:
+
+1. `workbench_foundation`
+2. `plan_task_run_intelligence`
+3. `build_fulfillment_trace`
+4. `asset_systems`
+5. `site_scoped_execution`
+6. `strategy_empire_context`
+
+The packet proposes marking `multi-agent-resumable-plan-system` as
+`merged_into` `shay-process-intelligence`, because the former is a design
+note/workstream under the broader Shay process-intelligence parent plan.
+
+### Workbench Object Contract
+
+Every plan/task/run/workspace object should eventually carry:
+
+- `parent`
+- `purpose`
+- `complaint`
+- `execution_role`
+- `desired_outcome`
+- `relevant_tools`
+- `unlocks`
+- `blocks`
+- `blocked_by`
+- `staleness_risk`
+- `success_signal`
+- `proof_required`
+- `next_best_action`
+
+Closure rule: a plan or task is not done until proof is satisfied and the
+result explains what changed or unlocked. No orphan work: every item must have
+a parent, a purpose, an execution role, a tool map, and a proof requirement.
+
+### Brain Store Reframing
+
+Brain Store should not be implemented as a model picker. It should become a
+Capability Store covering brains, tools, providers, recipes, permissions,
+cost class, latency expectations, evidence tier, validation date, and current
+state. The existing seed is `site-studio/config/studio-capabilities.json`.
+
+### BuildIntent / Workflow Trace Current State
+
+As of 2026-05-04, `architecture/2026-04-24-canonical-build-intent-v2.md` is
+the current BuildIntent direction. V1 remains historical only. The V2
+interpreter is not implemented yet; the closed work is the ambiguity removal
+and evidence attachment captured in
+`architecture/2026-05-04-build-intent-v2-current.md`.
+
+`parallelBuild()` in `site-studio/server.js` now emits durable trace events via
+`site-studio/lib/build-trace.js` for `start`, `page_inventory`,
+`template_start`, `template_written`, `template_failed`, `template_empty`,
+`template_incomplete`, `pages_start`, `page_written`, and `page_failed`. This
+is instrumentation only: no build order, prompt, model routing, or file-writing
+behavior was changed.
+
+Workflow-as-data phase 1 exists as a catalog-only contract at
+`site-studio/lib/workflow-stage-catalog.json`. It declares stage IDs,
+boundaries, inputs, outputs, and proof events for intake, parallel build start,
+page inventory, template generation, template artifacts, page generation,
+post-processing, verification, and completion. The visualizer should not be
+built until real builds have produced trace events against this vocabulary.
+
+### MBSH Site Boundary
+
+MBSH has an explicit two-home state boundary as of 2026-05-04. Studio owns
+`sites/site-mbsh-reunion/` for the canonical site record, spec, memory,
+research, worker queue, and preview symlink. The deploy implementation remains
+in `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/` for frontend,
+backend PHP, schema, config, Netlify settings, and setup scripts. The boundary
+is documented in `docs/sites/site-mbsh-reunion/DEPLOY-STATE.md`.
+
+MBSH child tasks now live in `tasks/tasks.jsonl` under `site-mbsh-reunion`
+instead of being buried inside a broad plan note. The split is backend, RSVP,
+sponsor, deploy, media/story assets, chatbot, content deltas, Studio audit
+harness, and generalized gap promotion. Reusable lessons should be promoted
+upward only when they apply beyond MBSH.
+
+### Shay-Shay UI Proof
+
+Actual Shay behavior proof on 2026-05-04 used Playwright against Studio UI, not
+WebSocket shortcuts or direct API-only proof. Exact message: `system status`.
+The test clicked the Shay orb, entered the message into `#shay-shay-input`,
+clicked `#pip-send-btn`, observed a real `POST /api/shay-shay`, and verified
+the rendered Shay Lite panel contained capability status text. Proof note:
+`docs/operating-rules/studio-shay-ui-proof-2026-05-04.md`; screenshot:
+`proofs/shay-shay-system-status-ui-2026-05-04.png`.
+
+Two real bugs were fixed during that proof. First, the open Shay Lite panel
+could still lose clicks to the Studio workspace layer because
+`#shay-lite-shell` kept `pointer-events: none`; `studio-orb.css` now restores
+pointer events while the panel is open. Second, the send-button click listener
+passed the click event as `forcedText`, so Shay received `[object PointerEvent]`
+instead of the typed message; `studio-orb.js` now wraps the handler and calls
+`sendDirect()` with no event payload.
+
+### Workbench Shay Context Provider
+
+Workbench is now a real Shay page-context provider. The embedded Workbench
+iframe registers `page_id: workbench.foundation` with the parent
+`ShayContextRegistry` from `site-studio/public/js/workbench-foundation.js`.
+The provider exposes the selected domain, domain label, mode, scope, submode,
+selected object, workspace contract, plan-state summary, and available
+Workbench actions. `site-studio/public/js/studio-shell.js` marks
+`workbench.foundation` active only when the Workbench tab is foregrounded so
+hidden iframe state does not overwrite Shay context for other Studio pages.
+
+Actual proof used the Studio UI and Shay-Shay, not a direct API shortcut. The
+test opened Workbench through Studio, selected the Media domain, clicked the
+Shay orb, sent `What Workbench page context are you receiving? Answer with the
+page_id and domain only.`, observed a real `POST /api/shay-shay`, and verified
+the panel response: `page_id: workbench.foundation | domain: media`. Evidence:
+`proofs/workbench-shay-context-provider-2026-05-04.json` and
+`proofs/workbench-shay-context-provider-2026-05-04.png`.
+
+One server-side bug was found and fixed during the proof. `answerShayShayDirect`
+matched generic active-page questions before page-context questions, so the
+same prompt returned `index.html` even though `context.page_context` contained
+the correct Workbench payload. `site-studio/server.js` now checks page-context
+requests before the older active-page shortcut.
+
+### Site Workflow Modes
+
+The three site workflow modes are now captured as an architecture contract in
+`architecture/site-workflow-modes-2026-05-04.md`. The modes are
+`new_site_from_brief`, `adapt_existing_site`, and `rebuild_from_brief`. Each
+contract names required inputs, state ownership, permissions, config discovery,
+execution path, proof requirements, and known gaps.
+
+Current reality remains intentionally explicit: `new_site_from_brief` is the
+best-supported mode; `adapt_existing_site` and `rebuild_from_brief` are not yet
+first-class runtime modes. The doc is the boundary that prevents Studio from
+treating hand-built deploy repos, imported sites, and generated Studio sites as
+the same state problem.
+
+### MBSH Backend Endpoint Inventory
+
+The MBSH v2 backend inventory is complete at
+`docs/sites/site-mbsh-reunion/backend-endpoint-inventory-2026-05-04.md`. It
+documents the PHP/MySQL endpoints, methods, payloads, persistence tables,
+shared backend libraries, admin pages, cron scripts, frontend consumers,
+config/env requirements, local/staging assumptions, missing runtime files,
+blockers, and which follow-up tasks consume each endpoint.
+
+Important operational finding: endpoint code and schema exist, but meaningful
+local execution is blocked until one of `.env`, `.mbsh-config.local.php`, or
+`MBSH_CONFIG_PATH` is present with database, Resend, admin hash, CORS, and
+upload-path config. Production frontend config also still has
+`API_BASE_URL: null`, so deploy proof must verify that the public config points
+at the real backend origin before production smoke tests.
+
+### Knowledge Capture First Pass
+
+`fam-hub capture extract <source-file>` is now the first usable knowledge
+capture pass. It is intentionally review-only: `scripts/capture-insights.js`
+reads a designated source document or conversation export and writes a JSON and
+Markdown packet under `captures/review/` with buckets for design decisions,
+breakthroughs, gaps, lessons, contradictions, and proposed destinations.
+
+The first run processed `/Users/famtasticfritz/Downloads/COWORK-BRIEFING.md`
+and wrote `captures/review/2026-05-04-cowork-briefing-first-pass.json` plus
+`.md`. It detected 13 design decisions, 4 breakthroughs, 3 gaps, 3 lessons,
+and 2 contradictions. This closes the first automation slice of the flywheel:
+conversation knowledge can now become a reviewable artifact without immediately
+mutating `.wolf/cerebrum.md`, `SITE-LEARNINGS.md`, `FAMTASTIC-STATE.md`, or
+`gaps.jsonl`.
+
+The extraction is heuristic, not semantic-agent grade yet. That is acceptable
+for slice one because the output is designed for review and approval before
+promotion. The next improvement should be a promote/apply command with explicit
+per-item approvals, duplicate detection, and better title/summary cleanup.
+
+### MBSH RSVP and Sponsor Browser Proof
+
+The MBSH v2 deploy repo now has browser-level proof for the public RSVP and
+sponsor submission paths. The proof used the actual pages under
+`/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/frontend/`, intercepted
+the outbound API requests, and saved evidence at
+`proofs/mbsh-rsvp-sponsor-browser-submit-2026-05-04.json`.
+
+Two frontend defects were fixed in the deploy repo. `frontend/js/main.js`
+now treats the anti-bot form timestamp as valid only after the minimum elapsed
+time, matching the backend helper instead of rejecting legitimate delayed
+submits. `frontend/js/rsvp.js` now explicitly serializes unchecked public
+attendee opt-out as `display_publicly: "0"` instead of omitting the field.
+
+The browser proof does not claim backend persistence/email/export are live.
+Those still require MBSH runtime config and external access: database, Resend,
+admin hash, upload path, CORS origin, Netlify, DNS, and GoDaddy/PHP/MySQL.
+
+### MBSH Deploy Proof Boundary
+
+`docs/sites/site-mbsh-reunion/deploy-proof-2026-05-04.md` is the deploy proof
+packet for MBSH. It documents the exact frontend/backend/DNS/config/smoke-test
+and rollback path, plus the blockers that prevent honest live proof in this
+session.
+
+Do not mark MBSH production deploy complete until the public frontend has a
+real `API_BASE_URL`, the backend is configured with production secrets, and
+the live RSVP/sponsor smoke tests pass against the actual deployed backend.
+
+### Pipeline Visualizer Phase 1
+
+Workbench Plan mode now includes the first live pipeline visualizer surface.
+`GET /api/workflow/stage-catalog` serves
+`site-studio/lib/workflow-stage-catalog.json`; the Workbench reads that catalog
+plus `/api/trace?limit=24` and renders three lanes: Inspect, Trace, and
+Propose.
+
+This is deliberately read-first. Inspect shows the nine workflow stages and
+their proof events. Trace shows live trace events when a build has produced
+them, with an explicit empty state when no active-site trace exists. Propose
+lists review-first next changes: keep phase one read-only, bind trace events
+to stages, then migrate one declarative stage at a time.
+
+Evidence: `proofs/workbench-pipeline-visualizer-2026-05-04.json` and
+`proofs/workbench-pipeline-visualizer-2026-05-04.png`.
+
+### MBSH Chatbot, Content, Audit, and Gap Proof
+
+Hi-Tide Harry Chatbot Phase 1 is browser-verified at
+`docs/sites/site-mbsh-reunion/chatbot-phase1-verification-2026-05-04.md`.
+The proof opened the actual v2 frontend, asked the eight V1 FAQ questions, and
+confirmed the fallback collector emits a payload. A CSS hidden-state bug was
+fixed in the deploy repo: `.chatbot__panel[hidden] { display: none; }`.
+
+The MBSH content delta packet is at
+`docs/sites/site-mbsh-reunion/content-delta-verification-2026-05-04.md`.
+The seven-page architecture is present, but launch content still needs final
+date/venue/payment values, story/gallery assets, playlist ID, seed data, and
+backend proof.
+
+The MBSH Studio reproduction harness is at
+`docs/sites/site-mbsh-reunion/studio-reproduction-audit-harness-2026-05-04.md`.
+It defines the exact single prompt to send through Studio, required checks, and
+which gaps should be promoted only after a real Studio reproduction run.
+
+Reusable MBSH-derived gaps are separated at
+`docs/sites/site-mbsh-reunion/generalized-platform-gaps-2026-05-04.md`. They
+map back into the existing four parent plans instead of creating another plan
+stack.
+
+### Known Gaps Opened / Still Open
+
+- Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
+- Plan mode reads `site-studio/public/data/workbench-plan-state.json`, a browser-safe mirror of `plans/registry.json`, `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`; automatic regeneration from source ledgers is still missing.
+- `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` exist. `fam-hub plan graph` is still not implemented.
+- `fam-hub capture extract` exists, but promotion from review packet into canonical memory is still manual.
+- Capability Store broader than Media Studio is not implemented.
+- Pipeline visualizer phase 1 is implemented in Workbench Plan mode; stage/event matching and proposed patch preview are still missing.
+- MBSH child tasks are split and scoped. Backend endpoint inventory, RSVP/sponsor browser proof, chatbot Phase 1 proof, content delta, audit harness, and generalized gap promotion are complete.
+- MBSH backend runtime execution is blocked by missing runtime config/secrets and external deploy access; this is a deploy-proof blocker, not a source-code inventory or frontend-submit blocker.
+- MBSH media/story readiness is blocked by seven missing `frontend/assets/story/*.jpg` files and missing archival/gallery rights proof.
+- Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
+- Theme/token update propagation rules are not implemented.
+- FAMtastic brand asset pack is not created yet.
+- Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.
+- Media Studio exists as a prompt-first Workbench surface and as a production mini-app, but generation/provider controls are not unified between the two yet.
+- Operations workspace GUI plan (`plan_2026_05_05_ops_workspace_gui`) is design-only — no Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These four prerequisites are tracked in the plan's `known_gaps_opened`.
+
+## Operations Workspace GUI Plan (2026-05-05)
+
+A new parent plan, `plan_2026_05_05_ops_workspace_gui`, was registered as the
+design spec for an Operations workspace inside the Workbench shell. It defines
+an 11-tab Ops sub-nav (Pulse, Plans, Tasks, Jobs, Runs, Proofs, Agents,
+Reviews, Gaps, Memory, Debt) and a record-type visual language so PLAN, TASK,
+JOB, RUN, PROOF, GAP, MEMORY, and REVIEW are visually distinct everywhere
+(glyph + accent color + card shape + route prefix).
+
+Files:
+- `plans/plan_2026_05_05_ops_workspace_gui/plan.json` — 14 workstreams, MVP
+  scope, known gaps, links.
+- `plans/plan_2026_05_05_ops_workspace_gui/README.md` — human summary.
+- `plans/registry.json` — added to `active_parent_ids`; new `labels` block
+  introduced (label `ops-workspace-gui`, tags `platform-upgrades`,
+  `studio-ui`, `ops`, `shay-shay`, `agent-management`).
+
+Origin: a debug session showed the UI claiming "agents waiting" while the
+real task ledger had no active work — 448 stale legacy worker-queue items
+were inflating the picture. The plan resolves this by making freshness a
+first-class record field (live | idle | stale | parked | archived) and
+quarantining stale debt in a dedicated drawer that never enters live lanes.
+
+MVP: the Jobs tab. Six swimlanes (Queued · Approving · Running · Blocked ·
+Done · Parked) plus a Stale Debt drawer with Migrate/Archive/Purge. Job
+inspector with Cancel/Park/Promote-to-Task. WebSocket lane updates.
+Shay-Shay one-sentence queue summary. This validates the swimlane +
+inspector + WebSocket pattern every other Ops tab reuses.
+
+Status: design-only. No API, UI, or schema changes shipped yet.

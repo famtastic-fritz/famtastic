@@ -2979,7 +2979,7 @@
       if (!charState.name || !charState.description) { showAssetsFeedback('Fill in name and description first.', 'error'); return; }
       anchorBtn.disabled = true;
       anchorBtn.textContent = 'Generating...';
-      showAssetsFeedback('Generating character anchor via Imagen...', 'info');
+      showAssetsFeedback('Generating character anchor...', 'info');
       fetch('/api/character/create-anchor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3017,7 +3017,7 @@
         posesBtn.textContent = 'Queuing poses...';
         charState.poseStatuses = {};
         for (var j = 0; j < 12; j++) charState.poseStatuses[j] = { status: 'generating' };
-        showAssetsFeedback('Generating 12 poses via Leonardo...', 'info');
+        showAssetsFeedback('Generating 12 character poses...', 'info');
         renderAssetsWorkspace();
         fetch('/api/character/generate-poses', {
           method: 'POST',

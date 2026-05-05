@@ -43,19 +43,61 @@ function resolveApiStatus(brainKey, envKey, settingsKey) {
   return getConfiguredSecret(envKey, settingsKey || envKey) ? 'available' : 'unavailable';
 }
 
+/**
+ * checkNetlify() — structured Netlify capability probe.
+ *
+ * Returns { ok, reason?, details? } where reason is one of:
+ *   'cli_missing'         — Netlify CLI executable not found
+ *   'credentials_missing' — CLI present but no auth token / config users
+ *   'config_unreadable'   — config exists but JSON.parse failed
+ *   'other'               — unexpected error during probe
+ *
+ * Probe order short-circuits on first failure encountered.
+ */
 async function checkNetlify() {
+  // Layer 1: CLI presence
   try {
     execFileSync('netlify', ['--version'], { stdio: 'ignore', timeout: 3000 });
-    if (process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_SITE_ID) return true;
-    const cfgPath = path.join(process.env.HOME, '.netlify', 'config.json');
-    if (fs.existsSync(cfgPath)) {
-      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-      return !!(cfg?.users && Object.keys(cfg.users).length > 0);
-    }
-    return false;
-  } catch {
-    return false;
+  } catch (cliErr) {
+    return {
+      ok: false,
+      reason: 'cli_missing',
+      details: 'Netlify CLI not found on PATH. Install with: npm install -g netlify-cli',
+    };
   }
+
+  // Layer 2: Env-var credentials
+  if (process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_SITE_ID) {
+    return { ok: true };
+  }
+
+  // Layer 3: Config file readability
+  const cfgPath = path.join(process.env.HOME || '', '.netlify', 'config.json');
+  if (fs.existsSync(cfgPath)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+      if (cfg && cfg.users && Object.keys(cfg.users).length > 0) {
+        return { ok: true };
+      }
+      return {
+        ok: false,
+        reason: 'credentials_missing',
+        details: 'Netlify config exists but contains no users. Run: netlify login',
+      };
+    } catch (parseErr) {
+      return {
+        ok: false,
+        reason: 'config_unreadable',
+        details: `Could not parse Netlify config (${parseErr.message}). Run: netlify login`,
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    reason: 'credentials_missing',
+    details: 'No Netlify credentials found (no env vars, no config file). Run: netlify login',
+  };
 }
 
 function readRegistry() {
@@ -75,7 +117,7 @@ function buildBaseCapabilities(netlify) {
     claude_api: claudeStatus,
     gemini_api: geminiStatus,
     openai_api: openaiStatus,
-    netlify: netlify ? 'available' : 'unavailable',
+    netlify: (netlify && netlify.ok) ? 'available' : 'unavailable',
     imagen: geminiStatus,
     pinecone: getConfiguredSecret('PINECONE_API_KEY', 'pinecone_api_key') ? 'available' : 'unavailable',
     leonardo_api: getConfiguredSecret('LEONARDO_API_KEY', 'leonardo_api_key') ? 'available' : 'unavailable',
@@ -232,4 +274,5 @@ module.exports = {
   loadManifest,
   diffStateVsManifest,
   readRegistry,
+  checkNetlify,
 };

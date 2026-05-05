@@ -132,6 +132,13 @@ and assets/logo-wordmark.svg. Reference the full logo in the nav via:
 <a href="index.html" data-logo-v class="block"><img src="assets/logo-full.svg" alt="[BRAND_NAME]" class="h-10 w-auto"></a>
 `.trim();
 
+// NAV_SKELETON is the canonical default — added Session 17 to close the
+// double-nav bug (mandatory class names so CSS selectors match consistently).
+//
+// IMPORTANT — there is currently ONE skeleton variant. Every site's nav
+// renders with the same structure (logo left, nav-links center, nav-cta right,
+// mobile hamburger). Per-vertical or per-style nav variants are an open
+// P1.2 work item — see architecture/2026-04-27-p0.1-diagnostic.md Thread 2.
 const NAV_SKELETON = `
 MANDATORY NAV CLASS NAMES — DO NOT INVENT ALTERNATIVES:
 
@@ -348,6 +355,30 @@ function extractLogoSVGs(responseText, distDir) {
   return { results, cleanedHtml };
 }
 
+// GAP-1 fix (2026-04-24): default palette injected when no client colors are specified.
+// Keys match the role names used in visualRequirements color labels.
+//
+// IMPORTANT — this is the FALLBACK palette, not the only palette.
+// Every Tier-B site without explicit `spec.colors` ends up here, so two
+// unrelated businesses (e.g. a barbershop and an accounting firm) both render
+// with the same teal/gold/navy. The visual sameness this produces is tracked
+// as a P1.2 (Visual Distinctiveness) work item — per-site style fingerprint
+// (Global Style Object: tokens, not images) — see V3-final operating plan and
+// architecture/2026-04-27-p0.1-diagnostic.md Thread 1.
+//
+// Until P1.2 lands, the sentinel script `scripts/smoke-distinct-palette`
+// emits a tracked signal when two sites converge to this palette.
+const FAMTASTIC_DEFAULT_PALETTE = {
+  primary:    '#00A79D',
+  accent:     '#F5B800',
+  navy:       '#001F3F',
+  coral:      '#FF6B6B',
+  background: '#FDF4E3',
+};
+
+// V2 Phase 1 will consume this list for DNA context injection.
+const FAMTASTIC_PALETTE_NAMES = Object.keys(FAMTASTIC_DEFAULT_PALETTE);
+
 module.exports = {
   HERO_SKELETON,
   DIVIDER_SKELETON,
@@ -358,4 +389,6 @@ module.exports = {
   VIDEO_HERO_SKELETON,
   INLINE_STYLE_PROHIBITION,
   extractLogoSVGs,
+  FAMTASTIC_DEFAULT_PALETTE,
+  FAMTASTIC_PALETTE_NAMES,
 };

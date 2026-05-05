@@ -1,0 +1,101 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * P0 exit gate #5 — every site spec validates against the runtime schema.
+ *
+ * Enumerates sites/<tag>/spec.json, runs validateSpec(), and reports failures
+ * with per-spec error/warning lists. Exits non-zero if any spec fails (errors).
+ * Warnings do not fail the run but are reported.
+ *
+ * Usage:
+ *   scripts/smoke-validate-all-specs        # all sites
+ *   scripts/smoke-validate-all-specs <tag>  # single site
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const SITES_ROOT = path.join(__dirname, '..', 'sites');
+const { validateSpec } = require('../site-studio/lib/spec-schema');
+
+const arg = process.argv[2];
+
+let sites;
+if (arg) {
+  sites = [arg.startsWith('site-') ? arg : `site-${arg}`];
+} else {
+  sites = fs.readdirSync(SITES_ROOT, { withFileTypes: true })
+    .filter(d => d.isDirectory() && d.name.startsWith('site-'))
+    .map(d => d.name)
+    .sort();
+}
+
+let totalScanned = 0;
+let totalFailed = 0;
+let totalWarned = 0;
+let totalNoSpec = 0;
+const failureReports = [];
+const warningReports = [];
+
+for (const tag of sites) {
+  const specPath = path.join(SITES_ROOT, tag, 'spec.json');
+  if (!fs.existsSync(specPath)) {
+    totalNoSpec++;
+    continue;
+  }
+  totalScanned++;
+
+  let spec;
+  try {
+    spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+  } catch (e) {
+    totalFailed++;
+    failureReports.push({ tag, parseError: e.message });
+    continue;
+  }
+
+  const result = validateSpec(spec);
+  if (!result.valid) {
+    totalFailed++;
+    failureReports.push({ tag, errors: result.errors, warnings: result.warnings });
+  } else if (result.warnings.length > 0) {
+    totalWarned++;
+    warningReports.push({ tag, warnings: result.warnings });
+  }
+}
+
+console.log('=== Schema Validation Report ===');
+console.log(`Sites scanned:        ${totalScanned}`);
+console.log(`Sites with no spec:   ${totalNoSpec}`);
+console.log(`Sites failed:         ${totalFailed}`);
+console.log(`Sites with warnings:  ${totalWarned}`);
+
+if (warningReports.length > 0) {
+  console.log('\n=== Warnings ===');
+  for (const wr of warningReports) {
+    console.log(`\n${wr.tag}:`);
+    wr.warnings.forEach(w => console.log(`  warning: ${w}`));
+  }
+}
+
+if (failureReports.length > 0) {
+  console.log('\n=== Failures ===');
+  for (const fr of failureReports) {
+    console.log(`\n${fr.tag}:`);
+    if (fr.parseError) {
+      console.log(`  parse error: ${fr.parseError}`);
+    }
+    if (fr.errors) {
+      fr.errors.forEach(e => console.log(`  ERROR: ${e}`));
+    }
+    if (fr.warnings && fr.warnings.length > 0) {
+      fr.warnings.forEach(w => console.log(`  warning: ${w}`));
+    }
+  }
+  console.log('\n=== Exit: 1 (failures present) ===');
+  process.exit(1);
+}
+
+console.log('\n=== Exit: 0 (all specs valid) ===');
+process.exit(0);

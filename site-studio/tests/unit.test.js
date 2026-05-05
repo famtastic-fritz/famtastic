@@ -28,8 +28,15 @@ const {
   selectShayShayBrain,
   normalizeShayShayResponse,
   answerShayShayDirect,
+  resolveShayShayBridgeState,
+  buildShayShayBridgeDebug,
+  buildShayShaySiteSnapshot,
+  buildShayShayPrompt,
+  executeBridgeOp,
   normalizeShayLiteSettings,
+  extractBriefPatternBased,
 } = require('../server');
+const { createShayBridgeClient } = require('../public/js/shay-bridge-client.js');
 
 const db = require('../lib/db');
 const { buildCapabilityManifest, readRegistry } = require('../lib/capability-manifest');
@@ -795,6 +802,298 @@ describe('Shay-Shay helpers', () => {
   });
 });
 
+describe('Shay-Shay bridge contract', () => {
+  it('prefers top-level bridge_result over the legacy context fallback in snapshots', () => {
+    const topLevelResult = { op: 'exec', command: 'bash -lc true', stdout: '', stderr: '', exitCode: 0 };
+    const legacyResult = { op: 'read', path: 'legacy.txt', content: 'legacy' };
+    const bridgeState = resolveShayShayBridgeState(topLevelResult, { bridge_result: legacyResult });
+    const snapshot = buildShayShaySiteSnapshot(
+      { active_site: 'site-demo', bridge_result: legacyResult },
+      { bridgeState }
+    );
+
+    expect(snapshot.bridge_result).toBe(topLevelResult);
+    expect(snapshot.bridge_debug).toEqual({
+      last_request_seen: true,
+      last_result_source: 'top_level',
+      last_result_op: 'exec',
+      last_result_exit_code: 0,
+      last_result_had_stdout: false,
+      last_result_had_stderr: false,
+    });
+  });
+
+  it('uses context.bridge_result only as a legacy fallback', () => {
+    const legacyResult = { op: 'write', path: 'legacy.txt', success: true };
+    const bridgeState = resolveShayShayBridgeState(null, { bridge_result: legacyResult });
+    const snapshot = buildShayShaySiteSnapshot(
+      { active_site: 'site-demo', bridge_result: legacyResult },
+      { bridgeState }
+    );
+
+    expect(snapshot.bridge_result).toBe(legacyResult);
+    expect(snapshot.bridge_debug.last_result_source).toBe('context_fallback');
+  });
+
+  it('treats an explicit top-level null as canonical over a legacy context fallback', () => {
+    const legacyResult = { op: 'read', path: 'legacy.txt', content: 'legacy' };
+    const bridgeState = resolveShayShayBridgeState(null, { bridge_result: legacyResult }, { topLevelProvided: true });
+    const snapshot = buildShayShaySiteSnapshot(
+      { active_site: 'site-demo', bridge_result: legacyResult },
+      { bridgeState }
+    );
+
+    expect(snapshot.bridge_result).toBe(null);
+    expect(snapshot.bridge_debug).toEqual({
+      last_request_seen: true,
+      last_result_source: 'top_level',
+      last_result_op: null,
+      last_result_exit_code: null,
+      last_result_had_stdout: false,
+      last_result_had_stderr: false,
+    });
+  });
+
+  it('keeps the prompt bridge block aligned with siteSnapshot.bridge_result', () => {
+    const bridgeResult = { op: 'exec', command: 'bash -lc true', stdout: 'SYNC_SENTINEL', stderr: '', exitCode: 0 };
+    const siteSnapshot = buildShayShaySiteSnapshot(
+      { active_site: 'site-demo' },
+      { bridgeState: resolveShayShayBridgeState(bridgeResult, {}) }
+    );
+
+    const prompt = buildShayShayPrompt({
+      message: 'What happened?',
+      manifest: { capabilities: {} },
+      instructions: 'You are Shay-Shay.',
+      agentCards: {},
+      siteSnapshot,
+      reasoning: { kind: 'review', tier: 2 },
+      studioContext: '',
+      includePrimer: true,
+      selectedBrain: 'codex',
+      memoryContext: '',
+    });
+
+    expect(prompt).toContain('same object as siteSnapshot.bridge_result');
+    expect(prompt).toContain('Use siteSnapshot.repo_paths to target the correct file');
+    expect(prompt).toContain('@active-site/');
+    expect((prompt.match(/SYNC_SENTINEL/g) || []).length).toBe(2);
+  });
+
+  it('trims verbose snapshot arrays in the prompt while keeping compact counts', () => {
+    const siteSnapshot = buildShayShaySiteSnapshot({ active_site: 'site-demo' });
+    siteSnapshot.workspace_state.open_tabs = Array.from({ length: 6 }, (_, index) => ({
+      id: `tab-${index}`,
+      title: `Tab ${index}`,
+      page: `page-${index}.html`,
+      active: index === 0,
+    }));
+    siteSnapshot.ui_state.step_log_items = Array.from({ length: 6 }, (_, index) => ({
+      title: `Step ${index}`,
+      status: 'pending',
+    }));
+
+    const prompt = buildShayShayPrompt({
+      message: 'Summarize the UI state.',
+      manifest: { capabilities: {} },
+      instructions: 'You are Shay-Shay.',
+      agentCards: {},
+      siteSnapshot,
+      reasoning: { kind: 'studio', tier: 1 },
+      studioContext: '',
+      includePrimer: false,
+      selectedBrain: 'claude',
+      memoryContext: '',
+    });
+
+    expect(prompt).toContain('tab-0');
+    expect(prompt).toContain('"open_tabs_omitted_count":2');
+    expect(prompt).toContain('"step_log_items_omitted_count":2');
+    expect(prompt).not.toContain('tab-5');
+    expect(prompt).not.toContain('Step 5');
+  });
+
+  it('includes repo path hints for bridge targeting in the snapshot', () => {
+    const snapshot = buildShayShaySiteSnapshot({
+      active_site: 'site-demo',
+      active_page: 'about.html',
+    });
+
+    expect(snapshot.repo_paths).toMatchObject({
+      hub_root: '.',
+      studio_ui_entry: 'site-studio/public/index.html',
+      studio_orb_script: 'site-studio/public/js/studio-orb.js',
+      studio_orb_styles: 'site-studio/public/css/studio-orb.css',
+      studio_server_entry: 'site-studio/server.js',
+      active_site_dist_dir: 'sites/site-demo/dist',
+      active_page_path: 'sites/site-demo/dist/about.html',
+    });
+    expect(snapshot.repo_paths.bridge_aliases).toMatchObject({
+      '@hub/': '.',
+      '@studio/': 'site-studio',
+      '@studio-ui/': 'site-studio/public',
+      '@active-site/': 'sites/site-demo/dist',
+    });
+  });
+
+  it('builds compact bridge debug metadata from exec results', () => {
+    const debug = buildShayShayBridgeDebug({
+      source: 'top_level',
+      bridgeResult: { op: 'exec', stdout: '', stderr: 'warn', exitCode: 7 },
+    });
+
+    expect(debug).toEqual({
+      last_request_seen: true,
+      last_result_source: 'top_level',
+      last_result_op: 'exec',
+      last_result_exit_code: 7,
+      last_result_had_stdout: false,
+      last_result_had_stderr: true,
+    });
+  });
+
+  it('returns a structured exec result even when stdout is empty', async () => {
+    const result = await executeBridgeOp({ op: 'exec', command: 'bash -lc true' });
+
+    expect(result).toMatchObject({
+      op: 'exec',
+      command: 'bash -lc true',
+      cwd: '.',
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+    });
+    expect(Object.prototype.hasOwnProperty.call(result, 'stdout')).toBe(true);
+  });
+
+  it('keeps read and write bridge results serializable', async () => {
+    const relPath = path.join('site-studio', 'tests', '.tmp-shay-bridge-' + Date.now() + '.txt');
+
+    try {
+      const writeResult = await executeBridgeOp({ op: 'write', path: relPath, content: 'bridge-ok' });
+      const readResult = await executeBridgeOp({ op: 'read', path: relPath });
+
+      expect(writeResult).toMatchObject({ op: 'write', path: relPath, resolved_path: relPath, success: true });
+      expect(readResult).toMatchObject({ op: 'read', path: relPath, resolved_path: relPath, content: 'bridge-ok' });
+    } finally {
+      const absPath = path.join(HUB_ROOT, relPath);
+      if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
+    }
+  });
+
+  it('supports bridge path aliases for studio files', async () => {
+    const relPath = ('tests/.tmp-shay-alias-' + Date.now() + '.txt');
+    const aliasedPath = '@studio/' + relPath;
+
+    try {
+      const writeResult = await executeBridgeOp({ op: 'write', path: aliasedPath, content: 'alias-ok' });
+      const readResult = await executeBridgeOp({ op: 'read', path: aliasedPath });
+
+      expect(writeResult).toMatchObject({
+        op: 'write',
+        path: aliasedPath,
+        resolved_path: 'site-studio/' + relPath,
+        success: true,
+      });
+      expect(readResult).toMatchObject({
+        op: 'read',
+        path: aliasedPath,
+        resolved_path: 'site-studio/' + relPath,
+        content: 'alias-ok',
+      });
+    } finally {
+      const absPath = path.join(HUB_ROOT, 'site-studio', relPath);
+      if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
+    }
+  });
+});
+
+describe('Shay bridge client helper', () => {
+  it('sends the pending result once and clears it after payload creation', () => {
+    const bridgeResult = { op: 'read', path: 'foo.txt', content: 'hello' };
+    const client = createShayBridgeClient(bridgeResult);
+
+    const payload = client.prepareRequestPayload('hi', { active_site: 'site-demo' });
+
+    expect(payload).toEqual({
+      message: 'hi',
+      context: { active_site: 'site-demo' },
+      bridge_result: bridgeResult,
+    });
+    expect(client.getPendingResult()).toBe(null);
+  });
+
+  it('stores new bridge results for the next turn and replaces older pending results cleanly', () => {
+    const firstResult = { op: 'read', path: 'a.txt', content: 'A' };
+    const secondResult = { op: 'exec', command: 'bash -lc true', stdout: '', stderr: '', exitCode: 0 };
+    const client = createShayBridgeClient();
+
+    client.storeResponseResult({ bridge_result: firstResult });
+    expect(client.getPendingResult()).toEqual(firstResult);
+
+    client.storeResponseResult({ bridge_result: secondResult });
+    expect(client.getPendingResult()).toEqual(secondResult);
+
+    const payload = client.prepareRequestPayload('next', {});
+    expect(payload.bridge_result).toEqual(secondResult);
+    expect(client.getPendingResult()).toBe(null);
+  });
+
+  it('wires both Shay entry points through the shared bridge helper', () => {
+    const orbSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/js/studio-orb.js'), 'utf8');
+    const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/index.html'), 'utf8');
+
+    expect((orbSrc.match(/prepareRequestPayload/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect((orbSrc.match(/storeResponseResult/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect(orbSrc.includes('pendingBridgeResult')).toBe(false);
+    expect(htmlSrc.indexOf('js/shay-bridge-client.js')).toBeGreaterThan(-1);
+    expect(htmlSrc.indexOf('js/shay-bridge-client.js')).toBeLessThan(htmlSrc.indexOf('js/studio-orb.js'));
+  });
+});
+
+describe('Shay Desk tab chat surface', () => {
+  it('renders a transcript container above the desk composer', () => {
+    const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/index.html'), 'utf8');
+
+    expect(htmlSrc).toContain('id="shay-desk-transcript"');
+    expect(htmlSrc).toContain('id="shay-desk-empty-state"');
+    expect(htmlSrc.indexOf('id="shay-desk-transcript"')).toBeLessThan(htmlSrc.indexOf('id="shay-desk-input"'));
+  });
+
+  it('removes the redundant Lite and Desk helper cards from the Shay tab', () => {
+    const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/index.html'), 'utf8');
+    const orbSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/js/studio-orb.js'), 'utf8');
+
+    expect(htmlSrc.includes('shay-desk-card-lite-btn')).toBe(false);
+    expect(htmlSrc.includes('shay-desk-card-chat-btn')).toBe(false);
+    expect(htmlSrc).not.toContain('Open the floating Lite surface for immediate questions, light event reactions, and selection-aware nudges.');
+    expect(htmlSrc).not.toContain('Keep build chat for execution. Use Desk as the place to frame multi-step thinking and move between workspaces intentionally.');
+    expect(orbSrc.includes('cardLiteBtn')).toBe(false);
+    expect(orbSrc.includes('cardChatBtn')).toBe(false);
+  });
+
+  it('appends desk-tab messages into the transcript instead of a one-off response block', () => {
+    const orbSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/js/studio-orb.js'), 'utf8');
+
+    expect(orbSrc).toContain('function appendShayDeskMessage');
+    expect(orbSrc).toContain("appendShayDeskMessage('user', text)");
+    expect(orbSrc).toContain("appendShayDeskMessage('assistant', data.response || data.error || 'No response.')");
+    expect(orbSrc).toContain("appendShayDeskMessage('system', 'Error: ' + err.message, { subtle: true })");
+    expect(orbSrc.includes('showDeskResponse')).toBe(false);
+  });
+
+  it('drives Shay working state from the desk-tab request path', () => {
+    const orbSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/js/studio-orb.js'), 'utf8');
+    const htmlSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/index.html'), 'utf8');
+
+    expect(orbSrc).toContain('function beginShayThinking');
+    expect(orbSrc).toContain('var thinkStart = beginShayThinking();');
+    expect(orbSrc).toContain('completeShayThinkingWindow(thinkStart');
+    expect(orbSrc).toContain("appendShayDeskMessage('assistant', 'Shay is on it…'");
+    expect(htmlSrc).toContain('Shay is on it…');
+  });
+});
+
 // --- SQLite Session Storage ---
 
 describe('db: session lifecycle', () => {
@@ -858,5 +1157,25 @@ describe('Studio CSS file structure', () => {
       expect(indexHtml,
         `${file} not linked in index.html`).toContain(`href="css/${file}"`);
     }
+  });
+});
+
+// ── GAP-4: Brief extraction lockstep (Part B parity, server-side) ─────────────
+
+describe('extractBriefPatternBased — tier field parity', () => {
+  it('always returns a tier field', () => {
+    const result = extractBriefPatternBased('Build a site for a pizza place');
+    expect(result).toHaveProperty('tier');
+    expect(['famtastic', 'clean']).toContain(result.tier);
+  });
+
+  it('returns clean tier for explicit clean language', () => {
+    const result = extractBriefPatternBased('Build a simple minimal professional accounting firm website');
+    expect(result.tier).toBe('clean');
+  });
+
+  it('returns famtastic tier when no clean keywords present', () => {
+    const result = extractBriefPatternBased('Build a bold energetic site for DJ Rockstar in Atlanta');
+    expect(result.tier).toBe('famtastic');
   });
 });

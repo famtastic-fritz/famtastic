@@ -7,7 +7,8 @@ site-studio/.env
 
 # Site working directories — local only, not committed to hub repo
 # Each site gets its own repo at ~/famtastic-sites/<tag>/
-sites/
+# Anchored to root so nested directories named `sites` (e.g. docs/sites/) aren't caught.
+/sites/
 
 # Local Netlify folder
 .netlify
@@ -19,8 +20,10 @@ sites/
 # which can include inline env-var API keys. Never tracked.
 .claude/settings.local.json
 
-# Local tools (adb-mcp bridge etc) — machine-specific, not tracked
-tools/
+# Local tools (adb-mcp bridge etc) — machine-specific, not tracked.
+# web-chat-exporter is portable, shared code, so it's tracked.
+tools/adb-mcp/
+tools/cpanel-mcp/
 
 # Session 12 Phase 1 safety net: PENDING-REVIEW.md is supposed to live at
 # ~/PENDING-REVIEW.md (outside the repo). This entry catches the case where
@@ -38,3 +41,35 @@ PENDING-REVIEW.md
 .wolf/designqc-report.json
 .wolf/identity.md
 .wolf/suggestions.json
+
+# Runtime / auto-generated state — never commit
+.brain/
+.local/
+.worker-queue.jsonl
+intelligence/
+STUDIO-CONTEXT.md
+site-studio/.dismissed-findings.json
+site-studio/intelligence/
+site-studio/logs/
+tests/automation/logs/
+tier-comparison-results/
+diagnostics/
+
+# Built site output — dist/ is a deploy artifact, not source
+sites/*/dist/
+
+# Playwright MCP captures — ephemeral test screenshots and console logs
+.playwright-mcp/
+
+# Scratch / throwaway files at repo root
+bridge-test.txt
+script.py
+proposed_patch.diff
+header-font-patch.diff
+patch-shay-desk.js
+gate1-step6-misclassify.png
+codex\ final\ review\ plan.md
+site-studio/_patch_promo.py
+site-studio/validation-plan.json.done
+.studio-patches/
+scripts/Screenshot*

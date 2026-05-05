@@ -4,17 +4,28 @@
 > Do not edit manually unless correcting an error.
 > Last updated: 2026-03-24
 
-## Tool Availability (Verified April 8, 2026)
+## Tool Availability (Verified April 21, 2026)
 
 ### Image Generation
-- Google Imagen 4.0: AVAILABLE (Gemini API, $25 funded, ~$0.004/image)
+- Google Imagen 4.0: AVAILABLE (Gemini API, $25 funded, ~$0.004/image) — `imagen-4.0-generate-001`
+- Google Imagen 3 edit_image: AVAILABLE — `imagen-3.0-capability-001` — used for character pose generation with SubjectReferenceImage
 - Leonardo.ai Phoenix: AVAILABLE (API, $5 free credit, ~$0.016/image)
 - Adobe Firefly API: NOT AVAILABLE (requires enterprise $1K+/mo — verified in Developer Console)
 - Adobe Firefly Web: AVAILABLE (Playwright automation, CC credits)
+- ffmpeg 8.1: INSTALLED at /opt/homebrew/bin/ffmpeg (installed April 21, 2026)
 
 ### Video Generation
 - Google Veo: AVAILABLE (Gemini API, tested, 33s generation, 1.6MB output)
 - Adobe Firefly Video: AVAILABLE via web only (CC credits, no API)
+
+### Character Pose Generation — CRITICAL DO-NOT-REPEAT
+- `SubjectReferenceImage` is in `_EditImageParameters` ONLY — it does NOT exist in `GenerateImagesConfig`
+- Character poses MUST use `client.models.edit_image(model='imagen-3.0-capability-001', reference_images=[SubjectReferenceImage(...)])` — NOT `generate_images`
+- The enum is `types.SubjectReferenceType.SUBJECT_TYPE_DEFAULT` (not `REFERENCE_TYPE_SUBJECT` — that constant does not exist)
+- Available subject types: `SUBJECT_TYPE_DEFAULT`, `SUBJECT_TYPE_PERSON`, `SUBJECT_TYPE_ANIMAL`, `SUBJECT_TYPE_PRODUCT`
+- For cartoon mascots use `SUBJECT_TYPE_DEFAULT`
+- Implementation lives in `scripts/google-media-generate` as `generate_character_pose()` and `--subject-ref` CLI flag
+- Batch mode supports `"type": "character_pose"` with `anchor_filename` field
 
 ### Post-Processing
 - Photoshop via adb-mcp: PARTIALLY AVAILABLE (installed, UXP plugin load bug being fixed)
@@ -210,10 +221,11 @@ registry before first use.
 
 ## Session 17 Do-Not-Repeat Rules
 
-### ORB_STATE_MACHINE (2026-04-20)
+### ORB_STATE_MACHINE (2026-04-20, updated 2026-05-02)
 - `#pip-dynamic-area` transitions go through `setOrbState(state, data)` ONLY — never write to the area directly from event listeners
-- Four valid states: `IDLE`, `BRIEF_PROGRESS`, `BRAINSTORM_ACTIVE`, `REVIEW_ACTIVE`
+- **Five valid states** (updated for Shay v2): `IDLE`, `BRIEF_PROGRESS`, `BRAINSTORM_ACTIVE`, `REVIEW_ACTIVE`, `SHAY_THINKING`
 - `currentOrbState` is the single source of truth (module-level var in `studio-orb.js`)
+- `SHAY_THINKING` was added in code on 2026-04-20 and formalized in the contract on 2026-05-02 (Shay architecture v2). Has a min-display window (`SHAY_THINKING_MIN_MS = 800`) so brief reasoning bursts don't flicker the orb.
 - When adding a new dynamic-area renderer, add a new state constant and route it through `setOrbState` — do not bypass
 
 ### TEST_RETURN_SHAPE_ASSERTIONS (2026-04-20)
@@ -235,3 +247,86 @@ registry before first use.
 ### RESEARCH_ROUTER_SKIP_CACHE (2026-04-20)
 - `queryResearch(vertical, question, { skipCache: true })` or `{ forceSource: 'gemini_loop' }` both bypass Pinecone cache
 - `forceSource` was already in the code; `skipCache` was added in Session 3-A — use `skipCache: true` when you need a fresh result without constraining the source
+
+## Session 4-A — Job Queue Schema (2026-04-20)
+
+### JOBS_TABLE_SCHEMA (Decision Log)
+
+SQLite table `jobs` in `~/.config/famtastic/studio.db` (via `lib/db.js`):
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT PK | UUID |
+| type | TEXT NOT NULL | job category: `build`, `research`, `deploy`, `gap`, etc. |
+| status | TEXT NOT NULL | see state machine below |
+| site_tag | TEXT | which site; null for global jobs |
+| payload | TEXT | JSON blob (build params, research question, etc.) |
+| dependencies | TEXT | JSON array of job IDs that must be `done` first |
+| cost_estimate | REAL | estimated USD cost before running |
+| cost_actual | REAL | actual USD cost after completion |
+| created_at | TEXT | ISO timestamp |
+| approved_at | TEXT | when approved (null until) |
+| approved_by | TEXT | who approved (default 'fritz') |
+| completed_at | TEXT | when done/failed (null until) |
+| result | TEXT | JSON blob (output, error, etc.) |
+
+**Status enum — semantics matter, parked ≠ pending:**
+- `pending` — reviewed by Fritz, awaiting approval to run
+- `approved` — approved, waiting for a worker to pick it up
+- `running` — actively executing
+- `done` — successfully completed
+- `blocked` — has unmet dependencies (auto-transitions to `pending` when all deps reach `done`)
+- `failed` — execution error
+- `parked` — consciously deferred; NOT rejected, NOT forgotten
+
+**State machine (lib/job-queue.js):**
+- `blocked` → `pending` (automatic: all dep jobs reach `done`)
+- `pending` → `approved` (POST /api/jobs/approve/:id)
+- `pending` → `parked` (POST /api/jobs/park/:id)
+- `blocked` → `parked` (POST /api/jobs/park/:id)
+- `approved` → `running` (when worker picks up)
+- `running` → `done` (completeJob)
+- `running` → `failed` (failJob)
+
+### JOB_QUEUE_DO_NOT_REPEAT (2026-04-20)
+- NEVER conflate `parked` and `pending` — parked is deliberate deferral, pending is awaiting approval. They are semantically distinct states.
+- `blocked` jobs auto-transition to `pending` when ALL dependency IDs reach `done` — this is automatic in `_unblockDependents()`, not manual
+- JSONL migration uses `INSERT OR IGNORE` so it's idempotent — safe to call on every restart
+
+### 2026-04-24 — Build Layer Default Injection (GAP-1/2/3)
+
+**Key Learning: Mandatory-language palette injection works.**
+Injecting `FAMTASTIC DEFAULT PALETTE (no client palette specified — you MUST use these exact hex values)` as a mandatory block in `briefContext` reliably causes Claude to apply the specified palette as CSS custom properties. Tested live: `site-small-accounting-firm` built from "Build a site for a small accounting firm" with zero hex colors in the brief — output contained all five `--color-*` properties correctly wired.
+
+**Key Learning: Dead variable pattern — returned but never destructured.**
+`buildPromptContext()` returned `heroSkeleton` and `navSkeleton` in its return object but `handleChatMessage()` did not destructure them. The variables existed in the return, were never referenced, and were silently discarded on every single-page edit. Pattern: when a function returns a large object, audit the destructure at call sites to confirm all needed fields are actually pulled out.
+
+**DO-NOT-REPEAT (2026-04-24): Default palette injection must cover the else branch.**
+The `visualRequirements` block only injects colors when client hex values are found. Without the `else` branch, a silent no-op means Claude picks industry-inference colors. Always pair "inject if present" blocks with "inject defaults if absent" fallback.
+
+**DO-NOT-REPEAT (2026-04-24): design_brief.approved blocks all edit routing.**
+`classifyRequest()` checks `spec.design_brief.approved` before any pattern matching. Sites built via `runAutonomousBuild` have `approved: false` by default — every subsequent Studio Chat message routes to `new_site` regardless of content. When testing single-page edits on autonomously-built sites, manually set `approved: true` in spec.json first.
+
+### RULE — Separation-Ready Architecture for Future Studios (2026-04-24)
+
+Any work touching component logic, media/image generation, or
+strategy/brainstorming capability must be built assuming eventual
+extraction into a standalone studio (Component Studio, Media
+Studio, Think Tank respectively). Communicate through structured
+payload contracts, not tight function-call coupling. Cross-studio
+features — even the ones currently all living in Site Studio —
+are message contracts, not function calls. Platform services
+(research, memory, learning capture, Pinecone, Perplexity) must
+live in a shared services namespace that Site Studio calls but
+does not own.
+
+### 2026-05-02 — MBSH Audit + Platform Layer (Cowork session)
+
+**Decision Log:**
+- [2026-05-02] REPO_SEPARATION_RULE: Site deploys live at `~/famtastic-sites/<site>/` (sibling to `~/famtastic/`, NOT nested). `~/famtastic/sites/<tag>/` is the Studio sandbox/asset-workshop. The `dist/` subdirectory under sandbox can hold builds, but the production deploy artifact lives in the sibling repo. `fam-hub site new` should default to creating the deploy repo at the correct sibling path.
+- [2026-05-02] PLATFORM_CAPABILITY_PATTERN: Operational primitives live at `~/famtastic/platform/capabilities/<class>/<verb>.sh`. Each capability reads credentials from the vault (`platform/vault/vault.sh`, macOS Keychain backed), reads/writes `spec.json` as single source of truth, appends to `platform/invocations/<date>.jsonl` for audit trail, surfaces `manual_required` explicitly when underlying API coverage is incomplete — NEVER silently degrades. Standing-approval model: store once, agent reads on every invocation, Fritz sees decision points only.
+- [2026-05-02] STUDIO_CANNOT_PRODUCE_MBSH: Audit gap report Section 0.11. The full V1-BRIEF asks for capabilities Studio doesn't have (no chatbot skeleton, no compass nav skeleton, no two-nav-system spec field, no layered CSS mode, no PHP backend support, no asset triage workflow, no commissioned brand mark generation pipeline). Recommendations B.1–B.8 + G.1 must land before any "Studio rebuilds MBSH" prompt is meaningful. Today's runnable v2 lives at `~/famtastic-sites/mbsh-reunion-v2/`.
+
+**DO-NOT-REPEAT:**
+- [2026-05-02] NO_DUPLICATE_TAGS: `extractBriefFromMessage` must compare proposed tags against existing `spec.json` tags using `normalizeBizName` + `checkSameBusinessIdentity`. Refuse/prompt-disambiguate when match. Evidence: `site-mbsh96reunion` vs `site-mbsh-reunion` coexisted, with the duplicate's `dist/` misleading Studio's preview with hallucinated Myrtle Beach SC content.
+- [2026-05-02] VERIFY_BRIEFING_CLAIMS: Always check briefing/doc claims against the actual repo before acting. Example: briefing said Drive sync action exists with a bug — it didn't exist at all. Wasted cycles diagnosing a phantom workflow.

@@ -1,0 +1,65 @@
+{
+  "iteration": "iteration-3",
+  "date": "2026-05-02",
+  "title": "Chunks A + B + C complete (with D1 stretch) — capture flywheel realized, ecosystem substrate live",
+  "duration": "~3 hours autonomous (no Fritz interactions during build)",
+  "summary": "Iteration 3 of the FAMtastic total-ask plan. Fritz authorized full autonomy with directive to complete chunks A, B, C and stretch toward D. Shipped: capture promote command, LLM-assisted extraction, pattern detection, capture inspector tool, real Take-to-Workshop button, server-side page_context injection, live job queue panel, Show-Me-How routine engine with starter routine, FAMtasticEcosystem registration API with 4 pre-registered Studios, shared services scaffolding (research/memory/learning), cross-Studio handoff routing, component library with auto-discovery, recipe library with example recipe, Drive sync GitHub Action with delete-before-upload fix. 17 new files, 5 modified files, ~3000 lines. Nothing committed — Fritz reviews via this report.",
+  "categories": [
+    {
+      "title": "CHUNK A — Capture flywheel completed",
+      "description": "MVP from iteration 2 now has the full feature set: extract, dry-run, promote, patterns. Workshop tool registered for live UI access.",
+      "items": [
+        { "path": "lib/famtastic/capture/promote.js", "status": "new", "description": "Promote command — reads approved items from a capture, routes each to its destination canonical file (markdown append, jsonl append, json array append). Closes the capture loop." },
+        { "path": "lib/famtastic/capture/extract.js", "status": "new", "description": "LLM-assisted extraction — takes a transcript, builds a structured prompt, calls Anthropic API (with key) or outputs prompt for manual paste (no key). Cost estimation included." },
+        { "path": "lib/famtastic/capture/patterns.js", "status": "new", "description": "Pattern detection across captures — Jaccard-similarity clustering on item titles, flags 3+ recurrences across 2+ captures as standing-rule candidates." },
+        { "path": "lib/famtastic/capture/route.js", "status": "new", "description": "Express router exposing capture endpoints. Mount: app.use('/api/capture', require('./lib/famtastic/capture/route.js')). Endpoints: summary, scan, captures, patterns, scaffold." },
+        { "path": "lib/famtastic/capture/cli.js", "status": "modified", "description": "CLI updated with promote, extract, patterns commands. Help text refreshed." },
+        { "path": "site-studio/public/js/shay-workshop-tool-capture.js", "status": "new", "description": "Workshop Capture Inspector tool — live view of captures + patterns. Registers with ShayWorkshop.registerTool. Fetches from /api/capture/* (requires server route mount)." }
+      ]
+    },
+    {
+      "title": "CHUNK B — Shay v2 wired live",
+      "description": "Architecture from iteration 2 is now connected to the running Studio. Shay actually USES page context. Real handoff button. Show-Me-How engine works.",
+      "items": [
+        { "path": "site-studio/public/index.html", "status": "modified", "description": "Take-to-Workshop button on Shay-Shay light surface now fires real ShayHandoff.takeToWorkshop with intent from input. Three new script tags for v2 iter 3 modules." },
+        { "path": "site-studio/server.js", "status": "modified", "description": "buildShayShaySiteSnapshot + buildShayShayPromptSnapshot now thread page_context + registered_context_providers from incoming context all the way into Shay's prompt. Two surgical inserts; no existing logic touched." },
+        { "path": "site-studio/public/js/shay-workshop.js", "status": "modified", "description": "Active Job Tracker tool now fetches live from /api/jobs every 5s while panel is open. Real status colors, abbreviated IDs, Studio tag display." },
+        { "path": "site-studio/public/js/shay-handoff.js", "status": "modified", "description": "takeToStudio() added for cross-Studio routing (e.g. takeToStudio('media_studio', {...})). Auto-detects current Studio from ShayContextRegistry." },
+        { "path": "site-studio/public/js/shay-routine.js", "status": "new", "description": "Show-Me-How routine engine. Routine registration API. Spotlight overlay (dim layer + glowing ring + callout). Bottom-right control panel with step counter + Continue/Hand-back/Stop. Status-bar indicator. Includes one starter routine: 'show-me-how:settings.domain'." }
+      ]
+    },
+    {
+      "title": "CHUNK C — Ecosystem substrate built",
+      "description": "Site Studio is the seed; this is the substrate every future Studio plugs into. Registration API live. 4 Studios pre-declared. Shared services scaffolded. Component + recipe libraries scaffolded.",
+      "items": [
+        { "path": "lib/famtastic/ecosystem/index.js", "status": "new", "description": "FAMtasticEcosystem.registerStudio API. 4 Studios pre-registered: Site Studio (live), Media Studio (seed), Brand Studio (seed), Think Tank (seed). Cross-Studio handoff routing via resolveHandoffRoute()." },
+        { "path": "lib/famtastic/ecosystem/route.js", "status": "new", "description": "HTTP routes for ecosystem registry. /studios, /studios/:id, /route?target=." },
+        { "path": "lib/famtastic/research/index.js", "status": "new", "description": "Shared research service scaffold. Wraps existing site-studio/lib/research-router.js. Iteration 4+ relocates impl here." },
+        { "path": "lib/famtastic/memory/index.js", "status": "new", "description": "Shared memory service scaffold. Three-layer model (episodic/semantic/procedural). Wraps existing site-studio/lib/memory.js." },
+        { "path": "lib/famtastic/learning/index.js", "status": "new", "description": "Shared learning service scaffold. Promotion log (.wolf/memory/promotions.jsonl). Wraps suggestion-logger.js." },
+        { "path": "lib/famtastic/components/index.js", "status": "new", "description": "Component library — auto-discovers components/* directory at boot. Pluggable, ecosystem-shared. Studios contribute, all consume." },
+        { "path": "lib/famtastic/components/route.js", "status": "new", "description": "HTTP routes for component library. /, /summary, /:id, /refresh." },
+        { "path": "lib/famtastic/recipes/index.js", "status": "new", "description": "Recipe library — Fritz's 'proven recipes' framing realized. One example recipe registered (family-reunion-event-site, tested confidence). Scaffold for iteration 5+ to mine sites/<tag>/spec.json for proven patterns." },
+        { "path": "lib/famtastic/recipes/route.js", "status": "new", "description": "HTTP routes for recipe library. /, /summary, /find?intent=, /:id." },
+        { "path": "lib/famtastic/README.md", "status": "new", "description": "Top-level README for lib/famtastic/ — separation-ready architecture, layout, status of each module, how to add a new Studio." }
+      ]
+    },
+    {
+      "title": "CHUNK D STRETCH — D1 Drive sync (delete-before-upload)",
+      "description": "The highest-immediate-ROI item from the briefing. Closed.",
+      "items": [
+        { "path": ".github/workflows/drive-sync.yml", "status": "new", "description": "GitHub Action triggered on push to main when canonical files change. Runs scripts/drive-sync.js. Required secrets: GDRIVE_SERVICE_ACCOUNT_JSON, GDRIVE_FOLDER_ID." },
+        { "path": "scripts/drive-sync.js", "status": "new", "description": "Drive sync with delete-before-upload — fixes the duplicate-doc accumulation bug from the briefing. Supports --dry-run and --diff modes for inspection. Syncs FAMTASTIC-STATE, CHANGELOG, CLAUDE, .wolf/*, docs/famtastic-total-ask-plan, shay-architecture-v2-proposal, all docs/captures/*.md." }
+      ]
+    },
+    {
+      "title": "META — Reports + plan update + capture",
+      "description": "Self-bootstrapping artifacts.",
+      "items": [
+        { "path": "lib/famtastic/iteration-report/iteration-3-manifest.json", "status": "new", "description": "This iteration's manifest. Hand-curated; iteration 4+ may auto-generate from git diff + chat summary." },
+        { "path": "docs/iterations/2026-05-02_iteration-3-report.html", "status": "new", "description": "This report. Generated by lib/famtastic/iteration-report/generate.js from the manifest above." },
+        { "path": "docs/captures/2026-05-02_cowork-session-02.md", "status": "new", "description": "Knowledge-capture artifact for this iteration. Items proposed for canonical file promotion." }
+      ]
+    }
+  ]
+}

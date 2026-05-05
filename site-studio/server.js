@@ -18,9 +18,12 @@ const studioContextWriter = require('./lib/studio-context-writer');
 const brainInjector = require('./lib/brain-injector');
 const surgicalEditor = require('./lib/surgical-editor');
 const gapLogger = require('./lib/gap-logger');
+const { logTrace, getRunTrace, queryTraceEvents } = require('./lib/build-trace');
+const { createRunContext } = require('./lib/run-id');
+const { createLedger, addFulfillmentItem, finalizeLedger, readLedger, FULFILLMENT_STATUS, DETECTED_TYPES, WORKSPACE } = require('./lib/fulfillment-ledger');
 const suggestionLogger = require('./lib/suggestion-logger');
 const brandTracker = require('./lib/brand-tracker');
-const { buildCapabilityManifest, loadManifest } = require('./lib/capability-manifest');
+const { buildCapabilityManifest, loadManifest, checkNetlify } = require('./lib/capability-manifest');
 const costMonitor = require('./lib/cost-monitor');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
@@ -29,11 +32,17 @@ const { verifyAllAPIs, getBrainStatus } = require('./lib/brain-verifier');
 // DECISION: Tool calling is Claude-only (Session 10).
 // Gemini and OpenAI tool format translation deferred to Session 12.
 // Do not pass STUDIO_TOOLS to GeminiAdapter or CodexAdapter.
-const { handleToolCall, initToolHandlers } = require('./lib/tool-handlers');
+const { handleToolCall, initToolHandlers, isStudioTierAvailable, getStudioTierResolver } = require('./lib/tool-handlers');
+const shayShaySessions = require('./lib/shay-shay-sessions');
 const { startInterview, recordAnswer, getCurrentQuestion, shouldInterview } = require('./lib/client-interview');
 const fontRegistry = require('./lib/font-registry');
 const layoutRegistry = require('./lib/layout-registry');
 const famSkeletons = require('./lib/famtastic-skeletons');
+const styleFingerprint = require('./lib/style-fingerprint');
+const { resolveTier, normalizeTierAndMode } = require('./lib/tier');
+const { validateSpec: validateSpecSchema, normalizeRequiredFields } = require('./lib/spec-schema');
+const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
+const logger = require('./lib/logger');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -191,6 +200,17 @@ function readSpec() {
           console.log(`[spec] ${TAG}: migrated flat deploy fields to environments.staging`);
           fs.writeFileSync(SPEC_FILE(), JSON.stringify(_specCache, null, 2));
         }
+        // L143 — normalize tier and derived famtastic_mode; write back if dirty (drift repair)
+        const { dirty: _tierDirty } = normalizeTierAndMode(_specCache);
+        // P0.2 schema repair-on-read — fill required fields with sensible defaults
+        // when missing. Does NOT default tag/site_name (those identify the site).
+        const { dirty: _schemaDirty } = normalizeRequiredFields(_specCache);
+        if (_tierDirty || _schemaDirty) {
+          console.log(`[spec] ${TAG}: spec normalized (tier=${_tierDirty}, schema=${_schemaDirty}) — writing drift repair`);
+          const _tierTmp = SPEC_FILE() + '.tmp';
+          fs.writeFileSync(_tierTmp, JSON.stringify(_specCache, null, 2));
+          fs.renameSync(_tierTmp, SPEC_FILE());
+        }
       }
     } catch (e) {
       console.error(`[spec] Failed to parse ${SPEC_FILE()}: ${e.message}`);
@@ -253,6 +273,11 @@ initToolHandlers({
   getTag:     () => TAG,
   hubRoot:    HUB_ROOT,
 });
+
+// Wire the patch-applied notifier so propose_studio_patch's auto-apply path
+// (SHAY_AUTO_APPROVE=true) can fire the same WS broadcast + system-notification
+// queue that the CLI apply route uses. Lazy require so circular deps stay quiet.
+require('./lib/tool-handlers').setPatchAppliedNotifier((payload) => notifyShayShayPatchApplied(payload));
 
 // --- Path safety ---
 // Validates that a page name is safe (no traversal, alphanumeric + hyphens only)
@@ -547,7 +572,15 @@ function writeBlueprint(bp) {
   fs.writeFileSync(BLUEPRINT_FILE(), JSON.stringify(bp, null, 2));
 }
 
-// Swap data-logo-v anchor content: img if assets/logo.{ext} exists, site name text otherwise
+// Swap data-logo-v anchor content: img if assets/logo.{ext} exists, site name text otherwise.
+//
+// Three-step normalisation (P0.2 fix for bug-broken-header-links-2026-04-25):
+//   A. Swap inner content of EVERY data-logo-v anchor to canonical newContent
+//      (regex /gi — Claude sometimes emits both image-form and text-form anchors;
+//      the prior /i flag only normalised the first).
+//   B. Dedupe — keep only the first data-logo-v anchor; remove the rest.
+//   C. Strip any style="..." attribute from surviving data-logo-v anchors
+//      (no-inline-styles standing rule).
 function applyLogoV(pages) {
   try {
     const distDir = DIST_DIR();
@@ -570,16 +603,41 @@ function applyLogoV(pages) {
       ? `<img src="${logoFile}" alt="${siteName}" class="h-10 w-auto">`
       : siteName;
 
-    const logoVRegex = /(<a[^>]*data-logo-v[^>]*>)([\s\S]*?)(<\/a>)/i;
+    function normalizeLogoMarkup(htmlString) {
+      if (!htmlString.includes('data-logo-v')) return htmlString;
+
+      // Step A: swap content of every data-logo-v anchor (note /gi for global match)
+      let html = htmlString.replace(
+        /(<a[^>]*data-logo-v[^>]*>)([\s\S]*?)(<\/a>)/gi,
+        `$1${newContent}$3`
+      );
+
+      // Step B: dedupe — keep only the first data-logo-v anchor
+      const anchorRegex = /<a[^>]*data-logo-v[^>]*>[\s\S]*?<\/a>/gi;
+      const matches = html.match(anchorRegex) || [];
+      if (matches.length > 1) {
+        let seenFirst = false;
+        html = html.replace(anchorRegex, (m) => {
+          if (!seenFirst) { seenFirst = true; return m; }
+          return '';
+        });
+      }
+
+      // Step C: strip inline style="..." from any data-logo-v anchor
+      html = html.replace(
+        /(<a[^>]*data-logo-v[^>]*?)(\s*style="[^"]*")([^>]*>)/gi,
+        '$1$3'
+      );
+
+      return html;
+    }
 
     // Update the canonical nav partial first so syncNavPartial won't clobber it
     const navPartialPath = path.join(distDir, '_partials', '_nav.html');
     if (fs.existsSync(navPartialPath)) {
-      let nav = fs.readFileSync(navPartialPath, 'utf8');
-      if (logoVRegex.test(nav)) {
-        nav = nav.replace(logoVRegex, `$1${newContent}$3`);
-        fs.writeFileSync(navPartialPath, nav);
-      }
+      const original = fs.readFileSync(navPartialPath, 'utf8');
+      const updated = normalizeLogoMarkup(original);
+      if (updated !== original) fs.writeFileSync(navPartialPath, updated);
     }
 
     // Update all pages
@@ -588,10 +646,10 @@ function applyLogoV(pages) {
     for (const page of allPages) {
       const filePath = path.join(distDir, page);
       if (!fs.existsSync(filePath)) continue;
-      let html = fs.readFileSync(filePath, 'utf8');
-      if (logoVRegex.test(html)) {
-        html = html.replace(logoVRegex, `$1${newContent}$3`);
-        fs.writeFileSync(filePath, html);
+      const original = fs.readFileSync(filePath, 'utf8');
+      const updatedHtml = normalizeLogoMarkup(original);
+      if (updatedHtml !== original) {
+        fs.writeFileSync(filePath, updatedHtml);
         updated++;
       }
     }
@@ -1007,6 +1065,7 @@ function listPages() {
 // --- Express app ---
 const app = express();
 app.use(express.json());
+app.use(logger.middleware());
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: false,
@@ -1035,6 +1094,14 @@ app.use((req, res, next) => {
 
 // Serve spec.json
 // Deploy & environment info (structured: local + staging + production)
+app.get('/api/logs/tail', (req, res) => {
+  const n = Math.min(parseInt(req.query.n) || 100, 500);
+  const level = req.query.level || null;
+  let lines = logger.tail(n);
+  if (level) lines = lines.filter(l => l.level === level);
+  res.json({ count: lines.length, lines });
+});
+
 app.get('/api/deploy-info', (req, res) => {
   try {
     const spec = readSpec();
@@ -1076,6 +1143,61 @@ app.get('/api/deploy-info', (req, res) => {
   } catch {
     res.json({ local: {}, staging: null, production: null, repo: null, deployed: false });
   }
+});
+
+// POST /api/deploy — transactional deploy endpoint.
+// P0.6 fix: the Deploy buttons used to ws.send a chat message ("deploy to staging")
+// which was vulnerable to classifier mis-routing and brain-route gating. This
+// endpoint is the structured contract: 4xx + reason on preflight failure (so the
+// caller knows the dispatch failed), 200 + dispatched on success.
+// See architecture/2026-04-27-p0.6-diagnostic.md (Finding 3).
+app.post('/api/deploy', async (req, res) => {
+  const env = (req.body && req.body.env) || 'staging';
+  if (env !== 'staging' && env !== 'production') {
+    return res.status(400).json({ ok: false, reason: 'invalid_env', details: `env must be 'staging' or 'production', got '${env}'` });
+  }
+  if (!TAG) {
+    return res.status(400).json({ ok: false, reason: 'no_active_site', details: 'No active site selected.' });
+  }
+  if (deployInProgress) {
+    return res.status(409).json({ ok: false, reason: 'deploy_in_progress', details: 'A deploy is already running.' });
+  }
+
+  // Preflight here so the caller gets a structured reason synchronously.
+  // runDeploy will redo the same checkNetlify probe — that's cheap (~3s) and harmless.
+  let netlify;
+  try {
+    netlify = await checkNetlify();
+  } catch (probeErr) {
+    netlify = { ok: false, reason: 'other', details: probeErr.message };
+  }
+  if (!netlify || !netlify.ok) {
+    return res.status(412).json({
+      ok: false,
+      reason: netlify && netlify.reason ? netlify.reason : 'other',
+      details: (netlify && netlify.details) || 'Netlify is not configured.',
+    });
+  }
+
+  // Build a broadcasting WS proxy so progress reaches every connected client,
+  // mirroring the triggerSiteBuild mockWs pattern.
+  const wsClients = [...wss.clients].filter(c => c.readyState === 1);
+  const broadcastWs = {
+    readyState: 1,
+    send: (data) => {
+      wsClients.forEach(client => {
+        if (client.readyState === 1) {
+          try { client.send(data); } catch {}
+        }
+      });
+    },
+  };
+
+  // Fire and return — actual deploy progress streams to WS clients.
+  runDeploy(broadcastWs, env).catch(err => {
+    console.error('[deploy] uncaught error in runDeploy:', err.message);
+  });
+  return res.json({ ok: true, dispatched: true, env, tag: TAG });
 });
 
 // Create production repo for the current site
@@ -1151,6 +1273,17 @@ app.use('/site-assets', express.static(path.join(DIST_DIR(), 'assets')));
 // Get site config
 app.get('/api/config', (req, res) => {
   res.json({ tag: TAG, previewPort: PREVIEW_PORT, studioPort: PORT, sitesRoot: SITES_ROOT });
+});
+
+// Smoke-suite readiness probe (P0.0). Public, unauthenticated, no side effects.
+// Wrapper scripts use this to confirm the Studio process is up and serving HTTP
+// before issuing further commands (e.g. the EADDRINUSE 50-cycle test).
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Server info — session metadata, uptime, file status
@@ -3500,9 +3633,12 @@ OUTPUT FORMAT — generate this EXACT structure:
     /* END LAYOUT FOUNDATION */
 
     :root {
-      --color-primary: ${spec.colors?.primary || '#1a5c2e'};
-      --color-accent: ${spec.colors?.accent || '#d4a843'};
-      --color-bg: ${spec.colors?.bg || '#f0f4f0'};
+      /* P1.2 — per-site style fingerprint locked at build start (see lib/style-fingerprint.js).
+         Resolution order: spec.style_fingerprint.palette (P1.2) > spec.colors (legacy) >
+         FAMTASTIC_DEFAULT_PALETTE (GAP-1 fallback). */
+      --color-primary: ${spec.style_fingerprint?.palette?.primary || spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary};
+      --color-accent: ${spec.style_fingerprint?.palette?.accent || spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent};
+      --color-bg: ${spec.style_fingerprint?.palette?.background || spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background};
       --font-serif: '${fontSerif}', serif;
       --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
@@ -3571,7 +3707,7 @@ ${FAMTASTIC_DNA_VOCAB}
 
 ${systemRules}
 
-${spec.famtastic_mode ? famSkeletons.LOGO_SKELETON_TEMPLATE : ''}
+${getLogoSkeletonBlock(spec)}
 
 OUTPUT: ${spec.famtastic_mode
   ? 'First output the three <!-- LOGO_FULL -->, <!-- LOGO_ICON -->, <!-- LOGO_WORDMARK --> SVG blocks exactly as specified above. Then output the complete HTML document. No explanation, no markdown fences.'
@@ -4113,7 +4249,8 @@ app.get('/api/projects', (req, res) => {
 
   const projects = dirs.map(d => {
     try {
-      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8'));
+      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8')); // L4116
+      normalizeTierAndMode(spec); // in-memory only — listing endpoint, no write-back
       const hasHtml = fs.existsSync(path.join(SITES_ROOT, d, 'dist', 'index.html'));
       const pageCount = hasHtml ? fs.readdirSync(path.join(SITES_ROOT, d, 'dist')).filter(f => f.endsWith('.html')).length : 0;
       // Resolve display name: stored site_name → brief.business_name → tag slug
@@ -4171,7 +4308,8 @@ app.get('/api/sites', (req, res) => {
   });
   const sites = dirs.map(d => {
     try {
-      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8'));
+      const spec = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, d, 'spec.json'), 'utf8')); // L4174
+      normalizeTierAndMode(spec); // in-memory only — listing endpoint, no write-back
       const tagName = d.replace(/^site-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       const displayName = (spec.site_name && spec.site_name !== 'New Site') ? spec.site_name
                         : spec.design_brief?.business_name || tagName;
@@ -4221,6 +4359,7 @@ app.post('/api/switch-site', async (req, res) => {
   sessionMessageCount = 0;
   sessionStartedAt = new Date().toISOString();
   resetBrainSessions();
+  shayShaySessions.resetAll();
 
   // Load new site state
   const studio = loadStudio();
@@ -4243,59 +4382,56 @@ app.post('/api/switch-site', async (req, res) => {
 });
 
 app.post('/api/new-site', async (req, res) => {
+  // Authorization is caller-owned (no Developer Mode gating on this endpoint).
+  // The shared createSite() helper performs sanitization, identity check,
+  // directory creation, atomic spec write, and TAG switch + WS notification.
   let newTag = req.body.tag;
   if (!newTag) return res.status(400).json({ error: 'tag required' });
-  // Sanitize: lowercase, replace spaces/special chars with hyphens
   newTag = newTag.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   if (!newTag.startsWith('site-')) newTag = 'site-' + newTag;
 
-  const newSiteDir = path.join(SITES_ROOT, newTag);
-  if (fs.existsSync(newSiteDir)) {
-    return res.status(400).json({ error: `Site "${newTag}" already exists` });
+  // P1.1.1 — reject invalid tier values explicitly instead of silently
+  // coercing via normalizeTierAndMode. The set of allowed values matches
+  // VALID_TIER_VALUES in lib/spec-schema.js. Closes C1.6 from the P1.1
+  // edge-case report.
+  const ALLOWED_TIERS = ['famtastic', 'clean'];
+  if (req.body.tier !== undefined && !ALLOWED_TIERS.includes(req.body.tier)) {
+    return res.status(400).json({
+      ok: false,
+      error: `Invalid tier "${req.body.tier}". Allowed: ${ALLOWED_TIERS.join(', ')}.`,
+      reason: 'invalid_tier',
+      allowed: ALLOWED_TIERS,
+      received: req.body.tier,
+    });
   }
 
-  // Create minimal site structure
-  const distDir = path.join(newSiteDir, 'dist');
-  fs.mkdirSync(distDir, { recursive: true });
-
-  // Session 11 Fix 4: flag new sites for auto-interview on next studio open
-  // unless the admin has disabled auto_interview in studio-config.json.
-  const autoInterviewEnabled = loadSettings().auto_interview !== false;
-  const spec = {
-    tag: newTag,
-    site_name: req.body.name || newTag.replace('site-', '').replace(/-/g, ' '),
+  const brief = {
+    business_name: req.body.name || newTag.replace(/^site-/, '').replace(/-/g, ' '),
     business_type: req.body.business_type || '',
-    state: 'new',
-    created_at: new Date().toISOString(),
-    interview_pending: req.body.client_brief ? false : (autoInterviewEnabled === true),
-    interview_completed: req.body.client_brief ? true : false,
-    // If brief data provided at creation time (from Brief tab flow), pre-load it
+    ...(req.body.tier ? { tier: req.body.tier } : {}),
+    interview_pending: !req.body.client_brief,
+    interview_completed: !!req.body.client_brief,
     ...(req.body.client_brief ? { client_brief: req.body.client_brief } : {}),
   };
-  const _newSpecPath = path.join(newSiteDir, 'spec.json');
-  fs.writeFileSync(_newSpecPath + '.tmp', JSON.stringify(spec, null, 2));
-  fs.renameSync(_newSpecPath + '.tmp', _newSpecPath); // atomic write
 
-  // Switch to the new site — await so summary writes to the old site directory
-  await endSession();
-  TAG = newTag;
-  writeLastSite(TAG);
-  invalidateSpecCache();
-  currentPage = 'index.html';
-  sessionMessageCount = 0;
-  sessionStartedAt = new Date().toISOString();
-  startSession();
-  studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
-
-  const pages = listPages();
-  wss.clients.forEach(client => {
-    if (client.readyState === 1) {
-      client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
-    }
+  const result = await createSite(brief, {
+    tag_source: 'caller_supplied',
+    tag: newTag,
+    on_collision: 'error',
   });
 
-  console.log(`[studio] Created and switched to new site: ${TAG}`);
-  res.json({ success: true, tag: TAG });
+  if (result.status === 'error') {
+    // Preserve current human-readable error string for the Brief tab client contract,
+    // and add machine-readable error_code alongside it.
+    return res.status(400).json({
+      error: `Site "${result.existing_tag || newTag}" already exists`,
+      error_code: result.error_code || 'tag_exists',
+    });
+  }
+
+  // status === 'created' (caller_supplied with on_collision='error' never returns
+  // 'updated_existing' or 'collision' for fresh tags).
+  res.json({ success: true, tag: result.tag });
 });
 
 // --- Client Interview API ---
@@ -5092,6 +5228,7 @@ function loadSettings() {
     firefly_client_id: '',
     firefly_client_secret: '',
     prod_sites_base: path.join(require('os').homedir(), 'famtastic-sites'),
+    image_provider: 'imagen4',
     developer_mode: {
       enabled: true,
       trust_mode: 'apply_with_approval',
@@ -5871,6 +6008,74 @@ app.get('/api/studio-capabilities', async (req, res) => {
   }
 });
 
+// ── Shay-Shay session cookie ──────────────────────────────────────────────
+// Server-issued, server-validated session id per surface (lite/desk). Replaces
+// the older client-localStorage scheme, which couldn't reconcile with non-
+// browser callers (curl, Claude Code test runs). Cookie is httpOnly + sameSite
+// lax; no expiration so the id persists until the user runs new-conversation.
+
+const SHAY_SHAY_SURFACES = new Set(['lite', 'desk']);
+
+function _parseCookies(req) {
+  const header = req && req.headers && req.headers.cookie;
+  if (!header) return {};
+  const out = {};
+  for (const part of String(header).split(';')) {
+    const idx = part.indexOf('=');
+    if (idx < 0) continue;
+    const k = part.slice(0, idx).trim();
+    const v = part.slice(idx + 1).trim();
+    if (k) out[k] = decodeURIComponent(v);
+  }
+  return out;
+}
+
+function _shaySessionCookieName(surface) {
+  const s = SHAY_SHAY_SURFACES.has(surface) ? surface : 'lite';
+  return 'shay-shay-session-' + s;
+}
+
+function _setShaySessionCookie(res, name, value) {
+  // httpOnly + sameSite=Lax. No Max-Age → session-permanent until cleared.
+  // Path=/ so all studio routes see it. No Secure flag (localhost http://).
+  res.append('Set-Cookie', name + '=' + encodeURIComponent(value) + '; Path=/; HttpOnly; SameSite=Lax');
+}
+
+function _clearShaySessionCookie(res, name) {
+  res.append('Set-Cookie', name + '=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+}
+
+function getOrMintShayShaySession(req, res, surface) {
+  const name = _shaySessionCookieName(surface);
+  const cookies = _parseCookies(req);
+  const existing = cookies[name];
+  if (existing && typeof existing === 'string' && existing.length >= 8) {
+    console.error('[session-diag] cookie HIT name=' + name + ' id=' + existing);
+    return { conversationId: existing, source: 'cookie', minted: false };
+  }
+  const fresh = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : ('conv-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36));
+  _setShaySessionCookie(res, name, fresh);
+  console.error('[session-diag] cookie MINTED name=' + name + ' id=' + fresh);
+  return { conversationId: fresh, source: 'minted', minted: true };
+}
+
+app.post('/api/shay-shay/new-conversation', (req, res) => {
+  const target = (req.body && req.body.surface) || 'all';
+  const cleared = [];
+  if (target === 'lite' || target === 'all') {
+    _clearShaySessionCookie(res, _shaySessionCookieName('lite'));
+    cleared.push('lite');
+  }
+  if (target === 'desk' || target === 'all') {
+    _clearShaySessionCookie(res, _shaySessionCookieName('desk'));
+    cleared.push('desk');
+  }
+  console.error('[session-diag] new-conversation cleared=' + JSON.stringify(cleared));
+  res.json({ ok: true, cleared });
+});
+
 app.get('/api/shay-shay/session-init', async (req, res) => {
   try {
     const manifest = loadManifest() || await buildCapabilityManifest();
@@ -5878,6 +6083,10 @@ app.get('/api/shay-shay/session-init', async (req, res) => {
     const diff = require('./lib/capability-manifest').diffStateVsManifest(manifest);
     const developerMode = summarizeShayDeveloperMode();
     const recentAudit = readShayDeveloperModeAudit(5);
+    // Mint (or read) per-surface session cookies on init so subsequent
+    // /api/shay-shay calls always travel with a server-issued id.
+    const liteSession = getOrMintShayShaySession(req, res, 'lite');
+    const deskSession = getOrMintShayShaySession(req, res, 'desk');
     res.json({
       ok: true,
       generated_at: new Date().toISOString(),
@@ -5888,6 +6097,10 @@ app.get('/api/shay-shay/session-init', async (req, res) => {
       active_page: currentPage || 'index.html',
       developer_mode: developerMode,
       developer_audit: recentAudit,
+      conversation_ids: {
+        lite: liteSession.conversationId,
+        desk: deskSession.conversationId,
+      },
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -5904,10 +6117,57 @@ app.post('/api/shay-shay', async (req, res) => {
       context = {},
       bridge_result: incomingBridgeResult = null,
       surface = 'lite',
-      conversation_id = null,
       handoff_context = null,
+      images: incomingImages = null,   // vision: user-attached images for the brain
     } = requestBody;
+    // Sanitize incoming images — accept either { media_type, data } (base64)
+    // or { url } and download. Cap count + per-image size for safety.
+    const sanitizedImages = await sanitizeShayShayImages(incomingImages);
     if (!message) return res.status(400).json({ error: 'message required' });
+
+    // Cookie is the source of truth for conversation_id. Any body-provided
+    // convId is ignored — frontends no longer mint or send it. Non-browser
+    // callers (curl, test runners) without a cookie get a freshly minted id,
+    // which is correct: they're a new session.
+    const _resolvedSurface = SHAY_SHAY_SURFACES.has(surface) ? surface : 'lite';
+    const sessionInfo = getOrMintShayShaySession(req, res, _resolvedSurface);
+    const conversation_id = sessionInfo.conversationId;
+
+    // Cookie convId is authoritative — ensure the session map has a default
+    // entry for it so /studio on (and the tier-pin gate) can mutate flags
+    // without a chicken-and-egg problem. getOrCreate is a no-op when an
+    // entry already exists; on first sight it creates studioTier=false.
+    if (conversation_id) {
+      shayShaySessions.getOrCreate(conversation_id);
+    }
+
+    // Stash convId/surface for tool handlers (propose_studio_patch records it
+    // in the patch JSON so the apply CLI can notify the right convId).
+    require('./lib/tool-handlers').setCurrentShayContext({
+      conversation_id,
+      surface: _resolvedSurface,
+    });
+
+    // Drain any system notifications queued for this convId (e.g., a patch
+    // landing while Shay-Shay is idle) and prepend to the user message so
+    // her next turn knows about external state changes.
+    const _notif = drainShayShayNotifications(conversation_id);
+    let messageForBrain = message;
+    if (_notif.length > 0) {
+      messageForBrain = [
+        'SYSTEM NOTIFICATIONS (since your last turn):',
+        ...(_notif.map(n => '  • ' + n)),
+        '',
+        'USER MESSAGE:',
+        message,
+      ].join('\n');
+      console.log('[shay-shay] drained ' + _notif.length + ' notification(s) into next turn convId=' + conversation_id);
+    }
+
+    {
+      const _diagSession = conversation_id ? shayShaySessions.get(conversation_id) : null;
+      console.error('[tier-diag] /api/shay-shay ENTRY convId=', conversation_id, 'source=' + sessionInfo.source, 'surface=' + _resolvedSurface, 'msg=', String(message).slice(0, 80), 'session=', _diagSession ? { studioTier: _diagSession.studioTier, forcedBrain: _diagSession.forcedBrain } : null);
+    }
 
     const bridgeState = resolveShayShayBridgeState(incomingBridgeResult, context, {
       topLevelProvided: hasIncomingBridgeResult,
@@ -5919,6 +6179,96 @@ app.post('/api/shay-shay', async (req, res) => {
     const agentCards = loadShayShayAgentCards();
     const siteSnapshot = buildShayShaySiteSnapshot(context, { bridgeState, surface, conversation_id });
     const bridgeDebug = siteSnapshot.bridge_debug;
+
+    // Studio Tier slash commands — must run BEFORE tier-0 classification so a
+    // command like /studio on can't be intercepted by any other deterministic
+    // matcher. Returns early on every recognized command.
+    const trimmedMessage = typeof message === 'string' ? message.trim() : '';
+    if (trimmedMessage.startsWith('/studio')) {
+      const cmd = trimmedMessage.slice('/studio'.length).trim().toLowerCase();
+      const session = conversation_id ? shayShaySessions.getOrCreate(conversation_id) : null;
+      const claudeAvailable = ((manifest && manifest.capabilities) || {}).claude_api === 'available';
+
+      if (cmd === 'on' || cmd === 'tier on') {
+        if (!session) {
+          return res.json({
+            response: 'Studio Tier requires a stable conversation_id. Reload the Shay-Shay UI to obtain one, then try again.',
+            source: 'studio-tier-slash',
+            bridge_debug: bridgeDebug,
+          });
+        }
+        if (!isStudioTierAvailable()) {
+          const r = getStudioTierResolver();
+          const loadErr = r ? r.getLoadError() : 'resolver not initialized';
+          return res.json({
+            response: `Studio Tier is unavailable: ${loadErr}. Fix docs/famtastic-root-inventory.json and restart Studio.`,
+            source: 'studio-tier-slash',
+            bridge_debug: bridgeDebug,
+          });
+        }
+        if (!claudeAvailable) {
+          return res.json({
+            response: 'Studio Tier requires Claude. Claude is not available right now (check ANTHROPIC_API_KEY and brain status). Try again once Claude is back.',
+            source: 'studio-tier-slash',
+            bridge_debug: bridgeDebug,
+          });
+        }
+        session.studioTier  = true;
+        session.forcedBrain = 'claude';
+        console.error('[tier-diag] /studio on — convId=', conversation_id, 'studioTier=', session.studioTier, 'forcedBrain=', session.forcedBrain, 'sessionMap.has=', !!shayShaySessions.get(conversation_id));
+        return res.json({
+          response: '🔧 Studio Tier ON. I can now read Studio source via `read_studio_file` and propose patches via `propose_studio_patch`. Patches go to a review queue at `~/famtastic/.studio-patches/pending/` — nothing applies until you run `fam-hub studio patches apply <id>`.',
+          source: 'studio-tier-slash',
+          studio_tier: true,
+          forced_brain: 'claude',
+          bridge_debug: bridgeDebug,
+        });
+      }
+
+      if (cmd === 'off' || cmd === 'tier off') {
+        // Studio Tier off clears tier flags but does NOT change brain pinning.
+        // When SHAY_BRAIN_OVERRIDE is set the forcedBrain stays so routing
+        // continues to lock to the override across tier-on/tier-off cycles.
+        const _brainOverride = String(process.env.SHAY_BRAIN_OVERRIDE || '').trim().toLowerCase();
+        if (session) {
+          session.studioTier = false;
+          if (!_brainOverride) {
+            session.forcedBrain = null;
+          }
+        }
+        return res.json({
+          response: '🔧 Studio Tier OFF. Back to standard Shay-Shay tools.' + (_brainOverride ? ' (Brain stays pinned to ' + _brainOverride + ' via SHAY_BRAIN_OVERRIDE.)' : ''),
+          source: 'studio-tier-slash',
+          studio_tier: false,
+          forced_brain: session && session.forcedBrain ? session.forcedBrain : null,
+          bridge_debug: bridgeDebug,
+        });
+      }
+
+      if (cmd === 'status') {
+        const tierOn = !!(session && session.studioTier);
+        const brain  = session && session.forcedBrain ? session.forcedBrain : 'dynamic';
+        return res.json({
+          response: `Studio Tier: ${tierOn ? 'ON' : 'OFF'} | brain: ${brain} | available: ${isStudioTierAvailable() ? 'yes' : 'no'} | claude: ${claudeAvailable ? 'available' : 'unavailable'}`,
+          source: 'studio-tier-slash',
+          studio_tier: tierOn,
+          forced_brain: session && session.forcedBrain ? session.forcedBrain : null,
+          bridge_debug: bridgeDebug,
+        });
+      }
+
+      // Unknown / no-arg: list commands
+      return res.json({
+        response: 'Studio Tier commands: `/studio on`, `/studio off`, `/studio status`',
+        source: 'studio-tier-slash',
+        bridge_debug: bridgeDebug,
+      });
+    }
+
+    // Look up Studio Tier session state for this conversation. Used below to
+    // pin Claude when forcedBrain is set and to thread studioTier into the
+    // brain-interface tool-assembly gate.
+    const tierSession = conversation_id ? shayShaySessions.get(conversation_id) : null;
 
     // Tier 0: deterministic commands — no AI needed
     const lower = message.toLowerCase().trim();
@@ -5932,6 +6282,21 @@ app.post('/api/shay-shay', async (req, res) => {
           bridge_debug: bridgeDebug,
         });
       }
+      // character_pipeline is async — fire-and-forget, return jobId immediately
+      if (tier0.intent === 'character_pipeline') {
+        suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'character_pipeline', source: 'shay-shay-t0' });
+        const jobId = require('crypto').randomUUID();
+        setImmediate(() => runCharacterPipeline(jobId, message, context).catch(e =>
+          broadcastAll({ type: 'character-pipeline-error', jobId, error: e.message })
+        ));
+        return res.json({
+          action: 'character_pipeline',
+          jobId,
+          status: 'started',
+          response: `Starting character pipeline. I'll generate the anchor, then all 12 poses, hero video, and promo — broadcasting progress as each step completes.`,
+          bridge_debug: bridgeDebug,
+        });
+      }
       // autonomous_build is async — handle separately
       if (tier0.intent === 'autonomous_build') {
         suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'autonomous_build', source: 'shay-shay-t0' });
@@ -5941,6 +6306,27 @@ app.post('/api/shay-shay', async (req, res) => {
           response: buildResult.message || (buildResult.error ? `Build failed: ${buildResult.error}` : 'Build initiated'),
           bridge_debug: bridgeDebug,
           ...buildResult,
+        });
+      }
+      // build_request is async — extracts brief, returns confirmation prompt.
+      // No route_to_chat: status surfaces in Shay Desk only. P0.3 split the
+      // chain into request → confirm to add a human-in-the-loop checkpoint.
+      if (tier0.intent === 'build_request') {
+        suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'build_request', source: 'shay-shay-t0' });
+        const buildResult = await handleShayBuildRequest(message, context);
+        return res.json({
+          ...buildResult,
+          bridge_debug: bridgeDebug,
+        });
+      }
+      // confirm/cancel of a pending build_request. The full build chain
+      // (createSite → synthesize → triggerSiteBuild) runs here on confirm.
+      if (tier0.intent === 'confirm_build_request' || tier0.intent === 'cancel_build_request') {
+        suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });
+        const confirmResult = await handleShayBuildConfirmation(message, context);
+        return res.json({
+          ...confirmResult,
+          bridge_debug: bridgeDebug,
         });
       }
       const result = handleShayShayTier0(tier0, message, context, manifest);
@@ -5971,15 +6357,42 @@ app.post('/api/shay-shay', async (req, res) => {
     const reasoning = classifyShayShayReasoning(lower);
     const selection = selectShayShayBrain(reasoning, manifest, agentCards);
 
-    let usedBrain = selection.brain;
-    let usedModel = selection.model;
+    // Studio Tier brain pinning. When tier is on, force Claude and refuse the
+    // request rather than silently fall back to another brain — Studio Tier
+    // tools only reach Claude, so a fallback would leave the user with a
+    // present-but-broken mode.
+    let effectiveBrain = selection.brain;
+    let effectiveModel = selection.model;
+    let suppressFallback = false;
+    console.error('[tier-diag] tier-pin GATE convId=', conversation_id, 'tierSession=', tierSession ? { studioTier: tierSession.studioTier, forcedBrain: tierSession.forcedBrain } : null, 'selection.brain=', selection.brain);
+    if (tierSession && tierSession.studioTier && tierSession.forcedBrain === 'claude') {
+      const claudeAvailable = ((manifest && manifest.capabilities) || {}).claude_api === 'available';
+      if (!claudeAvailable) {
+        // Clear tier state so future requests don't keep failing
+        tierSession.studioTier  = false;
+        tierSession.forcedBrain = null;
+        return res.status(503).json({
+          error: 'Studio Tier requires Claude, and Claude is currently unavailable. Tier mode has been turned off; run `/studio on` again once Claude is back.',
+          studio_tier: false,
+          bridge_debug: bridgeDebug,
+        });
+      }
+      effectiveBrain = 'claude';
+      const claudeCard = agentCards && agentCards.claude ? agentCards.claude : {};
+      effectiveModel = claudeCard.model || selection.model || null;
+      suppressFallback = true;
+      console.error('[tier-diag] tier-pin APPLIED effectiveBrain=claude effectiveModel=', effectiveModel);
+    }
+
+    let usedBrain = effectiveBrain;
+    let usedModel = effectiveModel;
     let responseText = '';
 
     try {
       responseText = await executeShayShayBrainCall({
-        brain: selection.brain,
-        model: selection.model,
-        message,
+        brain: effectiveBrain,
+        model: effectiveModel,
+        message: messageForBrain,
         context,
         manifest,
         instructions,
@@ -5989,15 +6402,21 @@ app.post('/api/shay-shay', async (req, res) => {
         conversation_id,
         surface,
         handoff_context,
+        studioTier: !!(tierSession && tierSession.studioTier),
+        images: sanitizedImages,
       });
     } catch (err) {
+      if (suppressFallback) {
+        // Studio Tier is on — do not fall back to a non-Claude brain.
+        throw err;
+      }
       if (selection.fallbackBrain && selection.fallbackBrain !== selection.brain) {
         usedBrain = selection.fallbackBrain;
         usedModel = selection.fallbackModel;
         responseText = await executeShayShayBrainCall({
           brain: selection.fallbackBrain,
           model: selection.fallbackModel,
-          message,
+          message: messageForBrain,
           context,
           manifest,
           instructions,
@@ -6007,13 +6426,14 @@ app.post('/api/shay-shay', async (req, res) => {
           conversation_id,
           surface,
           handoff_context,
+          studioTier: false,
         });
       } else {
         throw err;
       }
     }
 
-    const normalized = normalizeShayShayResponse(responseText, {
+    let normalized = normalizeShayShayResponse(responseText, {
       response: responseText || 'I do not have a good answer yet.',
       action: null,
     });
@@ -6022,17 +6442,186 @@ app.post('/api/shay-shay', async (req, res) => {
       normalized.response = `${selection.note} ${normalized.response}`.trim();
     }
 
-    // Bridge execution loop — if Shay signaled a bridge_request, run it and include result
+    if (hasIncomingBridgeResult && incomingBridgeResult) {
+      console.error('[bridge-diag] inbound: client carried prior bridge_result back op=' + (incomingBridgeResult.op || 'unknown') + ' — brain saw it via siteSnapshot.bridge_result');
+    }
+
+    // Bridge execution loop — server-side auto-continuation (max 5 iterations).
+    // Loop closes inside one user turn: execute bridge op, re-call brain with
+    // siteSnapshot.bridge_result populated, re-normalize, repeat until the
+    // brain stops emitting bridge_request or the iteration cap is hit.
     let bridgeResult = null;
-    if (normalized.bridge_request && typeof normalized.bridge_request === 'object') {
-      logShayShayBridgeRequest(normalized.bridge_request);
-      try {
-        bridgeResult = await executeBridgeOp(normalized.bridge_request);
-        logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
-      } catch (e) {
-        bridgeResult = { op: normalized.bridge_request.op, error: e.message };
-        logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
+    let bridgeIterations = 0;
+    let bridgeTruncated = false;
+    const MAX_BRIDGE_ITERATIONS = 50;
+
+    while (
+      (normalized.bridge_request && typeof normalized.bridge_request === 'object') ||
+      (normalized.screenshot_request && typeof normalized.screenshot_request === 'object')
+    ) {
+      if (bridgeIterations >= MAX_BRIDGE_ITERATIONS) {
+        bridgeTruncated = true;
+        console.error('[bridge-diag] iteration cap hit (' + MAX_BRIDGE_ITERATIONS + ') — returning latest response with truncation flag');
+        break;
       }
+      bridgeIterations += 1;
+      // Per-iteration image buffer. May be populated by either (a) a
+      // bridge_request with op=screenshot or (b) a top-level screenshot_request.
+      let continuationImages = null;
+
+      // ── (a) bridge_request (text-feedback path; or image when op=screenshot) ─
+      if (normalized.bridge_request && typeof normalized.bridge_request === 'object') {
+        const reqOp = (normalized.bridge_request.op || 'unknown');
+        const reqTarget = normalized.bridge_request.path
+          || normalized.bridge_request.command
+          || normalized.bridge_request.url
+          || '';
+        console.error('[bridge-diag] iteration=' + bridgeIterations + ' op=' + reqOp);
+        console.error('[bridge-diag] brain emitted bridge_request: op=' + reqOp + ' response_text_len=' + String(normalized.response || '').length);
+        logShayShayBridgeRequest(normalized.bridge_request);
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: reqOp,
+          target: String(reqTarget).slice(0, 200),
+          phase: 'executing',
+        });
+        try {
+          bridgeResult = await executeBridgeOp(normalized.bridge_request);
+          logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
+        } catch (e) {
+          bridgeResult = { op: reqOp, error: e.message };
+          logShayShayBridgeResult(normalized.bridge_request, bridgeResult);
+        }
+        // Short-circuit on unknown-op: don't burn iterations re-asking the
+        // brain when the bridge dispatcher rejected the call. Surface the
+        // real error instead of letting the loop drift into the adapter's
+        // depth-limit boilerplate ("max number of tool calls").
+        if (bridgeResult && typeof bridgeResult.error === 'string' && bridgeResult.error.indexOf('Unknown bridge op') === 0) {
+          console.error('[bridge-diag] iteration=' + bridgeIterations + ' UNKNOWN OP → short-circuit. error=' + bridgeResult.error);
+          normalized.response = bridgeResult.error
+            + (Array.isArray(bridgeResult.valid_ops) ? ' (Brain emitted: ' + JSON.stringify(normalized.bridge_request).slice(0, 200) + ')' : '');
+          normalized.bridge_request = null;
+          normalized.screenshot_request = null;
+          break;
+        }
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: reqOp,
+          target: String(reqTarget).slice(0, 200),
+          phase: 'thinking',
+        });
+        // If the bridge op produced an image (screenshot), route the bytes
+        // into the next brain call as image content and replace the snapshot
+        // payload with a small note — never put raw base64 into the prompt.
+        if (bridgeResult && bridgeResult.data && bridgeResult.media_type && (reqOp === 'screenshot' || reqOp === 'capture_screenshot')) {
+          continuationImages = (continuationImages || []).concat([{
+            media_type: bridgeResult.media_type,
+            data: bridgeResult.data,
+            source_label: bridgeResult.url || reqTarget,
+          }]);
+          console.log('[shay-shay] bridge screenshot captured ' + (bridgeResult.url || reqTarget) + ' bytes_b64=' + bridgeResult.data.length + ' (routed to next brain call as image)');
+          siteSnapshot.bridge_result = {
+            op: reqOp,
+            url: bridgeResult.url || reqTarget,
+            attached_as_image: true,
+            note: 'Image attached to this turn — see your visual input.',
+          };
+        } else {
+          siteSnapshot.bridge_result = bridgeResult;
+        }
+        siteSnapshot.bridge_debug = buildShayShayBridgeDebug({
+          bridgeResult,
+          source: 'server_continuation',
+          seen: true,
+        });
+      }
+
+      // ── (b) screenshot_request (image-feedback path) ───────────────────
+      // The brain emits { screenshot_request: { url, fullPage?, viewport? } }.
+      // Server captures via Playwright, attaches the PNG as an image block
+      // on the next brain call so vision drives the next iteration.
+      if (normalized.screenshot_request && typeof normalized.screenshot_request === 'object') {
+        const ssUrl = String(normalized.screenshot_request.url || '');
+        console.error('[bridge-diag] iteration=' + bridgeIterations + ' op=screenshot url=' + ssUrl);
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: 'screenshot',
+          target: ssUrl.slice(0, 200),
+          phase: 'executing',
+        });
+        let shotResult;
+        try {
+          shotResult = await captureScreenshotForShay(ssUrl, normalized.screenshot_request);
+        } catch (e) {
+          shotResult = { error: e.message };
+        }
+        broadcastShayShayProgress({
+          conversation_id: conversation_id || null,
+          surface: _resolvedSurface,
+          iteration: bridgeIterations,
+          max: MAX_BRIDGE_ITERATIONS,
+          op: 'screenshot',
+          target: ssUrl.slice(0, 200),
+          phase: 'thinking',
+        });
+        if (shotResult && shotResult.data) {
+          continuationImages = [{
+            media_type: shotResult.media_type || 'image/png',
+            data: shotResult.data,
+            source_label: ssUrl,
+          }];
+          console.log('[shay-shay] screenshot captured ' + ssUrl + ' bytes_b64=' + shotResult.data.length);
+          // Surface a short note in the snapshot so the brain knows the
+          // image was attached (and from where).
+          siteSnapshot.screenshot_result = { url: ssUrl, attached: true, note: 'Image attached to this turn.' };
+        } else {
+          console.error('[shay-shay] screenshot FAILED url=' + ssUrl + ' err=' + (shotResult && shotResult.error));
+          siteSnapshot.screenshot_result = { url: ssUrl, attached: false, error: (shotResult && shotResult.error) || 'unknown' };
+        }
+      } else {
+        siteSnapshot.screenshot_result = null;
+      }
+
+      // ── (c) re-call brain ──────────────────────────────────────────────
+      let nextResponseText = '';
+      try {
+        nextResponseText = await executeShayShayBrainCall({
+          brain: usedBrain,
+          model: usedModel,
+          message: messageForBrain,
+          context,
+          manifest,
+          instructions,
+          agentCards,
+          siteSnapshot,
+          reasoning,
+          conversation_id,
+          surface,
+          handoff_context: null,
+          studioTier: !!(tierSession && tierSession.studioTier),
+          images: continuationImages,
+        });
+      } catch (e) {
+        console.error('[bridge-diag] iteration=' + bridgeIterations + ' continuation brain call FAILED: ' + e.message);
+        normalized.response = (normalized.response || '') + '\n\n(Bridge continuation failed: ' + e.message + ')';
+        normalized.bridge_request = null;
+        normalized.screenshot_request = null;
+        break;
+      }
+      normalized = normalizeShayShayResponse(nextResponseText, {
+        response: nextResponseText || normalized.response || 'No response.',
+        action: null,
+      });
+      console.error('[bridge-diag] iteration=' + bridgeIterations + ' completion response_text_len=' + String(normalized.response || '').length + ' has_next_bridge=' + !!(normalized.bridge_request && typeof normalized.bridge_request === 'object') + ' has_next_screenshot=' + !!(normalized.screenshot_request && typeof normalized.screenshot_request === 'object'));
     }
 
     // Log suggestion for outcome tracking
@@ -6045,6 +6634,7 @@ app.post('/api/shay-shay', async (req, res) => {
       model: usedModel,
     });
 
+    console.error('[bridge-diag] HTTP response sent: response_text_len=' + String(normalized.response || '').length + ' has_bridge_result=' + !!bridgeResult + ' iterations=' + bridgeIterations + ' truncated=' + bridgeTruncated + ' action=' + (normalized.action || 'null'));
     res.json({
       response: normalized.response,
       action: normalized.action || null,
@@ -6056,6 +6646,8 @@ app.post('/api/shay-shay', async (req, res) => {
       suggestion_id: suggestionId,
       bridge_debug: bridgeDebug,
       conversation_id: conversation_id || null,
+      bridge_iterations: bridgeIterations,
+      ...(bridgeTruncated ? { bridge_truncated: true } : {}),
       ...(bridgeResult ? { bridge_result: bridgeResult } : {}),
       ...(normalized.commit_request && typeof normalized.commit_request === 'object' ? { commit_request: normalized.commit_request } : {}),
       ...(normalized.usage ? { usage: normalized.usage } : {}),
@@ -6209,6 +6801,11 @@ function buildShayShaySiteSnapshot(context = {}, opts = {}) {
   const componentState = (context && typeof context.component_state === 'object' && context.component_state) ? context.component_state : {};
   const previewState = (context && typeof context.preview_state === 'object' && context.preview_state) ? context.preview_state : {};
   const developerMode = summarizeShayDeveloperMode();
+  // SHAY V2 (2026-05-02 iter 3): page_context — what the page Shay-Shay is on
+  // currently exposes via the ShayContextRegistry (browser-side). Pages register
+  // a context provider; getShayShayContext() pulls the snapshot per request.
+  const pageContext = (context && typeof context.page_context === 'object' && context.page_context) ? context.page_context : null;
+  const registeredContextProviders = Array.isArray(context.registered_context_providers) ? context.registered_context_providers : [];
 
   return {
     site_tag: context.active_site || TAG || null,
@@ -6279,6 +6876,12 @@ function buildShayShaySiteSnapshot(context = {}, opts = {}) {
     repo_recent_commits: getRepoRecentCommits(),
     quality_signals: { last_test_run: getLastTestRun() },
     surface: _surface,
+    // SHAY V2 (2026-05-02 iter 3): page_context surfaces what Shay-Shay can SEE
+    // on the active page right now (Media Studio image grid, etc.). Pulled from
+    // the browser-side ShayContextRegistry. Without this, Shay is a chatbot with
+    // a fixed prompt; with it, she's a multifunctional utility tool.
+    page_context: pageContext,
+    registered_context_providers: registeredContextProviders,
     conversation_id: _conversation_id,
     visibility_contract: {
       can_see: [
@@ -6489,6 +7092,11 @@ function buildShayShayPromptSnapshot(siteSnapshot = {}) {
     repo_paths: siteSnapshot.repo_paths || null,
     bridge_result: siteSnapshot.bridge_result || null,
     bridge_debug: siteSnapshot.bridge_debug || null,
+    // SHAY V2 (2026-05-02 iter 3): page_context — Shay reads this to answer
+    // questions about what's currently on screen. If null, she's not connected
+    // to a registered page (which is itself useful info — she can name the gap).
+    page_context: siteSnapshot.page_context || null,
+    registered_context_providers: Array.isArray(siteSnapshot.registered_context_providers) ? siteSnapshot.registered_context_providers : [],
     developer_mode: siteSnapshot.developer_mode && typeof siteSnapshot.developer_mode === 'object'
       ? {
           enabled: !!siteSnapshot.developer_mode.enabled,
@@ -6527,6 +7135,30 @@ function answerShayShayDirect(lower, siteSnapshot, manifest) {
       ? `${siteSnapshot.site_name} (${siteSnapshot.site_tag})`
       : (siteSnapshot.site_tag || 'no active site');
     return { intent: 'active_site', response: `The active site is ${siteLabel}.` };
+  }
+
+  if (/\b(page\s+context|workbench\s+context|context\s+(are\s+you\s+)?receiv|registered\s+context|current\s+context)\b/.test(lower)) {
+    const pageContext = siteSnapshot.page_context && typeof siteSnapshot.page_context === 'object'
+      ? siteSnapshot.page_context
+      : null;
+    if (!pageContext) {
+      return {
+        intent: 'page_context_missing',
+        response: 'I do not have an active page-context provider in my payload yet.'
+      };
+    }
+    const contextBits = [
+      `page_id: ${pageContext.page_id || 'unknown'}`,
+      `domain: ${pageContext.domain || pageContext.studio || 'unknown'}`
+    ];
+    if (pageContext.submode) contextBits.push(`submode: ${pageContext.submode}`);
+    if (pageContext.selected_object && pageContext.selected_object.title) {
+      contextBits.push(`selected: ${pageContext.selected_object.title}`);
+    }
+    return {
+      intent: 'page_context',
+      response: contextBits.join(' | ')
+    };
   }
 
   if (/\b(active\s+page|current\s+page|what\s+page|which\s+page)\b/.test(lower)) {
@@ -6604,12 +7236,31 @@ function classifyShayShayReasoning(lower) {
 }
 
 function selectShayShayBrain(reasoning, manifest, agentCards) {
+  // Override gate — when SHAY_BRAIN_OVERRIDE is set, lock to that brain
+  // regardless of reasoning, availability matrix, or fallbacks. The full
+  // selector logic below is intentionally retained so we can flip the flag
+  // off and resume routing without a code change.
+  const override = String(process.env.SHAY_BRAIN_OVERRIDE || '').trim().toLowerCase();
+  if (override) {
+    const overrideCard = (agentCards && agentCards[override]) || {};
+    const overrideModel = overrideCard.model || (override === 'claude' ? 'claude-sonnet-4-6' : null);
+    console.error('[tier-diag] selectShayShayBrain OVERRIDE brain=' + override + ' model=' + overrideModel);
+    return {
+      brain: override,
+      model: overrideModel,
+      fallbackBrain: null,
+      fallbackModel: null,
+      note: '',
+    };
+  }
+
   const capabilities = (manifest && manifest.capabilities) || {};
   const availability = {
     claude: capabilities.claude_api === 'available',
     gemini: capabilities.gemini_api === 'available',
     codex: capabilities.openai_api === 'available',
   };
+  console.error('[tier-diag] selectShayShayBrain INPUT reasoning=', reasoning, 'availability=', availability, 'argCount=', arguments.length, '— note: NO session/forcedBrain arg is passed to this function');
 
   const preferenceByKind = {
     brainstorm: ['gemini', 'claude', 'codex'],
@@ -6627,6 +7278,8 @@ function selectShayShayBrain(reasoning, manifest, agentCards) {
   const note = chosen !== preferred[0]
     ? `${preferredCard.name || preferred[0]} is not available right now, so I’m using ${chosenCard.name || chosen}.`
     : '';
+
+  console.error('[tier-diag] selectShayShayBrain CHOSE brain=', chosen, 'model=', chosenCard.model || null);
 
   return {
     brain: chosen,
@@ -6651,6 +7304,8 @@ async function executeShayShayBrainCall(opts) {
     conversation_id = null,
     surface = 'lite',
     handoff_context = null,
+    studioTier = false,
+    images = null,   // optional: vision input — [{ media_type, data (base64) }]
   } = opts;
 
   // Composite session key: brain:conversation_id (or brain:surface as fallback)
@@ -6695,10 +7350,14 @@ async function executeShayShayBrainCall(opts) {
     memoryContext,
   });
 
+  console.error('[tier-diag] executeShayShayBrainCall FIRING brain=', brain, 'model=', model, 'studioTier=', studioTier, 'sessionKey=', sessionKey, 'session.brain=', session.brain, 'convId=', conversation_id);
+
   const result = await session.execute(prompt, {
     maxTokens: reasoning.tier === 3 ? 2048 : 1400,
     mode: reasoning.kind === 'brainstorm' ? 'brainstorm' : 'chat',
     model,
+    studioTier,
+    images: Array.isArray(images) && images.length > 0 ? images : null,
   });
 
   return result && result.content ? result.content : '';
@@ -6729,6 +7388,7 @@ function buildShayShayPrompt(opts) {
   const shayContextContent = fs.existsSync(shayContextPath) ? fs.readFileSync(shayContextPath, 'utf8') : '';
   const shayContextExcerpt = truncateShayShayContext(shayContextContent, SHAY_SHAY_PROMPT_LIMITS.excerptLines.shayContext);
   const crossSessionMemoryExcerpt = truncateShayShayContext(opts.memoryContext || '', SHAY_SHAY_PROMPT_LIMITS.excerptLines.crossSession);
+  const _autoApproveActive = String(process.env.SHAY_AUTO_APPROVE || '').trim().toLowerCase() === 'true';
   const repoPaths = siteSnapshot && siteSnapshot.repo_paths ? siteSnapshot.repo_paths : {};
   const currentActivePagePath = repoPaths.active_page_path || '@active-site/' + (siteSnapshot && siteSnapshot.active_page ? siteSnapshot.active_page : 'index.html');
 
@@ -6740,14 +7400,47 @@ function buildShayShayPrompt(opts) {
     'Allowed actions: null, route_to_chat, system_command, show_me, suggest_brainstorm.',
     'Prefer action:null unless routing or UI behavior is genuinely needed.',
     '',
+    // P1.1.1 anti-hallucination rule — closes C1.2 / C2.3 from the P1.1
+    // edge-case report. The brain twice invented an active-site identity
+    // ("Crumb & Crust Bakery" for site-jj-ba-transport). Pin it.
+    'ACTIVE-SITE IDENTITY (strict):',
+    `  The active site IS site_tag="${siteSnapshot && siteSnapshot.site_tag || ''}", site_name="${siteSnapshot && siteSnapshot.site_name || ''}", business_type="${siteSnapshot && siteSnapshot.business_type || ''}".`,
+    '  Use these exact strings when referring to the active site. Do NOT paraphrase, translate, or invent a different name or description for it.',
+    '  If the user message references a DIFFERENT business than the active site, say so by referencing the active site by its exact site_name above — do not make up a different identity to compare against.',
+    '',
+    'TOOL POLICY (read this before every action):',
+    '  Reading Studio source       → use the `read_studio_file` tool (NOT bridge exec + cat).',
+    '  Modifying Studio source     → use the `propose_studio_patch` tool.' + (_autoApproveActive
+      ? '\n                                AUTO-APPROVE MODE ACTIVE (SHAY_AUTO_APPROVE=true): patches\n                                on ALLOW-policy paths apply IMMEDIATELY (no queue, no review).\n                                BLOCK / READ_ONLY / REVIEW paths still queue for Fritz approval.\n                                After every apply (auto or manual) the system notifies you in\n                                your next turn — re-screenshot and verify the change took.'
+      : '\n                                Patches land in a review queue at ~/famtastic/.studio-patches/pending/\n                                and only apply when Fritz runs `fam-hub studio patches apply <id>`.\n                                EVEN under trusted_auto_apply mode, Studio source still routes\n                                through the patch queue — there is no auto-write path for Studio\n                                source. After apply, the system will notify you in your next turn\n                                so you can re-screenshot and verify.'),
+    '  Reading site/hub files      → bridge_request op=read.',
+    '  Writing site content        → bridge_request op=write, ONLY under sites/<tag>/.',
+    '                                Anywhere else → propose_studio_patch.',
+    '  Running shell commands      → bridge_request op=exec is READ-ONLY. Inspection only:',
+    '                                git diff, git log, git status, cat, ls, grep, head, tail,',
+    '                                find, wc, jq, diff, echo, pwd. NO redirects (>, >>), NO tee,',
+    '                                NO sed -i, NO mv/cp/rm/chmod/touch/mkdir. Any write',
+    '                                attempt is refused with a pointer to propose_studio_patch.',
+    '  Visual capture              → bridge_request op=screenshot (image arrives next turn).',
+    '',
     'BRIDGE EXECUTION LOOP:',
-    'You have direct access to the local repo via a bridge. To read a file, write a file, or run a shell command,',
-    'include a "bridge_request" field in your JSON response. The Studio will execute it and return the result',
-    'in your next snapshot under siteSnapshot.bridge_result. Supported operations:',
+    'You have direct access to the local repo via a bridge. Include a "bridge_request" field in',
+    'your JSON response and the Studio will execute it and return the result in your next snapshot',
+    'under siteSnapshot.bridge_result. Supported operations:',
     '  Read file:    { "bridge_request": { "op": "read", "path": "relative/path/from/famtastic" } }',
-    '  Write file:   { "bridge_request": { "op": "write", "path": "relative/path", "content": "..." } }',
+    '  Write file:   { "bridge_request": { "op": "write", "path": "sites/<tag>/...", "content": "..." } }',
+    '    SCOPE: bridge writes are ALLOWED ONLY under sites/<tag>/ (site content).',
+    '    For Studio source, hub docs, configs, or any other repo file: use propose_studio_patch.',
     '  Run command:  { "bridge_request": { "op": "exec", "command": "git status" } }',
-    'All exec commands run in ~/famtastic. Allowed binaries: git, npm, node, bash, cat, ls, sed.',
+    '    READ-ONLY. Refused if it contains > >> tee sed -i mv cp rm chmod touch mkdir or any',
+    '    other write-y pattern. Use propose_studio_patch / op=write instead.',
+    '  Screenshot:   { "bridge_request": { "op": "screenshot", "url": "https://example.com", "fullPage": false, "viewport": { "width": 1280, "height": 800 } } }',
+    '    Equivalent shape: { "screenshot_request": { "url": "...", "fullPage": false, "viewport": {...} } }.',
+    '    The captured PNG is attached as an image to your NEXT iteration — you can SEE it.',
+    '    Useful for visual diffs, layout verification, and reviewing live sites against builds.',
+    '    The next siteSnapshot.bridge_result will be a small note (attached_as_image:true) — the image itself arrives as visual input on your next turn.',
+    'All exec commands run in ~/famtastic. Allowed binaries: git, cat, ls, grep, wc, head, tail, find, pwd, echo, jq, diff, fam-hub.',
+    'fam-hub is scoped: only `fam-hub studio patches {apply|show|list|reject} [id]` is callable. Use it to apply your own queued patches end-to-end without a Fritz handoff.',
     'Do not guess that "index.html" lives at the repo root. Use siteSnapshot.repo_paths to target the correct file.',
     'Preferred bridge path aliases:',
     '  @hub/...         => repo root',
@@ -6784,10 +7477,16 @@ function buildShayShayPrompt(opts) {
     ? '\n\nBRIDGE RESULT FROM LAST REQUEST (same object as siteSnapshot.bridge_result):\n' + JSON.stringify(siteSnapshot.bridge_result, null, 2) + '\n(Act on this result before anything else.)'
     : '';
 
+  // When SHAY_BRAIN_OVERRIDE is set, the snapshot reports the override brain
+  // verbatim regardless of what the routing layer "would have" chosen, so the
+  // brain sees consistent identity across selector + snapshot.
+  const _brainOverride = String(process.env.SHAY_BRAIN_OVERRIDE || '').trim().toLowerCase();
+  const _selectedBrainForSnapshot = _brainOverride || selectedBrain;
+
   return [
     primer,
     `CURRENT ROUTING MODE: ${reasoning.kind}`,
-    `SELECTED BRAIN: ${selectedBrain}`,
+    `SELECTED BRAIN: ${_selectedBrainForSnapshot}`,
     'ACTIVE SITE SNAPSHOT:',
     snapshotText,
     bridgeBlock,
@@ -6839,11 +7538,30 @@ function normalizeShayShayResponse(raw, fallback = {}) {
     try {
       const parsed = JSON.parse(candidate);
       if (parsed && typeof parsed === 'object') {
+        // Defense against nested-envelope hallucination: when the brain
+        // emits its full JSON envelope INSIDE the response field as text
+        // (a known structured-output failure mode), peel one more layer.
+        let respText = parsed.response;
+        if (typeof respText === 'string' && /^\s*\{\s*"response"\s*:/.test(respText)) {
+          try {
+            const inner = JSON.parse(respText);
+            if (inner && typeof inner === 'object' && typeof inner.response === 'string') {
+              console.log('[shay-shay] normalize: peeled nested envelope from response field');
+              respText = inner.response;
+              // Lift any nested control fields the brain forgot to put at the top.
+              if (!parsed.bridge_request && inner.bridge_request) parsed.bridge_request = inner.bridge_request;
+              if (!parsed.screenshot_request && inner.screenshot_request) parsed.screenshot_request = inner.screenshot_request;
+              if (!parsed.commit_request && inner.commit_request) parsed.commit_request = inner.commit_request;
+              if (!parsed.action && inner.action) parsed.action = inner.action;
+            }
+          } catch {}
+        }
         return {
-          response: parsed.response || fallback.response || text,
+          response: typeof respText === 'string' && respText ? respText : (fallback.response || text),
           action: parsed.action || null,
           message: parsed.message || null,
           bridge_request: (parsed.bridge_request && typeof parsed.bridge_request === 'object') ? parsed.bridge_request : null,
+          screenshot_request: (parsed.screenshot_request && typeof parsed.screenshot_request === 'object' && typeof parsed.screenshot_request.url === 'string') ? parsed.screenshot_request : null,
           commit_request: (parsed.commit_request && typeof parsed.commit_request === 'object' && parsed.commit_request.message) ? parsed.commit_request : null,
           usage: parsed.usage || null,
         };
@@ -6851,11 +7569,30 @@ function normalizeShayShayResponse(raw, fallback = {}) {
     } catch {}
   }
 
+  // Last-ditch: raw text starts with a JSON envelope shape but didn't parse.
+  // Strip a leading `{"response":"..."` fragment so the user at least sees
+  // text rather than the literal JSON envelope.
+  const envelopeMatch = text.match(/^\s*\{\s*"response"\s*:\s*"([\s\S]*?)"\s*[,}]/);
+  if (envelopeMatch) {
+    const unescaped = envelopeMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    console.log('[shay-shay] normalize: extracted response field from unparseable envelope');
+    return {
+      response: unescaped,
+      action: fallback.action || null,
+      message: fallback.message || null,
+      bridge_request: null,
+      screenshot_request: null,
+      commit_request: null,
+      usage: null,
+    };
+  }
+
   return {
     response: text,
     action: fallback.action || null,
     message: fallback.message || null,
     bridge_request: null,
+    screenshot_request: null,
     commit_request: null,
     usage: null,
   };
@@ -6863,6 +7600,235 @@ function normalizeShayShayResponse(raw, fallback = {}) {
 
 function summarizeBridgeExecBytes(text) {
   return Buffer.byteLength(String(text || ''), 'utf8');
+}
+
+// ── Vision: image sanitation + Playwright screenshot capture ─────────────
+// Two paths feed image content into Claude's messages array:
+//   1. User attaches images in the chat — sanitized here from the request body.
+//   2. Brain emits screenshot_request — captured here via Playwright.
+// Both produce { media_type, data (base64) } blocks the brain-interface knows
+// how to render into Anthropic's content-array format.
+
+const SHAY_VISION_LIMITS = {
+  maxImages: 6,
+  maxBase64Bytes: 4 * 1024 * 1024,    // ~3 MB raw per image
+  allowedMediaTypes: new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
+  fetchTimeoutMs: 8000,
+  screenshotTimeoutMs: 25000,
+};
+
+function _b64FromDataUrl(s) {
+  const m = String(s || '').match(/^data:([^;]+);base64,(.+)$/);
+  if (!m) return null;
+  return { media_type: m[1], data: m[2] };
+}
+
+async function sanitizeShayShayImages(rawImages) {
+  if (!Array.isArray(rawImages) || rawImages.length === 0) return null;
+  const out = [];
+  for (const img of rawImages.slice(0, SHAY_VISION_LIMITS.maxImages)) {
+    if (!img || typeof img !== 'object') continue;
+    let entry = null;
+    if (typeof img.data === 'string' && typeof img.media_type === 'string') {
+      // Strip any data:URL prefix the client may have left in place.
+      const fromDataUrl = _b64FromDataUrl(img.data);
+      if (fromDataUrl) {
+        entry = { media_type: fromDataUrl.media_type, data: fromDataUrl.data };
+      } else {
+        entry = { media_type: img.media_type, data: img.data };
+      }
+    } else if (typeof img.data === 'string' && img.data.startsWith('data:')) {
+      const fromDataUrl = _b64FromDataUrl(img.data);
+      if (fromDataUrl) entry = fromDataUrl;
+    } else if (typeof img.url === 'string') {
+      try {
+        const fetched = await _fetchUrlAsBase64(img.url);
+        if (fetched) entry = fetched;
+      } catch (e) {
+        console.error('[shay-shay] image url fetch failed: ' + img.url + ' — ' + e.message);
+      }
+    }
+    if (!entry) continue;
+    if (!SHAY_VISION_LIMITS.allowedMediaTypes.has(entry.media_type)) continue;
+    if (entry.data.length > SHAY_VISION_LIMITS.maxBase64Bytes) {
+      console.error('[shay-shay] image rejected — exceeds size cap (' + entry.data.length + ' > ' + SHAY_VISION_LIMITS.maxBase64Bytes + ')');
+      continue;
+    }
+    out.push(entry);
+  }
+  if (out.length > 0) {
+    console.log('[shay-shay] sanitizeShayShayImages — accepted ' + out.length + ' image(s)');
+  }
+  return out.length > 0 ? out : null;
+}
+
+async function _fetchUrlAsBase64(urlStr) {
+  const url = new URL(urlStr);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SHAY_VISION_LIMITS.fetchTimeoutMs);
+  try {
+    const res = await fetch(urlStr, { signal: controller.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const ct = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!SHAY_VISION_LIMITS.allowedMediaTypes.has(ct)) throw new Error('unsupported content-type ' + ct);
+    const buf = Buffer.from(await res.arrayBuffer());
+    return { media_type: ct, data: buf.toString('base64') };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Cached Playwright browser — launched once, reused. Closed on process exit.
+let _shayPlaywrightBrowser = null;
+async function _getShayPlaywrightBrowser() {
+  if (_shayPlaywrightBrowser && _shayPlaywrightBrowser.isConnected && _shayPlaywrightBrowser.isConnected()) {
+    return _shayPlaywrightBrowser;
+  }
+  const { chromium } = require('playwright');
+  _shayPlaywrightBrowser = await chromium.launch({ headless: true });
+  process.once('exit', () => { try { _shayPlaywrightBrowser && _shayPlaywrightBrowser.close(); } catch {} });
+  return _shayPlaywrightBrowser;
+}
+
+async function captureScreenshotForShay(rawUrl, opts = {}) {
+  const url = String(rawUrl || '').trim();
+  if (!url) return { error: 'url required' };
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { error: 'invalid url' };
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { error: 'unsupported protocol ' + parsed.protocol };
+  }
+  const fullPage = !!opts.fullPage;
+  const vp = (opts.viewport && typeof opts.viewport === 'object') ? opts.viewport : { width: 1280, height: 800 };
+  const browser = await _getShayPlaywrightBrowser();
+  const ctx = await browser.newContext({ viewport: { width: vp.width || 1280, height: vp.height || 800 } });
+  const page = await ctx.newPage();
+  try {
+    const navP = page.goto(url, { waitUntil: 'load', timeout: SHAY_VISION_LIMITS.screenshotTimeoutMs });
+    await navP.catch(e => { console.error('[shay-shay] screenshot nav warn: ' + e.message); });
+    // Small settle delay for late paint
+    await page.waitForTimeout(300);
+    const buf = await page.screenshot({ type: 'png', fullPage });
+    return { media_type: 'image/png', data: buf.toString('base64'), url };
+  } finally {
+    try { await ctx.close(); } catch {}
+  }
+}
+
+// ── Shay-Shay system notifications queue ──────────────────────────────────
+// Stores per-convId notifications that the next /api/shay-shay request drains
+// into the prompt as a "SYSTEM NOTIFICATIONS" block. Used today by the patch-
+// applied callback so Shay knows to re-screenshot and verify after Fritz
+// approves a patch externally.
+const _shayShayNotifications = new Map();
+function enqueueShayShayNotification(convId, text) {
+  if (!convId || !text) return;
+  if (!_shayShayNotifications.has(convId)) _shayShayNotifications.set(convId, []);
+  _shayShayNotifications.get(convId).push(String(text).slice(0, 500));
+  console.log('[shay-shay] notification enqueued convId=' + convId + ' text=' + String(text).slice(0, 80));
+}
+function drainShayShayNotifications(convId) {
+  if (!convId || !_shayShayNotifications.has(convId)) return [];
+  const out = _shayShayNotifications.get(convId);
+  _shayShayNotifications.delete(convId);
+  return out;
+}
+
+function broadcastShayShayPatchApplied(payload) {
+  if (!wss || !wss.clients) return;
+  let frame;
+  try {
+    frame = JSON.stringify({ type: 'patch-applied', ...payload });
+  } catch { return; }
+  console.log('[patch-loop] broadcast patch-applied id=' + payload.id + ' status=' + payload.status + ' convId=' + (payload.conversation_id || 'unknown'));
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) { try { client.send(frame); } catch {} }
+  });
+}
+
+// Shared notifier: WS broadcast + system-notification queue. Used by both the
+// CLI apply endpoint and the in-process auto-apply path (SHAY_AUTO_APPROVE).
+function notifyShayShayPatchApplied({ id, path: targetPath, status, error, conversation_id, auto_applied }) {
+  const payload = {
+    id,
+    path: targetPath || null,
+    status: status || 'applied',
+    error: error || null,
+    conversation_id: conversation_id || null,
+    auto_applied: !!auto_applied,
+    applied_at: new Date().toISOString(),
+  };
+  broadcastShayShayPatchApplied(payload);
+  if (conversation_id) {
+    const verb = payload.status === 'applied' ? (auto_applied ? 'auto-applied' : 'applied') : (payload.status === 'failed' ? 'failed to apply' : payload.status);
+    enqueueShayShayNotification(conversation_id,
+      'Your proposed patch ' + id + ' has been ' + verb +
+      (targetPath ? ' (target: ' + targetPath + ')' : '') +
+      '. Re-screenshot and verify the change took effect; if anything looks off, propose a follow-up patch.'
+    );
+  }
+  return payload;
+}
+
+// Endpoint called by `fam-hub studio patches apply <id>` after the patch is
+// successfully applied (or fails). Reads the patch JSON to recover the convId,
+// broadcasts the WS event to clients, and queues a system notification so the
+// proposing convId sees it on its next /api/shay-shay turn.
+app.post('/api/studio-patches/applied', (req, res) => {
+  try {
+    const body = (req && req.body && typeof req.body === 'object') ? req.body : {};
+    const id = String(body.id || '').trim();
+    if (!id) return res.status(400).json({ error: 'id required' });
+
+    const patchesRoot = path.join(HUB_ROOT, '.studio-patches');
+    const candidates = [
+      path.join(patchesRoot, 'applied', id + '.json'),
+      path.join(patchesRoot, 'pending', id + '.json'),
+      path.join(patchesRoot, 'rejected', id + '.json'),
+    ];
+    let patchData = null;
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        try { patchData = JSON.parse(fs.readFileSync(f, 'utf8')); } catch {}
+        break;
+      }
+    }
+
+    const payload = notifyShayShayPatchApplied({
+      id,
+      path: (patchData && patchData.path) || body.path || null,
+      status: String(body.status || (patchData ? 'applied' : 'unknown')),
+      error: body.error || null,
+      conversation_id: (patchData && patchData.conversation_id) || body.conversation_id || null,
+      auto_applied: false,
+    });
+    res.json({ ok: true, broadcasted: true, patch: payload });
+  } catch (e) {
+    console.error('[patch-loop] /api/studio-patches/applied error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Broadcast bridge-loop progress over the existing Studio WebSocket so the
+// client can render "Iteration N/M: <op> <target>" during multi-step turns.
+// Filtered client-side by conversation_id to avoid cross-surface noise.
+function broadcastShayShayProgress(payload) {
+  if (!wss || !wss.clients) return;
+  let frame;
+  try {
+    frame = JSON.stringify({ type: 'shay-shay-progress', ...payload });
+  } catch { return; }
+  console.error('[bridge-diag] broadcast progress: iteration=' + payload.iteration + '/' + payload.max + ' op=' + payload.op + ' phase=' + payload.phase + ' target=' + (payload.target || '').slice(0, 60));
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      try { client.send(frame); } catch {}
+    }
+  });
 }
 
 function logShayShayBridgeRequest(bridgeRequest) {
@@ -6932,7 +7898,24 @@ function unifiedDiff(oldStr, newStr, label) {
 async function executeBridgeOp(bridgeRequest) {
   const { execFile } = require('child_process');
   const FAM_ROOT = HUB_ROOT;
-  const ALLOWED_COMMANDS = ['git', 'npm', 'node', 'bash', 'cat', 'ls', 'sed'];
+  // exec is read-only. Writes go through propose_studio_patch (Studio source,
+  // hub docs, configs) or op:write (site content under sites/<tag>/). Removed
+  // npm/node/bash/sed because they can mutate state via tasks/scripts/-i flags.
+  // fam-hub is allowed but additionally scoped to `fam-hub studio patches …`
+  // subcommands so its other branches (site builds, deploys, agent dispatch)
+  // remain out of reach from this surface.
+  const ALLOWED_COMMANDS = ['git', 'cat', 'ls', 'grep', 'wc', 'head', 'tail', 'find', 'pwd', 'echo', 'jq', 'diff', 'fam-hub'];
+  const FAM_HUB_ALLOWED_SUBCOMMANDS = new Set(['apply', 'show', 'list', 'reject']);
+
+  // Patterns that perform writes — refuse with the propose_studio_patch
+  // message so the brain reroutes through the review queue.
+  const WRITE_PATTERNS = [
+    { re: /(?:^|[^>&])>>?\s*(?!\s*$)\S/, name: 'redirect (> or >>)' },
+    { re: /(?:^|[\s|;])tee(?:\s|$)/,     name: 'tee' },
+    { re: /(?:^|[\s|;])sed\s+[^|]*-[iI]\b/, name: 'sed -i' },
+    { re: /(?:^|[\s|;])dd\s+[^|]*\bof=/, name: 'dd of=' },
+    { re: /(?:^|[\s|;])(mv|cp|rm|rmdir|truncate|install|chmod|chown|ln|touch|mkdir|rsync|patch)(?:\s|$)/, name: 'mutating fs command' },
+  ];
   const BRIDGE_TIMEOUTS = { read: 3000, write: 5000, exec: 20000 };
   const PATH_ALIASES = [
     { prefix: '@active-site/', root: () => DIST_DIR() },
@@ -6982,6 +7965,23 @@ async function executeBridgeOp(bridgeRequest) {
   if (op === 'write') {
     const target = resolveSafe(bridgeRequest.path || '');
     if (!target) return { op, path: bridgeRequest.path, error: 'Path escapes allowed bridge roots' };
+    // Guard: bridge writes are allowed ONLY for site content under
+    // <hub>/sites/<tag>/ (which includes @active-site/* paths). Any write
+    // touching Studio source, hub docs, configs, or other infra files must
+    // go through propose_studio_patch so Fritz reviews before it lands.
+    const sitesDirAbs = path.resolve(HUB_ROOT, 'sites') + path.sep;
+    const allowedForBridge = (target.abs + path.sep).startsWith(sitesDirAbs);
+    if (!allowedForBridge) {
+      const err = 'Bridge writes are blocked outside sites/<tag>/. To modify Studio source, hub docs, or any other repo file, use propose_studio_patch instead — patches go to ~/famtastic/.studio-patches/pending/ for Fritz to review and apply with `fam-hub studio patches apply <id>`.';
+      console.error('[bridge-diag] write REFUSED path=' + (bridgeRequest.path || '') + ' resolved=' + target.resolvedPath + ' (outside sites/)');
+      return {
+        op,
+        path: bridgeRequest.path,
+        resolved_path: target.resolvedPath,
+        error: err,
+        use_instead: 'propose_studio_patch',
+      };
+    }
     try {
       fs.mkdirSync(path.dirname(target.abs), { recursive: true });
       fs.writeFileSync(target.abs, bridgeRequest.content || '', 'utf8');
@@ -7002,11 +8002,59 @@ async function executeBridgeOp(bridgeRequest) {
         stdout: '',
         stderr: '',
         exitCode: null,
-        error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}`,
+        error: `Command not allowed: ${bin}. exec is read-only — allowed binaries: ${ALLOWED_COMMANDS.join(', ')}. To modify Studio source or hub files use propose_studio_patch; for site content under sites/<tag>/ use bridge_request op=write.`,
       };
     }
+    // fam-hub is scoped: only `fam-hub studio patches {apply|show|list|reject}`.
+    // This keeps the patch end-to-end loop usable while blocking the binary's
+    // other subcommands (site builds, deploys, agent dispatch, admin).
+    let resolvedCommand = command;
+    if (bin === 'fam-hub') {
+      const tokens = command.split(/\s+/);
+      const sub1 = tokens[1] || '';
+      const sub2 = tokens[2] || '';
+      const sub3 = tokens[3] || '';
+      if (sub1 !== 'studio' || sub2 !== 'patches' || !FAM_HUB_ALLOWED_SUBCOMMANDS.has(sub3)) {
+        console.error('[bridge-diag] fam-hub REFUSED scope sub1=' + sub1 + ' sub2=' + sub2 + ' sub3=' + sub3);
+        return {
+          op,
+          command,
+          cwd: '.',
+          stdout: '',
+          stderr: '',
+          exitCode: null,
+          error: 'fam-hub is scoped: only `fam-hub studio patches {apply|show|list|reject} [id]` is allowed via exec. For site builds, deploys, or other admin actions, use the proper Studio path or have Fritz run them.',
+        };
+      }
+      // Resolve `fam-hub` to its absolute path — launchd's PATH does not
+      // include ~/.famtastic-bin so the bare name fails with exit 127.
+      const famHubAbs = path.join(require('os').homedir(), '.famtastic-bin', 'fam-hub');
+      if (!fs.existsSync(famHubAbs)) {
+        return { op, command, cwd: '.', stdout: '', stderr: '', exitCode: null, error: 'fam-hub binary not found at ' + famHubAbs };
+      }
+      tokens[0] = famHubAbs;
+      resolvedCommand = tokens.join(' ');
+    }
+    // Refuse any write redirection / mutating operation regardless of target.
+    // Matches the same write policy as op:write — repo writes flow through
+    // propose_studio_patch (review queue) or op:write (sites/<tag>/ only).
+    for (const wp of WRITE_PATTERNS) {
+      if (wp.re.test(command)) {
+        console.error('[bridge-diag] exec REFUSED reason=' + wp.name + ' command=' + command.slice(0, 200));
+        return {
+          op,
+          command,
+          cwd: '.',
+          stdout: '',
+          stderr: '',
+          exitCode: null,
+          error: `exec refused: command contains ${wp.name}, which writes to disk. exec is read-only. Use propose_studio_patch for Studio source/hub files, or bridge_request op=write for site content under sites/<tag>/.`,
+          use_instead: 'propose_studio_patch',
+        };
+      }
+    }
     return new Promise(resolve => {
-      execFile('bash', ['-c', command], { cwd: FAM_ROOT, timeout: BRIDGE_TIMEOUTS.exec }, (err, stdout, stderr) => {
+      execFile('bash', ['-c', resolvedCommand], { cwd: FAM_ROOT, timeout: BRIDGE_TIMEOUTS.exec }, (err, stdout, stderr) => {
         const result = {
           op,
           command,
@@ -7034,10 +8082,48 @@ async function executeBridgeOp(bridgeRequest) {
     }
   }
 
-  return { op, error: `Unknown bridge op: ${op}` };
+  if (op === 'screenshot' || op === 'capture_screenshot' || op === 'screenshot_request') {
+    const url = String(bridgeRequest.url || '').trim();
+    if (!url) return { op, error: 'url required' };
+    try {
+      const shot = await captureScreenshotForShay(url, {
+        fullPage: !!bridgeRequest.fullPage,
+        viewport: bridgeRequest.viewport,
+      });
+      if (shot && shot.error) return { op, url, error: shot.error };
+      // Image data is returned in the bridge_result. The bridge loop detects
+      // media_type+data and routes the bytes into the next brain call as an
+      // image content block (rather than dumping base64 into the prompt).
+      return {
+        op,
+        url,
+        media_type: shot.media_type,
+        data: shot.data,
+        bytes_b64: shot.data ? shot.data.length : 0,
+      };
+    } catch (e) {
+      return { op, url, error: e.message };
+    }
+  }
+
+  return {
+    op,
+    error: `Unknown bridge op: ${op}. Valid ops: read, write, exec, diff, screenshot.`,
+    valid_ops: ['read', 'write', 'exec', 'diff', 'screenshot'],
+  };
 }
 
 function classifyShayShayTier0(lower, context = {}) {
+  // P0.3 — confirmation/cancellation of a pending build_request. Only fires when
+  // there is an actual pending entry, so a bare "yes" outside the build flow
+  // doesn't get hijacked. See handleShayBuildConfirmation.
+  if (hasPendingBuildConfirmation()) {
+    if (/\b(yes|yep|yeah|yup|ok|okay|sure|proceed|build\s+it|go\s+ahead|do\s+it|let['']?s\s+go|sounds\s+good|approved|confirm|confirmed)\b/.test(lower))
+      return { intent: 'confirm_build_request' };
+    if (/\b(no|nope|cancel|abort|nevermind|never\s+mind|forget\s+it|stop|don['']?t)\b/.test(lower))
+      return { intent: 'cancel_build_request' };
+  }
+
   if (/\b(restart\s+studio|reboot\s+studio|reset\s+server)\b/.test(lower))
     return { intent: 'studio_command', command: 'restart' };
   if (/\b(clear\s+cache|purge\s+cache)\b/.test(lower))
@@ -7052,11 +8138,22 @@ function classifyShayShayTier0(lower, context = {}) {
   if (/\b(i\s+don['']?t\s+know\s+how\s+i\s+feel|not\s+sure\s+(about|if)|i['']?m\s+not\s+sure|i\s+can['']?t\s+decide|help\s+me\s+think|let['']?s\s+brainstorm|should\s+we\s+brainstorm|i['']?m\s+unsure)\b/.test(lower))
     return { intent: 'suggest_brainstorm' };
   // Gap capture — "we need X", "I can't do X", "we're missing X"
-  if (/\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower))
-    return { intent: 'capture_gap' };
+  // P1.1.1 — exclude site/website-shaped phrases so a sentence like
+  // "we need a site for our family bakery" matches build_request below
+  // instead of capture_gap. Matches the C1.4 edge case in
+  // architecture/2026-04-27-p1.1-edge-case-results.md.
+  if (
+    /\b(we\s+need\s+(a\s+|an\s+|the\s+)?|i\s+can['']?t\s+do\s+|we['']?re\s+missing\s+|there['']?s\s+no\s+way\s+to\s+)\b/.test(lower) &&
+    !/\b(site|website|webpage|landing\s+page)\b/.test(lower)
+  ) return { intent: 'capture_gap' };
   // Job plan creation — "plan jobs for...", "create a job plan", "schedule tasks"
   if (/\b(plan\s+(the\s+)?jobs?\s+for|create\s+a?\s+job\s+plan|schedule\s+(the\s+)?tasks?\s+for|build\s+(a\s+)?job\s+plan|queue\s+(up\s+)?jobs?\s+for)\b/.test(lower))
     return { intent: 'create_job_plan' };
+  // Character pipeline — "character pipeline", "FAM Bear", or "generate anchor" + "poses"
+  if (/character\s+pipeline/i.test(lower) ||
+      /\bfam\s*bear\b/i.test(lower) ||
+      (/generate\s+anchor/i.test(lower) && /\bposes?\b/i.test(lower)))
+    return { intent: 'character_pipeline' };
   // Autonomous build — explicitly requests full autonomous pipeline
   if (/\b(autonomous|auto.?build|build\s+autonomously|shay.?shay\s+build)\b/.test(lower) ||
       (context && context.autonomous === true))
@@ -7065,7 +8162,7 @@ function classifyShayShayTier0(lower, context = {}) {
   if (/\bbuild\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
       /\bcreate\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
       /\bmake\b.{0,30}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
-      /\b(i\s+want|i\s+need)\b.{0,20}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
+      /\b(i|we)\s+(want|need)\b.{0,20}\b(site|website)\b.{0,20}\bfor\b/.test(lower) ||
       /\bnew\s+site\s+for\b/.test(lower))
     return { intent: 'build_request' };
   return null;
@@ -7126,12 +8223,15 @@ function handleShayShayTier0(tier0, message, context, manifest) {
   }
 
   if (tier0.intent === 'build_request') {
-    // Route the entire build request directly to Studio chat — the classifier
-    // will pick it up as new_site or build intent and handle the brief + build
+    // Build_request is now intercepted in the /api/shay-shay dispatcher BEFORE
+    // reaching this synchronous handler — see handleShayBuildRequest for the
+    // full async chain (auth → extract → createSite → synthesize → trigger).
+    // This branch only fires if a future call site invokes handleShayShayTier0
+    // without going through the dispatcher; in that case, return a benign
+    // shay_response that explains where the work is owned now.
     return {
-      response: `Routing your build request to Studio. The brief interview will start automatically.`,
-      action: 'route_to_chat',
-      message: message, // full original message goes to Studio
+      action: 'shay_response',
+      response: 'Build requests are handled asynchronously via the /api/shay-shay dispatcher. This synchronous path is not used.',
     };
   }
 
@@ -7245,6 +8345,399 @@ function buildShayShayJobPlan(message, context = {}) {
 // Shay-Shay can drive a complete site build from brief text, without the browser.
 // Fritz watches via the UI; Shay-Shay drives via the API and WS broadcast.
 
+// ── Site Creation Contract (2026-04-25) ──────────────────────────────────
+// Recognized business-type words for type+location synthesis when a prompt
+// describes a new site without a proper noun ("a church in Atlanta").
+// Also used by classifyRequest's new_site_create detection.
+const GENERIC_BUSINESS_TYPES = [
+  'church','barber','barbershop','bakery','salon','gym','clinic','school',
+  'studio','bar','cafe','restaurant','shop','store','office','practice',
+  'pharmacy','garage','spa','diner','lounge','theater','agency','firm',
+];
+
+// Words stripped when comparing two business names for same-business identity.
+// Used by createSite() collision handling and classifyRequest gating.
+const IDENTITY_STRIP_WORDS = new Set([
+  'the','inc','llc','co','company','ltd','church','barber','bakery','salon',
+  'gym','clinic','school','studio','bar','cafe','restaurant','office',
+  'practice','service','services','shop','store','firm','agency',
+]);
+
+function normalizeBizName(name) {
+  if (!name || typeof name !== 'string') return '';
+  return name.toLowerCase()
+    // Drop punctuation entirely (so "Tony's" → "tonys", "Acme, Inc." → "acme inc")
+    // Keep whitespace so multi-word names retain word boundaries.
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w && !IDENTITY_STRIP_WORDS.has(w))
+    .join(' ')
+    .trim();
+}
+
+// True when two business names refer to the same business after stripping
+// noise words. Returns false on either-empty input.
+function checkSameBusinessIdentity(nameA, nameB) {
+  if (!nameA || !nameB) return false;
+  const a = normalizeBizName(nameA);
+  const b = normalizeBizName(nameB);
+  return !!(a && b && a === b);
+}
+
+function suggestAlternativeSlug(tag) {
+  let i = 2;
+  let candidate = `${tag}-${i}`;
+  while (fs.existsSync(path.join(SITES_ROOT, candidate)) && i < 50) {
+    i += 1;
+    candidate = `${tag}-${i}`;
+  }
+  return candidate;
+}
+
+/**
+ * createSite(brief, options) — canonical site-creation helper.
+ *
+ * INVARIANTS:
+ *   - Authorization is CALLER-OWNED. This helper does NOT check Developer Mode
+ *     or any other auth. Callers must approve before calling.
+ *   - Identity check ALWAYS runs first against existing spec.site_name.
+ *     Different-business collisions ALWAYS return 'collision' (or 'error'
+ *     when on_collision === 'error'), regardless of caller's request.
+ *   - On status: 'collision' or 'error', the helper returns BEFORE any
+ *     endSession(), TAG change, cache invalidation, or site-switched WS
+ *     emit. Failure paths leave session state untouched.
+ *   - On status: 'created' or 'updated_existing', helper performs:
+ *     endSession → TAG switch → writeLastSite → cache invalidation →
+ *     session reset → SITE_SWITCHED event → WS notification to all clients.
+ *   - "Half-initialized site is recoverable; activation occurs at creation."
+ *     If the build chain that follows fails, the user is on the new site
+ *     and can retry — the site directory persists.
+ *
+ * @param {object} brief
+ *   Required: tag (extracted) OR caller-supplied via options.tag,
+ *             business_name (for site_name),
+ *   Optional: business_type, client_brief, interview_pending,
+ *             interview_completed, pages, tier, business_description,
+ *             revenue_model, location, tone, cta, differentiator
+ * @param {object} options
+ * @param {'extracted'|'caller_supplied'} options.tag_source
+ * @param {string} [options.tag]    Required when tag_source === 'caller_supplied'
+ * @param {'famtastic'|'clean'} [options.tier]
+ * @param {'error'|'update'|'return_collision'} [options.on_collision='error']
+ * @returns {Promise<
+ *     { status: 'created', tag, spec }
+ *   | { status: 'updated_existing', tag, spec }
+ *   | { status: 'collision', tag, existing_site_name, suggested_alternative_slug }
+ *   | { status: 'error', error, error_code, existing_tag? }
+ * >}
+ */
+async function createSite(brief, options = {}) {
+  const { tag_source = 'extracted', on_collision = 'error' } = options;
+
+  // Determine and sanitize the target tag
+  let newTag;
+  if (tag_source === 'caller_supplied') {
+    if (!options.tag) {
+      return { status: 'error', error: 'tag required', error_code: 'missing_tag' };
+    }
+    newTag = options.tag;
+  } else {
+    newTag = brief && brief.tag;
+    if (!newTag) {
+      return { status: 'error', error: 'brief.tag required for tag_source=extracted', error_code: 'missing_tag' };
+    }
+  }
+  newTag = String(newTag).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!newTag.startsWith('site-')) newTag = 'site-' + newTag;
+
+  const siteDir = path.join(SITES_ROOT, newTag);
+  const specPath = path.join(siteDir, 'spec.json');
+
+  // Identity check + collision handling — runs BEFORE any state change
+  if (fs.existsSync(siteDir)) {
+    let existingSpec = {};
+    try {
+      if (fs.existsSync(specPath)) {
+        existingSpec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+      }
+    } catch { /* treat as empty */ }
+
+    const incomingName = brief && (brief.business_name || brief.site_name);
+    const isSameBusiness = existingSpec.site_name
+      ? checkSameBusinessIdentity(incomingName, existingSpec.site_name)
+      : false; // No existing name → fall back to slug-only match (which already happened)
+
+    // Different-business collision ALWAYS returns 'collision'/'error' regardless of caller request
+    if (!isSameBusiness) {
+      if (on_collision === 'error') {
+        return {
+          status: 'error',
+          error: `Site "${newTag}" already exists`,
+          error_code: 'tag_exists',
+          existing_tag: newTag,
+        };
+      }
+      return {
+        status: 'collision',
+        tag: newTag,
+        existing_site_name: existingSpec.site_name || newTag.replace(/^site-/, ''),
+        suggested_alternative_slug: suggestAlternativeSlug(newTag),
+      };
+    }
+
+    // Same business — apply on_collision policy
+    if (on_collision === 'error') {
+      return {
+        status: 'error',
+        error: `Site "${newTag}" already exists`,
+        error_code: 'tag_exists',
+        existing_tag: newTag,
+      };
+    }
+
+    // 'update' or 'return_collision' for same-business → update in place
+    normalizeTierAndMode(existingSpec);
+    if (brief.business_name) existingSpec.site_name = brief.business_name;
+    if (brief.business_type) existingSpec.business_type = brief.business_type;
+    if (options.tier) {
+      existingSpec.tier = options.tier;
+      normalizeTierAndMode(existingSpec);
+    } else if (brief.tier) {
+      existingSpec.tier = brief.tier;
+      normalizeTierAndMode(existingSpec);
+    }
+    if (brief.client_brief) existingSpec.client_brief = brief.client_brief;
+    if (brief.interview_completed !== undefined) existingSpec.interview_completed = brief.interview_completed;
+    if (brief.interview_pending !== undefined) existingSpec.interview_pending = brief.interview_pending;
+    if (brief.pages) existingSpec.pages = brief.pages;
+
+    const tmpPath = specPath + '.tmp';
+    fs.writeFileSync(tmpPath, JSON.stringify(existingSpec, null, 2));
+    fs.renameSync(tmpPath, specPath);
+
+    // Helper-owned activation
+    await endSession();
+    TAG = newTag;
+    writeLastSite(TAG);
+    invalidateSpecCache();
+    currentPage = 'index.html';
+    sessionMessageCount = 0;
+    sessionStartedAt = new Date().toISOString();
+    shayShaySessions.resetAll();
+    startSession();
+    studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
+
+    const switchedSpec = readSpec();
+    const pages = listPages();
+    wss.clients.forEach(client => {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
+        client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+        client.send(JSON.stringify({ type: 'spec-updated', spec: switchedSpec }));
+      }
+    });
+    console.log(`[createSite] Updated existing same-business site: ${TAG}`);
+    return { status: 'updated_existing', tag: newTag, spec: switchedSpec };
+  }
+
+  // Fresh creation
+  try {
+    const distDir = path.join(siteDir, 'dist');
+    fs.mkdirSync(distDir, { recursive: true });
+  } catch (mkErr) {
+    return { status: 'error', error: `Failed to create site directory: ${mkErr.message}`, error_code: 'mkdir_failed' };
+  }
+
+  const autoInterviewEnabled = loadSettings().auto_interview !== false;
+  const tierForSpec = options.tier || brief.tier || 'famtastic';
+  const newSpec = {
+    tag: newTag,
+    site_name: brief.business_name || newTag.replace(/^site-/, '').replace(/-/g, ' '),
+    business_type: brief.business_type || (brief.business_description ? brief.business_description.split(' ').slice(0, 3).join(' ') : ''),
+    state: 'new',
+    tier: tierForSpec,
+    created_at: new Date().toISOString(),
+    interview_pending: brief.interview_completed
+      ? false
+      : (brief.interview_pending !== undefined ? !!brief.interview_pending : (autoInterviewEnabled === true)),
+    interview_completed: !!brief.interview_completed,
+    ...(brief.client_brief ? { client_brief: brief.client_brief } : {}),
+    ...(brief.pages ? { pages: brief.pages } : {}),
+  };
+  normalizeTierAndMode(newSpec);
+
+  try {
+    fs.writeFileSync(specPath + '.tmp', JSON.stringify(newSpec, null, 2));
+    fs.renameSync(specPath + '.tmp', specPath);
+  } catch (writeErr) {
+    return { status: 'error', error: `Failed to write spec: ${writeErr.message}`, error_code: 'write_failed' };
+  }
+
+  // Helper-owned activation — only after successful directory + spec write
+  await endSession();
+  TAG = newTag;
+  writeLastSite(TAG);
+  invalidateSpecCache();
+  currentPage = 'index.html';
+  sessionMessageCount = 0;
+  sessionStartedAt = new Date().toISOString();
+  shayShaySessions.resetAll();
+  startSession();
+  studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
+
+  const createdSpec = readSpec();
+  const pages = listPages();
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
+      client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
+      client.send(JSON.stringify({ type: 'spec-updated', spec: createdSpec }));
+    }
+  });
+  console.log(`[createSite] Created and switched to new site: ${TAG}`);
+  return { status: 'created', tag: newTag, spec: createdSpec };
+}
+
+/**
+ * Synthesize design_brief on the active site spec from a brief object so the
+ * build classifier routes to 'build' (not 'new_site' → handlePlanning).
+ *
+ * P0.4 hotfix (2026-04-27) — also flips design_brief.approved=true at this
+ * synthesis point. Confirmation IS the approval: when this function runs,
+ * the user has just confirmed the build via Shay Desk (or via createSite at
+ * /api/new-site). Without this flip, the classifier's hasBrief gate at
+ * server.js:11308 stays false post-build and every subsequent chat message
+ * misclassifies as new_site, blocking content edits, deploys, and restyle.
+ * See architecture/2026-04-27-p0-exit-gate-results.md.
+ */
+function synthesizeDesignBriefForBuild(brief) {
+  const spec = readSpec();
+  if (!spec) return false;
+
+  // Path A: no existing design_brief — synthesize fresh and persist.
+  if (!spec.design_brief) {
+    const cb = spec.client_brief || {};
+    spec.design_brief = {
+      goal: cb.business_description || brief.business_description || `Site for ${brief.business_name || spec.site_name}`,
+      audience: cb.ideal_customer || (brief.location ? `Customers in ${brief.location}` : 'Local customers'),
+      tone: brief.tone && brief.tone.length ? brief.tone : ['professional', 'clean'],
+      visual_direction: {
+        layout: 'standard',
+        typography: 'clean and professional',
+        color_usage: 'brand colors throughout',
+        motion: 'subtle',
+        density: 'balanced',
+      },
+      content_priorities: [brief.cta || 'Lead generation', 'Brand credibility'],
+      must_have_sections: brief.pages || spec.pages || ['home', 'about', 'contact'],
+      avoid: ['clutter', 'stock-photo feel'],
+      open_questions: [],
+      approved: true, // P0.4: synthesizing-for-build implies approval
+    };
+    if (brief && brief.pages) spec.pages = brief.pages;
+    spec.state = 'briefed';
+    // P1.2 — derive a per-site style fingerprint from the brief + vertical.
+    // Source ordering: explicit brief hex > vertical default > brand.json > FAMtastic default.
+    spec.style_fingerprint = styleFingerprint.generateStyleFingerprint(
+      spec.design_brief,
+      {
+        vertical: spec.business_type || (brief && brief.vertical) || (spec.client_brief && spec.client_brief.business_description),
+        userMessage: brief && (brief.business_description || brief.style_notes),
+        brand: readBrandJsonForFingerprint(),
+      },
+    );
+    writeSpec(spec);
+    return true;
+  }
+
+  // Path B: design_brief already exists. Confirming a build implicitly
+  // approves whatever brief is on disk. Flip approved=true if not already set.
+  // This also closes the gap for legacy sites that have a brief but were
+  // built before the P0.4 hotfix.
+  let dirty = false;
+  if (spec.design_brief.approved !== true) {
+    spec.design_brief.approved = true;
+    dirty = true;
+  }
+  if (!spec.style_fingerprint || !spec.style_fingerprint.palette) {
+    // P1.2 — ensure a per-site fingerprint exists on the spec before the
+    // build prompt is assembled. Existing operator overrides are preserved
+    // by the early-exit check above.
+    spec.style_fingerprint = styleFingerprint.generateStyleFingerprint(
+      spec.design_brief,
+      {
+        vertical: spec.business_type || (brief && brief.vertical) || (spec.client_brief && spec.client_brief.business_description),
+        userMessage: brief && (brief.business_description || brief.style_notes),
+        brand: readBrandJsonForFingerprint(),
+      },
+    );
+    dirty = true;
+  }
+  if (dirty) writeSpec(spec);
+  return true;
+}
+
+// Helper — read sites/<TAG>/brand.json if present, else null. Used as a recovery
+// source when generating a fingerprint for legacy sites that already have a
+// brand.json from a prior build but no spec.style_fingerprint yet.
+function readBrandJsonForFingerprint() {
+  try {
+    const brandPath = path.join(SITE_DIR(), 'brand.json');
+    if (!fs.existsSync(brandPath)) return null;
+    return JSON.parse(fs.readFileSync(brandPath, 'utf8'));
+  } catch { return null; }
+}
+
+/**
+ * Trigger a build for the currently active site.
+ * Gates on WS client presence BEFORE dispatching — no orphaned builds.
+ *
+ * @param {object|null} ws  Optional real WS connection. When null, a mockWs
+ *   broadcasts to all connected clients.
+ * @param {object} spec     Spec for the current site (post-TAG-switch).
+ * @returns {{ triggered: boolean, reason?: string, error?: string }}
+ */
+function triggerSiteBuild(ws, spec) {
+  const wsClients = [...wss.clients].filter(c => c.readyState === 1);
+
+  // Gate on WS client presence FIRST — corrects prior dispatch-before-check order.
+  if (!ws && wsClients.length === 0) {
+    return { triggered: false, reason: 'no_ws_clients' };
+  }
+
+  // Use real ws or a mockWs that broadcasts to all clients.
+  const buildWs = ws || {
+    readyState: 1,
+    buildRunId: null,
+    currentBrain: 'claude',
+    brainModels: {},
+    activeChildren: [],
+    currentChild: null,
+    autoAccept: false,
+    send: (data) => {
+      wsClients.forEach(client => {
+        if (client.readyState === 1) {
+          try { client.send(data); } catch {}
+        }
+      });
+    },
+    once: () => {},
+    removeListener: () => {},
+    on: () => {},
+  };
+
+  const pagesList = (spec.pages || (spec.design_brief && spec.design_brief.must_have_sections) || ['home']).join(', ');
+  const buildMsg = `Build this site based on the design brief. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}.`;
+
+  try {
+    routeToHandler(buildWs, 'build', buildMsg, spec);
+    return { triggered: true };
+  } catch (err) {
+    console.error('[triggerSiteBuild] dispatch error:', err.message);
+    return { triggered: false, reason: 'dispatch_error', error: err.message };
+  }
+}
+
 function extractBriefPatternBased(text) {
   const lower = text.toLowerCase();
 
@@ -7319,9 +8812,14 @@ function extractBriefPatternBased(text) {
     .replace(/-+/g, '-')
     .slice(0, 40);
 
+  // Tier: explicit clean/simple/minimal language → 'clean'; otherwise 'famtastic'
+  const tierCleanWords = ['simple', 'minimal', 'clean', 'professional', 'traditional', 'conservative', 'basic'];
+  const tier = tierCleanWords.some(w => lower.includes(w)) ? 'clean' : 'famtastic';
+
   return {
     business_name: businessName || 'New Business',
     tag,
+    tier,
     revenue_model: revenueModel,
     business_description: text.slice(0, 300),
     location,
@@ -7332,27 +8830,244 @@ function extractBriefPatternBased(text) {
   };
 }
 
+// Generic tag blocklist — expanded to include all GENERIC_BUSINESS_TYPES so
+// generic category words can never become a site tag.
+const GENERIC_TAG_BLOCKLIST = new Set([
+  'restaurant','business','site','pizza','shop','store','company','new-site',
+  ...GENERIC_BUSINESS_TYPES,
+]);
+
+function isMeaningfulBusinessName(name) {
+  if (!name || typeof name !== 'string') return false;
+  const trimmed = name.trim();
+  if (!trimmed) return false;
+  if (trimmed === 'New Business') return false;
+  // A name composed only of generic category words is not meaningful
+  const tokens = trimmed.toLowerCase().split(/\s+/);
+  const onlyGeneric = tokens.every(t => GENERIC_TAG_BLOCKLIST.has(t) || IDENTITY_STRIP_WORDS.has(t));
+  return !onlyGeneric;
+}
+
+function tryTypeLocationSynthesis(text, baseBrief) {
+  const lower = text.toLowerCase();
+  const detectedType = GENERIC_BUSINESS_TYPES.find(t => new RegExp(`\\b${t}\\b`).test(lower));
+  if (!detectedType) return null;
+  // Match "in [Location]" — captures up to two capitalized words plus optional state code
+  const locMatch = text.match(/\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?(?:,\s*[A-Z]{2})?)/);
+  if (!locMatch) return null;
+  const location = locMatch[1].trim();
+  const locationSlug = location.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const tag = ('site-' + detectedType + '-' + locationSlug).slice(0, 50);
+  const capitalType = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
+  const business_name = `${capitalType} in ${location}`;
+  const merged = { ...(baseBrief || {}) };
+  merged.business_name = business_name;
+  merged.tag = tag;
+  merged.business_type = detectedType;
+  merged.business_description = baseBrief && baseBrief.business_description
+    ? baseBrief.business_description
+    : `${business_name}. ${text.slice(0, 200)}`;
+  merged.location = location;
+  if (!merged.tone || !merged.tone.length) merged.tone = ['professional', 'clean'];
+  if (!merged.cta) merged.cta = 'Contact Us';
+  if (!merged.revenue_model) merged.revenue_model = 'lead_generation';
+  if (!merged.tier) merged.tier = baseBrief && baseBrief.tier ? baseBrief.tier : 'famtastic';
+  if (!merged.pages) merged.pages = ['home', 'about', 'contact'];
+  return merged;
+}
+
+/**
+ * extractBriefFromMessage(text) — extract a site brief from natural-language input.
+ *
+ * Returns one of:
+ *   { status: 'extracted', extraction_method: 'proper_noun', brief }
+ *   { status: 'extracted', extraction_method: 'type_location_synthesis', brief }
+ *   { status: 'insufficient_identity', reason, clarification_question, raw_message }
+ *
+ * Logic order:
+ *   1. Claude JSON extraction. Accept only when business_name is meaningful
+ *      AND tag isn't generic.
+ *   2. Pattern fallback (proper noun cluster) via extractBriefPatternBased.
+ *   3. Business-type + location synthesis ("a church in Atlanta" →
+ *      site-church-atlanta).
+ *   4. None matched → insufficient_identity with clarification question.
+ *
+ * NO silent fallback to "New Business" / "site-new-site".
+ */
 async function extractBriefFromMessage(text) {
-  // Use Claude if available, with explicit instruction to use business name in tag
+  const raw = String(text || '');
+
+  // Step 1: Claude JSON extraction
+  let claudeBrief = null;
   try {
     const extracted = await callSDK(
-      `Extract a structured site brief from this request. Return ONLY valid JSON, no markdown:\n\n"${text}"\n\nRules:\n- business_name: the actual business name (e.g. "Mario's Pizza")\n- tag: "site-" + business name slugified (e.g. "site-marios-pizza") — NEVER use a generic category word\n- revenue_model: one of lead_generation|rank_and_rent|ecommerce|appointment_booking\n\n{"business_name":"","tag":"site-","revenue_model":"lead_generation","business_description":"","location":"","differentiator":"","cta":"Contact Us","tone":["professional"],"pages":["home","about","contact"]}`,
+      `Extract a structured site brief from this request. Return ONLY valid JSON, no markdown:\n\n"${raw}"\n\nRules:\n- business_name: the actual business name (e.g. "Mario's Pizza"). If no name is given, leave it empty — do NOT invent "New Business".\n- tag: "site-" + business name slugified (e.g. "site-marios-pizza") — NEVER use a generic category word\n- revenue_model: one of lead_generation|rank_and_rent|ecommerce|appointment_booking\n- tier: "famtastic" for bold/expressive design, "clean" for minimal/professional/simple design\n\n{"business_name":"","tag":"site-","tier":"famtastic","revenue_model":"lead_generation","business_description":"","location":"","differentiator":"","cta":"Contact Us","tone":["professional"],"pages":["home","about","contact"]}`,
       { maxTokens: 400, callSite: 'brief-extraction', timeoutMs: 8000 }
     );
     const clean = extracted.replace(/```(?:json)?\n?|```\n?/g, '').trim();
     const parsed = JSON.parse(clean);
-    // Validate tag isn't a generic word
-    const genericTags = ['restaurant', 'business', 'site', 'pizza', 'shop', 'store', 'company'];
     const tagSlug = (parsed.tag || '').replace(/^site-/, '');
-    if (parsed.business_name && parsed.tag && !genericTags.includes(tagSlug)) return parsed;
-    // Tag was generic — regenerate from business name
-    if (parsed.business_name) {
+    const tagOk = parsed.tag && !GENERIC_TAG_BLOCKLIST.has(tagSlug);
+    const nameOk = isMeaningfulBusinessName(parsed.business_name);
+    if (nameOk && tagOk) {
+      claudeBrief = parsed;
+    } else if (nameOk) {
+      // Name is good but tag was generic — regenerate from business name
       parsed.tag = 'site-' + parsed.business_name.toLowerCase()
         .replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 35);
-      return parsed;
+      claudeBrief = parsed;
     }
   } catch { /* fall through to pattern matching */ }
-  return extractBriefPatternBased(text);
+
+  if (claudeBrief) {
+    return { status: 'extracted', extraction_method: 'proper_noun', brief: claudeBrief };
+  }
+
+  // Step 2: Pattern-based proper noun cluster
+  const patternBrief = extractBriefPatternBased(raw);
+  if (patternBrief && isMeaningfulBusinessName(patternBrief.business_name)) {
+    const tagSlug = (patternBrief.tag || '').replace(/^site-/, '');
+    if (!GENERIC_TAG_BLOCKLIST.has(tagSlug)) {
+      return { status: 'extracted', extraction_method: 'proper_noun', brief: patternBrief };
+    }
+  }
+
+  // Step 3: Business-type + location synthesis
+  const synthesized = tryTypeLocationSynthesis(raw, patternBrief);
+  if (synthesized) {
+    return { status: 'extracted', extraction_method: 'type_location_synthesis', brief: synthesized };
+  }
+
+  // Step 4: Insufficient identity
+  const lower = raw.toLowerCase();
+  const hasType = GENERIC_BUSINESS_TYPES.some(t => new RegExp(`\\b${t}\\b`).test(lower));
+  const hasLocation = /\bin\s+[A-Z][a-zA-Z]/.test(raw);
+  let reason = 'no_proper_noun_no_location';
+  if (hasType && !hasLocation) reason = 'too_generic';
+  else if (!hasType && !hasLocation) reason = 'no_proper_noun_no_location';
+  else if (hasType && hasLocation) reason = 'parse_failed'; // synthesis should have caught this — fallback
+  return {
+    status: 'insufficient_identity',
+    reason,
+    clarification_question: `I'd love to build that site. To get the slug right, can you tell me the business name — or at least the type and location? For example: "Tony's Barber Shop in Atlanta" or "a church in Brooklyn".`,
+    raw_message: raw,
+  };
+}
+
+// ── Character Pipeline — sequential anchor → poses → hero → promo ─────────────
+
+async function runCharacterPipeline(jobId, message, context = {}) {
+  const siteTag = TAG;
+
+  const briefMatch = message.match(/(?:character(?:\s+pipeline)?(?:\s+for)?[:\s]+|generate\s+(?:a\s+)?(?:character|anchor)\s+(?:for\s+)?)\s*(.{8,120})/i);
+  const rawBrief = briefMatch ? briefMatch[1].trim() : '';
+  const isFamBear = /fam\s*bear/i.test(message) || !rawBrief;
+  const characterName   = isFamBear ? 'FAM Bear' : rawBrief.split(/[\.,]/)[0].trim().slice(0, 40);
+  const characterPrompt = isFamBear
+    ? 'futuristic cartoon teddy bear, bright blue bow tie, circuit pattern details, friendly expression, full body, white background, illustrated style'
+    : rawBrief;
+  const characterStyle  = 'Illustrated/Cartoon';
+
+  const DEFAULT_POSES = [
+    'right arm raised high waving, left arm at side, weight shifted, waving hello',
+    'right thumb raised, elbow bent, grinning, thumbs up',
+    'both arms raised overhead, feet apart, mouth open in cheer, celebrating',
+    'right arm extended forward, index finger pointing, leaning slightly, pointing forward',
+    'arms out wide, hips swaying, one knee bent, dancing',
+    'head tilted back, mouth open, hands on belly, laughing',
+    'seated, elbows on desk, hands on keyboard, looking at screen, sitting at desk',
+    'both hands wrapped around mug, elbows bent, slight smile, holding coffee',
+    'arms bent at 90 degrees, knees lifted alternately, leaning forward, running',
+    'arms extended forward and wrapped around, head tilted to side, hugging',
+    'one arm extended sideways toward audience, other hand on hip, presenting',
+    'one arm raised holding pennant, other fist pumping, cheering with pennant',
+  ];
+
+  function step(label, data) {
+    broadcastAll({ type: 'character-pipeline-step', jobId, label, ...data });
+    console.log(`[character-pipeline:${jobId}] ${label}`);
+  }
+
+  // Step 1: create anchor — call core function directly (no HTTP round-trip)
+  step('anchor:start', { site_tag: siteTag, character: characterName });
+  let anchorResult;
+  try {
+    anchorResult = await createCharacterAnchorCore({
+      name: characterName,
+      description: characterPrompt,
+      style: characterStyle,
+      prompt: characterPrompt,
+      site_tag: siteTag,
+    });
+    step('anchor:complete', { character_id: anchorResult.character_id, anchor_path: anchorResult.anchor_path });
+  } catch (e) {
+    step('anchor:error', { error: e.message });
+    broadcastAll({ type: 'character-pipeline-error', jobId, stage: 'anchor', error: e.message });
+    return;
+  }
+
+  const characterId = anchorResult.character_id;
+
+  // Step 2: generate all 12 poses — call core function directly
+  step('poses:start', { character_id: characterId, count: DEFAULT_POSES.length });
+  let posesResult;
+  try {
+    posesResult = await generateCharacterPosesCore({
+      character_id: characterId,
+      poses: DEFAULT_POSES,
+      site_tag: siteTag,
+    });
+    const successCount = (posesResult.results || []).filter(r => r.success !== false).length;
+    step('poses:complete', { character_id: characterId, success_count: successCount, total: DEFAULT_POSES.length });
+  } catch (e) {
+    step('poses:error', { error: e.message });
+    // Non-fatal — continue to video
+  }
+
+  // Step 3: hero video from anchor — fire-and-forget via core function
+  step('video:start', { character_id: characterId });
+  let videoResult;
+  try {
+    const anchorAbsPath = path.join(getCharacterSiteDir(siteTag), anchorResult.anchor_path);
+    const videoPrompt = `${characterName} animated, smooth motion, ${characterPrompt.slice(0, 80)}, white background`;
+    videoResult = startVideoGenerateCore({
+      image_path: anchorAbsPath,
+      prompt: videoPrompt,
+      site_tag: siteTag,
+    });
+    step('video:queued', { character_id: characterId, jobId: videoResult.jobId });
+  } catch (e) {
+    step('video:error', { error: e.message });
+    // Non-fatal — continue to promo
+  }
+
+  // Step 4: promo video — fire-and-forget via core function
+  step('promo:start', { character_id: characterId });
+  try {
+    const promoSpec = readSpecForSite(getCharacterSiteDir(siteTag));
+    startVideoPromoCore({
+      character_id: anchorResult.character_id,
+      site_tag: siteTag,
+      site_name: promoSpec.site_name || siteTag,
+      tagline: promoSpec.tagline || promoSpec.design_brief?.tagline || `${promoSpec.site_name || siteTag} — FAMtastic`,
+      pose_indices: [0, 1, 2],
+    });
+    step('promo:queued', { character_id: characterId });
+  } catch (e) {
+    step('promo:error', { error: e.message });
+  }
+
+  const posesOk  = posesResult && (posesResult.results || []).filter(r => r.success !== false).length;
+  const videoOk  = !!videoResult;
+  const assessment = [
+    `Anchor: done (${characterName})`,
+    `Poses: ${posesOk != null ? posesOk + '/' + DEFAULT_POSES.length : 'failed'}`,
+    `Hero video: ${videoOk ? 'queued' : 'failed'}`,
+    `Promo: queued`,
+  ].join(' · ');
+
+  broadcastAll({ type: 'character-pipeline-complete', jobId, character_id: characterId, assessment });
+  console.log(`[character-pipeline:${jobId}] complete — ${assessment}`);
 }
 
 async function runAutonomousBuild(message, context = {}) {
@@ -7386,10 +9101,37 @@ async function runAutonomousBuild(message, context = {}) {
       };
     }
 
-    // Step 1: Extract brief
+    // Step 1: Extract brief — new status-based shape
     step('Extracting brief');
-    const brief = await extractBriefFromMessage(message);
-    step('Brief extracted', { tag: brief.tag, name: brief.business_name, revenue: brief.revenue_model });
+    const briefResult = await extractBriefFromMessage(message);
+    if (briefResult.status === 'insufficient_identity') {
+      step('Insufficient identity', { reason: briefResult.reason });
+      return {
+        success: false,
+        insufficient_identity: true,
+        clarification_question: briefResult.clarification_question,
+        log,
+        message: briefResult.clarification_question,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+    const brief = briefResult.brief;
+    // Pre-load client_brief so the spec carries owner-style context downstream
+    const incomingClientBrief = {
+      business_description: brief.business_description,
+      revenue_model: brief.revenue_model,
+      ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
+      differentiator: brief.differentiator || 'Quality service',
+      primary_cta: brief.cta,
+      style_notes: (brief.tone || []).join(', '),
+    };
+    const briefForCreate = {
+      ...brief,
+      interview_completed: true,
+      interview_pending: false,
+      client_brief: incomingClientBrief,
+    };
+    step('Brief extracted', { tag: brief.tag, name: brief.business_name, method: briefResult.extraction_method });
     logShayDeveloperModeEvent({
       event: 'autonomous_build_brief_extracted',
       actor: 'shay',
@@ -7398,207 +9140,63 @@ async function runAutonomousBuild(message, context = {}) {
       target_site_tag: brief.tag,
     });
 
-    // Step 2: Create site (with brief pre-loaded)
-    step('Creating site', { tag: brief.tag });
-    const existingDir = path.join(SITES_ROOT, brief.tag);
-    if (fs.existsSync(existingDir)) {
-      // Site exists — update the brief and switch to it
-      const existSpec = JSON.parse(fs.readFileSync(path.join(existingDir, 'spec.json'), 'utf8'));
-      existSpec.client_brief = {
-        business_description: brief.business_description,
-        revenue_model: brief.revenue_model,
-        ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
-        differentiator: brief.differentiator || 'Quality service',
-        primary_cta: brief.cta,
-        style_notes: brief.tone.join(', '),
-      };
-      existSpec.interview_completed = true;
-      existSpec.interview_pending = false;
-      if (brief.pages) existSpec.pages = brief.pages;
-      const tmpPath = path.join(existingDir, 'spec.json.tmp');
-      fs.writeFileSync(tmpPath, JSON.stringify(existSpec, null, 2));
-      fs.renameSync(tmpPath, path.join(existingDir, 'spec.json'));
-      step('Site exists — brief updated');
-      logShayDeveloperModeEvent({
-        event: 'site_write',
-        actor: 'shay',
-        status: 'updated_existing',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [existingDir],
-        target_site_tag: brief.tag,
-      });
-    } else {
-      // Create fresh
-      const distDir = path.join(existingDir, 'dist');
-      fs.mkdirSync(distDir, { recursive: true });
-      const newSpec = {
-        tag: brief.tag,
-        site_name: brief.business_name,
-        business_type: brief.business_description.split(' ').slice(0, 3).join(' '),
-        state: 'new',
-        created_at: new Date().toISOString(),
-        interview_completed: true,
-        interview_pending: false,
-        pages: brief.pages,
-        client_brief: {
-          business_description: brief.business_description,
-          revenue_model: brief.revenue_model,
-          ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
-          differentiator: brief.differentiator || 'Quality service',
-          primary_cta: brief.cta,
-          style_notes: brief.tone.join(', '),
-        },
-      };
-      const newSpecPath = path.join(existingDir, 'spec.json');
-      fs.writeFileSync(newSpecPath + '.tmp', JSON.stringify(newSpec, null, 2));
-      fs.renameSync(newSpecPath + '.tmp', newSpecPath);
-      step('Site created');
-      logShayDeveloperModeEvent({
-        event: 'site_write',
-        actor: 'shay',
-        status: 'created_site',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [existingDir],
-        target_site_tag: brief.tag,
-      });
-    }
-
-    // Step 2b: Synthesize design_brief from client_brief so classifier routes
-    // to 'build' intent (not 'new_site' → handlePlanning which needs approval)
-    step('Synthesizing design_brief for build routing');
-    const specToUpdate = JSON.parse(fs.readFileSync(path.join(SITES_ROOT, brief.tag, 'spec.json'), 'utf8'));
-    if (!specToUpdate.design_brief) {
-      const cb = specToUpdate.client_brief || {};
-      specToUpdate.design_brief = {
-        goal: cb.business_description || brief.business_description,
-        audience: cb.ideal_customer || 'Local customers',
-        tone: brief.tone,
-        visual_direction: {
-          layout: 'standard',
-          typography: 'clean and professional',
-          color_usage: 'brand colors throughout',
-          motion: 'subtle',
-          density: 'balanced',
-        },
-        content_priorities: [brief.cta || 'Lead generation', 'Brand credibility'],
-        must_have_sections: brief.pages,
-        avoid: ['clutter', 'stock-photo feel'],
-        open_questions: [],
-      };
-      specToUpdate.pages = brief.pages;
-      specToUpdate.state = 'briefed';
-      const tmpP = path.join(SITES_ROOT, brief.tag, 'spec.json.tmp');
-      fs.writeFileSync(tmpP, JSON.stringify(specToUpdate, null, 2));
-      fs.renameSync(tmpP, path.join(SITES_ROOT, brief.tag, 'spec.json'));
-      step('design_brief synthesized');
-      logShayDeveloperModeEvent({
-        event: 'site_write',
-        actor: 'shay',
-        status: 'design_brief_synthesized',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [path.join(SITES_ROOT, brief.tag)],
-        target_site_tag: brief.tag,
-      });
-    }
-
-    // Step 3: Switch to the new site
-    step('Switching to site', { tag: brief.tag });
-    await endSession();
-    TAG = brief.tag;
-    writeLastSite(TAG);
-    invalidateSpecCache();
-    currentPage = 'index.html';
-    sessionMessageCount = 0;
-    sessionStartedAt = new Date().toISOString();
-    startSession();
-    studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });
-
-    // Notify all WS clients of the switch
-    const spec = readSpec();
-    const pages = listPages();
-    wss.clients.forEach(client => {
-      if (client.readyState === 1) {
-        client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));
-        client.send(JSON.stringify({ type: 'pages-updated', pages, currentPage }));
-      }
-    });
-    step('Site switched, clients notified');
-    logShayDeveloperModeEvent({
-      event: 'site_switch',
-      actor: 'shay',
-      status: 'ok',
-      trust_mode: approval.summary.trust_mode,
-      target_site_tag: brief.tag,
-    });
-
-    // Step 4: Trigger build directly via routeToHandler with a mock WS.
-    // IMPORTANT: Cannot call handleChatMessage twice — it self-blocks via buildInProgress.
-    // routeToHandler(ws, 'build', ...) calls handleChatMessage once with the right message,
-    // which then sets buildInProgress + calls parallelBuild. This is the correct entry point.
-    step('Triggering build (direct routeToHandler)');
-
-    // Mock WS — mirrors all build events to real browser clients so Fritz watches live
-    const mockWs = {
-      readyState: 1,
-      buildRunId: null,
-      currentBrain: 'claude',
-      brainModels: {},
-      activeChildren: [],
-      currentChild: null,
-      autoAccept: false,
-      send: (data) => {
-        try {
-          wss.clients.forEach(client => {
-            if (client.readyState === 1) {
-              try { client.send(data); } catch {}
-            }
-          });
-        } catch {}
-      },
-      // parallelBuild uses ws.once/removeListener/on for close-event guards.
-      // The mock WS never fires events so these are safe no-ops.
-      once: () => {},
-      removeListener: () => {},
-      on: () => {},
-    };
-
-    // Call routeToHandler directly — it calls handleChatMessage once with correct params.
-    // handleChatMessage sets buildInProgress=true, then calls parallelBuild.
-    const builtSpec = readSpec();
-    const buildMsg = `Build this site based on the design brief. Site name: ${builtSpec.site_name || brief.business_name}. Pages to generate: ${(builtSpec.pages || brief.pages).join(', ')}.`;
-    // routeToHandler case 'build' calls handleChatMessage(ws, buildMsg, 'build', spec)
-    // → buildInProgress=true → parallelBuild fires
-    try {
-      routeToHandler(mockWs, 'build', buildMsg, builtSpec);
-      step('Build dispatched via routeToHandler');
-      logShayDeveloperModeEvent({
-        event: 'build_trigger',
-        actor: 'shay',
-        status: 'dispatched',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [path.join(SITES_ROOT, brief.tag)],
-        target_site_tag: brief.tag,
-      });
-    } catch (routeErr) {
-      step('routeToHandler error', { error: routeErr.message });
-      logShayDeveloperModeEvent({
-        event: 'build_trigger',
-        actor: 'shay',
-        status: 'error',
-        trust_mode: approval.summary.trust_mode,
-        target_paths: [path.join(SITES_ROOT, brief.tag)],
-        target_site_tag: brief.tag,
-        error: routeErr.message,
-      });
-    }
-
-    const wsClients = [...wss.clients].filter(c => c.readyState === 1).length;
-
-    if (wsClients === 0) {
-      step('No active WS clients — build cannot be triggered until browser connects');
+    // Step 2: Create site via shared helper (TAG switch + WS notify owned by helper)
+    step('Creating site via createSite()', { tag: brief.tag });
+    const siteResult = await createSite(briefForCreate, { tag_source: 'extracted', on_collision: 'update' });
+    if (siteResult.status === 'collision') {
+      step('Different-business collision', { existing: siteResult.existing_site_name });
       return {
         success: false,
-        tag: brief.tag,
+        collision: true,
+        log,
+        message: `A site named "${siteResult.existing_site_name}" already exists. Suggested alternative: ${siteResult.suggested_alternative_slug}. Resend with explicit name to proceed.`,
+        existing_site_name: siteResult.existing_site_name,
+        suggested_alternative_slug: siteResult.suggested_alternative_slug,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+    if (siteResult.status === 'error') {
+      step('createSite error', { error: siteResult.error });
+      return {
+        success: false,
+        log,
+        error: siteResult.error,
+        message: `Could not create site: ${siteResult.error}`,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+    step(`Site ${siteResult.status}`, { tag: siteResult.tag });
+    logShayDeveloperModeEvent({
+      event: 'site_write',
+      actor: 'shay',
+      status: siteResult.status,
+      trust_mode: approval.summary.trust_mode,
+      target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+      target_site_tag: siteResult.tag,
+    });
+
+    // Step 2b: Synthesize design_brief on the active spec (post-TAG-switch)
+    step('Synthesizing design_brief for build routing');
+    synthesizeDesignBriefForBuild(brief);
+    logShayDeveloperModeEvent({
+      event: 'site_write',
+      actor: 'shay',
+      status: 'design_brief_synthesized',
+      trust_mode: approval.summary.trust_mode,
+      target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+      target_site_tag: siteResult.tag,
+    });
+
+    // Step 3: Trigger build via shared helper — gates on WS clients BEFORE dispatch
+    step('Trigger build via triggerSiteBuild()');
+    const builtSpec = readSpec();
+    const triggerResult = triggerSiteBuild(null, builtSpec);
+
+    if (!triggerResult.triggered && triggerResult.reason === 'no_ws_clients') {
+      step('No active WS clients — build NOT dispatched');
+      return {
+        success: false,
+        tag: siteResult.tag,
         brief,
         log,
         message: `Site ${brief.business_name} created. Open Studio to trigger build — no browser connected.`,
@@ -7606,16 +9204,44 @@ async function runAutonomousBuild(message, context = {}) {
       };
     }
 
-    step('Build triggered', { ws_clients: wsClients });
+    if (!triggerResult.triggered) {
+      step('Build dispatch failed', { reason: triggerResult.reason, error: triggerResult.error });
+      logShayDeveloperModeEvent({
+        event: 'build_trigger',
+        actor: 'shay',
+        status: 'error',
+        trust_mode: approval.summary.trust_mode,
+        target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+        target_site_tag: siteResult.tag,
+        error: triggerResult.error || triggerResult.reason,
+      });
+      return {
+        success: false,
+        tag: siteResult.tag,
+        brief,
+        log,
+        message: `Site created but build dispatch failed: ${triggerResult.error || triggerResult.reason}`,
+        elapsed_ms: Date.now() - t0,
+      };
+    }
+
+    step('Build dispatched');
+    logShayDeveloperModeEvent({
+      event: 'build_trigger',
+      actor: 'shay',
+      status: 'dispatched',
+      trust_mode: approval.summary.trust_mode,
+      target_paths: [path.join(SITES_ROOT, siteResult.tag)],
+      target_site_tag: siteResult.tag,
+    });
 
     return {
       success: true,
-      tag: brief.tag,
+      tag: siteResult.tag,
       brief,
       log,
       message: `🚀 ${brief.business_name} build started. Watch Studio for progress.`,
       preview_url: `http://localhost:${PREVIEW_PORT}`,
-      ws_clients_notified: wsClients,
       elapsed_ms: Date.now() - t0,
     };
 
@@ -7623,6 +9249,232 @@ async function runAutonomousBuild(message, context = {}) {
     step('ERROR', { error: err.message, stack: err.stack?.slice(0, 200) });
     return { success: false, error: err.message, log, elapsed_ms: Date.now() - t0 };
   }
+}
+
+/**
+ * Build-confirmation pending map (P0.3 fix for bug-shay-auto-build-no-confirmation-2026-04-25).
+ *
+ * The build_request flow used to fire the full chain (auth → extract → createSite →
+ * synthesize → triggerSiteBuild) without a human-in-the-loop checkpoint. P0.3 splits
+ * the flow into two messages: the first message extracts the brief and stores it
+ * here; an explicit confirmation message ("yes" / "build it" / "proceed") triggers
+ * the deferred build chain.
+ *
+ * Single-key map ('shay-default') is acceptable for the single-user localhost
+ * system. TTL is 5 minutes — entries beyond TTL are treated as expired.
+ */
+const pendingBuildConfirmations = new Map();
+const BUILD_CONFIRMATION_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const BUILD_CONFIRMATION_KEY = 'shay-default';
+
+function setPendingBuildConfirmation(brief, extractionMethod) {
+  pendingBuildConfirmations.set(BUILD_CONFIRMATION_KEY, {
+    brief,
+    extraction_method: extractionMethod,
+    extracted_at: Date.now(),
+    expires_at: Date.now() + BUILD_CONFIRMATION_TTL_MS,
+  });
+}
+
+function takePendingBuildConfirmation() {
+  const entry = pendingBuildConfirmations.get(BUILD_CONFIRMATION_KEY);
+  if (!entry) return null;
+  if (Date.now() > entry.expires_at) {
+    pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+    return null;
+  }
+  pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+  return entry;
+}
+
+function hasPendingBuildConfirmation() {
+  const entry = pendingBuildConfirmations.get(BUILD_CONFIRMATION_KEY);
+  if (!entry) return false;
+  if (Date.now() > entry.expires_at) {
+    pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * handleShayBuildRequest(message, context)
+ *
+ * Async first-message handler for Shay Desk's build_request intent:
+ *   auth → extractBriefFromMessage → store pending → return confirmation prompt
+ *
+ * Does NOT auto-trigger the build. The user must explicitly confirm via a
+ * second message ("yes" / "build it" / "proceed" / "go ahead"), which is
+ * detected by classifyShayShayTier0 as 'confirm_build_request' and dispatched
+ * through handleShayBuildConfirmation.
+ *
+ * Returns { action: 'shay_response', response: <user-facing text> }. Status
+ * surfaces in Shay Desk only — no route_to_chat side-channel; chat is for chat.
+ *
+ * The response key matches the orb fallback key at studio-orb.js:1027.
+ */
+async function handleShayBuildRequest(message, context = {}) {
+  // 1. Caller-owned authorization gate
+  const approval = authorizeShayDeveloperAction('site_write', [SITES_ROOT], context);
+  logShayDeveloperModeEvent({
+    event: 'shay_build_request_received',
+    actor: 'shay',
+    status: approval.allowed ? 'allowed' : approval.status,
+    trust_mode: approval.summary && approval.summary.trust_mode,
+    target_paths: [SITES_ROOT],
+    message_preview: String(message || '').slice(0, 180),
+  });
+  if (!approval.allowed) {
+    return {
+      action: 'shay_response',
+      response: 'This would create a new site. Approve in Developer Mode to proceed.',
+      blocked_by_developer_mode: true,
+      developer_mode: approval.summary,
+    };
+  }
+
+  // 2. Extract brief
+  const briefResult = await extractBriefFromMessage(message);
+  if (briefResult.status === 'insufficient_identity') {
+    return {
+      action: 'shay_response',
+      response: briefResult.clarification_question,
+      insufficient_identity: true,
+      reason: briefResult.reason,
+    };
+  }
+
+  // 3. Store pending confirmation. The build chain runs in handleShayBuildConfirmation
+  // when the user explicitly confirms.
+  setPendingBuildConfirmation(briefResult.brief, briefResult.extraction_method);
+  const brief = briefResult.brief;
+  const pages = (brief.pages || ['home', 'about', 'contact']).join(', ');
+  const tier = brief.tier || 'famtastic';
+  const lines = [
+    `Ready to build "${brief.business_name}".`,
+    `  Tag: ${brief.tag}`,
+    `  Pages: ${pages}`,
+    `  Tier: ${tier}`,
+    `  Extraction: ${briefResult.extraction_method}`,
+    '',
+    'Reply "yes" / "build it" / "proceed" to start the build, or "cancel" to discard.',
+    '(Pending confirmation expires in 5 minutes.)',
+  ];
+  return {
+    action: 'shay_response',
+    response: lines.join('\n'),
+    pending_confirmation: true,
+    extracted_brief: brief,
+    extraction_method: briefResult.extraction_method,
+  };
+}
+
+/**
+ * handleShayBuildConfirmation(message, context)
+ *
+ * Runs the deferred build chain that handleShayBuildRequest set up:
+ *   takePending → createSite → synthesizeDesignBriefForBuild → triggerSiteBuild
+ *
+ * Called when classifyShayShayTier0 returns 'confirm_build_request' or
+ * 'cancel_build_request'. Re-runs auth (defence-in-depth — auth state may have
+ * changed between the build_request and the confirmation).
+ */
+async function handleShayBuildConfirmation(message, context = {}) {
+  const lower = String(message || '').toLowerCase();
+
+  // Cancel path
+  if (/\b(cancel|abort|nope|nevermind|never\s+mind|forget\s+it)\b/.test(lower)) {
+    const had = hasPendingBuildConfirmation();
+    pendingBuildConfirmations.delete(BUILD_CONFIRMATION_KEY);
+    return {
+      action: 'shay_response',
+      response: had ? 'Build cancelled. Pending confirmation discarded.' : 'No pending build to cancel.',
+    };
+  }
+
+  const pending = takePendingBuildConfirmation();
+  if (!pending) {
+    return {
+      action: 'shay_response',
+      response: 'No pending build to confirm. Send a fresh build request.',
+    };
+  }
+
+  // Re-check auth at confirmation time
+  const approval = authorizeShayDeveloperAction('site_write', [SITES_ROOT], context);
+  if (!approval.allowed) {
+    return {
+      action: 'shay_response',
+      response: 'This would create a new site. Approve in Developer Mode to proceed.',
+      blocked_by_developer_mode: true,
+      developer_mode: approval.summary,
+    };
+  }
+
+  // 3. Pre-load client_brief and create site (non-destructive on different-business collisions)
+  const brief = pending.brief;
+  const briefForCreate = {
+    ...brief,
+    interview_completed: true,
+    interview_pending: false,
+    client_brief: {
+      business_description: brief.business_description,
+      revenue_model: brief.revenue_model,
+      ideal_customer: brief.location ? `Customers in ${brief.location}` : 'Local customers',
+      differentiator: brief.differentiator || 'Quality service',
+      primary_cta: brief.cta,
+      style_notes: (brief.tone || []).join(', '),
+    },
+  };
+  const siteResult = await createSite(briefForCreate, { tag_source: 'extracted', on_collision: 'return_collision' });
+
+  if (siteResult.status === 'collision') {
+    return {
+      action: 'shay_response',
+      response: `A site named "${siteResult.existing_site_name}" already exists. Suggested alternative: ${siteResult.suggested_alternative_slug}. Resend with explicit name to proceed.`,
+      collision: true,
+      existing_site_name: siteResult.existing_site_name,
+      suggested_alternative_slug: siteResult.suggested_alternative_slug,
+    };
+  }
+  if (siteResult.status === 'error') {
+    return {
+      action: 'shay_response',
+      response: `Could not create site: ${siteResult.error}`,
+      error: siteResult.error,
+      error_code: siteResult.error_code,
+    };
+  }
+
+  // 4. Synthesize design_brief on the active spec (post-TAG-switch)
+  synthesizeDesignBriefForBuild(brief);
+
+  // 5. Trigger build via shared helper — gates on WS clients BEFORE dispatch
+  const triggerResult = triggerSiteBuild(null, readSpec());
+  const siteName = brief.business_name;
+
+  if (!triggerResult.triggered && triggerResult.reason === 'no_ws_clients') {
+    return {
+      action: 'shay_response',
+      response: `${siteName} site created. Open Studio to trigger the build — no browser connected.`,
+      tag: siteResult.tag,
+      build_pending: true,
+    };
+  }
+  if (!triggerResult.triggered) {
+    return {
+      action: 'shay_response',
+      response: `${siteName} site created but build dispatch failed: ${triggerResult.error || triggerResult.reason}.`,
+      tag: siteResult.tag,
+      build_dispatch_error: triggerResult.error || triggerResult.reason,
+    };
+  }
+  return {
+    action: 'shay_response',
+    response: `Building ${siteName}. Watch progress in Studio Chat.`,
+    tag: siteResult.tag,
+    build_dispatched: true,
+  };
 }
 
 // POST /api/autonomous-build — Shay-Shay's autonomous site build endpoint
@@ -7642,7 +9494,8 @@ app.get('/api/build-status/:tag', (req, res) => {
   const specPath = path.join(SITES_ROOT, tagParam, 'spec.json');
   if (!fs.existsSync(specPath)) return res.status(404).json({ error: 'site not found' });
   try {
-    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // L7781
+    normalizeTierAndMode(spec); // in-memory only — status endpoint, no write-back
     const distDir = path.join(SITES_ROOT, tagParam, 'dist');
     const htmlFiles = fs.existsSync(distDir)
       ? fs.readdirSync(distDir).filter(f => f.endsWith('.html') && !f.startsWith('_'))
@@ -9257,6 +11110,50 @@ app.get('/api/telemetry/sdk-cost-summary', (req, res) => {
   res.json({ ...sessionSummary, recentCalls: siteLog });
 });
 
+// Build trace — per-run or per-site event log
+app.get('/api/trace', (req, res) => {
+  const { runId, limit = 50 } = req.query;
+  const events = queryTraceEvents({ siteTag: TAG, runId: runId || undefined, limit: parseInt(limit, 10) });
+  res.json({ site_tag: TAG, run_id: runId || null, count: events.length, events });
+});
+
+app.get('/api/trace/run/:runId', (req, res) => {
+  const { runId } = req.params;
+  const events = getRunTrace(TAG, runId, HUB_ROOT);
+  res.json({ site_tag: TAG, run_id: runId, count: events.length, events });
+});
+
+app.get('/api/workflow/stage-catalog', (req, res) => {
+  try {
+    const catalogPath = path.join(__dirname, 'lib', 'workflow-stage-catalog.json');
+    const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+    res.json(catalog);
+  } catch (err) {
+    res.status(500).json({ error: 'workflow_stage_catalog_unavailable', message: err.message });
+  }
+});
+
+// Agent performance scorecard
+app.get('/api/agent/performance', (req, res) => {
+  const { agent, task_type, provider } = req.query;
+  const rows = db.getAgentPerformance({ agent, task_type, provider });
+  res.json({ count: rows.length, rows });
+});
+
+app.get('/api/agent/scorecard', (req, res) => {
+  const { agent, task_type } = req.query;
+  const scorecard = db.getAgentScorecard({ agent, task_type });
+  res.json({ scorecard });
+});
+
+// Fulfillment ledger — latest for current site or specific run
+app.get('/api/fulfillment', (req, res) => {
+  const { runId } = req.query;
+  const ledger = readLedger(TAG, HUB_ROOT, runId || null);
+  if (!ledger) return res.json({ site_tag: TAG, ledger: null });
+  res.json({ site_tag: TAG, ledger });
+});
+
 // Upgrade /api/compare/generate — add validation + Claude fallback
 app.post('/api/compare/generate-v2', async (req, res) => {
   const { page } = req.body;
@@ -9429,6 +11326,92 @@ function runGoogleMediaScript(args) {
       resolve({ stdout: stdout || '', stderr: stderr || '' });
     });
   });
+}
+
+// ── OpenAI gpt-image-2 adapter wiring ────────────────────────────────────────
+// Mirrors createGoogleImageAsset but routes through lib/openai-image-adapter.js.
+// Selectable per request via pickImageProvider(); defaults to imagen4 for
+// backwards compatibility (settings.image_provider).
+
+const openaiImageAdapter = require('./lib/openai-image-adapter');
+
+function pickImageProvider(requestProvider) {
+  try {
+    return openaiImageAdapter.pickProvider(requestProvider, loadSettings().image_provider);
+  } catch {
+    return openaiImageAdapter.pickProvider(requestProvider, 'imagen4');
+  }
+}
+
+// Aspect ratio → gpt-image-2 size preset. The adapter only accepts square,
+// portrait, or landscape; everything else snaps to 1024x1024.
+function aspectRatioToOpenAiSize(aspectRatio) {
+  switch ((aspectRatio || '').trim()) {
+    case '16:9':
+    case '3:2':
+    case '4:3':
+      return '1792x1024';
+    case '9:16':
+    case '2:3':
+    case '3:4':
+      return '1024x1792';
+    case '1:1':
+    default:
+      return '1024x1024';
+  }
+}
+
+async function createOpenAiImageAsset({
+  prompt,
+  aspectRatio,
+  size,
+  transparent,
+  referenceImages,
+  role,
+  label,
+  notes,
+  brandFamilyId,
+  model,
+}) {
+  ensureGeneratedMediaCapacity(1);
+  const filename = makeGeneratedMediaFilename('media', prompt, '.png');
+  const outputPath = path.join(UPLOADS_DIR(), filename);
+  fs.mkdirSync(UPLOADS_DIR(), { recursive: true });
+
+  const finalSize = size || aspectRatioToOpenAiSize(aspectRatio);
+  const useEdits = Array.isArray(referenceImages) ? referenceImages.length > 0 : !!referenceImages;
+  const finalModel = model || openaiImageAdapter.DEFAULT_MODEL;
+
+  const result = useEdits
+    ? await openaiImageAdapter.editImage({
+        prompt, referenceImages, size: finalSize, transparent, model: finalModel, savePath: outputPath,
+      })
+    : await openaiImageAdapter.generateImage({
+        prompt, size: finalSize, transparent, model: finalModel, savePath: outputPath,
+      });
+
+  const asset = {
+    filename,
+    type: 'image',
+    role: role || 'content',
+    label: label || '',
+    notes: notes || '',
+    uploaded_at: new Date().toISOString(),
+    source_provider: 'openai',
+    source_model: finalModel,
+    generation_mode: useEdits ? 'image_edit' : 'text_to_image',
+    source_prompt: prompt,
+    brand_family_id: brandFamilyId || null,
+    size: result.size,
+    transparent: !!transparent,
+    duration_ms: result.durationMs,
+  };
+  recordUploadedAsset(asset);
+  return {
+    success: true,
+    asset,
+    path: `/assets/uploads/${filename}`,
+  };
 }
 
 async function createGoogleImageAsset({ prompt, aspectRatio, role, label, notes, brandFamilyId }) {
@@ -9628,13 +11611,28 @@ function getCharacterSiteDir(siteTag) {
 function readSpecForSite(siteDir) {
   const specPath = path.join(siteDir, 'spec.json');
   if (!fs.existsSync(specPath)) return {};
-  try { return JSON.parse(fs.readFileSync(specPath, 'utf8')); } catch { return {}; }
+  try {
+    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // L9764
+    normalizeTierAndMode(spec); // in-memory only — caller handles persistence via writeSpecForSite
+    return spec;
+  } catch { return {}; }
 }
 
 function writeSpecForSite(siteDir, spec) {
   const specPath = path.join(siteDir, 'spec.json');
   fs.mkdirSync(siteDir, { recursive: true });
-  fs.writeFileSync(specPath, JSON.stringify(spec, null, 2));
+  // Preserve revision metadata from the current on-disk spec if not already set
+  if (!spec._revision && fs.existsSync(specPath)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(specPath, 'utf8'));
+      if (existing._revision)       spec._revision = existing._revision;
+      if (existing._last_modified)  spec._last_modified = existing._last_modified;
+    } catch {}
+  }
+  // Atomic write — matches the safety pattern used by the main writeSpec function
+  const tmpPath = specPath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(spec, null, 2));
+  fs.renameSync(tmpPath, specPath);
 }
 
 function broadcastAll(payload) {
@@ -9666,59 +11664,365 @@ Requirements for the expanded prompt:
   return resp.content[0].text.trim();
 }
 
+// ── Character pipeline core functions ─────────────────────────────────────
+// Called directly by runCharacterPipeline (no HTTP round-trip) and also
+// exposed via the HTTP routes below for external callers.
+
+async function createCharacterAnchorCore({ name, description, style, prompt, site_tag } = {}) {
+  if (!getGoogleApiKey()) throw new Error('GEMINI_API_KEY not configured');
+  if (!name || !prompt) throw new Error('name and prompt are required');
+
+  const siteDir = getCharacterSiteDir(site_tag);
+  const characterId = require('crypto').randomUUID();
+  const charDir = path.join(siteDir, 'assets', 'characters', characterId);
+  const anchorPath = path.join(charDir, 'anchor.png');
+  fs.mkdirSync(charDir, { recursive: true });
+
+  let enrichedPrompt = prompt;
+  try {
+    enrichedPrompt = await enrichCharacterPrompt(prompt, name || '', description || '', style || 'illustrated');
+  } catch (e) {
+    console.warn('[character] prompt enrichment failed, using raw prompt:', e.message);
+  }
+  enrichedPrompt = `${enrichedPrompt}, transparent background, isolated character, no background`;
+
+  await runGoogleMediaScript([
+    '--prompt', enrichedPrompt,
+    '--output', anchorPath,
+    '--aspect-ratio', '1:1',
+    '--site-dir', siteDir,
+  ]);
+  if (!fs.existsSync(anchorPath)) throw new Error('Imagen did not produce anchor image');
+
+  const anchorRelPath = path.join('assets', 'characters', characterId, 'anchor.png');
+  const characterSet = {
+    id: characterId,
+    name: name || '',
+    description: description || '',
+    style: style || 'illustrated',
+    enriched_prompt: enrichedPrompt,
+    anchor_image_path: anchorRelPath,
+    poses: [],
+    created_at: new Date().toISOString(),
+    provider: 'imagen',
+  };
+
+  const spec = readSpecForSite(siteDir);
+  if (!Array.isArray(spec.character_sets)) spec.character_sets = [];
+  spec.character_sets.push(characterSet);
+  writeSpecForSite(siteDir, spec);
+
+  return { character_id: characterId, anchor_path: anchorRelPath, character_set: characterSet };
+}
+
+async function generateCharacterPosesCore({ character_id, poses, site_tag } = {}) {
+  if (!character_id || !Array.isArray(poses) || poses.length === 0)
+    throw new Error('character_id and poses[] are required');
+
+  const openaiKey = process.env.OPENAI_API_KEY || '';
+  const leonardoKey = getLeonardoApiKey();
+  if (!openaiKey && !leonardoKey) throw new Error('OPENAI_API_KEY or LEONARDO_API_KEY required for pose generation');
+
+  const siteDir = getCharacterSiteDir(site_tag);
+  const spec = readSpecForSite(siteDir);
+  if (!Array.isArray(spec.character_sets)) throw new Error('No character_sets in spec');
+  const charSet = spec.character_sets.find(c => c.id === character_id);
+  if (!charSet) throw new Error(`Character ${character_id} not found`);
+
+  const charDir = path.join(siteDir, 'assets', 'characters', character_id);
+  fs.mkdirSync(charDir, { recursive: true });
+
+  const charDescription = charSet.description || charSet.name || '';
+  const charStyle = charSet.style || 'illustrated';
+
+  function buildPosePrompt(poseName) {
+    return [
+      `full body pose: ${poseName}`,
+      `character facing forward`,
+      charDescription,
+      `${charStyle} style`,
+      `full body visible`,
+      `transparent background`,
+      `PNG with alpha channel`,
+    ].filter(Boolean).join(', ');
+  }
+
+  // Log sample prompt before generation loop so each run can be verified
+  console.log('[character/generate-poses] sample prompt →\n', buildPosePrompt(poses[0]));
+
+  function savePoseToSpec(i, poseName, poseRelPath) {
+    const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
+    const specNow = readSpecForSite(siteDir);
+    const charSetNow = specNow.character_sets?.find(c => c.id === character_id);
+    if (charSetNow) {
+      if (!Array.isArray(charSetNow.poses)) charSetNow.poses = [];
+      charSetNow.poses[i] = poseEntry;
+      writeSpecForSite(siteDir, specNow);
+    }
+  }
+
+  const results = [];
+
+  // ── Primary: gpt-image-1 ──────────────────────────────────────────────────
+  if (openaiKey) {
+    const { OpenAI } = require('openai');
+    const openai = new OpenAI({ apiKey: openaiKey });
+
+    for (let i = 0; i < poses.length; i++) {
+      const poseName = poses[i];
+      const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const posePath    = path.join(charDir, `pose-${i + 1}-${poseSlug}.png`);
+      const poseRelPath = path.join('assets', 'characters', character_id, `pose-${i + 1}-${poseSlug}.png`);
+
+      try {
+        const response = await openai.images.generate({
+          model: 'gpt-image-1',
+          prompt: buildPosePrompt(poseName),
+          size: '1024x1024',
+          n: 1,
+        });
+        const b64 = response.data[0].b64_json;
+        if (!b64) throw new Error('gpt-image-1 returned no image data');
+        fs.writeFileSync(posePath, Buffer.from(b64, 'base64'));
+        savePoseToSpec(i, poseName, poseRelPath);
+        broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
+        results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
+      } catch (poseErr) {
+        console.error(`[character/generate-poses] gpt-image-1 pose ${i + 1} failed:`, poseErr.message);
+        results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
+      }
+
+      if (i < poses.length - 1) await new Promise(r => setTimeout(r, 1000));
+    }
+
+    broadcastAll({ type: 'poses-complete', character_id, results });
+    return { character_id, results };
+  }
+
+  // ── Fallback: Leonardo AI ─────────────────────────────────────────────────
+  if (!leonardoKey) throw new Error('LEONARDO_API_KEY not configured');
+
+  const anchorAbsPath = path.join(siteDir, charSet.anchor_image_path);
+  if (!fs.existsSync(anchorAbsPath)) throw new Error('Anchor image not found on disk');
+
+  const { default: fetch } = await import('node-fetch').catch(() => ({ default: global.fetch }));
+  const fetchFn = fetch || global.fetch;
+  const leonardoHeaders = { 'Authorization': `Bearer ${leonardoKey}`, 'Content-Type': 'application/json' };
+
+  const anchorBytes = fs.readFileSync(anchorAbsPath);
+  const uploadResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/init-image', {
+    method: 'POST', headers: leonardoHeaders, body: JSON.stringify({ extension: 'png' }),
+  });
+  if (!uploadResp.ok) {
+    const txt = await uploadResp.text();
+    throw new Error(`Leonardo init-image presign failed: ${uploadResp.status} ${txt}`);
+  }
+  const uploadData = await uploadResp.json();
+  const rawFields = uploadData.uploadInitImage?.fields;
+  const uploadFields = rawFields ? (typeof rawFields === 'string' ? JSON.parse(rawFields) : rawFields) : {};
+  const uploadUrl = uploadData.uploadInitImage?.url || '';
+  const initImageId = uploadData.uploadInitImage?.id;
+  if (!uploadUrl || !initImageId) throw new Error('Leonardo did not return upload URL or id');
+
+  const formData = new FormData();
+  Object.entries(uploadFields).forEach(([k, v]) => formData.append(k, String(v)));
+  formData.append('file', new Blob([anchorBytes], { type: 'image/png' }), 'anchor.png');
+  const s3Resp = await fetchFn(uploadUrl, { method: 'POST', body: formData });
+  if (!s3Resp.ok && s3Resp.status !== 204) throw new Error(`Leonardo S3 upload failed: ${s3Resp.status}`);
+
+  for (let i = 0; i < poses.length; i++) {
+    const poseName = poses[i];
+    const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const posePath    = path.join(charDir, `pose-${i + 1}-${poseSlug}.jpg`);
+    const poseRelPath = path.join('assets', 'characters', character_id, `pose-${i + 1}-${poseSlug}.jpg`);
+
+    try {
+      const genResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/generations', {
+        method: 'POST', headers: leonardoHeaders,
+        body: JSON.stringify({
+          prompt: buildPosePrompt(poseName),
+          modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876', // Leonardo Lightning XL
+          width: 512, height: 512, num_images: 1,
+          init_image_id: initImageId, init_strength: 0.4,
+        }),
+      });
+      if (!genResp.ok) { const txt = await genResp.text(); throw new Error(`Leonardo gen failed: ${genResp.status} ${txt}`); }
+      const genData = await genResp.json();
+      const generationId = genData.sdGenerationJob?.generationId;
+      if (!generationId) throw new Error('Leonardo did not return generationId');
+
+      let imageUrl = null;
+      const pollDeadline = Date.now() + 60000;
+      while (Date.now() < pollDeadline) {
+        await new Promise(r => setTimeout(r, 3000));
+        const pollResp = await fetchFn(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, { headers: leonardoHeaders });
+        if (!pollResp.ok) continue;
+        const pollData = await pollResp.json();
+        const status = pollData.generations_by_pk?.status;
+        if (status === 'COMPLETE') { imageUrl = pollData.generations_by_pk?.generated_images?.[0]?.url; break; }
+        if (status === 'FAILED') throw new Error('Leonardo generation FAILED');
+      }
+      if (!imageUrl) throw new Error('Leonardo generation timed out');
+
+      const imgResp = await fetchFn(imageUrl);
+      if (!imgResp.ok) throw new Error(`Failed to download pose image: ${imgResp.status}`);
+      fs.writeFileSync(posePath, Buffer.from(await imgResp.arrayBuffer()));
+      savePoseToSpec(i, poseName, poseRelPath);
+      broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
+      results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
+    } catch (poseErr) {
+      console.error(`[character/generate-poses] Leonardo pose ${i + 1} failed:`, poseErr.message);
+      results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
+    }
+
+    if (i < poses.length - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+
+  broadcastAll({ type: 'poses-complete', character_id, results });
+  return { character_id, results };
+}
+
+function startVideoGenerateCore({ image_path, prompt, duration_seconds, site_tag } = {}) {
+  if (!getGoogleApiKey()) throw new Error('GEMINI_API_KEY not configured');
+  if (!image_path || !prompt) throw new Error('image_path and prompt are required');
+
+  const siteDir = getCharacterSiteDir(site_tag);
+  const jobId = require('crypto').randomUUID();
+  const videoDir = path.join(siteDir, 'assets', 'video');
+  const outputPath = path.join(videoDir, `${jobId}.mp4`);
+  const imagePath = path.isAbsolute(image_path) ? image_path : path.join(siteDir, image_path);
+
+  writeVideoJob(jobId, { status: 'generating', prompt, image_path });
+
+  setImmediate(async () => {
+    broadcastAll({ type: 'video-progress', jobId, status: 'generating' });
+    try {
+      const { actual_duration, file_size } = await runVeoGeneration(
+        imagePath, prompt, outputPath,
+        { duration: Number(duration_seconds) || 5 }
+      );
+      const relPath = path.relative(siteDir, outputPath);
+      writeVideoJob(jobId, { status: 'complete', path: relPath, actual_duration, file_size });
+      broadcastAll({ type: 'video-complete', jobId, path: relPath, actual_duration });
+    } catch (e) {
+      console.error('[video/generate] veo error:', e.message);
+      writeVideoJob(jobId, { status: 'error', error: e.message });
+      broadcastAll({ type: 'video-error', jobId, error: e.message });
+    }
+  });
+
+  return { jobId, status: 'started' };
+}
+
+function startVideoPromoCore({ character_id, site_tag, site_name, tagline, pose_indices } = {}) {
+  if (!getGoogleApiKey()) throw new Error('GEMINI_API_KEY not configured');
+  if (!character_id) throw new Error('character_id is required');
+
+  const jobId = require('crypto').randomUUID();
+
+  setImmediate(async () => {
+    const ffmpeg = '/opt/homebrew/bin/ffmpeg';
+    const { execFile: ef } = require('child_process');
+    const { promisify } = require('util');
+    const efAsync = promisify(ef);
+
+    function step(s, status = 'done', extra = {}) {
+      broadcastAll({ type: 'promo-step', jobId, step: s, status, ...extra });
+    }
+
+    try {
+      const siteDir = getCharacterSiteDir(site_tag);
+      const spec = readSpecForSite(siteDir);
+      const charSet = (spec.character_sets || []).find(c => c.id === character_id);
+      if (!charSet) throw new Error(`character_set ${character_id} not found in spec`);
+
+      const donePoses = (charSet.poses || []).filter(p => p.status === 'done' && p.image_path);
+      if (donePoses.length < 1) throw new Error('No done poses available for promo');
+      const indices = Array.isArray(pose_indices) && pose_indices.length > 0
+        ? pose_indices.map(i => donePoses[i]).filter(Boolean)
+        : donePoses.slice(0, 3);
+      const selectedPoses = indices.length > 0 ? indices : donePoses.slice(0, 3);
+
+      const tmpClips = [];
+      const brandName = site_name || charSet.name || 'Brand';
+      for (let i = 0; i < selectedPoses.length; i++) {
+        const pose = selectedPoses[i];
+        const clipPath = `/tmp/promo-clip-${jobId}-${i}.mp4`;
+        const clipPrompt = `${brandName} ${pose.name || pose.id} smooth looping animation`;
+        const imagePath = path.isAbsolute(pose.image_path)
+          ? pose.image_path
+          : path.join(siteDir, pose.image_path);
+        await runVeoGeneration(imagePath, clipPrompt, clipPath, { duration: 5 });
+        tmpClips.push(clipPath);
+        step(`clip-${i}`);
+      }
+
+      const videoDir = path.join(siteDir, 'assets', 'video');
+      require('fs').mkdirSync(videoDir, { recursive: true });
+      const concatPath = `/tmp/promo-concat-${jobId}.mp4`;
+      const finalPath = path.join(videoDir, 'promo.mp4');
+
+      if (tmpClips.length === 1) {
+        require('fs').copyFileSync(tmpClips[0], concatPath);
+      } else {
+        const clipDuration = 5;
+        const xfadeDuration = 0.5;
+        let filterStr = '';
+        let lastLabel = '[0:v]';
+        for (let i = 1; i < tmpClips.length; i++) {
+          const offset = (clipDuration - xfadeDuration) * i - xfadeDuration * (i - 1);
+          const outLabel = i === tmpClips.length - 1 ? '' : `[v${i}]`;
+          filterStr += `${lastLabel}[${i}:v]xfade=transition=fade:duration=${xfadeDuration}:offset=${offset.toFixed(2)}${outLabel ? outLabel : ''}`;
+          if (i < tmpClips.length - 1) { filterStr += ';'; lastLabel = `[v${i}]`; }
+        }
+        const inputArgs = tmpClips.flatMap(c => ['-i', c]);
+        await efAsync(ffmpeg, [
+          ...inputArgs,
+          '-filter_complex', filterStr,
+          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', concatPath
+        ], { timeout: 120000 });
+      }
+      step('concat');
+
+      const siteName = (site_name || brandName).replace(/'/g, "\\'");
+      const taglineText = (tagline || '').replace(/'/g, "\\'");
+      const drawtextFilters = [
+        `drawtext=text='${siteName}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=(h/2)-80:shadowx=3:shadowy=3:shadowcolor=black@0.8`,
+        taglineText ? `drawtext=text='${taglineText}':fontsize=36:fontcolor=white@0.9:x=(w-text_w)/2:y=(h/2)+30:shadowx=2:shadowy=2:shadowcolor=black@0.7` : null
+      ].filter(Boolean).join(',');
+
+      await efAsync(ffmpeg, [
+        '-i', concatPath,
+        '-vf', drawtextFilters,
+        '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', finalPath
+      ], { timeout: 60000 });
+      step('text-overlay');
+
+      [...tmpClips, concatPath].forEach(f => { try { require('fs').unlinkSync(f); } catch (_) {} });
+
+      const resolvedTag = site_tag || TAG;
+      const download_url = `/api/video/promo/${resolvedTag}/download`;
+      broadcastAll({ type: 'promo-complete', jobId, path: finalPath, download_url });
+      console.log(`[video/promo] Complete → ${finalPath}`);
+    } catch (e) {
+      console.error('[video/promo] pipeline error:', e.message);
+      broadcastAll({ type: 'promo-error', jobId, error: e.message });
+    }
+  });
+
+  return { jobId, status: 'started' };
+}
+
 // POST /api/character/create-anchor
 // Generates an anchor/reference image for a character using Imagen 4.
 app.post('/api/character/create-anchor', async (req, res) => {
   try {
-    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
-    const { name, description, style, prompt, site_tag } = req.body || {};
-    if (!name || !prompt) return res.status(400).json({ error: 'name and prompt are required' });
-
-    const siteDir = getCharacterSiteDir(site_tag);
-    const characterId = require('crypto').randomUUID();
-    const charDir = path.join(siteDir, 'assets', 'characters', characterId);
-    const anchorPath = path.join(charDir, 'anchor.jpg');
-    fs.mkdirSync(charDir, { recursive: true });
-
-    // Enrich prompt via Claude
-    let enrichedPrompt = prompt;
-    try {
-      enrichedPrompt = await enrichCharacterPrompt(prompt, name || '', description || '', style || 'illustrated');
-    } catch (e) {
-      console.warn('[character] prompt enrichment failed, using raw prompt:', e.message);
-    }
-
-    // Generate anchor image via Imagen 4
-    await runGoogleMediaScript([
-      '--prompt', enrichedPrompt,
-      '--output', anchorPath,
-      '--aspect-ratio', '1:1',
-      '--site-dir', siteDir,
-    ]);
-    if (!fs.existsSync(anchorPath)) throw new Error('Imagen did not produce anchor image');
-
-    const anchorRelPath = path.join('assets', 'characters', characterId, 'anchor.jpg');
-    const characterSet = {
-      id: characterId,
-      name: name || '',
-      description: description || '',
-      style: style || 'illustrated',
-      enriched_prompt: enrichedPrompt,
-      anchor_image_path: anchorRelPath,
-      poses: [],
-      created_at: new Date().toISOString(),
-      provider: 'imagen',
-    };
-
-    const spec = readSpecForSite(siteDir);
-    if (!Array.isArray(spec.character_sets)) spec.character_sets = [];
-    spec.character_sets.push(characterSet);
-    writeSpecForSite(siteDir, spec);
-
-    res.json({ character_id: characterId, anchor_path: anchorRelPath, character_set: characterSet });
+    const result = await createCharacterAnchorCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[character/create-anchor]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
@@ -9726,139 +12030,12 @@ app.post('/api/character/create-anchor', async (req, res) => {
 // Generates pose variations using Leonardo AI with the anchor as init image.
 app.post('/api/character/generate-poses', async (req, res) => {
   try {
-    const leonardoKey = getLeonardoApiKey();
-    if (!leonardoKey) return res.status(400).json({ error: 'LEONARDO_API_KEY not configured' });
-    const { character_id, poses, site_tag } = req.body || {};
-    if (!character_id || !Array.isArray(poses) || poses.length === 0)
-      return res.status(400).json({ error: 'character_id and poses[] are required' });
-
-    const siteDir = getCharacterSiteDir(site_tag);
-    const spec = readSpecForSite(siteDir);
-    if (!Array.isArray(spec.character_sets)) return res.status(404).json({ error: 'No character_sets in spec' });
-    const charSet = spec.character_sets.find(c => c.id === character_id);
-    if (!charSet) return res.status(404).json({ error: `Character ${character_id} not found` });
-
-    const anchorAbsPath = path.join(siteDir, charSet.anchor_image_path);
-    if (!fs.existsSync(anchorAbsPath)) return res.status(400).json({ error: 'Anchor image not found on disk' });
-
-    const { default: fetch } = await import('node-fetch').catch(() => ({ default: global.fetch }));
-    const fetchFn = fetch || global.fetch;
-
-    const leonardoHeaders = {
-      'Authorization': `Bearer ${leonardoKey}`,
-      'Content-Type': 'application/json',
-    };
-
-    // Upload anchor image to Leonardo init-image (presigned S3 upload)
-    const anchorBytes = fs.readFileSync(anchorAbsPath);
-    const uploadResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/init-image', {
-      method: 'POST',
-      headers: leonardoHeaders,
-      body: JSON.stringify({ extension: 'jpg' }),
-    });
-    if (!uploadResp.ok) {
-      const txt = await uploadResp.text();
-      throw new Error(`Leonardo init-image presign failed: ${uploadResp.status} ${txt}`);
-    }
-    const uploadData = await uploadResp.json();
-    // Leonardo returns fields as a JSON string — parse it
-    const rawFields = uploadData.uploadInitImage?.fields;
-    const uploadFields = rawFields ? (typeof rawFields === 'string' ? JSON.parse(rawFields) : rawFields) : {};
-    const uploadUrl = uploadData.uploadInitImage?.url || '';
-    const initImageId = uploadData.uploadInitImage?.id;
-    if (!uploadUrl || !initImageId) throw new Error('Leonardo did not return upload URL or id');
-
-    // POST to S3 presigned URL with multipart form data
-    const formData = new FormData();
-    Object.entries(uploadFields).forEach(([k, v]) => formData.append(k, String(v)));
-    formData.append('file', new Blob([anchorBytes], { type: 'image/jpeg' }), 'anchor.jpg');
-    const s3Resp = await fetchFn(uploadUrl, { method: 'POST', body: formData });
-    if (!s3Resp.ok && s3Resp.status !== 204) throw new Error(`Leonardo S3 upload failed: ${s3Resp.status}`);
-
-    const charDir = path.join(siteDir, 'assets', 'characters', character_id);
-    fs.mkdirSync(charDir, { recursive: true });
-
-    const results = [];
-    for (let i = 0; i < poses.length; i++) {
-      const poseName = poses[i];
-      const poseSlug = poseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      const poseFilename = `pose-${i + 1}-${poseSlug}.jpg`;
-      const posePath = path.join(charDir, poseFilename);
-      const poseRelPath = path.join('assets', 'characters', character_id, poseFilename);
-
-      try {
-        const genPrompt = `${poseName}, ${charSet.description || charSet.name}, same character, white background, ${charSet.style || 'illustrated'} style, consistent design, full body`;
-        const genResp = await fetchFn('https://cloud.leonardo.ai/api/rest/v1/generations', {
-          method: 'POST',
-          headers: leonardoHeaders,
-          body: JSON.stringify({
-            prompt: genPrompt,
-            modelId: 'b24e16ff-06e3-43eb-8d33-4416c2d75876',
-            width: 512,
-            height: 512,
-            num_images: 1,
-            init_image_id: initImageId,
-            init_strength: 0.4,
-          }),
-        });
-        if (!genResp.ok) {
-          const txt = await genResp.text();
-          throw new Error(`Leonardo generation request failed: ${genResp.status} ${txt}`);
-        }
-        const genData = await genResp.json();
-        const generationId = genData.sdGenerationJob?.generationId;
-        if (!generationId) throw new Error('Leonardo did not return generationId');
-
-        // Poll until COMPLETE
-        let imageUrl = null;
-        const pollDeadline = Date.now() + 60000;
-        while (Date.now() < pollDeadline) {
-          await new Promise(r => setTimeout(r, 3000));
-          const pollResp = await fetchFn(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
-            headers: leonardoHeaders,
-          });
-          if (!pollResp.ok) continue;
-          const pollData = await pollResp.json();
-          const status = pollData.generations_by_pk?.status;
-          if (status === 'COMPLETE') {
-            imageUrl = pollData.generations_by_pk?.generated_images?.[0]?.url;
-            break;
-          }
-          if (status === 'FAILED') throw new Error('Leonardo generation FAILED');
-        }
-        if (!imageUrl) throw new Error('Leonardo generation timed out');
-
-        // Download result
-        const imgResp = await fetchFn(imageUrl);
-        if (!imgResp.ok) throw new Error(`Failed to download pose image: ${imgResp.status}`);
-        const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
-        fs.writeFileSync(posePath, imgBuffer);
-
-        // Update spec
-        const poseEntry = { index: i + 1, pose_name: poseName, image_path: poseRelPath, status: 'done' };
-        const specNow = readSpecForSite(siteDir);
-        const charSetNow = specNow.character_sets?.find(c => c.id === character_id);
-        if (charSetNow) {
-          if (!Array.isArray(charSetNow.poses)) charSetNow.poses = [];
-          charSetNow.poses[i] = poseEntry;
-          writeSpecForSite(siteDir, specNow);
-        }
-
-        broadcastAll({ type: 'pose-generated', character_id, pose_index: i + 1, path: poseRelPath });
-        results.push({ pose_name: poseName, path: poseRelPath, status: 'done' });
-      } catch (poseErr) {
-        console.error(`[character/generate-poses] pose ${i + 1} failed:`, poseErr.message);
-        results.push({ pose_name: poseName, status: 'error', error: poseErr.message });
-      }
-
-      if (i < poses.length - 1) await new Promise(r => setTimeout(r, 1500));
-    }
-
-    broadcastAll({ type: 'poses-complete', character_id, results });
-    res.json({ character_id, results });
+    const result = await generateCharacterPosesCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[character/generate-poses]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured|not found/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
@@ -9866,42 +12043,12 @@ app.post('/api/character/generate-poses', async (req, res) => {
 // Fire-and-forget Veo video generation. Returns jobId immediately, emits WS events.
 app.post('/api/video/generate', (req, res) => {
   try {
-    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
-    const { image_path, prompt, duration_seconds, site_tag } = req.body || {};
-    if (!image_path || !prompt) return res.status(400).json({ error: 'image_path and prompt are required' });
-
-    const siteDir = getCharacterSiteDir(site_tag);
-    const jobId = require('crypto').randomUUID();
-    const videoDir = path.join(siteDir, 'assets', 'video');
-    const outputPath = path.join(videoDir, `${jobId}.mp4`);
-
-    // Resolve image_path: allow relative-to-site or absolute
-    const imagePath = path.isAbsolute(image_path)
-      ? image_path
-      : path.join(siteDir, image_path);
-
-    writeVideoJob(jobId, { status: 'generating', prompt, image_path });
-    res.json({ jobId, status: 'started' });
-
-    setImmediate(async () => {
-      broadcastAll({ type: 'video-progress', jobId, status: 'generating' });
-      try {
-        const { actual_duration, file_size } = await runVeoGeneration(
-          imagePath, prompt, outputPath,
-          { duration: Number(duration_seconds) || 5 }
-        );
-        const relPath = path.relative(siteDir, outputPath);
-        writeVideoJob(jobId, { status: 'complete', path: relPath, actual_duration, file_size });
-        broadcastAll({ type: 'video-complete', jobId, path: relPath, actual_duration });
-      } catch (e) {
-        console.error('[video/generate] veo error:', e.message);
-        writeVideoJob(jobId, { status: 'error', error: e.message });
-        broadcastAll({ type: 'video-error', jobId, error: e.message });
-      }
-    });
+    const result = startVideoGenerateCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[video/generate]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
@@ -9910,112 +12057,12 @@ app.post('/api/video/generate', (req, res) => {
 // Returns jobId immediately; emits WS promo-step / promo-complete events.
 app.post('/api/video/promo', (req, res) => {
   try {
-    if (!getGoogleApiKey()) return res.status(400).json({ error: 'GEMINI_API_KEY not configured' });
-    const { character_id, site_tag, site_name, tagline, pose_indices } = req.body || {};
-    if (!character_id) return res.status(400).json({ error: 'character_id is required' });
-
-    const jobId = require('crypto').randomUUID();
-    res.json({ jobId, status: 'started' });
-
-    setImmediate(async () => {
-      const ffmpeg = '/opt/homebrew/bin/ffmpeg';
-      const { execFile: ef } = require('child_process');
-      const { promisify } = require('util');
-      const efAsync = promisify(ef);
-
-      function step(s, status = 'done', extra = {}) {
-        broadcastAll({ type: 'promo-step', jobId, step: s, status, ...extra });
-      }
-
-      try {
-        const siteDir = getCharacterSiteDir(site_tag);
-        const spec = readSpecForSite(siteDir);
-        const charSet = (spec.character_sets || []).find(c => c.id === character_id);
-        if (!charSet) throw new Error(`character_set ${character_id} not found in spec`);
-
-        // Select poses
-        const donePoses = (charSet.poses || []).filter(p => p.status === 'done' && p.image_path);
-        if (donePoses.length < 1) throw new Error('No done poses available for promo');
-        const indices = Array.isArray(pose_indices) && pose_indices.length > 0
-          ? pose_indices.map(i => donePoses[i]).filter(Boolean)
-          : donePoses.slice(0, 3);
-        const selectedPoses = indices.length > 0 ? indices : donePoses.slice(0, 3);
-
-        // Generate Veo clips
-        const tmpClips = [];
-        const brandName = site_name || charSet.name || 'Brand';
-        for (let i = 0; i < selectedPoses.length; i++) {
-          const pose = selectedPoses[i];
-          const clipPath = `/tmp/promo-clip-${jobId}-${i}.mp4`;
-          const clipPrompt = `${brandName} ${pose.name || pose.id} smooth looping animation`;
-          const imagePath = path.isAbsolute(pose.image_path)
-            ? pose.image_path
-            : path.join(siteDir, pose.image_path);
-          await runVeoGeneration(imagePath, clipPrompt, clipPath, { duration: 5 });
-          tmpClips.push(clipPath);
-          step(`clip-${i}`);
-        }
-
-        // Ensure output dir
-        const videoDir = path.join(siteDir, 'assets', 'video');
-        require('fs').mkdirSync(videoDir, { recursive: true });
-        const concatPath = `/tmp/promo-concat-${jobId}.mp4`;
-        const finalPath = path.join(videoDir, 'promo.mp4');
-
-        // ffmpeg xfade concat
-        if (tmpClips.length === 1) {
-          require('fs').copyFileSync(tmpClips[0], concatPath);
-        } else {
-          // Build xfade filter chain
-          const clipDuration = 5;
-          const xfadeDuration = 0.5;
-          let filterStr = '';
-          let lastLabel = '[0:v]';
-          for (let i = 1; i < tmpClips.length; i++) {
-            const offset = (clipDuration - xfadeDuration) * i - xfadeDuration * (i - 1);
-            const outLabel = i === tmpClips.length - 1 ? '' : `[v${i}]`;
-            filterStr += `${lastLabel}[${i}:v]xfade=transition=fade:duration=${xfadeDuration}:offset=${offset.toFixed(2)}${outLabel ? outLabel : ''}`;
-            if (i < tmpClips.length - 1) { filterStr += ';'; lastLabel = `[v${i}]`; }
-          }
-          const inputArgs = tmpClips.flatMap(c => ['-i', c]);
-          await efAsync(ffmpeg, [
-            ...inputArgs,
-            '-filter_complex', filterStr,
-            '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', concatPath
-          ], { timeout: 120000 });
-        }
-        step('concat');
-
-        // ffmpeg drawtext overlay
-        const siteName = (site_name || brandName).replace(/'/g, "\\'");
-        const taglineText = (tagline || '').replace(/'/g, "\\'");
-        const drawtextFilters = [
-          `drawtext=text='${siteName}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=(h/2)-80:shadowx=3:shadowy=3:shadowcolor=black@0.8`,
-          taglineText ? `drawtext=text='${taglineText}':fontsize=36:fontcolor=white@0.9:x=(w-text_w)/2:y=(h/2)+30:shadowx=2:shadowy=2:shadowcolor=black@0.7` : null
-        ].filter(Boolean).join(',');
-
-        await efAsync(ffmpeg, [
-          '-i', concatPath,
-          '-vf', drawtextFilters,
-          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-y', finalPath
-        ], { timeout: 60000 });
-        step('text-overlay');
-
-        // Cleanup tmp files
-        [...tmpClips, concatPath].forEach(f => { try { require('fs').unlinkSync(f); } catch (_) {} });
-
-        const resolvedTag = site_tag || TAG;
-        const download_url = `/api/video/promo/${resolvedTag}/download`;
-        broadcastAll({ type: 'promo-complete', jobId, path: finalPath, download_url });
-        console.log(`[video/promo] Complete → ${finalPath}`);
-      } catch (e) {
-        console.error('[video/promo] pipeline error:', e.message);
-        broadcastAll({ type: 'promo-error', jobId, error: e.message });
-      }
-    });
+    const result = startVideoPromoCore(req.body || {});
+    res.json(result);
   } catch (e) {
     console.error('[video/promo]', e.message);
-    res.status(500).json({ error: e.message });
+    const status = /required|not configured/.test(e.message) ? 400 : 500;
+    res.status(status).json({ error: e.message });
   }
 });
 
@@ -10050,24 +12097,52 @@ app.post('/api/media/generate-asset', async (req, res) => {
 
 app.post('/api/media/generate-image', async (req, res) => {
   try {
-    if (!getGoogleApiKey()) {
-      return res.status(400).json({ error: 'Google AI Studio key is not configured. Add GEMINI_API_KEY, GOOGLE_API_KEY, or save a Gemini key in Settings → Platform.' });
-    }
     const prompt = String(req.body?.prompt || '').trim();
     if (!prompt) return res.status(400).json({ error: 'prompt is required' });
-    const provider = String(req.body?.provider || 'auto');
-    if (!['auto', 'google'].includes(provider)) {
-      return res.status(409).json({ error: `${provider} is not wired yet for direct Media Studio image generation.` });
+
+    // Per-request provider overrides site-level config default (loadSettings().image_provider).
+    // 'auto' or unset → use site default. Explicit 'google'/'imagen4'/'gpt-image-2' picks one.
+    const requestedRaw = String(req.body?.provider || 'auto');
+    const requested = requestedRaw === 'google' ? 'imagen4' : requestedRaw;
+    const provider = requested === 'auto' ? pickImageProvider(null) : pickImageProvider(requested);
+
+    if (provider === 'gpt-image-2') {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ error: 'OPENAI_API_KEY is not configured.' });
+      }
+      const refsRaw = req.body?.reference_images || req.body?.reference_image || null;
+      const referenceImages = !refsRaw ? null : (Array.isArray(refsRaw) ? refsRaw : [refsRaw]);
+      const result = await createOpenAiImageAsset({
+        prompt,
+        aspectRatio: String(req.body?.aspect_ratio || '1:1'),
+        size: req.body?.size || null,
+        transparent: !!req.body?.transparent,
+        referenceImages,
+        role: String(req.body?.role || 'content'),
+        label: String(req.body?.label || ''),
+        notes: String(req.body?.notes || ''),
+        brandFamilyId: req.body?.brand_family_id || null,
+        model: req.body?.model || null,
+      });
+      return res.json(result);
     }
-    const result = await createGoogleImageAsset({
-      prompt,
-      aspectRatio: String(req.body?.aspect_ratio || '1:1'),
-      role: String(req.body?.role || 'content'),
-      label: String(req.body?.label || ''),
-      notes: String(req.body?.notes || ''),
-      brandFamilyId: req.body?.brand_family_id || null,
-    });
-    res.json(result);
+
+    if (provider === 'imagen4') {
+      if (!getGoogleApiKey()) {
+        return res.status(400).json({ error: 'Google AI Studio key is not configured. Add GEMINI_API_KEY, GOOGLE_API_KEY, or save a Gemini key in Settings → Platform.' });
+      }
+      const result = await createGoogleImageAsset({
+        prompt,
+        aspectRatio: String(req.body?.aspect_ratio || '1:1'),
+        role: String(req.body?.role || 'content'),
+        label: String(req.body?.label || ''),
+        notes: String(req.body?.notes || ''),
+        brandFamilyId: req.body?.brand_family_id || null,
+      });
+      return res.json(result);
+    }
+
+    return res.status(409).json({ error: `${requestedRaw} is not a known image provider.` });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -10456,6 +12531,39 @@ function classifyRequest(message, spec) {
   const hasBrief = spec && spec.design_brief && spec.design_brief.approved;
   const hasHtml = fs.existsSync(path.join(DIST_DIR(), 'index.html'));
 
+  // --- NEW SITE CREATE (highest precedence) ---------------------------------
+  // Detects an explicit build request that names or describes a NEW site target —
+  // distinct from edits to the active site. Fires BEFORE strong build signals
+  // so the active site's hasBrief doesn't lock the classifier into edit mode.
+  //
+  // Required ALL of:
+  //   1. Build phrase pattern: "build [me] [a] [new] (site|website) for ..."
+  //   2. Identifiable target: proper noun cluster OR business-type+location OR no active site
+  //   3. No edit-language keywords (change/update/modify/fix/edit/tweak/adjust/improve)
+  //   4. If active site exists, the extracted target must NOT match active spec.site_name
+  //      under normalized identity comparison (prevents same-site re-trigger).
+  const buildPhrasePattern = /\bbuild\b.{0,30}\b(?:me\s+)?(?:a\s+)?(?:new\s+)?(?:site|website)\b.{0,20}\bfor\b/;
+  const editLanguagePattern = /\b(change|update|modify|fix|edit|tweak|adjust|improve)\b/;
+  if (buildPhrasePattern.test(lower) && !editLanguagePattern.test(lower)) {
+    const properNounCluster = message.match(/\bfor\s+(?:a\s+|an\s+|the\s+)?([A-Z][a-zA-Z']+(?:\s+[A-Z][a-zA-Z']+){0,3})/);
+    const hasProperNoun = !!(properNounCluster && properNounCluster[1]);
+    const detectedType = GENERIC_BUSINESS_TYPES.find(t => new RegExp(`\\b${t}\\b`).test(lower));
+    const hasLocation = /\bin\s+[A-Z][a-zA-Z]/.test(message);
+    const hasTypeLocation = !!(detectedType && hasLocation);
+    const noActiveSite = !spec || !spec.site_name;
+
+    if (hasProperNoun || hasTypeLocation || noActiveSite) {
+      let isSameAsActive = false;
+      if (spec && spec.site_name && hasProperNoun) {
+        isSameAsActive = checkSameBusinessIdentity(properNounCluster[1], spec.site_name);
+      }
+      if (!isSameAsActive) {
+        console.log(`[classifier] intent=new_site_create (build request with identifiable new target)`);
+        return 'new_site_create';
+      }
+    }
+  }
+
   // --- STRONG BUILD SIGNALS (intent-dominant, override vocabulary) ---
   // These fire before any vocabulary matching to prevent brief text from being misclassified
   const strongBuildSignals = [
@@ -10562,6 +12670,14 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(push\s+studio\s+code|push\s+hub|sync\s+studio)\b/)) return 'hub_push';
   if (lower.match(/\b(push\s+to\s+(repo|git|github|remote)|git\s+push|sync\s+repo|update\s+repo)\b/)) return 'git_push';
 
+  // New site fallback — no brief exists yet (HTML may exist from fallback template).
+  // Moved ABOVE the deploy keyword gate so an unbriefed site doesn't get hijacked
+  // by an incidental "deploy" word into a deploy attempt on an unbuilt site.
+  if (!hasBrief) {
+    console.log(`[classifier] intent=new_site confidence=HIGH (no approved brief)`);
+    return 'new_site';
+  }
+
   // Explicit commands first
   if (lower.match(/\bdeploy\b/) && !lower.match(/\bhow\s+to\s+deploy\b/)) return 'deploy';
   if (lower.match(/\b(build|rebuild)\s+(the\s+)?site\b/) || lower.match(/\b(generate|create|make)\s+(the\s+)?site\b/)) return 'build';
@@ -10575,12 +12691,6 @@ function classifyRequest(message, spec) {
   if (lower.match(/\b(add|fill|insert|get|find|need)\s+(?:some\s+|all\s+)?(?:placeholder\s+)?(?:images?|photos?|stock\s+photos?|pictures?)\b/) ||
       lower.match(/\b(fill\s+(?:the\s+)?(?:image|photo)\s+slots?|stock\s+photos?)\b/) ||
       lower.match(/\bi\s+need\s+images?\b/)) return 'fill_stock_photos';
-
-  // New site — no brief exists yet (HTML may exist from fallback template)
-  if (!hasBrief) {
-    console.log(`[classifier] intent=new_site confidence=HIGH (no approved brief)`);
-    return 'new_site';
-  }
 
   // Brief approved but no HTML built yet — need to build first
   if (hasBrief && !hasHtml) return 'build';
@@ -10649,9 +12759,12 @@ function classifyRequest(message, spec) {
   // Pattern 12: "fix the typo" / "fix the text" — minor text fixes are content, not layout
   if (lower.match(/\bfix\s+(?:the\s+)?(?:typo|spelling|wording|copy|text|label)\b/)) return 'content_update';
 
-  // Restyle signals — about overall vibe, not specific elements
-  if (lower.match(/\b(make\s+it\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
-  if (lower.match(/\b(more\s+(premium|minimal|bold|elegant|modern|playful|professional|corporate|clean|edgy))\b/) && !lower.match(/\b(header|footer|button|section|nav|hero|card)\b/)) return 'restyle';
+  // Restyle signals — about overall vibe, not specific elements.
+  // P1.1.1 widening (C3.3): accept "make it/this/the site/page (look/feel)
+  // more|less <adj>" and conjunctions like "more X and Y". Previous patterns
+  // missed "make this look more conservative and corporate".
+  if (lower.match(/\b(make\s+(it|this|the\s+(site|page))(\s+(look|feel))?\s+(more|less)\s+\w+|change\s+the\s+(whole|entire|overall)\s+(vibe|feel|look|style|aesthetic))\b/)) return 'restyle';
+  if (lower.match(/\b(more|less)\s+(premium|minimal|bold|elegant|modern|playful|professional|corporate|conservative|clean|edgy|moody|warm|cool)\b/) && !lower.match(/\b(header|footer|button|section|nav|hero|card)\b/)) return 'restyle';
 
   // Bug fix signals
   if (lower.match(/\b(broken|bug|doesn't\s+work|not\s+working|misaligned|overlapping|overflow)\b/)) return 'bug_fix';
@@ -10934,6 +13047,25 @@ function buildPromptContext(requestType, spec, userMessage) {
         visualRequirements += 'Include the correct Google Fonts <link> tag in <head>.\n';
       }
       visualRequirements += 'Apply these colors and fonts in Tailwind config AND CSS custom properties.\n';
+    } else if (spec.style_fingerprint && spec.style_fingerprint.palette) {
+      // P1.2 — no decision/brief-mentioned hex colors found, BUT the spec
+      // already carries a per-site fingerprint. Use it. Replaces the GAP-1
+      // FAMtastic-default injection for fingerprint-having sites; the GAP-1
+      // intent (lock palette so Claude can't drift to generic industry colors)
+      // is preserved because the fingerprint itself is locked at build start.
+      visualRequirements += styleFingerprint.buildFingerprintPromptBlock(spec.style_fingerprint);
+    } else {
+      // GAP-1 fix (legacy fallback): no fingerprint AND no brief colors —
+      // inject the FAMtastic default so Claude never falls back to generic
+      // industry colors. Sites that go through synthesizeDesignBriefForBuild
+      // get a fingerprint and skip this branch; this only fires for legacy
+      // builds that bypassed the synthesis step.
+      const defaultPalette = famSkeletons.FAMTASTIC_DEFAULT_PALETTE;
+      visualRequirements = '\n\nFAMTASTIC DEFAULT PALETTE (no client palette specified — you MUST use these exact hex values):\n';
+      for (const [role, hex] of Object.entries(defaultPalette)) {
+        visualRequirements += `  ${role}: ${hex}\n`;
+      }
+      visualRequirements += 'Apply in Tailwind config AND CSS custom properties. Using any other colors is a build failure.\n';
     }
   }
   // Append visual requirements to briefContext
@@ -11624,6 +13756,40 @@ function emitPhase(ws, phase, status, progress) {
 async function parallelBuild(ws, spec, specPages, userMessage, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, conversationHistory, analyticsInstruction, slotMappingContext, brainContext) {
   if (!buildInProgress) setBuildInProgress(true, ws);
   const startTime = Date.now();
+  const parallelTraceRunId = ws._currentRunId || `run_parallel_${Date.now()}`;
+  let parallelTraceStep = 0;
+  const traceParallelBuild = (stepId, fields = {}) => {
+    try {
+      parallelTraceStep += 1;
+      logTrace({
+        trace_id: `${parallelTraceRunId}.parallel_${String(parallelTraceStep).padStart(2, '0')}_${stepId}`,
+        parent_trace_id: parallelTraceRunId,
+        run_id: parallelTraceRunId,
+        site_tag: TAG,
+        phase: fields.phase || 'build',
+        step_id: stepId,
+        decision_type: fields.decision_type || 'workflow_stage',
+        requested_item: fields.requested_item || userMessage?.slice(0, 200) || null,
+        selected_path: fields.selected_path || null,
+        alternatives_considered: fields.alternatives_considered || [],
+        reason: fields.reason || null,
+        agent: 'orchestrator',
+        tool: 'parallelBuild',
+        provider: fields.provider || 'deterministic',
+        model: fields.model || null,
+        cost_type: fields.cost_type || 'zero_token',
+        duration_ms: Math.round(Date.now() - startTime),
+        status: fields.status || 'completed',
+        error: fields.error || null,
+      }, HUB_ROOT);
+    } catch (err) {
+      console.error('[parallel-build-trace] failed:', err.message);
+    }
+  };
+  traceParallelBuild('start', {
+    selected_path: 'template_first_parallel_build',
+    reason: 'parallelBuild entered; record stage boundaries before workflow-as-data refactor.',
+  });
 
   // Detect logo file
   const logoSvg = fs.existsSync(path.join(DIST_DIR(), 'assets', 'logo.svg'));
@@ -11645,6 +13811,10 @@ async function parallelBuild(ws, spec, specPages, userMessage, briefContext, dec
     return finalSlug + '.html';
   });
   const allPageLinks = pageFiles.map(f => f).join(', ');
+  traceParallelBuild('page_inventory', {
+    selected_path: pageFiles.join(', '),
+    reason: `${pageFiles.length} page file(s) normalized from specPages before template generation.`,
+  });
 
   const siteContext = `
 SITE SPEC:
@@ -11691,7 +13861,7 @@ HEAD REQUIREMENTS (CRITICAL — every page MUST include these in <head>):
 
 CSS THEMING (REQUIRED):
 - Define brand colors as CSS custom properties in a <style> block inside <head>:
-  :root { --color-primary: ${spec.colors?.primary || '#1a5c2e'}; --color-accent: ${spec.colors?.accent || '#d4a843'}; --color-bg: ${spec.colors?.bg || '#f0f4f0'}; --font-serif: '${fontSerif}', serif; --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  :root { --color-primary: ${spec.style_fingerprint?.palette?.primary || spec.colors?.primary || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.primary}; --color-accent: ${spec.style_fingerprint?.palette?.accent || spec.colors?.accent || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.accent}; --color-bg: ${spec.style_fingerprint?.palette?.background || spec.colors?.bg || famSkeletons.FAMTASTIC_DEFAULT_PALETTE.background}; --font-serif: '${fontSerif}', serif; --font-sans: '${fontSans}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 - Use these variables throughout — reference var(--color-primary), var(--font-sans), etc.
 - Put page-specific styles in a <style data-page="true"> block. Shared styles go in the main <style> block.
 
@@ -11767,7 +13937,7 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
       famSkeletons.DIVIDER_SKELETON,
       famSkeletons.NAV_SKELETON,
       famSkeletons.INLINE_STYLE_PROHIBITION,
-      spec.famtastic_mode ? famSkeletons.LOGO_NOTE_PAGE : '',
+      getLogoNoteBlock(spec),
     ].filter(Boolean).join('\n\n');
 
     let pagePrompt;
@@ -11846,7 +14016,19 @@ ${sharedRules}`;
   }
 
   async function spawnAllPages(templateContext) {
+    traceParallelBuild('pages_start', {
+      provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+      model: hasAnthropicKey() ? (loadSettings().model || 'claude-sonnet-4-6') : 'claude-cli',
+      cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+      selected_path: templateContext ? 'template_context' : 'legacy_no_template',
+      reason: `Launching ${pageFiles.length} page build(s).`,
+    });
     if (pageFiles.length === 0) {
+      traceParallelBuild('pages_skipped', {
+        selected_path: 'no_pages',
+        status: 'skipped',
+        reason: 'No normalized page files were available.',
+      });
       finishParallelBuild(ws, writtenPages, startTime, spec);
       return;
     }
@@ -11904,9 +14086,24 @@ ${sharedRules}`;
           versionFile(pageFileSub, 'build');
           fs.writeFileSync(path.join(DIST_DIR(), pageFileSub), responseSub);
           writtenPages.push(pageFileSub);
+          traceParallelBuild('page_written', {
+            selected_path: pageFileSub,
+            provider: 'subscription',
+            model: 'claude-cli',
+            cost_type: 'subscription',
+            reason: `${pageFileSub} written from subprocess result (${responseSub.length} bytes).`,
+          });
           console.log(`[parallel-build-sub] ${pageFileSub} done (${responseSub.length} bytes)`);
         } else {
           const failedPage = result.value ? result.value.page : `page-${completedSub}`;
+          traceParallelBuild('page_failed', {
+            selected_path: failedPage,
+            provider: 'subscription',
+            model: 'claude-cli',
+            cost_type: 'subscription',
+            status: 'failed',
+            error: 'empty response after retry',
+          });
           console.error(`[parallel-build-sub] ${failedPage} failed after retry`);
           if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `⚠️ ${failedPage} failed after retry — re-run build` }));
         }
@@ -11971,10 +14168,25 @@ ${sharedRules}`;
         versionFile(pageFile, 'build');
         fs.writeFileSync(path.join(DIST_DIR(), pageFile), response);
         writtenPages.push(pageFile);
+        traceParallelBuild('page_written', {
+          selected_path: pageFile,
+          provider: 'anthropic',
+          model: pageModel,
+          cost_type: 'api_billed',
+          reason: `${pageFile} written from SDK result (${response.length} bytes).`,
+        });
         console.log(`[parallel-build] ${pageFile} done (${response.length} bytes)`);
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} built (${completed}/${total} — ${Math.round((Date.now() - startTime) / 1000)}s)` }));
       } else {
         const pageFile = result.status === 'fulfilled' ? result.value.page : `page-${completed}`;
+        traceParallelBuild('page_failed', {
+          selected_path: pageFile,
+          provider: 'anthropic',
+          model: pageModel,
+          cost_type: 'api_billed',
+          status: 'failed',
+          error: result.reason?.message || 'empty response',
+        });
         console.error(`[parallel-build] ${pageFile} failed:`, result.reason?.message || 'empty response');
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} failed — will retry on next build` }));
       }
@@ -11995,6 +14207,13 @@ ${sharedRules}`;
   // Fallback — If template build fails, fall back to legacy no-seed parallel build.
   ws.send(JSON.stringify({ type: 'status', content: 'Building design template (header, nav, footer, shared CSS)...' }));
   emitPhase(ws, 'generating', 'active', 10);
+  traceParallelBuild('template_start', {
+    provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+    model: hasAnthropicKey() ? (loadSettings().model || 'claude-sonnet-4-6') : 'claude-cli',
+    cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+    selected_path: 'template_first',
+    reason: 'Template-first stage builds shared head/header/footer/CSS before page fanout.',
+  });
 
   const templatePrompt = buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction);
   ws.currentChild = null;
@@ -12038,6 +14257,14 @@ ${sharedRules}`;
     if (!templateSpawned) {
       templateSpawned = true;
       console.warn('[template-build] SDK failed — falling back to legacy build:', err.message);
+      traceParallelBuild('template_failed', {
+        provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+        model: hasAnthropicKey() ? sdkModel : 'claude-cli',
+        cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+        selected_path: 'legacy_no_template_fallback',
+        status: 'failed',
+        error: err.message,
+      });
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'error', content: 'Template failed — building pages without template (legacy mode).' }));
       spawnAllPages('');
     }
@@ -12069,6 +14296,13 @@ ${sharedRules}`;
     if (templateHtml.length > 50) {
       // Write _template.html to dist
       fs.writeFileSync(path.join(DIST_DIR(), '_template.html'), templateHtml);
+      traceParallelBuild('template_written', {
+        provider: hasAnthropicKey() ? 'anthropic' : 'subscription',
+        model: hasAnthropicKey() ? sdkModel : 'claude-cli',
+        cost_type: hasAnthropicKey() ? 'api_billed' : 'subscription',
+        selected_path: '_template.html',
+        reason: `Template written (${templateHtml.length} bytes).`,
+      });
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Template built (${Math.round((Date.now() - startTime) / 1000)}s) — writing artifacts...` }));
 
       // Extract components and write artifacts (styles.css, _partials/)
@@ -12081,11 +14315,21 @@ ${sharedRules}`;
         spawnAllPages(templateContext);
       } else {
         console.warn('[parallel-build] Template parsed but no usable components — falling back to legacy build');
+        traceParallelBuild('template_incomplete', {
+          selected_path: 'legacy_no_template_fallback',
+          status: 'skipped',
+          reason: 'Template parsed but no reusable components were extracted.',
+        });
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Template incomplete — building pages without template.' }));
         spawnAllPages('');
       }
     } else {
       console.warn('[template-build] Empty template response — falling back to legacy build');
+      traceParallelBuild('template_empty', {
+        selected_path: 'legacy_no_template_fallback',
+        status: 'failed',
+        error: 'empty template response',
+      });
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: 'Template failed — building pages without template (legacy mode).' }));
       spawnAllPages('');
     }
@@ -13545,6 +15789,50 @@ function finishParallelBuild(ws, writtenPages, startTime, spec) {
   } catch {}
   ws.send(JSON.stringify({ type: 'verification-result', ...verification }));
 
+  // --- Trace: verification outcome ---
+  try {
+    const _verifyRunId = ws._currentRunId || 'run_unknown';
+    const _verifyTraceId = `${_verifyRunId}.step_verify`;
+    logTrace({
+      trace_id:          _verifyTraceId,
+      parent_trace_id:   _verifyRunId,
+      run_id:            _verifyRunId,
+      site_tag:          TAG,
+      phase:             'verification',
+      step_id:           'run_build_verification',
+      decision_type:     'quality_gate',
+      selected_path:     verification.status,
+      agent:             'orchestrator',
+      tool:              'runBuildVerification',
+      provider:          'deterministic',
+      cost_type:         'zero_token',
+      duration_ms:       Math.round(Date.now() - startTime),
+      status:            verification.status === 'failed' ? 'failed' : 'completed',
+      quality_score:     verification.score || null,
+      gaps:              (verification.issues || []).map(i => i.slice(0, 80)),
+    }, HUB_ROOT);
+
+    // --- Agent performance: parallel build ---
+    db.logAgentPerformance({
+      id:                   require('crypto').randomUUID(),
+      agent:                'parallel_builder',
+      tool:                 'parallelBuild',
+      provider:             loadSettings().worker_brain || 'subscription',
+      model:                loadSettings().model || 'unknown',
+      task_type:            'multi_page_build',
+      site_tag:             TAG,
+      run_id:               _verifyRunId,
+      status:               verification.status === 'failed' ? 'completed' : 'completed',
+      duration_ms:          Math.round(Date.now() - startTime),
+      cost_usd:             sessionInputTokens * 0.000003 + sessionOutputTokens * 0.000015,
+      input_tokens:         sessionInputTokens,
+      output_tokens:        sessionOutputTokens,
+      verification_passed:  verification.status !== 'failed',
+    });
+  } catch (err) {
+    console.error('[trace] Failed to log verification trace:', err.message);
+  }
+
   // Log SEO warnings to build log
   if (seoResult && seoResult.warnings.length > 0) {
     try {
@@ -13947,11 +16235,49 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
     return;
   }
 
+  // --- Build Run Trace Setup ---
+  const _run = createRunContext();
+  ws._currentRunId = _run.runId;
+  const _buildLedger = createLedger(_run.runId, TAG, userMessage);
+
+  // Log: classification decision
+  logTrace({
+    trace_id:      _run.nextTraceId(),
+    run_id:        _run.runId,
+    site_tag:      TAG,
+    phase:         'classification',
+    step_id:       'classify_request',
+    decision_type: 'routing',
+    requested_item: userMessage.slice(0, 200),
+    selected_path:  requestType,
+    agent:         'orchestrator',
+    tool:          'classifyRequest',
+    provider:      'deterministic',
+    cost_type:     'zero_token',
+    status:        'completed',
+  }, HUB_ROOT);
+
   // Try deterministic handler first — simple CSS/HTML changes without AI
   if (requestType === 'layout_update' || requestType === 'content_update' || requestType === 'bug_fix') {
     const t0 = Date.now();
     if (tryDeterministicHandler(ws, userMessage, currentPage)) {
       logAgentCall({ agent: 'none', intent: requestType, page: currentPage, elapsed_ms: Date.now() - t0, success: true, output_size: 0 });
+      logTrace({
+        trace_id:      _run.nextTraceId(),
+        run_id:        _run.runId,
+        site_tag:      TAG,
+        phase:         'execution',
+        step_id:       'deterministic_handler',
+        decision_type: 'fulfillment_path',
+        selected_path:  'deterministic_edit',
+        reason:        'Simple structural edit handled without model call',
+        agent:         'deterministic',
+        provider:      'deterministic',
+        cost_type:     'zero_token',
+        duration_ms:   Date.now() - t0,
+        status:        'completed',
+      }, HUB_ROOT);
+      finalizeLedger(_buildLedger, HUB_ROOT);
       return; // Handled without Claude
     }
   }
@@ -13961,7 +16287,9 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
   ws.send(JSON.stringify({ type: 'status', content: 'Reading site spec...' }));
 
   const prevPage = currentPage;
-  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage } = buildPromptContext(requestType, spec, userMessage);
+  // GAP-2/3 fix: destructure heroSkeleton and navSkeleton so they can be
+  // injected into the single-page prompt (they were returned but unused before).
+  const { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, navSkeleton } = buildPromptContext(requestType, spec, userMessage);
 
   // If buildPromptContext resolved a different page, update currentPage explicitly here
   if (resolvedPage !== prevPage) {
@@ -13998,6 +16326,13 @@ async function handleChatMessage(ws, userMessage, requestType, spec) {
       break;
     case 'bug_fix':
       modeInstruction = `The user is reporting a BUG or visual issue on ${currentPage}. Fix only the specific problem. Do not change design direction or content.`;
+      break;
+    case 'restyle':
+      // P0.3 fix — Session 13 wired routing + htmlContext but never added the
+      // modeInstruction case. Result was that restyle classified, hit the default
+      // generic instruction, and produced a vaguely-modified site instead of an
+      // actual restyle. This case makes the intent explicit.
+      modeInstruction = `The user wants to RESTYLE ${currentPage} — change the visual design (colors, fonts, layout, motion, decorative shapes) while preserving all content (headings, body copy, links, images, structure). Do NOT rewrite copy. Do NOT add or remove sections. Do NOT change navigation or CTAs. Only the visual treatment changes. Honor the FAMtastic Tier B identity unless the brief says otherwise. Return the COMPLETE updated page as HTML_UPDATE: — not a diff.`;
       break;
     case 'enhancement_pass': {
       const passes = detectEnhancementPasses(userMessage);
@@ -14076,7 +16411,7 @@ ${variantList}
   // can write three separate files at once. Only triggered when there
   // is no existing logo file AND the user is building or asking for a
   // new site / logo.
-  if (spec.famtastic_mode === true && !_logoFile && ['build', 'new_site'].includes(requestType)) {
+  if (shouldInjectFamtasticLogoMode(spec, _logoFile, requestType)) {
     _logoInstruction += `
 
 FAMTASTIC LOGO MODE (spec.famtastic_mode = true, no logo file yet):
@@ -14124,6 +16459,8 @@ REQUEST TYPE: ${requestType}
 MODE: ${modeInstruction}
 ${_logoInstruction}
 ${_slotStabilityInstruction}
+${['build', 'layout_update'].includes(requestType) ? heroSkeleton : ''}
+${navSkeleton}
 ${briefContext}
 ${decisionsContext}
 ${assetsContext}
@@ -15106,21 +17443,28 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // Non-Claude brain: route all conversational messages through the selected brain adapter.
-      // HTML build intents (build/layout_update/content_update/bug_fix/restyle/restructure/major_revision)
-      // still require Claude for HTML generation — but conversational queries go to the selected brain.
+      // Non-Claude brain: only conversational/edit-shaped intents divert to the
+      // selected brain adapter. Direct-dispatch intents (deploy, git_push, hub_push,
+      // page_switch, query, visual_inspect, asset_import) MUST fall through to the
+      // dispatcher switch — they have dedicated handlers and never need a brain.
+      // P0.6 fix: previously a build-intent whitelist, which silently dropped every
+      // direct-dispatch intent into handleBrainstorm. See architecture/2026-04-27-p0.6-diagnostic.md.
       if (currentBrain !== 'claude') {
-        const nonBuildIntents = ['brainstorm', 'content_update', 'bug_fix'];
+        const BRAINSTORM_INTENTS = ['brainstorm', 'content_update', 'bug_fix'];
         const quickClassify = classifyRequest(userMessage, spec);
-        const isBuildIntent = ['build', 'layout_update', 'restyle', 'restructure', 'major_revision', 'new_site', 'enhancement_pass'].includes(quickClassify);
-        if (!isBuildIntent) {
-          console.log(`[brain-route] ${currentBrain} selected — routing "${userMessage.substring(0, 40)}..." to handleBrainstorm`);
+        if (BRAINSTORM_INTENTS.includes(quickClassify)) {
+          console.log(`[brain-route] ${currentBrain} selected — routing "${userMessage.substring(0, 40)}..." (intent=${quickClassify}) to handleBrainstorm`);
           handleBrainstorm(ws, userMessage, spec);
           return;
         }
-        // Build intents: inform user then fall through to Claude
-        console.log(`[brain-route] ${currentBrain} selected but build intent detected — using Claude for HTML generation`);
-        ws.send(JSON.stringify({ type: 'status', content: `Using Claude for HTML generation (${currentBrain} handles brainstorm only)` }));
+        // HTML-build intents still need Claude for generation — fall through with a notice.
+        const HTML_BUILD_INTENTS = ['build', 'layout_update', 'restyle', 'restructure', 'major_revision', 'new_site', 'enhancement_pass'];
+        if (HTML_BUILD_INTENTS.includes(quickClassify)) {
+          console.log(`[brain-route] ${currentBrain} selected but build intent detected — using Claude for HTML generation`);
+          ws.send(JSON.stringify({ type: 'status', content: `Using Claude for HTML generation (${currentBrain} handles brainstorm only)` }));
+        }
+        // Everything else (deploy, git_push, hub_push, page_switch, query, visual_inspect, asset_import, …)
+        // falls through to the dispatcher unchanged.
       }
 
       // Classify request
@@ -15610,6 +17954,66 @@ wss.on('connection', (ws) => {
         case 'major_revision':
           handlePlanning(ws, userMessage, spec);
           break;
+
+        case 'new_site_create': {
+          // Direct Studio Chat path: full chain (extract → createSite → synthesize → trigger build).
+          // Authorization is NOT enforced here — Studio Chat is already inside the trusted UI.
+          // createSite() owns TAG switch + WS notify; this handler owns user-visible chat surfaces.
+          (async () => {
+            ws.send(JSON.stringify({ type: 'status', content: 'Analyzing new-site request...' }));
+            const briefResult = await extractBriefFromMessage(userMessage);
+            if (briefResult.status === 'insufficient_identity') {
+              ws.send(JSON.stringify({ type: 'assistant', content: briefResult.clarification_question }));
+              appendConvo({ role: 'assistant', content: briefResult.clarification_question, at: new Date().toISOString() });
+              return;
+            }
+            ws.send(JSON.stringify({ type: 'status', content: `Creating site for ${briefResult.brief.business_name}...` }));
+            const briefForCreate = {
+              ...briefResult.brief,
+              interview_completed: true,
+              interview_pending: false,
+              client_brief: {
+                business_description: briefResult.brief.business_description,
+                revenue_model: briefResult.brief.revenue_model,
+                ideal_customer: briefResult.brief.location ? `Customers in ${briefResult.brief.location}` : 'Local customers',
+                differentiator: briefResult.brief.differentiator || 'Quality service',
+                primary_cta: briefResult.brief.cta,
+                style_notes: (briefResult.brief.tone || []).join(', '),
+              },
+            };
+            const siteResult = await createSite(briefForCreate, { tag_source: 'extracted', on_collision: 'return_collision' });
+            if (siteResult.status === 'collision') {
+              const msg = `A site named "${siteResult.existing_site_name}" already exists. Suggested alternative: ${siteResult.suggested_alternative_slug}. Resend with an explicit different name to proceed.`;
+              ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+              appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+              return;
+            }
+            if (siteResult.status === 'error') {
+              const msg = `Could not create site: ${siteResult.error}`;
+              ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+              appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+              return;
+            }
+            // created or updated_existing — synthesize design_brief and trigger build
+            synthesizeDesignBriefForBuild(briefResult.brief);
+            const triggered = triggerSiteBuild(ws, readSpec());
+            if (!triggered.triggered) {
+              const msg = triggered.reason === 'no_ws_clients'
+                ? `Site ${briefResult.brief.business_name} created. Open Studio to trigger the build.`
+                : `Site created but build dispatch failed: ${triggered.error || triggered.reason}`;
+              ws.send(JSON.stringify({ type: 'assistant', content: msg }));
+              appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+              return;
+            }
+            const okMsg = `Building ${briefResult.brief.business_name}.`;
+            appendConvo({ role: 'assistant', content: okMsg, at: new Date().toISOString() });
+          })().catch((err) => {
+            console.error('[new_site_create] error:', err);
+            try { ws.send(JSON.stringify({ type: 'error', content: `New-site flow failed: ${err.message}` })); } catch {}
+          });
+          break;
+        }
+
         case 'restyle':
           handleChatMessage(ws, userMessage, 'restyle', spec);
           break;
@@ -16161,39 +18565,102 @@ function runOrchestratorSite(ws, template) {
 // --- Run site-deploy ---
 // env: 'staging' | 'production'
 let deployInProgress = false;
-function runDeploy(ws, env) {
+// Parse deploy stderr for known failure patterns and return a user-facing message.
+function parseDeployStderr(stderr) {
+  if (!stderr) return null;
+  const s = stderr.toLowerCase();
+  if (/not\s+(?:logged\s+in|authorized|authenticated)|login\s+required|netlify\s+login/.test(s))
+    return 'Netlify is not logged in. Run "netlify login" in a terminal.';
+  if (/network|enotfound|econnrefused|etimedout|getaddrinfo/.test(s))
+    return 'Network error reaching Netlify. Check your connection and retry.';
+  if (/site\s+id|site_id|no\s+site\s+specified/.test(s))
+    return 'Netlify site ID is missing or invalid. Set NETLIFY_SITE_ID or run "netlify link".';
+  if (/permission\s+denied|EACCES/i.test(stderr))
+    return 'Permission denied running the deploy script. Check file permissions on scripts/site-deploy.';
+  if (/quota|rate\s+limit/.test(s))
+    return 'Netlify rate limit or quota exceeded. Try again later.';
+  return null;
+}
+
+async function runDeploy(ws, env) {
   if (deployInProgress) {
     try { ws.send(JSON.stringify({ type: 'status', content: 'Deploy already in progress.' })); } catch {}
     return;
   }
-  deployInProgress = true;
   env = env || 'staging';
   const envLabel = env.charAt(0).toUpperCase() + env.slice(1);
+  console.log(`[deploy] starting env=${env} tag=${TAG}`);
+
+  // Layer 2 — Preflight BEFORE setting deployInProgress flag.
+  // If the preflight fails, the flag stays false and the user can retry.
+  let netlify;
+  try {
+    netlify = await checkNetlify();
+  } catch (probeErr) {
+    netlify = { ok: false, reason: 'other', details: probeErr.message };
+  }
+  if (!netlify || !netlify.ok) {
+    const detail = (netlify && netlify.details) || 'Netlify is not configured.';
+    console.log(`[deploy] preflight failed reason=${(netlify && netlify.reason) || 'other'} details=${detail}`);
+    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed: ${detail}` })); } catch {}
+    appendConvo({ role: 'assistant', content: `${envLabel} deploy preflight failed: ${detail}`, at: new Date().toISOString() });
+    return;
+  }
+
+  deployInProgress = true;
   const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG, '--prod', '--env', env];
-  const child = spawn(args[0], args.slice(1), {
-    env: process.env,
-    cwd: HUB_ROOT,
-  });
+  let child;
+  try {
+    child = spawn(args[0], args.slice(1), {
+      env: process.env,
+      cwd: HUB_ROOT,
+    });
+  } catch (spawnErr) {
+    // Synchronous spawn failure (rare — usually surfaces via 'error' event)
+    deployInProgress = false;
+    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed to start: ${spawnErr.message}` })); } catch {}
+    return;
+  }
 
   let output = '';
+  let stderrBuf = '';
+  let settled = false;
+  const settle = () => {
+    if (settled) return false;
+    settled = true;
+    deployInProgress = false;
+    return true;
+  };
 
   child.stdout.on('data', (chunk) => {
     output += chunk.toString();
-    ws.send(JSON.stringify({ type: 'status', content: chunk.toString().trim() }));
+    try { ws.send(JSON.stringify({ type: 'status', content: chunk.toString().trim() })); } catch {}
   });
 
   child.stderr.on('data', (chunk) => {
-    const text = chunk.toString().trim();
-    console.error('[deploy]', text);
-    if (text) ws.send(JSON.stringify({ type: 'status', content: text }));
+    const text = chunk.toString();
+    stderrBuf += text;
+    const trimmed = text.trim();
+    console.error('[deploy]', trimmed);
+    if (trimmed) try { ws.send(JSON.stringify({ type: 'status', content: trimmed })); } catch {}
   });
 
+  // Layer 3 — Spawn error handler (executable not found, permission denied, etc.)
+  child.on('error', (err) => {
+    if (!settle()) return;
+    const msg = err && err.code === 'ENOENT'
+      ? `${envLabel} deploy failed: deploy script not found at scripts/site-deploy.`
+      : `${envLabel} deploy failed to launch: ${err.message}`;
+    try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
+    appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
+  });
+
+  // Layer 4 — Exit code handling with stderr pattern parsing
   child.on('close', (code) => {
+    if (!settle()) return;
     const urlMatch = output.match(/https:\/\/[^\s]+/);
     if (code === 0 && urlMatch) {
-      // Invalidate cache — deploy script wrote to spec.json via jq
       invalidateSpecCache();
-      // Update spec.environments (merge — preserve existing fields like repo, custom_domain)
       const spec = readSpec();
       if (!spec.environments) spec.environments = {};
       spec.environments[env] = {
@@ -16204,12 +18671,10 @@ function runDeploy(ws, env) {
         deployed_at: new Date().toISOString(),
         state: 'deployed',
       };
-      // Keep flat fields for backward compat
       spec.deployed_url = urlMatch[0];
       spec.deployed_at = spec.environments[env].deployed_at;
       spec.state = 'deployed';
 
-      // Persist deploy history — seed of Mission Control data model
       spec.deploy_history = spec.deploy_history || [];
       spec.deploy_history.push({
         version: spec.deploy_history.length + 1,
@@ -16220,32 +18685,34 @@ function runDeploy(ws, env) {
         lighthouse: spec.lighthouse_score || null,
         pages: (listPages() || []).length,
       });
-
       writeSpec(spec);
 
       studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });
-      ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` }));
-      // Notify client to refresh deploy info
-      ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] }));
+      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` })); } catch {}
+      try { ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] })); } catch {}
+      appendConvo({ role: 'assistant', content: `${envLabel} deploy succeeded: ${urlMatch[0]}`, at: new Date().toISOString() });
     } else if (code === 0) {
-      ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy completed. Check the output above for the URL.` }));
+      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy completed. Check the output above for the URL.` })); } catch {}
+      appendConvo({ role: 'assistant', content: `${envLabel} deploy completed (no URL captured)`, at: new Date().toISOString() });
     } else {
-      ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed. You may need to run "netlify login" first.` }));
+      // Non-zero exit — parse stderr for a specific reason; fall back to generic message.
+      const specific = parseDeployStderr(stderrBuf);
+      const msg = specific
+        ? `${envLabel} deploy failed: ${specific}`
+        : `${envLabel} deploy failed with exit code ${code}. Check the output above for details.`;
+      try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
+      appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
     }
-    appendConvo({ role: 'assistant', content: `${envLabel} deploy ${code === 0 ? 'succeeded' : 'failed'}: ${urlMatch ? urlMatch[0] : 'see logs'}`, at: new Date().toISOString() });
 
     // Auto-sync site repo after successful deploy
-    // staging → syncs dev then merges dev→staging
-    // production → syncs dev then merges dev→staging→main
     if (code === 0) {
       const freshSpec = readSpec();
       if (freshSpec.site_repo?.path) {
         const targetBranch = env === 'production' ? 'main' : 'staging';
-        ws.send(JSON.stringify({ type: 'status', content: `Syncing site repo (${targetBranch})...` }));
+        try { ws.send(JSON.stringify({ type: 'status', content: `Syncing site repo (${targetBranch})...` })); } catch {}
         syncSiteRepo(ws, freshSpec, targetBranch);
       }
     }
-    deployInProgress = false;
   });
 }
 
@@ -17396,6 +19863,14 @@ function broadcastSessionStatus(ws) {
 module.exports = {
   sanitizeSvg, extractMultiPartSvg, isValidPageName, extractSlotsFromPage, classifyRequest, detectEnhancementPasses, extractPagesFromBrief, syncContentFieldsFromHtml,
   extractBrandColors, labelToFilename, generatePlaceholderSVG, SLOT_DIMENSIONS, retrofitSlotAttributes,
+  // Tier canonicalization (GAP-4)
+  resolveTier, normalizeTierAndMode,
+  getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode,
+  extractBriefPatternBased,
+  // Site creation contract (2026-04-25 baseline closure)
+  GENERIC_BUSINESS_TYPES, IDENTITY_STRIP_WORDS, normalizeBizName, checkSameBusinessIdentity,
+  suggestAlternativeSlug, isMeaningfulBusinessName, tryTypeLocationSynthesis,
+  extractBriefFromMessage, createSite, synthesizeDesignBriefForBuild, triggerSiteBuild,
   readBlueprint, writeBlueprint, updateBlueprint, buildBlueprintContext, extractSharedCss, ensureHeadDependencies,
   truncateAssistantMessage, loadRecentConversation,
   classifyShayShayReasoning, selectShayShayBrain, normalizeShayShayResponse, answerShayShayDirect,
@@ -17591,6 +20066,26 @@ if (require.main === module) {
     wss.clients.forEach(c => { if (c.readyState === 1) try { c.send(JSON.stringify(msg)); } catch {} });
   });
 
+  // P0.3 — EADDRINUSE handler: emit a clear single-line operator signal instead
+  // of a raw uncaughtException stack trace. The previous process's port may still
+  // be in TIME_WAIT after a crash; launchd's ThrottleInterval (raised from 2 to 30
+  // in the plist) and the kernel's TIME_WAIT period together make this a transient
+  // error that resolves on the next launchd restart.
+  server.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      console.error(`[site-studio] EADDRINUSE on port ${PORT} — previous instance may still be releasing the socket. launchd will restart in ${30}s.`);
+      process.exit(1);
+    }
+    throw err;
+  });
+  previewServer.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      console.error(`[preview] EADDRINUSE on port ${PREVIEW_PORT} — previous instance may still be releasing the socket. launchd will restart in ${30}s.`);
+      process.exit(1);
+    }
+    throw err;
+  });
+
   server.listen(PORT, () => {
     console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
     console.log(`[site-studio] Site tag: ${TAG}`);
@@ -17605,7 +20100,7 @@ if (require.main === module) {
     // Initialise universal context writer — fires STUDIO-CONTEXT.md generation on every event
     studioContextWriter.init({
       getTag:     () => TAG,
-      getSpec:    () => { try { return JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')); } catch { return {}; } },
+      getSpec:    () => { try { const s = JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8')); normalizeTierAndMode(s); return s; } catch { return {}; } }, // L17806
       getHubRoot: () => HUB_ROOT,
     });
 

@@ -619,11 +619,16 @@ body {
 }
 
 /* Chat input row */
+/* SHAY V2 (2026-05-02): padding-right is now fixed (96px) instead of var(--shay-lite-safe-area).
+   The dynamic var caused #chat-input-row to reflow every time workspace chrome changed
+   (inspector open/close, tab switch, layout preset toggle), which felt like "the chat moves".
+   Composer width is now stable. The floating Shay-Shay surface lives in its own isolated
+   layer and avoids the composer via fixed positioning, not by reshaping it. */
 #chat-input-row {
   display: flex;
   gap: 8px;
   align-items: flex-end;
-  padding-right: var(--shay-lite-safe-area);
+  padding-right: 96px;
 }
 
 #chat-form {

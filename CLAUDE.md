@@ -11,6 +11,16 @@ FAMtastic (adj.): Fearless deviation from established norms with a bold and unap
 - A `SITE-LEARNINGS.md` file is maintained at `~/famtastic/SITE-LEARNINGS.md` (tracked in the repo) to capture architecture notes, lessons learned, and ecosystem-level context.
 - When meaningful discoveries, patterns, or decisions are made, update the SITE-LEARNINGS file.
 
+## Studio Process Management (Non-Negotiable)
+
+FAMtastic Studio is managed by **macOS launchd** (`com.famtastic.studio`).
+- **NEVER start Studio manually** with `node server.js` or `npm run studio` — launchd owns it.
+- The restart button calls `process.exit(0)` → launchd restarts automatically in ~2s.
+- To check status: `launchctl list | grep famtastic`
+- To tail logs: `tail -f /tmp/studio.log`
+- To force a restart from terminal: `launchctl stop com.famtastic.studio`
+- The plist lives at `~/Library/LaunchAgents/com.famtastic.studio.plist`
+
 ## FAMtastic Ecosystem
 - **One repo:** `~/famtastic/` — the consolidated home for everything
   - Site factory: `fam-hub site *` (build, preview, deploy websites)

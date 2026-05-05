@@ -1,0 +1,47 @@
+{
+  "url": "http://127.0.0.1:8097/index.html",
+  "greeting": "Hey Tide family. I'm Harry, the reunion's spirit guide. Got a question about the night? Ask me anything.",
+  "answers": [
+    {
+      "question": "When is the reunion?",
+      "answer": "Saturday, October–November 2026 — Miami Beach (date confirmed by committee, coming soon), from 7 PM to midnight."
+    },
+    {
+      "question": "Where is it?",
+      "answer": "Venue announcement coming soon. The committee is finalizing details."
+    },
+    {
+      "question": "How do I RSVP?",
+      "answer": "Tap here to RSVP: /rsvp"
+    },
+    {
+      "question": "Who's coming?",
+      "answer": "See who's confirmed: classmates"
+    },
+    {
+      "question": "What's the dress code?",
+      "answer": "Black-tie cocktail. Think prom night, but make it 2026."
+    },
+    {
+      "question": "How much are tickets?",
+      "answer": "$60 early bird, $75 after the deadline. /tickets"
+    },
+    {
+      "question": "Can I sponsor?",
+      "answer": "Yes! Tap here to see sponsor tiers: /tickets#sponsor"
+    },
+    {
+      "question": "Are you AI?",
+      "answer": "I'm Hi-Tide Harry, the reunion's spirit guide. Let's just say I've been here a while."
+    }
+  ],
+  "fallbackText": "Hey Tide family. I'm Harry, the reunion's spirit guide. Got a question about the night? Ask me anything.\nWhen is the reunion?\nSaturday, October–November 2026 — Miami Beach (date confirmed by committee, coming soon), from 7 PM to midnight.\nWhere is it?\nVenue announcement coming soon. The committee is finalizing details.\nHow do I RSVP?\nTap here to RSVP: /rsvp\nWho's coming?\nSee who's confirmed: classmates\nWhat's the dress code?\nBlack-tie cocktail. Think prom night, but make it 2026.\nHow much are tickets?\n$60 early bird, $75 after the deadline. /tickets\nCan I sponsor?\nYes! Tap here to see sponsor tiers: /tickets#sponsor\nAre you AI?\nI'm Hi-Tide Harry, the reunion's spirit guide. Let's just say I've been here a while.\nWhat is Harry's favorite dessert?\nThat's a great question — let me get the committee on it. Drop your email and we'll follow up.\n\nDrop your email and the committee will follow up.\n\nSend to Committee",
+  "fallbackRequests": [
+    {
+      "question": "What is Harry's favorite dessert?",
+      "email": "test@example.com",
+      "was_fallback": true
+    }
+  ],
+  "fallbackConfirm": "Got it — committee will reach out at test@example.com."
+}
