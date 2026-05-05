@@ -1081,6 +1081,11 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // Bridge routes — mounted before CSRF so internal Studio tool calls pass through
 app.use('/api/bridge', require('./lib/bridge-routes'));
 
+// Ops Workspace API (read endpoints + destructive command gate).
+// See docs/ops/state-contract.md and site-studio/lib/ops-api.js.
+// Mounted BEFORE any /api/:param route so static /api/ops/* paths resolve.
+app.use('/api/ops', require('./lib/ops-api'));
+
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
