@@ -1,5 +1,9 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — Operations Workspace GUI plan registered
+
+Registered new parent plan `plan_2026_05_05_ops_workspace_gui` (label `ops-workspace-gui`, tags `platform-upgrades`, `studio-ui`, `ops`, `shay-shay`, `agent-management`) capturing the design for an 11-tab Operations workspace inside the Workbench shell (Pulse · Plans · Tasks · Jobs · Runs · Proofs · Agents · Reviews · Gaps · Memory · Debt). Plan defines a record-type visual language for PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW, freshness as a first-class field, and quarantines stale legacy queue items in a dedicated drawer. MVP is the Jobs tab (six lanes + Stale Debt drawer + inspector + WebSocket). Added `plans/plan_2026_05_05_ops_workspace_gui/{plan.json,README.md}`, added the plan to `plans/registry.json` `active_parent_ids` with a new `labels` block, and updated SITE-LEARNINGS.md with the plan summary plus four prerequisite known gaps (no `/api/ops/*`, no `/ws/ops`, no record `freshness` field, no record-type visual tokens). Design-only — no API, UI, or schema changes shipped.
+
 ## 2026-05-04 — Plan registry CLI substrate
 Built the first read-only plan/task/run status substrate: `plans/registry.json`, three density contracts under `plans/templates/`, empty append-only ledgers, `FAMTASTIC-STATUS.md`, and a build report at `docs/plan-registry-build-report-2026-05-04.md`. Added `fam-hub plan list`, `fam-hub plan list --compact`, `fam-hub plan list --json`, `fam-hub plan show <id>`, `fam-hub task list`, and `fam-hub run status`. Verified JSON validity, shell syntax, standard/compact/detail plan output, and empty-ledger behavior. Deferred: task promotion, run creation, automatic status export, schema validation, and Studio Plans panel rendering.
 

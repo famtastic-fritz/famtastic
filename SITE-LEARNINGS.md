@@ -5307,3 +5307,35 @@ stack.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.
 - Media Studio exists as a prompt-first Workbench surface and as a production mini-app, but generation/provider controls are not unified between the two yet.
+- Operations workspace GUI plan (`plan_2026_05_05_ops_workspace_gui`) is design-only — no Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These four prerequisites are tracked in the plan's `known_gaps_opened`.
+
+## Operations Workspace GUI Plan (2026-05-05)
+
+A new parent plan, `plan_2026_05_05_ops_workspace_gui`, was registered as the
+design spec for an Operations workspace inside the Workbench shell. It defines
+an 11-tab Ops sub-nav (Pulse, Plans, Tasks, Jobs, Runs, Proofs, Agents,
+Reviews, Gaps, Memory, Debt) and a record-type visual language so PLAN, TASK,
+JOB, RUN, PROOF, GAP, MEMORY, and REVIEW are visually distinct everywhere
+(glyph + accent color + card shape + route prefix).
+
+Files:
+- `plans/plan_2026_05_05_ops_workspace_gui/plan.json` — 14 workstreams, MVP
+  scope, known gaps, links.
+- `plans/plan_2026_05_05_ops_workspace_gui/README.md` — human summary.
+- `plans/registry.json` — added to `active_parent_ids`; new `labels` block
+  introduced (label `ops-workspace-gui`, tags `platform-upgrades`,
+  `studio-ui`, `ops`, `shay-shay`, `agent-management`).
+
+Origin: a debug session showed the UI claiming "agents waiting" while the
+real task ledger had no active work — 448 stale legacy worker-queue items
+were inflating the picture. The plan resolves this by making freshness a
+first-class record field (live | idle | stale | parked | archived) and
+quarantining stale debt in a dedicated drawer that never enters live lanes.
+
+MVP: the Jobs tab. Six swimlanes (Queued · Approving · Running · Blocked ·
+Done · Parked) plus a Stale Debt drawer with Migrate/Archive/Purge. Job
+inspector with Cancel/Park/Promote-to-Task. WebSocket lane updates.
+Shay-Shay one-sentence queue summary. This validates the swimlane +
+inspector + WebSocket pattern every other Ops tab reuses.
+
+Status: design-only. No API, UI, or schema changes shipped yet.
