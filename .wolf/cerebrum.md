@@ -19,13 +19,19 @@
 - Adobe Firefly Video: AVAILABLE via web only (CC credits, no API)
 
 ### Character Pose Generation — CRITICAL DO-NOT-REPEAT
-- `SubjectReferenceImage` is in `_EditImageParameters` ONLY — it does NOT exist in `GenerateImagesConfig`
-- Character poses MUST use `client.models.edit_image(model='imagen-3.0-capability-001', reference_images=[SubjectReferenceImage(...)])` — NOT `generate_images`
-- The enum is `types.SubjectReferenceType.SUBJECT_TYPE_DEFAULT` (not `REFERENCE_TYPE_SUBJECT` — that constant does not exist)
-- Available subject types: `SUBJECT_TYPE_DEFAULT`, `SUBJECT_TYPE_PERSON`, `SUBJECT_TYPE_ANIMAL`, `SUBJECT_TYPE_PRODUCT`
-- For cartoon mascots use `SUBJECT_TYPE_DEFAULT`
-- Implementation lives in `scripts/google-media-generate` as `generate_character_pose()` and `--subject-ref` CLI flag
-- Batch mode supports `"type": "character_pose"` with `anchor_filename` field
+- `SubjectReferenceImage` / `edit_image` is VERTEX AI ONLY in google-genai SDK v1.50.0+
+- `client.models.edit_image()` raises `ValueError: This method is only supported in the Vertex AI client` when using Gemini Developer API key — this is SDK-enforced, not a config issue
+- Vertex AI client requires GCP project + location credentials — NOT an API key. Not configured in this environment.
+- **WORKING APPROACH: use fal-ai/flux-pulid via fal.ai API** (FAL_KEY in site-studio/.env)
+  1. Upload anchor: `anchor_url = fal_client.upload(bytes, 'image/png')`
+  2. Submit: `handle = fal_client.submit('fal-ai/flux-pulid', arguments={'reference_image_url': anchor_url, 'prompt': ..., 'image_size': {'width': 768, 'height': 1024}, 'num_inference_steps': 28})`
+  3. Poll: `fal_client.status('fal-ai/flux-pulid', handle.request_id)`
+  4. Fetch: `result = fal_client.result('fal-ai/flux-pulid', handle.request_id)`
+  5. Download: `urllib.request.urlretrieve(result['images'][0]['url'], output_path)`
+- Field is `reference_image_url` (singular string), NOT `reference_images` (array)
+- Use submit/poll/result pattern (not subscribe) for poses that take >45s
+- `scripts/google-media-generate` `--subject-ref` flag and `generate_character_pose()` function are BROKEN for Gemini Developer API — only work with Vertex AI credentials
+- Batch mode `"type": "character_pose"` in the script is similarly broken without Vertex AI
 
 ### Post-Processing
 - Photoshop via adb-mcp: PARTIALLY AVAILABLE (installed, UXP plugin load bug being fixed)
@@ -330,3 +336,55 @@ does not own.
 **DO-NOT-REPEAT:**
 - [2026-05-02] NO_DUPLICATE_TAGS: `extractBriefFromMessage` must compare proposed tags against existing `spec.json` tags using `normalizeBizName` + `checkSameBusinessIdentity`. Refuse/prompt-disambiguate when match. Evidence: `site-mbsh96reunion` vs `site-mbsh-reunion` coexisted, with the duplicate's `dist/` misleading Studio's preview with hallucinated Myrtle Beach SC content.
 - [2026-05-02] VERIFY_BRIEFING_CLAIMS: Always check briefing/doc claims against the actual repo before acting. Example: briefing said Drive sync action exists with a bug — it didn't exist at all. Wasted cycles diagnosing a phantom workflow.
+
+### vendor-fact/netlify-cannot-link-a-project-to-a-git-repository-via-api — 2026-05-05 (auto-promoted)
+
+**Type:** `vendor-fact` | **Confidence:** 0.88 | **Facets:** vendor:netlify, deploy
+
+Netlify cannot link a project to a Git repository via API
+
+_See `memory/vendor-fact/netlify-cannot-link-a-project-to-a-git-repository-via-api.md` for body and evidence._
+
+### bug-pattern/bug-pattern-cowork-ghost-session-silent-failure — 2026-05-05 (auto-promoted)
+
+**Type:** `bug-pattern` | **Confidence:** 0.85 | **Facets:** (none)
+
+## Bug pattern: cowork ghost-session silent failure
+
+_See `memory/bug-pattern/bug-pattern-cowork-ghost-session-silent-failure.md` for body and evidence._
+
+### do-not-repeat/do-not-repeat-do-not-skip-handshake-protocols — 2026-05-05 (auto-promoted)
+
+**Type:** `do-not-repeat` | **Confidence:** 0.85 | **Facets:** (none)
+
+## Do-not-repeat: do not skip handshake protocols
+
+_See `memory/do-not-repeat/do-not-repeat-do-not-skip-handshake-protocols.md` for body and evidence._
+
+### vendor-fact/gap-netlifys-git-linking-still-requires-the-vendor-ui — 2026-05-05 (auto-promoted)
+
+**Type:** `vendor-fact` | **Confidence:** 0.88 | **Facets:** vendor:netlify, vendor:godaddy, vendor:resend, vendor:stripe
+
+Gap: Netlify's git linking still requires the vendor UI
+
+_See `memory/vendor-fact/gap-netlifys-git-linking-still-requires-the-vendor-ui.md` for body and evidence._
+
+## Standing Rule — Memory Pipeline (added 2026-05-05)
+
+Every chat session worth learning from must go through:
+1. `node scripts/session-capture.js --source <s> --input <p>` (or session-end hook)
+2. `node scripts/memory-promote.js review <capture-id>`
+3. `node scripts/memory-promote.js promote <capture-id> --auto` (allowlist) or interactive
+
+Auto-allowlist: `vendor-fact`, `do-not-repeat`, `bug-pattern` at confidence >= 0.85.
+
+Source-of-truth precedence:
+- `memory/INDEX.json` is the queryable index (rebuilt by promoter + digest)
+- `memory/<type>/<id>.md` files are canonical entries (markdown + YAML frontmatter)
+- `.wolf/cerebrum.md` (this file) gets one short backlink per promoted entry
+- `SITE-LEARNINGS.md` gets a backlink only when entry has `site-execution` facet or type=`learning`
+- `memory/usage.jsonl` is the append-only telemetry log
+
+Disable telemetry with `MEMORY_TELEMETRY=off`.
+
+Retire (don't delete) entries that drift wrong: `fam-hub memory retire <id>` — the entry stays for history, lifecycle flips to `retired`, no longer surfaces.

@@ -5,13 +5,14 @@
 
 set -euo pipefail
 PLATFORM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+HUB_ROOT="$(cd "$PLATFORM_ROOT/.." && pwd)"
 VAULT="$PLATFORM_ROOT/vault/vault.sh"
 
 SITE="${1:?Usage: dns register-subdomain <site> <subdomain> <type> <value>}"
 SUBDOMAIN="${2:?subdomain required (e.g. api, www, send)}"
 TYPE="${3:?type required (A, CNAME, TXT, etc.)}"
 VALUE="${4:?value required}"
-SPEC="$HOME/famtastic/sites/site-$SITE/spec.json"
+SPEC="$HUB_ROOT/sites/site-$SITE/spec.json"
 
 vault_has() {
   "$VAULT" read "$1" >/dev/null 2>&1

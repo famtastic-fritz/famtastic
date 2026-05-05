@@ -1,0 +1,57 @@
+# MBSH deploy backend proof cPanel UAPI fallback overwrite
+timestamp=2026-05-05T18:38:48Z
+cwd=/Users/famtasticfritz/famtastic-mbsh-deploy
+command=platform/famtastic-platform deploy backend mbsh-reunion
+
+deploy.backend: rsync /Users/famtasticfritz/famtastic-sites/mbsh-reunion/backend/ → nineoo@FAMTASTICINC.COM:public_html/
+ssh: connect to host famtasticinc.com port 22: Operation timed out
+rsync(67643): error: unexpected end of file
+rsync(67643): error: io_read_nonblocking
+rsync(67643): error: io_read_buf
+rsync(67643): error: io_read_int
+rsync(67643): warning: child 67644 exited with status 255
+deploy.backend: rsync failed; attempting cPanel UAPI file upload fallback
+deploy.backend: ensured directory public_html/admin
+deploy.backend: ensured directory public_html/cron
+deploy.backend: ensured directory public_html/lib
+deploy.backend: ensured directory public_html/uploads
+deploy.backend: ensured directory public_html/uploads
+deploy.backend: ensured directory public_html/uploads/approved
+deploy.backend: ensured directory public_html/uploads
+deploy.backend: ensured directory public_html/uploads/approved
+deploy.backend: ensured directory public_html/uploads/approved/memories
+deploy.backend: ensured directory public_html/uploads
+deploy.backend: ensured directory public_html/uploads/approved
+deploy.backend: ensured directory public_html/uploads/approved/sponsors
+deploy.backend: uploaded public_html/admin/dashboard.php
+deploy.backend: uploaded public_html/admin/login.php
+deploy.backend: uploaded public_html/admin/logout.php
+deploy.backend: uploaded public_html/admin/manage-in-memory.php
+deploy.backend: uploaded public_html/admin/review-memory.php
+deploy.backend: uploaded public_html/admin/review-sponsor.php
+deploy.backend: uploaded public_html/admin/serve-pending-upload.php
+deploy.backend: uploaded public_html/attendees.php
+deploy.backend: uploaded public_html/capsule.php
+deploy.backend: uploaded public_html/chatbot-question.php
+deploy.backend: uploaded public_html/cron/cleanup-rate-limits.php
+deploy.backend: uploaded public_html/cron/send-capsules.php
+deploy.backend: uploaded public_html/in-memory.php
+deploy.backend: uploaded public_html/lib/admin-auth.php
+deploy.backend: uploaded public_html/lib/config.php
+deploy.backend: uploaded public_html/lib/cors.php
+deploy.backend: uploaded public_html/lib/csrf.php
+deploy.backend: uploaded public_html/lib/db.php
+deploy.backend: uploaded public_html/lib/rate-limit.php
+deploy.backend: uploaded public_html/lib/resend.php
+deploy.backend: uploaded public_html/lib/upload.php
+deploy.backend: uploaded public_html/lib/validate.php
+deploy.backend: uploaded public_html/memory.php
+deploy.backend: uploaded public_html/rsvp.php
+deploy.backend: uploaded public_html/schema.sql
+deploy.backend: uploaded public_html/sponsor.php
+deploy.backend: uploaded public_html/sponsors.php
+deploy.backend: uploaded public_html/uploads/approved/.htaccess
+deploy.backend: complete via cpanel_uapi. Revision cdf8921 live.
+Next: platform smoke test mbsh-reunion
+
+exit_code=0

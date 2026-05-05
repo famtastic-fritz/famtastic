@@ -17,35 +17,42 @@
 
 ## Vault keys
 
-Migrated from `sites/mbsh-reunion-v2/*` → `sites/mbsh-reunion/*`. Old keys removed.
+Migrated from `sites/mbsh-reunion-v2/*` to `sites/mbsh-reunion/*`. Old keys removed.
 
 ## Netlify
 
 Project `street-family-reunion-staging` (id `3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf`) renamed to `mbsh-reunion-staging`. Default URL: `https://mbsh-reunion-staging.netlify.app`.
 
-**MANUAL STEP STILL REQUIRED:** the Netlify ↔ GitHub link must be (re)established via the Netlify UI — Netlify's git connection cannot be set via API. After my rename, the build_settings came back null. Steps:
+Fritz completed the Netlify GitHub provider link through the Netlify UI on 2026-05-05. The staging project now deploys from `famtastic-fritz/mbsh-reunion` branch `staging`, with publish directory `frontend/` and no build command.
 
-1. https://app.netlify.com/sites/mbsh-reunion-staging/settings/deploys
-2. Link site to repo: `git@github.com:famtastic-fritz/mbsh-reunion.git`
-3. Production branch: `staging` (the staging branch deploys to this Netlify project)
-4. Build command: (none — netlify.toml takes over)
-5. Publish directory: `frontend/` (already in netlify.toml)
+Verified staging settings:
 
-## Promote-to-prod model (designed — implementation pending)
+- Site id: `3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf`
+- Repo: `https://github.com/famtastic-fritz/mbsh-reunion`
+- Provider: GitHub
+- Production branch: `staging`
+- Allowed branches: `staging`
+- Build command: none
+- Publish directory: `frontend/`
+- Latest deploy state: `ready`
 
-A separate Netlify project will be created for production:
+Proof: `proofs/mbsh-netlify-branch-link-2026-05-05.log`.
+
+## Promote-to-prod model
+
+A separate Netlify production project remains the intended production path:
+
 - Name: `mbsh-reunion`
-- URL: `mbsh-reunion.netlify.app` → custom domain `mbsh96reunion.com`
+- URL: `mbsh-reunion.netlify.app` to custom domain `mbsh96reunion.com`
 - Production branch: `main`
 
 Promotion ladder:
-- `dev` branch → no auto-deploy (local only)
-- `staging` branch → auto-deploys to staging Netlify
-- `main` branch → auto-deploys to prod Netlify, custom domain
-- Tags `vYYYY.MM.DD-HHMM` → immutable release markers, used by `platform site rollback`
 
-Implementation lives in `plan_2026_05_05_platform_site_promotion`.
+- `dev` branch: local only
+- `staging` branch: auto-deploys to staging Netlify
+- `main` branch: deploys to production Netlify/custom domain
+- Tags `vYYYY.MM.DD-HHMM`: release markers for rollback tooling
 
 ## Provision-site verification
 
-After cleanup, `platform studio provision-site mbsh-reunion --check` returns 12/12 ready/present, 0 blocked. Proof: `proofs/studio-service-auth-mbsh-reunion-2026-05-05.json`.
+After cleanup, `platform studio provision-site mbsh-reunion --check` returned 12/12 ready or present, 0 blocked. Proof: `proofs/studio-service-auth-mbsh-reunion-2026-05-05.json`.

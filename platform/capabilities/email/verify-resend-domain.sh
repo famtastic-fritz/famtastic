@@ -4,10 +4,11 @@
 
 set -euo pipefail
 PLATFORM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+HUB_ROOT="$(cd "$PLATFORM_ROOT/.." && pwd)"
 VAULT="$PLATFORM_ROOT/vault/vault.sh"
 
 SITE="${1:?Usage: email verify-resend-domain <site>}"
-SPEC="$HOME/famtastic/sites/site-$SITE/spec.json"
+SPEC="$HUB_ROOT/sites/site-$SITE/spec.json"
 [[ -f "$SPEC" ]] || { echo "verify-resend: spec not found"; exit 1; }
 
 DOMAIN=$(python3 -c "import json;print(json.load(open('$SPEC')).get('backend',{}).get('email_sending_domain',''))")

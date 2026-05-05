@@ -5423,3 +5423,63 @@ Shay-Shay one-sentence queue summary. This validates the swimlane +
 inspector + WebSocket pattern every other Ops tab reuses.
 
 Status: design-only. No API, UI, or schema changes shipped yet.
+
+## Chat Capture / Tag / Learn / Optimize Pipeline (2026-05-05)
+
+Built a working capture → tag → promote → use → optimize loop. Closes the
+"learnings produced in chats never make it into canonical memory" gap.
+
+Files (this session):
+- `plans/plan_2026_05_05_chat_capture_learn_optimize/{plan.json,README.md}`
+- `captures/SCHEMA.md` — v0.2 capture-packet shape
+- `memory/TAXONOMY.md` — types (decision, rule, learning, bug-pattern, gap,
+  preference, vendor-fact, anti-pattern, do-not-repeat) + facets +
+  auto-promote allowlist + lifecycle
+- `memory/<type>/` — 8 per-type directories
+- `memory/INDEX.json` — store index
+- `memory/usage.jsonl` — append-only telemetry
+- `scripts/session-capture.js` — orchestrator
+- `scripts/capture-adapters/{manual,claude-code,cowork,codex}.js`
+- `scripts/memory-promote.js` — gated + auto-allowlist promoter
+- `scripts/memory-digest.js` — weekly digest with auto-promote-to-candidate
+- `lib/famtastic/memory/recall.js` — retriever
+- `lib/shay/memory-context.js` — Shay context provider with prefixed +
+  bare facet matching
+- `.claude/hooks/session-end-capture.sh` — Claude Code session-end hook
+- `docs/operating-rules/memory-lifecycle.md`
+- `plans/registry.json` — registered the new plan
+
+Verified end-to-end:
+- Captured a synthetic transcript (`captures/inbox/test-session-2026-05-05.md`)
+- Extracted 15 items, 4 auto-promote eligible
+- Auto-promoted 4 entries: 2 `vendor-fact`, 1 `bug-pattern`, 1 `do-not-repeat`
+- INDEX.json populated; usage.jsonl recorded `captured`, `reviewed`,
+  `auto_promoted`, `surfaced` events
+- `recall({facets:['vendor:netlify']})` returns the 2 Netlify entries
+- Shay context provider emits a RELEVANT MEMORY block when given site/plan/
+  workspace context that overlaps the entries' facets
+- `memory-digest.js` produced a digest at `~/PENDING-REVIEW.md` with new
+  entries, retroactive auto-promotion review section, no false stale flags
+
+Auto-promote rule (per TAXONOMY): confidence >= 0.85 AND type in
+{vendor-fact, do-not-repeat, bug-pattern} AND canonical_id new. All
+auto-promotions logged for retroactive human review in next weekly digest.
+
+Decisions:
+- Store: per-entry markdown with YAML frontmatter at memory/<type>/<id>.md
+- Telemetry: local-only, disable with MEMORY_TELEMETRY=off
+- Optimizer aggressiveness: report + auto-promote high-recurrence to
+  lifecycle=candidate (NOT active). Stale flagged but never auto-retired.
+
+Known gaps opened:
+- 11 of 15 extracts from the test capture were correctly gated (decisions,
+  rules, learnings) but the gating wording could be more actionable —
+  human-review UI lives in the Ops Reviews tab, which is design-only.
+- Cron registration for `memory-digest.js` requires the schedule plugin /
+  launchd setup separate from this plan.
+- Adversarial review loop applied to memory promotions depends on the Ops
+  plan's loop implementation.
+- The manual adapter's regex-based extraction sometimes mis-types entries
+  (a "do-not-repeat" sentence got tagged as both `do-not-repeat` and `rule`
+  on the second match) — first-match-wins works, but a smarter classifier
+  could eliminate near-duplicates.

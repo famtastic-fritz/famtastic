@@ -1,0 +1,224 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_2026-05-05T18-08_4f0a",
+  "created_at": "2026-05-05T18:08:55.620Z",
+  "source": {
+    "surface": "manual",
+    "session_id": null,
+    "adapter": "scripts/capture-adapters/manual.js",
+    "adapter_version": "0.2.0",
+    "input_path": "/Users/famtasticfritz/famtastic/captures/inbox/test-session-2026-05-05.md",
+    "timestamp_range": {
+      "start": "2026-05-05T18:08:51.137Z",
+      "end": "2026-05-05T18:08:55.620Z"
+    }
+  },
+  "summary": "Manual capture of test-session-2026-05-05.md (3961 bytes). 15 extracts found across 9 type patterns.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "vendor-fact",
+      "text": "Netlify cannot link a project to a Git repository via API",
+      "rationale": "Netlify cannot link a project to a Git repository via API. The `netlify api updateSite` call can rename a project, change build settings, and modify deploy hooks, but it does not expose project-to-repo linking. The \"Connect to Git\" flow requires the vendor UI. This is a vendor fact about Netlify's API surface confirmed by today's attempt to repoint the mbsh-reunion-staging project programmatically.",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:netlify",
+        "deploy"
+      ],
+      "confidence": 0.88,
+      "candidate_id": "vendor-fact/netlify-cannot-link-a-project-to-a-git-repository-via-api"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "decision",
+      "text": "## Decision: single Netlify project per site, not two",
+      "rationale": "## Decision: single Netlify project per site, not two",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:netlify"
+      ],
+      "confidence": 0.78,
+      "candidate_id": "decision/decision-single-netlify-project-per-site-not-two"
+    },
+    {
+      "extract_id": "x_3",
+      "type": "decision",
+      "text": "We decided on one Netlify project per site over the earlier two-project model",
+      "rationale": "We decided on one Netlify project per site over the earlier two-project model. Netlify's native branch deploys handle staging — push to the staging branch and Netlify serves it at <tag>--staging.netlify.app. The production branch (main) serves the custom domain. Chose this over a separate <tag>-staging Netlify project because it's simpler, native to how Netlify is built, and there is less to manage.",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:netlify",
+        "deploy"
+      ],
+      "confidence": 0.78,
+      "candidate_id": "decision/we-decided-on-one-netlify-project-per-site-over-the-earlier-two-project-model"
+    },
+    {
+      "extract_id": "x_4",
+      "type": "rule",
+      "text": "## Rule: sites never commit to Studio history",
+      "rationale": "## Rule: sites never commit to Studio history",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/rule-sites-never-commit-to-studio-history"
+    },
+    {
+      "extract_id": "x_5",
+      "type": "rule",
+      "text": "Sites must never commit to the Studio repo history",
+      "rationale": "Sites must never commit to the Studio repo history. Each site lives at ~/famtastic-sites/<tag>/ as its own git repo. The Studio repo at ~/famtastic/ has a /sites/ gitignore entry. Today we found 25 leaked site files that predated this gitignore and removed them with git rm --cached. Going forward, every site has its own remote on github.com/famtastic-fritz/<tag>.",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:github"
+      ],
+      "confidence": 0.72,
+      "candidate_id": "rule/sites-must-never-commit-to-the-studio-repo-history"
+    },
+    {
+      "extract_id": "x_6",
+      "type": "bug-pattern",
+      "text": "## Bug pattern: cowork ghost-session silent failure",
+      "rationale": "## Bug pattern: cowork ghost-session silent failure",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.85,
+      "candidate_id": "bug-pattern/bug-pattern-cowork-ghost-session-silent-failure"
+    },
+    {
+      "extract_id": "x_7",
+      "type": "rule",
+      "text": "Bug pattern: cowork session was reported as running by the cowork orchestrator but produced zero sta",
+      "rationale": "Bug pattern: cowork session was reported as running by the cowork orchestrator but produced zero status log entries and zero commits over 80 minutes. Root cause unconfirmed but likely: cowork worked in an isolated worktree without pushing, or skipped the handshake protocol entirely, or the session never actually started despite verbal confirmation. Fix going forward: bold the handshake protocol as the literal first action in cowork handoffs and add a 60-second timeout with auto-restart if the st",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/bug-pattern-cowork-session-was-reported-as-running-by-the-cowork-orchestrator-bu"
+    },
+    {
+      "extract_id": "x_8",
+      "type": "anti-pattern",
+      "text": "## Anti-pattern: hardcoded counts in plan acceptance criteria",
+      "rationale": "## Anti-pattern: hardcoded counts in plan acceptance criteria",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.75,
+      "candidate_id": "anti-pattern/anti-pattern-hardcoded-counts-in-plan-acceptance-criteria"
+    },
+    {
+      "extract_id": "x_9",
+      "type": "rule",
+      "text": "Anti-pattern: writing acceptance criteria like \"448 stale legacy-queue jobs render in Stale Debt dra",
+      "rationale": "Anti-pattern: writing acceptance criteria like \"448 stale legacy-queue jobs render in Stale Debt drawer\" is wrong — it bakes a transient inventory snapshot into the plan as if it were a contract. Real current inventory should be read from a snapshot script (docs/ops/inventory-YYYY-MM-DD.json) and never hardcoded. Today's adversarial review caught this in the ops-workspace-gui plan.",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "ops"
+      ],
+      "confidence": 0.72,
+      "candidate_id": "rule/anti-pattern-writing-acceptance-criteria-like-448-stale-legacy-queue-jobs-render"
+    },
+    {
+      "extract_id": "x_10",
+      "type": "learning",
+      "text": "## Learning: adversarial review loops are valuable but bounded",
+      "rationale": "## Learning: adversarial review loops are valuable but bounded",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "ops"
+      ],
+      "confidence": 0.7,
+      "candidate_id": "learning/learning-adversarial-review-loops-are-valuable-but-bounded"
+    },
+    {
+      "extract_id": "x_11",
+      "type": "learning",
+      "text": "Learning from today: a 3-round adversarial review loop on a plan caught real issues each round (10 c",
+      "rationale": "Learning from today: a 3-round adversarial review loop on a plan caught real issues each round (10 critical issues round 1, 4 critical round 2, 1 cosmetic round 3) and converged. Keep the default cap at 3 rounds. Stop conditions need to be: ship-as-is, OR no new architectural issues, OR cap reached.",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "learning/learning-from-today-a-3-round-adversarial-review-loop-on-a-plan-caught-real-issu"
+    },
+    {
+      "extract_id": "x_12",
+      "type": "do-not-repeat",
+      "text": "## Do-not-repeat: do not skip handshake protocols",
+      "rationale": "## Do-not-repeat: do not skip handshake protocols",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.85,
+      "candidate_id": "do-not-repeat/do-not-repeat-do-not-skip-handshake-protocols"
+    },
+    {
+      "extract_id": "x_13",
+      "type": "rule",
+      "text": "Do not repeat the cowork ghost-session pattern",
+      "rationale": "Do not repeat the cowork ghost-session pattern. When delegating to a fresh agent session, the handshake confirmation must be the literal first instruction in the handoff document, bolded, and include a deadline (60 seconds). If the handshake doesn't land, the orchestrator must treat the agent as dead and pivot, not wait.",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/do-not-repeat-the-cowork-ghost-session-pattern"
+    },
+    {
+      "extract_id": "x_14",
+      "type": "gap",
+      "text": "## Gap: no Netlify ↔ GitHub link automation",
+      "rationale": "## Gap: no Netlify ↔ GitHub link automation",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:netlify",
+        "vendor:github"
+      ],
+      "confidence": 0.7,
+      "candidate_id": "gap/gap-no-netlify-github-link-automation"
+    },
+    {
+      "extract_id": "x_15",
+      "type": "vendor-fact",
+      "text": "Gap: Netlify's git linking still requires the vendor UI",
+      "rationale": "Gap: Netlify's git linking still requires the vendor UI. We need an \"assisted-manual capability\" pattern that opens the deep-link URL and polls the API to detect completion. The pattern should generalize to Resend domain verify, GoDaddy DNS confirmation, Stripe webhook setup, and other vendor flows that don't have programmatic equivalents.",
+      "evidence": [
+        "source:test-session-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:netlify",
+        "vendor:godaddy",
+        "vendor:resend",
+        "vendor:stripe"
+      ],
+      "confidence": 0.88,
+      "candidate_id": "vendor-fact/gap-netlifys-git-linking-still-requires-the-vendor-ui"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": []
+}

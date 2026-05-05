@@ -42,7 +42,8 @@
     "build-intent-fulfillment-trace",
     "site-mbsh-reunion",
     "plan_2026_05_05_ops_workspace_gui",
-    "plan_2026_05_05_platform_site_promotion"
+    "plan_2026_05_05_platform_site_promotion",
+    "plan_2026_05_05_chat_capture_learn_optimize"
   ],
   "labels": {
     "plan_2026_05_05_platform_site_promotion": {
@@ -82,6 +83,13 @@
       "parent_plan": "studio-workbench-foundation",
       "depends_on": ["plan-task-run-intelligence"],
       "note": "Ops domain mounted inside the Workbench shell as the ◆ Ops left-rail entry. Shell from workbench-foundation; ledgers from plan-task-run."
+    },
+    "plan_2026_05_05_chat_capture_learn_optimize": {
+      "label": "chat-capture-learn-optimize",
+      "tags": ["platform-upgrades", "memory", "shay-shay", "intelligence", "ledgers"],
+      "role": "substrate",
+      "feeds_into": ["plan_2026_05_05_ops_workspace_gui"],
+      "note": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read."
     }
   },
   "_label_role_legend": {

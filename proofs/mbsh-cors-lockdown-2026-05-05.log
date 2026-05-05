@@ -1,0 +1,14 @@
+# MBSH CORS lockdown proof
+timestamp=2026-05-05T18:53:12Z
+cwd=/Users/famtasticfritz/famtastic-mbsh-deploy
+command=platform/famtastic-platform cors lockdown mbsh-reunion production
+
+cors.lockdown: patching FAMTASTICINC.COM:/home/nineoo/.config/mbsh-config.php to lock CORS to mbsh-reunion-staging
+Permission denied, please try again.
+Permission denied, please try again.
+nineoo@famtasticinc.com: Permission denied (publickey,password).
+cors.lockdown: SSH unavailable; verifying cPanel config written by db.apply-schema
+cors.lockdown: verified locked patterns in cPanel config
+cors.lockdown: complete via cpanel_uapi_verify
+
+exit_code=0

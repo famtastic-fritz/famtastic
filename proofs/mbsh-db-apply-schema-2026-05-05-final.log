@@ -1,0 +1,12 @@
+# MBSH DB apply-schema proof final
+timestamp=2026-05-05T18:50:42Z
+cwd=/Users/famtasticfritz/famtastic-mbsh-deploy
+command=platform/famtastic-platform db apply-schema mbsh-reunion production
+
+apply-schema: uploading schema to FAMTASTICINC.COM:/tmp/mbsh-reunion-schema-75116.sql
+scp: Connection closed
+apply-schema: SSH apply failed; attempting cPanel API temporary PHP runner
+apply-schema: 10 tables present in mbsh96_reunion
+apply-schema: complete via cpanel_uapi_php_runner
+
+exit_code=0
