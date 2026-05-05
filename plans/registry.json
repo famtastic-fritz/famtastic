@@ -44,16 +44,44 @@
     "plan_2026_05_05_ops_workspace_gui"
   ],
   "labels": {
+    "studio-workbench-foundation": {
+      "label": "workbench-foundation",
+      "tags": ["platform-upgrades", "studio-ui", "shell", "workbench"],
+      "role": "chassis",
+      "note": "The Workbench shell (left rail, center workspace, Shay-Shay drawer) hosting all domain workspaces."
+    },
+    "plan-task-run-intelligence": {
+      "label": "plan-task-run",
+      "tags": ["platform-upgrades", "ledgers", "intelligence", "capture"],
+      "role": "substrate",
+      "note": "Plan/task/run/proof ledger substrate and capture promotion. Underlies every domain that needs durable state."
+    },
+    "build-intent-fulfillment-trace": {
+      "label": "build-trace",
+      "tags": ["platform-upgrades", "build-pipeline", "tracing"],
+      "role": "substrate",
+      "note": "Build intent classification, fulfillment trace, and workflow data for the Build domain."
+    },
+    "site-mbsh-reunion": {
+      "label": "site-mbsh",
+      "tags": ["site-execution", "reunion"],
+      "role": "site-project",
+      "note": "Per-site execution plan; consumes the platform substrates above."
+    },
     "plan_2026_05_05_ops_workspace_gui": {
       "label": "ops-workspace-gui",
-      "tags": [
-        "platform-upgrades",
-        "studio-ui",
-        "ops",
-        "shay-shay",
-        "agent-management"
-      ]
+      "tags": ["platform-upgrades", "studio-ui", "ops", "shay-shay", "agent-management"],
+      "role": "domain",
+      "parent_plan": "studio-workbench-foundation",
+      "depends_on": ["plan-task-run-intelligence"],
+      "note": "Ops domain mounted inside the Workbench shell as the ◆ Ops left-rail entry. Shell from workbench-foundation; ledgers from plan-task-run."
     }
+  },
+  "_label_role_legend": {
+    "chassis": "The shell that hosts other workspaces.",
+    "substrate": "Cross-cutting platform capability that other plans consume.",
+    "domain": "A workspace that mounts inside the shell.",
+    "site-project": "Per-site execution plan that consumes platform capabilities."
   },
   "absorbed_records": [
     {
