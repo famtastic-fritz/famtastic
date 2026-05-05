@@ -180,6 +180,26 @@
       ]
     },
     {
+      "id": "ws_plan_create_flow",
+      "title": "Plan Creation GUI + Purpose Capture",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "'New Plan' action on Plans tab opens a right-side composer (not a modal)",
+        "Required fields: title, purpose (why this exists), origin (conversation|gap|proof|manual), success_signal, owner",
+        "Optional fields: why_now, initial workstreams, tags, label",
+        "Auto-link to trigger record when launched from a gap/proof/conversation card",
+        "Plan record schema additions: purpose, why_now, origin.trigger_record, success_signal",
+        "Same composer reachable from Pulse 'Needs Me', Gaps 'Convert to Plan', and Shay-Shay 'Draft a plan'"
+      ],
+      "acceptance": [
+        "No plan can be saved without a non-empty purpose.",
+        "Plans converted from a gap auto-populate origin.trigger_record with the gap id.",
+        "Shay-Shay can narrate any plan in one sentence using purpose + success_signal.",
+        "CLI parity: `fam-hub plan new` accepts the same fields and writes the same shape."
+      ]
+    },
+    {
       "id": "ws_shay_shay_drawer_integration",
       "title": "Shay-Shay Drawer Integration (read-only first)",
       "status": "ready",
