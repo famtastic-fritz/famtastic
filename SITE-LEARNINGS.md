@@ -5127,6 +5127,24 @@ sponsor, deploy, media/story assets, chatbot, content deltas, Studio audit
 harness, and generalized gap promotion. Reusable lessons should be promoted
 upward only when they apply beyond MBSH.
 
+### Shay-Shay UI Proof
+
+Actual Shay behavior proof on 2026-05-04 used Playwright against Studio UI, not
+WebSocket shortcuts or direct API-only proof. Exact message: `system status`.
+The test clicked the Shay orb, entered the message into `#shay-shay-input`,
+clicked `#pip-send-btn`, observed a real `POST /api/shay-shay`, and verified
+the rendered Shay Lite panel contained capability status text. Proof note:
+`docs/operating-rules/studio-shay-ui-proof-2026-05-04.md`; screenshot:
+`proofs/shay-shay-system-status-ui-2026-05-04.png`.
+
+Two real bugs were fixed during that proof. First, the open Shay Lite panel
+could still lose clicks to the Studio workspace layer because
+`#shay-lite-shell` kept `pointer-events: none`; `studio-orb.css` now restores
+pointer events while the panel is open. Second, the send-button click listener
+passed the click event as `forcedText`, so Shay received `[object PointerEvent]`
+instead of the typed message; `studio-orb.js` now wraps the handler and calls
+`sendDirect()` with no event payload.
+
 ### Known Gaps Opened / Still Open
 
 - Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
@@ -5135,6 +5153,7 @@ upward only when they apply beyond MBSH.
 - Capability Store broader than Media Studio is not implemented.
 - Pipeline visualizer inspect/trace/propose is still not implemented; it now has trace events and a workflow stage catalog to read from.
 - MBSH child tasks are split and scoped, but the backend/RSVP/sponsor/deploy/media/chatbot/content/audit execution tasks are not complete yet.
+- Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.

@@ -13,6 +13,7 @@
 - Task, run, and proof ledgers now contain first records.
 - Workbench Plan mode now reads a browser-safe consolidated plan state packet at `site-studio/public/data/workbench-plan-state.json`.
 - Workbench Foundation now follows the frozen seven-domain left rail, exposes contract pills in the workspace chrome, and keeps Media as prompt-first **Media Studio**.
+- Actual Shay-Shay UI proof passed through Studio with the message `system status`; two UI bugs were fixed in the process.
 
 ## Active Parent Plans
 
@@ -57,3 +58,4 @@ fam-hub plan show build-intent-fulfillment-trace
 - Workbench Shay context provider.
 - Automatic status-packet regeneration from code instead of manual update.
 - Media Studio controls are still not unified between the Workbench surface and the richer production mini-app.
+- Studio console still has non-blocking cleanup noise from the Shay proof: Tailwind CDN warning, unsupported preload `as`, and `/config/site-config.json` 404.

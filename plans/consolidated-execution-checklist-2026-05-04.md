@@ -107,10 +107,10 @@ This follows the solution hierarchy:
 
 ### P0 — Prove Builds Through Actual Studio
 
-- [ ] Test through Site Studio UI using Playwright browser automation.
-- [ ] Use actual Shay/Shay-Shay calls where the feature is a Shay behavior.
-- [ ] Record exact Studio message, observed failure/success, CLI workaround if any, and proposed GUI fix for every gap.
-- [ ] Do not use WebSocket shortcuts as proof for Studio behavior.
+- [x] Test through Site Studio UI using Playwright browser automation.
+- [x] Use actual Shay/Shay-Shay calls where the feature is a Shay behavior.
+- [x] Record exact Studio message, observed failure/success, CLI workaround if any, and proposed GUI fix for every gap.
+- [x] Do not use WebSocket shortcuts as proof for Studio behavior.
 
 ### P1 — Make Shay/Plans Resumable
 

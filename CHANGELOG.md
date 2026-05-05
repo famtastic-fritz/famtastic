@@ -433,3 +433,7 @@ Declared `architecture/2026-04-24-canonical-build-intent-v2.md` as the current B
 ## 2026-05-04 — MBSH site-scoped execution split
 
 Added `docs/sites/site-mbsh-reunion/DEPLOY-STATE.md` to document the boundary between Studio canonical state and the standalone deploy repo at `/Users/famtasticfritz/famtastic-sites/mbsh-reunion-v2/`. Added MBSH child tasks for backend, RSVP, sponsor, deploy, media/story assets, chatbot, content deltas, Studio audit harness, and generalized gap promotion while closing the parent split tasks. Deferred: executing those site-specific tasks and running the full MBSH Studio audit harness.
+
+## 2026-05-04 — Shay-Shay UI proof and send fixes
+
+Ran an actual Shay-Shay `system status` call through the Studio UI with Playwright and verified the rendered panel response plus real `POST /api/shay-shay`. Fixed two bugs found during the proof: open Shay Lite panels now restore pointer events, and the send button no longer passes the click `PointerEvent` as the message. Added `docs/operating-rules/studio-shay-ui-proof-2026-05-04.md` and screenshot proof at `proofs/shay-shay-system-status-ui-2026-05-04.png`. Deferred: broader console-health cleanup for existing non-blocking Studio warnings.

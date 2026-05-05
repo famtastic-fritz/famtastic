@@ -1238,7 +1238,7 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDirect(); }
     });
 
-    if (sendBtn) sendBtn.addEventListener('click', sendDirect);
+    if (sendBtn) sendBtn.addEventListener('click', function () { sendDirect(); });
 
     window.__pipSendDirect = sendDirect;
   }

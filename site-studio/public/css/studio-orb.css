@@ -397,6 +397,11 @@
   isolation: isolate;
 }
 
+#shay-lite-shell[data-panel-open="true"],
+#shay-lite-shell[data-identity="mini_panel"] {
+  pointer-events: auto;
+}
+
 #shay-lite-shell.is-custom-position {
   left: 24px;
   top: 120px;

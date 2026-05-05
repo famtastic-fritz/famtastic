@@ -10,9 +10,9 @@
   "summary": {
     "active_parent_count": 4,
     "absorbed_record_count": 10,
-    "task_count": 32,
+    "task_count": 33,
     "run_count": 1,
-    "proof_count": 12,
+    "proof_count": 13,
     "current_run": "run-2026-05-04-consolidation-apply",
     "drive_sync_status": "complete",
     "workflow_as_data_status": "phase_1_cataloged",
@@ -171,6 +171,6 @@
     "plan_id": "plan-task-run-intelligence",
     "status": "active",
     "target": "complete_p0_then_report",
-    "current_step": "MBSH site-scoped task split and deploy repo boundary documented; remaining proof work is actual Studio/Shay behavior and MBSH task execution."
+    "current_step": "Actual Shay-Shay UI call through Studio passed after fixing click-layer and PointerEvent message bugs; remaining work is execution of MBSH child tasks, knowledge capture, Workbench Shay context provider, three workflows, and visualizer."
   }
 }
