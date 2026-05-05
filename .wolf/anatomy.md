@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:17:37.208Z
-> Files: 638 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:45:23.806Z
+> Files: 642 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -32,6 +32,7 @@
 ## ../.claude/plans/
 
 - `floofy-dancing-mccarthy.md` — Per-Site Repo Architecture + Studio State URLs (~1614 tok)
+- `purring-riding-brook.md` — Plan: Reconcile the Two Workbench Shells (~2437 tok)
 - `tidy-snacking-gizmo.md` — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop (~730 tok)
 
 ## ../.claude/projects/-Users-famtasticfritz-famtastic/memory/
@@ -459,6 +460,10 @@
 - `2026-04-27-p1.1-round2-results.md` — P1.1 — Edge Case Smoke (Round 2, post-P1.1.1 hotfix) (~2270 tok)
 - `2026-04-27-smoke-suite.md` — FAMtastic Studio — Smoke Suite (P0.0) (~6353 tok)
 
+## captures/inbox/
+
+- `cap_shell-reconciliation-2026-05-05.md` — Shell Reconciliation Session — 2026-05-05 (~867 tok)
+
 ## cli/idea/
 
 - `blueprint.py` — blueprint — Move an idea from incubation to structured plan. (~1206 tok)
@@ -619,6 +624,7 @@
 - `shay-shay-architecture.md` — Shay-Shay Architecture (~8680 tok)
 - `spawn-claude-migration-map.md` — spawnClaude() Migration Map (~6729 tok)
 - `studio-cli-handoff-pattern.md` — Studio → CLI Handoff Pattern (~1432 tok)
+- `STUDIO-SHELL-RECONCILIATION-2026-05-05.md` — Studio Shell Reconciliation — 2026-05-05 (~4061 tok)
 - `sync-checklist.md` — Claude Web Project Knowledge — Sync Checklist (~2452 tok)
 - `test-manual.md` — Test Manual Promotion (~21 tok)
 - `test-notes.draft.md` — Draft Notes from ChatGPT (~112 tok)
@@ -851,6 +857,7 @@
 ## site-studio/public/
 
 - `index.html` — FAMtastic Site Studio (~32710 tok)
+- `shell-compare.html` — Studio Shell Compare — index.html ↔ workbench-foundation.html (~1150 tok)
 
 ## site-studio/public/css/
 

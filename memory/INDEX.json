@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-05T23:15:44.002Z",
+  "generated_at": "2026-05-05T23:45:41.488Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -531,6 +531,19 @@
       "lifecycle": "active",
       "confidence": 0.88,
       "path": "memory/do-not-repeat/do-not-mark-a-task-blocked-without-re-checking-when-external.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche",
+      "type": "bug-pattern",
+      "title": "When the locked design doesn't match what works, the next agent will follow whichever surface produc",
+      "facets": [
+        "ops"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.85,
+      "path": "memory/bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }
