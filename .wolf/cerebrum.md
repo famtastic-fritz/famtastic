@@ -388,3 +388,31 @@ Source-of-truth precedence:
 Disable telemetry with `MEMORY_TELEMETRY=off`.
 
 Retire (don't delete) entries that drift wrong: `fam-hub memory retire <id>` — the entry stays for history, lifecycle flips to `retired`, no longer surfaces.
+
+## Ops Workspace Rules (2026-05-05)
+
+Standing rules introduced by `plan_2026_05_05_ops_workspace_gui` Phase 0:
+
+1. **Freshness is derived, never stored.** All `(record_type, status, age_seconds)`
+   → freshness logic must go through `site-studio/lib/ops-freshness.js`. Adding
+   a parallel implementation is forbidden; that was the original "false
+   agents waiting" failure mode.
+2. **Every `/api/ops/*` GET response must wrap in the snapshot envelope:**
+   `{ snapshot_version, generated_at, source_ledgers[], record_count, data }`.
+   Endpoints that return raw arrays will silently break the WS reconcile
+   contract once the WS channel ships.
+3. **Every destructive `/api/ops/command/*` action must call `checkGovernance()`
+   and 403 on failure.** The destructive set is `{purge, cancel, archive,
+   promote, migrate}`. Adding a new destructive action means adding it to
+   `DESTRUCTIVE_ACTIONS` in `ops-api.js` AND extending the test in
+   `tests/ops/destructive-action-gate.test.js` — both, or the regression
+   substrate is incomplete.
+4. **`parked|archived|stale` records can never appear in any "live" count,
+   lane, or KPI tile.** Enforced by `tests/ops/stale-cannot-inflate-live.test.js`.
+5. **Inventory snapshots are immutable.** `scripts/ops/inventory.js` writes
+   one dated file per day; never edit a previous day's snapshot.
+6. **Studio launchd boot is a known-broken precondition (2026-05-05).**
+   `site-studio/lib/{shay-shay-sessions,logger,openai-image-adapter}.js`
+   are referenced by server.js but have never been tracked in git. Until
+   they are restored, in-Studio verification is impossible — verify Ops
+   API changes by spinning up an isolated Express harness instead.

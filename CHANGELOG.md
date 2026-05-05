@@ -1,5 +1,21 @@
 # FAMtastic Changelog
 
+## 2026-05-05 — Ops Workspace MVP shipped
+
+Shipped Phase 0 of the Operations Workspace inside the Workbench shell:
+the source-of-truth matrix and freshness derivation table now live as
+contracts in `docs/ops/state-contract.md` plus the single implementation in
+`site-studio/lib/ops-freshness.js`, and `scripts/ops/inventory.js` writes
+dated debt snapshots (first one committed for 2026-05-05). Wired
+`/api/ops/{jobs,runs,tasks,plans,proofs,gaps,memory,reviews,debt,needsMe}`
+read endpoints with snapshot-versioned envelopes, plus a destructive-action
+gate on `POST /api/ops/command/:action`. Built the Jobs tab UI (seven
+swimlanes, Stale Debt drawer, slide-over inspector) — polls every 5s; WS
+deferred. 15 ops tests green (`tests/ops/`). Pre-existing breakage on the
+branch — `site-studio/lib/{shay-shay-sessions,logger,openai-image-adapter}.js`
+have never been tracked in git and Studio refuses to boot under launchd
+without them — blocks live UI verification; logged as a known gap.
+
 ## 2026-05-05 — Site Studio Resend notifications configured
 
 Configured Site Studio itself to send notification email through Resend using `notifications.email` in `~/.config/famtastic/studio-config.json` and the existing `vault://studio.resend.api_key`. Added `fam-hub platform configure-resend`, `fam-hub platform send-test-email`, reusable `site-studio/lib/studio-mailer.js`, and proof at `proofs/studio-resend-notification-2026-05-05.json`. A real test email was accepted by Resend from `FAMtastic Site Studio <studio@send.mbsh96reunion.com>` to the configured Studio email. Deferred: verify a FAMtastic-owned sender domain such as `send.famtastic.com`; the current domain is functional but temporary.

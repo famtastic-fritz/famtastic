@@ -5483,3 +5483,103 @@ Known gaps opened:
   (a "do-not-repeat" sentence got tagged as both `do-not-repeat` and `rule`
   on the second match) — first-match-wins works, but a smarter classifier
   could eliminate near-duplicates.
+
+## Ops Workspace MVP — Phase 0 Shipped (2026-05-05)
+
+Shipped Phase 0 of `plan_2026_05_05_ops_workspace_gui` plus the Jobs tab MVP.
+All numbers below are reproducible from the inventory snapshot, not
+hardcoded.
+
+### What landed
+
+- **State contract** — `docs/ops/state-contract.md` mirrors the
+  source-of-truth matrix and freshness derivation table from `plan.json`.
+  The plan is the contract; the doc is a human mirror.
+- **Inventory script** — `scripts/ops/inventory.js` scans every Ops ledger
+  and writes `docs/ops/inventory-YYYY-MM-DD.json`. First snapshot committed
+  for 2026-05-05: 71 records (live=15 stale=4 parked=0 archived=52).
+- **Freshness library** — `site-studio/lib/ops-freshness.js` is the **single**
+  implementation of the (record_type, status, age) → freshness derivation.
+  Consumed by inventory script, ops-api, and tests so they cannot drift.
+- **Ops API surface** — `site-studio/lib/ops-api.js` mounted at
+  `/api/ops` (server.js line 1086, BEFORE any `/api/:param` route per the
+  static-routes-first cerebrum rule).
+  - GET `/api/ops/{jobs,runs,tasks,plans,proofs,gaps,memory,reviews,debt,needsMe}`
+    — every response wrapped `{snapshot_version, generated_at, source_ledgers, record_count, data}`.
+  - POST `/api/ops/command/:action` — destructive actions (purge, cancel,
+    archive, promote, migrate) return 403 without `x-ops-governance-token`.
+    Token issuance is deferred; the only accepted token in MVP is the
+    `OPS_DEV_BYPASS_DO_NOT_SHIP` constant (documented in state-contract.md).
+- **Ops tab in Workbench** — added "Ops" entry to the sidebar nav and a
+  matching tab (`tab-pane-ops`) in `index.html`. `js/ops-jobs.js` mounts
+  11 sub-tabs (only Jobs functional in MVP); `css/ops-jobs.css` and
+  `css/ops-tokens.css` link from `<head>`.
+- **Visual language tokens** — `css/ops-tokens.css` defines CSS custom
+  properties and `.ops-chip--{plan,task,job,run,proof,gap,memory,review}`
+  with the per-plan color palette (PLAN ◇ indigo, TASK ☐ slate, JOB ▶ amber,
+  RUN ● cyan, PROOF ▣ emerald, GAP △ coral, MEMORY ✦ violet, REVIEW ⛔
+  red-orange) plus freshness dots.
+- **Jobs tab** — seven swimlanes (Queued ← pending, Approving ← approved,
+  Running, Blocked, Done, Failed, Parked) polled every 5s. Stale Debt
+  drawer at the bottom shows count + Migrate / Archive / Purge (Purge
+  needs confirm); source line shows the dated inventory file driving the
+  count. Slide-over inspector with Cancel / Park / Promote-to-Task.
+  Shay-Shay one-line summary refreshed against the API snapshot, never
+  from cached state.
+- **Test substrate** — `tests/ops/` runs under `node --test` (no new deps):
+  - `freshness-derivation.test.js` — pinned (type, status, age) table
+  - `stale-cannot-inflate-live.test.js` — 1000-trial property test
+  - `destructive-action-gate.test.js` — every destructive action 403 without token
+  - `cross-link-integrity.test.js` — `buildCrossLink` writes both sides or throws
+  - `fixtures/synthetic-ledgers.js` — mixed live/idle/stale/parked records
+  - All 15 tests green: `node --test tests/ops/*.test.js`
+
+### Files added
+
+- `docs/ops/state-contract.md`
+- `docs/ops/inventory-2026-05-05.json`
+- `scripts/ops/inventory.js`
+- `site-studio/lib/ops-freshness.js`
+- `site-studio/lib/ops-api.js`
+- `site-studio/public/css/ops-tokens.css`
+- `site-studio/public/css/ops-jobs.css`
+- `site-studio/public/js/ops-jobs.js`
+- `tests/ops/{freshness-derivation,stale-cannot-inflate-live,destructive-action-gate,cross-link-integrity}.test.js`
+- `tests/ops/fixtures/synthetic-ledgers.js`
+
+### Files modified
+
+- `site-studio/server.js` — mounts `/api/ops` router
+- `site-studio/public/index.html` — links new CSS, adds sidebar nav item, adds tab pane, loads ops-jobs.js
+- `site-studio/public/js/studio-shell.js` — registers `ops` tab in `initTabs()`
+
+### Standing rule introduced
+
+Any read endpoint under `/api/ops/*` MUST wrap its data in the snapshot
+envelope `{snapshot_version, generated_at, source_ledgers, record_count, data}`.
+Any destructive command MUST refuse without a governance token.
+
+### Known gaps opened
+
+- **Studio launchd boot is broken on this branch** — `site-studio/server.js`
+  requires `./lib/{shay-shay-sessions,logger,openai-image-adapter}.js` which
+  have never been tracked in git and don't exist in the working tree.
+  Studio cannot start under launchd until someone restores them. The
+  Ops API and Jobs tab were verified by spinning up an isolated Express
+  server in-process; live in-Studio verification + Playwright proof are
+  blocked on this pre-existing breakage. NOT caused by this work.
+- **WebSocket `/ws/ops` not implemented.** Reconcile contract is documented
+  in `state-contract.md`; Jobs tab polls every 5s in MVP.
+- **Real governance token issuance deferred.** Destructive endpoints accept
+  the placeholder `OPS_DEV_BYPASS_DO_NOT_SHIP` only; production token
+  flow comes in a later commit.
+- **Cross-link schema not back-filled.** `origin_job_id`, `promoted_to_task_id`,
+  `promoted_from`, `converted_to_task_id`, `reviews_record_id` will be
+  written by new commands; existing records do not have them.
+- **Sub-tabs other than Jobs render placeholder text.** Pulse, Plans,
+  Tasks, Runs, Proofs, Agents, Reviews, Gaps, Memory, Debt all show
+  "coming soon" in MVP per plan scope.
+- **Memory tab is a stub.** Will consume `lib/famtastic/memory/recall.js`
+  in a follow-up commit.
+- **Inspector "log tail" and dependency graph are placeholders.** Real
+  log tail wiring depends on the deferred WS channel.
