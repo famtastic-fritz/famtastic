@@ -573,7 +573,7 @@
     }
   ],
   "last_smoke_test": {
-    "timestamp": "2026-05-05T20:42:47.390074Z",
+    "timestamp": "2026-05-05T21:15:33.152386Z",
     "passed": 7,
     "failed": 0,
     "dns_fallback": false,

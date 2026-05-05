@@ -115,8 +115,13 @@ Proof: `proofs/mbsh-smoke-test-2026-05-05-green.log`
 
 ## Remaining Blockers
 
-1. Complete Netlify Git-provider linking in the UI for `mbsh-reunion-staging`.
-2. Rerun frontend deploy proof from the linked staging project.
+No deploy blockers remain for the MBSH proof. Staging and production Netlify projects are both GitHub-linked and branch-scoped.
+
+Follow-up platform work remains outside the MBSH deploy proof:
+
+1. Automate renewal for the `api.mbsh96reunion.com` Let's Encrypt certificate before `2026-08-03`.
+2. Rename the production Netlify project from `loquacious-valkyrie-37d5f8` to a human-readable production name.
+3. Build a structured Site Studio deploy-environment model instead of relying on per-site prose.
 
 ## 2026-05-05 API DNS/TLS Follow-Up
 
@@ -133,6 +138,27 @@ Final verification passed against the canonical API origin:
 
 Proof: `proofs/mbsh-api-dns-tls-smoke-2026-05-05.log`.
 
+## 2026-05-05 Netlify Branch-Link Follow-Up
+
+Fritz completed the missing Netlify Git-provider link for staging. Verification through the Netlify API now shows:
+
+- Staging project `mbsh-reunion-staging` (`3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf`) is linked to `https://github.com/famtastic-fritz/mbsh-reunion`, branch `staging`, publish directory `frontend/`.
+- Production project `loquacious-valkyrie-37d5f8` (`d83da14e-6513-4407-8cdf-8176975690c0`) is linked to the same repo, branch `main`, publish directory `frontend/`.
+- Staging and production both returned HTTP `200` from their root URLs.
+- `https://mbsh96reunion.com/` returned HTTP `200` through Netlify.
+
+Proof: `proofs/mbsh-netlify-branch-link-2026-05-05.log`.
+
+## 2026-05-05 Capture Follow-Up
+
+The deploy discoveries were captured into the v0.2 memory flow:
+
+- Source summary: `captures/inbox/mbsh-deploy-discoveries-2026-05-05.md`
+- Capture packet: `captures/inbox/cap_2026-05-05T21-12_a27e.json`
+- Review proposal: `captures/review/cap_2026-05-05T21-12_a27e.proposal.json`
+
+The capture generated 16 tagged extracts and 8 auto-promote eligible entries. They were left at review/proposal state so canonical memory promotion can happen intentionally.
+
 ## Task State
 
-`task-2026-05-04-027` was updated from `blocked` to `passed_with_blockers`. The old blockers for missing config/secrets, null API base URL, and missing service access are no longer accurate. The remaining blockers are Netlify UI linking and unresolved API DNS.
+`task-2026-05-04-027` is now `completed`. The old blockers for missing config/secrets, null API base URL, missing service access, API DNS, and Netlify UI linking are no longer accurate.

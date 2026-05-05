@@ -23,15 +23,20 @@ Migrated from `sites/mbsh-reunion-v2/*` to `sites/mbsh-reunion/*`. Old keys remo
 
 Project `street-family-reunion-staging` (id `3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf`) renamed to `mbsh-reunion-staging`. Default URL: `https://mbsh-reunion-staging.netlify.app`.
 
-**Manual step still required:** the Netlify to GitHub link must be established through the Netlify UI. Netlify's GitHub provider connection cannot be set reliably through the API for this project. After the rename, build settings came back empty.
+Fritz completed the Netlify GitHub provider link through the Netlify UI on 2026-05-05. The staging project now deploys from `famtastic-fritz/mbsh-reunion` branch `staging`, with publish directory `frontend/` and no build command.
 
-Required settings:
+Verified staging settings:
 
-1. Open `https://app.netlify.com/projects/mbsh-reunion-staging/settings/deploys`.
-2. Link site to repo: `git@github.com:famtastic-fritz/mbsh-reunion.git`.
-3. Production branch: `staging`.
-4. Build command: none.
-5. Publish directory: `frontend/`.
+- Site id: `3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf`
+- Repo: `https://github.com/famtastic-fritz/mbsh-reunion`
+- Provider: GitHub
+- Production branch: `staging`
+- Allowed branches: `staging`
+- Build command: none
+- Publish directory: `frontend/`
+- Latest deploy state: `ready`
+
+Proof: `proofs/mbsh-netlify-branch-link-2026-05-05.log`.
 
 ## Promote-to-prod model
 
@@ -44,7 +49,7 @@ A separate Netlify production project remains the intended production path:
 Promotion ladder:
 
 - `dev` branch: local only
-- `staging` branch: auto-deploys to staging Netlify after UI link
+- `staging` branch: auto-deploys to staging Netlify
 - `main` branch: deploys to production Netlify/custom domain
 - Tags `vYYYY.MM.DD-HHMM`: release markers for rollback tooling
 

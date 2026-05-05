@@ -359,7 +359,11 @@ IDEAHELP
     case "$CAPTURECMD" in
       extract)
         shift 2 || true
-        node "$SCRIPT_DIR/capture-insights.js" extract "$@"
+        if [[ "${1:-}" == "--source" ]]; then
+          node "$SCRIPT_DIR/session-capture.js" "$@"
+        else
+          node "$SCRIPT_DIR/capture-insights.js" extract "$@"
+        fi
         ;;
       help|*)
         cat <<'CAPTUREHELP'
@@ -367,11 +371,44 @@ fam-hub capture — Review-only knowledge capture
 
 Usage:
   fam-hub capture extract <source-file> [--out-dir captures/review] [--id capture-id]
+  fam-hub capture extract --source <claude-code|cowork|codex|manual> --input <path> [--session-id <id>]
 
 Extracts design decisions, breakthroughs, gaps, lessons, and contradictions
 into a review packet. It does not write canonical memory files.
 
 CAPTUREHELP
+        ;;
+    esac
+    ;;
+
+  memory)
+    MEMCMD="${2:-help}"
+    case "$MEMCMD" in
+      review)
+        shift 2 || true
+        node "$SCRIPT_DIR/memory-promote.js" review "$@"
+        ;;
+      promote)
+        shift 2 || true
+        node "$SCRIPT_DIR/memory-promote.js" promote "$@"
+        ;;
+      list-auto-eligible)
+        shift 2 || true
+        node "$SCRIPT_DIR/memory-promote.js" list-auto-eligible "$@"
+        ;;
+      help|*)
+        cat <<'MEMORYHELP'
+fam-hub memory — Review and promote captured knowledge
+
+Usage:
+  fam-hub memory review <capture-id-or-path>
+  fam-hub memory promote <proposal-id-or-path> [--auto] [--dry-run]
+  fam-hub memory list-auto-eligible <proposal-id-or-path>
+
+Capture packets live in captures/inbox/. Review writes proposals to captures/review/.
+Promotion writes canonical memory entries only after the promoter gate allows it.
+
+MEMORYHELP
         ;;
     esac
     ;;

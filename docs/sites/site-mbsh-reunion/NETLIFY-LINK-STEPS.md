@@ -1,37 +1,41 @@
-# Netlify Link Steps — MBSH Reunion Staging
+# Netlify Link Verification — MBSH Reunion Staging
 
-Netlify's GitHub repo connection has to be completed in the Netlify UI. The Netlify API/CLI can inspect the site, but it does not expose a reliable way to attach the Git provider connection for this project.
+This file originally captured the manual Netlify UI steps needed to connect the staging project to GitHub. Fritz completed the provider link in the Netlify UI on 2026-05-05. This document now records the verified state.
 
-## Target
+## Verified Target
 
 - Netlify project: `mbsh-reunion-staging`
 - Netlify site id: `3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf`
 - Netlify URL: `https://mbsh-reunion-staging.netlify.app`
-- GitHub repo: `git@github.com:famtastic-fritz/mbsh-reunion.git`
+- GitHub repo: `https://github.com/famtastic-fritz/mbsh-reunion`
 - Production branch for this Netlify project: `staging`
 - Build command: none
 - Publish directory: `frontend/`
+- Latest verified deploy state: `ready`
 
-## Steps
+## Verified Production Project
 
-1. Open `https://app.netlify.com/projects/mbsh-reunion-staging/settings/deploys`.
-2. In **Build settings**, choose the option to link or edit the connected repository.
-3. Select GitHub as the provider.
-4. Select repository `famtastic-fritz/mbsh-reunion`.
-5. Set production branch to `staging`.
-6. Leave build command blank.
-7. Set publish directory to `frontend/`.
-8. Save settings.
-9. Trigger a deploy from the `staging` branch.
+- Netlify project: `loquacious-valkyrie-37d5f8`
+- Netlify site id: `d83da14e-6513-4407-8cdf-8176975690c0`
+- Netlify URL: `https://loquacious-valkyrie-37d5f8.netlify.app`
+- Custom domain: `https://mbsh96reunion.com`
+- GitHub repo: `https://github.com/famtastic-fritz/mbsh-reunion`
+- Production branch: `main`
+- Build command: none
+- Publish directory: `frontend/`
+- Latest verified deploy state: `ready`
 
 ## Verification
 
-After saving, run:
+Run:
 
 ```bash
 cd /Users/famtasticfritz/famtastic-sites/mbsh-reunion
 netlify status
 netlify sites:list --json | jq '.[] | select(.id=="3b4f9abd-d0cd-4b78-9ac1-d1b4b51606bf")'
+netlify sites:list --json | jq '.[] | select(.id=="d83da14e-6513-4407-8cdf-8176975690c0")'
+curl -I https://mbsh-reunion-staging.netlify.app/
+curl -I https://mbsh96reunion.com/
 ```
 
 Expected result:
@@ -39,3 +43,6 @@ Expected result:
 - `netlify status` reports the local repo is linked to `mbsh-reunion-staging`.
 - The site record shows non-empty build settings for repo `famtastic-fritz/mbsh-reunion`.
 - `https://mbsh-reunion-staging.netlify.app` serves the current `staging` branch deploy.
+- `https://mbsh96reunion.com` serves the current `main` branch deploy through the production Netlify project.
+
+Proof: `proofs/mbsh-netlify-branch-link-2026-05-05.log`.
