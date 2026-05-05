@@ -5002,6 +5002,23 @@ of truth yet, but it records the intended contract every Workbench mode must
 answer before implementation: purpose, center surface, primary objects,
 capabilities, proof required, and anti-patterns.
 
+2026-05-04 implementation update: the Workbench Foundation prototype now
+follows the frozen domain rail instead of the earlier scope-initial rail. The
+left nav is the locked domain list from `docs/STUDIO-UI-FOUNDATION.md`: Sites,
+Brainstorm, Plans, Components, Media, Research, and Admin. The former mode
+strip is replaced with a workspace contract strip that shows the selected
+domain's purpose, center surface, and proof rule. `workbench-workspaces.json`
+is now schema `0.2.0` with contracts for all seven domains; this closes the
+first-pass frozen-contract rebuild, workspace-contract declaration, and
+prompt-first Media Studio tasks for the prototype.
+
+Playwright proof: `http://localhost:3334/workbench-foundation.html` was opened
+through launchd-managed Studio, every domain button was clicked, each active
+domain and contract purpose was verified, Plan mode rendered
+`.plan-intel-surface`, Media rendered `.media-studio`, and no console errors
+were observed. Screenshot:
+`proofs/workbench-domain-contracts-2026-05-04.png`.
+
 Existing implementation note: the current production Studio already has a
 Media Studio mini-app in `site-studio/public/js/studio-screens.js` and
 `site-studio/public/css/studio-screens.css` with Create, Image, Motion,
@@ -5076,8 +5093,8 @@ state. The existing seed is `site-studio/config/studio-capabilities.json`.
 ### Known Gaps Opened / Still Open
 
 - Workbench Foundation is production-linked as an embedded tab and standalone fallback, but it is not yet the default Studio shell replacement.
-- Plan mode uses static data; it is not connected to `plans/registry.json`, `tasks/tasks.jsonl`, `runs/runs.jsonl`, or live job state yet.
-- `fam-hub plan review`, `fam-hub plan graph`, `fam-hub task promote`, and `fam-hub run start` are not implemented.
+- Plan mode reads `site-studio/public/data/workbench-plan-state.json`, a browser-safe mirror of `plans/registry.json`, `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`; automatic regeneration from source ledgers is still missing.
+- `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start` exist. `fam-hub plan graph` is still not implemented.
 - Capability Store broader than Media Studio is not implemented.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.

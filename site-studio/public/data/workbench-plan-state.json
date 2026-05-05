@@ -12,7 +12,7 @@
     "absorbed_record_count": 10,
     "task_count": 23,
     "run_count": 1,
-    "proof_count": 9,
+    "proof_count": 10,
     "current_run": "run-2026-05-04-consolidation-apply",
     "drive_sync_status": "complete",
     "workflow_as_data_status": "open",
@@ -171,6 +171,6 @@
     "plan_id": "plan-task-run-intelligence",
     "status": "active",
     "target": "complete_p0_then_report",
-    "current_step": "Registry and ledgers applied; fam-hub review/promote/start commands verified; Workbench Plan mode now renders browser-safe consolidated plan state through Studio with Playwright proof."
+    "current_step": "Workbench frozen-contract rail, workspace contracts, and prompt-first Media Studio verified through Playwright; next remaining P0s are Studio/Shay behavior proof and BuildIntent/parallelBuild instrumentation."
   }
 }

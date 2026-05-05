@@ -2,6 +2,7 @@
   const TOOL_ORDER_STORAGE_KEY = 'famtastic-workbench-tool-order';
 
   const state = {
+    domain: 'sites',
     scope: 'all-sites',
     submode: 'sites',
     selected: 'portfolio',
@@ -15,7 +16,168 @@
 
   const themes = ['malachite', 'electric', 'paper'];
 
+  const domains = {
+    sites: {
+      label: 'Sites',
+      mode: 'build',
+      scope: 'all-sites',
+      submode: 'sites',
+      purpose: 'Portfolio, site, page, build, deploy, and proof work.',
+      surface: 'Live preview first',
+      proof: 'Screenshots, links, a11y, fulfillment'
+    },
+    brainstorm: {
+      label: 'Brainstorm',
+      mode: 'brainstorm',
+      scope: 'brainstorm',
+      submode: 'inbox',
+      purpose: 'Capture raw ideas before they become plans.',
+      surface: 'Idea inbox and promotion queue',
+      proof: 'Promotion, rejection, or parked rationale'
+    },
+    plans: {
+      label: 'Plans',
+      mode: 'plan',
+      scope: 'plans',
+      submode: 'parents',
+      purpose: 'Explain why work exists and what proof closes it.',
+      surface: 'Registry, task, run, and proof graph',
+      proof: 'Status, blocker, next action, closure proof'
+    },
+    components: {
+      label: 'Components',
+      mode: 'components',
+      scope: 'components',
+      submode: 'canvas',
+      purpose: 'Create and promote reusable component systems.',
+      surface: 'Component canvas and variant proof',
+      proof: 'Responsive, usage, dependency, promotion'
+    },
+    media: {
+      label: 'Media Studio',
+      mode: 'media',
+      scope: 'media',
+      submode: 'prompt',
+      purpose: 'Generate and govern site media from prompt to usage.',
+      surface: 'Prompt-first creation surface',
+      proof: 'Route, cost, rights, quality, usage'
+    },
+    research: {
+      label: 'Research',
+      mode: 'research',
+      scope: 'research',
+      submode: 'questions',
+      purpose: 'Turn evidence into decisions, gaps, and tasks.',
+      surface: 'Source board and promotion packet',
+      proof: 'Sources, claims, contradictions, target'
+    },
+    admin: {
+      label: 'Admin',
+      mode: 'admin',
+      scope: 'admin',
+      submode: 'health',
+      purpose: 'Operate keys, services, deploy targets, and capability health.',
+      surface: 'Environment and guardrail board',
+      proof: 'Health, auth, smoke, rollback, approval'
+    }
+  };
+
   const scopes = {
+    brainstorm: {
+      title: 'Brainstorm',
+      submodes: ['inbox', 'promote', 'parked'],
+      objects: {
+        inbox: [
+          ['raw-ideas', 'Raw idea inbox', 'Capture without committing execution weight'],
+          ['site-candidates', 'Site candidates', 'Revenue hypotheses before blueprinting'],
+          ['media-seeds', 'Media seeds', 'Visual ideas before generation cost']
+        ],
+        promote: [
+          ['promote-plan', 'Promote to plan', 'Turn an idea into a task with proof'],
+          ['promote-site', 'Promote to site', 'Create a site candidate with market fit'],
+          ['promote-research', 'Promote to research', 'Ask for evidence before action']
+        ],
+        parked: [
+          ['parked-context', 'Parked context', 'Useful, but not active work'],
+          ['rejected-ideas', 'Rejected ideas', 'Do-not-repeat rationale']
+        ]
+      }
+    },
+    plans: {
+      title: 'Plans',
+      submodes: ['parents', 'tasks', 'runs', 'proof'],
+      objects: {
+        parents: [
+          ['four-parents', 'Four parent plans', 'Workbench, plan intelligence, build trace, MBSH'],
+          ['absorbed-context', 'Absorbed context', 'Old plans kept as evidence, not active work']
+        ],
+        tasks: [
+          ['p0-lane', 'P0 lane', 'Executable work that unblocks the system'],
+          ['p1-lane', 'P1 lane', 'Next build layer after the proof substrate'],
+          ['p2-lane', 'P2 lane', 'Only after traces are trustworthy']
+        ],
+        runs: [
+          ['active-run', 'Active run', 'Current target, step, and report-back rule'],
+          ['run-history', 'Run history', 'What closed, what carried, what blocked']
+        ],
+        proof: [
+          ['proof-ledger', 'Proof ledger', 'Screenshots, CLI checks, docs, and verification'],
+          ['gap-evidence', 'Gap evidence', 'Failures that need GUI remedies']
+        ]
+      }
+    },
+    components: {
+      title: 'Components',
+      submodes: ['canvas', 'variants', 'usage', 'promote'],
+      objects: {
+        canvas: [['component-canvas', 'Component canvas', 'Build and inspect the reusable unit']],
+        variants: [['state-matrix', 'State matrix', 'Variants, interaction states, responsive shapes']],
+        usage: [['usage-map', 'Usage map', 'Where this component appears and what it affects']],
+        promote: [['promotion-gate', 'Promotion gate', 'Proof before shared library adoption']]
+      }
+    },
+    media: {
+      title: 'Media Studio',
+      submodes: ['prompt', 'results', 'library', 'usage'],
+      objects: {
+        prompt: [
+          ['media-prompt', 'Prompt job', 'Destination slot, reference, route, and quality target'],
+          ['reference-inputs', 'Reference inputs', 'Images, brand pack, prior winners, constraints']
+        ],
+        results: [
+          ['generation-queue', 'Generation queue', 'Queued, running, ready, rejected, promoted'],
+          ['variant-review', 'Variant review', 'Compare outputs before usage']
+        ],
+        library: [
+          ['asset-library', 'Asset library support', 'Find and reuse without making browsing the workspace'],
+          ['prompt-blueprints', 'Prompt blueprints', 'Reusable media recipes']
+        ],
+        usage: [
+          ['slot-map', 'Slot map', 'Which asset is used where'],
+          ['rights-proof', 'Rights proof', 'Quality, rights, cost, and replacement rule']
+        ]
+      }
+    },
+    research: {
+      title: 'Research',
+      submodes: ['questions', 'sources', 'claims', 'promote'],
+      objects: {
+        questions: [['research-question', 'Question board', 'What needs evidence before action']],
+        sources: [['source-stack', 'Source stack', 'URLs, local files, screenshots, and notes']],
+        claims: [['claim-table', 'Claim table', 'Findings, contradictions, confidence, and owner']],
+        promote: [['promotion-packet', 'Promotion packet', 'Decision, gap, task, or canonical memory target']]
+      }
+    },
+    admin: {
+      title: 'Admin',
+      submodes: ['health', 'keys', 'deploy', 'capabilities'],
+      objects: {
+        health: [['studio-health', 'Studio health', 'Launchd, logs, routes, and service state']],
+        keys: [['secrets', 'Keys and secrets', 'Presence, redaction, scopes, and failure mode']],
+        deploy: [['deploy-targets', 'Deploy targets', 'Domains, auth, smoke tests, rollback']],
+        capabilities: [['capability-manifest', 'Capability manifest', 'Brains, tools, costs, and gaps']]
+      }
+    },
     'all-sites': {
       title: 'All Sites',
       submodes: ['sites', 'pages', 'meta', 'media', 'templates', 'runs', 'proof'],
@@ -152,6 +314,16 @@
         'Proof assist': ['Screenshot', 'A11y scan', 'Link check', 'Fulfillment trace']
       }
     },
+    brainstorm: {
+      label: 'Brainstorm',
+      title: 'Brainstorm Workbench',
+      job: 'capture/triage/promote/park',
+      tools: {
+        'Capture tools': ['Quick capture', 'Merge idea', 'Tag revenue fit', 'Park context'],
+        'Promotion tools': ['Promote to plan', 'Promote to site', 'Promote to research', 'Create proof need'],
+        'Memory tools': ['Extract lesson', 'Log contradiction', 'Do-not-repeat', 'Create capture packet']
+      }
+    },
     plan: {
       label: 'Plan',
       title: 'Plan workbench',
@@ -160,6 +332,16 @@
         'Plan tools': ['Show why', 'Find blockers', 'Find duplicates', 'Mark stale'],
         'Run tools': ['Start run', 'Assign worker', 'Require proof', 'Create approval'],
         'Graph tools': ['Dependency graph', 'Unlock map', 'Parallel lanes', 'Risk view']
+      }
+    },
+    admin: {
+      label: 'Admin',
+      title: 'Admin Workbench',
+      job: 'health/keys/deploy/capabilities/gates',
+      tools: {
+        'Health tools': ['Launchd status', 'Tail logs', 'Route smoke', 'Config check'],
+        'Capability tools': ['Manifest review', 'Brain route', 'Provider auth', 'Cost state'],
+        'Deploy tools': ['Stage gate', 'Smoke test', 'Rollback proof', 'Export pack']
       }
     },
     components: {
@@ -235,6 +417,16 @@
     render();
   }
 
+  function setDomain(domainId) {
+    const domain = domains[domainId] || domains.sites;
+    state.domain = domainId in domains ? domainId : 'sites';
+    state.mode = domain.mode;
+    state.scope = domain.scope;
+    state.submode = domain.submode;
+    state.selected = currentObjects()[0][0];
+    render();
+  }
+
   function setSubmode(submode) {
     state.submode = submode;
     state.selected = currentObjects()[0][0];
@@ -263,9 +455,10 @@
     document.getElementById('status-scope').textContent = scope.title;
     document.getElementById('status-mode').textContent = mode.label || titleCase(state.mode);
     document.body.dataset.mode = state.mode;
+    document.body.dataset.domain = state.domain;
+    renderContract();
 
-    syncActive('.scope-button', 'scope', state.scope);
-    syncActive('.mode-button', 'mode', state.mode);
+    syncActive('.domain-button', 'domain', state.domain);
     renderSubmodes(scope);
     renderObjects();
     renderBench(object);
@@ -293,6 +486,8 @@
     const stage = document.getElementById('bench-stage');
     if (state.mode === 'build') {
       stage.innerHTML = buildPreviewBench(title, description);
+    } else if (state.mode === 'brainstorm') {
+      stage.innerHTML = buildBrainstormBench(title, description);
     } else if (state.mode === 'plan') {
       stage.innerHTML = buildPlanBench(title, description);
     } else if (state.mode === 'media') {
@@ -301,9 +496,18 @@
       stage.innerHTML = buildResearchBench(title, description);
     } else if (state.mode === 'deploy') {
       stage.innerHTML = buildDeployBench(title, description);
+    } else if (state.mode === 'admin') {
+      stage.innerHTML = buildAdminBench(title, description);
     } else {
       stage.innerHTML = buildComponentBench(title, description, id);
     }
+  }
+
+  function renderContract() {
+    const domain = domains[state.domain] || domains.sites;
+    document.getElementById('contract-purpose').textContent = `${domain.label}: ${domain.purpose}`;
+    document.getElementById('contract-surface').textContent = domain.surface;
+    document.getElementById('contract-proof').textContent = `Proof: ${domain.proof}`;
   }
 
   function buildPreviewBench(title, description) {
@@ -521,10 +725,28 @@
     </div>`;
   }
 
+  function buildBrainstormBench(title, description) {
+    return `<div class="source-board brainstorm-board">
+      ${source('Capture', `${title}: ${description}`)}
+      ${source('Triage', 'Keep, merge, reject, or promote. Nothing becomes work until it has purpose and proof.')}
+      ${source('Promotion', 'Promote into Plans, Sites, Media Studio, or Research with parent, next action, and acceptance.')}
+      ${source('Fritz filter', 'Saves a click, runs without him, makes money, compounds learning, or prevents a mistake.')}
+      ${source('Memory target', 'Decisions and do-not-repeat lessons go to canonical memory, not another loose note.')}
+      ${source('Guardrail', 'Park useful context without letting it become a fifth active plan.')}
+    </div>`;
+  }
+
   function buildDeployBench(title, description) {
     return `<div class="deploy-board">
       <div>${deploy('Local', 'Editable and reversible. Launchd owns Studio.')} ${deploy('Staging', 'Proof required before production.')} ${deploy('Production', 'Hard-stop approval, DNS, rollback, secrets.')}</div>
       <div>${deploy(title, description)} ${deploy('Portability', 'Export pack, manifest, asset rights, environment notes.')}</div>
+    </div>`;
+  }
+
+  function buildAdminBench(title, description) {
+    return `<div class="deploy-board admin-board">
+      <div>${deploy('Health', 'Launchd owns Studio. Routes, logs, and service state are checked before UI claims are trusted.')} ${deploy('Keys', 'Presence, scope, redaction, and silent-failure prevention.')} ${deploy(title, description)}</div>
+      <div>${deploy('Capabilities', 'Brains, tools, providers, permissions, current gaps, and costs.')} ${deploy('Deploy gates', 'Staging, smoke, production approval, rollback, and export packs.')}</div>
     </div>`;
   }
 
@@ -696,6 +918,7 @@
   document.addEventListener('click', (event) => {
     const target = event.target.closest('button');
     if (!target) return;
+    if (target.dataset.domain) setDomain(target.dataset.domain);
     if (target.dataset.scope) setScope(target.dataset.scope);
     if (target.dataset.submode) setSubmode(target.dataset.submode);
     if (target.dataset.object) setSelected(target.dataset.object);
@@ -715,7 +938,7 @@
     if (target.dataset.action === 'open-admin') openModal('admin');
     if (target.dataset.action === 'close-modal') closeModal();
     if (target.dataset.action === 'focus-shay') {
-      setMode('build');
+      setDomain('sites');
       state.console = 'trace';
       render();
     }

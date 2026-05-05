@@ -12,12 +12,13 @@
 - Workflow-as-data and the pipeline visualizer remain open under `build-intent-fulfillment-trace`.
 - Task, run, and proof ledgers now contain first records.
 - Workbench Plan mode now reads a browser-safe consolidated plan state packet at `site-studio/public/data/workbench-plan-state.json`.
+- Workbench Foundation now follows the frozen seven-domain left rail, exposes contract pills in the workspace chrome, and keeps Media as prompt-first **Media Studio**.
 
 ## Active Parent Plans
 
 | Plan | Status | Next action |
 |---|---|---|
-| `studio-workbench-foundation` | Active parent plan | Continue the frozen-contract Workbench rebuild now that Plan mode reads consolidated plan state. |
+| `studio-workbench-foundation` | Active parent plan | Register Workbench as a Shay context provider after the frozen-contract rail/contracts and Plan mode wiring. |
 | `plan-task-run-intelligence` | Active parent plan | Use the promoted task/run/proof ledgers as the operating checklist and build review/promote/start commands. |
 | `build-intent-fulfillment-trace` | Active parent plan | Instrument `parallelBuild()` before declarative workflow refactor or visualizer work. |
 | `site-mbsh-reunion` | Site-scoped active parent plan | Split MBSH site work into backend/RSVP/sponsor/media/chatbot/deploy/content/proof tasks and promote reusable gaps upward. |
@@ -37,11 +38,11 @@ fam-hub plan show build-intent-fulfillment-trace
 
 ## Remaining Priority
 
-1. P0: Rebuild the rest of Workbench against `docs/STUDIO-UI-FOUNDATION.md`.
-2. P0: Use Playwright and actual Shay/Shay-Shay calls for Studio behavior proof.
-3. P0/P1: Declare BuildIntent v2 current and instrument `parallelBuild()`.
-4. P1/P2: Start workflow-as-data phase 1, then build pipeline visualizer inspect + trace + propose.
-5. P0/P1: Split MBSH site work from reusable platform gaps.
+1. P0: Use Playwright and actual Shay/Shay-Shay calls for Studio behavior proof.
+2. P0/P1: Declare BuildIntent v2 current and instrument `parallelBuild()`.
+3. P1/P2: Start workflow-as-data phase 1, then build pipeline visualizer inspect + trace + propose.
+4. P0/P1: Split MBSH site work from reusable platform gaps.
+5. P1: Register Workbench as a Shay context provider and automate status-packet regeneration.
 
 ## Newly Available
 
@@ -55,3 +56,4 @@ fam-hub plan show build-intent-fulfillment-trace
 - Studio Plans panel rendering from registry/ledgers.
 - Workbench Shay context provider.
 - Automatic status-packet regeneration from code instead of manual update.
+- Media Studio controls are still not unified between the Workbench surface and the richer production mini-app.

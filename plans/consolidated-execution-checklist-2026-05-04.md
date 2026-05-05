@@ -91,18 +91,18 @@ This follows the solution hierarchy:
 
 ### P0 — Make The System Executable
 
-- [ ] Rewrite `plans/registry.json` to the four active parent plans above.
-- [ ] Back up the current registry before rewrite.
-- [ ] Promote embedded registry task arrays into `tasks/tasks.jsonl` with `plan_id`, priority, owner/runner, acceptance, proof requirement, and status.
-- [ ] Add at least one `runs/runs.jsonl` record for the consolidation run.
-- [ ] Add proof records for the freeze, consolidation, and any closed baseline/gap evidence.
-- [ ] Update `FAMTASTIC-STATUS.md` from the consolidated registry.
+- [x] Rewrite `plans/registry.json` to the four active parent plans above.
+- [x] Back up the current registry before rewrite.
+- [x] Promote embedded registry task arrays into `tasks/tasks.jsonl` with `plan_id`, priority, owner/runner, acceptance, proof requirement, and status.
+- [x] Add at least one `runs/runs.jsonl` record for the consolidation run.
+- [x] Add proof records for the freeze, consolidation, and any closed baseline/gap evidence.
+- [x] Update `FAMTASTIC-STATUS.md` from the consolidated registry.
 
 ### P0 — Protect The Workbench Direction
 
-- [ ] Rebuild Workbench against `docs/STUDIO-UI-FOUNDATION.md`, not against the earlier generic prototype.
-- [ ] Make every workspace declare its workspace contract before implementation.
-- [ ] Keep Media as **Media Studio**, with prompt input as the primary center work surface and library/tooling as support.
+- [x] Rebuild Workbench against `docs/STUDIO-UI-FOUNDATION.md`, not against the earlier generic prototype.
+- [x] Make every workspace declare its workspace contract before implementation.
+- [x] Keep Media as **Media Studio**, with prompt input as the primary center work surface and library/tooling as support.
 - [x] Wire Workbench Plan mode to registry/task/run/proof data instead of static demo data.
 
 ### P0 — Prove Builds Through Actual Studio

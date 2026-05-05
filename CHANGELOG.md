@@ -421,3 +421,7 @@ Applied the consolidation instead of leaving it as a proposal: backed up the old
 ## 2026-05-04 — Workbench Plan mode registry wiring
 
 Added `site-studio/public/data/workbench-plan-state.json` as a browser-safe mirror of the consolidated registry/task/run/proof state and rewired Workbench Plan mode to render real parent plans, P0/P1/P2 lanes, current run state, and Drive/workflow/visualizer status. Verified through launchd-managed Studio at `localhost:3334` with Playwright by opening the Workbench, switching to Plan mode, checking required consolidated-plan text, confirming no console errors, and saving `proofs/workbench-plan-mode-2026-05-04.png`. Deferred: automatic generation of the browser-safe state packet and Shay context-provider registration.
+
+## 2026-05-04 — Workbench frozen-contract domain rail
+
+Rebuilt the Workbench Foundation prototype against the frozen UI foundation by replacing the scope-initial left rail with the seven locked domains, replacing the duplicate mode strip with workspace contract pills, and updating `workbench-workspaces.json` to declare contracts for all top-level domains. Verified through launchd-managed Studio with Playwright by clicking Sites, Brainstorm, Plans, Components, Media, Research, and Admin, confirming the active domain/contract text, checking Plan and Media surfaces, and saving `proofs/workbench-domain-contracts-2026-05-04.png`. Deferred: making Workbench the default Studio shell, automatic status-packet generation, and Shay context-provider registration.

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAMtastic Workbench Foundation</title>
+  <link rel="stylesheet" href="css/workbench-foundation.css">
+</head>
+<body data-theme="malachite">
+  <div class="wb-shell" id="wb-shell">
+    <header class="topbar">
+      <div class="brand-lockup" aria-label="FAMtastic Workbench">
+        <span class="brand-mark">F</span>
+        <span class="brand-copy">FAMtastic <b>Workbench</b></span>
+      </div>
+      <button class="command-center" type="button" data-action="open-command">
+        <span>Ask, search, run, jump, or explain the screen</span>
+        <kbd>CMD K</kbd>
+      </button>
+      <div class="top-actions">
+        <button class="status-pill" type="button" data-action="open-runs"><span class="live-dot"></span> Run active</button>
+        <button class="status-pill" type="button" data-action="open-admin">Admin</button>
+        <button class="status-pill shay-watch" type="button" data-action="focus-shay">Shay watching</button>
+      </div>
+    </header>
+
+    <nav class="scope-rail domain-rail" aria-label="Studio domains">
+      <button class="domain-button active" type="button" data-domain="sites" title="Sites"><span>S</span><small>Sites</small></button>
+      <button class="domain-button" type="button" data-domain="brainstorm" title="Brainstorm"><span>B</span><small>Brain</small></button>
+      <button class="domain-button" type="button" data-domain="plans" title="Plans"><span>P</span><small>Plans</small></button>
+      <button class="domain-button" type="button" data-domain="components" title="Components"><span>C</span><small>Comp</small></button>
+      <button class="domain-button" type="button" data-domain="media" title="Media"><span>M</span><small>Media</small></button>
+      <button class="domain-button" type="button" data-domain="research" title="Research"><span>R</span><small>Intel</small></button>
+      <button class="domain-button rail-bottom" type="button" data-domain="admin" title="Admin"><span>A</span><small>Admin</small></button>
+    </nav>
+
+    <aside class="object-nav" id="object-nav">
+      <div class="object-nav-head">
+        <div>
+          <div class="eyebrow">Scope</div>
+          <h2 id="scope-title">All Sites</h2>
+        </div>
+        <button class="icon-button" type="button" data-action="toggle-nav" aria-label="Collapse object navigation">&lt;</button>
+      </div>
+      <div class="submode-strip" id="submode-strip"></div>
+      <div class="object-list" id="object-list"></div>
+      <div class="nav-footer">
+        <button class="soft-button" type="button" data-action="open-capabilities">Capability store</button>
+        <button class="soft-button" type="button" data-action="cycle-theme">Theme</button>
+      </div>
+    </aside>
+
+    <section class="mode-dock contract-dock" aria-label="Workspace contract">
+      <span class="contract-pill" id="contract-purpose">Sites workspace</span>
+      <span class="contract-pill" id="contract-surface">Live preview first</span>
+      <span class="contract-pill" id="contract-proof">Proof required</span>
+    </section>
+
+    <main class="workbench">
+      <div class="bench-head">
+        <div>
+          <div class="crumb" id="crumb">All Sites / Sites / Portfolio overview</div>
+          <h1 id="bench-title">Site workbench</h1>
+        </div>
+        <div class="bench-head-actions">
+          <button class="glass-button" type="button" data-action="compare">Compare</button>
+          <button class="glass-button" type="button" data-action="review">Review</button>
+          <button class="glass-button primary" type="button" data-action="focus-shay">Ask Shay</button>
+        </div>
+      </div>
+
+      <section class="bench-stage" id="bench-stage" aria-live="polite"></section>
+
+      <section class="bottom-console" id="bottom-console">
+        <div class="console-head">
+          <div class="console-tabs">
+            <button class="console-tab active" type="button" data-console="runs">Runs <span>1</span></button>
+            <button class="console-tab" type="button" data-console="logs">Logs <span>42</span></button>
+            <button class="console-tab" type="button" data-console="trace">Trace <span>8</span></button>
+            <button class="console-tab" type="button" data-console="approvals">Approvals <span>2</span></button>
+            <button class="console-tab" type="button" data-console="proof">Proof <span>5</span></button>
+          </div>
+        <button class="icon-button" type="button" data-action="toggle-console">v</button>
+        </div>
+        <div class="console-body" id="console-body"></div>
+      </section>
+    </main>
+
+    <aside class="tool-shelf" id="tool-shelf" aria-label="Context tools">
+      <div class="shelf-head">
+        <div>
+          <div class="eyebrow">Tools</div>
+          <h2 id="tool-title">Context tools</h2>
+          <p class="shelf-role">Move, reorder, and keep them behind the job.</p>
+        </div>
+        <button class="icon-button" type="button" data-action="toggle-tools">&gt;</button>
+      </div>
+      <div class="tool-pods" id="tool-pods"></div>
+    </aside>
+
+    <button class="shay-orb" type="button" data-action="focus-shay" aria-label="Open Shay">S</button>
+
+    <footer class="status-strip">
+      <span id="status-scope">All Sites</span>
+      <span id="status-mode">Build</span>
+      <span>FAM 94</span>
+      <span>LH 98</span>
+      <span>a11y 100</span>
+      <span>staging</span>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop" role="presentation"></div>
+  <section class="wb-modal hidden" id="wb-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow" id="modal-eyebrow">Workbench</div>
+        <h2 id="modal-title">Modal</h2>
+      </div>
+      <button class="glass-button" type="button" data-action="close-modal">Close</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </section>
+
+  <script src="js/workbench-foundation.js"></script>
+</body>
+</html>

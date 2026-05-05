@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.2.0",
+  "created_at": "2026-05-04",
+  "foundation": "docs/STUDIO-UI-FOUNDATION.md",
+  "principle": "Every top-level domain declares purpose, center surface, primary objects, capabilities, proof, and what to avoid before UI work is treated as real.",
+  "depth_rule": {
+    "native_edges": "Darker and stable: global domains, durable state, admin.",
+    "secondary_navigation": "More translucent: domain-specific object navigation.",
+    "workspace_overlays": "Most translucent: temporary controls over the active workbench.",
+    "center": "Dominant and task-shaped: preview, inbox, graph, canvas, prompt, source board, or environment gate depending on domain."
+  },
+  "top_level_domains": [
+    "sites",
+    "brainstorm",
+    "plans",
+    "components",
+    "media",
+    "research",
+    "admin"
+  ],
+  "workspaces": {
+    "sites": {
+      "label": "Sites",
+      "purpose": "Manage the portfolio and every individual site from intent through build, proof, deploy, and learning.",
+      "center_surface": "Live site/page preview remains dominant while site, page, meta, media, template, run, and proof lanes expose the selected job.",
+      "primary_objects": ["site", "page", "section", "component instance", "media slot", "form/function", "build run", "proof item"],
+      "capabilities": ["portfolio_view", "single_site_overview", "live_preview", "section_edit", "metadata_edit", "media_slot_binding", "template_recipe_review", "build_trace", "deploy_gate", "visual_compare", "accessibility_check", "link_check", "fulfillment_trace"],
+      "proof_required": ["screenshot", "accessibility", "links", "console", "requested_changes_fulfilled", "deploy_preflight_when_shipping"],
+      "avoid": ["dashboard cards replacing the preview", "fixed tools unrelated to the selected object", "tool panels competing with the selected job"]
+    },
+    "brainstorm": {
+      "label": "Brainstorm",
+      "purpose": "Capture raw ideas before they become plans, sites, research tasks, or parked context.",
+      "center_surface": "Idea inbox with triage, merge, reject, park, and promote lanes.",
+      "primary_objects": ["idea", "site candidate", "media seed", "research question", "parked context", "promotion packet"],
+      "capabilities": ["quick_capture", "merge_duplicates", "revenue_hypothesis", "fritz_filter", "promote_to_plan", "promote_to_site", "promote_to_research", "park_with_reason"],
+      "proof_required": ["promotion_target_or_rejection_reason", "expected_value", "next_action", "owner_or_runner"],
+      "avoid": ["letting raw ideas become a fifth active plan", "promoting without proof requirements"]
+    },
+    "plans": {
+      "label": "Plans",
+      "purpose": "Explain why work exists, what it unlocks, what blocks it, and what proof closes it.",
+      "center_surface": "Registry, dependency, task, run, approval, and proof graph anchored to the four active parent plans.",
+      "primary_objects": ["parent plan", "task", "run", "approval", "proof item", "gap", "absorbed context"],
+      "capabilities": ["show_why", "dependency_graph", "stale_detection", "duplicate_detection", "worker_assignment", "proof_gate", "status_export", "capture_packet"],
+      "proof_required": ["plan_status", "blocker_state", "next_action", "owner_or_runner", "closure_proof"],
+      "avoid": ["task lists without bigger-picture context", "parallel plan documents that bypass the registry"]
+    },
+    "components": {
+      "label": "Components",
+      "purpose": "Create, adapt, test, version, and promote reusable UI/component systems.",
+      "center_surface": "Component canvas with variants, states, responsive views, usage proof, dependency checks, and promotion gates.",
+      "primary_objects": ["component package", "variant", "state", "usage instance", "dependency", "promotion candidate"],
+      "capabilities": ["variant_canvas", "state_preview", "dependency_check", "usage_map", "responsive_proof", "promotion_gate"],
+      "proof_required": ["responsive_screenshot", "usage_count", "dependency_status", "promotion_reason"],
+      "avoid": ["library cards without a working canvas", "promoting shared UI without usage proof"]
+    },
+    "media": {
+      "label": "Media Studio",
+      "purpose": "Create site media: images, video, logos, brand assets, backgrounds, prompt blueprints, upscales, and edited canvases.",
+      "center_surface": "Prompt-first creation surface with mode-specific controls and reference inputs; queue, results, library, and usage proof remain supporting surfaces.",
+      "primary_objects": ["prompt", "reference asset", "image", "video", "logo", "brand pack", "blueprint", "upscale job", "canvas edit", "asset family"],
+      "capabilities": ["text_to_image", "text_to_video", "image_to_video", "reference_image", "transparent_png", "logo_pack", "prompt_blueprint", "upscale", "canvas_edit", "usage_map", "rights_check", "telemetry"],
+      "proof_required": ["site_page_slot", "route_used", "cost_time", "quality_review", "rights_status", "usage_or_rejection", "replacement_rule"],
+      "avoid": ["calling the workspace Media Library", "making library browsing the whole workspace", "provider-first UI copy"]
+    },
+    "research": {
+      "label": "Research",
+      "purpose": "Answer capability, design, market, technical, and contradiction questions with evidence that can be promoted into memory.",
+      "center_surface": "Source board with question, sources, claims, contradictions, synthesis, and promotion packet.",
+      "primary_objects": ["topic", "source", "claim", "finding", "contradiction", "promotion packet"],
+      "capabilities": ["web_search", "source_fetch", "local_search", "claim_extraction", "source_compare", "citation_capture", "contradiction_detection", "promote_capture"],
+      "proof_required": ["source_urls", "claim_summary", "decision_or_gap", "promotion_target"],
+      "avoid": ["research notes that do not become decisions, gaps, or tasks"]
+    },
+    "admin": {
+      "label": "Admin",
+      "purpose": "Operate the system: keys, deploy targets, capability manifest, launchd health, route smoke tests, and controlled environment changes.",
+      "center_surface": "Environment and guardrail board with health, auth, domains, smoke tests, rollback, exports, and hard-stop approvals.",
+      "primary_objects": ["service", "environment", "deploy run", "domain", "provider auth", "secret", "capability", "approval"],
+      "capabilities": ["launchd_status", "log_tail", "health_check", "provider_auth", "domain_status", "stage_deploy", "smoke_test", "rollback_path", "export_pack", "production_approval"],
+      "proof_required": ["target_environment", "service_status", "auth_state", "latest_build", "smoke_test", "rollback", "approval"],
+      "avoid": ["silent production deploys", "hiding auth or DNS risk", "manual Studio starts outside launchd"]
+    }
+  }
+}
