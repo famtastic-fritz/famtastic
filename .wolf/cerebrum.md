@@ -456,3 +456,11 @@ No plan may stay `status: active` with zero open tasks for more than one
 session. Use `scripts/plans/audit.js` to detect drift and `scripts/plans/closeout.js`
 to ship packets. Memory candidates in closeout packets flow into the
 chat-capture pipeline automatically.
+
+### bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche — 2026-05-05 (auto-promoted)
+
+**Type:** `bug-pattern` | **Confidence:** 0.85 | **Facets:** ops
+
+When the locked design doesn't match what works, the next agent will follow whichever surface produc
+
+_See `memory/bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche.md` for body and evidence._

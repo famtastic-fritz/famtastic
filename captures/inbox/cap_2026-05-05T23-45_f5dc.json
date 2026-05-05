@@ -1,0 +1,170 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_2026-05-05T23-45_f5dc",
+  "created_at": "2026-05-05T23:45:33.302Z",
+  "source": {
+    "surface": "manual",
+    "session_id": null,
+    "adapter": "scripts/capture-adapters/manual.js",
+    "adapter_version": "0.2.0",
+    "input_path": "/Users/famtasticfritz/famtastic/captures/inbox/cap_shell-reconciliation-2026-05-05.md",
+    "timestamp_range": {
+      "start": "2026-05-05T23:45:23.778Z",
+      "end": "2026-05-05T23:45:33.302Z"
+    }
+  },
+  "summary": "Manual capture of cap_shell-reconciliation-2026-05-05.md (3472 bytes). 12 extracts found across 9 type patterns.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "rule",
+      "text": "## Do-not-repeat: every UI plan must pin the exact mount-target file path",
+      "rationale": "## Do-not-repeat: every UI plan must pin the exact mount-target file path",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/do-not-repeat-every-ui-plan-must-pin-the-exact-mount-target-file-path"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "rule",
+      "text": "Today's Ops dashboard MVP shipped to `index",
+      "rationale": "Today's Ops dashboard MVP shipped to `index.html` because the plan specification said \"mounts into the existing Workbench shell\" without naming the file. The subagent guessed `index.html`. The canonical Foundation lives at `site-studio/public/workbench-foundation.html`. Do not repeat: every UI plan must reference an exact absolute path for its mount target, never a noun phrase.",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [
+        "ops"
+      ],
+      "confidence": 0.72,
+      "candidate_id": "rule/todays-ops-dashboard-mvp-shipped-to-index"
+    },
+    {
+      "extract_id": "x_3",
+      "type": "anti-pattern",
+      "text": "## Anti-pattern: declaring a shell frozen canonical without a cutover plan creates drift",
+      "rationale": "## Anti-pattern: declaring a shell frozen canonical without a cutover plan creates drift",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.75,
+      "candidate_id": "anti-pattern/anti-pattern-declaring-a-shell-frozen-canonical-without-a-cutover-plan-creates-d"
+    },
+    {
+      "extract_id": "x_4",
+      "type": "anti-pattern",
+      "text": "The Workbench Foundation was declared \"frozen canonical\" in `docs/STUDIO-UI-FOUNDATION",
+      "rationale": "The Workbench Foundation was declared \"frozen canonical\" in `docs/STUDIO-UI-FOUNDATION.md` on 2026-05-04. No migration plan was attached. The next day, a new feature shipped into the legacy shell because that's where the working APIs lived. Anti-pattern: freeze plus working-old plus no-cutover equals duplicate-implementation drift the next day. A freeze without a cutover plan is decorative.",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.75,
+      "candidate_id": "anti-pattern/the-workbench-foundation-was-declared-frozen-canonical-in-docsstudio-ui-foundati"
+    },
+    {
+      "extract_id": "x_5",
+      "type": "rule",
+      "text": "The canonical Foundation renders 7 domain icons but only Sites and Plans are wired to live data",
+      "rationale": "The canonical Foundation renders 7 domain icons but only Sites and Plans are wired to live data. Brain, Components, Media, Intel, Admin all render UI shells but `buildXBench()` returns empty content. Logs and Approvals bottom panels show hardcoded fake entries. Right-rail Tools render pod containers but never populate. This is the operational reality of the canonical Foundation as of 2026-05-05.",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/the-canonical-foundation-renders-7-domain-icons-but-only-sites-and-plans-are-wir"
+    },
+    {
+      "extract_id": "x_6",
+      "type": "learning",
+      "text": "## Learning: working architecture can diverge from locked architecture",
+      "rationale": "## Learning: working architecture can diverge from locked architecture",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "learning/learning-working-architecture-can-diverge-from-locked-architecture"
+    },
+    {
+      "extract_id": "x_7",
+      "type": "bug-pattern",
+      "text": "When the locked design doesn't match what works, the next agent will follow whichever surface produc",
+      "rationale": "When the locked design doesn't match what works, the next agent will follow whichever surface produces value. Today the canonical Foundation was locked, but `index.html` had every working API behind it — so today's Ops dashboard correctly went to where the wires were. This is not a violation; it's gravity. The fix is not to discipline the agent; it's to either wire the canonical or update the lock.",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [
+        "ops"
+      ],
+      "confidence": 0.85,
+      "candidate_id": "bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche"
+    },
+    {
+      "extract_id": "x_8",
+      "type": "rule",
+      "text": "## Rule: the Workbench Foundation R3 says Shay is never a left-nav domain",
+      "rationale": "## Rule: the Workbench Foundation R3 says Shay is never a left-nav domain",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/rule-the-workbench-foundation-r3-says-shay-is-never-a-left-nav-domain"
+    },
+    {
+      "extract_id": "x_9",
+      "type": "rule",
+      "text": "Per `docs/STUDIO-UI-FOUNDATION",
+      "rationale": "Per `docs/STUDIO-UI-FOUNDATION.md` Section 1 R3: Shay is ambient, not a nav item. Domains are things; Shay is the air. The current `index.html` left rail violates R3 with a Shay tab. Any future shell work must not add Shay as a top-level domain entry. Workshop UI is fine; making it a tab is not.",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/per-docsstudio-ui-foundation"
+    },
+    {
+      "extract_id": "x_10",
+      "type": "gap",
+      "text": "## Gap: Studio serves index",
+      "rationale": "## Gap: Studio serves index.html as / by default; workbench-foundation.html is reachable but not the default",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "gap/gap-studio-serves-index"
+    },
+    {
+      "extract_id": "x_11",
+      "type": "decision",
+      "text": "## Decision: research-only assessment shipped, three reconciliation paths documented",
+      "rationale": "## Decision: research-only assessment shipped, three reconciliation paths documented",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.78,
+      "candidate_id": "decision/decision-research-only-assessment-shipped-three-reconciliation-paths-documented"
+    },
+    {
+      "extract_id": "x_12",
+      "type": "decision",
+      "text": "Decided to ship a research-only assessment doc + a side-by-side viewer instead of a code merge",
+      "rationale": "Decided to ship a research-only assessment doc + a side-by-side viewer instead of a code merge. Three paths described and not chosen: Foundation wins (port everything in, deprecate index.html), index.html wins (rewrite the locked rules to match reality), Hybrid (Foundation as roadmap, index.html as live, gradual migration). Decision deferred to Fritz after observing both shells through the side-by-side viewer at `http://localhost:3334/shell-compare.html`.",
+      "evidence": [
+        "source:cap_shell-reconciliation-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.78,
+      "candidate_id": "decision/decided-to-ship-a-research-only-assessment-doc-a-side-by-side-viewer-instead-of-"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": []
+}
