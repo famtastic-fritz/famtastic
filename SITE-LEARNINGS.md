@@ -1,5 +1,68 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## MBSH "The Premiere" Theme + Virtual Assistant Pattern (2026-05-05)
+
+Shipped a theme-overlay pattern (Pass 1) on the deployed `mbsh-reunion`
+deploy repo at `~/famtastic-sites/mbsh-reunion/frontend/`. Branch:
+`feat/premiere-theme`. PR: famtastic-fritz/mbsh-reunion#1.
+Plan: `docs/sites/site-mbsh-reunion/PREMIERE-THEME-EXPERIENCE-PLAN-2026-05-05.md`.
+Gaps: `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
+
+### What this proves about the FAMtastic factory
+
+1. **Single-attribute feature flags scale.** The whole experience is gated
+   by `body[data-premiere="on"]`. Existing CSS untouched. Flipping the
+   attribute is the rollback. Pattern is reusable for any future cinematic
+   / themed treatment on any factory-built site.
+2. **Hi-Tide Harry as virtual assistant is the prototype.** Per Fritz's
+   correction mid-session: Harry is NOT decoration — he's a context-aware
+   on-page assistant. Implemented as a real `<button>` (aria-labeled,
+   keyboard accessible), replaces the original small chatbot bubble,
+   swaps pose + contextual hint by section, click opens the chatbot panel.
+   This is the public-site instance of the broader virtual-assistant
+   pattern Fritz is prototyping with Shay on Studio. Future factory builds
+   should ship every site with the same pattern: visible character +
+   interactive + context-aware + accessible.
+3. **Adversarial-review fallback chain is missing.** When `codex-bridge`
+   rate-limited mid-session, there was no automatic fallback to a second
+   provider. Lost the review-until-trivial loop. Self-review by the
+   executing agent caught 6 real issues but is not a substitute. See
+   GAP-2026-05-05-01 for the recommended fix (chain: codex-bridge →
+   codex-official → second-Claude pass → local lint rules).
+4. **Native scroll + IntersectionObserver beats Lenis + GSAP for
+   factory-built static sites.** The plan originally called for Lenis
+   and GSAP ScrollTrigger; self-review found Lenis breaks `position:
+   sticky` and adds a11y friction with no real perf upside on modern
+   browsers. Final implementation is GSAP-free, Lenis-free; uses native
+   scroll + IO + CSS scroll-driven animations with @supports fallback.
+   Saves ~53KB and removes a class of footguns.
+5. **Pass 2 was correctly de-risked.** Most "image gen tasks" in the
+   original plan were actually pure CSS/SVG; only 3 assets needed real
+   raster gen (velvet curtain, patron-tier medallions, brand-foil).
+   When Gemini API key expired mid-session, those 3 deferred without
+   blocking the experience because the CSS placeholders were
+   intentionally designed as the v1 fallback. Lesson: separate
+   "structurally needs raster" from "would be nicer with raster" up
+   front; the second category should never block a ship.
+
+### Files added (in deploy repo, not famtastic core)
+
+- `frontend/css/premiere.css` — 480 lines, all selectors gated by `body[data-premiere="on"]`
+- `frontend/js/premiere.js` — 270 lines, IntersectionObserver-driven, no framework
+- `frontend/assets/premiere/` — directory created, empty pending Pass 2
+
+### Known Gaps opened
+
+- GAP-2026-05-05-01: Adversarial-review fallback chain missing
+- GAP-2026-05-05-02: codex-bridge MCP attempts Linear OAuth handshake unprompted
+- GAP-2026-05-05-03: Gemini API key expired (blocks Pass 2 raster gen)
+- GAP-2026-05-05-04: `data-premiere` flag is HTML-hardcoded; future migration to runtime config
+- GAP-2026-05-05-05: preview MCP launch.json discovery is not project-aware
+
+All five documented at `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
+
+---
+
 ## Studio Boot Stubs for Missing Lib Modules (2026-05-05)
 
 Studio refused to boot under launchd because three modules required by
