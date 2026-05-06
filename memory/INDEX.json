@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-06T01:00:26.414092Z",
+  "generated_at": "2026-05-06T01:50:58.608769Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -775,6 +775,192 @@
       "lifecycle": "active",
       "confidence": 0.95,
       "path": "memory/gap/no-design-research-done-for-canonical-7-domains.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v",
+      "type": "bug-pattern",
+      "title": "## Learning: Working architecture and locked architecture diverge silently \u2014 surface viewers fix thi",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.85,
+      "path": "memory/bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "bug-pattern/todays-bug-pattern-entry-when-the-locked-design-doesnt-match-what-works-the-next",
+      "type": "bug-pattern",
+      "title": "Today's bug-pattern entry (`when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follo",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.85,
+      "path": "memory/bug-pattern/todays-bug-pattern-entry-when-the-locked-design-doesnt-match-what-works-the-next.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "vendor-fact/todays-plan-closeout-mechanism-applies-to-site-execution-too",
+      "type": "vendor-fact",
+      "title": "Today's plan-closeout mechanism applies to site execution too",
+      "facets": [
+        "vendor:cpanel",
+        "deploy",
+        "memory",
+        "capture"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.88,
+      "path": "memory/vendor-fact/todays-plan-closeout-mechanism-applies-to-site-execution-too.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res",
+      "type": "vendor-fact",
+      "title": "Today's MBSH deploy proved a recipe: cPanel UAPI overwrite path + DNS via cPanel + Resend domain ver",
+      "facets": [
+        "vendor:godaddy",
+        "vendor:cpanel",
+        "vendor:resend",
+        "deploy"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.88,
+      "path": "memory/vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/rail-icons-sit-inside-glass-bevel-button-container",
+      "type": "rule",
+      "title": "Rail icons must sit inside a glass+bevel button container, not as flat SVG glyphs",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/rail-icons-sit-inside-glass-bevel-button-container.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/every-research-subagent-produces-working-html-mockup",
+      "type": "decision",
+      "title": "Every research subagent must produce a working HTML mockup, not just a markdown brief",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/every-research-subagent-produces-working-html-mockup.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/research-before-build-is-the-default",
+      "type": "decision",
+      "title": "Research-before-build is the new default for every page-type-shaped problem",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/research-before-build-is-the-default.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/pages-of-a-site-need-page-type-research-too",
+      "type": "decision",
+      "title": "Site-building inherits the page-type research discipline",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/pages-of-a-site-need-page-type-research-too.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/every-site-completion-produces-a-recipe",
+      "type": "decision",
+      "title": "Every site completion produces a reusable recipe distilled to memory",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/every-site-completion-produces-a-recipe.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/every-research-brief-cites-2-product-references",
+      "type": "rule",
+      "title": "Every research brief cites at least 2 product references with what-to-adopt + what-to-reject",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/every-research-brief-cites-2-product-references.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "recipe/plan-adversarial-review-amend-closeout",
+      "type": "recipe",
+      "title": "Plan -> Adversarial Review -> Amend -> Closeout",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/recipe/plan-adversarial-review-amend-closeout.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "recipe/spawn-n-parallel-research-subagents-with-strict-file-scopes",
+      "type": "recipe",
+      "title": "Spawn N parallel research subagents with strict file scopes",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/recipe/spawn-n-parallel-research-subagents-with-strict-file-scopes.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "recipe/side-by-side-viewer-for-design-comparison",
+      "type": "recipe",
+      "title": "Side-by-side viewer for design comparison",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/recipe/side-by-side-viewer-for-design-comparison.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "recipe/user-canonical-override-on-confidence-gate",
+      "type": "recipe",
+      "title": "User-canonical override on the auto-promote confidence gate",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/recipe/user-canonical-override-on-confidence-gate.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "learning/session-history-is-durable-value",
+      "type": "learning",
+      "title": "Session history is durable value, not throwaway transcript",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/learning/session-history-is-durable-value.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/eight-pre-flight-questions-for-new-ui-surfaces",
+      "type": "rule",
+      "title": "Eight pre-flight questions every new UI surface answers before drafting",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/eight-pre-flight-questions-for-new-ui-surfaces.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }

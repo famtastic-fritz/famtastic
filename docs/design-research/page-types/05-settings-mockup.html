@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Settings — Shay-Shay options mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #08080A;
+    --bg-1: #0C0C10;
+    --glass: rgba(255,255,255,0.025);
+    --glass-2: rgba(255,255,255,0.045);
+    --glass-3: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.06);
+    --border-hi: rgba(255,255,255,0.11);
+    --text-1: #F2EFE8;
+    --text-2: rgba(242,239,232,0.55);
+    --text-3: rgba(242,239,232,0.32);
+    --glow-warm: #F5C46B;
+    --glow-warm-2: #E6A856;
+    --glow-cool: #6FE0D2;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg-0);
+    color: var(--text-1);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.45;
+    overflow: hidden;
+    background:
+      radial-gradient(900px 600px at 78% 18%, rgba(245,196,107,0.05), transparent 60%),
+      radial-gradient(900px 600px at 18% 82%, rgba(111,224,210,0.04), transparent 60%),
+      var(--bg-0);
+  }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3); }
+  .data    { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.04em; color: var(--text-2); }
+  .kbd     { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.10em; color: var(--text-2);
+             padding: 2px 6px; border: 1px solid var(--border); border-radius: 7px; background: var(--glass); }
+  .display { font-family: Fraunces, serif; font-weight: 300; font-style: italic; }
+
+  .app {
+    position: fixed; inset: 0;
+    display: grid;
+    grid-template-columns: 56px 260px 1fr;
+    grid-template-rows: 44px 1fr;
+  }
+
+  /* --- Icon rail --- */
+  .icon-rail {
+    grid-row: 1 / 3;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 6px;
+  }
+  .ir-brand {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: radial-gradient(circle at 35% 30%, var(--glow-warm), var(--glow-warm-2));
+    box-shadow: 0 0 18px -2px rgba(245,196,107,0.45);
+    margin-bottom: 14px;
+  }
+  .ir-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: grid; place-items: center;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background 200ms var(--ease), color 200ms var(--ease);
+  }
+  .ir-icon:hover { background: var(--glass-2); color: var(--text-1); }
+  .ir-icon.is-active { background: var(--glass-2); color: var(--text-1); position: relative; }
+  .ir-icon.is-active::before {
+    content: ''; position: absolute; left: -10px; top: 8px; bottom: 8px; width: 2px;
+    background: var(--glow-warm); box-shadow: 0 0 8px var(--glow-warm);
+    border-radius: 2px;
+  }
+  .ir-spacer { flex: 1; }
+  .ir-shay {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--glow-cool), #2c8a82);
+    box-shadow: 0 0 14px -2px rgba(111,224,210,0.55);
+    animation: breathe 3s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.95; }
+    50%      { transform: scale(1.06); opacity: 1; }
+  }
+
+  /* --- Top bar --- */
+  .top-bar {
+    grid-column: 2 / 4; grid-row: 1;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.012), transparent);
+  }
+  .crumb { color: var(--text-2); font-size: 13px; }
+  .crumb b { color: var(--text-1); font-weight: 500; }
+  .crumb .sep { color: var(--text-3); margin: 0 8px; }
+  .top-spacer { flex: 1; }
+  .cmdk-hint { display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 12px; }
+  .shay-dot {
+    display: inline-flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 12px;
+  }
+  .shay-dot::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--glow-cool); box-shadow: 0 0 8px var(--glow-cool);
+    animation: breathe 2.6s ease-in-out infinite;
+  }
+
+  /* --- Section list --- */
+  .section-list {
+    grid-column: 2; grid-row: 2;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 18px 12px 24px;
+  }
+  .group-eyebrow {
+    padding: 14px 12px 8px; color: var(--text-3);
+  }
+  .section {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 12px; margin: 2px 0;
+    border-radius: 10px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 14.5px;
+    transition: background 180ms var(--ease), color 180ms var(--ease);
+    position: relative;
+  }
+  .section:hover { background: var(--glass-2); color: var(--text-1); }
+  .section .sec-icon {
+    width: 16px; height: 16px; flex-shrink: 0; color: var(--text-3);
+  }
+  .section.is-active {
+    background: var(--glass-2); color: var(--text-1);
+  }
+  .section.is-active::before {
+    content: ''; position: absolute; left: -2px; top: 8px; bottom: 8px; width: 2px;
+    background: var(--glow-warm); box-shadow: 0 0 8px var(--glow-warm); border-radius: 2px;
+  }
+  .section.is-active .sec-icon { color: var(--glow-warm); }
+  .section .sec-meta { margin-left: auto; font-size: 11px; color: var(--text-3); }
+
+  /* --- Form area --- */
+  .form-pane {
+    grid-column: 3; grid-row: 2;
+    overflow-y: auto;
+    padding: 22px 36px 120px;
+    position: relative;
+  }
+  .search-row {
+    position: sticky; top: 0; z-index: 5;
+    margin: -22px -36px 22px;
+    padding: 16px 36px;
+    background: linear-gradient(180deg, rgba(8,8,10,0.92), rgba(8,8,10,0.72));
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+  }
+  .search {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--glass); border: 1px solid var(--border); border-radius: 12px;
+    backdrop-filter: blur(20px) saturate(180%);
+    transition: border-color 200ms var(--ease);
+  }
+  .search:hover { border-color: var(--border-hi); }
+  .search svg { width: 16px; height: 16px; color: var(--text-3); flex-shrink: 0; }
+  .search input {
+    flex: 1; background: transparent; border: 0; outline: 0;
+    color: var(--text-1); font-family: inherit; font-size: 14.5px;
+  }
+  .search input::placeholder { color: var(--text-3); }
+
+  .pane-head {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 6px;
+  }
+  .pane-head h1 { font-family: Fraunces, serif; font-weight: 300; font-style: italic; font-size: 38px; margin: 0; letter-spacing: -0.01em; }
+  .pane-sub { color: var(--text-2); font-size: 14.5px; margin: 0 0 28px; max-width: 640px; }
+
+  .anchors {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin: 0 0 24px;
+  }
+  .anchor {
+    padding: 5px 11px; font-size: 11.5px;
+    border: 1px solid var(--border); border-radius: 999px;
+    color: var(--text-2); background: var(--glass);
+    cursor: pointer; transition: all 200ms var(--ease);
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em;
+  }
+  .anchor:hover { border-color: var(--border-hi); color: var(--text-1); background: var(--glass-2); }
+
+  /* --- Glass blocks (groups) --- */
+  .group {
+    background: var(--glass); border: 1px solid var(--border); border-radius: 18px;
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 20px 40px -28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+    padding: 24px 26px;
+    margin-bottom: 18px;
+  }
+  .group-title {
+    font-family: Fraunces, serif; font-weight: 300; font-style: italic;
+    font-size: 26px; margin: 0 0 4px;
+  }
+  .group-sub { color: var(--text-2); font-size: 14px; margin: 0 0 20px; }
+  .group-eyebrow-inline { display: block; margin-bottom: 10px; color: var(--text-3); }
+
+  /* --- Form rows --- */
+  .row {
+    display: grid; grid-template-columns: 220px 1fr auto;
+    gap: 20px; align-items: center;
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  .row:first-of-type { border-top: 0; padding-top: 4px; }
+  .row .label { color: var(--text-1); font-size: 14.5px; }
+  .row .hint  { color: var(--text-3); font-size: 12px; margin-top: 3px; }
+  .row .ctrl  { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .row .meta  { color: var(--text-3); font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+
+  /* slider */
+  .slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--glow-warm) 0%, var(--glow-warm) var(--v, 60%), rgba(255,255,255,0.08) var(--v, 60%), rgba(255,255,255,0.08) 100%);
+    outline: 0;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-1);
+    box-shadow: 0 0 10px -1px var(--glow-warm), 0 0 0 1px var(--border-hi);
+    cursor: pointer;
+  }
+  .slider-val { color: var(--text-2); font-size: 12px; font-family: 'JetBrains Mono', monospace; min-width: 36px; text-align: right; }
+
+  /* toggle */
+  .toggle {
+    position: relative; width: 38px; height: 22px;
+    border-radius: 999px; background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border); cursor: pointer;
+    transition: background 220ms var(--ease);
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-1);
+    transition: transform 220ms var(--ease);
+  }
+  .toggle.on { background: var(--glow-warm); border-color: var(--glow-warm-2); }
+  .toggle.on::after { transform: translateX(16px); background: #1a1208; }
+
+  /* segmented */
+  .seg {
+    display: inline-flex; padding: 3px;
+    background: var(--glass); border: 1px solid var(--border); border-radius: 10px;
+  }
+  .seg button {
+    border: 0; background: transparent; padding: 6px 14px;
+    color: var(--text-2); font-family: inherit; font-size: 12.5px;
+    border-radius: 7px; cursor: pointer;
+    transition: all 180ms var(--ease);
+  }
+  .seg button.on { background: var(--glass-3); color: var(--text-1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+  .seg button:hover:not(.on) { color: var(--text-1); }
+
+  /* text input */
+  .text-input, .textarea {
+    width: 100%;
+    background: var(--glass); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text-1); font-family: inherit; font-size: 14px;
+    outline: 0; transition: border-color 200ms var(--ease);
+  }
+  .text-input:focus, .textarea:focus { border-color: var(--border-hi); }
+  .textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+
+  /* --- Save indicator (sticky bottom-right) --- */
+  .save-pill {
+    position: fixed; right: 28px; bottom: 28px; z-index: 20;
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    background: var(--glass); border: 1px solid var(--border); border-radius: 999px;
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 20px 40px -20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 12.5px;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em;
+  }
+  .save-pill::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--glow-cool); box-shadow: 0 0 8px var(--glow-cool);
+    animation: breathe 2.6s ease-in-out infinite;
+  }
+
+  /* --- ambient scrollbar polish --- */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.09); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Icon rail -->
+  <aside class="icon-rail">
+    <div class="ir-brand" title="FAMtastic"></div>
+    <div class="ir-icon" title="Sites">S</div>
+    <div class="ir-icon" title="Brainstorm">B</div>
+    <div class="ir-icon" title="Plans">P</div>
+    <div class="ir-icon" title="Components">C</div>
+    <div class="ir-icon" title="Media">M</div>
+    <div class="ir-icon" title="Research">R</div>
+    <div class="ir-icon is-active" title="Admin · Settings">
+      <!-- gear glyph -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </div>
+    <div class="ir-spacer"></div>
+    <div class="ir-shay" title="Shay-Shay — listening"></div>
+  </aside>
+
+  <!-- Top bar -->
+  <header class="top-bar">
+    <div class="crumb">
+      <b>Admin</b><span class="sep">/</span>Shay-Shay<span class="sep">/</span><b>Personality</b>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="cmdk-hint">jump anywhere <span class="kbd">⌘ K</span></div>
+    <div class="shay-dot">Shay · listening</div>
+  </header>
+
+  <!-- Section list -->
+  <nav class="section-list">
+
+    <div class="eyebrow group-eyebrow">SHAY-SHAY</div>
+
+    <div class="section is-active">
+      <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="17" x2="12" y2="22"/></svg>
+      Personality
+    </div>
+    <div class="section">
+      <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Permissions
+      <span class="sec-meta">12</span>
+    </div>
+    <div class="section">
+      <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>
+      Budget
+      <span class="sec-meta">$48 / $200</span>
+    </div>
+    <div class="section">
+      <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>
+      Autonomy
+    </div>
+    <div class="section">
+      <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V6a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+      Memory
+    </div>
+    <div class="section">
+      <svg class="sec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 18 0"/><path d="M5 12v3a2 2 0 0 0 2 2h1v-7H7a2 2 0 0 0-2 2z"/><path d="M19 12v3a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2z"/></svg>
+      Voice
+    </div>
+
+    <div class="eyebrow group-eyebrow">ADMIN</div>
+    <div class="section"><span class="sec-icon"></span>Capability Manifest</div>
+    <div class="section"><span class="sec-icon"></span>Deploy Targets</div>
+    <div class="section"><span class="sec-icon"></span>Vault — Keys</div>
+    <div class="section"><span class="sec-icon"></span>Health</div>
+
+    <div class="eyebrow group-eyebrow">STUDIO</div>
+    <div class="section"><span class="sec-icon"></span>Model Defaults</div>
+    <div class="section"><span class="sec-icon"></span>Brain Pricing</div>
+    <div class="section"><span class="sec-icon"></span>Default Site Template</div>
+
+  </nav>
+
+  <!-- Form pane -->
+  <main class="form-pane">
+
+    <div class="search-row">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input placeholder="Search settings — across all sections" />
+        <span class="kbd">⌘ F</span>
+      </label>
+    </div>
+
+    <div class="pane-head">
+      <span class="eyebrow">Shay-Shay · personality</span>
+    </div>
+    <h1>How Shay shows up.</h1>
+    <p class="pane-sub">Tone, warmth, brevity, and how forward she is when she has an opinion. These shape every message she sends — across every site, every page, every plan.</p>
+
+    <div class="anchors">
+      <span class="anchor">tone</span>
+      <span class="anchor">presence</span>
+      <span class="anchor">writing style</span>
+      <span class="anchor">opinions</span>
+      <span class="anchor">signature</span>
+    </div>
+
+    <!-- Group A: Tone -->
+    <section class="group">
+      <span class="eyebrow group-eyebrow-inline">tone</span>
+      <h2 class="group-title">Tone &amp; warmth</h2>
+      <p class="group-sub">Shay reads the room, but you set her resting pitch.</p>
+
+      <div class="row">
+        <div>
+          <div class="label">Warmth</div>
+          <div class="hint">Cool &amp; precise · friendly · familial</div>
+        </div>
+        <div class="ctrl">
+          <input class="slider" type="range" min="0" max="100" value="62" style="--v:62%;" />
+          <span class="slider-val">62</span>
+        </div>
+        <div class="meta">friendly</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Formality</div>
+          <div class="hint">Casual ←→ professional</div>
+        </div>
+        <div class="ctrl">
+          <input class="slider" type="range" min="0" max="100" value="34" style="--v:34%;" />
+          <span class="slider-val">34</span>
+        </div>
+        <div class="meta">casual</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Brevity</div>
+          <div class="hint">How tightly she edits her own messages</div>
+        </div>
+        <div class="ctrl">
+          <input class="slider" type="range" min="0" max="100" value="78" style="--v:78%;" />
+          <span class="slider-val">78</span>
+        </div>
+        <div class="meta">tight</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Humor</div>
+          <div class="hint">Dry asides when something is absurd</div>
+        </div>
+        <div class="ctrl">
+          <div class="toggle on" role="switch" aria-checked="true"></div>
+          <span class="data">on</span>
+        </div>
+        <div class="meta">light · dry</div>
+      </div>
+    </section>
+
+    <!-- Group B: Presence -->
+    <section class="group">
+      <span class="eyebrow group-eyebrow-inline">presence</span>
+      <h2 class="group-title">When she speaks up</h2>
+      <p class="group-sub">Shay is ambient by default. These rules say when she breaks the ambient and addresses you directly.</p>
+
+      <div class="row">
+        <div>
+          <div class="label">Proactivity</div>
+          <div class="hint">Quiet · waits for you to ask · proposes when she sees a fit · interrupts when stakes are high</div>
+        </div>
+        <div class="ctrl">
+          <div class="seg" role="tablist">
+            <button>Quiet</button>
+            <button>Wait</button>
+            <button class="on">Propose</button>
+            <button>Interrupt</button>
+          </div>
+        </div>
+        <div class="meta">proposes</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Whisper on idle</div>
+          <div class="hint">After 90s of inactivity, surface one small suggestion</div>
+        </div>
+        <div class="ctrl">
+          <div class="toggle on" role="switch" aria-checked="true"></div>
+          <span class="data">on</span>
+        </div>
+        <div class="meta">90s</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Celebrate ships</div>
+          <div class="hint">Confetti pulse + one-line note when a deploy succeeds</div>
+        </div>
+        <div class="ctrl">
+          <div class="toggle" role="switch" aria-checked="false"></div>
+          <span class="data">off</span>
+        </div>
+        <div class="meta">—</div>
+      </div>
+    </section>
+
+    <!-- Group C: Writing style -->
+    <section class="group">
+      <span class="eyebrow group-eyebrow-inline">writing style</span>
+      <h2 class="group-title">How she writes</h2>
+      <p class="group-sub">A few words from you become the spine of every message she drafts.</p>
+
+      <div class="row">
+        <div>
+          <div class="label">Voice prompt</div>
+          <div class="hint">Plain-English instructions Shay re-reads before she writes</div>
+        </div>
+        <div class="ctrl">
+          <textarea class="textarea" placeholder="e.g. Confident, never cute. Short sentences. Never apologize for AI things.">Confident, never cute. Short sentences. Skip throat-clearing. If something looks wrong, say so first, suggest second.</textarea>
+        </div>
+        <div class="meta">42 / 280</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Banned phrases</div>
+          <div class="hint">Comma-separated. Shay avoids these on every draft.</div>
+        </div>
+        <div class="ctrl">
+          <input class="text-input" value="as an AI, certainly!, I hope this helps, leverage, synergy" />
+        </div>
+        <div class="meta">5</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <div class="label">Signature</div>
+          <div class="hint">Optional sign-off appended to longer messages</div>
+        </div>
+        <div class="ctrl">
+          <input class="text-input" placeholder="— Shay" value="— Shay" />
+        </div>
+        <div class="meta">on long</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Save indicator (sticky) -->
+  <div class="save-pill" title="Autosaved 3 seconds ago — toggle &amp; slider edits autosave on release. Structural changes show an explicit Save button.">
+    Autosaved · 3s ago
+  </div>
+
+</div>
+
+</body>
+</html>
