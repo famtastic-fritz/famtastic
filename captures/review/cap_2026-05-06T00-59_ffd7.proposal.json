@@ -1,0 +1,308 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_2026-05-06T00-59_ffd7",
+  "from_capture": "cap_2026-05-06T00-59_ffd7",
+  "created_at": "2026-05-06T00:59:52.467Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "decision/decision-famtastic-is-a-creation-platform-not-a-website",
+      "type": "decision",
+      "title": "## Decision: FAMtastic is a creation platform, not a website",
+      "body": "## Decision: FAMtastic is a creation platform, not a website. Layout must reflect that.",
+      "facets": [
+        "platform"
+      ],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "decision/the-single-most-important-framing-the-user-has-given",
+      "type": "decision",
+      "title": "The single most important framing the user has given",
+      "body": "The single most important framing the user has given. The current implementation treats the Workbench like a website (pages with persistent chrome around content). It should be treated like a creation product (canvas with collapsible chrome). Every layout decision flows from this. Reference: IDEs (Codex Desktop, VS Code), creation tools (Figma, Linear), generative AI tools (Leonardo, Midjourney, Cursor). The pets-assistant screenshot the user shared shows a collapsed-pane IDE pattern with header",
+      "facets": [
+        "vendor:figma"
+      ],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "rule/rule-when-the-user-is-actually-creating-chrome-collapses-canvas-dominates",
+      "type": "rule",
+      "title": "## Rule: When the user is actually creating, chrome collapses; canvas dominates",
+      "body": "## Rule: When the user is actually creating, chrome collapses; canvas dominates",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/when-a-user-is-in-active-creation-mode-writing-a-prompt-editing-an-image-designi",
+      "type": "rule",
+      "title": "When a user is in active creation mode (writing a prompt, editing an image, designing a component, e",
+      "body": "When a user is in active creation mode (writing a prompt, editing an image, designing a component, editing a template), all chrome must collapse to maximum-information-minimum-space. The right rail slides away. Secondary nav collapses. The canvas dominates. When the user is browsing or selecting, chrome can expand. Mode is detected by user intent (clicked into a workspace vs. landed on a list).",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/rule-right-rail-is-a-glass-slide-out-not-a-stuck-panel",
+      "type": "rule",
+      "title": "## Rule: Right rail is a glass slide-out, not a stuck panel",
+      "body": "## Rule: Right rail is a glass slide-out, not a stuck panel",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/the-right-side-panel-must-be-a-translucent-glass-slide-out-not-a-fixed-boxy-colu",
+      "type": "rule",
+      "title": "The right-side panel must be a translucent glass slide-out, not a fixed boxy column",
+      "body": "The right-side panel must be a translucent glass slide-out, not a fixed boxy column. It can hold tools OR information depending on context (the same surface, content varies). It slides in/out cleverly designed to show/hide. Sections inside must be thoughtfully grouped, not just a tool dump. Glass aesthetic is mandatory.",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/rule-secondary-nav-is-a-glass-slide-out-from-the-icon-rail",
+      "type": "rule",
+      "title": "## Rule: Secondary nav is a glass slide-out from the icon rail",
+      "body": "## Rule: Secondary nav is a glass slide-out from the icon rail",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "decision/decision-page-types-each-have-their-own-layout-pattern",
+      "type": "decision",
+      "title": "## Decision: Page types each have their own layout pattern",
+      "body": "## Decision: Page types each have their own layout pattern. One-size-fits-all is wrong.",
+      "facets": [],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "rule/different-page-types-call-for-different-layouts",
+      "type": "rule",
+      "title": "Different page types call for different layouts",
+      "body": "Different page types call for different layouts. The previous plan defaulted to a one-template-everywhere approach. New rule: every page type gets a designed layout pattern matching its function. The ones identified so far (with their needed patterns):",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/creation-canvas-page-applies-to-media-studio-individual-item-component-studio-ed",
+      "type": "rule",
+      "title": "### Creation / Canvas page (applies to: Media Studio individual item, Component Studio editor, Templ",
+      "body": "### Creation / Canvas page (applies to: Media Studio individual item, Component Studio editor, Template editor)\n- Canvas dominates the screen\n- Tool/info panels are glass slide-outs from edges\n- Prompt input (when applicable) is a glass panel that can collapse\n- Results / previews need explicit thoughtful design — how many, what size, what comparison affordances\n- Shay-Shay must have a defined location near the canvas so she can see the proofs and the canvas (not floating randomly)",
+      "facets": [
+        "shay-shay"
+      ],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/editor-with-chat-sites-template-editor-individual-page-editors-editor-canvas-cha",
+      "type": "rule",
+      "title": "### Editor with chat (Sites > Template editor, individual page editors)\n- Editor canvas + chat sideb",
+      "body": "### Editor with chat (Sites > Template editor, individual page editors)\n- Editor canvas + chat sidebar\n- Two distinct chats exist: Studio chat (per-page work) vs Shay-Shay (cross-cutting). Their relationship and surfaces must be designed.",
+      "facets": [
+        "shay-shay"
+      ],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/rule-each-domain-gets-its-own-coherent-icon-set",
+      "type": "rule",
+      "title": "## Rule: Each domain gets its own coherent icon set",
+      "body": "## Rule: Each domain gets its own coherent icon set",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/rule-icons-over-text-always",
+      "type": "rule",
+      "title": "## Rule: Icons over text, always",
+      "body": "## Rule: Icons over text, always",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "anti-pattern/anti-pattern-implementing-layout-before-researching-the-page-type",
+      "type": "anti-pattern",
+      "title": "## Anti-pattern: Implementing layout before researching the page-type",
+      "body": "## Anti-pattern: Implementing layout before researching the page-type",
+      "facets": [],
+      "confidence": 0.75,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.75 < 0.85"
+    },
+    {
+      "canonical_id": "rule/the-previous-ops-plan-went-straight-to-swimlanes-drawer-inspector-without-asking",
+      "type": "rule",
+      "title": "The previous Ops plan went straight to \"swimlanes + drawer + inspector\" without asking \"what kind of",
+      "body": "The previous Ops plan went straight to \"swimlanes + drawer + inspector\" without asking \"what kind of page is this and what layout does it need?\" Anti-pattern: every new page must do design research first — what's the closest reference (IDE, creation tool, library, dashboard?), what affordances does it need, what tools does it need, where does Shay live?",
+      "facets": [
+        "ops"
+      ],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "gap/gap-no-design-research-has-been-done-for-any-of-the-canonical-7-domains",
+      "type": "gap",
+      "title": "## Gap: No design research has been done for any of the canonical 7 domains",
+      "body": "## Gap: No design research has been done for any of the canonical 7 domains",
+      "facets": [],
+      "confidence": 0.7,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.7 < 0.85"
+    },
+    {
+      "canonical_id": "decision/decision-pause-workbench-implementation",
+      "type": "decision",
+      "title": "## Decision: pause Workbench implementation",
+      "body": "## Decision: pause Workbench implementation. Research first, build second.",
+      "facets": [],
+      "confidence": 0.78,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.78 < 0.85"
+    },
+    {
+      "canonical_id": "rule/rule-every-page-type-design-must-cite-at-least-2-product-references",
+      "type": "rule",
+      "title": "## Rule: Every page-type design must cite at least 2 product references",
+      "body": "## Rule: Every page-type design must cite at least 2 product references",
+      "facets": [],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    },
+    {
+      "canonical_id": "rule/to-prevent-inventing-layouts-every-new-page-type-design-must-cite-at-least-2-pro",
+      "type": "rule",
+      "title": "To prevent inventing layouts: every new page-type design must cite at least 2 product references (Cu",
+      "body": "To prevent inventing layouts: every new page-type design must cite at least 2 product references (Cursor, Figma, Leonardo, Linear, Codex Desktop, VS Code, JSFiddle, etc.) showing the layout pattern is proven, what it gets right, and what we should adapt.",
+      "facets": [
+        "vendor:figma"
+      ],
+      "confidence": 0.72,
+      "lifecycle": "active",
+      "source_capture": "cap_2026-05-06T00-59_ffd7",
+      "evidence": [
+        "source:cap_creation-product-design-direction-2026-05-05.md"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "confidence 0.72 < 0.85"
+    }
+  ],
+  "review_status": "pending",
+  "approver": "auto-allowlist",
+  "approved_at": "2026-05-06T00:59:52.490Z"
+}

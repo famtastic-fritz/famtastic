@@ -43,9 +43,17 @@
     "plan_2026_05_05_ops_workspace_gui",
     "plan_2026_05_05_platform_site_promotion",
     "plan_2026_05_05_chat_capture_learn_optimize",
-    "plan_2026_05_05_agent_coordination"
+    "plan_2026_05_05_agent_coordination",
+    "plan_2026_05_05_workbench_per_page_design"
   ],
   "labels": {
+    "plan_2026_05_05_workbench_per_page_design": {
+      "label": "workbench-per-page-design",
+      "tags": ["platform-upgrades", "studio-ui", "design-research", "ux", "creation-platform"],
+      "role": "research",
+      "feeds_into": ["plan_2026_05_05_ops_workspace_gui", "studio-workbench-foundation"],
+      "note": "Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05."
+    },
     "plan_2026_05_05_platform_site_promotion": {
       "label": "site-promotion",
       "tags": [
