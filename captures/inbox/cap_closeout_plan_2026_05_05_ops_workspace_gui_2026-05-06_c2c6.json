@@ -1,0 +1,45 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-06_c2c6",
+  "created_at": "2026-05-06T01:02:58.706Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/plan_2026_05_05_ops_workspace_gui/closeouts/2026-05-06-checkpoint_complete.json",
+    "timestamp_range": {
+      "start": "2026-05-06T00:30:00.000Z",
+      "end": "2026-05-06T00:30:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for plan_2026_05_05_ops_workspace_gui (verdict: checkpoint_complete). 1 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "decision",
+      "text": "Pause Ops dashboard implementation pending per-page-type design research",
+      "rationale": "On 2026-05-06 the Ops dashboard MVP was paused (checkpoint_complete) after the user reframed FAMtastic as a creation platform. Resume only after plan_2026_05_05_workbench_per_page_design lands its taxonomy + canvas + chrome briefs.",
+      "evidence": [
+        "closeout:plan_2026_05_05_ops_workspace_gui:2026-05-06T00:30:00.000Z",
+        "docs/STUDIO-SHELL-RECONCILIATION-2026-05-05.md",
+        "plans/plan_2026_05_05_workbench_per_page_design/plan.json",
+        "3d76488"
+      ],
+      "facets": [
+        "ops",
+        "platform",
+        "studio-ui"
+      ],
+      "confidence": 0.95,
+      "candidate_id": "decision/pause-ops-dashboard-implementation-pending-per-page-type-des"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "ALL further sub-tab implementation paused pending plan_2026_05_05_workbench_per_page_design",
+    "User reframed FAMtastic as creation platform on 2026-05-05; previous trajectory was building website-style chrome with empty rooms",
+    "Resume implementation only after the per-page-type research lands and a consolidation plan picks Path A/B/C from STUDIO-SHELL-RECONCILIATION-2026-05-05.md"
+  ]
+}

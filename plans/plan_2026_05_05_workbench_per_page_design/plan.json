@@ -1,0 +1,230 @@
+{
+  "id": "plan_2026_05_05_workbench_per_page_design",
+  "title": "Workbench Per-Page-Type Design Research",
+  "status": "active",
+  "label": "workbench-per-page-design",
+  "tags": ["platform-upgrades", "studio-ui", "design-research", "ux", "creation-platform"],
+  "created_at": "2026-05-06T00:00:00.000Z",
+  "owner": "Fritz",
+  "purpose": "Before any more Workbench shell implementation work, do real per-page-type design research and produce mockups for every distinct page type the platform needs. The current trajectory was building a website-style chrome with empty rooms; the user re-framed FAMtastic as a creation platform that needs canvas-dominant layouts with collapsible glass chrome, distinct layouts per page type, and per-domain icon sets.",
+  "why_now": "User feedback session 2026-05-05 (cap_creation-product-design-direction-2026-05-05): the prior implementation defaulted to one-size-fits-all chrome and never asked 'what kind of page is this and what layout does it need?' The 5 mockups in docs/mockups/ are a partial start; they cover home, page editor, components, media generation, Shay trace — but they're inconsistent and incomplete for the page-type taxonomy the user described (Library, Creation Canvas, Workshop/Sandbox, Triage, Settings, Editor-with-Chat).",
+  "origin": {
+    "type": "conversation",
+    "trigger_record": "Session 2026-05-05 — Workbench shell reconciliation + design recovery",
+    "summary": "User saw the 3-pane shell-compare viewer, recognized the design intent was preserved in mockups but lost in implementation, and provided a long architectural reframe distinguishing creation-platform from website. They named six distinct page types and called out gaps in research per type."
+  },
+  "success_signal": "(1) Six page-type design briefs land in docs/design-research/page-types/, each citing at least 2 product references and proposing a layout pattern. (2) Per-domain icon-set briefs land for at least Sites, Media, Components. (3) New mockup HTMLs land in docs/mockups/ extending the existing 5 to cover the full page-type taxonomy. (4) The Workbench Foundation implementation plan is paused until these briefs land, formalized via a needs_tasking closeout on plan_2026_05_05_ops_workspace_gui pointing here.",
+  "non_goals": [
+    "Implementing any of the new mockups (separate plan after research is approved)",
+    "Choosing between Path A / B / C from the shell-reconciliation doc (still deferred)",
+    "Drawing actual final icons (icon-set BRIEFS only — visual style + reference grid; final icon production happens after a tool/illustrator decision)"
+  ],
+  "depends_on": [],
+  "feeds_into": ["plan_2026_05_05_ops_workspace_gui", "studio-workbench-foundation"],
+  "page_types_in_scope": [
+    {
+      "id": "library-collection",
+      "name": "Library / Collection",
+      "applies_to": ["Sites landing", "Media Studio landing", "Component Studio landing", "Plans landing (the registry)", "Proofs gallery"],
+      "needs": ["search box", "sort + filter (faceted to type)", "grid/list toggle", "type-specific cards", "optional operational widgets area on a domain home"]
+    },
+    {
+      "id": "creation-canvas",
+      "name": "Creation Canvas",
+      "applies_to": ["Media Studio individual item", "Component Studio editor", "Template editor", "Page editor"],
+      "needs": ["canvas dominates", "tool/info panels are glass slide-outs", "collapsible prompt input", "thoughtful results/preview area", "Shay-Shay has a defined location near the canvas"]
+    },
+    {
+      "id": "workshop-sandbox",
+      "name": "Workshop / Sandbox",
+      "applies_to": ["Component Studio sandbox", "Media Studio test gen"],
+      "needs": ["JSFiddle-style multi-pane (HTML/CSS/JS/preview)", "test runner", "state inspector", "hot reload"]
+    },
+    {
+      "id": "triage-workshop",
+      "name": "Triage / Workshop (Shay-Shay)",
+      "applies_to": ["Shay-Shay's own workshop page where bigger tasks land"],
+      "needs": ["task queue Shay sees", "her workspace for triaging", "handoff handles", "differs from per-page contextual Shay"]
+    },
+    {
+      "id": "settings-customization",
+      "name": "Settings / Customization",
+      "applies_to": ["Shay-Shay options", "Admin sub-pages", "Capability manifest"],
+      "needs": ["form-heavy", "section-based", "save indicator"]
+    },
+    {
+      "id": "editor-with-chat",
+      "name": "Editor with Chat",
+      "applies_to": ["Sites > Template editor", "individual page editors"],
+      "needs": ["editor canvas + chat sidebar", "two distinct chats: Studio chat (per-page work) vs Shay-Shay (cross-cutting) — relationship and surfaces designed"]
+    }
+  ],
+  "domains_for_icon_sets": [
+    "Sites",
+    "Brainstorm",
+    "Plans",
+    "Components",
+    "Media",
+    "Research",
+    "Admin"
+  ],
+  "workstreams": [
+    {
+      "id": "ws_page_type_taxonomy_doc",
+      "title": "Page-type taxonomy document",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "docs/design-research/page-type-taxonomy.md — the canonical list of 6 page types, what each is for, what layout pattern it follows, where it appears in the platform"
+      ],
+      "acceptance": [
+        "Every existing surface in both shells (index.html + workbench-foundation.html) maps to exactly one page-type.",
+        "No page is left without a type."
+      ]
+    },
+    {
+      "id": "ws_research_library_collection",
+      "title": "Library/Collection layout research",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "docs/design-research/page-types/01-library-collection.md",
+        "Cite at least 2 product references (e.g. Linear backlog, Figma file browser, Apple Photos library, Notion gallery, Codex Desktop project picker)",
+        "Mockup screenshot or sketch in docs/design-research/page-types/01-library-collection-mockup.html",
+        "Concrete layout: where search lives, where filters live, what card looks like, where operational-widgets area lives if applicable"
+      ]
+    },
+    {
+      "id": "ws_research_creation_canvas",
+      "title": "Creation Canvas layout research (the most important one)",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "docs/design-research/page-types/02-creation-canvas.md",
+        "Reference: Cursor, Leonardo AI, Midjourney, Figma, Pets-assistant pattern user shared",
+        "How chrome collapses when user is creating: which keys, which gestures, what's the default state",
+        "Where Shay-Shay lives so she can see canvas + proofs simultaneously",
+        "Right rail glass slide-out spec: when does it open, what triggers, animation pattern, sections inside",
+        "Mockup: docs/design-research/page-types/02-creation-canvas-mockup.html"
+      ]
+    },
+    {
+      "id": "ws_research_workshop_sandbox",
+      "title": "Workshop/Sandbox layout research",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "docs/design-research/page-types/03-workshop-sandbox.md",
+        "Reference: JSFiddle, CodePen, StackBlitz, Storybook",
+        "Multi-pane layout spec, runner controls, state inspector pattern",
+        "Mockup: docs/design-research/page-types/03-workshop-sandbox-mockup.html"
+      ]
+    },
+    {
+      "id": "ws_research_triage_workshop",
+      "title": "Shay-Shay's Workshop / Triage page research",
+      "status": "ready",
+      "priority": "P2",
+      "outputs": [
+        "docs/design-research/page-types/04-shay-workshop.md",
+        "Reference: Linear inbox + agent dashboards (LangGraph, CrewAI), Cursor agent panel",
+        "How Shay's workshop page differs from contextual Shay (per-page assistant vs. her own workspace)",
+        "Mockup: docs/design-research/page-types/04-shay-workshop-mockup.html"
+      ]
+    },
+    {
+      "id": "ws_research_settings_customization",
+      "title": "Settings / Customization page research",
+      "status": "ready",
+      "priority": "P2",
+      "outputs": [
+        "docs/design-research/page-types/05-settings.md — short, mostly conventional",
+        "Reference: Linear settings, Notion settings, Apple System Settings",
+        "Mockup: docs/design-research/page-types/05-settings-mockup.html"
+      ]
+    },
+    {
+      "id": "ws_research_editor_with_chat",
+      "title": "Editor-with-chat layout research",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "docs/design-research/page-types/06-editor-with-chat.md",
+        "Reference: Cursor (chat sidebar pattern), Notion AI, Codex Desktop chat pane",
+        "The Studio-chat vs Shay-Shay relationship — when does which surface speak, do they coexist, is there a handoff",
+        "Mockup: docs/design-research/page-types/06-editor-with-chat-mockup.html"
+      ]
+    },
+    {
+      "id": "ws_research_chrome_glass_pattern",
+      "title": "Chrome collapse + glass slide-out pattern research (cross-cutting)",
+      "status": "ready",
+      "priority": "P0",
+      "outputs": [
+        "docs/design-research/cross-cutting/01-chrome-collapse.md — when chrome collapses, what triggers it, animation timing, accessibility",
+        "docs/design-research/cross-cutting/02-glass-slide-out.md — the canonical glass panel slide-out spec (right rail, secondary nav, modal)",
+        "Reference: macOS sidebars, Cursor command palette, Cassidy Williams' floating glass nav patterns, Aceternity/Cult UI glass components",
+        "CSS prototype HTML: docs/design-research/cross-cutting/glass-slide-out-prototype.html"
+      ]
+    },
+    {
+      "id": "ws_research_per_domain_icon_sets",
+      "title": "Per-domain icon set briefs",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "docs/design-research/icon-sets/sites.md — visual direction (cards, grids, globes, portfolio metaphors), reference set, candidate symbol library",
+        "docs/design-research/icon-sets/brainstorm.md",
+        "docs/design-research/icon-sets/plans.md",
+        "docs/design-research/icon-sets/components.md (cubes, brackets, code metaphors)",
+        "docs/design-research/icon-sets/media.md (sparkles, image, video, generation metaphors)",
+        "docs/design-research/icon-sets/research.md",
+        "docs/design-research/icon-sets/admin.md",
+        "Each brief: 2+ reference icon sets (Phosphor, Lucide, Tabler, Iconoir, Heroicons, custom-illustrated), recommended set, hover state spec"
+      ]
+    },
+    {
+      "id": "ws_consolidation_plan",
+      "title": "Consolidate research into a final shell-rebuild plan",
+      "status": "planned",
+      "priority": "P0",
+      "depends_on": ["ws_page_type_taxonomy_doc", "ws_research_library_collection", "ws_research_creation_canvas", "ws_research_workshop_sandbox", "ws_research_chrome_glass_pattern", "ws_research_per_domain_icon_sets"],
+      "outputs": [
+        "A new plan plan_2026_05_XX_workbench_shell_rebuild that uses the research deliverables to scope an actual implementation",
+        "The new plan picks Path A / B / C from the shell-reconciliation doc with the user's input",
+        "Closeout for plan_2026_05_05_ops_workspace_gui marking it superseded-by-or-pending-rebuild"
+      ]
+    }
+  ],
+  "mvp": {
+    "scope": [
+      "ws_page_type_taxonomy_doc",
+      "ws_research_creation_canvas (the most important — this is the page type the platform actually creates value on)",
+      "ws_research_chrome_glass_pattern (cross-cutting prerequisite for every page-type design)"
+    ],
+    "rationale": "These three unblock every other research deliverable. Once the taxonomy and the canvas + chrome patterns are settled, the other page types are variations on a theme. Library / Workshop / Settings / Editor-with-chat all reuse the chrome rules.",
+    "deferred": [
+      "ws_research_library_collection (P1, follows MVP)",
+      "ws_research_workshop_sandbox (P1)",
+      "ws_research_editor_with_chat (P1)",
+      "ws_research_triage_workshop (P2)",
+      "ws_research_settings_customization (P2)",
+      "ws_research_per_domain_icon_sets (P1, parallel-safe with the above)",
+      "ws_consolidation_plan (P0, but blocked until others land)"
+    ]
+  },
+  "decisions_confirmed": [
+    {"id": "D1", "summary": "FAMtastic is a creation platform, not a website. Every layout decision flows from this."},
+    {"id": "D2", "summary": "Different page types get different layouts. Six types identified."},
+    {"id": "D3", "summary": "Chrome collapses when user is actively creating; canvas dominates."},
+    {"id": "D4", "summary": "Right rail and secondary nav are glass slide-outs, not stuck panels."},
+    {"id": "D5", "summary": "Each domain gets its own coherent icon set (not generic Lucide soup)."},
+    {"id": "D6", "summary": "Pause Workbench implementation until per-page-type design research is done."}
+  ],
+  "known_gaps_opened": [
+    "No existing taxonomy doc maps surfaces → page types.",
+    "Cross-cutting glass slide-out CSS pattern doesn't exist yet — only static glass panels in workbench-foundation.css.",
+    "No per-domain icon set briefs exist; current rail uses single-letter text glyphs.",
+    "The Studio-chat vs Shay-Shay surface relationship is undefined."
+  ]
+}

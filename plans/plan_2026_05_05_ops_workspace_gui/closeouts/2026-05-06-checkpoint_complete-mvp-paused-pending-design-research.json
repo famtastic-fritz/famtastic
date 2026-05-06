@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "plan_2026_05_05_ops_workspace_gui",
+  "verdict": "checkpoint_complete",
+  "phase": "mvp-paused-pending-design-research",
+  "verdict_at": "2026-05-06T00:30:00.000Z",
+  "verdict_by": "fritz",
+  "fixed": [],
+  "added": [
+    "Phase 0 + Jobs tab MVP shipped — but mounted to wrong shell (index.html instead of workbench-foundation.html)"
+  ],
+  "proved": [
+    "15/15 ops tests passing under node --test",
+    "API surface returns wrapped envelopes with snapshot_version + generated_at"
+  ],
+  "remaining_work": [
+    "ALL further sub-tab implementation paused pending plan_2026_05_05_workbench_per_page_design",
+    "User reframed FAMtastic as creation platform on 2026-05-05; previous trajectory was building website-style chrome with empty rooms",
+    "Resume implementation only after the per-page-type research lands and a consolidation plan picks Path A/B/C from STUDIO-SHELL-RECONCILIATION-2026-05-05.md"
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "docs/STUDIO-SHELL-RECONCILIATION-2026-05-05.md",
+      "note": "shell drift assessment"
+    },
+    {
+      "type": "doc",
+      "ref": "plans/plan_2026_05_05_workbench_per_page_design/plan.json",
+      "note": "new research plan"
+    },
+    {
+      "type": "commit",
+      "ref": "3d76488",
+      "note": "Ops MVP merge — to be revisited after research"
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "decision",
+      "title": "Pause Ops dashboard implementation pending per-page-type design research",
+      "body": "On 2026-05-06 the Ops dashboard MVP was paused (checkpoint_complete) after the user reframed FAMtastic as a creation platform. Resume only after plan_2026_05_05_workbench_per_page_design lands its taxonomy + canvas + chrome briefs.",
+      "facets": [
+        "ops",
+        "platform",
+        "studio-ui"
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "next_task_ids": []
+}

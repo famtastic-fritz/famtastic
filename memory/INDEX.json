@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-06T00:11:51.285564Z",
+  "generated_at": "2026-05-06T01:00:26.414092Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -610,6 +610,171 @@
       "lifecycle": "active",
       "confidence": 0.95,
       "path": "memory/rule/different-page-types-need-different-layouts.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/famtastic-is-a-creation-platform-not-a-website",
+      "type": "decision",
+      "title": "FAMtastic is a creation platform, not a website. Layout must reflect that.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/famtastic-is-a-creation-platform-not-a-website.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/page-types-each-have-their-own-layout-pattern",
+      "type": "decision",
+      "title": "Page types each have their own layout pattern. One-size-fits-all is wrong.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/page-types-each-have-their-own-layout-pattern.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/pause-workbench-implementation-research-first",
+      "type": "decision",
+      "title": "Pause Workbench implementation. Research first, build second.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/pause-workbench-implementation-research-first.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/chrome-collapses-when-user-is-actively-creating",
+      "type": "rule",
+      "title": "When the user is actually creating, chrome collapses; canvas dominates.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/chrome-collapses-when-user-is-actively-creating.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/right-rail-is-glass-slide-out-not-stuck-panel",
+      "type": "rule",
+      "title": "Right rail is a glass slide-out, not a stuck panel.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/right-rail-is-glass-slide-out-not-stuck-panel.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/secondary-nav-slides-out-as-glass-from-icon-rail",
+      "type": "rule",
+      "title": "Secondary nav is a glass slide-out from the icon rail.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/secondary-nav-slides-out-as-glass-from-icon-rail.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/each-domain-gets-its-own-coherent-icon-set",
+      "type": "rule",
+      "title": "Each domain gets its own coherent icon set.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/each-domain-gets-its-own-coherent-icon-set.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/icons-over-text-always-in-the-rail",
+      "type": "rule",
+      "title": "Icons over text, always.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/icons-over-text-always-in-the-rail.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/every-page-type-design-must-cite-2-product-references",
+      "type": "rule",
+      "title": "Every page-type design must cite at least 2 product references.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/every-page-type-design-must-cite-2-product-references.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/implementing-layout-before-researching-the-page-type",
+      "type": "anti-pattern",
+      "title": "Implementing layout before researching the page-type.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/anti-pattern/implementing-layout-before-researching-the-page-type.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "gap/no-design-research-done-for-canonical-7-domains",
+      "type": "gap",
+      "title": "No design research has been done for any of the canonical 7 domains.",
+      "facets": [
+        "ui-shell",
+        "platform",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/gap/no-design-research-done-for-canonical-7-domains.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }
