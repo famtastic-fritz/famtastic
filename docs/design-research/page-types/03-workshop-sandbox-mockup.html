@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Workshop / Sandbox — Component Studio mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #08080A;
+    --bg-1: #0C0C10;
+    --bg-2: #101016;
+    --glass: rgba(255,255,255,0.025);
+    --glass-2: rgba(255,255,255,0.045);
+    --glass-3: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.06);
+    --border-hi: rgba(255,255,255,0.11);
+    --text-1: #F2EFE8;
+    --text-2: rgba(242,239,232,0.55);
+    --text-3: rgba(242,239,232,0.32);
+    --glow-warm: #F5C46B;
+    --glow-warm-2: #E6A856;
+    --glow-cool: #6FE0D2;
+    --glow-error: #F58B6B;
+    --code-key: #C7A2FF;
+    --code-str: #9BD3A0;
+    --code-tag: #6FE0D2;
+    --code-attr: #F5C46B;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg-0);
+    color: var(--text-1);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    overflow: hidden;
+    background:
+      radial-gradient(900px 600px at 78% 18%, rgba(245,196,107,0.04), transparent 60%),
+      radial-gradient(900px 600px at 18% 82%, rgba(111,224,210,0.035), transparent 60%),
+      var(--bg-0);
+  }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3); }
+  .data { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--text-2); }
+  .display { font-family: Fraunces, serif; font-weight: 300; font-style: italic; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* --- App frame --- */
+  .app {
+    position: fixed; inset: 0;
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    grid-template-rows: 44px 1fr;
+  }
+
+  /* --- Icon rail --- */
+  .icon-rail {
+    grid-row: 1 / 3;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0;
+    gap: 10px;
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  .ir-brand {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: radial-gradient(circle at 30% 30%, var(--glow-warm), var(--glow-warm-2));
+    box-shadow: 0 0 24px rgba(245,196,107,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    margin-bottom: 12px;
+  }
+  .ir-btn {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: background 400ms var(--ease), border-color 400ms var(--ease), color 400ms var(--ease), transform 400ms var(--ease), box-shadow 400ms var(--ease);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+  }
+  .ir-btn:hover {
+    background: var(--glass-3);
+    border-color: var(--border-hi);
+    color: var(--text-1);
+    transform: translateY(-1px);
+  }
+  .ir-btn.active {
+    background: linear-gradient(180deg, rgba(245,196,107,0.18), rgba(245,196,107,0.04));
+    border-color: rgba(245,196,107,0.32);
+    color: var(--text-1);
+    box-shadow: 0 0 22px -6px rgba(245,196,107,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .ir-spacer { flex: 1; }
+
+  /* --- Top bar --- */
+  .top-bar {
+    grid-column: 2 / 3; grid-row: 1 / 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(12,12,16,0.55);
+    backdrop-filter: blur(22px) saturate(180%);
+    z-index: 5;
+    gap: 16px;
+  }
+  .crumb { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 13px; min-width: 0; }
+  .crumb b { color: var(--text-1); font-weight: 500; }
+  .crumb .sep { color: var(--text-3); }
+  .iso-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(111,224,210,0.10), rgba(111,224,210,0.02));
+    border: 1px solid rgba(111,224,210,0.28);
+    color: var(--glow-cool);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.20em; text-transform: uppercase;
+  }
+  .iso-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-cool); box-shadow: 0 0 10px var(--glow-cool); }
+
+  .top-right { display: flex; align-items: center; gap: 12px; }
+  .pill-row-top { display: flex; align-items: center; gap: 4px; padding: 3px; border-radius: 11px; background: var(--glass); border: 1px solid var(--border); }
+  .pill-mini {
+    padding: 4px 9px; border-radius: 8px;
+    background: transparent;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background 280ms var(--ease), color 280ms var(--ease);
+  }
+  .pill-mini:hover { color: var(--text-1); }
+  .pill-mini.on { background: var(--glass-3); color: var(--text-1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); }
+
+  .stop-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: 11px;
+    background: linear-gradient(180deg, rgba(245,196,107,0.22), rgba(245,196,107,0.06));
+    border: 1px solid rgba(245,196,107,0.38);
+    color: var(--text-1);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.16em;
+    cursor: pointer;
+    transition: background 400ms var(--ease), box-shadow 400ms var(--ease), transform 400ms var(--ease), border-color 400ms var(--ease);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .stop-btn:hover {
+    background: linear-gradient(180deg, rgba(245,196,107,0.34), rgba(245,196,107,0.14));
+    box-shadow: 0 0 28px -6px rgba(245,196,107,0.55), inset 0 1px 0 rgba(255,255,255,0.10);
+    border-color: rgba(245,196,107,0.55);
+    transform: translateY(-1px);
+  }
+  .stop-btn .sq { width: 9px; height: 9px; border-radius: 2px; background: var(--glow-warm); box-shadow: 0 0 10px var(--glow-warm); }
+  .stop-btn .kbd { font-size: 9.5px; padding: 2px 6px; border-radius: 5px; background: rgba(0,0,0,0.30); border: 1px solid rgba(0,0,0,0.40); color: var(--text-2); }
+
+  .shay-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--glow-cool);
+    box-shadow: 0 0 16px var(--glow-cool), 0 0 32px rgba(111,224,210,0.45);
+    animation: breathe 2.8s var(--ease) infinite;
+    cursor: pointer;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.65; transform: scale(1); }
+    50%      { opacity: 1;    transform: scale(1.18); }
+  }
+
+  /* --- Stage layout: editor-stack | preview, with console below both --- */
+  .stage {
+    grid-column: 2 / 3; grid-row: 2 / 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+  }
+
+  /* --- Editor stack (left column, three Monaco-style panes) --- */
+  .editor-stack {
+    grid-column: 1 / 2; grid-row: 1 / 2;
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
+    border-right: 1px solid var(--border);
+    min-height: 0;
+  }
+  .pane {
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-1);
+    min-height: 0;
+  }
+  .pane:last-child { border-bottom: none; }
+  .pane-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.015);
+    border-bottom: 1px solid var(--border);
+  }
+  .pane-tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .pane-tab .lang {
+    padding: 2px 7px; border-radius: 6px;
+    background: var(--glass-2); border: 1px solid var(--border);
+    color: var(--text-1);
+    font-size: 10px; letter-spacing: 0.14em;
+  }
+  .pane-tab .dirty {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--glow-warm); box-shadow: 0 0 8px var(--glow-warm);
+  }
+  .pane-meta { display: flex; align-items: center; gap: 10px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; }
+  .pane-body {
+    flex: 1; overflow: auto;
+    padding: 12px 0 12px 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65;
+    background: var(--bg-1);
+  }
+  .code-row { display: grid; grid-template-columns: 44px 1fr; gap: 0; }
+  .ln { color: var(--text-3); text-align: right; padding-right: 14px; user-select: none; font-size: 11px; }
+  .ln.curr { color: var(--text-2); }
+  .src { color: var(--text-1); white-space: pre; }
+  .src .k { color: var(--code-key); }
+  .src .s { color: var(--code-str); }
+  .src .t { color: var(--code-tag); }
+  .src .a { color: var(--code-attr); }
+  .src .c { color: var(--text-3); font-style: italic; }
+
+  /* --- Preview pane (right column) --- */
+  .preview {
+    grid-column: 2 / 3; grid-row: 1 / 2;
+    display: flex; flex-direction: column;
+    background:
+      radial-gradient(80% 60% at 50% 0%, rgba(255,255,255,0.025), transparent 60%),
+      var(--bg-0);
+    min-height: 0;
+    position: relative;
+  }
+  .variant-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(12,12,16,0.40);
+    backdrop-filter: blur(12px) saturate(160%);
+  }
+  .variant-row .group { display: flex; align-items: center; gap: 8px; }
+  .variant-row .group label { color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.20em; text-transform: uppercase; margin-right: 4px; }
+  .preview-stage {
+    flex: 1;
+    position: relative;
+    display: grid; place-items: center;
+    overflow: hidden;
+    /* faint grid backdrop hint */
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -1px -1px;
+  }
+  .iframe-frame {
+    width: 720px; max-width: calc(100% - 48px);
+    height: 320px; max-height: calc(100% - 48px);
+    border-radius: 16px;
+    background: linear-gradient(160deg, #15151c, #0b0b10);
+    border: 1px solid var(--border-hi);
+    box-shadow: 0 30px 60px -32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .iframe-frame::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(70% 50% at 75% 25%, rgba(245,196,107,0.18), transparent 60%),
+      radial-gradient(70% 50% at 25% 75%, rgba(111,224,210,0.10), transparent 60%);
+    pointer-events: none;
+  }
+  .iframe-content {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    text-align: center;
+  }
+  .iframe-content .badge-mini {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .iframe-content h1 {
+    margin: 0;
+    font-family: Fraunces, serif; font-style: italic; font-weight: 300;
+    font-size: 36px; color: var(--text-1); letter-spacing: -0.01em;
+  }
+  .iframe-content p {
+    margin: 0; max-width: 420px;
+    color: var(--text-2); font-size: 14px; line-height: 1.55;
+  }
+  .iframe-content .demo-cta {
+    margin-top: 4px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 12px;
+    background: linear-gradient(180deg, rgba(245,196,107,0.32), rgba(245,196,107,0.10));
+    border: 1px solid rgba(245,196,107,0.45);
+    color: var(--text-1);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em;
+    box-shadow: 0 0 28px -8px rgba(245,196,107,0.55), inset 0 1px 0 rgba(255,255,255,0.10);
+  }
+  .iframe-dim {
+    position: absolute; left: 14px; bottom: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em;
+    color: var(--text-3);
+    z-index: 2;
+  }
+
+  /* --- Console strip (spans both columns) --- */
+  .console {
+    grid-column: 1 / 3; grid-row: 2 / 3;
+    height: 88px;
+    background: rgba(12,12,16,0.78);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(18px) saturate(160%);
+    display: flex; flex-direction: column;
+  }
+  .console-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .console-head .left { display: flex; align-items: center; gap: 12px; }
+  .reload-eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--glow-cool);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.20em; text-transform: uppercase;
+  }
+  .reload-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-cool); box-shadow: 0 0 8px var(--glow-cool); }
+  .console-actions { display: flex; align-items: center; gap: 8px; }
+  .ghost-btn {
+    padding: 4px 10px; border-radius: 8px;
+    background: var(--glass); border: 1px solid var(--border);
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background 280ms var(--ease), color 280ms var(--ease), border-color 280ms var(--ease);
+  }
+  .ghost-btn:hover { background: var(--glass-2); color: var(--text-1); border-color: var(--border-hi); }
+  .console-body {
+    flex: 1; overflow: auto;
+    padding: 8px 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.55;
+    color: var(--text-2);
+  }
+  .log-row { display: grid; grid-template-columns: 64px 14px 1fr; gap: 8px; align-items: baseline; }
+  .log-row .ts { color: var(--text-3); font-size: 10.5px; letter-spacing: 0.10em; }
+  .log-row .glyph { color: var(--text-3); }
+  .log-row.ok .glyph { color: var(--glow-cool); }
+  .log-row.warn .glyph { color: var(--glow-warm); }
+  .log-row.err .glyph { color: var(--glow-error); }
+
+  /* --- Right rail trigger (closed by default for this scene) --- */
+  .rr-trigger {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 88px; border-radius: 14px;
+    background: var(--glass-2); border: 1px solid var(--border-hi);
+    backdrop-filter: blur(20px) saturate(180%);
+    color: var(--text-2); cursor: pointer; z-index: 6;
+    display: grid; place-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em;
+    writing-mode: vertical-rl; text-transform: uppercase;
+    transition: background 400ms var(--ease), color 400ms var(--ease), border-color 400ms var(--ease);
+  }
+  .rr-trigger:hover { background: var(--glass-3); border-color: rgba(111,224,210,0.32); color: var(--text-1); }
+
+  /* --- Note overlay --- */
+  .note {
+    position: fixed; left: 76px; bottom: 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em;
+    color: var(--text-3); text-transform: uppercase;
+    pointer-events: none;
+    z-index: 20;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Icon rail -->
+    <aside class="icon-rail" aria-label="Domains">
+      <div class="ir-brand" title="FAMtastic"></div>
+      <button class="ir-btn" title="Sites">S</button>
+      <button class="ir-btn" title="Brainstorm">B</button>
+      <button class="ir-btn" title="Plans">P</button>
+      <button class="ir-btn active" title="Components">C</button>
+      <button class="ir-btn" title="Media">M</button>
+      <button class="ir-btn" title="Research">R</button>
+      <div class="ir-spacer"></div>
+      <button class="ir-btn" title="Admin">A</button>
+    </aside>
+
+    <!-- Top bar -->
+    <header class="top-bar">
+      <div class="crumb">
+        <span>Components</span><span class="sep">/</span>
+        <span>Live Countdown Timer</span><span class="sep">/</span>
+        <b>Sandbox</b>
+        <span class="iso-badge" title="Rendered against nothing else"><span class="dot"></span> Isolated</span>
+      </div>
+      <div class="top-right">
+        <div class="pill-row-top" aria-label="Viewport">
+          <span class="pill-mini">Mobile</span>
+          <span class="pill-mini">Tablet</span>
+          <span class="pill-mini on">Desktop</span>
+        </div>
+        <div class="pill-row-top" aria-label="Theme">
+          <span class="pill-mini">Light</span>
+          <span class="pill-mini">Dark</span>
+          <span class="pill-mini on">Night</span>
+        </div>
+        <button class="stop-btn" title="Auto-run engaged — click to halt">
+          <span class="sq"></span>
+          STOP
+          <span class="kbd">⌘ ↵</span>
+        </button>
+        <span class="shay-dot" title="Shay-Shay is here"></span>
+      </div>
+    </header>
+
+    <!-- Stage -->
+    <section class="stage">
+
+      <!-- Editor stack -->
+      <div class="editor-stack" aria-label="Source editors">
+
+        <!-- HTML pane -->
+        <div class="pane">
+          <div class="pane-head">
+            <span class="pane-tab"><span class="lang">HTML</span> markup <span class="dirty" title="Unsaved"></span></span>
+            <span class="pane-meta">14 lines · utf-8</span>
+          </div>
+          <div class="pane-body">
+            <div class="code-row"><div class="ln">1</div><div class="src"><span class="t">&lt;section</span> <span class="a">class</span>=<span class="s">"countdown"</span> <span class="a">data-target</span>=<span class="s">"2026-08-15T18:00"</span><span class="t">&gt;</span></div></div>
+            <div class="code-row"><div class="ln">2</div><div class="src">  <span class="t">&lt;p</span> <span class="a">class</span>=<span class="s">"eyebrow"</span><span class="t">&gt;</span>Reunion in<span class="t">&lt;/p&gt;</span></div></div>
+            <div class="code-row"><div class="ln">3</div><div class="src">  <span class="t">&lt;div</span> <span class="a">class</span>=<span class="s">"clock"</span><span class="t">&gt;</span></div></div>
+            <div class="code-row"><div class="ln">4</div><div class="src">    <span class="t">&lt;span</span> <span class="a">data-unit</span>=<span class="s">"days"</span><span class="t">&gt;</span>102<span class="t">&lt;/span&gt;</span><span class="c">  &lt;!-- d --&gt;</span></div></div>
+            <div class="code-row"><div class="ln">5</div><div class="src">    <span class="t">&lt;span</span> <span class="a">data-unit</span>=<span class="s">"hours"</span><span class="t">&gt;</span>14<span class="t">&lt;/span&gt;</span></div></div>
+            <div class="code-row"><div class="ln">6</div><div class="src">    <span class="t">&lt;span</span> <span class="a">data-unit</span>=<span class="s">"mins"</span><span class="t">&gt;</span>22<span class="t">&lt;/span&gt;</span></div></div>
+            <div class="code-row"><div class="ln">7</div><div class="src">  <span class="t">&lt;/div&gt;</span></div></div>
+            <div class="code-row"><div class="ln curr">8</div><div class="src">  <span class="t">&lt;button</span> <span class="a">class</span>=<span class="s">"cta"</span><span class="t">&gt;</span>Save the date<span class="t">&lt;/button&gt;</span></div></div>
+            <div class="code-row"><div class="ln">9</div><div class="src"><span class="t">&lt;/section&gt;</span></div></div>
+          </div>
+        </div>
+
+        <!-- CSS pane -->
+        <div class="pane">
+          <div class="pane-head">
+            <span class="pane-tab"><span class="lang">CSS</span> styles</span>
+            <span class="pane-meta">38 lines · css-only reload</span>
+          </div>
+          <div class="pane-body">
+            <div class="code-row"><div class="ln">1</div><div class="src"><span class="k">.countdown</span> { display: flex; flex-direction: column; gap: <span class="s">14px</span>; align-items: center; }</div></div>
+            <div class="code-row"><div class="ln">2</div><div class="src"><span class="k">.eyebrow</span> { font-family: <span class="s">'JetBrains Mono'</span>; letter-spacing: <span class="s">0.24em</span>; }</div></div>
+            <div class="code-row"><div class="ln">3</div><div class="src"><span class="k">.clock</span> { display: grid; grid-template-columns: repeat(3, <span class="s">1fr</span>); gap: <span class="s">22px</span>; }</div></div>
+            <div class="code-row"><div class="ln">4</div><div class="src"><span class="k">.clock span</span> { font: <span class="s">300 56px/1 Fraunces</span>; font-style: italic; }</div></div>
+            <div class="code-row"><div class="ln">5</div><div class="src"><span class="k">.cta</span> { padding: <span class="s">9px 18px</span>; border-radius: <span class="s">12px</span>; }</div></div>
+            <div class="code-row"><div class="ln">6</div><div class="src"><span class="k">.cta:hover</span> { box-shadow: <span class="s">0 0 28px -8px rgba(245,196,107,0.55)</span>; }</div></div>
+          </div>
+        </div>
+
+        <!-- JS pane -->
+        <div class="pane">
+          <div class="pane-head">
+            <span class="pane-tab"><span class="lang">JS</span> behavior <span class="dirty"></span></span>
+            <span class="pane-meta">22 lines · auto-run · 400ms debounce</span>
+          </div>
+          <div class="pane-body">
+            <div class="code-row"><div class="ln">1</div><div class="src"><span class="k">const</span> root = document.<span class="t">querySelector</span>(<span class="s">'.countdown'</span>);</div></div>
+            <div class="code-row"><div class="ln">2</div><div class="src"><span class="k">const</span> target = <span class="k">new</span> Date(root.dataset.target);</div></div>
+            <div class="code-row"><div class="ln">3</div><div class="src"><span class="k">function</span> <span class="t">tick</span>() {</div></div>
+            <div class="code-row"><div class="ln">4</div><div class="src">  <span class="k">const</span> diff = target - <span class="k">new</span> Date();</div></div>
+            <div class="code-row"><div class="ln curr">5</div><div class="src">  <span class="k">if</span> (diff &lt; <span class="s">0</span>) <span class="k">return</span> root.<span class="t">classList</span>.add(<span class="s">'past'</span>);</div></div>
+            <div class="code-row"><div class="ln">6</div><div class="src">  <span class="k">const</span> d = Math.<span class="t">floor</span>(diff / <span class="s">86400000</span>);</div></div>
+            <div class="code-row"><div class="ln">7</div><div class="src">  root.<span class="t">querySelector</span>(<span class="s">'[data-unit=days]'</span>).textContent = d;</div></div>
+            <div class="code-row"><div class="ln">8</div><div class="src">}</div></div>
+            <div class="code-row"><div class="ln">9</div><div class="src">setInterval(tick, <span class="s">1000</span>); <span class="c">// hot-reload safe</span></div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Preview column -->
+      <div class="preview" aria-label="Live preview">
+
+        <div class="variant-row">
+          <div class="group">
+            <label>grid</label>
+            <span class="pill-mini on">Off</span>
+            <span class="pill-mini">8px</span>
+            <span class="pill-mini">12-col</span>
+          </div>
+          <div class="group">
+            <span class="data">iframe · sandbox · allow-scripts</span>
+          </div>
+        </div>
+
+        <div class="preview-stage">
+          <div class="iframe-frame">
+            <div class="iframe-content">
+              <div class="badge-mini">Reunion in</div>
+              <h1>102 · 14 · 22</h1>
+              <p>Class of '96 · save the date — countdown component live, auto-running, isolated from any host page.</p>
+              <span class="demo-cta">Save the date</span>
+            </div>
+            <div class="iframe-dim">1280 × 320 · component-isolation</div>
+          </div>
+        </div>
+
+        <button class="rr-trigger" title="Open right rail">SHAY · PROPS</button>
+      </div>
+
+      <!-- Console strip -->
+      <div class="console" aria-label="Console output">
+        <div class="console-head">
+          <div class="left">
+            <span class="eyebrow" style="color: var(--text-2);">Console</span>
+            <span class="reload-eyebrow"><span class="dot"></span> Reload · css-only · 84ms</span>
+          </div>
+          <div class="console-actions">
+            <button class="ghost-btn">Clear</button>
+            <button class="ghost-btn">Collapse ▾</button>
+          </div>
+        </div>
+        <div class="console-body">
+          <div class="log-row ok"><span class="ts">14:02:18</span><span class="glyph">›</span><span>tick() registered · interval 1000ms · 1 listener</span></div>
+          <div class="log-row"><span class="ts">14:02:19</span><span class="glyph">·</span><span>days=102 hours=14 mins=22 — rendered</span></div>
+          <div class="log-row warn"><span class="ts">14:02:21</span><span class="glyph">!</span><span>css-only reload — .cta:hover added · iframe state preserved</span></div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <div class="note">workshop · sandbox · component studio · auto-run engaged · isolated mode</div>
+</body>
+</html>

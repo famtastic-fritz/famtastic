@@ -1,0 +1,260 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_2026-05-06T01-49_8547",
+  "created_at": "2026-05-06T01:49:52.172Z",
+  "source": {
+    "surface": "manual",
+    "session_id": null,
+    "adapter": "scripts/capture-adapters/manual.js",
+    "adapter_version": "0.2.0",
+    "input_path": "/Users/famtasticfritz/famtastic/captures/inbox/cap_session-meta-learning-2026-05-05.md",
+    "timestamp_range": {
+      "start": "2026-05-06T01:49:42.713Z",
+      "end": "2026-05-06T01:49:52.172Z"
+    }
+  },
+  "summary": "Manual capture of cap_session-meta-learning-2026-05-05.md (11470 bytes). 18 extracts found across 9 type patterns.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "learning",
+      "text": "# Session Meta-Learning — 2026-05-05",
+      "rationale": "# Session Meta-Learning — 2026-05-05",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "learning/session-meta-learning-2026-05-05"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "learning",
+      "text": "Authored at the user's request: *\"lets capture the research that was done",
+      "rationale": "Authored at the user's request: *\"lets capture the research that was done. how we did it, what information was useful to capture. what would have been nice to have. is the session history important? did we learn any new recipies? also what learning can we apply to the logic of how we build sites, refine them, what questions were important. how do we learn from this etc..\"*",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "capture"
+      ],
+      "confidence": 0.7,
+      "candidate_id": "learning/authored-at-the-users-request-lets-capture-the-research-that-was-done"
+    },
+    {
+      "extract_id": "x_3",
+      "type": "rule",
+      "text": "## Rule: Rail icons must sit inside a glass+bevel button container, not as flat SVG glyphs",
+      "rationale": "## Rule: Rail icons must sit inside a glass+bevel button container, not as flat SVG glyphs",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/rule-rail-icons-must-sit-inside-a-glassbevel-button-container-not-as-flat-svg-gl"
+    },
+    {
+      "extract_id": "x_4",
+      "type": "decision",
+      "text": "## Decision: Every research subagent must produce a working HTML mockup, not just a markdown brief",
+      "rationale": "## Decision: Every research subagent must produce a working HTML mockup, not just a markdown brief",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.78,
+      "candidate_id": "decision/decision-every-research-subagent-must-produce-a-working-html-mockup-not-just-a-m"
+    },
+    {
+      "extract_id": "x_5",
+      "type": "rule",
+      "text": "Today's most valuable design move was pairing each markdown brief with a self-contained HTML mockup",
+      "rationale": "Today's most valuable design move was pairing each markdown brief with a self-contained HTML mockup. The user could see and click the actual layout instead of inferring from prose. Six page-type briefs × two artifacts each = twelve files; the user picked direction visually in minutes. Words alone would have produced more rounds of clarification. Future research subagents must always produce both.",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "agents"
+      ],
+      "confidence": 0.72,
+      "candidate_id": "rule/todays-most-valuable-design-move-was-pairing-each-markdown-brief-with-a-self-con"
+    },
+    {
+      "extract_id": "x_6",
+      "type": "decision",
+      "text": "## Decision: Research-before-build is the new default for every page-type-shaped problem",
+      "rationale": "## Decision: Research-before-build is the new default for every page-type-shaped problem",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.78,
+      "candidate_id": "decision/decision-research-before-build-is-the-new-default-for-every-page-type-shaped-pro"
+    },
+    {
+      "extract_id": "x_7",
+      "type": "learning",
+      "text": "## Recipe: Capture the meta-learning from each session, not just the work",
+      "rationale": "## Recipe: Capture the meta-learning from each session, not just the work",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "capture"
+      ],
+      "confidence": 0.7,
+      "candidate_id": "learning/recipe-capture-the-meta-learning-from-each-session-not-just-the-work"
+    },
+    {
+      "extract_id": "x_8",
+      "type": "learning",
+      "text": "This very capture packet is an example",
+      "rationale": "This very capture packet is an example. Beyond shipping the work, capture the *how* — the recipes that worked, the gaps that surfaced, the questions that mattered. Otherwise the next session reinvents the methodology. Recommend: a `--meta` flag on `session-capture.js` that creates a meta-learning capture template at session end, prompting for \"what worked / what would I have wanted / what new recipes / what to apply forward.\"",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "capture"
+      ],
+      "confidence": 0.7,
+      "candidate_id": "learning/this-very-capture-packet-is-an-example"
+    },
+    {
+      "extract_id": "x_9",
+      "type": "learning",
+      "text": "## Learning: Session history is durable value, not throwaway transcript",
+      "rationale": "## Learning: Session history is durable value, not throwaway transcript",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "learning/learning-session-history-is-durable-value-not-throwaway-transcript"
+    },
+    {
+      "extract_id": "x_10",
+      "type": "bug-pattern",
+      "text": "## Learning: Working architecture and locked architecture diverge silently — surface viewers fix thi",
+      "rationale": "## Learning: Working architecture and locked architecture diverge silently — surface viewers fix this",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.85,
+      "candidate_id": "bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v"
+    },
+    {
+      "extract_id": "x_11",
+      "type": "bug-pattern",
+      "text": "Today's bug-pattern entry (`when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follo",
+      "rationale": "Today's bug-pattern entry (`when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whichever-surface-produces-value`) was the root of the day's confusion. The fix isn't to discipline the next agent; it's to make divergence visible. Recipe: any time there are two implementations of the same intent, build a viewer that shows them side-by-side. Drift becomes obvious; decisions become inevitable.",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.85,
+      "candidate_id": "bug-pattern/todays-bug-pattern-entry-when-the-locked-design-doesnt-match-what-works-the-next"
+    },
+    {
+      "extract_id": "x_12",
+      "type": "learning",
+      "text": "## Learning: The chat-capture pipeline needs a \"session\" packet type, not just paragraph extraction",
+      "rationale": "## Learning: The chat-capture pipeline needs a \"session\" packet type, not just paragraph extraction",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "capture"
+      ],
+      "confidence": 0.7,
+      "candidate_id": "learning/learning-the-chat-capture-pipeline-needs-a-session-packet-type-not-just-paragrap"
+    },
+    {
+      "extract_id": "x_13",
+      "type": "vendor-fact",
+      "text": "Today's plan-closeout mechanism applies to site execution too",
+      "rationale": "Today's plan-closeout mechanism applies to site execution too. Every site spec should produce closeout packets at major checkpoints (scaffold complete, content complete, deploy complete, post-launch). Each closeout records `proved`, `remaining_work`, `memory_candidates`. This makes site-building a first-class participant in the chat-capture pipeline — vendor facts learned during MBSH (cPanel UAPI is the deploy path) become memory entries that benefit every future site.",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:cpanel",
+        "deploy",
+        "memory",
+        "capture"
+      ],
+      "confidence": 0.88,
+      "candidate_id": "vendor-fact/todays-plan-closeout-mechanism-applies-to-site-execution-too"
+    },
+    {
+      "extract_id": "x_14",
+      "type": "vendor-fact",
+      "text": "Today's MBSH deploy proved a recipe: cPanel UAPI overwrite path + DNS via cPanel + Resend domain ver",
+      "rationale": "Today's MBSH deploy proved a recipe: cPanel UAPI overwrite path + DNS via cPanel + Resend domain verify + cron + CORS lockdown + smoke test. That recipe should be promoted as a `decision/site-deploy-canonical-recipe-cpanel-godaddy-resend` so the next site reuses it instead of re-discovering it. Pattern for every site we ship: at completion, distill the unique-to-this-site work AND the reusable recipe.",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "vendor:godaddy",
+        "vendor:cpanel",
+        "vendor:resend",
+        "deploy"
+      ],
+      "confidence": 0.88,
+      "candidate_id": "vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res"
+    },
+    {
+      "extract_id": "x_15",
+      "type": "decision",
+      "text": "- **Is this a creation tool or a website",
+      "rationale": "- **Is this a creation tool or a website?** (changes layout entirely)\n- **What page type is this?** (decision tree, not gut feel)\n- **Where does Shay live so she can see what she needs to see?** (placement is design, not afterthought)\n- **Does this surface push the canvas or float over it?** (right-rail behavior choice)\n- **Per-domain coherent icon set or generic library mixed?** (visual identity at the rail)\n- **What 2 product references prove this layout works?** (no inventing layouts)\n- **Wha",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.78,
+      "candidate_id": "decision/is-this-a-creation-tool-or-a-website"
+    },
+    {
+      "extract_id": "x_16",
+      "type": "gap",
+      "text": "## Gap: We have research methodology now, but no research-brief template",
+      "rationale": "## Gap: We have research methodology now, but no research-brief template",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "gap/gap-we-have-research-methodology-now-but-no-research-brief-template"
+    },
+    {
+      "extract_id": "x_17",
+      "type": "gap",
+      "text": "## Gap: Agent-checkin overlap detection is too coarse and produces false positives",
+      "rationale": "## Gap: Agent-checkin overlap detection is too coarse and produces false positives",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "gap/gap-agent-checkin-overlap-detection-is-too-coarse-and-produces-false-positives"
+    },
+    {
+      "extract_id": "x_18",
+      "type": "decision",
+      "text": "## Decision: Every Workbench-relevant memory entry must be reviewable from inside the Workbench itse",
+      "rationale": "## Decision: Every Workbench-relevant memory entry must be reviewable from inside the Workbench itself",
+      "evidence": [
+        "source:cap_session-meta-learning-2026-05-05.md"
+      ],
+      "facets": [
+        "memory"
+      ],
+      "confidence": 0.78,
+      "candidate_id": "decision/decision-every-workbench-relevant-memory-entry-must-be-reviewable-from-inside-th"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": []
+}

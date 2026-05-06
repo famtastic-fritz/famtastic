@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Page Type 04 — Triage / Workshop (Shay-Shay)</title>
+<style>
+  /* ---------- Night Scheme tokens (per STUDIO-UI-FOUNDATION §2) ---------- */
+  :root {
+    --bg:           #08080a;
+    --surface:      #131319;
+    --surface-2:    #1c1c24;
+    --surface-3:    #25252f;
+    --surface-4:    #2f2f3a;
+    --border:       rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.16);
+    --text:         #f0f0f5;
+    --text-2:       #a0a0aa;
+    --text-3:       #606068;
+    /* Shay cool-teal (per design-direction freeze) */
+    --shay:         #6FE0D2;
+    --shay-soft:    rgba(111,224,210,0.12);
+    --shay-line:    rgba(111,224,210,0.32);
+    --shay-glow:    0 0 24px rgba(111,224,210,0.45);
+    /* state pills */
+    --st-submitted:    #94a3b8;
+    --st-ack:          #60a5fa;
+    --st-decomposing:  #c084fc;
+    --st-running:      #6FE0D2;
+    --st-awaiting:     #fbbf24;
+    --st-done:         #4ade80;
+    --st-failed:       #f87171;
+    --st-handed-off:   #fb923c;
+    --mono: "SF Mono", Menlo, monospace;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --radius: 10px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body {
+    background:var(--bg); color:var(--text);
+    font-family:var(--font); font-size:13px; line-height:1.5;
+    min-height:100vh;
+  }
+  body::before {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(111,224,210,0.05) 0%, transparent 55%),
+      radial-gradient(circle at 82% 88%, rgba(111,224,210,0.03) 0%, transparent 55%);
+  }
+  /* ---------- mockup banner ---------- */
+  .banner {
+    position:relative; z-index:10;
+    background:linear-gradient(180deg, var(--shay-soft), transparent);
+    border-bottom:1px solid var(--shay-line);
+    padding:12px 22px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .banner h1 {
+    font-size:12px; font-weight:700; color:var(--shay);
+    text-transform:uppercase; letter-spacing:0.08em;
+  }
+  .banner .meta { color:var(--text-2); font-size:11px; }
+  .banner .meta span { color:var(--text); }
+
+  /* ---------- shell layout ---------- */
+  .shell {
+    position:relative; z-index:1;
+    display:grid;
+    grid-template-columns: 56px 280px 1fr 340px;
+    grid-template-rows: 1fr 220px;
+    grid-template-areas:
+      "rail queue workspace traceCol"
+      "rail queue reportRow traceCol";
+    height: calc(100vh - 46px);
+  }
+  /* ---------- icon rail ---------- */
+  .rail {
+    grid-area:rail;
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center;
+    padding-top:12px; gap:6px;
+  }
+  .rail .glyph {
+    width:40px; height:40px; border-radius:10px;
+    background:var(--surface-2); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-3); font-size:13px; font-weight:700;
+    cursor:pointer; transition:all .15s; position:relative;
+  }
+  .rail .glyph:hover { color:var(--text); border-color:var(--border-strong); }
+  .rail .glyph.shay {
+    background:radial-gradient(circle at 35% 32%, #b8f0e6, var(--shay) 55%, #2c8e80 100%);
+    color:#062420; box-shadow:var(--shay-glow);
+    animation: shayPulse 2.6s ease-in-out infinite;
+  }
+  .rail .glyph.shay::after {
+    content:""; position:absolute; left:-3px; top:6px; bottom:6px; width:3px;
+    background:var(--shay); border-radius:0 3px 3px 0;
+  }
+  @keyframes shayPulse {
+    0%,100% { box-shadow: 0 0 0 2px rgba(111,224,210,0.18), 0 0 18px rgba(111,224,210,0.4); }
+    50%     { box-shadow: 0 0 0 4px rgba(111,224,210,0.30), 0 0 30px rgba(111,224,210,0.6); }
+  }
+  .rail .spacer { flex:1; }
+  .rail .glyph.companion-tag {
+    font-size:8px; color:var(--shay); background:transparent; border:none;
+    cursor:default; height:auto; width:auto; padding:4px 0;
+    text-transform:uppercase; letter-spacing:0.08em; writing-mode:vertical-rl;
+  }
+
+  /* ---------- queue (Region B) ---------- */
+  .queue {
+    grid-area:queue;
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    overflow-y:auto;
+    display:flex; flex-direction:column;
+  }
+  .queue-head {
+    padding:14px 14px 10px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:baseline; gap:10px;
+  }
+  .queue-head h2 {
+    font-size:13px; font-weight:700; color:var(--text);
+    letter-spacing:-0.01em;
+  }
+  .queue-head .count {
+    font-size:10px; font-weight:700;
+    background:var(--shay-soft); color:var(--shay);
+    padding:1px 8px; border-radius:99px;
+  }
+  .queue-filters {
+    display:flex; gap:6px; padding:8px 12px;
+    border-bottom:1px solid var(--border);
+    font-size:10px; color:var(--text-3);
+  }
+  .queue-filters .f {
+    padding:3px 8px; border-radius:99px;
+    background:var(--surface-2); border:1px solid var(--border);
+    cursor:pointer; text-transform:uppercase; letter-spacing:0.06em;
+    font-weight:600;
+  }
+  .queue-filters .f.active { background:var(--shay-soft); color:var(--shay); border-color:var(--shay-line); }
+  .queue-list { padding:6px 8px; }
+  .qrow {
+    display:grid;
+    grid-template-columns: 22px 1fr auto;
+    gap:8px; align-items:start;
+    padding:9px 10px; margin-bottom:4px;
+    border-radius:8px;
+    border:1px solid transparent;
+    cursor:pointer; transition:all .15s;
+    background:transparent;
+  }
+  .qrow:hover { background:var(--surface-2); }
+  .qrow.selected {
+    background:var(--shay-soft);
+    border-color:var(--shay-line);
+  }
+  .qrow .src {
+    width:22px; height:22px; border-radius:6px;
+    background:var(--surface-3); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; color:var(--text-2); font-weight:700;
+  }
+  .qrow .body { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .qrow .title {
+    font-size:12px; color:var(--text); font-weight:600;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .qrow .meta {
+    display:flex; gap:6px; align-items:center;
+    font-size:10px; color:var(--text-3); font-family:var(--mono);
+  }
+  .qrow .age { color:var(--text-3); font-size:10px; font-family:var(--mono); }
+  .pill {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
+    padding:2px 7px; border-radius:99px;
+    background:var(--surface-3); color:var(--text-2);
+  }
+  .pill::before {
+    content:""; width:5px; height:5px; border-radius:50%; background:currentColor;
+  }
+  .pill.submitted    { color:var(--st-submitted); }
+  .pill.acknowledged { color:var(--st-ack); }
+  .pill.decomposing  { color:var(--st-decomposing); }
+  .pill.running      { color:var(--st-running); }
+  .pill.awaiting     { color:var(--st-awaiting); }
+  .pill.done         { color:var(--st-done); }
+  .pill.failed       { color:var(--st-failed); }
+  .pill.handed-off   { color:var(--st-handed-off); }
+  .qrow .cost {
+    font-size:10px; color:var(--st-done); font-family:var(--mono);
+  }
+
+  /* ---------- workspace (Region C + D) ---------- */
+  .workspace {
+    grid-area:workspace;
+    overflow-y:auto;
+    padding:18px 22px;
+    background:linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+  }
+  .ws-head {
+    display:flex; align-items:flex-start; gap:14px;
+    margin-bottom:10px;
+  }
+  .ws-head h2 {
+    font-size:18px; font-weight:700; letter-spacing:-0.01em;
+  }
+  .ws-head .id {
+    font-family:var(--mono); font-size:10px; color:var(--text-3);
+    margin-top:6px;
+  }
+  .ws-head .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .ws-meta {
+    display:flex; gap:14px; font-size:11px; color:var(--text-2);
+    margin-bottom:14px; flex-wrap:wrap;
+  }
+  .ws-meta strong { color:var(--text); font-weight:600; }
+  .ws-meta a { color:var(--shay); text-decoration:none; border-bottom:1px dotted var(--shay-line); }
+
+  .panel {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    margin-bottom:12px;
+  }
+  .panel.shay-notes { border-color:var(--shay-line); }
+  .panel-head {
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px;
+    font-size:10px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--text-3); font-weight:700;
+  }
+  .panel.shay-notes .panel-head { color:var(--shay); }
+  .panel-head .badge {
+    margin-left:auto; font-size:10px; color:var(--text-3); font-family:var(--mono);
+    text-transform:none; letter-spacing:0;
+  }
+  .panel-body { padding:14px; font-size:13px; color:var(--text); }
+  .panel-body p { margin-bottom:8px; color:var(--text); }
+  .panel-body p:last-child { margin-bottom:0; }
+  .panel-body .quiet { color:var(--text-2); font-size:12px; }
+  .panel-body code {
+    background:var(--surface-2); color:var(--shay);
+    padding:1px 6px; border-radius:5px;
+    font-size:11px; font-family:var(--mono);
+  }
+  .accept-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
+  .accept-list li {
+    font-size:12px; color:var(--text-2);
+    display:flex; gap:8px; align-items:flex-start;
+  }
+  .accept-list li::before {
+    content:"◆"; color:var(--shay); margin-top:1px;
+  }
+
+  /* ---------- decomposition tree (Region D) ---------- */
+  .tree { padding:12px 14px; }
+  .node {
+    display:grid;
+    grid-template-columns: 16px 1fr auto auto auto;
+    gap:10px; align-items:center;
+    padding:7px 8px; border-radius:7px;
+    background:var(--surface-2); border:1px solid var(--border);
+    margin-bottom:4px;
+    font-size:12px;
+  }
+  .node .twig { color:var(--text-3); font-family:var(--mono); font-size:11px; }
+  .node .nm { font-family:var(--mono); font-size:11px; color:var(--text); }
+  .node .nm .who {
+    font-family:var(--font); color:var(--text-3); font-size:10px;
+    margin-left:8px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;
+  }
+  .node .nm .who.codex  { color:#fb923c; }
+  .node .nm .who.gemini { color:#60a5fa; }
+  .node .nm .who.shay   { color:var(--shay); }
+  .node .dur, .node .cst {
+    font-family:var(--mono); font-size:10px; color:var(--text-3);
+  }
+  .node .cst.has { color:var(--st-done); }
+  .node.indent-1 { margin-left:18px; }
+
+  /* ---------- trace + cost (Region E) ---------- */
+  .trace-col {
+    grid-area:traceCol;
+    background:var(--surface);
+    border-left:1px solid var(--border);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+  .cost-meter {
+    padding:14px 16px;
+    border-bottom:1px solid var(--shay-line);
+    background:linear-gradient(180deg, var(--shay-soft), transparent);
+  }
+  .cost-meter .label {
+    font-size:10px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--shay); font-weight:700; margin-bottom:6px;
+  }
+  .cost-meter .row {
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:4px;
+  }
+  .cost-meter .row .k { font-size:11px; color:var(--text-2); }
+  .cost-meter .row .v {
+    font-family:var(--mono); font-size:13px; color:var(--text); font-weight:600;
+  }
+  .cost-meter .row.session .v { color:var(--shay); }
+  .trace-head {
+    padding:10px 14px; font-size:10px;
+    text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--text-3); font-weight:700;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:8px;
+  }
+  .trace-head .live {
+    width:6px; height:6px; border-radius:50%;
+    background:var(--shay); animation:livePulse 1.6s ease-in-out infinite;
+  }
+  @keyframes livePulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .trace {
+    flex:1; overflow-y:auto;
+    padding:8px 14px;
+    font-family:var(--mono); font-size:11px;
+  }
+  .ev {
+    display:grid;
+    grid-template-columns: 56px 1fr auto;
+    gap:8px; padding:6px 0;
+    border-bottom:1px dashed var(--border);
+    color:var(--text-2);
+  }
+  .ev .ts { color:var(--text-3); }
+  .ev .cs { color:var(--st-done); }
+  .ev.state .ms { color:var(--shay); }
+  .ev.tool  .ms { color:var(--text); }
+  .ev.error .ms { color:var(--st-failed); }
+
+  /* ---------- report-back (Region F) ---------- */
+  .report-row {
+    grid-area:reportRow;
+    background:var(--surface);
+    border-top:1px solid var(--shay-line);
+    border-right:1px solid var(--border);
+    padding:14px 22px;
+    overflow-y:auto;
+  }
+  .report-head {
+    display:flex; align-items:center; gap:10px; margin-bottom:8px;
+  }
+  .report-head .label {
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--shay);
+  }
+  .report-head .id { font-family:var(--mono); font-size:10px; color:var(--text-3); }
+  .report-head .right { margin-left:auto; font-size:10px; color:var(--text-3); }
+  .draft {
+    background:var(--surface-2);
+    border:1px solid var(--shay-line);
+    border-radius:8px;
+    padding:12px 14px;
+    color:var(--text); font-size:12.5px; line-height:1.6;
+    margin-bottom:10px;
+  }
+  .draft strong { color:var(--shay); font-weight:600; }
+  .draft code {
+    background:var(--surface-3); color:var(--shay);
+    padding:1px 5px; border-radius:4px;
+    font-family:var(--mono); font-size:11px;
+  }
+  .handles { display:flex; flex-wrap:wrap; gap:6px; }
+  .handle {
+    padding:6px 12px; border-radius:8px;
+    border:1px solid var(--border-strong);
+    background:transparent; color:var(--text-2);
+    font-size:11px; font-weight:600; cursor:pointer;
+    transition:all .15s;
+  }
+  .handle:hover { color:var(--text); border-color:var(--text-3); }
+  .handle.primary {
+    background:var(--shay); color:#062420; border-color:var(--shay);
+  }
+  .handle.primary:hover { background:#86eddf; }
+  .handle.warn { color:var(--st-awaiting); border-color:rgba(251,191,36,0.4); }
+  .handle.danger { color:var(--st-failed); border-color:rgba(248,113,113,0.3); }
+  .handle.handoff {
+    background:var(--surface-2); color:var(--text);
+    border-color:var(--border-strong);
+  }
+  .handle.handoff .badge {
+    background:var(--surface-3); color:var(--text-3);
+    padding:1px 6px; border-radius:99px;
+    font-size:9px; margin-left:6px; text-transform:uppercase; letter-spacing:0.06em;
+  }
+
+  /* ---------- annotations strip ---------- */
+  .annotations {
+    position:relative; z-index:1;
+    background:linear-gradient(180deg, transparent, rgba(111,224,210,0.04));
+    border-top:1px solid var(--border);
+    padding:18px 22px 26px;
+  }
+  .annotations h3 {
+    font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--shay); font-weight:700; margin-bottom:10px;
+  }
+  .annot-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; }
+  .annot {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px;
+  }
+  .annot .num {
+    display:inline-block; background:var(--shay); color:#062420;
+    font-weight:700; font-size:10px;
+    width:18px; height:18px; line-height:18px; text-align:center;
+    border-radius:50%; margin-right:6px;
+  }
+  .annot .what { font-weight:600; color:var(--text); font-size:12px; margin-bottom:4px; }
+  .annot .why  { color:var(--text-2); font-size:11px; line-height:1.55; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>Page Type 04 — Triage / Workshop (Shay-Shay's own page)</h1>
+  <div class="meta">
+    Shows: <span>icon rail w/ Shay companion glyph</span> ·
+    <span>queue (left)</span> ·
+    <span>active workspace + decomposition (center)</span> ·
+    <span>run trace + cost meter (right)</span> ·
+    <span>report-back + handoff handles (bottom)</span>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ============== ICON RAIL ============== -->
+  <aside class="rail">
+    <div class="glyph" title="Sites">S</div>
+    <div class="glyph" title="Brain">B</div>
+    <div class="glyph" title="Plans">P</div>
+    <div class="glyph" title="Components">C</div>
+    <div class="glyph" title="Media">M</div>
+    <div class="glyph" title="Intel">I</div>
+    <div class="glyph" title="Admin">A</div>
+    <div class="spacer"></div>
+    <div class="glyph companion-tag">Companion</div>
+    <div class="glyph shay" title="Shay-Shay (companion — not a domain)">★</div>
+  </aside>
+
+  <!-- ============== REGION B — QUEUE ============== -->
+  <aside class="queue">
+    <div class="queue-head">
+      <h2>Shay's plate</h2>
+      <span class="count">7</span>
+    </div>
+    <div class="queue-filters">
+      <span class="f active">All</span>
+      <span class="f">Running</span>
+      <span class="f">Awaiting you</span>
+      <span class="f">Done</span>
+    </div>
+    <div class="queue-list">
+
+      <div class="qrow">
+        <div class="src" title="capture">CP</div>
+        <div class="body">
+          <div class="title">Triage capture: workbench foundation notes</div>
+          <div class="meta"><span class="pill submitted">submitted</span> <span class="age">3m</span></div>
+        </div>
+        <div class="cost">$0.00</div>
+      </div>
+
+      <div class="qrow">
+        <div class="src" title="plan task">PL</div>
+        <div class="body">
+          <div class="title">Decompose ws_research_triage_workshop</div>
+          <div class="meta"><span class="pill acknowledged">acknowledged</span> <span class="age">7m</span></div>
+        </div>
+        <div class="cost">$0.01</div>
+      </div>
+
+      <div class="qrow selected">
+        <div class="src" title="dispatch">DP</div>
+        <div class="body">
+          <div class="title">Audit MBSH reunion site for slot drift</div>
+          <div class="meta"><span class="pill running">running</span> <span class="age">14m</span></div>
+        </div>
+        <div class="cost">$0.18</div>
+      </div>
+
+      <div class="qrow">
+        <div class="src" title="intel promotion">IN</div>
+        <div class="body">
+          <div class="title">Investigate hero double-dash regression flag</div>
+          <div class="meta"><span class="pill awaiting">awaiting you</span> <span class="age">28m</span></div>
+        </div>
+        <div class="cost">$0.07</div>
+      </div>
+
+      <div class="qrow">
+        <div class="src" title="dispatch">DP</div>
+        <div class="body">
+          <div class="title">Refactor surgical-editor diff applier</div>
+          <div class="meta"><span class="pill handed-off">handed-off</span> <span class="age">42m</span></div>
+        </div>
+        <div class="cost">$0.22</div>
+      </div>
+
+      <div class="qrow">
+        <div class="src" title="schedule">SC</div>
+        <div class="body">
+          <div class="title">Weekly intel sweep — verticals queue</div>
+          <div class="meta"><span class="pill done">done</span> <span class="age">1h</span></div>
+        </div>
+        <div class="cost">$0.31</div>
+      </div>
+
+      <div class="qrow">
+        <div class="src" title="capture">CP</div>
+        <div class="body">
+          <div class="title">Promote capture: glass slide-out rules</div>
+          <div class="meta"><span class="pill failed">failed</span> <span class="age">2h</span></div>
+        </div>
+        <div class="cost">$0.04</div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ============== REGION C + D — WORKSPACE ============== -->
+  <main class="workspace">
+    <div class="ws-head">
+      <div>
+        <h2>Audit MBSH reunion site for slot drift</h2>
+        <div class="id">task ws_2026-05-05_t04 · src dispatch_a3f9 · started 14:23 · age 14m</div>
+      </div>
+      <div class="right">
+        <span class="pill running">running</span>
+      </div>
+    </div>
+
+    <div class="ws-meta">
+      <div><strong>Source:</strong> <a href="#">operator dispatch from Sites › site-mbsh-reunion</a></div>
+      <div><strong>Budget:</strong> $0.50 hard cap</div>
+      <div><strong>Brain:</strong> Sonnet (tier 3)</div>
+    </div>
+
+    <!-- Shay's working notes (FIRST thing — per acceptance §6.3) -->
+    <div class="panel shay-notes">
+      <div class="panel-head">
+        <span>Shay's working notes</span>
+        <span class="badge">acknowledged 14:24 · last edit 14:31</span>
+      </div>
+      <div class="panel-body">
+        <p>You asked me to <strong>audit the MBSH reunion site for slot drift</strong> — places where
+        <code>data-slot-id</code> values disagree between the brief, the rendered HTML, and the
+        media library.</p>
+        <p>Plan: walk all 8 pages, diff slot ids against <code>brief.slots</code>, then against
+        <code>library.json</code>. Flag mismatches. Group by severity (broken vs cosmetic). Return a
+        table with proposed renames where I can infer the right id.</p>
+        <p class="quiet">Acceptance criteria I'm honoring:</p>
+        <ul class="accept-list">
+          <li>Every slot mismatch listed with page, slot id (current), slot id (expected), confidence.</li>
+          <li>No automatic edits — report-back only.</li>
+          <li>Stay under the $0.50 cap. Escalate to operator if I'd blow it.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Decomposition tree (Region D) -->
+    <div class="panel">
+      <div class="panel-head">
+        <span>Decomposition tree</span>
+        <span class="badge">5 sub-tasks · 2 done · 2 running · 1 queued</span>
+      </div>
+      <div class="tree">
+        <div class="node">
+          <span class="twig">▾</span>
+          <span class="nm">crawl_pages <span class="who shay">SHAY</span></span>
+          <span class="pill done">done</span>
+          <span class="dur">3.1s</span>
+          <span class="cst has">$0.012</span>
+        </div>
+        <div class="node">
+          <span class="twig">▾</span>
+          <span class="nm">extract_slot_ids <span class="who shay">SHAY</span></span>
+          <span class="pill done">done</span>
+          <span class="dur">2.4s</span>
+          <span class="cst has">$0.008</span>
+        </div>
+        <div class="node">
+          <span class="twig">▾</span>
+          <span class="nm">diff_against_brief <span class="who shay">SHAY</span></span>
+          <span class="pill running">running</span>
+          <span class="dur">8.2s…</span>
+          <span class="cst has">$0.041</span>
+        </div>
+        <div class="node indent-1">
+          <span class="twig">└</span>
+          <span class="nm">infer_renames <span class="who codex">CODEX</span></span>
+          <span class="pill running">running</span>
+          <span class="dur">5.6s…</span>
+          <span class="cst has">$0.097</span>
+        </div>
+        <div class="node">
+          <span class="twig">▾</span>
+          <span class="nm">build_severity_table <span class="who shay">SHAY</span></span>
+          <span class="pill submitted">queued</span>
+          <span class="dur">—</span>
+          <span class="cst">$0.000</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============== REGION F — REPORT-BACK ============== -->
+  <section class="report-row">
+    <div class="report-head">
+      <span class="label">Report-back draft</span>
+      <span class="id">rb_ws_2026-05-05_t04 · auto-saving</span>
+      <span class="right">visible to: operator only · not yet sent</span>
+    </div>
+    <div class="draft">
+      Draft (in progress, ~60%): I walked all 8 pages of <code>site-mbsh-reunion</code> and pulled the
+      <code>data-slot-id</code> values. So far <strong>11 mismatches</strong> found across 4 pages.
+      Most are cosmetic (id casing drift between <code>hero-bg</code> and <code>heroBg</code>) but
+      <strong>2 are broken</strong> on <code>rsvp.html</code> — they reference slots the brief
+      doesn't declare, so the media pipeline is silently skipping them. <strong>Codex is inferring
+      proposed renames now</strong> for the cosmetic ones; the 2 broken ones I'd kick to you with
+      the brief snippet so you can decide whether to add the slot or remove the reference. Will
+      finalize once <code>infer_renames</code> returns (~30s).
+    </div>
+    <div class="handles">
+      <button class="handle primary">Approve &amp; promote</button>
+      <button class="handle warn">Kick back with note</button>
+      <button class="handle">Park</button>
+      <button class="handle handoff">Escalate to Codex <span class="badge">code-shaped</span></button>
+      <button class="handle handoff">Escalate to Gemini <span class="badge">research</span></button>
+      <button class="handle handoff">Hand to operator <span class="badge">decision</span></button>
+    </div>
+  </section>
+
+  <!-- ============== REGION E — TRACE + COST ============== -->
+  <aside class="trace-col">
+    <div class="cost-meter">
+      <div class="label">Cost meter</div>
+      <div class="row">
+        <span class="k">This task</span>
+        <span class="v">$0.181 / $0.50</span>
+      </div>
+      <div class="row session">
+        <span class="k">Session total</span>
+        <span class="v">$0.74</span>
+      </div>
+    </div>
+    <div class="trace-head">
+      <span class="live"></span>
+      <span>Run trace · live</span>
+    </div>
+    <div class="trace">
+      <div class="ev state"><span class="ts">14:23:04</span><span class="ms">state → submitted</span><span class="cs">$0.000</span></div>
+      <div class="ev state"><span class="ts">14:24:11</span><span class="ms">state → acknowledged</span><span class="cs">$0.004</span></div>
+      <div class="ev tool"><span class="ts">14:24:22</span><span class="ms">notes drafted (412 toks)</span><span class="cs">$0.006</span></div>
+      <div class="ev state"><span class="ts">14:25:01</span><span class="ms">state → decomposing</span><span class="cs">$0.006</span></div>
+      <div class="ev tool"><span class="ts">14:25:18</span><span class="ms">tree built · 5 nodes</span><span class="cs">$0.011</span></div>
+      <div class="ev state"><span class="ts">14:25:42</span><span class="ms">state → running</span><span class="cs">$0.011</span></div>
+      <div class="ev tool"><span class="ts">14:25:43</span><span class="ms">spawn crawl_pages</span><span class="cs">$0.011</span></div>
+      <div class="ev tool"><span class="ts">14:25:46</span><span class="ms">crawl_pages → done · 8 pages</span><span class="cs">$0.023</span></div>
+      <div class="ev tool"><span class="ts">14:25:47</span><span class="ms">spawn extract_slot_ids</span><span class="cs">$0.023</span></div>
+      <div class="ev tool"><span class="ts">14:25:49</span><span class="ms">extract → done · 87 ids</span><span class="cs">$0.031</span></div>
+      <div class="ev tool"><span class="ts">14:25:50</span><span class="ms">spawn diff_against_brief</span><span class="cs">$0.031</span></div>
+      <div class="ev tool"><span class="ts">14:30:12</span><span class="ms">11 mismatches found</span><span class="cs">$0.072</span></div>
+      <div class="ev tool"><span class="ts">14:30:13</span><span class="ms">handoff → Codex (infer_renames)</span><span class="cs">$0.072</span></div>
+      <div class="ev tool"><span class="ts">14:30:14</span><span class="ms">codex tier-3 invoked</span><span class="cs">$0.084</span></div>
+      <div class="ev tool"><span class="ts">14:36:55</span><span class="ms">codex partial · 6 of 9 inferred</span><span class="cs">$0.181</span></div>
+    </div>
+  </aside>
+
+</div>
+
+<div class="annotations">
+  <h3>What this mockup shows</h3>
+  <div class="annot-grid">
+    <div class="annot">
+      <div class="what"><span class="num">1</span>Shay is a companion glyph, not a domain</div>
+      <div class="why">The icon rail keeps the six canonical domains (S/B/P/C/M/I/A). Shay sits below the spacer with a "Companion" label, honoring R3 — she runs across all domains rather than being a peer to them. This page is reached from anywhere by clicking her glyph.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">2</span>Queue first, then workspace, then trace</div>
+      <div class="why">Linear-inbox layout: triage list at left, expanded task in the middle, run trace + cost on the right. State pills are the same strings everywhere (queue, workspace header, trace events) so the operator can scan once and know.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">3</span>Working notes are the first thing you see</div>
+      <div class="why">When a task is expanded, Shay's working notes (her own restatement of intent + plan) render before the decomposition tree, before the trace, before anything. Per acceptance §6.3 — sanity-check intent before burning budget.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">4</span>Decomposition tree shows executor + state + cost per node</div>
+      <div class="why">LangGraph/CrewAI pattern. Sub-tasks are tagged with their executor (SHAY / CODEX / GEMINI), state pill, duration, and rolling cost. Nested handoffs (Shay → Codex for code-shaped sub-tasks) are visible inline.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">5</span>Cost meter is always visible</div>
+      <div class="why">Top of the right column shows this-task cost vs. budget cap, and rolling session total. Per the contextual-vs-workshop table: in the workshop, cost is a budget, not a hidden conversation expense.</div>
+    </div>
+    <div class="annot">
+      <div class="what"><span class="num">6</span>Handoff handles are the formal escalation contract</div>
+      <div class="why">Six handles below the report-back: Approve &amp; promote, Kick back, Park, Escalate to Codex, Escalate to Gemini, Hand to operator. Each fires a real state transition (per §4 state map). No decorative buttons — this IS the contract with the other agents.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

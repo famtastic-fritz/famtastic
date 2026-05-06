@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Creation Canvas — Media Studio mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #08080A;
+    --bg-1: #0C0C10;
+    --glass: rgba(255,255,255,0.025);
+    --glass-2: rgba(255,255,255,0.045);
+    --glass-3: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.06);
+    --border-hi: rgba(255,255,255,0.11);
+    --text-1: #F2EFE8;
+    --text-2: rgba(242,239,232,0.55);
+    --text-3: rgba(242,239,232,0.32);
+    --glow-warm: #F5C46B;
+    --glow-warm-2: #E6A856;
+    --glow-cool: #6FE0D2;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg-0);
+    color: var(--text-1);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.45;
+    overflow: hidden;
+    /* subtle ambient */
+    background:
+      radial-gradient(900px 600px at 78% 18%, rgba(245,196,107,0.05), transparent 60%),
+      radial-gradient(900px 600px at 18% 82%, rgba(111,224,210,0.04), transparent 60%),
+      var(--bg-0);
+  }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3); }
+  .data { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.04em; color: var(--text-2); }
+  .display { font-family: Fraunces, serif; font-weight: 300; font-style: italic; }
+
+  /* --- App frame --- */
+  .app {
+    position: fixed; inset: 0;
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    grid-template-rows: 44px 1fr;
+  }
+
+  /* --- Icon rail --- */
+  .icon-rail {
+    grid-row: 1 / 3;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0;
+    gap: 10px;
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  .ir-brand {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: radial-gradient(circle at 30% 30%, var(--glow-warm), var(--glow-warm-2));
+    box-shadow: 0 0 24px rgba(245,196,107,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    margin-bottom: 12px;
+  }
+  .ir-btn {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: background 400ms var(--ease), border-color 400ms var(--ease), color 400ms var(--ease), transform 400ms var(--ease), box-shadow 400ms var(--ease);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+  }
+  .ir-btn:hover {
+    background: var(--glass-3);
+    border-color: var(--border-hi);
+    color: var(--text-1);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .ir-btn.active {
+    background: linear-gradient(180deg, rgba(245,196,107,0.18), rgba(245,196,107,0.04));
+    border-color: rgba(245,196,107,0.32);
+    color: var(--text-1);
+    box-shadow: 0 0 22px -6px rgba(245,196,107,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .ir-spacer { flex: 1; }
+
+  /* --- Top bar (collapsed: 44px) --- */
+  .top-bar {
+    grid-column: 2 / 3; grid-row: 1 / 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(12,12,16,0.55);
+    backdrop-filter: blur(22px) saturate(180%);
+    z-index: 5;
+  }
+  .crumb { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 13px; }
+  .crumb b { color: var(--text-1); font-weight: 500; }
+  .crumb .sep { color: var(--text-3); }
+  .top-right { display: flex; align-items: center; gap: 14px; }
+  .kbd { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.10em;
+    padding: 4px 8px; border-radius: 7px; background: var(--glass); border: 1px solid var(--border); color: var(--text-2); }
+  .cost-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-2);
+  }
+  .cost-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-warm); box-shadow: 0 0 10px var(--glow-warm); }
+  .shay-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--glow-cool);
+    box-shadow: 0 0 16px var(--glow-cool), 0 0 32px rgba(111,224,210,0.45);
+    animation: breathe 2.8s var(--ease) infinite;
+    cursor: pointer;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.65; transform: scale(1); }
+    50%      { opacity: 1;    transform: scale(1.18); }
+  }
+
+  /* --- Stage (canvas) --- */
+  .stage {
+    grid-column: 2 / 3; grid-row: 2 / 3;
+    position: relative;
+    overflow: hidden;
+  }
+  .canvas {
+    position: absolute; inset: 0;
+    padding: 28px 32px 132px 32px; /* bottom padding leaves room for prompt strip */
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .status-line {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.04em;
+  }
+  .status-line .pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--glow-warm);
+    box-shadow: 0 0 12px var(--glow-warm);
+    animation: breathe 2.4s var(--ease) infinite;
+  }
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 18px;
+    min-height: 0;
+  }
+  .tile {
+    position: relative;
+    border-radius: 18px;
+    background:
+      radial-gradient(140% 90% at 30% 20%, rgba(255,255,255,0.06), transparent 60%),
+      linear-gradient(160deg, #1a1a22, #0d0d12);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 400ms var(--ease), transform 400ms var(--ease), box-shadow 400ms var(--ease);
+    box-shadow: 0 20px 40px -28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .tile:hover {
+    border-color: var(--border-hi);
+    transform: translateY(-2px);
+    box-shadow: 0 28px 48px -28px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .tile.selected {
+    border-color: rgba(245,196,107,0.5);
+    box-shadow: 0 0 0 1px rgba(245,196,107,0.25), 0 0 48px -12px rgba(245,196,107,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .tile .label {
+    position: absolute; left: 12px; bottom: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3);
+  }
+  .tile .actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; transition: opacity 400ms var(--ease); }
+  .tile:hover .actions { opacity: 1; }
+  .tile .act {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+    color: var(--text-2); display: grid; place-items: center;
+    backdrop-filter: blur(10px); font-size: 13px;
+  }
+  /* Tile faux-image gradients for the 6 generations */
+  .t1 { background:
+    radial-gradient(80% 60% at 70% 30%, #f7c98d, transparent 60%),
+    radial-gradient(60% 60% at 30% 70%, #5a2b1b, transparent 60%),
+    linear-gradient(160deg, #1c0e08, #0a0707); }
+  .t2 { background:
+    radial-gradient(80% 60% at 30% 30%, #b6e8de, transparent 60%),
+    radial-gradient(60% 60% at 70% 70%, #102b39, transparent 60%),
+    linear-gradient(160deg, #0a1418, #06080a); }
+  .t3 { background:
+    radial-gradient(80% 60% at 50% 30%, #ffd17a, transparent 60%),
+    radial-gradient(60% 60% at 50% 80%, #4a1f0c, transparent 60%),
+    linear-gradient(160deg, #1a0f06, #07050a); }
+  .t4 { background:
+    radial-gradient(80% 60% at 70% 70%, #e2a4d8, transparent 60%),
+    radial-gradient(60% 60% at 30% 30%, #2a1140, transparent 60%),
+    linear-gradient(160deg, #15091e, #07060c); }
+  .t5 { background:
+    radial-gradient(80% 60% at 30% 70%, #9bc7ff, transparent 60%),
+    radial-gradient(60% 60% at 70% 30%, #122340, transparent 60%),
+    linear-gradient(160deg, #0a1224, #05070d); }
+  .t6 { background:
+    radial-gradient(80% 60% at 50% 50%, #f8a76b, transparent 60%),
+    linear-gradient(160deg, #2a1308, #08060a); }
+
+  /* --- Prompt strip (glass, collapsible) --- */
+  .prompt {
+    position: absolute; left: 50%; bottom: 24px;
+    transform: translateX(-50%);
+    width: min(880px, calc(100% - 64px));
+    background: var(--glass-2);
+    border: 1px solid var(--border-hi);
+    border-radius: 18px;
+    backdrop-filter: blur(26px) saturate(180%);
+    box-shadow: 0 24px 60px -32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: padding 400ms var(--ease), max-height 600ms var(--ease);
+    overflow: hidden;
+    z-index: 10;
+  }
+  .prompt-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px;
+  }
+  .prompt-input {
+    flex: 1;
+    background: transparent;
+    border: none; outline: none;
+    color: var(--text-1);
+    font-family: Inter, sans-serif; font-size: 15.5px;
+    padding: 4px 0;
+  }
+  .prompt-input::placeholder { color: var(--text-3); }
+  .prompt-cta {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 11px;
+    background: linear-gradient(180deg, rgba(245,196,107,0.22), rgba(245,196,107,0.08));
+    border: 1px solid rgba(245,196,107,0.35);
+    color: var(--text-1);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.10em;
+    cursor: pointer;
+    transition: background 400ms var(--ease), box-shadow 400ms var(--ease), transform 400ms var(--ease);
+  }
+  .prompt-cta:hover {
+    background: linear-gradient(180deg, rgba(245,196,107,0.32), rgba(245,196,107,0.14));
+    box-shadow: 0 0 26px -6px rgba(245,196,107,0.55);
+    transform: translateY(-1px);
+  }
+  .prompt-meta {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 18px 10px;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .chip {
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 10.5px;
+  }
+
+  /* --- Right rail (glass slide-out) --- */
+  .right-rail {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 380px;
+    background: rgba(12,12,16,0.55);
+    border-left: 1px solid var(--border);
+    backdrop-filter: blur(26px) saturate(180%);
+    transform: translateX(100%);
+    transition: transform 600ms var(--ease);
+    z-index: 8;
+    display: flex; flex-direction: column;
+    box-shadow: -24px 0 60px -32px rgba(0,0,0,0.8);
+  }
+  .right-rail.open { transform: translateX(0); }
+  .rr-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .rr-tabs { display: flex; gap: 6px; }
+  .rr-tab {
+    padding: 6px 10px; border-radius: 8px;
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    cursor: pointer;
+  }
+  .rr-tab.active { background: var(--glass-2); border-color: var(--border-hi); color: var(--text-1); }
+  .rr-close { width: 28px; height: 28px; border-radius: 9px; background: var(--glass); border: 1px solid var(--border); color: var(--text-2); cursor: pointer; }
+  .rr-body { flex: 1; overflow: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; }
+  .rr-section-title { display: flex; align-items: center; justify-content: space-between; }
+  .rr-section-title .eyebrow { color: var(--text-2); }
+  .shay-card {
+    background: linear-gradient(160deg, rgba(111,224,210,0.08), rgba(111,224,210,0.02));
+    border: 1px solid rgba(111,224,210,0.18);
+    border-radius: 14px; padding: 14px;
+  }
+  .shay-card .who { display: flex; align-items: center; gap: 8px; color: var(--glow-cool); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; }
+  .shay-card .who .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--glow-cool); box-shadow: 0 0 12px var(--glow-cool); animation: breathe 2.8s var(--ease) infinite; }
+  .shay-card p { margin: 10px 0 0; color: var(--text-1); font-size: 14px; line-height: 1.55; }
+  .shay-card .mirror {
+    margin-top: 12px; height: 84px; border-radius: 10px; border: 1px solid var(--border);
+    background: radial-gradient(80% 60% at 70% 30%, #f7c98d, transparent 60%), linear-gradient(160deg, #1c0e08, #0a0707);
+    position: relative;
+  }
+  .shay-card .mirror::after {
+    content: 'CURRENT VIEW · variation 02';
+    position: absolute; left: 10px; bottom: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.20em;
+    color: rgba(0,0,0,0.6);
+  }
+  .tool-row { display: flex; flex-direction: column; gap: 8px; }
+  .tool-row label { color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    padding: 6px 10px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--border);
+    color: var(--text-2); font-size: 12px; cursor: pointer;
+    transition: background 400ms var(--ease), border-color 400ms var(--ease), color 400ms var(--ease);
+  }
+  .pill:hover { background: var(--glass-2); border-color: var(--border-hi); color: var(--text-1); }
+  .pill.on { background: linear-gradient(180deg, rgba(245,196,107,0.16), rgba(245,196,107,0.04)); border-color: rgba(245,196,107,0.3); color: var(--text-1); }
+  .cost-block {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-radius: 12px;
+    background: var(--glass); border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--text-2);
+  }
+  .cost-block b { color: var(--glow-warm); }
+
+  /* --- Floating right-rail trigger when closed --- */
+  .rr-trigger {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 88px; border-radius: 14px;
+    background: var(--glass-2); border: 1px solid var(--border-hi);
+    backdrop-filter: blur(20px) saturate(180%);
+    color: var(--text-2); cursor: pointer; z-index: 6;
+    display: grid; place-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em;
+    writing-mode: vertical-rl; text-transform: uppercase;
+    transition: background 400ms var(--ease), color 400ms var(--ease), border-color 400ms var(--ease);
+  }
+  .rr-trigger:hover { background: var(--glass-3); border-color: rgba(245,196,107,0.32); color: var(--text-1); }
+
+  /* --- Note overlay (for the mockup viewer only) --- */
+  .note {
+    position: fixed; left: 76px; bottom: 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em;
+    color: var(--text-3); text-transform: uppercase;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <!-- Icon rail -->
+    <aside class="icon-rail" aria-label="Domains">
+      <div class="ir-brand" title="FAMtastic"></div>
+      <button class="ir-btn" title="Sites">S</button>
+      <button class="ir-btn" title="Brainstorm">B</button>
+      <button class="ir-btn" title="Plans">P</button>
+      <button class="ir-btn" title="Components">C</button>
+      <button class="ir-btn active" title="Media">M</button>
+      <button class="ir-btn" title="Research">R</button>
+      <div class="ir-spacer"></div>
+      <button class="ir-btn" title="Admin">A</button>
+    </aside>
+
+    <!-- Top bar (collapsed/focused mode) -->
+    <header class="top-bar">
+      <div class="crumb">
+        <span>Media</span><span class="sep">/</span>
+        <span>Generate</span><span class="sep">/</span>
+        <b>hero · mbsh-reunion</b>
+      </div>
+      <div class="top-right">
+        <span class="kbd">⌘ K</span>
+        <span class="cost-pill"><span class="dot"></span>$0.42 · 4 gens</span>
+        <span class="shay-dot" title="Shay-Shay is here" onclick="document.getElementById('rr').classList.add('open')"></span>
+      </div>
+    </header>
+
+    <!-- Stage -->
+    <section class="stage">
+      <div class="canvas">
+        <div class="status-line">
+          <span class="pulse"></span>
+          <span>generated 6 of 6 via Imagen 4 · 12.3s · prompt locked</span>
+        </div>
+        <div class="grid" role="list">
+          <div class="tile t1" role="listitem">
+            <div class="actions"><div class="act" title="Regenerate">↻</div><div class="act" title="Promote">★</div><div class="act" title="Compare">⤢</div></div>
+            <div class="label">var · 01</div>
+          </div>
+          <div class="tile t2 selected" role="listitem">
+            <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div></div>
+            <div class="label">var · 02 · selected</div>
+          </div>
+          <div class="tile t3" role="listitem">
+            <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div></div>
+            <div class="label">var · 03</div>
+          </div>
+          <div class="tile t4" role="listitem">
+            <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div></div>
+            <div class="label">var · 04</div>
+          </div>
+          <div class="tile t5" role="listitem">
+            <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div></div>
+            <div class="label">var · 05</div>
+          </div>
+          <div class="tile t6" role="listitem">
+            <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div></div>
+            <div class="label">var · 06</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt strip (collapsed = single line) -->
+      <div class="prompt" id="prompt">
+        <div class="prompt-row">
+          <span class="eyebrow" style="color: var(--text-3);">PROMPT</span>
+          <input class="prompt-input" placeholder="describe the change…" value="warm dusk light · class of '96 · subtle confetti · 16:9" />
+          <button class="prompt-cta">REGEN <span class="kbd" style="background: rgba(0,0,0,0.25); border-color: rgba(0,0,0,0.35);">⌘ ↵</span></button>
+        </div>
+        <div class="prompt-meta">
+          <span class="chip">Imagen 4</span>
+          <span class="chip">16:9</span>
+          <span class="chip">cinematic</span>
+          <span class="chip">seed · 0xA12F</span>
+          <span style="margin-left: auto;">⌘ E expand</span>
+        </div>
+      </div>
+
+      <!-- Right-rail trigger (only visible when closed) -->
+      <button class="rr-trigger" onclick="document.getElementById('rr').classList.add('open')">SHAY · TOOLS</button>
+
+      <!-- Right rail (glass slide-out) -->
+      <aside class="right-rail open" id="rr" aria-label="Right rail">
+        <div class="rr-head">
+          <div class="rr-tabs">
+            <button class="rr-tab active">SHAY</button>
+            <button class="rr-tab">TOOLS</button>
+            <button class="rr-tab">HISTORY</button>
+          </div>
+          <button class="rr-close" onclick="document.getElementById('rr').classList.remove('open')">×</button>
+        </div>
+        <div class="rr-body">
+          <div class="shay-card">
+            <div class="who"><span class="dot"></span> SHAY-SHAY</div>
+            <p>Variation 02 reads warmest of the six and lines up with the brief's "dusk class reunion" tone. Want me to upscale it and stage it on the index hero so you can compare against the current build?</p>
+            <div class="mirror" aria-label="Shay's view of the selected canvas tile"></div>
+          </div>
+
+          <div>
+            <div class="rr-section-title"><span class="eyebrow">TOOLS</span><span class="data">model · imagen-4</span></div>
+            <div class="tool-row" style="margin-top: 10px;">
+              <label>style</label>
+              <div class="pill-row">
+                <span class="pill on">cinematic</span>
+                <span class="pill">editorial</span>
+                <span class="pill">documentary</span>
+                <span class="pill">illustrative</span>
+              </div>
+            </div>
+            <div class="tool-row" style="margin-top: 12px;">
+              <label>aspect</label>
+              <div class="pill-row">
+                <span class="pill">1:1</span>
+                <span class="pill on">16:9</span>
+                <span class="pill">9:16</span>
+                <span class="pill">3:2</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cost-block">
+            <span>this run</span>
+            <b>$0.42</b>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <div class="note">creation canvas · media studio · selected · right rail open</div>
+
+  <script>
+    // tiny: ESC closes the rail; clicking the trigger opens it.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') document.getElementById('rr').classList.remove('open');
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        document.getElementById('rr').classList.toggle('open');
+      }
+    });
+  </script>
+</body>
+</html>

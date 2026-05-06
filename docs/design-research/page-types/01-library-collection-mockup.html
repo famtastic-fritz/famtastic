@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library / Collection — Sites Landing (Mockup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300..700;1,300..700&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#08080A; --bg-1:#0C0C10;
+    --glass:rgba(255,255,255,0.025); --glass-2:rgba(255,255,255,0.045);
+    --border:rgba(255,255,255,0.06); --border-hi:rgba(255,255,255,0.11);
+    --text-1:#F2EFE8; --text-2:rgba(242,239,232,0.55); --text-3:rgba(242,239,232,0.32);
+    --glow-warm:#F5C46B; --glow-warm-2:#E6A856; --glow-cool:#6FE0D2;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg-0);color:var(--text-1);font-family:Inter,system-ui,sans-serif;font-size:16.5px;line-height:1.5;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(900px 600px at 12% -10%, rgba(245,196,107,0.06), transparent 60%),
+      radial-gradient(900px 600px at 110% 20%, rgba(111,224,210,0.04), transparent 60%),
+      var(--bg-0);
+  }
+  .frame{display:grid;grid-template-columns:56px 1fr;min-height:100vh;}
+
+  /* ICON RAIL */
+  .rail{
+    position:sticky;top:0;height:100vh;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;
+  }
+  .rail .brand{
+    width:34px;height:34px;border-radius:10px;
+    background:radial-gradient(circle at 30% 30%, var(--glow-warm), var(--glow-warm-2));
+    box-shadow:0 0 24px rgba(245,196,107,0.35), inset 0 1px 0 rgba(255,255,255,0.18);
+    margin-bottom:14px;display:grid;place-items:center;font-family:Fraunces,serif;font-weight:600;color:#1a1208;
+  }
+  .rail-item{
+    width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+    color:var(--text-2);font-family:JetBrains Mono,monospace;font-size:12px;
+    border:1px solid transparent;transition:all 240ms var(--ease);position:relative;cursor:pointer;
+  }
+  .rail-item:hover{background:var(--glass-2);border-color:var(--border-hi);color:var(--text-1);}
+  .rail-item.active{
+    background:var(--glass-2);border-color:rgba(245,196,107,0.35);color:var(--glow-warm);
+    box-shadow:0 0 24px -6px rgba(245,196,107,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .rail-item .glyph{font-size:14px;letter-spacing:0;}
+  .rail-spacer{flex:1;}
+  .rail .shay{
+    width:30px;height:30px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, var(--glow-cool), #2c8a82);
+    box-shadow:0 0 18px rgba(111,224,210,0.45);
+    animation:breathe 3.2s var(--ease) infinite;
+  }
+  @keyframes breathe{50%{transform:scale(1.08);box-shadow:0 0 28px rgba(111,224,210,0.55);}}
+
+  /* MAIN COLUMN */
+  .main{display:flex;flex-direction:column;min-width:0;}
+
+  /* TOP BAR */
+  .topbar{
+    position:sticky;top:0;z-index:5;
+    height:64px;display:flex;align-items:center;gap:14px;
+    padding:0 24px;
+    background:linear-gradient(180deg, rgba(8,8,10,0.85), rgba(8,8,10,0.55));
+    backdrop-filter:blur(24px) saturate(180%);
+    border-bottom:1px solid var(--border);
+  }
+  .breadcrumb{font-family:JetBrains Mono,monospace;font-size:11.5px;letter-spacing:0.04em;color:var(--text-2);text-transform:uppercase;}
+  .breadcrumb b{color:var(--text-1);font-weight:500;}
+  .search{
+    flex:1;max-width:520px;height:36px;border-radius:10px;
+    background:var(--glass);border:1px solid var(--border);
+    backdrop-filter:blur(20px) saturate(180%);
+    display:flex;align-items:center;gap:10px;padding:0 12px;
+    transition:all 240ms var(--ease);
+  }
+  .search:hover{background:var(--glass-2);border-color:var(--border-hi);}
+  .search input{
+    flex:1;background:transparent;border:0;outline:0;color:var(--text-1);font:inherit;font-size:14.5px;
+  }
+  .search input::placeholder{color:var(--text-3);}
+  .kbd{
+    font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:0.10em;
+    color:var(--text-2);background:rgba(255,255,255,0.04);
+    border:1px solid var(--border);border-radius:7px;padding:2px 6px;
+  }
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .seg{
+    display:flex;background:var(--glass);border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  }
+  .seg button{
+    background:transparent;border:0;color:var(--text-2);font:inherit;font-size:12px;
+    padding:7px 11px;cursor:pointer;font-family:JetBrains Mono,monospace;letter-spacing:0.06em;
+  }
+  .seg button.on{background:var(--glass-2);color:var(--text-1);}
+  .shay-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--glow-cool);box-shadow:0 0 12px var(--glow-cool);
+    animation:breathe 3.2s var(--ease) infinite;
+  }
+
+  /* PAGE BODY */
+  .body{padding:22px 24px 80px;display:flex;flex-direction:column;gap:18px;}
+
+  /* WIDGETS ROW */
+  .widgets{
+    display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;
+    scrollbar-width:thin;
+  }
+  .widget{
+    flex:0 0 auto;min-width:184px;max-width:280px;
+    padding:14px 16px;border-radius:16px;
+    background:var(--glass);border:1px solid var(--border);
+    backdrop-filter:blur(22px) saturate(180%);
+    box-shadow:0 20px 40px -28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+    display:flex;flex-direction:column;gap:6px;transition:all 320ms var(--ease);
+  }
+  .widget:hover{background:var(--glass-2);border-color:var(--border-hi);transform:translateY(-1px);}
+  .widget .eyebrow{
+    font-family:JetBrains Mono,monospace;font-size:10.5px;letter-spacing:0.24em;
+    color:var(--text-3);text-transform:uppercase;
+  }
+  .widget .num{font-family:Fraunces,serif;font-weight:300;font-size:32px;line-height:1;color:var(--text-1);}
+  .widget .num em{color:var(--glow-warm);font-style:normal;font-size:13px;margin-left:6px;letter-spacing:0.04em;font-family:JetBrains Mono,monospace;}
+  .widget .sub{font-size:12.5px;color:var(--text-2);}
+  .widget.feed .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-2);padding:3px 0;border-bottom:1px dashed rgba(255,255,255,0.04);}
+  .widget.feed .row:last-child{border:0;}
+  .widget.shay-note{border-color:rgba(111,224,210,0.18);}
+  .widget.shay-note .eyebrow{color:var(--glow-cool);}
+  .widget.shay-note .note{font-family:Fraunces,serif;font-style:italic;font-size:15px;color:var(--text-1);line-height:1.35;}
+  .widget .pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--glow-warm);box-shadow:0 0 8px var(--glow-warm);margin-right:6px;animation:breathe 2.4s var(--ease) infinite;}
+  .widget-add{
+    flex:0 0 auto;width:64px;border-radius:16px;border:1px dashed var(--border-hi);
+    color:var(--text-3);display:grid;place-items:center;font-size:20px;cursor:pointer;
+    transition:all 240ms var(--ease);
+  }
+  .widget-add:hover{color:var(--glow-warm);border-color:rgba(245,196,107,0.4);}
+
+  /* FACET PILL BAR */
+  .facets{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:10px 12px;border-radius:12px;
+    background:var(--glass);border:1px solid var(--border);
+    backdrop-filter:blur(20px) saturate(180%);
+  }
+  .pill{
+    height:30px;display:inline-flex;align-items:center;gap:6px;
+    padding:0 11px;border-radius:8px;
+    background:rgba(255,255,255,0.03);border:1px solid var(--border);
+    color:var(--text-2);font-size:12.5px;cursor:pointer;
+    font-family:JetBrains Mono,monospace;letter-spacing:0.04em;
+    transition:all 200ms var(--ease);
+  }
+  .pill:hover{color:var(--text-1);border-color:var(--border-hi);background:var(--glass-2);}
+  .pill.on{
+    background:linear-gradient(180deg, rgba(245,196,107,0.18), rgba(245,196,107,0.06));
+    border-color:rgba(245,196,107,0.42);color:var(--glow-warm);
+    box-shadow:0 0 18px -4px rgba(245,196,107,0.35);
+  }
+  .pill .x{color:var(--text-3);margin-left:2px;}
+  .pill.add{border-style:dashed;color:var(--text-3);}
+  .facet-spacer{flex:1;}
+  .count{font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--text-3);letter-spacing:0.04em;}
+
+  /* GRID */
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:18px;
+  }
+  .card{
+    position:relative;
+    border-radius:18px;overflow:hidden;
+    background:var(--glass);border:1px solid var(--border);
+    backdrop-filter:blur(22px) saturate(180%);
+    box-shadow:0 20px 40px -28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+    transition:transform 400ms var(--ease), border-color 240ms var(--ease), box-shadow 400ms var(--ease);
+    cursor:pointer;display:flex;flex-direction:column;
+  }
+  .card:hover{
+    border-color:var(--border-hi);transform:translateY(-2px);
+    box-shadow:0 28px 60px -28px rgba(0,0,0,0.75), 0 0 36px -8px rgba(245,196,107,0.18), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .card .cover{
+    position:relative;height:154px;overflow:hidden;
+    background:linear-gradient(135deg, #1a1620 0%, #0f0d14 100%);
+  }
+  .card .cover .render{
+    position:absolute;inset:0;
+    transition:transform 600ms var(--ease);
+  }
+  .card:hover .cover .render{transform:scale(1.02);}
+  .card .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;}
+  .card .eyebrow{
+    font-family:JetBrains Mono,monospace;font-size:10.5px;letter-spacing:0.22em;
+    color:var(--text-3);text-transform:uppercase;
+  }
+  .card h3{
+    margin:0;font-family:Fraunces,serif;font-weight:400;font-size:22px;line-height:1.15;color:var(--text-1);
+  }
+  .card .meta{font-size:12.5px;color:var(--text-2);}
+  .chip{
+    position:absolute;top:12px;left:12px;z-index:2;
+    height:24px;display:inline-flex;align-items:center;gap:6px;
+    padding:0 9px;border-radius:7px;
+    font-family:JetBrains Mono,monospace;font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;
+    backdrop-filter:blur(14px);
+    background:rgba(8,8,10,0.55);border:1px solid var(--border-hi);color:var(--text-1);
+  }
+  .chip .dot{width:6px;height:6px;border-radius:50%;}
+  .chip.deployed .dot{background:#7AD499;box-shadow:0 0 8px #7AD499;}
+  .chip.building .dot{background:var(--glow-warm);box-shadow:0 0 8px var(--glow-warm);animation:breathe 1.6s var(--ease) infinite;}
+  .chip.scaffolded .dot{background:var(--glow-cool);box-shadow:0 0 8px var(--glow-cool);}
+  .chip.idle .dot{background:var(--text-3);}
+  .pin{
+    position:absolute;top:12px;right:12px;z-index:2;
+    width:26px;height:26px;border-radius:8px;
+    background:rgba(8,8,10,0.55);border:1px solid var(--border-hi);
+    display:grid;place-items:center;color:var(--text-2);font-size:11px;
+    backdrop-filter:blur(14px);
+  }
+  .actions{
+    position:absolute;left:0;right:0;bottom:0;
+    padding:10px 14px;display:flex;gap:8px;
+    background:linear-gradient(180deg, transparent, rgba(8,8,10,0.7) 60%);
+    opacity:0;transform:translateY(6px);transition:all 320ms var(--ease);
+  }
+  .card:hover .actions{opacity:1;transform:none;}
+  .actions .a{
+    height:26px;padding:0 10px;border-radius:7px;
+    background:var(--glass-2);border:1px solid var(--border-hi);
+    color:var(--text-1);font-family:JetBrains Mono,monospace;font-size:10.5px;
+    letter-spacing:0.10em;text-transform:uppercase;cursor:pointer;
+  }
+  .actions .a.primary{
+    background:linear-gradient(180deg, rgba(245,196,107,0.22), rgba(245,196,107,0.08));
+    border-color:rgba(245,196,107,0.5);color:var(--glow-warm);
+  }
+
+  /* FORCED HOVER STATE on one card */
+  .card.show-hover{
+    border-color:var(--border-hi);transform:translateY(-2px);
+    box-shadow:0 28px 60px -28px rgba(0,0,0,0.75), 0 0 36px -8px rgba(245,196,107,0.28), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .card.show-hover .actions{opacity:1;transform:none;}
+  .card.show-hover .cover .render{transform:scale(1.02);}
+
+  /* COVER ART (fake site renders) */
+  .render-bakery{background:
+    radial-gradient(140% 80% at 20% -10%, #d97a4a 0, transparent 60%),
+    radial-gradient(140% 80% at 80% 110%, #4a2516 0, transparent 60%),
+    linear-gradient(135deg,#2b1810,#3a201a);}
+  .render-bakery::after{content:"crumb & crust";position:absolute;left:14px;bottom:14px;color:#f3d8b8;font-family:Fraunces,serif;font-style:italic;font-size:18px;}
+  .render-altitude{background:
+    radial-gradient(120% 90% at 50% 0%, #4f6f9a 0, transparent 60%),
+    linear-gradient(180deg,#0d1726,#070b13);}
+  .render-altitude::after{content:"altitude";position:absolute;left:14px;bottom:14px;color:#cfe1f5;font-family:Fraunces,serif;font-size:20px;letter-spacing:0.12em;}
+  .render-mbsh{background:
+    radial-gradient(90% 70% at 80% 20%, #f5c46b 0, transparent 50%),
+    radial-gradient(90% 70% at 20% 90%, #6fe0d2 0, transparent 55%),
+    linear-gradient(135deg,#10101a,#1a1428);}
+  .render-mbsh::after{content:"mbsh '96";position:absolute;left:14px;bottom:14px;color:#f5e7c5;font-family:Fraunces,serif;font-style:italic;font-size:18px;}
+  .render-luna{background:
+    radial-gradient(110% 80% at 50% 100%, #a85b9c 0, transparent 60%),
+    linear-gradient(135deg,#1a0f1c,#0d0712);}
+  .render-luna::after{content:"luna's flowers";position:absolute;left:14px;bottom:14px;color:#f3cfe8;font-family:Fraunces,serif;font-style:italic;font-size:17px;}
+  .render-tony{background:
+    repeating-linear-gradient(135deg,#1a0e0e 0 18px,#2a1414 18px 36px),
+    #1a0e0e;}
+  .render-tony::after{content:"tony's barber";position:absolute;left:14px;bottom:14px;color:#f0e0d0;font-family:Fraunces,serif;font-size:17px;}
+  .render-jjba{background:
+    linear-gradient(135deg,#0a1a14,#06120e);
+    box-shadow:inset 0 0 80px rgba(111,224,210,0.18);}
+  .render-jjba::after{content:"JJ-BA Transport";position:absolute;left:14px;bottom:14px;color:#cfe7df;font-family:Fraunces,serif;font-size:16px;letter-spacing:0.06em;}
+  .render-skel{background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 12px, transparent 12px 24px),
+    var(--bg-1);}
+  .render-skel::after{content:"scaffolded";position:absolute;left:14px;bottom:14px;color:var(--text-3);font-family:JetBrains Mono,monospace;font-size:11px;letter-spacing:0.20em;text-transform:uppercase;}
+
+  /* tiny scrollbar polish */
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:8px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.12);}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- ICON RAIL -->
+  <aside class="rail" aria-label="Domain rail">
+    <div class="brand" title="FAMtastic">F</div>
+    <div class="rail-item active" title="Sites"><span class="glyph">S</span></div>
+    <div class="rail-item" title="Brainstorm"><span class="glyph">B</span></div>
+    <div class="rail-item" title="Plans"><span class="glyph">P</span></div>
+    <div class="rail-item" title="Components"><span class="glyph">C</span></div>
+    <div class="rail-item" title="Media"><span class="glyph">M</span></div>
+    <div class="rail-item" title="Research"><span class="glyph">R</span></div>
+    <div class="rail-item" title="Admin"><span class="glyph">A</span></div>
+    <div class="rail-spacer"></div>
+    <div class="shay" title="Shay"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="breadcrumb"><b>Sites</b> · Portfolio</div>
+      <label class="search">
+        <span style="color:var(--text-3);font-size:13px;">⌕</span>
+        <input placeholder="Search Sites…" />
+        <span class="kbd">/</span>
+        <span class="kbd">⌘K</span>
+      </label>
+      <div class="topbar-right">
+        <div class="seg" role="tablist" aria-label="View">
+          <button class="on">▦ Grid</button>
+          <button>≡ List</button>
+        </div>
+        <span class="shay-dot" title="Shay is here"></span>
+      </div>
+    </header>
+
+    <!-- BODY -->
+    <section class="body">
+
+      <!-- OPERATIONAL WIDGETS -->
+      <div class="widgets" aria-label="Operational widgets">
+        <div class="widget">
+          <div class="eyebrow">Deploys today</div>
+          <div class="num">3 <em>+1</em></div>
+          <div class="sub">Last: mbsh-reunion · 18m ago</div>
+        </div>
+        <div class="widget">
+          <div class="eyebrow">Active runs</div>
+          <div class="num"><span class="pulse"></span>2</div>
+          <div class="sub">crumb-and-crust · luna's flowers</div>
+        </div>
+        <div class="widget">
+          <div class="eyebrow">Worker queue</div>
+          <div class="num">7</div>
+          <div class="sub">Oldest queued 41m ago</div>
+        </div>
+        <div class="widget">
+          <div class="eyebrow">Proofs pending</div>
+          <div class="num">12</div>
+          <div class="sub">8 visual · 3 log · 1 metric</div>
+        </div>
+        <div class="widget feed">
+          <div class="eyebrow">Recent activity</div>
+          <div class="row"><span>deploy · mbsh</span><span>18m</span></div>
+          <div class="row"><span>build · luna</span><span>34m</span></div>
+          <div class="row"><span>capture · workbench</span><span>1h</span></div>
+          <div class="row"><span>promote · jjba</span><span>3h</span></div>
+        </div>
+        <div class="widget shay-note">
+          <div class="eyebrow">Shay's note</div>
+          <div class="note">"Crumb &amp; Crust hero looks washed at 1440px — one tweak fixes it."</div>
+        </div>
+        <div class="widget-add" title="Add widget">+</div>
+      </div>
+
+      <!-- FACET PILL BAR -->
+      <div class="facets">
+        <span class="pill on">status: deployed <span class="x">×</span></span>
+        <span class="pill">type: any ▾</span>
+        <span class="pill">scope: all ▾</span>
+        <span class="pill on">pinned <span class="x">×</span></span>
+        <span class="pill add">+ filter</span>
+        <span class="facet-spacer"></span>
+        <span class="pill">Sort: Last deployed ▾</span>
+        <span class="count">8 of 14</span>
+      </div>
+
+      <!-- CARD GRID -->
+      <div class="grid">
+
+        <!-- DEPLOYED + forced hover state -->
+        <article class="card show-hover">
+          <span class="chip deployed"><span class="dot"></span>Deployed</span>
+          <span class="pin">★</span>
+          <div class="cover"><div class="render render-bakery"></div></div>
+          <div class="body">
+            <div class="eyebrow">crumb-and-crust-bakery</div>
+            <h3>Crumb &amp; Crust Bakery</h3>
+            <div class="meta">3 pages · deployed 18m ago · v0.4.2</div>
+          </div>
+          <div class="actions">
+            <button class="a primary">Open</button>
+            <button class="a">Deploy</button>
+            <button class="a">Rebuild</button>
+          </div>
+        </article>
+
+        <!-- DEPLOYED -->
+        <article class="card">
+          <span class="chip deployed"><span class="dot"></span>Deployed</span>
+          <div class="cover"><div class="render render-mbsh"></div></div>
+          <div class="body">
+            <div class="eyebrow">mbsh-reunion</div>
+            <h3>MBSH Class of '96</h3>
+            <div class="meta">8 pages · deployed 2h ago</div>
+          </div>
+          <div class="actions">
+            <button class="a primary">Open</button>
+            <button class="a">Deploy</button>
+            <button class="a">Rebuild</button>
+          </div>
+        </article>
+
+        <!-- BUILDING -->
+        <article class="card">
+          <span class="chip building"><span class="dot"></span>Building</span>
+          <div class="cover"><div class="render render-luna"></div></div>
+          <div class="body">
+            <div class="eyebrow">lunas-flower-shop</div>
+            <h3>Luna's Flower Shop</h3>
+            <div class="meta">3 pages · build 38% · 2 of 5 workstreams</div>
+          </div>
+          <div class="actions">
+            <button class="a primary">Open</button>
+            <button class="a">View run</button>
+            <button class="a">Cancel</button>
+          </div>
+        </article>
+
+        <!-- DEPLOYED -->
+        <article class="card">
+          <span class="chip deployed"><span class="dot"></span>Deployed</span>
+          <div class="cover"><div class="render render-altitude"></div></div>
+          <div class="body">
+            <div class="eyebrow">altitude</div>
+            <h3>Altitude</h3>
+            <div class="meta">3 pages · deployed yesterday</div>
+          </div>
+          <div class="actions">
+            <button class="a primary">Open</button>
+            <button class="a">Deploy</button>
+            <button class="a">Rebuild</button>
+          </div>
+        </article>
+
+        <!-- DEPLOYED -->
+        <article class="card">
+          <span class="chip deployed"><span class="dot"></span>Deployed</span>
+          <div class="cover"><div class="render render-tony"></div></div>
+          <div class="body">
+            <div class="eyebrow">tonys-barber-shop</div>
+            <h3>Tony's Barber Shop</h3>
+            <div class="meta">3 pages · deployed 4d ago</div>
+          </div>
+          <div class="actions">
+            <button class="a primary">Open</button>
+            <button class="a">Deploy</button>
+            <button class="a">Rebuild</button>
+          </div>
+        </article>
+
+        <!-- IDLE -->
+        <article class="card">
+          <span class="chip idle"><span class="dot"></span>Idle</span>
+          <div class="cover"><div class="render render-jjba"></div></div>
+          <div class="body">
+            <div class="eyebrow">jj-ba-transport</div>
+            <h3>JJ-BA Transport</h3>
+            <div class="meta">3 pages · last edited 8d ago</div>
+          </div>
+          <div class="actions">
+            <button class="a primary">Open</button>
+            <button class="a">Deploy</button>
+            <button class="a">Rebuild</button>
+          </div>
+        </article>
+
+        <!-- SCAFFOLDED -->
+        <article class="card">
+          <span class="chip scaffolded"><span class="dot"></span>Scaffolded</span>
+          <div class="cover"><div class="render render-skel"></div></div>
+          <div class="body">
+            <div class="eyebrow">site-new-cafe</div>
+            <h3>New Café (untitled)</h3>
+            <div class="meta">brief drafted · awaiting first build</div>
+          </div>
+          <div class="actions">
+            <button class="a primary">Open brief</button>
+            <button class="a">Build</button>
+            <button class="a">Discard</button>
+          </div>
+        </article>
+
+      </div>
+
+    </section>
+  </main>
+
+</div>
+</body>
+</html>

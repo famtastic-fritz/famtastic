@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Rail icon hover-state prototype</title>
+  <style>
+    :root {
+      --bg-0: #08080A;
+      --bg-1: #0C0C10;
+      --glass: rgba(255,255,255,0.025);
+      --glass-2: rgba(255,255,255,0.045);
+      --border: rgba(255,255,255,0.06);
+      --border-hi: rgba(255,255,255,0.11);
+      --text-1: #F2EFE8;
+      --text-2: rgba(242,239,232,0.55);
+      --text-3: rgba(242,239,232,0.32);
+      --glow-warm: #F5C46B;
+      --glow-warm-2: #E6A856;
+      --glow-cool: #6FE0D2;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: var(--bg-0);
+      color: var(--text-1);
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      height: 100vh;
+    }
+
+    /* === RAIL === */
+    .rail {
+      background: var(--bg-1);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 16px 0; gap: 4px;
+      position: relative;
+    }
+
+    .rail-icon {
+      position: relative;
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+      color: var(--text-2);
+      opacity: 0.85;
+      cursor: pointer;
+      background: transparent;
+      border: 0;
+      transition:
+        color 160ms ease-out,
+        opacity 160ms ease-out,
+        transform 220ms ease-out,
+        filter 220ms ease-out,
+        background 160ms ease-out;
+    }
+    .rail-icon svg { width: 22px; height: 22px; stroke-width: 1.75; }
+
+    .rail-icon:hover {
+      color: var(--glow-warm);
+      opacity: 1;
+      transform: scale(1.06);
+      filter: drop-shadow(0 0 6px rgba(245,196,107,0.35));
+      background: var(--glass-2);
+    }
+
+    .rail-icon[aria-current="page"] {
+      color: var(--glow-warm);
+      opacity: 1;
+      box-shadow: inset 2px 0 0 var(--glow-warm);
+    }
+
+    .rail-icon[aria-disabled="true"] {
+      color: var(--text-3);
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* === SLIDE-OUT LABEL === */
+    .rail-icon .label {
+      position: absolute;
+      left: calc(100% + 10px);
+      top: 50%;
+      transform: translate(-6px, -50%);
+      padding: 4px 10px;
+      background: rgba(12,12,16,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-hi);
+      border-radius: 6px;
+      color: var(--text-1);
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease-out, transform 220ms ease-out;
+    }
+    .rail-icon:hover .label {
+      opacity: 1;
+      transform: translate(0, -50%);
+    }
+
+    /* === CANVAS === */
+    .canvas {
+      padding: 32px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+    h1 { font-size: 18px; font-weight: 500; color: var(--text-1); margin: 0; }
+    p  { color: var(--text-2); margin: 0; max-width: 60ch; }
+    .legend {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; max-width: 720px;
+      padding: 16px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--glass);
+    }
+    .legend div { font-size: 12px; color: var(--text-2); }
+    .legend strong { color: var(--text-1); display: block; margin-bottom: 4px; font-weight: 500; }
+    .swatch {
+      display: inline-block; width: 10px; height: 10px;
+      border-radius: 50%; vertical-align: middle; margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+<div class="stage">
+
+  <nav class="rail" aria-label="Workbench rail">
+    <!-- Sites: framed grid -->
+    <button class="rail-icon" aria-current="page" aria-label="Sites">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+      <span class="label">Sites</span>
+    </button>
+
+    <!-- Brainstorm: lightbulb + spark -->
+    <button class="rail-icon" aria-label="Brainstorm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18h6" />
+        <path d="M10 21h4" />
+        <path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5v1h6v-1c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z" />
+        <path d="M19 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" />
+      </svg>
+      <span class="label">Brainstorm</span>
+    </button>
+
+    <!-- Plans: line + milestones -->
+    <button class="rail-icon" aria-label="Plans">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <circle cx="6" cy="12" r="2" fill="currentColor" />
+        <circle cx="12" cy="12" r="2" />
+        <circle cx="18" cy="12" r="2" />
+      </svg>
+      <span class="label">Plans</span>
+    </button>
+
+    <!-- Components: cubes -->
+    <button class="rail-icon" aria-label="Components">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="8" height="8" rx="1" />
+        <rect x="13" y="3" width="8" height="8" rx="1" />
+        <rect x="3" y="13" width="8" height="8" rx="1" />
+      </svg>
+      <span class="label">Components</span>
+    </button>
+
+    <!-- Disabled example -->
+    <button class="rail-icon" aria-disabled="true" aria-label="Media (coming soon)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M12 8l1.5 3 3 .5-2 2 .5 3L12 15l-3 1.5.5-3-2-2 3-.5z" />
+      </svg>
+      <span class="label">Media (soon)</span>
+    </button>
+  </nav>
+
+  <main class="canvas">
+    <h1>Rail icon hover-state prototype</h1>
+    <p>
+      Default state is dim. Hover lights the icon warm, scales it 1.06×, drops a
+      soft glow, and slides a glass label out from the rail. The active item
+      (Sites here) carries a 2px warm inset bar on the left and stays full
+      opacity. The disabled item (Media) sits at 32% opacity and ignores hover.
+    </p>
+
+    <div class="legend">
+      <div><strong><span class="swatch" style="background:var(--text-2)"></span>Default</strong>color: text-2 / opacity 0.85 / no scale</div>
+      <div><strong><span class="swatch" style="background:var(--glow-warm)"></span>Hover</strong>color: glow-warm / scale 1.06 / drop-shadow / label slides</div>
+      <div><strong><span class="swatch" style="background:var(--glow-warm)"></span>Active</strong>color: glow-warm / inset bar 2px / no scale</div>
+      <div><strong><span class="swatch" style="background:var(--text-3)"></span>Disabled</strong>color: text-3 / opacity 0.4 / no hover</div>
+    </div>
+
+    <p style="color:var(--text-3); font-size:12px;">
+      Icons here are placeholders to demonstrate the interaction. Final glyphs
+      come from each domain's brief (sites.md, brainstorm.md, plans.md,
+      components.md, media.md, research.md, admin.md).
+    </p>
+  </main>
+</div>
+</body>
+</html>
