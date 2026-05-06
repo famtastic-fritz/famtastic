@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-05T23:45:41.488Z",
+  "generated_at": "2026-05-06T00:11:51.285564Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -58,7 +58,7 @@
     {
       "canonical_id": "anti-pattern/never-use-echo-for-claude-prompts-use-printf",
       "type": "anti-pattern",
-      "title": "Never use echo for Claude prompts — use printf",
+      "title": "Never use echo for Claude prompts \u2014 use printf",
       "facets": [
         "shell",
         "prompting"
@@ -493,7 +493,7 @@
     {
       "canonical_id": "bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra",
       "type": "bug-pattern",
-      "title": "agent-checkin keyword overlap is too coarse — flags merged branches as conflicts",
+      "title": "agent-checkin keyword overlap is too coarse \u2014 flags merged branches as conflicts",
       "facets": [
         "agents",
         "governance"
@@ -544,6 +544,72 @@
       "lifecycle": "active",
       "confidence": 0.85,
       "path": "memory/bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist",
+      "type": "do-not-repeat",
+      "title": "## Do-not-repeat: Do not invent middle-area layouts when mockups exist",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.85,
+      "path": "memory/do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/mockups-are-the-canonical-visual-reference",
+      "type": "decision",
+      "title": "## Decision: The 5 mockup HTML files in docs/mockups/ are the canonical visual reference",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/mockups-are-the-canonical-visual-reference.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "anti-pattern/building-from-tokens-alone-without-screen-mockups",
+      "type": "anti-pattern",
+      "title": "## Anti-pattern: Building from design tokens without rebuilding from the screen mockups",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/anti-pattern/building-from-tokens-alone-without-screen-mockups.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "gap/workbench-foundation-diverged-from-mockups",
+      "type": "gap",
+      "title": "## Gap: Workbench Foundation implementation diverged from designed mockups",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/gap/workbench-foundation-diverged-from-mockups.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/render-matching-mockup-when-implementing-domain",
+      "type": "rule",
+      "title": "When implementing a workbench domain, the implementor must render the matching mockup screen, not in",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/render-matching-mockup-when-implementing-domain.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "rule/different-page-types-need-different-layouts",
+      "type": "rule",
+      "title": "Different page types call for different layouts",
+      "facets": [],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/rule/different-page-types-need-different-layouts.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }

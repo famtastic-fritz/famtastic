@@ -23,3 +23,7 @@
 {"ts":"2026-05-05T23:45:33.304Z","memory_id":null,"event":"captured","context":{"capture_id":"cap_2026-05-05T23-45_f5dc","surface":"manual"}}
 {"ts":"2026-05-05T23:45:41.464Z","memory_id":null,"event":"reviewed","context":{"capture_id":"cap_2026-05-05T23-45_f5dc","proposal_id":"prop_cap_2026-05-05T23-45_f5dc"}}
 {"ts":"2026-05-05T23:45:41.488Z","memory_id":"bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche","event":"auto_promoted","context":{"capture":"cap_2026-05-05T23-45_f5dc","type":"bug-pattern"}}
+{"ts":"2026-05-06T00:11:16.585Z","memory_id":null,"event":"captured","context":{"capture_id":"cap_2026-05-06T00-11_16f0","surface":"manual"}}
+{"ts":"2026-05-06T00:11:16.618Z","memory_id":null,"event":"reviewed","context":{"capture_id":"cap_2026-05-05T23-45_f5dc","proposal_id":"prop_cap_2026-05-05T23-45_f5dc"}}
+{"ts":"2026-05-06T00:11:23.078Z","memory_id":null,"event":"reviewed","context":{"capture_id":"cap_2026-05-06T00-11_16f0","proposal_id":"prop_cap_2026-05-06T00-11_16f0"}}
+{"ts":"2026-05-06T00:11:23.101Z","memory_id":"do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist","event":"auto_promoted","context":{"capture":"cap_2026-05-06T00-11_16f0","type":"do-not-repeat"}}

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Studio Shell Compare — index.html ↔ workbench-foundation.html</title>
+  <title>Studio Shell Compare — index.html ↔ workbench-foundation.html ↔ mockups</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     *,*::before,*::after { box-sizing: border-box; }
@@ -12,26 +12,40 @@
       background: #0C0C10;
       border-bottom: 1px solid rgba(255,255,255,0.08);
       padding: 10px 16px;
-      display:flex; gap:16px; align-items:center;
+      display:flex; gap:14px; align-items:center;
       font-size: 13px;
+      flex-wrap: wrap;
     }
     header .title { font-weight: 600; letter-spacing: 0.02em; }
     header .meta { color: rgba(242,239,232,0.55); font-size:11.5px; }
     header .spacer { flex: 1; }
-    header a { color:#F5C46B; text-decoration: none; padding: 4px 10px; border:1px solid rgba(245,196,107,0.3); border-radius:6px; font-size:11.5px; transition: background 0.15s; }
-    header a:hover { background: rgba(245,196,107,0.08); }
+    header a, header button {
+      color:#F5C46B; text-decoration: none;
+      padding: 4px 10px; border:1px solid rgba(245,196,107,0.3); border-radius:6px;
+      font-size:11.5px; transition: background 0.15s;
+      background: transparent; cursor:pointer; font-family: inherit;
+    }
+    header a:hover, header button:hover { background: rgba(245,196,107,0.08); }
+    header button.active { background: rgba(245,196,107,0.15); color: #F2EFE8; }
     header label { display:inline-flex; gap:6px; align-items:center; cursor:pointer; user-select:none; font-size:11.5px; color: rgba(242,239,232,0.7); }
     header input[type=checkbox] { accent-color: #F5C46B; }
+    header select {
+      background: #08080A; color: #F2EFE8;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+      padding: 4px 8px; font-size: 11.5px; font-family: inherit;
+    }
 
     main {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      padding: 8px;
-      overflow: hidden;
-      min-height: 0;
+      gap: 8px; padding: 8px;
+      overflow: hidden; min-height: 0;
     }
-    main.stacked { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+
+    /* layouts */
+    main.two-col { grid-template-columns: 1fr 1fr; }
+    main.three-col { grid-template-columns: 1fr 1fr 1fr; }
+    main.stacked { grid-template-columns: 1fr; grid-auto-rows: 1fr; }
+    main.mockup-only { grid-template-columns: 1fr; }
 
     .pane {
       display:grid; grid-template-rows: auto 1fr;
@@ -50,10 +64,11 @@
     }
     .pane h2 .badge {
       font-size: 10px; padding: 2px 8px; border-radius: 999px;
-      background: rgba(245,196,107,0.15); color:#F5C46B;
       letter-spacing: 0.06em; text-transform: uppercase;
     }
+    .pane h2 .badge.warm { background: rgba(245,196,107,0.15); color:#F5C46B; }
     .pane h2 .badge.cool { background: rgba(111,224,210,0.12); color:#6FE0D2; }
+    .pane h2 .badge.purple { background: rgba(180,140,255,0.15); color:#B48CFF; }
     .pane h2 .url {
       font-size: 11px; color: rgba(242,239,232,0.55);
       font-family: 'JetBrains Mono', monospace;
@@ -65,28 +80,49 @@
       width: 100%; height: 100%; border: 0; display:block;
       background:#000;
     }
+    .pane.hidden { display: none; }
   </style>
 </head>
 <body>
   <header>
     <span class="title">Studio Shell Compare</span>
-    <span class="meta">side-by-side, read-only — see <code>docs/STUDIO-SHELL-RECONCILIATION-2026-05-05.md</code> for the per-entry verdict</span>
+    <span class="meta">working ↔ canonical ↔ mockup. read-only.</span>
     <span class="spacer"></span>
-    <label><input type="checkbox" id="stack" /> stack vertically</label>
-    <a href="/" target="_blank" rel="noopener">open / (index.html)</a>
-    <a href="/workbench-foundation.html" target="_blank" rel="noopener">open foundation</a>
+
+    <span style="display:inline-flex;gap:6px;align-items:center;">
+      <span style="font-size:11px;color:rgba(242,239,232,0.55);">view:</span>
+      <button data-view="2col" class="active">2-col (working / foundation)</button>
+      <button data-view="3col">3-col (+ mockup)</button>
+      <button data-view="mockup">mockup only</button>
+      <button data-view="stacked">stacked</button>
+    </span>
+
+    <span style="display:inline-flex;gap:6px;align-items:center;margin-left:8px;">
+      <span style="font-size:11px;color:rgba(242,239,232,0.55);">mockup:</span>
+      <select id="mockup-select">
+        <option value="/_mockup-workbench-night.html" selected>Workbench Night — home / portfolio</option>
+        <option value="/_mockup-screens.html">Five Screens — full system</option>
+        <option value="/_mockup-a-shay-on-media.html">Mockup A — Shay on Media Studio</option>
+        <option value="/_mockup-b-shays-workshop.html">Mockup B — Shay's Workshop</option>
+        <option value="/_mockup-c-show-me-how.html">Mockup C — Show Me How</option>
+      </select>
+    </span>
+
+    <a href="/" target="_blank" rel="noopener">pop /</a>
+    <a href="/workbench-foundation.html" target="_blank" rel="noopener">pop foundation</a>
   </header>
-  <main id="grid">
-    <section class="pane">
+
+  <main id="grid" class="two-col">
+    <section class="pane" id="pane-working">
       <h2>
         <span>index.html</span>
-        <span class="badge">working shell</span>
+        <span class="badge warm">working shell</span>
         <span class="url">/</span>
         <a class="pop" href="/" target="_blank" rel="noopener">pop ↗</a>
       </h2>
       <iframe src="/" title="index.html — working Studio shell"></iframe>
     </section>
-    <section class="pane">
+    <section class="pane" id="pane-foundation">
       <h2>
         <span>workbench-foundation.html</span>
         <span class="badge cool">canonical foundation</span>
@@ -95,10 +131,58 @@
       </h2>
       <iframe src="/workbench-foundation.html" title="workbench-foundation.html — canonical Foundation shell"></iframe>
     </section>
+    <section class="pane hidden" id="pane-mockup">
+      <h2>
+        <span id="mockup-title">Workbench Night — home / portfolio</span>
+        <span class="badge purple">designed mockup</span>
+        <span class="url" id="mockup-url">/_mockup-workbench-night.html</span>
+        <a class="pop" href="/_mockup-workbench-night.html" target="_blank" rel="noopener" id="mockup-pop">pop ↗</a>
+      </h2>
+      <iframe src="/_mockup-workbench-night.html" title="Designed mockup" id="mockup-iframe"></iframe>
+    </section>
   </main>
+
   <script>
-    document.getElementById('stack').addEventListener('change', (e) => {
-      document.getElementById('grid').classList.toggle('stacked', e.target.checked);
+    const grid = document.getElementById('grid');
+    const paneWorking = document.getElementById('pane-working');
+    const paneFoundation = document.getElementById('pane-foundation');
+    const paneMockup = document.getElementById('pane-mockup');
+    const buttons = document.querySelectorAll('header button[data-view]');
+    const select = document.getElementById('mockup-select');
+    const mockupIframe = document.getElementById('mockup-iframe');
+    const mockupTitle = document.getElementById('mockup-title');
+    const mockupUrl = document.getElementById('mockup-url');
+    const mockupPop = document.getElementById('mockup-pop');
+
+    function setView(view) {
+      buttons.forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      grid.className = '';
+      paneWorking.classList.remove('hidden');
+      paneFoundation.classList.remove('hidden');
+      paneMockup.classList.remove('hidden');
+      if (view === '2col') {
+        grid.classList.add('two-col');
+        paneMockup.classList.add('hidden');
+      } else if (view === '3col') {
+        grid.classList.add('three-col');
+      } else if (view === 'mockup') {
+        grid.classList.add('mockup-only');
+        paneWorking.classList.add('hidden');
+        paneFoundation.classList.add('hidden');
+      } else if (view === 'stacked') {
+        grid.classList.add('stacked');
+      }
+    }
+
+    buttons.forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+
+    select.addEventListener('change', (e) => {
+      const url = e.target.value;
+      const label = e.target.options[e.target.selectedIndex].text;
+      mockupIframe.src = url;
+      mockupTitle.textContent = label;
+      mockupUrl.textContent = url;
+      mockupPop.href = url;
     });
   </script>
 </body>
