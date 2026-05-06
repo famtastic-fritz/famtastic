@@ -1,0 +1,144 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_2026-05-06T00-11_16f0",
+  "created_at": "2026-05-06T00:11:16.583Z",
+  "source": {
+    "surface": "manual",
+    "session_id": null,
+    "adapter": "scripts/capture-adapters/manual.js",
+    "adapter_version": "0.2.0",
+    "input_path": "/Users/famtasticfritz/famtastic/captures/inbox/cap_design-preferences-2026-05-05.md",
+    "timestamp_range": {
+      "start": "2026-05-06T00:11:06.885Z",
+      "end": "2026-05-06T00:11:16.583Z"
+    }
+  },
+  "summary": "Manual capture of cap_design-preferences-2026-05-05.md (4705 bytes). 10 extracts found across 9 type patterns.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "decision",
+      "text": "## Decision: The 5 mockup HTML files in docs/mockups/ are the canonical visual reference",
+      "rationale": "## Decision: The 5 mockup HTML files in docs/mockups/ are the canonical visual reference",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.78,
+      "candidate_id": "decision/decision-the-5-mockup-html-files-in-docsmockups-are-the-canonical-visual-referen"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "rule",
+      "text": "`docs/mockups/workbench-night",
+      "rationale": "`docs/mockups/workbench-night.html`, `docs/mockups/workbench-screens.html`, `docs/mockups/mockup-a-shay-shay-on-media-studio.html`, `docs/mockups/mockup-b-shays-workshop.html`, `docs/mockups/mockup-c-show-me-how.html` together comprise the canonical visual reference. Any rebuild of the Workbench shell must match these mockups visually before any architectural reorganization happens. They were preserved through the freeze on 2026-05-04 and are the source of truth for what the shell should look li",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [
+        "shay-shay"
+      ],
+      "confidence": 0.72,
+      "candidate_id": "rule/docsmockupsworkbench-night"
+    },
+    {
+      "extract_id": "x_3",
+      "type": "anti-pattern",
+      "text": "## Anti-pattern: Building from design tokens without rebuilding from the screen mockups",
+      "rationale": "## Anti-pattern: Building from design tokens without rebuilding from the screen mockups",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.75,
+      "candidate_id": "anti-pattern/anti-pattern-building-from-design-tokens-without-rebuilding-from-the-screen-mock"
+    },
+    {
+      "extract_id": "x_4",
+      "type": "rule",
+      "text": "`docs/STUDIO-UI-FOUNDATION",
+      "rationale": "`docs/STUDIO-UI-FOUNDATION.md` Section 2 codifies the design tokens (color, type, glass, motion, glow). Section 8 codifies the workspace contract. But `docs/mockups/workbench-screens.html` shows 5 complete designed screens that the implementation never matched. The implementation took the tokens but invented its own layout. Anti-pattern: when both tokens and screen mockups exist, implementing from tokens alone produces a shell that is technically on-spec but visually nothing like the design. Alw",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/docsstudio-ui-foundation"
+    },
+    {
+      "extract_id": "x_5",
+      "type": "gap",
+      "text": "## Gap: Workbench Foundation implementation diverged from designed mockups",
+      "rationale": "## Gap: Workbench Foundation implementation diverged from designed mockups",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.7,
+      "candidate_id": "gap/gap-workbench-foundation-implementation-diverged-from-designed-mockups"
+    },
+    {
+      "extract_id": "x_6",
+      "type": "rule",
+      "text": "The current `site-studio/public/workbench-foundation",
+      "rationale": "The current `site-studio/public/workbench-foundation.html` reproduces the Night Scheme color tokens from STUDIO-UI-FOUNDATION.md but does not match any of the 5 designed screens in `docs/mockups/workbench-screens.html`. Specifically: the home/portfolio screen is missing (mockup-screen-01 has the calm welcome, italic Fraunces hero, and warm site cards which never got built); the page editor screen is missing; the components library screen is missing; the media studio generation screen is missing;",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/the-current-site-studiopublicworkbench-foundation"
+    },
+    {
+      "extract_id": "x_7",
+      "type": "do-not-repeat",
+      "text": "## Do-not-repeat: Do not invent middle-area layouts when mockups exist",
+      "rationale": "## Do-not-repeat: Do not invent middle-area layouts when mockups exist",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.85,
+      "candidate_id": "do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist"
+    },
+    {
+      "extract_id": "x_8",
+      "type": "rule",
+      "text": "When implementing a workbench domain, the implementor must render the matching mockup screen, not in",
+      "rationale": "When implementing a workbench domain, the implementor must render the matching mockup screen, not invent its own layout. The current middle-area implementation (the macOS-styled Object/Sites/Page/Meta tile system) has no source in the mockups and was invented during build. Future builds: open the relevant mockup HTML side-by-side with the implementation and match it.",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/when-implementing-a-workbench-domain-the-implementor-must-render-the-matching-mo"
+    },
+    {
+      "extract_id": "x_9",
+      "type": "rule",
+      "text": "## Rule: Per-page-type layout consideration is mandatory",
+      "rationale": "## Rule: Per-page-type layout consideration is mandatory",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/rule-per-page-type-layout-consideration-is-mandatory"
+    },
+    {
+      "extract_id": "x_10",
+      "type": "rule",
+      "text": "Different page types call for different layouts",
+      "rationale": "Different page types call for different layouts. The 5 mockups demonstrate this: portfolio overview uses card grid, page editor uses sidebar+preview+sidebar, components library uses tile grid, media studio uses chat-with-grid+preview, Shay trace uses terminal log view. Future page additions must pick the right mockup pattern for the page type, not default to a one-size-fits-all template.",
+      "evidence": [
+        "source:cap_design-preferences-2026-05-05.md"
+      ],
+      "facets": [],
+      "confidence": 0.72,
+      "candidate_id": "rule/different-page-types-call-for-different-layouts"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": []
+}

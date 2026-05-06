@@ -1,0 +1,1385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAMtastic Workbench — Five Screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== Night theme tokens (per STUDIO-UI-FOUNDATION.md §2) ===== */
+  :root {
+    --bg-0: #08080A;
+    --bg-1: #0C0C10;
+    --bg-2: #111116;
+    --glass: rgba(255,255,255,0.025);
+    --glass-2: rgba(255,255,255,0.045);
+    --glass-3: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.06);
+    --border-hi: rgba(255,255,255,0.11);
+    --border-warm: rgba(245,196,107,0.25);
+    --text-1: #F2EFE8;
+    --text-2: rgba(242,239,232,0.55);
+    --text-3: rgba(242,239,232,0.32);
+    --glow-warm: #F5C46B;
+    --glow-warm-2: #E6A856;
+    --glow-cool: #6FE0D2;
+    --glow-rose: #F08C8C;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg-0);
+    color: var(--text-1);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-weight: 400;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 600px at 80% 110%, rgba(245,196,107,0.07), transparent 60%),
+      radial-gradient(700px 500px at 8% -10%, rgba(111,224,210,0.04), transparent 60%);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>");
+    mix-blend-mode: overlay;
+  }
+
+  /* ===== Reusable primitives ===== */
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .display { font-family: 'Fraunces', serif; font-weight: 300; letter-spacing: -0.02em; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px -28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .pulse {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: var(--glow-warm); box-shadow: 0 0 10px var(--glow-warm);
+    animation: breathe 2.6s var(--ease) infinite;
+  }
+  .pulse.cool { background: var(--glow-cool); box-shadow: 0 0 10px var(--glow-cool); }
+  .pulse.rose { background: var(--glow-rose); box-shadow: 0 0 10px var(--glow-rose); }
+  .pulse.dim { background: var(--text-3); box-shadow: none; animation: none; }
+  @keyframes breathe { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.45;transform:scale(0.85)} }
+
+  .kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.1em;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-2);
+  }
+
+  /* ===== Screen wrapper ===== */
+  .screen {
+    position: relative; z-index: 1;
+    min-height: 100vh; padding: 0;
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .screen-header {
+    padding: 32px 48px 0;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 32px;
+  }
+  .screen-header .meta { max-width: 720px; }
+  .screen-num {
+    font-family: 'Fraunces', serif; font-weight: 300;
+    font-size: 56px; line-height: 1;
+    background: linear-gradient(180deg, var(--glow-warm), var(--glow-warm-2));
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; font-style: italic;
+  }
+  .screen-title { font-family: 'Fraunces', serif; font-weight: 300; font-size: 28px; margin: 6px 0 8px; letter-spacing: -0.01em; }
+  .screen-why {
+    font-size: 13px; color: var(--text-2); line-height: 1.55;
+    max-width: 640px;
+  }
+  .screen-rules {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px;
+  }
+  .rule-chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.06em; padding: 4px 9px;
+    background: rgba(245,196,107,0.06);
+    border: 1px solid rgba(245,196,107,0.2);
+    border-radius: 6px;
+    color: var(--glow-warm);
+  }
+
+  /* ===== Common in-screen chrome ===== */
+  .whisper {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px;
+    font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-3);
+    border-bottom: 1px solid var(--border);
+  }
+  .whisper .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text-2); }
+  .brand-mark {
+    width: 16px; height: 16px; border-radius: 999px;
+    background: radial-gradient(circle at 32% 32%, var(--glow-warm), rgba(245,196,107,0.05) 65%, transparent);
+    box-shadow: 0 0 18px rgba(245,196,107,0.35);
+  }
+  .whisper .right { display: flex; gap: 22px; align-items: center; }
+  .shay-presence { display: inline-flex; align-items: center; gap: 8px; color: var(--text-2); }
+
+  /* ===== Left domain rail ===== */
+  .domain-rail {
+    width: 56px; padding: 18px 0;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.012);
+    border-right: 1px solid var(--border);
+  }
+  .domain-btn {
+    width: 40px; height: 40px;
+    border-radius: 11px; border: 1px solid transparent;
+    background: transparent; color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 0.1em; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.4s var(--ease);
+    text-transform: uppercase;
+  }
+  .domain-btn:hover { color: var(--text-1); background: var(--glass); border-color: var(--border); }
+  .domain-btn.active {
+    color: var(--glow-warm);
+    background: rgba(245,196,107,0.06);
+    border-color: rgba(245,196,107,0.25);
+    box-shadow: 0 0 22px -4px rgba(245,196,107,0.4);
+  }
+
+  /* ===== Shay orb (ambient on every screen) ===== */
+  .shay-orb {
+    position: absolute; bottom: 32px; right: 32px;
+    width: 52px; height: 52px; border-radius: 999px;
+    background: radial-gradient(circle at 35% 35%, rgba(111,224,210,0.4), rgba(111,224,210,0.05) 60%, transparent);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(111,224,210,0.16);
+    cursor: pointer;
+    box-shadow: 0 0 50px -10px rgba(111,224,210,0.35), inset 0 0 24px rgba(111,224,210,0.05);
+    z-index: 8;
+  }
+  .shay-orb::before {
+    content: ''; position: absolute; inset: 12px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(111,224,210,0.5), transparent 70%);
+    animation: breathe 3.6s var(--ease) infinite;
+  }
+
+  /* ===== SCREEN 1 — Sites Portfolio ===== */
+  .s1-shell { display: grid; grid-template-columns: 56px 1fr; flex: 1; }
+  .s1-main { padding: 32px 44px 80px; max-width: 1280px; margin: 0 auto; width: 100%; position: relative; }
+  .s1-greet {
+    font-family: 'Fraunces', serif; font-weight: 300;
+    font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;
+    margin: 16px 0 8px;
+  }
+  .s1-greet .glow {
+    background: linear-gradient(180deg, var(--glow-warm) 30%, var(--glow-warm-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-style: italic;
+  }
+  .s1-sub { font-size: 14px; color: var(--text-2); line-height: 1.55; max-width: 580px; margin-bottom: 36px; }
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .site-card {
+    padding: 22px 24px; cursor: pointer;
+    transition: all 0.5s var(--ease);
+    position: relative; overflow: hidden;
+  }
+  .site-card.hero { grid-column: span 2; padding: 28px 30px; }
+  .site-card.hero::after {
+    content: ''; position: absolute; right: -100px; top: -100px;
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(245,196,107,0.08), transparent 65%);
+    pointer-events: none;
+  }
+  .site-card:hover {
+    background: var(--glass-2); border-color: var(--border-hi);
+    transform: translateY(-2px);
+  }
+  .site-card-head {
+    display: flex; align-items: center; gap: 9px; margin-bottom: 12px;
+  }
+  .site-card-stage {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .site-card-title {
+    font-family: 'Fraunces', serif; font-weight: 400;
+    font-size: 21px; line-height: 1.2; letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .site-card.hero .site-card-title { font-size: 28px; }
+  .site-card-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); margin-bottom: 14px; }
+  .site-card-row {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3);
+  }
+  .site-card-row .next { color: var(--text-1); }
+  .site-card-row .next::before { content: '→ '; color: var(--glow-warm); }
+  .stage-bar {
+    display: flex; gap: 3px; margin: 16px 0 12px; max-width: 280px;
+  }
+  .stage-bar div {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.06);
+  }
+  .stage-bar div.done { background: var(--glow-warm); box-shadow: 0 0 8px rgba(245,196,107,0.4); }
+
+  /* ===== SCREEN 2 — Single Site Page Editor ===== */
+  .s2-shell { display: grid; grid-template-columns: 56px 280px 1fr 320px; flex: 1; min-height: 0; }
+  .s2-aside { background: rgba(255,255,255,0.012); border-right: 1px solid var(--border); padding: 20px 18px; overflow-y: auto; }
+  .s2-aside h3 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 16px; margin-bottom: 4px; }
+  .s2-site-tag { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-3); margin-bottom: 18px; }
+  .s2-page-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 24px; }
+  .s2-page-item {
+    padding: 9px 11px; border-radius: 8px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--text-2);
+    cursor: pointer; transition: all 0.3s var(--ease);
+  }
+  .s2-page-item:hover { background: var(--glass); color: var(--text-1); }
+  .s2-page-item.active {
+    background: rgba(245,196,107,0.06);
+    color: var(--glow-warm);
+    border: 1px solid rgba(245,196,107,0.18);
+  }
+  .s2-page-item .dot {
+    width: 5px; height: 5px; border-radius: 999px;
+    background: var(--text-3);
+  }
+  .s2-page-item.active .dot { background: var(--glow-warm); box-shadow: 0 0 6px var(--glow-warm); }
+
+  .s2-section-tree { padding: 0 4px; }
+  .s2-section-tree .lbl {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-3);
+    margin: 12px 0 8px;
+  }
+  .s2-section-item {
+    padding: 7px 10px; font-size: 12.5px; color: var(--text-2);
+    border-radius: 7px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background 0.3s var(--ease);
+  }
+  .s2-section-item:hover { background: var(--glass); }
+  .s2-section-item.selected { background: var(--glass-2); color: var(--text-1); border: 1px solid var(--border-hi); }
+  .s2-section-item .id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); }
+
+  .s2-bench { position: relative; padding: 24px 32px; overflow-y: auto; }
+  .s2-bench-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
+  .s2-crumb { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; color: var(--text-3); text-transform: uppercase; margin-bottom: 8px; }
+  .s2-page-title { font-family: 'Fraunces', serif; font-weight: 300; font-size: 30px; letter-spacing: -0.02em; }
+  .s2-actions { display: flex; gap: 8px; }
+  .btn {
+    font-size: 12px; color: var(--text-2);
+    padding: 8px 14px; border-radius: 9px;
+    background: var(--glass); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.3s var(--ease);
+    backdrop-filter: blur(16px);
+  }
+  .btn:hover { color: var(--text-1); border-color: var(--border-hi); background: var(--glass-2); }
+  .btn.primary {
+    background: linear-gradient(180deg, rgba(245,196,107,0.18), rgba(245,196,107,0.08));
+    border-color: rgba(245,196,107,0.3);
+    color: var(--glow-warm);
+    box-shadow: 0 0 24px -8px rgba(245,196,107,0.3);
+  }
+  .btn.primary:hover { box-shadow: 0 0 36px -8px rgba(245,196,107,0.5); }
+
+  .preview-frame {
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #0F0E0C, #08080A);
+    padding: 60px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 360px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+  }
+  .preview-frame::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(800px 500px at 70% 90%, rgba(245,196,107,0.1), transparent);
+  }
+  .preview-frame .preview-eyebrow { color: rgba(245,196,107,0.6); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.3em; margin-bottom: 12px; position: relative; }
+  .preview-frame h1 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 56px; line-height: 1.05; max-width: 580px; position: relative; }
+  .preview-frame .glow { color: var(--glow-warm); font-style: italic; }
+  .preview-frame .sub { color: var(--text-2); margin-top: 18px; max-width: 440px; font-size: 14px; position: relative; }
+  .preview-frame .selection {
+    position: absolute; pointer-events: none;
+    border: 1.5px solid var(--glow-warm);
+    box-shadow: 0 0 0 4px rgba(245,196,107,0.08), 0 0 30px rgba(245,196,107,0.3);
+    border-radius: 4px;
+    inset: 50px 80px auto 80px; height: 130px;
+  }
+  .selection-tag {
+    position: absolute; top: -22px; left: 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em;
+    color: var(--glow-warm); text-transform: uppercase;
+  }
+
+  .s2-inspector { background: rgba(255,255,255,0.012); border-left: 1px solid var(--border); padding: 24px 22px; overflow-y: auto; }
+  .s2-inspector .hdr { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; color: var(--text-3); text-transform: uppercase; margin-bottom: 8px; }
+  .s2-inspector h4 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 18px; margin-bottom: 22px; letter-spacing: -0.01em; }
+  .field { margin-bottom: 16px; }
+  .field-lbl { font-size: 10.5px; color: var(--text-3); margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+  .field-input {
+    width: 100%; background: var(--glass); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    color: var(--text-1); font-family: inherit; font-size: 13.5px;
+    outline: none; transition: all 0.3s var(--ease);
+  }
+  .field-input:focus { border-color: var(--border-warm); background: var(--glass-2); }
+  .field-input.txt { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 400; }
+  .tools-rail {
+    margin-top: 24px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .tool-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; font-size: 13px; color: var(--text-2);
+    cursor: pointer; transition: color 0.3s var(--ease);
+  }
+  .tool-row:hover { color: var(--text-1); }
+  .tool-row .ic {
+    width: 22px; height: 22px; border-radius: 7px;
+    background: var(--glass); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--glow-warm); font-size: 11px;
+  }
+
+  /* ===== SCREEN 3 — Components Library ===== */
+  .s3-shell { display: grid; grid-template-columns: 56px 1fr; flex: 1; }
+  .s3-main { padding: 32px 44px 80px; max-width: 1300px; margin: 0 auto; width: 100%; position: relative; }
+  .s3-head { display: flex; justify-content: space-between; align-items: flex-end; margin: 12px 0 28px; gap: 24px; }
+  .s3-head h2 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 36px; letter-spacing: -0.02em; }
+  .s3-head p { font-size: 13.5px; color: var(--text-2); margin-top: 6px; max-width: 520px; line-height: 1.55; }
+  .s3-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.08em; padding: 6px 11px;
+    background: var(--glass); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text-2);
+    cursor: pointer; transition: all 0.3s var(--ease);
+  }
+  .filter-chip.active { color: var(--glow-warm); border-color: rgba(245,196,107,0.3); background: rgba(245,196,107,0.06); }
+  .filter-chip:hover { color: var(--text-1); }
+
+  .comp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .comp-card {
+    padding: 0; cursor: pointer;
+    transition: all 0.5s var(--ease);
+    overflow: hidden;
+  }
+  .comp-card:hover { transform: translateY(-2px); border-color: var(--border-hi); background: var(--glass-2); }
+  .comp-render {
+    height: 160px;
+    background: linear-gradient(180deg, #0F0E0C, #0A0A0C);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-size: 26px; color: var(--text-2);
+    font-style: italic; position: relative; overflow: hidden;
+  }
+  .comp-render.video::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(400px 300px at 50% 60%, rgba(111,224,210,0.15), transparent 70%);
+  }
+  .comp-render.starburst::after {
+    content: '★'; position: absolute;
+    color: var(--glow-warm); font-size: 80px; opacity: 0.4;
+    filter: drop-shadow(0 0 24px var(--glow-warm));
+  }
+  .comp-render.timer { font-family: 'JetBrains Mono', monospace; font-size: 32px; letter-spacing: 0.08em; color: var(--text-1); }
+  .comp-render.card { font-size: 14px; padding: 20px; }
+  .comp-render.pills::before {
+    content: ''; position: absolute; inset: auto 30px 50px;
+    height: 32px; border-radius: 999px;
+    background:
+      linear-gradient(90deg, rgba(245,196,107,0.4), transparent 30%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 60%, transparent 60%, rgba(255,255,255,0.06) 60%);
+  }
+  .comp-meta { padding: 16px 20px 18px; }
+  .comp-name { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 400; margin-bottom: 4px; }
+  .comp-type { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+  .comp-stats { display: flex; gap: 14px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-3); }
+  .comp-stats span.warm { color: var(--glow-warm); }
+  .comp-stats span.cool { color: var(--glow-cool); }
+
+  /* ===== SCREEN 4 — Media Generate (FAMtastic logo flow) ===== */
+  .s4-shell { display: grid; grid-template-columns: 56px 1fr; flex: 1; }
+  .s4-main { padding: 32px 44px 80px; max-width: 1240px; margin: 0 auto; width: 100%; position: relative; }
+  .s4-head { margin: 12px 0 28px; }
+  .s4-head h2 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 36px; letter-spacing: -0.02em; }
+  .s4-head h2 .glow { color: var(--glow-warm); font-style: italic; }
+  .s4-head p { font-size: 13.5px; color: var(--text-2); margin-top: 6px; max-width: 580px; line-height: 1.55; }
+  .gen-layout { display: grid; grid-template-columns: 360px 1fr; gap: 22px; }
+  .gen-form { padding: 24px 26px; }
+  .gen-form .field-lbl { margin-bottom: 8px; }
+  .gen-form textarea {
+    width: 100%; min-height: 110px; resize: vertical;
+    background: var(--glass-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    color: var(--text-1); font-family: 'Fraunces', serif; font-size: 15.5px; line-height: 1.5;
+    outline: none; transition: all 0.3s var(--ease);
+  }
+  .gen-form textarea:focus { border-color: var(--border-warm); }
+  .model-pick { display: grid; gap: 8px; margin-top: 8px; }
+  .model-row {
+    display: grid; grid-template-columns: 16px 1fr auto; gap: 10px;
+    padding: 10px 12px; border-radius: 9px;
+    background: var(--glass); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.3s var(--ease);
+    align-items: center;
+  }
+  .model-row:hover { background: var(--glass-2); border-color: var(--border-hi); }
+  .model-row.on { background: rgba(245,196,107,0.06); border-color: rgba(245,196,107,0.3); }
+  .model-check {
+    width: 14px; height: 14px; border-radius: 4px;
+    border: 1.5px solid var(--text-3);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .model-row.on .model-check { background: var(--glow-warm); border-color: var(--glow-warm); }
+  .model-row.on .model-check::after { content: '✓'; color: var(--bg-0); font-size: 10px; font-weight: 700; }
+  .model-name { font-size: 13px; color: var(--text-1); }
+  .model-tier { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.1em; color: var(--text-3); text-transform: uppercase; }
+  .model-tier.validated { color: var(--glow-cool); }
+  .model-tier.fallback { color: var(--text-3); }
+  .gen-options { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .gen-opt-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; font-size: 12.5px; color: var(--text-2);
+  }
+  .gen-opt-row .v { color: var(--text-1); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+  .gen-output { padding: 22px 24px; min-height: 480px; }
+  .gen-output-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .compare-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  }
+  .compare-cell {
+    border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; cursor: pointer;
+    transition: all 0.4s var(--ease);
+    background: linear-gradient(180deg, #0E0D0B, #0A0A0C);
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .compare-cell:hover { border-color: var(--border-hi); transform: translateY(-2px); }
+  .compare-cell.winner {
+    border-color: rgba(245,196,107,0.4);
+    box-shadow: 0 0 30px -6px rgba(245,196,107,0.4);
+  }
+  .compare-cell.winner::before {
+    content: 'YOU PICKED'; position: absolute; top: 10px; left: 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em;
+    color: var(--glow-warm);
+  }
+  .compare-cell .mark {
+    width: 80px; height: 80px; border-radius: 999px;
+    background: radial-gradient(circle at 32% 32%, var(--glow-warm), transparent 70%);
+    box-shadow: 0 0 60px rgba(245,196,107,0.4);
+  }
+  .compare-cell.b .mark { background: radial-gradient(circle at 50% 50%, var(--glow-cool), transparent 70%); box-shadow: 0 0 60px rgba(111,224,210,0.4); }
+  .compare-cell.c .mark { background: linear-gradient(135deg, var(--glow-warm), var(--glow-rose)); box-shadow: 0 0 60px rgba(240,140,140,0.4); }
+  .compare-cell.d .mark { background: conic-gradient(from 90deg, var(--glow-warm), var(--glow-cool), var(--glow-rose), var(--glow-warm)); box-shadow: 0 0 60px rgba(255,255,255,0.2); border-radius: 12px; }
+  .compare-tag {
+    position: absolute; bottom: 10px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text-2);
+  }
+  .compare-tag .cost { color: var(--text-3); }
+
+  .approval-bar {
+    margin-top: 18px; padding: 16px 20px;
+    border: 1px solid rgba(245,196,107,0.25);
+    border-radius: 12px;
+    background: rgba(245,196,107,0.04);
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px;
+  }
+  .approval-bar .msg { font-size: 13.5px; color: var(--text-1); }
+  .approval-bar .msg b { color: var(--glow-warm); font-weight: 500; }
+  .approval-bar .actions { display: flex; gap: 8px; }
+
+  /* ===== SCREEN 5 — Shay Desk ===== */
+  .s5-shell { display: grid; grid-template-columns: 56px 1fr 380px; flex: 1; }
+  .s5-main { padding: 32px 44px 80px; max-width: 760px; margin: 0 auto; width: 100%; position: relative; }
+  .s5-thread { display: flex; flex-direction: column; gap: 22px; margin-top: 32px; }
+  .s5-msg { display: flex; gap: 14px; align-items: flex-start; }
+  .s5-msg .av {
+    width: 32px; height: 32px; border-radius: 999px; flex-shrink: 0;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-size: 13px; font-style: italic;
+  }
+  .s5-msg.you .av { background: var(--glass-2); color: var(--text-1); }
+  .s5-msg.shay .av {
+    background: radial-gradient(circle at 35% 35%, rgba(111,224,210,0.4), rgba(111,224,210,0.05) 60%, transparent);
+    border-color: rgba(111,224,210,0.2);
+    color: var(--glow-cool);
+    box-shadow: 0 0 20px rgba(111,224,210,0.2);
+  }
+  .s5-msg .body { flex: 1; }
+  .s5-msg .who {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: 6px;
+  }
+  .s5-msg.shay .who { color: var(--glow-cool); }
+  .s5-msg .text {
+    font-size: 15px; line-height: 1.55; color: var(--text-1);
+  }
+  .s5-msg.you .text { color: var(--text-2); }
+
+  .s5-proposal {
+    margin-top: 12px; padding: 16px 18px;
+    border: 1px solid rgba(245,196,107,0.2);
+    background: rgba(245,196,107,0.03);
+    border-radius: 12px;
+  }
+  .s5-proposal .lbl {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--glow-warm); margin-bottom: 10px;
+  }
+  .s5-proposal .summary { font-size: 13.5px; color: var(--text-1); margin-bottom: 12px; line-height: 1.5; }
+  .s5-proposal .diff {
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;
+  }
+  .s5-proposal .diff .add { color: #95E5B0; }
+  .s5-proposal .diff .del { color: var(--glow-rose); text-decoration: line-through; }
+  .s5-proposal .actions { display: flex; gap: 8px; }
+
+  .s5-context {
+    background: rgba(255,255,255,0.012);
+    border-left: 1px solid var(--border);
+    padding: 24px 22px; overflow-y: auto;
+  }
+  .s5-context .hdr { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; color: var(--text-3); text-transform: uppercase; margin-bottom: 8px; }
+  .s5-context h4 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 17px; margin-bottom: 18px; }
+  .ctx-row {
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 12.5px;
+  }
+  .ctx-row:last-child { border-bottom: none; }
+  .ctx-row .k { color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .ctx-row .v { color: var(--text-1); text-align: right; max-width: 60%; word-break: break-word; }
+  .ctx-mode {
+    margin-top: 22px; padding: 12px 14px;
+    background: var(--glass); border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .ctx-mode .label { font-size: 12px; color: var(--text-2); }
+  .ctx-mode .v { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--glow-cool); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .s5-input-bar {
+    position: sticky; bottom: 0; margin-top: 30px;
+    padding: 14px 18px;
+    display: flex; gap: 12px; align-items: center;
+    background: var(--glass-2);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .s5-input-bar input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text-1); font-family: inherit; font-size: 15px;
+  }
+  .s5-input-bar input::placeholder { color: var(--text-3); }
+  .mode-toggle { display: flex; gap: 4px; padding: 3px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--border); }
+  .mode-toggle button {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    letter-spacing: 0.12em; padding: 5px 9px;
+    background: transparent; border: none; border-radius: 5px;
+    color: var(--text-3); cursor: pointer; text-transform: uppercase;
+    transition: all 0.3s var(--ease);
+  }
+  .mode-toggle button.on { background: var(--glass-3); color: var(--glow-cool); }
+
+  /* ===== Discovery overlay (top of doc) ===== */
+  .discovery {
+    position: relative; z-index: 1;
+    padding: 60px 48px 40px; max-width: 1100px; margin: 0 auto;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .discovery h1 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 44px; letter-spacing: -0.02em; margin-bottom: 14px; }
+  .discovery h1 .glow { color: var(--glow-warm); font-style: italic; }
+  .discovery .lede { font-size: 15px; color: var(--text-2); line-height: 1.6; max-width: 720px; margin-bottom: 32px; }
+  .disc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .disc-card { padding: 22px 24px; }
+  .disc-card h3 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 19px; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .disc-card p { font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
+  .disc-card ul { margin-top: 8px; padding-left: 0; list-style: none; }
+  .disc-card ul li {
+    padding: 4px 0 4px 18px; font-size: 13px; color: var(--text-2);
+    position: relative; line-height: 1.5;
+  }
+  .disc-card ul li::before {
+    content: '·'; position: absolute; left: 4px; top: -3px;
+    color: var(--glow-warm); font-size: 22px;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     DISCOVERY — answers to Fritz's open questions
+============================================================= -->
+<section class="discovery">
+  <div class="eyebrow" style="margin-bottom: 18px;">Discovery — applied below as five screens</div>
+  <h1>Five surfaces, <span class="glow">one system.</span></h1>
+  <p class="lede">
+    Each screen below is a different domain from the foundation rules, all using the same Night theme tokens, the same vocabulary, and the same rules. Discovery answers to your specific questions are embedded inline. Scroll through to see how the same design language renders across very different jobs.
+  </p>
+  <div class="disc-grid">
+    <div class="disc-card glass">
+      <h3>What is "creating the FAMtastic logo"?</h3>
+      <p>It's a specific case of the <b>Media · Generate</b> flow with branded story tier. (See Screen 4.) The flow is:</p>
+      <ul>
+        <li>Pick the goal (logo, hero, character, voice, etc.)</li>
+        <li>Capability manifest routes to candidate models — for a logo, primary is Claude SVG + OpenAI Responses (validated)</li>
+        <li>Models generate in parallel, results compare side-by-side</li>
+        <li>You pick the winner — winner promotes to brand kit, runners-up archive</li>
+        <li>Permission gate fires before any external API spend over a threshold</li>
+      </ul>
+    </div>
+    <div class="disc-card glass">
+      <h3>How do you pick different models?</h3>
+      <p>You don't pick models — you pick a goal. The capability manifest (`studio-capabilities.json`) routes goals to validated providers. Manual override is available for experiments, but the default UI surfaces the capability tier (validated / fallback / partial / broken) so you know what you're picking before you click.</p>
+    </div>
+    <div class="disc-card glass">
+      <h3>How do comparisons work?</h3>
+      <p>Multi-model generation is the default for any branded asset. 2–4 cells in a grid, same prompt, different routes. Cost shown per cell. Click a winner — it promotes. Losers stay in history for one session, then archive. (Screen 4 shows this.)</p>
+    </div>
+    <div class="disc-card glass">
+      <h3>Permission gates — when do they fire?</h3>
+      <p>Three triggers: spend over threshold, write to brand kit (canonical), or any provider in `unverified` tier. Gate appears as a contextual approval bar inside the workspace, never as a modal. Approve once = scoped to this generation. (Bottom of Screen 4.)</p>
+    </div>
+    <div class="disc-card glass">
+      <h3>Components vs Media — what's the line?</h3>
+      <p><b>Components</b> are AI-generated reusable code/HTML modules (hero sections, cards, badges) — versioned, tested, promoted to library after proof. <b>Media</b> are static assets (images, video, audio, brand kit) — generated, versioned, owned by a site or by the brand. Both have library + generate + detail flows. Different domains because acceptance criteria differ.</p>
+    </div>
+    <div class="disc-card glass">
+      <h3>Where do jobs live?</h3>
+      <p>The <b>job queue</b> isn't a left-nav domain. It's a panel inside <b>Admin</b> (worker queue) and surfaces contextually wherever a job is dispatched (e.g., "generation queue" in Media, "build queue" in Sites). The same underlying ledger, three contextual views.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SCREEN 1 — Sites · Portfolio (the landing)
+============================================================= -->
+<section class="screen" id="s1">
+  <div class="screen-header">
+    <div class="meta">
+      <div class="screen-num">01</div>
+      <div class="screen-title">Sites · Portfolio</div>
+      <div class="screen-why">The landing surface. The empire-first view. You see every site in flight before you see any one site.</div>
+      <div class="screen-rules">
+        <span class="rule-chip">R1 left-nav-domain · Sites</span>
+        <span class="rule-chip">R4 Fritz-filter · ranks by attention</span>
+        <span class="rule-chip">UX-5 surface state, not options</span>
+      </div>
+    </div>
+    <div class="eyebrow" style="text-align: right;">scroll for next →</div>
+  </div>
+
+  <div class="whisper" style="margin: 24px 48px 0;">
+    <div class="brand"><span class="brand-mark"></span><span>FAMtastic Site Studio</span></div>
+    <div class="right">
+      <span>Sites · All</span>
+      <span class="shay-presence"><span class="pulse cool"></span><span>Shay listening</span></span>
+    </div>
+  </div>
+
+  <div class="s1-shell" style="margin: 0 48px;">
+    <nav class="domain-rail">
+      <button class="domain-btn active" title="Sites">SI</button>
+      <button class="domain-btn" title="Brainstorm">BR</button>
+      <button class="domain-btn" title="Plans">PL</button>
+      <button class="domain-btn" title="Components">CO</button>
+      <button class="domain-btn" title="Media">ME</button>
+      <button class="domain-btn" title="Research">RE</button>
+      <button class="domain-btn" title="Admin">AD</button>
+    </nav>
+
+    <div class="s1-main">
+      <div class="eyebrow">Tonight · 6 sites in flight</div>
+      <h1 class="s1-greet">Three need you, <span class="glow">three are running themselves.</span></h1>
+      <p class="s1-sub">MBSH is closest to ship. JJ B&A and Pip Knows are awaiting decisions. Three older builds are operating without intervention.</p>
+
+      <div class="portfolio-grid">
+
+        <article class="site-card hero glass">
+          <div class="site-card-head">
+            <span class="pulse"></span>
+            <span class="site-card-stage">Build · Closest to ship</span>
+          </div>
+          <h3 class="site-card-title">MBSH Class of '96 — 30th Reunion</h3>
+          <div class="site-card-tag">site-mbsh-reunion · reunion · 8 pages</div>
+          <div class="stage-bar">
+            <div class="done"></div><div class="done"></div><div class="done"></div><div class="done"></div><div></div><div></div>
+          </div>
+          <div class="site-card-row">
+            <span>scaffold</span><span>brief</span><span>media</span><span>build</span><span style="color:var(--text-2);">▸ rsvp backend</span><span style="color:var(--text-3);">deploy</span>
+          </div>
+          <div class="site-card-row" style="margin-top: 10px;">
+            <span class="next">finish RSVP backend wiring</span>
+          </div>
+        </article>
+
+        <article class="site-card glass">
+          <div class="site-card-head">
+            <span class="pulse cool"></span>
+            <span class="site-card-stage">Blueprint · Awaiting</span>
+          </div>
+          <h3 class="site-card-title">Pip Knows</h3>
+          <div class="site-card-tag">site-pip-knows · creator</div>
+          <div class="site-card-row">
+            <span class="next">approve interview answers</span>
+          </div>
+        </article>
+
+        <article class="site-card glass">
+          <div class="site-card-head">
+            <span class="pulse"></span>
+            <span class="site-card-stage">Build · Verifying</span>
+          </div>
+          <h3 class="site-card-title">JJ B&A Transport</h3>
+          <div class="site-card-tag">site-jj-ba-transport · transport · 3 pages</div>
+          <div class="site-card-row">
+            <span class="next">run verification build</span>
+          </div>
+        </article>
+
+        <article class="site-card glass">
+          <div class="site-card-head">
+            <span class="pulse dim"></span>
+            <span class="site-card-stage">Operating · Live</span>
+          </div>
+          <h3 class="site-card-title">Mario's Pizza</h3>
+          <div class="site-card-tag">site-marios-pizza · live since 2026-04-17</div>
+          <div class="site-card-row">
+            <span style="color: var(--glow-cool);">$0 MRR</span>
+            <span>87 visits/wk</span>
+          </div>
+        </article>
+
+        <article class="site-card glass">
+          <div class="site-card-head">
+            <span class="pulse dim"></span>
+            <span class="site-card-stage">Operating · Live</span>
+          </div>
+          <h3 class="site-card-title">Tony's Barber Shop</h3>
+          <div class="site-card-tag">site-tonys-barber-shop · live</div>
+          <div class="site-card-row">
+            <span style="color: var(--glow-cool);">$0 MRR</span>
+            <span>43 visits/wk</span>
+          </div>
+        </article>
+
+        <article class="site-card glass">
+          <div class="site-card-head">
+            <span class="pulse dim"></span>
+            <span class="site-card-stage">Operating · Live</span>
+          </div>
+          <h3 class="site-card-title">Luna's Flower Shop</h3>
+          <div class="site-card-tag">site-lunas-flower-shop · live</div>
+          <div class="site-card-row">
+            <span style="color: var(--glow-cool);">$0 MRR</span>
+            <span>62 visits/wk</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </div>
+
+  <button class="shay-orb" aria-label="Shay"></button>
+</section>
+
+
+<!-- ============================================================
+     SCREEN 2 — Sites · Single Page Editor (MBSH index.html)
+============================================================= -->
+<section class="screen" id="s2">
+  <div class="screen-header">
+    <div class="meta">
+      <div class="screen-num">02</div>
+      <div class="screen-title">Sites · Page Editor with Live Preview</div>
+      <div class="screen-why">Drilled into MBSH's index.html. Section selected on canvas; tools surface contextually in the right inspector. Direct manipulation; no modal forms.</div>
+      <div class="screen-rules">
+        <span class="rule-chip">R2 workspace reacts to selection</span>
+        <span class="rule-chip">UX-4 direct manipulation over forms</span>
+        <span class="rule-chip">v3 identity · index-hero-1</span>
+      </div>
+    </div>
+    <div class="eyebrow" style="text-align: right;">scroll for next →</div>
+  </div>
+
+  <div class="whisper" style="margin: 24px 48px 0;">
+    <div class="brand"><span class="brand-mark"></span><span>FAMtastic Site Studio</span></div>
+    <div class="right">
+      <span>Sites · MBSH · index.html</span>
+      <span class="shay-presence"><span class="pulse cool"></span><span>Shay watching</span></span>
+    </div>
+  </div>
+
+  <div class="s2-shell" style="margin: 0 48px; height: 720px;">
+    <nav class="domain-rail">
+      <button class="domain-btn active" title="Sites">SI</button>
+      <button class="domain-btn" title="Brainstorm">BR</button>
+      <button class="domain-btn" title="Plans">PL</button>
+      <button class="domain-btn" title="Components">CO</button>
+      <button class="domain-btn" title="Media">ME</button>
+      <button class="domain-btn" title="Research">RE</button>
+      <button class="domain-btn" title="Admin">AD</button>
+    </nav>
+
+    <aside class="s2-aside">
+      <h3>MBSH Class of '96</h3>
+      <div class="s2-site-tag">site-mbsh-reunion · 8 pages</div>
+
+      <div class="eyebrow" style="margin-bottom: 8px;">Pages</div>
+      <div class="s2-page-list">
+        <div class="s2-page-item active"><span class="dot"></span>index.html</div>
+        <div class="s2-page-item"><span class="dot"></span>rsvp.html</div>
+        <div class="s2-page-item"><span class="dot"></span>tickets.html</div>
+        <div class="s2-page-item"><span class="dot"></span>through-years.html</div>
+        <div class="s2-page-item"><span class="dot"></span>memorial.html</div>
+        <div class="s2-page-item"><span class="dot"></span>capsule.html</div>
+        <div class="s2-page-item"><span class="dot"></span>playlist.html</div>
+        <div class="s2-page-item"><span class="dot"></span>404.html</div>
+      </div>
+
+      <div class="s2-section-tree">
+        <div class="lbl">Sections</div>
+        <div class="s2-section-item selected">
+          <span>Hero</span><span class="id">index-hero-1</span>
+        </div>
+        <div class="s2-section-item">
+          <span>Story moments</span><span class="id">index-story-1</span>
+        </div>
+        <div class="s2-section-item">
+          <span>Forever block</span><span class="id">index-forever-1</span>
+        </div>
+        <div class="s2-section-item">
+          <span>RSVP teaser</span><span class="id">index-rsvp-1</span>
+        </div>
+        <div class="s2-section-item">
+          <span>Footer</span><span class="id">index-footer-1</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="s2-bench">
+      <div class="s2-bench-head">
+        <div>
+          <div class="s2-crumb">Sites · MBSH · index.html · index-hero-1</div>
+          <div class="s2-page-title">Hero</div>
+        </div>
+        <div class="s2-actions">
+          <button class="btn">History</button>
+          <button class="btn">Variants</button>
+          <button class="btn primary">Refine with Shay</button>
+        </div>
+      </div>
+
+      <div class="preview-frame">
+        <div class="preview-eyebrow">MBSH · CLASS OF 1996 · 30TH REUNION</div>
+        <h1>One night, <span class="glow">thirty years.</span></h1>
+        <div class="sub">Saturday, July 12, 2026 · The night we've been waiting for.</div>
+        <div class="selection">
+          <div class="selection-tag">Selected · index-hero-1</div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="s2-inspector">
+      <div class="hdr">Inspector</div>
+      <h4>Hero · index-hero-1</h4>
+
+      <div class="field">
+        <div class="field-lbl">Eyebrow</div>
+        <input class="field-input" value="MBSH · CLASS OF 1996 · 30TH REUNION" />
+      </div>
+      <div class="field">
+        <div class="field-lbl">Headline</div>
+        <input class="field-input txt" value="One night, thirty years." />
+      </div>
+      <div class="field">
+        <div class="field-lbl">Sub</div>
+        <input class="field-input" value="Saturday, July 12, 2026" />
+      </div>
+
+      <div class="tools-rail">
+        <div class="hdr" style="margin-bottom: 6px;">Tools for this section</div>
+        <div class="tool-row"><span class="ic">G</span> Generate hero image (Imagen / OpenAI)</div>
+        <div class="tool-row"><span class="ic">M</span> Swap motion preset</div>
+        <div class="tool-row"><span class="ic">L</span> Adjust hero layers</div>
+        <div class="tool-row"><span class="ic">P</span> Promote section to Components</div>
+        <div class="tool-row"><span class="ic">V</span> View HTML</div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SCREEN 3 — Components Library
+============================================================= -->
+<section class="screen" id="s3">
+  <div class="screen-header">
+    <div class="meta">
+      <div class="screen-num">03</div>
+      <div class="screen-title">Components · Library</div>
+      <div class="screen-why">"Generator of AI-based components." Each component is a reusable, versioned, AI-generated module with usage proof. Promote a section from any site → it lands here, smarter every time it's used.</div>
+      <div class="screen-rules">
+        <span class="rule-chip">R1 left-nav-domain · Components</span>
+        <span class="rule-chip">UX-5 surface state · usage proof inline</span>
+        <span class="rule-chip">famtastic-dna · BEM hero, NAV_SKELETON</span>
+      </div>
+    </div>
+    <div class="eyebrow" style="text-align: right;">scroll for next →</div>
+  </div>
+
+  <div class="whisper" style="margin: 24px 48px 0;">
+    <div class="brand"><span class="brand-mark"></span><span>FAMtastic Site Studio</span></div>
+    <div class="right">
+      <span>Components · 6 in library</span>
+      <span class="shay-presence"><span class="pulse cool"></span><span>Shay listening</span></span>
+    </div>
+  </div>
+
+  <div class="s3-shell" style="margin: 0 48px;">
+    <nav class="domain-rail">
+      <button class="domain-btn" title="Sites">SI</button>
+      <button class="domain-btn" title="Brainstorm">BR</button>
+      <button class="domain-btn" title="Plans">PL</button>
+      <button class="domain-btn active" title="Components">CO</button>
+      <button class="domain-btn" title="Media">ME</button>
+      <button class="domain-btn" title="Research">RE</button>
+      <button class="domain-btn" title="Admin">AD</button>
+    </nav>
+
+    <div class="s3-main">
+      <div class="s3-head">
+        <div>
+          <div class="eyebrow">Library</div>
+          <h2>Components</h2>
+          <p>AI-generated, versioned, used across sites. Click any component to see variants, where it's deployed, and the proof that earned it promotion.</p>
+        </div>
+        <div class="s3-filters">
+          <button class="filter-chip active">All</button>
+          <button class="filter-chip">Hero</button>
+          <button class="filter-chip">Card</button>
+          <button class="filter-chip">Showcase</button>
+          <button class="filter-chip">Decorator</button>
+          <button class="filter-chip">Interactive</button>
+        </div>
+      </div>
+
+      <div class="comp-grid">
+
+        <article class="comp-card glass">
+          <div class="comp-render video">Video Hero</div>
+          <div class="comp-meta">
+            <div class="comp-name">Video Hero Section</div>
+            <div class="comp-type">Hero · v1.2</div>
+            <div class="comp-stats">
+              <span class="warm">3 sites</span>
+              <span>5 variants</span>
+              <span class="cool">94 score</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="comp-card glass">
+          <div class="comp-render starburst"></div>
+          <div class="comp-meta">
+            <div class="comp-name">CSS Starburst Badge</div>
+            <div class="comp-type">Decorator · v1.0</div>
+            <div class="comp-stats">
+              <span class="warm">2 sites</span>
+              <span>3 variants</span>
+              <span class="cool">88 score</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="comp-card glass">
+          <div class="comp-render timer">07 : 12 : 04</div>
+          <div class="comp-meta">
+            <div class="comp-name">Live Countdown Timer</div>
+            <div class="comp-type">Interactive · v1.1</div>
+            <div class="comp-stats">
+              <span class="warm">2 sites</span>
+              <span>2 variants</span>
+              <span class="cool">91 score</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="comp-card glass">
+          <div class="comp-render card">Garage Sale<br>Product Card</div>
+          <div class="comp-meta">
+            <div class="comp-name">Garage Sale Product Card</div>
+            <div class="comp-type">Card · v1.0</div>
+            <div class="comp-stats">
+              <span class="warm">1 site</span>
+              <span>4 variants</span>
+              <span>—</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="comp-card glass">
+          <div class="comp-render pills"></div>
+          <div class="comp-meta">
+            <div class="comp-name">Category Filter Pills</div>
+            <div class="comp-type">Interactive · v1.0</div>
+            <div class="comp-stats">
+              <span class="warm">1 site</span>
+              <span>2 variants</span>
+              <span>—</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="comp-card glass" style="border-style: dashed; border-color: rgba(245,196,107,0.3); background: rgba(245,196,107,0.03);">
+          <div class="comp-render" style="color: var(--glow-warm); font-style: italic;">Promote a section</div>
+          <div class="comp-meta">
+            <div class="comp-name" style="color: var(--glow-warm);">Promote from a site →</div>
+            <div class="comp-type">Pending promotion</div>
+            <div class="comp-stats"><span>Hero from MBSH ready for review</span></div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </div>
+
+  <button class="shay-orb" aria-label="Shay"></button>
+</section>
+
+
+<!-- ============================================================
+     SCREEN 4 — Media · Generate (FAMtastic logo flow)
+============================================================= -->
+<section class="screen" id="s4">
+  <div class="screen-header">
+    <div class="meta">
+      <div class="screen-num">04</div>
+      <div class="screen-title">Media · Generate the FAMtastic Logo</div>
+      <div class="screen-why">Pick the goal (logo). Capability manifest routes to validated providers. Multi-model parallel generation. You pick the winner. Approval gate fires before brand-kit write because this is canonical.</div>
+      <div class="screen-rules">
+        <span class="rule-chip">R4 Fritz-filter · saves clicks + prevents mistakes</span>
+        <span class="rule-chip">UX-3 progressive disclosure · advanced collapsed</span>
+        <span class="rule-chip">UX-7 no spinner without explanation</span>
+      </div>
+    </div>
+    <div class="eyebrow" style="text-align: right;">scroll for next →</div>
+  </div>
+
+  <div class="whisper" style="margin: 24px 48px 0;">
+    <div class="brand"><span class="brand-mark"></span><span>FAMtastic Site Studio</span></div>
+    <div class="right">
+      <span>Media · Generate · Brand kit</span>
+      <span class="shay-presence"><span class="pulse cool"></span><span>Shay watching</span></span>
+    </div>
+  </div>
+
+  <div class="s4-shell" style="margin: 0 48px;">
+    <nav class="domain-rail">
+      <button class="domain-btn" title="Sites">SI</button>
+      <button class="domain-btn" title="Brainstorm">BR</button>
+      <button class="domain-btn" title="Plans">PL</button>
+      <button class="domain-btn" title="Components">CO</button>
+      <button class="domain-btn active" title="Media">ME</button>
+      <button class="domain-btn" title="Research">RE</button>
+      <button class="domain-btn" title="Admin">AD</button>
+    </nav>
+
+    <div class="s4-main">
+      <div class="s4-head">
+        <div class="eyebrow">Media · Generate</div>
+        <h2>Create the <span class="glow">FAMtastic mark.</span></h2>
+        <p>This will write to the canonical brand kit. You'll approve a winner before anything is committed.</p>
+      </div>
+
+      <div class="gen-layout">
+
+        <div class="gen-form glass">
+          <div class="field">
+            <div class="field-lbl">Goal</div>
+            <div class="field-input" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Branded logo · vector</span>
+              <span class="kbd">▾</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-lbl">Prompt</div>
+            <textarea>FAMtastic — fearless, confident, warm. A mark that feels like dawn breaking. Off-black + amber glow. Could read as a letter, a sun rising, or both. SVG, scales clean to favicon.</textarea>
+          </div>
+
+          <div class="field-lbl" style="margin-top: 18px;">Models</div>
+          <div class="model-pick">
+            <div class="model-row on">
+              <div class="model-check"></div>
+              <div>
+                <div class="model-name">Claude SVG</div>
+                <div class="model-tier validated">VALIDATED · vector</div>
+              </div>
+              <span class="kbd">$0.04</span>
+            </div>
+            <div class="model-row on">
+              <div class="model-check"></div>
+              <div>
+                <div class="model-name">OpenAI Responses · image</div>
+                <div class="model-tier validated">VALIDATED · transparent PNG</div>
+              </div>
+              <span class="kbd">$0.08</span>
+            </div>
+            <div class="model-row on">
+              <div class="model-check"></div>
+              <div>
+                <div class="model-name">Imagen 4 · Google</div>
+                <div class="model-tier validated">VALIDATED · raster</div>
+              </div>
+              <span class="kbd">$0.06</span>
+            </div>
+            <div class="model-row on">
+              <div class="model-check"></div>
+              <div>
+                <div class="model-name">Adobe Firefly Web</div>
+                <div class="model-tier fallback">FALLBACK · manual</div>
+              </div>
+              <span class="kbd">manual</span>
+            </div>
+          </div>
+
+          <div class="gen-options">
+            <div class="gen-opt-row"><span>Comparison cells</span><span class="v">2 × 2</span></div>
+            <div class="gen-opt-row"><span>Approval threshold</span><span class="v">$0.50</span></div>
+            <div class="gen-opt-row"><span>Save losers</span><span class="v">history · 1 session</span></div>
+          </div>
+
+          <button class="btn primary" style="width: 100%; margin-top: 20px; padding: 12px;">Generate four variants</button>
+        </div>
+
+        <div class="gen-output glass">
+          <div class="gen-output-head">
+            <div>
+              <div class="eyebrow">Comparison · 4 outputs</div>
+              <div style="font-family: 'Fraunces', serif; font-size: 22px; font-weight: 400; margin-top: 4px;">Pick the winner</div>
+            </div>
+            <span class="kbd">⌘ ↩ to confirm</span>
+          </div>
+
+          <div class="compare-grid">
+            <div class="compare-cell winner">
+              <div class="mark"></div>
+              <div class="compare-tag"><span>Claude SVG</span><span class="cost">$0.04 · 2.1s</span></div>
+            </div>
+            <div class="compare-cell b">
+              <div class="mark"></div>
+              <div class="compare-tag"><span>OpenAI</span><span class="cost">$0.08 · 4.6s</span></div>
+            </div>
+            <div class="compare-cell c">
+              <div class="mark"></div>
+              <div class="compare-tag"><span>Imagen 4</span><span class="cost">$0.06 · 3.2s</span></div>
+            </div>
+            <div class="compare-cell d">
+              <div class="mark"></div>
+              <div class="compare-tag"><span>Firefly · manual</span><span class="cost">queued</span></div>
+            </div>
+          </div>
+
+          <div class="approval-bar">
+            <div class="msg">
+              You picked <b>Claude SVG · variant 1</b>. This will write to <b>brand kit canonical</b>, generating <b>logo-full.svg / logo-icon.svg / logo-wordmark.svg</b>, replace existing brand mark, and append a decision entry.
+            </div>
+            <div class="actions">
+              <button class="btn">Refine</button>
+              <button class="btn primary">Approve &amp; promote</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <button class="shay-orb" aria-label="Shay"></button>
+</section>
+
+
+<!-- ============================================================
+     SCREEN 5 — Shay Desk (threaded, persistent)
+============================================================= -->
+<section class="screen" id="s5">
+  <div class="screen-header">
+    <div class="meta">
+      <div class="screen-num">05</div>
+      <div class="screen-title">Shay · Desk · Threaded</div>
+      <div class="screen-why">Shay Desk is invoked. Right pane shows page_context — what Shay knows about what you're looking at. She proposes; you approve. Default mode is propose-only.</div>
+      <div class="screen-rules">
+        <span class="rule-chip">R3 Shay ambient → invoked Desk</span>
+        <span class="rule-chip">page_context registry · v2</span>
+        <span class="rule-chip">propose-only mode default</span>
+      </div>
+    </div>
+    <div class="eyebrow" style="text-align: right;">end ▪</div>
+  </div>
+
+  <div class="whisper" style="margin: 24px 48px 0;">
+    <div class="brand"><span class="brand-mark"></span><span>FAMtastic Site Studio</span></div>
+    <div class="right">
+      <span>Shay · Desk</span>
+      <span class="shay-presence"><span class="pulse cool"></span><span>Shay listening</span></span>
+    </div>
+  </div>
+
+  <div class="s5-shell" style="margin: 0 48px; min-height: 720px;">
+    <nav class="domain-rail">
+      <button class="domain-btn" title="Sites">SI</button>
+      <button class="domain-btn" title="Brainstorm">BR</button>
+      <button class="domain-btn" title="Plans">PL</button>
+      <button class="domain-btn" title="Components">CO</button>
+      <button class="domain-btn" title="Media">ME</button>
+      <button class="domain-btn" title="Research">RE</button>
+      <button class="domain-btn" title="Admin">AD</button>
+    </nav>
+
+    <div class="s5-main">
+      <div class="eyebrow">Shay · threaded · propose-only</div>
+      <h1 class="display" style="font-size: 36px; margin-top: 6px;">What should we sharpen <em style="color: var(--glow-cool); font-style: italic;">on the MBSH hero?</em></h1>
+
+      <div class="s5-thread">
+
+        <div class="s5-msg you">
+          <div class="av">F</div>
+          <div class="body">
+            <div class="who">Fritz · 22:41</div>
+            <div class="text">The MBSH hero feels close but the headline is doing too much work alone. Can we layer something behind it that signals "30 years"?</div>
+          </div>
+        </div>
+
+        <div class="s5-msg shay">
+          <div class="av">S</div>
+          <div class="body">
+            <div class="who">Shay · listening · 22:41</div>
+            <div class="text">
+              I see what you mean. The hero has only the headline + sub right now. The brief says <em>"layered composition (background loop + brand mark top-left + center typography stack + Hi-Tide Harry bottom-right + scroll-tease bottom-center)"</em>. The bg loop slot is empty.
+              <br><br>
+              I can propose two things — pick one, both, or neither.
+            </div>
+
+            <div class="s5-proposal">
+              <div class="lbl">Proposal · 1 of 2</div>
+              <div class="summary">Generate an atmospheric background loop (Leonardo, validated route) showing slow ocean motion in moonlight. Tag: cinematic, restrained, blue-grey.</div>
+              <div class="diff">
+<span class="del">.fam-hero-layer--bg { background: var(--ink); }</span>
+<span class="add">.fam-hero-layer--bg { background: url(/assets/hero-loop.mp4) cover; }</span>
+              </div>
+              <div class="actions">
+                <button class="btn">Propose to Media queue</button>
+                <button class="btn">Skip</button>
+              </div>
+            </div>
+
+            <div class="s5-proposal" style="margin-top: 10px;">
+              <div class="lbl">Proposal · 2 of 2</div>
+              <div class="summary">Add a faint "30 · 1996—2026" wordmark to the fx layer, behind the headline. Allura cursive, low opacity, slow drift. Reinforces the "30 years" idea without competing with the headline.</div>
+              <div class="diff">
+<span class="add">+ &lt;div class="fam-hero-layer--fx" data-id="index-fx-1"&gt;</span>
+<span class="add">+   &lt;span class="anniv"&gt;30 · 1996—2026&lt;/span&gt;</span>
+<span class="add">+ &lt;/div&gt;</span>
+              </div>
+              <div class="actions">
+                <button class="btn">Apply with approval</button>
+                <button class="btn">Skip</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s5-msg you">
+          <div class="av">F</div>
+          <div class="body">
+            <div class="who">Fritz · 22:43</div>
+            <div class="text">Do proposal 2. Hold proposal 1 for tomorrow when I'm at the laptop with audio.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="s5-input-bar">
+        <span style="color: var(--glow-cool); font-size: 18px;">✦</span>
+        <input placeholder="Continue with Shay…" />
+        <div class="mode-toggle">
+          <button class="on">Propose</button>
+          <button>Apply</button>
+          <button>Auto</button>
+        </div>
+        <span class="kbd">⌘ ↩</span>
+      </div>
+    </div>
+
+    <aside class="s5-context">
+      <div class="hdr">Page context</div>
+      <h4>What Shay sees</h4>
+      <div class="ctx-row"><span class="k">Domain</span><span class="v">Sites</span></div>
+      <div class="ctx-row"><span class="k">Site</span><span class="v">site-mbsh-reunion</span></div>
+      <div class="ctx-row"><span class="k">Page</span><span class="v">index.html</span></div>
+      <div class="ctx-row"><span class="k">Section</span><span class="v">index-hero-1</span></div>
+      <div class="ctx-row"><span class="k">Spec tier</span><span class="v">featured</span></div>
+      <div class="ctx-row"><span class="k">Brief tone</span><span class="v">cinematic, elegant, black-tie</span></div>
+      <div class="ctx-row"><span class="k">Last build</span><span class="v">2026-04-30 · 313s · 5 pages</span></div>
+      <div class="ctx-row"><span class="k">Open blockers</span><span class="v">RSVP backend wiring</span></div>
+      <div class="ctx-row"><span class="k">Capability tier</span><span class="v">Leonardo validated</span></div>
+
+      <div class="ctx-mode">
+        <span class="label">Shay mode</span>
+        <span class="v">Propose-only</span>
+      </div>
+
+      <div style="margin-top: 24px; font-size: 12.5px; color: var(--text-3); line-height: 1.55;">
+        Shay can read site state, propose changes, and queue media generations. She cannot supersede plans, write to brand kit, or deploy. Approve mode change in Admin → Permissions.
+      </div>
+    </aside>
+  </div>
+</section>
+
+</body>
+</html>
