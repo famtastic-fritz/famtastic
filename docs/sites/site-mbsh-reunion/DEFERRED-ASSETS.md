@@ -2,7 +2,24 @@
 
 **Tracks:** every asset/pose that was NOT generated this run, with the explicit fallback in use
 **Source of truth:** Design Map §3 + V3 §4 pose register
-**Updated:** 2026-05-07 (P1 paused)
+**Updated:** 2026-05-07 (P1 paused; image-gen capability check completed)
+
+---
+
+## Image-generation toolchain status (real fallback chain)
+
+Per `IMAGE-GEN-CAPABILITY-CHECK.md` (2026-05-07):
+
+| Order | Provider | Status | Reason / Fix |
+|---|---|---|---|
+| 1 | **Gemini / nano-banana (PRIMARY)** | ❌ BLOCKED — key invalid | `GEMINI_API_KEY` returns `API_KEY_INVALID` HTTP 400. Not credits — auth. Regenerate at https://aistudio.google.com/app/apikey |
+| 2 | OpenAI DALL-E / `gpt-image-1` (backup 1) | ❌ Unavailable | No `OPENAI_API_KEY` configured |
+| 3 | Adobe Firefly (backup 2) | ❌ Unavailable | `firefly_client_id` + `firefly_client_secret` empty in studio-config |
+| 4 | Canva MCP (backup 3) | ❓ Unknown | Plugin registered (`mcp__plugin_marketing_canva__*`); OAuth + image-gen scope unverified |
+| 5 | Local / manual (backup 4) | ⚠️ Manual only | `ffmpeg` present (video, not gen); no ImageMagick; no local diffusion model |
+| 6 | CSS / SVG / existing-pose (FINAL) | ✅ Active | Documented per-asset below; ships today |
+
+**Practical implication for the build:** Pass 2 ships with the existing-pose / CSS / SVG fallbacks below. Pass 3 raster polish unblocks the moment ANY of providers 1–4 becomes available.
 
 ---
 
