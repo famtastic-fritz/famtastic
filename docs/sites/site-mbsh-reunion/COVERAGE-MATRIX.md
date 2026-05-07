@@ -1,9 +1,26 @@
 # MBSH Premiere — Design Map Coverage Matrix
 
 **Tracks:** every section in Design Map §2 against build-pass status
-**Last updated:** 2026-05-07 (P1 paused for Fritz)
+**Last updated:** 2026-05-07 (P8+P9 deployed to staging)
 
-Legend: ✅ shipped this pass · 🟡 in progress · ⬜ pending · ⏸ deferred (with fallback) · 🚫 blocked
+Legend: ✅ shipped this pass · 🟡 in progress · ⬜ pending · ⏸ deferred (with fallback) · 🚫 blocked · ❌ removed
+
+---
+
+## Pass 8 + 9 additions (post-Design-Map)
+
+| Component | Status | Notes |
+|---|---|---|
+| Canonical page pattern Title→Note→Pre→Main→Post→WhereNext | ✅ P8 | See PASS-8-9-CLOSEOUT |
+| `.page-note` (Usher Note section) | ✅ P8 | Home — 3 numbered beats, slate top, Harry-in-scene |
+| `.director-strip` (Post-item) | ✅ P8 | Motto + meta + Harry salute |
+| Unified `.reel-card` vocab | ✅ P9 | REEL N · title · usher · runtime · SELECT/NOW PLAYING |
+| `.reel-rail` (horizontal snap) | ✅ P9 | Mobile peek + desktop 4-up |
+| Page-aware Where-Next injector | ✅ P9 | All 7 pages, current page = NOW PLAYING |
+| Harry-in-scene (per-page pose map) | ✅ P9 | 7 poses; chat Harry remains as `.premiere-usher` |
+| Home bulletin (reel-card row) | ✅ P9 | `fillHomeBulletin()` |
+| Story Then/Now/Forever on home | ❌ P8 | Removed — migrates to Through-Years rebuild |
+| Home `.preview-card` poster wall | ❌ P8 | Replaced by reel-card bulletin |
 
 ---
 

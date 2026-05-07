@@ -1,16 +1,16 @@
 # MBSH Premiere — Run State (Heartbeat / Resume)
 
-**Updated:** 2026-05-07 (P1 paused for Fritz)
+**Updated:** 2026-05-07 (Pass 8+9 deployed to staging)
 **Mode:** `guarded-autonomous-to-completion`
 
 ---
 
 ## Current state
 
-- **Active pass:** P7 — ⏸ **PAUSED for explicit Fritz prod-merge approval**
-- **Staging:** ✅ deployed — `e46c241` on `staging` branch → auto-deploys to `https://mbsh-reunion-staging.netlify.app`
+- **Active pass:** P8+P9 — ⏸ **PAUSED for Fritz review on staging**
+- **Staging:** ✅ deployed — `350e7d7` on `staging` branch → auto-deploys to `https://mbsh-reunion-staging.netlify.app`
 - **Production (`main`):** UNCHANGED — Fritz approval gate
-- **Branch:** `feat/premiere-theme` head at `4f046d7` (preserved for reference)
+- **Working branch:** `staging` (direct commits, no separate feature branch this pass)
 - **Sandbox preview URL (local):** http://localhost:3000/_premiere-sandbox.html
 - **Pre-P0 baseline:** `1386d17`
 - **P0 commit:** `dbec459`
@@ -21,6 +21,8 @@
 - **P5 commit:** `8cfc50e`
 - **P6 commit:** `4f046d7`
 - **Staging merge:** `e46c241`
+- **P7 curtain-slowdown + Harry-intro:** `4b8fd70`
+- **P8+P9 page pattern + reel-card + Harry-in-scene:** `350e7d7`
 
 ## Resume contract
 
@@ -51,6 +53,8 @@ The run is recoverable from these files alone — no in-memory state required.
 | 2026-05-07 | P5 | ✅ Closed at `8cfc50e`. Filmstrip perspective polish (Fritz R13) + asset weight optimization 32MB→9MB. |
 | 2026-05-07 | P6 | ✅ Closed at `4f046d7`. Lighthouse mobile a11y 96 ✓, BP 93, perf 74 (LCP-on-slow-4G video quirk documented for P7 real-device validation). |
 | 2026-05-07 | P7 | 🟡 Staging deployed at `e46c241`. ⏸ PAUSED for explicit Fritz prod-merge approval. |
+| 2026-05-07 | P7+ | Curtain rise slowed 1.2s→3.2s; Harry intro speech bubble (one-per-session) added. Commit `4b8fd70`. |
+| 2026-05-07 | P8+9 | Canonical page pattern (Title→Note→Pre→Main→Post→WhereNext) + unified `.reel-card` + page-aware Where-Next + Harry-in-scene per page. Commit `350e7d7`. ⏸ PAUSED for Fritz review on staging. |
 
 ---
 
