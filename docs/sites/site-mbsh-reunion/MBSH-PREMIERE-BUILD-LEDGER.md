@@ -135,8 +135,12 @@ Rule: the Design Map drives build decisions. This ledger tracks execution status
 current_status:
   plan_name: FAMtastic Site Build — MBSH Premiere Experience
   current_pass: pass-7
-  pass_disposition: starting-staging-deploy
-  next_action: push-to-staging-branch-and-pause-for-fritz-prod-approval
+  pass_disposition: paused-for-fritz-prod-merge-approval
+  next_action: fritz-walks-staging-then-approves-or-blocks-main-merge
+  staging_deploy_commit: e46c241
+  staging_url: https://mbsh-reunion-staging.netlify.app
+  production_branch: main
+  production_status: untouched-awaiting-fritz
   approved_to_build: pass-3-pass-4-pass-5-pass-6-pass-7-staging-only
   blocked_by: none
   must_stop_after: pass-7-staging-deploy-pause-for-fritz-prod-approval
@@ -421,6 +425,7 @@ Update or report: current pass, completed tasks, blocked tasks, next action, pro
 | 2026-05-07 | P4 | ✅ Closed | All 21 assets integrated: POSE_MAP swapped (8 entries), 3 backdrops via stage::before, brand-mark-foil on hero + Forever, 3 tier medallions on patron mini-cards. Commit `1006c99`. |
 | 2026-05-07 | P5 | ✅ Closed | Filmstrip perspective polish (Fritz R13) + asset weight optimization (32MB → 9MB, 72% reduction). Commit `8cfc50e`. |
 | 2026-05-07 | P6 | ✅ Closed | Lighthouse mobile: a11y 96 ✓, BP 93, perf 74 (LCP 13s under slow-4G simulation — video-hero quirk; deferred to P7 real-device validation). Commit `4f046d7`. |
+| 2026-05-07 | P7 | 🟡 Staging deployed | `feat/premiere-theme` merged into `staging` at `e46c241`; pushed; Netlify auto-deploys to `https://mbsh-reunion-staging.netlify.app`. ⏸ PAUSED for explicit Fritz prod-merge approval before touching `main`. |
 
 ---
 

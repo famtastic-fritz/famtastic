@@ -7,15 +7,20 @@
 
 ## Current state
 
-- **Active pass:** P3 — Missing Asset Generation (Gemini unblocked)
-- **Next action:** nano-banana batch 1 (4 priority Harry poses: peeking, pride-celebrate, ticket-stub, wax-stamping)
-- **Branch:** `feat/premiere-theme`
+- **Active pass:** P7 — ⏸ **PAUSED for explicit Fritz prod-merge approval**
+- **Staging:** ✅ deployed — `e46c241` on `staging` branch → auto-deploys to `https://mbsh-reunion-staging.netlify.app`
+- **Production (`main`):** UNCHANGED — Fritz approval gate
+- **Branch:** `feat/premiere-theme` head at `4f046d7` (preserved for reference)
 - **Sandbox preview URL (local):** http://localhost:3000/_premiere-sandbox.html
-- **Production preview URL (local):** http://localhost:3000/
 - **Pre-P0 baseline:** `1386d17`
 - **P0 commit:** `dbec459`
 - **P1 commit:** `6b9ca56`
 - **P2 commit:** `9b9f655`
+- **P3 commits:** `9100c82`, `e713285`, `ed28511`
+- **P4 commit:** `1006c99`
+- **P5 commit:** `8cfc50e`
+- **P6 commit:** `4f046d7`
+- **Staging merge:** `e46c241`
 
 ## Resume contract
 
@@ -41,6 +46,11 @@ The run is recoverable from these files alone — no in-memory state required.
 | 2026-05-07 17:26 UTC | — | Gemini unblocked. New key rotated via secure script (`scripts/rotate-gemini-key.sh`). HTTP 200, model reply `OK`. P3 raster generation cleared. P1 pause for Fritz still active. |
 | 2026-05-07 | P1 | Fritz provisional approval. R12-R15 logged. Run resumed. |
 | 2026-05-07 | P2 | ✅ Closed at commit `9b9f655`. Home page now has golden filmstrip frame around poster wall, 3 ribbon dividers, scroll-snap-mandatory, SCENE 0X slate badges. Starfield scoped home+memorial. |
+| 2026-05-07 | P3 | ✅ Closed across `9100c82` + `e713285` + `ed28511`. 21/21 assets generated, zero DEFERREDs. Pose register 01-23 complete. |
+| 2026-05-07 | P4 | ✅ Closed at `1006c99`. POSE_MAP swapped 8 entries; backdrops + brand-foil + tier medallions integrated. |
+| 2026-05-07 | P5 | ✅ Closed at `8cfc50e`. Filmstrip perspective polish (Fritz R13) + asset weight optimization 32MB→9MB. |
+| 2026-05-07 | P6 | ✅ Closed at `4f046d7`. Lighthouse mobile a11y 96 ✓, BP 93, perf 74 (LCP-on-slow-4G video quirk documented for P7 real-device validation). |
+| 2026-05-07 | P7 | 🟡 Staging deployed at `e46c241`. ⏸ PAUSED for explicit Fritz prod-merge approval. |
 
 ---
 
