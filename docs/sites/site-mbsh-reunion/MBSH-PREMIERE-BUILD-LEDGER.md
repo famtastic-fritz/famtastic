@@ -134,19 +134,20 @@ Rule: the Design Map drives build decisions. This ledger tracks execution status
 ```yaml
 current_status:
   plan_name: FAMtastic Site Build — MBSH Premiere Experience
-  current_pass: pass-1
-  pass_disposition: paused-for-fritz-approval
-  next_action: fritz-reviews-sandbox-D4-D5-D8
-  approved_to_build: pass-2-after-fritz-approval-of-pass-1
-  blocked_by: fritz-review-of-D4-D5-D8  # gemini-key-for-pass-3 was unblocked 2026-05-07 17:26 UTC
-  must_stop_after: pass-1-pause-resolved
-  last_review: V3 approved as protocol; Design Map approved as build blueprint
-  next_review_needed: D4 filmstrip frame, D5 medallion menu, D8 snap mechanism
+  current_pass: pass-3
+  pass_disposition: in-progress
+  next_action: nano-banana-batch-1-priority-harry-poses
+  approved_to_build: pass-3-pass-4-pass-5-pass-6-pass-7-staging-only
+  blocked_by: none
+  must_stop_after: pass-7-staging-deploy-pause-for-fritz-prod-approval
+  last_review: Fritz provisional P1 disposition 2026-05-07 (R12-R15); P2 shipped autonomously
+  next_review_needed: post-P5-/ultrareview-or-P7-staging-fritz-walkthrough
   product_repo_branch: feat/premiere-theme
-  product_repo_head: 6b9ca56
+  product_repo_head: 9b9f655
   pre_p0_baseline: 1386d17
   p0_commit: dbec459
   p1_commit: 6b9ca56
+  p2_commit: 9b9f655
   sandbox_url_local: http://localhost:3000/_premiere-sandbox.html
 ```
 
@@ -412,6 +413,9 @@ Update or report: current pass, completed tasks, blocked tasks, next action, pro
 | 2026-05-07 | P1 | Started | Building filmstrip frame, ribbon divider, medallion menu, snap mechanism, Harry vocabulary. |
 | 2026-05-07 | P1 | ⏸ Paused | Components built + sandbox demos. Awaiting Fritz on D4/D5/D8. Commit `6b9ca56`. Apparatus committed via second-pass after rebase reconciliation with Fritz's parallel ledger work. |
 | 2026-05-07 17:26 UTC | — | Gemini unblocked | New `GEMINI_API_KEY` rotated via `scripts/rotate-gemini-key.sh` (secure prompt, no key in logs). Test HTTP 200, model reply `OK`. P3 raster generation cleared. P1 pause for Fritz on D4/D5/D8 still in effect. |
+| 2026-05-07 | P1 | ✅ Provisional approval | Fritz: "I do not want to stay stuck in sandbox review. Keep momentum." D4 approved foundation (P5 polish carry-forward). D5/D8 provisionally approved. R12-R15 logged. |
+| 2026-05-07 | P2 | Started | Resumed autonomous run. Wiring P1 components into production HTMLs with explicit fallbacks per DEFERRED-ASSETS.md. |
+| 2026-05-07 | P2 | ✅ Closed | Home gets frame + 3 dividers + snap + SCENE slate; through-years gets snap. Starfield scoped home+memorial. Commit `9b9f655`. |
 
 ---
 
