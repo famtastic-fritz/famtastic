@@ -1,0 +1,43 @@
+{
+  "pass": "P1",
+  "criterion": "Components testable on sandbox HTML page; medallion menu opens/closes/keyboard-accessible; one section demonstrates frame-around-section pattern; preview-verified",
+  "timestamp": "2026-05-07",
+  "sandbox_url": "/_premiere-sandbox.html",
+  "commit": "6b9ca56",
+  "browser_eval_initial": {
+    "dataPremiere": "on",
+    "dataSnap": "on",
+    "dividerCount": 6,
+    "framePresent": true,
+    "goldVarLoaded": "#C9A961",
+    "medallionMenuItems": 7,
+    "medallionMenuPresent": true,
+    "medallionMounted": "mounted",
+    "medallionPresent": true,
+    "oldEdgeStripsHidden": true,
+    "oldNavHidden": true,
+    "snapTargets": 5,
+    "url": "/_premiere-sandbox",
+    "usherPresent": true
+  },
+  "menu_open_test": {
+    "menuOpen": true,
+    "ariaExpanded": "true",
+    "anchored_to_medallion": true,
+    "cx": "1367px (medallion x-center)",
+    "cy": "58px (medallion y-center)"
+  },
+  "esc_close_test": {
+    "menuStillOpen": false,
+    "ariaExpanded": "false"
+  },
+  "reopen_test": {
+    "menuOpenedAgain": true
+  },
+  "console_errors": "none",
+  "verdict": "pass — all P1 components working; medallion menu opens/closes/keyboard-accessible; sandbox renders cleanly",
+  "known_polish_items": [
+    "Radial menu arc (-135° to +135°) doesn't bias toward viewport center when medallion is anchored to top-right corner — some items extend off-screen. Bias arc by detecting medallion quadrant. Decide with Fritz at review.",
+    "Snap-bounce on iOS Safari not yet tested on real device — acceptance criterion deferred to P6 QA pass."
+  ]
+}
