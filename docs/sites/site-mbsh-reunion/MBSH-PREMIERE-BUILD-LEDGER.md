@@ -138,7 +138,7 @@ current_status:
   pass_disposition: paused-for-fritz-approval
   next_action: fritz-reviews-sandbox-D4-D5-D8
   approved_to_build: pass-2-after-fritz-approval-of-pass-1
-  blocked_by: fritz-review-of-D4-D5-D8 + gemini-key-for-pass-3
+  blocked_by: fritz-review-of-D4-D5-D8  # gemini-key-for-pass-3 was unblocked 2026-05-07 17:26 UTC
   must_stop_after: pass-1-pause-resolved
   last_review: V3 approved as protocol; Design Map approved as build blueprint
   next_review_needed: D4 filmstrip frame, D5 medallion menu, D8 snap mechanism
@@ -309,7 +309,7 @@ Proof to Fritz: page-by-page preview; updated `DEFERRED-ASSETS.md`; screenshots;
 
 ### Pass 3 — Missing Asset Generation
 
-**Status:** 🚫 blocked on `GEMINI_API_KEY` expired (GAP-2026-05-05-03)
+**Status:** ✅ ready to execute (Gemini key rotated 2026-05-07 17:26 UTC; HTTP 200 verified). Sequenced after P2; no longer a blocker for build progression.
 
 Purpose: generate missing Harry poses + premium visuals.
 
@@ -411,6 +411,7 @@ Update or report: current pass, completed tasks, blocked tasks, next action, pro
 | 2026-05-07 | P0 | ✅ Closed | Header z-layer doc landed at `dbec459`. No visible regression. Smoke green by accepted exception. |
 | 2026-05-07 | P1 | Started | Building filmstrip frame, ribbon divider, medallion menu, snap mechanism, Harry vocabulary. |
 | 2026-05-07 | P1 | ⏸ Paused | Components built + sandbox demos. Awaiting Fritz on D4/D5/D8. Commit `6b9ca56`. Apparatus committed via second-pass after rebase reconciliation with Fritz's parallel ledger work. |
+| 2026-05-07 17:26 UTC | — | Gemini unblocked | New `GEMINI_API_KEY` rotated via `scripts/rotate-gemini-key.sh` (secure prompt, no key in logs). Test HTTP 200, model reply `OK`. P3 raster generation cleared. P1 pause for Fritz on D4/D5/D8 still in effect. |
 
 ---
 
@@ -421,7 +422,7 @@ Update or report: current pass, completed tasks, blocked tasks, next action, pro
 | Claude Opus 4.7 (this builder) | Subscription | This run, P0 + P1 |
 | Plan / Explore subagents | Free within session | Not yet |
 | Codex bridge | Rate-limited (hit limit 2026-05-05) | Not in this run |
-| Gemini / nano-banana | API key expired | Blocked (P3) |
+| Gemini / nano-banana | New key (39 chars, AIza***ufpA) — tested HTTP 200 on 2026-05-07 17:26 UTC | Ready for P3 |
 | Adobe Firefly | Auth unverified | Not attempted in this run |
 | Lighthouse | Free | Pending P6 |
 | Netlify deploy preview | Free with branch push | Pending P7 |

@@ -7,11 +7,33 @@
 
 ---
 
+## ⚠️ STATUS UPDATE — 2026-05-07 17:26 UTC
+
+**Gemini key rotated. UNBLOCKED.**
+
+| Check | Result |
+|---|---|
+| Rotation script | `scripts/rotate-gemini-key.sh` (secure prompt, header-auth test, no key in any log) |
+| Key length | 39 (standard Google format) |
+| Key shape | `AIza***ufpA` (different from prior `AIza***mkZM` — confirmed regenerated, not the old one) |
+| Test endpoint | `gemini-2.5-flash:generateContent` (header auth, no URL key param) |
+| HTTP status | **200** |
+| Model reply | `OK` (matches prompt) |
+| Verdict | **UNBLOCKED** |
+
+**P3 raster generation can resume.** Priority order per `DEFERRED-ASSETS.md` § "Re-generation priority."
+
+The findings below remain accurate as the historical diagnosis (key was invalid pre-rotation). They are kept for the audit trail.
+
+---
+
+---
+
 ## TL;DR
 
 | Provider | Status | Diagnosis | Fix |
 |---|---|---|---|
-| **Gemini / nano-banana (PRIMARY)** | ❌ BLOCKED | API key INVALID (auth failure, not credits) | Generate new key at https://aistudio.google.com/app/apikey; update `~/.zshrc` and `~/.config/famtastic/studio-config.json` |
+| **Gemini / nano-banana (PRIMARY)** | ✅ UNBLOCKED (rotated 2026-05-07 17:26 UTC) | New key returns HTTP 200; model reply `OK`. Old key history below kept as audit trail. | Done — rotated via `scripts/rotate-gemini-key.sh` |
 | **OpenAI / ChatGPT DALL-E (BACKUP 1)** | ❌ UNAVAILABLE | No `OPENAI_API_KEY` in env or config | Add OpenAI API key to env + studio-config |
 | **Adobe Firefly (BACKUP 2)** | ❌ UNAVAILABLE | `firefly_client_id` is empty string; `firefly_client_secret` empty | Configure Adobe IMS credentials |
 | **Canva MCP (BACKUP 3)** | ❓ UNKNOWN | Plugin registered (`mcp__plugin_marketing_canva__*`) but OAuth not completed in this session | Run `mcp__plugin_marketing_canva__authenticate` if a workable image-gen flow exists |

@@ -36,6 +36,7 @@ The run is recoverable from these files alone — no in-memory state required.
 | 2026-05-07 P0 start | P0 | Apparatus created. Beginning P0 refactor. |
 | 2026-05-07 P0 done  | P0 | Z-layer header documented. No visible change. Smoke green by accepted exception. Commit `dbec459`. |
 | 2026-05-07 P1 done  | P1 | All components built: `.premiere-frame`, `.premiere-divider`, `.premiere-medallion-menu`, snap mechanism, Harry walk/peek/celebrate. Sandbox at `_premiere-sandbox.html` demos all. V1 top nav + edge strips + .is-visible bounce hidden via `[data-medallion-menu="mounted"]`. Zero console errors. Commit `6b9ca56`. Awaiting Fritz on D4/D5/D8. |
+| 2026-05-07 17:26 UTC | — | Gemini unblocked. New key rotated via secure script (`scripts/rotate-gemini-key.sh`). HTTP 200, model reply `OK`. P3 raster generation cleared. P1 pause for Fritz still active. |
 
 ---
 
@@ -50,8 +51,8 @@ The run is recoverable from these files alone — no in-memory state required.
 
 ## Current blockers
 
-- **GEMINI_API_KEY expired (GAP-2026-05-05-03):** blocks P3 raster generation. Mitigation: P2 ships with explicit fallbacks per `DEFERRED-ASSETS.md`.
-- **Fritz review of D4/D5/D8:** blocks P2 start.
+- ~~GEMINI_API_KEY expired (GAP-2026-05-05-03)~~ — **resolved 2026-05-07 17:26 UTC.** New key rotated via `scripts/rotate-gemini-key.sh`; tested HTTP 200, model reply `OK`. P3 raster generation cleared.
+- **Fritz review of D4/D5/D8:** blocks P2 start. (Still the only active blocker.)
 
 ---
 

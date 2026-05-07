@@ -12,18 +12,18 @@ Per `IMAGE-GEN-CAPABILITY-CHECK.md` (2026-05-07):
 
 | Order | Provider | Status | Reason / Fix |
 |---|---|---|---|
-| 1 | **Gemini / nano-banana (PRIMARY)** | ❌ BLOCKED — key invalid | `GEMINI_API_KEY` returns `API_KEY_INVALID` HTTP 400. Not credits — auth. Regenerate at https://aistudio.google.com/app/apikey |
-| 2 | OpenAI DALL-E / `gpt-image-1` (backup 1) | ❌ Unavailable | No `OPENAI_API_KEY` configured |
-| 3 | Adobe Firefly (backup 2) | ❌ Unavailable | `firefly_client_id` + `firefly_client_secret` empty in studio-config |
-| 4 | Canva MCP (backup 3) | ❓ Unknown | Plugin registered (`mcp__plugin_marketing_canva__*`); OAuth + image-gen scope unverified |
+| 1 | **Gemini / nano-banana (PRIMARY)** | ✅ **READY** (rotated 2026-05-07 17:26 UTC) | New key tested HTTP 200; model reply `OK`. P3 raster generation cleared to start. |
+| 2 | OpenAI DALL-E / `gpt-image-1` (backup 1) | ❌ Unavailable | No `OPENAI_API_KEY` configured (not needed unless Gemini regresses) |
+| 3 | Adobe Firefly (backup 2) | ❌ Unavailable | `firefly_client_id` + `firefly_client_secret` empty in studio-config (not needed unless Gemini regresses) |
+| 4 | Canva MCP (backup 3) | ❓ Unknown | Plugin registered (`mcp__plugin_marketing_canva__*`); OAuth + image-gen scope unverified (not needed unless Gemini regresses) |
 | 5 | Local / manual (backup 4) | ⚠️ Manual only | `ffmpeg` present (video, not gen); no ImageMagick; no local diffusion model |
 | 6 | CSS / SVG / existing-pose (FINAL) | ✅ Active | Documented per-asset below; ships today |
 
-**Practical implication for the build:** Pass 2 ships with the existing-pose / CSS / SVG fallbacks below. Pass 3 raster polish unblocks the moment ANY of providers 1–4 becomes available.
+**Pass 3 status:** unblocked. Generation can begin per the priority order at the bottom of this doc the moment the build run resumes.
 
 ---
 
-## Deferred poses (Harry — P3 generation queue, blocked on GEMINI_API_KEY)
+## P3 generation queue — Harry poses (Gemini ready)
 
 | File | Pose | Used by | Fallback in use | Acceptable? |
 |---|---|---|---|---|
@@ -43,7 +43,7 @@ Per `IMAGE-GEN-CAPABILITY-CHECK.md` (2026-05-07):
 
 **Net assessment:** 13 poses missing. **9 fallbacks acceptable**. **3 fallbacks tolerable but degrade specific moments** (Story-Now peek, Story-Forever pride, walk transitions). **1 acceptable per-page.**
 
-If P3 unblocks (Gemini key restored), priority generation order:
+P3 priority generation order (Gemini ready as of 2026-05-07 17:26 UTC):
 1. `11-peeking.png` (highest visual impact — Story-Now is a hero moment)
 2. `21-pride-celebrate.png` (Forever legacy moment)
 3. `13-ticket-stub.png` (RSVP success is high-traffic)
@@ -52,7 +52,7 @@ If P3 unblocks (Gemini key restored), priority generation order:
 
 ---
 
-## Deferred backdrops (raster — P3, blocked)
+## P3 generation queue — Backdrops (Gemini ready)
 
 | File | Page | Fallback in use | Acceptable? |
 |---|---|---|---|
@@ -64,7 +64,7 @@ If P3 unblocks (Gemini key restored), priority generation order:
 
 ---
 
-## Deferred raster brand assets (P3, blocked)
+## P3 generation queue — Raster brand assets (Gemini ready)
 
 | File | Use | Fallback in use | Acceptable? |
 |---|---|---|---|
@@ -90,7 +90,7 @@ These will land in P2 alongside the page they serve.
 
 ---
 
-## Re-generation priority (when GEMINI_API_KEY restored)
+## Re-generation priority (Gemini ready — execute in this order on P3 start)
 
 1. `11-peeking.png` (Story-Now hero moment)
 2. `21-pride-celebrate.png` (Forever legacy moment)
