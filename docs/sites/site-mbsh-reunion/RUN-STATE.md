@@ -23,6 +23,7 @@
 - **Staging merge:** `e46c241`
 - **P7 curtain-slowdown + Harry-intro:** `4b8fd70`
 - **P8+P9 page pattern + reel-card + Harry-in-scene:** `350e7d7`
+- **P10 billboard slideshow + chevrons + unified pull-in:** `d517a30`
 
 ## Resume contract
 
@@ -55,6 +56,7 @@ The run is recoverable from these files alone — no in-memory state required.
 | 2026-05-07 | P7 | 🟡 Staging deployed at `e46c241`. ⏸ PAUSED for explicit Fritz prod-merge approval. |
 | 2026-05-07 | P7+ | Curtain rise slowed 1.2s→3.2s; Harry intro speech bubble (one-per-session) added. Commit `4b8fd70`. |
 | 2026-05-07 | P8+9 | Canonical page pattern (Title→Note→Pre→Main→Post→WhereNext) + unified `.reel-card` + page-aware Where-Next + Harry-in-scene per page. Commit `350e7d7`. ⏸ PAUSED for Fritz review on staging. |
+| 2026-05-07 | P10 | Note becomes billboard slideshow (auto-advance + manual dots, animated slide-up transitions). Pre-item folded in. Per-page billboards on all inner pages. Chevron-up + chevron-down on every section. Unified pull-in animation via IntersectionObserver — same effect on click and on passive scroll. Commit `d517a30`. ⏸ PAUSED for Fritz review on staging. |
 
 ---
 
