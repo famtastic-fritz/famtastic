@@ -134,9 +134,9 @@ Rule: the Design Map drives build decisions. This ledger tracks execution status
 ```yaml
 current_status:
   plan_name: FAMtastic Site Build — MBSH Premiere Experience
-  current_pass: pass-4
-  pass_disposition: in-progress
-  next_action: integrate-21-generated-assets-swap-fallbacks
+  current_pass: pass-7
+  pass_disposition: starting-staging-deploy
+  next_action: push-to-staging-branch-and-pause-for-fritz-prod-approval
   approved_to_build: pass-3-pass-4-pass-5-pass-6-pass-7-staging-only
   blocked_by: none
   must_stop_after: pass-7-staging-deploy-pause-for-fritz-prod-approval
@@ -418,6 +418,9 @@ Update or report: current pass, completed tasks, blocked tasks, next action, pro
 | 2026-05-07 | P2 | ✅ Closed | Home gets frame + 3 dividers + snap + SCENE slate; through-years gets snap. Starfield scoped home+memorial. Commit `9b9f655`. |
 | 2026-05-07 | P3 | Started | Three nano-banana batches: 4 priority Harry poses → 9 remaining Harry poses → 8 raster brand+backdrop assets. Gemini key unblocked earlier in the day. |
 | 2026-05-07 | P3 | ✅ Closed | 21/21 assets delivered, zero DEFERREDs. Pose register complete (01-23). Commits `9100c82`, `e713285`, `ed28511`. |
+| 2026-05-07 | P4 | ✅ Closed | All 21 assets integrated: POSE_MAP swapped (8 entries), 3 backdrops via stage::before, brand-mark-foil on hero + Forever, 3 tier medallions on patron mini-cards. Commit `1006c99`. |
+| 2026-05-07 | P5 | ✅ Closed | Filmstrip perspective polish (Fritz R13) + asset weight optimization (32MB → 9MB, 72% reduction). Commit `8cfc50e`. |
+| 2026-05-07 | P6 | ✅ Closed | Lighthouse mobile: a11y 96 ✓, BP 93, perf 74 (LCP 13s under slow-4G simulation — video-hero quirk; deferred to P7 real-device validation). Commit `4f046d7`. |
 
 ---
 
