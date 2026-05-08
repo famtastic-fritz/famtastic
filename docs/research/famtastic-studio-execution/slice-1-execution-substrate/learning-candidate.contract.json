@@ -1,0 +1,45 @@
+{
+  "contract_id": "studio.execution_substrate.learning_candidate.v1",
+  "object_type": "learning_candidate",
+  "purpose": "Capture reusable lessons from a run/pass before promotion into registries or canonical memory.",
+  "studio_layer": "Intelligence Layer",
+  "primary_agent_role": "Learning Curator",
+  "supporting_agent_roles": ["Shay Guide", "QA Critic", "Recipe Architect"],
+  "required_fields": {
+    "id": "Stable unique identifier.",
+    "source_run_id": "Related Run Ledger id.",
+    "source_pass_id": "Related pass id.",
+    "lesson_type": "Type of learning.",
+    "summary": "Concise lesson.",
+    "applies_to": "Where the lesson applies.",
+    "registry_nomination": "Registry destination or none.",
+    "v1_v2_classification": "V1/V2 classification.",
+    "proof_reference": "Proof packet or artifact reference.",
+    "status": "Lifecycle status.",
+    "created_at": "ISO-8601 timestamp."
+  },
+  "optional_fields": {
+    "do_not_repeat_candidate": "Whether this should become a Do-Not-Repeat rule.",
+    "supersedes": "Older lesson/pattern this replaces.",
+    "owner": "Suggested owner role or workspace.",
+    "notes": "Additional context."
+  },
+  "allowed_values": {
+    "lesson_type": ["decision", "pattern", "failure", "proof", "capability", "component", "media", "cost", "workflow"],
+    "v1_v2_classification": ["v1_required", "v1_optional", "v2_backlog", "archive_only"],
+    "status": ["candidate", "accepted", "rejected", "promoted", "superseded", "archived"]
+  },
+  "relationships": {
+    "requires": ["proof_packet"],
+    "feeds": ["Learning Board", "Registry Promotion", "Shay Training"],
+    "read_by": ["Mission Control", "Shay Home", "Run Closeout"]
+  },
+  "proof_validation_expectations": [
+    "proof_reference is present before promotion.",
+    "registry_nomination is explicit, even if value is none.",
+    "V2 discoveries are classified without expanding active V1 scope.",
+    "Do-Not-Repeat candidates require human or orchestrator review before canonical promotion."
+  ],
+  "example_fixture_path": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/learning-candidate.example.json"
+}
+

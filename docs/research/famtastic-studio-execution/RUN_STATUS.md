@@ -80,3 +80,14 @@ Proof: Created `01-competitive-map.md`, `02-pattern-library.md`, `03-gap-and-opp
 Blockers: None.
 Non-blockers logged: Public docs were sufficient for V1 research; some vendor behavior is visible only inside product surfaces. No paid/cloud actions, installs, deploys, or provider API calls were run. `site-studio/server.js` remains a V1 modularization risk at 20,150 lines.
 Next: Review the Studio redesign/spec map and implement only the minimum execution substrate: Intelligence Brief, Run Ledger, Capability Truth records, proof/pass closeout, learning candidate capture, and first low-risk server extraction plan.
+
+## Update 2026-05-08 19:34
+
+Status: complete
+Agent: Codex
+Current track: Slice 1 execution substrate contracts and unattended run controller
+What changed: Created Slice 1 contract package with JSON contracts and realistic fixtures for Intelligence Brief, Recipe Decision, Capability Truth, Run Ledger, Proof Packet, and Learning Candidate. Added the unattended run controller that defines continuation through Slice 5 toward MBSH V2 proof-readiness.
+Proof: Added `docs/research/famtastic-studio-execution/slice-1-execution-substrate/` with contracts, fixtures, README, acceptance checklist, and run report template. Added `docs/research/famtastic-studio-execution/UNATTENDED-RUN-CONTROLLER.md`.
+Blockers: None.
+Non-blockers logged: Slice 1 is docs/runtime-contract substrate only; Studio UI does not yet ingest these artifacts. Server modularization remains required before major backend growth.
+Next: Continue to Slice 2: server modularization first safe extraction plan/proof.
