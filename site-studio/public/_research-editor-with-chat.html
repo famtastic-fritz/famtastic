@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Editor with Chat — MBSH RSVP page mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #08080A;
+    --bg-1: #0C0C10;
+    --glass: rgba(255,255,255,0.025);
+    --glass-2: rgba(255,255,255,0.045);
+    --glass-3: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.06);
+    --border-hi: rgba(255,255,255,0.11);
+    --text-1: #F2EFE8;
+    --text-2: rgba(242,239,232,0.55);
+    --text-3: rgba(242,239,232,0.32);
+    --glow-warm: #F5C46B;
+    --glow-warm-2: #E6A856;
+    --glow-cool: #6FE0D2;
+    --warn: #E27A6B;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg-0);
+    color: var(--text-1);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.5;
+    overflow: hidden;
+    background:
+      radial-gradient(900px 600px at 78% 18%, rgba(245,196,107,0.05), transparent 60%),
+      radial-gradient(900px 600px at 18% 82%, rgba(111,224,210,0.04), transparent 60%),
+      var(--bg-0);
+  }
+  .mono   { font-family: 'JetBrains Mono', monospace; }
+  .eyebrow{ font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3); }
+  .data   { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.04em; color: var(--text-2); }
+  .display{ font-family: Fraunces, serif; font-weight: 300; font-style: italic; }
+
+  /* --- App frame: icon rail | (top bar / canvas / bottom strip) | right rail --- */
+  .app {
+    position: fixed; inset: 0;
+    display: grid;
+    grid-template-columns: 56px 1fr 420px;
+    grid-template-rows: 44px 1fr 28px;
+  }
+
+  /* --- Icon rail --- */
+  .icon-rail {
+    grid-row: 1 / 4;
+    grid-column: 1 / 2;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0;
+    gap: 10px;
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  .ir-brand {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: radial-gradient(circle at 30% 30%, var(--glow-warm), var(--glow-warm-2));
+    box-shadow: 0 0 24px rgba(245,196,107,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+    margin-bottom: 12px;
+  }
+  .ir-btn {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    display: grid; place-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+  }
+  .ir-btn.active {
+    background: var(--glass-3);
+    color: var(--text-1);
+    border-color: var(--border-hi);
+    box-shadow: 0 0 24px rgba(245,196,107,0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* --- Top bar --- */
+  .top-bar {
+    grid-row: 1 / 2;
+    grid-column: 2 / 4;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 18px 0 20px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.005));
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; }
+  .breadcrumb .seg { color: var(--text-2); font-size: 12.5px; }
+  .breadcrumb .seg.active { color: var(--text-1); }
+  .breadcrumb .sep { color: var(--text-3); font-size: 12px; }
+  .top-right { display: flex; align-items: center; gap: 14px; }
+  .save-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 9px; border-radius: 8px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-2); font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-cool); box-shadow: 0 0 8px var(--glow-cool); }
+  .cost-pill {
+    padding: 4px 9px; border-radius: 8px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-2); font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .shay-dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--glow-cool), #2E8C82);
+    box-shadow: 0 0 14px rgba(111,224,210,0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+    animation: breathe 3.4s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100% { transform: scale(1); opacity: 0.95; } 50% { transform: scale(1.08); opacity: 1; } }
+
+  /* --- Editor canvas --- */
+  .canvas {
+    grid-row: 2 / 3;
+    grid-column: 2 / 3;
+    overflow: auto;
+    padding: 32px 48px 24px;
+    position: relative;
+  }
+  .doc-eyebrow { margin-bottom: 6px; }
+  .doc-h1 {
+    font-family: Fraunces, serif; font-weight: 300;
+    font-size: 44px; line-height: 1.05; letter-spacing: -0.01em;
+    margin: 6px 0 18px;
+  }
+  .doc-h1 em { font-style: italic; color: var(--glow-warm); }
+  .doc-meta { color: var(--text-2); font-size: 13px; margin-bottom: 26px; }
+  .block {
+    position: relative;
+    padding: 14px 16px;
+    margin: 8px -16px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+  }
+  .block:hover {
+    background: rgba(255,255,255,0.012);
+    border-color: var(--border);
+  }
+  .block-handle {
+    position: absolute; top: 10px; right: 10px;
+    display: none; gap: 6px;
+  }
+  .block:hover .block-handle { display: flex; }
+  .handle-btn {
+    padding: 3px 8px; border-radius: 7px;
+    background: var(--glass-2);
+    border: 1px solid var(--border);
+    color: var(--text-2); font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+  .block h2 {
+    font-family: Fraunces, serif; font-weight: 400;
+    font-size: 22px; margin: 0 0 8px;
+  }
+  .block p { margin: 0 0 10px; max-width: 64ch; color: var(--text-1); }
+  .block p.muted { color: var(--text-2); }
+
+  /* selection mini-composer */
+  .selection-wrap {
+    background: rgba(245,196,107,0.10);
+    border-radius: 4px;
+    padding: 0 2px;
+    box-shadow: inset 0 -1px 0 rgba(245,196,107,0.45);
+    position: relative;
+  }
+  .mini-composer {
+    position: absolute; left: 50%; top: -38px;
+    transform: translateX(-50%);
+    display: flex; gap: 0;
+    background: rgba(20,20,24,0.78);
+    backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid var(--border-hi);
+    border-radius: 10px;
+    box-shadow: 0 14px 32px -18px rgba(0,0,0,0.7);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .mini-composer button {
+    padding: 7px 12px;
+    background: transparent; border: 0;
+    border-right: 1px solid var(--border);
+    color: var(--text-1);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .mini-composer button:last-child { border-right: 0; color: var(--text-3); }
+  .mini-composer button.shay { color: var(--glow-cool); }
+
+  /* diff preview */
+  .diff-overlay {
+    margin: 14px 0;
+    border-radius: 14px;
+    border: 1px solid var(--border-hi);
+    background: linear-gradient(180deg, rgba(245,196,107,0.06), rgba(245,196,107,0.02));
+    overflow: hidden;
+  }
+  .diff-head {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-3);
+  }
+  .diff-body { padding: 10px 14px 12px; }
+  .diff-old { color: var(--text-3); text-decoration: line-through; max-width: 64ch; margin: 0 0 6px; }
+  .diff-new { color: var(--text-1); max-width: 64ch; margin: 0; }
+  .diff-actions { display: flex; gap: 8px; padding: 0 14px 12px; }
+  .btn-accept {
+    padding: 6px 12px; border-radius: 9px;
+    background: linear-gradient(180deg, var(--glow-warm), var(--glow-warm-2));
+    color: #1a1308; border: 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.06em;
+    box-shadow: 0 8px 20px -10px rgba(245,196,107,0.65);
+  }
+  .btn-reject {
+    padding: 6px 12px; border-radius: 9px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+
+  /* --- Bottom strip --- */
+  .bottom-strip {
+    grid-row: 3 / 4;
+    grid-column: 2 / 3;
+    border-top: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.005), rgba(255,255,255,0.018));
+    backdrop-filter: blur(20px) saturate(180%);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .bottom-strip .grp { display: flex; gap: 18px; align-items: center; }
+
+  /* --- Right rail --- */
+  .right-rail {
+    grid-row: 1 / 4;
+    grid-column: 3 / 4;
+    border-left: 1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0.008)),
+      rgba(12,12,16,0.55);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: -24px 0 60px -28px rgba(0,0,0,0.8);
+    display: grid;
+    grid-template-rows: 44px 1fr auto 28px;
+  }
+  .rail-tabs {
+    display: flex; align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding: 0 6px;
+    gap: 4px;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+    margin: 6px 2px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    position: relative;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: var(--glass-2);
+    border-color: var(--border-hi);
+    color: var(--text-1);
+  }
+  .tab.shay-tab.active {
+    background: linear-gradient(180deg, rgba(111,224,210,0.10), rgba(111,224,210,0.02));
+    border-color: rgba(111,224,210,0.35);
+    color: var(--glow-cool);
+    text-shadow: 0 0 12px rgba(111,224,210,0.4);
+  }
+  .tab .badge {
+    position: absolute; top: 4px; right: 8px;
+    background: var(--glow-warm);
+    color: #1a1308;
+    border-radius: 999px;
+    font-size: 9px; padding: 1px 5px;
+    letter-spacing: 0;
+  }
+  .tab .ctx {
+    display: block; font-size: 9.5px; color: var(--text-3); letter-spacing: 0.1em; margin-top: 2px; text-transform: lowercase;
+  }
+  .tab.active .ctx { color: var(--text-2); }
+
+  .rail-body { overflow: auto; padding: 14px 14px 8px; }
+  .msg {
+    border-radius: 14px;
+    padding: 11px 13px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    max-width: 100%;
+  }
+  .msg .who {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 6px;
+    display: flex; justify-content: space-between;
+  }
+  .msg.user { background: rgba(255,255,255,0.04); }
+  .msg.user .who { color: var(--text-2); }
+  .msg.assistant { background: rgba(255,255,255,0.02); }
+  .msg p { margin: 0; font-size: 13.5px; color: var(--text-1); }
+  .msg p + p { margin-top: 6px; }
+  .msg .status {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--text-2);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .status .jump { color: var(--glow-warm); }
+
+  .escalation-chip {
+    margin: -2px 0 8px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(111,224,210,0.10), rgba(111,224,210,0.02));
+    border: 1px solid rgba(111,224,210,0.28);
+    color: var(--glow-cool);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.06em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .escalation-chip .arrow { color: var(--text-2); }
+
+  .composer {
+    border-top: 1px solid var(--border);
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.01);
+  }
+  .composer .row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--glass-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+  .composer .row:focus-within { border-color: var(--border-hi); }
+  .composer .input {
+    flex: 1;
+    color: var(--text-1);
+    font-family: Inter, system-ui, sans-serif; font-size: 13px;
+    outline: none;
+  }
+  .composer .input.placeholder { color: var(--text-3); }
+  .composer .kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text-3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 6px;
+  }
+  .composer .selection-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 8px; border-radius: 7px;
+    background: rgba(245,196,107,0.10);
+    border: 1px solid rgba(245,196,107,0.28);
+    color: var(--glow-warm);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    margin-bottom: 6px;
+  }
+
+  .cost-ticker {
+    border-top: 1px solid var(--border);
+    padding: 0 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* annotations */
+  .anno {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(245,196,107,0.55);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Icon rail -->
+  <aside class="icon-rail">
+    <div class="ir-brand"></div>
+    <div class="ir-btn active">St</div>
+    <div class="ir-btn">Br</div>
+    <div class="ir-btn">Pl</div>
+    <div class="ir-btn">Co</div>
+    <div class="ir-btn">Md</div>
+    <div class="ir-btn">Re</div>
+    <div style="flex:1"></div>
+    <div class="ir-btn">Ad</div>
+  </aside>
+
+  <!-- Top bar -->
+  <header class="top-bar">
+    <div class="breadcrumb">
+      <span class="seg">Sites</span>
+      <span class="sep">/</span>
+      <span class="seg">mbsh-reunion</span>
+      <span class="sep">/</span>
+      <span class="seg active">rsvp.html</span>
+      <span class="data" style="margin-left:14px;color:var(--text-3)">editor with chat</span>
+    </div>
+    <div class="top-right">
+      <div class="save-pill"><span class="save-dot"></span>SAVED 2s AGO</div>
+      <div class="cost-pill">$0.42 · session</div>
+      <div class="cost-pill">claude · sonnet 4.7</div>
+      <div class="shay-dot" title="Shay is here"></div>
+    </div>
+  </header>
+
+  <!-- Editor canvas -->
+  <main class="canvas">
+    <div class="doc-eyebrow eyebrow">PAGE · RSVP</div>
+    <h1 class="doc-h1">Save the <em>Date</em></h1>
+    <div class="doc-meta mono">last edited 2026-05-02 20:40 · 5 image slots · 0 sectioned blocks</div>
+
+    <div class="block">
+      <div class="block-handle">
+        <div class="handle-btn">studio chat</div>
+        <div class="handle-btn">@shay</div>
+      </div>
+      <h2>The night belongs to us.</h2>
+      <p>September 19, 2026 — three decades since we walked the halls of Mary B. Shaw together. We are gathering at the old gymnasium, with a hi-tide reception, dancing under the bleachers, and a memorial tribute to the classmates we have lost.</p>
+      <p class="muted">Reservations are required by August 15. Tickets are $96 per person and include dinner, drinks, and a copy of the reunion yearbook supplement.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-handle">
+        <div class="handle-btn">studio chat</div>
+        <div class="handle-btn">@shay</div>
+      </div>
+      <h2>Reserve your spot</h2>
+      <p>
+        Use the form below to confirm your attendance. If you are bringing a plus-one, add their name in the second field.
+        <span class="selection-wrap">
+          We expect a sold-out reception, so please RSVP early to avoid disappointment.
+          <span class="mini-composer">
+            <button>rewrite</button>
+            <button>tighten</button>
+            <button class="shay">@shay ask</button>
+            <button>✕</button>
+          </span>
+        </span>
+      </p>
+    </div>
+
+    <!-- Diff preview from a prior Studio Chat instruction -->
+    <div class="diff-overlay">
+      <div class="diff-head">
+        <span>STUDIO CHAT · proposed edit · hero subhead</span>
+        <span style="color:var(--text-2)">awaiting review</span>
+      </div>
+      <div class="diff-body">
+        <p class="diff-old">September 19, 2026 — three decades since we walked the halls of Mary B. Shaw together. We are gathering at the old gymnasium, with a hi-tide reception, dancing under the bleachers, and a memorial tribute to the classmates we have lost.</p>
+        <p class="diff-new">Thirty years on. September 19, 2026, the gymnasium reopens for one night — a hi-tide reception, dancing under the bleachers, and a quiet hour for the classmates we carry with us.</p>
+      </div>
+      <div class="diff-actions">
+        <button class="btn-accept">accept</button>
+        <button class="btn-reject">reject</button>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-handle">
+        <div class="handle-btn">studio chat</div>
+        <div class="handle-btn">@shay</div>
+      </div>
+      <h2>Memorial moment</h2>
+      <p class="muted">A short candle-lighting ceremony at 8:30pm. Names of classmates we've lost will be read aloud. If you'd like to add a name or share a memory, submit it in the form below.</p>
+    </div>
+  </main>
+
+  <!-- Bottom strip -->
+  <div class="bottom-strip">
+    <div class="grp">
+      <span>claude · sonnet 4.7</span>
+      <span style="color:var(--glow-cool)">● saved</span>
+      <span>session $0.42</span>
+    </div>
+    <div class="grp">
+      <span>⌘\ collapse</span>
+      <span>⌘J studio chat</span>
+      <span>⌘. shay</span>
+    </div>
+  </div>
+
+  <!-- Right rail -->
+  <aside class="right-rail">
+    <div class="rail-tabs">
+      <div class="tab active">
+        Studio chat
+        <span class="ctx">this page · ephemeral</span>
+      </div>
+      <div class="tab shay-tab">
+        Shay
+        <span class="badge">1</span>
+        <span class="ctx">empire · persistent</span>
+      </div>
+    </div>
+
+    <div class="rail-body">
+      <div class="msg user">
+        <div class="who"><span>YOU · 2m</span><span style="color:var(--text-3)">on rsvp.html</span></div>
+        <p>Rewrite this hero subhead in a calmer voice. Keep the date and the gym detail.</p>
+      </div>
+
+      <div class="msg assistant">
+        <div class="who"><span>STUDIO CHAT · 2m</span><span style="color:var(--text-3)">surgical</span></div>
+        <p>Proposed a quieter rewrite that keeps Sept 19, the gymnasium, and adds a softer line for the memorial moment.</p>
+        <div class="status">
+          <span>diff pending in canvas</span>
+          <span class="jump">jump to diff ↑</span>
+        </div>
+      </div>
+
+      <div class="msg user">
+        <div class="who"><span>YOU · 40s</span></div>
+        <p>tighten the second paragraph by 20%.</p>
+      </div>
+
+      <div class="msg assistant">
+        <div class="who"><span>STUDIO CHAT · 38s</span><span style="color:var(--text-3)">done</span></div>
+        <p>Tightened. Cut "to avoid disappointment" and merged the August 15 deadline into the reservation line.</p>
+        <div class="status">
+          <span>diff accepted · 1 block</span>
+          <span style="color:var(--text-3)">undo · ⌘Z</span>
+        </div>
+      </div>
+
+      <!-- The handoff -->
+      <div class="msg user">
+        <div class="who"><span>YOU · just now</span></div>
+        <p>@shay is the memorial section ordering consistent with how other reunion sites handle this?</p>
+      </div>
+
+      <div class="escalation-chip">
+        <span>↗ ESCALATED TO @SHAY</span>
+        <span class="arrow">·</span>
+        <span style="color:var(--text-2)">she has the brand + cross-site context</span>
+      </div>
+
+      <div class="msg assistant" style="border-style:dashed;background:rgba(111,224,210,0.04);">
+        <div class="who"><span style="color:var(--glow-cool)">STUDIO CHAT</span><span style="color:var(--text-3)">handoff notice</span></div>
+        <p style="color:var(--text-2)">I can't answer that — it crosses into brand and other sites. Routed to Shay. Watch the Shay tab (1).</p>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="selection-chip">selection: "We expect a sold-out reception…"</div>
+      <div class="row">
+        <div class="input">do this thing on this page…</div>
+        <div class="kbd">⌘ ↵</div>
+      </div>
+    </div>
+
+    <div class="cost-ticker">
+      <span>STUDIO CHAT · 4 turns</span>
+      <span>$0.08</span>
+    </div>
+  </aside>
+
+  <!-- floating annotations to make the design intent legible in static review -->
+  <div class="anno" style="left:80px; top:50px;">ICON RAIL · 56px</div>
+  <div class="anno" style="left:80px; top:74px;">SITES ACTIVE</div>
+  <div class="anno" style="right:444px; top:50px;">SHAY PRESENCE DOT · TOP BAR</div>
+  <div class="anno" style="left:90px; bottom:42px;">BOTTOM STRIP · COST · MODEL · SAVE</div>
+  <div class="anno" style="right:444px; top:300px;">SELECTION → MINI-COMPOSER (rewrite · tighten · @shay)</div>
+  <div class="anno" style="right:444px; top:430px;">DIFF PREVIEW IN CANVAS · accept / reject</div>
+  <div class="anno" style="right:8px; top:50px; color:rgba(111,224,210,0.55);">RIGHT RAIL · TWO TABS · STUDIO CHAT + SHAY</div>
+  <div class="anno" style="right:8px; bottom:60px;">COMPOSER PINNED · COST TICKER BELOW</div>
+</div>
+</body>
+</html>

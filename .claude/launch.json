@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "sites/site-street-family-reunion/dist"],
       "autoPort": true
+    },
+    {
+      "name": "mbsh-frontend",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "/Users/famtasticfritz/famtastic-sites/mbsh-reunion/frontend"],
+      "autoPort": true
     }
   ]
 }

@@ -464,3 +464,43 @@ chat-capture pipeline automatically.
 When the locked design doesn't match what works, the next agent will follow whichever surface produc
 
 _See `memory/bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche.md` for body and evidence._
+
+### do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist — 2026-05-06 (auto-promoted)
+
+**Type:** `do-not-repeat` | **Confidence:** 0.85 | **Facets:** (none)
+
+## Do-not-repeat: Do not invent middle-area layouts when mockups exist
+
+_See `memory/do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist.md` for body and evidence._
+
+### bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v — 2026-05-06 (auto-promoted)
+
+**Type:** `bug-pattern` | **Confidence:** 0.85 | **Facets:** (none)
+
+## Learning: Working architecture and locked architecture diverge silently — surface viewers fix thi
+
+_See `memory/bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v.md` for body and evidence._
+
+### bug-pattern/todays-bug-pattern-entry-when-the-locked-design-doesnt-match-what-works-the-next — 2026-05-06 (auto-promoted)
+
+**Type:** `bug-pattern` | **Confidence:** 0.85 | **Facets:** (none)
+
+Today's bug-pattern entry (`when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follo
+
+_See `memory/bug-pattern/todays-bug-pattern-entry-when-the-locked-design-doesnt-match-what-works-the-next.md` for body and evidence._
+
+### vendor-fact/todays-plan-closeout-mechanism-applies-to-site-execution-too — 2026-05-06 (auto-promoted)
+
+**Type:** `vendor-fact` | **Confidence:** 0.88 | **Facets:** vendor:cpanel, deploy, memory, capture
+
+Today's plan-closeout mechanism applies to site execution too
+
+_See `memory/vendor-fact/todays-plan-closeout-mechanism-applies-to-site-execution-too.md` for body and evidence._
+
+### vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res — 2026-05-06 (auto-promoted)
+
+**Type:** `vendor-fact` | **Confidence:** 0.88 | **Facets:** vendor:godaddy, vendor:cpanel, vendor:resend, deploy
+
+Today's MBSH deploy proved a recipe: cPanel UAPI overwrite path + DNS via cPanel + Resend domain ver
+
+_See `memory/vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res.md` for body and evidence._

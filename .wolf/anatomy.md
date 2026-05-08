@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:45:23.806Z
-> Files: 642 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-08T16:35:35.968Z
+> Files: 718 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -34,13 +34,16 @@
 - `floofy-dancing-mccarthy.md` — Per-Site Repo Architecture + Studio State URLs (~1614 tok)
 - `purring-riding-brook.md` — Plan: Reconcile the Two Workbench Shells (~2437 tok)
 - `tidy-snacking-gizmo.md` — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop (~730 tok)
+- `whats-the-best-use-precious-waffle.md` — MBSH Reunion — "The Premiere" Theme + Experience Plan (~7403 tok)
 
 ## ../.claude/projects/-Users-famtasticfritz-famtastic/memory/
 
 - `feedback_docs_always_pushed.md` (~420 tok)
 - `feedback_dynamic_crud.md` — Declares should (~486 tok)
-- `MEMORY.md` — Memory Index (~175 tok)
+- `feedback_harry_is_assistant.md` — Declares and (~471 tok)
+- `MEMORY.md` — Memory Index (~272 tok)
 - `project_template_upload_future.md` — Declares names (~444 tok)
+- `project_virtual_assistants_prototype.md` — Declares with (~380 tok)
 
 ## ../.config/famtastic/
 
@@ -58,7 +61,7 @@
 
 - `.gitignore` — Git ignore rules (~158 tok)
 - `DATA-PERSISTENCE.md` — Data Persistence — MBSH Reunion Site (~4020 tok)
-- `netlify.toml` (~83 tok)
+- `netlify.toml` (~282 tok)
 - `README.md` — Project documentation (~1892 tok)
 
 ## ../famtastic-sites/mbsh-reunion/backend/
@@ -92,8 +95,14 @@
 
 ## ../famtastic-sites/mbsh-reunion/frontend/
 
-- `index.html` — MBSH Class of &rsquo;96 — 30th Reunion (~981 tok)
-- `rsvp.html` — RSVP — MBSH Class of &rsquo;96 30th Reunion (~2243 tok)
+- `_premiere-sandbox.html` — Premiere Sandbox — D4 / D5 / D8 component review (~2287 tok)
+- `capsule.html` — Hi-Tide Time Capsule — MBSH Class of &rsquo;96 (~2172 tok)
+- `index.html` — MBSH Class of &rsquo;96 — 30th Reunion (~3490 tok)
+- `memorial.html` — In Memory — MBSH Class of &rsquo;96 (~1628 tok)
+- `playlist.html` — Our Soundtrack — MBSH Class of &rsquo;96 (~3403 tok)
+- `rsvp.html` — RSVP — MBSH Class of &rsquo;96 30th Reunion (~3342 tok)
+- `through-years.html` — Through the Years — MBSH Class of &rsquo;96 (~2112 tok)
+- `tickets.html` — Tickets &amp; Sponsorship — MBSH Class of &rsquo;96 (~3656 tok)
 
 ## ../famtastic-sites/mbsh-reunion/frontend/assets/brand-mark/rejected/
 
@@ -106,15 +115,19 @@
 ## ../famtastic-sites/mbsh-reunion/frontend/css/
 
 - `base.css` — Stylesheet (~12 tok)
+- `chatbot.css` — Styles: 27 rules (~1238 tok)
+- `footer.css` — Styles: 19 rules (~715 tok)
 - `hero.css` — Stylesheet (~12 tok)
+- `premiere.css` — Styles: 7 rules (~39162 tok)
 - `rsvp.css` — Styles: 53 rules (~2649 tok)
-- `sections.css` — Styles: 20 rules (~1275 tok)
+- `sections.css` — Styles: 82 rules (~4736 tok)
 - `typography.css` — Stylesheet (~14 tok)
 
 ## ../famtastic-sites/mbsh-reunion/frontend/js/
 
 - `countdown.js` — countdown.js — live countdown to REUNION_DATE 7:00 PM ET (~534 tok)
 - `main.js` — main.js — bootstrap + cross-section orchestration (~385 tok)
+- `premiere.js` — reduceMotion: curtainRise, harryIntro, dismiss + 3 more (~20140 tok)
 - `rsvp-form.js` — rsvp-form.js — RSVP form handling (~1528 tok)
 
 ## ../famtastic-sites/mbsh-reunion/scripts/
@@ -142,11 +155,11 @@
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~75376 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~93517 tok)
 
 ## .claude/
 
-- `launch.json` (~110 tok)
+- `launch.json` (~166 tok)
 - `settings.json` (~441 tok)
 - `settings.local.json` (~2026 tok)
 
@@ -462,6 +475,9 @@
 
 ## captures/inbox/
 
+- `cap_creation-product-design-direction-2026-05-05.md` — Creation Product Design Direction — 2026-05-05 (~1700 tok)
+- `cap_design-preferences-2026-05-05.md` — Design Preferences — 2026-05-05 (~1176 tok)
+- `cap_session-meta-learning-2026-05-05.md` — Session Meta-Learning — 2026-05-05 (~2862 tok)
 - `cap_shell-reconciliation-2026-05-05.md` — Shell Reconciliation Session — 2026-05-05 (~867 tok)
 
 ## cli/idea/
@@ -630,6 +646,45 @@
 - `test-notes.draft.md` — Draft Notes from ChatGPT (~112 tok)
 - `wrapper-test.draft.md` — Test Content from Wrapper (~70 tok)
 
+## docs/design-research/
+
+- `page-type-taxonomy.md` — Page-Type Taxonomy (~3907 tok)
+
+## docs/design-research/cross-cutting/
+
+- `01-chrome-collapse.md` — Chrome Collapse — Cross-Cutting Pattern (~1855 tok)
+- `02-glass-slide-out.md` — Glass Slide-Out — Cross-Cutting Pattern (~2057 tok)
+- `03-ai-result-comparison-mockup.html` — AI Result Comparison — Media Studio mockup (~7818 tok)
+- `03-ai-result-comparison.md` — AI Result Comparison — Cross-Cutting Brief (~5264 tok)
+- `glass-slide-out-prototype.html` — Glass slide-out — prototype (~3101 tok)
+
+## docs/design-research/icon-sets/
+
+- `_hover-state-prototype.html` — Rail icon hover-state prototype (~1982 tok)
+- `admin.md` — Admin — Icon Set Brief (~898 tok)
+- `brainstorm.md` — Brainstorm — Icon Set Brief (~904 tok)
+- `components.md` — Components — Icon Set Brief (~938 tok)
+- `media.md` — Media — Icon Set Brief (~955 tok)
+- `plans.md` — Plans — Icon Set Brief (~900 tok)
+- `README.md` — Project documentation (~1138 tok)
+- `research.md` — Research — Icon Set Brief (~931 tok)
+- `sites.md` — Sites — Icon Set Brief (~947 tok)
+
+## docs/design-research/page-types/
+
+- `01-library-collection-mockup.html` — Library / Collection — Sites Landing (Mockup) (~6042 tok)
+- `01-library-collection.md` — Library / Collection — Page-Type Brief (~5634 tok)
+- `02-creation-canvas-mockup.html` — Creation Canvas — Media Studio mockup (~5885 tok)
+- `02-creation-canvas.md` — Creation Canvas — Page-Type Brief (~3954 tok)
+- `03-workshop-sandbox-mockup.html` — Workshop / Sandbox — Component Studio mockup (~6909 tok)
+- `03-workshop-sandbox.md` — Workshop / Sandbox — Page-Type Brief (~5238 tok)
+- `04-triage-workshop-mockup.html` — Page Type 04 — Triage / Workshop (Shay-Shay) (~7902 tok)
+- `04-triage-workshop.md` — Page Type 04 — Triage / Workshop (Shay-Shay's Own Page) (~3673 tok)
+- `05-settings-mockup.html` — Settings — Shay-Shay options mockup (~6115 tok)
+- `05-settings.md` — Settings / Customization — Page-Type Brief (~3024 tok)
+- `06-editor-with-chat-mockup.html` — Editor with Chat — MBSH RSVP page mockup (~5932 tok)
+- `06-editor-with-chat.md` — Editor with Chat — Page-Type Brief (~4995 tok)
+
 ## docs/intelligence-reports/
 
 
@@ -637,6 +692,7 @@
 
 - `godaddy-mcp-spike.md` — GoDaddy / cPanel MCP Capability Spike (~2162 tok)
 - `mbsh-rsvp-integration-notes-2026-04-29.md` — MBSH RSVP Integration Notes — 2026-04-29 (~2812 tok)
+- `research-brief-template.md` — Research Brief Template (~1363 tok)
 - `studio-multipage-discovery-2026-04-29.md` — Studio Multi-Page Discovery — 2026-04-29 (~7808 tok)
 - `studio-vs-eleventy-evaluation-2026-04-29.md` — Studio vs. Eleventy — Strategic Technical Evaluation (~10800 tok)
 
@@ -650,10 +706,45 @@
 
 ## docs/sites/site-mbsh-reunion/
 
+- `AUDIT-2026-05-07.md` — MBSH Premiere — Pre-Production Audit (~4131 tok)
 - `character-sheet.md` — Hi-Tide Harry — Character Sheet Spec (~2572 tok)
+- `COVERAGE-MATRIX.md` — MBSH Premiere — Design Map Coverage Matrix (~1861 tok)
+- `DECISION-LOG.md` — MBSH Premiere — Decision Log (~1119 tok)
+- `DEFERRED-ASSETS.md` — MBSH Premiere — Deferred Assets & Fallbacks (~1618 tok)
 - `DISCOVERY.md` — MBSH Pre-Build Discovery Report (~5592 tok)
+- `FAILURE-LOG.md` — MBSH Premiere — Failure Log (~400 tok)
+- `GAPS-2026-05-05-premiere-session.md` — Premiere Session Gaps — 2026-05-05 (~1324 tok)
+- `IMAGE-GEN-CAPABILITY-CHECK.md` — Image Generation Capability Check (~2845 tok)
+- `MBSH-PREMIERE-BUILD-LEDGER.md` — FAMtastic Site Build — MBSH Premiere Experience Ledger (~4522 tok)
 - `planning-consolidated.md` — MBSH Class of '96 Reunion Site — Consolidated Planning Doc (~2309 tok)
+- `PREMIERE-DESIGN-MAP-2026-05-07.md` — MBSH Reunion — Premiere Detailed Design Map (~12119 tok)
+- `PREMIERE-EXPERIENCE-V2-PLAN-2026-05-07.md` — MBSH Reunion — Premiere Experience V2 Plan (~8119 tok)
+- `PREMIERE-EXPERIENCE-V3-PLAN-2026-05-07.md` — MBSH Reunion — Premiere Experience V3 Plan (~15320 tok)
+- `RUN-STATE.md` — MBSH Premiere — Run State (Heartbeat / Resume) (~2183 tok)
 - `SESSION-1A-SCAFFOLD-PROPOSAL.md` — MBSH Reunion Site — Session 1A Scaffold Proposal (~6996 tok)
+- `V2-LEARNINGS-AND-PATTERNS.md` — MBSH Premiere — V2 Learnings & Patterns (~2724 tok)
+
+## docs/sites/site-mbsh-reunion/closeouts/
+
+- `P0-2026-05-07.md` — Pass 0 Closeout — Setup / Architecture (~871 tok)
+- `P1-2026-05-07.md` — Pass 1 Closeout — Reusable Structure (~2063 tok)
+- `PASS-0-CLOSEOUT.md` — Pass 0 Closeout — Setup / Architecture (~694 tok)
+- `PASS-1-CLOSEOUT.md` — Pass 1 Closeout — Reusable Structure (~1800 tok)
+- `PASS-10-CLOSEOUT.md` — Pass 10 — Billboard slideshow + chevrons everywhere + unified pull-in (~1275 tok)
+- `PASS-11-CLOSEOUT.md` — Pass 11 — Viewport Composition System + Centered Medallion (~1512 tok)
+- `PASS-12-CLOSEOUT.md` — Pass 12 — Final Reel footer + dirty-Harry cleanup + FX calibration (~1582 tok)
+- `PASS-2-CLOSEOUT.md` — Pass 2 Closeout — Existing Assets Only (~1456 tok)
+- `PASS-3-CLOSEOUT.md` — Pass 3 Closeout — Missing Asset Generation (~2067 tok)
+- `PASS-4-CLOSEOUT.md` — Pass 4 Closeout — Asset Integration (~500 tok)
+- `PASS-5-CLOSEOUT.md` — Pass 5 Closeout — Motion Polish (~558 tok)
+- `PASS-6-CLOSEOUT.md` — Pass 6 Closeout — QA / Accessibility / Performance (~989 tok)
+- `PASS-8-9-CLOSEOUT.md` — Pass 8 + 9 — Canonical page pattern + Reel-card system + Harry-in-scene (~1462 tok)
+
+## docs/sites/site-mbsh-reunion/evidence/
+
+- `INDEX.md` — MBSH Premiere — Evidence Index (~293 tok)
+- `p0-no-op-eval.json` (~180 tok)
+- `p1-sandbox-state.json` (~448 tok)
 
 ## ideas/capture/20250924-1743_my-first-spark-idea/
 
@@ -686,13 +777,18 @@
 ## plans/
 
 - `CLOSEOUT-SCHEMA.md` — Plan Closeout / Checkpoint Schema (~929 tok)
-- `registry.json` (~5546 tok)
+- `registry.json` — Declares design (~5838 tok)
 - `registry.json` (~4403 tok)
 
 ## plans/plan_2026_05_05_agent_coordination/
 
 - `plan.json` (~1269 tok)
 - `README.md` — Project documentation (~531 tok)
+
+## plans/plan_2026_05_05_workbench_per_page_design/
+
+- `plan.json` — Declares design (~3753 tok)
+- `README.md` — Project documentation (~597 tok)
 
 ## schemas/
 
@@ -738,6 +834,7 @@
 - `orchestrator-site` — Declares fs (~2914 tok)
 - `precommit-security` (~91 tok)
 - `rembg-worker.py` (~334 tok)
+- `rotate-gemini-key.sh` — rotate-gemini-key.sh — securely rotate the Gemini API key (~1673 tok)
 - `seed-pinecone` — seed-pinecone — Seeds Pinecone famtastic-intelligence index (~1320 tok)
 - `site-brainstorm` — site-brainstorm — Terminal brainstorm session for a site project (~1428 tok)
 - `site-chat` (~465 tok)
@@ -857,7 +954,7 @@
 ## site-studio/public/
 
 - `index.html` — FAMtastic Site Studio (~32710 tok)
-- `shell-compare.html` — Studio Shell Compare — index.html ↔ workbench-foundation.html (~1150 tok)
+- `shell-compare.html` — Studio Shell Compare — index.html ↔ workbench-foundation.html ↔ mockups (~2164 tok)
 
 ## site-studio/public/css/
 

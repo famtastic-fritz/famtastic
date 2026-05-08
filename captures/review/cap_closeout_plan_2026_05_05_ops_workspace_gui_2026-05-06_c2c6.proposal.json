@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.2.0",
+  "proposal_id": "prop_cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-06_c2c6",
+  "from_capture": "cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-06_c2c6",
+  "created_at": "2026-05-06T01:02:58.726Z",
+  "proposed_entries": [
+    {
+      "canonical_id": "decision/pause-ops-dashboard-implementation-pending-per-page-type-des",
+      "type": "decision",
+      "title": "Pause Ops dashboard implementation pending per-page-type design research",
+      "body": "On 2026-05-06 the Ops dashboard MVP was paused (checkpoint_complete) after the user reframed FAMtastic as a creation platform. Resume only after plan_2026_05_05_workbench_per_page_design lands its taxonomy + canvas + chrome briefs.",
+      "facets": [
+        "ops",
+        "platform",
+        "studio-ui"
+      ],
+      "confidence": 0.95,
+      "lifecycle": "active",
+      "source_capture": "cap_closeout_plan_2026_05_05_ops_workspace_gui_2026-05-06_c2c6",
+      "evidence": [
+        "closeout:plan_2026_05_05_ops_workspace_gui:2026-05-06T00:30:00.000Z",
+        "docs/STUDIO-SHELL-RECONCILIATION-2026-05-05.md",
+        "plans/plan_2026_05_05_workbench_per_page_design/plan.json",
+        "3d76488"
+      ],
+      "auto_promote_eligible": false,
+      "auto_promote_reason": "type 'decision' not in allowlist {vendor-fact, do-not-repeat, bug-pattern}"
+    }
+  ],
+  "review_status": "pending",
+  "approver": "auto-allowlist",
+  "approved_at": "2026-05-06T01:02:58.749Z"
+}

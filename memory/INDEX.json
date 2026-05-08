@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-06T01:50:58.608769Z",
+  "generated_at": "2026-05-06T02:04:23.103969Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -870,7 +870,7 @@
       "type": "decision",
       "title": "Site-building inherits the page-type research discipline",
       "facets": [],
-      "lifecycle": "active",
+      "lifecycle": "superseded",
       "confidence": 0.95,
       "path": "memory/decision/pages-of-a-site-need-page-type-research-too.md",
       "seen_count": 0,
@@ -961,6 +961,21 @@
       "lifecycle": "active",
       "confidence": 0.95,
       "path": "memory/rule/eight-pre-flight-questions-for-new-ui-surfaces.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "decision/pages-of-a-site-can-trigger-page-type-research-when-needed",
+      "type": "decision",
+      "title": "Per-page-type research for site pages is optional, triggered by user dissatisfaction",
+      "facets": [
+        "site-execution",
+        "design-research",
+        "governance"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.95,
+      "path": "memory/decision/pages-of-a-site-can-trigger-page-type-research-when-needed.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }
