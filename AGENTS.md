@@ -4,17 +4,27 @@ Rules that apply to every agent surface (Claude Code, Cowork, Codex) working
 in this repo. Surface-specific guidance lives in CLAUDE.md, and inside each
 plugin / adapter.
 
-## Agent Coordination (Non-Negotiable)
+## Agent Coordination (Conditional)
 
-Before scaffolding any new system, capability, or non-trivial workstream,
-run `node scripts/agent-checkin.js --intent "<short description>"` from the
-repo root. If it reports overlapping in-flight work, either coordinate
-with the other agent (read its branch, propose merge) or pick a different
-scope. Respect scope-locks declared in AGENT-COORDINATION.md.
+The automatic check-in requirement is paused by default.
 
-This rule prevents the parallel-implementation problem where two agent
-surfaces independently solve the same problem in incompatible ways
-(observed 2026-05-05 with the .brain/ vs memory/ duplication).
+Run `node scripts/agent-checkin.js --intent "<short description>"` from the
+repo root only when Fritz explicitly says he is running multi-brain,
+multi-agent, multi-session, parallel, or otherwise concurrent work.
+
+When the check-in condition is active and the script reports overlapping
+in-flight work, either coordinate with the other agent (read its branch,
+propose merge) or pick a different scope. Respect scope-locks declared in
+AGENT-COORDINATION.md.
+
+Even while the automatic check-in requirement is paused, agents should still
+avoid obvious known scope locks and should not knowingly overwrite another
+agent's active work.
+
+This rule exists to prevent the parallel-implementation problem where two
+agent surfaces independently solve the same problem in incompatible ways
+(observed 2026-05-05 with the .brain/ vs memory/ duplication), without
+making every ordinary single-agent task pay the noise cost.
 
 ## Plan Closeout Rule (Non-Negotiable)
 
