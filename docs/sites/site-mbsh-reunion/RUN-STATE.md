@@ -28,6 +28,7 @@
 - **Pre-prod audit pass:** `776dd0d` + `512bc97` (Harry rembg + Through-Years coming-soon + memorial copy + config + netlify.toml)
 - **Final pre-prod content (CTAs go live):** `3a91c40`
 - **P11 viewport composition system + centered medallion:** `0389d3f`
+- **P12 Final Reel footer + dirty-Harry cleanup + FX calibration:** `aa8e69b`
 
 ## Resume contract
 
@@ -64,7 +65,8 @@ The run is recoverable from these files alone — no in-memory state required.
 | 2026-05-07 | post-P10 | Doubled up-chevron (matches down vocabulary) + chatbot mobile fixes (100dvh, 16px input, env(safe-area-inset-bottom)). Commit `e2bb498`. |
 | 2026-05-07 | AUDIT | Pre-prod audit: rembg 4 RGB Harry poses (06,08,09,10), removed 2 legacy static Harrys, Through-Years simplified to coming-soon poster, Memorial empty-state rewritten, footer dead # social links → italic coming-soon note, copied site-config.json into frontend/config/, removed broken netlify /config/* self-rewrite. Commits `776dd0d` + `512bc97`. ⏸ PAUSED for Fritz review on staging. **Production recommendation: option 2 — ready to merge with Through-Years in current coming-soon treatment.** See `AUDIT-2026-05-07.md`. |
 | 2026-05-08 | CONTENT | Final pre-prod content fixes per Fritz: home hero CTA → "Reserve Your Seat" (live, links to rsvp.html), tickets tier cards → "Hold My Seat" + italic "RSVP now — pay when ticketing opens" hint, tickets footer note rewritten to inviting tone. Spotify ID, Through-Years coming-soon, memorial copy, social links unchanged per Fritz. Commit `3a91c40`. |
-| 2026-05-08 | P11 | Viewport composition system: Scene/Sequence/Tease archetypes auto-tagged on every section, snap-proximity not mandatory, centered top medallion (every page, fixed), up-chevron moves top-left, down-chevron skipped on Sequences, Harry routes off Sequences into adjacent Scenes, playlist 3047px section split into two Sequences with a Note Scene transition, Memorial empty-state promoted to reverence Scene with starfield + scarlet rule frame, global 16px input font-size kills iOS auto-zoom across all forms. Commit `0389d3f`. ⏸ PAUSED for Fritz phone review before production merge. |
+| 2026-05-08 | P11 | Viewport composition system: Scene/Sequence/Tease archetypes auto-tagged on every section, snap-proximity not mandatory, centered top medallion (every page, fixed), up-chevron moves top-left, down-chevron skipped on Sequences, Harry routes off Sequences into adjacent Scenes, playlist 3047px section split into two Sequences with a Note Scene transition, Memorial empty-state promoted to reverence Scene with starfield + scarlet rule frame, global 16px input font-size kills iOS auto-zoom across all forms. Commit `0389d3f`. |
+| 2026-05-08 | P12 | Footer Final Reel + dirty-Harry cleanup + FX calibration. FX overlay opacity 0.55→0.08 (P0 spec restored) + z-index 50→1 to clear footer/content contrast. `.premiere-usher` corner button removed (duplicated `.chatbot__bubble`); `harryIntro` speech bubble retired (billboard slide-1 carries the welcome). Hero `.hero__harry` markup removed. Footer rewritten as closing-credits Scene: scarlet→gold curtain rails top+bottom, centered seal medallion, MBSH 1926-2026, Class of 1996, Allura motto, credit roll, encore. Footer joined archetype system (`data-mode="scene"`); Where-Next chevron-down lands on footer; footer gets up-chevron only. Commit `aa8e69b`. ⏸ PAUSED for Fritz phone review. **Production recommendation: option 1 — ready to merge.** |
 
 ---
 
