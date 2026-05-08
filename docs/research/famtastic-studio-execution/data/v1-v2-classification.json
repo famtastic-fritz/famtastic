@@ -1,0 +1,39 @@
+{
+  "v1_adaptations": [
+    "Intelligence Brief before build",
+    "Capability Truth records",
+    "Run Ledger and pass closeout packets",
+    "Media Library as active registry",
+    "Component/slot mutation protocol",
+    "Server responsibility map and first extraction plan",
+    "Visible Shay domain/home",
+    "$50+ cost approval gate",
+    "Deploy proof gate"
+  ],
+  "v2_backlog": [
+    "automated deep competitive intelligence",
+    "full multi-agent orchestration runtime",
+    "embedding-based recipe similarity",
+    "full Media Studio automation",
+    "component marketplace behavior",
+    "monthly improvement engine",
+    "advanced cost optimization",
+    "polished research UI visualizations",
+    "complete server extraction",
+    "public Site Assistant productization"
+  ],
+  "hard_blockers": [
+    "projected cost above $50 without approval",
+    "required key/secret missing with no fallback",
+    "repo write/build impossible",
+    "safety/security issue",
+    "repeated validation failure after documented retry/fix attempts"
+  ],
+  "non_blockers": [
+    "optional repo unavailable",
+    "optional install failure with fallback",
+    "cloud lane unavailable when local/documented substitute exists",
+    "V2-worthy idea discovered during research"
+  ]
+}
+

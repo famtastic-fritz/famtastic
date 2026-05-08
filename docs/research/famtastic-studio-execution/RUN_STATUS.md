@@ -2,7 +2,7 @@
 
 ## Current state
 
-Status: seeded
+Status: complete
 
 ## Run goal
 
@@ -58,3 +58,25 @@ Hard blockers:
 - Repo write/build impossible
 - Safety/security issue
 - Repeated validation failure after retry/fix attempts
+
+## Update 2026-05-08 19:09
+
+Status: running
+Agent: Codex
+Current track: kickoff / setup inspection / source collection
+What changed: Full research run started. Seed instructions read. Repo setup inspection began.
+Proof: Branch `research/studio-intelligence-foundation-20260508`; package files found at `package.json`, `site-studio/package.json`, and `package-lock.json`; server files found at `site-studio/server.js` and `mcp-server/server.js`.
+Blockers: None.
+Non-blockers logged: `site-studio/server.js` is very large at 20,150 lines, confirming server modularization is a V1 technical foundation track.
+Next: Gather public source research, create competitive/pattern/gap/agent/proof/training/V1/V2/impact artifacts, then update status to complete.
+
+## Update 2026-05-08 19:19
+
+Status: complete
+Agent: Codex
+Current track: full research run / artifact creation / server modularization review
+What changed: Completed the required research artifacts, structured data files, final briefing, and server modularization planning notes. Research covered at least 5 AI app/site builders, 5 agentic coding systems, 3 multi-agent orchestration frameworks, 3 research/provenance systems or patterns, and 3 security/cost/safety failure patterns.
+Proof: Created `01-competitive-map.md`, `02-pattern-library.md`, `03-gap-and-opportunity-map.md`, `04-agent-skill-map.md`, `05-proof-and-checklist-system.md`, `06-training-and-readback-system.md`, `07-v1-adaptations.md`, `08-v2-backlog.md`, `09-execution-plan-impact.md`, `FINAL-BRIEFING.md`, required `data/*.json` files, `server-responsibility-map.md`, `server-modularization-plan.md`, and `server-modularization-proof.md`.
+Blockers: None.
+Non-blockers logged: Public docs were sufficient for V1 research; some vendor behavior is visible only inside product surfaces. No paid/cloud actions, installs, deploys, or provider API calls were run. `site-studio/server.js` remains a V1 modularization risk at 20,150 lines.
+Next: Review the Studio redesign/spec map and implement only the minimum execution substrate: Intelligence Brief, Run Ledger, Capability Truth records, proof/pass closeout, learning candidate capture, and first low-risk server extraction plan.

@@ -1,0 +1,55 @@
+{
+  "project_intake": [
+    "What is the real business outcome?",
+    "Who is the target user/customer?",
+    "What does the client know, and what are they unable to specify yet?",
+    "What would make this build FAMtastic rather than generic?"
+  ],
+  "research": [
+    "What comparable systems/businesses exist?",
+    "What do they do well?",
+    "What do they miss?",
+    "Which claims have sources and which are inference?",
+    "What research depth is appropriate: Fast, Standard, Deep, or Expert?"
+  ],
+  "recipe": [
+    "Does an existing recipe match?",
+    "Is this reuse, extension, hybrid, new, or deprecation?",
+    "Which capability modules are required?",
+    "Which QA gates bind to this recipe?"
+  ],
+  "media": [
+    "What prompt object generated this asset?",
+    "What research basis supports it?",
+    "Which slots can use it?",
+    "Has cleanup/compression/mobile crop QA passed?",
+    "What fallback exists?"
+  ],
+  "component": [
+    "Is this a new component or a variant?",
+    "Which slots are allowed?",
+    "What data/assets/dependencies are required?",
+    "What proof is needed before library promotion?"
+  ],
+  "run_control": [
+    "What is the approved full-run plan?",
+    "What pass is active?",
+    "What proof exists?",
+    "Did a hard stop condition trigger?",
+    "What did this pass fix, add, or prove?"
+  ],
+  "deploy": [
+    "Is provider capability working by probe?",
+    "Are secrets absent from committed config?",
+    "Were sourcemaps/debug artifacts checked?",
+    "Is rollback documented?",
+    "Is production approval required?"
+  ],
+  "shay_readback": [
+    "What needs Fritz right now?",
+    "What can continue automatically?",
+    "What failed but did not block?",
+    "What got learned for future builds?"
+  ]
+}
+
