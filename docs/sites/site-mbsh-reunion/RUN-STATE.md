@@ -24,6 +24,8 @@
 - **P7 curtain-slowdown + Harry-intro:** `4b8fd70`
 - **P8+P9 page pattern + reel-card + Harry-in-scene:** `350e7d7`
 - **P10 billboard slideshow + chevrons + unified pull-in:** `d517a30`
+- **post-P10 doubled up-chevron + chatbot mobile:** `e2bb498`
+- **Pre-prod audit pass:** `776dd0d` + `512bc97` (Harry rembg + Through-Years coming-soon + memorial copy + config + netlify.toml)
 
 ## Resume contract
 
@@ -57,6 +59,8 @@ The run is recoverable from these files alone — no in-memory state required.
 | 2026-05-07 | P7+ | Curtain rise slowed 1.2s→3.2s; Harry intro speech bubble (one-per-session) added. Commit `4b8fd70`. |
 | 2026-05-07 | P8+9 | Canonical page pattern (Title→Note→Pre→Main→Post→WhereNext) + unified `.reel-card` + page-aware Where-Next + Harry-in-scene per page. Commit `350e7d7`. ⏸ PAUSED for Fritz review on staging. |
 | 2026-05-07 | P10 | Note becomes billboard slideshow (auto-advance + manual dots, animated slide-up transitions). Pre-item folded in. Per-page billboards on all inner pages. Chevron-up + chevron-down on every section. Unified pull-in animation via IntersectionObserver — same effect on click and on passive scroll. Commit `d517a30`. ⏸ PAUSED for Fritz review on staging. |
+| 2026-05-07 | post-P10 | Doubled up-chevron (matches down vocabulary) + chatbot mobile fixes (100dvh, 16px input, env(safe-area-inset-bottom)). Commit `e2bb498`. |
+| 2026-05-07 | AUDIT | Pre-prod audit: rembg 4 RGB Harry poses (06,08,09,10), removed 2 legacy static Harrys, Through-Years simplified to coming-soon poster, Memorial empty-state rewritten, footer dead # social links → italic coming-soon note, copied site-config.json into frontend/config/, removed broken netlify /config/* self-rewrite. Commits `776dd0d` + `512bc97`. ⏸ PAUSED for Fritz review on staging. **Production recommendation: option 2 — ready to merge with Through-Years in current coming-soon treatment.** See `AUDIT-2026-05-07.md`. |
 
 ---
 
