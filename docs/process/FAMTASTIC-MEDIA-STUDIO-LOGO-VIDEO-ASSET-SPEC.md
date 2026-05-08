@@ -1,7 +1,7 @@
 # FAMtastic Media Studio Logo Video Asset Spec
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** define Media Studio modes and how media work supports site builds.
 
 ## Media Studio Modes

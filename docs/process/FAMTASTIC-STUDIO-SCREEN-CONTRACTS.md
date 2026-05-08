@@ -1,7 +1,7 @@
 # FAMtastic Studio Screen Contracts
 
-**Status:** planning/spec only  
-**Primary anchors:** [Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md), [Development Convergence Dossier](FAMTASTIC-DEVELOPMENT-CONVERGENCE-DOSSIER.md)  
+**Status:** planning/spec only
+**Primary anchors:** [Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md), [Development Convergence Dossier](FAMTASTIC-DEVELOPMENT-CONVERGENCE-DOSSIER.md)
 **Purpose:** define each redesigned Studio screen as a product contract.
 
 ## Contract Format

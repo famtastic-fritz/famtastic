@@ -1,7 +1,7 @@
 # FAMtastic Dynamic Recipe Resolver
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** define how FAMtastic avoids rigid templates while still reusing build intelligence.
 
 ## Core Rule

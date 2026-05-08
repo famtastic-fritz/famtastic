@@ -1,7 +1,7 @@
 # FAMtastic Open Questions And Default Decisions
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** capture unresolved questions and default decisions so the next chat/agent does not drift.
 
 ## Resolved User Decisions

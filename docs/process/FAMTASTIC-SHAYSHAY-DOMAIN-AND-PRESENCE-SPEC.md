@@ -1,7 +1,7 @@
 # FAMtastic ShayShay Domain And Presence Spec
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** preserve Shay as more than a bubble.
 
 ## Core Definition

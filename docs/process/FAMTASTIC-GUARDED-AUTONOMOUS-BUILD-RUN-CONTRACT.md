@@ -1,7 +1,7 @@
 # FAMtastic Guarded Autonomous Build Run Contract
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** define guarded-autonomous-to-completion.
 
 ## Contract

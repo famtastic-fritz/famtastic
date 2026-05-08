@@ -1,7 +1,7 @@
 # FAMtastic Build Mutation And Injection System
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** define how FAMtastic Studio performs efficient, safe, component-aware changes instead of broad rewrites.
 
 ## A. Change Classification

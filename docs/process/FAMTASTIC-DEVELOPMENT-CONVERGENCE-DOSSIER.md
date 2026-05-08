@@ -1,7 +1,7 @@
 # FAMtastic Development Convergence Dossier
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** merge the research-driven build-system session with the platform refresh, operator cockpit, Shay, component, media, and long-running build lessons into one no-drift planning source.
 
 ## Executive Summary

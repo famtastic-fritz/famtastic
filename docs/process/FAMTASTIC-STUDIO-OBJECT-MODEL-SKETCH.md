@@ -1,7 +1,7 @@
 # FAMtastic Studio Object Model Sketch
 
-**Status:** planning/spec only  
-**Primary anchors:** [Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md), [Development Convergence Dossier](FAMTASTIC-DEVELOPMENT-CONVERGENCE-DOSSIER.md)  
+**Status:** planning/spec only
+**Primary anchors:** [Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md), [Development Convergence Dossier](FAMTASTIC-DEVELOPMENT-CONVERGENCE-DOSSIER.md)
 **Purpose:** sketch the main object types without implementing schema.
 
 ## Object Model Table

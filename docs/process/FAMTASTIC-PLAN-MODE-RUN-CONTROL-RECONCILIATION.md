@@ -1,7 +1,7 @@
 # FAMtastic Plan Mode Run Control Reconciliation
 
-**Status:** planning/spec only  
-**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)  
+**Status:** planning/spec only
+**Primary anchor:** [FAMtastic Research-Driven Build System Blueprint](FAMTASTIC-RESEARCH-DRIVEN-BUILD-SYSTEM-BLUEPRINT.md)
 **Purpose:** reconcile Plan Mode, Full-Run Plan Rule, Build Ledger, Run Control, and agent execution.
 
 ## Core Distinction

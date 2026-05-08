@@ -23,17 +23,17 @@
 [build-intent-]    [plan_2026_05_05_                    [+ Cost guardrails   ]
 [fulfillment- ]    [ops_workspace_gui]                  [+ Capability Truth  ]
 [trace        ]    [domain Admin    ]                   [  Layer cost field  ]
-                                                        
+
 [plan_2026_05_05_  [plan_2026_05_05_
-[chat_capture_     [platform_site_   
-[learn_optimize]   [promotion]       
-                                     
+[chat_capture_     [platform_site_
+[learn_optimize]   [promotion]
+
 [plan_2026_05_05_  [plan_2026_05_05_
-[agent_           [workbench_per_   
-[coordination]    [page_design]     
-                  
+[agent_           [workbench_per_
+[coordination]    [page_design]
+
 [site-mbsh-       (independent — site-scoped, post-launch backlog)
-[reunion]         
+[reunion]
 ```
 
 Eight active parents. Five are **substrate** (the rails). Three are **domain** (the workspaces). One is **site-scoped** (MBSH itself). Governance is configuration in the registry, not a parent plan.
