@@ -135,3 +135,14 @@ Proof: `slice-5-mbsh-v2-readiness-gate/readiness-gate.md`. Brief, capability map
 Blockers: None.
 Non-blockers logged: Photography, sponsor approvals, and venue copy are content sourcing tasks (not engineering blockers); they convert to blockers only at launch. Lighthouse and a11y MCP tools available locally — no paid call required for V2 proof packet.
 Next: Studio is ready for MBSH V2 proofing per §1 of the controller. The explicit next build action is captured in `slice-5-mbsh-v2-readiness-gate/readiness-gate.md` §8. FINAL-RUN-REPORT.md authored.
+
+## Update 2026-05-08 22:35
+
+Status: complete
+Agent: Claude (functional substrate run)
+Current track: Slices 2–5 functional implementation
+What changed: Landed Slice 2 Phase 1 step 1 (`site-studio/server/validators.js` extracting `isValidPageName`, `sanitizeSvg`, `validateAgentHtml`; net `-73` lines in `server.js`). Landed Slice 3 reader (`site-studio/server/intelligence-reader.js`) and four routes via `site-studio/server/intelligence-routes.js` mounted with one `app.use` line. Landed Slice 4 writer (`site-studio/server/intelligence-writer.js`) with atomic JSON writes, status/verdict enums, and `$50` cumulative cost cap. Wrote MBSH V2 brief and capability-truth files into `sites/site-mbsh-reunion/intelligence/`. Opened, populated, and finalized Run Ledger `mbsh-v2-readiness-001` (verdict `pass`) with 5 passes, 11-proof packet, 2 learning candidates, and explicit `next_action`.
+Proof: `npm test` 71/71 tests pass (preexisting unrelated suite-load failure on missing `public/js/shay-bridge-client.js`); B2 server module load OK; reader+writer end-to-end smoke including cost-cap auto-block at `$50` and path-traversal rejection; live MBSH route smoke 4/4 routes 200. Proof packet mirrored at `slice-2-server-modularization/proof/mbsh-v2-readiness-proof.json`. FUNCTIONAL-SUBSTRATE-RUN-REPORT.md authored.
+Blockers: None.
+Non-blockers logged: preexisting test loader failure (unit.test.js shay-bridge-client.js missing); B3/B9 baseline checks deferred to launchd runtime; worktree node_modules partial (mitigated via NODE_PATH overlay during validation); 3 yellow capability chips (Harry, media, RSVP V2 schema) — allowed at gate-open, convert to blockers only at MBSH V2 launch.
+Next: Begin MBSH V2 implementation per FUNCTIONAL-SUBSTRATE-RUN-REPORT §9.
