@@ -1065,10 +1065,10 @@ app.use('/api/bridge', require('./lib/bridge-routes'));
 // Mounted BEFORE any /api/:param route so static /api/ops/* paths resolve.
 app.use('/api/ops', require('./lib/ops-api'));
 
-// Intelligence routes (Slice 3). Read-only, site-scoped via TAG.
+// Intelligence routes (Slice 3 + Operator Workspace). Read-only.
 // Mounted BEFORE any /api/:param route per route-order standing rule.
 app.use('/api/intelligence', require('./server/intelligence-routes')
-  .createIntelligenceRouter(() => SITE_DIR()));
+  .createIntelligenceRouter(() => SITE_DIR(), SITES_ROOT));
 
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {

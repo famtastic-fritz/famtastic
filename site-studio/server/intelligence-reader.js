@@ -121,6 +121,36 @@ function isSafeId(id) {
   return typeof id === 'string' && /^[a-z0-9][a-z0-9-]{2,80}$/i.test(id) && !id.includes('..');
 }
 
+function isSafeTag(tag) {
+  return typeof tag === 'string' && /^site-[a-z0-9][a-z0-9-]{1,80}$/i.test(tag) && !tag.includes('..');
+}
+
+function listSites(sitesRoot) {
+  if (!fs.existsSync(sitesRoot)) return [];
+  return fs.readdirSync(sitesRoot, { withFileTypes: true })
+    .filter(d => d.isDirectory() && isSafeTag(d.name))
+    .map(d => {
+      const tag = d.name;
+      const siteDir = path.join(sitesRoot, tag);
+      const intelDir = intelligenceDir(siteDir);
+      const hasIntel = fs.existsSync(intelDir);
+      const brief = hasIntel ? readBrief(siteDir) : null;
+      let runCount = 0;
+      const runsDir = path.join(intelDir, 'runs');
+      if (fs.existsSync(runsDir)) {
+        runCount = fs.readdirSync(runsDir, { withFileTypes: true }).filter(e => e.isDirectory()).length;
+      }
+      return {
+        tag,
+        title: brief ? brief.title : null,
+        vertical: brief ? brief.vertical : null,
+        has_intelligence: hasIntel,
+        run_count: runCount,
+      };
+    })
+    .sort((a, b) => Number(b.has_intelligence) - Number(a.has_intelligence) || a.tag.localeCompare(b.tag));
+}
+
 module.exports = {
   readBrief,
   readCapabilityTruth,
@@ -130,6 +160,8 @@ module.exports = {
   readRunLedger,
   readProofPacket,
   readLearningCandidates,
+  listSites,
   intelligenceDir,
   isSafeId,
+  isSafeTag,
 };

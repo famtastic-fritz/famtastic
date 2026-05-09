@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAMtastic Studio · Operator Workspace</title>
+  <link rel="stylesheet" href="/css/operator.css">
+</head>
+<body>
+  <div class="op-shell">
+
+    <!-- ── Top bar: brand + selectors + V2 target pill ───────────── -->
+    <header class="op-topbar" id="op-topbar">
+      <div class="op-brand">FAM<span class="accent">tastic</span> · Operator</div>
+      <div class="op-selectors">
+        <label class="op-small" for="op-site-select">Project / site</label>
+        <select id="op-site-select" class="op-select" aria-label="Active site"></select>
+      </div>
+      <div class="op-selectors">
+        <label class="op-small" for="op-target-select">MBSH V2 target</label>
+        <select id="op-target-select" class="op-select" aria-label="MBSH V2 refinement target">
+          <option value="site-mbsh-reunion">site-mbsh-reunion (refinement target)</option>
+        </select>
+      </div>
+      <span id="op-target-pill" class="op-target-pill">
+        <span class="dot"></span>
+        <span id="op-target-pill-text">MBSH V2 · refinement target</span>
+      </span>
+      <div class="op-spacer"></div>
+      <a class="op-link" href="/" title="Back to legacy Studio">↩ legacy Studio</a>
+    </header>
+
+    <!-- ── Zone tabs ────────────────────────────────────────────── -->
+    <nav class="op-zones" id="op-zones" role="tablist">
+      <button class="op-zone-tab active" data-zone="intelligence" role="tab"><span class="tab-icon"></span>Intelligence</button>
+      <button class="op-zone-tab" data-zone="control" role="tab"><span class="tab-icon"></span>Control</button>
+      <button class="op-zone-tab" data-zone="creation" role="tab"><span class="tab-icon"></span>Creation</button>
+      <button class="op-zone-tab" data-zone="guide" role="tab"><span class="tab-icon"></span>Guide / Shay</button>
+      <button class="op-zone-tab" data-zone="flow" role="tab"><span class="tab-icon"></span>Visual Map</button>
+      <button class="op-zone-tab" data-zone="readiness" role="tab"><span class="tab-icon"></span>MBSH V2 Readiness</button>
+    </nav>
+
+    <!-- ── Workspace ───────────────────────────────────────────── -->
+    <main class="op-workspace" id="op-workspace">
+
+      <!-- INTELLIGENCE ZONE ----------------------------------- -->
+      <section class="op-zone active" data-zone="intelligence" aria-labelledby="zone-intelligence">
+        <div class="op-grid cols-2">
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Intelligence Brief</h2>
+              <span class="op-panel-meta op-mono" id="op-brief-route">/api/intelligence/brief</span>
+            </div>
+            <div id="op-brief-body"><div class="op-empty">Loading…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Recipe Decision · Plan-Lite</h2>
+              <span class="op-panel-meta op-mono">recipe registry</span>
+            </div>
+            <div id="op-recipe-body"><div class="op-empty">No recipes recorded yet — Plan-Lite is implicit (substrate run only).</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Research / Source Summary</h2>
+              <span class="op-panel-meta">slice-1 → slice-5</span>
+            </div>
+            <div id="op-research-body"><div class="op-empty">Loading…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">MBSH V2 Readiness Summary</h2>
+              <span class="op-panel-meta op-mono">capability-truth</span>
+            </div>
+            <div id="op-readiness-summary"><div class="op-empty">Loading…</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTROL ZONE ---------------------------------------- -->
+      <section class="op-zone" data-zone="control">
+        <div class="op-grid cols-2">
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Capability Truth</h2>
+              <span class="op-panel-meta op-mono" id="op-cap-route">/api/intelligence/capability-truth</span>
+            </div>
+            <div id="op-capability-body"><div class="op-empty">Loading…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Cost / Approval</h2>
+              <span class="op-panel-meta op-mono">cap $50.00</span>
+            </div>
+            <div id="op-cost-body"><div class="op-empty">Loading…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Run Ledger</h2>
+              <span class="op-panel-meta op-mono" id="op-runs-route">/api/intelligence/runs</span>
+            </div>
+            <div id="op-runs-body"><div class="op-empty">Loading…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Proof Packet</h2>
+              <span class="op-panel-meta op-mono" id="op-proof-route">/api/intelligence/runs/:runId</span>
+            </div>
+            <div id="op-proof-body"><div class="op-empty">Select a run to inspect proof packet.</div></div>
+          </div>
+
+          <div class="op-panel" style="grid-column: 1 / -1;">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Blockers · Non-blockers</h2>
+              <span class="op-panel-meta">live from selected run</span>
+            </div>
+            <div id="op-blockers-body"><div class="op-empty">No run selected.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CREATION ZONE --------------------------------------- -->
+      <section class="op-zone" data-zone="creation">
+        <div class="op-grid cols-2">
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Component Studio · Library</h2>
+              <span class="op-panel-meta">check-existing-before-creating</span>
+            </div>
+            <div id="op-components-body"><div class="op-empty">Loading inventory…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Media Library · Asset Registry</h2>
+              <span class="op-panel-meta">prompt → asset → slot → QA</span>
+            </div>
+            <div id="op-media-body"><div class="op-empty">Loading registry…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Design System · Critics</h2>
+              <span class="op-panel-meta">tokens · contrast · a11y · proof gates</span>
+            </div>
+            <div id="op-design-body"><div class="op-empty">Loading…</div></div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Gap Tracking · Workaround Log</h2>
+              <span class="op-panel-meta">studio handled? · workaround · severity · v1/v2</span>
+            </div>
+            <div id="op-gaps-body"><div class="op-empty">Loading…</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GUIDE / SHAY ZONE ----------------------------------- -->
+      <section class="op-zone" data-zone="guide">
+        <div class="op-grid cols-2">
+          <div class="op-panel op-shay">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Shay Desk · Readback</h2>
+              <span class="op-panel-meta">visible · findable</span>
+            </div>
+            <div class="op-readback-tabs" role="tablist" aria-label="Readback modes">
+              <button class="op-readback-tab active" data-mode="short">short</button>
+              <button class="op-readback-tab" data-mode="operator">operator</button>
+              <button class="op-readback-tab" data-mode="deep">deep</button>
+              <button class="op-readback-tab" data-mode="next">next-action</button>
+            </div>
+            <div class="op-readback-body" id="op-readback-body">Loading…</div>
+          </div>
+
+          <div class="op-panel">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Learning Candidates</h2>
+              <span class="op-panel-meta">from selected run</span>
+            </div>
+            <div id="op-learning-body"><div class="op-empty">Select a run to view candidates.</div></div>
+          </div>
+
+          <div class="op-panel" style="grid-column: 1 / -1;">
+            <div class="op-panel-header">
+              <h2 class="op-panel-title">Training · Quiz Hook</h2>
+              <span class="op-panel-meta">future</span>
+            </div>
+            <div id="op-training-body" class="op-empty">
+              Quiz/training surface is V2 backlog. Hook reserved at <span class="op-mono">/api/operator/training</span> (not implemented in V1).
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISUAL MAP / FLOW ZONE ------------------------------ -->
+      <section class="op-zone" data-zone="flow">
+        <div class="op-panel">
+          <div class="op-panel-header">
+            <h2 class="op-panel-title">Visual Map · Operator Flow</h2>
+            <span class="op-panel-meta">backed by capability truth — only green/yellow nodes are real</span>
+          </div>
+          <div id="op-flow-body" class="op-flow"><div class="op-empty">Loading…</div></div>
+        </div>
+
+        <div class="op-section-divider"></div>
+
+        <div class="op-panel">
+          <div class="op-panel-header">
+            <h2 class="op-panel-title">Checkpoint / Frame List</h2>
+            <span class="op-panel-meta">from selected run ledger.passes[]</span>
+          </div>
+          <div id="op-frames-body"><div class="op-empty">Select a run.</div></div>
+        </div>
+
+        <div class="op-section-divider"></div>
+
+        <div class="op-panel">
+          <div class="op-panel-header">
+            <h2 class="op-panel-title">Artifact Provenance</h2>
+            <span class="op-panel-meta">from selected run proof packet</span>
+          </div>
+          <div id="op-provenance-body"><div class="op-empty">Select a run.</div></div>
+        </div>
+      </section>
+
+      <!-- MBSH V2 READINESS ZONE ------------------------------ -->
+      <section class="op-zone" data-zone="readiness">
+        <div class="op-panel">
+          <div class="op-panel-header">
+            <h2 class="op-panel-title">MBSH — Production state</h2>
+            <span class="op-panel-meta">already built · already shipped</span>
+          </div>
+          <div id="op-mbsh-prod-body"><div class="op-empty">Loading…</div></div>
+        </div>
+
+        <div class="op-section-divider"></div>
+
+        <div class="op-panel">
+          <div class="op-panel-header">
+            <h2 class="op-panel-title">MBSH V2 — Refinement target</h2>
+            <span class="op-panel-meta">controlled visual / layout / functionality refinement (NOT a fresh build)</span>
+          </div>
+          <div id="op-mbsh-v2-body"><div class="op-empty">Loading…</div></div>
+        </div>
+
+        <div class="op-section-divider"></div>
+
+        <div class="op-panel">
+          <div class="op-panel-header">
+            <h2 class="op-panel-title">Paused / Deferred Decisions</h2>
+            <span class="op-panel-meta">surface honestly</span>
+          </div>
+          <div id="op-deferred-body"><div class="op-empty">Loading…</div></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── Status bar ──────────────────────────────────────────── -->
+    <footer class="op-statusbar" id="op-statusbar" aria-live="polite">
+      <span class="seg"><span class="dot live" id="op-status-dot"></span><span id="op-status-text">ready</span></span>
+      <span class="seg">site: <span class="op-mono" id="op-status-site">—</span></span>
+      <span class="seg">brief: <span id="op-status-brief">—</span></span>
+      <span class="seg">caps: <span id="op-status-caps">—</span></span>
+      <span class="seg">runs: <span id="op-status-runs">—</span></span>
+      <span class="seg">cost: <span class="op-mono" id="op-status-cost">$0.00</span></span>
+      <span class="seg">verdict: <span id="op-status-verdict">—</span></span>
+      <span class="op-spacer"></span>
+      <span class="seg op-small" id="op-status-time">—</span>
+    </footer>
+  </div>
+
+  <script src="/js/operator.js" defer></script>
+</body>
+</html>

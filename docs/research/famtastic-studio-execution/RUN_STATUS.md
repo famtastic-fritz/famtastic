@@ -146,3 +146,14 @@ Proof: `npm test` 71/71 tests pass (preexisting unrelated suite-load failure on 
 Blockers: None.
 Non-blockers logged: preexisting test loader failure (unit.test.js shay-bridge-client.js missing); B3/B9 baseline checks deferred to launchd runtime; worktree node_modules partial (mitigated via NODE_PATH overlay during validation); 3 yellow capability chips (Harry, media, RSVP V2 schema) — allowed at gate-open, convert to blockers only at MBSH V2 launch.
 Next: Begin MBSH V2 implementation per FUNCTIONAL-SUBSTRATE-RUN-REPORT §9.
+
+## Update 2026-05-08 23:05
+
+Status: complete
+Agent: Claude (operator workspace run)
+Current track: Studio Operator Workspace UI — Stages 1–8
+What changed: Added the redesigned Studio Operator Workspace at `/operator.html` (self-contained, does not touch the legacy Studio shell). New files: `site-studio/public/operator.html`, `site-studio/public/css/operator.css`, `site-studio/public/js/operator.js`. Extended `site-studio/server/intelligence-reader.js` with `listSites()`/`isSafeTag()` and `site-studio/server/intelligence-routes.js` with `/api/intelligence/sites` plus `?tag=` override on the existing four routes; passed `SITES_ROOT` to the router via the existing `app.use(...)` line in `server.js` (zero net new mount lines). Six zones: Intelligence, Control, Creation, Guide/Shay, Visual Map, MBSH V2 Readiness. Component Library, Media Registry, Design/Critics, Gap Tracking, Shay Desk with four readback modes (short/operator/deep/next-action), Visual Flow with capability-truth-backed nodes, MBSH V2 panel showing prod-built status and refinement target.
+Proof: `npm test` 71/71 pass (same preexisting unit.test.js loader gap); B2 server module load OK; 5/5 intelligence endpoints return 200 with correct payloads against MBSH; Puppeteer DOM smoke against `/operator.html` confirms 6 zones, 14 capability rows, 1 run row, 22 proof rows, 8 flow nodes, 12 component items, 6 media items, all 5 intelligence routes consumed; zone-tab switching OK for all 6 zones; only console 404 is `/favicon.ico` (non-blocker). `git diff --check` clean.
+Blockers: None.
+Non-blockers logged: missing `/favicon.ico`; preexisting unit.test.js loader gap; recipe panel renders Plan-Lite from ledger.passes[] (no recipe registry yet — V2 backlog); training/quiz hook reserved but not implemented (V2 backlog); concurrent same-site run lock still V2 backlog.
+Next: STUDIO-OPERATOR-WORKSPACE-RUN-REPORT.md authored. Studio UI is ready for Fritz review and MBSH V2 visual refinement may begin once Fritz signs off.
