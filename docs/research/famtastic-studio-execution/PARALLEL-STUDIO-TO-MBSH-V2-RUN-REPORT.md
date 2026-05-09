@@ -192,7 +192,7 @@ learning candidates. Visual-diff working copy persists at
 
 ## 17. Commit hash
 
-`<recorded after commit at end of this run>`
+`e3e2e4046f37c08153d3a30d25e1deb846631f99`
 
 ## 18. Exact next action
 
