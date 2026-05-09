@@ -91,3 +91,47 @@ Proof: Added `docs/research/famtastic-studio-execution/slice-1-execution-substra
 Blockers: None.
 Non-blockers logged: Slice 1 is docs/runtime-contract substrate only; Studio UI does not yet ingest these artifacts. Server modularization remains required before major backend growth.
 Next: Continue to Slice 2: server modularization first safe extraction plan/proof.
+
+## Update 2026-05-08 22:20
+
+Status: complete
+Agent: Claude (unattended run controller)
+Current track: Slice 2 — server modularization first safe extraction plan/proof
+What changed: Authored `slice-2-server-modularization/baseline-and-extraction-plan.md`. Identified the nine baseline commands (B1–B9), produced the route smoke checklist (18 GET routes), and selected `site-studio/server/validators.js` as the first safe extraction target carrying `isValidPageName` (server.js:284), `sanitizeSvg` (server.js:416), and `validateAgentHtml` (server.js:10976). No backend behavior changed. Created empty `proof/` directory placeholder for Phase 1 step 1 execution.
+Proof: `slice-2-server-modularization/baseline-and-extraction-plan.md`, `slice-2-server-modularization/proof/.gitkeep`. Reference signatures verified by grep against `site-studio/server.js` (3 functions confirmed at the lines listed).
+Blockers: None.
+Non-blockers logged: Phase 1 step 1 (the actual extraction commit) intentionally deferred — Slice 2 is plan/proof only per the controller. WebSocket B9 check requires Studio running; documented but not executed in plan pass.
+Next: Continue to Slice 3 — Studio artifact reader / display substrate.
+
+## Update 2026-05-08 22:20
+
+Status: complete
+Agent: Claude (unattended run controller)
+Current track: Slice 3 — Studio artifact reader / display substrate
+What changed: Authored `slice-3-artifact-reader/artifact-reader-substrate.md`. Defined site-scoped filesystem layout under `sites/<tag>/intelligence/`, an eight-function read-only API for `site-studio/server/intelligence-reader.js`, four GET routes (`/api/intelligence/*`), and a five-subsection Studio sidebar Intelligence panel. Modularization guardrail respected: net diff in `server.js` is one `app.use(...)` line.
+Proof: `slice-3-artifact-reader/artifact-reader-substrate.md`. Cross-references Slice 1 contracts and Slice 2 extraction pattern.
+Blockers: None.
+Non-blockers logged: No real intelligence artifacts exist for production sites yet; Slice 1 fixtures cover development. Sidebar visual polish deferred to Studio redesign cohesion track.
+Next: Continue to Slice 4 — run ledger + proof packet wiring plan.
+
+## Update 2026-05-08 22:20
+
+Status: complete
+Agent: Claude (unattended run controller)
+Current track: Slice 4 — run ledger + proof packet wiring plan
+What changed: Authored `slice-4-run-ledger-wiring/run-ledger-and-proof-wiring.md`. Defined writer module API (`startRun`, `appendLedgerPass`, `setLedgerStatus`, `recordCost`, `recordBlocker`, `recordNonBlocker`, `attachProofPacket`, `addLearningCandidate`, `setNextAction`, `finalizeRun`), atomic-write semantics, validation rules (path traversal, contract-shape, cost monotonic, status enum), and a controller-signal → ledger-field mapping that wires the unattended stop/continue policy directly to the Slice 1 contracts. Cost cap at $50 enforced cumulatively.
+Proof: `slice-4-run-ledger-wiring/run-ledger-and-proof-wiring.md`. Status/verdict enums match Slice 1 `run-ledger.contract.json` shape.
+Blockers: None.
+Non-blockers logged: Concurrent same-site run lock not addressed (V2 backlog). Provider-aware cost projection helper deferred to V2.
+Next: Continue to Slice 5 — MBSH V2 readiness gate.
+
+## Update 2026-05-08 22:20
+
+Status: complete
+Agent: Claude (unattended run controller)
+Current track: Slice 5 — MBSH V2 readiness gate
+What changed: Authored `slice-5-mbsh-v2-readiness-gate/readiness-gate.md`. Drafted MBSH V2 Intelligence Brief, mapped 13 capability truth chips (11 required green, 2 yellow-allowed), listed reusable + new components/slots (committee-grid, sponsor-wall, schedule-block, rsvp-form, harry-assistant, gallery-then-now), enumerated media registry slots, and specified 13 QA/proof gates (route smoke, tests, BEM/nav lint, a11y, Lighthouse, Hi-Tide Harry interactive check, visual + responsive verifiers, console health). Stop conditions and explicit next build action recorded.
+Proof: `slice-5-mbsh-v2-readiness-gate/readiness-gate.md`. Brief, capability map, components, media, QA, and next action are each populated as required by the controller §7 readiness criteria.
+Blockers: None.
+Non-blockers logged: Photography, sponsor approvals, and venue copy are content sourcing tasks (not engineering blockers); they convert to blockers only at launch. Lighthouse and a11y MCP tools available locally — no paid call required for V2 proof packet.
+Next: Studio is ready for MBSH V2 proofing per §1 of the controller. The explicit next build action is captured in `slice-5-mbsh-v2-readiness-gate/readiness-gate.md` §8. FINAL-RUN-REPORT.md authored.
