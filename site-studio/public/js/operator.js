@@ -736,6 +736,10 @@
     getActiveTag: function () { return state.activeTag; },
     getRunDetail: function () { return state.runDetail; },
     refresh: function () { return Promise.resolve(loadAllForActiveSite()); },
+    // Action-layer contract (Lane B). Stable shape — keep both verb/getter forms.
+    currentTag: function () { return state.activeTag; },
+    currentRunId: function () { return state.selectedRunId; },
+    selectRun: function (runId) { return Promise.resolve(selectRun(runId)); },
     h: h
   };
 })();

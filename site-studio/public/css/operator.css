@@ -426,6 +426,7 @@ html, body {
 .op-actions-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   padding: 8px 0;
   margin-bottom: 8px;
@@ -433,6 +434,64 @@ html, body {
 }
 .op-actions-toolbar:empty {
   display: none;
+}
+
+/* Action buttons */
+.op-action-btn {
+  appearance: none;
+  border: 1px solid var(--op-border-strong);
+  background: var(--op-bg-2);
+  color: var(--op-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--op-radius-sm);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.op-action-btn:hover:not(:disabled) {
+  background: var(--op-bg-3);
+  border-color: var(--op-purple);
+}
+.op-action-btn:focus-visible {
+  outline: 2px solid var(--op-purple);
+  outline-offset: 2px;
+}
+.op-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Action status pill — must be visibly distinct so users can never miss feedback */
+.op-actions-status {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  min-height: 22px;
+}
+.op-actions-status:empty {
+  display: none;
+}
+.op-actions-status[data-kind="info"] {
+  color: var(--op-text);
+  background: rgba(78, 163, 255, 0.12);
+  border-color: var(--op-blue);
+}
+.op-actions-status[data-kind="ok"] {
+  color: #ffffff;
+  background: rgba(29, 158, 117, 0.20);
+  border-color: var(--op-green);
+}
+.op-actions-status[data-kind="err"] {
+  color: #ffffff;
+  background: rgba(224, 62, 54, 0.20);
+  border-color: var(--op-red);
 }
 
 /* ─── Keyboard focus for run rows + zone tabs ─────────────────── */

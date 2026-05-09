@@ -57,8 +57,18 @@
   function refreshOperator() {
     var op = window.__operator;
     if (op && typeof op.refresh === 'function') {
-      try { op.refresh(); } catch (_) {}
+      try { return Promise.resolve(op.refresh()); } catch (_) {}
     }
+    return Promise.resolve();
+  }
+
+  function selectRunInOperator(runId) {
+    if (!runId) return Promise.resolve();
+    var op = window.__operator;
+    if (op && typeof op.selectRun === 'function') {
+      try { return Promise.resolve(op.selectRun(runId)); } catch (_) {}
+    }
+    return Promise.resolve();
   }
 
   function makeButton(label, onClick) {
@@ -87,11 +97,16 @@
         run_id: runId,
         intent: 'mbsh_v2_visual_refinement',
       }).then(function (r) {
+        var errCode = r.data && r.data.error ? r.data.error : null;
         if (r.ok) {
-          setStatus(status, 'Run ' + runId + ' started.', 'ok');
-          refreshOperator();
+          setStatus(status, 'Run ' + runId + ' started — opened.', 'ok');
+          refreshOperator().then(function () { return selectRunInOperator(runId); });
+        } else if (r.status === 409 && errCode === 'already_exists') {
+          // Friendly path: existing run — select and open it instead of error-noise.
+          setStatus(status, 'Run ' + runId + ' already exists — opened.', 'ok');
+          refreshOperator().then(function () { return selectRunInOperator(runId); });
         } else {
-          setStatus(status, 'Start failed: ' + (r.data && r.data.error ? r.data.error : r.status), 'err');
+          setStatus(status, 'Start failed: ' + (errCode || r.status), 'err');
         }
       });
     });
