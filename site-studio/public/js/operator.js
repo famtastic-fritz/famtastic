@@ -16,7 +16,8 @@
     selectedRunId: null,
     runDetail: null,
     readbackMode: 'short',
-    consumedRoutes: new Set()
+    consumedRoutes: new Set(),
+    errors: {}  // { brief, capability, runs, runDetail } → fetch error result if any
   };
 
   // ── DOM helpers (no innerHTML, no eval) ────────────────────
@@ -71,14 +72,25 @@
     try {
       var res = await fetch(url, { headers: { Accept: 'application/json' } });
       if (!res.ok) {
-        if (res.status === 404) return { __notFound: true };
-        throw new Error('HTTP ' + res.status);
+        if (res.status === 404) return { __notFound: true, __status: 404 };
+        // Honest error: surface non-404 HTTP failures with the status code so
+        // panels can render "fetch failed: HTTP X" rather than a silent fallback.
+        var msg = 'HTTP ' + res.status;
+        console.warn('[operator] fetch failed', url, msg);
+        return { __error: msg, __status: res.status };
       }
       return await res.json();
     } catch (err) {
+      // Network or parse error — also honest, no silent fallback.
       console.warn('[operator] fetch failed', url, err.message);
-      return { __error: err.message };
+      return { __error: 'fetch failed: ' + err.message };
     }
+  }
+  // Build an honest error node for panels that have a fetch result with __error.
+  function fetchErrorNode(result) {
+    if (!result || !result.__error) return null;
+    var label = result.__status ? ('fetch failed: HTTP ' + result.__status) : ('fetch failed: ' + result.__error);
+    return h('div', { class: 'op-error' }, label);
   }
 
   // ── Zone routing ───────────────────────────────────────────
@@ -94,7 +106,12 @@
     if (qa('.op-zone-tab').some(function (b) { return b.dataset.zone === initial; })) switchZone(initial);
   }
   function switchZone(zone) {
-    qa('.op-zone-tab').forEach(function (b) { b.classList.toggle('active', b.dataset.zone === zone); });
+    qa('.op-zone-tab').forEach(function (b) {
+      var on = b.dataset.zone === zone;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
     qa('.op-zone').forEach(function (el) { el.classList.toggle('active', el.dataset.zone === zone); });
   }
   function bindReadbackTabs() {
@@ -144,12 +161,17 @@
       fetchJson('/api/intelligence/runs?tag=' + tag)
     ]);
     var brief = results[0], cap = results[1], runs = results[2];
+    state.errors = {};
+    if (brief && brief.__error)    state.errors.brief = brief;
+    if (cap && cap.__error)        state.errors.capability = cap;
+    if (runs && runs.__error)      state.errors.runs = runs;
     state.brief = brief && !brief.__notFound && !brief.__error ? brief : null;
     state.capability = cap && !cap.__notFound && !cap.__error ? cap : null;
     state.runs = runs && Array.isArray(runs.runs) ? runs.runs : [];
     if (state.runs.length) {
       state.selectedRunId = state.runs[0].run_id;
       var detail = await fetchJson('/api/intelligence/runs/' + encodeURIComponent(state.selectedRunId) + '?tag=' + tag);
+      if (detail && detail.__error) state.errors.runDetail = detail;
       state.runDetail = detail && !detail.__error ? detail : null;
     } else {
       state.selectedRunId = null;
@@ -194,6 +216,8 @@
   // ── Brief ──────────────────────────────────────────────────
   function renderBrief() {
     var el = q('#op-brief-body'); if (!el) return; clear(el);
+    var errNode = fetchErrorNode(state.errors.brief);
+    if (errNode) { el.appendChild(errNode); return; }
     var b = state.brief;
     if (!b) { el.appendChild(emptyMsg('No intelligence brief found for this site.')); return; }
     var aud = (b.audience || []).map(function (a) { return chip('muted', a); });
@@ -282,6 +306,8 @@
   // ── Capability matrix ──────────────────────────────────────
   function renderCapability() {
     var el = q('#op-capability-body'); if (!el) return; clear(el);
+    var errNode = fetchErrorNode(state.errors.capability);
+    if (errNode) { el.appendChild(errNode); return; }
     var caps = (state.capability && state.capability.capabilities) || [];
     if (!caps.length) { el.appendChild(emptyMsg('No capability truth recorded.')); return; }
     var grid = h('div', { class: 'op-capability-grid' });
@@ -320,9 +346,19 @@
   // ── Runs list ──────────────────────────────────────────────
   function renderRuns() {
     var el = q('#op-runs-body'); if (!el) return; clear(el);
+    var errNode = fetchErrorNode(state.errors.runs);
+    if (errNode) { el.appendChild(errNode); return; }
     if (!state.runs.length) { el.appendChild(emptyMsg('No runs yet.')); return; }
     state.runs.forEach(function (r) {
-      var row = h('div', { class: 'op-run-row' + (r.run_id === state.selectedRunId ? ' selected' : ''), dataset: { run: r.run_id } },
+      var selected = r.run_id === state.selectedRunId;
+      var row = h('div', {
+        class: 'op-run-row' + (selected ? ' selected' : ''),
+        dataset: { run: r.run_id },
+        role: 'button',
+        tabindex: '0',
+        'aria-pressed': selected ? 'true' : 'false',
+        'aria-label': 'Select run ' + r.run_id
+      },
         h('div', { class: 'id' }, r.run_id),
         h('div', { class: 'meta' },
           h('span', null, 'status: ' + r.status),
@@ -332,6 +368,12 @@
         )
       );
       row.addEventListener('click', function () { selectRun(r.run_id); });
+      row.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          selectRun(r.run_id);
+        }
+      });
       el.appendChild(row);
     });
   }
@@ -685,5 +727,15 @@
   }
 
   document.addEventListener('DOMContentLoaded', boot);
-  window.__operator = { state: state, consumed: function () { return Array.from(state.consumedRoutes); } };
+  // Hooks exposed to parallel-lane modules (operator-components, operator-media,
+  // operator-shay, operator-actions, operator-refinement). Other lanes can read
+  // state and request a re-render without touching internals.
+  window.__operator = {
+    state: state,
+    consumed: function () { return Array.from(state.consumedRoutes); },
+    getActiveTag: function () { return state.activeTag; },
+    getRunDetail: function () { return state.runDetail; },
+    refresh: function () { return Promise.resolve(loadAllForActiveSite()); },
+    h: h
+  };
 })();

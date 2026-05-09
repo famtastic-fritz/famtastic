@@ -157,3 +157,14 @@ Proof: `npm test` 71/71 pass (same preexisting unit.test.js loader gap); B2 serv
 Blockers: None.
 Non-blockers logged: missing `/favicon.ico`; preexisting unit.test.js loader gap; recipe panel renders Plan-Lite from ledger.passes[] (no recipe registry yet — V2 backlog); training/quiz hook reserved but not implemented (V2 backlog); concurrent same-site run lock still V2 backlog.
 Next: STUDIO-OPERATOR-WORKSPACE-RUN-REPORT.md authored. Studio UI is ready for Fritz review and MBSH V2 visual refinement may begin once Fritz signs off.
+
+## Update 2026-05-08 23:55
+
+Status: complete
+Agent: studio-orchestrator (Claude in-conversation) coordinating Lanes A–F + integration + proof/QA
+Current track: Parallel Studio → MBSH V2 refinement run
+What changed: Dispatched 6 lane subagents in parallel (single multi-Agent message). All returned non-blocker. 12 new files (5 server modules + 5 client modules + intelligence-actions writer client + .gitignore append) totaling 1,777 LOC. server.js: 4 new app.use lines (consolidated by orchestrator, ≤ controller cap of 4). Lane A polished operator.html/css/js with aria, keyboard, honest fetch errors, and the toolbar div + script-tag plumbing. Lane B shipped 9 POST action routes with $25 confirm-gate and $50 auto-block. Lane C shipped 10-component inventory + checkExisting. Lane D shipped media registry contract + 6-deferred-slot honest skeleton. Lane E shipped Shay groupings, "what next" panel, deep-mode evidence footer. Lane F shipped working-copy refinement tooling with allowlists + 3 verified denylist throws. Proof/QA opened mbsh-v2-refinement-001, applied two allowed tweaks (--fam-primary shift + fam-spacing-tight body class), captured before/after, attached 22-proof packet, recorded 3 learning candidates and 3 non-blockers, set next_action, finalized verdict=pass.
+Proof: PARALLEL-STUDIO-TO-MBSH-V2-RUN-REPORT.md written. 18/18 route+asset smokes 200. 71/71 vitest pass. B2 server load OK. DOM smoke: 6 zones, actions toolbar populated, all panels populated by lane modules, only favicon 404. git diff --check clean.
+Blockers: None.
+Non-blockers logged: preexisting unit.test.js loader gap; /favicon.ico 404; no real MBSH dist in monorepo (used representative fixture, removed after proof — production lives at ~/famtastic-sites/mbsh-reunion/); recipe registry, training/quiz hook, concurrent run lock, component signature parser all V2 backlog.
+Next: Fritz reviews the operator workspace and proof packet, then schedules a separately authorized run to apply the same tweaks into ~/famtastic-sites/mbsh-reunion/ and deploy via existing Netlify pipeline. Deploy out of scope here.

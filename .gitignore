@@ -73,3 +73,5 @@ site-studio/_patch_promo.py
 site-studio/validation-plan.json.done
 .studio-patches/
 scripts/Screenshot*
+
+sites/*/.refinement/

@@ -1070,6 +1070,13 @@ app.use('/api/ops', require('./lib/ops-api'));
 app.use('/api/intelligence', require('./server/intelligence-routes')
   .createIntelligenceRouter(() => SITE_DIR(), SITES_ROOT));
 
+// Operator Workspace parallel-lane mounts (B/C/D/F). Each is a sibling module
+// — server.js stays orchestrator-only.
+app.use('/api/intelligence/actions', require('./server/intelligence-actions').createActionsRouter(() => SITE_DIR(), SITES_ROOT));
+app.use('/api/components', require('./server/component-routes').createComponentRouter());
+app.use('/api/media', require('./server/media-routes').createMediaRouter(() => SITE_DIR(), SITES_ROOT));
+app.use('/api/refinement', require('./server/visual-refinement-routes').createRefinementRouter(() => SITE_DIR(), SITES_ROOT));
+
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();

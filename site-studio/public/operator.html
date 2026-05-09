@@ -31,13 +31,13 @@
     </header>
 
     <!-- ── Zone tabs ────────────────────────────────────────────── -->
-    <nav class="op-zones" id="op-zones" role="tablist">
-      <button class="op-zone-tab active" data-zone="intelligence" role="tab"><span class="tab-icon"></span>Intelligence</button>
-      <button class="op-zone-tab" data-zone="control" role="tab"><span class="tab-icon"></span>Control</button>
-      <button class="op-zone-tab" data-zone="creation" role="tab"><span class="tab-icon"></span>Creation</button>
-      <button class="op-zone-tab" data-zone="guide" role="tab"><span class="tab-icon"></span>Guide / Shay</button>
-      <button class="op-zone-tab" data-zone="flow" role="tab"><span class="tab-icon"></span>Visual Map</button>
-      <button class="op-zone-tab" data-zone="readiness" role="tab"><span class="tab-icon"></span>MBSH V2 Readiness</button>
+    <nav class="op-zones" id="op-zones" role="tablist" aria-label="Operator zones">
+      <button class="op-zone-tab active" data-zone="intelligence" role="tab" aria-selected="true" tabindex="0"><span class="tab-icon"></span>Intelligence</button>
+      <button class="op-zone-tab" data-zone="control" role="tab" aria-selected="false" tabindex="-1"><span class="tab-icon"></span>Control</button>
+      <button class="op-zone-tab" data-zone="creation" role="tab" aria-selected="false" tabindex="-1"><span class="tab-icon"></span>Creation</button>
+      <button class="op-zone-tab" data-zone="guide" role="tab" aria-selected="false" tabindex="-1"><span class="tab-icon"></span>Guide / Shay</button>
+      <button class="op-zone-tab" data-zone="flow" role="tab" aria-selected="false" tabindex="-1"><span class="tab-icon"></span>Visual Map</button>
+      <button class="op-zone-tab" data-zone="readiness" role="tab" aria-selected="false" tabindex="-1"><span class="tab-icon"></span>MBSH V2 Readiness</button>
     </nav>
 
     <!-- ── Workspace ───────────────────────────────────────────── -->
@@ -82,6 +82,7 @@
 
       <!-- CONTROL ZONE ---------------------------------------- -->
       <section class="op-zone" data-zone="control">
+        <div id="op-actions-toolbar" class="op-actions-toolbar" role="toolbar" aria-label="Operator actions"></div>
         <div class="op-grid cols-2">
           <div class="op-panel">
             <div class="op-panel-header">
@@ -277,6 +278,12 @@
     </footer>
   </div>
 
+  <!-- ── Parallel-lane module includes (other lanes plug in here) ── -->
   <script src="/js/operator.js" defer></script>
+  <script src="/js/operator-components.js" defer></script>
+  <script src="/js/operator-media.js" defer></script>
+  <script src="/js/operator-shay.js" defer></script>
+  <script src="/js/operator-actions.js" defer></script>
+  <script src="/js/operator-refinement.js" defer></script>
 </body>
 </html>
