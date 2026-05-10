@@ -71,4 +71,40 @@ function RecipeFlow({ recipe = RECIPE_RESEARCH_TO_PROOF, onJump }) {
   );
 }
 
-Object.assign(window, { RecipeFlow, RECIPE_RESEARCH_TO_PROOF });
+/* RecipeSelector — wraps RecipeFlow with a 5-recipe picker.
+   Reads recipe definitions from window.STUDIO_RECIPES (lib/recipes.js).
+   Falls back to the bare RECIPE_RESEARCH_TO_PROOF if the registry isn't
+   loaded yet so the Home card never goes empty. */
+function RecipeSelector({ default: defaultId = "research-to-proof", onJump }) {
+  const recipes = window.STUDIO_RECIPES || {};
+  const ids = Object.keys(recipes);
+  const fallback = recipes[defaultId] ? defaultId : (ids[0] || null);
+  const [selectedId, setSelectedId] = React.useState(fallback);
+
+  if (!ids.length) {
+    /* Registry not loaded — render the original single recipe so the page
+       still has a visible workflow card. */
+    return <RecipeFlow recipe={RECIPE_RESEARCH_TO_PROOF} onJump={onJump} />;
+  }
+
+  const recipe = recipes[selectedId] || recipes[fallback];
+  const titles = ids.map(i => recipes[i].title);
+  return (
+    <div>
+      <div className="between mb-3" style={{ gap: 12, flexWrap: "wrap" }}>
+        <Eyebrow>Visual workflow · {ids.length} recipes</Eyebrow>
+        <Seg
+          items={titles}
+          value={recipe.title}
+          onChange={(t) => {
+            const next = ids.find(i => recipes[i].title === t);
+            if (next) setSelectedId(next);
+          }}
+        />
+      </div>
+      <RecipeFlow recipe={recipe} onJump={onJump} />
+    </div>
+  );
+}
+
+Object.assign(window, { RecipeFlow, RecipeSelector, RECIPE_RESEARCH_TO_PROOF });

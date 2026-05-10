@@ -526,3 +526,63 @@
   font-size: 12px;
   background: oklch(1 0 0 / 0.02);
 }
+
+/* Lane E — context-pane variants + collapse
+   ─────────────────────────────────────────────
+   Adds a collapsed right-rail variant (slim 36px bar) and the
+   per-section variant scaffolding consumed by ContextPanel in shell.jsx.
+   Additive only — does not modify existing .body or .right-panel rules. */
+
+/* Body grid override when the right pane is collapsed.
+   Default body is `1fr 340px`; when collapsed we shrink to 36px. */
+.studio-shell .body.right-collapsed {
+  grid-template-columns: 1fr 36px;
+}
+
+/* Collapsed right panel — slim vertical strip with avatar + expand button. */
+.studio-shell .right-panel.collapsed {
+  width: 36px;
+  min-width: 36px;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  background: linear-gradient(180deg, var(--bg-2), var(--bg));
+  border-left: 1px solid var(--hair);
+}
+.studio-shell .right-panel.collapsed .panel-collapse-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  /* Flip the chev so it points "back" toward the workspace */
+  transform: rotate(180deg);
+}
+.studio-shell .right-panel .panel-collapse-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+}
+.studio-shell .right-panel.collapsed .panel-collapsed-mark {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Capability-truth status colors come from inline style on the row span,
+   but also surface a subtle hover affordance for the route-to chips so
+   users see they're clickable. */
+.studio-shell .right-panel .btn.btn-ghost:hover {
+  color: var(--ember);
+}
+
+/* Mobile / narrow-viewport guard — if the body shrinks too far the
+   collapsed strip would be cramped, so make sure it doesn't overflow. */
+@media (max-width: 720px) {
+  .studio-shell .body.right-collapsed { grid-template-columns: 1fr 32px; }
+  .studio-shell .right-panel.collapsed { width: 32px; min-width: 32px; }
+}

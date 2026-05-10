@@ -31,6 +31,18 @@ function App() {
   const [section, setSection] = React.useState(readHashSection());
   const [activeSite] = React.useState("Auntie Gale");
   const [currentContext, setCurrentContext] = React.useState(null);
+  const [rightCollapsed, setRightCollapsed] = React.useState(() => {
+    try { return localStorage.getItem("studio.rightCollapsed") === "1"; }
+    catch (_) { return false; }
+  });
+  const toggleRightCollapsed = React.useCallback(() => {
+    setRightCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem("studio.rightCollapsed", next ? "1" : "0"); }
+      catch (_) { /* ignore quota / privacy-mode */ }
+      return next;
+    });
+  }, []);
 
   // Expose a global jump hook so screens (and the recipe flow) can request navigation
   // without prop drilling. Stable identity by mutating window.
@@ -71,14 +83,19 @@ function App() {
       <div className="shell">
         <Topbar section={section} project="FAMtastic" site={siteFor} />
 
-        <div className={`body ${NO_RIGHT_PANEL.has(section) ? "no-right" : ""}`}>
+        <div className={`body ${NO_RIGHT_PANEL.has(section) ? "no-right" : ""} ${!NO_RIGHT_PANEL.has(section) && rightCollapsed ? "right-collapsed" : ""}`}>
           <main className="workspace">
             <div className="fade-up" key={section}>
               {Screen ? <Screen /> : <div className="muted">Coming soon.</div>}
             </div>
           </main>
           {!NO_RIGHT_PANEL.has(section) ? (
-            <ContextPanel section={section} currentContext={currentContext} />
+            <ContextPanel
+              section={section}
+              currentContext={currentContext}
+              collapsed={rightCollapsed}
+              onToggle={toggleRightCollapsed}
+            />
           ) : null}
         </div>
 

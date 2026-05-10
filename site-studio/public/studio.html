@@ -23,6 +23,19 @@
   <script type="text/babel" src="/studio/src/icons.jsx"></script>
   <script type="text/babel" src="/studio/src/primitives.jsx"></script>
   <script type="text/babel" src="/studio/src/shell.jsx"></script>
+
+  <!-- Functional Workspace Run lane libs (loaded before screens; assign to window.*) -->
+  <script src="/studio/src/lib/site-context.js"></script>
+  <script src="/studio/src/lib/sites-api.js"></script>
+  <script src="/studio/src/lib/media-api.js"></script>
+  <script src="/studio/src/lib/components-api.js"></script>
+  <script src="/studio/src/lib/research-api.js"></script>
+  <script src="/studio/src/lib/think-tank-api.js"></script>
+  <script src="/studio/src/lib/current-context.js"></script>
+  <script src="/studio/src/lib/recipes.js"></script>
+  <script src="/studio/src/lib/memory-tail.js"></script>
+
+  <!-- Recipe flow uses window.STUDIO_RECIPES from recipes.js, so loads after lib -->
   <script type="text/babel" src="/studio/src/recipe-flow.jsx"></script>
 
   <!-- 12 screens -->

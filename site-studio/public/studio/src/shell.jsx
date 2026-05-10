@@ -82,27 +82,60 @@ function Topbar({ section, project, site }) {
   );
 }
 
-/* Bottom memory strip — placeholder activity tail.
-   In a later pass this reads from /captures/ + /sites/<tag>/intelligence/runs.
-   For now, a labeled placeholder so the user can see the strip exists. */
+/* Bottom memory strip — live activity tail.
+   Reads /api/intelligence/runs?tag=<last-active-tag> via window.MemoryTail
+   (lib/memory-tail.js). When no tag is selected or the registry has no
+   runs, renders a single honest empty-state row instead of fake items. */
 function MemoryStrip({ section, site }) {
-  const items = [
-    { t: "now",   who: "shell",   text: `Active: ${section}${site && site !== "—" ? " · " + site : ""}`, tone: "info" },
-    { t: "—",     who: "memory",  text: "Live memory tail not wired yet — placeholder.", tone: "" },
-  ];
+  /* Lane F — MemoryStrip wire */
+  const [items, setItems] = React.useState([]);
+  const [reason, setReason] = React.useState("Loading…");
+
+  React.useEffect(() => {
+    let alive = true;
+    const tag = (window.SiteContext && window.SiteContext.getLastActiveTag)
+      ? window.SiteContext.getLastActiveTag()
+      : null;
+    if (!window.MemoryTail || typeof window.MemoryTail.getTail !== "function") {
+      if (alive) {
+        setItems([]);
+        setReason("memory tail not loaded");
+      }
+      return () => { alive = false; };
+    }
+    window.MemoryTail.getTail({ tag }).then((res) => {
+      if (!alive) return;
+      const list = (res && Array.isArray(res.items)) ? res.items : [];
+      if (list.length > 0) {
+        setItems(list);
+        setReason(null);
+      } else {
+        setItems([]);
+        setReason((res && res.reason) || "no activity");
+      }
+    });
+    return () => { alive = false; };
+  }, [site]);
+
+  const visible = items.slice(0, 5);
+
   return (
     <div className="strip">
       <div className="row gap-2"><I name="history" size={14} style={{ color: "var(--ink-3)" }} /><span className="eyebrow">Memory</span></div>
       <div className="vdivider" style={{ height: 22 }} />
       <div className="row" style={{ gap: 18, overflow: "hidden", flex: 1 }}>
-        {items.map((it, i) => (
+        {visible.length > 0 ? visible.map((it, i) => (
           <div key={i} className="row gap-2" style={{ flexShrink: 0 }}>
             <span className="mono dim tabular">{it.t}</span>
             <Dot tone={it.tone} />
             <span className="muted">{it.who}</span>
             <span style={{ color: "var(--ink-2)" }}>{it.text}</span>
           </div>
-        ))}
+        )) : (
+          <div className="row gap-2" style={{ flexShrink: 0 }}>
+            <span className="dim">{reason}</span>
+          </div>
+        )}
       </div>
       <div className="row gap-2">
         <span className="dim">replay · pin · …</span>
@@ -111,16 +144,50 @@ function MemoryStrip({ section, site }) {
   );
 }
 
-/* Right contextual panel — Shay context-aware. Per-screen explanation and
-   "what's next" hooks; placeholder content until each screen publishes
-   a currentContext object (see Recipe 5: Shay routing). */
-function ContextPanel({ section, currentContext }) {
+/* Right contextual panel — Shay context-aware. Renders dynamically from
+   `currentContext` published by the active screen via window.__studioPublishContext.
+   Falls back to an honest placeholder when nothing is published.
+   Collapsible — `collapsed` + `onToggle` are owned by the App in app.jsx
+   and persisted to localStorage (key: "studio.rightCollapsed"). */
+function ContextPanel({ section, currentContext, collapsed, onToggle }) {
   const screenName = (NAV.find(n => n.id === section) || {}).label || section;
-  const explainer = currentContext?.explain
+  const [readback, setReadback] = React.useState("Short");
+
+  // Map capabilityTruth status → display class + label
+  const statusBits = (status) => {
+    if (status === "verified") return { color: "var(--good)",            label: "verified" };
+    if (status === "partial")  return { color: "var(--warn)",            label: "partial"  };
+    if (status === "pending")  return { color: "var(--ink-3)",           label: "pending"  };
+    return                          { color: "var(--ink-3)",            label: status || "" };
+  };
+
+  // Collapsed state — slim 36px vertical bar with avatar + expand button
+  if (collapsed) {
+    return (
+      <aside className="right-panel collapsed" aria-label="Shay panel (collapsed)">
+        <button
+          type="button"
+          className="btn btn-ghost btn-icon panel-collapse-btn"
+          onClick={onToggle}
+          aria-label="Expand Shay panel"
+          title="Expand Shay panel">
+          <I name="chev" size={14} />
+        </button>
+        <div className="panel-collapsed-mark" title="Shay">
+          <Avatar kind="shay" initials="S" />
+        </div>
+      </aside>
+    );
+  }
+
+  const explain = currentContext?.explain
     || `You're on ${screenName}. Real Shay context not wired yet — this panel is a placeholder until each section publishes its currentContext.`;
   const nextAction = currentContext?.nextAction;
+  const capabilityTruth = Array.isArray(currentContext?.capabilityTruth) ? currentContext.capabilityTruth : null;
+  const hints = Array.isArray(currentContext?.hints) ? currentContext.hints : null;
+
   return (
-    <aside className="right-panel">
+    <aside className="right-panel" aria-label="Shay panel">
       <div className="p-4" style={{ borderBottom: "1px solid var(--hair)" }}>
         <div className="between">
           <div className="row gap-2">
@@ -131,19 +198,23 @@ function ContextPanel({ section, currentContext }) {
             </div>
           </div>
           <div className="row gap-2">
-            <button className="btn btn-ghost btn-icon"><I name="diff" size={14} /></button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon panel-collapse-btn"
+              onClick={onToggle}
+              aria-label="Collapse Shay panel"
+              title="Collapse">
+              <I name="chev" size={14} />
+            </button>
           </div>
         </div>
-        <div className="seg mt-3">
-          <button className="on">Short</button>
-          <button>Operator</button>
-          <button>Deep</button>
-          <button>Next</button>
+        <div className="mt-3">
+          <Seg items={["Short","Operator","Deep","Next"]} value={readback} onChange={setReadback} />
         </div>
       </div>
 
       <div className="p-4" style={{ flex: 1, overflow: "auto" }}>
-        <ChatBubble who="shay" meta="just now">{explainer}</ChatBubble>
+        <ChatBubble who="shay" meta="just now">{explain}</ChatBubble>
 
         {nextAction ? (
           <Card style={{ marginBottom: 12 }}>
@@ -164,19 +235,46 @@ function ContextPanel({ section, currentContext }) {
             <Chip tone="good">Honest mode</Chip>
           </div>
           <div className="col gap-2 fz-12">
-            <div className="between"><span>Site builds</span><span className="muted">verified · chat shell live</span></div>
-            <div className="between"><span>Mission Control</span><span className="muted">verified · operator action layer</span></div>
-            <div className="between"><span>Sites dashboard</span><span style={{ color: "var(--warn)" }}>read-only · no UI yet</span></div>
-            <div className="between"><span>Media gen</span><span className="dim">adapters wired · UI placeholder</span></div>
-            <div className="between"><span>Component reuse</span><span className="dim">surgical edits real · UI placeholder</span></div>
+            {capabilityTruth && capabilityTruth.length ? (
+              capabilityTruth.map((row, i) => {
+                const bits = statusBits(row.status);
+                return (
+                  <div key={i} className="between">
+                    <span>{row.label}</span>
+                    <span style={{ color: bits.color }}>
+                      {bits.label}{row.detail ? <span className="dim"> · {row.detail}</span> : null}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="dim">No capability truth published for this section.</div>
+            )}
           </div>
         </Card>
 
         <div className="mt-3">
           <Eyebrow>Route this to…</Eyebrow>
           <div className="row gap-2 mt-2" style={{ flexWrap: "wrap" }}>
-            {["Sites","Site Builder","Research","Components","Media","Mission Control"].map(t => (
-              <button key={t} className="btn btn-ghost" style={{ fontSize: 11 }}>{t}</button>
+            {(hints && hints.length
+              ? hints
+              : [
+                  { label: "Sites",            target: "sites"    },
+                  { label: "Site Builder",     target: "builder"  },
+                  { label: "Research",         target: "research" },
+                  { label: "Components",       target: "components" },
+                  { label: "Media",            target: "media"    },
+                  { label: "Mission Control",  target: "mission"  },
+                ]
+            ).map((h, i) => (
+              <button
+                key={i}
+                type="button"
+                className="btn btn-ghost"
+                style={{ fontSize: 11 }}
+                onClick={() => h.target && window.__studioJump?.(h.target)}>
+                {h.label}
+              </button>
             ))}
           </div>
         </div>

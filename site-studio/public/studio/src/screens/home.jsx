@@ -3,6 +3,13 @@
    embedded RecipeFlow so the cross-section visual workflow is visible. */
 
 function ScreenHome({ onJump }) {
+  // Lane E — currentContext publish
+  React.useEffect(() => {
+    const activeSite = window.SiteContext?.getLastActiveTag?.() || null;
+    window.__studioPublishContext?.(window.CurrentContext?.forSection_home?.(activeSite) || null);
+    return () => window.__studioPublishContext?.(null);
+  }, []);
+
   return (
     <div>
       <SectionHeader
@@ -16,8 +23,9 @@ function ScreenHome({ onJump }) {
       />
 
       {/* Visual recipe flow — drillable */}
+      {/* Lane F — RecipeSelector mount */}
       <Card style={{ marginBottom: 14 }}>
-        <RecipeFlow onJump={onJump} />
+        <RecipeSelector onJump={onJump} />
       </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14 }}>

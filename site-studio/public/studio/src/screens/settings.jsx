@@ -5,6 +5,12 @@
 function ScreenSettings() {
   const [group, setGroup] = React.useState("models");
 
+  // Lane E — currentContext publish
+  React.useEffect(() => {
+    window.__studioPublishContext?.(window.CurrentContext?.forSection_settings?.(group) || null);
+    return () => window.__studioPublishContext?.(null);
+  }, [group]);
+
   const groups = [
     { id: "models",     label: "Models & providers", icon: "cube" },
     { id: "cost",       label: "Cost & approvals",   icon: "bolt" },

@@ -229,6 +229,27 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | POST | `/api/shay-shay/outcome` | Suggestion outcome scoring |
 | POST | `/api/autonomous-build` | Trigger `runAutonomousBuild` (refactored to use `createSite`). |
 
+### Studio Shell Endpoints (modular routers under `site-studio/server/`)
+
+| Method | Endpoint | Purpose | Owner module |
+|--------|----------|---------|--------------|
+| GET | `/api/intelligence/sites` | List Studio-managed sites | `intelligence-routes.js` |
+| GET | `/api/intelligence/brief?tag=` | Per-site intelligence brief | `intelligence-routes.js` |
+| GET | `/api/intelligence/capability-truth?tag=` | Per-site capability truth | `intelligence-routes.js` |
+| GET | `/api/intelligence/runs?tag=` | List runs for a site | `intelligence-routes.js` |
+| GET | `/api/intelligence/runs/:runId?tag=` | Run ledger + proof + learning | `intelligence-routes.js` |
+| POST | `/api/intelligence/actions/runs/start` | Start a refinement run | `intelligence-actions.js` |
+| GET | `/api/components` | Component inventory from skeletons | `component-routes.js` |
+| GET | `/api/components/check?id=` | Diff-match proposed id against inventory | `component-routes.js` |
+| GET | `/api/components/contract` | Surgical-insertion contract schema | `component-routes.js` |
+| GET | `/api/media?tag=` | Media registry + summary for a site | `media-routes.js` |
+| GET | `/api/media/contract` | Asset shape contract | `media-routes.js` |
+| GET | `/api/refinement/...` | Visual refinement (run-scoped) | `visual-refinement-routes.js` |
+| **GET** | **`/api/research/briefs`** | **List `.md` briefs from `docs/research/famtastic-studio-execution/`** | **`research-routes.js` (NEW 2026-05-10, Lane D)** |
+| **GET** | **`/api/research/brief/:id`** | **Brief detail (title + summary + first 500 chars)** | **`research-routes.js` (NEW 2026-05-10, Lane D)** |
+| **GET** | **`/api/think-tank/captures`** | **Read `captures/inbox/*.capture.json` (cap 50)** | **`think-tank-routes.js` (NEW 2026-05-10, Lane D)** |
+| **GET** | **`/api/think-tank/contract`** | **Capture shape + promotion targets** | **`think-tank-routes.js` (NEW 2026-05-10, Lane D)** |
+
 **Route ordering rule:** Static routes must be declared BEFORE parameterized routes of the same prefix.
 
 ---
@@ -254,7 +275,13 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Worker queue consumer | Tier 2 | `.worker-queue.jsonl` has no live consumer process. |
 | Detailed interview mode UI | Tier 3 | 10-question detailed mode works via API only. |
 | Brain routing in build path | Tier 2 | Build/content-edit paths use Anthropic SDK (Claude only). Non-Claude brains only work for chat/brainstorm. |
-| Mission Control / Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. |
+| Mission Control / Platform dashboard | Tier 2 | Closed 2026-05-10: Mission Control is now one section in the unified Studio shell at `/studio.html` (iframe-wraps `/operator.html?embedded=1`). Per `STUDIO-DRIFT-CORRECTION-NOTES.md` it must remain one section among twelve — Lane G drift trip-wire confirms zero leak. |
+| **Studio Functional Workspace — generation/insertion wiring** | Tier 1 | NEW 2026-05-10. Media Studio Generate/Approve/Save and Component Studio Insert (surgical) all visible-but-disabled with honest action contracts. Backend round-trips deferred. |
+| **Per-site `site-settings.json` schema** | Tier 2 | NEW 2026-05-10. Site Settings shows honest "0 overrides · matches platform" — schema + read/write paths deferred. |
+| **Captures inbox write paths** | Tier 2 | NEW 2026-05-10. Think-Tank Quick add / Link source / Promote actions disabled-with-Tag; read works. |
+| **Brain integration in Shay screen** | Tier 1 | NEW 2026-05-10. Shay screen ships with mode segmented control, sample chat, route-to chips — no brain round-trip yet. |
+| **Recipe live-status binding** | Tier 2 | NEW 2026-05-10. All 5 recipes from `WORKSPACE-RECIPES.md` render via `RecipeSelector`, but node statuses are static. Live binding to a run ledger deferred. |
+| **Studio shell browser-prong host re-run** | Tier 2 | NEW 2026-05-10. `studio-functional-verify.js` ready to run; sandbox lacks chromium. Host re-run will close Lane G's browser-prong gap. |
 | Template upload mode | Tier 2 | Uploading pre-built templates for Studio to tweak. |
 | Pinecone zero-vectors | Tier 3 | All Pinecone vectors use placeholder zero-vectors. |
 | seed-pinecone --vertical flag | Tier 3 | Add `--vertical <name>` for per-build auto-seeding. |
@@ -270,6 +297,21 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | MBSH runtime endpoint execution | Tier 1 | Backend inventory and browser-level RSVP/sponsor submission proof are complete. Runtime execution now depends on Studio-managed service provisioning: vaulted Studio Resend/cPanel/site DB refs exist, but production `API_BASE_URL` remains `null` until backend origin generation, cPanel DNS/addon-domain automation still needs wrapper coverage or manual UI, and SSH host-key trust blocks backend deploy/smoke. |
 | MBSH archival/crowd-sourced media replacement | Tier 2 | Launch-safe generated/derivative story assets now exist and have a rights manifest. Future real archival/crowd-sourced replacements still need source attribution, permission, and approval logging before publishing. |
 | Pipeline visualizer depth | Tier 1 | Workbench phase 1 renders inspect/trace/propose from the workflow catalog and trace API. Stage/event matching, missing-stage detection, and proposed patch preview are still missing. |
+
+### Closed 2026-05-10 — Studio Functional Workspace Wiring
+
+- **Studio shell operationalized** — All 12 platform sections now have working live-data reads or honest action contracts. Run controller: `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md`. Run report: `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md`.
+- **Mission Control containment formalized** — Lane G drift trip-wire asserts `mission-control.jsx` contains zero RecipeSelector / Sites / Components / Media listings. Mission Control is one section among twelve.
+- **Sites Dashboard read-only UI** — Reads `/api/intelligence/sites`, last-active-tag persists to localStorage, "Continue where you left off" reflects state.
+- **Component Studio live read** — `/api/components` + `/api/components/check?id=` debounced search + `/api/components/contract` debug endpoint.
+- **Media Library live read** — `/api/media?tag=` + summary chips reflect real `auto/pending/approved/deferred` counts.
+- **Research Center live brief reads** — New `/api/research/briefs` + `/api/research/brief/:id` with id allowlist + path-traversal containment.
+- **Think-Tank live capture reads** — New `/api/think-tank/captures` + `/api/think-tank/contract`. Reads `captures/inbox/*.capture.json` with fail-soft parse.
+- **Right pane contextualized + collapsible** — `ContextPanel` in `shell.jsx` rewritten to render per-section content from each screen's published `currentContext`. Collapse toggle persists to `studio.rightCollapsed` localStorage.
+- **5-recipe Visual Workflow** — `RecipeFlow` extended via `RecipeSelector` wrapper; all five recipes from `WORKSPACE-RECIPES.md` selectable; Home defaults to research-to-proof, Research Center defaults to research-to-build.
+- **Memory Strip live-wired** — Reads `/api/intelligence/runs?tag=` via `MemoryTail.getTail`; honest empty-state with reason copy.
+- **Server.js minimal-mounts policy** — Only 2 lines added to `server.js` (the existing mount block at 1070–1078). All real route logic lives in modular `server/<name>-routes.js` files.
+- **Lane G static-prong PASS** — 85/85 assertions pass. Browser-prong ready, BLOCKED on chromium availability in sandbox.
 
 ### Closed 2026-04-25 — Baseline failure closure
 
@@ -371,6 +413,59 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 | `site-studio/.dismissed-findings.json` | — | Site-scoped intelligence dismiss store. |
 | `.wolf/build-backlog.json` | — | Append-only build backlog. |
 | `mcp-server/server.js` | 343 | MCP server. 4 tools via stdio JSON-RPC. |
+
+### Studio Shell — unified `/studio.html` (2026-05-10 functional wiring)
+
+| File | Owner lane | Purpose |
+|------|------------|---------|
+| `site-studio/public/studio.html` | shell + orchestrator | React 18 UMD + Babel-standalone entry. Loads 9 plain-JS lib files BEFORE Babel-transformed JSX scripts. |
+| `site-studio/public/studio/styles.css` | shell + Lane E append | OKLCH dark theme tokens scoped under `.studio-shell`. Lane E append block adds collapse + per-section variants. |
+| `site-studio/public/studio/src/icons.jsx` | shell | Stroke-based icon set (~50 icons). |
+| `site-studio/public/studio/src/primitives.jsx` | shell | Card, Eyebrow, Chip, Dot, Tag, Avatar, Btn, Slot, MediaTile, Skel, Toggle, Hint, SectionHeader, ChatBubble, Meter, Field, Tabs, Seg. |
+| `site-studio/public/studio/src/shell.jsx` | shell + Lane E + Lane F | 12-item Rail, Topbar, MemoryStrip (Lane F-wired), ContextPanel (Lane E-rewritten + collapse), ShayBubble. |
+| `site-studio/public/studio/src/recipe-flow.jsx` | shell + Lane F | RecipeFlow renderer + RecipeSelector wrapper (5 recipes). |
+| `site-studio/public/studio/src/app.jsx` | shell + Lane E | Hash-router, screen registry, currentContext hook, collapse localStorage glue. |
+| `site-studio/public/studio/src/screens/home.jsx` | Lane E + Lane F | Platform Home — RecipeSelector embed, recent sites/components/media tiles. |
+| `site-studio/public/studio/src/screens/sites.jsx` | Lane A | Sites dashboard — live `/api/intelligence/sites`, filter/Grid-List, last-active-tag persist. |
+| `site-studio/public/studio/src/screens/site-builder.jsx` | Lane A | iframe-wraps `/index.html?embedded=1` + status bar (last-active tag, status chips, action buttons). |
+| `site-studio/public/studio/src/screens/site-settings.jsx` | Lane A | Two-scope (Platform / This site), honest "0 overrides" diff. |
+| `site-studio/public/studio/src/screens/think-tank.jsx` | Lane D | Capture/Cluster/Promote board, live `/api/think-tank/captures`. |
+| `site-studio/public/studio/src/screens/research.jsx` | Lane D + Lane F | Brief list + detail (live `/api/research/briefs`), depth selector, RecipeSelector embed. |
+| `site-studio/public/studio/src/screens/component-studio.jsx` | Lane C | Library + check-existing search (live `/api/components/check`), props/slots, insert (disabled). |
+| `site-studio/public/studio/src/screens/media-studio.jsx` | Lane B | Three-pane gen workspace (placeholder grid; honest disabled actions). |
+| `site-studio/public/studio/src/screens/media-library.jsx` | Lane B | Tile registry — live `/api/media?tag=`, summary chips. |
+| `site-studio/public/studio/src/screens/shay.jsx` | shell | Two-pane chat + routing/knowledge. |
+| `site-studio/public/studio/src/screens/mission-control.jsx` | shell | iframe-wraps `/operator.html?embedded=1`. ONE section among twelve — drift trip-wire enforces. |
+| `site-studio/public/studio/src/screens/settings.jsx` | shell | Seven groups (Models / Cost / Media / Components / Sites / Deployment / Theme). |
+| `site-studio/public/studio/src/lib/site-context.js` | Lane A (NEW) | `window.SiteContext` — last-active-tag persistence (localStorage). |
+| `site-studio/public/studio/src/lib/sites-api.js` | Lane A (NEW) | `window.SitesAPI` — `listSites()`, `getBrief(tag)`. |
+| `site-studio/public/studio/src/lib/media-api.js` | Lane B (NEW) | `window.MediaAPI` — `getContract()`, `getRegistry(tag)`. |
+| `site-studio/public/studio/src/lib/components-api.js` | Lane C (NEW) | `window.ComponentsAPI` — `list()`, `check(id)`, `getContract()`. |
+| `site-studio/public/studio/src/lib/research-api.js` | Lane D (NEW) | `window.ResearchAPI` — `listBriefs()`, `getBrief(id)`. |
+| `site-studio/public/studio/src/lib/think-tank-api.js` | Lane D (NEW) | `window.ThinkTankAPI` — `listCaptures()`, `getContract()`. |
+| `site-studio/public/studio/src/lib/current-context.js` | Lane E (NEW) | `window.CurrentContext` — 7 forSection_* helpers building `{section, activeId, hints, explain, nextAction, capabilityTruth}`. |
+| `site-studio/public/studio/src/lib/recipes.js` | Lane F (NEW) | `window.STUDIO_RECIPES` — 6 recipe definitions per `WORKSPACE-RECIPES.md`. |
+| `site-studio/public/studio/src/lib/memory-tail.js` | Lane F (NEW) | `window.MemoryTail` — reads `/api/intelligence/runs?tag=` for the bottom strip. |
+| `site-studio/server/intelligence-routes.js` | shell | `/api/intelligence/{sites,brief,capability-truth,runs,runs/:runId}` factory. |
+| `site-studio/server/intelligence-actions.js` | shell | `/api/intelligence/actions/runs/start` + cost-cap gate. |
+| `site-studio/server/intelligence-reader.js` | shell | Read-only file accessors with `isSafeTag` / `isSafeId` guards. |
+| `site-studio/server/intelligence-writer.js` | shell | Atomic ledger writes; $50 cost cap. |
+| `site-studio/server/component-routes.js` | shell | `/api/components`, `/api/components/check`, `/api/components/contract`. |
+| `site-studio/server/component-inventory.js` | shell | Reads `lib/famtastic-skeletons.js` exports + Levenshtein diff-match. |
+| `site-studio/server/media-routes.js` | shell | `/api/media?tag=`, `/api/media/contract`. |
+| `site-studio/server/media-registry.js` | shell | Asset shape contract; reads `<siteDir>/media/registry.json`. |
+| `site-studio/server/research-routes.js` | Lane D (NEW) | `/api/research/briefs`, `/api/research/brief/:id` — path-traversal-safe. |
+| `site-studio/server/think-tank-routes.js` | Lane D (NEW) | `/api/think-tank/captures`, `/api/think-tank/contract` — fail-soft parse. |
+| `site-studio/server/visual-refinement.js` + `-routes.js` | shell | Run-scoped visual refinement. |
+| `site-studio/server/validators.js` | shell | `isValidPageName`, `sanitizeSvg`, `validateAgentHtml`. |
+| `site-studio/server/__smoke__/operator-fast-server.js` | shell | Fast smoke harness (no credentials). |
+| `site-studio/server/__smoke__/operator-action-browser-pw.js` | shell | Playwright operator action smoke. |
+| `site-studio/server/__smoke__/studio-shell-smoke.js` | shell | Original shell smoke (23 asserts). |
+| `site-studio/server/__smoke__/studio-shell-verify.js` | shell | Independent stricter verifier (73 asserts). |
+| `site-studio/server/__smoke__/studio-functional-verify.js` | Lane G (NEW) | Functional-wiring browser verifier; ready for host re-run. |
+| `tests/studio/lane-static-checks.js` | Lane G (NEW) | Pure-Node static invariants (85 asserts; 85/85 PASS). |
+| `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md` | orchestrator (NEW) | Lane ownership + integration order + hard-blocker list. |
+| `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md` | orchestrator (NEW) | Final 21-field run report. |
 
 ### Test Suites
 
@@ -574,7 +669,7 @@ The full iterative roadmap is in `architecture/2026-04-25-outstanding-plan.md`.
 
 Quick view:
 
-**Immediate (next session):** JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX.
+**Immediate (next session):** Studio shell browser-prong host re-run (`studio-functional-verify.js`); JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX. Wire one of the disabled-but-labeled actions in the Studio shell end-to-end (recommended first: Media Studio Generate → registry write → slot assign, since the adapter + telemetry + cost-monitor exist and only the round-trip is missing).
 
 **Near-term (this week):** Edge case test suite design (5 categories); Wizard-of-Oz orchestrated build session; Reunion site (July 12 deadline).
 

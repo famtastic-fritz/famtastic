@@ -5744,3 +5744,68 @@ and merges cowork's `.brain/` content into the canonical store.
 cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting
 
 See `memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda.md`.
+
+## 2026-05-10 — Studio Functional Workspace Wiring (parallel-lane run)
+
+The unified Studio shell at `/studio.html` (shipped in commits `3fa3a8c` +
+`ff9ae42` follow-ups) has been **operationalized** across all twelve
+platform sections by a parallel orchestrator + seven-lane run. The shell
+was layout-complete; this run made it work — honest where the backend
+isn't wired, real where it is.
+
+### Run model
+
+- **Orchestrator + 6 parallel implementation lanes (A–F) + 1 sequential proof lane (G).**
+- Strict file-ownership scope-locks per lane in `STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md`.
+- Cross-lane integration via marker comments (`// Lane E — currentContext publish`, `{/* Lane F — RecipeSelector mount */}`) — orchestrator stitches at integration time.
+- Lane G (`tests/studio/lane-static-checks.js` + `site-studio/server/__smoke__/studio-functional-verify.js`): 85/85 static assertions PASS; browser prong BLOCKED on chromium availability in sandbox (verifier ready to run on host).
+
+### Per-lane shipped
+
+**Lane A — Sites + Site Builder + Site Settings.** Files: `studio/src/screens/sites.jsx`, `site-builder.jsx`, `site-settings.jsx`; new `studio/src/lib/sites-api.js`, `site-context.js`. Sites filter chips actually filter (derived honest classification, commented), Grid/List density differs, "Continue" persists `studio.lastActiveTag` to localStorage, "Continue where you left off" card reflects state. Site Builder gets a status-bar above the iframe (last-active tag chip, three honest status chips, three labeled-not-wired action buttons Preview/Inspect/Refine, Local site settings link via `window.__studioJump`). Site Settings reflects last-active tag in title, shows honest "0 overrides · matches platform" diff chip, every field has a `default` mono badge, disabled "Reset to platform" button.
+
+**Lane B — Media Studio + Media Library.** Files: `studio/src/screens/media-studio.jsx`, `media-library.jsx`; new `studio/src/lib/media-api.js`. Media Library reads from `/api/media?tag=<tag>` on mount (`media-routes.js` + `media-registry.js` already wired in server); summary chips show real `auto/pending/approved/deferred` counts. Media Studio variations grid stays placeholder (no fake generation); Generate / Approve / Reject / Save / Send-to-library / Assign-to-slot all `disabled={true}` with honest `Tag` labels. Action-contract debug button calls `/api/media/contract` and surfaces real shape.
+
+**Lane C — Component Studio.** Files: `studio/src/screens/component-studio.jsx`; new `studio/src/lib/components-api.js`. Library pane reads from `/api/components` on mount (`component-routes.js` + `component-inventory.js` were already in server). Search input debounces 200ms and calls `/api/components/check?id=` — surfaces `exists` / `near` / no-match Chip inline. Props/slots tab renders live `slots[]` and `props[]` from inventory. "Insert (surgical)" disabled with `contract ready · server route pending` Tag. Show-contract button works.
+
+**Lane D — Research Center + Think-Tank.** Files: `studio/src/screens/research.jsx`, `think-tank.jsx`; new `studio/src/lib/research-api.js`, `think-tank-api.js`; new `server/research-routes.js`, `server/think-tank-routes.js`; +2 mount lines in `server.js` after line 1078: `app.use('/api/research', require('./server/research-routes').createResearchRouter(HUB_ROOT))` and `app.use('/api/think-tank', require('./server/think-tank-routes').createThinkTankRouter(HUB_ROOT))`. Research Center reads brief list live from `/api/research/briefs`; click-to-load detail panel via `/api/research/brief/:id` (title, summary, body_first_500). Depth selector has honest descriptions per depth (Fast: ~30s, Standard: ~3min, Deep: ~10min, Expert: ~30min). Think-Tank reads `captures/inbox/*.capture.json` via `/api/think-tank/captures` — falls back to seed examples with honest empty-state hint. Promote actions disabled-with-Tag.
+
+**Lane E — Right pane + Shay context.** Files: `studio/src/shell.jsx` (ContextPanel + collapse), `app.jsx` (collapse localStorage glue), `styles.css` (Lane E append block); new `studio/src/lib/current-context.js`. Publish hooks added by orchestrator integration to all 7 non-special screens (home, sites, site-settings, research, think-tank, media-library, settings). Each screen's hook calls `window.CurrentContext.forSection_<name>(...)` to publish a `{section, activeId, hints[], explain, nextAction, capabilityTruth[]}` object. ContextPanel renders dynamically from this. Collapse button toggles to a 36px slim-bar variant; state persisted to `studio.rightCollapsed` localStorage key. Routing chips actually call `window.__studioJump?.(target)`.
+
+**Lane F — Recipes + Memory Strip.** Files: `studio/src/recipe-flow.jsx` (extend with RecipeSelector wrapper), `screens/home.jsx` (mount), `screens/research.jsx` (mount), `shell.jsx` (MemoryStrip wire); new `studio/src/lib/recipes.js`, `memory-tail.js`. RecipeSelector wraps RecipeFlow with a 5-recipe Seg picker (new-site, media-to-component, component-to-site, research-to-proof preserved, research-to-build, shay-routing — node lists drawn from `WORKSPACE-RECIPES.md`). Home defaults to research-to-proof; Research Center defaults to research-to-build. MemoryStrip in `shell.jsx` reads from `/api/intelligence/runs?tag=<tag>` (via `MemoryTail.getTail`) — renders up to 5 honest run rows or a single dim "no site context" / "registry empty" reason. Static V1; no live polling.
+
+**Lane G — QA / Proof.** Files: `tests/studio/lane-static-checks.js`, `site-studio/server/__smoke__/studio-functional-verify.js`. Static checker validates: every JSX file parses via `@babel/parser`, every new lib/server JS file passes `node --check`, `server.js` parses with the 2 added mount lines, all 7 publish hooks present in their screens, RecipeSelector mounts in home + research, server.js mount block has the expected 4 lane mounts in order, studio.html loads all 9 new lib script tags, forbidden-edit files all present (no inadvertent deletes), Mission Control hosts ONLY run-centric content (drift trip-wire). 85/85 PASS.
+
+### How it's wired in studio.html
+
+`site-studio/public/studio.html` now loads 9 plain-JS lib files (no `type="text/babel"`) BEFORE the Babel-transformed JSX scripts: `site-context`, `sites-api`, `media-api`, `components-api`, `research-api`, `think-tank-api`, `current-context`, `recipes`, `memory-tail`. They each assign to a single `window.*` global so screens can pick them up as `window.SitesAPI?.listSites?.(...)` (defensive optional-chaining throughout — a missing lib doesn't crash a screen, it falls back to honest empty-state). `recipe-flow.jsx` reads `window.STUDIO_RECIPES` from `recipes.js`, so the Babel JSX scripts come after the lib block.
+
+### New API surface
+
+- `GET /api/research/briefs` — `{briefs: [{id, filename, title, path}]}` — reads `docs/research/famtastic-studio-execution/*.md`.
+- `GET /api/research/brief/:id` — `{id, filename, title, summary, body_first_500}` — id allowlist `/^[a-zA-Z0-9._-]+$/`, `path.resolve` containment.
+- `GET /api/think-tank/captures` — `{captures: [{id, title, captured_at, source_path}]}` — reads `captures/inbox/*.capture.json`, fail-soft parse, capped at 50.
+- `GET /api/think-tank/contract` — `{contract: {capture_shape, promotion_targets}}`.
+
+Both routers follow the existing `createXRouter(repoRoot)` factory pattern from `intelligence-routes.js`. Path traversal blocked via allowlist + `path.resolve` + `startsWith` containment.
+
+### Standing rules reinforced
+
+- **Mission Control containment.** Lane G drift trip-wire confirms `mission-control.jsx` contains zero RecipeSelector / Sites listing / Components listing / Media listing. Mission Control is one section among twelve.
+- **Honest action contracts.** Every unwired button (`Generate`, `Approve`, `Reject`, `Insert (surgical)`, `Promote findings`, `Reset to platform`, `Capture idea`, `New brief`, `Quick add`, etc.) is `disabled={true}` and adjacent to a `Tag` chip explaining what's deferred. No fake outputs.
+- **server.js minimal-mounts policy.** Only 2 lines added to `server.js` (the existing mount block at 1070–1078). All real route logic lives in modular `server/<name>-routes.js` files.
+
+### Known gaps (NEW — open after this run)
+
+- **Studio launchd boot still broken** — `site-studio/lib/{shay-shay-sessions,logger,openai-image-adapter}.js` still ungitted (cerebrum entry from 2026-05-05). Lane G's browser verifier was forced to use the fast smoke server which doesn't mount the new Lane B/C/D routers — host re-run required to close the browser-prong gap.
+- **Generate / Approve / Save / Send-to-library / Assign-to-slot** — Media Studio actions remain visible-but-disabled; provider round-trip + library write path + slot-assignment write path all unwired.
+- **Insert (surgical)** — Component Studio insertion remains visible-but-disabled; surgical-editor wiring deferred.
+- **Plan-card UI / Versions / Verify** — Site Builder native panes deferred (the iframe wrapper preserves the existing chat/build/preview flow for now).
+- **Per-site `site-settings.json` schema undefined** — Site Settings shows `0 overrides · matches platform` honestly; reads/writes for the per-site overrides file deferred.
+- **Memory strip live polling** — Lane F implementation reads once on mount and on `site` change; no SSE / interval refresh.
+- **Recipe node live status** — all V1 recipes are static (`status: idle` except the preserved Research → Proof mix). Live binding to a run ledger deferred.
+- **Captures inbox write paths (Quick add / Link source / Promote)** — Think-Tank read works; write paths deferred.
+- **Brain integration in Shay screen** — chat round-trip, currentContext readback, and route-this-thread-to-X confirmation deferred.
+- **Recipe 3 branching diamond** — rendered as linear chain in V1 with branch noted in the node summary.
+- **Component Studio variants tab** — still hard-coded placeholder set; inventory does not yet expose variants.
+- **Browser prong** — `studio-functional-verify.js` is written and runnable on host (and the prior `studio-shell-verify.js` already lands 73/73 on host); chromium not in sandbox here.
