@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FAMtastic Studio · Operator Workspace</title>
   <link rel="stylesheet" href="/css/operator.css">
+  <!-- Embedded mode: when ?embedded=1, hide the operator's top brand row so this
+       page can be iframed inside the unified Studio shell (/studio.html). The
+       zones/tabs/workspace/footer remain fully functional. -->
+  <script>
+    (function () {
+      try {
+        if (new URLSearchParams(location.search).get('embedded') === '1') {
+          document.documentElement.classList.add('studio-embedded');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    html.studio-embedded .op-topbar { display: none !important; }
+    html.studio-embedded .op-shell { padding-top: 0 !important; }
+  </style>
 </head>
 <body>
   <div class="op-shell">

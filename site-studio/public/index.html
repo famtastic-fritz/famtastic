@@ -4,6 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FAMtastic Site Studio</title>
+  <!-- Embedded mode: when ?embedded=1, hide top chrome so this page can be
+       iframed inside the unified Studio shell (/studio.html). No-op otherwise. -->
+  <script>
+    (function () {
+      try {
+        if (new URLSearchParams(location.search).get('embedded') === '1') {
+          document.documentElement.classList.add('studio-embedded');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    html.studio-embedded .top-bar,
+    html.studio-embedded #restart-banner,
+    html.studio-embedded .top-bar-logo-img { display: none !important; }
+    html.studio-embedded body { padding-top: 0 !important; }
+    html.studio-embedded .main-shell, html.studio-embedded .app-shell { top: 0 !important; }
+  </style>
   <!-- CDNs -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>

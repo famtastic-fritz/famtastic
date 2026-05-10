@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FAMtastic Studio</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="/studio/styles.css" />
+</head>
+<body class="studio-body">
+  <div id="studio-root" class="studio-shell"></div>
+
+  <!-- React + Babel pinned (matches design template; replace with bundler later) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+  <!-- Shared primitives -->
+  <script type="text/babel" src="/studio/src/icons.jsx"></script>
+  <script type="text/babel" src="/studio/src/primitives.jsx"></script>
+  <script type="text/babel" src="/studio/src/shell.jsx"></script>
+  <script type="text/babel" src="/studio/src/recipe-flow.jsx"></script>
+
+  <!-- 12 screens -->
+  <script type="text/babel" src="/studio/src/screens/home.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/sites.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/site-builder.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/site-settings.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/think-tank.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/research.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/component-studio.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/media-studio.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/media-library.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/shay.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/mission-control.jsx"></script>
+  <script type="text/babel" src="/studio/src/screens/settings.jsx"></script>
+
+  <!-- App entry -->
+  <script type="text/babel" src="/studio/src/app.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+/* ============================================================
+   FAMtastic Studio — Unified Shell
+   Tokens scoped under .studio-shell so they don't leak into the
+   legacy /index.html or /operator.html shells.
+   "Coming out of darkness" — deep blacks, glass, soft warm light.
+   ============================================================ */
+
+.studio-shell {
+  /* Surfaces */
+  --void: oklch(0.08 0.008 265);
+  --bg: oklch(0.11 0.010 265);
+  --bg-2: oklch(0.135 0.012 265);
+  --panel: oklch(0.165 0.013 265);
+  --panel-2: oklch(0.195 0.014 265);
+  --panel-3: oklch(0.225 0.015 265);
+  --panel-hi: oklch(0.27 0.016 265);
+
+  /* Glass */
+  --glass: oklch(0.20 0.014 265 / 0.62);
+  --glass-2: oklch(0.24 0.015 265 / 0.55);
+  --glass-edge: oklch(1 0 0 / 0.06);
+  --glass-edge-hi: oklch(1 0 0 / 0.10);
+
+  /* Borders */
+  --hair: oklch(1 0 0 / 0.06);
+  --hair-2: oklch(1 0 0 / 0.10);
+  --hair-3: oklch(1 0 0 / 0.16);
+
+  /* Type */
+  --ink: oklch(0.96 0.005 265);
+  --ink-2: oklch(0.82 0.008 265);
+  --ink-3: oklch(0.62 0.010 265);
+  --ink-4: oklch(0.46 0.012 265);
+  --ink-5: oklch(0.36 0.012 265);
+
+  /* Brand */
+  --ember: oklch(0.78 0.14 65);
+  --ember-2: oklch(0.68 0.16 50);
+  --ember-soft: oklch(0.78 0.14 65 / 0.18);
+  --aurora: oklch(0.74 0.13 200);
+  --aurora-soft: oklch(0.74 0.13 200 / 0.16);
+  --plum: oklch(0.55 0.16 320);
+  --shay: oklch(0.82 0.12 90);
+  --shay-soft: oklch(0.82 0.12 90 / 0.20);
+
+  /* Status */
+  --good: oklch(0.74 0.14 155);
+  --warn: oklch(0.80 0.14 80);
+  --crit: oklch(0.66 0.20 25);
+  --info: oklch(0.72 0.12 235);
+
+  /* Radii */
+  --r-1: 6px;
+  --r-2: 10px;
+  --r-3: 14px;
+  --r-4: 20px;
+  --r-5: 28px;
+
+  /* Shadows */
+  --shadow-1: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 12px 30px -16px oklch(0 0 0 / 0.6);
+  --shadow-2: 0 1px 0 oklch(1 0 0 / 0.05) inset, 0 24px 60px -22px oklch(0 0 0 / 0.7);
+  --shadow-glow: 0 0 0 1px oklch(0.78 0.14 65 / 0.30), 0 10px 40px -8px oklch(0.78 0.14 65 / 0.25);
+
+  /* Type stacks */
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-serif: "Instrument Serif", "Cormorant Garamond", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Scoped resets — only inside the shell. Legacy pages untouched. */
+.studio-body { margin: 0; padding: 0; background: var(--void, #0e0e12); }
+.studio-shell, .studio-shell * { box-sizing: border-box; }
+.studio-shell {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Typography ─────────────────────────────────────────── */
+.studio-shell .serif { font-family: var(--font-serif); letter-spacing: -0.01em; }
+.studio-shell .mono  { font-family: var(--font-mono); }
+.studio-shell .tabular { font-variant-numeric: tabular-nums; }
+
+.studio-shell .eyebrow {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.studio-shell .h-display {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.studio-shell .h-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.studio-shell .h-section {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.studio-shell .muted { color: var(--ink-3); }
+.studio-shell .dim   { color: var(--ink-4); }
+
+.studio-shell .fz-11 { font-size: 11px; }
+.studio-shell .fz-12 { font-size: 12px; }
+.studio-shell .fz-13 { font-size: 13px; }
+.studio-shell .fw-500 { font-weight: 500; }
+.studio-shell .mt-1 { margin-top: 4px; }
+.studio-shell .mt-2 { margin-top: 8px; }
+.studio-shell .mt-3 { margin-top: 12px; }
+.studio-shell .mt-4 { margin-top: 16px; }
+.studio-shell .mb-2 { margin-bottom: 8px; }
+.studio-shell .mb-3 { margin-bottom: 12px; }
+.studio-shell .mb-4 { margin-bottom: 16px; }
+.studio-shell .p-3 { padding: 12px; }
+.studio-shell .p-4 { padding: 16px; }
+.studio-shell .gap-2 { gap: 8px; }
+.studio-shell .gap-3 { gap: 12px; }
+.studio-shell .row { display: flex; align-items: center; }
+.studio-shell .col { display: flex; flex-direction: column; }
+.studio-shell .between { display: flex; align-items: center; justify-content: space-between; }
+.studio-shell .grow { flex: 1; min-width: 0; }
+
+/* ── Surfaces ───────────────────────────────────────────── */
+.studio-shell .panel {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--hair);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1);
+}
+.studio-shell .panel-flat {
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-2);
+}
+.studio-shell .card {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--hair);
+  border-radius: var(--r-3);
+  padding: 16px;
+  box-shadow: var(--shadow-1);
+}
+.studio-shell .card-hi {
+  border-color: oklch(0.78 0.14 65 / 0.25);
+  box-shadow: var(--shadow-glow);
+}
+.studio-shell .card-hover { cursor: pointer; transition: border-color 140ms ease, transform 140ms ease; }
+.studio-shell .card-hover:hover { border-color: var(--hair-3); transform: translateY(-1px); }
+.studio-shell .divider { height: 1px; background: var(--hair); margin: 14px 0; }
+.studio-shell .vdivider { width: 1px; background: var(--hair); align-self: stretch; }
+
+/* ── Buttons ────────────────────────────────────────────── */
+.studio-shell .btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 12px; font-weight: 500;
+  background: linear-gradient(180deg, oklch(0.245 0.014 265), oklch(0.195 0.012 265));
+  border: 1px solid var(--hair-2);
+  color: var(--ink);
+  border-radius: var(--r-1);
+  cursor: pointer;
+  transition: border-color 140ms, background 140ms, box-shadow 140ms;
+}
+.studio-shell .btn:hover { border-color: var(--hair-3); background: linear-gradient(180deg, oklch(0.30 0.016 265), oklch(0.23 0.014 265)); }
+.studio-shell .btn:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.studio-shell .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.studio-shell .btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-3);
+}
+.studio-shell .btn-ghost:hover { background: oklch(1 0 0 / 0.05); color: var(--ink); border-color: var(--hair); }
+.studio-shell .btn-primary {
+  background: linear-gradient(180deg, var(--ember), var(--ember-2));
+  color: oklch(0.18 0.04 60);
+  border-color: oklch(0.78 0.14 65 / 0.4);
+  font-weight: 600;
+}
+.studio-shell .btn-primary:hover { box-shadow: var(--shadow-glow); }
+.studio-shell .btn-icon { padding: 6px 8px; }
+.studio-shell .kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 4px;
+  border: 1px solid var(--hair-2);
+  border-radius: 3px;
+  color: var(--ink-3);
+  background: oklch(1 0 0 / 0.04);
+}
+
+/* ── Chips, dots, tags ──────────────────────────────────── */
+.studio-shell .chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid var(--hair-2);
+  border-radius: 999px;
+  color: var(--ink-2);
+  background: oklch(1 0 0 / 0.04);
+}
+.studio-shell .chip-ember  { background: var(--ember-soft);  border-color: oklch(0.78 0.14 65 / 0.3);  color: var(--ember); }
+.studio-shell .chip-aurora { background: var(--aurora-soft); border-color: oklch(0.74 0.13 200 / 0.3); color: var(--aurora); }
+.studio-shell .chip-shay   { background: var(--shay-soft);   border-color: oklch(0.82 0.12 90 / 0.35); color: var(--shay); }
+.studio-shell .chip-good   { color: var(--good); border-color: oklch(0.74 0.14 155 / 0.3); background: oklch(0.74 0.14 155 / 0.10); }
+.studio-shell .chip-warn   { color: var(--warn); border-color: oklch(0.80 0.14 80 / 0.3);  background: oklch(0.80 0.14 80 / 0.10); }
+.studio-shell .chip-crit   { color: var(--crit); border-color: oklch(0.66 0.20 25 / 0.3);  background: oklch(0.66 0.20 25 / 0.10); }
+
+.studio-shell .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-4); display: inline-block; }
+.studio-shell .dot-good   { background: var(--good); box-shadow: 0 0 8px var(--good); }
+.studio-shell .dot-warn   { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+.studio-shell .dot-crit   { background: var(--crit); }
+.studio-shell .dot-shay   { background: var(--shay); box-shadow: 0 0 10px var(--shay); }
+.studio-shell .dot-ember  { background: var(--ember); box-shadow: 0 0 8px var(--ember); }
+.studio-shell .dot-aurora { background: var(--aurora); }
+.studio-shell .dot-info   { background: var(--info); }
+
+.studio-shell .tag {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border: 1px solid var(--hair-2);
+  border-radius: 4px;
+  color: var(--ink-3);
+  background: oklch(1 0 0 / 0.03);
+}
+
+/* ── Inputs / segmented controls ────────────────────────── */
+.studio-shell .input {
+  flex: 1;
+  background: oklch(1 0 0 / 0.04);
+  border: 1px solid var(--hair-2);
+  border-radius: var(--r-2);
+  padding: 7px 10px;
+  font: inherit;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 140ms, box-shadow 140ms;
+}
+.studio-shell .input:focus { border-color: oklch(0.78 0.14 65 / 0.5); box-shadow: 0 0 0 3px oklch(0.78 0.14 65 / 0.10); }
+.studio-shell .input::placeholder { color: var(--ink-4); }
+
+.studio-shell .seg {
+  display: inline-flex;
+  border: 1px solid var(--hair-2);
+  border-radius: var(--r-1);
+  background: oklch(1 0 0 / 0.03);
+  padding: 2px;
+}
+.studio-shell .seg button {
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: calc(var(--r-1) - 2px);
+  cursor: pointer;
+}
+.studio-shell .seg button.on {
+  background: oklch(1 0 0 / 0.08);
+  color: var(--ink);
+  box-shadow: 0 1px 0 oklch(1 0 0 / 0.05) inset;
+}
+
+.studio-shell .tabs { display: flex; gap: 14px; border-bottom: 1px solid var(--hair); padding: 0 2px; }
+.studio-shell .tab  { padding: 8px 2px 10px; font-size: 12px; color: var(--ink-3); cursor: pointer; border-bottom: 1px solid transparent; margin-bottom: -1px; }
+.studio-shell .tab:hover { color: var(--ink); }
+.studio-shell .tab.active { color: var(--ember); border-bottom-color: var(--ember); }
+
+/* ── App layout — rail + shell + topbar + body + strip ──── */
+.studio-shell .app {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  height: 100vh;
+}
+
+.studio-shell .rail {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px;
+  padding: 10px 0;
+  background: linear-gradient(180deg, oklch(0.10 0.010 265), oklch(0.085 0.010 265));
+  border-right: 1px solid var(--hair);
+}
+.studio-shell .rail-mark {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: grid; place-items: center;
+  background: linear-gradient(180deg, var(--ember), var(--ember-2));
+  color: oklch(0.18 0.04 60);
+  font-weight: 700;
+  margin-bottom: 6px;
+  cursor: default;
+}
+.studio-shell .rail-item {
+  position: relative;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 140ms, background 140ms;
+}
+.studio-shell .rail-item:hover { color: var(--ink); background: oklch(1 0 0 / 0.04); }
+.studio-shell .rail-item.active {
+  color: var(--ember);
+  background: oklch(0.78 0.14 65 / 0.08);
+}
+.studio-shell .rail-item.active::before {
+  content: ""; position: absolute; left: -10px; top: 8px; bottom: 8px;
+  width: 2px; border-radius: 2px;
+  background: var(--ember); box-shadow: 0 0 10px var(--ember);
+}
+.studio-shell .rail-tooltip {
+  position: absolute; left: 48px; padding: 4px 8px;
+  background: var(--panel-hi); border: 1px solid var(--hair-2);
+  border-radius: 4px; font-size: 11px; white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity 140ms ease 200ms;
+  color: var(--ink); z-index: 10;
+}
+.studio-shell .rail-item:hover .rail-tooltip { opacity: 1; }
+.studio-shell .rail-spacer { flex: 1; }
+
+.studio-shell .shell {
+  display: flex; flex-direction: column;
+  height: 100vh;
+  min-width: 0;
+}
+.studio-shell .topbar {
+  display: flex; align-items: center;
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--hair);
+  background: linear-gradient(180deg, oklch(0.13 0.011 265 / 0.7), oklch(0.115 0.011 265 / 0.5));
+  backdrop-filter: blur(12px);
+  gap: 14px;
+  flex-shrink: 0;
+}
+.studio-shell .crumb { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+.studio-shell .crumb b { color: var(--ink); font-weight: 500; }
+.studio-shell .status { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--ink-3); }
+.studio-shell .status .item { display: flex; align-items: center; gap: 6px; }
+
+.studio-shell .subtab-row {
+  display: flex; align-items: center; gap: 4px;
+  height: 36px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--hair);
+  background: oklch(0.10 0.010 265 / 0.5);
+  flex-shrink: 0;
+}
+.studio-shell .subtab {
+  padding: 6px 12px; font-size: 12px; color: var(--ink-3); cursor: pointer;
+  border-bottom: 1px solid transparent; margin-bottom: -1px;
+}
+.studio-shell .subtab.active { color: var(--ember); border-bottom-color: var(--ember); }
+.studio-shell .subtab:hover { color: var(--ink); }
+
+.studio-shell .body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+}
+.studio-shell .body.no-right { grid-template-columns: 1fr; }
+.studio-shell .workspace { overflow: auto; padding: 22px 26px; min-width: 0; }
+.studio-shell .right-panel {
+  border-left: 1px solid var(--hair);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg));
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.studio-shell .strip {
+  height: 40px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 14px;
+  border-top: 1px solid var(--hair);
+  background: oklch(0.095 0.010 265 / 0.92);
+  font-size: 11px; color: var(--ink-3);
+  flex-shrink: 0;
+}
+.studio-shell .strip .item { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* ── ChatBubble ─────────────────────────────────────────── */
+.studio-shell .avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: inline-grid; place-items: center;
+  font-size: 11px; font-weight: 600;
+  background: linear-gradient(180deg, oklch(0.30 0.016 265), oklch(0.22 0.014 265));
+  color: var(--ink-2);
+  border: 1px solid var(--hair-2);
+}
+.studio-shell .avatar.shay {
+  background: linear-gradient(180deg, var(--shay), oklch(0.65 0.10 90));
+  color: oklch(0.18 0.04 60);
+  border-color: oklch(0.82 0.12 90 / 0.4);
+  box-shadow: 0 0 12px oklch(0.82 0.12 90 / 0.2);
+}
+.studio-shell .avatar.fritz {
+  background: linear-gradient(180deg, var(--ember), var(--ember-2));
+  color: oklch(0.18 0.04 60);
+}
+
+/* ── Slot, Tile, Skeleton, Meter ────────────────────────── */
+.studio-shell .slot {
+  display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--hair-2);
+  border-radius: var(--r-2);
+  padding: 10px;
+  font-size: 11px; color: var(--ink-4);
+  min-height: 48px;
+}
+.studio-shell .slot.filled { border-style: solid; border-color: var(--ember-soft); color: var(--ember); }
+.studio-shell .media-tile {
+  position: relative; overflow: hidden;
+  border-radius: var(--r-2);
+  border: 1px solid var(--hair-2);
+}
+.studio-shell .skel {
+  background: linear-gradient(90deg, oklch(1 0 0 / 0.04), oklch(1 0 0 / 0.08), oklch(1 0 0 / 0.04));
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: studio-skel 1.2s ease-in-out infinite;
+}
+@keyframes studio-skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.studio-shell .meter { width: 100%; height: 4px; background: oklch(1 0 0 / 0.06); border-radius: 2px; overflow: hidden; }
+.studio-shell .meter > i { display: block; height: 100%; background: var(--ember); }
+
+/* ── ShayBubble (floating) ──────────────────────────────── */
+.studio-shell .shay-bubble {
+  position: fixed; right: 18px; bottom: 56px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 30% 30%, var(--shay), oklch(0.62 0.10 90));
+  color: oklch(0.18 0.04 60);
+  font-weight: 700; font-size: 16px;
+  box-shadow: 0 0 24px oklch(0.82 0.12 90 / 0.5);
+  cursor: pointer;
+  z-index: 8;
+  border: 1px solid oklch(0.82 0.12 90 / 0.5);
+}
+
+/* ── Iframe wrappers (Builder + Mission Control) ────────── */
+.studio-shell .embed-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  border: 1px solid var(--hair);
+}
+.studio-shell .embed-wrap > iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--bg);
+}
+
+/* ── Recipe flow visualization ──────────────────────────── */
+.studio-shell .recipe {
+  display: flex; align-items: stretch;
+  gap: 10px;
+  padding: 14px 4px;
+  overflow-x: auto;
+}
+.studio-shell .recipe-node {
+  flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: stretch;
+  min-width: 140px;
+  padding: 12px;
+  border: 1px solid var(--hair-2);
+  border-radius: var(--r-2);
+  background: var(--panel);
+  cursor: pointer;
+  transition: border-color 140ms, transform 140ms;
+}
+.studio-shell .recipe-node:hover { border-color: var(--hair-3); transform: translateY(-1px); }
+.studio-shell .recipe-node.active { border-color: var(--ember); box-shadow: 0 0 0 1px var(--ember-soft); }
+.studio-shell .recipe-node.done { border-color: oklch(0.74 0.14 155 / 0.4); }
+.studio-shell .recipe-arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--ink-4);
+  font-size: 18px;
+  user-select: none;
+}
+
+/* ── Fade-in for screen swaps ───────────────────────────── */
+.studio-shell .fade-up { animation: studio-fade 220ms ease-out; }
+@keyframes studio-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Iframes embedded mode: hide host scrollbars on legacy pages ── */
+.studio-shell iframe { color-scheme: dark; }
+
+/* ── Utility ────────────────────────────────────────────── */
+.studio-shell .between { display: flex; align-items: center; justify-content: space-between; }
+.studio-shell .placeholder-note {
+  padding: 12px 14px;
+  border: 1px dashed var(--hair-2);
+  border-radius: var(--r-2);
+  color: var(--ink-3);
+  font-size: 12px;
+  background: oklch(1 0 0 / 0.02);
+}
