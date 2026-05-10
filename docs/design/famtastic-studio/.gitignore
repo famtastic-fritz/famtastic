@@ -1,0 +1,4 @@
+# The extracted/ tree is a working copy of FAMtastic Studios.zip.
+# The ZIP is the source of truth. Re-extract with:
+#   cd docs/design/famtastic-studio && unzip -o "FAMtastic Studios.zip" -d extracted
+extracted/
