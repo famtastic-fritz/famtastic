@@ -16,8 +16,11 @@
     })();
   </script>
   <style>
-    html.studio-embedded .top-bar,
+    /* The actual top chrome is <div id="top-bar"> (an id, not a class).
+       Hide it plus the restart banner and the logo image when embedded. */
+    html.studio-embedded #top-bar,
     html.studio-embedded #restart-banner,
+    html.studio-embedded .top-bar,
     html.studio-embedded .top-bar-logo-img { display: none !important; }
     html.studio-embedded body { padding-top: 0 !important; }
     html.studio-embedded .main-shell, html.studio-embedded .app-shell { top: 0 !important; }
