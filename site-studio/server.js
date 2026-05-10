@@ -1076,6 +1076,8 @@ app.use('/api/intelligence/actions', require('./server/intelligence-actions').cr
 app.use('/api/components', require('./server/component-routes').createComponentRouter());
 app.use('/api/media', require('./server/media-routes').createMediaRouter(() => SITE_DIR(), SITES_ROOT));
 app.use('/api/refinement', require('./server/visual-refinement-routes').createRefinementRouter(() => SITE_DIR(), SITES_ROOT));
+app.use('/api/research', require('./server/research-routes').createResearchRouter(HUB_ROOT));
+app.use('/api/think-tank', require('./server/think-tank-routes').createThinkTankRouter(HUB_ROOT));
 
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
