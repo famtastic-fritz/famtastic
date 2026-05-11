@@ -128,7 +128,7 @@ yes
 - A dedicated Phase 3 browser smoke script in `site-studio/server/__smoke__/` that uses the current runtime path instead of legacy Playwright loader assumptions.
 
 20. Commit hash:
-PENDING
+`db05322`
 
 21. Exact URL Fritz should open:
 `http://127.0.0.1:3344/studio.html`
