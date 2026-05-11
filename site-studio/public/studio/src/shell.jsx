@@ -91,20 +91,19 @@ function MemoryStrip({ section, site }) {
   const [items, setItems] = React.useState([]);
   const [reason, setReason] = React.useState("Loading…");
 
-  React.useEffect(() => {
-    let alive = true;
+  /* Lane F — MemoryStrip refresh */
+  const [refreshed, setRefreshed] = React.useState(false);
+
+  function loadTail() {
     const tag = (window.SiteContext && window.SiteContext.getLastActiveTag)
       ? window.SiteContext.getLastActiveTag()
       : null;
     if (!window.MemoryTail || typeof window.MemoryTail.getTail !== "function") {
-      if (alive) {
-        setItems([]);
-        setReason("memory tail not loaded");
-      }
-      return () => { alive = false; };
+      setItems([]);
+      setReason("memory tail not loaded");
+      return;
     }
     window.MemoryTail.getTail({ tag }).then((res) => {
-      if (!alive) return;
       const list = (res && Array.isArray(res.items)) ? res.items : [];
       if (list.length > 0) {
         setItems(list);
@@ -114,8 +113,19 @@ function MemoryStrip({ section, site }) {
         setReason((res && res.reason) || "no activity");
       }
     });
-    return () => { alive = false; };
+  }
+
+  React.useEffect(() => {
+    loadTail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site]);
+
+  function handleRefresh() {
+    loadTail();
+    setRefreshed(true);
+    setTimeout(() => setRefreshed(false), 1500);
+  }
+  /* end Lane F — MemoryStrip refresh */
 
   const visible = items.slice(0, 5);
 
@@ -138,6 +148,17 @@ function MemoryStrip({ section, site }) {
         )}
       </div>
       <div className="row gap-2">
+        {/* Lane F — MemoryStrip refresh */}
+        {refreshed ? <Chip tone="good" style={{ fontSize: 10 }}>refreshed</Chip> : null}
+        <button
+          type="button"
+          className="btn btn-ghost"
+          style={{ fontSize: 11, padding: "2px 8px" }}
+          onClick={handleRefresh}
+          title="Refresh memory strip">
+          <I name="refresh" size={12} /> Refresh
+        </button>
+        {/* end Lane F — MemoryStrip refresh */}
         <span className="dim">replay · pin · …</span>
       </div>
     </div>
@@ -148,20 +169,44 @@ function MemoryStrip({ section, site }) {
    `currentContext` published by the active screen via window.__studioPublishContext.
    Falls back to an honest placeholder when nothing is published.
    Collapsible — `collapsed` + `onToggle` are owned by the App in app.jsx
-   and persisted to localStorage (key: "studio.rightCollapsed"). */
+   and persisted to localStorage (key: "studio.rightCollapsed").
+
+   Phase 1 additions:
+   - Density Seg (Short / Operator / Deep / Next-action) — pure local UI toggle
+   - "Explain current screen" action button — calls ShayActions.explainCurrentScreen
+   - "What should I do next?" action button — calls ShayActions.whatNext
+   - Routing chips call ShayActions.routeWithPayload (not bare __studioJump)
+   - Learning capture footer — calls ShayActions.captureLearning + inbox chip
+   - All feedback chips auto-clear after ~2s via setTimeout + state             */
 function ContextPanel({ section, currentContext, collapsed, onToggle }) {
   const screenName = (NAV.find(n => n.id === section) || {}).label || section;
-  const [readback, setReadback] = React.useState("Short");
 
-  // Map capabilityTruth status → display class + label
-  const statusBits = (status) => {
-    if (status === "verified") return { color: "var(--good)",            label: "verified" };
-    if (status === "partial")  return { color: "var(--warn)",            label: "partial"  };
-    if (status === "pending")  return { color: "var(--ink-3)",           label: "pending"  };
-    return                          { color: "var(--ink-3)",            label: status || "" };
+  // Density state — "Operator" is the Phase 0 default
+  const [density, setDensity] = React.useState("Operator");
+
+  // Transient chip feedback flags
+  const [explainChip, setExplainChip]   = React.useState(false);
+  const [nextChip,    setNextChip]      = React.useState(false);
+  const [learnChip,   setLearnChip]     = React.useState(false);
+
+  // Learning capture input ref
+  const learnRef = React.useRef(null);
+
+  // Helper — show a chip for ~2s then hide
+  const flashChip = (setter) => {
+    setter(true);
+    setTimeout(() => setter(false), 2000);
   };
 
-  // Collapsed state — slim 36px vertical bar with avatar + expand button
+  // Map capabilityTruth status → display color + label
+  const statusBits = (status) => {
+    if (status === "verified") return { color: "var(--good)", label: "verified" };
+    if (status === "partial")  return { color: "var(--warn)", label: "partial"  };
+    if (status === "pending")  return { color: "var(--ink-3)", label: "pending" };
+    return                          { color: "var(--ink-3)", label: status || "" };
+  };
+
+  // Collapsed state — slim 36px vertical bar with avatar + expand button (Phase 0 preserved)
   if (collapsed) {
     return (
       <aside className="right-panel collapsed" aria-label="Shay panel (collapsed)">
@@ -180,21 +225,73 @@ function ContextPanel({ section, currentContext, collapsed, onToggle }) {
     );
   }
 
-  const explain = currentContext?.explain
-    || `You're on ${screenName}. Real Shay context not wired yet — this panel is a placeholder until each section publishes its currentContext.`;
-  const nextAction = currentContext?.nextAction;
-  const capabilityTruth = Array.isArray(currentContext?.capabilityTruth) ? currentContext.capabilityTruth : null;
-  const hints = Array.isArray(currentContext?.hints) ? currentContext.hints : null;
+  // Apply density filter via CurrentContext.forDensity (lib/current-context.js)
+  const dctx = (window.CurrentContext?.forDensity && currentContext)
+    ? window.CurrentContext.forDensity(currentContext, density)
+    : currentContext;
+
+  // Resolved values — fall back to honest placeholders when no context published
+  const explain = dctx?.explain
+    || (density !== "Next-action"
+        ? `You're on ${screenName}. Real Shay context not wired yet — this panel is a placeholder until each section publishes its currentContext.`
+        : "");
+  const nextAction      = dctx?.nextAction  || null;
+  const capabilityTruth = Array.isArray(dctx?.capabilityTruth) ? dctx.capabilityTruth : [];
+  const hints           = Array.isArray(dctx?.hints) ? dctx.hints : [];
+
+  // Default route chips when no hints published
+  const defaultHints = [
+    { label: "Sites",           target: "sites"      },
+    { label: "Site Builder",    target: "builder"    },
+    { label: "Research",        target: "research"   },
+    { label: "Components",      target: "components" },
+    { label: "Media",           target: "media"      },
+    { label: "Mission Control", target: "mission"    },
+  ];
+  const routeHints = hints.length ? hints : defaultHints;
+
+  // Action handlers
+  const handleExplain = () => {
+    const result = window.ShayActions?.explainCurrentScreen(currentContext);
+    console.info("[shay] explainCurrentScreen →", result);
+    flashChip(setExplainChip);
+  };
+
+  const handleWhatNext = () => {
+    const result = window.ShayActions?.whatNext(currentContext);
+    console.info("[shay] whatNext →", result);
+    flashChip(setNextChip);
+  };
+
+  const handleLearnSave = async () => {
+    const note = learnRef.current?.value?.trim();
+    if (!note) return;
+    const result = await window.ShayActions?.captureLearning(section, note, currentContext?.activeId || '');
+    console.info("[shay] captureLearning →", result);
+    if (learnRef.current) learnRef.current.value = "";
+    flashChip(setLearnChip);
+  };
+
+  const handleRouteChip = async (target) => {
+    await window.ShayActions?.routeWithPayload(target, {
+      title: `Shay routed work to ${target}`,
+      recommendation: currentContext?.nextAction?.title || `Open ${target}`,
+      source_section: currentContext?.section || section,
+      source_id: currentContext?.activeId || '',
+    });
+  };
 
   return (
     <aside className="right-panel" aria-label="Shay panel">
+
+      {/* ── Header ── */}
       <div className="p-4" style={{ borderBottom: "1px solid var(--hair)" }}>
         <div className="between">
           <div className="row gap-2">
             <Avatar kind="shay" initials="S" />
             <div>
               <div className="fz-13 fw-500">Shay</div>
-              <div className="dim fz-11">Operator · context-aware</div>
+              <div className="dim fz-11">{density} · context-aware</div>
             </div>
           </div>
           <div className="row gap-2">
@@ -208,19 +305,41 @@ function ContextPanel({ section, currentContext, collapsed, onToggle }) {
             </button>
           </div>
         </div>
+
+        {/* Density Seg — Short / Operator / Deep / Next-action */}
         <div className="mt-3">
-          <Seg items={["Short","Operator","Deep","Next"]} value={readback} onChange={setReadback} />
+          <Seg
+            items={["Short", "Operator", "Deep", "Next-action"]}
+            value={density}
+            onChange={setDensity}
+          />
         </div>
       </div>
 
+      {/* ── Body ── */}
       <div className="p-4" style={{ flex: 1, overflow: "auto" }}>
-        <ChatBubble who="shay" meta="just now">{explain}</ChatBubble>
 
+        {/* Action buttons row */}
+        <div className="row gap-2" style={{ marginBottom: 12, flexWrap: "wrap" }}>
+          <Btn kind="ghost" icon="spark" onClick={handleExplain}>Explain screen</Btn>
+          {explainChip ? <Chip tone="good">Explanation surfaced</Chip> : null}
+          <Btn kind="ghost" icon="spark" onClick={handleWhatNext}>What's next?</Btn>
+          {nextChip ? <Chip tone="good">Next action surfaced</Chip> : null}
+        </div>
+
+        {/* Explain bubble — show when density is not Next-action and explain is non-empty */}
+        {density !== "Next-action" && explain ? (
+          <ChatBubble who="shay" meta="just now">{explain}</ChatBubble>
+        ) : null}
+
+        {/* Next action card — shown in Operator / Deep / Next-action (not Short) */}
         {nextAction ? (
           <Card style={{ marginBottom: 12 }}>
             <Eyebrow>Next recommended action</Eyebrow>
             <div className="fw-500 mt-2 fz-13">{nextAction.title}</div>
-            {nextAction.subtitle ? <div className="muted fz-11 mt-2">{nextAction.subtitle}</div> : null}
+            {nextAction.subtitle
+              ? <div className="muted fz-11 mt-2">{nextAction.subtitle}</div>
+              : null}
             <div className="row gap-2 mt-3">
               {(nextAction.buttons || []).map((b, i) => (
                 <Btn key={i} kind={b.kind || "default"} icon={b.icon}>{b.label}</Btn>
@@ -229,57 +348,72 @@ function ContextPanel({ section, currentContext, collapsed, onToggle }) {
           </Card>
         ) : null}
 
-        <Card>
-          <div className="between mb-3">
-            <Eyebrow>Capability truth</Eyebrow>
-            <Chip tone="good">Honest mode</Chip>
-          </div>
-          <div className="col gap-2 fz-12">
-            {capabilityTruth && capabilityTruth.length ? (
-              capabilityTruth.map((row, i) => {
+        {/* Capability truth card — shown in Operator (≤3 rows) and Deep (all rows) */}
+        {capabilityTruth.length > 0 ? (
+          <Card style={{ marginBottom: 12 }}>
+            <div className="between mb-3">
+              <Eyebrow>Capability truth</Eyebrow>
+              <Chip tone="good">Honest mode</Chip>
+            </div>
+            <div className="col gap-2 fz-12">
+              {capabilityTruth.map((row, i) => {
                 const bits = statusBits(row.status);
                 return (
                   <div key={i} className="between">
                     <span>{row.label}</span>
                     <span style={{ color: bits.color }}>
-                      {bits.label}{row.detail ? <span className="dim"> · {row.detail}</span> : null}
+                      {bits.label}
+                      {row.detail ? <span className="dim"> · {row.detail}</span> : null}
                     </span>
                   </div>
                 );
-              })
-            ) : (
-              <div className="dim">No capability truth published for this section.</div>
-            )}
-          </div>
-        </Card>
+              })}
+            </div>
+          </Card>
+        ) : null}
 
-        <div className="mt-3">
-          <Eyebrow>Route this to…</Eyebrow>
-          <div className="row gap-2 mt-2" style={{ flexWrap: "wrap" }}>
-            {(hints && hints.length
-              ? hints
-              : [
-                  { label: "Sites",            target: "sites"    },
-                  { label: "Site Builder",     target: "builder"  },
-                  { label: "Research",         target: "research" },
-                  { label: "Components",       target: "components" },
-                  { label: "Media",            target: "media"    },
-                  { label: "Mission Control",  target: "mission"  },
-                ]
-            ).map((h, i) => (
-              <button
-                key={i}
-                type="button"
-                className="btn btn-ghost"
-                style={{ fontSize: 11 }}
-                onClick={() => h.target && window.__studioJump?.(h.target)}>
-                {h.label}
-              </button>
-            ))}
+        {/* Routing chips — hidden in Next-action density */}
+        {density !== "Next-action" ? (
+          <div className="mt-3">
+            <Eyebrow>Route this to…</Eyebrow>
+            <div className="row gap-2 mt-2" style={{ flexWrap: "wrap" }}>
+              {routeHints.map((h, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ fontSize: 11 }}
+                  onClick={() => h.target && handleRouteChip(h.target)}>
+                  {h.label}
+                </button>
+              ))}
+            </div>
           </div>
+        ) : null}
+
+        {/* Learning capture footer */}
+        <div className="mt-4" style={{ borderTop: "1px solid var(--hair)", paddingTop: 12 }}>
+          <Eyebrow style={{ marginBottom: 8 }}>Capture a learning</Eyebrow>
+          <div className="row gap-2">
+            <input
+              ref={learnRef}
+              className="input"
+              placeholder="Note something worth remembering…"
+              style={{ flex: 1 }}
+              onKeyDown={(e) => { if (e.key === "Enter") handleLearnSave(); }}
+            />
+            <Btn kind="ghost" icon="bookmark" onClick={handleLearnSave}>Save</Btn>
+          </div>
+          {learnChip
+            ? <Chip tone="good" style={{ marginTop: 6, display: "inline-block" }}>
+                Learning captured · inbox+1
+              </Chip>
+            : null}
         </div>
+
       </div>
 
+      {/* ── Chat input strip (Phase 0 preserved — not wired to backend in Phase 1) ── */}
       <div className="p-3" style={{ borderTop: "1px solid var(--hair)", display: "flex", gap: 8 }}>
         <input className="input" placeholder="Ask Shay…  ⌘ to readback" />
         <button className="btn btn-primary btn-icon"><I name="send" size={14} /></button>

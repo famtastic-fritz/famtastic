@@ -51,3 +51,16 @@
     clearLastActiveTag: clearLastActiveTag,
   };
 })();
+
+// Helper used by SitesActions to post into the embedded /index.html
+// iframe. Safe no-op if no iframe is mounted (Site Builder not active).
+window.__studioPostToBuilder = function (msg) {
+  try {
+    var iframe = document.querySelector('.embed-wrap iframe[src*="index.html"]');
+    if (!iframe || !iframe.contentWindow) return false;
+    iframe.contentWindow.postMessage(Object.assign({ source: 'studio-shell' }, msg), '*');
+    return true;
+  } catch (_e) {
+    return false;
+  }
+};

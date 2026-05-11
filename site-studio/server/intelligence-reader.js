@@ -125,6 +125,20 @@ function isSafeTag(tag) {
   return typeof tag === 'string' && /^site-[a-z0-9][a-z0-9-]{1,80}$/i.test(tag) && !tag.includes('..');
 }
 
+function getSiteFreshness(siteDir) {
+  try {
+    const specPath = path.join(siteDir, 'spec.json');
+    if (fs.existsSync(specPath)) {
+      const st = fs.statSync(specPath);
+      return st.mtime.toISOString();
+    }
+    const dirStat = fs.statSync(siteDir);
+    return dirStat.mtime.toISOString();
+  } catch (_e) {
+    return null;
+  }
+}
+
 function listSites(sitesRoot) {
   if (!fs.existsSync(sitesRoot)) return [];
   return fs.readdirSync(sitesRoot, { withFileTypes: true })
@@ -146,6 +160,7 @@ function listSites(sitesRoot) {
         vertical: brief ? brief.vertical : null,
         has_intelligence: hasIntel,
         run_count: runCount,
+        updated_at: getSiteFreshness(siteDir),
       };
     })
     .sort((a, b) => Number(b.has_intelligence) - Number(a.has_intelligence) || a.tag.localeCompare(b.tag));

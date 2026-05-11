@@ -18,7 +18,30 @@
    Helpers stay honest — when something isn't wired, the explain string and
    nextAction make that explicit. Do not invent metrics. */
 
+/* forDensity — filter a currentContext object to match the selected density tier.
+   Short:       explain only (hide nextAction, capabilityTruth, keep hints for chips)
+   Operator:    explain + nextAction + first-3 capabilityTruth rows (Phase 0 default)
+   Deep:        full object — all fields unmodified
+   Next-action: nextAction only (clear explain, capabilityTruth, hints)              */
+function forDensity(ctx, density) {
+  if (!ctx) return ctx;
+  switch (density) {
+    case 'Short':
+      return { ...ctx, nextAction: null, capabilityTruth: [], hints: ctx.hints };
+    case 'Deep':
+      return ctx; // full
+    case 'Next-action':
+      return { ...ctx, explain: '', capabilityTruth: [], hints: [] };
+    case 'Operator':
+    default:
+      // Phase 0 default — explain + nextAction + capabilityTruth (compact, 3 rows max)
+      return { ...ctx, capabilityTruth: (ctx.capabilityTruth || []).slice(0, 3) };
+  }
+}
+
 window.CurrentContext = {
+  forDensity,
+
   forSection_home(activeSite) {
     return {
       section: "home",
@@ -59,7 +82,7 @@ window.CurrentContext = {
       ],
       explain: activeTag
         ? `Looking at the ${activeTag} card. Continue routes to Site Builder; Settings opens this site's overrides view.`
-        : `Sites dashboard. Pick a card to continue, or click "New site" — the wizard isn't wired yet, but Continue / Inspect / Settings flows are.`,
+        : `Sites dashboard. Pick a card to continue, or use New Site to stage a safe local draft under sites/_drafts before opening Builder.`,
       nextAction: activeTag
         ? {
             title: "Resume in Builder",
@@ -69,8 +92,8 @@ window.CurrentContext = {
         : null,
       capabilityTruth: [
         { label: "Sites list",          status: "verified", detail: "/api/intelligence/sites" },
-        { label: "New-site wizard",     status: "pending",  detail: "opens chat builder for now" },
-        { label: "Per-site freshness",  status: "pending",  detail: "updated_at not yet served" },
+        { label: "New-site wizard",     status: "verified", detail: "stages local drafts in sites/_drafts" },
+        { label: "Per-site freshness",  status: "verified", detail: "updated_at served from filesystem mtime" },
       ],
     };
   },
@@ -108,8 +131,8 @@ window.CurrentContext = {
         { kind: "route", label: "Media Studio",     target: "media" },
       ],
       explain: n > 0
-        ? `Capture · Cluster · Promote. ${n} capture${n === 1 ? "" : "s"} on the board. Promote-to-X chips are labeled but not yet wired to live promotion endpoints.`
-        : `Capture · Cluster · Promote. The board is showing placeholder seed cards — captures/inbox/*.capture.json reads aren't wired yet, so Promote-to-X chips are honest-labeled.`,
+        ? `Capture · Cluster · Promote. ${n} capture${n === 1 ? "" : "s"} on the board. Promote writes a local promotion record and a Studio task.`
+        : `Capture · Cluster · Promote. The board shows seed examples only when captures/inbox is empty.`,
       nextAction: {
         title: "Capture an idea",
         subtitle: "Live capture endpoint not wired — opens the local capture form.",
@@ -117,8 +140,8 @@ window.CurrentContext = {
       },
       capabilityTruth: [
         { label: "Three-column board",  status: "verified", detail: "Capture / Cluster / Promote layout" },
-        { label: "Live captures read",  status: "pending",  detail: "captures/inbox not yet read by client" },
-        { label: "Promote-to-X",        status: "pending",  detail: "chips labeled, no endpoint wired" },
+        { label: "Live captures read",  status: "verified", detail: "captures/inbox read by client" },
+        { label: "Promote-to-X",        status: "verified", detail: "writes promotion json + Studio task" },
       ],
     };
   },
@@ -136,8 +159,8 @@ window.CurrentContext = {
       explain: selectedBriefId
         ? `Reading brief ${selectedBriefId}. Depth selector switches reading mode (Fast / Standard / Deep / Expert) — V1 changes UI density, doesn't yet call the brain.`
         : (n > 0
-            ? `Research Center · ${n} brief${n === 1 ? "" : "s"} on file. Depth selector controls reading mode but the live "deep" pass isn't wired yet.`
-            : `Research Center shell. Briefs read from docs/research/famtastic-studio-execution/. Promote-findings routes to a target section but doesn't seed yet.`),
+            ? `Research Center · ${n} brief${n === 1 ? "" : "s"} on file. Promote findings creates local Studio tasks while depth stays local-only.`
+            : `Research Center shell. Briefs read from docs/research/famtastic-studio-execution/. Promote-findings creates local Studio tasks.`),
       nextAction: {
         title: "Pick a depth and open a brief",
         subtitle: "Depth changes UI density only — Deep / Expert do not yet call the brain.",
@@ -146,7 +169,7 @@ window.CurrentContext = {
       capabilityTruth: [
         { label: "Brief inventory",   status: "partial",  detail: "/api/research/briefs returns titles only" },
         { label: "Depth selector",    status: "verified", detail: "UI density only in V1 — honest" },
-        { label: "Promote findings",  status: "pending",  detail: "no seeder for target sections yet" },
+        { label: "Promote findings",  status: "verified", detail: "promotion writes local Studio tasks" },
       ],
     };
   },
@@ -164,13 +187,13 @@ window.CurrentContext = {
       explain: selectedAssetId
         ? `Selected asset ${selectedAssetId}. Approve / Send-to-component actions stay labeled until the write side of the registry is wired.`
         : (n > 0
-            ? `Media Library · ${n} asset${n === 1 ? "" : "s"} loaded from /api/media for the active site.`
-            : `Media Library shell. Read-side reads /api/media when a site is selected; write-side (approve / upload / generate) isn't wired yet — actions are labeled honestly.`),
+            ? `Media Library · ${n} asset${n === 1 ? "" : "s"} loaded from /api/media for the active site. Status and assignment are local-first writes.`
+            : `Media Library shell. Read-side reads /api/media when a site is selected; local status and assignment writes are available when an asset exists.`),
       nextAction: null,
       capabilityTruth: [
-        { label: "Asset registry read",   status: "partial",  detail: "/api/media reads, no writes yet" },
-        { label: "Approve / Send-to",     status: "pending",  detail: "buttons labeled, no endpoint" },
-        { label: "Slot assignment",       status: "pending",  detail: "contract ready, no round-trip" },
+        { label: "Asset registry read",   status: "verified", detail: "/api/media live" },
+        { label: "Approve / status write",status: "verified", detail: "writes local registry approval state" },
+        { label: "Slot assignment",       status: "verified", detail: "records local used_by contracts" },
       ],
     };
   },

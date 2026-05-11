@@ -52,10 +52,14 @@ function App() {
         location.hash = id;
       }
     };
-    window.__studioPublishContext = (ctx) => setCurrentContext(ctx);
+    window.__studioPublishContext = (ctx) => {
+      window.__studioCurrentContext = ctx || null;
+      setCurrentContext(ctx);
+    };
     return () => {
       window.__studioJump = undefined;
       window.__studioPublishContext = undefined;
+      window.__studioCurrentContext = undefined;
     };
   }, []);
 

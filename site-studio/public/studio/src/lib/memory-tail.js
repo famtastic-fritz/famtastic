@@ -57,10 +57,41 @@
     };
   }
 
+  async function getCaptureTail() {
+    try {
+      var r = await fetch("/api/think-tank/captures", { credentials: "same-origin" });
+      var j = await r.json();
+      if (!j || !Array.isArray(j.captures)) return { items: [] };
+      var items = j.captures.slice(0, 5).map(function (c) {
+        return {
+          t:    c.captured_at || "—",
+          who:  "capture",
+          text: c.title || c.id,
+        };
+      });
+      return { items: items };
+    } catch (e) {
+      return { items: [], error: String((e && e.message) || e) };
+    }
+  }
+
   async function getTail(opts) {
     opts = opts || {};
     var tag = opts.tag;
+    if (window.WorkflowAPI && typeof window.WorkflowAPI.getState === 'function') {
+      try {
+        var state = await window.WorkflowAPI.getState(tag || null);
+        if (state && Array.isArray(state.latest_actions) && state.latest_actions.length > 0) {
+          return { items: state.latest_actions, reason: null };
+        }
+      } catch (_e) { /* fall through to legacy tails */ }
+    }
     if (!tag) {
+      /* No site context — fall back to capture inbox tail. */
+      var capResult = await getCaptureTail();
+      if (capResult.items && capResult.items.length > 0) {
+        return { items: capResult.items, reason: null };
+      }
       return { items: [], reason: "no site context" };
     }
     var url = "/api/intelligence/runs?tag=" + encodeURIComponent(tag);
@@ -81,5 +112,5 @@
     }
   }
 
-  window.MemoryTail = { getTail: getTail };
+  window.MemoryTail = { getTail: getTail, getCaptureTail: getCaptureTail };
 })();

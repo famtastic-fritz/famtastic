@@ -279,6 +279,470 @@ process.stdout.write('\n[12] RecipeFlow Eyebrow contains "{ids.length} recipes" 
   record('recipe-flow:eyebrow-marker', ok);
 }
 
+// ── Phase 1 Invariants ──────────────────────────────────────────────
+
+// ── P1-1. The 6 new lib JS files exist and node --check clean ─────
+process.stdout.write('\n[P1-1] Phase 1 — 6 new lib JS files exist + node --check\n');
+{
+  const newLibFiles = [
+    'sites-actions.js',
+    'media-actions.js',
+    'components-actions.js',
+    'research-actions.js',
+    'think-tank-actions.js',
+    'shay-actions.js',
+  ];
+  for (const name of newLibFiles) {
+    const p = path.join(LIB_DIR, name);
+    assertExists(`p1-lib-exists:${name}`, p);
+    if (fs.existsSync(p)) {
+      let ok = false, err = '';
+      try {
+        execFileSync(process.execPath, ['--check', p], { stdio: 'pipe' });
+        ok = true;
+      } catch (e) {
+        err = (e.stderr || e.message || '').toString().split('\n').slice(0, 2).join(' | ');
+      }
+      record(`p1-lib-node-check:${name}`, ok, err);
+    }
+  }
+}
+
+// ── P1-2. Global window.* assignments present in source ──────────
+process.stdout.write('\n[P1-2] Phase 1 — window.* global assignments in lib sources\n');
+{
+  const assignments = [
+    { file: 'sites-actions.js',       needle: 'window.SitesActions' },
+    { file: 'media-actions.js',       needle: 'window.MediaActions' },
+    { file: 'components-actions.js',  needle: 'window.ComponentsActions' },
+    { file: 'research-actions.js',    needle: 'window.ResearchActions' },
+    { file: 'think-tank-actions.js',  needle: 'window.ThinkTankActions' },
+    { file: 'shay-actions.js',        needle: 'window.ShayActions' },
+  ];
+  for (const { file, needle } of assignments) {
+    const code = readFile(path.join(LIB_DIR, file)) || '';
+    const ok = code.includes(needle);
+    record(`p1-global-assign:${needle}`, ok,
+      ok ? '' : `substring "${needle}" not found in ${file}`);
+  }
+}
+
+// ── P1-3. window.CurrentContext.forDensity helper ─────────────────
+process.stdout.write('\n[P1-3] Phase 1 — window.CurrentContext.forDensity in current-context.js\n');
+{
+  const code = readFile(path.join(LIB_DIR, 'current-context.js')) || '';
+  record('p1-forDensity-in-source', code.includes('forDensity'),
+    code.includes('forDensity') ? '' : 'forDensity not found in current-context.js');
+  record('p1-forDensity-on-CurrentContext', code.includes('window.CurrentContext'),
+    code.includes('window.CurrentContext') ? '' : 'window.CurrentContext not found in current-context.js');
+}
+
+// ── P1-4. appendAsset exported from media-registry.js ────────────
+process.stdout.write('\n[P1-4] Phase 1 — appendAsset exported from media-registry.js\n');
+{
+  const code = readFile(path.join(SERVER_DIR, 'media-registry.js')) || '';
+  const hasImpl  = /function appendAsset/.test(code);
+  const hasExport = /module\.exports\s*=/.test(code) && /appendAsset/.test(code);
+  record('p1-appendAsset-function-defined', hasImpl, hasImpl ? '' : 'function appendAsset not found');
+  record('p1-appendAsset-exported', hasExport, hasExport ? '' : 'appendAsset not present in module.exports block');
+}
+
+// ── P1-5. POST route handlers in media-routes.js + think-tank-routes.js ──
+process.stdout.write('\n[P1-5] Phase 1 — POST route handlers in server modules\n');
+{
+  const mediaCode = readFile(path.join(SERVER_DIR, 'media-routes.js')) || '';
+  record('p1-POST-test-asset-route',
+    mediaCode.includes("router.post('/test-asset'") || mediaCode.includes('router.post("/test-asset"'),
+    'POST /test-asset handler not found in media-routes.js');
+
+  const ttCode = readFile(path.join(SERVER_DIR, 'think-tank-routes.js')) || '';
+  const hasPostCaptures = ttCode.includes("router.post('/captures'") || ttCode.includes('router.post("/captures"');
+  const hasPostPromote  = ttCode.includes("router.post('/promote'")  || ttCode.includes('router.post("/promote"');
+  record('p1-POST-captures-route',  hasPostCaptures, hasPostCaptures ? '' : 'POST /captures not found in think-tank-routes.js');
+  record('p1-POST-promote-route',   hasPostPromote,  hasPostPromote  ? '' : 'POST /promote not found in think-tank-routes.js');
+}
+
+// ── P1-6. 6 new lib script tags in studio.html ────────────────────
+process.stdout.write('\n[P1-6] Phase 1 — 6 action lib <script> tags in studio.html\n');
+{
+  const html = readFile(path.join(STUDIO, 'public', 'studio.html')) || '';
+  const actionLibs = [
+    'sites-actions.js',
+    'media-actions.js',
+    'components-actions.js',
+    'research-actions.js',
+    'think-tank-actions.js',
+    'shay-actions.js',
+  ];
+  for (const name of actionLibs) {
+    const rx = new RegExp(`<script[^>]+src="[^"]*\\/lib\\/${name.replace('.', '\\.')}"`);
+    record(`p1-html-action-script:${name}`, rx.test(html), '');
+  }
+}
+
+// ── P1-7. server.js mount block — no growth beyond Phase 0 +2 ────
+process.stdout.write('\n[P1-7] Phase 1 — server.js mount block not grown; all 6 mounts still present\n');
+{
+  const code = readFile(path.join(STUDIO, 'server.js')) || '';
+  const lines = code.split('\n');
+
+  function findLine2(rx) {
+    for (let i = 0; i < lines.length; i++) {
+      if (rx.test(lines[i])) return i + 1;
+    }
+    return -1;
+  }
+
+  const intel      = findLine2(/app\.use\(['"]\/api\/intelligence['"]/);
+  const comp       = findLine2(/app\.use\(['"]\/api\/components['"]/);
+  const research   = findLine2(/app\.use\(['"]\/api\/research['"]/);
+  const tt         = findLine2(/app\.use\(['"]\/api\/think-tank['"]/);
+  const media      = findLine2(/app\.use\(['"]\/api\/media['"]/);
+  const refinement = findLine2(/app\.use\(['"]\/api\/refinement['"]/);
+
+  record('p1-mount:/api/intelligence still present', intel > 0, `line=${intel}`);
+  record('p1-mount:/api/components still present',   comp > 0,  `line=${comp}`);
+  record('p1-mount:/api/research still present',     research > 0, `line=${research}`);
+  record('p1-mount:/api/think-tank still present',   tt > 0,    `line=${tt}`);
+  record('p1-mount:/api/media still present',        media > 0, `line=${media}`);
+  record('p1-mount:/api/refinement still present',   refinement > 0, `line=${refinement}`);
+
+  // No new mount lines added beyond the Phase 0 set
+  // Count lines that match app.use('/api/... between the first and last of the known 6
+  if (intel > 0 && media > 0 && refinement > 0) {
+    const minL = Math.min(intel, comp, research, tt, media, refinement);
+    const maxL = Math.max(intel, comp, research, tt, media, refinement);
+    const blockLines = lines.slice(minL - 1, maxL);
+    const mountCount = blockLines.filter(l => /^\s*app\.use\(/.test(l)).length;
+    // Phase 0 introduced 6 mounts; allow up to 8 in case intelligence-actions straddles
+    record('p1-mount:no-phantom-extra-mounts', mountCount <= 8,
+      `found ${mountCount} app.use() lines in mount block span (allowed ≤8)`);
+  }
+}
+
+// ── P1-8. recipes.js — every node has inputs, outputs, next_action, proof ──
+process.stdout.write('\n[P1-8] Phase 1 — recipes.js every node has inputs/outputs/next_action/proof\n');
+{
+  const recipesCode = readFile(path.join(LIB_DIR, 'recipes.js'));
+  if (!recipesCode) {
+    record('p1-recipes-readable', false, 'could not read recipes.js');
+  } else {
+    // Evaluate in a sandbox: stub window, run the code, inspect window.STUDIO_RECIPES
+    let sandboxOk = false;
+    let sandboxErr = '';
+    let recipeResult = null;
+    try {
+      const vm = require('vm');
+      const sandbox = { window: {} };
+      vm.createContext(sandbox);
+      vm.runInContext(recipesCode, sandbox);
+      recipeResult = sandbox.window.STUDIO_RECIPES;
+      sandboxOk = true;
+    } catch (e) {
+      sandboxErr = e.message;
+    }
+    record('p1-recipes-vm-eval', sandboxOk, sandboxErr);
+
+    if (sandboxOk && recipeResult && typeof recipeResult === 'object') {
+      const recipeIds = Object.keys(recipeResult);
+      record('p1-recipes-count>=5', recipeIds.length >= 5, `found ${recipeIds.length} recipes`);
+      let totalNodes = 0;
+      let allHaveKeys = true;
+      const missingList = [];
+      for (const rid of recipeIds) {
+        const recipe = recipeResult[rid];
+        const nodes = (recipe && Array.isArray(recipe.nodes)) ? recipe.nodes : [];
+        for (const node of nodes) {
+          totalNodes++;
+          const missing = [];
+          if (!Array.isArray(node.inputs))   missing.push('inputs');
+          if (!Array.isArray(node.outputs))  missing.push('outputs');
+          if (!node.next_action)             missing.push('next_action');
+          if (!Array.isArray(node.proof))    missing.push('proof');
+          if (missing.length > 0) {
+            allHaveKeys = false;
+            missingList.push(`${rid}/${node.id}: missing [${missing.join(',')}]`);
+          }
+        }
+      }
+      record('p1-recipes-total-nodes>=30', totalNodes >= 30, `total=${totalNodes}`);
+      record('p1-recipes-all-nodes-have-4-keys', allHaveKeys,
+        allHaveKeys ? '' : missingList.slice(0, 5).join('; '));
+    } else if (sandboxOk) {
+      record('p1-recipes-STUDIO_RECIPES-defined', false, 'window.STUDIO_RECIPES not set after eval');
+    }
+  }
+}
+
+// ── P1-9. Mission Control drift trip-wire (Phase 1 regression) ────
+process.stdout.write('\n[P1-9] Phase 1 — Mission Control drift trip-wire (regression check)\n');
+{
+  const code = readFile(path.join(SCREENS_DIR, 'mission-control.jsx')) || '';
+  const noRecipe       = !/<RecipeSelector\b/.test(code);
+  const noSitesList    = !/<ScreenSites\b/.test(code)     && !/sites-api/.test(code);
+  const noCompList     = !/<ScreenComponentStudio\b/.test(code) && !/components-api/.test(code);
+  const noMediaList    = !/<ScreenMediaLibrary\b/.test(code)    && !/media-api/.test(code);
+  record('p1-mc-no-RecipeSelector',   noRecipe);
+  record('p1-mc-no-Sites-content',    noSitesList);
+  record('p1-mc-no-Component-content', noCompList);
+  record('p1-mc-no-Media-content',    noMediaList);
+}
+
+// ── Phase 2 Invariants ───────────────────────────────────────────────
+
+// ── P2-1. site-settings-api.js exists + window.SiteSettingsAPI present ──
+process.stdout.write('\n[P2-1] Phase 2 — site-settings-api.js exists + window.SiteSettingsAPI\n');
+{
+  const apiFile = path.join(LIB_DIR, 'site-settings-api.js');
+  assertExists('p2-site-settings-api-exists', apiFile);
+  const code = readFile(apiFile) || '';
+  record('p2-site-settings-api-window-global',
+    code.includes('window.SiteSettingsAPI'),
+    code.includes('window.SiteSettingsAPI') ? '' : 'window.SiteSettingsAPI substring not found');
+  // node --check
+  if (fs.existsSync(apiFile)) {
+    let ok = false, err = '';
+    try {
+      execFileSync(process.execPath, ['--check', apiFile], { stdio: 'pipe' });
+      ok = true;
+    } catch (e) {
+      err = (e.stderr || e.message || '').toString().split('\n').slice(0, 2).join(' | ');
+    }
+    record('p2-site-settings-api-node-check', ok, err);
+  }
+}
+
+// ── P2-2. server/site-settings-schema.js exports 5 expected names ────
+process.stdout.write('\n[P2-2] Phase 2 — site-settings-schema.js exports\n');
+{
+  const schemaFile = path.join(SERVER_DIR, 'site-settings-schema.js');
+  assertExists('p2-site-settings-schema-exists', schemaFile);
+  const code = readFile(schemaFile) || '';
+  // node --check
+  if (fs.existsSync(schemaFile)) {
+    let ok = false, err = '';
+    try {
+      execFileSync(process.execPath, ['--check', schemaFile], { stdio: 'pipe' });
+      ok = true;
+    } catch (e) {
+      err = (e.stderr || e.message || '').toString().split('\n').slice(0, 2).join(' | ');
+    }
+    record('p2-site-settings-schema-node-check', ok, err);
+  }
+  const expectedExports = [
+    'SCHEMA_VERSION', 'ALLOWED_OVERRIDE_KEYS', 'ALLOWED_VALUES', 'validate', 'emptyOverrides',
+  ];
+  for (const name of expectedExports) {
+    record(`p2-schema-exports:${name}`, code.includes(name),
+      code.includes(name) ? '' : `"${name}" not found in site-settings-schema.js`);
+  }
+}
+
+// ── P2-3. server/site-settings-routes.js exports createSiteSettingsRouter ──
+process.stdout.write('\n[P2-3] Phase 2 — site-settings-routes.js exports createSiteSettingsRouter\n');
+{
+  const routesFile = path.join(SERVER_DIR, 'site-settings-routes.js');
+  assertExists('p2-site-settings-routes-exists', routesFile);
+  const code = readFile(routesFile) || '';
+  if (fs.existsSync(routesFile)) {
+    let ok = false, err = '';
+    try {
+      execFileSync(process.execPath, ['--check', routesFile], { stdio: 'pipe' });
+      ok = true;
+    } catch (e) {
+      err = (e.stderr || e.message || '').toString().split('\n').slice(0, 2).join(' | ');
+    }
+    record('p2-site-settings-routes-node-check', ok, err);
+  }
+  record('p2-site-settings-routes-exports-fn',
+    code.includes('createSiteSettingsRouter'),
+    code.includes('createSiteSettingsRouter') ? '' : 'createSiteSettingsRouter not found');
+}
+
+// ── P2-4. server.js /api/site-settings mount present (total 9 modular mounts) ──
+process.stdout.write('\n[P2-4] Phase 2 — server.js has /api/site-settings mount\n');
+{
+  const code = readFile(path.join(STUDIO, 'server.js')) || '';
+  const lines = code.split('\n');
+
+  function findLineP2(rx) {
+    for (let i = 0; i < lines.length; i++) {
+      if (rx.test(lines[i])) return i + 1;
+    }
+    return -1;
+  }
+
+  const siteSettings = findLineP2(/app\.use\(['"]\/api\/site-settings['"]/);
+  record('p2-mount:/api/site-settings present', siteSettings > 0, `line=${siteSettings}`);
+
+  // Verify all 9 modular mounts are present:
+  // Phase 0: intelligence, intelligence/actions, components, media, refinement (5)
+  // Phase 1: research, think-tank (2)
+  // Phase 2: site-settings (1)
+  // Total = 8 unique mounts (intelligence + intelligence/actions count separately)
+  const mountPatterns = [
+    /app\.use\(['"]\/api\/intelligence['"]/,
+    /app\.use\(['"]\/api\/intelligence\/actions['"]/,
+    /app\.use\(['"]\/api\/components['"]/,
+    /app\.use\(['"]\/api\/media['"]/,
+    /app\.use\(['"]\/api\/refinement['"]/,
+    /app\.use\(['"]\/api\/research['"]/,
+    /app\.use\(['"]\/api\/think-tank['"]/,
+    /app\.use\(['"]\/api\/site-settings['"]/,
+  ];
+  const foundMounts = mountPatterns.filter(rx => lines.some(l => rx.test(l))).length;
+  record('p2-mount:all-8-modular-mounts-present', foundMounts === 8,
+    `found ${foundMounts}/8 modular /api/* mounts`);
+}
+
+// ── P2-5. media-registry.js countByApproval covers all 7 buckets ────
+process.stdout.write('\n[P2-5] Phase 2 — media-registry.js countByApproval covers 7 buckets\n');
+{
+  const code = readFile(path.join(SERVER_DIR, 'media-registry.js')) || '';
+  // Find the countByApproval function body
+  const fnStart = code.indexOf('function countByApproval');
+  const fnEnd = fnStart >= 0 ? code.indexOf('\nfunction ', fnStart + 1) : -1;
+  const fnBody = fnStart >= 0 ? code.slice(fnStart, fnEnd > 0 ? fnEnd : undefined) : '';
+  const buckets = ['auto', 'pending', 'approved', 'deferred', 'draft', 'rejected', 'used'];
+  for (const bucket of buckets) {
+    record(`p2-countByApproval:${bucket}`, fnBody.includes(bucket),
+      fnBody.includes(bucket) ? '' : `bucket "${bucket}" not found in countByApproval`);
+  }
+}
+
+// ── P2-6. component-routes.js POST /insert + GET /insertions ─────────
+process.stdout.write('\n[P2-6] Phase 2 — component-routes.js POST /insert + GET /insertions\n');
+{
+  const code = readFile(path.join(SERVER_DIR, 'component-routes.js')) || '';
+  record('p2-component-routes-POST-insert',
+    code.includes("router.post('/insert'") || code.includes('router.post("/insert"'),
+    'POST /insert handler not found in component-routes.js');
+  record('p2-component-routes-GET-insertions',
+    code.includes("router.get('/insertions'") || code.includes('router.get("/insertions"'),
+    'GET /insertions handler not found in component-routes.js');
+}
+
+// ── P2-7. component-inventory.js stagedInsert + listInsertions exported ──
+process.stdout.write('\n[P2-7] Phase 2 — component-inventory.js stagedInsert + listInsertions\n');
+{
+  const code = readFile(path.join(SERVER_DIR, 'component-inventory.js')) || '';
+  record('p2-inventory-stagedInsert-defined',
+    /function stagedInsert/.test(code),
+    'function stagedInsert not found in component-inventory.js');
+  record('p2-inventory-listInsertions-defined',
+    /function listInsertions/.test(code),
+    'function listInsertions not found in component-inventory.js');
+  record('p2-inventory-stagedInsert-exported',
+    /module\.exports\s*=/.test(code) && code.includes('stagedInsert'),
+    'stagedInsert not found in module.exports block');
+  record('p2-inventory-listInsertions-exported',
+    /module\.exports\s*=/.test(code) && code.includes('listInsertions'),
+    'listInsertions not found in module.exports block');
+}
+
+// ── P2-8. sites-actions.js _dispatch helper + setTimeout reference ────
+process.stdout.write('\n[P2-8] Phase 2 — sites-actions.js _dispatch helper + setTimeout race fix\n');
+{
+  const code = readFile(path.join(LIB_DIR, 'sites-actions.js')) || '';
+  record('p2-sites-actions-_dispatch-present',
+    code.includes('function _dispatch') || code.includes('_dispatch ='),
+    '_dispatch helper not found in sites-actions.js');
+  record('p2-sites-actions-setTimeout-present',
+    code.includes('setTimeout'),
+    'setTimeout not found in sites-actions.js (race fix missing)');
+}
+
+// ── P2-9. index.html postMessage listener gated to studio-embedded class ──
+process.stdout.write('\n[P2-9] Phase 2 — index.html studio-shell postMessage listener + guard\n');
+{
+  const code = readFile(path.join(STUDIO, 'public', 'index.html')) || '';
+  record('p2-index-html-studio-embedded-class',
+    code.includes("'studio-embedded'") || code.includes('"studio-embedded"'),
+    'studio-embedded class reference not found in index.html');
+  record('p2-index-html-addEventListener-message',
+    code.includes("addEventListener('message'") || code.includes('addEventListener("message"'),
+    'addEventListener(\'message\'...) not found in index.html');
+  record('p2-index-html-early-return-guard',
+    code.includes("classList.contains('studio-embedded')") ||
+    code.includes('classList.contains("studio-embedded")'),
+    'early-return guard (classList.contains studio-embedded) not found in index.html');
+}
+
+// ── P2-10. index.html non-embedded early-return check ────────────────
+process.stdout.write('\n[P2-10] Phase 2 — index.html IIFE early-returns when not embedded\n');
+{
+  const code = readFile(path.join(STUDIO, 'public', 'index.html')) || '';
+  // The IIFE must check for studio-embedded class and return early if absent
+  const hasGuard = /if\s*\(!document\.documentElement\.classList\.contains\(['"]studio-embedded['"]\)\)\s*return/.test(code);
+  record('p2-index-html-not-embedded-early-return', hasGuard,
+    hasGuard ? '' : 'if (!document.documentElement.classList.contains("studio-embedded")) return not found in index.html');
+}
+
+// ── P2-11. recipes.js bindRecipeStatuses + window.STUDIO_RECIPES_BIND ──
+process.stdout.write('\n[P2-11] Phase 2 — recipes.js bindRecipeStatuses + window.STUDIO_RECIPES_BIND\n');
+{
+  const code = readFile(path.join(LIB_DIR, 'recipes.js')) || '';
+  record('p2-recipes-bindRecipeStatuses-defined',
+    /function bindRecipeStatuses/.test(code),
+    'function bindRecipeStatuses not found in recipes.js');
+  record('p2-recipes-STUDIO_RECIPES_BIND-window',
+    code.includes('window.STUDIO_RECIPES_BIND'),
+    'window.STUDIO_RECIPES_BIND not found in recipes.js');
+}
+
+// ── P2-12. recipe-flow.jsx fetches /api/intelligence/runs ────────────
+process.stdout.write('\n[P2-12] Phase 2 — recipe-flow.jsx fetches /api/intelligence/runs\n');
+{
+  const code = readFile(path.join(SRC_DIR, 'recipe-flow.jsx')) || '';
+  record('p2-recipe-flow-fetches-runs',
+    code.includes('/api/intelligence/runs'),
+    '/api/intelligence/runs substring not found in recipe-flow.jsx');
+}
+
+// ── P2-13. intelligence-reader.js updated_at + spec.json fallback ─────
+process.stdout.write('\n[P2-13] Phase 2 — intelligence-reader.js updated_at + spec.json mtime\n');
+{
+  const code = readFile(path.join(SERVER_DIR, 'intelligence-reader.js')) || '';
+  record('p2-intelligence-reader-updated_at',
+    code.includes('updated_at'),
+    'updated_at not found in intelligence-reader.js');
+  record('p2-intelligence-reader-spec-json-fallback',
+    code.includes('spec.json'),
+    'spec.json fallback not found in intelligence-reader.js');
+}
+
+// ── P2-14. sites.jsx relativeTime function defined ────────────────────
+process.stdout.write('\n[P2-14] Phase 2 — sites.jsx relativeTime function\n');
+{
+  const code = readFile(path.join(SCREENS_DIR, 'sites.jsx')) || '';
+  record('p2-sites-jsx-relativeTime-defined',
+    /function relativeTime/.test(code),
+    'function relativeTime not found in sites.jsx');
+}
+
+// ── P2-15. studio.html has site-settings-api.js script tag ───────────
+process.stdout.write('\n[P2-15] Phase 2 — studio.html <script> tag for site-settings-api.js\n');
+{
+  const html = readFile(path.join(STUDIO, 'public', 'studio.html')) || '';
+  const rx = /site-settings-api\.js/;
+  record('p2-studio-html-site-settings-api-script', rx.test(html),
+    rx.test(html) ? '' : 'site-settings-api.js <script> tag not found in studio.html');
+}
+
+// ── P2-16. Mission Control drift trip-wire regression (Phase 2) ───────
+process.stdout.write('\n[P2-16] Phase 2 — Mission Control drift trip-wire (Phase 2 regression)\n');
+{
+  const code = readFile(path.join(SCREENS_DIR, 'mission-control.jsx')) || '';
+  const noRecipe       = !/<RecipeSelector\b/.test(code);
+  const noSitesList    = !/<ScreenSites\b/.test(code)     && !/sites-api/.test(code);
+  const noCompList     = !/<ScreenComponentStudio\b/.test(code) && !/components-api/.test(code);
+  const noMediaList    = !/<ScreenMediaLibrary\b/.test(code)    && !/media-api/.test(code);
+  record('p2-mc-no-RecipeSelector',    noRecipe);
+  record('p2-mc-no-Sites-content',     noSitesList);
+  record('p2-mc-no-Component-content', noCompList);
+  record('p2-mc-no-Media-content',     noMediaList);
+}
+
 // ── Summary ─────────────────────────────────────────────────────────
 const total = passCount + failCount;
 process.stdout.write(`\nSTATIC: ${passCount} PASS / ${failCount} FAIL  (total=${total})\n`);

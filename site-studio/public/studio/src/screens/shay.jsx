@@ -1,91 +1,153 @@
-/* Shay Shay — assistant workspace.
-   Two-pane: chat · routing/knowledge. Mode segmented control:
-   Short / Operator / Deep / Next-action. Explain-current-screen + route-to. */
+/* Shay Shay — Phase 3 local routing workspace.
+   Honest local-first action surface: creates tasks, records learnings,
+   reads section context, and never pretends a paid/cloud brain call ran. */
 
-function ScreenShay() {
+function ScreenShay({ onJump }) {
   const [mode, setMode] = React.useState("Operator");
-  const routes = [
-    { id: "research",   label: "Research Center", chip: "good" },
-    { id: "components", label: "Component Studio" },
-    { id: "media",      label: "Media Studio" },
-    { id: "builder",    label: "Site Builder" },
-    { id: "mission",    label: "Mission Control" },
-    { id: "thinktank",  label: "Think-Tank" },
-  ];
+  const [note, setNote] = React.useState("");
+  const [routeTarget, setRouteTarget] = React.useState("research");
+  const [routeMsg, setRouteMsg] = React.useState(null);
+  const [learningMsg, setLearningMsg] = React.useState(null);
+  const [tasks, setTasks] = React.useState([]);
+  const [state, setState] = React.useState(null);
+
+  const current = window.__studioCurrentContext || null;
+
+  React.useEffect(() => {
+    window.__studioPublishContext?.({
+      section: "shay",
+      activeId: current?.activeId || null,
+      explain: current?.explain || "Shay routes local-first tasks based on the current section context.",
+      nextAction: current?.nextAction || null,
+      hints: current?.hints || [],
+      capabilityTruth: [
+        { label: "Local routing", status: "verified", detail: "creates tasks in tasks/tasks.jsonl" },
+        { label: "Learning capture", status: "verified", detail: "writes local learning candidates" },
+        { label: "Backend chat", status: "pending", detail: "no paid/cloud brain call in Phase 3" },
+      ],
+    });
+    return () => window.__studioPublishContext?.(null);
+  }, [current]);
+
+  const refresh = React.useCallback(() => {
+    window.WorkflowAPI?.listTasks?.().then((result) => setTasks(Array.isArray(result?.tasks) ? result.tasks.slice(0, 8) : []));
+    const tag = window.SiteContext?.getLastActiveTag?.() || null;
+    window.WorkflowAPI?.getState?.(tag).then((next) => setState(next || null));
+  }, []);
+
+  React.useEffect(() => { refresh(); }, [refresh]);
+
+  const handleRoute = async () => {
+    const result = await window.ShayActions?.routeWithPayload(routeTarget, {
+      title: `Shay routed work to ${routeTarget}`,
+      recommendation: note.trim() || current?.nextAction?.title || `Open ${routeTarget}`,
+      source_section: current?.section || "shay",
+      source_id: current?.activeId || "",
+    });
+    setRouteMsg(result?.task ? `task created · ${result.task.task_id}` : "route staged");
+    refresh();
+    onJump?.(routeTarget);
+  };
+
+  const handleLearning = async () => {
+    if (!note.trim()) return;
+    const result = await window.ShayActions?.captureLearning(current?.section || "shay", note, current?.activeId || '');
+    setLearningMsg(result?.stored?.item ? `learning stored · ${result.stored.item.learning_id}` : "learning captured");
+    setNote("");
+    refresh();
+  };
+
+  const densityContext = window.CurrentContext?.forDensity?.(current, mode) || current;
+  const hints = Array.isArray(densityContext?.hints) ? densityContext.hints : [];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.4fr 360px", gap: 14, height: "100%" }}>
-      {/* Chat */}
+    <div style={{ display: "grid", gridTemplateColumns: "1.35fr 360px", gap: 14, height: "100%" }}>
       <Card style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <div className="p-3" style={{ borderBottom: "1px solid var(--hair)", display: "flex", alignItems: "center", gap: 14 }}>
           <Avatar kind="shay" initials="S" />
           <div>
             <div className="fz-13 fw-500">Shay</div>
-            <div className="dim fz-11">Operator · context-aware</div>
+            <div className="dim fz-11">local routing · no paid backend chat</div>
           </div>
-          <div className="seg" style={{ marginLeft: "auto" }} title="Readback mode">
-            {["Short","Operator","Deep","Next-action"].map(m => <button key={m} className={mode === m ? "on" : ""} onClick={() => setMode(m)}>{m}</button>)}
+          <div className="seg" style={{ marginLeft: "auto" }}>
+            {["Short","Operator","Deep","Next-action"].map((item) => (
+              <button key={item} className={mode === item ? "on" : ""} onClick={() => setMode(item)}>{item}</button>
+            ))}
           </div>
         </div>
 
         <div className="p-4" style={{ flex: 1, overflow: "auto" }}>
-          <ChatBubble who="shay" meta="just now">
-            You're on Shay. I can explain any screen, route work to the right section, or summarize a run at four depths. Live brain integration is wired separately — V1 is layout + intent, not full round-trips.
+          <ChatBubble who="shay" meta="local">
+            {densityContext?.explain || "Open another section first if you want Shay to explain or route from live context."}
           </ChatBubble>
-          <ChatBubble who="fritz" meta="now">
-            Take this thread to Research and start a Standard brief on home services local SEO 2026.
-          </ChatBubble>
-          <ChatBubble who="shay" meta="thinking…">
-            Routing this to Research Center. I'll preload the prompt and set depth to <Tag>Standard</Tag>. Confirm or pick a different section.
-          </ChatBubble>
+          {densityContext?.nextAction ? (
+            <Card style={{ marginTop: 12 }}>
+              <Eyebrow>What should Fritz do next?</Eyebrow>
+              <div className="fw-500 fz-13 mt-2">{densityContext.nextAction.title}</div>
+              <div className="muted fz-11 mt-2">{densityContext.nextAction.subtitle || "Local next-action summary only."}</div>
+            </Card>
+          ) : null}
 
           <Card style={{ marginTop: 12 }}>
-            <Eyebrow>Suggested next step</Eyebrow>
-            <div className="fw-500 fz-13 mt-2">Open Research with prompt preloaded</div>
-            <div className="muted fz-11 mt-2">Cost not wired · Brief will save under docs/research/famtastic-studio-execution.</div>
+            <Eyebrow>Route request</Eyebrow>
+            <div className="seg mt-3" style={{ width: "100%" }}>
+              {["research","sites","components","media","mission","settings"].map((item) => (
+                <button key={item} className={routeTarget === item ? "on" : ""} onClick={() => setRouteTarget(item)}>{item}</button>
+              ))}
+            </div>
+            <textarea className="input mt-3" rows={4} placeholder="What should Fritz do next?" value={note} onChange={(e) => setNote(e.target.value)} />
             <div className="row gap-2 mt-3">
-              <Btn icon="zap" kind="primary">Run brief</Btn>
-              <Btn>Edit prompt first</Btn>
+              <Btn icon="arrowUpRight" kind="primary" onClick={handleRoute}>Create task + route</Btn>
+              {routeMsg ? <Chip tone="good">{routeMsg}</Chip> : null}
+            </div>
+          </Card>
+
+          <Card style={{ marginTop: 12 }}>
+            <Eyebrow>Learning capture</Eyebrow>
+            <div className="muted fz-12 mt-2">Writes a local candidate so Shay can remember what mattered without pretending a remote memory system ran.</div>
+            <div className="row gap-2 mt-3">
+              <Btn kind="ghost" icon="bookmark" onClick={handleLearning} disabled={!note.trim()}>Record learning</Btn>
+              {learningMsg ? <Chip tone="aurora">{learningMsg}</Chip> : null}
             </div>
           </Card>
         </div>
-
-        <div className="p-3" style={{ borderTop: "1px solid var(--hair)", display: "flex", gap: 8 }}>
-          <input className="input" placeholder="Ask Shay anything — she'll route or readback…" />
-          <Btn icon="send" kind="primary" />
-        </div>
       </Card>
 
-      {/* Routing + knowledge */}
       <div className="col" style={{ gap: 14 }}>
         <Card>
-          <Eyebrow>Route this thread to…</Eyebrow>
-          <div className="col gap-2 mt-3">
-            {routes.map(r => (
-              <div key={r.id} className="between panel-flat" style={{ padding: 8 }}>
-                <span className="fz-12">{r.label}</span>
-                {r.chip ? <Chip tone={r.chip}>recommended</Chip> : <Btn kind="ghost" icon="arrowRight">Route</Btn>}
+          <div className="between mb-3"><Eyebrow>Context routes</Eyebrow><Tag>{hints.length}</Tag></div>
+          <div className="col gap-2">
+            {hints.length > 0 ? hints.map((hint, idx) => (
+              <div key={idx} className="between panel-flat" style={{ padding: 8 }}>
+                <span className="fz-12">{hint.label}</span>
+                <Btn kind="ghost" icon="arrowRight" onClick={() => onJump?.(hint.target)}>Open</Btn>
               </div>
-            ))}
+            )) : <div className="muted fz-12">No section context published yet.</div>}
           </div>
         </Card>
 
         <Card>
-          <Eyebrow>Explain current screen</Eyebrow>
-          <div className="muted fz-12 mt-2">From any other section, ask Shay to explain it. She summarizes layout, current state, and the most useful next action.</div>
-          <div className="row gap-2 mt-3">
-            <Btn icon="search">Explain</Btn>
-            <Btn icon="diff">Compare</Btn>
+          <div className="between mb-3"><Eyebrow>Local task queue</Eyebrow><Btn kind="ghost" icon="refresh" onClick={refresh}>Refresh</Btn></div>
+          <div className="col gap-2">
+            {tasks.length > 0 ? tasks.map((task) => (
+              <div key={task.task_id} className="panel-flat" style={{ padding: 8 }}>
+                <div className="between">
+                  <span className="fz-12">{task.target_section}</span>
+                  <Tag>{task.status}</Tag>
+                </div>
+                <div className="muted fz-11 mt-1">{task.recommendation || task.title || task.task_id}</div>
+              </div>
+            )) : <div className="muted fz-12">No Studio tasks yet.</div>}
           </div>
         </Card>
 
         <Card>
-          <div className="between mb-3"><Eyebrow>Knowledge sources</Eyebrow><Tag>auto-loaded</Tag></div>
+          <div className="between mb-3"><Eyebrow>Local state</Eyebrow><Tag>phase 3</Tag></div>
           <div className="col gap-2 fz-12 muted">
-            <div>· FAMTASTIC-STUDIO-PLATFORM-IA-AND-FUNCTIONAL-MAP.md</div>
-            <div>· FAMTASTIC-STUDIO-WORKSPACE-RECIPES.md</div>
-            <div>· STUDIO-DESIGN-TO-IMPLEMENTATION-PLAN.md</div>
-            <div>· STUDIO-DRIFT-CORRECTION-NOTES.md</div>
+            <div>site drafts: {state?.counts?.site_drafts || 0}</div>
+            <div>component drafts: {state?.counts?.component_drafts || 0}</div>
+            <div>open tasks: {state?.counts?.open_tasks || 0}</div>
+            <div>learning candidates: {state?.counts?.learning_candidates || 0}</div>
           </div>
         </Card>
       </div>

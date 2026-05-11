@@ -17,7 +17,7 @@
   'use strict';
 
   const EMPTY_REGISTRY = Object.freeze({ version: 1, assets: [] });
-  const EMPTY_SUMMARY = Object.freeze({ auto: 0, pending: 0, approved: 0, deferred: 0 });
+  const EMPTY_SUMMARY = Object.freeze({ auto: 0, pending: 0, approved: 0, deferred: 0, draft: 0, rejected: 0, used: 0 });
 
   function emptyResult(error) {
     return {
@@ -66,5 +66,61 @@
     }
   }
 
-  window.MediaAPI = { getContract, getRegistry };
+  /**
+   * saveTestAsset(tag, asset) — POST /api/media/test-asset.
+   * asset must have { id, slot, prompt }; server fills the rest.
+   * Returns parsed JSON or { error }.
+   */
+  async function saveTestAsset(tag, asset) {
+    try {
+      const r = await fetch('/api/media/test-asset', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tag, asset }),
+      });
+      const text = await r.text();
+      try {
+        return JSON.parse(text);
+      } catch (_e) {
+        return { error: 'invalid_json', body: text };
+      }
+    } catch (e) {
+      return { error: String(e?.message || e) };
+    }
+  }
+
+  async function updateAssetStatus(tag, assetId, approval, note) {
+    try {
+      const r = await fetch('/api/media/asset/status', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tag, asset_id: assetId, approval, note }),
+      });
+      return await r.json();
+    } catch (e) {
+      return { ok: false, error: String(e?.message || e) };
+    }
+  }
+
+  async function assignAsset(tag, payload) {
+    try {
+      const r = await fetch('/api/media/asset/assign', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tag, ...payload }),
+      });
+      return await r.json();
+    } catch (e) {
+      return { ok: false, error: String(e?.message || e) };
+    }
+  }
+
+  /**
+   * refreshRegistry(tag) — explicit alias for getRegistry used by action-driven refreshes.
+   */
+  async function refreshRegistry(tag) {
+    return await getRegistry(tag);
+  }
+
+  window.MediaAPI = { getContract, getRegistry, saveTestAsset, updateAssetStatus, assignAsset, refreshRegistry };
 })();

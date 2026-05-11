@@ -1,15 +1,22 @@
-/* Media Library — registry view (Lane B).
+/* Media Library — registry view (Lane B, Phase 1).
    V1 reads from /api/media?tag=<active-tag> when a site is selected via
    Lane A's window.SiteContext. Honest empty states when no site or no assets.
-   Approval/upload/generate actions stay visible but labeled until wired. */
+   Approval/upload/generate actions stay visible but labeled until wired.
+   Phase 1 additions: Refresh button, dirty-flag check on mount, extended
+   approval tone mapping, status legend Card. */
 
 function ScreenMediaLibrary() {
   const [tag, setTag] = React.useState(null);
   const [registry, setRegistry] = React.useState({ version: 1, assets: [] });
-  const [summary, setSummary] = React.useState({ auto: 0, pending: 0, approved: 0, deferred: 0 });
+  const [summary, setSummary] = React.useState({ auto: 0, pending: 0, approved: 0, deferred: 0, draft: 0, rejected: 0, used: 0 });
   const [loadState, setLoadState] = React.useState("idle"); // idle | loading | loaded | error
   const [loadError, setLoadError] = React.useState(null);
   const [selectedId, setSelectedId] = React.useState(null);
+  const [assetActionMsg, setAssetActionMsg] = React.useState(null);
+  const [assignMode, setAssignMode] = React.useState("component-slot");
+  const [assignComponent, setAssignComponent] = React.useState("fam-hero-layered");
+  const [assignPage, setAssignPage] = React.useState("index.html");
+  const [assignSlot, setAssignSlot] = React.useState("hero-image");
 
   // Lane E — currentContext publish
   React.useEffect(() => {
@@ -18,35 +25,75 @@ function ScreenMediaLibrary() {
     return () => window.__studioPublishContext?.(null);
   }, [registry, selectedId]);
 
-  React.useEffect(() => {
-    const activeTag = (window.SiteContext && typeof window.SiteContext.getLastActiveTag === "function")
-      ? window.SiteContext.getLastActiveTag()
-      : null;
-    setTag(activeTag || null);
+  const doLoad = (activeTag, setActive) => {
+    if (setActive) setTag(activeTag || null);
     if (!activeTag) {
       setLoadState("loaded");
       return;
     }
-    if (!window.MediaAPI || typeof window.MediaAPI.getRegistry !== "function") {
+    if (!window.MediaAPI || typeof window.MediaAPI.refreshRegistry !== "function") {
       setLoadState("error");
       setLoadError("MediaAPI client not loaded");
       return;
     }
     setLoadState("loading");
-    let cancelled = false;
-    window.MediaAPI.getRegistry(activeTag).then((result) => {
-      if (cancelled) return;
+    window.MediaAPI.refreshRegistry(activeTag).then((result) => {
       if (result && result.error) {
         setLoadError(result.error);
       }
       setRegistry(result && result.registry ? result.registry : { version: 1, assets: [] });
-      setSummary(result && result.summary ? result.summary : { auto: 0, pending: 0, approved: 0, deferred: 0 });
+      setSummary(result && result.summary ? result.summary : { auto: 0, pending: 0, approved: 0, deferred: 0, draft: 0, rejected: 0, used: 0 });
       const assets = (result && result.registry && Array.isArray(result.registry.assets)) ? result.registry.assets : [];
       if (assets.length > 0) setSelectedId(assets[0].id);
       setLoadState("loaded");
     });
-    return () => { cancelled = true; };
+  };
+
+  React.useEffect(() => {
+    const activeTag = (window.SiteContext && typeof window.SiteContext.getLastActiveTag === "function")
+      ? window.SiteContext.getLastActiveTag()
+      : null;
+
+    // Check dirty flag — if Media Studio saved a test asset, reload fresh.
+    if (window.__mediaRegistryDirty) {
+      window.__mediaRegistryDirty = false;
+    }
+
+    doLoad(activeTag, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleRefresh = () => {
+    const activeTag = (window.SiteContext && typeof window.SiteContext.getLastActiveTag === "function")
+      ? window.SiteContext.getLastActiveTag()
+      : tag;
+    doLoad(activeTag, false);
+  };
+
+  const handleStatus = async (approval) => {
+    if (!tag || !selected || !window.MediaActions?.updateAssetStatus) return;
+    const result = await window.MediaActions.updateAssetStatus(tag, selected.id || selected.asset_id, approval, '');
+    if (result && result.ok) {
+      setAssetActionMsg({ ok: true, text: `status → ${approval}` });
+      doLoad(tag, false);
+    } else {
+      setAssetActionMsg({ ok: false, text: result?.error || result?.errors?.join('; ') || 'status update failed' });
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!tag || !selected) return;
+    const assetId = selected.id || selected.asset_id;
+    const result = assignMode === 'component-slot'
+      ? await window.MediaActions?.assignToComponentSlot(tag, assetId, assignComponent, assignSlot)
+      : await window.MediaActions?.assignToSiteSlot(tag, assetId, assignPage, assignSlot);
+    if (result && result.status === 'recorded_local') {
+      setAssetActionMsg({ ok: true, text: `assignment recorded · ${assignMode}` });
+      doLoad(tag, false);
+    } else {
+      setAssetActionMsg({ ok: false, text: result?.reason || result?.server_result?.error || 'assignment failed' });
+    }
+  };
 
   // Stable hash → seed for MediaTile (deterministic per asset.id)
   const hashSeed = (str) => {
@@ -59,12 +106,29 @@ function ScreenMediaLibrary() {
     return Math.abs(h);
   };
 
+  // Extended tone map — covers full MediaActions.STATUS plus registry approval values.
   const approvalTone = (approval) => {
-    if (approval === "approved") return "good";
-    if (approval === "pending") return "warn";
-    if (approval === "auto") return "ember";
-    return "";
+    switch (approval) {
+      case "approved":  return "good";
+      case "pending":   return "warn";
+      case "deferred":  return "";
+      case "auto":      return "ember";
+      case "draft":     return "";
+      case "rejected":  return "crit";
+      case "used":      return "aurora";
+      default:          return "";
+    }
   };
+
+  const STATUS_LEGEND = [
+    { value: "approved",  label: "Approved",  tone: "good"  },
+    { value: "pending",   label: "Pending",   tone: "warn"  },
+    { value: "deferred",  label: "Deferred",  tone: ""      },
+    { value: "auto",      label: "Auto",      tone: "ember" },
+    { value: "draft",     label: "Draft",     tone: ""      },
+    { value: "rejected",  label: "Rejected",  tone: "crit"  },
+    { value: "used",      label: "Used",      tone: "aurora"},
+  ];
 
   const assets = Array.isArray(registry.assets) ? registry.assets : [];
   const selected = assets.find((a) => a && a.id === selectedId) || null;
@@ -76,6 +140,7 @@ function ScreenMediaLibrary() {
         title="Where every pixel earns a name."
         sub="Provenance, approval, variants, placement, and slot-compatibility per asset. Reads from /api/media when a site is selected."
         right={[
+          <Btn key="rf" kind="ghost" icon="refresh" onClick={handleRefresh} title="Reload registry from server">Refresh</Btn>,
           <Btn key="up" icon="upload" disabled={true} title="not wired yet">Upload</Btn>,
           <Tag key="up-tag">not wired</Tag>,
           <Btn key="gn" icon="zap" kind="primary" disabled={true} title="uses Media Studio shell — generation not wired">Generate new</Btn>,
@@ -124,12 +189,28 @@ function ScreenMediaLibrary() {
       {tag && loadState === "loaded" ? (
         <>
           <Card style={{ marginBottom: 14 }}>
-            <div className="row gap-2">
+            <div className="row gap-2" style={{ flexWrap: "wrap" }}>
               <Chip tone="good">{summary.approved} approved</Chip>
               <Chip tone="warn">{summary.pending} pending</Chip>
               <Chip>{summary.deferred} deferred</Chip>
               <Chip tone="ember">{summary.auto} auto</Chip>
+              <Chip>{summary.draft} draft</Chip>
+              <Chip tone="crit">{summary.rejected} rejected</Chip>
+              <Chip tone="aurora">{summary.used} used</Chip>
               <Tag style={{ marginLeft: "auto" }}>{assets.length} total</Tag>
+            </div>
+          </Card>
+
+          {/* Status legend */}
+          <Card style={{ marginBottom: 14 }}>
+            <Eyebrow>Status legend</Eyebrow>
+            <div className="row gap-2 mt-3" style={{ flexWrap: "wrap" }}>
+              {STATUS_LEGEND.map((s) => (
+                <span key={s.value} className="row gap-2" style={{ alignItems: "center" }}>
+                  <Chip tone={s.tone}>{s.value}</Chip>
+                  <span className="fz-11 muted">{s.label}</span>
+                </span>
+              ))}
             </div>
           </Card>
 
@@ -198,6 +279,17 @@ function ScreenMediaLibrary() {
                   <div className="between"><span>Approval</span><Chip tone={approvalTone(selected.approval)}>{selected.approval || "—"}</Chip></div>
                   <div className="between"><span>Created</span><span className="muted">{selected.created_at || "—"}</span></div>
                 </div>
+                <div className="row gap-2 mt-3" style={{ flexWrap: "wrap" }}>
+                  <Btn kind="ghost" icon="check" onClick={() => handleStatus("approved")}>Approve</Btn>
+                  <Btn kind="ghost" icon="x" onClick={() => handleStatus("rejected")}>Reject</Btn>
+                  <Btn kind="ghost" onClick={() => handleStatus("draft")}>Mark draft</Btn>
+                  <Btn kind="ghost" onClick={() => handleStatus("used")}>Mark used</Btn>
+                </div>
+                {assetActionMsg ? (
+                  <div className="row gap-2 mt-2">
+                    <Chip tone={assetActionMsg.ok ? "good" : "crit"}>{assetActionMsg.text}</Chip>
+                  </div>
+                ) : null}
               </Card>
               <Card>
                 <div className="between mb-3"><Eyebrow>Placement / usage</Eyebrow><Tag>{(selected.placement_pages || []).length} pages</Tag></div>
@@ -218,6 +310,30 @@ function ScreenMediaLibrary() {
                     ? selected.variants.map((v, i) => <Tag key={i}>{typeof v === "string" ? v : (v && v.id) || `v${i+1}`}</Tag>)
                     : <span className="muted fz-12">No variants.</span>}
                 </div>
+                <div className="divider" />
+                <Eyebrow>Assign locally</Eyebrow>
+                <div className="seg mt-3" style={{ width: "100%" }}>
+                  {["component-slot", "site-slot"].map((mode) => (
+                    <button key={mode} className={assignMode === mode ? "on" : ""} onClick={() => setAssignMode(mode)}>
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+                {assignMode === "component-slot" ? (
+                  <div className="col gap-2 mt-3">
+                    <Field label="Component"><Seg items={["fam-hero-layered","product-grid-breakout","service-card-breakout"]} value={assignComponent} onChange={setAssignComponent} /></Field>
+                    <Field label="Slot"><Seg items={["hero-image","badge","cta","media"]} value={assignSlot} onChange={setAssignSlot} /></Field>
+                  </div>
+                ) : (
+                  <div className="col gap-2 mt-3">
+                    <Field label="Page"><input className="input" value={assignPage} onChange={(e) => setAssignPage(e.target.value)} /></Field>
+                    <Field label="Slot"><input className="input" value={assignSlot} onChange={(e) => setAssignSlot(e.target.value)} /></Field>
+                  </div>
+                )}
+                <div className="row gap-2 mt-3">
+                  <Btn icon="arrowUpRight" kind="primary" onClick={handleAssign}>Record assignment</Btn>
+                  <Tag tone="good">local only · registry write</Tag>
+                </div>
               </Card>
             </div>
           ) : null}
@@ -225,7 +341,7 @@ function ScreenMediaLibrary() {
       ) : null}
 
       <Hint style={{ marginTop: 14 }}>
-        Read path is live (<span className="mono">/api/media?tag=…</span>). Upload, generate, send-to-library, and slot-assignment are honest stubs until the round-trip lands. Asset shape is documented at <span className="mono">/api/media/contract</span>.
+        Read path is live (<span className="mono">/api/media?tag=…</span>). Generate remains disabled until a zero-paid provider path exists. Local asset save, status updates, and assignment now write to the registry without any cloud call.
       </Hint>
     </div>
   );

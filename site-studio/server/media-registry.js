@@ -23,7 +23,8 @@ const fs = require('fs');
 const path = require('path');
 
 const VALID_SOURCES = ['upload', 'import', 'generated', 'pipeline'];
-const VALID_APPROVALS = ['auto', 'pending', 'approved', 'deferred'];
+// V1 approval values + Phase 1 extended status model (draft, rejected, used).
+const VALID_APPROVALS = ['auto', 'pending', 'approved', 'deferred', 'draft', 'rejected', 'used'];
 const REQUIRED_FIELDS = [
   'id',
   'slot',
@@ -101,11 +102,14 @@ function validateAsset(asset) {
   if ('prompt' in asset && typeof asset.prompt !== 'string') {
     errors.push('prompt must be a string');
   }
+  if ('used_by' in asset && !Array.isArray(asset.used_by)) {
+    errors.push('used_by must be an array');
+  }
   return { valid: errors.length === 0, errors };
 }
 
 function countByApproval(registry) {
-  const out = { auto: 0, pending: 0, approved: 0, deferred: 0 };
+  const out = { auto: 0, pending: 0, approved: 0, deferred: 0, draft: 0, rejected: 0, used: 0 };
   if (!registry || !Array.isArray(registry.assets)) return out;
   for (const asset of registry.assets) {
     if (asset && asset.approval && Object.prototype.hasOwnProperty.call(out, asset.approval)) {
@@ -115,11 +119,79 @@ function countByApproval(registry) {
   return out;
 }
 
+/**
+ * appendAsset(siteDir, asset) — atomic write, dup-id rejection.
+ *
+ * Returns:
+ *   { ok: true,  registry, summary }
+ *   { ok: false, errors: string[] }
+ */
+function appendAsset(siteDir, asset) {
+  // 1. Validate shape first.
+  const validation = validateAsset(asset);
+  if (!validation.valid) {
+    return { ok: false, errors: validation.errors };
+  }
+
+  // 2. Read current registry (or start fresh).
+  const mediaDir = path.join(siteDir, 'media');
+  const file = path.join(mediaDir, 'registry.json');
+  let registry = readRegistry(siteDir);
+  if (!registry) {
+    // readRegistry only returns null on a JSON parse error of an existing file.
+    registry = emptyRegistry();
+  }
+
+  // 3. Reject duplicate id.
+  if (registry.assets.some((a) => a && a.id === asset.id)) {
+    return { ok: false, errors: ['id already exists'] };
+  }
+
+  // 4. Append.
+  registry.assets.push(asset);
+
+  // 5. Atomic write: tmp → rename.
+  try {
+    fs.mkdirSync(mediaDir, { recursive: true });
+    const tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(registry, null, 2), 'utf8');
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    return { ok: false, errors: [`write failed: ${err.message}`] };
+  }
+
+  return { ok: true, registry, summary: countByApproval(registry) };
+}
+
+function updateAsset(siteDir, assetId, mutate) {
+  const mediaDir = path.join(siteDir, 'media');
+  const file = path.join(mediaDir, 'registry.json');
+  let registry = readRegistry(siteDir);
+  if (!registry) registry = emptyRegistry();
+  const idx = registry.assets.findIndex((asset) => asset && (asset.id === assetId || asset.asset_id === assetId));
+  if (idx === -1) return { ok: false, errors: ['asset not found'] };
+  const next = mutate({ ...registry.assets[idx] });
+  const validation = validateAsset(next);
+  if (!validation.valid) return { ok: false, errors: validation.errors };
+  registry.assets[idx] = next;
+  try {
+    fs.mkdirSync(mediaDir, { recursive: true });
+    const tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(registry, null, 2), 'utf8');
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    return { ok: false, errors: [`write failed: ${err.message}`] };
+  }
+  return { ok: true, asset: next, registry, summary: countByApproval(registry) };
+}
+
 module.exports = {
   readRegistry,
   validateAsset,
   countByApproval,
   emptyRegistry,
+  appendAsset,
+  updateAsset,
   VALID_SOURCES,
   VALID_APPROVALS,
   REQUIRED_FIELDS,

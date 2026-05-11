@@ -42,4 +42,28 @@ window.ComponentsAPI = {
       return null;
     }
   },
+
+  // Phase 2, Lane C2 — staged sandbox insertion
+  async insertStaged({ tag, component_id, slot, page }) {
+    try {
+      const r = await fetch("/api/components/insert", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tag, component_id, slot, page }),
+      });
+      return await r.json();
+    } catch (e) {
+      return { ok: false, error: String(e && e.message || e) };
+    }
+  },
+
+  // Phase 2, Lane C2 — list insertion history for a site tag (last 50)
+  async listInsertions(tag) {
+    try {
+      const r = await fetch(`/api/components/insertions?tag=${encodeURIComponent(String(tag || ""))}`);
+      return await r.json();
+    } catch (e) {
+      return { insertions: [], error: String(e && e.message || e) };
+    }
+  },
 };

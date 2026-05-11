@@ -1078,6 +1078,8 @@ app.use('/api/media', require('./server/media-routes').createMediaRouter(() => S
 app.use('/api/refinement', require('./server/visual-refinement-routes').createRefinementRouter(() => SITE_DIR(), SITES_ROOT));
 app.use('/api/research', require('./server/research-routes').createResearchRouter(HUB_ROOT));
 app.use('/api/think-tank', require('./server/think-tank-routes').createThinkTankRouter(HUB_ROOT));
+app.use('/api/site-settings', require('./server/site-settings-routes').createSiteSettingsRouter(SITES_ROOT));
+app.use('/api/studio-workflows', require('./server/studio-workflows-routes').createStudioWorkflowsRouter(HUB_ROOT));
 
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {

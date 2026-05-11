@@ -4,14 +4,9 @@
    "visual recipe" pointer back to Home's RecipeFlow.
 
    Lane D — live brief reads from /api/research/briefs + /api/research/brief/:id.
-   Honest disabled-with-label for actions still pending backend wiring. */
-
-const RESEARCH_DEPTH_HINTS = {
-  Fast: "1–2 sources, ~30s, surface-level",
-  Standard: "5–10 sources, ~3min, balanced",
-  Deep: "15–25 sources, ~10min, evidence-rich",
-  Expert: "30+ sources, ~30min, gap-mapped",
-};
+   Phase 1 — depth selector shows honest metadata via ResearchActions.depthMeta().
+   New brief wired to ResearchActions.newBriefContract() (contract_only — brain not wired).
+   Promote findings wired to ResearchActions.promoteFindings() via ThinkTankAPI. */
 
 function ScreenResearch({ onJump }) {
   const [depth, setDepth] = React.useState("Standard");
@@ -21,6 +16,15 @@ function ScreenResearch({ onJump }) {
   const [selectedId, setSelectedId] = React.useState(null);
   const [detail, setDetail] = React.useState(null);
   const [detailLoading, setDetailLoading] = React.useState(false);
+  const [tasks, setTasks] = React.useState([]);
+
+  // New brief contract state
+  const [newBriefTopic, setNewBriefTopic] = React.useState("");
+  const [newBriefContract, setNewBriefContract] = React.useState(null);
+  const [showNewBrief, setShowNewBrief] = React.useState(false);
+
+  // Promote findings per-opportunity state: { [oppKey]: { open, busy, result } }
+  const [promoteState, setPromoteState] = React.useState({});
 
   // Lane E — currentContext publish
   React.useEffect(() => {
@@ -44,6 +48,15 @@ function ScreenResearch({ onJump }) {
     return () => { alive = false; };
   }, []);
 
+  React.useEffect(() => {
+    let alive = true;
+    window.WorkflowAPI?.listTasks?.('research').then((result) => {
+      if (!alive) return;
+      setTasks(Array.isArray(result?.tasks) ? result.tasks.slice(0, 8) : []);
+    });
+    return () => { alive = false; };
+  }, [promoteState]);
+
   const openBrief = React.useCallback((id) => {
     setSelectedId(id);
     setDetail(null);
@@ -65,6 +78,55 @@ function ScreenResearch({ onJump }) {
   const idPatterns     = findId("02-pattern-library");
   const idOpportunity  = findId("03-gap-and-opportunity-map");
 
+  // Depth metadata from ResearchActions
+  const depthMeta = window.ResearchActions?.depthMeta?.(depth) || null;
+
+  // Opportunities config: id used as from_capture_id base for promote
+  const OPPORTUNITIES = [
+    { key: "opp-1", label: "Opportunity 1 of 3", desc: "local-SEO seasonal landing pages", id: "opp-1-local-seo" },
+    { key: "opp-2", label: "Opportunity 2 of 3", desc: "storm-prep aisle component",         id: "opp-2-storm-prep" },
+    { key: "opp-3", label: "Opportunity 3 of 3", desc: "reusable reunion countdown",          id: "opp-3-reunion-countdown" },
+  ];
+
+  const PROMOTE_TARGETS = [
+    { label: "Research",   to: "research"   },
+    { label: "Sites",      to: "sites"      },
+    { label: "Components", to: "components" },
+    { label: "Media",      to: "media"      },
+  ];
+
+  const handlePromote = React.useCallback(async (oppId, to, oppLabel) => {
+    setPromoteState(s => ({
+      ...s,
+      [oppId]: { ...s[oppId], busy: true, result: null },
+    }));
+    const r = await window.ResearchActions?.promoteFindings(oppId, to, { note: oppLabel });
+    setPromoteState(s => ({
+      ...s,
+      [oppId]: {
+        open: true,
+        busy: false,
+        result: r && r.ok
+          ? { ok: true,  msg: `promoted → ${to} · ${r.path || ''}` }
+          : { ok: false, msg: r?.error || r?.detail || 'promote failed' },
+      },
+    }));
+  }, []);
+
+  const toggleOppPromote = React.useCallback((oppId) => {
+    setPromoteState(s => ({
+      ...s,
+      [oppId]: { ...s[oppId], open: !s[oppId]?.open, result: null },
+    }));
+  }, []);
+
+  const handleNewBrief = React.useCallback(() => {
+    const topic = newBriefTopic.trim();
+    if (!topic) return;
+    const contract = window.ResearchActions?.newBriefContract(topic, depth, []);
+    setNewBriefContract(contract || null);
+  }, [newBriefTopic, depth]);
+
   return (
     <div>
       <SectionHeader
@@ -77,31 +139,95 @@ function ScreenResearch({ onJump }) {
               <button key={d} className={depth === d ? "on" : ""} onClick={() => setDepth(d)}>{d}</button>
             ))}
           </div>,
-          <Btn key="nb" icon="search" kind="primary" disabled={true} title="Brain pipeline pending">New brief</Btn>,
-          <Tag key="nbtag">not wired · brain pipeline pending</Tag>,
+          <Btn key="nb" icon="search" kind="primary" onClick={() => { setShowNewBrief(v => !v); setNewBriefContract(null); }}>New brief</Btn>,
           <Btn key="ex" kind="ghost" icon="download" disabled={true} title="Export pending">Export</Btn>,
         ]}
       />
 
+      {/* Depth metadata — honest sources / duration / description */}
       <Hint style={{ marginBottom: 12 }}>
-        Depth: <span className="mono">{depth}</span> — {RESEARCH_DEPTH_HINTS[depth]}.
+        Depth: <span className="mono">{depth}</span>
+        {depthMeta ? (
+          <> — {depthMeta.sources} sources · {depthMeta.duration} · {depthMeta.description}</>
+        ) : null}
       </Hint>
+
+      {/* New brief panel — contract_only, brain not wired */}
+      {showNewBrief ? (
+        <Card style={{ marginBottom: 14 }}>
+          <Eyebrow>New brief — contract staging</Eyebrow>
+          <div className="col gap-2 mt-2">
+            <input
+              className="input"
+              placeholder="Research topic…"
+              value={newBriefTopic}
+              onChange={e => { setNewBriefTopic(e.target.value); setNewBriefContract(null); }}
+            />
+            <div className="row gap-2">
+              <Btn kind="primary" icon="search" onClick={handleNewBrief} disabled={!newBriefTopic.trim()}>
+                Stage contract
+              </Btn>
+              <Tag>brain pipeline not wired — local contract only</Tag>
+              <Btn kind="ghost" onClick={() => { setShowNewBrief(false); setNewBriefContract(null); }}>Close</Btn>
+            </div>
+            {newBriefContract ? (
+              <div>
+                <Chip tone="aurora">contract staged · status: {newBriefContract.status}</Chip>
+                <pre
+                  className="mono fz-11"
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    background: "oklch(1 0 0 / 0.04)",
+                    border: "1px solid oklch(1 0 0 / 0.06)",
+                    borderRadius: 6,
+                    padding: 10,
+                    color: "var(--ink-2)",
+                    margin: "8px 0 0",
+                  }}
+                >{JSON.stringify(newBriefContract, null, 2)}</pre>
+              </div>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
 
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14 }}>
         <Card>
           <div className="between mb-3"><Eyebrow>Opportunity / gap analysis</Eyebrow><Btn kind="ghost" icon="filter">Filter</Btn></div>
           <div className="col gap-3">
-            {["Opportunity 1 of 3 — local-SEO seasonal landing pages","Opportunity 2 of 3 — storm-prep aisle component","Opportunity 3 of 3 — reusable reunion countdown"].map((t,i) => (
-              <div key={i} className="panel-flat" style={{ padding: 12 }}>
-                <Eyebrow>{t.split(" — ")[0]}</Eyebrow>
-                <div className="fz-13 mt-2">{t.split(" — ")[1]}</div>
-                <div className="row gap-2 mt-2">
-                  <Btn icon="zap" disabled={true} title="Brain pipeline pending">Dig deeper</Btn>
-                  <Btn icon="arrowUpRight" kind="primary" disabled={true} title="Promotion route pending">Promote findings</Btn>
-                  <Tag>not wired</Tag>
+            {OPPORTUNITIES.map((opp) => {
+              const ps = promoteState[opp.id] || {};
+              return (
+                <div key={opp.key} className="panel-flat" style={{ padding: 12 }}>
+                  <Eyebrow>{opp.label}</Eyebrow>
+                  <div className="fz-13 mt-2">{opp.desc}</div>
+                  <div className="row gap-2 mt-2" style={{ flexWrap: "wrap" }}>
+                    <Btn icon="zap" disabled={true} title="Brain pipeline pending">Dig deeper</Btn>
+                    <Btn icon="arrowUpRight" kind="primary" onClick={() => toggleOppPromote(opp.id)}>
+                      Promote findings
+                    </Btn>
+                  </div>
+                  {ps.result ? (
+                    <div className="row gap-2 mt-2">
+                      <Chip tone={ps.result.ok ? "good" : "warn"}>{ps.result.ok ? "promoted" : "error"} · {ps.result.msg}</Chip>
+                    </div>
+                  ) : null}
+                  {ps.open && !ps.result ? (
+                    <div className="row gap-2 mt-2" style={{ flexWrap: "wrap" }}>
+                      {ps.busy ? (
+                        <Chip tone="">promoting…</Chip>
+                      ) : (
+                        PROMOTE_TARGETS.map(({ label, to }) => (
+                          <Btn key={to} kind="ghost" icon="arrowUpRight" onClick={() => handlePromote(opp.id, to, opp.desc)}>
+                            → {label}
+                          </Btn>
+                        ))
+                      )}
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <Hint style={{ marginTop: 12 }}>
             Source: <span className="mono">docs/research/famtastic-studio-execution/03-gap-and-opportunity-map.md</span>.{" "}
@@ -138,6 +264,21 @@ function ScreenResearch({ onJump }) {
           </Card>
         </div>
       </div>
+
+      <Card style={{ marginTop: 14 }}>
+        <div className="between mb-3"><Eyebrow>Research tasks</Eyebrow><Tag>{tasks.length}</Tag></div>
+        <div className="col gap-2">
+          {tasks.length > 0 ? tasks.map((task) => (
+            <div key={task.task_id} className="panel-flat" style={{ padding: 10 }}>
+              <div className="between">
+                <span className="fz-12">{task.target_section}</span>
+                <Tag>{task.status}</Tag>
+              </div>
+              <div className="muted fz-11 mt-1">{task.recommendation || task.title || task.task_id}</div>
+            </div>
+          )) : <div className="muted fz-12">No research-origin tasks yet.</div>}
+        </div>
+      </Card>
 
       <Card style={{ marginTop: 14 }}>
         <div className="between mb-3"><Eyebrow>Visual recipe — Research → Build</Eyebrow><Btn kind="ghost" icon="arrowRight" onClick={() => onJump?.("home")}>See on Home</Btn></div>

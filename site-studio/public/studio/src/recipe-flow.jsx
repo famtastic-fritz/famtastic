@@ -24,18 +24,61 @@ const RECIPE_RESEARCH_TO_PROOF = {
 };
 
 function RecipeFlow({ recipe = RECIPE_RESEARCH_TO_PROOF, onJump }) {
+  // Phase 2 Lane E2 — fetch intelligence runs on mount to drive live node statuses.
+  const [runs, setRuns] = React.useState(null); // null = loading; [] = loaded (empty)
+  const [workflowState, setWorkflowState] = React.useState(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const tag = window.SiteContext && typeof window.SiteContext.getLastActiveTag === 'function'
+      ? window.SiteContext.getLastActiveTag()
+      : null;
+    const url = tag
+      ? `/api/intelligence/runs?tag=${encodeURIComponent(tag)}`
+      : '/api/intelligence/runs';
+    fetch(url)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!cancelled) setRuns(Array.isArray(data && data.runs) ? data.runs : []);
+      })
+      .catch(() => {
+        if (!cancelled) setRuns([]); // fail-soft: fall back to static statuses
+      });
+    window.WorkflowAPI?.getState?.(tag).then((state) => {
+      if (!cancelled) setWorkflowState(state || null);
+    });
+    return () => { cancelled = true; };
+  }, []); // on mount only; re-triggers on recipe switch via RecipeSelector key prop
+
+  // Apply live binding when runs are loaded and the helper is available.
+  const boundRecipe = window.STUDIO_RECIPES_BIND
+    ? window.STUDIO_RECIPES_BIND(recipe, runs || [], workflowState)
+    : recipe;
+
+  // Derive binding label for the header tag.
+  const bindingLabel = runs === null
+    ? 'loading runs…'
+    : workflowState
+      ? `local state + ${runs.length} run${runs.length !== 1 ? 's' : ''}`
+      : runs.length > 0
+        ? `bound to ${runs.length} run${runs.length !== 1 ? 's' : ''}`
+        : 'no runs · static';
+
   const [activeId, setActiveId] = React.useState(
     (recipe.nodes.find(n => n.status === "active") || recipe.nodes[0]).id
   );
-  const active = recipe.nodes.find(n => n.id === activeId);
+  const active = boundRecipe.nodes.find(n => n.id === activeId);
   return (
     <div>
       <div className="between mb-3">
         <Eyebrow>{recipe.title}</Eyebrow>
-        <Chip tone="aurora">recipe · v1 · static</Chip>
+        <div className="row" style={{ gap: 6 }}>
+          <Chip tone={runs && runs.length > 0 ? "good" : "muted"}>{bindingLabel}</Chip>
+          <Chip tone="aurora">recipe · v1</Chip>
+        </div>
       </div>
       <div className="recipe">
-        {recipe.nodes.map((n, i) => (
+        {boundRecipe.nodes.map((n, i) => (
           <React.Fragment key={n.id}>
             <div
               className={`recipe-node ${n.id === activeId ? "active" : ""} ${n.status === "done" ? "done" : ""}`}
@@ -52,7 +95,7 @@ function RecipeFlow({ recipe = RECIPE_RESEARCH_TO_PROOF, onJump }) {
                 <Btn kind="ghost" icon="arrowUpRight" onClick={(e) => { e.stopPropagation(); onJump?.(n.section); }}>Open</Btn>
               </div>
             </div>
-            {i < recipe.nodes.length - 1 ? <span className="recipe-arrow">→</span> : null}
+            {i < boundRecipe.nodes.length - 1 ? <span className="recipe-arrow">→</span> : null}
           </React.Fragment>
         ))}
       </div>
@@ -64,6 +107,64 @@ function RecipeFlow({ recipe = RECIPE_RESEARCH_TO_PROOF, onJump }) {
             <Btn icon="arrowUpRight" kind="primary" onClick={() => onJump?.(active.section)}>Open in {active.section}</Btn>
             <Btn kind="ghost" icon="doc">View artifact</Btn>
           </div>
+
+          {/* Inputs / Outputs / Next action / Proof — two-column grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 16px", marginTop: 14 }}>
+
+            {/* Left column — Inputs + Outputs */}
+            <div className="col" style={{ gap: 10 }}>
+              {Array.isArray(active.inputs) && active.inputs.length > 0 ? (
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: 4 }}>Inputs</div>
+                  <div className="row" style={{ gap: 4, flexWrap: "wrap" }}>
+                    {active.inputs.map((inp, i) => <Tag key={i} style={{ fontSize: 10 }}>{inp}</Tag>)}
+                  </div>
+                </div>
+              ) : null}
+              {Array.isArray(active.outputs) && active.outputs.length > 0 ? (
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: 4 }}>Outputs</div>
+                  <div className="row" style={{ gap: 4, flexWrap: "wrap" }}>
+                    {active.outputs.map((out, i) => <Tag key={i} style={{ fontSize: 10 }}>{out}</Tag>)}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Right column — Next action + Proof */}
+            <div className="col" style={{ gap: 10 }}>
+              {active.next_action ? (
+                <Card style={{ padding: "8px 10px" }}>
+                  <Eyebrow style={{ marginBottom: 4 }}>Next action</Eyebrow>
+                  <div className="row" style={{ gap: 8, alignItems: "center", marginTop: 4 }}>
+                    <span className="fz-12" style={{ color: "var(--ink-2)", flex: 1 }}>{active.next_action.label}</span>
+                    <Btn kind="ghost" style={{ fontSize: 10, padding: "2px 8px" }}
+                      onClick={() => onJump?.(active.next_action.target)}>Open</Btn>
+                  </div>
+                </Card>
+              ) : null}
+              <Card style={{ padding: "8px 10px" }}>
+                <Eyebrow style={{ marginBottom: 4 }}>Owner / artifacts</Eyebrow>
+                <div className="fz-11 dim">owner: {recipe.owner_section || '—'}</div>
+                <div className="row" style={{ gap: 4, flexWrap: "wrap", marginTop: 6 }}>
+                  {Array.isArray(workflowState?.recipe_artifacts?.[recipe.id]) && workflowState.recipe_artifacts[recipe.id].length > 0
+                    ? workflowState.recipe_artifacts[recipe.id].slice(0, 5).map((item, i) => <Tag key={i} style={{ fontSize: 10 }}>{item}</Tag>)
+                    : <span className="fz-11 dim">no local artifacts yet</span>}
+                </div>
+              </Card>
+              {Array.isArray(active.proof) && active.proof.length > 0 ? (
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: 4 }}>Proof</div>
+                  <div className="col" style={{ gap: 3 }}>
+                    {active.proof.map((p, i) => (
+                      <div key={i} className="fz-11 dim" style={{ lineHeight: 1.4 }}>· {p}</div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
           <div className="mt-3 dim fz-11">{recipe.caption}</div>
         </Card>
       ) : null}

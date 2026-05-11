@@ -22,4 +22,24 @@ window.ThinkTankAPI = {
       return { contract: null, error: String(err && err.message || err) };
     }
   },
+  async createCapture(payload) {
+    try {
+      const r = await fetch('/api/think-tank/captures', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return await r.json();
+    } catch (e) { return { error: String(e?.message || e) }; }
+  },
+  async promote(payload) {
+    try {
+      const r = await fetch('/api/think-tank/promote', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return await r.json();
+    } catch (e) { return { error: String(e?.message || e) }; }
+  },
 };
