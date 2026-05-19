@@ -1,5 +1,312 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Shay-Shay upstream Hermes security-wave integration (2026-05-19)
+
+Shay-Shay lives at `~/famtastic/shay-shay/` as a rebranded fork of Hermes Agent, with `shay`, `SHAY_*`, and `~/.shay` as the protected product/runtime boundary. The first upstream-port wave from Hermes `v2026.5.16` was intentionally selective rather than a direct merge: security and dependency hardening were adapted while preserving Shay naming and runtime paths.
+
+Ported/adapted files: `agent/anthropic_adapter.py` separates OAuth PKCE `code_verifier` from independent `oauth_state` and validates returned state before token exchange; `model_tools.py` adds `_sanitize_tool_error()` and routes exception-path errors through it; `tools/registry.py` sanitizes registry dispatch exception strings; `tools/url_safety.py` blocks non-HTTP(S) and missing-scheme URLs; `tools/approval.py` extends dangerous-command detection for macOS `/private/{etc,var,tmp,home}` mirrors, `killall` force/regex sweeps, and `find -execdir rm`; `pyproject.toml` and `uv.lock` raise dependency floors for `anthropic`, `aiohttp`, and `cryptography`. Tests added/extended at `tests/test_sanitize_tool_error.py`, `tests/tools/test_url_safety.py`, and `tests/tools/test_approval.py`.
+
+Known gap: this Shay-Shay repo currently lacks `pytest` in `.venv`, so targeted tests were validated through `py_compile` and direct Python assertions rather than the pytest runner; install/sync the dev extra before relying on full unit-test execution.
+
+## muapi-orchestrated brand-package generation — rebuild experiment (2026-05-19)
+
+After spending 30+ rounds manually building the FAMtastic brand mark via
+primitive muapi calls + Python compositing, ran the same brand exercise
+through muapi's **prebuilt recipe skills** to measure flow quality and
+limitations. Results inform Media Studio's wrapper architecture.
+
+### Recipes executed (in order)
+1. `muapi-logo-branding` — 3 logo concepts in parallel + 1 application mockup
+2. `muapi-brand-kit` — Logo A + Logo B + moodboard + pattern (parallel)
+3. `muapi-3d-logo-animation` — 2D→3D image edit, then image-to-video animation
+4. `muapi-design-guide` — palette card + typography pairing + UI kit + real-world mockup (parallel)
+
+**Total time:** ~15 minutes for ~16 outputs, vs. 5+ hours and 30+ rounds for
+the manual approach. Order-of-magnitude improvement.
+
+### Highest-quality outputs (use as proof-of-concept references)
+- **3D medallion (flux-kontext-max edit of Logo 1):** Premium cast-metal
+  circular medallion with FAM letters inset in proper colors + green burst
+  behind. Genuinely premium brand mark quality. URL:
+  `https://cdn.muapi.ai/outputs/a0a0a7fe513544f7b3de345425ea5151.jpg`
+- **Color palette card (gpt4o):** Agency-quality design-guide page with
+  the FAMtastic wordmark + 5 hex swatches labeled (PRIMARY #1A3FAA,
+  SECONDARY #F2C40D, ACCENT #D62828, HIGHLIGHT #0F6B3C, BACKGROUND #FFFFFF +
+  text #1A1A1A). Ready to ship as page 1 of a brand book.
+- **Typography pairing sheet (gpt4o):** Editorial typography reference
+  with Heading/Subheading/Body/Caption levels, sample text "Manifesting
+  the Extraordinary from the Ordinary." Magazine-quality layout.
+- **UI components kit (gpt4o):** Figma-style component documentation
+  with brand-colored buttons, inputs, cards, badges, icons. Usable as
+  the basis of a real design system.
+- **5-second animated logo (wan2.2 image-to-video):** Polished cinematic
+  reveal of the 3D medallion. URL:
+  `https://cdn.muapi.ai/outputs/83355157a8cc49c3ae5b93ea429e7aaf.mp4`
+
+### Limitations discovered (the real constraints)
+
+1. **Model availability mismatch:** Recipe skills reference newer model
+   names (`ideogram-v3-t2i`, `flux-2-pro`, `nano-banana-pro`,
+   `nano-banana-2`, `bytedance-seedream-v4.5`, `gpt-image-2-text-to-image`,
+   `veo3.1-fast-image-to-video`) that are NOT in muapi's current CLI
+   catalog. Substitution required.
+2. **Models returning "Not Found":** `midjourney`, `seedream`,
+   `kling-pro`, `seedance-pro` all returned `{"detail":"Not Found"}` —
+   either not enabled on the account, or wrong endpoint paths in CLI.
+   `gpt4o`, `flux-dev`, `flux-kontext-max`, `wan2.2` all worked
+   reliably.
+3. **veo3-fast image-to-video CLI/API mismatch:** CLI sends `image_url`,
+   API expects `images_list`. Use `wan2.2` for i2v instead.
+4. **Multi-segment text rendering is unreliable:** Brand names like
+   "FAMtastic" (FAM + tastic) sometimes drop the F ("AMtastic") or
+   misspell ("TaSTIC", "Famino"). Single-word brands render more
+   reliably.
+5. **flux-kontext-max image edit drifts beyond the instruction:** Asked
+   for "add 3D depth, preserve composition" — got a beautiful circular
+   medallion crop that dropped "tastic" entirely. Composition not
+   preserved as instructed.
+6. **No deterministic recipe substitution:** When a recipe's specified
+   model isn't available, the executing agent has to manually map
+   substitutes. Recipes need a fallback chain in their spec.
+
+### Implications for Media Studio's wrapper
+
+The wrapper layer Media Studio needs to add on top of raw muapi recipes:
+
+1. **Model-fallback chain per call** — recipe specifies primary +
+   fallback models; wrapper tries each until one returns success
+2. **OCR validation gate** — after generating a logo with brand-name
+   text, OCR the output and verify the name renders correctly; re-run
+   if not
+3. **Composition-preservation guard** — when using image edit, capture
+   the source's content bounding box and reject outputs that drift too
+   far from it (or composite the edit back into the source frame)
+4. **Recipe template overrides** — the muapi recipe skill prompts are
+   generic; Media Studio's wrapper should inject FAMtastic-specific
+   brand context (manifesto excerpts, per-letter color rules,
+   composition rules) into every recipe invocation automatically
+5. **Asset-categorization output** — wrapper organizes outputs by
+   category (logo concept / mockup / palette / typography / UI / video)
+   for retrieval, not flat dump
+6. **Recipe-cost ledger** — record per-run cost (~40-120 credits per
+   recipe) so users see budget impact before launching a campaign
+7. **Curated final-assembly** — pick the best outputs across recipes
+   into a clean deliverable package, prune the misses
+
+### Flow quality assessment (★★★★★ = production-ready)
+
+| Recipe | Quality | Notes |
+|---|---|---|
+| `muapi-logo-branding` | ★★★★☆ | Good structure; some text issues |
+| `muapi-brand-kit` | ★★★★☆ | Moodboard + pattern useful; logos redundant after Step 1 |
+| `muapi-3d-logo-animation` | ★★★☆☆ | 3D image excellent; video needs `wan2.2` not `veo3-fast` |
+| `muapi-design-guide` | ★★★★★ | Palette card + typography sheet are agency-quality |
+
+**Overall verdict:** muapi recipes deliver a complete brand package in
+~15 minutes for ~$10-20 of credits. Manual primitive-by-primitive build
+took 5+ hours and resulted in equivalent output quality. Recipes are
+the right starting point; wrapper adds brand-specific context + quality
+gates + curation.
+
+**Hermes pass (gap → solution mapping):** Every limitation observed
+during this experiment has been mapped to a concrete proposed solution
+with sized effort and verification criteria at
+`~/famtastic/media-studio/SOLUTIONS-BACKLOG.md`. 16 backlog items totaling
+~30 hours of focused work to reach Media Studio V1.
+
+## FAMtastic Remotion engine — Media Studio foundation (2026-05-19)
+
+`~/famtastic/remotion/` is the FAMtastic shared animation & rendering engine.
+It is the foundation layer of the future **Media Studio**. Built on
+[Remotion](https://www.remotion.dev) (free for ≤3-person teams). All studios
+in the FAMtastic ecosystem will consume compositions from this package.
+
+### Architecture (the contract)
+
+Generation = **muapi** (text-to-image, text-to-video, music, voiceover,
+transcription, edit). Composition = **Remotion** (assemble, animate,
+caption, render, embed). No overlap, no double-pay.
+
+```
+~/famtastic/
+├── brand/                        # brand-mark manifesto + source PNG layers
+├── remotion/                     # shared animation engine (NEW)
+│   ├── src/FAMtasticLogo.tsx     # primary brand-mark composition (shipped)
+│   ├── src/Root.tsx              # composition registry (3 entries)
+│   ├── public/brand/             # transparent PNG layers (burst, FAM, tastic)
+│   ├── RECIPES.md                # composition catalog + future-build roadmap
+│   └── README.md                 # architecture + integration docs
+├── site-studio/                  # will import compositions (next)
+├── (future) media-studio/        # the eventual studio server + UI
+└── .claude/skills/remotion-best-practices/
+                                   # 1 SKILL.md + 36 rule files — AI agent
+                                   # auto-loads these when working on Remotion
+```
+
+### Shipped today
+
+- **3 compositions** registered: `FAMtasticLogo-Luminous`,
+  `FAMtasticLogo-Dark`, `FAMtasticLogo-Square` — all in
+  `src/FAMtasticLogo.tsx`.
+- **9 Remotion packages** installed: core + `@remotion/player`,
+  `@remotion/captions`, `@remotion/transitions`, `@remotion/google-fonts`,
+  `@remotion/shapes`, `@remotion/animation-utils`, `@remotion/media-utils`,
+  `@remotion/preload`.
+- **`remotion-best-practices` skill** copied to
+  `~/famtastic/.claude/skills/` — gives any Claude Code session in the
+  monorepo deep Remotion knowledge automatically.
+- **`launch.json`** entry `famtastic-remotion` runs `npm run dev` at
+  `localhost:3000`.
+
+### npm scripts on the package
+
+- `dev` — Remotion Studio at `localhost:3000`
+- `build` — bundle for production
+- `render:luminous` / `render:dark` / `render:square` — render named MP4s
+- `render:still` — render a still PNG at frame 60
+- `lint` — eslint + tsc
+
+### Integration contract (how studios call it)
+
+Studios bundle once, then call `selectComposition` + `renderMedia` with
+their own `inputProps` (brand colors, content, format preset). Full code
+example in `~/famtastic/remotion/README.md`.
+
+### Recipe catalog (the build roadmap)
+
+`~/famtastic/remotion/RECIPES.md` is the canonical catalog of every
+composition and integration pattern Media Studio is being built toward:
+- Phase 2 — composition library (LowerThird, TitleCard, SocialReel,
+  IntroOutro, KineticType, ProductShowcase)
+- Phase 3 — Studio integration patterns (captions overlay, music sync,
+  voiceover sync, AI-clip wrapping, multi-format batch, brand context
+  injection)
+- Phase 4 — embedded live experiences (`<Player>` embed in
+  Site-Studio-built sites, per-visitor personalization)
+- Phase 5 — AI media pipelines ("make me a 30s ad" end-to-end, social
+  variant factory, Site-Studio-triggered hero videos)
+
+Update RECIPES.md when a recipe is added/shipped/retired.
+
+### Critical rules (do not break)
+
+1. **Single contiguous brand mark** — every composition must lead with the
+   FAMtastic signature lock-up (FAM letters + burst + "tastic"). Hard-coded,
+   not optional. See `~/famtastic/brand/FAMTASTIC-BRAND-MARK.md`.
+2. **muapi for generation, Remotion for composition** — do NOT install
+   `@remotion/openai-whisper`; muapi already transcribes inside AI-Clipping.
+3. **Compositions are the moat** — invest engineering time in compositions
+   first, Studio server/UI second. Each composition is reusable forever.
+4. **Sequence frame offsets are auto-applied** — when wrapping a component
+   in `<Sequence from={N}>`, `useCurrentFrame()` inside is already 0 at
+   sequence start. Do NOT subtract N again (caught this bug 2026-05-19
+   during initial install; tastic was invisible because of double-offset).
+5. **Brand assets via `staticFile()`** — never import PNGs as ES modules;
+   use `staticFile("brand/<name>.png")` so they load in both Studio dev
+   and bundled production renders.
+
+### Known Gaps opened
+
+- No `media-studio/` server yet — Remotion is callable only via CLI today.
+  The server wrapper is Phase 3 of the build (per RECIPES.md).
+- No automated tests on compositions yet — visual regression should be
+  added before composition library scales past 5 entries.
+- `FAMtasticLogo` motion-warp FAM still doesn't have a dramatically taller
+  A — flux-kontext softened the directive. Manual SVG re-author would fix.
+- "tastic" composition uses Arial Rounded Bold as placeholder typography
+  — needs replacement with the actual FAMtastic-DNA typeface choice once
+  determined.
+- No CI hook to run `npm run lint` in `~/famtastic/remotion/` yet.
+
+## MBSH RSVP Phase 3.4 marker-band surgical fixes (2026-05-14)
+
+`~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` keeps the RSVP `.hero-stage` sealed; the hero-stage markup hash stayed unchanged during Phase 3.4. The changes are limited to `.marker-band` and children: the band now uses visible 4vw left/right padding instead of a full-bleed velvet panel, the existing HTML/CSS `.marker-plaque` carries a prominent `.marker-bulbs-top` crown of 20 glowing `.marker-bulb` nodes, and the `.chevron.layer--chevron.scroll-teaser` remains a direct `.marker-band` child with `data-scroll-target="#rsvp-form"` and two SVG paths.
+
+`frontend/css/premiere.css` now treats the interior-hero chevron as `position: absolute` at the marker-band/section bottom (`bottom: 1.5rem`, `z-index: 20`) with `chevronBounce` traveling upward over the marker text area. In-flow chevrons cannot reliably reach the section bottom because the marker band content pushes them out of the intended zone; the absolute bottom chevron is the canonical interior-hero pattern. Mobile marker containment is marker-only: at phone widths the top crown drops to 10 visible bulbs, the bottom `.bleed-bulb-row` holds 12, and `.marker-line-1` / `.marker-line-2` use tighter sizes/spacing so the text does not clip.
+
+Known gap: RSVP Phase 3.4 is complete locally and awaiting Fritz inspection before staging. The HTML/CSS marker-plaque recipe and absolute chevron pattern are canonical for future interior reels, but they have not been cloned to Tickets/Through the Years/In Memory/Capsule/Playlist yet. Mobile-throttled Lighthouse remains under 85 due to the broader existing CSS/font payload; desktop Lighthouse remains above threshold.
+
+## MBSH RSVP Phase 3.3 simplification (2026-05-14)
+
+`~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now keeps the RSVP cinematic interior hero as a two-band first viewport, but the lower `.marker-band` uses a plain HTML/CSS `.marker-plaque` instead of an SVG object. The plaque contains `.marker-corner` diamond spans, `.marker-bulbs-top` with 20 `.marker-bulb` nodes, `.marker-line-1`, and `.marker-line-2`; `frontend/css/premiere.css` owns the typography (`JetBrains Mono` scene line and `Playfair Display` title), burgundy/brass plaque treatment, marker bulb chase, mobile 10-bulb top reduction, and bottom `.bleed-bulb-row` with 20 desktop / 12 mobile bulbs.
+
+The rope extension experiment has been removed. The baked-in velvet ropes and Harry's hand-on-stanchion pose carry the “opening the path” story better than a separate SVG bridge without a believable endpoint. Do not recreate a rope-continues-into-bleed layer unless the actual scene plate includes an anchor/stanchion destination for it.
+
+Known gap: RSVP Phase 3.3 is complete locally and awaiting Fritz inspection before staging. The HTML/CSS marker-plaque recipe is canonical for future interior reels, but it has not been cloned to Tickets/Through the Years/In Memory/Capsule/Playlist yet. Mobile-throttled Lighthouse is still under 85 due to the broader existing CSS/font payload, while desktop local Lighthouse remains above threshold.
+
+## MBSH RSVP Phase 3.2 marker-band refinement (2026-05-14)
+
+`~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now treats the RSVP marker band as a full-width cinematic chapter strip instead of a left-anchored plaque area. Phase 3.2 briefly tested a full-section rope bridge and SVG marker, but Phase 3.3 superseded both: the rope layer is removed and the marker is now an HTML/CSS plaque with centered `SCENE II · INT. AUDITORIUM — NIGHT` and `LOCK YOUR SEAT` text plus 20 top bulbs.
+
+`frontend/css/premiere.css` owns the Phase 3.2 composition rules: `.marker-band` is a single-column plaque/bulbs/chevron grid, `.marker-plaque` fills the band width as HTML/CSS, `.marker-bulbs-top` animates the plaque bulbs, and `.bleed-bulb-row` spreads 20 bulbs across the band with 12 shown on phone widths, `.layer--headline` is center/right aligned, and `.chevron` uses a visible double-chevron `chevronBounce` instead of a subtle pulse. RSVP head loading now aligns the scene-image preload with the CSS LCP background and async-loads the heavy font/premiere stylesheets; desktop Lighthouse remains above threshold, but mobile-throttled npx Lighthouse still reports below 85 because of the broader existing CSS/font payload.
+
+Known gap: Phase 3.2 is complete locally and awaiting Fritz inspection before staging. The full-width marker-band recipe is now canonical for future interior reels, but it has not been cloned to Tickets/Through the Years/In Memory/Capsule/Playlist yet.
+
+## MBSH RSVP Phase 4 additive layer polish (2026-05-14)
+
+After Fritz approved the corrected Preview-B live base, RSVP received a local-only three-layer polish pass without staging push. `~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now adds Phase 4-only atmosphere nodes inside `.layer--atmosphere`: `.atmosphere-sconce`, `.atmosphere-camera-flash`, and `.atmosphere-painting-wash`; the rope glint was removed in Phase 3.3 with the rope concept. `frontend/css/premiere.css` owns the additive motion and interaction rules under the "RSVP Phase 4" block: `sconceFlicker`, `cameraFlashPop`, `paintingWashDrift`, refined `lampBreath`, `bleedBulbChase`, `rsvpChevronPulse`, guest-list form top treatment, and mobile simplification that hides the kicker and keeps the title readable on 390px screens.
+
+The important implementation lesson is that decorative bridge/spill overlays must not be boxed partial-width elements when they sit over photographic hero art. The attempted `.bleed-light-spill` element produced a visible lower-right rectangular artifact in browser proof, so Phase 4 disables that element (`display: none`) and lets the form-section/background gradients carry the warm spill instead. Local verification for Phase 4 included desktop browser visual proof, 390×844 headless mobile screenshot proof, clean browser console, `node --check frontend/js/premiere.js`, `node --check frontend/js/rsvp.js`, and `git diff --check`.
+
+Known gap: RSVP Phase 4 is complete locally and awaiting Fritz inspection before any staging push. The broader MBSH interior-page rollout is still pending; this pass intentionally touched RSVP only and did not clone the Phase 4 layer recipe to Tickets/Through the Years/In Memory/Capsule/Playlist.
+
+## MBSH RSVP Phase 3 hero wire + bleed pattern (2026-05-14)
+
+The live RSVP page in `~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now uses the approved Variant B 3D Harry direction for the production RSVP hero. The live hero is a static HTML layered composition (`section.reel-hero.reel-hero--rsvp.interior-hero`) using optimized web derivatives of `frontend/assets/heroes/rsvp/01-environment.png` and `frontend/assets/heroes/rsvp/02b-harry-3d-render-transparent.png`, while preserving `data-source-asset` pointers to the approved PNG inputs. the earlier SVG marker/rope assets were superseded in Phase 3.3 by the HTML/CSS marker and no-rope composition.
+
+The rope-continues-into-bleed bridge from the initial Phase 3 wire was removed in Phase 3.3 because it had no convincing endpoint. `frontend/css/premiere.css` owns the first-pass atmosphere loops (`tungstenPulse`, `dustRise`, `lampBreath`, `bleedBulbChase`, `spillBreath`, `rsvpChevronPulse`) plus reduced-motion/mobile simplification; `frontend/js/premiere.js` keeps RSVP page-scoped behavior by skipping the old full-page `.premiere-stage` overlay on RSVP so Lighthouse does not count decorative backdrop as LCP. Local verification for Phase 3/Preview-B correction passed with no browser console errors, SVG/XML parse checks, `node --check frontend/js/premiere.js`, `node --check frontend/js/rsvp.js`, `git diff --check`, browser visual proof of the full-width Preview-B layout, and chevron scroll to `#rsvp-form`. Desktop Lighthouse Performance is 98 after optimized RSVP assets/footer mark; mobile-throttled npx Lighthouse remains 75 because the existing 206KB `frontend/css/premiere.css` payload is render-blocking, so mobile performance cleanup is a separate known gap before staging if Fritz wants the Lighthouse gate strict on mobile.
+
+Known gap: Phase 3 is complete locally and still awaiting Fritz inspection before any staging push. The hero uses optimized WebP derivatives for performance, but the approved full-source PNGs remain in place; future polish should focus on the HTML/CSS plaque and baked-in scene plate, not a separate rope endpoint.
+
+## MBSH RSVP Phase 2 hero composition (2026-05-14)
+
+The approved RSVP artboard plan in `captures/inbox/mbsh-rsvp-hero-artboard-plan-2026-05-14.md` has now been executed locally in `~/famtastic-sites/mbsh-reunion` for RSVP only. The page composes `frontend/assets/heroes/rsvp/01-environment.png` (1536×1024 RGB theater check-in plate), `frontend/assets/heroes/rsvp/02-harry-usher-transparent.png` (1024×1536 RGBA Tier 1 Harry usher, alpha range `(0,255)`), and a hand-authored marker concept, later replaced by an HTML/CSS marker plaque through the RSVP entry in `frontend/js/page-sequence.js`, the hero assembly and scroll wiring in `frontend/js/premiere.js`, and the RSVP-only layout rules in `frontend/css/premiere.css`.
+
+Two implementation lessons matter for future reels. First, the scroll-teaser wiring must compute absolute document position with `target.getBoundingClientRect().top + window.pageYOffset`, not `target.offsetTop`, because form targets nested inside wrappers otherwise land too early and leave snap-in sections invisible. Second, if a hero is supposed to bleed into the form, RSVP-specific injected interstitials must not sit between the hero and form: `mountAllBillboards()` now skips the RSVP note-panel injection, and `frontend/rsvp.html` places the countdown after `.rsvp-form-wrap` so the hero chevron/bridge lands on `#rsvp-form`.
+
+Known gap: this RSVP Phase 2 build is complete locally and awaiting Fritz inspection; staging must remain unpushed until Fritz approves the visual result. The rest of the interior pages were intentionally not touched in this phase.
+
+## MBSH layered hero + Hi-Tide Harry tier system (2026-05-12)
+
+MBSH's interior hero concept is now locked as page-specific hero recipes with **layered scene composition required**. Captures: `captures/inbox/mbsh-scene-marker-info-panel-interview-capture-2026-05-12.md` and `captures/inbox/mbsh-hero-harry-tier-decisions-2026-05-12.md`; the reels plan is `captures/inbox/mbsh_reels_layered_experience_plan.md`. The key architectural lesson is that cinematic heroes, info panels, and chatbot avatars should not be generated as flat composites when the experience needs placement, animation, responsive control, and character identity preservation. Instead, compose independent DOM layers: scene, atmosphere, character, headline/copy, foreground/frame, and motion/status.
+
+Hi-Tide Harry now has three asset tiers: Tier 1 **Ultimate Photoreal Hero Harry** for major page hero moments; Tier 2 **Normal Photoreal Chatbot Harry** with transparent background for the assistant/avatar; and Tier 3 **Regular Hi-Tide Harry Content Images** for cards, Note-from-Usher slides, form success states, and smaller content moments. The chatbot avatar is a miniature layered composition with a marquee bulb ring frame, warm vignette scene, transparent Harry portrait, shine layer, and status layer; the bulb chase doubles as idle/listening/speaking feedback. This became a reusable skill, `cinematic-layered-character-systems`, and `famtastic-site-vibe-production` now points future site work toward character-tier definition before implementation.
+
+Animation choice is now tiered: CSS/code animation for ambient motion that code can fake, identity-locked reference-to-video for Harry character actions, and Veo-style scene video only for organic physics that code cannot convincingly reproduce. This should guide MBSH implementation and future FAMtastic cinematic sites so small asset waves stay economical while still producing high-vibe, controlled experiences. The reusable `controlled-movie-site-experience` skill now captures the broader Site Studio recipe: emotional page map first, layered heroes, mini scene markers, configurable guide panels, section-slot movement grammar, motion tiers, mobile guidance, and staging proof.
+
+### Implementation update — Super Vibe Coder + guided-reel corrective pass
+
+The MBSH site repo `~/famtastic-sites/mbsh-reunion` now implements the runtime grammar through `frontend/js/page-sequence.js`, `frontend/js/premiere.js`, and `frontend/css/premiere.css`. `page-sequence.js` is the cinematic reel map for scene number, scene title, location, hero title, hero kicker, hero copy, hero image, `heroHarry` fallback, Tier 1 `heroHarryPhoto`, `heroAction`, page-specific `heroBridge`/`heroBridgeLabel`, configurable `companion` info-panel copy, mood, and Where Next/usher copy. `premiere.js` upgrades interior `.page-header` blocks into layered full-width cinematic heroes, injects the Tier 1 photoreal Harry asset from `frontend/assets/premiere/characters/harry-photoreal-mascot-f1.png`, injects bridge/bleed layers, adds the mini-marquee Scene Marker directly under the hero, defers the chatbot bubble until after the opening hero/marker so the marker stays clean, moves the configurable Note-from-Usher billboard immediately after the marker, mounts the `info-companion` panel beside that billboard, upgrades forms with `premiere-form-wow`, and assigns page slots/heights such as `pre`, `main`, `post`, and `where-next` without rewriting every HTML page. `premiere.css` adds the full opening composition, scene/title-only lower-third marker calibration, page-specific bridge/bleed treatments (`velvet-rope`, `ticket-strip`, `film-reel`, `candle-light`, `wax-seal`, `soundwave`), companion info cards, theatrical form/card treatment with readable dark-form consent text, CTA shine, page-specific motion restraint/intensity, and mobile simplification rules.
+
+The guided interior reel map is now: Home/The Lobby Opens, RSVP/Lock Your Seat, Tickets/Claim Your Ticket, Through the Years/Roll the Memory Reel, In Memory/Hold the Light, Time Capsule/Seal the Time Capsule, and Playlist/Drop the Soundtrack. The local implementation plan lives at `captures/inbox/mbsh-interior-scene-reel-map-2026-05-14.md`. Local browser verification confirmed that Tickets, Through the Years, In Memory, Capsule, and Playlist each mount Tier 1 Harry, use scene/title-only markers, carry distinct bridge data, and keep hero+marker within roughly the first viewport on the active local preview. RSVP is now the prototype exception: `frontend/js/premiere.js` mounts `.experience-hero__scene-marker` inside the hero instead of inserting a separate `.scene-marker-marquee`, and `frontend/css/premiere.css` builds a full-viewport red-carpet check-in artboard with CSS layers for the theatre plate, marquee/doors, podium, guest list, seat cards, velvet ropes/stanchions, red-carpet bleed, light FX, photoreal Harry, and integrated lower-third marker. This pass intentionally keeps the current illustrated Harry images hidden inside billboard slides because some assets have baked checkerboard artifacts; the configured Harry voice remains, but final page-specific transparent/photoreal Harry assets are still the correct future asset direction.
+
+### Corrective planning update — RSVP artboard reset
+
+Fritz rejected the RSVP proof-asset hero as still feeling like generic slot-filling. The corrected recipe is captured in `captures/inbox/mbsh-rsvp-hero-artboard-plan-2026-05-14.md`: research the RSVP page purpose first, translate it into a movie-premiere check-in / guest-list manifest scene, then decompose it into background plate, animation/effects, prop/meaning, bleed/bridge, Tier 1 Harry, integrated scene marker, title/copy, and bottom-chevron control layers. The key learning is that the scene marker must feel physically merged into the artboard, not stacked below it, and the bottom chevron/continue control remains part of the guided movie experience on interior pages.
+
+The local reusable `image-and-video-gen` skill now captures the FAMtastic visual generation rules: Imagen 4.0 for cheap drafts, gpt-image-2 high for final hero/pose candidates, no `input_fidelity`, no `response_format`, base64 default returns, multi-anchor character identity prompts, transparent alpha verification, BiRefNet fallback, and generation cost gates.
+
+### Known Gaps opened or preserved
+
+- Existing Wave 1 assets must be added to the staging change set because the hero map references `frontend/assets/premiere/wave1/scenes/*`.
+- The current Tier 1 hero implementation reuses `frontend/assets/premiere/characters/harry-photoreal-mascot-f1.png` across all interior heroes as the proof-of-grammar asset. Final page-specific transparent/photoreal hero Harry variants, Tier 2 chatbot/advisor Harry, and Tier 3 regular content Harry remain future enhancement work.
+- RSVP Phase 3.4 has replaced the rejected prototype on the live RSVP page locally with Variant B, HTML/CSS marker plaque/bulb crown, marker-band edge padding, absolute bounce-over-text chevron, essential atmosphere, and no separate rope bridge while preserving the sealed hero-stage layout. Staging remains blocked by Fritz inspection/approval; mobile-throttled Lighthouse is still below 85 due the existing render-blocking `premiere.css`/font payload, while desktop Lighthouse is 98.
+- The current implementation uses JS runtime enhancement of existing headers for speed and blast-radius control; a later cleanup could bake the hero/scene-marker/note slots directly into HTML templates if desired.
+
+## Platform Refresh v2 implementation reconciliation (2026-05-11)
+
+`docs/platform-refresh/PLATFORM-REFRESH-V2-IMPLEMENTATION-RECONCILIATION.md` now bridges the original read-only Platform Refresh v2 packet with the newer `/studio.html` implementation work on `research/studio-intelligence-foundation-20260508`. The original packet files under `docs/platform-refresh/` remain authoritative for control-surface ownership, API/cost governance, autonomous-build contracts, dangerous-action gates, and proof discipline, but their old seven-domain Workbench/R1 navigation assumption is no longer safe to treat as current execution state without reading the reconciliation first.
+
+The newer implementation branch introduces the 12-section Studio IA (`Home`, `Sites`, `Site Builder`, `Site Settings`, `Think-Tank`, `Research Center`, `Component Studio`, `Media Studio`, `Media Library`, `Shay Shay`, `Mission Control`, `Settings`) and reports a functional `/studio.html` shell via `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md`. `docs/platform-refresh/REFRESH-READY-HANDOFF.md`, `docs/platform-refresh/FIRST-BUILD-SEQUENCE.md`, and `docs/platform-refresh/WORKSTREAM-MAP.md` now include top-of-file reconciliation notes so future agents do not execute the original first-wave plan as if it were the full current completion plan.
+
+### Known Gaps opened or preserved
+
+- The local `docs/platform-refresh-v2-cohesion` branch does not contain the newer `docs/research/famtastic-studio-execution/` implementation reports or `/studio.html` files; they were inspected from `origin/research/studio-intelligence-foundation-20260508` and must be brought into a working tree or comparison worktree before implementation continues.
+- Fritz still needs to confirm whether the 12-section `/studio.html` platform IA supersedes the old seven-domain R1 nav in all current docs.
+- `docs/platform-refresh/FIRST-BUILD-SEQUENCE.md` is now explicitly first-wave/substrate guidance, not the full completion plan for the current 12-section Studio.
+- Exact `STUDIO-ACTION-WIRING-PHASE-1/2/3-RUN-REPORT.md` files were not found under those names on the inspected implementation branch; verify whether they are uncommitted, renamed, or summarized by other run reports.
+- Local plan audit still reports `plan_2026_05_05_workbench_per_page_design` as active with no closeout, while the implementation branch run report says a `2026-05-10-needs_tasking.json` closeout exists. Resolve this during branch reconciliation.
+
 ## MBSH "The Premiere" Theme + Virtual Assistant Pattern (2026-05-05)
 
 Shipped a theme-overlay pattern (Pass 1) on the deployed `mbsh-reunion`
@@ -58,8 +365,10 @@ Gaps: `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
 - GAP-2026-05-05-03: Gemini API key expired (blocks Pass 2 raster gen)
 - GAP-2026-05-05-04: `data-premiere` flag is HTML-hardcoded; future migration to runtime config
 - GAP-2026-05-05-05: preview MCP launch.json discovery is not project-aware
+- GAP-2026-05-12-01: MBSH interior pages still behave too much like normal web pages. The unified experience grammar is documented in `captures/inbox/mbsh-page-structure-unified-assessment-2026-05-12.md`; the page-by-page implementation assessment is `captures/inbox/mbsh-page-by-page-experience-assessment-2026-05-12.md`. Deployment-critical remaining work is impactful interior heroes, visible scene markers, a true Note-from-Usher info panel/slideshow, explicit `data-page-slot` / `data-mode` / `data-height` section metadata, form/card wow-factor upgrades, mobile movement verification, staging, committee presentation, and recipe capture.
+- GAP-2026-05-12-02: Agent coordination check-in is paused because `scripts/agent-checkin.js` produced disruptive false positives. `AGENTS.md`, `CLAUDE.md`, and `AGENT-COORDINATION.md` now mark it paused; a future replacement needs lower-friction, non-blocking coordination.
 
-All five documented at `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
+All 2026-05-05 gaps documented at `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`; 2026-05-12 structure/coordination gaps are captured in `captures/inbox/mbsh-page-structure-unified-assessment-2026-05-12.md`, `captures/inbox/mbsh-page-by-page-experience-assessment-2026-05-12.md`, and the paused coordination docs.
 
 ---
 
@@ -5744,3 +6053,9 @@ and merges cowork's `.brain/` content into the canonical store.
 cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting
 
 See `memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda.md`.
+
+### MBSH RSVP cinematic-interior hero Phase 3.1 proportion
+
+- The RSVP `cinematic-interior-hero` recipe now uses a canonical two-band first viewport in `~/famtastic-sites/mbsh-reunion/frontend/rsvp.html`: `.hero-stage` owns 66.66svh for scene plate, Harry, headline, and atmosphere; `.marker-band` owns 33.34svh for `.marker-plaque`, `.bleed-bulb-row`, `.bleed-light-spill`, and the `.scroll-teaser` chevron targeting `#rsvp-form`.
+- The marker plaque is no longer a small hero overlay. It is the primary feature of the lower band, and the chevron marks the exact boundary before the RSVP form.
+- RSVP Phase 3.1 also removes the duplicate top-left `.reel-hero__back` medallion from `frontend/rsvp.html`; the center MENU medallion remains the canonical navigation control.
