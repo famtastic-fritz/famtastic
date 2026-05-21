@@ -1,0 +1,72 @@
+{
+  "run_id": "mbsh-v2-readiness-001",
+  "packets": [
+    {
+      "pass_id": "substrate-proof",
+      "at": "2026-05-09T02:31:16.735Z",
+      "proofs": [
+        {
+          "kind": "file_exists",
+          "path": "site-studio/server/validators.js"
+        },
+        {
+          "kind": "file_exists",
+          "path": "site-studio/server/intelligence-reader.js"
+        },
+        {
+          "kind": "file_exists",
+          "path": "site-studio/server/intelligence-writer.js"
+        },
+        {
+          "kind": "file_exists",
+          "path": "site-studio/server/intelligence-routes.js"
+        },
+        {
+          "kind": "module_load",
+          "target": "site-studio/server.js",
+          "exit": 0
+        },
+        {
+          "kind": "route_smoke",
+          "path": "/api/intelligence/brief",
+          "status": 200
+        },
+        {
+          "kind": "route_smoke",
+          "path": "/api/intelligence/capability-truth",
+          "status": 200
+        },
+        {
+          "kind": "route_smoke",
+          "path": "/api/intelligence/runs",
+          "status": 200
+        },
+        {
+          "kind": "route_smoke",
+          "path": "/api/intelligence/runs/:runId",
+          "status": 200
+        },
+        {
+          "kind": "cost_cap",
+          "threshold_usd": 50,
+          "behavior": "auto-block"
+        },
+        {
+          "kind": "test_run",
+          "command": "npm test",
+          "exit": 1,
+          "note": "preexisting tests/unit.test.js loader failure unrelated to extraction; 71 tests pass"
+        }
+      ],
+      "blockers": [],
+      "non_blockers": [
+        {
+          "note": "tests/unit.test.js requires public/js/shay-bridge-client.js which is not present in worktree; preexisting"
+        },
+        {
+          "note": "WebSocket B9 baseline check requires running Studio; deferred to Studio runtime"
+        }
+      ]
+    }
+  ]
+}

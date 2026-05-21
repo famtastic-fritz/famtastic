@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_plan_2026_05_05_workbench_per_page_design_2026-05-19_a6d8",
+  "created_at": "2026-05-19T23:54:03.162Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/plan_2026_05_05_workbench_per_page_design/closeouts/2026-05-19-needs_tasking.json",
+    "timestamp_range": {
+      "start": "2026-05-19T23:55:00.000Z",
+      "end": "2026-05-19T23:55:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for plan_2026_05_05_workbench_per_page_design (verdict: needs_tasking). 1 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "do-not-repeat",
+      "text": "Zero-task active plans need explicit closeout",
+      "rationale": "If a plan is still desired but has no open tasks, issue a needs_tasking closeout instead of leaving it active with ambiguous state.",
+      "evidence": [
+        "closeout:plan_2026_05_05_workbench_per_page_design:2026-05-19T23:55:00.000Z",
+        "plans/plan_2026_05_05_workbench_per_page_design/plan.json",
+        "docs/platform-refresh/PLATFORM-REFRESH-V2-IMPLEMENTATION-RECONCILIATION.md",
+        "node scripts/plans/audit.js"
+      ],
+      "facets": [
+        "plans",
+        "closeout-discipline"
+      ],
+      "confidence": 0.98,
+      "candidate_id": "do-not-repeat/zero-task-active-plans-need-explicit-closeout"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "Reconfirm whether the page-type research deliverables in docs/design-research are accepted, stale, or need refresh against the newer Studio IA.",
+    "Generate a fresh task set or superseding shell-rebuild plan before any more Workbench UI implementation."
+  ]
+}

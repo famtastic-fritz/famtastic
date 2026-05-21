@@ -1,0 +1,42 @@
+{
+  "contract_id": "studio.execution_substrate.capability_truth.v1",
+  "object_type": "capability_truth",
+  "purpose": "Represent whether a Studio capability is actually working, partial, broken, manual-only, costly, or approval-gated.",
+  "studio_layer": "Control Layer",
+  "primary_agent_role": "Security / Capability Auditor",
+  "supporting_agent_roles": ["Deploy Manager", "Build Runner", "QA Critic"],
+  "required_fields": {
+    "id": "Stable unique identifier.",
+    "capability_name": "Human-readable capability name.",
+    "status": "Current capability status.",
+    "last_probe": "Last probe object or null when unprobed.",
+    "cost_tier": "Cost classification.",
+    "fallback": "Fallback path if this capability is unavailable.",
+    "approval_requirement": "Approval requirement for use.",
+    "proof_reference": "Artifact proving current status or null.",
+    "updated_at": "ISO-8601 timestamp."
+  },
+  "optional_fields": {
+    "provider": "External or local provider name.",
+    "last_error": "Last known failure if applicable.",
+    "required_for": "Features or recipes that require this capability.",
+    "notes": "Additional context."
+  },
+  "allowed_values": {
+    "status": ["working", "partial", "stubbed", "broken", "manual_only", "costly", "approval_required"],
+    "cost_tier": ["free_local", "low", "medium", "high", "unknown"],
+    "approval_requirement": ["none", "fritz_required", "provider_required", "production_required"]
+  },
+  "relationships": {
+    "feeds": ["run_ledger", "proof_packet", "Approval Center", "Deploy Center"],
+    "read_by": ["Mission Control", "Capability Truth", "Run Control", "Shay Home"],
+    "blocks": ["features that require a broken or missing capability"]
+  },
+  "proof_validation_expectations": [
+    "Declared configuration is not enough; working status requires a probe or proof reference.",
+    "$50+ projected cost must set approval_requirement to fritz_required.",
+    "Missing capability blocks only work that requires it.",
+    "last_error is present when status is broken or partial due to failure."
+  ],
+  "example_fixture_path": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/capability-truth.example.json"
+}

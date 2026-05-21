@@ -1,0 +1,3 @@
+[mcp_servers.famtastic]
+args = ["mcp-server/server.js"]
+command = "node"

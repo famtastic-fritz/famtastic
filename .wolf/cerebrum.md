@@ -2,7 +2,52 @@
 
 > OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
 > Do not edit manually unless correcting an error.
-> Last updated: 2026-03-24
+> Last updated: 2026-05-19
+
+## muapi recipe orchestration — verified working catalog (2026-05-19)
+
+When building brand/media work with muapi, USE THE PREBUILT RECIPE SKILLS, do NOT
+hand-build via primitives. The recipes deliver in ~15 min what primitives take 5+ hours
+to assemble manually.
+
+### Verified-working models in muapi CLI (`muapi models list`)
+- **Text-to-image (reliable):** `gpt4o` (best text legibility), `flux-dev`, `flux-schnell`,
+  `flux-kontext-dev/pro/max`, `hidream-fast/dev/full`, `wan2.1`, `reve`, `qwen`
+- **Text-to-image (returned Not Found on this account):** `midjourney`, `seedream`
+- **Image edit:** `flux-kontext-max-edit` works; `flux-kontext-dev/pro` work
+- **Image-to-video (verified working):** `wan2.2`
+- **Image-to-video (returned Not Found):** `kling-pro`, `seedance-pro`
+- **Image-to-video (CLI/API param mismatch):** `veo3-fast` (CLI sends `image_url`,
+  API expects `images_list`)
+
+### Recipe-skill models that DON'T exist in muapi catalog (need substitution)
+The muapi recipe skills reference newer model aliases that aren't yet in CLI:
+- `ideogram-v3-t2i` → substitute `gpt4o` (best text legibility we have)
+- `flux-2-pro` → substitute `flux-dev` or `hidream-full`
+- `nano-banana-pro` → substitute `gpt4o` or `flux-kontext-max`
+- `nano-banana-2` → substitute `flux-dev`
+- `nano-banana-2-edit` → substitute `flux-kontext-max`
+- `bytedance-seedream-v4.5` → substitute `gpt4o`
+- `gpt-image-2-text-to-image` → substitute `gpt4o`
+- `veo3.1-fast-image-to-video` → substitute `wan2.2`
+
+### Critical execution gotchas
+1. **Multi-segment brand names render unreliably.** Logos with names like
+   "FAMtastic" (FAM + tastic split) sometimes drop the F (yields "AMtastic")
+   or misspell ("Famino", "TaSTIC"). OCR-validate logo outputs before shipping.
+2. **flux-kontext-max edit drifts beyond instructions.** Asked for "add 3D
+   depth, preserve composition" — got a beautiful but DIFFERENT composition
+   (circle medallion vs the source's rectangular layout). Treat flux-kontext-max
+   as "high-quality reinterpretation," not "literal edit."
+3. **muapi recipes are interactive-prompt-heavy.** `muapi remotion skills add`
+   prompts for agent target interactively even with `--yes --global`. Use
+   git-clone + manual file copy as workaround for non-interactive install.
+
+### Quality-rated recipe skills (★★★★★ = ship-ready)
+- `muapi-design-guide`: ★★★★★ — color palette + typography + UI kit + mockups
+- `muapi-logo-branding`: ★★★★☆ — 3 logos + mockup (text-legibility issues)
+- `muapi-brand-kit`: ★★★★☆ — moodboard + pattern + 2 logos (logos can be redundant)
+- `muapi-3d-logo-animation`: ★★★☆☆ — 3D image good; animation needs wan2.2 fallback
 
 ## Tool Availability (Verified April 21, 2026)
 
@@ -54,6 +99,12 @@ registry before first use.
 
 ## Key Learnings
 
+- **Interior hero chevron absolute-bottom pattern:** Interior-hero chevron is `position: absolute` at section bottom (z-index above plaque), with an exaggerated bounce that travels up and overlaps the marker text. In-flow chevron cannot reach section bottom because the marker band pushes it out of view. This is the canonical interior-hero chevron pattern.
+- **Interior hero marker-band edge padding:** Marker band has edge padding (~4vw), not full-bleed. The dark velvet panel sits INSIDE the viewport with visible margin on left and right.
+- **Interior hero full-width marker band:** Interior hero marker plaque renders FULL WIDTH of the 33vh band, center-aligned text, with bulb chase as a full-width row beneath. This is the canonical pattern; do NOT left-anchor the marker.
+- **Interior hero marker plaques are HTML/CSS, not SVG:** Marker plaques for interior heroes render as HTML/CSS, NOT SVG. SVG is over-engineered for horizontal banners with text and decorative bulbs. HTML/CSS is faster to iterate, easier to style, and uses the same bulb-chase pattern as the bleed-bulb-row. Reserve SVG for actual vector illustrations (logos, complex shapes, character silhouettes), not text banners.
+- **Interior hero two-band proportion:** Interior hero section composes as 2 bands: hero stage (2/3 height) + marker band (1/3 height). Marker plaque owns the bottom band; chevron marks section end. This becomes the canonical proportion for cinematic-interior-hero recipe across all interior reels.
+- **Preview-harness-to-live wiring rule:** when a generated hero preview is approved, live CSS must preserve the preview composition first (character side, marker side, headline side, full-width stage) before adding atmosphere/bleed layers. Animation layers are judged against the approved preview, not against a newly improvised layout.
 - **Summarization always uses Claude:** When conversation history exceeds 20 turns, the oldest 10 turns are summarized using Claude regardless of the currently active brain. This is a standing decision. Do not change to the active brain. Logged with source: "summarization".
 
 - **Project:** famtastic
@@ -123,6 +174,7 @@ registry before first use.
 
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
+- [2026-05-14] Do NOT add rope-continues-into-bleed pattern unless the scene plate has a stanchion endpoint baked in that the rope can visually anchor to. The pattern fails when the rope has no destination.
 - [2026-03-25] Never mutate module-level state inside a function that looks like a pure reader (buildPromptContext). Return the resolved value and let the caller mutate.
 - [2026-03-25] When extracting shared CSS, only strip blocks whose content matches what was extracted — don't blindly strip all non-data-page style blocks.
 - [2026-03-25] String prefix matching (substring(0, 80)) is unreliable for deduplication. Use content hashes.
@@ -464,3 +516,11 @@ chat-capture pipeline automatically.
 When the locked design doesn't match what works, the next agent will follow whichever surface produc
 
 _See `memory/bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche.md` for body and evidence._
+
+### do-not-repeat/zero-task-active-plans-need-explicit-closeout — 2026-05-19 (auto-promoted)
+
+**Type:** `do-not-repeat` | **Confidence:** 0.98 | **Facets:** plans, closeout-discipline
+
+Zero-task active plans need explicit closeout
+
+_See `memory/do-not-repeat/zero-task-active-plans-need-explicit-closeout.md` for body and evidence._

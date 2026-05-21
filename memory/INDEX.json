@@ -1,6 +1,6 @@
 {
   "schema_version": "0.2.0",
-  "generated_at": "2026-05-06T01:50:58.608769Z",
+  "generated_at": "2026-05-19T23:54:03.202Z",
   "generator": "scripts/memory-promote.js (also writes), scripts/memory-digest.js (rebuilds weekly)",
   "entries": [
     {
@@ -58,7 +58,7 @@
     {
       "canonical_id": "anti-pattern/never-use-echo-for-claude-prompts-use-printf",
       "type": "anti-pattern",
-      "title": "Never use echo for Claude prompts \u2014 use printf",
+      "title": "Never use echo for Claude prompts — use printf",
       "facets": [
         "shell",
         "prompting"
@@ -493,7 +493,7 @@
     {
       "canonical_id": "bug-pattern/agent-checkin-keyword-overlap-is-too-coarse-flags-merged-bra",
       "type": "bug-pattern",
-      "title": "agent-checkin keyword overlap is too coarse \u2014 flags merged branches as conflicts",
+      "title": "agent-checkin keyword overlap is too coarse — flags merged branches as conflicts",
       "facets": [
         "agents",
         "governance"
@@ -781,7 +781,7 @@
     {
       "canonical_id": "bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v",
       "type": "bug-pattern",
-      "title": "## Learning: Working architecture and locked architecture diverge silently \u2014 surface viewers fix thi",
+      "title": "## Learning: Working architecture and locked architecture diverge silently — surface viewers fix thi",
       "facets": [],
       "lifecycle": "active",
       "confidence": 0.85,
@@ -961,6 +961,20 @@
       "lifecycle": "active",
       "confidence": 0.95,
       "path": "memory/rule/eight-pre-flight-questions-for-new-ui-surfaces.md",
+      "seen_count": 0,
+      "last_surfaced_at": null
+    },
+    {
+      "canonical_id": "do-not-repeat/zero-task-active-plans-need-explicit-closeout",
+      "type": "do-not-repeat",
+      "title": "Zero-task active plans need explicit closeout",
+      "facets": [
+        "plans",
+        "closeout-discipline"
+      ],
+      "lifecycle": "active",
+      "confidence": 0.98,
+      "path": "memory/do-not-repeat/zero-task-active-plans-need-explicit-closeout.md",
       "seen_count": 0,
       "last_surfaced_at": null
     }

@@ -1,0 +1,75 @@
+{
+  "id": "run-studio-substrate-to-mbsh-v2-proof-readiness-2026-05-08",
+  "objective": "Continue from Slice 1 through the minimum Studio execution substrate until the system is ready for MBSH V2 proofing.",
+  "scope": {
+    "in_scope": [
+      "execution substrate contracts",
+      "fixtures",
+      "unattended run controller",
+      "server modularization planning",
+      "artifact reader/display substrate planning",
+      "run ledger/proof packet wiring plan",
+      "MBSH V2 readiness gate"
+    ],
+    "out_of_scope": [
+      "Studio UI implementation",
+      "site-studio/server.js behavior changes",
+      "MBSH V2 implementation",
+      "shipping company site work",
+      "logo/site work",
+      "paid/cloud actions"
+    ]
+  },
+  "branch": "research/studio-intelligence-foundation-20260508",
+  "approved_guardrails": [
+    "Continue automatically after passing slices.",
+    "Checkpoints are proof/tracking, not default approval stops.",
+    "Stop only for hard blockers.",
+    "Anything projected above $50 requires Fritz approval.",
+    "Do not add major backend behavior to the 20,150-line server.js without modularization path."
+  ],
+  "active_pass": "slice-1-execution-substrate-contracts",
+  "stop_conditions": [
+    "projected cost above $50",
+    "missing required secret/API key with no local fallback",
+    "DNS/payment/production deploy/destructive change",
+    "repo write/build impossible",
+    "safety/security issue",
+    "repeated validation failure after documented retry/fix attempts",
+    "major backend behavior added to site-studio/server.js without modularization path"
+  ],
+  "continue_conditions": [
+    "required files exist",
+    "JSON contracts and fixtures parse",
+    "git diff --check passes",
+    "no UI/app behavior files changed",
+    "no server.js changes",
+    "RUN_STATUS.md updated"
+  ],
+  "cost_state": {
+    "status": "under_threshold",
+    "projected_cost_usd": 0,
+    "approval_required": false
+  },
+  "proof_links": [
+    "docs/research/famtastic-studio-execution/slice-1-execution-substrate/acceptance-checklist.md",
+    "docs/research/famtastic-studio-execution/UNATTENDED-RUN-CONTROLLER.md"
+  ],
+  "blockers": [],
+  "non_blockers": [
+    "Studio UI does not yet ingest these artifacts.",
+    "Server modularization is planned but not implemented in Slice 1."
+  ],
+  "status": "ready_for_next_slice",
+  "updated_at": "2026-05-08T19:48:00-04:00",
+  "related_intelligence_brief_id": "ib-mbsh-v2-proof-readiness-2026-05-08",
+  "related_recipe_decision_id": "rd-mbsh-v2-post-launch-iteration-2026-05-08",
+  "passes": [
+    {
+      "id": "slice-1-execution-substrate-contracts",
+      "status": "pass",
+      "proof_packet_id": "proof-slice-1-execution-substrate-2026-05-08"
+    }
+  ],
+  "final_report_path": "docs/research/famtastic-studio-execution/FINAL-RUN-REPORT.md"
+}

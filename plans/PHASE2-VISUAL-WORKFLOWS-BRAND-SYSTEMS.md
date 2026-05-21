@@ -34,6 +34,12 @@ Every platform-level component inherits this loop:
 
 Goal: create the real FAMtastic logo/brand system through Media Studio, not through copy/paste/manual one-offs.
 
+Starting inputs already present:
+
+- `brand/FAMTASTIC-BRAND-MARK.md` — current brand mark manifesto and production rules.
+- `remotion/` — current FAMtastic logo motion composition source and recipes.
+- `docs/archive/pre-shay-shay/local-artifact-manifests/epic-mclean-muapi-logo-outputs.md` — manifest for local MuAPI logo/media WIPs preserved outside the repo.
+
 Workflow requirements:
 
 - brand brief

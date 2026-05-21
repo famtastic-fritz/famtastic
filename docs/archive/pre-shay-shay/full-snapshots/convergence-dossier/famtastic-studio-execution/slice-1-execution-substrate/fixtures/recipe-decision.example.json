@@ -1,0 +1,54 @@
+{
+  "id": "rd-mbsh-v2-post-launch-iteration-2026-05-08",
+  "intelligence_brief_id": "ib-mbsh-v2-proof-readiness-2026-05-08",
+  "requested_fingerprint": {
+    "base_type": "event",
+    "experience_level": "cinematic",
+    "lifecycle_model": "post_launch_iteration",
+    "capability_modules": [
+      "component_slot_replacement",
+      "media_registry",
+      "mobile_qa",
+      "learning_capture"
+    ],
+    "polish_level": "production_mvp_plus_v2_refinement"
+  },
+  "decision": "extend",
+  "matched_recipe_id": "recipe-event-cinematic-production-mvp",
+  "similarity_score": 0.82,
+  "reason": "MBSH V2 should extend the existing cinematic event recipe with post-launch iteration behavior rather than create a new build path.",
+  "required_capabilities": [
+    "cap-local-doc-validation",
+    "cap-run-ledger",
+    "cap-proof-packet",
+    "cap-media-registry-minimum",
+    "cap-component-slot-protocol"
+  ],
+  "qa_gates": [
+    "proof_packet_required",
+    "component_slot_change_classification",
+    "media_asset_lineage",
+    "mobile_viewport_check",
+    "learning_candidate_capture"
+  ],
+  "status": "ready_for_run_plan",
+  "created_at": "2026-05-08T19:46:00-04:00",
+  "rejected_alternatives": [
+    {
+      "recipe_id": "recipe-new-site-from-brief",
+      "reason": "Wrong lifecycle; MBSH already exists and should test post-launch iteration."
+    },
+    {
+      "recipe_id": "recipe-static-content-update",
+      "reason": "Too narrow; does not cover cinematic components, media registry, or learning proof."
+    }
+  ],
+  "v1_notes": [
+    "Use explicit object contracts and proof packets before MBSH work starts.",
+    "Keep component/slot classification mandatory."
+  ],
+  "v2_notes": [
+    "Automated recipe similarity can be added later.",
+    "Full Media Studio automation is deferred."
+  ]
+}

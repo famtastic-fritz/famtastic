@@ -1,0 +1,24 @@
+{
+  "id": "cap-run-ledger-doc-substrate-2026-05-08",
+  "capability_name": "Run Ledger documentation substrate",
+  "status": "working",
+  "last_probe": {
+    "type": "local_file_validation",
+    "ran_at": "2026-05-08T19:47:00-04:00",
+    "result": "pass",
+    "evidence": "JSON contracts and fixtures parse; required files exist; no app files changed."
+  },
+  "cost_tier": "free_local",
+  "fallback": "Manual Markdown run ledger and proof packet until Studio UI reads the objects.",
+  "approval_requirement": "none",
+  "proof_reference": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/acceptance-checklist.md",
+  "updated_at": "2026-05-08T19:47:00-04:00",
+  "provider": "local_repo",
+  "last_error": null,
+  "required_for": [
+    "Slice 3 Studio artifact reader/display substrate",
+    "Slice 4 run ledger + proof packet wiring plan",
+    "MBSH V2 proof-readiness gate"
+  ],
+  "notes": "This capability is documentation/runtime-contract only; it does not imply Studio UI behavior is implemented."
+}

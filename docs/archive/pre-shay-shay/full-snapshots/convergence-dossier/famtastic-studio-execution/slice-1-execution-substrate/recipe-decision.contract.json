@@ -1,0 +1,43 @@
+{
+  "contract_id": "studio.execution_substrate.recipe_decision.v1",
+  "object_type": "recipe_decision",
+  "purpose": "Record why Studio reused, extended, hybridized, created, or deprecated a build recipe.",
+  "studio_layer": "Intelligence Layer",
+  "primary_agent_role": "Recipe Architect",
+  "supporting_agent_roles": ["Research Strategist", "Capability Auditor", "QA Critic"],
+  "required_fields": {
+    "id": "Stable unique identifier.",
+    "intelligence_brief_id": "Related Intelligence Brief id.",
+    "requested_fingerprint": "Structured recipe fingerprint requested by the brief.",
+    "decision": "Reuse/extend/hybrid/new/deprecate decision.",
+    "reason": "Short explanation for the decision.",
+    "required_capabilities": "Capability ids required by this recipe.",
+    "qa_gates": "QA gates bound to this recipe.",
+    "status": "Lifecycle status.",
+    "created_at": "ISO-8601 timestamp."
+  },
+  "optional_fields": {
+    "matched_recipe_id": "Existing recipe id if reused or extended.",
+    "similarity_score": "Numerical or descriptive match score.",
+    "rejected_alternatives": "Recipes or approaches not chosen and why.",
+    "v1_notes": "Notes that belong in V1 execution.",
+    "v2_notes": "Notes deferred to V2."
+  },
+  "allowed_values": {
+    "decision": ["reuse", "extend", "hybrid", "new", "deprecate"],
+    "status": ["draft", "ready_for_run_plan", "blocked", "superseded", "archived"]
+  },
+  "relationships": {
+    "requires": ["intelligence_brief"],
+    "feeds": ["run_ledger", "capability_truth", "proof_packet"],
+    "read_by": ["Recipe Composer", "Mission Control", "Shay Home"]
+  },
+  "proof_validation_expectations": [
+    "intelligence_brief_id points to an existing brief.",
+    "decision is one of the allowed values.",
+    "required_capabilities and qa_gates are non-empty for executable work.",
+    "reason records why the selected path is better than alternatives.",
+    "V2 ideas are captured without expanding active scope."
+  ],
+  "example_fixture_path": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/recipe-decision.example.json"
+}

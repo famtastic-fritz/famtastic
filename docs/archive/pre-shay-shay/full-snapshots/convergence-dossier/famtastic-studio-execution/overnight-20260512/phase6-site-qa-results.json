@@ -1,0 +1,924 @@
+{
+  "run_id": "phase-6-build-sites-20260512",
+  "recorded_at": "2026-05-12T06:34:00.315Z",
+  "results": [
+    {
+      "tag": "site-bam-bam-civic",
+      "name": "Bam Bam Civic",
+      "local_preview_url": "http://127.0.0.1:3436",
+      "file_preview": "sites/site-bam-bam-civic/dist/index.html",
+      "pages": [
+        "index.html",
+        "platform.html",
+        "events.html",
+        "contact.html"
+      ],
+      "qa": {
+        "pass": 31,
+        "fail": 0
+      },
+      "checks": [
+        {
+          "name": "index.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "platform.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "platform.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "platform.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "platform.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "platform.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "platform.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "platform.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "events.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "events.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "events.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "events.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "events.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "events.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "events.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "switch-site API",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "local preview responds",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "production deploy blocked by readiness contract",
+          "status": "pass"
+        }
+      ],
+      "deploy_readiness": {
+        "ok": true,
+        "production_allowed": false,
+        "netlify": {
+          "ok": false,
+          "reason": "credentials_missing",
+          "details": "No Netlify credentials found (no env vars, no config file). Run: netlify login"
+        }
+      }
+    },
+    {
+      "tag": "site-black-night-barbershop",
+      "name": "Black Night Barbershop",
+      "local_preview_url": "http://127.0.0.1:3436",
+      "file_preview": "sites/site-black-night-barbershop/dist/index.html",
+      "pages": [
+        "index.html",
+        "services.html",
+        "membership.html",
+        "contact.html"
+      ],
+      "qa": {
+        "pass": 31,
+        "fail": 0
+      },
+      "checks": [
+        {
+          "name": "index.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "services.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "services.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "services.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "services.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "services.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "services.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "services.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "membership.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "membership.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "membership.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "membership.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "membership.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "membership.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "membership.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "switch-site API",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "local preview responds",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "production deploy blocked by readiness contract",
+          "status": "pass"
+        }
+      ],
+      "deploy_readiness": {
+        "ok": true,
+        "production_allowed": false,
+        "netlify": {
+          "ok": false,
+          "reason": "credentials_missing",
+          "details": "No Netlify credentials found (no env vars, no config file). Run: netlify login"
+        }
+      }
+    },
+    {
+      "tag": "site-glasshouse-records",
+      "name": "Glasshouse Records",
+      "local_preview_url": "http://127.0.0.1:3436",
+      "file_preview": "sites/site-glasshouse-records/dist/index.html",
+      "pages": [
+        "index.html",
+        "single.html",
+        "roster.html",
+        "contact.html"
+      ],
+      "qa": {
+        "pass": 31,
+        "fail": 0
+      },
+      "checks": [
+        {
+          "name": "index.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "single.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "single.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "single.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "single.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "single.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "single.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "single.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "roster.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "roster.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "roster.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "roster.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "roster.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "roster.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "roster.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "switch-site API",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "local preview responds",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "production deploy blocked by readiness contract",
+          "status": "pass"
+        }
+      ],
+      "deploy_readiness": {
+        "ok": true,
+        "production_allowed": false,
+        "netlify": {
+          "ok": false,
+          "reason": "credentials_missing",
+          "details": "No Netlify credentials found (no env vars, no config file). Run: netlify login"
+        }
+      }
+    },
+    {
+      "tag": "site-oscars-after-dark-china-edition",
+      "name": "Oscars After Dark: China Edition",
+      "local_preview_url": "http://127.0.0.1:3436",
+      "file_preview": "sites/site-oscars-after-dark-china-edition/dist/index.html",
+      "pages": [
+        "index.html",
+        "program.html",
+        "vip.html",
+        "contact.html"
+      ],
+      "qa": {
+        "pass": 31,
+        "fail": 0
+      },
+      "checks": [
+        {
+          "name": "index.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "program.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "program.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "program.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "program.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "program.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "program.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "program.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "vip.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "vip.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "vip.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "vip.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "vip.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "vip.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "vip.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "switch-site API",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "local preview responds",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "production deploy blocked by readiness contract",
+          "status": "pass"
+        }
+      ],
+      "deploy_readiness": {
+        "ok": true,
+        "production_allowed": false,
+        "netlify": {
+          "ok": false,
+          "reason": "credentials_missing",
+          "details": "No Netlify credentials found (no env vars, no config file). Run: netlify login"
+        }
+      }
+    },
+    {
+      "tag": "site-spades-royale-online",
+      "name": "Spades Royale Online",
+      "local_preview_url": "http://127.0.0.1:3436",
+      "file_preview": "sites/site-spades-royale-online/dist/index.html",
+      "pages": [
+        "index.html",
+        "bracket.html",
+        "rules.html",
+        "contact.html"
+      ],
+      "qa": {
+        "pass": 31,
+        "fail": 0
+      },
+      "checks": [
+        {
+          "name": "index.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "bracket.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "bracket.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "bracket.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "bracket.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "bracket.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "bracket.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "bracket.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "rules.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "rules.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "rules.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "rules.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "rules.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "rules.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "rules.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "switch-site API",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "local preview responds",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "production deploy blocked by readiness contract",
+          "status": "pass"
+        }
+      ],
+      "deploy_readiness": {
+        "ok": true,
+        "production_allowed": false,
+        "netlify": {
+          "ok": false,
+          "reason": "credentials_missing",
+          "details": "No Netlify credentials found (no env vars, no config file). Run: netlify login"
+        }
+      }
+    },
+    {
+      "tag": "site-the-love-seat",
+      "name": "The Love Seat",
+      "local_preview_url": "http://127.0.0.1:3436",
+      "file_preview": "sites/site-the-love-seat/dist/index.html",
+      "pages": [
+        "index.html",
+        "casting.html",
+        "episodes.html",
+        "contact.html"
+      ],
+      "qa": {
+        "pass": 31,
+        "fail": 0
+      },
+      "checks": [
+        {
+          "name": "index.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "index.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "casting.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "casting.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "casting.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "casting.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "casting.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "casting.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "casting.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "episodes.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "episodes.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "episodes.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "episodes.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "episodes.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "episodes.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "episodes.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: exists",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: title",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: meta description",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: viewport",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: CTA",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: Black Night marker",
+          "status": "pass"
+        },
+        {
+          "name": "contact.html: production-safe note",
+          "status": "pass"
+        },
+        {
+          "name": "switch-site API",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "local preview responds",
+          "status": "pass",
+          "evidence": "200"
+        },
+        {
+          "name": "production deploy blocked by readiness contract",
+          "status": "pass"
+        }
+      ],
+      "deploy_readiness": {
+        "ok": true,
+        "production_allowed": false,
+        "netlify": {
+          "ok": false,
+          "reason": "credentials_missing",
+          "details": "No Netlify credentials found (no env vars, no config file). Run: netlify login"
+        }
+      }
+    }
+  ]
+}

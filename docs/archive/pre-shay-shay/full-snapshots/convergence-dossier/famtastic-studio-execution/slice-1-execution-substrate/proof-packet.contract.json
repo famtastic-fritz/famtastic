@@ -1,0 +1,50 @@
+{
+  "contract_id": "studio.execution_substrate.proof_packet.v1",
+  "object_type": "proof_packet",
+  "purpose": "Record the evidence that a pass changed, proved, deferred, or blocked something.",
+  "studio_layer": "Control Layer",
+  "primary_agent_role": "QA Critic",
+  "supporting_agent_roles": ["Build Runner", "Medium-brain orchestrator", "Learning Curator"],
+  "required_fields": {
+    "id": "Stable unique identifier.",
+    "run_id": "Related Run Ledger id.",
+    "pass_id": "Pass/slice identifier.",
+    "objective": "Pass objective.",
+    "files_changed": "Files created/modified by the pass.",
+    "commands_run": "Commands run and results.",
+    "checks_run": "Validation checks and results.",
+    "outputs": "Artifacts produced.",
+    "capability_probes": "Capability probes used or not applicable.",
+    "cost_notes": "Cost estimate/actual or not applicable.",
+    "fixed": "What was fixed.",
+    "added": "What was added.",
+    "proved": "What was proved.",
+    "deferred": "What was intentionally deferred.",
+    "risk": "Remaining risk.",
+    "next_action": "Recommended next action.",
+    "status": "Lifecycle status.",
+    "created_at": "ISO-8601 timestamp."
+  },
+  "optional_fields": {
+    "screenshots": "Screenshot paths when visual proof is relevant.",
+    "logs": "Log paths or excerpts.",
+    "fallback_used": "Fallbacks used and why.",
+    "blockers": "Hard blockers encountered.",
+    "non_blockers": "Logged non-blockers."
+  },
+  "allowed_values": {
+    "status": ["draft", "pass", "fail", "blocked", "superseded"]
+  },
+  "relationships": {
+    "requires": ["run_ledger"],
+    "feeds": ["Learning Board", "Shay Readback", "Run Control"],
+    "may_create": ["learning_candidate"]
+  },
+  "proof_validation_expectations": [
+    "files_changed and checks_run are explicit, even for docs-only work.",
+    "cost_notes records whether cost is not applicable or under threshold.",
+    "proved is non-empty for pass status.",
+    "blockers are empty for pass status."
+  ],
+  "example_fixture_path": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/proof-packet.example.json"
+}

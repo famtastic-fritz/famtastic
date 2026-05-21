@@ -1,5 +1,11 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Final pre-Phase-2 consolidation and archive cleanup (2026-05-21)
+
+The active plan of record for the next work cycle is `plans/PHASE2-VISUAL-WORKFLOWS-BRAND-SYSTEMS.md`. A final pre-Phase-2 cleanup harvested broader pre-Shay-Shay worktree material into `docs/archive/pre-shay-shay/full-snapshots/` instead of merging stale app/UI work wholesale. The archive includes the convergence dossier docs/process and studio-execution research snapshot, experimental agent/bootstrap skills from the adoring-merkle Claude worktree, and temporary Site Studio stubs from great-gauss as reference-only evidence.
+
+Phase 2A now has concrete starting inputs tracked in main: `brand/FAMTASTIC-BRAND-MARK.md` records the current FAMtastic brand mark manifesto/production rules, and `remotion/` contains the current FAMtastic logo motion composition source and recipes. Bulk MuAPI logo/media WIPs from the epic-mclean worktree were preserved in the local cleanup archive and indexed by `docs/archive/pre-shay-shay/local-artifact-manifests/epic-mclean-muapi-logo-outputs.md` rather than committed as large binary output. Local nested repos/probes such as `shay-shay/`, `shay-desktop*/`, `_tool-probes/`, and generated Remotion output are intentionally ignored by the hub repo; useful conclusions must be promoted into docs, Data Center records, plans, or separate repos before they count as incorporated.
+
 ## Post-evaluation contract and Phase 1 opportunity forecast (2026-05-21)
 
 Added the shared post-evaluation substrate at `lib/famtastic/post-eval/index.js`. It exports `buildPostEval()`, `recordPostEval()`, `listPostEvalRecords()`, `extractPhaseOneOpportunitySeeds()`, and `renderPostEvalReport()`. Post-eval records write sanitized JSON to `data-center/post-eval/<evaluation_id>.json`, Markdown reports to `data-center/reports/post-eval/<evaluation_id>.md`, and ledger rows to `data-center/ledgers/post-eval.jsonl`; `lib/famtastic/data-center/index.js` now treats `post-eval/` and `schemas/post-eval-record.schema.json` as first-class Data Center structure.
@@ -2697,7 +2703,7 @@ main > section:first-of-type { width: 100vw; position: relative; left: 50%; marg
 **Pattern established:** Playwright drives Studio for HTML + CSS. When Studio can't write JavaScript, Playwright logs the gap and triggers CLI. CLI writes the JS, injects script tags into HTML, and Playwright verifies. High-reuse JS becomes a component in `~/famtastic/components/`.
 
 **Full documentation:** `docs/studio-cli-handoff-pattern.md`
-**Capability registry:** `docs/capability-registry.md`  
+**Capability registry:** `docs/capability-registry.md`
 **Task log:** `tests/automation/logs/cli-handoff-pattern.json`
 
 **Studio can handle:** HTML structure, CSS classes, Tailwind utilities, basic CSS transitions (hover lift, button scale), `scroll-behavior:smooth`, `loading="lazy"` attributes, static data attribute scaffolding.
@@ -2718,7 +2724,7 @@ main > section:first-of-type { width: 100vw; position: relative; left: 50%; marg
 
 ### street-family-reunion-js-pass -- 2026-04-08
 
-**Site:** `sites/site-street-family-reunion/`  
+**Site:** `sites/site-street-family-reunion/`
 **JS files added:** `dist/assets/js/parallax.js`, `slideshow.js`, `card-animations.js`, `counter-animation.js`, `smooth-scroll.js`, `lazy-load.js`
 
 **Data attributes used across all pages:**
@@ -2747,10 +2753,10 @@ Each includes HTML template, data attribute docs, platform notes (Drupal, WordPr
 
 **Primary media generation pipeline for all FAMtastic sites.**
 
-**Script:** `scripts/google-media-generate`  
-**SDK:** `google.genai` v1.47.0 (NOT `google.generativeai` — different package, not installed)  
-**Credentials:** `GEMINI_API_KEY` env var  
-**Image model:** `imagen-4.0-generate-001` — $0.004/image, ~7s  
+**Script:** `scripts/google-media-generate`
+**SDK:** `google.genai` v1.47.0 (NOT `google.generativeai` — different package, not installed)
+**Credentials:** `GEMINI_API_KEY` env var
+**Image model:** `imagen-4.0-generate-001` — $0.004/image, ~7s
 **Video model:** `veo-2.0-generate-001` — ~$0.05/video, ~33s, produces 5s MP4 ~2.4MB
 
 **Batch usage:**
@@ -2794,12 +2800,12 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 
 **Site #5. Full FAMtastic build for an independent garage sale curator. Primary purpose: Studio stress test across all 14 phases.**
 
-**Deployed:** `https://effortless-tiramisu-ed9345.netlify.app` (Netlify site ID: `d50d0586-8f28-407f-aebe-14c175a88e1d`)  
-**Pages:** `index.html`, `shop.html`, `deals.html`, `about.html`, `contact.html`  
+**Deployed:** `https://effortless-tiramisu-ed9345.netlify.app` (Netlify site ID: `d50d0586-8f28-407f-aebe-14c175a88e1d`)
+**Pages:** `index.html`, `shop.html`, `deals.html`, `about.html`, `contact.html`
 **Assets:** `dist/assets/css/main.css`, `dist/assets/buddy/` (8 PNG poses), `dist/assets/video/` (hero.mp4 + still)
 
-**Color palette:** `#E8420A` primary · `#1D4ED8` secondary · `#FBBF24` accent · `#FFFBF5` bg · `#1C1917` dark · `#16A34A` green  
-**Fonts:** Bangers (display) · Nunito (body) · Permanent Marker (accent) — all Google Fonts CDN  
+**Color palette:** `#E8420A` primary · `#1D4ED8` secondary · `#FBBF24` accent · `#FFFBF5` bg · `#1C1917` dark · `#16A34A` green
+**Fonts:** Bangers (display) · Nunito (body) · Permanent Marker (accent) — all Google Fonts CDN
 **Shared stylesheet:** `dist/assets/css/main.css` — 607 lines, defines `.starburst`, `.display-stage*`, `.product-card`, `.countdown-*`, `.category-pill`, nav, hero, footer, Buddy placement classes
 
 **Buddy mascot (11 placements):**
@@ -3867,7 +3873,7 @@ verifyOpenAIAPI() // individual probe (chat.completions.create)
 verifyCodexCLI()  // checks OPENAI_API_KEY presence + SDK instantiation
 ```
 
-Called at startup: `verifyAllAPIs().then(r => console.log('[brain-verifier] ...'))`.  
+Called at startup: `verifyAllAPIs().then(r => console.log('[brain-verifier] ...'))`.
 Returns within 5–10 seconds; non-blocking.
 
 #### `GET /api/brain-status`
@@ -3967,7 +3973,7 @@ Why ESM? Avoids bash heredoc + `echo` pipe conflict with stdin. Node readline pr
 </div>
 ```
 
-Brain buttons are clickable and send `set-brain` WS message.  
+Brain buttons are clickable and send `set-brain` WS message.
 Worker spans are display-only — show CLI tools available, not selectable.
 
 #### Per-brain model selector

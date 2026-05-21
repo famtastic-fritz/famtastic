@@ -1,7 +1,50 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-05T23:45:23.806Z
-> Files: 642 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-05-09T04:00:20.623Z
+> Files: 687 tracked | Anatomy hits: 0 | Misses: 0
+
+
+## MBSH RSVP hero Phase 3.4 marker-band structure (2026-05-14)
+
+- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP `.hero-stage` remains sealed/unchanged. The `.marker-band` contains the HTML/CSS `.marker-plaque`, `.marker-bulbs-top` as the first plaque child with 20 `.marker-bulb` spans, four `.marker-corner` diamonds, centered `.marker-line-1` / `.marker-line-2`, the existing `.bleed-bulb-row`, `.bleed-light-spill`, and the direct-child `.chevron.layer--chevron.scroll-teaser` targeting `#rsvp-form`.
+- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.4 marker-only overrides inset `.marker-band` with 4vw edge padding, make the top bulb crown prominent, position the chevron absolutely at the section bottom with bounce-over-text, preserve reduced-motion coverage, and add mobile marker text/bulb containment.
+
+## MBSH RSVP hero Phase 3.3 structure (2026-05-14)
+
+- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP marker band now contains an HTML/CSS `.marker-plaque` with four `.marker-corner` diamond spans, 20 `.marker-bulb` nodes in `.marker-bulbs-top`, centered `.marker-line-1` / `.marker-line-2` text, the existing full-width `.bleed-bulb-row`, and the double-chevron scroll button. The previous marker SVG object and rope-extension object were removed.
+- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.3 overrides style the HTML/CSS marker plaque, top marker bulb chase, mobile 10-bulb marker reduction, 12-bulb mobile bottom row, no-rope cleanup, and reduced-motion marker-bulb behavior while preserving the 2/3 + 1/3 band layout.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/03-scene-marker.svg` — deleted; marker plaque is now HTML/CSS in `frontend/rsvp.html`.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — deleted; the rope-continues concept was removed because it had no convincing visual endpoint.
+
+
+## MBSH RSVP hero Phase 3.2 structure (2026-05-14)
+
+- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP marker band now contains a full-width marker plaque, 20-bulb full-width chase row, double-chevron scroll button, async font/premiere stylesheet loading, and the now-superseded rope experiment, which Phase 3.3 removed.
+- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.2 overrides make `.marker-band` a single-column full-width plaque/bulbs/chevron grid, center the hero headline, enforce mobile title containment, apply exaggerated `chevronBounce`.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/03-scene-marker.svg` — superseded and deleted in Phase 3.3; marker is now HTML/CSS.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — superseded and deleted in Phase 3.3; rope concept removed.
+
+## MBSH RSVP hero Phase 3.1 structure (2026-05-14)
+
+- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP hero HTML now splits the opening into `.hero-stage` plus `.marker-band`, removes the duplicate `.reel-hero__back` medallion, and keeps the center MENU medallion.
+- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.1 two-band layout, prominent marker plaque sizing, intensified two-position camera flashes, marker-band spill/bulb/chevron placement, mobile fit, reduced-motion coverage, and the former rope overflow fix superseded by Phase 3.3 removal.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — deleted in Phase 3.3; rope concept removed.
+
+## MBSH RSVP hero Phase 4 assets (2026-05-14)
+
+- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — live RSVP page preserves Preview-B and includes additive Phase 4 atmosphere nodes.
+- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 4 motion polish, deferred wow details, interaction/form bridge, mobile title cleanup, and bleed-spill artifact fix.
+
+## MBSH RSVP hero Phase 3 assets (2026-05-14)
+
+- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — live RSVP page now wired to Variant B hero composition.
+- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Preview-B alignment, essential atmosphere, bleed, mobile/reduced-motion rules.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/01-environment-640.webp` — mobile responsive environment derivative.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/01-environment-960.webp` — tablet responsive environment derivative.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/01-environment-1280.webp` — desktop responsive environment derivative.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/02b-harry-3d-render-transparent-768.webp` — live optimized Variant B Harry.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/03-scene-marker.svg` — deleted in Phase 3.3; marker is now HTML/CSS.
+- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — deleted in Phase 3.3; rope concept removed.
 
 ## ../
 
@@ -11,7 +54,9 @@
 
 ## ../../../tmp/
 
+- `lane-b-smoke.js` — path: req, record (~2043 tok)
 - `migrate-brain.js` — One-shot migration: .brain entries → memory/<type>/<slug>.md (lifecycle: candidate) (~4104 tok)
+- `refinement-smoke.js` — API routes: GET (2 endpoints) (~1123 tok)
 - `session7-plan.md` — FAMtastic Site Studio — Session 7 Prompt (~3122 tok)
 - `ws-build.js` — Declares WebSocket (~1028 tok)
 - `ws-build2.js` — WebSocket: sendBuildMessage (~1476 tok)
@@ -53,6 +98,88 @@
 ## ../Library/LaunchAgents/
 
 - `com.famtastic.studio.plist` (~606 tok)
+
+## ../famtastic-convergence-dossier/.claude/agents/
+
+- `component-studio-agent.md` — Role (~682 tok)
+- `media-library-agent.md` — Role (~616 tok)
+- `proof-qa-agent.md` — Role (~787 tok)
+- `shay-guide-training-agent.md` — Role (~515 tok)
+- `studio-action-layer-agent.md` — Role (~634 tok)
+- `studio-operator-ui-agent.md` — Role (~481 tok)
+- `studio-orchestrator.md` — Role (~758 tok)
+- `visual-refinement-agent.md` — Role (~601 tok)
+
+## ../famtastic-convergence-dossier/docs/research/famtastic-studio-execution/
+
+- `FINAL-RUN-REPORT.md` — FAMtastic Studio Intelligence — Final Run Report (~1508 tok)
+- `FUNCTIONAL-SUBSTRATE-RUN-REPORT.md` — FAMtastic Studio — Functional Substrate Run Report (~1970 tok)
+- `PARALLEL-STUDIO-TO-MBSH-V2-CONTROLLER.md` — Parallel Studio → MBSH V2 Controller (~2151 tok)
+- `PARALLEL-STUDIO-TO-MBSH-V2-RUN-REPORT-TEMPLATE.md` — Parallel Studio → MBSH V2 — Run Report (template) (~1114 tok)
+- `PARALLEL-STUDIO-TO-MBSH-V2-RUN-REPORT.md` — Parallel Studio → MBSH V2 — Run Report (~2624 tok)
+- `RUN_STATUS.md` — FAMtastic Studio Intelligence Run — Status (~3750 tok)
+- `STUDIO-OPERATOR-WORKSPACE-NONSTOP-RUN.md` — Studio Operator Workspace — Non-Stop Run Plan (~628 tok)
+- `STUDIO-OPERATOR-WORKSPACE-RUN-REPORT.md` — Studio Operator Workspace — Run Report (~2339 tok)
+
+## ../famtastic-convergence-dossier/docs/research/famtastic-studio-execution/slice-2-server-modularization/
+
+- `baseline-and-extraction-plan.md` — Slice 2 — Server Modularization First Safe Extraction (Plan + Proof) (~1250 tok)
+
+## ../famtastic-convergence-dossier/docs/research/famtastic-studio-execution/slice-3-artifact-reader/
+
+- `artifact-reader-substrate.md` — Slice 3 — Studio Artifact Reader / Display Substrate (Plan) (~1181 tok)
+
+## ../famtastic-convergence-dossier/docs/research/famtastic-studio-execution/slice-4-run-ledger-wiring/
+
+- `run-ledger-and-proof-wiring.md` — Slice 4 — Run Ledger + Proof Packet Wiring (Plan) (~1469 tok)
+
+## ../famtastic-convergence-dossier/docs/research/famtastic-studio-execution/slice-5-mbsh-v2-readiness-gate/
+
+- `readiness-gate.md` — Slice 5 — MBSH V2 Readiness Gate (~1807 tok)
+
+## ../famtastic-convergence-dossier/site-studio/
+
+- `server.js` — express: readLastSite, writeLastSite, SITE_DIR + 13 more (~254556 tok)
+
+## ../famtastic-convergence-dossier/site-studio/public/
+
+- `operator.html` — FAMtastic Studio · Operator Workspace (~3619 tok)
+
+## ../famtastic-convergence-dossier/site-studio/public/css/
+
+- `operator.css` — Styles: 94 rules, 16 vars (~3230 tok)
+
+## ../famtastic-convergence-dossier/site-studio/public/js/
+
+- `operator-actions.js` — site-studio/public/js/operator-actions.js (~1862 tok)
+- `operator-components.js` — Lane C — Operator Components panel client (~813 tok)
+- `operator-media.js` — Operator Media panel client — Lane D (~1448 tok)
+- `operator-refinement.js` — site-studio/public/js/operator-refinement.js (~784 tok)
+- `operator-shay.js` — operator-shay.js — Lane E augmentation for the Operator Shay Desk. (~2744 tok)
+- `operator.js` — operator.js — Studio Operator Workspace (~10047 tok)
+
+## ../famtastic-convergence-dossier/site-studio/server/
+
+- `component-inventory.js` — Tiny Levenshtein distance — iterative DP, O(n*m) memory. (~1069 tok)
+- `component-routes.js` — Lane C — Component routes (~276 tok)
+- `intelligence-actions.js` — site-studio/server/intelligence-actions.js (~3209 tok)
+- `intelligence-reader.js` — site-studio/server/intelligence-reader.js (~1578 tok)
+- `intelligence-routes.js` — site-studio/server/intelligence-routes.js (~806 tok)
+- `intelligence-writer.js` — site-studio/server/intelligence-writer.js (~2324 tok)
+- `media-registry.js` — fs: emptyRegistry, readRegistry, validateAsset, countByApproval (~1076 tok)
+- `media-routes.js` — API routes: GET (2 endpoints) (~507 tok)
+- `validators.js` — site-studio/server/validators.js (~1069 tok)
+- `visual-refinement-routes.js` — site-studio/server/visual-refinement-routes.js (~791 tok)
+- `visual-refinement.js` — site-studio/server/visual-refinement.js (~2128 tok)
+
+## ../famtastic-convergence-dossier/sites/site-mbsh-reunion/intelligence/
+
+- `capability-truth.json` (~563 tok)
+- `intelligence-brief.json` (~344 tok)
+
+## ../famtastic-convergence-dossier/sites/site-mbsh-reunion/media/
+
+- `registry.json` (~137 tok)
 
 ## ../famtastic-sites/mbsh-reunion/
 
@@ -124,6 +251,20 @@
 - `generate-story-stills.js` — generate-story-stills.js — Generate 6 atmospheric stills (3 Then + 3 Now) (~1510 tok)
 - `screenshot-hero.js` — screenshot-hero.js — Capture hero at iPhone 14 (390x844) and desktop (1440x900). (~584 tok)
 - `screenshot-story.js` — screenshot-story.js — Capture each Story moment + event details panel (~630 tok)
+
+
+## ../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/
+
+- `01-environment-1280.webp` — RSVP Phase 3 optimized environment derivative for live hero proof.
+- `02b-harry-3d-render-transparent-768.webp` — RSVP Phase 3 optimized Variant B Harry derivative for live hero proof.
+- RSVP marker plaque — now HTML/CSS in `frontend/rsvp.html` with `.marker-bulb` chase.
+- RSVP rope-extension SVG — deleted in Phase 3.3; do not recreate without a baked-in endpoint.
+
+## ../famtastic-sites/mbsh-reunion/frontend/ Phase 3 RSVP touchpoints
+
+- `rsvp.html` — Live RSVP page now contains `section.reel-hero--rsvp`, `.bleed-bridge`, and `.rsvp-form-section`.
+- `css/premiere.css` — RSVP Phase 3 atmosphere, marker band, mobile, reduced-motion, and performance-safe visual rules.
+- `js/premiere.js` — RSVP-scoped optimized medallion asset and no full-page injected backdrop overlay on RSVP.
 
 ## ./
 

@@ -1,0 +1,218 @@
+[
+  {
+    "id": "replit-agent-billing",
+    "category": "ai_builder",
+    "name": "Replit Agent AI billing and checkpoints",
+    "url": "https://docs.replit.com/billing/ai-billing",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Checkpoint cost, usage dashboard, budget/alert concepts."
+  },
+  {
+    "id": "bolt-github",
+    "category": "ai_builder",
+    "name": "Bolt.new GitHub repository",
+    "url": "https://github.com/stackblitz/bolt.new",
+    "source_type": "official_github",
+    "trust_level": "high",
+    "notes": "Browser full-stack builder, WebContainers, prompt/run/edit/deploy loop."
+  },
+  {
+    "id": "vercel-v0-docs",
+    "category": "ai_builder",
+    "name": "Vercel v0 docs",
+    "url": "https://vercel.com/docs/v0",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Natural-language generation, Vercel project/deploy integration."
+  },
+  {
+    "id": "lovable-docs",
+    "category": "ai_builder",
+    "name": "Lovable documentation",
+    "url": "https://docs.lovable.dev/",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Full-stack AI development platform, GitHub sync, deployment/governance framing."
+  },
+  {
+    "id": "dyad-github",
+    "category": "ai_builder",
+    "name": "Dyad GitHub repository",
+    "url": "https://github.com/dyad-sh/dyad",
+    "source_type": "official_github",
+    "trust_level": "high",
+    "notes": "Local open-source AI app builder alternative."
+  },
+  {
+    "id": "claude-code-statusline",
+    "category": "agentic_coding",
+    "name": "Claude Code statusline docs",
+    "url": "https://code.claude.com/docs/en/statusline",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Statusline fields including tasks, token counts, git/cost/progress display."
+  },
+  {
+    "id": "claude-code-hooks",
+    "category": "agentic_coding",
+    "name": "Claude Code hooks docs",
+    "url": "https://code.claude.com/docs/en/hooks",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Hook lifecycle, subagent events, async hooks."
+  },
+  {
+    "id": "openai-codex-docs",
+    "category": "agentic_coding",
+    "name": "OpenAI Codex cloud docs",
+    "url": "https://platform.openai.com/docs/codex/overview",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Cloud sandbox tasks, GitHub connection, PR handoff."
+  },
+  {
+    "id": "github-copilot-agent",
+    "category": "agentic_coding",
+    "name": "GitHub Copilot coding agent docs",
+    "url": "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/assign-copilot-to-an-issue",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Issue/chat/CLI/agent panel to PR workflow."
+  },
+  {
+    "id": "cursor-background-agents",
+    "category": "agentic_coding",
+    "name": "Cursor Background Agents docs",
+    "url": "https://docs.cursor.com/en/background-agents",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Async remote agents, branch handoff, status/takeover."
+  },
+  {
+    "id": "windsurf-cascade",
+    "category": "agentic_coding",
+    "name": "Windsurf Cascade docs",
+    "url": "https://docs.windsurf.com/windsurf/cascade",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Code/chat modes, planning, todos, checkpoints, workflows."
+  },
+  {
+    "id": "cline-overview",
+    "category": "agentic_coding",
+    "name": "Cline overview",
+    "url": "https://docs.cline.bot/introduction/overview",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Editor agent with browser, task management, long-running sessions."
+  },
+  {
+    "id": "crewai-flows",
+    "category": "multi_agent",
+    "name": "CrewAI Flows",
+    "url": "https://www.crewai.com/crewai-flows",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Controlled flows plus autonomous crews."
+  },
+  {
+    "id": "langgraph-durable",
+    "category": "multi_agent",
+    "name": "LangGraph durable execution",
+    "url": "https://docs.langchain.com/oss/python/langgraph/durable-execution",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Durable checkpoints, pause/resume, human-in-loop support."
+  },
+  {
+    "id": "autogen-hitl",
+    "category": "multi_agent",
+    "name": "AutoGen human-in-the-loop",
+    "url": "https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/human-in-the-loop.html",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Human input, handoff, preserved team state."
+  },
+  {
+    "id": "openhands-product",
+    "category": "multi_agent",
+    "name": "OpenHands product page",
+    "url": "https://www.openhands.dev/product",
+    "source_type": "official_product",
+    "trust_level": "medium",
+    "notes": "Autonomous cloud coding agent positioning."
+  },
+  {
+    "id": "openai-deep-research",
+    "category": "research_provenance",
+    "name": "OpenAI Deep Research announcement",
+    "url": "https://openai.com/index/introducing-deep-research/",
+    "source_type": "official_blog",
+    "trust_level": "high",
+    "notes": "Multi-step research with citations and source verification."
+  },
+  {
+    "id": "llamaindex-citations",
+    "category": "research_provenance",
+    "name": "LlamaIndex CitationQueryEngine",
+    "url": "https://docs.llamaindex.ai/en/v0.10.34/examples/query_engine/citation_query_engine/",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Citation chunks and source nodes."
+  },
+  {
+    "id": "haystack-retrievers",
+    "category": "research_provenance",
+    "name": "Haystack retrievers",
+    "url": "https://docs.haystack.deepset.ai/v2.9/docs/retrievers",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Retriever/document-store patterns."
+  },
+  {
+    "id": "langchain-retrieval",
+    "category": "research_provenance",
+    "name": "LangChain retrieval",
+    "url": "https://www.langchain.com/retrieval",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "RAG/retrieval patterns."
+  },
+  {
+    "id": "owasp-llm-2025",
+    "category": "security_cost_safety",
+    "name": "OWASP Top 10 for LLM Applications 2025",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "source_type": "official_security_standard",
+    "trust_level": "high",
+    "notes": "Prompt injection, sensitive disclosure, supply chain, excessive agency, unbounded consumption."
+  },
+  {
+    "id": "github-secret-scanning",
+    "category": "security_cost_safety",
+    "name": "GitHub secret scanning and push protection",
+    "url": "https://docs.github.com/en/code-security/secret-scanning/working-with-secret-scanning-and-push-protection",
+    "source_type": "official_docs",
+    "trust_level": "high",
+    "notes": "Push protection and secret leak prevention."
+  },
+  {
+    "id": "source-map-risk",
+    "category": "security_cost_safety",
+    "name": "Production source map exposure discussion",
+    "url": "https://domainoptic.com/blog/source-maps-production-security-risk",
+    "source_type": "security_blog",
+    "trust_level": "medium",
+    "notes": "Source maps can expose source code, comments, endpoints, and expected env variables."
+  },
+  {
+    "id": "source-map-public-case",
+    "category": "security_cost_safety",
+    "name": "Public source map exposure case reporting",
+    "url": "https://www.securitytoday.de/en/2026/04/01/source-map-in-npm-package-how-anthropic-exposed-512000-lines-of-production-code/",
+    "source_type": "public_report",
+    "trust_level": "medium",
+    "notes": "Public report of debug/source map artifact exposure."
+  }
+]

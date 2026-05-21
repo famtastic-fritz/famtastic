@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-05-21 (Post-evaluation contract added: shared `lib/famtastic/post-eval/index.js`, first-class `data-center/post-eval/` records and schema, Mission Control post-eval visibility, `scripts/post-eval-phase1.js`, and live Phase 1 opportunity forecast with 15 Phase 2 skill/process/component/media/tool/research opportunities; Wave 7 Site Studio quality-flow hook and Waves 1–6 foundation work remain current.)
+**Last updated:** 2026-05-21 (Final pre-Phase-2 consolidation completed: Phase 2 plan of record is tracked, broader pre-Shay-Shay worktree references are archived under `docs/archive/pre-shay-shay/`, Phase 2A brand/remotion starting inputs are tracked, local nested repos/probes are ignored, and Phase 1 foundation remains current.)
 
 ---
 
@@ -11,6 +11,8 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 The system is currently single-user and localhost-only, built and operated by Fritz Medine. The architectural goal — captured in the canonical vision doc `docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md` — is the **Adobe Creative Cloud pattern**: separate full-identity studios (Site, Component, Media, Think Tank) atop shared Platform services (research, memory, intelligence loop, learning).
 
 **Key recent milestones:**
+
+- **2026-05-21** — Final pre-Phase-2 consolidation and clean-state prep. The current plan of record is `plans/PHASE2-VISUAL-WORKFLOWS-BRAND-SYSTEMS.md`. Broader pre-Shay-Shay worktree material was harvested into `docs/archive/pre-shay-shay/full-snapshots/` instead of merging stale UI/code wholesale; bulk MuAPI logo/media WIPs were preserved locally and indexed by `docs/archive/pre-shay-shay/local-artifact-manifests/epic-mclean-muapi-logo-outputs.md`. Phase 2A starting inputs are now tracked in main via `brand/FAMTASTIC-BRAND-MARK.md` and the `remotion/` FAMtastic logo motion composition source. Local nested repos/probes (`shay-shay/`, `shay-desktop*/`, `_tool-probes/`, etc.) are ignored by the hub repo; useful findings must be promoted into tracked docs/plans/Data Center records or separate repos.
 
 - **2026-05-21** — Post-evaluation contract and Phase 1 opportunity forecast. Added `lib/famtastic/post-eval/index.js` with `buildPostEval()`, `recordPostEval()`, `listPostEvalRecords()`, `extractPhaseOneOpportunitySeeds()`, and `renderPostEvalReport()`. Data Center now treats `post-eval/` and `schemas/post-eval-record.schema.json` as first-class structure; records write JSON to `data-center/post-eval/`, Markdown reports to `data-center/reports/post-eval/`, and ledger events to `data-center/ledgers/post-eval.jsonl`. Mission Control reads post-eval records via `summary.post_eval` and `post_eval[]`, and `scripts/mission-control-report.js` renders post-eval counts. `scripts/post-eval-phase1.js` ran the real Phase 1 closeout plus Phase 2 plan through four live Perplexity-backed research proofs and produced `data-center/reports/post-eval/posteval_phase1_20260521.md` with 15 opportunities. Remaining gaps: post-eval is not yet automatically invoked by every studio/job endpoint, and promotion policy is not yet implemented for turning opportunities into skills, process rules, components, media recipes, claims, or Fritz review cards.
 

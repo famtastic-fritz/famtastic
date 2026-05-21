@@ -1,0 +1,82 @@
+{
+  "id": "proof-slice-1-execution-substrate-2026-05-08",
+  "run_id": "run-studio-substrate-to-mbsh-v2-proof-readiness-2026-05-08",
+  "pass_id": "slice-1-execution-substrate-contracts",
+  "objective": "Create execution substrate contracts, fixtures, acceptance checklist, report template, and unattended run controller.",
+  "files_changed": [
+    "docs/research/famtastic-studio-execution/slice-1-execution-substrate/README.md",
+    "docs/research/famtastic-studio-execution/slice-1-execution-substrate/*.contract.json",
+    "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/*.example.json",
+    "docs/research/famtastic-studio-execution/slice-1-execution-substrate/acceptance-checklist.md",
+    "docs/research/famtastic-studio-execution/slice-1-execution-substrate/agent-run-report-template.md",
+    "docs/research/famtastic-studio-execution/UNATTENDED-RUN-CONTROLLER.md",
+    "docs/research/famtastic-studio-execution/RUN_STATUS.md"
+  ],
+  "commands_run": [
+    {
+      "command": "node -e \"JSON.parse(...)\" for each JSON contract and fixture",
+      "result": "pass"
+    },
+    {
+      "command": "git diff --check",
+      "result": "pass"
+    },
+    {
+      "command": "git status --short",
+      "result": "pass after commit except pre-existing unrelated changes in another worktree"
+    }
+  ],
+  "checks_run": [
+    "required file existence check",
+    "JSON parse check",
+    "git diff whitespace check",
+    "scope check for no UI/app/server.js changes"
+  ],
+  "outputs": [
+    "Slice 1 contract package",
+    "Unattended run controller",
+    "RUN_STATUS.md Slice 1 update"
+  ],
+  "capability_probes": [
+    {
+      "capability_id": "cap-run-ledger-doc-substrate-2026-05-08",
+      "result": "working"
+    }
+  ],
+  "cost_notes": {
+    "projected_cost_usd": 0,
+    "approval_required": false,
+    "notes": "Local docs/JSON work only."
+  },
+  "fixed": [
+    "Established concrete contracts for the minimum execution substrate."
+  ],
+  "added": [
+    "Contracts and fixtures for Intelligence Brief, Recipe Decision, Capability Truth, Run Ledger, Proof Packet, and Learning Candidate.",
+    "Unattended run controller for continuing through proof-readiness without default Fritz approval stops."
+  ],
+  "proved": [
+    "Slice 1 can be represented as parseable repo-native artifacts.",
+    "The run can define continue/stop rules before later slices begin."
+  ],
+  "deferred": [
+    "Studio UI artifact reader/display substrate.",
+    "Server modularization first safe extraction plan/proof.",
+    "Run ledger/proof packet wiring plan.",
+    "MBSH V2 readiness gate."
+  ],
+  "risk": [
+    "Artifacts are not yet consumed by Studio UI or runtime.",
+    "The 20,150-line server.js remains a backend-growth risk until Slice 2 planning/proof."
+  ],
+  "next_action": "Execute Slice 2: server modularization first safe extraction plan/proof.",
+  "status": "pass",
+  "created_at": "2026-05-08T19:49:00-04:00",
+  "screenshots": [],
+  "logs": [],
+  "fallback_used": null,
+  "blockers": [],
+  "non_blockers": [
+    "Docs-only substrate is not yet app behavior."
+  ]
+}

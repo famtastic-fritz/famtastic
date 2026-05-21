@@ -1,0 +1,22 @@
+{
+  "id": "learn-slice-1-substrate-before-site-work-2026-05-08",
+  "source_run_id": "run-studio-substrate-to-mbsh-v2-proof-readiness-2026-05-08",
+  "source_pass_id": "slice-1-execution-substrate-contracts",
+  "lesson_type": "workflow",
+  "summary": "Before MBSH V2 begins, Studio needs parseable execution substrate artifacts so every run can explain its intelligence, capability truth, proof, and learning output.",
+  "applies_to": [
+    "MBSH V2 proof-readiness",
+    "future shipping company full build test",
+    "long-running guarded autonomous build runs",
+    "plan closeout and learning capture"
+  ],
+  "registry_nomination": "learning_registry",
+  "v1_v2_classification": "v1_required",
+  "proof_reference": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/proof-packet.example.json",
+  "status": "candidate",
+  "created_at": "2026-05-08T19:50:00-04:00",
+  "do_not_repeat_candidate": true,
+  "supersedes": null,
+  "owner": "Learning Curator",
+  "notes": "This should become a durable rule: do not start major site iteration until the execution substrate can record what the run is proving."
+}

@@ -1,5 +1,8 @@
 # FAMtastic Changelog
 
+## 2026-05-21 — Final pre-Phase-2 cleanup [docs]
+Completed the final harvest/prune pass for Phase 2 readiness. Broader pre-Shay-Shay worktree references were archived under `docs/archive/pre-shay-shay/full-snapshots/`, local MuAPI logo/media WIPs were preserved in `~/famtastic-local-archive/` and indexed by a tracked manifest, and local nested repos/probes were moved behind `.gitignore` rules so the hub repo can stay clean. Phase 2A starting inputs are now explicit: `brand/FAMTASTIC-BRAND-MARK.md`, the `remotion/` logo motion source, and the local MuAPI WIP manifest. Deferred: using those inputs to run the actual Phase 2A Media Studio logo/brand workflow.
+
 ## 2026-05-21 — Phase 1 consolidation and Phase 2 readiness [docs]
 Consolidated the Phase 1 Waves 1–7 foundation, preserved useful pre-Shay-Shay/worktree material as reference instead of blindly merging it, and made Phase 2: Visual Workflows & Brand Systems the current plan of record. Added agent startup guidance for Claude/Codex/Gemini/Cowork, harvested the missing Site Studio bridge client, aligned Shay Desk IDs/tests, and updated bridge tests to match the current safe-write policy. Verification passes for the focused Data Center, Mission Control, Media Studio, Component Studio, Site quality-flow, research-router, and Site Studio unit suites. Deferred: pruning raw captures/tool probes/worktrees after Fritz reviews the preserved reference index.
 

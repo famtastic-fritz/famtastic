@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "plan_2026_05_05_workbench_per_page_design",
+  "verdict": "needs_tasking",
+  "verdict_at": "2026-05-19T23:55:00.000Z",
+  "verdict_by": "codex",
+  "fixed": [
+    "Resolved stale active-plan drift by attaching the missing closeout packet required by AGENTS.md."
+  ],
+  "added": [
+    "Recorded that the design-research plan remains desired but no active task ledger currently carries it."
+  ],
+  "proved": [
+    "Plan audit confirmed the only repo-level drift issue was missing closeout state for this zero-open-task active plan."
+  ],
+  "remaining_work": [
+    "Reconfirm whether the page-type research deliverables in docs/design-research are accepted, stale, or need refresh against the newer Studio IA.",
+    "Generate a fresh task set or superseding shell-rebuild plan before any more Workbench UI implementation."
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/plan_2026_05_05_workbench_per_page_design/plan.json",
+      "note": "Plan remained active with no closeout packet."
+    },
+    {
+      "type": "doc",
+      "ref": "docs/platform-refresh/PLATFORM-REFRESH-V2-IMPLEMENTATION-RECONCILIATION.md",
+      "note": "Repository docs already noted the closeout discrepancy for this plan."
+    },
+    {
+      "type": "test_run",
+      "ref": "node scripts/plans/audit.js",
+      "note": "Audit reported this plan as the lone drift violation."
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "do-not-repeat",
+      "title": "Zero-task active plans need explicit closeout",
+      "body": "If a plan is still desired but has no open tasks, issue a needs_tasking closeout instead of leaving it active with ambiguous state.",
+      "facets": [
+        "plans",
+        "closeout-discipline"
+      ],
+      "confidence": 0.98
+    }
+  ],
+  "next_task_ids": [
+    "task-reconfirm-workbench-page-type-research",
+    "task-scope-successor-workbench-shell-rebuild"
+  ]
+}

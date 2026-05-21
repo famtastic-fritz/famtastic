@@ -1,0 +1,56 @@
+[
+  {
+    "role": "Medium-brain orchestrator",
+    "layer": "Control",
+    "owns": ["run plan", "delegation", "stop/continue", "cost gate", "ledger"],
+    "proof": ["run ledger", "pass closeout", "coverage matrix"]
+  },
+  {
+    "role": "Research Strategist",
+    "layer": "Intelligence",
+    "owns": ["source map", "competitive scan", "evidence scoring", "question bank"],
+    "proof": ["source IDs", "confidence", "research summary"]
+  },
+  {
+    "role": "Recipe Architect",
+    "layer": "Intelligence",
+    "owns": ["recipe fingerprint", "registry lookup", "module compatibility", "QA binding"],
+    "proof": ["recipe decision", "reason code", "capability map"]
+  },
+  {
+    "role": "Prompt Strategist",
+    "layer": "Intelligence/Creation",
+    "owns": ["prompt objects", "negative constraints", "asset prompt QA"],
+    "proof": ["prompt object", "research basis", "slot target"]
+  },
+  {
+    "role": "Media Director",
+    "layer": "Creation",
+    "owns": ["asset registry", "variants", "cleanup", "compression", "usage tracking"],
+    "proof": ["approved asset", "QA result", "fallback"]
+  },
+  {
+    "role": "Component Architect",
+    "layer": "Creation",
+    "owns": ["component contract", "sandbox", "library promotion", "installer plan"],
+    "proof": ["metadata", "sandbox proof", "QA gates"]
+  },
+  {
+    "role": "Security / Capability Auditor",
+    "layer": "Control",
+    "owns": ["capability probes", "secret checks", "source map checks", "approval rules"],
+    "proof": ["capability status", "last probe", "proof ref"]
+  },
+  {
+    "role": "Learning Curator",
+    "layer": "Intelligence/Guide",
+    "owns": ["closeout learning", "registry nominations", "training objects"],
+    "proof": ["learning candidates", "V1/V2 classification"]
+  },
+  {
+    "role": "Shay Guide",
+    "layer": "Guide",
+    "owns": ["readback", "handoffs", "operator explanation", "necessary questions"],
+    "proof": ["plain-English status", "source/proof links"]
+  }
+]

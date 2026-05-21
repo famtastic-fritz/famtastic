@@ -1,0 +1,33 @@
+{
+  "id": "ib-mbsh-v2-proof-readiness-2026-05-08",
+  "project_tag": "site-mbsh-reunion",
+  "source_brief": "Prepare the MBSH reunion site for a V2 post-launch iteration proof without starting implementation.",
+  "research_depth": "standard",
+  "audience": "MBSH Class of 1996 reunion attendees, organizers, sponsors, and future FAMtastic Studio operators reviewing post-launch iteration behavior.",
+  "opportunity": "Use MBSH V2 to prove that Studio can refine a launched cinematic event site through component/slot replacement, media registry discipline, QA gates, and learning capture.",
+  "positioning": "MBSH V2 is a post-launch iteration proof for the Studio system, not a fresh site build.",
+  "source_ids": [
+    "docs/research/famtastic-studio-execution/FINAL-BRIEFING.md",
+    "docs/research/famtastic-studio-execution/09-execution-plan-impact.md",
+    "docs/research/famtastic-studio-execution/server-modularization-plan.md"
+  ],
+  "open_questions": [
+    "Which MBSH V2 backlog items are production blockers versus polish?",
+    "Which deferred assets already exist and which need Media Library intake?",
+    "Which pages expose named slots suitable for safe replacement?"
+  ],
+  "status": "ready_for_recipe",
+  "created_at": "2026-05-08T19:45:00-04:00",
+  "constraints": [
+    "Do not start MBSH V2 implementation in Slice 1.",
+    "Do not add major backend behavior to site-studio/server.js.",
+    "Any projected cost above $50 requires Fritz approval."
+  ],
+  "related_site": "mbsh-reunion",
+  "research_summary": "The completed research package shows FAMtastic should prove intelligence, capability truth, run ledger, proof packet, and learning capture before site work.",
+  "assumptions": [
+    "MBSH V2 remains the first post-launch iteration proof after the execution substrate exists.",
+    "Slice 1 is documentation/contract work only."
+  ],
+  "next_recommended_action": "Create Slice 2 server modularization first safe extraction plan/proof before backend-heavy Studio behavior."
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@famtastic/remotion",
+  "version": "0.1.0",
+  "description": "FAMtastic shared animation & rendering engine — Remotion compositions used by site-studio, media-studio, and component-studio.",
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc",
+    "render:luminous": "remotion render FAMtasticLogo-Luminous out/famtastic-logo-luminous.mp4",
+    "render:dark": "remotion render FAMtasticLogo-Dark out/famtastic-logo-dark.mp4",
+    "render:square": "remotion render FAMtasticLogo-Square out/famtastic-logo-square.mp4",
+    "render:still": "remotion still FAMtasticLogo-Luminous out/famtastic-logo.png --frame=60"
+  },
+  "repository": {},
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@remotion/animation-utils": "^4.0.463",
+    "@remotion/captions": "^4.0.463",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/google-fonts": "^4.0.463",
+    "@remotion/media-utils": "^4.0.463",
+    "@remotion/player": "^4.0.463",
+    "@remotion/preload": "^4.0.463",
+    "@remotion/shapes": "^4.0.463",
+    "@remotion/transitions": "^4.0.463",
+    "@remotion/zod-types": "^4.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "^4.0.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "^4.0.0",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "private": true
+}

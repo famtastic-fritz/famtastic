@@ -1,0 +1,22 @@
+{
+  "claude": {
+    "provider": "anthropic",
+    "models": {
+      "site_generation": "claude-sonnet-4-6",
+      "brainstorm": "claude-sonnet-4-6",
+      "planning": "claude-sonnet-4-6",
+      "summarization": "claude-haiku-4-5-20251001",
+      "fallback": "claude-haiku-4-5-20251001"
+    }
+  },
+  "gemini": {
+    "provider": "google",
+    "model": "gemini-2.5-flash",
+    "fallback": "gemini-2.0-flash-001"
+  },
+  "openai": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "fallback": "gpt-4o-mini"
+  }
+}

@@ -7,9 +7,10 @@ This folder preserves older plans, specs, and agent-role material discovered dur
 
 ## Current source of truth
 
-- `shay-shay/.shay/plans/2026-05-21_phase2-visual-workflows-brand-systems.md`
-- `shay-shay/observations/SHAY-PHASE1-WAVES1-7-CLOSEOUT-2026-05-21.md`
+- `plans/PHASE2-VISUAL-WORKFLOWS-BRAND-SYSTEMS.md`
 - `data-center/reports/post-eval/posteval_phase1_20260521.md`
+- `SITE-LEARNINGS.md`
+- `FAMTASTIC-STATE.md`
 
 ## Harvested reference docs
 
@@ -30,6 +31,15 @@ This folder preserves older plans, specs, and agent-role material discovered dur
 ## Agent role references
 
 Specialist role docs were copied into `agent-role-references/` as references for Phase 2 and future multi-agent onboarding. They are not current startup instructions until reconciled into `AGENTS.md`, `CLAUDE.md`, or surface-specific config.
+
+## Full snapshots
+
+The final cleanup pass also preserved broader pre-Shay-Shay worktree material under `full-snapshots/` so useful details are not lost while keeping the current plan clear:
+
+- `full-snapshots/convergence-dossier/` — full docs/process, studio-execution research, design ingest docs, and Claude agent references from the convergence worktree.
+- `full-snapshots/adoring-merkle-agent-bootstrap/` — experimental `.agents` skills and Codex bootstrap config for future agent startup consolidation.
+- `full-snapshots/great-gauss-temporary-stubs/` — temporary Site Studio stubs preserved only as evidence of old missing module expectations.
+- `local-artifact-manifests/epic-mclean-muapi-logo-outputs.md` — manifest for MuAPI logo/media outputs preserved in the local archive, not committed as binary bulk.
 
 ## Consolidation decisions
 

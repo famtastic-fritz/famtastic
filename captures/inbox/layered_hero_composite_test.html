@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Layered Hero — Composite Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Limelight&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --c-crimson:      #8B1A1F;
+    --c-crimson-deep: #4A0E11;
+    --c-gold:         #C8A45C;
+    --c-gold-bright:  #E8C77A;
+    --c-black:        #0A0507;
+    --c-velvet:       #2A0508;
+    --c-bg:           #14090B;
+    --c-ink:          #E8DCC6;
+    --c-ink-dim:      #8A7B66;
+    --c-line:         rgba(232, 199, 122, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(ellipse at top, rgba(139, 26, 31, 0.08), transparent 60%),
+      var(--c-bg);
+    color: var(--c-ink);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    min-height: 100vh;
+    padding: 32px 24px 64px;
+    line-height: 1.5;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* === Header === */
+  header.intro {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-gold);
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-family: 'Limelight', 'Georgia', serif;
+    font-size: 32px;
+    letter-spacing: 0.02em;
+    color: var(--c-ink);
+    margin: 0 0 10px;
+    font-weight: 400;
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--c-ink-dim);
+    margin: 0;
+    max-width: 68ch;
+    font-style: italic;
+  }
+
+  /* === Hero stage === */
+  .stage {
+    margin: 24px auto 28px;
+    transition: max-width 0.35s cubic-bezier(.2,.7,.2,1);
+  }
+  .stage-frame {
+    padding: 14px;
+    background:
+      linear-gradient(135deg, rgba(232, 199, 122, 0.06), rgba(139, 26, 31, 0.04));
+    border: 1px solid var(--c-line);
+    border-radius: 2px;
+    position: relative;
+  }
+  .stage-frame::before,
+  .stage-frame::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--c-gold);
+    opacity: 0.5;
+  }
+  .stage-frame::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .stage-frame::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    container-type: inline-size;
+    overflow: hidden;
+    border-radius: 1px;
+    box-shadow:
+      0 24px 60px rgba(0,0,0,0.6),
+      inset 0 0 80px rgba(0,0,0,0.4);
+    background: var(--c-black);
+  }
+
+  /* === Layer: scene (CSS-rendered fallback OR swapped image) === */
+  .layer { position: absolute; }
+
+  .scene {
+    inset: 0;
+    background:
+      radial-gradient(ellipse 55% 38% at 68% 58%,
+        rgba(232, 199, 122, 0.55) 0%,
+        rgba(200, 164, 92, 0.22) 35%,
+        transparent 70%),
+      radial-gradient(ellipse 90% 65% at 68% 58%,
+        var(--c-crimson) 0%,
+        var(--c-crimson-deep) 55%,
+        var(--c-black) 95%);
+    animation: tungstenFlicker 5.3s ease-in-out infinite;
+    transform: translate3d(calc(var(--px, 0) * -3px),
+                           calc(var(--py, 0) * -2px), 0);
+    transition: transform 0.18s ease-out;
+  }
+  .scene img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    animation: kenBurns 22s ease-in-out infinite alternate;
+  }
+
+  /* === Layer: dust motes (parallax with the scene) === */
+  .motes {
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 50% 40%, rgba(255,247,220,0.45) 0.5px, transparent 1.5px),
+      radial-gradient(circle at 28% 70%, rgba(255,247,220,0.3)  0.5px, transparent 1.5px),
+      radial-gradient(circle at 82% 32%, rgba(255,247,220,0.35) 0.5px, transparent 1.5px),
+      radial-gradient(circle at 18% 50%, rgba(255,247,220,0.22) 0.5px, transparent 1.5px),
+      radial-gradient(circle at 62% 82%, rgba(255,247,220,0.3)  0.5px, transparent 1.5px);
+    background-size: 240px 240px, 290px 290px, 200px 200px, 260px 260px, 280px 280px;
+    animation: motes 26s linear infinite;
+    mix-blend-mode: screen;
+    opacity: 0.7;
+    pointer-events: none;
+    transform: translate3d(calc(var(--px, 0) * -5px),
+                           calc(var(--py, 0) * -3px), 0);
+    transition: transform 0.18s ease-out;
+  }
+
+  /* === Layer: Harry (wrapper handles parallax, inner img handles breath) === */
+  .harry {
+    bottom: 0;
+    right: 7cqw;
+    width: 30cqw;
+    transform: translate3d(calc(var(--px, 0) * -12px),
+                           calc(var(--py, 0) * -6px), 0);
+    transition: transform 0.18s ease-out;
+  }
+  .harry img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transform-origin: bottom center;
+    animation: breath 5.5s ease-in-out infinite;
+    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.55));
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(.2,.7,.2,1), filter 0.3s ease;
+  }
+  .harry img:hover {
+    transform: translateY(-10px) scale(1.04) rotate(-1deg);
+    filter: drop-shadow(0 18px 32px rgba(0,0,0,0.6))
+            drop-shadow(0 0 24px rgba(232, 199, 122, 0.35));
+  }
+
+  /* === Layer: headline === */
+  .headline {
+    left: 6cqw;
+    top: 50%;
+    transform: translateY(-50%) translate3d(calc(var(--px, 0) * -4px),
+                                            calc(var(--py, 0) * -2px), 0);
+    transition: transform 0.18s ease-out;
+    max-width: 36cqw;
+    color: var(--c-gold-bright);
+    margin: 0;
+  }
+  .headline .scene-marker {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.4cqw;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-gold);
+    margin-bottom: 1.8cqw;
+    opacity: 0.85;
+  }
+  .headline .title {
+    display: block;
+    font-family: 'Limelight', Georgia, serif;
+    font-size: 10cqw;
+    line-height: 0.95;
+    letter-spacing: 0.04em;
+    font-weight: 400;
+    text-shadow:
+      0 2px 14px rgba(0,0,0,0.75),
+      0 0 28px rgba(232, 199, 122, 0.32);
+    animation: neonPulse 4.5s ease-in-out infinite;
+  }
+  .headline .sub {
+    display: block;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 3cqw;
+    color: var(--c-ink);
+    margin-top: 1.8cqw;
+    opacity: 0.82;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+  }
+
+  /* === Animations === */
+  @keyframes breath {
+    0%, 100% { transform: translateY(0)    scale(1); }
+    50%      { transform: translateY(-4px) scale(1.014); }
+  }
+  @keyframes tungstenFlicker {
+    0%, 100% { filter: brightness(1)    saturate(1); }
+    18%      { filter: brightness(1.07) saturate(1.04); }
+    37%      { filter: brightness(0.96) saturate(0.98); }
+    54%      { filter: brightness(1.04) saturate(1.02); }
+    71%      { filter: brightness(0.99) saturate(1); }
+    88%      { filter: brightness(1.02) saturate(1.01); }
+  }
+  @keyframes neonPulse {
+    0%, 100% {
+      text-shadow: 0 2px 14px rgba(0,0,0,0.75),
+                   0 0 28px rgba(232, 199, 122, 0.32);
+    }
+    47% {
+      text-shadow: 0 2px 14px rgba(0,0,0,0.75),
+                   0 0 48px rgba(232, 199, 122, 0.55);
+    }
+  }
+  @keyframes motes {
+    from { background-position: 0 0,        0 0,        0 0,        0 0,        0 0; }
+    to   { background-position: 0 -240px,  0 -290px,  0 -200px,  0 -260px,  0 -280px; }
+  }
+  @keyframes kenBurns {
+    from { transform: scale(1)    translate(0, 0); }
+    to   { transform: scale(1.05) translate(-1%, 0.5%); }
+  }
+
+  /* === Parallax disabled mode (resets transforms) === */
+  .hero[data-parallax="off"] .scene,
+  .hero[data-parallax="off"] .motes,
+  .hero[data-parallax="off"] .harry,
+  .hero[data-parallax="off"] .headline {
+    transform: none;
+  }
+  .hero[data-parallax="off"] .headline {
+    transform: translateY(-50%);
+  }
+
+  /* === Debug / show-layers mode === */
+  .hero[data-debug="on"] .layer {
+    outline: 1px dashed rgba(232, 199, 122, 0.55);
+    outline-offset: -1px;
+  }
+  .hero[data-debug="on"] .layer::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 6px; left: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: rgba(0,0,0,0.72);
+    color: var(--c-gold);
+    padding: 2px 7px;
+    border-radius: 1px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  /* === Controls panel === */
+  .controls {
+    background:
+      linear-gradient(180deg,
+        rgba(232, 199, 122, 0.025),
+        rgba(0,0,0,0.2));
+    border: 1px solid var(--c-line);
+    border-radius: 2px;
+    padding: 20px 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 28px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+  .ctrl-h {
+    grid-column: 1 / -1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-gold);
+    margin: 0 0 4px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .ctrl {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ctrl > label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--c-ink-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .ctrl input[type="range"] {
+    width: 100%;
+    accent-color: var(--c-gold);
+  }
+  .ctrl input[type="text"] {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--c-line);
+    color: var(--c-ink);
+    padding: 8px 10px;
+    border-radius: 1px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .ctrl input[type="text"]:focus {
+    border-color: var(--c-gold);
+  }
+  .ctrl-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--c-ink-dim);
+  }
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--c-ink);
+    user-select: none;
+  }
+  .switch input { accent-color: var(--c-gold); }
+
+  /* === Legend === */
+  .legend {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--c-line);
+    padding-top: 14px;
+    margin-top: 4px;
+    color: var(--c-ink-dim);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .legend strong {
+    color: var(--c-gold);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .legend code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: rgba(0,0,0,0.35);
+    padding: 1px 6px;
+    border-radius: 1px;
+    color: var(--c-ink);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="intro">
+    <p class="eyebrow">Composite test · layered DOM heroes</p>
+    <h1>Scene + Character + Headline, three independent layers</h1>
+    <p class="lede">
+      Each layer animates on its own loop. Mouse-tracked parallax moves them at different depths.
+      Container queries (<code style="font-family:'JetBrains Mono',monospace;font-size:0.85em;background:rgba(0,0,0,0.35);padding:1px 6px;border-radius:1px;color:var(--c-ink)">cqw</code>) scale Harry to the hero box, not the viewport.
+    </p>
+  </header>
+
+  <div class="stage" id="stage" style="max-width: 920px;">
+    <div class="stage-frame">
+      <div class="hero" id="hero" data-parallax="on" data-debug="off">
+        <div class="layer scene"   data-label="scene"></div>
+        <div class="layer motes"   data-label="motes"></div>
+        <div class="layer harry"   data-label="harry">
+          <img id="harryImg"
+               src="https://mbsh96reunion.com/assets/mascot/06-listening.png"
+               alt="Hi-Tide Harry"
+               draggable="false" />
+        </div>
+        <h2 class="layer headline" data-label="headline">
+          <span class="scene-marker">Scene III · Int. Box Office</span>
+          <span class="title">Box Office</span>
+          <span class="sub">Tickets are now releasing.</span>
+        </h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <p class="ctrl-h">Stage controls</p>
+
+    <div class="ctrl">
+      <label>Container width · proves <code style="font-family:'JetBrains Mono',monospace;font-size:0.85em;background:rgba(0,0,0,0.35);padding:1px 6px;border-radius:1px;color:var(--c-ink)">cqw</code> scaling</label>
+      <input type="range" id="widthSlider" min="320" max="1100" value="920" />
+      <div class="ctrl-row"><span id="widthVal">920px</span></div>
+    </div>
+
+    <div class="ctrl">
+      <label>Toggles</label>
+      <div class="ctrl-row" style="gap:18px;">
+        <label class="switch">
+          <input type="checkbox" id="parallaxToggle" checked />
+          Parallax
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="debugToggle" />
+          Show&nbsp;layers
+        </label>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>Scene image URL · paste Test A or any hero still</label>
+      <input type="text" id="sceneSrc"
+             placeholder="https://.../A-style-transfer-tickets.png" />
+    </div>
+
+    <div class="ctrl">
+      <label>Harry image URL · paste E2b-harry-transparent.png when ready</label>
+      <input type="text" id="harrySrc"
+             placeholder="https://.../E2b-harry-transparent.png or any mascot URL" />
+    </div>
+
+    <p class="legend">
+      Move the mouse <strong>over the hero</strong> to see depth — scene moves least, Harry moves most.
+      <strong>Hover Harry directly</strong> for the per-layer interaction (he doesn't care that the scene exists).
+      Drag the <strong>width slider</strong> to watch Harry stay proportional to the hero box, not the page —
+      that's container-query units at work, and it's why this pattern survives responsive layouts.
+      Toggle <strong>Show layers</strong> to see each layer's boundaries.
+      Paste a real scene URL to swap the CSS-rendered fallback for your generated photoreal hero —
+      the rest of the composition (Harry, headline, animations) stays untouched.
+    </p>
+  </div>
+</div>
+
+<script>
+  const hero        = document.getElementById('hero');
+  const harryImg    = document.getElementById('harryImg');
+  const sceneLayer  = hero.querySelector('.scene');
+  const stage       = document.getElementById('stage');
+  const widthSlider = document.getElementById('widthSlider');
+  const widthVal    = document.getElementById('widthVal');
+  const sceneSrc    = document.getElementById('sceneSrc');
+  const harrySrc    = document.getElementById('harrySrc');
+
+  /* ── Mouse parallax ─────────────────────────────────────── */
+  hero.addEventListener('mousemove', (e) => {
+    const r = hero.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width  - 0.5;
+    const py = (e.clientY - r.top)  / r.height - 0.5;
+    hero.style.setProperty('--px', px.toFixed(3));
+    hero.style.setProperty('--py', py.toFixed(3));
+  });
+  hero.addEventListener('mouseleave', () => {
+    hero.style.setProperty('--px', 0);
+    hero.style.setProperty('--py', 0);
+  });
+
+  /* ── Width slider ───────────────────────────────────────── */
+  widthSlider.addEventListener('input', () => {
+    const w = widthSlider.value;
+    stage.style.maxWidth = w + 'px';
+    widthVal.textContent = w + 'px';
+  });
+
+  /* ── Scene image swap ───────────────────────────────────── */
+  sceneSrc.addEventListener('change', () => {
+    const url = sceneSrc.value.trim();
+    if (url) {
+      sceneLayer.innerHTML = `<img src="${url}" alt="" draggable="false" />`;
+      sceneLayer.style.background = 'var(--c-black)';
+    } else {
+      sceneLayer.innerHTML = '';
+      sceneLayer.style.background = '';
+    }
+  });
+
+  /* ── Harry image swap ───────────────────────────────────── */
+  harrySrc.addEventListener('change', () => {
+    const url = harrySrc.value.trim();
+    if (url) harryImg.src = url;
+  });
+
+  /* ── Toggles ────────────────────────────────────────────── */
+  document.getElementById('parallaxToggle').addEventListener('change', (e) => {
+    hero.dataset.parallax = e.target.checked ? 'on' : 'off';
+  });
+  document.getElementById('debugToggle').addEventListener('change', (e) => {
+    hero.dataset.debug = e.target.checked ? 'on' : 'off';
+  });
+</script>
+</body>
+</html>

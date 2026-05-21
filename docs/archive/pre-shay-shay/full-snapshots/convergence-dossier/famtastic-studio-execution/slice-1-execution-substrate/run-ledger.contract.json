@@ -1,0 +1,46 @@
+{
+  "contract_id": "studio.execution_substrate.run_ledger.v1",
+  "object_type": "run_ledger",
+  "purpose": "Track a long-running Studio workstream from objective through passes, blockers, proof, and closeout.",
+  "studio_layer": "Control Layer",
+  "primary_agent_role": "Medium-brain orchestrator",
+  "supporting_agent_roles": ["Build Runner", "QA Critic", "Learning Curator", "Shay Guide"],
+  "required_fields": {
+    "id": "Stable unique identifier.",
+    "objective": "Run objective.",
+    "scope": "In-scope and out-of-scope boundaries.",
+    "branch": "Git branch for the run.",
+    "approved_guardrails": "Guardrails under which agents may continue.",
+    "active_pass": "Current slice/pass id.",
+    "stop_conditions": "Hard blockers that stop autonomous continuation.",
+    "continue_conditions": "Conditions allowing the next slice/pass to start.",
+    "cost_state": "Current cost estimate/state.",
+    "proof_links": "Proof packet or artifact references.",
+    "blockers": "Current hard blockers.",
+    "non_blockers": "Logged issues that do not stop continuation.",
+    "status": "Lifecycle status.",
+    "updated_at": "ISO-8601 timestamp."
+  },
+  "optional_fields": {
+    "related_intelligence_brief_id": "Related Intelligence Brief id.",
+    "related_recipe_decision_id": "Related Recipe Decision id.",
+    "passes": "Pass summaries.",
+    "final_report_path": "Final run report path when complete."
+  },
+  "allowed_values": {
+    "status": ["planned", "running", "blocked", "ready_for_next_slice", "ready_for_mbsh_v2_proofing", "complete", "archived"],
+    "cost_state.status": ["not_applicable", "under_threshold", "approval_required", "unknown"]
+  },
+  "relationships": {
+    "requires": ["intelligence_brief", "recipe_decision for build runs"],
+    "feeds": ["Mission Control", "Run Control", "Build Ledger", "Shay Readback"],
+    "collects": ["proof_packet", "learning_candidate", "capability_truth"]
+  },
+  "proof_validation_expectations": [
+    "Hard blocker list is present before autonomous continuation.",
+    "Cost state explicitly records whether $50 approval is relevant.",
+    "Each completed pass links to a proof packet.",
+    "No pass claims completion without fixed/added/proved/deferred/risk/next."
+  ],
+  "example_fixture_path": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/run-ledger.example.json"
+}
