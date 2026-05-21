@@ -1,0 +1,108 @@
+{
+  "job_id": "research-20260519225143-swarm-worker-a-research-synthesis-structure",
+  "ok": true,
+  "vertical": "AI research swarms",
+  "question": "What structure should a bounded multi-agent research swarm use to synthesize cited reports efficiently?",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 9,
+  "search_result_count": 9,
+  "usage": {
+    "prompt_tokens": 40,
+    "completion_tokens": 568,
+    "total_tokens": 608,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00004,
+      "output_tokens_cost": 0.00057,
+      "request_cost": 0.005,
+      "total_cost": 0.00561
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://strandsagents.com/docs/user-guide/concepts/multi-agent/swarm/",
+    "https://arxiv.org/html/2510.10047v1",
+    "https://www.augmentcode.com/guides/swarm-vs-supervisor",
+    "https://github.com/kyegomez/swarms",
+    "https://www.anthropic.com/engineering/multi-agent-research-system",
+    "https://galileo.ai/blog/openai-swarm-framework-multi-agents",
+    "https://www.youtube.com/watch?v=JeyDrn1dSUQ",
+    "https://matthopkins.com/technology/swarm-tax-multi-agent-systems/",
+    "https://groups.csail.mit.edu/mac/projects/amorphous/6.978/final-papers/jwerfel-final.pdf"
+  ],
+  "search_results": [
+    {
+      "title": "Swarm Multi-Agent Pattern | Strands Agents SDK",
+      "url": "https://strandsagents.com/docs/user-guide/concepts/multi-agent/swarm/",
+      "last_updated": "2026-05-19",
+      "snippet": "A Swarm is a collaborative agent orchestration system where multiple agents work together as a team to solve complex tasks. Unlike traditional sequential or ...",
+      "source": "web"
+    },
+    {
+      "title": "SwarmSys: Decentralized Swarm-Inspired Agents for Scalable and ...",
+      "url": "https://arxiv.org/html/2510.10047v1",
+      "date": "2025-10-11",
+      "last_updated": "2026-05-05",
+      "snippet": "This work introduces SwarmSys, a distributed multi-agent reasoning framework inspired by swarm intelligence. The research involves no human ...",
+      "source": "web"
+    },
+    {
+      "title": "Swarm vs. Supervisor: Multi-Agent Architecture Guide - Augment Code",
+      "url": "https://www.augmentcode.com/guides/swarm-vs-supervisor",
+      "date": "2026-04-06",
+      "last_updated": "2026-05-18",
+      "snippet": "Choose the right multi-agent architecture: swarm patterns for independent workloads, supervisor for dynamic routing, or hybrid for complex ...",
+      "source": "web"
+    },
+    {
+      "title": "kyegomez/swarms: The Enterprise-Grade Production ... - GitHub",
+      "url": "https://github.com/kyegomez/swarms",
+      "date": "2023-05-11",
+      "last_updated": "2025-10-11",
+      "snippet": "swarms provides a variety of powerful, pre-built multi-agent architectures enabling you to orchestrate agents in various ways. Choose the right structure for ...",
+      "source": "web"
+    },
+    {
+      "title": "How we built our multi-agent research system - Anthropic",
+      "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+      "date": "2025-06-13",
+      "last_updated": "2026-05-15",
+      "snippet": "Our Research system uses a multi-agent architecture with an orchestrator-worker pattern, where a lead agent coordinates the process while ...",
+      "source": "web"
+    },
+    {
+      "title": "OpenAI Swarm Framework Guide for Reliable Multi-Agents - Galileo AI",
+      "url": "https://galileo.ai/blog/openai-swarm-framework-multi-agents",
+      "date": "2025-08-29",
+      "last_updated": "2026-05-15",
+      "snippet": "OpenAI Swarm framework is a lightweight framework for building and orchestrating multi-agent AI systems that maintain clarity and control ...",
+      "source": "web"
+    },
+    {
+      "title": "Multi-agent swarms with LangGraph - YouTube",
+      "url": "https://www.youtube.com/watch?v=JeyDrn1dSUQ",
+      "date": "2025-02-26",
+      "last_updated": "2026-03-31",
+      "snippet": "Swarms are one architecture for multi-agent systems, giving each agent the ability to interact with users and handoff requests between one ...",
+      "source": "web"
+    },
+    {
+      "title": "The swarm tax: when more agents stops being architecture",
+      "url": "https://matthopkins.com/technology/swarm-tax-multi-agent-systems/",
+      "date": "2026-05-17",
+      "snippet": "Stanford research finds single agents usually beat multi-agent swarms on equal compute. The swarm tax is architecture inflation eating your AI ...",
+      "source": "web"
+    },
+    {
+      "title": "[PDF] Autonomous multi-agent construction - Research",
+      "url": "https://groups.csail.mit.edu/mac/projects/amorphous/6.978/final-papers/jwerfel-final.pdf",
+      "date": "2002-12-10",
+      "last_updated": "2025-02-07",
+      "snippet": "Swarm intelligence, the idea of teams of autonomous low-level agents operating in col- laboration to achieve some high-level goal without ...",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "For **bounded, cited research reports**, use a **hybrid orchestrator-worker swarm**, not a fully flat swarm.\n\n## Recommended structure\n1. **Lead orchestrator**\n   - Breaks the question into 3–6 scoped subquestions\n   - Assigns each subtask to a specialist\n   - Sets output format, citation requirements, and time/call budget\n\n2. **Specialist research agents**\n   - Each handles one narrow lane:\n     - market/industry scan\n     - technical evidence\n     - competitor/benchmark review\n     - risks/limitations\n     - user-impact implications\n   - They work mostly independently and return structured notes with sources\n\n3. **Verifier/editor agent**\n   - Deduplicates claims\n   - Checks citation quality\n   - Flags weak or uncited assertions\n   - Produces the final synthesized report\n\n## Why this works\n- **Efficient for bounded research**: parallel exploration reduces time-to-answer.\n- **Better citation hygiene**: one agent can enforce “claim → source” mapping.\n- **Avoids swarm chaos**: pure peer-"
+}

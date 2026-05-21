@@ -1,0 +1,19 @@
+{
+  "claim_id": "claim_a3b0cb120202f00c",
+  "statement": "Mission Control should remain a reader/projection over Data Center rather than creating a second knowledge store.",
+  "source_ids": [],
+  "status": "supported",
+  "confidence": 0.96,
+  "tags": [
+    "wave4",
+    "mission-control",
+    "observability"
+  ],
+  "summary": "Wave 4 Mission Control is reader-only over canonical Data Center records.",
+  "created_at": "2026-05-20T18:34:10.759Z",
+  "updated_at": "2026-05-20T18:34:10.759Z",
+  "provenance": {
+    "layer": "data_center",
+    "origin": "wave4-mission-control"
+  }
+}

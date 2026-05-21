@@ -1,0 +1,127 @@
+{
+  "nodes": [
+    {
+      "id": "job",
+      "type": "text",
+      "text": "Research Job\nSwarm worker B research shaped SDD",
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 140
+    },
+    {
+      "id": "source",
+      "type": "text",
+      "text": "Source: perplexity\nCitations: 7\nSearch results: 7",
+      "x": 430,
+      "y": 0,
+      "width": 360,
+      "height": 140
+    },
+    {
+      "id": "citation-1",
+      "type": "link",
+      "url": "https://pyramidci.com/blog/spec-driven-development/",
+      "x": 860,
+      "y": 0,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-2",
+      "type": "link",
+      "url": "https://www.augmentcode.com/guides/what-is-spec-driven-development",
+      "x": 860,
+      "y": 120,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-3",
+      "type": "link",
+      "url": "https://arxiv.org/html/2601.03878v1",
+      "x": 860,
+      "y": 240,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-4",
+      "type": "link",
+      "url": "https://lasoft.org/blog/spec-driven-development-vs-ai-development-which-will-win/",
+      "x": 860,
+      "y": 360,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-5",
+      "type": "link",
+      "url": "https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html",
+      "x": 860,
+      "y": 480,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-6",
+      "type": "link",
+      "url": "https://addyosmani.com/blog/good-spec/",
+      "x": 860,
+      "y": 600,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-7",
+      "type": "link",
+      "url": "https://news.ycombinator.com/item?id=45935763",
+      "x": 860,
+      "y": 720,
+      "width": 420,
+      "height": 100
+    }
+  ],
+  "edges": [
+    {
+      "id": "job-source",
+      "fromNode": "job",
+      "toNode": "source"
+    },
+    {
+      "id": "source-citation-1",
+      "fromNode": "source",
+      "toNode": "citation-1"
+    },
+    {
+      "id": "source-citation-2",
+      "fromNode": "source",
+      "toNode": "citation-2"
+    },
+    {
+      "id": "source-citation-3",
+      "fromNode": "source",
+      "toNode": "citation-3"
+    },
+    {
+      "id": "source-citation-4",
+      "fromNode": "source",
+      "toNode": "citation-4"
+    },
+    {
+      "id": "source-citation-5",
+      "fromNode": "source",
+      "toNode": "citation-5"
+    },
+    {
+      "id": "source-citation-6",
+      "fromNode": "source",
+      "toNode": "citation-6"
+    },
+    {
+      "id": "source-citation-7",
+      "fromNode": "source",
+      "toNode": "citation-7"
+    }
+  ]
+}

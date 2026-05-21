@@ -1,0 +1,60 @@
+{
+  "schema_version": "0.1.0",
+  "updated_at": "2026-05-20T00:00:00.000Z",
+  "notes": [
+    "Seeded from Media Studio solutions backlog and Wave 5 scouts.",
+    "Dry-run planning only; paid generation requires explicit approval."
+  ],
+  "aliases": {
+    "text-to-image": {
+      "primary": "flux-dev",
+      "fallbacks": ["flux-kontext-max", "gpt4o"],
+      "media_type": "image",
+      "category": "general"
+    },
+    "hero-image": {
+      "primary": "flux-dev",
+      "fallbacks": ["flux-kontext-max", "gpt4o"],
+      "media_type": "image",
+      "category": "hero"
+    },
+    "logo-design": {
+      "primary": "flux-kontext-max",
+      "fallbacks": ["gpt4o", "flux-dev"],
+      "media_type": "image",
+      "category": "logo"
+    },
+    "design-guide": {
+      "primary": "gpt4o",
+      "fallbacks": ["flux-kontext-max"],
+      "media_type": "image",
+      "category": "design-guide"
+    },
+    "image-to-video": {
+      "primary": "wan2.2",
+      "fallbacks": ["wan2.1-i2v"],
+      "media_type": "video",
+      "category": "motion",
+      "notes": ["veo3-fast had prior CLI/API mismatch; keep behind wan fallback until re-witnessed."]
+    },
+    "text-to-video": {
+      "primary": "wan2.2",
+      "fallbacks": ["wan2.1-t2v", "seedance-lite"],
+      "media_type": "video",
+      "category": "motion"
+    }
+  },
+  "status": {
+    "flux-dev": "verified",
+    "flux-kontext-max": "verified",
+    "gpt4o": "verified",
+    "wan2.2": "verified",
+    "wan2.1-i2v": "fallback",
+    "wan2.1-t2v": "fallback",
+    "veo3-fast": "cli_api_mismatch",
+    "midjourney": "not_found_prior",
+    "seedream": "not_found_prior",
+    "kling-pro": "not_found_prior",
+    "seedance-pro": "not_found_prior"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Data Center Post-Evaluation Record",
+  "type": "object",
+  "required": [
+    "evaluation_id",
+    "type",
+    "created_at",
+    "run",
+    "learnings",
+    "gaps",
+    "opportunities"
+  ],
+  "properties": {
+    "evaluation_id": {
+      "type": "string"
+    },
+    "type": {
+      "const": "post_evaluation"
+    },
+    "run": {
+      "type": "object"
+    },
+    "learnings": {
+      "type": "array"
+    },
+    "gaps": {
+      "type": "array"
+    },
+    "opportunities": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": true
+}

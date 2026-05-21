@@ -1,8 +1,13 @@
 # Agent Coordination
 
-Single source of truth for which agent surface (Claude Code, Cowork, Codex)
-is doing what. Prevents the parallel-implementation problem where two
-surfaces independently build incompatible solutions to the same problem.
+Status: paused by Fritz. Do not run `scripts/agent-checkin.js` as a mandatory
+pre-flight step while this document is paused. Use lightweight human-readable
+notes in active plans/captures/reports when coordination is actually needed.
+
+This file remains as historical context for which agent surface (Claude Code,
+Cowork, Codex) is doing what. It was created to prevent the parallel-
+implementation problem where two surfaces independently build incompatible
+solutions to the same problem.
 
 ## Why this exists
 
@@ -36,9 +41,14 @@ duration of its branch. Other agents seeing the lock should:
 
 A lock is removed when the branch lands in main or is abandoned.
 
-## Pre-flight protocol
+## Pre-flight protocol (conditional while paused)
 
-Before starting any non-trivial workstream, every agent runs:
+While this file is paused, do **not** run `scripts/agent-checkin.js` as a
+mandatory prerequisite. Run it only when Fritz explicitly says multi-agent,
+multi-session, parallel, or concurrent work is active and coordination locks
+should be enforced.
+
+When enabled, run:
 
 ```bash
 node scripts/agent-checkin.js --intent "<short description of what you're about to build>"
@@ -52,8 +62,6 @@ The script:
 4. Exits **0** with a green "no conflicts" summary, or exits **2** with a
    table of overlapping branches you should coordinate with.
 5. Logs the check-in to `memory/usage.jsonl` for telemetry.
-
-If you skip this step and ship overlapping work, you own the merge cost.
 
 ## Conflict resolution
 

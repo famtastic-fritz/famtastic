@@ -952,12 +952,12 @@ describe('Shay-Shay bridge contract', () => {
     });
   });
 
-  it('returns a structured exec result even when stdout is empty', async () => {
-    const result = await executeBridgeOp({ op: 'exec', command: 'bash -lc true' });
+  it('returns a structured exec result for allowed read-only commands even when stdout is empty', async () => {
+    const result = await executeBridgeOp({ op: 'exec', command: 'echo -n' });
 
     expect(result).toMatchObject({
       op: 'exec',
-      command: 'bash -lc true',
+      command: 'echo -n',
       cwd: '.',
       stdout: '',
       stderr: '',
@@ -966,8 +966,8 @@ describe('Shay-Shay bridge contract', () => {
     expect(Object.prototype.hasOwnProperty.call(result, 'stdout')).toBe(true);
   });
 
-  it('keeps read and write bridge results serializable', async () => {
-    const relPath = path.join('site-studio', 'tests', '.tmp-shay-bridge-' + Date.now() + '.txt');
+  it('keeps read and write bridge results serializable for allowed site content', async () => {
+    const relPath = path.join('sites', process.env.SITE_TAG || 'site-demo', 'dist', '.tmp-shay-bridge-' + Date.now() + '.txt');
 
     try {
       const writeResult = await executeBridgeOp({ op: 'write', path: relPath, content: 'bridge-ok' });
@@ -981,30 +981,20 @@ describe('Shay-Shay bridge contract', () => {
     }
   });
 
-  it('supports bridge path aliases for studio files', async () => {
+  it('refuses bridge writes to Studio source aliases and directs them to the patch queue', async () => {
     const relPath = ('tests/.tmp-shay-alias-' + Date.now() + '.txt');
     const aliasedPath = '@studio/' + relPath;
 
-    try {
-      const writeResult = await executeBridgeOp({ op: 'write', path: aliasedPath, content: 'alias-ok' });
-      const readResult = await executeBridgeOp({ op: 'read', path: aliasedPath });
+    const writeResult = await executeBridgeOp({ op: 'write', path: aliasedPath, content: 'alias-ok' });
 
-      expect(writeResult).toMatchObject({
-        op: 'write',
-        path: aliasedPath,
-        resolved_path: 'site-studio/' + relPath,
-        success: true,
-      });
-      expect(readResult).toMatchObject({
-        op: 'read',
-        path: aliasedPath,
-        resolved_path: 'site-studio/' + relPath,
-        content: 'alias-ok',
-      });
-    } finally {
-      const absPath = path.join(HUB_ROOT, 'site-studio', relPath);
-      if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
-    }
+    expect(writeResult).toMatchObject({
+      op: 'write',
+      path: aliasedPath,
+      resolved_path: 'site-studio/' + relPath,
+      use_instead: 'propose_studio_patch',
+    });
+    expect(writeResult.error).toContain('Bridge writes are blocked outside sites/<tag>/');
+    expect(fs.existsSync(path.join(HUB_ROOT, 'site-studio', relPath))).toBe(false);
   });
 });
 
@@ -1057,7 +1047,7 @@ describe('Shay Desk tab chat surface', () => {
 
     expect(htmlSrc).toContain('id="shay-desk-transcript"');
     expect(htmlSrc).toContain('id="shay-desk-empty-state"');
-    expect(htmlSrc.indexOf('id="shay-desk-transcript"')).toBeLessThan(htmlSrc.indexOf('id="shay-desk-input"'));
+    expect(htmlSrc.indexOf('id="shay-desk-transcript"')).toBeLessThan(htmlSrc.indexOf('id="shay-workshop-input"'));
   });
 
   it('removes the redundant Lite and Desk helper cards from the Shay tab', () => {
@@ -1076,8 +1066,8 @@ describe('Shay Desk tab chat surface', () => {
     const orbSrc = fs.readFileSync(path.join(HUB_ROOT, 'site-studio/public/js/studio-orb.js'), 'utf8');
 
     expect(orbSrc).toContain('function appendShayDeskMessage');
-    expect(orbSrc).toContain("appendShayDeskMessage('user', text)");
-    expect(orbSrc).toContain("appendShayDeskMessage('assistant', data.response || data.error || 'No response.')");
+    expect(orbSrc).toContain("appendShayDeskMessage('user', text");
+    expect(orbSrc).toContain("appendShayDeskMessage('assistant', peelShayResponseEnvelope(data.response) || data.error || 'No response.')");
     expect(orbSrc).toContain("appendShayDeskMessage('system', 'Error: ' + err.message, { subtle: true })");
     expect(orbSrc.includes('showDeskResponse')).toBe(false);
   });

@@ -271,12 +271,13 @@ function selectSource(vertical, _question, options = {}) {
 
 async function queryResearch(vertical, question, options = {}) {
   // 1. Pinecone cache check (skip when forceSource or skipCache)
+  let cached = null;
   let fallbackAnswer = null;
   if (!options.skipCache && !options.forceSource) {
-    const cached = await pineconeQuery(vertical, question);
+    cached = await pineconeQuery(vertical, question);
     if (cached && !cached.stale) {
       logResearchCall(cached.source || 'pinecone_cache', vertical, question, { answer: cached.answer }, true);
-      return { answer: cached.answer, source: cached.source || 'pinecone_cache', fromCache: true };
+      return { answer: cached.answer, source: cached.source || 'pinecone_cache', fromCache: true, stale: false };
     }
     fallbackAnswer = cached?.answer || null;
   }
@@ -285,7 +286,7 @@ async function queryResearch(vertical, question, options = {}) {
   const source = selectSource(vertical, question, options);
 
   // 3. Query
-  let result = { answer: null };
+  let result = { answer: null, meta: {} };
   try {
     result = await RESEARCH_REGISTRY[source].query(vertical, question);
   } catch (err) {
@@ -308,6 +309,7 @@ async function queryResearch(vertical, question, options = {}) {
     source,
     fromCache: false,
     stale: !!cached?.stale,
+    meta: result.meta || {},
   };
 }
 

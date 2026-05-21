@@ -115,17 +115,16 @@ async function queryManual(vertical, question) {
 // ── Source: perplexity ────────────────────────────────────────────────────────
 
 async function queryPerplexity(vertical, question) {
-  if (!process.env.PERPLEXITY_API_KEY) {
+  const apiKey = process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY;
+  if (!apiKey) {
     return { answer: null, meta: { reason: 'PERPLEXITY_API_KEY not set' } };
   }
-  // Real implementation would call https://api.perplexity.ai/chat/completions
-  // Using placeholder for Phase 4 — Phase 5 wires real Perplexity calls
   try {
     const https = require('https');
     const body = JSON.stringify({
       model: 'sonar',
       messages: [
-        { role: 'system', content: 'Be concise. Focus on actionable insights for web designers.' },
+        { role: 'system', content: 'Be concise. Focus on actionable insights for web designers. Include sources where useful.' },
         { role: 'user', content: `${vertical} industry: ${question}` },
       ],
     });
@@ -136,7 +135,7 @@ async function queryPerplexity(vertical, question) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Length': Buffer.byteLength(body),
         },
         timeout: 20000,
@@ -147,9 +146,22 @@ async function queryPerplexity(vertical, question) {
           try {
             const parsed = JSON.parse(data);
             const answer = parsed.choices?.[0]?.message?.content || null;
-            resolve({ answer, meta: { source: 'perplexity', model: 'sonar' } });
+            const usage = parsed.usage || null;
+            resolve({
+              answer,
+              meta: {
+                source: 'perplexity',
+                model: parsed.model || 'sonar',
+                citations: parsed.citations || [],
+                search_results: parsed.search_results || [],
+                usage,
+                cost: parsed.cost || parsed.usage_cost || null,
+                request_id: parsed.id || null,
+                statusCode: res.statusCode,
+              },
+            });
           } catch {
-            resolve({ answer: null, meta: { reason: 'parse error' } });
+            resolve({ answer: null, meta: { reason: 'parse error', statusCode: res.statusCode } });
           }
         });
       });
@@ -197,7 +209,7 @@ const RESEARCH_REGISTRY = {
   perplexity: {
     name: 'Perplexity',
     type: 'api',
-    status: process.env.PERPLEXITY_API_KEY ? 'active' : 'disabled',
+    status: (process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY) ? 'active' : 'disabled',
     model: 'sonar',
     costPerQuery: 0.001,
     query: queryPerplexity,

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Data Center Claim Record",
+  "type": "object",
+  "required": [
+    "claim_id",
+    "statement",
+    "source_ids",
+    "status",
+    "confidence",
+    "created_at",
+    "updated_at"
+  ],
+  "additionalProperties": true
+}

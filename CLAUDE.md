@@ -11,6 +11,17 @@ FAMtastic (adj.): Fearless deviation from established norms with a bold and unap
 - A `SITE-LEARNINGS.md` file is maintained at `~/famtastic/SITE-LEARNINGS.md` (tracked in the repo) to capture architecture notes, lessons learned, and ecosystem-level context.
 - When meaningful discoveries, patterns, or decisions are made, update the SITE-LEARNINGS file.
 
+## Current Agent Startup Contract
+
+Before non-trivial work, read `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`.
+It is the current orientation layer for Claude Code, Codex, Gemini, Cowork,
+and other agent surfaces. It supersedes stale role assumptions from older
+worktrees unless those references have been reconciled into the current docs.
+
+Core doctrine: research-first, spec-shaped, proof-driven work; reuse before
+generate; route specialized needs to the owning studio/service; record proof
+in Data Center; run post-evaluation after meaningful jobs.
+
 ## Studio Process Management (Non-Negotiable)
 
 FAMtastic Studio is managed by **macOS launchd** (`com.famtastic.studio`).
@@ -196,17 +207,16 @@ already been done and mistakes that have already been fixed.
 
 See `.wolf/OPENWOLF.md` for the full operating protocol.
 
-## Agent Coordination (Non-Negotiable)
+## Agent Coordination (Paused)
 
-Before scaffolding any new system, capability, or non-trivial workstream,
-run `node scripts/agent-checkin.js --intent "<short description>"` from the
-repo root. If it reports overlapping in-flight work, either coordinate
-with the other agent (read its branch, propose merge) or pick a different
-scope. Respect scope-locks declared in AGENT-COORDINATION.md.
+Agent check-in is temporarily disabled by Fritz because the current overlap
+detection creates too much nuisance/false-positive friction during active
+FAMtastic and MBSH work. Do **not** run `node scripts/agent-checkin.js` as a
+mandatory prerequisite for new systems, capabilities, or non-trivial
+workstreams while this section is marked paused.
 
-This rule prevents the parallel-implementation problem where two agent
-surfaces independently solve the same problem in incompatible ways
-(observed 2026-05-05 with the .brain/ vs memory/ duplication).
+If coordination is needed, use lightweight human-readable notes in the active
+plan/capture/report instead of blocking on AGENT-COORDINATION.md scope locks.
 
 <!-- famtastic-dna-include (Session 12 Phase 3) — persistent build knowledge -->
 @famtastic-dna.md

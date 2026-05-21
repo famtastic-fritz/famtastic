@@ -4,6 +4,8 @@
 **Companions:** `STUDIO-TOOLS-AND-PROCESSES-MATRIX.md` · `WORKSTREAM-MAP.md` · `AUTONOMOUS-BUILD-OPERATING-MODEL.md`
 **Purpose:** the actual order of work. What gets built first under Platform Refresh v2, why that order, what each step proves, and what the first **Studio-driven** build looks like — as opposed to the hand-built MBSH Premiere we just shipped.
 
+> **2026-05-11 reconciliation note:** this remains the original first-wave substrate sequence, not the full current completion plan for the newer 12-section `/studio.html` implementation. Read `PLATFORM-REFRESH-V2-IMPLEMENTATION-RECONCILIATION.md` before treating this as executable order.
+
 ---
 
 ## 1. The principle

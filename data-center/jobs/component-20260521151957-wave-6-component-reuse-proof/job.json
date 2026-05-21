@@ -1,0 +1,14 @@
+{
+  "id": "component-20260521151957-wave-6-component-reuse-proof",
+  "kind": "component_reuse",
+  "title": "Wave 6 component reuse proof",
+  "status": "completed",
+  "query": "cinematic hero with video background and CTA",
+  "query_hash": "7387a9c6d9dca774",
+  "selected_component_ids": [
+    "video-hero"
+  ],
+  "candidate_count": 1,
+  "created_at": "2026-05-21T15:19:57.504Z",
+  "updated_at": "2026-05-21T15:19:57.504Z"
+}

@@ -1,0 +1,99 @@
+{
+  "job_id": "research-20260521171752-reusable-component-studio-registry-workflow-research",
+  "ok": true,
+  "vertical": "component_studio",
+  "question": "What are current best practices for reusable UI component registries and design systems that support search-before-build, partial pattern reuse, provenance, where-used tracking, and AI-assisted generation? Return concise implementation implications.",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 8,
+  "search_result_count": 8,
+  "usage": {
+    "prompt_tokens": 64,
+    "completion_tokens": 988,
+    "total_tokens": 1052,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00006,
+      "output_tokens_cost": 0.00099,
+      "request_cost": 0.005,
+      "total_cost": 0.00605
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://github.com/orgs/community/discussions/166670",
+    "https://dev.to/addwebsolutionpvtltd/building-reusable-ui-components-in-react-clean-scalable-approach-gp1",
+    "https://nareshit.com/blogs/reusable-react-components-best-practices-guide-nareshit",
+    "https://forum.uipath.com/t/project-organization-ui-components-reusability-best-practice/191869",
+    "https://www.components.build/registry",
+    "https://blog.bitsrc.io/do-we-really-use-reusable-components-959a252a0a98",
+    "https://www.youtube.com/watch?v=0gIt2T2epss",
+    "https://forum.uipath.com/t/how-to-make-useful-libraries-reusable-components/481641"
+  ],
+  "search_results": [
+    {
+      "title": "How do you approach structuring reusable components in a growing ...",
+      "url": "https://github.com/orgs/community/discussions/166670",
+      "date": "2025-07-18",
+      "last_updated": "2025-08-06",
+      "snippet": "A good approach is to separate presentational and container components—keeping UI-focused components stateless and logic-free, while handling ...",
+      "source": "web"
+    },
+    {
+      "title": "Building Reusable UI Components in React (Clean & Scalable ...",
+      "url": "https://dev.to/addwebsolutionpvtltd/building-reusable-ui-components-in-react-clean-scalable-approach-gp1",
+      "date": "2026-04-27",
+      "last_updated": "2026-05-20",
+      "snippet": "Best practice: Choose one approach and stay consistent. 9. Handling State and Logic. Reusable components should avoid heavy logic. Good pattern:.",
+      "source": "web"
+    },
+    {
+      "title": "Reusable React Components: Best Practices Guide | NareshIT",
+      "url": "https://nareshit.com/blogs/reusable-react-components-best-practices-guide-nareshit",
+      "last_updated": "2026-05-20",
+      "snippet": "A reusable UI component should usually not fetch data on its own. Instead: Keep data fetching outside (in parent/containers) and pass results down as props ...",
+      "source": "web"
+    },
+    {
+      "title": "Project Organization: UI Components reusability (best practice) - Help",
+      "url": "https://forum.uipath.com/t/project-organization-ui-components-reusability-best-practice/191869",
+      "date": "2020-02-06",
+      "last_updated": "2026-05-05",
+      "snippet": "Hi everyone, i was wondering what's the best practice to create reusable UI Automation (non-ui) components (workflows) for an application.",
+      "source": "web"
+    },
+    {
+      "title": "Registry - Components.build",
+      "url": "https://www.components.build/registry",
+      "last_updated": "2026-03-19",
+      "snippet": "Understand the concept of component registries, how they work, and why they're revolutionizing how developers share and discover UI components.",
+      "source": "web"
+    },
+    {
+      "title": "How Do We Really Use Reusable Components? | by Jonathan Saring",
+      "url": "https://blog.bitsrc.io/do-we-really-use-reusable-components-959a252a0a98",
+      "date": "2019-04-15",
+      "last_updated": "2025-04-02",
+      "snippet": "In this short post, we'll explore how the componentization in the JS ecosystem make code reuse more practical than ever before.",
+      "source": "web"
+    },
+    {
+      "title": "How to build your reusable UI component library like a pro - YouTube",
+      "url": "https://www.youtube.com/watch?v=0gIt2T2epss",
+      "date": "2020-04-07",
+      "last_updated": "2026-02-27",
+      "snippet": "Second talk of the JavaScript Track from Geekle Free Online DevOps+JS Conference (April, ...",
+      "source": "web"
+    },
+    {
+      "title": "How to make useful Libraries(Reusable components) - Video Tutorials",
+      "url": "https://forum.uipath.com/t/how-to-make-useful-libraries-reusable-components/481641",
+      "date": "2022-10-17",
+      "last_updated": "2026-05-08",
+      "snippet": "I believe that a good practice for creating libraries is to split them based on application/system. ex: WordActivitiesLibrary or ...",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "Current best practices for **reusable UI component registries + design systems** are shifting from “component libraries” to **productized, searchable, governed component platforms**.\n\n## What good looks like\n\n### 1) Search-before-build is first-class\nDesign systems now need a **registry with strong metadata**, not just a package:\n- semantic tags: `button`, `input`, `pricing`, `empty-state`\n- content/purpose tags: `checkout`, `admin`, `marketing`\n- visual traits: `compact`, `dense`, `destructive`\n- platform/status tags: `React`, `Vue`, `stable`, `experimental`, `deprecated`\n\n**Implementation implication:**  \nBuild a searchable index over components, variants, tokens, docs, and examples. Treat metadata as a required authoring step.\n\n---\n\n### 2) Partial pattern reuse beats copy/paste and over-abstracting\nTeams increasingly reuse **patterns** instead of only whole components:\n- layout recipes\n- interaction patterns\n- tokenized blocks\n- composed “section” components\n- snippets/blocks that c"
+}

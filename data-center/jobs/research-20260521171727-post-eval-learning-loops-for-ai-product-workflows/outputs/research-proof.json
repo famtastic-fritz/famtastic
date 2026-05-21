@@ -1,0 +1,101 @@
+{
+  "job_id": "research-20260521171727-post-eval-learning-loops-for-ai-product-workflows",
+  "ok": true,
+  "vertical": "post_eval",
+  "question": "What are current best practices for post-run evaluation loops in AI agent product workflows, including learning capture, reusable skill/process extraction, human review, and auditability? Return concise implementation implications.",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 8,
+  "search_result_count": 8,
+  "usage": {
+    "prompt_tokens": 58,
+    "completion_tokens": 825,
+    "total_tokens": 883,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00006,
+      "output_tokens_cost": 0.00082,
+      "request_cost": 0.005,
+      "total_cost": 0.00588
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://galileo.ai/blog/ai-agent-evaluation",
+    "https://www.turingcollege.com/blog/evaluating-ai-agents-practical-guide",
+    "https://wandb.ai/onlineinference/genai-research/reports/AI-agent-evaluation-Metrics-strategies-and-best-practices--VmlldzoxMjM0NjQzMQ",
+    "https://blog.n8n.io/how-to-evaluate-the-performance-of-ai-agents/",
+    "https://www.confident-ai.com/blog/definitive-ai-agent-evaluation-guide",
+    "https://www.mindstudio.ai/blog/self-improving-ai-agent-feedback-loop/",
+    "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+    "https://www.youtube.com/watch?v=reISMhbZ2XE"
+  ],
+  "search_results": [
+    {
+      "title": "AI Agent Evaluation: Key Methods & Insights | Galileo",
+      "url": "https://galileo.ai/blog/ai-agent-evaluation",
+      "date": "2026-02-24",
+      "last_updated": "2026-05-16",
+      "snippet": "Post-incident eval workflows: Turn production failures into new test cases automatically, closing the feedback loop that separates elite ...",
+      "source": "web"
+    },
+    {
+      "title": "Evaluating AI Agents in 2025: A Practical Guide - Turing College",
+      "url": "https://www.turingcollege.com/blog/evaluating-ai-agents-practical-guide",
+      "date": "2025-09-12",
+      "last_updated": "2026-05-18",
+      "snippet": "Evaluating AI agents in 2025 requires new methods. Learn metrics, frameworks, and best practices to make agent systems reliable and ...",
+      "source": "web"
+    },
+    {
+      "title": "AI agent evaluation: Metrics, strategies, and best practices - Wandb",
+      "url": "https://wandb.ai/onlineinference/genai-research/reports/AI-agent-evaluation-Metrics-strategies-and-best-practices--VmlldzoxMjM0NjQzMQ",
+      "date": "2025-11-07",
+      "last_updated": "2025-12-10",
+      "snippet": "Best practices for effective agent evaluation · Define clear success criteria: · Track multiple metrics and balance them: · Use baselines and ...",
+      "source": "web"
+    },
+    {
+      "title": "How to evaluate the performance of AI agents? - n8n Blog",
+      "url": "https://blog.n8n.io/how-to-evaluate-the-performance-of-ai-agents/",
+      "date": "2026-04-21",
+      "last_updated": "2026-05-21",
+      "snippet": "Evaluate AI agents effectively: learn offline vs. online testing, key metrics, and methods like deterministic checks, LLM-as-a-judge, ...",
+      "source": "web"
+    },
+    {
+      "title": "AI Agent Evaluation: Metrics, Traces, Human Review, and Workflows",
+      "url": "https://www.confident-ai.com/blog/definitive-ai-agent-evaluation-guide",
+      "date": "2026-04-13",
+      "last_updated": "2026-05-21",
+      "snippet": "A practical guide to evaluating AI agents with LLM metrics and tracing—plus when human review matters, how it calibrates judges, ...",
+      "source": "web"
+    },
+    {
+      "title": "How to Build a Self-Improving AI Agent That Learns From Its Own ...",
+      "url": "https://www.mindstudio.ai/blog/self-improving-ai-agent-feedback-loop/",
+      "date": "2026-04-28",
+      "last_updated": "2026-05-21",
+      "snippet": "Self-healing agent loops use diagnostic feedback to iterate and improve over time. Here's how to build one using Claude Code and a custom ...",
+      "source": "web"
+    },
+    {
+      "title": "Demystifying evals for AI agents - Anthropic",
+      "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+      "date": "2026-01-09",
+      "last_updated": "2026-05-21",
+      "snippet": "Good evaluations help teams ship AI agents more confidently. Without them, it's easy to get stuck in reactive loops—catching issues only in ...",
+      "source": "web"
+    },
+    {
+      "title": "Building Better AI Agents: Observability and Evaluation - YouTube",
+      "url": "https://www.youtube.com/watch?v=reISMhbZ2XE",
+      "date": "2026-02-09",
+      "last_updated": "2026-05-21",
+      "snippet": "... agent does until you run it - How observability powers evaluation: turning traces into datasets and metrics for continuous improvement ...",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "Current best practices for **post-run evaluation loops** in AI agent workflows:\n\n### 1) Capture every run as structured evidence\n- Log **inputs, tool calls, intermediate steps, outputs, timestamps, and errors**.\n- Store traces in a queryable format so failures can be replayed and grouped.\n- Keep production and eval logs linked by run ID for auditability.\n\n**Implication:** Design your product analytics/event schema to support full-run replay, not just final-output tracking.  \nSources: Galileo [1], Confident AI [5], Turing College [2]\n\n### 2) Turn failures into new test cases automatically\n- After incidents, convert real failures into **regression cases**.\n- Add them to your eval suite so the same issue cannot recur unnoticed.\n- Prefer **real production failures** over synthetic edge cases early on.\n\n**Implication:** Build an incident-to-test pipeline: support ticket/trace → labeled failure → stored fixture → CI regression.  \nSources: Galileo [1], Anthropic [7], n8n [4]\n\n### 3) Extract r"
+}

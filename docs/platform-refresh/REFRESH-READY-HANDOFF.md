@@ -2,6 +2,8 @@
 
 **Paste this entire file into the first message of a fresh chat. It will reproduce the state.**
 
+> **2026-05-11 reconciliation note:** this handoff captures the original read-only Platform Refresh v2 packet. A newer `/studio.html` implementation branch (`research/studio-intelligence-foundation-20260508`) introduces a 12-section Studio shell and partially supersedes the old seven-domain Workbench/R1 navigation assumption. Before executing feature work, read `docs/platform-refresh/PLATFORM-REFRESH-V2-IMPLEMENTATION-RECONCILIATION.md` and reconcile the active branch/worktree state.
+
 ---
 
 ## 0. What you are looking at

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Data Center Decision Record",
+  "type": "object",
+  "required": [
+    "decision_id",
+    "title",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "additionalProperties": true
+}

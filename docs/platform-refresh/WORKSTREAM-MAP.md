@@ -4,6 +4,8 @@
 **Companion:** `STUDIO-TOOLS-AND-PROCESSES-MATRIX.md`
 **Purpose:** map the umbrella's ten branches onto the existing eight active parent plans, identify what should be absorbed under Platform Refresh v2, and surface the recommended registry changes (without rewriting `plans/registry.json` — recommendations only, per the brief).
 
+> **2026-05-11 reconciliation note:** this map reflects the original Platform Refresh v2 packet and its eight-parent-plan view. The newer `/studio.html` implementation branch adds a 12-section Studio IA and implementation delta. Read `PLATFORM-REFRESH-V2-IMPLEMENTATION-RECONCILIATION.md` before using this map as current execution state.
+
 ---
 
 ## 1. The picture

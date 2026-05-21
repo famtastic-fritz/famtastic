@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Data Center Ledger Record",
+  "type": "object",
+  "required": [
+    "ts"
+  ],
+  "additionalProperties": true
+}

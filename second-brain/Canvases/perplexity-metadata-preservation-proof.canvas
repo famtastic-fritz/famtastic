@@ -1,0 +1,99 @@
+{
+  "nodes": [
+    {
+      "id": "job",
+      "type": "text",
+      "text": "Research Job\nPerplexity metadata preservation proof",
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 140
+    },
+    {
+      "id": "source",
+      "type": "text",
+      "text": "Source: perplexity\nCitations: 5\nSearch results: 5",
+      "x": 430,
+      "y": 0,
+      "width": 360,
+      "height": 140
+    },
+    {
+      "id": "citation-1",
+      "type": "link",
+      "url": "https://www.frontiersin.org/journals/big-data/articles/10.3389/fdata.2024.1476506/full",
+      "x": 860,
+      "y": 0,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-2",
+      "type": "link",
+      "url": "https://www.zenml.io/blog/steerable-deep-research-building-production-ready-agentic-workflows-with-controlled-autonomy",
+      "x": 860,
+      "y": 120,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-3",
+      "type": "link",
+      "url": "https://www.mindstudio.ai/blog/google-gemini-deep-research-api/",
+      "x": 860,
+      "y": 240,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-4",
+      "type": "link",
+      "url": "https://guides.libs.uga.edu/ai/research_tools",
+      "x": 860,
+      "y": 360,
+      "width": 420,
+      "height": 100
+    },
+    {
+      "id": "citation-5",
+      "type": "link",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11510778/",
+      "x": 860,
+      "y": 480,
+      "width": 420,
+      "height": 100
+    }
+  ],
+  "edges": [
+    {
+      "id": "job-source",
+      "fromNode": "job",
+      "toNode": "source"
+    },
+    {
+      "id": "source-citation-1",
+      "fromNode": "source",
+      "toNode": "citation-1"
+    },
+    {
+      "id": "source-citation-2",
+      "fromNode": "source",
+      "toNode": "citation-2"
+    },
+    {
+      "id": "source-citation-3",
+      "fromNode": "source",
+      "toNode": "citation-3"
+    },
+    {
+      "id": "source-citation-4",
+      "fromNode": "source",
+      "toNode": "citation-4"
+    },
+    {
+      "id": "source-citation-5",
+      "fromNode": "source",
+      "toNode": "citation-5"
+    }
+  ]
+}
