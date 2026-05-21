@@ -42,6 +42,7 @@ const styleFingerprint = require('./lib/style-fingerprint');
 const { resolveTier, normalizeTierAndMode } = require('./lib/tier');
 const { validateSpec: validateSpecSchema, normalizeRequiredFields } = require('./lib/spec-schema');
 const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
+const { buildSiteQualityFlowContext } = require('../lib/famtastic/site-quality-flow');
 const logger = require('./lib/logger');
 
 // --- Config ---
@@ -13271,6 +13272,23 @@ ${FAMTASTIC_DNA_VOCAB}`;
       }
     }
   } catch {}
+
+  // Wave 7: shared Site Studio quality flow.
+  // Build prompts now carry the platform contract: research first, route media
+  // needs to Media Studio, route reusable UI needs to Component Studio, return
+  // structured proof to the caller, and record useful outputs in Data Center.
+  try {
+    const siteQualityFlow = buildSiteQualityFlowContext({
+      hubRoot: HUB_ROOT,
+      spec,
+      userMessage,
+      requestType,
+      maxComponentCandidates: 3,
+    });
+    briefContext += `\n\n${siteQualityFlow.promptBlock}`;
+  } catch (err) {
+    console.warn('[site-quality-flow] failed to build prompt context:', err.message);
+  }
 
   return { htmlContext, briefContext, decisionsContext, systemRules, assetsContext, sessionContext, brainContext, conversationHistory, blueprintContext, slotMappingContext, templateContext, contentFieldContext, globalFieldContext, resolvedPage, heroSkeleton, dividerSkeleton, navSkeleton, inlineStyleProhibition, logoSkeletonTemplate, logoNotePage, promotedIntelContext };
 }

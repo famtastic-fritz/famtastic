@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Data Center Media Generation Job",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "provider",
+    "model",
+    "status",
+    "prompt_hash",
+    "media_type",
+    "created_at"
+  ],
+  "additionalProperties": true
+}

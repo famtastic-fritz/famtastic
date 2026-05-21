@@ -1,0 +1,92 @@
+{
+  "job_id": "research-20260519225150-swarm-worker-b-research-shaped-sdd",
+  "ok": true,
+  "vertical": "spec driven development",
+  "question": "How should research findings influence requirements specs and acceptance criteria before implementation?",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 7,
+  "search_result_count": 7,
+  "usage": {
+    "prompt_tokens": 35,
+    "completion_tokens": 763,
+    "total_tokens": 798,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00003,
+      "output_tokens_cost": 0.00076,
+      "request_cost": 0.005,
+      "total_cost": 0.0058
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://pyramidci.com/blog/spec-driven-development/",
+    "https://www.augmentcode.com/guides/what-is-spec-driven-development",
+    "https://arxiv.org/html/2601.03878v1",
+    "https://lasoft.org/blog/spec-driven-development-vs-ai-development-which-will-win/",
+    "https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html",
+    "https://addyosmani.com/blog/good-spec/",
+    "https://news.ycombinator.com/item?id=45935763"
+  ],
+  "search_results": [
+    {
+      "title": "Spec Driven Development: The Discipline Every AI-augmented ...",
+      "url": "https://pyramidci.com/blog/spec-driven-development/",
+      "date": "2026-04-26",
+      "last_updated": "2026-05-15",
+      "snippet": "Industry research confirms that structured requirements and specifications significantly impact the quality of AI-generated software. Better ...",
+      "source": "web"
+    },
+    {
+      "title": "What Is Spec-Driven Development? A Complete Guide",
+      "url": "https://www.augmentcode.com/guides/what-is-spec-driven-development",
+      "date": "2026-04-23",
+      "last_updated": "2026-05-19",
+      "snippet": "Spec-driven development (SDD) turns specifications from passive documentation into executable contracts that constrain what AI agents generate.",
+      "source": "web"
+    },
+    {
+      "title": "Understanding Specification-Driven Code Generation with LLMs",
+      "url": "https://arxiv.org/html/2601.03878v1",
+      "date": "2026-01-07",
+      "last_updated": "2026-05-04",
+      "snippet": "The study aims to analyze how human intervention in specification and test refinement influences the quality and dynamics of LLM-generated code.",
+      "source": "web"
+    },
+    {
+      "title": "Spec Driven Development vs. Vibe Coding: Which Will Win? - LaSoft",
+      "url": "https://lasoft.org/blog/spec-driven-development-vs-ai-development-which-will-win/",
+      "date": "2025-10-22",
+      "last_updated": "2026-05-15",
+      "snippet": "Discover best practices for mastering Spec Driven Development. Compare it with AI development and AI driven no-code platforms.",
+      "source": "web"
+    },
+    {
+      "title": "Understanding Spec-Driven-Development: Kiro, spec-kit, and Tessl",
+      "url": "https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html",
+      "date": "2025-10-15",
+      "last_updated": "2026-05-15",
+      "snippet": "Here's what I can gather from how I have seen it used so far: Spec-driven development means writing a “spec” before writing code with AI (“ ...",
+      "source": "web"
+    },
+    {
+      "title": "How to write a good spec for AI agents - Addy Osmani",
+      "url": "https://addyosmani.com/blog/good-spec/",
+      "date": "2026-01-13",
+      "last_updated": "2026-05-19",
+      "snippet": "Learn how to write effective specifications for AI coding agents to improve clarity, focus, and productivity in your AI-driven development ...",
+      "source": "web"
+    },
+    {
+      "title": "Spec-Driven Development: The Waterfall Strikes Back | Hacker News",
+      "url": "https://news.ycombinator.com/item?id=45935763",
+      "date": "2025-11-15",
+      "last_updated": "2026-02-20",
+      "snippet": "The approach we take is the specs are developed from the tests and tests exercise the spec point in its entirety. That is, a test and a spec are semantically ...",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "Research findings should shape the spec **before implementation** by turning evidence into **explicit requirements, constraints, and acceptance criteria**. For web design teams, that means:\n\n### 1) Convert research insights into user outcomes\nDon’t paste research notes into the spec. Translate them into:\n- **User needs**: what users are trying to do\n- **Pain points**: what currently blocks them\n- **Success signals**: how you’ll know the solution works\n\n**Example**\n- Research: users miss the CTA because the page hierarchy is unclear  \n- Requirement: the primary CTA must be visually dominant above the fold\n- Acceptance criterion: “Given a first-time visitor, when the page loads on desktop or mobile, then the primary CTA is visible without scrolling and has the highest contrast among action elements.”\n\n### 2) Make requirements testable\nA good spec should be written so QA, design, and AI tools can verify it. Include:\n- **Functional requirements**\n- **UI constraints** (layout, spacing, cont"
+}

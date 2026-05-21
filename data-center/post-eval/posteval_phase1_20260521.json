@@ -1,0 +1,311 @@
+{
+  "type": "post_evaluation",
+  "schema_version": "0.1.0",
+  "evaluation_id": "posteval_phase1_20260521",
+  "created_at": "2026-05-21T17:21:30.198Z",
+  "run": {
+    "id": "phase1-foundation-post-eval",
+    "title": "Phase 1 Foundation Post-Evaluation and Phase 2 Opportunity Forecast",
+    "kind": "phase_post_eval",
+    "system": "shay_famtastic",
+    "status": "completed"
+  },
+  "inputs": [
+    "shay-shay/observations/SHAY-PHASE1-WAVES1-7-CLOSEOUT-2026-05-21.md",
+    "shay-shay/.shay/plans/2026-05-21_phase2-visual-workflows-brand-systems.md",
+    "data-center/jobs/research-20260521171727-post-eval-learning-loops-for-ai-product-workflows/outputs/research-proof.json",
+    "data-center/jobs/research-20260521171734-media-studio-logo-brand-ai-workflow-research/outputs/research-proof.json",
+    "data-center/jobs/research-20260521171744-ai-website-builder-edit-enhancement-workflow-research/outputs/research-proof.json",
+    "data-center/jobs/research-20260521171752-reusable-component-studio-registry-workflow-research/outputs/research-proof.json"
+  ],
+  "outputs": [
+    "lib/famtastic/post-eval/index.js",
+    "data-center/post-eval/<evaluation>.json",
+    "data-center/reports/post-eval/<evaluation>.md"
+  ],
+  "proof": [
+    {
+      "kind": "test",
+      "command": "node tests/post-eval-tests.js",
+      "status": "pass"
+    },
+    {
+      "kind": "test",
+      "command": "node tests/mission-control-tests.js",
+      "status": "pass"
+    },
+    {
+      "kind": "research_job",
+      "job_id": "research-20260521171727-post-eval-learning-loops-for-ai-product-workflows",
+      "title": "Post-eval learning loops for AI product workflows",
+      "source": "perplexity",
+      "status": "completed",
+      "citations": 8,
+      "search_results": 8,
+      "usage": {
+        "prompt_tokens": "[REDACTED]",
+        "completion_tokens": "[REDACTED]",
+        "total_tokens": "[REDACTED]",
+        "search_context_size": "low",
+        "cost": {
+          "input_tokens_cost": "[REDACTED]",
+          "output_tokens_cost": "[REDACTED]",
+          "request_cost": 0.005,
+          "total_cost": 0.00588
+        }
+      },
+      "path": "data-center/jobs/research-20260521171727-post-eval-learning-loops-for-ai-product-workflows/outputs/research-proof.json"
+    },
+    {
+      "kind": "research_job",
+      "job_id": "research-20260521171734-media-studio-logo-brand-ai-workflow-research",
+      "title": "Media Studio logo brand AI workflow research",
+      "source": "perplexity",
+      "status": "completed",
+      "citations": 8,
+      "search_results": 8,
+      "usage": {
+        "prompt_tokens": "[REDACTED]",
+        "completion_tokens": "[REDACTED]",
+        "total_tokens": "[REDACTED]",
+        "search_context_size": "low",
+        "cost": {
+          "input_tokens_cost": "[REDACTED]",
+          "output_tokens_cost": "[REDACTED]",
+          "request_cost": 0.005,
+          "total_cost": 0.00641
+        }
+      },
+      "path": "data-center/jobs/research-20260521171734-media-studio-logo-brand-ai-workflow-research/outputs/research-proof.json"
+    },
+    {
+      "kind": "research_job",
+      "job_id": "research-20260521171744-ai-website-builder-edit-enhancement-workflow-research",
+      "title": "AI website builder edit enhancement workflow research",
+      "source": "perplexity",
+      "status": "completed",
+      "citations": 8,
+      "search_results": 8,
+      "usage": {
+        "prompt_tokens": "[REDACTED]",
+        "completion_tokens": "[REDACTED]",
+        "total_tokens": "[REDACTED]",
+        "search_context_size": "low",
+        "cost": {
+          "input_tokens_cost": "[REDACTED]",
+          "output_tokens_cost": "[REDACTED]",
+          "request_cost": 0.005,
+          "total_cost": 0.00617
+        }
+      },
+      "path": "data-center/jobs/research-20260521171744-ai-website-builder-edit-enhancement-workflow-research/outputs/research-proof.json"
+    },
+    {
+      "kind": "research_job",
+      "job_id": "research-20260521171752-reusable-component-studio-registry-workflow-research",
+      "title": "Reusable component studio registry workflow research",
+      "source": "perplexity",
+      "status": "completed",
+      "citations": 8,
+      "search_results": 8,
+      "usage": {
+        "prompt_tokens": "[REDACTED]",
+        "completion_tokens": "[REDACTED]",
+        "total_tokens": "[REDACTED]",
+        "search_context_size": "low",
+        "cost": {
+          "input_tokens_cost": "[REDACTED]",
+          "output_tokens_cost": "[REDACTED]",
+          "request_cost": 0.005,
+          "total_cost": 0.00605
+        }
+      },
+      "path": "data-center/jobs/research-20260521171752-reusable-component-studio-registry-workflow-research/outputs/research-proof.json"
+    }
+  ],
+  "learnings": [
+    "Phase 1 proved the backend foundation, but the next value unlock is visible Media/Site workflows anchored by the FAMtastic logo/brand system.",
+    "Post-evaluation must be a required platform contract for Shay, Site Studio, Media Studio, Component Studio, Mission Control, Data Center, and future services.",
+    "Research-first SDD should mean rough ask → research → sharper spec/prompt → plan/tasks → build → proof → post-eval → reusable learning.",
+    "Phase 2 should treat skill/process/component/media-recipe opportunities as first-class outputs, not afterthoughts."
+  ],
+  "gaps": [
+    "Post-eval is now a shared local module/proof, but not yet automatically invoked by every studio/job endpoint.",
+    "The Phase 2 Media Studio and Site Studio screens/workflows are planned but not yet implemented.",
+    "No automatic promotion policy yet decides whether a post-eval opportunity becomes a skill, process rule, component, media recipe, Data Center claim, or Fritz review card.",
+    "Mission Control can read post-eval records after this slice, but the visual surface is still later in Phase 2."
+  ],
+  "opportunities": [
+    {
+      "opportunity_id": "opp_d650ddeb778d7b07",
+      "type": "process_opportunity",
+      "title": "Mandatory post-evaluation closeout for all studio jobs",
+      "priority": "high",
+      "summary": "Mandatory post-evaluation closeout for all studio jobs",
+      "evidence": [],
+      "suggested_action": null,
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_9c370f29f706dc43",
+      "type": "skill_opportunity",
+      "title": "Research-first post-evaluation and opportunity extraction workflow",
+      "priority": "high",
+      "summary": "Research-first post-evaluation and opportunity extraction workflow",
+      "evidence": [],
+      "suggested_action": null,
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_9ee959ecada18dd5",
+      "type": "media_recipe_opportunity",
+      "title": "FAMtastic logo/brand prompt and variant evaluation recipe",
+      "priority": "high",
+      "summary": "FAMtastic logo/brand prompt and variant evaluation recipe",
+      "evidence": [],
+      "suggested_action": null,
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_f0b2c7bd4bd3d463",
+      "type": "component_opportunity",
+      "title": "Build-time component decomposition and partial reuse process",
+      "priority": "high",
+      "summary": "Build-time component decomposition and partial reuse process",
+      "evidence": [],
+      "suggested_action": null,
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_6cc80f2448d8f64a",
+      "type": "process_opportunity",
+      "title": "Site Studio build/edit/enhance proof loop",
+      "priority": "high",
+      "summary": "Site Studio build/edit/enhance proof loop",
+      "evidence": [],
+      "suggested_action": null,
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_d1ca2cacaecba181",
+      "type": "tool_opportunity",
+      "title": "Visual agent/workflow status surface with proof and cost lanes",
+      "priority": "medium",
+      "summary": "Visual agent/workflow status surface with proof and cost lanes",
+      "evidence": [],
+      "suggested_action": null,
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_356ac0863c0ce534",
+      "type": "research_opportunity",
+      "title": "Data Center to Second Brain visual knowledge projection",
+      "priority": "medium",
+      "summary": "Data Center to Second Brain visual knowledge projection",
+      "evidence": [],
+      "suggested_action": null,
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_011cafcba3d37980",
+      "type": "skill_opportunity",
+      "title": "Research-first SDD closeout workflow",
+      "priority": "high",
+      "summary": "Research-first SDD closeout workflow",
+      "evidence": [],
+      "suggested_action": "Create or patch an umbrella skill after Phase 2A proves the logo workflow.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_32fd34f88c9905da",
+      "type": "skill_opportunity",
+      "title": "Media Studio brand/logo workflow",
+      "priority": "high",
+      "summary": "Media Studio brand/logo workflow",
+      "evidence": [],
+      "suggested_action": "Capture prompt refinement, variant comparison, approval, export, and DESIGN.md extraction steps.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_5d766ec076bf454b",
+      "type": "skill_opportunity",
+      "title": "Site Studio build/edit/enhance workflow",
+      "priority": "high",
+      "summary": "Site Studio build/edit/enhance workflow",
+      "evidence": [],
+      "suggested_action": "Capture coconut-style site request flow with research packet, edit loop, media/component routing, and proof gates.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_2f17b5dbbd4b6823",
+      "type": "component_opportunity",
+      "title": "Component decomposition before generation",
+      "priority": "high",
+      "summary": "Component decomposition before generation",
+      "evidence": [],
+      "suggested_action": "Turn slideshow/hero/gallery needs into component specs, full-match search, partial-piece search, and save-back rules.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_0028d61cd2b9f743",
+      "type": "media_recipe_opportunity",
+      "title": "Research-backed asset prompt enhancer",
+      "priority": "high",
+      "summary": "Research-backed asset prompt enhancer",
+      "evidence": [],
+      "suggested_action": "Use research/taste references to turn vague asset asks into detailed prompt variants with provenance.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_8fdc8a5090b2b660",
+      "type": "routing_opportunity",
+      "title": "Cross-studio request/response broker",
+      "priority": "high",
+      "summary": "Cross-studio request/response broker",
+      "evidence": [],
+      "suggested_action": "Formalize Site→Research/Media/Component and Component→Media calls after Phase 2A/2B screens are designed.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_ae84886f2df67815",
+      "type": "tool_opportunity",
+      "title": "Visual workflow prototype surface",
+      "priority": "medium",
+      "summary": "Visual workflow prototype surface",
+      "evidence": [],
+      "suggested_action": "Use existing browser UI before Mission Control-first; surface Media/Site workflow proof where Fritz works.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_d677b35187c3fbf5",
+      "type": "research_opportunity",
+      "title": "Second Brain promotion rules",
+      "priority": "medium",
+      "summary": "Second Brain promotion rules",
+      "evidence": [],
+      "suggested_action": "Define which post-eval learnings become Data Center claims, Obsidian notes, memories, skills, or backlog tasks.",
+      "owner": null,
+      "status": "proposed"
+    }
+  ],
+  "next_actions": [
+    "Let Fritz choose which Phase 2A logo WIPs/references to load first.",
+    "Create the Phase 2A research-first SDD packet for FAMtastic logo/brand workflow.",
+    "After Phase 2A proves the workflow, create/publish the durable skill(s) rather than guessing too early."
+  ],
+  "summary": "Post-evaluation for Phase 1 Foundation Post-Evaluation and Phase 2 Opportunity Forecast: 4 learnings, 4 gaps, 15 opportunities."
+}

@@ -1,0 +1,28 @@
+# Swarm worker B research shaped SDD
+
+Status: completed
+Source: perplexity
+Citations: 7
+Search results: 7
+Usage: {"prompt_tokens":35,"completion_tokens":763,"total_tokens":798,"search_context_size":"low","cost":{"input_tokens_cost":0.00003,"output_tokens_cost":0.00076,"request_cost":0.005,"total_cost":0.0058}}
+Cost: n/a
+
+## Answer excerpt
+
+Research findings should shape the spec **before implementation** by turning evidence into **explicit requirements, constraints, and acceptance criteria**. For web design teams, that means:
+
+### 1) Convert research insights into user outcomes
+Don’t paste research notes into the spec. Translate them into:
+- **User needs**: what users are trying to do
+- **Pain points**: what currently blocks them
+- **Success signals**: how you’ll know the solution works
+
+**Example**
+- Research: users miss the CTA because the page hierarchy is unclear
+- Requirement: the primary CTA must be visually dominant above the fold
+- Acceptance criterion: “Given a first-time visitor, when the page loads on desktop or mobile, then the primary CTA is visible without scrolling and has the highest contrast among action elements.”
+
+### 2) Make requirements testable
+A good spec should be written so QA, design, and AI tools can verify it. Include:
+- **Functional requirements**
+- **UI constraints** (layout, spacing, cont

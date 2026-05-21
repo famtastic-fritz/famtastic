@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Capability Witness Record",
+  "type": "object",
+  "required": [
+    "capability",
+    "status",
+    "durationMs",
+    "issuedAt",
+    "platform",
+    "os"
+  ],
+  "properties": {
+    "capability": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "warn"
+      ]
+    },
+    "durationMs": {
+      "type": "number",
+      "minimum": 0
+    },
+    "issuedAt": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "os": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "baseline": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

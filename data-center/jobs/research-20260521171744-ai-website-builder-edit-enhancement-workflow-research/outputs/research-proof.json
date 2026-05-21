@@ -1,0 +1,100 @@
+{
+  "job_id": "research-20260521171744-ai-website-builder-edit-enhancement-workflow-research",
+  "ok": true,
+  "vertical": "site_studio",
+  "question": "What are current best practices for AI website builders to support high-quality generation plus section-level edits, media enhancement, component reuse, proof/evaluation, and user approval workflows? Return concise implementation implications.",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 8,
+  "search_result_count": 8,
+  "usage": {
+    "prompt_tokens": 61,
+    "completion_tokens": 1112,
+    "total_tokens": 1173,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00006,
+      "output_tokens_cost": 0.00111,
+      "request_cost": 0.005,
+      "total_cost": 0.00617
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://durable.com/blog/can-ai-website-builders-create-professional-websites",
+    "https://www.youtube.com/watch?v=trfDoGoXNsE",
+    "https://playcode.io/blog/best-ai-web-design-tools-2026",
+    "https://www.networksolutions.com/blog/best-ai-website-builder/",
+    "https://www.wix.com/ai-website-builder",
+    "https://www.microsoft.com/en-us/power-platform/topics/ai-website-builder",
+    "https://www.beehiiv.com/blog/ai-website-builder",
+    "https://www.youtube.com/watch?v=wbyPMZ6Y6Qw"
+  ],
+  "search_results": [
+    {
+      "title": "Can AI website builders create professional websites? - Durable",
+      "url": "https://durable.com/blog/can-ai-website-builders-create-professional-websites",
+      "date": "2026-01-06",
+      "last_updated": "2026-05-06",
+      "snippet": "Detailed business descriptions improve AI generation quality by 30-40%; Editing 20-30% of AI content increases conversions by 31%; Authentic ...",
+      "source": "web"
+    },
+    {
+      "title": "How To Build the PERFECT Website Using AI (Step-by ... - YouTube",
+      "url": "https://www.youtube.com/watch?v=trfDoGoXNsE",
+      "date": "2025-05-16",
+      "last_updated": "2026-05-21",
+      "snippet": "... best-practice layout proven for this industry. Deep-Research Instructions 1. **Industry best practices** – In the background, scan recent high ...",
+      "source": "web"
+    },
+    {
+      "title": "Best AI Web Design Tools 2026: Create Stunning Sites - Playcode.io",
+      "url": "https://playcode.io/blog/best-ai-web-design-tools-2026",
+      "date": "2026-03-14",
+      "last_updated": "2026-05-20",
+      "snippet": "Compare 8 AI web design tools for 2026. Playcode, Framer, Figma AI, Relume, Uizard, Galileo AI, Midjourney, and Locofy reviewed for design ...",
+      "source": "web"
+    },
+    {
+      "title": "Best AI website builder for small businesses in 2026",
+      "url": "https://www.networksolutions.com/blog/best-ai-website-builder/",
+      "date": "2026-02-25",
+      "last_updated": "2026-05-20",
+      "snippet": "Discover the best AI website builder for your needs. See comparisons, costs, and beginner-friendly tools for small businesses.",
+      "source": "web"
+    },
+    {
+      "title": "AI Website Builder - Create A Website In Minutes | Wix",
+      "url": "https://www.wix.com/ai-website-builder",
+      "date": "2024-01-08",
+      "last_updated": "2026-05-21",
+      "snippet": "Experience seamless website creation with Wix's intuitive Free AI website builder. Design a unique, business-ready site faster than ever before. Start now.",
+      "source": "web"
+    },
+    {
+      "title": "AI Website Builder | Microsoft Power Platform",
+      "url": "https://www.microsoft.com/en-us/power-platform/topics/ai-website-builder",
+      "last_updated": "2026-03-31",
+      "snippet": "AI website builders help you create websites by generating layouts, content, and design suggestions. Learn how they work, when to use them, and what to consider ...",
+      "source": "web"
+    },
+    {
+      "title": "10 Best AI Website Builders in 2026 [Tried & Tested] | beehiiv Blog",
+      "url": "https://www.beehiiv.com/blog/ai-website-builder",
+      "date": "2025-11-24",
+      "last_updated": "2026-05-16",
+      "snippet": "We tested 10 AI website builders to see which ones deliver the best results. Compare pros and cons, pricing, and features to decide the best ...",
+      "source": "web"
+    },
+    {
+      "title": "I Built the Same Website 20 Times Using AI Website Builders",
+      "url": "https://www.youtube.com/watch?v=wbyPMZ6Y6Qw",
+      "date": "2025-11-28",
+      "last_updated": "2026-05-20",
+      "snippet": "... great, some were chaotic, and some made me wait 30+ seconds just to swap a photo. This video breaks down what's real about AI web design and ...",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "Here are the current best practices for AI website builders, with **concise implementation implications** for web designers.\n\n## 1) High-quality generation\n**Best practice**\n- Use **structured, detailed prompts/intake**: industry, audience, offer, tone, CTA, differentiators, constraints.\n- Generate from **proven page patterns** (hero → problem → solution → benefits → proof → CTA).\n- Make the AI aware of **brand rules** and **content style**.\n\n**Implementation implications**\n- Add an onboarding form that captures:\n  - business type, ICP, goals, differentiators, trust signals, required pages\n- Store these as reusable **site context objects** for all generations.\n- Prefer **section-level generation** over full-page “black box” generation for better control.\n\n**Source signals:** Durable and Wix emphasize detailed business input + customizable outputs; Microsoft notes human review remains essential. [1][5][6]\n\n---\n\n## 2) Section-level edits\n**Best practice**\n- Let users edit **one section a"
+}

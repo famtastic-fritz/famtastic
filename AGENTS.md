@@ -4,17 +4,25 @@ Rules that apply to every agent surface (Claude Code, Cowork, Codex) working
 in this repo. Surface-specific guidance lives in CLAUDE.md, and inside each
 plugin / adapter.
 
-## Agent Coordination (Non-Negotiable)
+## Current Agent Startup Contract
 
-Before scaffolding any new system, capability, or non-trivial workstream,
-run `node scripts/agent-checkin.js --intent "<short description>"` from the
-repo root. If it reports overlapping in-flight work, either coordinate
-with the other agent (read its branch, propose merge) or pick a different
-scope. Respect scope-locks declared in AGENT-COORDINATION.md.
+Before non-trivial work, read `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`.
+It is the current orientation layer for Claude Code, Codex, Gemini, Cowork,
+and other agent surfaces. It captures the current doctrine:
+research-first, spec-shaped, proof-driven work; reuse before generate;
+post-evaluation after meaningful jobs; Phase 2 priority is Visual Workflows &
+Brand Systems.
 
-This rule prevents the parallel-implementation problem where two agent
-surfaces independently solve the same problem in incompatible ways
-(observed 2026-05-05 with the .brain/ vs memory/ duplication).
+## Agent Coordination (Paused by Default)
+
+Agent check-in is paused by default because Fritz found the earlier mandatory
+overlap detection too noisy during active FAMtastic work. Do **not** run
+`node scripts/agent-checkin.js` as a mandatory prerequisite.
+
+Only run check-in when Fritz explicitly says he is running multi-agent,
+multi-session, parallel, or otherwise concurrent work and wants coordination
+locks active. Otherwise, use lightweight human-readable notes in the active
+plan/capture/report.
 
 ## Plan Closeout Rule (Non-Negotiable)
 

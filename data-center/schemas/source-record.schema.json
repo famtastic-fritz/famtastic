@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FAMtastic Data Center Source Record",
+  "type": "object",
+  "required": [
+    "source_id",
+    "kind",
+    "title",
+    "hash",
+    "created_at",
+    "updated_at",
+    "provenance"
+  ],
+  "additionalProperties": true
+}

@@ -1,0 +1,73 @@
+{
+  "job_id": "research-20260519225124-perplexity-metadata-preservation-proof",
+  "ok": true,
+  "vertical": "research systems",
+  "question": "What metadata should an AI research pipeline preserve for source-grounded synthesis?",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 5,
+  "search_result_count": 5,
+  "usage": {
+    "prompt_tokens": 35,
+    "completion_tokens": 802,
+    "total_tokens": 837,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00003,
+      "output_tokens_cost": 0.0008,
+      "request_cost": 0.005,
+      "total_cost": 0.00584
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://www.frontiersin.org/journals/big-data/articles/10.3389/fdata.2024.1476506/full",
+    "https://www.zenml.io/blog/steerable-deep-research-building-production-ready-agentic-workflows-with-controlled-autonomy",
+    "https://www.mindstudio.ai/blog/google-gemini-deep-research-api/",
+    "https://guides.libs.uga.edu/ai/research_tools",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC11510778/"
+  ],
+  "search_results": [
+    {
+      "title": "Constructing a metadata knowledge graph as an atlas for ... - Frontiers",
+      "url": "https://www.frontiersin.org/journals/big-data/articles/10.3389/fdata.2024.1476506/full",
+      "date": "2025-01-07",
+      "last_updated": "2025-08-28",
+      "snippet": "In this study, we present a solution by introducing Common Metadata Ontology (CMO) which is used to construct an extensive AI Pipeline Metadata Knowledge Graph ...",
+      "source": "web"
+    },
+    {
+      "title": "Steerable Deep Research: Building Production-Ready Agentic ...",
+      "url": "https://www.zenml.io/blog/steerable-deep-research-building-production-ready-agentic-workflows-with-controlled-autonomy",
+      "date": "2025-06-17",
+      "last_updated": "2026-05-16",
+      "snippet": "We provide a technical walkthrough of our ZenML Deep Research pipeline, showing how to create AI systems that are agentic in capability and ...",
+      "source": "web"
+    },
+    {
+      "title": "Google Gemini Deep Research API: What Developers Need to Know",
+      "url": "https://www.mindstudio.ai/blog/google-gemini-deep-research-api/",
+      "date": "2026-04-28",
+      "snippet": "Deep Research responses include both the generated report and grounding metadata — citations, source URLs, and search queries used. You can ...",
+      "source": "web"
+    },
+    {
+      "title": "AI Tools for Research - Introduction to AI Literacy",
+      "url": "https://guides.libs.uga.edu/ai/research_tools",
+      "date": "2026-05-15",
+      "last_updated": "2026-05-16",
+      "snippet": "Specialized AI tools evolve along multiple branches: AI-native research tools answer research questions grounded in academic literature, ...",
+      "source": "web"
+    },
+    {
+      "title": "Artificial Intelligence (AI) Applications in Drug Discovery and ... - PMC",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11510778/",
+      "date": "2024-10-14",
+      "last_updated": "2026-05-19",
+      "snippet": "In this review article, we will present a comprehensive overview of AI's applications in the pharmaceutical industry, covering areas such as drug discovery, ...",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "For **source-grounded synthesis**, an AI research pipeline should preserve metadata at three levels: **source provenance, extraction context, and synthesis traceability**.\n\n## 1) Source provenance\nStore enough to prove where each claim came from.\n\n- **Source ID / canonical URL**\n- **Title**\n- **Author(s) / publisher / repository**\n- **Publication or crawl date**\n- **Version / snapshot / commit hash** if applicable\n- **Access method**: API, web crawl, database export, PDF, etc.\n- **License / usage rights**\n- **Source type**: paper, dataset, repo, web page, internal doc\n\nWhy: this supports reproducibility and citation integrity. Systems like Gemini Deep Research expose **citations, source URLs, and search queries** for this reason [3]. Papers-with-Code/OpenML/Hugging Face integration work also emphasizes preserving source metadata for reproducible pipeline reconstruction [1].\n\n## 2) Retrieval and extraction context\nStore how the source was found and what part was used.\n\n- **Query text / "
+}
