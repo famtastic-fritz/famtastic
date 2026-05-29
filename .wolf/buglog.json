@@ -3362,6 +3362,29 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-05-29"
+    },
+    {
+      "id": 208,
+      "timestamp": "2026-05-29",
+      "error_message": "Adding a fastembed/onnxruntime-backed stdio MCP server (vault-search) to the Shay gateway intermittently dropped basic-memory with CancelledError on restart",
+      "file": "~/.shay/config.yaml, ~/.shay/tools/vault-semantic-mcp/server.py",
+      "root_cause": "Built a read-only whole-vault semantic-search MCP server (local FastEmbed bge-small-en-v1.5, 521 chunks, works standalone). When wired as a gateway stdio child, onnxruntime's teardown is slow (~30s; 'Process group termination failed ... Operation not permitted, falling back to simple terminate'), making total gateway teardown ~40s. Rapid restarts during that window caused MCP connect contention → basic-memory connect cancelled (CancelledError), leaving the gateway with '8 tools from 2 servers (1 failed)' and a stale gateway_state.json. Even lazy-importing fastembed didn't fully fix the teardown-time instability.",
+      "fix": "Removed vault-search from live gateway mcp_servers (commented out, preserved). Gateway restored to stable obsidian + basic-memory (29 tools, no failures, state=running). vault-search remains available standalone (CLI: ~/.shay/tools/vault-semantic-mcp/.venv/bin/python server.py; or import + search_vault). DO-NOT-REPEAT: do not add heavy-ML (onnxruntime/torch) stdio MCP servers directly to the gateway — their slow teardown destabilizes the restart cycle. Re-integrate as a PERSISTENT service the gateway proxies (HTTP), not a per-restart stdio child. Always wait for full ~40s teardown before re-restarting.",
+      "tags": [
+        "shay",
+        "gateway",
+        "mcp",
+        "onnxruntime",
+        "fastembed",
+        "vault-search",
+        "do-not-repeat",
+        "stability"
+      ],
+      "related_bugs": [
+        207
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-05-29"
     }
   ]
 }
