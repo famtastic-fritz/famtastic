@@ -3408,6 +3408,34 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-05-29"
+    },
+    {
+      "id": 210,
+      "timestamp": "2026-05-29",
+      "error_message": "Shay terminal kept defaulting to Gemini fallback even after the bulk-routing fix; root cause was the Claude Code WEEKLY usage cap (not the account being depleted) burned by per-call context bloat + a model=default 404 bug",
+      "file": "~/famtastic/shay-shay/agent/prompt_builder.py, ~/famtastic/shay-shay/agent/plugin_llm.py, ~/.shay/config.yaml",
+      "root_cause": "Anthropic added rolling WEEKLY usage limits for Claude Code / OAuth-API access in 2025, SEPARATE from claude.ai consumer chat. Shay (spoofing Claude Code via anthropic-beta: claude-code-20250219,oauth-2025-04-20 + Claude Code system-prompt + claude-cli user-agent) draws from the Claude Code bucket. Claude Desktop/web on the same account still worked, proving the account itself is fine. Two causes burned the Claude Code weekly cap: (1) overnight batch+swarm on Claude (fixed earlier — see buglog #206), (2) per-call context bloat avg 55,548 input tokens/call, dominated by a 22,600-token skills snapshot injecting ALL 160 skills' names+descriptions with no cap (agent/prompt_builder.py:988-1219 build_skills_system_prompt) and 35 MCP tool schemas (basic-memory's 27 + vault-search 6 + obsidian 2). Plus a secondary bug at agent/plugin_llm.py:586 where `_read_main_model() or 'default'` sent the literal string 'default' to Anthropic → HTTP 404, triggering Gemini fallback even before the usage cap mattered. 'Extra usage' (pay-as-you-go overflow) was off at claude.ai, so cap-hits hard-fail rather than overflow-bill.",
+      "fix": "Three changes: (1) Added skills.max_count: 40 + skills.always_include config in ~/.shay/config.yaml; implemented _read_skills_cap_config() and _apply_skill_count_cap() helpers in agent/prompt_builder.py and wired into build_skills_system_prompt's cache_key + render. Skills prompt verified: 22,600 → 1,274 tokens (~21.3k saved/call). (2) Added tools.include allowlist to mcp_servers.basic-memory in ~/.shay/config.yaml — registers 7 useful tools instead of 27. Tool roster verified: 35 → 19 tools (~3.2k tokens saved/call). (3) Replaced the literal 'default' fallback at agent/plugin_llm.py:586 with a multi-step resolution (_read_main_model → load_config().model.default → 'claude-sonnet-4-6' final fallback) — model=default 404 can never recur. Total per-call savings ~24.5k tokens. DO-NOT-REPEAT: Claude Code OAuth subscription has WEEKLY caps separate from chat — when 'out of extra usage' hits Shay but Claude Desktop works, it's the Claude-Code-bucket cap; permanent prevention is cutting per-call context + keeping bulk off the Max brain.",
+      "tags": [
+        "shay",
+        "claude-code",
+        "subscription",
+        "quota",
+        "weekly-cap",
+        "skills",
+        "mcp",
+        "context-bloat",
+        "do-not-repeat",
+        "permanent-fix"
+      ],
+      "related_bugs": [
+        206,
+        207,
+        208,
+        209
+      ],
+      "occurrences": 48,
+      "last_seen": "2026-05-29"
     }
   ]
 }
