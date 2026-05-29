@@ -1,5 +1,12 @@
 # FAMtastic Changelog
 
+## 2026-05-29 — Shay stabilization, overnight research, MBSH swarm, Desk hang fix [docs]
+Stabilized Shay-Shay (gateway on launchd, Claude Max OAuth brain, aux→direct Gemini, delegation 30/2), ran 8 overnight research jobs plus a cited re-run, and added `SHAY-MASTER-PLAN-2026-05-28.md` to the repo. Cleared an 18-day stale git lock (`.git/HEAD.lock`/`index.lock` from 2026-05-10) that had been silently blocking the MBSH repo, then ran a 6-stream agent swarm to revive the MBSH Premiere site — committed to branch `swarm/premiere-revival` and pushed to GitHub (untested, NOT deployed; `main` untouched). Diagnosed and fixed Shay Desk chat hangs (Anthropic stream stalling under heavy Max-token load; `shay gateway restart` clears the poisoned connection pool; documented fail-fast `stale_timeout_seconds` + the "keep bulk work off the interactive brain" rule in SITE-LEARNINGS). Deferred: proxy-mode wiring so terminal + Desk share one backend, and setting `API_SERVER_KEY` on `:8642`.
+
+## 2026-05-28 — Agent OS Integration Phase Complete [docs]
+
+All 7 integration tasks completed across API layer, studio bridges, heartbeat reporter, E2E tests, and trust mode UI. 20/20 tests pass (14 E2E + 6 unit/integration). FastAPI server runs on port 8643 with CORS for dashboard on 5174. Dashboard polls agents, tasks, and trust mode every 5 seconds. Studio bridges are stubs with graceful fallback. Heartbeat monitors every 30s with blocker escalation after 3 failures. Build state updated to `production_ready`. Handoff at `~/famtastic/obsidian/Projects/Agent-OS-Build-Complete-2026-05-28.md`. Deferred: real studio bridge integration, WebSocket real-time updates in dashboard, scaling worker pool beyond 3, activating launchd cron.
+
 ## 2026-05-21 — Final pre-Phase-2 cleanup [docs]
 Completed the final harvest/prune pass for Phase 2 readiness. Broader pre-Shay-Shay worktree references were archived under `docs/archive/pre-shay-shay/full-snapshots/`, local MuAPI logo/media WIPs were preserved in `~/famtastic-local-archive/` and indexed by a tracked manifest, and local nested repos/probes were moved behind `.gitignore` rules so the hub repo can stay clean. Phase 2A starting inputs are now explicit: `brand/FAMTASTIC-BRAND-MARK.md`, the `remotion/` logo motion source, and the local MuAPI WIP manifest. Deferred: using those inputs to run the actual Phase 2A Media Studio logo/brand workflow.
 
@@ -637,3 +644,5 @@ Wired the approved Variant B 3D Harry RSVP hero into the live RSVP page locally,
 
 ## 2026-05-14 — MBSH RSVP hero cache-proof visual correction
 Corrected the local RSVP proof flow after Fritz’s screenshot showed the browser was still displaying a stale/right-side Harry composition. Added cache-busting references for the RSVP Phase 3 CSS and critical hero assets so the live page reliably reflects the approved Preview-B layout with theater background, Harry left, headline right, marker bottom-left, and form bleed. No staging push was made.
+## 2026-05-27 — Agent OS Integration Complete
+Autonomous Agent OS integration completed — all 7 tasks and 20 tests passed. API server (port 8643), dashboard (port 5174), studio bridge stubs, heartbeat reporter, and trust mode UI are production-ready. Blockers: studio bridges are stubs pending real fam-hub/media/Component Studio integration, WebSocket events not yet wired to dashboard ActivityPanel, worker pool capped at 3 of 500 target.

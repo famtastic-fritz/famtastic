@@ -1,5 +1,55 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Agent OS — Software Design Document & Architecture Foundation (2026-05-27)
+
+Created a comprehensive Software Design Document for the Agent OS multi-agent orchestration system. The SDD lives at `~/famtastic/docs/AGENT-OS-SDD.md` (26KB, 12 sections). Rowboat (14.6K stars) is the intended fork base. ECC (affaan-m/ECC hackathon winner) was deep-researched for architectural patterns — buddy consensus, inter-agent Telegram bus, agent taxonomy — but has zero source code, so it serves as pattern reference only.
+
+**Architectural decisions captured:** Redis-backed message bus (replace Rowboat's default messaging), functional agent naming (no emojis/animals), trust mode spectrum (`paranoid` → `cautious` → `trusted` → `godmode`) with buddy consensus via NAND gate, `/goal` loop engine (judge model, turn budget, fail-open defaults), swarm execution with configurable parallelism and backpressure, heartbeat protocol (30s intervals, dead agent detection at 90s), and reporter agent for human narration.
+
+**Agent taxonomy defined:** Orchestrator tier (plan/delegate/verify/reporter) using Claude 4 / Kimi k1 / Codex, Worker tier (cheap/code/reasoning/local/vision/web) using Qwen 1.5B / Phi-4-mini / Hermes 3B / DeepSeek-R1, and Studio Bridge agents (site/media/component) calling fam-hub APIs.
+
+**Model registry includes cost-per-1M tokens and capability tiers.** Qwen 2.5 1.5B and Phi-4-mini 3.8B are primary free local workers via Ollama. Kimi k1 at $0.60/M is the reasoning orchestrator. Codex at $1.50/M is the code worker. Claude 4 Opus at $15.00/M is reserved for planning/verification only.
+
+**Implementation phases:** Phase 0 (fork Rowboat + Redis + Ollama workers), Phase 1 (orchestration + trust modes + heartbeat + dashboard shell), Phase 2 (studio bridges + revenue agents + cost tracking), Phase 3 (500-agent scaling + advanced routing + notifications).
+
+**Known gaps recorded:** Kimi API key not yet acquired; Claude Code auth intermittent; no notification system built; Redis not yet running; ECC has no source code; Open WebUI still uninstalled but now explicitly deprioritized in favor of custom dashboard.
+
+**Related artifacts:** `~/famtastic/docs/AGENT-OS-SDD.md`, `~/famtastic/obsidian/Projects/Agent-OS-Handoff-2026-05-27.md`, `~/.shay/session-checkpoints/agent-os-session-20260527-174734.json`.
+
+## Agent OS — Integration Phase Complete (2026-05-28)
+
+All 7 integration tasks completed in a single autonomous run. Status upgraded from `ready_for_integration_phase` to `production_ready`.
+
+**Files built:**
+- `api/server.py` — FastAPI server on port 8643, CORS for dashboard on 5174
+- `api/routes/agents.py`, `tasks.py`, `events.py`, `trust.py` — REST endpoints
+- `api/websocket.py` — WebSocket event broadcaster
+- `bridges/site_bridge.py`, `media_bridge.py`, `component_bridge.py`, `base_bridge.py` — Studio bridge stubs with graceful fallback
+- `reporter/heartbeat.py`, `status_reporter.py`, `blocker_detector.py` — Health monitoring, stale-worker detection, escalation
+- `cron/autonomous-run.yaml`, `cron/run-autonomous-check.sh` — Cron configuration every 5 minutes
+- `tests/e2e/test_goal_loop.py`, `test_error_recovery.py`, `test_trust_mode.py` — 14 E2E tests
+- `components/dashboard/src/hooks/useDashboardStore.ts` — Added `syncTrustMode()`, `setTrustModeRemote()`, `fetchAgents()`, `fetchTasks()`, `checkApiHealth()`
+- `components/dashboard/src/App.tsx` — Added `ApiPoller` component for 5s polling loop
+- `components/dashboard/src/components/Sidebar.tsx` — Trust mode selector wired to `/api/trust`, shows API connection indicator
+
+**Test results:** 20/20 pass (14 E2E + 6 unit/integration). Tested: goal decomposition with Ollama subgoals, async goal polling, trust mode gates (paranoid blocks, godmode allows, cautious triggers), error recovery retry/escalation, message bus pub/sub, worker pool task submission.
+
+**Blockers resolved:** `test_swarm.py::test_trust_mode` failed because system `~/.shay/trust-mode.json` had `level: trusted` persistently. Fixed test to use an isolated temp config via `TrustMode(config_path=...)`. Queue order test `test_message_bus` failed because previously seeded Redis keys polluted the test; flushing `swarm:queue:test_queue` and `swarm:state:test_key` resolved.
+
+**Known gaps (updated):** Studio bridges are stubs — actual `fam-hub site`, media generation API, and Component Studio integration pending. WebSocket event stream not yet consumed by dashboard (only polled REST). Worker pool hardcoded to 3 workers; scaling to 500 needs architecture work. Dashboard `ActivityPanel` is not yet real-time via WS. `launchd` plist for cron is documented but not activated.
+
+**How to run:**
+```bash
+# API server
+cd ~/famtastic/shay-agent-os && python3 api/server.py
+# Dashboard dev
+cd components/dashboard && npm run dev
+# Tests
+python3 -m pytest components/swarm/test_swarm.py tests/e2e/ -v
+# Heartbeat once
+python3 -m reporter.heartbeat --once
+```
+
 ## Final pre-Phase-2 consolidation and archive cleanup (2026-05-21)
 
 The active plan of record for the next work cycle is `plans/PHASE2-VISUAL-WORKFLOWS-BRAND-SYSTEMS.md`. A final pre-Phase-2 cleanup harvested broader pre-Shay-Shay worktree material into `docs/archive/pre-shay-shay/full-snapshots/` instead of merging stale app/UI work wholesale. The archive includes the convergence dossier docs/process and studio-execution research snapshot, experimental agent/bootstrap skills from the adoring-merkle Claude worktree, and temporary Site Studio stubs from great-gauss as reference-only evidence.
@@ -6175,3 +6225,17 @@ See `memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-
 - The RSVP `cinematic-interior-hero` recipe now uses a canonical two-band first viewport in `~/famtastic-sites/mbsh-reunion/frontend/rsvp.html`: `.hero-stage` owns 66.66svh for scene plate, Harry, headline, and atmosphere; `.marker-band` owns 33.34svh for `.marker-plaque`, `.bleed-bulb-row`, `.bleed-light-spill`, and the `.scroll-teaser` chevron targeting `#rsvp-form`.
 - The marker plaque is no longer a small hero overlay. It is the primary feature of the lower band, and the chevron marks the exact boundary before the RSVP form.
 - RSVP Phase 3.1 also removes the duplicate top-left `.reel-hero__back` medallion from `frontend/rsvp.html`; the center MENU medallion remains the canonical navigation control.
+
+## 2026-05-29 — Shay-Shay gateway, brain topology, and ops learnings
+
+### Shay Desk "chat hangs" — root cause + fix
+Symptom: Shay Desktop chats hung with no response. Root cause: the gateway's pool of streaming connections to the Anthropic API went half-open under heavy load on the single Max OAuth token (an overnight batch + the MBSH swarm + cited re-runs all ran on Claude). Anthropic accepted requests but sent zero chunks; the gateway's stale-stream detector waits **180s** before killing a silent stream, so a poisoned pooled connection froze the Desk ~3 min. Confirmed in `~/.shay/logs/agent.log` ("Stream stale for 180s — no chunks received. Killing connection. model=claude-sonnet-4-6"). Immediate fix: `shay gateway restart` rebuilds a fresh pool. Prevention: (1) lower per-provider `providers.anthropic.stale_timeout_seconds` (defaults to 180s, see `shay_cli/timeouts.py`) to ~45s for fail-fast + fallback; (2) keep bulk/swarm/batch work OFF the interactive Max brain ("Claude plans + judges only, never bulk work") — route bulk to Gemini/Ollama/OpenRouter.
+
+### Stale git lock silently blocks a whole repo
+`~/famtastic-sites/mbsh-reunion` had `.git/HEAD.lock` + `.git/index.lock` left by a crashed git process on 2026-05-10. For 18 days every commit/branch/push failed with "Another git process seems to be running" — a major reason MBSH looked "stuck." Lesson: when a repo seems stuck, check `ls .git/*.lock`; if no git process is running and nothing holds the lock (verify with `ps`/`lsof`), the locks are stale crash residue and safe to remove.
+
+### "Terminal + Desk both open" duplicates MCP servers
+MCP servers run as stdio children of each `shay` process, so a standalone CLI session + the Desk's gateway each spawn their own `cognee-mcp` + `mcp-obsidian`; two `cognee-mcp` then contend over the single `cognee_db`. Correct architecture: one gateway backend (`:8642`) with one MCP stack, with both Desk and terminal attaching as clients (proxy mode against the api_server) — which also requires setting `API_SERVER_KEY` (currently unset; `:8642` is unauthenticated). Crude per-session workaround: `shay chat --ignore-user-config` skips `mcp_servers` (but also drops model/rules/memory config).
+
+### Confirmed brain topology
+Interactive/orchestrator = Claude Sonnet 4.6 via Max subscription OAuth (`CLAUDE_CODE_OAUTH_TOKEN`, not API credits). Aux (10 slots) + research = direct Gemini 2.5 Flash. Fallback chain = Gemini → local Ollama `hermes3`. OpenRouter (DeepSeek/Kimi) returns 403 due to a per-KEY spend cap (not account balance — $14 present); the fix is raising the key's limit, not topping up.
