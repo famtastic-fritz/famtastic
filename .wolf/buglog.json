@@ -3340,6 +3340,28 @@
       "related_bugs": [],
       "occurrences": 26,
       "last_seen": "2026-05-29"
+    },
+    {
+      "id": 207,
+      "timestamp": "2026-05-29",
+      "error_message": "basic-memory mutates hand-authored Obsidian notes when its project points at the live vault — even with ensure_frontmatter_on_sync=false",
+      "file": "~/.basic-memory/config.json, ~/famtastic/obsidian/**",
+      "root_cause": "Pointed a basic-memory project at the whole vault (~/famtastic/obsidian) to give Shay whole-vault semantic recall. On reindex/init-sync basic-memory rewrote 2 notes: injected a 'permalink: <project>/...' line into frontmatter, stripped the trailing newline, and stripped some trailing whitespace — DESPITE ensure_frontmatter_on_sync:false (that flag does not fully prevent file rewrites). Also: basic-memory hard-refuses nested projects (cannot have a whole-vault project AND a Shay-Memory subfolder project), and its `project default` CLI is buggy (config.json default_project vs an internal DB default desync).",
+      "fix": "Reverted to a basic-memory project SCOPED to ~/famtastic/obsidian/Shay-Memory ONLY (never touches hand-authored notes). Repaired the 2 mutated files: CAPTURE-2026-05-19-platform-intel.md restored byte-exact (removed permalink line + restored trailing newline); MEDIA-COMPONENT-STUDIO-STATUS-2026-05-29.md restored content-complete (cosmetic trailing-whitespace on a few lines unrecoverable — files are untracked in git, no backup). DO-NOT-REPEAT: never point basic-memory at a vault of notes you don't want rewritten. Whole-vault semantic recall for the agent must come from Smart Connections (Obsidian, on-device) via smart-connections-mcp, NOT basic-memory. Safety protocol that caught it: hash-baseline all *.md before, diff after, revert.",
+      "tags": [
+        "basic-memory",
+        "shay",
+        "obsidian",
+        "data-safety",
+        "mutation",
+        "do-not-repeat",
+        "brain"
+      ],
+      "related_bugs": [
+        206
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-05-29"
     }
   ]
 }
