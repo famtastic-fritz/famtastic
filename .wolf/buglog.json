@@ -3385,6 +3385,29 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-05-29"
+    },
+    {
+      "id": 209,
+      "timestamp": "2026-05-29",
+      "error_message": "RESOLUTION of #208: how to integrate the fastembed/onnxruntime vault-search MCP into the Shay gateway WITHOUT restart instability",
+      "file": "~/.shay/tools/vault-semantic-mcp/server.py, ~/.shay/config.yaml",
+      "root_cause": "Per #208, spawning vault-search as a gateway stdio child caused ~30s onnxruntime teardown → MCP connect contention on restart. Shay's MCP loader (tools/mcp_tool.py) supports HTTP/StreamableHTTP + SSE transports via a `url:` config field, not only stdio command/args.",
+      "fix": "Added HTTP transport mode to server.py (VSM_TRANSPORT=http -> mcp.run(transport='http', host, port=8766)). Run it as a SEPARATE background HTTP service; wire the gateway by URL: `vault-search: {url: 'http://127.0.0.1:8766/mcp'}`. The gateway now connects over HTTP and never spawns/kills onnxruntime on restart. Result: stable restart (~6s to running), 35 tools from 3 servers (obsidian 2 + basic-memory 27 + vault-search 6), ZERO failures. CAVEAT: the background process is NOT persistent (dies on reboot/logout) — a launchd plist template is saved at ~/.shay/tools/vault-semantic-mcp/com.famtastic.vault-search.plist.template, but auto-start persistence was blocked by the security classifier (user must install the plist to make it survive reboots). Pattern: heavy-ML MCP servers -> persistent/background HTTP service + url config, never gateway stdio child.",
+      "tags": [
+        "shay",
+        "gateway",
+        "mcp",
+        "http",
+        "vault-search",
+        "resolution",
+        "stability",
+        "fastembed"
+      ],
+      "related_bugs": [
+        208
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-05-29"
     }
   ]
 }
