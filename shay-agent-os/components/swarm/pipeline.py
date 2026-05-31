@@ -866,8 +866,30 @@ def surgical_patch(
             # whitespace diff doesn't fail an otherwise-valid edit.
             _probe, _found = _fuzzy_replace(text, anchor, anchor)
             if not _found:
-                miss.append(anchor[:50])
-                continue
+                # Phase 1B: RE-ANCHOR instead of re-missing. The defect was that
+                # iterations 2-4 re-prompted with the SAME (absent) anchor. Ask the
+                # brain for a FRESH verbatim substring that EXISTS in the file, and
+                # only accept it if `anchor in text` BEFORE spending a replace call.
+                bc0 = BrainChain(preferred=brain)
+                fresh = bc0.call_prompt(
+                    f"""The anchor below was NOT found in the file. Return ONLY a NEW anchor:
+a SHORT substring copied VERBATIM (character-for-character) from the CURRENT FILE
+CONTENT, near where this edit belongs. No markdown, no explanation — just the substring.
+
+EDIT INTENT: {e['instruction']}
+ANCHOR THAT FAILED: {anchor[:200]}
+
+CURRENT FILE CONTENT:
+{text[:16000]}""",
+                    timeout=120.0)
+                fresh = _strip_fences(fresh).strip()
+                _p2, _f2 = _fuzzy_replace(text, fresh, fresh)
+                if fresh and _f2:
+                    anchor = e["anchor"] = fresh  # persist for later iterations
+                    logger.info(f"  ↻ re-anchored to verbatim substring ({fresh[:40]!r})")
+                else:
+                    miss.append(anchor[:50])
+                    continue
             err_ctx = f"\n\nLAST ATTEMPT FAILED TO COMPILE:\n{last_error[:800]}" if last_error else ""
             bc = BrainChain(preferred=brain)
             replacement = bc.call_prompt(
