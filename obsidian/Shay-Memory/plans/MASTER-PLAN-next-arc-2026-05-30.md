@@ -2,8 +2,27 @@
 title: Shay Master Plan — Next Execution Arc (adversarially reviewed)
 date: 2026-05-30
 author: shay-master-plan-adversarial workflow (6 agents)
-tags: [plan, ralph, recovery, adoption, adversarial-reviewed, run-in-one-go]
+tags:
+- plan
+- ralph
+- recovery
+- adoption
+- adversarial-reviewed
+- run-in-one-go
+permalink: shay-memory/plans/master-plan-next-arc-2026-05-30
 ---
+
+> ## ▶ EXECUTION STATUS (updated 2026-05-31)
+> - [x] **Phase 0** — loop hygiene (scoped commit/rollback, --units, run-state) ✅
+> - [x] **Phase 1A** — new-file brace-drop deterministic repair ✅
+> - [x] **Phase 1B** — anchor-miss re-anchor ✅
+> - [~] **Phase 1C** — recover blocked units: **17/20 landed**; 3 left (U5 JSX-tag, U8/U14 App.tsx edit hygiene)
+> - [x] **Phase 2** — functional launch test ✅ (found+fixed dead preload bridge + window.hermesAPI undefined; app boots, IPC alive)
+> - [ ] **Phase 3** — adoption tracks (tool-registry, obsidian-wiki, SkillNet, memory spike, Kanban) + companion app — NEXT
+> - Bonus fixes landed: 7 code-review findings; path-doubling resolver bug; Telegram push notifications.
+> - Directive: run to completion, fix bugs in-loop, DEFER decisions to end.
+
+
 
 # SHAY MASTER PLAN — Next Execution Arc (FINAL, 2026-05-30)
 
