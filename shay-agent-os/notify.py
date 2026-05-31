@@ -63,8 +63,12 @@ def _load_state() -> dict:
             "events": [], "checkpoints": {}}
 
 
+import os as _os
 def _save_state(s: dict) -> None:
-    RUN_STATE.write_text(json.dumps(s, indent=2))
+    # Atomic write so a mid-write crash can't truncate the ledger and erase job_id.
+    tmp = RUN_STATE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(s, indent=2))
+    _os.replace(tmp, RUN_STATE)
 
 
 def start_arc(title: str = "All-night master-plan arc") -> str:
@@ -112,7 +116,10 @@ def signoff(question: str, options=None, context: str = "", timeout: float = 360
                              "options": options, "context": context})
     aid = rec.get("id")
     if not aid:
-        return "Proceed"  # phone unreachable → fail-open is wrong for a gate; caller decides
+        # FAIL-CLOSED: a GO/NO-GO gate must NOT self-authorize when the phone is
+        # unreachable. Return TIMEOUT so the caller holds rather than proceeds.
+        heartbeat("SIGN-OFF", "phone unreachable — cannot create ask; treating as HOLD")
+        return "TIMEOUT"
     deadline = time.time() + timeout
     while time.time() < deadline:
         cur = _get(f"/api/ask?id={aid}")

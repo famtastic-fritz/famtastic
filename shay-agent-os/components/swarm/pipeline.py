@@ -606,11 +606,22 @@ def _syntax_validate_and_repair(file_path: str, cwd: str, brain: str = "claude",
         try:
             shell(f"cd {cwd} && npx prettier --parser {parser} --check {_q(str(p))} 2>&1",
                   cwd=cwd, timeout=60, trust_gate=False)
-            return True
+            return True  # exit 0 = valid AND already styled
         except RuntimeError as exc:
-            # prettier --check fails on STYLE diffs too; only a parse error means broken.
-            return "SyntaxError" not in str(exc) and "Unexpected" not in str(exc) \
-                   and "expected" not in str(exc).lower()
+            e = str(exc).lower()
+            # Explicit PARSE-error markers → the file is broken, repair it.
+            if any(k in e for k in ("syntaxerror", "unexpected", "expected",
+                                    "unterminated", "unclosed")):
+                return False
+            # Explicit STYLE-diff markers → valid syntax, just unformatted → clean.
+            if any(k in e for k in ("code style", "[warn]", "warn ", "would reformat")):
+                return True
+            # Infra/unknown (npx missing, ENOENT, timeout): we CANNOT validate.
+            # Treat as clean so we don't spuriously brain-repair a possibly-valid
+            # file; the whole-project typecheck remains the real gate.
+            logger.warning(f"[syntax-repair] prettier inconclusive for {p.name} "
+                           f"(treating as clean, deferring to typecheck): {e[:120]}")
+            return True
 
     if _parses():
         return {"ok": True, "method": "clean", "attempts": 0}
@@ -855,6 +866,9 @@ def surgical_patch(
     original = p.read_text()
     last_error = ""
 
+    # Work on a private copy so re-anchoring (Phase 1B) never mutates the
+    # caller-owned edits list across iterations or across repeated calls.
+    edits = [dict(e) for e in edits]
     for iteration in range(1, max_iterations + 1):
         logger.info(f"[surgical_patch] iter {iteration}/{max_iterations} — {len(edits)} anchored edit(s)")
         text = original  # always start from the pristine original each iteration
