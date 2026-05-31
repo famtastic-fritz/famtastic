@@ -524,3 +524,49 @@ _See `memory/bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next
 Zero-task active plans need explicit closeout
 
 _See `memory/do-not-repeat/zero-task-active-plans-need-explicit-closeout.md` for body and evidence._
+
+---
+
+### learning/harness-not-brain-for-weak-output — 2026-05-30
+
+**Type:** `learning` | **Confidence:** 0.95 | **Facets:** swarm, planning, quality-gates, brain-routing
+
+**When Shay's swarm output is weak, the fix is almost never "switch the brain" — it's "add the missing harness step."** Proven by controlled experiment on 2026-05-30:
+
+- A desktop plan scored **5/10**. Instinct said "wrong model — try Codex/Gemini."
+- Reality: the plan ran on Claude/Opus (strongest available) the whole time. The 5/10 came from missing guardrails, not a weak brain.
+- Holding the brain CONSTANT and adding three harness steps took the same task to **8/10**:
+  1. `ground_claim()` — verify codebase facts with real `grep`/`wc` before stating them (it had claimed hermesAPI=3 bindings; real count=125).
+  2. `plan_completeness_gate()` — reject truncated/section-incomplete plans.
+  3. `prior_planning_lessons()` injection — read past failures before planning.
+- Then `planning_loop()` made the gate ENFORCING (auto-reprompt until pass), verified catching a 4055-char truncated attempt and auto-fixing to a complete 1862-char plan on attempt 2.
+
+**Do-not-repeat:** Don't reach for a model swap when output quality is low. First check: is there a grounding step? a completeness/quality gate? a prior-lessons injection? A grounded weak brain beats an ungrounded strong one. All three primitives live in `shay-agent-os/components/swarm/pipeline.py`. Planning runs MUST go through `planning_loop()`, not a bare `agent()` call. Evidence: buglog #215 (the 5/10), #216 (verified 5→8 fix), #217 (enforcing-loop auto-capture).
+
+---
+
+### do-not-repeat/no-score-chasing-in-refine-loops — 2026-05-30
+
+**Type:** `do-not-repeat` | **Confidence:** 0.9 | **Facets:** swarm, adversarial-review, quality-gates
+
+**Do NOT optimize an artifact against a subjective 0-10 LLM score.** Verified failure 2026-05-30: `refine_to_target()` ran on an 8/10 desktop plan to push it toward 10. It made it WORSE — final 7/10, content halved (13.6k→6k chars), internal scores dropped each round (3.3→2.7→2.7, no convergence). Root cause: (1) the score is non-deterministic and lens-dependent — the same plan scored 8 holistically and 3.3 from harsh lenses, so there's no stable hill to climb; (2) "apply all 23 fixes" + "keep everything verbatim" are contradictory, so the brain compressed and lost detail; (3) open-ended critics always return 20+ fixes regardless of quality — no convergence target. This is adversarial collapse: optimizing hard against a critic degrades the artifact toward whatever superficially silences it.
+
+**Do instead:** Use a FIXED binary checklist (has-build-order: Y/N; every-step-is-a-code-change: Y/N; cites-grounded-count: Y/N). Revise ADDITIVELY/surgically — only add the missing checklist item, never regenerate. Measure success as checklist-items-passed, not an LLM score. Evidence: buglog #218.
+
+---
+
+### learning/runtime-render-gate-catches-what-typecheck-cant — 2026-05-30
+
+**Type:** `learning` | **Confidence:** 0.95 | **Facets:** desktop, quality-gates, vitest, render-loops
+
+A typecheck gate is NOT sufficient for core-render-path changes — the SessionNamePicker incident compiled clean and still infinite-looped at runtime. Built `runtime_render_gate()` in `shay-agent-os/components/swarm/pipeline.py`: writes a jsdom render smoke test, runs `vitest run` on it, FAILS if the render throws OR hangs. Two loop-detection paths: (a) "Maximum update depth" in output, (b) **subprocess timeout = hang = loop** (a render loop often hangs the runner rather than throwing). Proven 2026-05-30: clean component passes, infinite-loop component fails. Gotchas: vitest 4 removed `--reporter=basic` (don't use it); catch `subprocess.TimeoutExpired`, not just `RuntimeError`. This is gate #2 after typecheck for any UI build. buglog evidence in planning lessons.
+
+---
+
+### learning/surgical-edit-not-full-regen-for-existing-files — 2026-05-30
+
+**Type:** `do-not-repeat` | **Confidence:** 0.95 | **Facets:** swarm, code-edit, build
+
+To EDIT an existing file, use anchored surgical replacement (`surgical_patch()`), NOT full-file regeneration. Proven 2026-05-30: `multi_file_code_job` regenerating a 250-line App.tsx dropped braces every iteration (TS1005) and failed 4x → rolled back. Switching to `surgical_patch` (brain rewrites only the small anchored region) mounted two real screens (Soul, Models) into the core render path, FIRST try each, both gates green. Rule: new file → full generation is fine; existing file edit → surgical anchored edits. Both protected by the two-gate build (typecheck + runtime_render_gate).
+
+## Do-Not-Repeat (2026-05-31): 'done' = runs+reachable+looks-right+usable, NOT just compiles. The QA gate (npm run qa: runtime contract check + vision judge) + adversarial review must be REQUIRED loop gates, not hand-run. Confirm the target app/file before editing (space-vs-no-space trap). Never self-attest 'done' — require vision/reviewer/human signal. Verify generated code + .d.ts against runtime.
