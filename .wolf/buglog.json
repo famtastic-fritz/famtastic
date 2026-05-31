@@ -3895,5 +3895,186 @@
       "planning",
       "self-learning"
     ]
+  },
+  {
+    "id": 230,
+    "timestamp": "2026-05-30",
+    "error_message": "[planning] build_app: Create src/renderer/src/screens/AgentMonitor/index.tsx showi scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=[\"src/renderer/src/components/Sidebar.tsx(2,25): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.\"] render=None",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 231,
+    "timestamp": "2026-05-30",
+    "error_message": "[planning] build_app: Create Diagnostics screen showing system health; register ro scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=['shell exit 2: \\n> shay-desktop@0.4.3 typecheck:node\\n> tsc --noEmit -p tsconfig.node.json --composite false\\n\\n\\n> shay-desktop@0.4.3 typecheck:web\\n> tsc --noE",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 232,
+    "timestamp": "2026-05-31",
+    "error_message": "[planning] build_app: Promote Providers screen to live CRUD via keychain IPC. Type scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=[\"src/renderer/src/screens/Providers/index.tsx(193,6): error TS17008: JSX element 'div' has no corresponding closing tag.\", \"src/renderer/src/screens/Providers/in",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 233,
+    "timestamp": "2026-05-31",
+    "error_message": "[planning] build_app: Create CaptureInbox screen reading the Shay-Memory/inbox cap scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=[\"shell exit 2: \\n> shay-desktop@0.4.3 typecheck:node\\n> tsc --noEmit -p tsconfig.node.json --composite false\\n\\n\\n> shay-desktop@0.4.3 typecheck:web\\n> tsc --noE",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 234,
+    "timestamp": "2026-05-31",
+    "error_message": "[planning] build_app: Promote Providers screen to live CRUD via keychain IPC. Type scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=[\"src/renderer/src/screens/Providers/index.tsx(210,6): error TS17008: JSX element 'div' has no corresponding closing tag.\", 'src/renderer/src/screens/Providers/in",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 235,
+    "timestamp": "2026-05-31",
+    "error_message": "[planning] build_app: Create src/renderer/src/screens/AgentMonitor/index.tsx showi scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=[\"shell exit 2: \\n> shay-desktop@0.4.3 typecheck:node\\n> tsc --noEmit -p tsconfig.node.json --composite false\\n\\n\\n> shay-desktop@0.4.3 typecheck:web\\n> tsc --noE",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 236,
+    "timestamp": "2026-05-31",
+    "error_message": "[planning] build_app: Create Diagnostics screen showing system health; register ro scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=[\"shell exit 2: \\n> shay-desktop@0.4.3 typecheck:node\\n> tsc --noEmit -p tsconfig.node.json --composite false\\n\\n\\n> shay-desktop@0.4.3 typecheck:web\\n> tsc --noE",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 231,
+    "error_message": "Electron app: 'Unable to load preload script ... module not found: node:fs' \u2014 window.hermesAPI/shay never exposed at runtime",
+    "root_cause": "preload/domains.ts imports buildPreloadBindings (value) from main/domains/* which co-locate node:fs main-process code; electron-vite bundles node:fs into the sandboxed preload (sandbox:true), which cannot load it. Latent since the domains refactor (Desk Phase 5); undetected because nothing launched the real app \u2014 typecheck/build/jsdom all pass.",
+    "fix": "sandbox:false on main window (contextIsolation kept). TODO clean: split buildPreloadBindings into fs-free preload-safe modules, restore sandbox:true. Found by the Phase 2 Playwright electron launch smoke (.ralph/electron-smoke.mjs).",
+    "tags": [
+      "electron",
+      "preload",
+      "sandbox",
+      "node:fs",
+      "ipc-bridge",
+      "phase2"
+    ],
+    "date": "2026-05-31"
+  },
+  {
+    "id": 232,
+    "error_message": "window.hermesAPI undefined at runtime; renderer uses it 190x",
+    "root_cause": "preload exposeInMainWorld('hermes', hermesAPI) but renderer + index.d.ts reference window.hermesAPI. Naming mismatch \u2192 all 190 legacy IPC calls hit undefined.",
+    "fix": "Also expose under 'hermesAPI' key (dual-expose). Verified at runtime: window.hermesAPI=object, 35 methods. Found by Phase 2 launch smoke.",
+    "tags": [
+      "electron",
+      "preload",
+      "hermesAPI",
+      "ipc",
+      "phase2",
+      "runtime"
+    ],
+    "date": "2026-05-31"
+  },
+  {
+    "id": 233,
+    "timestamp": "2026-05-31",
+    "error_message": "[planning] build_app: Create src/renderer/src/screens/AgentMonitor/index.tsx showi scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=['could not derive anchored edits after 3 tries; last raw[:160]=\\'{\"edits\":[{\"anchor\":\"import { useEffect, useState } from \\\\\\'react\\\\\\'\\\\\\\\n\\\\\\\\ninterface AgentH",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 234,
+    "timestamp": "2026-05-31",
+    "error_message": "[planning] build_app: Create Diagnostics screen showing system health; register ro scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=['could not derive anchored edits after 3 tries; last raw[:160]=\\'{\"edits\":[{\"anchor\":\"import { useEffect, useState } from \\\\\\'react\\\\\\'\\\\\\\\n\\\\\\\\ninterface Diagno",
+    "file": "planning",
+    "root_cause": "typecheck: cross-file contract or a runtime render issue the brain couldn't resolve",
+    "fix": "narrow the manifest, add grounded context, or split into smaller builds",
+    "tags": [
+      "build-app",
+      "multi-file",
+      "typecheck",
+      "planning",
+      "self-learning"
+    ]
+  },
+  {
+    "id": 233,
+    "error_message": "Desktop runtime: window.hermesAPI.onChatChunk/listModels 'is not a function' \u2014 many IPC methods typed but not implemented",
+    "root_cause": "index.d.ts declares ~140 HermesAPI methods (the contract the renderer + all screens trust) but the preload implements ~92 keys, ~35 resolve at runtime. The typed interface is AHEAD of the implementation. typecheck passes (types claim the methods exist); jsdom render-gate passes (Proxy stub answers any method); only a real Electron launch exposes it. So '20/20 screens' compile+build+boot but are NOT functional \u2014 they call IPC methods that don't exist.",
+    "fix": "PENDING (big): implement the missing IPC methods (main-process handler + preload binding per method), OR trim the .d.ts to the real surface and update screens. Quantify the gap (140 typed - implemented) and prioritize the methods the core screens use (chat streaming onChatChunk, listModels, etc.). This is the real 'scaffolded vs functional' gap. Add a runtime contract-check test (launch app, assert every typed method is actually a function) so the .d.ts can't drift ahead of impl again.",
+    "tags": [
+      "electron",
+      "preload",
+      "ipc",
+      "typed-vs-implemented",
+      "runtime",
+      "scaffolded-not-functional",
+      "phase2"
+    ],
+    "date": "2026-05-31"
   }
 ]
