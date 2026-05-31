@@ -1,0 +1,225 @@
+================================================================================
+AGENT C — DASHBOARD SHELL BUILD LOG
+================================================================================
+Session: 2026-05-27 19:33 UTC
+Agent: C (dashboard shell + AGENTS.md)
+Task: Build React dashboard shell (dark theme, three-pane) and cross-agent context
+================================================================================
+
+[19:33:00] START — Received task from parent agent
+[19:33:01] DISCOVER — Exploring workspace structure
+  - Found: ~/famtastic/shay-agent-os/ (exists)
+  - Found: rowboat-base/ (forked Rowboat)
+  - Found: state/build-state.json (version 1, phase: parallel_construction)
+  - Found: logs/ directory
+  - dashboard_shell status: in_progress, agent: C
+
+[19:33:05] ANALYZE — Rowboat renderer structure
+  - Path: rowboat-base/apps/x/apps/renderer/src/
+  - Stack: Electron + React 19 + Vite 7 + TailwindCSS v4
+  - Patterns observed:
+    * Tailwind v4: @import "tailwindcss" in index.css
+    * cn() utility: clsx + tailwind-merge
+    * Lucide React for icons
+    * Zustand-like state via contexts (we'll use Zustand directly)
+  - Decision: Build standalone Vite+React in components/dashboard/ for now,
+    integrate with Rowboat renderer later.
+
+[19:33:15] PLAN — File structure for dashboard
+  components/dashboard/
+  ├── package.json
+  ├── vite.config.ts
+  ├── tsconfig.json
+  ├── index.html
+  ├── public/vite.svg
+  └── src/
+      ├── main.tsx
+      ├── App.tsx
+      ├── index.css
+      ├── lib/
+      │   └── utils.ts (cn utility)
+      ├── hooks/
+      │   └── useDashboardStore.ts (Zustand store)
+      └── components/
+          ├── Sidebar.tsx
+          ├── Workspace.tsx
+          ├── ActivityPanel.tsx
+          └── CommandBar.tsx
+
+[19:33:20] CREATE — package.json
+  - Dependencies: react@19.2.0, react-dom@19.2.0, lucide-react@0.562.0,
+    clsx, tailwind-merge, class-variance-authority, zustand
+  - Dev deps: @vitejs/plugin-react, tailwindcss@4.1.18, @tailwindcss/vite,
+    typescript, vite@6.3.0
+
+[19:33:22] CREATE — vite.config.ts
+  - Plugins: react(), tailwindcss()
+  - Alias: @ -> ./src
+  - Server port: 5174
+
+[19:33:24] CREATE — tsconfig.json
+  - Target: ES2020, module: ESNext, jsx: react-jsx
+  - Path mapping: @/* -> ./src/*
+
+[19:33:26] CREATE — index.html
+  - Dark mode class on html element
+  - Title: "Shay Agent OS — Dashboard"
+
+[19:33:28] CREATE — src/main.tsx
+  - StrictMode wrapper
+  - createRoot render to #root
+
+[19:33:30] CREATE — src/index.css
+  - @import "tailwindcss"
+  - Custom theme colors: slate-950 through slate-300, zinc-100 through zinc-900,
+    emerald, amber, red, blue, violet, cyan scales
+  - Global styles: html/body/#root height 100%, dark bg, scrollbar styling
+
+[19:33:32] CREATE — src/lib/utils.ts
+  - cn() function: twMerge(clsx(...inputs))
+
+[19:33:35] CREATE — src/hooks/useDashboardStore.ts
+  - Zustand store with full typing
+  - Types: AgentStatus, TrustMode, EventSeverity, Agent, ActivityEvent, Task, SystemMetrics
+  - Initial seed data:
+    * 4 agents (1 orchestrator, 3 workers) with realistic statuses
+    * 5 initial activity events
+    * 3 initial tasks (running, pending, completed)
+    * Metrics: CPU 34%, Memory 62%, 3 active agents, 1 queued, 12 evt/min
+  - Actions: setTrustMode, setSelectedAgentId, setCommandInput, setGoalInput,
+    addEvent, addTask, updateTask, updateAgent, executeCommand
+  - Command handlers:
+    * /goal <title> -> creates pending task
+    * /subgoal <title> -> creates pending task
+    * /trust <mode> -> sets trust mode (supervised/autonomous/locked)
+    * /status -> logs agent/task summary
+
+[19:33:45] CREATE — src/components/Sidebar.tsx
+  - Left sidebar, 72rem width (w-72)
+  - Header: "SHAY AGENT OS" with Activity icon
+  - Agent list split into Orchestrators and Workers sections
+  - AgentCard sub-component showing:
+    * Status dot (idle=green, busy=blue pulsing, error=red, offline=gray)
+    * Status badge (small uppercase label)
+    * Name, role icon, model name
+    * Current task (if any)
+    * Last heartbeat relative time
+    * Tasks completed (green) / failed (red) counts
+  - Click to select agent (highlighted with blue border)
+  - Trust Mode selector at bottom:
+    * Supervised (Shield icon) — Human approval required
+    * Autonomous (Zap icon) — Agents act independently
+    * Locked (Layers icon) — All actions paused
+  - Footer: version v0.1.0, online agent count
+
+[19:33:55] CREATE — src/components/Workspace.tsx
+  - Center pane, flex-1
+  - Goal Input section:
+    * Text input with placeholder
+    * Submit button (blue, disabled when empty)
+    * Enter key support
+    * Shows selected agent name below input
+  - Tab bar: "Active Tasks" / "Results"
+  - Task counters: running, pending, done, failed
+  - TaskItem sub-component with:
+    * Status icon (pending circle, running spinner, completed check, failed x)
+    * Title, status label, agent ID, result preview
+    * Creation time
+  - Results tab shows completed tasks with result text in monospace block
+  - Empty states for both tabs
+
+[19:34:05] CREATE — src/components/ActivityPanel.tsx
+  - Right sidebar, 80rem width (w-80)
+  - Header: "Activity Feed" with event count
+  - EventRow sub-component showing:
+    * Severity icon (info=blue, success=green, warn=amber, error=red)
+    * Type icon (heartbeat=heart, task=zap/check/alert, command=terminal, etc.)
+    * Timestamp (HH:MM:SS)
+    * Agent ID (if applicable)
+    * Message with severity-colored text
+  - System Metrics section at bottom:
+    * CPU and Memory progress bars
+    * 3 metric cards: Agents, Queued, Evt/min
+    * Footer: "System healthy", "Redis: connected"
+
+[19:34:15] CREATE — src/components/CommandBar.tsx
+  - Bottom bar, border-t, backdrop blur
+  - Command icon + input field
+  - Auto-suggestion dropdown when typing /commands:
+    * /goal — Create a new goal
+    * /subgoal — Create a sub-goal
+    * /trust — Set trust mode
+    * /status — Show system status
+  - Run button (blue when active)
+  - Ctrl+K shortcut to focus input
+  - Keyboard shortcut hint
+
+[19:34:20] CREATE — src/App.tsx
+  - Three-pane layout: Sidebar | Workspace+CommandBar | ActivityPanel
+  - Full viewport height, no overflow
+
+[19:34:22] CREATE — public/vite.svg
+  - Simple SVG placeholder for favicon
+
+[19:34:25] INSTALL — npm install in components/dashboard/
+  - Result: 86 packages installed, 0 vulnerabilities
+
+[19:34:35] BUILD — npm run build
+  - tsc -b: PASSED (no type errors)
+  - vite build: PASSED
+  - Output:
+    * dist/index.html (0.49 kB)
+    * dist/assets/index-BIaaCWwU.css (22.56 kB)
+    * dist/assets/index-DKWXK3AU.js (254.52 kB)
+  - Build time: 673ms
+
+[19:34:40] CREATE — ~/famtastic/shay-agent-os/AGENTS.md
+  - Sections:
+    * System Architecture (diagram + directory layout)
+    * Component Locations (dashboard + rowboat base details)
+    * API Endpoints (planned REST + WebSocket)
+    * Config Files (table of key files)
+    * Trust Mode Rules (supervised/autonomous/locked definitions)
+    * How to Resume a Failed Build (7-step process)
+    * Agent Coordination Notes (check-in paused, plan closeout rules)
+    * Local LLM Models (Ollama model table)
+    * Quick Commands (bash snippets)
+
+[19:34:45] UPDATE — state/build-state.json
+  - dashboard_shell: status "in_progress" -> "complete"
+  - Added: completed_at, path, stack, components_built[], build_result{}
+  - Updated: last_updated timestamp
+
+[19:34:50] VERIFY — File inventory
+  - components/dashboard/package.json: EXISTS (675 bytes)
+  - components/dashboard/vite.config.ts: EXISTS (348 bytes)
+  - components/dashboard/tsconfig.json: EXISTS (576 bytes)
+  - components/dashboard/index.html: EXISTS (389 bytes)
+  - components/dashboard/public/vite.svg: EXISTS
+  - components/dashboard/src/main.tsx: EXISTS (230 bytes)
+  - components/dashboard/src/App.tsx: EXISTS (512 bytes)
+  - components/dashboard/src/index.css: EXISTS (1537 bytes)
+  - components/dashboard/src/lib/utils.ts: EXISTS (166 bytes)
+  - components/dashboard/src/hooks/useDashboardStore.ts: EXISTS (7201 bytes)
+  - components/dashboard/src/components/Sidebar.tsx: EXISTS (7189 bytes)
+  - components/dashboard/src/components/Workspace.tsx: EXISTS (8443 bytes)
+  - components/dashboard/src/components/ActivityPanel.tsx: EXISTS (5785 bytes)
+  - components/dashboard/src/components/CommandBar.tsx: EXISTS (3722 bytes)
+  - components/dashboard/dist/: EXISTS (3 files, build artifacts)
+  - AGENTS.md: EXISTS (5621 bytes)
+  - state/build-state.json: UPDATED
+
+[19:34:55] SUMMARY — All deliverables complete
+  - Dashboard shell: REAL React components, not stubs
+  - Three-pane layout: Sidebar | Workspace | ActivityPanel
+  - Dark theme: slate-950 bg, zinc-100 text, Tailwind v4
+  - Command bar: /goal, /subgoal, /trust, /status with autocomplete
+  - Agent cards: name, model, status, heartbeat, task counts
+  - Activity feed: timestamps, types, severity, system metrics
+  - AGENTS.md: Cross-agent context with architecture, APIs, trust rules, recovery
+  - Build state: Updated under components.dashboard_shell
+  - Build verified: tsc + vite both passed, zero errors
+
+================================================================================
+END OF LOG
+================================================================================

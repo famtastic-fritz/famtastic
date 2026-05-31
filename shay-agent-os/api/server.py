@@ -1,0 +1,143 @@
+"""
+api/server.py — FastAPI server connecting dashboard to swarm orchestrator.
+Port: 8643
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import os
+import sys
+from contextlib import asynccontextmanager
+from typing import Any, Dict, List, Optional
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+
+# Ensure components/swarm is on path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from components.swarm import SwarmOrchestrator
+
+logger = logging.getLogger("api.server")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+)
+
+# Global orchestrator instance
+_orch: Optional[SwarmOrchestrator] = None
+
+
+def get_orchestrator() -> SwarmOrchestrator:
+    global _orch
+    if _orch is None:
+        _orch = SwarmOrchestrator(num_workers=3, log_level="INFO")
+        _orch.start()
+        logger.info("SwarmOrchestrator started via API server")
+    return _orch
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    get_orchestrator()
+    yield
+    if _orch is not None:
+        _orch.stop()
+        logger.info("SwarmOrchestrator stopped")
+
+
+app = FastAPI(
+    title="Shay Agent OS API",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5174", "http://127.0.0.1:5174"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ------------------------------------------------------------------
+# Import routes
+# ------------------------------------------------------------------
+from api.routes import agents, tasks, events, trust
+
+app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
+app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
+app.include_router(events.router, prefix="/api/events", tags=["events"])
+app.include_router(trust.router, prefix="/api/trust", tags=["trust"])
+
+
+# ------------------------------------------------------------------
+# Health & root
+# ------------------------------------------------------------------
+
+@app.get("/api/health")
+async def health() -> Dict[str, Any]:
+    orch = get_orchestrator()
+    return orch.health()
+
+
+@app.get("/api/status")
+async def status() -> Dict[str, Any]:
+    orch = get_orchestrator()
+    return {"report": orch.status_report()}
+
+
+@app.post("/api/heartbeat")
+async def heartbeat(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Receive agent heartbeat."""
+    agent_id = payload.get("agent_id", "unknown")
+    logger.info(f"Heartbeat from {agent_id}")
+    return {"received": True, "agent_id": agent_id, "timestamp": asyncio.get_event_loop().time()}
+
+
+# ------------------------------------------------------------------
+# WebSocket event stream
+# ------------------------------------------------------------------
+
+_connected_websockets: List[WebSocket] = []
+
+
+@app.websocket("/ws/events")
+async def websocket_events(websocket: WebSocket):
+    await websocket.accept()
+    _connected_websockets.append(websocket)
+    logger.info(f"WebSocket client connected. Total: {len(_connected_websockets)}")
+    try:
+        while True:
+            data = await websocket.receive_text()
+            msg = json.loads(data)
+            # Echo back or handle subscription
+            await websocket.send_json({"type": "ack", "received": msg})
+    except WebSocketDisconnect:
+        _connected_websockets.remove(websocket)
+        logger.info(f"WebSocket client disconnected. Total: {len(_connected_websockets)}")
+    except Exception as exc:
+        logger.error(f"WebSocket error: {exc}")
+        if websocket in _connected_websockets:
+            _connected_websockets.remove(websocket)
+
+
+async def broadcast_event(event: Dict[str, Any]) -> None:
+    """Broadcast an event to all connected WebSocket clients."""
+    dead = []
+    for ws in _connected_websockets:
+        try:
+            await ws.send_json(event)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        if ws in _connected_websockets:
+            _connected_websockets.remove(ws)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8643)

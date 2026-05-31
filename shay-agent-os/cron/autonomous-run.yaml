@@ -1,0 +1,35 @@
+# Autonomous run cron configuration for Agent OS
+# This file documents cron setup options. It is NOT a valid standalone YAML
+# for automatic parsing — use the snippets below for your scheduler.
+
+# --- Shay-Shay cron ---
+# schedule: "every 5m"
+# script: "~/famtastic/shay-agent-os/cron/run-autonomous-check.sh"
+
+# --- System crontab ---
+# */5 * * * * cd /Users/famtasticfritz/famtastic/shay-agent-os && /usr/bin/python3 -m reporter.heartbeat >> ~/famtastic/logs/cron-heartbeat.log 2>&1
+
+# --- launchd plist (macOS) ---
+# Save to: ~/Library/LaunchAgents/com.famtastic.agent-os.autonomous.plist
+# <?xml version="1.0" encoding="UTF-8"?>
+# <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+# <plist version="1.0">
+# <dict>
+#     <key>Label</key>
+#     <string>com.famtastic.agent-os.autonomous</string>
+#     <key>ProgramArguments</key>
+#     <array>
+#         <string>/usr/bin/python3</string>
+#         <string>-m</string>
+#         <string>reporter.heartbeat</string>
+#     </array>
+#     <key>WorkingDirectory</key>
+#     <string>/Users/famtasticfritz/famtastic/shay-agent-os</string>
+#     <key>StartInterval</key>
+#     <integer>300</integer>
+#     <key>StandardOutPath</key>
+#     <string>/Users/famtasticfritz/famtastic/logs/cron-heartbeat.log</string>
+#     <key>StandardErrorPath</key>
+#     <string>/Users/famtasticfritz/famtastic/logs/cron-heartbeat-error.log</string>
+# </dict>
+# </plist>

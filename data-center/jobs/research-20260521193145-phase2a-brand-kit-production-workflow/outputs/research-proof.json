@@ -1,0 +1,118 @@
+{
+  "job_id": "research-20260521193145-phase2a-brand-kit-production-workflow",
+  "ok": true,
+  "vertical": "brand-media",
+  "question": "brand identity production workflow for logo systems brand kit deliverables vector lockups usage guidelines 2026",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 10,
+  "search_result_count": 10,
+  "usage": {
+    "prompt_tokens": 40,
+    "completion_tokens": 1105,
+    "total_tokens": 1145,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00004,
+      "output_tokens_cost": 0.0011,
+      "request_cost": 0.005,
+      "total_cost": 0.00615
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://vocal.media/journal/how-to-build-a-brand-identity-in-2026",
+    "https://www.youtube.com/watch?v=oQn8zak4TU0",
+    "https://www.youtube.com/watch?v=y_2P5o_msuo",
+    "https://www.youtube.com/watch?v=PZ2ms2u4dhI",
+    "https://robizsolutions.com/what-is-brand-identity-why-your-business-needs-one-2026/",
+    "https://ignitecorpp.com/agency-brand-identity/",
+    "https://madebythings.com/2026-the-year-of-solidifying-brand-identity/",
+    "https://the-brandidentity.com",
+    "https://www.not.studio/monitor/fashion-creative-agencies-in-2026",
+    "https://www.logomaker.com/blog/branding-trends/"
+  ],
+  "search_results": [
+    {
+      "title": "How to Build a Brand Identity in 2026 | Journal - Vocal Media",
+      "url": "https://vocal.media/journal/how-to-build-a-brand-identity-in-2026",
+      "date": "2026-04-21",
+      "last_updated": "2026-05-21",
+      "snippet": "This step-by-step process typically takes 4–12 weeks depending on scope but delivers a professional brand identity system that scales.",
+      "source": "web"
+    },
+    {
+      "title": "How To ACTUALLY Design a Brand Identity (FULL Process 2026)",
+      "url": "https://www.youtube.com/watch?v=oQn8zak4TU0",
+      "date": "2026-01-04",
+      "last_updated": "2026-01-05",
+      "snippet": "Feeling stuck trying to make money as a freelance graphic designer? Get your FREE TICKET to Your First 10K Month LIVE MASTERCLASS: ...",
+      "source": "web"
+    },
+    {
+      "title": "How To ACTUALLY Design a Brand Identity (Full Guide 2026)",
+      "url": "https://www.youtube.com/watch?v=y_2P5o_msuo",
+      "date": "2025-01-17",
+      "last_updated": "2026-04-30",
+      "snippet": "... process 11:59 S3: Create a brand with me 27:29 S4: How to reverse engineer designs 29:30 S5: How to get clients 30:55 S6: How to steal my",
+      "source": "web"
+    },
+    {
+      "title": "Brand Design: Deep Dive Process 2026 - YouTube",
+      "url": "https://www.youtube.com/watch?v=PZ2ms2u4dhI",
+      "date": "2026-04-14",
+      "last_updated": "2026-05-21",
+      "snippet": "Sponsored by Freshbooks! Click for 90% off! https://freshbooks.com/willpaterson In this video I walk through my brand design workflow.",
+      "source": "web"
+    },
+    {
+      "title": "Brand Identity and Why Does Your Business Need One in 2026?",
+      "url": "https://robizsolutions.com/what-is-brand-identity-why-your-business-needs-one-2026/",
+      "date": "2026-04-21",
+      "last_updated": "2026-05-18",
+      "snippet": "Brand identity is more than a logo, it's the complete system of visuals, language, and values that makes your business recognizable.",
+      "source": "web"
+    },
+    {
+      "title": "Brand Building in 2026: Tips for a Stronger Agency Brand Identity",
+      "url": "https://ignitecorpp.com/agency-brand-identity/",
+      "date": "2025-07-26",
+      "last_updated": "2025-09-30",
+      "snippet": "Welcome to the comprehensive guide on branding simplified. We will walk you through the ins and outs of an agency brand identity.",
+      "source": "web"
+    },
+    {
+      "title": "2026: The Year of Solidifying Brand Identity - Made By Things",
+      "url": "https://madebythings.com/2026-the-year-of-solidifying-brand-identity/",
+      "date": "2026-01-28",
+      "last_updated": "2026-02-03",
+      "snippet": "When a brand doesn't have the means to produce a larger campaign, it can be more worthwhile to maintain a strong voice through simpler means – ...",
+      "source": "web"
+    },
+    {
+      "title": "The Brand Identity – Home of the Greatest in Graphic & Brand Design",
+      "url": "https://the-brandidentity.com",
+      "date": "2021-08-02",
+      "last_updated": "2025-07-25",
+      "snippet": "A curated platform for the world's best brand and graphic design, since 2015. Read case studies and interviews, shop premium design assets, and find your ...",
+      "source": "web"
+    },
+    {
+      "title": "Fashion Creative Agencies in 2026 — The Insider Guide - Not Studio",
+      "url": "https://www.not.studio/monitor/fashion-creative-agencies-in-2026",
+      "date": "2026-01-24",
+      "last_updated": "2026-05-21",
+      "snippet": "A Definitive Guide to Identity, Content & ECommerce Agencies for Fashion Brands. In 2026, fashion creativity no longer lives in silos.",
+      "source": "web"
+    },
+    {
+      "title": "10 Branding Trends for 2026 That Will Redefine Brand Identity",
+      "url": "https://www.logomaker.com/blog/branding-trends/",
+      "date": "2026-01-29",
+      "snippet": "Screens dominate every first impression. Motion always beats static images. AI systems accelerate every part of the process. Consumer ...",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "Here’s a practical **2026 brand identity production workflow** for the **brand/media industry**, focused on **logo systems, brand kit deliverables, vector lockups, and usage guidelines**.\n\n## 1) Start with strategy, not visuals\nBefore design, lock:\n- **Brand purpose**\n- **Audience segments**\n- **Positioning / differentiation**\n- **Personality / tone**\n- **Primary use cases**: web, social, print, motion, packaging, OOH\n\nThis prevents logo systems that look good but fail in real production.\n\n## 2) Build the logo system as a system\nDeliver a **logo suite**, not a single mark:\n- Primary logo\n- Horizontal lockup\n- Stacked lockup\n- Icon / symbol\n- Wordmark only\n- One-color versions\n- Reverse/light-on-dark versions\n- Micro-size simplified mark if needed\n\n### Production notes\n- Create in **vector** first: **AI, EPS, SVG, PDF**\n- Define **clear space**\n- Define **minimum size**\n- Test for:\n  - favicon/app icon\n  - social avatar\n  - mobile header\n  - print at small scale\n  - embroidery / merch /"
+}

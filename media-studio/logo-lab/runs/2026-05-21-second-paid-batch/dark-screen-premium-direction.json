@@ -1,0 +1,30 @@
+{
+  "id": "46ac0942-a337-4a34-a5d5-60edd3544da7",
+  "inputs": {
+    "prompt": "Create a premium dark-screen FAMtastic logo for a creative AI studio ecosystem. Correct spelling: FAMtastic. Keep playful FAM energy and green burst influence, but make it feel elevated, cinematic, glassy, confident, and suitable for a black elegant app interface. Bold readable FAM, refined “tastic”, strong app-header presence, not generic startup, not childish.",
+    "aspect_ratio": "1:1",
+    "num_images": 1
+  },
+  "outputs": [
+    "https://cdn.muapi.ai/outputs/b1d69568b4c0455dbf6cde561bc66c09.png"
+  ],
+  "urls": {
+    "get": "https://api.muapi.ai/api/v1/predictions/46ac0942-a337-4a34-a5d5-60edd3544da7/result"
+  },
+  "has_nsfw_contents": [
+    false
+  ],
+  "status": "completed",
+  "created_at": "2026-05-21T19:53:03.326372+00:00",
+  "error": "",
+  "executionTime": 52948.456999999995,
+  "timings": {
+    "inference": 52948.456999999995
+  },
+  "cost": {
+    "amount_usd": 0.04,
+    "amount_credits": 3,
+    "bonus_credits_used": 0,
+    "refunded": false
+  }
+}

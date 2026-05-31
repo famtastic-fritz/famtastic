@@ -1,0 +1,106 @@
+{
+  "job_id": "research-20260521193210-phase2a-react-brand-animation-ui",
+  "ok": true,
+  "vertical": "brand-media",
+  "question": "React animation UI patterns for premium brand studios motion design Framer Motion interface workflow",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 9,
+  "search_result_count": 9,
+  "usage": {
+    "prompt_tokens": 36,
+    "completion_tokens": 714,
+    "total_tokens": 750,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00004,
+      "output_tokens_cost": 0.00071,
+      "request_cost": 0.005,
+      "total_cost": 0.00575
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://www.syncfusion.com/blogs/post/top-react-animation-libraries",
+    "https://magicui.design/blog/react-animation-libraries",
+    "https://www.youtube.com/watch?v=5Fv6WfpVSI4",
+    "https://dev.to/themeselection/10-trending-animated-ui-component-libraries-4joe",
+    "https://www.youtube.com/watch?v=9-fO_2xTpgY",
+    "https://animate-ui.com",
+    "https://search.muz.li/MDYyYjE1NTA0",
+    "https://motion.dev",
+    "https://ui.aceternity.com/components"
+  ],
+  "search_results": [
+    {
+      "title": "Top 7 React Animation Libraries for Enterprise Apps in 2026",
+      "url": "https://www.syncfusion.com/blogs/post/top-react-animation-libraries",
+      "date": "2026-05-04",
+      "last_updated": "2026-05-15",
+      "snippet": "An enterprise-focused, experience-driven comparison of React animation libraries based on performance, scalability, and maintainability.",
+      "source": "web"
+    },
+    {
+      "title": "13 Awesome React Animation Libraries To Elevate Your Design ...",
+      "url": "https://magicui.design/blog/react-animation-libraries",
+      "date": "2024-06-20",
+      "last_updated": "2026-05-21",
+      "snippet": "Boost your design projects with the latest React animation libraries. Create eye-catching designs from simple animations to complex effects.",
+      "source": "web"
+    },
+    {
+      "title": "TOP Animation Libraries for React Developers in 2025! - YouTube",
+      "url": "https://www.youtube.com/watch?v=5Fv6WfpVSI4",
+      "date": "2025-04-30",
+      "last_updated": "2026-04-08",
+      "snippet": "In this video, we'll cover 3 best animation libraries for React developers in 2025. Whether you're building complex UI interactions or ...",
+      "source": "web"
+    },
+    {
+      "title": "10+ Trending Animated UI Component Libraries - DEV Community",
+      "url": "https://dev.to/themeselection/10-trending-animated-ui-component-libraries-4joe",
+      "date": "2024-11-06",
+      "last_updated": "2026-05-21",
+      "snippet": "LunarUI is a premium component library that provides a collection of interactive and animated TailwindCSS components built for React JS and Vue ...",
+      "source": "web"
+    },
+    {
+      "title": "React Animation Course with Motion - YouTube",
+      "url": "https://www.youtube.com/watch?v=9-fO_2xTpgY",
+      "date": "2025-12-09",
+      "last_updated": "2026-05-21",
+      "snippet": "... company/pedrotech) Business Email: pedro@pedrotech.co Timestamps ... React Animation Course with Motion - Become an Animations Pro in 1 Hour.",
+      "source": "web"
+    },
+    {
+      "title": "Animate UI - Animated React Components",
+      "url": "https://animate-ui.com",
+      "last_updated": "2025-08-30",
+      "snippet": "A fully animated, open-source React component distribution. Browse a list of animated primitives, components and icons you can install and use in your projects.",
+      "source": "web"
+    },
+    {
+      "title": "FutureUI - Premium Animated React Components for the modern Web",
+      "url": "https://search.muz.li/MDYyYjE1NTA0",
+      "snippet": "Build stunning UIs with handcrafted animated React components. Premium carousels, 3D cards, particle effects, WebGL shaders, and interactive UI blocks.",
+      "source": "web"
+    },
+    {
+      "title": "Motion: JavaScript & React animation library",
+      "url": "https://motion.dev",
+      "date": "2026-03-05",
+      "last_updated": "2026-05-21",
+      "snippet": "Motion (prev Framer Motion) is a fast, production-grade animation library for React, JavaScript and Vue. Build smooth UI animations at a tiny footprint.",
+      "source": "web"
+    },
+    {
+      "title": "Free React & Next.js Components | Aceternity UI",
+      "url": "https://ui.aceternity.com/components",
+      "last_updated": "2026-05-17",
+      "snippet": "200+ free, copy-paste components for React and Next.js. Animated cards, hero sections, backgrounds, and more. Built with Tailwind CSS and Framer Motion.",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "For **premium brand studio** interfaces in React, the strongest animation approach is usually:\n\n## Best-fit patterns\n1. **Micro-interactions**\n   - Button hover/press states\n   - Card lift, focus rings, icon feedback\n   - Form validation and tooltip transitions  \n   **Why:** polished without distracting from the brand content.\n\n2. **Editorial page transitions**\n   - Hero reveal, section fade/slide, staggered text\n   - Route transitions between case studies or campaign pages  \n   **Why:** feels high-end and cinematic.\n\n3. **Content choreography**\n   - Staggered grids, image + copy sequencing, scroll-triggered reveals\n   - Animated composition for portfolios and launches  \n   **Why:** ideal for brand/storytelling sites.\n\n4. **Gesture-driven UI**\n   - Drag galleries, image carousels, interactive cards  \n   **Why:** adds “crafted” feel on premium experiences.\n\n## Recommended library stack\n- **Motion (Framer Motion)** for most premium React UI animation work  \n  Best for: page transitions, "
+}

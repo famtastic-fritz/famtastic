@@ -1,0 +1,98 @@
+{
+  "job_id": "research-20260521193200-phase2a-media-studio-ux",
+  "ok": true,
+  "vertical": "brand-media",
+  "question": "best UX patterns for AI media generation studio prompt history variant comparison asset management workflow",
+  "source": "perplexity",
+  "fromCache": false,
+  "stale": false,
+  "citation_count": 8,
+  "search_result_count": 8,
+  "usage": {
+    "prompt_tokens": 36,
+    "completion_tokens": 948,
+    "total_tokens": 984,
+    "search_context_size": "low",
+    "cost": {
+      "input_tokens_cost": 0.00004,
+      "output_tokens_cost": 0.00095,
+      "request_cost": 0.005,
+      "total_cost": 0.00598
+    }
+  },
+  "cost": null,
+  "citations": [
+    "https://blog.logrocket.com/ux-design/ai-driven-ux-design-patterns/",
+    "https://www.shapeof.ai",
+    "https://www.youtube.com/watch?v=11ixIV656X0",
+    "https://uxdesign.cc/designing-for-ai-engineers-what-ui-patterns-and-principles-you-need-to-know-8b16a5b62a61",
+    "https://www.sparkfabrik.com/en/blog/ui-ux-ai-tools-for-designers/",
+    "https://a16z.com/how-generative-ai-is-remaking-ui-ux-design/",
+    "https://medium.muz.li/the-8-top-ai-tools-i-actually-use-in-my-ux-design-workflow-2026-8223a201753d",
+    "https://uxpilot.ai"
+  ],
+  "search_results": [
+    {
+      "title": "How to design AI features that actually improve user experience",
+      "url": "https://blog.logrocket.com/ux-design/ai-driven-ux-design-patterns/",
+      "date": "2026-01-14",
+      "last_updated": "2026-05-18",
+      "snippet": "Learn how to integrate AI into UX the right way. This guide breaks down five AI-UX design patterns, real examples, common pitfalls, ...",
+      "source": "web"
+    },
+    {
+      "title": "The Shape of AI | UX Patterns for Artificial Intelligence Design",
+      "url": "https://www.shapeof.ai",
+      "last_updated": "2026-03-13",
+      "snippet": "Exploring how User Experience will evolve with the growth of Artificial Intelligence. · Wayfinders · Inputs · Tuners · Governors · Trust builders · Identifiers ...",
+      "source": "web"
+    },
+    {
+      "title": "New UX/UI Tools You Need to Try! + AI Design Tools - YouTube",
+      "url": "https://www.youtube.com/watch?v=11ixIV656X0",
+      "date": "2025-11-03",
+      "last_updated": "2026-05-17",
+      "snippet": "Today we're looking at some amazing new UX/UI design tools that you must try. These also include some exciting AI design tools, ...",
+      "source": "web"
+    },
+    {
+      "title": "Designing for AI Engineers: UI patterns you need to know",
+      "url": "https://uxdesign.cc/designing-for-ai-engineers-what-ui-patterns-and-principles-you-need-to-know-8b16a5b62a61",
+      "date": "2025-02-09",
+      "last_updated": "2025-06-01",
+      "snippet": "A reference article with guiding principles, patterns, and personas to help designers become more AI literate.",
+      "source": "web"
+    },
+    {
+      "title": "10 AI Tools for UI/UX that are redefining design | SparkFabrik",
+      "url": "https://www.sparkfabrik.com/en/blog/ui-ux-ai-tools-for-designers/",
+      "date": "2025-10-22",
+      "last_updated": "2026-05-20",
+      "snippet": "A curated overview of 10 AI tools for UI/UX designers, from big players (Figma AI, Adobe Firefly, Google Workspace AI, Microsoft Copilot) to ...",
+      "source": "web"
+    },
+    {
+      "title": "How Generative AI Is Remaking UI/UX Design | Andreessen Horowitz",
+      "url": "https://a16z.com/how-generative-ai-is-remaking-ui-ux-design/",
+      "date": "2024-05-14",
+      "last_updated": "2026-05-14",
+      "snippet": "There are great examples like Tailwind, Chakra UI, and other framework-specific, well-made templates on the internet, and the generated result ...",
+      "source": "web"
+    },
+    {
+      "title": "The 8 Top AI Tools I Actually Use in My UX Design Workflow (2026)",
+      "url": "https://medium.muz.li/the-8-top-ai-tools-i-actually-use-in-my-ux-design-workflow-2026-8223a201753d",
+      "date": "2026-02-10",
+      "snippet": "Dovetail handles transcription and allows me to tag and cluster insights across conversations, making it easier to identify patterns and ...",
+      "source": "web"
+    },
+    {
+      "title": "UX Pilot - Superfast UX/UI Design with AI",
+      "url": "https://uxpilot.ai",
+      "last_updated": "2026-05-20",
+      "snippet": "Generate Wireframes and UI Designs with the most flexible AI model. Design & Ship faster your products with AI.",
+      "source": "web"
+    }
+  ],
+  "answer_excerpt": "For a **brand/media AI generation studio** (prompting, history, variant comparison, asset management), the best UX patterns are:\n\n## 1) Prompt builder with guardrails\nMake the first prompt easy, but structured.\n- Use **guided inputs** for subject, style, format, brand, audience, aspect ratio, and usage rights.\n- Offer **prompt chips** for common intents: “social ad,” “hero image,” “product cutout,” “campaign variant.”\n- Include **constraints** and **defaults** so users don’t start from a blank page.\n\nWhy it helps: reduces prompt failure and speeds up novice users.  \nSource: Shape of AI patterns around **Inputs**, **Parameters**, and **Caveat/Consent** [2].\n\n## 2) Variant gallery as the primary workspace\nDon’t hide generated outputs in a modal or feed.\n- Show results in a **grid of comparable variants**.\n- Let users **sort/filter by style, performance, status, or model**.\n- Support **side-by-side compare** and “make more like this.”\n\nWhy it helps: AI work is iterative; designers need fa"
+}

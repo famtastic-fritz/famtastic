@@ -1,0 +1,30 @@
+{
+  "id": "d099ea75-9450-462e-bee2-adec9f359806",
+  "inputs": {
+    "prompt": "Professional brand logo for “FAMtastic” — a creative AI site/media/component studio ecosystem. Create a bold energetic wordmark inspired by an early-2000s playful FAMtastic logo with colorful FAM letters and a green burst, but upgraded for 2026: premium, cinematic, dark-screen friendly, polished vector aesthetic, strong F legibility, clear FAM + tastic treatment, memorable icon potential, usable for web app header, favicon, brand kit, and animated intro. No generic startup icon. Correct spelling: FAMtastic.",
+    "aspect_ratio": "1:1",
+    "num_images": 1
+  },
+  "outputs": [
+    "https://cdn.muapi.ai/outputs/2376ad623c1349a5b7005bafd640c488.png"
+  ],
+  "urls": {
+    "get": "https://api.muapi.ai/api/v1/predictions/d099ea75-9450-462e-bee2-adec9f359806/result"
+  },
+  "has_nsfw_contents": [
+    false
+  ],
+  "status": "completed",
+  "created_at": "2026-05-21T19:50:14.482394+00:00",
+  "error": "",
+  "executionTime": 38282.068,
+  "timings": {
+    "inference": 38282.068
+  },
+  "cost": {
+    "amount_usd": 0.04,
+    "amount_credits": 3,
+    "bonus_credits_used": 0,
+    "refunded": false
+  }
+}

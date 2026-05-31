@@ -1,0 +1,905 @@
+2026-05-27 19:40:20,988 [test_swarm] INFO: Starting swarm integration tests
+2026-05-27 19:40:20,988 [test_swarm] INFO: ==================================================
+2026-05-27 19:40:20,988 [test_swarm] INFO: TEST: MessageBus
+2026-05-27 19:40:20,988 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 19:40:20,988 [swarm.message_bus] INFO: Subscribed callback to results (total=1)
+2026-05-27 19:40:20,988 [test_swarm] ERROR: MessageBus test failed
+Traceback (most recent call last):
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 235, in main
+    results["message_bus"] = test_message_bus()
+                             ~~~~~~~~~~~~~~~~^^
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 58, in test_message_bus
+    bus.publish("results", bus.Message(topic="test.hello", payload={"x": 1}, sender="test"))
+                           ^^^^^^^^^^^
+AttributeError: 'MessageBus' object has no attribute 'Message'
+2026-05-27 19:40:20,988 [test_swarm] INFO: ==================================================
+2026-05-27 19:40:20,988 [test_swarm] INFO: TEST: WorkerPool
+2026-05-27 19:40:21,020 [swarm.worker_pool] INFO: Ollama reachable. Models: ['hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 19:40:21,020 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 19:40:21,020 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 19:40:21,020 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 19:40:21,525 [test_swarm] INFO:   Health: {
+  "ollama_reachable": true,
+  "workers": {
+    "worker-1": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779925221.0202692
+    },
+    "worker-2": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779925221.020341
+    }
+  },
+  "pending_tasks": 0,
+  "completed_tasks": 0,
+  "failed_tasks": 0
+}
+2026-05-27 19:40:21,525 [swarm.worker_pool] INFO: Submitted task d12b84ee (tier=simple, prio=NORMAL)
+2026-05-27 19:40:21,525 [swarm.worker_pool] INFO: [worker-1] Running task d12b84ee on qwen2.5:1.5b
+2026-05-27 19:40:32,112 [swarm.worker_pool] INFO: [worker-1] Task d12b84ee completed (4 chars)
+2026-05-27 19:40:32,313 [test_swarm] INFO:   Task result: Pong
+2026-05-27 19:40:33,117 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 19:40:33,117 [test_swarm] INFO: PASS: WorkerPool
+2026-05-27 19:40:33,117 [test_swarm] INFO: ==================================================
+2026-05-27 19:40:33,117 [test_swarm] INFO: TEST: GoalLoop
+2026-05-27 19:40:33,123 [swarm.worker_pool] INFO: Ollama reachable. Models: ['hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 19:40:33,123 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 19:40:33,123 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 19:40:33,123 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 19:40:33,628 [swarm.goal_loop] INFO: Goal session goal-1779925233628 started: List three colors of the rainbow
+2026-05-27 19:40:33,629 [swarm.goal_loop] INFO: [goal-1779925233628] Turn 1/5
+2026-05-27 19:40:33,629 [swarm.goal_loop] INFO: [goal-1779925233628] Decomposing goal...
+2026-05-27 19:40:33,629 [swarm.worker_pool] INFO: Submitted task 9cbe167a (tier=complex, prio=HIGH)
+2026-05-27 19:40:33,629 [swarm.worker_pool] INFO: [worker-1] Running task 9cbe167a on hermes3:latest
+2026-05-27 19:40:50,487 [swarm.worker_pool] INFO: [worker-1] Task 9cbe167a completed (157 chars)
+2026-05-27 19:40:50,494 [swarm.goal_loop] INFO: [goal-1779925233628] Decomposed into 4 subgoals
+2026-05-27 19:40:50,495 [swarm.goal_loop] INFO: [goal-1779925233628] Turn 2/5
+2026-05-27 19:40:50,495 [swarm.worker_pool] INFO: Submitted task 68dbd568 (tier=medium, prio=NORMAL)
+2026-05-27 19:40:50,495 [swarm.goal_loop] INFO: [goal-1779925233628] Dispatched goal-1779925233628-sg1 -> 68dbd568 (medium)
+2026-05-27 19:40:50,495 [swarm.worker_pool] INFO: Submitted task b7e0786b (tier=simple, prio=NORMAL)
+2026-05-27 19:40:50,495 [swarm.worker_pool] INFO: [worker-2] Running task 68dbd568 on phi4-mini:latest
+2026-05-27 19:40:50,495 [swarm.goal_loop] INFO: [goal-1779925233628] Dispatched goal-1779925233628-sg2 -> b7e0786b (simple)
+2026-05-27 19:40:50,495 [swarm.worker_pool] INFO: [worker-1] Running task b7e0786b on qwen2.5:1.5b
+2026-05-27 19:40:50,496 [swarm.worker_pool] INFO: Submitted task 69a4f217 (tier=simple, prio=NORMAL)
+2026-05-27 19:40:50,496 [swarm.goal_loop] INFO: [goal-1779925233628] Dispatched goal-1779925233628-sg3 -> 69a4f217 (simple)
+2026-05-27 19:40:50,497 [swarm.worker_pool] INFO: Submitted task f1b3d61a (tier=simple, prio=NORMAL)
+2026-05-27 19:40:50,497 [swarm.goal_loop] INFO: [goal-1779925233628] Dispatched goal-1779925233628-sg4 -> f1b3d61a (simple)
+2026-05-27 19:40:50,866 [swarm.worker_pool] INFO: [worker-1] Task b7e0786b completed (36 chars)
+2026-05-27 19:40:50,912 [swarm.worker_pool] INFO: [worker-1] Running task 69a4f217 on qwen2.5:1.5b
+2026-05-27 19:40:51,120 [swarm.worker_pool] INFO: [worker-1] Task 69a4f217 completed (40 chars)
+2026-05-27 19:40:51,221 [swarm.worker_pool] INFO: [worker-1] Running task f1b3d61a on qwen2.5:1.5b
+2026-05-27 19:40:51,440 [swarm.worker_pool] INFO: [worker-1] Task f1b3d61a completed (37 chars)
+2026-05-27 19:41:05,912 [swarm.worker_pool] INFO: [worker-2] Task 68dbd568 completed (58 chars)
+2026-05-27 19:41:05,942 [swarm.goal_loop] INFO: [goal-1779925233628] Turn 3/5
+2026-05-27 19:41:05,943 [swarm.goal_loop] INFO: [goal-1779925233628] Judging completion...
+2026-05-27 19:41:05,944 [swarm.worker_pool] INFO: Submitted task 2fdf5bac (tier=complex, prio=HIGH)
+2026-05-27 19:41:05,944 [swarm.worker_pool] INFO: [worker-1] Running task 2fdf5bac on hermes3:latest
+2026-05-27 19:41:12,108 [swarm.worker_pool] INFO: [worker-1] Task 2fdf5bac completed (336 chars)
+2026-05-27 19:41:12,247 [swarm.goal_loop] INFO: [goal-1779925233628] Judge verdict: complete=False
+2026-05-27 19:41:12,247 [swarm.goal_loop] INFO: [goal-1779925233628] Judge says incomplete, adding subgoals
+2026-05-27 19:41:12,249 [swarm.goal_loop] INFO: [goal-1779925233628] Turn 4/5
+2026-05-27 19:41:12,258 [swarm.worker_pool] INFO: Submitted task 7d81ceba (tier=medium, prio=NORMAL)
+2026-05-27 19:41:12,258 [swarm.worker_pool] INFO: [worker-2] Running task 7d81ceba on phi4-mini:latest
+2026-05-27 19:41:12,260 [swarm.goal_loop] INFO: [goal-1779925233628] Dispatched goal-1779925233628-sg5 -> 7d81ceba (medium)
+2026-05-27 19:41:12,275 [swarm.worker_pool] INFO: Submitted task bf8aa580 (tier=medium, prio=NORMAL)
+2026-05-27 19:41:12,275 [swarm.goal_loop] INFO: [goal-1779925233628] Dispatched goal-1779925233628-sg6 -> bf8aa580 (medium)
+2026-05-27 19:41:12,288 [swarm.worker_pool] INFO: [worker-1] Running task bf8aa580 on phi4-mini:latest
+2026-05-27 19:41:13,548 [swarm.worker_pool] INFO: [worker-2] Task 7d81ceba completed (4 chars)
+2026-05-27 19:41:15,423 [swarm.worker_pool] INFO: [worker-1] Task bf8aa580 completed (186 chars)
+2026-05-27 19:41:15,532 [swarm.goal_loop] INFO: [goal-1779925233628] Turn 5/5
+2026-05-27 19:41:15,533 [swarm.goal_loop] INFO: [goal-1779925233628] Judging completion...
+2026-05-27 19:41:15,537 [swarm.worker_pool] INFO: Submitted task 2be4f71b (tier=complex, prio=HIGH)
+2026-05-27 19:41:15,537 [swarm.worker_pool] INFO: [worker-2] Running task 2be4f71b on hermes3:latest
+2026-05-27 19:41:21,856 [swarm.worker_pool] INFO: [worker-2] Task 2be4f71b completed (358 chars)
+2026-05-27 19:41:21,897 [swarm.goal_loop] INFO: [goal-1779925233628] Judge verdict: complete=False
+2026-05-27 19:41:21,898 [swarm.goal_loop] INFO: [goal-1779925233628] Judge says incomplete, adding subgoals
+2026-05-27 19:41:21,905 [swarm.goal_loop] WARNING: Session goal-1779925233628 budget exhausted (5 turns)
+2026-05-27 19:41:21,912 [test_swarm] INFO:   Session status: budget_exhausted
+2026-05-27 19:41:21,912 [test_swarm] INFO:   Turns used: 5
+2026-05-27 19:41:21,912 [test_swarm] INFO:   Subgoals: 8
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg1: completed -> Red, Orange, Yellow, Green, Blue, Indigo, Violet (ROYGBIV)
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg2: completed -> The first color in a rainbow is red.
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg3: completed -> The second color in a rainbow is purple.
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg4: completed -> The third color of a rainbow is blue.
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg5: completed -> Blue
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg6: completed -> The seventh color is violet (or indigo). You can identify it by observing rainbo
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg7: pending -> None
+2026-05-27 19:41:21,912 [test_swarm] INFO:     goal-1779925233628-sg8: pending -> None
+2026-05-27 19:41:22,871 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 19:41:22,883 [test_swarm] INFO: PASS: GoalLoop
+2026-05-27 19:41:22,900 [test_swarm] INFO: ==================================================
+2026-05-27 19:41:22,900 [test_swarm] INFO: TEST: TrustMode
+2026-05-27 19:41:22,961 [swarm.trust_mode] INFO: Created default trust config at /Users/famtasticfritz/.shay/trust-mode.json
+2026-05-27 19:41:22,962 [test_swarm] INFO:   Cautious deploy check: {'allowed': False, 'reason': "Cautious mode: trigger word 'deploy' requires approval", 'needs_approval': True, 'escalation': None}
+2026-05-27 19:41:22,964 [test_swarm] ERROR: TrustMode test failed
+Traceback (most recent call last):
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 253, in main
+    results["trust_mode"] = test_trust_mode()
+                            ~~~~~~~~~~~~~~~^^
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 151, in test_trust_mode
+    r = tm.check("list files in directory")
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/trust_mode.py", line 206, in check
+    self._log_decision(action, True, "cautious_auto")
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/trust_mode.py", line 240, in _log_decision
+    "timestamp": time.time(),
+                 ^^^^
+NameError: name 'time' is not defined. Did you forget to import 'time'?
+2026-05-27 19:41:22,993 [test_swarm] INFO: ==================================================
+2026-05-27 19:41:22,993 [test_swarm] INFO: TEST: ErrorRecovery
+2026-05-27 19:41:23,071 [swarm.worker_pool] INFO: Ollama reachable. Models: ['hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 19:41:23,071 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 19:41:23,072 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 19:41:23,072 [swarm.error_recovery] WARNING: Handling failure for task fake-fail-1 (attempt 1/2, error: connection refused)
+2026-05-27 19:41:23,072 [swarm.error_recovery] INFO: Retrying task fake-fail-1 in 0.5s (attempt 2)
+2026-05-27 19:41:23,578 [swarm.worker_pool] INFO: Submitted task 7876e22f (tier=simple, prio=HIGH)
+2026-05-27 19:41:23,578 [swarm.worker_pool] INFO: [worker-1] Running task 7876e22f on qwen2.5:1.5b
+2026-05-27 19:41:23,578 [swarm.error_recovery] INFO: Task fake-fail-1 retried as 7876e22f
+2026-05-27 19:41:23,579 [test_swarm] INFO:   Retry task ID: 7876e22f
+2026-05-27 19:41:23,579 [test_swarm] INFO:   Upgrade opportunities: [{'type': 'review_failures', 'reason': '1 total failures, no clear pattern', 'priority': 'low'}]
+2026-05-27 19:41:26,252 [swarm.worker_pool] INFO: [worker-1] Task 7876e22f completed (34 chars)
+2026-05-27 19:41:26,254 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 19:41:26,254 [test_swarm] INFO: PASS: ErrorRecovery
+2026-05-27 19:41:26,254 [test_swarm] INFO: ==================================================
+2026-05-27 19:41:26,254 [test_swarm] INFO: TEST: Full SwarmOrchestrator
+2026-05-27 19:41:26,261 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 19:41:26,292 [swarm.worker_pool] INFO: Ollama reachable. Models: ['hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 19:41:26,293 [swarm.trust_mode] INFO: Loaded trust config from /Users/famtasticfritz/.shay/trust-mode.json (level=cautious)
+2026-05-27 19:41:26,293 [swarm.orchestrator] INFO: SwarmOrchestrator initialized
+2026-05-27 19:41:26,293 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 19:41:26,293 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 19:41:26,293 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 19:41:26,293 [swarm.orchestrator] INFO: SwarmOrchestrator started
+2026-05-27 19:41:26,293 [swarm.message_bus] INFO: Subscribed callback to errors (total=1)
+2026-05-27 19:41:26,801 [test_swarm] INFO: 
+=== Swarm Orchestrator Status ===
+Started: True
+Trust Level: cautious
+Redis Connected: False
+Workers: 2
+Ollama Reachable: True
+Pending Tasks: 0
+Active Goals: 0
+Total Goals: 0
+Recent Failures: 0
+2026-05-27 19:41:26,806 [swarm.worker_pool] INFO: Submitted task 34bcc7c0 (tier=simple, prio=NORMAL)
+2026-05-27 19:41:26,806 [swarm.worker_pool] INFO: [worker-1] Running task 34bcc7c0 on qwen2.5:1.5b
+2026-05-27 19:41:27,406 [swarm.worker_pool] INFO: [worker-1] Task 34bcc7c0 completed (1 chars)
+2026-05-27 19:41:27,413 [test_swarm] INFO:   Direct ask result: 4
+2026-05-27 19:41:27,413 [test_swarm] ERROR: Full orchestrator test failed
+Traceback (most recent call last):
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 265, in main
+    results["full_orchestrator"] = test_full_orchestrator()
+                                   ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 220, in test_full_orchestrator
+    session = orch.goal("Name two programming languages")
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/swarm_orchestrator.py", line 104, in goal
+    trust_check = self.trust_mode.check(description)
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/trust_mode.py", line 206, in check
+    self._log_decision(action, True, "cautious_auto")
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/trust_mode.py", line 240, in _log_decision
+    "timestamp": time.time(),
+                 ^^^^
+NameError: name 'time' is not defined. Did you forget to import 'time'?
+2026-05-27 19:41:27,422 [test_swarm] INFO: ==================================================
+2026-05-27 19:41:27,422 [test_swarm] INFO: TEST SUMMARY
+2026-05-27 19:41:27,422 [test_swarm] INFO:   message_bus: FAIL
+2026-05-27 19:41:27,422 [test_swarm] INFO:   worker_pool: PASS
+2026-05-27 19:41:27,423 [test_swarm] INFO:   goal_loop: PASS
+2026-05-27 19:41:27,423 [test_swarm] INFO:   trust_mode: FAIL
+2026-05-27 19:41:27,423 [test_swarm] INFO:   error_recovery: PASS
+2026-05-27 19:41:27,423 [test_swarm] INFO:   full_orchestrator: FAIL
+2026-05-27 19:41:27,423 [test_swarm] INFO: Overall: SOME FAILED
+2026-05-27 22:28:37,919 [test_swarm] INFO: Starting swarm integration tests
+2026-05-27 22:28:37,919 [test_swarm] INFO: ==================================================
+2026-05-27 22:28:37,919 [test_swarm] INFO: TEST: MessageBus
+2026-05-27 22:28:37,919 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 22:28:37,919 [swarm.message_bus] INFO: Subscribed callback to results (total=1)
+2026-05-27 22:28:37,919 [test_swarm] INFO:   Received on results: test.hello -> {'x': 1}
+2026-05-27 22:28:38,424 [test_swarm] ERROR: MessageBus test failed
+Traceback (most recent call last):
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 236, in main
+    results["message_bus"] = test_message_bus()
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 69, in test_message_bus
+    assert m1 is not None and m1.payload["n"] == 1
+AssertionError
+2026-05-27 22:28:38,426 [test_swarm] INFO: ==================================================
+2026-05-27 22:28:38,426 [test_swarm] INFO: TEST: WorkerPool
+2026-05-27 22:28:38,475 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:28:38,475 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:28:38,476 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:28:38,476 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:28:38,979 [test_swarm] INFO:   Health: {
+  "ollama_reachable": true,
+  "workers": {
+    "worker-1": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935318.476042
+    },
+    "worker-2": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935318.476322
+    }
+  },
+  "pending_tasks": 0,
+  "completed_tasks": 0,
+  "failed_tasks": 0
+}
+2026-05-27 22:28:38,979 [swarm.worker_pool] INFO: Submitted task 473c84cf (tier=simple, prio=NORMAL)
+2026-05-27 22:28:38,980 [swarm.worker_pool] INFO: [worker-1] Running task 473c84cf on qwen2.5:1.5b
+2026-05-27 22:28:41,068 [swarm.worker_pool] INFO: [worker-1] Task 473c84cf completed (5 chars)
+2026-05-27 22:28:41,225 [test_swarm] INFO:   Task result: Pong!
+2026-05-27 22:28:42,071 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:28:42,071 [test_swarm] INFO: PASS: WorkerPool
+2026-05-27 22:28:42,072 [test_swarm] INFO: ==================================================
+2026-05-27 22:28:42,072 [test_swarm] INFO: TEST: GoalLoop
+2026-05-27 22:28:42,077 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:28:42,077 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:28:42,078 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:28:42,078 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:28:42,583 [swarm.goal_loop] INFO: Goal session goal-1779935322583 started: List three colors of the rainbow
+2026-05-27 22:28:42,583 [swarm.goal_loop] INFO: [goal-1779935322583] Turn 1/5
+2026-05-27 22:28:42,583 [swarm.goal_loop] INFO: [goal-1779935322583] Decomposing goal...
+2026-05-27 22:28:42,583 [swarm.worker_pool] INFO: Submitted task b94e0dd4 (tier=complex, prio=HIGH)
+2026-05-27 22:28:42,584 [swarm.worker_pool] INFO: [worker-1] Running task b94e0dd4 on hermes3:latest
+2026-05-27 22:28:49,007 [swarm.worker_pool] INFO: [worker-1] Task b94e0dd4 completed (126 chars)
+2026-05-27 22:28:49,105 [swarm.goal_loop] INFO: [goal-1779935322583] Decomposed into 4 subgoals
+2026-05-27 22:28:49,105 [swarm.goal_loop] INFO: [goal-1779935322583] Turn 2/5
+2026-05-27 22:28:49,106 [swarm.worker_pool] INFO: Submitted task 8b0891e7 (tier=medium, prio=NORMAL)
+2026-05-27 22:28:49,106 [swarm.goal_loop] INFO: [goal-1779935322583] Dispatched goal-1779935322583-sg1 -> 8b0891e7 (medium)
+2026-05-27 22:28:49,106 [swarm.worker_pool] INFO: [worker-2] Running task 8b0891e7 on phi4-mini:latest
+2026-05-27 22:28:49,107 [swarm.worker_pool] INFO: Submitted task b849fa71 (tier=simple, prio=NORMAL)
+2026-05-27 22:28:49,108 [swarm.worker_pool] INFO: [worker-1] Running task b849fa71 on qwen2.5:1.5b
+2026-05-27 22:28:49,109 [swarm.goal_loop] INFO: [goal-1779935322583] Dispatched goal-1779935322583-sg2 -> b849fa71 (simple)
+2026-05-27 22:28:49,109 [swarm.worker_pool] INFO: Submitted task 771a69e5 (tier=simple, prio=NORMAL)
+2026-05-27 22:28:49,110 [swarm.goal_loop] INFO: [goal-1779935322583] Dispatched goal-1779935322583-sg3 -> 771a69e5 (simple)
+2026-05-27 22:28:49,110 [swarm.worker_pool] INFO: Submitted task 8cd4e975 (tier=simple, prio=NORMAL)
+2026-05-27 22:28:49,110 [swarm.goal_loop] INFO: [goal-1779935322583] Dispatched goal-1779935322583-sg4 -> 8cd4e975 (simple)
+2026-05-27 22:28:49,278 [swarm.worker_pool] INFO: [worker-1] Task b849fa71 completed (3 chars)
+2026-05-27 22:28:49,312 [swarm.worker_pool] INFO: [worker-1] Running task 771a69e5 on qwen2.5:1.5b
+2026-05-27 22:28:49,434 [swarm.worker_pool] INFO: [worker-1] Task 771a69e5 completed (9 chars)
+2026-05-27 22:28:49,521 [swarm.worker_pool] INFO: [worker-1] Running task 8cd4e975 on qwen2.5:1.5b
+2026-05-27 22:28:49,698 [swarm.worker_pool] INFO: [worker-1] Task 8cd4e975 completed (22 chars)
+2026-05-27 22:28:52,996 [swarm.worker_pool] INFO: [worker-2] Task 8b0891e7 completed (58 chars)
+2026-05-27 22:28:53,182 [swarm.goal_loop] INFO: [goal-1779935322583] Turn 3/5
+2026-05-27 22:28:53,182 [swarm.goal_loop] INFO: [goal-1779935322583] Judging completion...
+2026-05-27 22:28:53,183 [swarm.worker_pool] INFO: Submitted task 6ce941d3 (tier=complex, prio=HIGH)
+2026-05-27 22:28:53,184 [swarm.worker_pool] INFO: [worker-1] Running task 6ce941d3 on hermes3:latest
+2026-05-27 22:28:56,805 [swarm.worker_pool] INFO: [worker-1] Task 6ce941d3 completed (321 chars)
+2026-05-27 22:28:56,843 [swarm.goal_loop] INFO: [goal-1779935322583] Judge verdict: complete=True
+2026-05-27 22:28:56,843 [swarm.goal_loop] INFO: [goal-1779935322583] Goal COMPLETED in 3 turns
+2026-05-27 22:28:56,843 [test_swarm] INFO:   Session status: completed
+2026-05-27 22:28:56,843 [test_swarm] INFO:   Turns used: 3
+2026-05-27 22:28:56,844 [test_swarm] INFO:   Subgoals: 4
+2026-05-27 22:28:56,844 [test_swarm] INFO:     goal-1779935322583-sg1: completed -> Red, Orange, Yellow, Green, Blue, Indigo, Violet (ROYGBIV)
+2026-05-27 22:28:56,844 [test_swarm] INFO:     goal-1779935322583-sg2: completed -> Red
+2026-05-27 22:28:56,844 [test_swarm] INFO:     goal-1779935322583-sg3: completed -> Red, Blue
+2026-05-27 22:28:56,844 [test_swarm] INFO:     goal-1779935322583-sg4: completed -> Red, Green, Blue (RGB)
+2026-05-27 22:28:57,810 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:28:57,811 [test_swarm] INFO: PASS: GoalLoop
+2026-05-27 22:28:57,811 [test_swarm] INFO: ==================================================
+2026-05-27 22:28:57,812 [test_swarm] INFO: TEST: TrustMode
+2026-05-27 22:28:57,815 [swarm.trust_mode] INFO: Loaded trust config from /Users/famtasticfritz/.shay/trust-mode.json (level=cautious)
+2026-05-27 22:28:57,815 [test_swarm] INFO:   Cautious deploy check: {'allowed': False, 'reason': "Cautious mode: trigger word 'deploy' requires approval", 'needs_approval': True, 'escalation': None}
+2026-05-27 22:28:57,816 [swarm.trust_mode] INFO: Trust decision: cautious_auto action='list files in directory' allowed=True
+2026-05-27 22:28:57,816 [test_swarm] INFO:   Cautious list check: {'allowed': True, 'reason': 'Cautious mode: no triggers detected, auto-approved', 'needs_approval': False, 'escalation': None}
+2026-05-27 22:28:57,816 [swarm.trust_mode] INFO: Trust level changed to paranoid
+2026-05-27 22:28:57,816 [test_swarm] INFO:   Paranoid list check: {'allowed': False, 'reason': 'Paranoid mode: all actions require approval', 'needs_approval': True, 'escalation': None}
+2026-05-27 22:28:57,817 [swarm.trust_mode] INFO: Trust level changed to godmode
+2026-05-27 22:28:57,817 [swarm.trust_mode] INFO: Trust decision: godmode action='deploy the app to production' allowed=True
+2026-05-27 22:28:57,817 [test_swarm] INFO:   Godmode deploy check: {'allowed': True, 'reason': 'Godmode: auto-approved', 'needs_approval': False, 'escalation': None}
+2026-05-27 22:28:57,818 [swarm.trust_mode] INFO: Trust level changed to cautious
+2026-05-27 22:28:57,818 [test_swarm] INFO: PASS: TrustMode
+2026-05-27 22:28:57,818 [test_swarm] INFO: ==================================================
+2026-05-27 22:28:57,818 [test_swarm] INFO: TEST: ErrorRecovery
+2026-05-27 22:28:57,835 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:28:57,835 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:28:57,836 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:28:57,836 [swarm.error_recovery] WARNING: Handling failure for task fake-fail-1 (attempt 1/2, error: connection refused)
+2026-05-27 22:28:57,836 [swarm.error_recovery] INFO: Retrying task fake-fail-1 in 0.5s (attempt 2)
+2026-05-27 22:28:58,342 [swarm.worker_pool] INFO: Submitted task f4bdd2d8 (tier=simple, prio=HIGH)
+2026-05-27 22:28:58,343 [swarm.worker_pool] INFO: [worker-1] Running task f4bdd2d8 on qwen2.5:1.5b
+2026-05-27 22:28:58,343 [swarm.error_recovery] INFO: Task fake-fail-1 retried as f4bdd2d8
+2026-05-27 22:28:58,345 [test_swarm] INFO:   Retry task ID: f4bdd2d8
+2026-05-27 22:28:58,347 [test_swarm] INFO:   Upgrade opportunities: [{'type': 'review_failures', 'reason': '1 total failures, no clear pattern', 'priority': 'low'}]
+2026-05-27 22:28:59,049 [swarm.worker_pool] INFO: [worker-1] Task f4bdd2d8 completed (199 chars)
+2026-05-27 22:28:59,050 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:28:59,050 [test_swarm] INFO: PASS: ErrorRecovery
+2026-05-27 22:28:59,050 [test_swarm] INFO: ==================================================
+2026-05-27 22:28:59,050 [test_swarm] INFO: TEST: Full SwarmOrchestrator
+2026-05-27 22:28:59,054 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 22:28:59,061 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:28:59,062 [swarm.trust_mode] INFO: Loaded trust config from /Users/famtasticfritz/.shay/trust-mode.json (level=cautious)
+2026-05-27 22:28:59,062 [swarm.orchestrator] INFO: SwarmOrchestrator initialized
+2026-05-27 22:28:59,062 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:28:59,062 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:28:59,062 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:28:59,062 [swarm.orchestrator] INFO: SwarmOrchestrator started
+2026-05-27 22:28:59,062 [swarm.message_bus] INFO: Subscribed callback to errors (total=1)
+2026-05-27 22:28:59,570 [test_swarm] INFO: 
+=== Swarm Orchestrator Status ===
+Started: True
+Trust Level: cautious
+Redis Connected: False
+Workers: 2
+Ollama Reachable: True
+Pending Tasks: 0
+Active Goals: 0
+Total Goals: 0
+Recent Failures: 0
+2026-05-27 22:28:59,571 [swarm.worker_pool] INFO: Submitted task 55838bad (tier=simple, prio=NORMAL)
+2026-05-27 22:28:59,572 [swarm.worker_pool] INFO: [worker-1] Running task 55838bad on qwen2.5:1.5b
+2026-05-27 22:28:59,769 [swarm.worker_pool] INFO: [worker-1] Task 55838bad completed (1 chars)
+2026-05-27 22:28:59,776 [test_swarm] INFO:   Direct ask result: 4
+2026-05-27 22:28:59,778 [swarm.trust_mode] INFO: Trust decision: cautious_auto action='Name two programming languages' allowed=True
+2026-05-27 22:28:59,778 [swarm.orchestrator] INFO: Goal approved by trust mode (cautious)
+2026-05-27 22:28:59,778 [swarm.goal_loop] INFO: Goal session goal-1779935339778 started: Name two programming languages
+2026-05-27 22:28:59,778 [swarm.goal_loop] INFO: [goal-1779935339778] Turn 1/5
+2026-05-27 22:28:59,778 [swarm.goal_loop] INFO: [goal-1779935339778] Decomposing goal...
+2026-05-27 22:28:59,778 [swarm.worker_pool] INFO: Submitted task d3572cfe (tier=complex, prio=HIGH)
+2026-05-27 22:28:59,778 [swarm.worker_pool] INFO: [worker-2] Running task d3572cfe on hermes3:latest
+2026-05-27 22:29:00,959 [swarm.worker_pool] INFO: [worker-2] Task d3572cfe completed (105 chars)
+2026-05-27 22:29:01,001 [swarm.goal_loop] INFO: [goal-1779935339778] Decomposed into 2 subgoals
+2026-05-27 22:29:01,001 [swarm.goal_loop] INFO: [goal-1779935339778] Turn 2/5
+2026-05-27 22:29:01,002 [swarm.worker_pool] INFO: Submitted task 1f4f0b0c (tier=medium, prio=NORMAL)
+2026-05-27 22:29:01,002 [swarm.goal_loop] INFO: [goal-1779935339778] Dispatched goal-1779935339778-sg1 -> 1f4f0b0c (medium)
+2026-05-27 22:29:01,002 [swarm.worker_pool] INFO: [worker-1] Running task 1f4f0b0c on phi4-mini:latest
+2026-05-27 22:29:01,002 [swarm.worker_pool] INFO: Submitted task 2c3509ba (tier=medium, prio=NORMAL)
+2026-05-27 22:29:01,002 [swarm.worker_pool] INFO: [worker-2] Running task 2c3509ba on phi4-mini:latest
+2026-05-27 22:29:01,003 [swarm.goal_loop] INFO: [goal-1779935339778] Dispatched goal-1779935339778-sg2 -> 2c3509ba (medium)
+2026-05-27 22:29:01,261 [swarm.worker_pool] INFO: [worker-2] Task 2c3509ba completed (10 chars)
+2026-05-27 22:29:02,205 [swarm.worker_pool] INFO: [worker-1] Task 1f4f0b0c completed (145 chars)
+2026-05-27 22:29:02,225 [swarm.goal_loop] INFO: [goal-1779935339778] Turn 3/5
+2026-05-27 22:29:02,225 [swarm.goal_loop] INFO: [goal-1779935339778] Judging completion...
+2026-05-27 22:29:02,225 [swarm.worker_pool] INFO: Submitted task 25c98bdd (tier=complex, prio=HIGH)
+2026-05-27 22:29:02,226 [swarm.worker_pool] INFO: [worker-2] Running task 25c98bdd on hermes3:latest
+2026-05-27 22:29:04,468 [swarm.worker_pool] INFO: [worker-2] Task 25c98bdd completed (169 chars)
+2026-05-27 22:29:04,667 [swarm.goal_loop] INFO: [goal-1779935339778] Judge verdict: complete=True
+2026-05-27 22:29:04,668 [swarm.goal_loop] INFO: [goal-1779935339778] Goal COMPLETED in 3 turns
+2026-05-27 22:29:04,668 [swarm.orchestrator] INFO: Goal session goal-1779935339778 finished with status=completed
+2026-05-27 22:29:04,668 [test_swarm] INFO:   Goal session status: completed
+2026-05-27 22:29:04,668 [test_swarm] INFO:   Goal result: The original goal was fully achieved by identifying two programming languages: Python and JavaScript.
+2026-05-27 22:29:04,668 [test_swarm] INFO: 
+=== Swarm Orchestrator Status ===
+Started: True
+Trust Level: cautious
+Redis Connected: False
+Workers: 2
+Ollama Reachable: True
+Pending Tasks: 0
+Active Goals: 0
+Total Goals: 1
+Recent Failures: 0
+2026-05-27 22:29:05,470 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:29:05,470 [swarm.message_bus] INFO: MessageBus closed.
+2026-05-27 22:29:05,470 [swarm.orchestrator] INFO: SwarmOrchestrator stopped
+2026-05-27 22:29:05,470 [test_swarm] INFO: PASS: Full SwarmOrchestrator
+2026-05-27 22:29:05,470 [test_swarm] INFO: ==================================================
+2026-05-27 22:29:05,470 [test_swarm] INFO: TEST SUMMARY
+2026-05-27 22:29:05,470 [test_swarm] INFO:   message_bus: FAIL
+2026-05-27 22:29:05,470 [test_swarm] INFO:   worker_pool: PASS
+2026-05-27 22:29:05,471 [test_swarm] INFO:   goal_loop: PASS
+2026-05-27 22:29:05,471 [test_swarm] INFO:   trust_mode: PASS
+2026-05-27 22:29:05,471 [test_swarm] INFO:   error_recovery: PASS
+2026-05-27 22:29:05,471 [test_swarm] INFO:   full_orchestrator: PASS
+2026-05-27 22:29:05,471 [test_swarm] INFO: Overall: SOME FAILED
+2026-05-27 22:29:42,732 [test_swarm] INFO: Starting swarm integration tests
+2026-05-27 22:29:42,732 [test_swarm] INFO: ==================================================
+2026-05-27 22:29:42,732 [test_swarm] INFO: TEST: MessageBus
+2026-05-27 22:29:42,732 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 22:29:42,732 [swarm.message_bus] INFO: Subscribed callback to results (total=1)
+2026-05-27 22:29:42,732 [test_swarm] INFO:   Received on results: test.hello -> {'x': 1}
+2026-05-27 22:29:43,234 [test_swarm] INFO:   Queue test passed
+2026-05-27 22:29:43,235 [test_swarm] ERROR: MessageBus test failed
+Traceback (most recent call last):
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 236, in main
+    results["message_bus"] = test_message_bus()
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 75, in test_message_bus
+    assert val == {"foo": "bar"}
+AssertionError
+2026-05-27 22:29:43,235 [test_swarm] INFO: ==================================================
+2026-05-27 22:29:43,236 [test_swarm] INFO: TEST: WorkerPool
+2026-05-27 22:29:43,288 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:29:43,289 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:29:43,289 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:29:43,289 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:29:43,793 [test_swarm] INFO:   Health: {
+  "ollama_reachable": true,
+  "workers": {
+    "worker-1": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935383.2894368
+    },
+    "worker-2": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935383.289598
+    }
+  },
+  "pending_tasks": 0,
+  "completed_tasks": 0,
+  "failed_tasks": 0
+}
+2026-05-27 22:29:43,793 [swarm.worker_pool] INFO: Submitted task d38d8d3d (tier=simple, prio=NORMAL)
+2026-05-27 22:29:43,793 [swarm.worker_pool] INFO: [worker-1] Running task d38d8d3d on qwen2.5:1.5b
+2026-05-27 22:29:43,988 [swarm.worker_pool] INFO: [worker-1] Task d38d8d3d completed (4 chars)
+2026-05-27 22:29:43,994 [test_swarm] INFO:   Task result: Pong
+2026-05-27 22:31:16,111 [test_swarm] INFO: Starting swarm integration tests
+2026-05-27 22:31:16,111 [test_swarm] INFO: ==================================================
+2026-05-27 22:31:16,111 [test_swarm] INFO: TEST: MessageBus
+2026-05-27 22:31:16,111 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 22:31:16,111 [swarm.message_bus] INFO: Subscribed callback to results (total=1)
+2026-05-27 22:31:16,111 [test_swarm] INFO:   Received on results: test.hello -> {'x': 1}
+2026-05-27 22:31:16,617 [test_swarm] INFO:   Queue test passed
+2026-05-27 22:31:16,617 [test_swarm] ERROR: MessageBus test failed
+Traceback (most recent call last):
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 236, in main
+    results["message_bus"] = test_message_bus()
+  File "/Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py", line 75, in test_message_bus
+    assert val == {"foo": "bar"}
+AssertionError
+2026-05-27 22:31:16,619 [test_swarm] INFO: ==================================================
+2026-05-27 22:31:16,619 [test_swarm] INFO: TEST: WorkerPool
+2026-05-27 22:31:16,677 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:31:16,678 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:31:16,678 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:31:16,678 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:31:17,183 [test_swarm] INFO:   Health: {
+  "ollama_reachable": true,
+  "workers": {
+    "worker-1": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935476.678252
+    },
+    "worker-2": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935476.678603
+    }
+  },
+  "pending_tasks": 0,
+  "completed_tasks": 0,
+  "failed_tasks": 0
+}
+2026-05-27 22:31:17,183 [swarm.worker_pool] INFO: Submitted task f5f6cb17 (tier=simple, prio=NORMAL)
+2026-05-27 22:31:17,183 [swarm.worker_pool] INFO: [worker-1] Running task f5f6cb17 on qwen2.5:1.5b
+2026-05-27 22:31:17,344 [swarm.worker_pool] INFO: [worker-1] Task f5f6cb17 completed (4 chars)
+2026-05-27 22:31:17,385 [test_swarm] INFO:   Task result: Pong
+2026-05-27 22:31:18,347 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:31:18,348 [test_swarm] INFO: PASS: WorkerPool
+2026-05-27 22:31:18,349 [test_swarm] INFO: ==================================================
+2026-05-27 22:31:18,349 [test_swarm] INFO: TEST: GoalLoop
+2026-05-27 22:31:18,362 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:31:18,362 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:31:18,362 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:31:18,363 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:31:18,865 [swarm.goal_loop] INFO: Goal session goal-1779935478865 started: List three colors of the rainbow
+2026-05-27 22:31:18,865 [swarm.goal_loop] INFO: [goal-1779935478865] Turn 1/5
+2026-05-27 22:31:18,865 [swarm.goal_loop] INFO: [goal-1779935478865] Decomposing goal...
+2026-05-27 22:31:18,866 [swarm.worker_pool] INFO: Submitted task a829e9e0 (tier=complex, prio=HIGH)
+2026-05-27 22:31:18,866 [swarm.worker_pool] INFO: [worker-1] Running task a829e9e0 on hermes3:latest
+2026-05-27 22:31:20,899 [swarm.worker_pool] INFO: [worker-1] Task a829e9e0 completed (180 chars)
+2026-05-27 22:31:21,096 [swarm.goal_loop] INFO: [goal-1779935478865] Decomposed into 4 subgoals
+2026-05-27 22:31:21,096 [swarm.goal_loop] INFO: [goal-1779935478865] Turn 2/5
+2026-05-27 22:31:21,096 [swarm.worker_pool] INFO: Submitted task 364e4122 (tier=medium, prio=NORMAL)
+2026-05-27 22:31:21,096 [swarm.goal_loop] INFO: [goal-1779935478865] Dispatched goal-1779935478865-sg1 -> 364e4122 (medium)
+2026-05-27 22:31:21,097 [swarm.worker_pool] INFO: [worker-2] Running task 364e4122 on phi4-mini:latest
+2026-05-27 22:31:21,097 [swarm.worker_pool] INFO: Submitted task a2802670 (tier=simple, prio=NORMAL)
+2026-05-27 22:31:21,097 [swarm.worker_pool] INFO: [worker-1] Running task a2802670 on qwen2.5:1.5b
+2026-05-27 22:31:21,099 [swarm.goal_loop] INFO: [goal-1779935478865] Dispatched goal-1779935478865-sg2 -> a2802670 (simple)
+2026-05-27 22:31:21,100 [swarm.worker_pool] INFO: Submitted task 630bf32f (tier=simple, prio=NORMAL)
+2026-05-27 22:31:21,100 [swarm.goal_loop] INFO: [goal-1779935478865] Dispatched goal-1779935478865-sg3 -> 630bf32f (simple)
+2026-05-27 22:31:21,100 [swarm.worker_pool] INFO: Submitted task 570fa294 (tier=simple, prio=NORMAL)
+2026-05-27 22:31:21,100 [swarm.goal_loop] INFO: [goal-1779935478865] Dispatched goal-1779935478865-sg4 -> 570fa294 (simple)
+2026-05-27 22:31:21,358 [swarm.worker_pool] INFO: [worker-1] Task a2802670 completed (3 chars)
+2026-05-27 22:31:21,402 [swarm.worker_pool] INFO: [worker-1] Running task 630bf32f on qwen2.5:1.5b
+2026-05-27 22:31:21,676 [swarm.worker_pool] INFO: [worker-1] Task 630bf32f completed (40 chars)
+2026-05-27 22:31:21,714 [swarm.worker_pool] INFO: [worker-1] Running task 570fa294 on qwen2.5:1.5b
+2026-05-27 22:31:21,960 [swarm.worker_pool] INFO: [worker-2] Task 364e4122 completed (58 chars)
+2026-05-27 22:31:21,968 [swarm.worker_pool] INFO: [worker-1] Task 570fa294 completed (41 chars)
+2026-05-27 22:31:22,119 [swarm.goal_loop] INFO: [goal-1779935478865] Turn 3/5
+2026-05-27 22:31:22,119 [swarm.goal_loop] INFO: [goal-1779935478865] Judging completion...
+2026-05-27 22:31:22,120 [swarm.worker_pool] INFO: Submitted task 689d4c43 (tier=complex, prio=HIGH)
+2026-05-27 22:31:22,120 [swarm.worker_pool] INFO: [worker-1] Running task 689d4c43 on hermes3:latest
+2026-05-27 22:31:25,190 [swarm.worker_pool] INFO: [worker-1] Task 689d4c43 completed (250 chars)
+2026-05-27 22:31:25,367 [swarm.goal_loop] INFO: [goal-1779935478865] Judge verdict: complete=True
+2026-05-27 22:31:25,367 [swarm.goal_loop] INFO: [goal-1779935478865] Goal COMPLETED in 3 turns
+2026-05-27 22:31:25,367 [test_swarm] INFO:   Session status: completed
+2026-05-27 22:31:25,367 [test_swarm] INFO:   Turns used: 3
+2026-05-27 22:31:25,368 [test_swarm] INFO:   Subgoals: 4
+2026-05-27 22:31:25,368 [test_swarm] INFO:     goal-1779935478865-sg1: completed -> Red, Orange, Yellow, Green, Blue, Indigo, Violet (ROYGBIV)
+2026-05-27 22:31:25,368 [test_swarm] INFO:     goal-1779935478865-sg2: completed -> Red
+2026-05-27 22:31:25,368 [test_swarm] INFO:     goal-1779935478865-sg3: completed -> The second color in the rainbow is blue.
+2026-05-27 22:31:25,368 [test_swarm] INFO:     goal-1779935478865-sg4: completed -> The third color in the rainbow is yellow.
+2026-05-27 22:31:26,196 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:31:26,196 [test_swarm] INFO: PASS: GoalLoop
+2026-05-27 22:31:26,196 [test_swarm] INFO: ==================================================
+2026-05-27 22:31:26,196 [test_swarm] INFO: TEST: TrustMode
+2026-05-27 22:31:26,197 [swarm.trust_mode] INFO: Loaded trust config from /Users/famtasticfritz/.shay/trust-mode.json (level=cautious)
+2026-05-27 22:31:26,198 [test_swarm] INFO:   Cautious deploy check: {'allowed': False, 'reason': "Cautious mode: trigger word 'deploy' requires approval", 'needs_approval': True, 'escalation': None}
+2026-05-27 22:31:26,198 [swarm.trust_mode] INFO: Trust decision: cautious_auto action='list files in directory' allowed=True
+2026-05-27 22:31:26,198 [test_swarm] INFO:   Cautious list check: {'allowed': True, 'reason': 'Cautious mode: no triggers detected, auto-approved', 'needs_approval': False, 'escalation': None}
+2026-05-27 22:31:26,199 [swarm.trust_mode] INFO: Trust level changed to paranoid
+2026-05-27 22:31:26,199 [test_swarm] INFO:   Paranoid list check: {'allowed': False, 'reason': 'Paranoid mode: all actions require approval', 'needs_approval': True, 'escalation': None}
+2026-05-27 22:31:26,199 [swarm.trust_mode] INFO: Trust level changed to godmode
+2026-05-27 22:31:26,200 [swarm.trust_mode] INFO: Trust decision: godmode action='deploy the app to production' allowed=True
+2026-05-27 22:31:26,200 [test_swarm] INFO:   Godmode deploy check: {'allowed': True, 'reason': 'Godmode: auto-approved', 'needs_approval': False, 'escalation': None}
+2026-05-27 22:31:26,200 [swarm.trust_mode] INFO: Trust level changed to cautious
+2026-05-27 22:31:26,200 [test_swarm] INFO: PASS: TrustMode
+2026-05-27 22:31:26,200 [test_swarm] INFO: ==================================================
+2026-05-27 22:31:26,200 [test_swarm] INFO: TEST: ErrorRecovery
+2026-05-27 22:31:26,208 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:31:26,208 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:31:26,208 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:31:26,208 [swarm.error_recovery] WARNING: Handling failure for task fake-fail-1 (attempt 1/2, error: connection refused)
+2026-05-27 22:31:26,209 [swarm.error_recovery] INFO: Retrying task fake-fail-1 in 0.5s (attempt 2)
+2026-05-27 22:31:26,714 [swarm.worker_pool] INFO: Submitted task 707918e0 (tier=simple, prio=HIGH)
+2026-05-27 22:31:26,714 [swarm.error_recovery] INFO: Task fake-fail-1 retried as 707918e0
+2026-05-27 22:31:26,714 [swarm.worker_pool] INFO: [worker-1] Running task 707918e0 on qwen2.5:1.5b
+2026-05-27 22:31:26,714 [test_swarm] INFO:   Retry task ID: 707918e0
+2026-05-27 22:31:26,716 [test_swarm] INFO:   Upgrade opportunities: [{'type': 'review_failures', 'reason': '1 total failures, no clear pattern', 'priority': 'low'}]
+2026-05-27 22:31:27,135 [swarm.worker_pool] INFO: [worker-1] Task 707918e0 completed (122 chars)
+2026-05-27 22:31:27,136 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:31:27,136 [test_swarm] INFO: PASS: ErrorRecovery
+2026-05-27 22:31:27,136 [test_swarm] INFO: ==================================================
+2026-05-27 22:31:27,136 [test_swarm] INFO: TEST: Full SwarmOrchestrator
+2026-05-27 22:31:27,136 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 22:31:27,140 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:31:27,141 [swarm.trust_mode] INFO: Loaded trust config from /Users/famtasticfritz/.shay/trust-mode.json (level=cautious)
+2026-05-27 22:31:27,141 [swarm.orchestrator] INFO: SwarmOrchestrator initialized
+2026-05-27 22:31:27,141 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:31:27,141 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:31:27,141 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:31:27,141 [swarm.orchestrator] INFO: SwarmOrchestrator started
+2026-05-27 22:31:27,141 [swarm.message_bus] INFO: Subscribed callback to errors (total=1)
+2026-05-27 22:31:27,647 [test_swarm] INFO: 
+=== Swarm Orchestrator Status ===
+Started: True
+Trust Level: cautious
+Redis Connected: False
+Workers: 2
+Ollama Reachable: True
+Pending Tasks: 0
+Active Goals: 0
+Total Goals: 0
+Recent Failures: 0
+2026-05-27 22:31:27,648 [swarm.worker_pool] INFO: Submitted task a40db983 (tier=simple, prio=NORMAL)
+2026-05-27 22:31:27,649 [swarm.worker_pool] INFO: [worker-1] Running task a40db983 on qwen2.5:1.5b
+2026-05-27 22:31:27,860 [swarm.worker_pool] INFO: [worker-1] Task a40db983 completed (1 chars)
+2026-05-27 22:31:28,072 [test_swarm] INFO:   Direct ask result: 4
+2026-05-27 22:31:28,079 [swarm.trust_mode] INFO: Trust decision: cautious_auto action='Name two programming languages' allowed=True
+2026-05-27 22:31:28,079 [swarm.orchestrator] INFO: Goal approved by trust mode (cautious)
+2026-05-27 22:31:28,079 [swarm.goal_loop] INFO: Goal session goal-1779935488079 started: Name two programming languages
+2026-05-27 22:31:28,080 [swarm.goal_loop] INFO: [goal-1779935488079] Turn 1/5
+2026-05-27 22:31:28,080 [swarm.goal_loop] INFO: [goal-1779935488079] Decomposing goal...
+2026-05-27 22:31:28,080 [swarm.worker_pool] INFO: Submitted task a9677e38 (tier=complex, prio=HIGH)
+2026-05-27 22:31:28,081 [swarm.worker_pool] INFO: [worker-2] Running task a9677e38 on hermes3:latest
+2026-05-27 22:31:29,507 [swarm.worker_pool] INFO: [worker-2] Task a9677e38 completed (130 chars)
+2026-05-27 22:31:29,699 [swarm.goal_loop] INFO: [goal-1779935488079] Decomposed into 2 subgoals
+2026-05-27 22:31:29,700 [swarm.goal_loop] INFO: [goal-1779935488079] Turn 2/5
+2026-05-27 22:31:29,700 [swarm.worker_pool] INFO: Submitted task 1fcb6abf (tier=medium, prio=NORMAL)
+2026-05-27 22:31:29,700 [swarm.worker_pool] INFO: [worker-1] Running task 1fcb6abf on phi4-mini:latest
+2026-05-27 22:31:29,700 [swarm.goal_loop] INFO: [goal-1779935488079] Dispatched goal-1779935488079-sg1 -> 1fcb6abf (medium)
+2026-05-27 22:31:29,702 [swarm.worker_pool] INFO: Submitted task 6a980c53 (tier=simple, prio=NORMAL)
+2026-05-27 22:31:29,702 [swarm.goal_loop] INFO: [goal-1779935488079] Dispatched goal-1779935488079-sg2 -> 6a980c53 (simple)
+2026-05-27 22:31:29,702 [swarm.worker_pool] INFO: [worker-2] Running task 6a980c53 on qwen2.5:1.5b
+2026-05-27 22:31:30,976 [swarm.worker_pool] INFO: [worker-2] Task 6a980c53 completed (266 chars)
+2026-05-27 22:31:31,239 [swarm.worker_pool] INFO: [worker-1] Task 1fcb6abf completed (162 chars)
+2026-05-27 22:31:31,334 [swarm.goal_loop] INFO: [goal-1779935488079] Turn 3/5
+2026-05-27 22:31:31,334 [swarm.goal_loop] INFO: [goal-1779935488079] Judging completion...
+2026-05-27 22:31:31,335 [swarm.worker_pool] INFO: Submitted task cde5abb0 (tier=complex, prio=HIGH)
+2026-05-27 22:31:31,335 [swarm.worker_pool] INFO: [worker-2] Running task cde5abb0 on hermes3:latest
+2026-05-27 22:31:35,084 [swarm.worker_pool] INFO: [worker-2] Task cde5abb0 completed (375 chars)
+2026-05-27 22:31:35,197 [swarm.goal_loop] INFO: [goal-1779935488079] Judge verdict: complete=False
+2026-05-27 22:31:35,197 [swarm.goal_loop] INFO: [goal-1779935488079] Judge says incomplete, adding subgoals
+2026-05-27 22:31:35,197 [swarm.goal_loop] INFO: [goal-1779935488079] Turn 4/5
+2026-05-27 22:31:35,198 [swarm.worker_pool] INFO: Submitted task 44727d99 (tier=simple, prio=NORMAL)
+2026-05-27 22:31:35,198 [swarm.goal_loop] INFO: [goal-1779935488079] Dispatched goal-1779935488079-sg3 -> 44727d99 (simple)
+2026-05-27 22:31:35,198 [swarm.worker_pool] INFO: [worker-1] Running task 44727d99 on qwen2.5:1.5b
+2026-05-27 22:31:35,198 [swarm.worker_pool] INFO: Submitted task 1884d62d (tier=medium, prio=NORMAL)
+2026-05-27 22:31:35,199 [swarm.worker_pool] INFO: [worker-2] Running task 1884d62d on phi4-mini:latest
+2026-05-27 22:31:35,200 [swarm.goal_loop] INFO: [goal-1779935488079] Dispatched goal-1779935488079-sg4 -> 1884d62d (medium)
+2026-05-27 22:31:36,711 [swarm.worker_pool] INFO: [worker-1] Task 44727d99 completed (359 chars)
+2026-05-27 22:31:36,839 [swarm.worker_pool] INFO: [worker-2] Task 1884d62d completed (217 chars)
+2026-05-27 22:31:37,029 [swarm.goal_loop] INFO: [goal-1779935488079] Turn 5/5
+2026-05-27 22:31:37,029 [swarm.goal_loop] INFO: [goal-1779935488079] Judging completion...
+2026-05-27 22:31:37,029 [swarm.worker_pool] INFO: Submitted task e4d1bdb7 (tier=complex, prio=HIGH)
+2026-05-27 22:31:37,029 [swarm.worker_pool] INFO: [worker-1] Running task e4d1bdb7 on hermes3:latest
+2026-05-27 22:31:41,710 [swarm.worker_pool] INFO: [worker-1] Task e4d1bdb7 completed (460 chars)
+2026-05-27 22:31:41,912 [swarm.goal_loop] INFO: [goal-1779935488079] Judge verdict: complete=False
+2026-05-27 22:31:41,912 [swarm.goal_loop] INFO: [goal-1779935488079] Judge says incomplete, adding subgoals
+2026-05-27 22:31:41,912 [swarm.goal_loop] WARNING: Session goal-1779935488079 budget exhausted (5 turns)
+2026-05-27 22:31:41,912 [swarm.orchestrator] INFO: Goal session goal-1779935488079 finished with status=budget_exhausted
+2026-05-27 22:31:41,912 [test_swarm] INFO:   Goal session status: budget_exhausted
+2026-05-27 22:31:41,912 [test_swarm] INFO:   Goal result: None
+2026-05-27 22:31:41,912 [test_swarm] INFO: 
+=== Swarm Orchestrator Status ===
+Started: True
+Trust Level: cautious
+Redis Connected: False
+Workers: 2
+Ollama Reachable: True
+Pending Tasks: 0
+Active Goals: 0
+Total Goals: 1
+Recent Failures: 0
+2026-05-27 22:31:42,866 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:31:42,867 [swarm.message_bus] INFO: MessageBus closed.
+2026-05-27 22:31:42,867 [swarm.orchestrator] INFO: SwarmOrchestrator stopped
+2026-05-27 22:31:42,867 [test_swarm] INFO: PASS: Full SwarmOrchestrator
+2026-05-27 22:31:42,867 [test_swarm] INFO: ==================================================
+2026-05-27 22:31:42,867 [test_swarm] INFO: TEST SUMMARY
+2026-05-27 22:31:42,867 [test_swarm] INFO:   message_bus: FAIL
+2026-05-27 22:31:42,867 [test_swarm] INFO:   worker_pool: PASS
+2026-05-27 22:31:42,867 [test_swarm] INFO:   goal_loop: PASS
+2026-05-27 22:31:42,867 [test_swarm] INFO:   trust_mode: PASS
+2026-05-27 22:31:42,867 [test_swarm] INFO:   error_recovery: PASS
+2026-05-27 22:31:42,868 [test_swarm] INFO:   full_orchestrator: PASS
+2026-05-27 22:31:42,868 [test_swarm] INFO: Overall: SOME FAILED
+2026-05-27 22:32:27,530 [test_swarm] INFO: Starting swarm integration tests
+2026-05-27 22:32:27,530 [test_swarm] INFO: ==================================================
+2026-05-27 22:32:27,530 [test_swarm] INFO: TEST: MessageBus
+2026-05-27 22:32:27,530 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 22:32:27,530 [swarm.message_bus] INFO: Subscribed callback to results (total=1)
+2026-05-27 22:32:27,530 [test_swarm] INFO:   Received on results: test.hello -> {'x': 1}
+2026-05-27 22:32:28,032 [test_swarm] INFO:   Queue test passed
+2026-05-27 22:32:28,033 [test_swarm] INFO:   State test passed
+2026-05-27 22:32:28,033 [test_swarm] INFO:   Health: {'connected': False, 'channels': ['orchestrator', 'workers', 'results', 'errors'], 'listeners': {'orchestrator': 0, 'workers': 0, 'results': 1, 'errors': 0}, 'memory_queue_size': 2}
+2026-05-27 22:32:28,033 [swarm.message_bus] INFO: MessageBus closed.
+2026-05-27 22:32:28,033 [test_swarm] INFO: PASS: MessageBus
+2026-05-27 22:32:28,033 [test_swarm] INFO: ==================================================
+2026-05-27 22:32:28,033 [test_swarm] INFO: TEST: WorkerPool
+2026-05-27 22:32:28,051 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:32:28,051 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:32:28,051 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:32:28,051 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:32:28,555 [test_swarm] INFO:   Health: {
+  "ollama_reachable": true,
+  "workers": {
+    "worker-1": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935548.051575
+    },
+    "worker-2": {
+      "status": "idle",
+      "model": "",
+      "total_tasks": 0,
+      "failed_tasks": 0,
+      "last_heartbeat": 1779935548.0518012
+    }
+  },
+  "pending_tasks": 0,
+  "completed_tasks": 0,
+  "failed_tasks": 0
+}
+2026-05-27 22:32:28,556 [swarm.worker_pool] INFO: Submitted task 45e7d345 (tier=simple, prio=NORMAL)
+2026-05-27 22:32:28,556 [swarm.worker_pool] INFO: [worker-1] Running task 45e7d345 on qwen2.5:1.5b
+2026-05-27 22:32:28,796 [swarm.worker_pool] INFO: [worker-1] Task 45e7d345 completed (4 chars)
+2026-05-27 22:32:28,962 [test_swarm] INFO:   Task result: Pong
+2026-05-27 22:32:29,799 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:32:29,799 [test_swarm] INFO: PASS: WorkerPool
+2026-05-27 22:32:29,800 [test_swarm] INFO: ==================================================
+2026-05-27 22:32:29,800 [test_swarm] INFO: TEST: GoalLoop
+2026-05-27 22:32:29,811 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:32:29,812 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:32:29,812 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:32:29,812 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:32:30,313 [swarm.goal_loop] INFO: Goal session goal-1779935550313 started: List three colors of the rainbow
+2026-05-27 22:32:30,313 [swarm.goal_loop] INFO: [goal-1779935550313] Turn 1/5
+2026-05-27 22:32:30,313 [swarm.goal_loop] INFO: [goal-1779935550313] Decomposing goal...
+2026-05-27 22:32:30,314 [swarm.worker_pool] INFO: Submitted task 0197a232 (tier=complex, prio=HIGH)
+2026-05-27 22:32:30,314 [swarm.worker_pool] INFO: [worker-1] Running task 0197a232 on hermes3:latest
+2026-05-27 22:32:33,283 [swarm.worker_pool] INFO: [worker-1] Task 0197a232 completed (196 chars)
+2026-05-27 22:32:33,372 [swarm.goal_loop] INFO: [goal-1779935550313] Decomposed into 2 subgoals
+2026-05-27 22:32:33,372 [swarm.goal_loop] INFO: [goal-1779935550313] Turn 2/5
+2026-05-27 22:32:33,372 [swarm.worker_pool] INFO: Submitted task 86b6c945 (tier=simple, prio=NORMAL)
+2026-05-27 22:32:33,372 [swarm.goal_loop] INFO: [goal-1779935550313] Dispatched goal-1779935550313-sg1 -> 86b6c945 (simple)
+2026-05-27 22:32:33,372 [swarm.worker_pool] INFO: [worker-1] Running task 86b6c945 on qwen2.5:1.5b
+2026-05-27 22:32:33,372 [swarm.worker_pool] INFO: Submitted task 4ee07119 (tier=simple, prio=NORMAL)
+2026-05-27 22:32:33,373 [swarm.worker_pool] INFO: [worker-2] Running task 4ee07119 on qwen2.5:1.5b
+2026-05-27 22:32:33,374 [swarm.goal_loop] INFO: [goal-1779935550313] Dispatched goal-1779935550313-sg2 -> 4ee07119 (simple)
+2026-05-27 22:32:34,288 [swarm.worker_pool] INFO: [worker-1] Task 86b6c945 completed (132 chars)
+2026-05-27 22:32:35,951 [swarm.worker_pool] INFO: [worker-2] Task 4ee07119 completed (100 chars)
+2026-05-27 22:32:36,021 [swarm.goal_loop] INFO: [goal-1779935550313] Turn 3/5
+2026-05-27 22:32:36,022 [swarm.goal_loop] INFO: [goal-1779935550313] Judging completion...
+2026-05-27 22:32:36,022 [swarm.worker_pool] INFO: Submitted task d56468b0 (tier=complex, prio=HIGH)
+2026-05-27 22:32:36,022 [swarm.worker_pool] INFO: [worker-1] Running task d56468b0 on hermes3:latest
+2026-05-27 22:32:43,849 [swarm.worker_pool] INFO: [worker-1] Task d56468b0 completed (264 chars)
+2026-05-27 22:32:43,955 [swarm.goal_loop] INFO: [goal-1779935550313] Judge verdict: complete=False
+2026-05-27 22:32:43,955 [swarm.goal_loop] INFO: [goal-1779935550313] Judge says incomplete, adding subgoals
+2026-05-27 22:32:43,955 [swarm.goal_loop] INFO: [goal-1779935550313] Turn 4/5
+2026-05-27 22:32:43,956 [swarm.worker_pool] INFO: Submitted task 60cc7d56 (tier=simple, prio=NORMAL)
+2026-05-27 22:32:43,956 [swarm.goal_loop] INFO: [goal-1779935550313] Dispatched goal-1779935550313-sg3 -> 60cc7d56 (simple)
+2026-05-27 22:32:43,956 [swarm.worker_pool] INFO: [worker-2] Running task 60cc7d56 on qwen2.5:1.5b
+2026-05-27 22:32:43,956 [swarm.worker_pool] INFO: Submitted task 7be96c96 (tier=medium, prio=NORMAL)
+2026-05-27 22:32:43,957 [swarm.worker_pool] INFO: [worker-1] Running task 7be96c96 on phi4-mini:latest
+2026-05-27 22:32:43,958 [swarm.goal_loop] INFO: [goal-1779935550313] Dispatched goal-1779935550313-sg4 -> 7be96c96 (medium)
+2026-05-27 22:32:44,480 [swarm.worker_pool] INFO: [worker-2] Task 60cc7d56 completed (24 chars)
+2026-05-27 22:32:46,249 [swarm.worker_pool] INFO: [worker-1] Task 7be96c96 completed (57 chars)
+2026-05-27 22:32:46,410 [swarm.goal_loop] INFO: [goal-1779935550313] Turn 5/5
+2026-05-27 22:32:46,411 [swarm.goal_loop] INFO: [goal-1779935550313] Judging completion...
+2026-05-27 22:32:46,412 [swarm.worker_pool] INFO: Submitted task 8a0689b5 (tier=complex, prio=HIGH)
+2026-05-27 22:32:46,413 [swarm.worker_pool] INFO: [worker-2] Running task 8a0689b5 on hermes3:latest
+2026-05-27 22:32:56,108 [swarm.worker_pool] INFO: [worker-2] Task 8a0689b5 completed (379 chars)
+2026-05-27 22:32:56,179 [swarm.goal_loop] INFO: [goal-1779935550313] Judge verdict: complete=False
+2026-05-27 22:32:56,179 [swarm.goal_loop] INFO: [goal-1779935550313] Judge says incomplete, adding subgoals
+2026-05-27 22:32:56,179 [swarm.goal_loop] WARNING: Session goal-1779935550313 budget exhausted (5 turns)
+2026-05-27 22:32:56,179 [test_swarm] INFO:   Session status: budget_exhausted
+2026-05-27 22:32:56,179 [test_swarm] INFO:   Turns used: 5
+2026-05-27 22:32:56,179 [test_swarm] INFO:   Subgoals: 6
+2026-05-27 22:32:56,179 [test_swarm] INFO:     goal-1779935550313-sg1: completed -> The primary colors of a rainbow are red, orange, yellow, green, blue, and violet
+2026-05-27 22:32:56,179 [test_swarm] INFO:     goal-1779935550313-sg2: completed -> Colors in a typical rainbow: Red, Orange, Yellow, Green, Blue, Indigo, Violet  
+
+2026-05-27 22:32:56,179 [test_swarm] INFO:     goal-1779935550313-sg3: completed -> Red, Green, Blue, Yellow
+2026-05-27 22:32:56,179 [test_swarm] INFO:     goal-1779935550313-sg4: completed -> Red, Orange, Yellow, Green, Blue, Indigo, Violet (Violet)
+2026-05-27 22:32:56,179 [test_swarm] INFO:     goal-1779935550313-sg5: pending -> None
+2026-05-27 22:32:56,179 [test_swarm] INFO:     goal-1779935550313-sg6: pending -> None
+2026-05-27 22:32:57,114 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:32:57,115 [test_swarm] INFO: PASS: GoalLoop
+2026-05-27 22:32:57,115 [test_swarm] INFO: ==================================================
+2026-05-27 22:32:57,115 [test_swarm] INFO: TEST: TrustMode
+2026-05-27 22:32:57,117 [swarm.trust_mode] INFO: Loaded trust config from /Users/famtasticfritz/.shay/trust-mode.json (level=cautious)
+2026-05-27 22:32:57,118 [test_swarm] INFO:   Cautious deploy check: {'allowed': False, 'reason': "Cautious mode: trigger word 'deploy' requires approval", 'needs_approval': True, 'escalation': None}
+2026-05-27 22:32:57,119 [swarm.trust_mode] INFO: Trust decision: cautious_auto action='list files in directory' allowed=True
+2026-05-27 22:32:57,119 [test_swarm] INFO:   Cautious list check: {'allowed': True, 'reason': 'Cautious mode: no triggers detected, auto-approved', 'needs_approval': False, 'escalation': None}
+2026-05-27 22:32:57,120 [swarm.trust_mode] INFO: Trust level changed to paranoid
+2026-05-27 22:32:57,120 [test_swarm] INFO:   Paranoid list check: {'allowed': False, 'reason': 'Paranoid mode: all actions require approval', 'needs_approval': True, 'escalation': None}
+2026-05-27 22:32:57,121 [swarm.trust_mode] INFO: Trust level changed to godmode
+2026-05-27 22:32:57,122 [swarm.trust_mode] INFO: Trust decision: godmode action='deploy the app to production' allowed=True
+2026-05-27 22:32:57,122 [test_swarm] INFO:   Godmode deploy check: {'allowed': True, 'reason': 'Godmode: auto-approved', 'needs_approval': False, 'escalation': None}
+2026-05-27 22:32:57,123 [swarm.trust_mode] INFO: Trust level changed to cautious
+2026-05-27 22:32:57,123 [test_swarm] INFO: PASS: TrustMode
+2026-05-27 22:32:57,123 [test_swarm] INFO: ==================================================
+2026-05-27 22:32:57,123 [test_swarm] INFO: TEST: ErrorRecovery
+2026-05-27 22:32:57,131 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:32:57,131 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:32:57,131 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:32:57,131 [swarm.error_recovery] WARNING: Handling failure for task fake-fail-1 (attempt 1/2, error: connection refused)
+2026-05-27 22:32:57,131 [swarm.error_recovery] INFO: Retrying task fake-fail-1 in 0.5s (attempt 2)
+2026-05-27 22:32:57,633 [swarm.worker_pool] INFO: Submitted task fe3452b1 (tier=simple, prio=HIGH)
+2026-05-27 22:32:57,633 [swarm.error_recovery] INFO: Task fake-fail-1 retried as fe3452b1
+2026-05-27 22:32:57,633 [swarm.worker_pool] INFO: [worker-1] Running task fe3452b1 on qwen2.5:1.5b
+2026-05-27 22:32:57,633 [test_swarm] INFO:   Retry task ID: fe3452b1
+2026-05-27 22:32:57,635 [test_swarm] INFO:   Upgrade opportunities: [{'type': 'review_failures', 'reason': '1 total failures, no clear pattern', 'priority': 'low'}]
+2026-05-27 22:32:59,120 [swarm.worker_pool] INFO: [worker-1] Task fe3452b1 completed (96 chars)
+2026-05-27 22:32:59,120 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:32:59,120 [test_swarm] INFO: PASS: ErrorRecovery
+2026-05-27 22:32:59,120 [test_swarm] INFO: ==================================================
+2026-05-27 22:32:59,120 [test_swarm] INFO: TEST: Full SwarmOrchestrator
+2026-05-27 22:32:59,122 [swarm.message_bus] WARNING: Redis unavailable (No module named 'redis'). Running in-memory fallback.
+2026-05-27 22:32:59,127 [swarm.worker_pool] INFO: Ollama reachable. Models: ['wizardlm-uncensored:latest', 'dolphin-phi:latest', 'dolphin-llama3:latest', 'dolphin-mistral:latest', 'hermes3:latest', 'phi4-mini:latest', 'qwen2.5:1.5b', 'nous-hermes2:latest']
+2026-05-27 22:32:59,127 [swarm.trust_mode] INFO: Loaded trust config from /Users/famtasticfritz/.shay/trust-mode.json (level=cautious)
+2026-05-27 22:32:59,127 [swarm.orchestrator] INFO: SwarmOrchestrator initialized
+2026-05-27 22:32:59,128 [swarm.worker_pool] INFO: WorkerPool started with orchestrator thread.
+2026-05-27 22:32:59,128 [swarm.worker_pool] INFO: Spawned worker-1
+2026-05-27 22:32:59,128 [swarm.worker_pool] INFO: Spawned worker-2
+2026-05-27 22:32:59,128 [swarm.orchestrator] INFO: SwarmOrchestrator started
+2026-05-27 22:32:59,128 [swarm.message_bus] INFO: Subscribed callback to errors (total=1)
+2026-05-27 22:32:59,630 [test_swarm] INFO: 
+=== Swarm Orchestrator Status ===
+Started: True
+Trust Level: cautious
+Redis Connected: False
+Workers: 2
+Ollama Reachable: True
+Pending Tasks: 0
+Active Goals: 0
+Total Goals: 0
+Recent Failures: 0
+2026-05-27 22:32:59,631 [swarm.worker_pool] INFO: Submitted task de0f321b (tier=simple, prio=NORMAL)
+2026-05-27 22:32:59,631 [swarm.worker_pool] INFO: [worker-1] Running task de0f321b on qwen2.5:1.5b
+2026-05-27 22:32:59,801 [swarm.worker_pool] INFO: [worker-1] Task de0f321b completed (1 chars)
+2026-05-27 22:32:59,836 [test_swarm] INFO:   Direct ask result: 4
+2026-05-27 22:32:59,837 [swarm.trust_mode] INFO: Trust decision: cautious_auto action='Name two programming languages' allowed=True
+2026-05-27 22:32:59,838 [swarm.orchestrator] INFO: Goal approved by trust mode (cautious)
+2026-05-27 22:32:59,838 [swarm.goal_loop] INFO: Goal session goal-1779935579838 started: Name two programming languages
+2026-05-27 22:32:59,838 [swarm.goal_loop] INFO: [goal-1779935579838] Turn 1/5
+2026-05-27 22:32:59,838 [swarm.goal_loop] INFO: [goal-1779935579838] Decomposing goal...
+2026-05-27 22:32:59,838 [swarm.worker_pool] INFO: Submitted task ce2f48c2 (tier=complex, prio=HIGH)
+2026-05-27 22:32:59,838 [swarm.worker_pool] INFO: [worker-2] Running task ce2f48c2 on hermes3:latest
+2026-05-27 22:33:05,064 [swarm.worker_pool] INFO: [worker-2] Task ce2f48c2 completed (239 chars)
+2026-05-27 22:33:05,132 [swarm.goal_loop] INFO: [goal-1779935579838] Decomposed into 4 subgoals
+2026-05-27 22:33:05,132 [swarm.goal_loop] INFO: [goal-1779935579838] Turn 2/5
+2026-05-27 22:33:05,132 [swarm.worker_pool] INFO: Submitted task 4c960d73 (tier=medium, prio=NORMAL)
+2026-05-27 22:33:05,132 [swarm.goal_loop] INFO: [goal-1779935579838] Dispatched goal-1779935579838-sg1 -> 4c960d73 (medium)
+2026-05-27 22:33:05,132 [swarm.worker_pool] INFO: [worker-1] Running task 4c960d73 on phi4-mini:latest
+2026-05-27 22:33:05,133 [swarm.worker_pool] INFO: Submitted task 739271eb (tier=medium, prio=NORMAL)
+2026-05-27 22:33:05,133 [swarm.worker_pool] INFO: [worker-2] Running task 739271eb on phi4-mini:latest
+2026-05-27 22:33:05,135 [swarm.goal_loop] INFO: [goal-1779935579838] Dispatched goal-1779935579838-sg2 -> 739271eb (medium)
+2026-05-27 22:33:05,136 [swarm.worker_pool] INFO: Submitted task acedaf40 (tier=medium, prio=NORMAL)
+2026-05-27 22:33:05,136 [swarm.goal_loop] INFO: [goal-1779935579838] Dispatched goal-1779935579838-sg3 -> acedaf40 (medium)
+2026-05-27 22:33:05,137 [swarm.worker_pool] INFO: Submitted task 1a969d9c (tier=medium, prio=NORMAL)
+2026-05-27 22:33:05,138 [swarm.goal_loop] INFO: [goal-1779935579838] Dispatched goal-1779935579838-sg4 -> 1a969d9c (medium)
+2026-05-27 22:33:05,709 [swarm.worker_pool] INFO: [worker-2] Task 739271eb completed (6 chars)
+2026-05-27 22:33:05,754 [swarm.worker_pool] INFO: [worker-2] Running task acedaf40 on phi4-mini:latest
+2026-05-27 22:33:09,218 [swarm.worker_pool] INFO: [worker-1] Task 4c960d73 completed (230 chars)
+2026-05-27 22:33:09,277 [swarm.worker_pool] INFO: [worker-1] Running task 1a969d9c on phi4-mini:latest
+2026-05-27 22:33:13,451 [swarm.worker_pool] INFO: [worker-2] Task acedaf40 completed (450 chars)
+2026-05-27 22:33:13,596 [swarm.worker_pool] INFO: [worker-1] Task 1a969d9c completed (6 chars)
+2026-05-27 22:33:13,687 [swarm.goal_loop] INFO: [goal-1779935579838] Turn 3/5
+2026-05-27 22:33:13,687 [swarm.goal_loop] INFO: [goal-1779935579838] Judging completion...
+2026-05-27 22:33:13,687 [swarm.worker_pool] INFO: Submitted task 832cd760 (tier=complex, prio=HIGH)
+2026-05-27 22:33:13,687 [swarm.worker_pool] INFO: [worker-2] Running task 832cd760 on hermes3:latest
+2026-05-27 22:33:25,679 [swarm.worker_pool] INFO: [worker-2] Task 832cd760 completed (480 chars)
+2026-05-27 22:33:25,700 [swarm.goal_loop] INFO: [goal-1779935579838] Judge verdict: complete=False
+2026-05-27 22:33:25,700 [swarm.goal_loop] INFO: [goal-1779935579838] Judge says incomplete, adding subgoals
+2026-05-27 22:33:25,701 [swarm.goal_loop] INFO: [goal-1779935579838] Turn 4/5
+2026-05-27 22:33:25,701 [swarm.worker_pool] INFO: Submitted task 55b98729 (tier=medium, prio=NORMAL)
+2026-05-27 22:33:25,701 [swarm.goal_loop] INFO: [goal-1779935579838] Dispatched goal-1779935579838-sg5 -> 55b98729 (medium)
+2026-05-27 22:33:25,701 [swarm.worker_pool] INFO: [worker-1] Running task 55b98729 on phi4-mini:latest
+2026-05-27 22:33:25,701 [swarm.worker_pool] INFO: Submitted task 462ef29a (tier=medium, prio=NORMAL)
+2026-05-27 22:33:25,702 [swarm.worker_pool] INFO: [worker-2] Running task 462ef29a on phi4-mini:latest
+2026-05-27 22:33:25,704 [swarm.goal_loop] INFO: [goal-1779935579838] Dispatched goal-1779935579838-sg6 -> 462ef29a (medium)
+2026-05-27 22:33:44,550 [swarm.worker_pool] INFO: [worker-2] Task 462ef29a completed (2027 chars)
+2026-05-27 22:33:49,485 [swarm.worker_pool] INFO: [worker-1] Task 55b98729 completed (1209 chars)
+2026-05-27 22:33:49,533 [swarm.goal_loop] INFO: [goal-1779935579838] Turn 5/5
+2026-05-27 22:33:49,534 [swarm.goal_loop] INFO: [goal-1779935579838] Judging completion...
+2026-05-27 22:33:49,534 [swarm.worker_pool] INFO: Submitted task d0dc0c0f (tier=complex, prio=HIGH)
+2026-05-27 22:33:49,534 [swarm.worker_pool] INFO: [worker-2] Running task d0dc0c0f on hermes3:latest
+2026-05-27 22:33:58,160 [swarm.worker_pool] INFO: [worker-2] Task d0dc0c0f completed (333 chars)
+2026-05-27 22:33:58,301 [swarm.goal_loop] INFO: [goal-1779935579838] Judge verdict: complete=True
+2026-05-27 22:33:58,302 [swarm.goal_loop] INFO: [goal-1779935579838] Goal COMPLETED in 5 turns
+2026-05-27 22:33:58,302 [swarm.goal_loop] WARNING: Session goal-1779935579838 budget exhausted (5 turns)
+2026-05-27 22:33:58,302 [swarm.orchestrator] INFO: Goal session goal-1779935579838 finished with status=budget_exhausted
+2026-05-27 22:33:58,302 [test_swarm] INFO:   Goal session status: budget_exhausted
+2026-05-27 22:33:58,302 [test_swarm] INFO:   Goal result: The original goal has been fully achieved by identifying and discussing two programming languages - FORTRAN, known for its efficiency in scientific calculations, and Python, recognized for its readability features and versatile ecosystem catering to various fields.
+2026-05-27 22:33:58,303 [test_swarm] INFO: 
+=== Swarm Orchestrator Status ===
+Started: True
+Trust Level: cautious
+Redis Connected: False
+Workers: 2
+Ollama Reachable: True
+Pending Tasks: 0
+Active Goals: 0
+Total Goals: 1
+Recent Failures: 0
+2026-05-27 22:33:59,164 [swarm.worker_pool] INFO: WorkerPool stopped.
+2026-05-27 22:33:59,164 [swarm.message_bus] INFO: MessageBus closed.
+2026-05-27 22:33:59,164 [swarm.orchestrator] INFO: SwarmOrchestrator stopped
+2026-05-27 22:33:59,164 [test_swarm] INFO: PASS: Full SwarmOrchestrator
+2026-05-27 22:33:59,165 [test_swarm] INFO: ==================================================
+2026-05-27 22:33:59,165 [test_swarm] INFO: TEST SUMMARY
+2026-05-27 22:33:59,165 [test_swarm] INFO:   message_bus: PASS
+2026-05-27 22:33:59,165 [test_swarm] INFO:   worker_pool: PASS
+2026-05-27 22:33:59,165 [test_swarm] INFO:   goal_loop: PASS
+2026-05-27 22:33:59,165 [test_swarm] INFO:   trust_mode: PASS
+2026-05-27 22:33:59,165 [test_swarm] INFO:   error_recovery: PASS
+2026-05-27 22:33:59,165 [test_swarm] INFO:   full_orchestrator: PASS
+2026-05-27 22:33:59,165 [test_swarm] INFO: Overall: ALL PASSED
+2026-05-27 22:35:01,806 [swarm.error_recovery] WARNING: Handling failure for task fake-fail-1 (attempt 1/2, error: connection refused)
+2026-05-27 22:36:39,158 [swarm.error_recovery] WARNING: Handling failure for task fake-fail-1 (attempt 1/2, error: connection refused)
+2026-05-27 22:36:50,739 [swarm.worker_pool] WARNING: [worker-1] Task b911af92 timed out
+2026-05-27 22:37:38,788 [swarm.orchestrator] WARNING: Goal blocked by trust mode: Paranoid mode: all actions require approval
+2026-05-27 22:37:58,109 [swarm.goal_loop] WARNING: Session goal-1779935858791 budget exhausted (5 turns)
+2026-05-27 22:41:22,193 [swarm.error_recovery] WARNING: Handling failure for task fake-fail-1 (attempt 1/2, error: connection refused)
+2026-05-27 22:41:48,426 [swarm.goal_loop] WARNING: Session goal-1779936083621 budget exhausted (5 turns)
+2026-05-27 22:41:50,613 [swarm.worker_pool] WARNING: [worker-1] Task 9418ffbe timed out
+2026-05-27 22:42:57,217 [swarm.orchestrator] WARNING: Goal blocked by trust mode: Paranoid mode: all actions require approval
+2026-05-27 22:43:21,258 [swarm.goal_loop] WARNING: Session goal-1779936177219 budget exhausted (5 turns)
