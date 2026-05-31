@@ -40,14 +40,28 @@ grounded = (f"- shay-phone/server.py exists; endpoint refs: {g_ep.get('value')}\
             f"- Gates for companion units: py_compile + server-boot /api/ping + node --check for JS")
 log(f"discovered {len(ctx_prd)+len(ctx_blackbox)} chars; grounded endpoints")
 
-# 2. PARALLEL RESEARCH — 4 angles
-log("parallel research (4 angles)...")
+# THE MANDATE (was missing): clone AND exceed the Claude/ChatGPT/Codex phone
+# apps, with every capability tied to SHAY's workflows (she has a desktop +
+# agent-OS + vault + ralph build loop behind her — incumbents don't).
+INCUMBENTS = (
+  "Incumbent phone-app capabilities to MATCH then EXCEED: advanced/realtime VOICE, "
+  "audio/photo/file ATTACHMENTS, ARTIFACTS/canvas, PROJECTS, WEB SEARCH, IMAGE GEN, "
+  "CODE INTERPRETER, persistent MEMORY, home-screen WIDGETS, iOS LIVE ACTIVITIES / "
+  "Dynamic Island, Apple WATCH app, SHARE-SHEET capture, Siri/App-Intents, push. "
+  "SHAY's unfair advantages (use them to EXCEED): she drives a real build pipeline "
+  "(ralph loop / build_app), does mid-run human-in-the-loop APPROVALS (ask flow), has "
+  "persistent VAULT memory + learning loops, controls a DESKTOP + the Agent-OS, is "
+  "BRAIN-AGNOSTIC (Claude/GPT/Gemini/Ollama, survives caps), self-updates, and emits "
+  "heartbeats. The companion is a REMOTE CONTROL FOR SHAY, not a generic chatbot.")
+
+# 2. PARALLEL RESEARCH — 4 angles (correct mandate)
+log("parallel research (4 angles — clone+exceed incumbents, tied to Shay)...")
 def mk(q): return lambda: agent(q, disp, brain=BRAIN, tier="complex")
 res = parallel([
-  mk(f"Design /api/instruct: how Fritz sends an instruction from the phone and Shay's job runner picks it up. Build ON the existing /api/dispatch. Grounded:\n{grounded}"),
-  mk(f"Design the feedback loop: /api/feedback (rating+note) -> ~/.shay/feedback.jsonl -> a nightly reflect that writes a vault lesson (Retain/Recall/Reflect). How does Shay measurably improve from it? Grounded:\n{grounded}"),
-  mk(f"Design the self-update pipeline (steal blackbox-poc): tag commit, git pull --ff-only, py_compile, restart, poll /api/ping, auto-rollback on boot fail. Concrete steps for shay-phone. Context:\n{ctx_blackbox[:1500]}"),
-  mk(f"Design the live heartbeat dashboard + sign-off inbox in the PWA reading /api/arc + /api/asks. What components, polling, badges. Grounded:\n{grounded}"),
+  mk(f"Build a CAPABILITY PARITY+EXCEED matrix: for EACH incumbent capability, give the Shay equivalent on the phone AND how Shay EXCEEDS it by tying it to her desktop/agent-OS/vault/build-loop. {INCUMBENTS}\nGrounded:\n{grounded}"),
+  mk(f"WORKFLOW-TIE: map each phone capability to Shay's ACTUAL workflows — build dispatch (ralph/build_app), mid-run approvals (/api/ask), vault memory + learning, desktop control, agent-OS job monitoring, heartbeats — so the phone is a true remote control for HER. {INCUMBENTS}\nGrounded:\n{grounded}"),
+  mk(f"BRAIN-AGNOSTIC architecture + build-ON path: how to add voice, attachments, artifacts, search, widgets, Live Activities, share-sheet to the EXISTING shay-phone (Python server + PWA) without vendor lock; what's a PWA-feasible subset vs needs-native. Self-update (blackbox-poc): tag/pull/py_compile/restart/poll/rollback. Context:\n{ctx_blackbox[:1200]}\nGrounded:\n{grounded}"),
+  mk(f"TOP-10 ways Shay's companion BEATS the Claude/ChatGPT/Codex apps (the differentiators a generic chatbot can't match), each concrete and tied to her workflows. {INCUMBENTS}"),
 ], max_workers=4)
 res = [r for r in res if r]
 log(f"{len(res)}/4 angles complete")
@@ -55,11 +69,14 @@ blob = "\n\n---\n\n".join(f"### Angle {i+1}\n{r}" for i, r in enumerate(res))
 
 # 3. SYNTHESIZE — gated plan
 log("synthesizing companion build plan (planning_loop)...")
-goal = ("Produce the concrete, ordered build plan for Shay's companion app (C1-C7 from the PRD), "
-        "grounded in the real shay-phone surface, where each unit is a gated build step Shay can run "
-        "through her own loop with the py_compile+boot gates.")
-required = ["Vision", "Current State", "Unit Build Order", "Per-Unit Recipe",
-            "Gates", "Feedback/Learning Loop", "Self-Update", "Risks"]
+goal = ("Produce the build plan for a Shay companion phone app that CLONES then EXCEEDS the "
+        "Claude/ChatGPT/Codex phone apps, with EVERY capability tied to Shay's real workflows "
+        "(build dispatch, mid-run approvals, vault memory, desktop/agent-OS control, brain-agnostic, "
+        "self-update, heartbeats). Build ON the existing shay-phone. Each unit is a gated build step "
+        "(py_compile + server-boot + node --check) Shay can run through her own loop.")
+required = ["Vision (clone+exceed)", "Capability Parity Matrix", "Workflow Ties",
+            "Top-10 Differentiators", "Unit Build Order", "Per-Unit Recipe + Gates",
+            "Brain-Agnostic + Self-Update", "Risks"]
 result = planning_loop(goal, disp, required_sections=required,
                        context=f"GROUNDED:\n{grounded}\n\nRESEARCH:\n{blob[:5000]}",
                        grounding_facts=grounded, brain=BRAIN, max_attempts=3)
