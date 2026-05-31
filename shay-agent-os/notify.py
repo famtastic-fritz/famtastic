@@ -42,6 +42,37 @@ def _get(path: str, timeout: float = 15.0) -> dict:
         return {"error": str(exc)}
 
 
+def _tg_creds():
+    """Read TELEGRAM_BOT_TOKEN + TELEGRAM_HOME_CHANNEL from ~/.shay/.env."""
+    env = {}
+    f = Path.home() / ".shay" / ".env"
+    if not f.exists():
+        return None, None
+    for line in f.read_text().splitlines():
+        line = line.strip()
+        if line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        env[k.strip()] = v.strip().strip('"').strip("'")
+    return env.get("TELEGRAM_BOT_TOKEN"), env.get("TELEGRAM_HOME_CHANNEL")
+
+
+def telegram_push(text: str) -> None:
+    """Real lock-screen push via the existing Shay Telegram bot. Never raises."""
+    token, chat = _tg_creds()
+    if not token or not chat:
+        return
+    try:
+        body = json.dumps({"chat_id": chat, "text": text,
+                           "disable_notification": False}).encode()
+        req = urllib.request.Request(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            data=body, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=10)
+    except Exception:
+        pass
+
+
 def _banner(title: str, msg: str) -> None:
     try:
         safe_t = title.replace('"', "'")[:60]
@@ -97,6 +128,10 @@ def heartbeat(phase: str, msg: str, pct=None) -> None:
     if s.get("job_id"):
         _post("/api/job/progress", {"id": s["job_id"], "message": line, "percent": pct})
     _banner(f"Shay · {phase}", msg)
+    # Real lock-screen push for the events that matter (not every micro-beat).
+    if any(k in msg for k in ("DONE", "BLOCKED", "SIGN-OFF", "FAILED", "complete",
+                              "arc", "start")) or phase == "SIGN-OFF":
+        telegram_push(f"🤖 Shay · {phase}\n{msg}")
 
 
 def checkpoint(name: str, data: dict) -> None:
