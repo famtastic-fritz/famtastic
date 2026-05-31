@@ -1,52 +1,55 @@
 ---
-title: Shay Desktop — Canonical App Decision (two apps, no crossing wires)
+title: Shay Apps — Canonical Map (CORRECTED) — desktop vs tunnel, no crossing wires
 date: 2026-05-31
-author: claude-code (Fritz decision)
+author: claude-code (Fritz confirmed)
 tags:
 - desktop
+- tunnel
 - canonical
 - decision
 - do-not-confuse
-- swift
 - electron
-- retire
+- swift
 permalink: shay-memory/plans/desktop-canonical-2026-05-31
 ---
 
-# Two desktops — which is which (DO NOT CROSS WIRES)
+# Shay apps — the CORRECT map (confirmed by Fritz 2026-05-31)
 
-There are TWO separate Shay desktop apps. They are NOT merged and must not be confused.
+Two installed apps whose names differ ONLY by a space. This caused repeated confusion.
+Confirmed mapping:
 
-## `shay-desktop` (Swift) — EXISTING, FROZEN, retiring
-- Native macOS Swift app (`HermesDesktop`), from `dodo-reach/hermes-desktop`.
-- BUILT + INSTALLED: `/Applications/ShayDesktop.app` (v0.8.1, ~9.2MB), last built 2026-05-19.
-- This is the polished hand-built daily-driver Fritz already had.
-- **Status: FROZEN.** No changes. It is the v1 that will be RETIRED once the
-  Electron app reaches parity. Shay's build loop must NEVER touch it.
+## ✅ `Shay Desktop.app` (WITH space) — THE DESKTOP Fritz works in
+- **Electron** app, v0.4.3, productName "Shay Desktop".
+- Installed at `/Applications/Shay Desktop.app` (packaged 2026-05-19).
+- **Source: `~/famtastic/shay-desktop-electron`** (repo `fathah/hermes-desktop`).
+- THIS is the real daily-driver desktop. All desktop dev targets this source.
+- Tonight's fixes (IPC bridge 140/140, QA gate, screens) are IN THE SOURCE but
+  NOT in the installed May-19 package yet → needs a repackage to land.
 
-## `shay-desktop-electron` (Electron/TS) — GO-FORWARD, Shay-buildable
-- Electron + TypeScript/React, from `fathah/hermes-desktop`, v0.4.3.
-- This is the one Shay can AUTONOMOUSLY build/extend (TSX >> Swift for an LLM pipeline).
-- Tonight: fixed dead preload bridge, completed the IPC contract (140/140, 0 console
-  errors — 96 real + 44 graceful stubs), added the render-QA gate (`npm run qa`).
-- **Status: ACTIVE.** All build work + Shay's ralph loop target THIS app only.
+## 🔌 `ShayDesktop.app` (NO space) — the SSH-TUNNEL app (different product)
+- **Native Swift** (`HermesDesktop`), repo `dodo-reach/hermes-desktop`.
+- Source: `~/famtastic/shay-desktop`. Built into `/Applications/ShayDesktop.app`.
+- This is the remote-access / SSH-tunnel product, NOT a desktop UI to build on.
+- Keep as a SEPARATE product (Fritz: two builds for now). Frozen for desktop work.
 
-## The plan (Fritz, 2026-05-31)
-Build them as separate apps. Drive the Electron app to feature-parity with the
-Swift app, then **retire the Swift app** (replace `/Applications/ShayDesktop.app`).
+## ⚠️ Bundle-id collision (must fix)
+BOTH apps use `com.famtastic.shaydesktop`. macOS can't disambiguate them. Fix:
+give the TUNNEL its own id+name → `com.famtastic.shaytunnel` / "Shay Tunnel".
+Desktop keeps `com.famtastic.shaydesktop` / "Shay Desktop".
 
-## Easiest path to "Electron complete → retire Swift"
-1. **Reuse the backend, don't rebuild it.** The 44 stubbed Electron methods map to
-   capabilities the hermes-agent gateway/CLI ALREADY provides (the Swift app uses
-   them). Wire the Electron main-process handlers as THIN PROXIES to that same
-   gateway — far easier than writing 44 new backends.
-2. **Parity checklist vs ShayDesktop.app** — enumerate what the Swift app does;
-   drive the Electron app to match, gated per-screen by `npm run qa` (contract + vision).
-3. **Cosmetic polish** via the visual-QA loop (fix cut-off text etc. flagged by visual_qa).
-4. **Cutover** when QA + parity are green: build the Electron `.dmg`, replace
-   `/Applications/ShayDesktop.app`, archive the Swift repo.
+## The other running pieces (not desktops)
+- `~/.shay` = runtime/config git repo (auth, SOUL, sessions) + checked-out
+  `hermes-agent` (= NousResearch/shay-shay, the agent core) + `hermes-office` (claw3d, npm dev :3333).
+- `ai.shay.gateway` = the brain gateway. `com.famtastic.studio` = FAMtastic Studio (launchd).
+- `shay-phone` (:8787) = phone PWA + API. vault-search MCP (:8766).
 
-## Guardrails so we never cross wires again
-- Shay's ralph loop / build_app target ONLY `shay-desktop-electron`.
-- The Swift `shay-desktop` repo is frozen — no agent edits it until retirement.
-- This note is the canonical reference; check it before any desktop work.
+## Decisions (Fritz)
+1. Keep BOTH as separate builds (desktop + tunnel).
+2. Fix the bundle-id collision (rename tunnel → shaytunnel / "Shay Tunnel").
+3. Repackage "Shay Desktop.app" from current source so the installed app gets
+   tonight's fixes — AFTER a no-regression check vs the installed build.
+4. Do NOT delete the Swift tunnel source — archive/freeze it, clearly labeled.
+
+## Guardrail
+Shay's build loop / build_app target ONLY `shay-desktop-electron`. Check this note
+before any desktop work. The space-vs-no-space naming is the trap — always verify.
