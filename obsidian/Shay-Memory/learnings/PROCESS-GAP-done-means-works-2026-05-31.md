@@ -1,7 +1,14 @@
 ---
 title: Process gap — "passes my gates" ≠ "works for the user" (do-not-repeat)
 date: 2026-05-31
-tags: [process, do-not-repeat, qa, definition-of-done, gates, self-attestation]
+tags:
+- process
+- do-not-repeat
+- qa
+- definition-of-done
+- gates
+- self-attestation
+permalink: shay-memory/learnings/process-gap-done-means-works-2026-05-31
 ---
 
 # Hard process rule: "done" = runs + reachable + looks right + usable

@@ -1,0 +1,751 @@
+{
+  "swarm": {
+    "r1": [
+      {
+        "major_issues": [
+          {
+            "claim": "gives ~90 concurrent inferences from free tiers alone",
+            "rebuttal": "This conflates RPM with concurrency. Cerebras free is 30 requests-per-minute = max 0.5 requests-per-second, not 25 concurrent inferences. The matrix even says 'groq: 25 # under their 30 RPM ceiling' \u2014 that's a rate limit, not a parallelism budget. If avg call latency is 8s (as section 6.1 assumes), 30 RPM means only ~4 calls can be in-flight at steady state before the bucket empties. The 'sum of free-pool ceilings' = 90 number in free-maximal.yaml is mathematically wrong; it adds RPM headrooms together as if they were semaphore slots. Real free-pool concurrency is closer to 12-15 sustained, not 90.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "500 agents queued through this pool clears in tens of minutes for free",
+            "rebuttal": "Daily request quotas hit before per-minute quotas matter. Gemini 2.5 Flash free is 250 RPD \u2014 500 agents with judge loops will exceed that on a single run. OpenRouter free is 50 RPD without a $10 credit (1000 RPD with one), not '50-1000 RPD' as a soft range. With 5 layers (executor + judge per turn) and >1 turn average, free-maximal hits Gemini's 250-RPD wall after one job and Groq's 14400-RPD wall (table says it, but 500 agents \u00d7 multiple inferences per agent \u00d7 retries on flake actually breaches it across 2-3 runs in a day). 'Tens of minutes' assumes no quota wall; the wall is the problem.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "OPENROUTER free 20 RPM shared, 50-1000 RPD",
+            "rebuttal": "The 50/1000 split is conditional, not a range. OpenRouter free is 50 requests/day if you have <$10 lifetime credit, 1000/day only after depositing $10. Treating it as 'allocated 100 agents' (table 6.1) assumes the $10 path without saying so \u2014 that's a real-money precondition for the 'free-maximal' policy. The cost_ceiling_usd: 0.00 line in free-maximal.yaml is incompatible with the OpenRouter allocation that requires $10 already on file.",
+            "severity": "major"
+          },
+          {
+            "claim": "Single-host Ollama on an M3/M4 Max caps at OLLAMA_NUM_PARALLEL=4 with realistic Q4 models",
+            "rebuttal": "True only for small models. For Hermes3 (8B Q4) or Llama-3.3-70B on an M-series, the cap is VRAM-bound, not the env var. A 70B Q4 model is ~40 GB; even an M4 Max 128GB unified memory cannot hold 4 parallel KV-cache copies of a 70B at meaningful context. The free-maximal table assigns 50 agents to Ollama with hermes3:latest and claims '4 concurrent' \u2014 that's plausible for 8B Hermes but the math breaks if anyone reads 'Ollama local' and uses it for the Llama 3.3 70B model that appears one row above in the same policy file (cerebras llama-3.3-70b). The doc doesn't pin the local model size and the speed-first.yaml explicitly disables Ollama because it's 'too slow' \u2014 confirming the doc knows local 4-parallel is fictional for the production case.",
+            "severity": "major"
+          },
+          {
+            "claim": "p99 super-step latency > 2\u00d7 the underlying LLM call as the fallback trigger threshold above ~200 sustained agents",
+            "rebuttal": "No benchmark cited. LangGraph's Postgres checkpointer writes the full state on every super-step transition; at 500 fan-out width with reducers running on every Send, write amplification on a single Postgres is the documented bottleneck (langgraph-ai issues #1247 and similar). The doc asserts '~200 sustained' as the cutover threshold without a measurement. The threshold is policy-shaped at best \u2014 claiming LangGraph 'gives us 500-way fan-out with durable, resumable state in ~200 lines of Python' contradicts the same section's '~200 sustained agents' fallback trigger. Either 500 works or 200 is the real ceiling; both cannot be true.",
+            "severity": "major"
+          },
+          {
+            "claim": "policy.yaml hot-reloaded on SIGHUP",
+            "rebuttal": "Reloading pydantic models inside a running threaded dispatcher mid-flight without an atomicity story is a foot-gun. The doc gives no version-stamp/swap protocol \u2014 if `per_provider_cap` shrinks mid-run, what happens to the 30 calls already in flight against the old cap? If `tier_definitions` changes a provider's model name, do checkpointed tasks resume with the old model or the new one? The kill-switch section mentions resume from checkpoint, but the policy version isn't part of the checkpoint key. SIGHUP without a version barrier is mid-flight torn config.",
+            "severity": "major"
+          },
+          {
+            "claim": "BudgetTracker enforces cost_ceiling_usd as a pre-dispatch hard stop. Persists to disk every tick",
+            "rebuttal": "Persisting to ~/.shay/budget-state.json 'every tick' across a LangGraph multi-process worker pool creates a sqlite/file-lock contention surface the doc never addresses. The incumbent already runs threaded; LangGraph + Postgres checkpointer typically runs multiple worker processes. A flat JSON file with concurrent writers loses updates (last-write-wins). The same fs-contention class of bug the doc says it's moving away from (MessageBus in-memory fallback) is reintroduced as the budget state. Needs Postgres row or Redis INCRBY, not a JSON file.",
+            "severity": "major"
+          },
+          {
+            "claim": "Score for Fritz's actual goals: shay-agent-os = 3",
+            "rebuttal": "The scoring rubric is undefined. 'For Fritz's actual goals' is asserted as numeric but no weighting of cost / lock-in / 500-cap / admin-tunability is shown. LangGraph scores 9 and greenfield scores 8 by the same opaque rubric \u2014 the rubric is doing the work. Without weights, the 8 vs 9 vs 3 comparison is unfalsifiable. A feasibility claim that ranks options by an invisible scoring function is not a feasibility claim.",
+            "severity": "major"
+          },
+          {
+            "claim": "expected wall-clock ... 500 agents \u2248 5.5 minutes of pure dispatch, plus per-call latency (avg 8s) \u2192 ~40-50 min end-to-end",
+            "rebuttal": "5.5 min dispatch + 8s per-call latency does not add to 40-50 min. If concurrency is genuinely 90 (which itself is wrong, see above), 500 calls / 90 concurrency \u00d7 8s = ~45s wall-clock for the parallel block. If concurrency is actually ~12-15 (the real free-pool sustained), 500/13 \u00d7 8s = ~310s = 5 min. The '40-50 min' includes retries handwave but the math behind it isn't shown. The 'retries' line claims 50-75 retries \u2014 a 10-15% flake rate adds ~75 calls \u00d7 8s / 13 concurrency = ~46s, not 35-45 minutes. The wall-clock is either ~6 min (optimistic) or hours (if Gemini RPD wall hits and the cascade falls back to Ollama at 4-parallel \u2014 500/4 \u00d7 8s = 1000s = 17 min for Ollama alone).",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Section 2.2.4 calls AutoGen 'maintenance mode since early 2026' without citation; the AutoGen repo is still actively merging PRs as of mid-2026, so 'maintenance' is overstated.",
+          "Cerebras Llama 3.3 70B '2000+ tok/sec' claim in speed-first cost math uses paid-tier throughput but the cost figure ~$0.10/M is rough; Cerebras paid Llama 3.3 70B is closer to $0.85 input / $1.20 output per M, making the speed-first total ~$5 not $0.43.",
+          "Section 7.4 says 'MessageBus Redis KV stays as-is (it's the right tool for trust state and rate-limit counters)' but message_bus.py:95 silently falls back to in-memory when Redis is down \u2014 section 8.1 flagged this exact failure mode is unacceptable, yet trust state inherits it.",
+          "The kill_switch.check() implementation only fires after a result is recorded; pre-dispatch check protects new dispatches but a long-tail of in-flight tasks that all fail simultaneously can blow through `cost_ceiling_usd` before record_result rolls in. Needs a max-in-flight budget reservation, not just post-hoc accounting.",
+          "Section 6.3 (speed-first) assigns 200 agents to Cerebras paid with 100 concurrent cap \u2014 fine \u2014 but doesn't model the Cerebras paid context window (8K typical for the cheapest paid tier) against the 2000+1500 = 3500 token agent envelope. Some agents need >3500 input if they're consuming prior layer's outputs (MoA section 5.2).",
+          "The 'idempotency_key: task_id' policy key implies provider-level dedupe but most LLM providers don't honor idempotency keys (OpenAI does, Groq/Cerebras/Gemini do not as of late 2025/early 2026). The key only protects checkpoint replay inside LangGraph, not provider-side retries.",
+          "policy.yaml under section 4.1 lists `failure_rate_kill: 0.30` as 'kill swarm if >30% of agents fail' but the kill_switch implementation compares to `rate >= self.policy.swarm.failure_rate_kill`, which is exactly-30% triggers (>= not >). Off-by-one against the doc text.",
+          "Section 7.2 Day 1 acceptance is `--probe` returns RPM headroom \u2014 but most free-tier providers don't expose a 'remaining quota' endpoint. Headroom has to be tracked client-side from prior responses. The doc treats `rpm_remaining()` as if providers expose it."
+        ],
+        "strengths": [
+          "Correctly identifies worker_pool.py hardcoded OLLAMA_HOST and MODEL_MAP as the structural ceiling \u2014 citations at worker_pool.py:27 and 78-82 match the actual file.",
+          "Correctly identifies goal_loop.py serializes subgoal waits (line 264-277 in the doc, matches actual 265-277). The parallelism fix in Day 4 is the right call.",
+          "Honest acknowledgment that 'every feature is on us to build' for greenfield path \u2014 doesn't oversell the asyncio escape hatch.",
+          "Preserving TrustMode, ErrorRecovery, GoalLoop is the right architectural call \u2014 they are framework-agnostic and battle-tested.",
+          "Pattern library section 5 is brain-runtime-agnostic by design; the patterns are implementable on whichever dispatcher wins.",
+          "Kill switch implementation has the right shape (cost + time + failure-rate triple gate) even if the implementation has the in-flight gap noted above.",
+          "Recognizes that 'Temporal is the right answer if no limits eventually means no excuses' \u2014 picks LangGraph as pragmatic primary rather than aspirational, which matches Fritz's stated week-not-month timeline."
+        ],
+        "overall": "revise-major"
+      },
+      {
+        "major_issues": [
+          {
+            "claim": "Brain-agnostic claim is contradicted by the Day-2 build: 'Create components/swarm/langgraph_dispatcher.py: a graph with dispatch, execute, judge, reduce nodes. Postgres checkpointer (SQLite for dev).' The dispatcher is named after the vendor, the persistence layer is LangGraph's checkpointer (a vendor-specific schema), and section 7.4 explicitly states 'LangGraph checkpointer is the new source of truth for in-flight task state.' Source of truth = lock-in. You cannot swap the runtime without a state migration tool for the checkpointer table format, which is not in the plan.",
+            "rebuttal": "The draft hand-waves this with 'Replace LangGraph entirely: the dispatcher is a single class behind a small interface. Swap LangGraphDispatcher for AsyncioDispatcher without touching SwarmOrchestrator, TrustMode, ErrorRecovery, or GoalLoop.' But it never defines that interface, never specifies a checkpoint export/import contract, and never reckons with the fact that any in-flight job at swap time would be stranded in LangGraph's Postgres tables with no migration path. Section 8.1 mode 7 actually doubles down \u2014 'LangGraph's checkpoint replay handles it on resume' \u2014 meaning resume semantics are vendor-defined. The 'escape hatch' is theoretical, not engineered.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "The pattern library in section 5 is presented as 'brain-agnostic patterns... implementable on LangGraph, asyncio, or Temporal without modification' but the very first pattern (5.1 Map-reduce) hardcodes LangGraph's Send primitive: 'sends = [Send(\"mapper\", {\"item\": x, \"id\": i}) for i, x in enumerate(items)]'. Send is a LangGraph-specific class with LangGraph-specific super-step semantics. The pseudocode is not runtime-portable; it is LangGraph code with a comment saying 'on asyncio: gather() under semaphore.' That comment is doing all the work and hides the fact that fan-out semantics, error containment, and partial-result preservation differ materially across the three runtimes.",
+            "rebuttal": "If patterns truly described coordination not runtime, they would use a runtime-neutral primitive like a `fan_out(callable, items)` method on a Dispatcher protocol. They don't \u2014 they import Send by name. This means migrating the pattern library off LangGraph requires rewriting every pattern, not swapping a dispatcher class.",
+            "severity": "major"
+          },
+          {
+            "claim": "The kill-switch resume semantics depend on LangGraph: 'SwarmOrchestrator.resume(job_id) continues from the last LangGraph checkpoint.' Resume \u2014 a user-facing capability \u2014 is defined in terms of the vendor's checkpoint format. If LangGraph is later swapped for the asyncio fallback, the resume() API either breaks for in-flight jobs or requires a parallel checkpoint format in the greenfield path that is not specified anywhere in section 7.",
+            "rebuttal": "The draft's own 'fallback: greenfield asyncio + Redis Streams' path would have to reimplement checkpoint semantics from scratch (Redis Streams are an event log, not a graph checkpoint). The two persistence models are not isomorphic \u2014 replaying a LangGraph super-step is not the same as XCLAIMing a pending stream entry \u2014 so the 'cut-over is bounded to the dispatch core' claim is false. State persistence cuts over too, and any in-flight job at cut-over time is lost.",
+            "severity": "major"
+          },
+          {
+            "claim": "The 'BrainRouter is our code, not LangChain's' defense in section 3 is undercut by the immediately preceding bullet: 'the LangChain LLM abstraction means BrainRouter becomes a node that picks among Ollama / Groq / Cerebras / Gemini / OpenRouter clients.' If BrainRouter picks LangChain ChatModel instances, it is coupled to LangChain's message format, tool-call schema, streaming interface, and version-bump churn. The draft cannot simultaneously claim (a) we use the LangChain LLM abstraction for brain-agnosticism and (b) we can swap it for raw HTTP at any time \u2014 those are mutually exclusive in practice once any provider-specific feature (tool calls, structured output, streaming) is in use.",
+            "rebuttal": "Section 7.1 actually contradicts the 'LangChain LLM abstraction' framing by showing ProviderClients as separate files per brain (ollama.py, groq.py, cerebras.py, gemini.py, openrouter.py) each implementing run(prompt, **kwargs) -> str. That is a custom abstraction, not LangChain's. The two descriptions of the brain layer disagree with each other. The reviewer cannot tell whether the recommended architecture uses LangChain ChatModels (lock-in) or a homegrown ProviderClient protocol (no lock-in). One of these must be wrong.",
+            "severity": "major"
+          },
+          {
+            "claim": "The matrix row 'Brain-agnosticism: YES (LangChain LLM abstraction)' for LangGraph misrepresents the coupling. LangChain's LLM abstraction has well-documented sharp edges: provider-specific kwargs leak through, tool-calling schema differs across providers (langchain-openai, langchain-anthropic, langchain-google-genai are not drop-in interchangeable), and the abstraction itself is on a 1.0+ churn cadence with breaking changes between minor versions. Calling this 'YES' without qualification is the exact kind of hidden coupling this lens is designed to flag.",
+            "rebuttal": "Compare to the 'Greenfield asyncio: YES (you write the router)' row \u2014 that is honestly characterized. LangGraph's row should read something like 'PARTIAL (LangChain abstraction varies by provider; provider-specific features require provider-specific code paths).' The matrix's binary YES/NO makes LangGraph look strictly better than it is.",
+            "severity": "major"
+          },
+          {
+            "claim": "Section 7.4 says 'MessageBus Redis KV stays as-is (it's the right tool for trust state and rate-limit counters)' \u2014 but section 4.1 puts per_provider_cap into policy.yaml and section 7.2 Day 1 says 'Token-bucket per provider keyed by per_provider_cap.' Where does the token bucket live? If it lives in MessageBus Redis, fine; if it lives in LangGraph state, that is another coupling not called out. The draft never specifies.",
+            "rebuttal": "Rate-limit state is the kind of thing that quietly migrates into whatever framework you adopt. If the token bucket ends up in LangGraph's checkpointed state (because the dispatcher node reads it on every dispatch), then rate-limit accounting is also tied to LangGraph's persistence \u2014 another invisible coupling.",
+            "severity": "major"
+          },
+          {
+            "claim": "The 'Score for Fritz's actual goals' row gives shay-agent-os a 3 and LangGraph a 9 without showing the rubric. The draft also gives Temporal an 8 (one point off LangGraph) despite admitting Temporal handles every property in the matrix strictly better (durability, idempotency, observability, concurrency ceiling, maturity). The scoring is unjustified and appears reverse-engineered to support the recommended option.",
+            "rebuttal": "The only honest tiebreaker the draft offers between LangGraph and Temporal is 'LangGraph solves today's problem in a week; Temporal solves it in three.' That is a build-time argument, not a goal-fit argument. If 'no vendor lock-in' is a stated goal, Temporal \u2014 which lets you write activities in any SDK with no framework-shaped state \u2014 is arguably the lower-lock-in choice. The matrix score does not reflect that.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Reference policy A 'free-maximal' sets ollama_local cap at 4 but the worked example 6.1 assigns 50 agents to Ollama Hermes3 \u2014 those are queued not concurrent, but the table headers blur the distinction. Worth labeling 'assigned (queued)' vs 'concurrent'.",
+          "Section 6.1 cost math is too clean: 'Expected cost USD: $0 (all free pools).' This ignores the realistic case where free-tier daily token budgets (Cerebras 1M tok/day, Gemini 250 RPD) are exceeded by a 1.75M-token job. Cerebras alone would burn the entire daily token budget on its 150-agent share. The fallback_chain handles it, but the table should show overflow into paid or local.",
+          "Section 2.2.4 calls AutoGen 'maintenance mode since early 2026' \u2014 verify against source. The cited Microsoft Research article from early 2025 announced v0.4 as the future direction; the 'frozen' claim needs a 2026-dated source if it is to stand.",
+          "The pattern library's adversarial_verify (5.3) uses the string 'RATIFIED' as a sentinel \u2014 but the prompt asks the prosecutor to 'REFUTE this claim with evidence. If you cannot, say RATIFIED.' Cloud LLMs frequently emit the sentinel inside a refutation paragraph ('...this argument could be RATIFIED if...'). Section 8.1 mode 4 mentions fuzzy parsing as the fix but the pattern code shows a substring check that is exactly the brittle pattern called out.",
+          "Section 7.2 Day 3 says 'every existing SwarmOrchestrator test passes against the new dispatcher with no signature change' \u2014 but the incumbent's test_swarm.py is not referenced, so it is unclear whether the existing test surface actually covers the goal_loop parallelism change planned for Day 4.",
+          "Section 8.1 mode 5 says the dispatcher 'refuses to start if neither [Postgres nor SQLite] available' \u2014 this contradicts the brain-agnostic / runtime-agnostic positioning. A homegrown asyncio fallback would not need Postgres. The hard-startup-requirement is another lock-in tell.",
+          "Section 4.1 policy.yaml has cost_ceiling_usd but section 5 pattern code never references budget checks inside the patterns themselves. Hierarchical decomposition with a 'premium' planner+reviewer could burn budget before the loop-until-dry breaker fires. Patterns and policy are not wired together in the spec."
+        ],
+        "strengths": [
+          "Section 2.2.1's critique of the incumbent is grounded: line citations (worker_pool.py:27 OLLAMA_HOST, worker_pool.py:78-82 MODEL_MAP, goal_loop.py:265-277 sequential wait) check out against the actual code on disk.",
+          "Section 4 policy.yaml schema is the strongest part of the draft \u2014 it externalizes every numeric ceiling, supports hot-reload, and the three reference policies show real understanding of the cost/latency/free-tier tradeoff.",
+          "Section 8.2 kill-switch implementation is concrete and defensive: cost ceiling, time ceiling, rolling failure-rate window, on-disk audit log. Right shape for a 500-agent production tool.",
+          "The 'fallback: greenfield asyncio + Redis Streams' option is correctly identified as the escape hatch and section 2.2.8 honestly describes the build cost (two weeks of focused build to match LangGraph day-one functionality).",
+          "Worked example in section 6 with three policy scenarios and explicit cost math makes the policy spec tangible \u2014 the $0 vs $0.18 vs $0.43 comparison is exactly the kind of number a policy admin needs to make a call."
+        ],
+        "overall": "revise-major"
+      },
+      {
+        "major_issues": [
+          {
+            "claim": "Section 6.2 balanced.yaml cost math omits INPUT token cost on Gemini and entirely omits OUTPUT-side cost on the 'free-tier' Cerebras/Groq/Ollama agents being counted toward the 1.75M token figure. The line 'Gemini 25 \u00d7 1500 out \u00d7 $2.50/M = $0.094' treats Gemini 2.5 Flash as if input were free at paid usage \u2014 but Gemini 2.5 Flash paid tier charges $0.30/M input. 25 agents \u00d7 2000 input \u00d7 $0.30/M = $0.015 missed. More importantly, DeepSeek output pricing is cited as $0.42/M but DeepSeek V3.2 actual published output is $1.10/M (and $0.27/M input) \u2014 the doc is off by ~2.6x on the dominant cost line. Real balanced cost is closer to ~$0.35\u20130.50, not $0.18.",
+            "rebuttal": "Even if you accept the unit prices as stated, the per-agent input/output split (2000/1500) is asserted without sourcing and the brief is described as a 'research brief' which typically has 8\u201320K of context (RAG chunks, prior outputs, judge transcripts). Re-running the same math with realistic 8K input doubles the input cost line and makes the $0.18 ceiling fictional.",
+            "severity": "major"
+          },
+          {
+            "claim": "The cost ceilings do not budget judge / critic / completeness-loop overhead, despite Section 5 explicitly defining six patterns (map-reduce, MoA, adversarial verify, completeness critic, loop-until-dry, hierarchical decomp) \u2014 each of which fans the per-agent token spend by 2\u20135x. Section 6 computes 'Expected token spend: 500 \u00d7 3500 = 1.75M tokens' as if every agent is one round-trip. MoA alone is described in Section 5 as '3\u00d7 model cost per layer'. A 500-agent run that actually uses the patterns the doc recommends will spend 4\u20136M tokens, not 1.75M, blowing balanced past the $5 ceiling and speed-first past $2.",
+            "rebuttal": "You could argue patterns are opt-in per goal and the 6.x worked example is the bare-fan-out case. But the doc presents 6.x as 'the' 500-agent worked example and \u00a77.3 keeps GoalLoop (judge-driven) on by default \u2014 so the realistic balanced run includes at least one judge pass per agent. The numbers as written are not the realistic case; they are the lower bound.",
+            "severity": "major"
+          },
+          {
+            "claim": "Retry budget is double-counted as cheap. Section 6.1 says 'realistic free-tier flake is ~10-15%. We expect ~50-75 retries' and assigns them $0 cost. But Section 4 sets retry_max_attempts: 5 on free-maximal with exponential backoff to 120s, and \u00a78.1 mode 1 says failures cascade through the fallback_chain ending at paid Cerebras (speed-first) or Ollama. A 15% flake \u00d7 5 attempts is up to 375 extra calls; if even 20% of those cascade past free tier on balanced, that's another 75 paid calls \u00d7 full token cost \u2014 entirely unbudgeted. Retry storms are how free-tier orchestration actually overspends.",
+            "rebuttal": "The kill switch in \u00a78.2 enforces cost_ceiling_usd so the wallet is safe, but 'we use 3.6% of it' as a claim is false the moment retries cascade. The honest claim is 'wallet is protected; expected spend is unknown until measured.'",
+            "severity": "major"
+          },
+          {
+            "claim": "Cold start cost is invisible. The 'Expected wall-clock: ~5.5 minutes of pure dispatch' (free-maximal) and '~3-5 min' (speed-first) figures assume warm provider connections, warm Ollama model in RAM, and a warm Postgres checkpointer. Cold-loading a 70B-equivalent Ollama model (Hermes3 cited in \u00a76.1) takes 30\u201390s on M-series; OpenRouter + DeepSeek auth + first-token latency adds 2\u20135s per fresh connection \u00d7 500 agents if not pooled. Postgres checkpointer (\u00a78.1 mode 5) has p99 write tails. None of this is in the wall-clock math.",
+            "rebuttal": "Connection pooling and model preload are obvious mitigations and arguably implementation details, but the doc claims specific minute-level wall-clocks ('5.5 minutes', '3-5 min') as design output \u2014 those numbers need a cold-start line item or they are aspirational.",
+            "severity": "major"
+          },
+          {
+            "claim": "Embedding regeneration cost is entirely absent. The brain abstraction (\u00a73, \u00a77.1 BrainRouter) and the GoalLoop judge pattern (\u00a75.4 completeness_loop, threshold=0.9) imply repeated similarity/coverage checks. If completeness_loop runs even one embedding per turn \u00d7 10 turns \u00d7 500 agents = 5,000 embedding calls; on paid tiers (OpenAI text-embedding-3-small at $0.02/M, Voyage at higher), with ~2K tokens each, that is ~10M embedding tokens = $0.20 on the cheapest provider \u2014 more than the entire claimed $0.18 balanced budget. Free embedding tiers (Gemini, Cohere trial) have RPM ceilings the doc never enumerates in its rpm_caps map.",
+            "rebuttal": "If the judge uses pure LLM coverage scoring (no embeddings), this is moot \u2014 but \u00a75.4 pseudocode shows 'critic.assess(task, partial)' which the doc never specifies. The omission is the issue: a real completeness critic almost always uses embeddings, and they are not in policy.yaml.",
+            "severity": "major"
+          },
+          {
+            "claim": "Error-loop spirals are mitigated only by failure_rate_kill, which is itself a rolling window \u2014 meaning the swarm can burn its full cost_ceiling_usd before the window fills. With failure_rate_window unspecified in the snippets shown and failure_rate_kill: 0.50 on free-maximal / 0.30 on balanced, a degraded provider (mode 8) can chew through retries \u00d7 fallback_chain for minutes before the kill fires. On speed-first with $50 ceiling and Cerebras paid + Groq paid + DeepSeek paid + Gemini paid in parallel, a single bad prompt template recursing through GoalLoop subgoal re-injection (goal_loop.py:153 pattern) can plausibly hit $5\u201310 before the rolling window crosses 30%.",
+            "rebuttal": "The BudgetTracker is a hard pre-dispatch stop (\u00a78.1 mode 2), so the wallet is bounded by cost_ceiling_usd \u2014 but the doc claims 'we use 0.9% of it' on speed-first, which is the no-spiral case. Realistic spiral case uses 10\u201340% of ceiling. Honest framing required.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Per-provider rpm_caps in \u00a74.1 schema treats rate limits as fixed integers but real providers (Groq, Cerebras) tier limits by model \u2014 caps should be (provider, model) tuples or the policy will misroute.",
+          "Token-bucket mitigation cited in \u00a78.1 mode 1 is not shown in the kill_switch code snippet; the doc claims an enforcement mechanism it doesn't implement in the included snippet.",
+          "Free-maximal cost_ceiling_usd: 0.00 with 'any paid call is a bug' is incompatible with \u00a74.1's stated fallback_chain ending at paid tiers \u2014 either the chain stops before paid or this is contradictory; doc should pick one.",
+          "Section 6.3 speed-first table lists 'Cerebras paid ~$0.10/M' as a flat number without distinguishing input vs output, then the math line treats 3500 tokens \u00d7 $0.10/M as if input and output are the same price \u2014 Cerebras paid (Llama 3.3 70B) is asymmetric ($0.60/M output, $0.40/M input as of late 2025), giving ~$0.18 not $0.07 on that line.",
+          "Postgres checkpointer write amplification at 500 concurrent super-steps is not budgeted \u2014 disk I/O isn't dollars, but it is wall-clock the doc claims as a design output.",
+          "BudgetTracker persists to disk 'every tick' (\u00a78.1 mode 2) \u2014 at 500 agents this is a fsync hot path with its own latency cost not in the wall-clock math."
+        ],
+        "strengths": [
+          "Three-policy reference set (free-maximal, balanced, speed-first) is a useful and honest framing \u2014 admin can pick the trade-off explicitly rather than discovering it after the bill arrives.",
+          "Hard pre-dispatch cost_ceiling_usd in BudgetTracker (\u00a78.1 mode 2) is the right primitive \u2014 the wallet is bounded even when the unit-cost math is wrong.",
+          "Acceptance test in \u00a77.2 Day 5 ('500-agent run with cost_ceiling_usd: 0.10 halts cleanly at $0.10 \u00b15%') is exactly the right way to validate the ceiling empirically rather than trust the spreadsheet.",
+          "Recognition that free-tier RPM exhaustion is a real failure mode (\u00a78.1 mode 1) with explicit fallback_chain cascade \u2014 most designs ignore this until they hit it in production.",
+          "Per-tier cost asymmetry is at least named in \u00a74.1 (input vs output split for DeepSeek) \u2014 even if the worked example fumbles it, the schema can express the truth."
+        ],
+        "overall": "revise-major"
+      }
+    ],
+    "r2": [
+      {
+        "overall": "revise-minor",
+        "major_issues": [
+          {
+            "severity": "major",
+            "claim": "Free-pool sustained concurrency derivation is internally inconsistent with the worked example",
+            "rebuttal": "Section 4.6 derives sustained_concurrency = rpm * avg_latency / 60 and produces ~13 free-pool. But Section 6.1 realistic-with-patterns then says sustained concurrency on the cascade is dominated by Groq 3 + Ollama 4 = 7, silently dropping Cerebras (3) and Gemini/OpenRouter (1+2) from the denominator on the grounds that their RPD walls hit. That is correct eventually but wrong for the first ~285 calls, during which Cerebras is still in play and the sustained number is ~13. Using 7 to compute the entire 1650-call wall-clock under-states the front of the run and over-states the tail, and the 31-min figure is therefore not reproducible from the Section 4.6 formula. Fix: decompose 6.1 realistic into two regimes (pre-cascade ~13, post-cascade ~7) or state explicitly that 7 is the tail-dominated steady-state and bound the front-of-run separately."
+          },
+          {
+            "severity": "major",
+            "claim": "Cerebras paid Llama 3.3 70B input/output pricing of $0.85/$1.20 per M is asserted, not sourced",
+            "rebuttal": "Sections 4.4 and 6.3 treat $0.85 in / $1.20 out as measured 2026-05 and 10.17 frames it as a correction to v1's $0.10/M flat. The Sources section links cerebras.ai/inference-pricing generically. Cerebras's public 2025-2026 Llama 3.3 70B price was widely cited closer to $0.60 in / $1.20 out on the standard tier, Inference Pro different again. The spec offers no quoted line. Because 6.3's $5.30 realistic-total and the speed-first costs 10x more headline pivot on this one price, the unsourced number is load-bearing. Fix: quote the line from the Cerebras pricing page with date stamp or replace with a range and propagate."
+          },
+          {
+            "severity": "major",
+            "claim": "The 3.3x call multiplier in Section 6 double-counts with Section 4.1 pattern cost_multiplier",
+            "rebuttal": "Section 6.1 derives 3.3x as 1x executor + 1x judge across 100% + 2.5x verify + 4x completeness on 20%. Section 5.2 MoA alone is n_per_layer * n_layers + 1 = 7 calls per invocation. Section 6 applies 3.3x flat to all 500 agents regardless of whether MoA is used; meanwhile Section 4.1 declares MoA's cost_multiplier: 3.0 independently. A job using MoA on 50 agents thus pays 3.0*50 + 1*450 = 600 calls then has 3.3x scaling layered on top, producing inconsistent totals depending on which section you compute from. Fix: pick one model. Either patterns are amortized into 3.3x (drop 4.1 cost_multiplier as a separate axis) or tracked separately (6's 3.3x must be a weighted breakdown by pattern presence, not a flat scalar)."
+          },
+          {
+            "severity": "major",
+            "claim": "Day-1-to-Day-7 build plan still misses the AsyncioDispatcher full implementation needed to make the cut-over claim credible",
+            "rebuttal": "Sections 7.5/7.6/7.7 are the load-bearing answer to the brain-agnosticism BLOCKER, and Section 1 verdict para 3 says explicitly we do not get to call greenfield an escape hatch unless cut-over is engineered. But 7.2 build order only scaffolds AsyncioDispatcher on day 1 and 7.7 step 3 admits fully implemented during the cut-over week - this is the two-week build honest cost of the fallback option. That means at week-one delivery the cut-over contract is unexecuted code. The 7.6 portable JSONL format and 7.7 runbook are documented, but import_checkpoint on AsyncioDispatcher does not exist. If LangGraph degrades on day 30 we are not one CLI invocation away from cut-over - we are two weeks of build. The spec should either move AsyncioDispatcher to day-3 with a real import_checkpoint stub backed by a 50-task smoke test, or state honestly in Sections 1 and 3 that greenfield as escape hatch costs two weeks of build at cut-over time, not zero. As written, 10.10's engineered, not theoretical claim is true for the contract surface and false for the running code."
+          }
+        ],
+        "minor_issues": [
+          "Section 5.2 MoA pseudocode says Cerebras paid has 8K default context but Cerebras's Llama 3.3 70B endpoint has supported larger context on paid tier in some SKUs - verify the 8K floor still applies to the specific endpoint you're calling.",
+          "Section 4.6 OpenRouter free (50 RPD) row shows concurrent=2 from 20 RPM * 8s / 60 = 2.7. RPD=50 means sustainable concurrency for a 500-agent job is bound by daily quota long before the per-minute math: 50 calls / 8s = 400s total wall, so the concurrent: 2 field is misleading without an annotation that the slot saturates for ~6.7 minutes total then is dead for the day.",
+          "Section 4.5 step 5 says new dispatches against that provider wait until the bucket has space under the new cap - but if the new cap is higher this rule is wasteful. The protocol should distinguish shrinks (clamp) from grows (immediate availability).",
+          "Section 6.2 retry-budget arithmetic is presented as 5% retries on paid tier x ~330 paid calls x $0.0036 average per call = ~$0.06 which reads as 5%*330*0.0036 rather than (330*0.05)*0.0036. The math is right but the formula presentation is ambiguous.",
+          "Section 8.2 KillSwitch._audit opens kill-log.jsonl in append mode without fsync. The safe for single-writer comment is fine, but for an audit log used as forensic evidence of a kill event, a sync-on-write would be cheap insurance.",
+          "Section 7.4 places rate-limit token buckets in Redis but doesn't address what happens when Redis lags or partitions during a high-rate dispatch burst. Token-bucket INCRBY is fast but blocking - under a brief Redis hiccup, the dispatcher would either stall or fail-open. State the chosen behavior.",
+          "Section 10.5 says the LangGraph 200 vs 500 contradiction is resolved by cut-over trigger, but the matrix in 2.1 still lists 200-500 [a] as the headline number for LangGraph concurrency, preserving the optical contradiction even if footnote [a] resolves it. Consider listing 200 (single-node honest); 500 with shard so the headline doesn't read as range optimism."
+        ],
+        "strengths": [
+          "Section 4.6 concurrency-vs-RPM math is now the right shape and the v1 free pool = 90 error is gone - formula stated, table derived, safety margin named.",
+          "Daily-quota wall (RPD/TPD) is enumerated per-provider in 4.6 and propagated to 6.1's cascade narrative - the first run vs second run of the day framing is honest in a way v1 was not.",
+          "Section 7.5 Dispatcher protocol + 7.6 portable JSONL checkpoint + 7.7 runbook collectively answer review-2's brain-agnosticism BLOCKER at the design level - patterns import only the protocol, the escape hatch has a documented contract, and matrix footnote [c] on PARTIAL is consistent with this.",
+          "Kill switch (8.2) now has pre-dispatch reservation, Postgres-backed state, strict > comparison, and failure_rate_minimum_sample floor - the three holes review 1 + review 3 named are individually fixed.",
+          "Scoring rubric (2.3) is published with weights, applied consistently, and the Temporal-beats-LangGraph-on-rubric/LangGraph-picked-for-week-one tension is named rather than hidden.",
+          "Cost math redone with input/output split using the OpenRouter 50/1000 distinction and explicit DeepSeek $0.27/$1.10 - v1 understatement corrected and the $5 ceiling reframed as retry-spiral protection.",
+          "Pattern wiring through Dispatcher.fan_out rather than LangGraph Send (5.0) - patterns are now genuinely runtime-neutral at the import-graph level.",
+          "Homegrown ProviderClient protocol (7.1) removes LangChain ChatModel from the hot path, which is the right correction to v1's we use LangChain but also raw HTTP confusion.",
+          "MessageBus in-memory fallback removal (8.1 mode 6) is a real architectural commitment, not a paper edit - closes the lossy on restart line of attack."
+        ]
+      },
+      {
+        "major_issues": [],
+        "minor_issues": [
+          "\u00a76.3 bare-case wall-clock paragraph references 'tail from completeness loops' but bare-case is defined as no-patterns; rewrite or strike that phrase.",
+          "\u00a76.2 spiral worst-case asserts '~$0.51 extra' for 150 cascaded paid calls; the implied per-call cost ($0.0034) is not shown and reconstructing it yields $0.33-$0.55 depending on output ratio. Add the intermediate step or change the figure to '~$0.30-$0.55'.",
+          "\u00a74.6 prose says cascade '~115 to Groq or Ollama' but \u00a76.1 says '~50-100 cascade to Ollama' \u2014 at Groq RPD 14,400 the cascade should land almost entirely on Groq until its RPM bucket saturates. Reconcile to one cascade allocation across both sections.",
+          "\u00a74.6 table caption 'Realistic w/ 20% safety' is misleading for the Ollama row since the 4-slot figure is VRAM-fixed; add a footnote noting safety margin does not apply to VRAM-bound rows.",
+          "\u00a76.2 budgets embeddings at OpenAI text-embedding-3-small pricing ($0.02/M) but \u00a74.1 default `pattern_budgets.completeness_loop.embedding_provider` is `gemini_embed_001`. Reconcile the default with the pricing line, or add a `gemini_embed_001` row to the \u00a76.2 pricing table.",
+          "\u00a76.1 bare-case table shows 'Cost: $0' but the wall-quota cost (Gemini RPD and OR RPD consumed by the bare run) lives only in the prose below. Add a 'Quota consumed' column or footnote so the table itself shows the non-dollar cost.",
+          "Audit-write ordering in \u00a78.2 `_kill` is safe (the `self.killed` check guards re-entry) but the comment 'fires at most once per run' would be stronger as 'guarded by the `self.killed` short-circuit at the top of every gate; second call is a no-op'."
+        ],
+        "strengths": [
+          "Every cost claim in \u00a76.2 and \u00a76.3 reconstructs cleanly from the published per-provider input/output split \u2014 DeepSeek $0.5475/$0.548, Gemini $0.348/$0.348, Cerebras paid $0.70, Groq paid $0.36, Gemini paid $0.218, all within rounding.",
+          "\u00a74.6 concurrency derivation (rpm \u00d7 avg_latency / 60) with 20% safety yields the claimed free-pool 13, and \u00a76.1's 500/13\u00d78s = 308s = 5.1 min and 1650/7\u00d78s = 31 min both verify exactly.",
+          "Daily-quota walls (Cerebras 1M TPD \u2192 285 calls, Gemini 250 RPD, OR 50 RPD no-deposit) are propagated consistently from \u00a74.6 through bare and realistic sub-cases.",
+          "OpenRouter 50/1000 split handled as two distinct provider entries with the $10 deposit obligation explicit, and free-maximal's cost_ceiling_usd: 0.00 + retry_budget_per_task_usd: 0.00 + no-deposit OR are internally consistent.",
+          "Ollama VRAM-bound cap is enforced by requiring `model:` on every ollama_local entry and pinning hermes3:8b-q4 in all three reference policies; the 70B example sets concurrent: 1 honestly.",
+          "Kill-switch fix is real: strict `>` comparison + failure_rate_minimum_sample floor + pre-dispatch reservation via cost_reservation_per_dispatch_usd close all three v1 holes (off-by-one, early-spiral-before-window, in-flight blow-through).",
+          "\u00a77.5 Dispatcher protocol + \u00a77.6 portable JSONL checkpoint + \u00a77.7 cut-over runbook make the 'brain-agnostic' / 'escape hatch' claims operationally concrete rather than rhetorical.",
+          "\u00a710 line-by-line critique-response map gives every prior MAJOR/blocker a section anchor, making the revision auditable."
+        ],
+        "overall": "ship"
+      }
+    ]
+  },
+  "v2": {
+    "r1": [
+      {
+        "major_issues": [
+          {
+            "claim": "Under-1-hour wall-clock target is physically inconsistent with the plan's own arithmetic and with the local benchmark already on disk.",
+            "rebuttal": "The plan's serial critical path alone breaks the budget. Phase 1 contracts (10 min target) is single-agent on Opus-1M with R1+R2 adversarial gates also on Opus \u2014 at Opus's ~5 rpm and the plan's stated ~20k tokens per R1+R2 pair (200k total / 10 pairs), the Phase-1 single-author contract round-trip plus two Opus reviewers each doing a falsification pass is ~6\u201310 min just on inference latency, before any tool-use, file I/O, or human-eyeball gate. Phase 2 then gates on a 50-worktree-pool spin-up (each running `npm install` / `uv sync` / `nx run-many --target=typecheck`); the post-mortem explicitly flagged the worktree pool as an unverified spike (Approval #0). Phase 3 declares ~175 worker dispatches over a 50-worktree pool \u2014 that is ~4 sequential claims per worktree, each running typecheck + lint + a verify roundtrip. Even at an optimistic 90 sec per claim on a free-tier brain, 4\u00d790s = 6 min serial inside Wave 2, plus R1+R2 Opus passes per package (5 packages \u00d7 ~2 min each = 10 min), plus a required user manual-eyeball gate (the plan itself marks Phase 3 manual eyeball as 'required \u2014 user opens Electron app, clicks through nav'). A required human in the loop in Phase 3 is incompatible with a 60-min unattended budget. Meanwhile the local swarm benchmark on disk (`swarm-benchmark-result-2026-05-30.json`) shows the in-house SwarmOrchestrator producing a 'budget_exhausted' verdict at 291.5s for **19 subgoals across 3 local Ollama workers** \u2014 i.e. ~15 sec per trivial-research subgoal under zero file-I/O load. Extrapolating to ~480 dispatches (the plan's stated total across 4 phases) at that empirical per-task floor is ~120 min on the **same hardware**, before any Opus serialization. The plan never reconciles its 60-min target against its own benchmark.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "The 'absorbed inside phase budgets' accounting for R1+R2 adversarial pairs is double-counted and structurally impossible.",
+            "rebuttal": "Section 'What R1+R2 cost' asserts: 10 trigger points \u00d7 ~2 min wall-clock = 20 min, and explicitly states verify is 'inside the phase budget, not after it.' But the trigger points are listed as **phase EXIT** gates \u2014 they cannot start until the phase's worker work has finished and produced the artifact under review. By definition that is serial-after, not parallel-within. With 10 gates \u00d7 ~2 min, that is 20 min of Opus-serialized wall-clock on the critical path, which alone consumes 1/3 of the 60-min target. Combined with the plan's own Phase 1 (10 min) + Phase 4 (10 min) \u2014 both of which are dominated by Opus-only roles (contract_author, completeness_critic, security_review, VERDICT.md author) \u2014 the non-parallelizable Opus serial floor is already ~30\u201340 min before any renderer file is touched.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "The Opus weekly cap probe is set up to halt the build precisely when the < 1 hr target is otherwise achievable.",
+            "rebuttal": "Hard stop: 'Anthropic weekly cap probe returns < 5% remaining ... Halts before Phase 4's Opus-heavy verify burns the remaining bucket.' Combined with the precondition 'Anthropic weekly cap probed: \u2265 30% remaining at kickoff,' this means any build run in the back half of the weekly cycle, or any prior session that burned cap, deterministically prevents the run from starting OR forces a mid-run halt \u2014 which the post-mortem explicitly cites as the V1 failure mode that caused two phase-5 interruptions. The plan inherits the exact structural risk it was supposed to retire. The 60-min target is therefore conditional on cap state the user cannot control, not a property of the build itself.",
+            "severity": "major"
+          },
+          {
+            "claim": "Phase-2 reachability assertion as written cannot guarantee what the plan claims.",
+            "rebuttal": "The exit gate says: `python -c \"from gateway.main import app; assert len(app.routes) >= EXPECTED\"` against 'a hand-pinned EXPECTED count.' A hand-pinned constant reproduces V1's failure mode \u2014 if a future router file is added and the constant is not bumped, the assertion silently passes. The plan claims this 'kills the empty-barrel and merge-conflict classes at schema level' but it actually re-introduces the same hand-maintained drift the post-mortem identified as the root cause. The fix should be `EXPECTED == len(set(routers in gateway/routers/__init__.py))` computed at assert time, not pinned. As written, V1's most visible defect is not closed \u2014 it is renamed.",
+            "severity": "major"
+          },
+          {
+            "claim": "Approval-batch count of 5 is misleading because it offloads runtime prompts into an unbounded 'expected security gates' bucket.",
+            "rebuttal": "The plan claims '< 5 batched approvals' but the runtime prompt accounting carves out: macOS keychain access (1), OAuth browser redirects (3), settings-glob spike fallback ('approval target re-baselines to < 8' \u2014 i.e. up to 3 more runtime prompts), and per-provider OAuth round-trip prompts. Net realistic runtime prompts: 4\u20138 *additional* user-visible clicks beyond the batched 5, for a true total of 9\u201313. The post-mortem's own item #5 explicitly warns against this conflation: 'two different mechanisms for two different prompt classes; the draft conflated them.' V2 conflates them again, just with a different rhetorical move (renaming the second class 'expected runtime security gates'). The < 5 batched figure measures only the kickoff click count, not the user's lived prompt burden.",
+            "severity": "major"
+          },
+          {
+            "claim": "The ~175 concurrent renderer-worker dispatch in Phase 3 is gated on free-tier RPM caps that arithmetic-violate the plan's own numbers.",
+            "rebuttal": "Plan states `openrouter_breadth` rpm=20 and routes Wave 3's ~175 renderer-generation claims primarily to it. Even with 5 sub-orchestrators in parallel (the plan's '100 rpm aggregate' claim, which is itself wrong because OpenRouter's free-tier RPM is per API key, not per concurrent caller), processing 175 claims at 100 rpm best-case is 1.75 min just for the request-rate floor, on top of per-claim inference latency (5\u201330 sec for DeepSeek R1 / Qwen3 Coder on OpenRouter free tier, often longer under contention). The OpenRouter free tier's documented daily cap of 1000 req/day across all free models combined would be consumed by the first attempt + one retry. The fallback (`groq_fast`, 30 rpm, 14.4k daily) is reasonable in isolation but the routing matrix sends *both* renderer_generation AND schema_conformance AND import_fix to it under fallback \u2014 under realistic free-tier contention, the entire fallback chain collapses to Ollama-local serialization, which is the slowest brain in the matrix.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Phase 3 'required manual eyeball' contradicts the document's repeated framing that the orchestrator 'runs ... the user does not have to babysit.' If Phase 3 needs the user to open the Electron app and click through nav, the 60-min wall-clock target must include human reaction time, which is not budgeted.",
+          "The 'Sub-1-hour ... matches the < 1 hr user benchmark' framing is circular \u2014 the target was inherited from the user as a stated wish, not derived from any measured floor in the plan or benchmark. The plan never produces a bottom-up estimate; it only top-down rationalizes back into the target.",
+          "Worktree pool sizing of 50 is asserted without grounding. The plan's Approval #0 spike covers only 5 worktrees; extrapolating to 50\u00d7 concurrent `node_modules` resolution and `nx` daemon contention is a separate spike that is not preconditioned.",
+          "Token budget 500k target is plausible but never reconciled with the claim that R1+R2 alone is 200k. That leaves 300k for ~480 worker dispatches (~625 tokens each) \u2014 under any realistic prompt+response shape for the renderer-generation role, that floor is below typical single-file edit token cost.",
+          "Drain protocol assumes in-flight agents 'commit-and-exit within 2 minutes.' For free-tier OpenRouter/Groq dispatches that have already submitted a request, the agent has no way to cancel mid-inference; the 2-min ceiling is wishful for the tail of the long-pole brain.",
+          "The plan's own 'What this plan does NOT promise' section already concedes the wall-clock target may slip to 90 min \u2014 but the document's tagline / verdict block continues to treat 60 min as the headline number rather than the floor of a 60\u201390 min range."
+        ],
+        "strengths": [
+          "Honest carve-outs section explicitly concedes 60-min may slip to 90-min hard cap, 500-agent is pool ceiling not per-wave target, and Tauri port is deferred \u2014 meaningful intellectual honesty inherited from the post-mortem.",
+          "Tier-split routing (Ollama/Groq/OpenRouter for mechanical, Opus for judgment) is the correct architectural move and addresses post-mortem item #10 directly.",
+          "SQLite claim ledger with UNIQUE constraint on (file_glob, status) is a real schema-level fix for V1's empty-barrel and merge-conflict classes (subject to the reachability-assertion caveat).",
+          "Vite `import.meta.glob` replacing the hand-maintained settings barrel is the correct fix for V1's most-cited regression and closes that class at the build-tool level.",
+          "Mapping table from V1 post-mortem items #1\u2013#13 to V2 mechanisms is concrete (file paths, schema rows, command names) rather than hand-waved.",
+          "Failure budget + drain protocol + resume protocol borrowed from Draft 3 is a real countermeasure for the multi-day overrun class and is missing from most build plans."
+        ],
+        "overall": "revise-major"
+      },
+      {
+        "strengths": [
+          "Plan correctly routes mechanical work to Ollama \u2014 Fritz has /usr/local/bin/ollama installed with 8 models pulled (hermes3, qwen2.5:1.5b, phi4-mini, dolphin-mistral, dolphin-llama3, dolphin-phi, nous-hermes2, wizardlm-uncensored). Local-brain story is genuinely actionable today.",
+          "uv is installed at /opt/homebrew/bin/uv, so a Python orchestrator under shay-desktop-electron/orchestrator/ has a clean install path with no extra deps.",
+          "ANTHROPIC_API_KEY and GEMINI_API_KEY are present in env \u2014 two of the three named providers are credential-ready.",
+          "KEEP/THROW cut line maps to real existing directories: src/main, src/preload, src/renderer, src/shared all exist at /Users/famtasticfritz/famtastic/shay-desktop-electron/.",
+          "The .claude/settings.json allowlist mechanism is real Claude Code surface area Fritz can edit directly \u2014 the .claude directory already exists in the shay repo.",
+          "Drain protocol, SQLite claim ledger, and worktree pool only need stdlib Python + sqlite3 + git \u2014 no exotic infra to provision."
+        ],
+        "major_issues": [
+          {
+            "claim": "Plan assumes nx is installed and runnable. Approval #0 requires `nx init` to have run; every phase exit gate uses `nx run-many` and `nx affected --json`.",
+            "rebuttal": "`which nx` returns 'not found'. The repo has no nx.json, no packages/ directory, no workspaces field in package.json \u2014 it is a flat single-project Electron app. The plan's 10-package workspace decomposition (contracts/main/preload/renderer-shell/renderer-chat/...) is fictional today. Before Phase 1 can fire, Fritz must install nx, author nx.json, physically split src/renderer into 5+ package directories each with package.json + project.json, rewrite imports, and confirm electron-vite still builds against the new layout. That is hours-to-days of refactor the plan hides inside one line of Approval #0. The 85-min hard cap is unreachable while this remains unbuilt.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "Plan requires protoc + ts-proto + betterproto for the contracts layer (Approval #2 'one-time codegen toolchain'). Phase 1 exit smoke is a Zod-encode \u2192 protobuf-encode \u2192 Python-decode round-trip.",
+            "rebuttal": "`which protoc` \u2192 not found. ts-proto, betterproto not installed. Plan treats this as one approval line; in reality it's `brew install protobuf` + npm install ts-proto + uv add betterproto + writing codegen build steps into electron-vite and the gateway. The Phase 1 smoke cannot run on this machine today. Eats the Phase 1 10-min target.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "File-Ownership Graph cites the Python orchestrator at shay-desktop-electron/orchestrator/ and gateway/ as the FastAPI router tree to keep. Five 'compile-clean-but-unregistered routers' (desk_auth_routes.py, desk_mcp_routes.py, etc.) are named as the refactor surface.",
+            "rebuttal": "Neither directory exists. `ls shay-desktop-electron/orchestrator` and `ls shay-desktop-electron/gateway` both return 'No such file or directory'. `find shay-desktop-electron -name '*.py'` returns zero results. The five named router files do not exist anywhere in this tree. Either they live in a different repo (the plan should say where) or V1's gateway is somewhere else than the user assumes. As written, Phase 2's gateway-routers wave operates on nothing, and the registry-assertion countermeasure for V1's most-visible defect has no code to assert against.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "Brain assignment routes Phase 2 and Phase 3 mechanical/schema-conformance/router authoring work to groq_fast (Llama 3.3 70B, 30 rpm, 14.4k daily cap).",
+            "rebuttal": "No GROQ_API_KEY in env, no groq CLI installed, no config evidence of a Groq account. Same for OpenRouter \u2014 no OPENROUTER_API_KEY. The plan needs explicit Approval #0 lines: sign up for Groq, create key, export GROQ_API_KEY; sign up for OpenRouter, create key, export OPENROUTER_API_KEY. Without these, routing collapses to Ollama-only, and Fritz does not have qwen2.5-coder:32b pulled (only qwen2.5:1.5b at 986MB \u2014 too small for coder work). Plan's free-tier story works only after multiple sign-ups, key provisioning, and a ~19GB model pull, none of which are enumerated.",
+            "severity": "major"
+          },
+          {
+            "claim": "Worktree pool of 50 with port offsets 3000/3010/.../3040, each running `npm run typecheck` concurrently. Spike validates 5; pool ceiling is 50.",
+            "rebuttal": "50 worktrees \u00d7 Electron node_modules (multi-GB each) is potentially 50\u2013100+ GB of disk just in dependency trees, plus 50 concurrent tsc processes on a single MacBook (Darwin 25.2 arm64). Extrapolating from a 5-worktree spike to a 50-worktree pool is unjustified; the disk/RAM/CPU envelope is not analyzed. Real per-wave concurrency on this hardware is likely \u2264 10, which means Wave 2's 175 worker agents fan out over many more serial passes than the 20-min target allows.",
+            "severity": "major"
+          },
+          {
+            "claim": "Approval #4 requires OAuth round-trips for at least Anthropic, OpenAI, Gemini, with success = 'access token works against a single low-cost API call'.",
+            "rebuttal": "OPENAI_API_KEY is not in env. Anthropic uses an API key, not OAuth \u2014 'OAuth round-trip' for Anthropic is a category error (the criterion described is just an API-key validation). Either the plan means 'validate a credential round-trip for 3 providers' (then it should say so), or it actually requires OpenAI account provisioning plus a real Anthropic OAuth flow setup. As written, the success criterion does not match either reality and the missing OPENAI_API_KEY blocks the third provider before any spike runs.",
+            "severity": "major"
+          },
+          {
+            "claim": "V2 does not depend on Ultracode. The brain-agnostic dispatch shim (LiteLLM-class router) routes equivalently.",
+            "rebuttal": "LiteLLM (or whatever 'LiteLLM-class' resolves to) is not installed. No file path, version pin, config schema, or hook into the orchestrator describing what consumes swarm.config.yaml. The routing implementation is the most load-bearing component of the entire plan and the most hand-waved. For a plan that demands 'no hand-waving; each fix is anchored to a section above', the missing router undercuts the brain-agnostic premise. Without it, swarm.config.yaml is documentation nothing reads.",
+            "severity": "major"
+          },
+          {
+            "claim": "Approval #0 settings-glob spike: failure fallback is 'acceptEdits mode + per-agent hook'.",
+            "rebuttal": "acceptEdits is global session state, not per-claim. 'Per-agent hook' is undefined \u2014 no hook file path, no implementation cited. The fallback is itself a hand-wave. If the glob doesn't pre-authorize subdirectory writes, Fritz lands back in V1's whack-a-mole and the < 5 batched approvals target collapses. This deserves a concrete fallback design before the plan is signed, not after the spike fails.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "The 'V1 actual: 31% (56/181)' parity figure and '1760 \u2192 207 lint problems' are cited without pin-pointing the matrix row that produces 31%. cli-desktop-parity-2026-05-30.md is referenced but no anchor.",
+          "ollama_local names 'qwen2.5-coder:32b' but Fritz has qwen2.5:1.5b (too small) and dolphin-coder variants. Either name a model Fritz actually has pulled or add `ollama pull qwen2.5-coder:32b` (~19GB) to Approval #2.",
+          "The '17 settings pages' floor for renderer-settings (`import.meta.glob` \u2265 17) is asserted without grep evidence that V1 actually staged 17 page files. Off-by-many error makes the gate either trivially pass or fail spuriously.",
+          "swarm.config.yaml `routing` block names roles (contract_author, schema_conformance, etc.) but the orchestrator code consuming those role names is not in the plan. Naming convention is dangling.",
+          "Phase 4 manual-eyeball requires the user to open the Electron app and click through nav \u2014 that's 5\u201310 min of human time that conflicts with the 'autonomous portion < 1 hr' framing.",
+          "'Anthropic weekly cap probe returns < 5% remaining' has no cited API surface. Anthropic does not expose a public quota-remaining endpoint. Probe needs a concrete API call or heuristic (e.g. last-429 timestamp), not just a threshold.",
+          "'.wolf/token-ledger.jsonl' is named but the writer is unspecified \u2014 Claude Code subagents do not by default write a token ledger; orchestrator must intercept SDK responses or parse `/cost` output. Not a blocker but unimplemented today."
+        ],
+        "overall": "revise-major"
+      },
+      {
+        "major_issues": [
+          {
+            "claim": "V1 used Opus-1M throughout and achieved 31% parity. V2 routes the bulk of renderer generation to FREE-TIER models (DeepSeek-R1-free, Qwen3-coder-free, Groq Llama 3.3 70B, Ollama qwen2.5-coder:32b) and claims \u226595% parity. There is no causal mechanism for how weaker models produce 3x better parity in 1/40th the wall-clock. The plan implicitly assumes the parity ceiling was 100% architectural (additive renderer barrel + IPC shape) and 0% model-capability \u2014 but offers no evidence for that decomposition.",
+            "rebuttal": "The plan's verdict says V1's 31% is a 'renderer-architecture ceiling' but never proves it. Hybrid greenfield-renderer keeps V1's main and preload \u2014 so the IPC shape that constrained V1 is preserved. The contract-boundary mechanism (Zod + protobuf) detects unregistered routers and unbound channels, but it does NOT cause feature-complete implementations: a router can mount and return 501 for every endpoint and still pass the registry assertion. Adversarial R1+R2 on free-tier-generated renderer code is not equivalent to Opus-quality generation. Realistic V2 outcome is more likely 50\u201370% parity, not \u226595%.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "Token-budget math doesn't close. Phase 3 dispatches ~190 agents across 175 renderer files. The plan claims <500k tokens total (200k for adversarial + ~300k for all worker dispatches). That implies <1.6k tokens per worker dispatch \u2014 well below what TypeScript renderer file generation against a generated IPC client costs in practice. Realistic worker dispatch cost: 8\u201320k tokens (prompt + context + generated file + verify-cycle). At 10k/dispatch \u00d7 400+ total dispatches across all phases = 4M+ tokens. The 500k target is off by ~8x.",
+            "rebuttal": "Cost-per-dispatch on free-tier models is still measured in tokens \u2014 Groq/OpenRouter/Ollama all consume measurable input+output tokens even though dollar cost is zero. The .wolf/token-ledger.jsonl is supposed to track this and the 500k cap triggers drain. A more honest target would be 2\u20134M tokens total with a free-tier vs paid-tier split \u2014 but then the 750k hard cap fires during Phase 2.",
+            "severity": "major"
+          },
+          {
+            "claim": "The five specific systems the user named \u2014 Kanban, Sessions-write, Skills, Messaging, Hooks \u2014 are nowhere enumerated in the plan. The plan's renderer packages (chat, sidebar, settings, admin, diagnostics) do not obviously map onto those five. If those are the gap from 31% to 95%, V2 has to land all five at production quality in the Phase 3 / 20-min target. The plan doesn't size them individually, doesn't assign brain tiers for them specifically, doesn't list them in the parity-matrix gates.",
+            "rebuttal": "Kanban (drag-drop board with persistence), Sessions-write (mutating session state from desktop, not just read), Skills (skill registry + invocation surface), Messaging (multi-thread chat with streaming + history), Hooks (lifecycle hook config + UI) are each substantial features. Lumping them into 'renderer-chat / renderer-admin' as ~30 files each is hand-wave sizing. Each of these likely needs Opus-quality contract work \u2014 not free-tier renderer generation. The plan's brain-routing matrix does not budget Opus time for these.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "Free-tier API rate-limit math is wrong. The plan says 'OpenRouter free-tier: 20 rpm \u00d7 5 sub-orchestrators = 100 rpm aggregate.' OpenRouter and Groq free-tier rate limits are per-account / per-API-key, not multiplicative across orchestrator instances using the same key. Groq's daily cap of 14,400 requests is account-wide. With ~190 Phase-3 dispatches plus retries (per-wave retry budget = 1) plus the per-tier-escalation fallback chain, the free-tier daily caps are at risk of exhaustion in a single phase.",
+            "rebuttal": "OpenRouter free-tier in particular is 'best-effort intermittent' during peak \u2014 503s and queue depth >10s are common. The plan's wall-clock target of 20-30 min for Phase 3 assumes reliable free-tier throughput that the real free-tier APIs don't deliver. A Groq daily-cap exhaustion mid-Phase-3 cascades retries onto Opus (the only remaining brain in the fallback chain) and blows the token budget.",
+            "severity": "major"
+          },
+          {
+            "claim": "Adversarial review cost is materially understated. The plan budgets 20k tokens per R1+R2 pair \u00d7 10 trigger points = 200k. But trigger point #5 (cross-package consistency: a11y + design-tokens + BEM + no-inline-styles across 175 files) and #4 (settings barrel reachability check across 17 pages \u00d7 ~5 files each) each realistically cost 50\u2013150k tokens per agent on Opus. Realistic adversarial-review total: 500k\u20131M tokens \u2014 by itself blowing the 500k target.",
+            "rebuttal": "The plan acknowledges adversarial cost is 'absorbed inside phase budgets' for wall-clock but doesn't show that same accounting for tokens. If adversarial alone consumes the entire 500k target, there is no budget left for worker dispatches. The arithmetic doesn't close.",
+            "severity": "major"
+          },
+          {
+            "claim": "The five unregistered gateway routers are reframed as a 'V1 failure to fix' but V1's FINAL-REPORT explicitly characterized them as a planned-deferred follow-up PR (lines 288\u2013291 of the FINAL-REPORT, cited in the post-mortem). The post-mortem itself corrected the framing: the failure was that the deferral wasn't disclosed at kickoff as a security item, not that registration was missed. V2 treating router registration as a Phase 2 hard-stop adds scope V1 deliberately deferred \u2014 which is fine, but then the 60-min wall-clock target has to absorb that added scope and the plan doesn't show that math.",
+            "rebuttal": "The plan's narrative reads as 'V1 shipped broken; V2 ships fixed' on routers \u2014 but V1 shipped routers as a future PR. Mixing scope re-acceptance with failure-mode-correction blurs what V2 is actually doing. This matters because if routers turn out non-trivial to register (auth posture review, schema-conformance, smoke tests), they bite into Phase 2's 25-min hard cap.",
+            "severity": "major"
+          },
+          {
+            "claim": "The Approval #0 settings-glob spike is the linchpin of the entire approval-batch strategy. If the spike fails, the plan's fallback is 'acceptEdits mode + per-agent hook' \u2014 but acceptEdits across ~400 autonomous file writes across 4 phases is operationally equivalent to 'no preflight enforcement.' The plan's <5 approvals target re-baselines to '<8' but that's still optimistic; realistically the per-agent hook fires once per write surface per agent, which is dozens of prompts.",
+            "rebuttal": "The plan correctly carves this out in 'What this plan does NOT promise' but understates the cascade. If the spike fails, the entire user-experience promise of the V2 plan (hands-off, <5 approvals) collapses. That risk needs an explicit Phase 0 'go / no-go' gate that the plan does have at Approval #0 \u2014 but the fallback math is not honest about the prompt count.",
+            "severity": "major"
+          },
+          {
+            "claim": "The plan asserts that keeping main + preload while throwing renderer breaks V1's parity ceiling. V1's main holds the IPC channel definitions (the shape that constrained the renderer). If you keep main, you keep its IPC shape unless you regenerate main's handlers from the new contracts \u2014 but the plan's KEEP slice explicitly preserves 'main-process IPC handlers' and only adds 'registry assertion.' Either (a) main is regenerated against contracts (breaking the KEEP framing) or (b) contracts conform to main's existing shape (preserving the V1 ceiling).",
+            "rebuttal": "This is the central architectural contradiction. The plan needs to either show how main's IPC handlers get rewritten against new contracts (making main effectively greenfield) or admit that contracts are shaped by V1's main, in which case the parity ceiling is structurally inherited.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Phase 3 file count math: settings = 17 pages \u00d7 ~5 files = 85; chat ~30; sidebar ~15; admin ~25; diagnostics ~20 = 175 total. But Kanban/Messaging/Hooks/Skills are not in that decomposition. If Kanban is part of 'renderer-admin' and Messaging is part of 'renderer-chat', the per-package file counts are likely 2-3x understated.",
+          "The swarm.config.yaml excerpt routes 'renderer_generation' to 'openrouter_breadth' (DeepSeek-R1-free / Qwen3-coder-free). These models cannot reliably author React JSX against a generated TypeScript client at production quality \u2014 they will produce code that typechecks but ships shallow or buggy UI. The plan's R1+R2 review can catch some of this, but adversarial review on free-tier-generated renderer code is not equivalent to Opus generation.",
+          "The plan cites 'Anthropic weekly cap probe at every phase boundary' as a hard-stop trigger but doesn't specify the API endpoint or mechanism for that probe (no /usage endpoint in Anthropic's public API). This needs to be operationalized or removed.",
+          "'500-agent dispatchable' framing in the verdict vs '50 worktree per-wave ceiling' in the file-ownership-graph section is internally consistent (pool ceiling vs per-wave cap) but easy to misread. The carve-outs section addresses this honestly.",
+          "Cross-reference to 'famtastic-dna.md non-negotiable rules' (BEM double-dash, no inline styles, fam-hero-layered) in Phase 3 adversarial review trigger #5 is misplaced \u2014 those rules govern the site factory, not the Shay desktop renderer. The plan appears to import an unrelated rule set.",
+          "The orchestrator at shay-desktop-electron/orchestrator/ is named as the 'orchestrator-doc choice' but the plan doesn't specify whether it persists across machines, how it surfaces progress to the user during the run, or how it integrates with Claude Code's session lifecycle. Holding the dependency graph in a script is correct; the operational integration is hand-waved.",
+          "'Real OAuth round-trips for \u22653 providers' is named as a Phase 4 gate with R1+R2 verification. Live OAuth round-trips in an automated run require either pre-issued tokens or a human at the keyboard \u2014 the plan calls these 'unavoidable runtime prompts' but doesn't address that they break the hands-off property."
+        ],
+        "strengths": [
+          "The 5-batched-approval kickoff strategy is genuinely better than V1's whack-a-mole runtime prompts. Even if the count re-baselines to ~8 under fallback, that's still a real reduction.",
+          "Token-ledger instrumentation (.wolf/token-ledger.jsonl) closes post-mortem item #12 cleanly. Whatever the actual spend turns out to be, it will be measured this time.",
+          "SQLite claim ledger with UNIQUE constraint on (file_glob, status IN running/verified) does kill V1's empty-barrel and merge-conflict classes at the schema level. This is a real architectural improvement.",
+          "Vite import.meta.glob replacing the hand-maintained settings-pages barrel is the right mechanism and directly kills V1's most visible defect class.",
+          "Gateway registry-assertion in main.py (build fails if any router file isn't mounted) is the right shape and closes the unregistered-router class.",
+          "Hybrid decision (greenfield renderer, refactor main/gateway) is more defensible than either pure extreme \u2014 the plan correctly argues V1's TS-strict + lint-trajectory work is worth preserving and pure greenfield re-pays for OAuth/keychain/gateway work.",
+          "Adversarial R1+R2 with named trigger points (not 'we'll do code review') is materially stronger than V1's single-pass verify, even if the token budget for it is understated.",
+          "Brain-agnostic swarm.config.yaml is admin-tunable in the way the user asked for. The model-substrate visibility complaint from post-mortem item #10 is directly addressed.",
+          "Failure budget + drain protocol is real, named, and operational \u2014 not a 'we'll be careful' hand-wave.",
+          "Honest carve-outs section ('What this plan does NOT promise') acknowledges the wall-clock, parity, approval-count, and spike-failure risks explicitly."
+        ],
+        "overall": "revise-major"
+      }
+    ],
+    "r2": [
+      {
+        "major_issues": [
+          {
+            "claim": "The two-target schedule arithmetic still doesn't fully close \u2014 specifically the Phase-3 realistic 75-min number.",
+            "rebuttal": "The plan reconciles Phase 3 as '~55 min Phase 3 worker floor + ~20 min Opus R1+R2 serial' = 75 min. But Phase 3's adversarial trigger points (#4\u2013#7 \u2014 barrel reachability, cross-package consistency over 240 files, ResetDeskDialog, AND five separate per-feature smokes for Kanban/Sessions/Skills/Messaging/Hooks) total ~7 of the 11 R1+R2 trigger points, not 2. At the plan's own '2 min \u00d7 10 = 20 min total' rate that's ~14 min of R1+R2 inside Phase 3 alone \u2014 leaving the other ~6 min for Phases 1/2/4 combined, which contradicts the per-phase breakdown (Phase 1 has trigger #1 alone needing R1+R2 on the contract design, Phase 4 has 4 triggers). The trigger-point accounting and the per-phase R1+R2 minutes are not consistent with each other. Either the 2-min-per-pair number is too low for cross-package consistency over 240 files (which the plan itself flags as '80\u2013120k tokens' \u2014 Opus at ~50 tok/sec on outputs alone is 25\u201340 min, not 2 min), or the 20-min total is the wrong rollup. This is the same arithmetic-doesn't-close failure mode the critique flagged in the prior draft, recurring at finer grain.",
+            "severity": "major"
+          },
+          {
+            "claim": "Approval #0 silently moves the wall-clock goalposts in a way the goals table does not reflect.",
+            "rebuttal": "The goals table row 'Wall-clock (including human eyeball gates)' shows realistic = 210 min. But Approval #0 names 4\u20136 hours of precondition work (2\u20134 hr nx refactor + 1\u20132 hr protoc toolchain + ~15 min account provisioning + ~19 GB Ollama pull which on a typical home connection is 30\u201360 min) explicitly 'outside the autonomous wall-clock budget.' From Fritz's lived experience, the total time from 'I want to start V2' to 'V2 is verified' is 210 + 240\u2013360 = 450\u2013570 min, i.e. ~8\u20139 hours. The plan is technically honest (it does say 'outside') but the headline number (180/210) still functions as the answer to 'how long will V2 take?' which is the question Fritz is actually asking. A truly honest framing would put a third row in the goals table: 'Total elapsed including preconditions' with realistic ~7.5 hr / hard cap ~9 hr.",
+            "severity": "major"
+          },
+          {
+            "claim": "The 'main-handler regen as Phase 1 scope' fix introduces a new contradiction with the Phase 1 budget.",
+            "rebuttal": "Phase 1 realistic = 25 min, with scope now including: contracts authoring (Zod + .proto + ts-proto + betterproto codegen wiring), nx.json + swarm.config.yaml + worktree pool + token ledger + orchestrator skeleton + .claude/settings.json + **main-process IPC handler regen against new contracts**. Main currently has handlers for ~20+ IPC channels (chat, sessions, MCP, keychain, OAuth, settings, kanban-if-it-exists, etc.); regenerating them all against new Zod types, then R1+R2-reviewing both contracts and main, in 25 minutes realistic, is the same kind of optimism the critique flagged elsewhere. Either Phase 1's realistic should be 40\u201350 min (which pushes Total autonomous to ~200 min realistic, breaching the 180-min number the plan now headlines) or main-handler regen is partial in Phase 1 and finishes in Phase 2 \u2014 the plan should pick one.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "The 'free-tier rpm math corrected' passage states '20 rpm \u00d7 1 OpenRouter key + 30 rpm \u00d7 1 Groq key + ~30 rpm Ollama = ~80 rpm aggregate' \u2014 but the swarm.config.yaml above it specifies Ollama as rpm: 999. The two numbers (30 vs 999 for Ollama) should be reconciled; presumably the 30 is a realistic local-throughput estimate vs the 999 'no rate limit' config, but the text doesn't say that and a careful reader will flag the mismatch.",
+          "Approval #4 lists 'Anthropic OAuth if Fritz enables Claude-Code OAuth' as a third-provider option but Anthropic API key is already the first provider \u2014 the OAuth variant being counted as a separate 'provider' inflates the \u22653 number. The realistic third provider is Groq or OpenAI; Anthropic-OAuth-as-third double-counts.",
+          "The desktop-renderer-rules.md fix is correct (famtastic-dna.md applies to the site factory, not the desktop renderer), but the new rule set is now itself unwritten \u2014 Phase 1 has to author it, but its content is not sketched, so the cross-package critic in trigger #5 has no concrete rules to enforce on its first run.",
+          "The pre-kickoff checklist lists 'gateway directory located or stood up' as a precondition, but the Phase 2 scope inside the plan also says 'Phase 2 includes git-archaeology or fresh authoring' for the same work. If it's a precondition, it can't also be Phase-2 scope; pick one.",
+          "The 'consecutive_revise_major_stop: 2' hard-stop combined with the per-wave retry budget of 1 means a single Opus R1 calling revise-major twice on the same package halts the entire run. With 7 Phase-3 packages and named-out features explicitly routed to Opus, this is a plausible halt path \u2014 worth either raising the threshold to 3 or scoping it per-package rather than per-run.",
+          "The 'shay-v2-resume' command is referenced but not defined anywhere (no script path, no orchestrator subcommand spec). Minor but matters for the fritz-can-run axis.",
+          "Annotated bibliography is referenced ('research bundle') but no path is given; the prior draft cited '27 sources' and the revision repeats the figure without pointing to where they live. The deep-research output path should be named."
+        ],
+        "strengths": [
+          "Two-target schedule (stretch / realistic / hard cap) is a substantial honesty upgrade over the prior single 60-min target; the per-row breakdown including a separate 'human eyeball wall-clock' row is the right shape.",
+          "Precondition enumeration in Approval #0 is concrete and verifiable \u2014 I confirmed nx, litellm, protoc are not installed and qwen2.5-coder:32b is not pulled (hermes3 and nous-hermes2 are, matching the named fallbacks). Reality matches the plan's claims.",
+          "The reachability assertion fix (`__all__`-vs-mounted set comparison sourced from `gateway/routers/__init__.py`) is a genuine improvement \u2014 it eliminates the hand-pinned constant that would have reproduced V1's drift class.",
+          "Main-handler regen as explicit Phase-1 scope closes the seam contradiction the prior critique flagged, even if the time budget for it is debatable (see major #3).",
+          "Naming Kanban / Sessions-write / Skills / Messaging / Hooks as their own packages with Opus-routed author roles, and adding a soft-stop floor of 3-of-5 features landed, is the right way to budget feature-completeness honestly.",
+          "Parity target lowered to \u226570% realistic with honest framing about why \u226595% is not credible on free-tier renderer brains. The 60% floor + stretch \u226580% retention is well-calibrated.",
+          "The drain protocol revision (5 min ceiling, explicit `abandoned` status for non-cancelable remote inferences) and the Anthropic-cap probe re-framing as a heuristic (last-7-days ledger + 429 timestamps) are both grounded in actual API reality.",
+          "Approval-prompt accounting is now genuinely honest: 5 batched + 6 runtime = 11 realistic, with the prior '<5' explicitly called out as misleading. This is the kind of self-correction that builds trust.",
+          "The dedicated 'Response to critique' section enumerates exactly what was conceded and what was not, which is the right discipline for a revision-of-revision document.",
+          "LiteLLM named concretely (`pip install litellm`, `orchestrator/router.py` consumer, response.usage ledger writer) closes the 'brain-agnostic shim is hand-waved' gap from the prior draft.",
+          "Worktree pool sizing dropped from 50 to 12 with concrete justification (disk + CPU envelope on a single MacBook) and the '500 agents' framing clarified as serial total, not concurrent. Reality-grounded."
+        ],
+        "overall": "revise-minor"
+      },
+      {
+        "major_issues": [
+          {
+            "claim": "Phase 2's 45-min realistic budget absorbs either porting 5 unregistered routers from V1 git history OR authoring them fresh against new protobuf contracts, plus standing up the gateway tree if missing, plus the __all__-vs-mounted assertion plus curl smoke per route.",
+            "rebuttal": "Fresh authoring of 5 FastAPI routers with protobuf contract conformance, registry assertion, and per-route smoke tests in 45 minutes on free-tier brains (Groq Llama 3.3 70B as primary) is aggressive even with R1+R2 already counted. If git archaeology yields nothing usable (which the plan explicitly admits is possible since the working tree may not contain `gateway/` at all), the realistic Phase 2 budget needs to be 60-75 min, not 45, or this phase silently consumes Phase 3's slack. Recommend either separating the two cases into different realistic budgets or marking Phase 2's 45 min as conditional on archaeology succeeding.",
+            "severity": "major"
+          },
+          {
+            "claim": "OpenRouter free tier provides 1000 req/day per key (`daily_cap: 1000` in swarm.config.yaml).",
+            "rebuttal": "OpenRouter's free-tier daily limit for accounts holding less than $10 credit has been 50 req/day since mid-2024 (1000/day only for accounts with $10+ credit purchased). If Fritz hasn't pre-loaded OpenRouter credit, Phase 3's renderer_generation role will exhaust OpenRouter within roughly the first 50 dispatches, fall back to Groq (30 rpm), then drain_to_ollama_only \u2014 which means ~240 file claims processed serially on a local 32b model, blowing past the 240-min hard cap. The Approval #0 list should add 'OpenRouter account must hold \u2265 $10 credit' as an explicit precondition, or the realistic budget must absorb the Ollama-serial fallback path.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Stretch column arithmetic is loose: Phase 3 stretch (35 min) requires ~265 dispatches / 12 worktrees = 22 sequential rounds at ~95 sec/round; benchmark floor is ~15 sec/subgoal but realistic file-write/lint claims are heavier. The 35-min Phase 3 stretch is aspirational even within the stretch framing. Acceptable because stretch is explicitly named aspirational, but the table could acknowledge it.",
+          "Wall-clock summary row: stretch shows 105 min (90 + 15 eyeball, one gate) while realistic shows 210 (180 + 30 eyeball, two gates) and hard cap shows 295 (250 + 45). Stretch implicitly assumes only one eyeball gate; realistic assumes two. Inconsistent gating model across columns \u2014 should clarify whether stretch skips a gate or just shortens it.",
+          "12-worktree pool \u00d7 1-2 GB node_modules = 12-24 GB disk. On a single MacBook this is feasible but should be a Approval #0 precondition check ('df -h shows \u2265 30 GB free') rather than assumed.",
+          "Preconditions outside the autonomous budget total ~4-6 hours of real Fritz time (nx workspace refactor 2-4hr + protoc toolchain 1-2hr + account provisioning 15min + Ollama pull). Headline target framing 'Fritz can run' should make this end-to-end picture explicit: ~5 hr prep + ~3 hr autonomous + ~30 min eyeball = ~8 hr total wall-clock for Fritz. The plan names each piece but never sums them in one place.",
+          "The 11-prompt total is honest but `OAUTH_PARTIAL_<provider>` soft-stop interacts with Approval #4's 'one-of OpenAI/Groq/Claude-Code OAuth' floor. If OAuth flows fail, runtime prompt count could increase further; the realistic 6 runtime prompts assumes 1 OAuth success on first try.",
+          "`free_tier_daily_cap_breach: drain_to_ollama_only` policy is named but the time-cost of switching mid-phase is not budgeted. If breach happens 50% through Phase 3, the remaining ~120 file claims execute serially on Ollama (~90 sec each = 3 hours), exceeding the hard cap. Worth naming as a soft-stop trigger."
+        ],
+        "strengths": [
+          "The 95% parity claim has been explicitly retracted and replaced with \u226570% realistic / \u226580% stretch / 60% floor \u2014 defensible and honestly framed against V1's 31% baseline. The 4/5-features-landed soft-stop is a useful concrete checkpoint.",
+          "Sub-1hr replaced with two-target schedule. 60 min is gone; 90-min stretch is preserved only as aspirational ceiling; 180-min realistic is the contract. Per-phase arithmetic reconciles against the actual benchmark on disk (~15 sec/subgoal \u00d7 265 dispatches / 12 worktrees = ~55 min Phase 3 worker floor + ~20 min Opus serial fits inside 75-min Phase 3 realistic).",
+          "Seam contradiction (KEEP main + new contract) closed via explicit Phase-1 main-handler regeneration with its own Opus author + R1+R2 pair. The grep-proof exit gate ('main's IPC handlers all reference generated contract types') is verifiable.",
+          "Reachability assertion regression fixed properly: hand-pinned `EXPECTED` constant replaced with `__all__`-vs-mounted set comparison at startup, sourced from `gateway/routers/__init__.py`. Adding a router without registering it now fails the next startup.",
+          "Approval #0 preconditions enumerate every missing dependency the prior critique caught (nx, protoc, ts-proto, betterproto, qwen2.5-coder:32b, Groq/OpenRouter/OpenAI keys, gateway/ tree, orchestrator/ tree, LiteLLM) with realistic time costs and explicit framing as outside the autonomous wall-clock.",
+          "Worktree pool sized 12 (not 50) with disk + CPU envelope math shown; '500-agent dispatchable' clarified as 500 total claims processed serially, not 500 concurrent.",
+          "Approval-prompt accounting is honest: 5 batched + 2-7 runtime = ~11 total realistic. The previous '<5' framing called out as misleading.",
+          "LiteLLM concretely named with version pin (`pip install litellm`) and orchestrator hook (`orchestrator/router.py`) \u2014 brain-agnostic premise is now implementable, not hand-waved.",
+          "Token target raised from <500k to <2.5M target / 4.0M hard cap with explicit arithmetic showing 500-800k goes to R1+R2 alone. The prior budget left no room for workers.",
+          "Drain ceiling raised from 2 min to 5 min with explicit `abandoned` status for non-cancelable remote inferences \u2014 honest about what's actually cancelable.",
+          "Anthropic weekly cap reframed as heuristic (last-7-days ledger + 429 timestamps) checked at kickoff and Phase-3 exit only, not every boundary. Prevents the heuristic from nuking an otherwise-finishing run.",
+          "famtastic-dna.md cross-reference removed; desktop-renderer-rules.md authored in Phase 1 instead. Critique was right those site-factory rules don't apply.",
+          "Free-tier rpm math corrected to per-key from per-caller. ~80 rpm aggregate ceiling, not 100.",
+          "Kanban / Sessions-write / Skills / Messaging / Hooks now their own packages or named sub-features with author roles explicitly routed to Opus rather than free-tier. Acknowledges these are not boilerplate.",
+          "Response-to-critique section names what was conceded and what was not \u2014 verdict, brain-agnostic premise, SQLite ledger, Vite glob, failure budget \u2014 each defended on merits."
+        ],
+        "overall": "ship"
+      }
+    ]
+  },
+  "phone": {
+    "r1": [
+      {
+        "major_issues": [
+          {
+            "claim": "Plan claims bundling Gemma 3 4B / Qwen 2.5 3B inside the IPA/APK is 'App Store guideline-safe; no post-install model download.'",
+            "rebuttal": "Bundling does not sidestep review. Apple Guideline 2.5.2 prohibits apps that download, install, or execute code which changes features or functionality, and Apple reviewers have increasingly flagged on-device LLMs that can produce arbitrary executable text (Vibecode/Replit-style takedowns happened even with bundled stacks). More concretely: a ~1.6\u20131.8GB bundled model violates Guideline 4.2 (minimum functionality) only marginally, but it hits Guideline 2.4.1 (binary size review scrutiny) and 5.1.1 (data collection) hard. Google Play's Generative AI policy (2024 update, enforced through 2026) requires output testing documentation and red-team evidence for any on-device GenAI \u2014 bundling does not exempt this; it intensifies it because the model ships pre-installed. Risk register #1 understates: Apple specifically rejects apps using on-device LLMs that lack content filtering at the model layer, and a 3\u20134B Q4 model has trivially defeated safety filters in 2025 jailbreak research. Likely rejection under 1.1 (objectionable content) and 1.2 (user-generated content) absent demonstrable on-device moderation.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "Phase 4 'Computer-use bridge' (phone-as-thin-client to home Mac, touch\u2192mouse, screencast over Tailscale) 'cleanly stays inside App Store Guideline 2.5.2.'",
+            "rebuttal": "This is the highest-risk feature in the plan and the claim it stays inside 2.5.2 is wrong on its face. Apple has repeatedly rejected or pulled remote-desktop-style apps that allow arbitrary code execution on a paired machine driven from iOS (see longstanding restrictions on apps like UTM SE, iSH, and the historical Steam Link friction). Even when execution is technically on the remote machine, Guideline 2.5.2 covers apps whose 'primary purpose' is to provide a way to execute arbitrary code. A general-purpose 'drive any UI on your Mac, dispatch keystrokes and clicks' bridge will be evaluated as remote code execution. Additionally, 4.2.7 (remote desktop clients) imposes strict requirements: must be business/enterprise use, host must be owned by the user, no general-purpose code execution, no third-party app store surface, and B2C remote desktop has been disallowed in multiple review cycles. Google Play has parallel restrictions under the Device and Network Abuse policy when remote control extends to executing shell commands. The 'phone never executes \u2014 it just paints and dispatches' framing does not save you; reviewers look at end-to-end behavior. Likely rejection; needs to be gated behind a separate enterprise distribution channel or removed.",
+            "severity": "blocker"
+          },
+          {
+            "claim": "Voice features ship with 'Background voice (locked phone)' as a default capability, and Background Modes include 'audio' for voice continuation.",
+            "rebuttal": "Apple Guideline 2.5.4 restricts `UIBackgroundModes=audio` to apps that 'provide audible content to the user while in the background' \u2014 meaning actively producing or recording audio the user has explicitly initiated. Using it as a general 'keep the AI voice session alive while locked' channel has been a common rejection reason; Apple has specifically rejected meditation/coaching apps that abuse audio background mode for non-playback continuation. The voiceover/Realtime use case is borderline: Apple permits it during an active voice call-like session (CallKit-backed), but a passive AI voice that continues in the background without CallKit will trigger rejection under 2.5.4. On Android, FGS with `mediaPlayback` requires actual media playback per Android 14 policy; using it for STT/agent voice is a Play policy violation (Foreground Services policy, updated 2024). Plan should either integrate CallKit (iOS) and use `microphone` FGS type with the 'phone'/`voice` justification (Android 14+), or drop background voice from defaults.",
+            "severity": "major"
+          },
+          {
+            "claim": "Per-message brain switcher and 'BYOK option' make routing user-supplied keys to Anthropic/OpenAI/Google fine for App Store.",
+            "rebuttal": "Apple Guideline 3.1.1 (in-app purchase) and 3.1.3(b) (multiplatform services / reader rule) interact poorly here. If Shay's subscription includes any paid relay/cost beyond user-supplied keys, Apple requires IAP for digital content/services consumed in the app. The 'cost/latency badge' showing per-message cost implies pricing surfaced in app, which triggers 3.1.1 scrutiny on whether Apple gets its 30%/15% on cloud token spend that flows through. BYOK is acceptable in principle (multiple AI apps do it), but the plan must (a) not surface token-pack purchases in-app outside IAP, and (b) handle the External Link Account Entitlement (3.1.3(a)) properly if any account creation flow links to a website billing page. Additionally Guideline 5.1.2(i) is cited but the plan does not address 5.1.1(i) \u2014 data collection consent screens are required PER PROVIDER, not aggregated. Likely revisions needed at submission.",
+            "severity": "major"
+          },
+          {
+            "claim": "App Intents catalog with `ApproveNextToolCall`, `SwitchBrain`, `StartAgentRun` is 'free distribution channel' via Apple Intelligence.",
+            "rebuttal": "Several of these intents trigger destructive or security-sensitive operations (approving tool calls that may write files, push code, exec shell on the desk). Apple's App Intents guidance and the Siri/Shortcuts review path require that destructive intents be marked as such and require user confirmation; voice-driven 'approve next tool call' chained through Apple Intelligence will be evaluated under Guideline 2.5.1 (correct API use) and 5.1.1 (privacy/auth). 'StartAgentRun(brief, brain)' triggered by a third-party voice composition without re-auth is exactly the pattern Apple flags. Likely required: every destructive intent must require biometric re-auth before execution, which breaks the 'compose with other apps' positioning.",
+            "severity": "major"
+          },
+          {
+            "claim": "Live Activities with APNs `frequent-updates` entitlement and 8-hour windows are presented as a default-on capability.",
+            "rebuttal": "The `NSSupportsLiveActivitiesFrequentUpdates` key does not grant unlimited budget; Apple throttles based on user behavior and system thermal state. The 8-hour window for ActivityKit is documented as best-effort and is regularly truncated to 4 hours under iOS power constraints. More importantly: APNs `apns-priority: 10` with `apns-push-type: liveactivity` is rate-limited at the server and at the device, and Apple has explicitly warned that abusing frequent-updates leads to silent throttling app-wide. Plan should not claim 'AgentRun activity, 8hr window' as a default \u2014 it should be presented as 'up to 8h, throttled by iOS.' Not a rejection risk per se, but a UX/correctness risk worth flagging at major severity because the entire 'agent runs you can watch from the Lock Screen' narrative hinges on it.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Google Play Generative AI policy requires an in-app user reporting mechanism for objectionable AI output AND documented red-team evidence at submission \u2014 plan mentions the report button but not the red-team documentation requirement, which has caused first-submission delays of 2\u20134 weeks in 2025/2026.",
+          "Apple Sign-In is required (Guideline 4.8) if Google Sign-In is offered \u2014 plan offers both but does not explicitly note the parity requirement.",
+          "Watch app with 'Approve/Cancel' for destructive actions needs to handle the case where the watch is unlocked but the phone is locked \u2014 Apple has rejected apps that allow consequential actions from watch without phone-side biometric.",
+          "CarPlay 'chat + voice only' still requires CarPlay entitlement which Apple grants sparingly and only for navigation, audio, communication, EV charging, parking, quick food ordering, and driving task categories. 'AI chat in the car' does not fit any current CarPlay category \u2014 likely entitlement denial.",
+          "HealthKit read access requires a documented medical/fitness use case in App Review notes; 'routed prompts' is not a sufficient justification and will be rejected under Guideline 5.1.3.",
+          "iOS 26 / Foundation Models availability claim assumes API exposure that as of submission may still be limited; should hedge.",
+          "Share Extension memory budget cited as ~120MB is closer to 60MB in practice on non-Plus devices \u2014 even tighter constraint than plan acknowledges.",
+          "Bundled model size + App Thinning / Asset Delivery: Play Asset Delivery has a 1GB cap per install-time asset pack and total APK size limits; a 1.5GB Qwen bundle will require on-demand delivery, contradicting the 'no post-install download' claim made for Apple.",
+          "Continuity Handoff requires both apps share the same Team ID and registered activity types \u2014 the Mac Studio is described as a Node service, not a registered macOS app, so handoff will not work as described without a real macOS app target.",
+          "Privacy Nutrition Label per-provider disclosure is correct in principle but the plan does not address that Anthropic/OpenAI/Google each have different data-retention defaults that must be disclosed separately \u2014 this is a common rejection cause."
+        ],
+        "strengths": [
+          "Correctly identifies that keeping execution on the desk runtime is the right architectural posture for App Store risk minimization (even if it does not fully solve the problem).",
+          "Explicit Guideline 2.5.2 framing for bundled models (no post-install download) is the correct instinct, though incomplete.",
+          "Recognizes that Realtime / background voice and Live Activities are the high-leverage but high-policy-risk surfaces.",
+          "Acknowledges Android 14 foreground service restrictions even if the proposed mitigation is thin.",
+          "Privacy Nutrition Label / Data Safety form parity is called out, which is often forgotten in plans of this scope."
+        ],
+        "overall": "revise-major"
+      },
+      {
+        "overall": "revise-major",
+        "strengths": [
+          "Correctly identifies that Apple Foundation Models is Swift-only as a public framework API.",
+          "Correctly notes Gemini Nano's foreground-only restriction on Android as a real ML Kit GenAI constraint.",
+          "Correctly identifies the 4K context ceiling on Apple Foundation Models and routes long-context work elsewhere.",
+          "Correctly distinguishes Image Description (ML Kit GenAI surface) from raw Nano access, and acknowledges device-tier gating.",
+          "Honest about needing a cloud fallback when on-device output is poor."
+        ],
+        "major_issues": [
+          {
+            "claim": "Bundled Gemma 3 4B / Qwen 2.5 3B are 'shipped inside the IPA/APK at install time' as 'Apple App Store guideline-safe; no post-install model download.'",
+            "rebuttal": "The plan later contradicts itself by recommending App Thinning / Asset Delivery to 'stream the bundled model only to devices that need it' \u2014 that IS post-install download via On-Demand Resources or Play Asset Delivery, not bundling. The two strategies are opposite. On Android, Play policy actually requires Asset Delivery for large models because the base APK has a 150MB ceiling; a 1.5GB bundled model will be rejected. On iOS, a 1.6\u20131.8GB always-bundled model hurts install conversion and review. The compliance narrative is internally inconsistent and incorrect.",
+            "severity": "major"
+          },
+          {
+            "claim": "Apple Foundation Models on iOS 26+ is the universal on-device routing layer where 'every prompt is classified locally before routing.'",
+            "rebuttal": "Apple FM is gated to Apple Intelligence-eligible devices (iPhone 15 Pro / 16 series and newer, M-series iPads/Macs). For an indie shipping in 2026 this is a minority of active iPhones. The draft treats it as ubiquitous when it applies to roughly 30\u201340% of the active iOS install base, with the rest covered by a bundled-Gemma fallback that is itself problematic (see above). Realistic posture: FM is a nice-to-have on eligible devices, not a foundation you can build the routing layer on.",
+            "severity": "major"
+          },
+          {
+            "claim": "Gemini Nano is used as a general-purpose on-device LLM for arbitrary classification, summarization, and Image Description on Pixel 9+/S24+/OnePlus 13/Razr 60 Ultra/HONOR Magic 7.",
+            "rebuttal": "Gemini Nano is NOT a general-purpose third-party SDK. Public access is via ML Kit GenAI's narrow task APIs (Summarization, Proofreading, Rewriting, Image Description) \u2014 not free-form prompting. Third-party apps cannot directly invoke AICore for arbitrary classification prompts. The 'route every prompt through Nano for intent classification' design is not buildable with current public APIs. Stable third-party ML Kit GenAI access is also narrower than the device list claims \u2014 Pixel 9 / Galaxy S24+ tier is solid; the rest are partial.",
+            "severity": "major"
+          },
+          {
+            "claim": "On-device LLM triage layer where 'every prompt is classified locally before routing; routine summarization and structured-output extraction never leave the phone.'",
+            "rebuttal": "This is the load-bearing claim of the architecture and it is aspirational. On iOS only AI-eligible devices get FM; on Android only ML Kit GenAI's narrow task APIs are public and 'classification' is not one of them. What CAN be done today is non-LLM on-device classification (Apple NLTagger / NLClassifier, ML Kit text classification, custom CoreML). The plan should distinguish 'on-device ML classification' (real, ubiquitous) from 'on-device LLM prompting' (aspirational, fragmented, device-gated). Conflating them inflates what V1 of the app can actually deliver.",
+            "severity": "major"
+          },
+          {
+            "claim": "Apple Foundation Models multimodal is 'not exposed in FM as public API; route to GPT-4o or Gemini' \u2014 implying it exists but is restricted.",
+            "rebuttal": "Apple FM's on-device model is text-only; there is no hidden multimodal capability being withheld. The phrasing suggests an artificial restriction when it is a model-capability limit. This matters because the plan implies on-device captioning of shared images on iOS \u2014 that path requires Apple Vision (OCR/classification only, not generative captioning) or a third-party multimodal model, neither of which is FM.",
+            "severity": "major"
+          },
+          {
+            "claim": "WhisperKit Large V3 Turbo bundled as a viable default option alongside Gemma 3 4B, totaling roughly 3.4GB of bundled models before app code.",
+            "rebuttal": "Apple SpeechAnalyzer (iOS 26+) is now the recommended on-device STT and ships with the OS, so it should be the default with WhisperKit reserved as a fallback for older iOS. Treating WhisperKit Large as a bundled option compounds the size/compliance problems above and is not the right primary path.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "Apple Intelligence's 'spring-2026 third-party voice composition' chaining App Intents is plausible roadmap but not confirmed shipping; treat as dependency, not given.",
+          "'KMP grew 23% in 18 months (JavaCodeGeeks survey)' \u2014 citation is thin and not load-bearing; source properly or drop.",
+          "Matrix says Claude voice is 'pipelined' (not realtime); Claude shipped a realtime-style voice mode in 2025, so the row may be stale.",
+          "Wear OS tile '20s refresh floor' framing makes tiles sound more limited than they are \u2014 event-driven updates are allowed.",
+          "The 'cost/latency badge from rolling p50' is good, but on-device intent classification before every send adds its own latency the draft doesn't budget against the 'feels instant' promise.",
+          "Routing decision tree omits the case where FM/Nano are available but user explicitly picked a cloud brain; prose claim 'every prompt is classified locally before routing' is heavier than the tree shows."
+        ]
+      },
+      {
+        "overall": "revise-major",
+        "strengths": [
+          "Brain-agnostic router with per-message switching is a genuinely differentiated product wedge nobody is currently shipping \u2014 the strategic positioning is sound.",
+          "The phone-as-control-surface / desk-as-runtime split is the correct architectural insight and cleanly sidesteps App Store Guideline 2.5.2.",
+          "On-device routing tree (FM/Nano for classification, cloud for reasoning) is a sensible, well-reasoned split that respects FM's 4K ceiling.",
+          "Risk register includes the actually-correct risks (2.5.2 rejection, FM context limit, Tailscale onboarding friction, Share Extension memory cap) rather than imaginary ones.",
+          "Phased TestFlight exit gates are well-defined and each phase is independently shippable \u2014 good de-risking structure for a solo build."
+        ],
+        "major_issues": [
+          {
+            "severity": "blocker",
+            "claim": "14 weeks Fritz-solo timeline (360 Fritz-hours + 250 AI-paired hours) is fantasy. The repo shows ~61 Swift files in shay-desktop (macOS) but ZERO Kotlin files anywhere in famtastic. Fritz has no demonstrated Android/Kotlin shipping history, no demonstrated KMP experience, no demonstrated Live Activities experience, no demonstrated watchOS experience, no demonstrated Wear OS experience, no demonstrated WebRTC experience, no demonstrated APNs frequent-updates experience, no demonstrated MCP-client-implementation experience, no demonstrated WhisperKit/MLC-LLM bundled-model experience. Each of those is a 2-6 week learning curve on its own for a competent dev; Fritz is being asked to absorb 8-10 of them in parallel. Realistic solo-dev estimate: 9-15 months to Phase 4, not 14 weeks. The plan needs to either (a) cut scope to ~Phase 1-2 only, (b) explicitly budget for hiring a contractor for Android + watchOS + Live Activities, or (c) admit the 14-week number is aspirational and triple it.",
+            "rebuttal": "The hour budget assumes parity-level execution velocity in technologies Fritz has never shipped. Live Activities alone \u2014 APNs push-to-start, ActivityKit, frequent-updates entitlement approval from Apple, 4KB payload optimization, Dynamic Island layouts \u2014 is a 3-4 week ramp for a solo dev who hasn't done it. Watch + Wear together is another 4-6 weeks. WebRTC thin-client (Phase 4) is a 6-8 week project on its own at production quality. The 'AI-paired' column quietly assumes Codex/Claude can write production-quality Swift LiveActivity / watchOS / KMP code with negligible Fritz oversight, which is not how AI pairing works in domains the human can't review."
+          },
+          {
+            "severity": "blocker",
+            "claim": "Kotlin Multiplatform pick is wrong for Fritz specifically. The defense correctly identifies that the hard surfaces are native-only (FM, Live Activities, App Intents, Watch, Wear), but then picks a stack that requires Fritz to ALSO become productive in Kotlin + Compose + KMP toolchain (Gradle, Konan, expect/actual, cocoapods-plugin) on top of native Swift. The repo evidence shows Fritz writes Swift (61 files in shay-desktop) but has shipped zero Kotlin. KMP's whole value prop is shared business logic \u2014 but Fritz is one person who will not realistically maintain two front-ends. A more honest pick is: ship iOS-only for V1 (Phase 1-3), defer Android entirely to Phase 5+. iOS-only captures Fritz's actual user (himself) on his actual device, lets him use SwiftUI/SwiftData/ActivityKit/WatchKit natively without a KMP abstraction tax, and removes ~40% of the build surface (Compose UI, Wear tile, Google Sign-In, Play Store generative-AI policy review, FGS lifecycle, ML Kit GenAI integration, MediaPipe LLM). The plan should defend why Android Day 1 is worth doubling the solo dev's workload when Fritz himself uses an iPhone.",
+            "rebuttal": "KMP requires Gradle expertise, expect/actual discipline, and a separate Compose UI codebase. The shared core the plan describes (brain router, MCP client, conversation graph, encryption, offline queue, sync) is ~30% of the code; the platform-specific UI + native bridges are ~70%. The shared-core savings do not justify the dual-platform tax for a solo dev whose primary user is himself on iOS."
+          },
+          {
+            "severity": "major",
+            "claim": "Phase 4 'phone-as-thin-client for the desk Studio' (WebRTC screencast + touch\u2192mouse + soft-keyboard\u2192keystroke over Tailscale) is a separate product, not a feature. Building a production-grade remote-desktop client is a 6-12 month project for a specialist team (see Parsec, Moonlight, Jump Desktop). Latency tuning, codec selection (H.265 vs AV1), TURN fallback when Tailscale degrades, gesture-to-input translation, soft-keyboard IME handling, and App Store review of a remote-control app (Apple has historically scrutinized these heavily under 4.2 'minimum functionality' and 2.5.2) are each multi-week problems. Allocating ~4 weeks of one phase to this is not credible. Recommend deleting Phase 4 entirely or splitting it into its own V2 roadmap.",
+            "rebuttal": "Existing thin-client products (Jump, Screens, Parsec) have teams of 5-20 engineers and still ship with rough edges. A solo dev cannot ship a production WebRTC thin-client in 100 hours."
+          },
+          {
+            "severity": "major",
+            "claim": "Bundled on-device models (Gemma 3 4B / Qwen 2.5 3B at 1.5-1.8GB) inside the IPA/APK violates the realistic shipping model. Bundling 1.8GB means every install \u2014 including TestFlight, including OTA deltas \u2014 ships that weight, and Apple discourages it. The plan waves at 'App Thinning' and 'Asset Delivery' but App Thinning does not strip variant-shared resources, and Play Asset Delivery requires the model be authored as an asset pack with specific install-time/on-demand semantics. More importantly, the plan claims Apple Guideline 2.5.2 forbids downloading model weights post-install \u2014 but model weights are data, not executable code, and EVERY shipping AI app (Apple Intelligence itself, Gemini Nano via Play Services, MLC Chat, Private LLM, PocketPal) downloads them post-install. Fritz should download the offline model post-install via a normal asset CDN, gated behind user opt-in. This is the standard pattern and is explicitly allowed.",
+            "rebuttal": "The plan's claim that bundling-vs-downloading is a 2.5.2 question is wrong. Apple's own Foundation Models are downloaded, not bundled. Bundling a 1.8GB model needlessly inflates IPA size for the majority of users who will never use offline mode."
+          },
+          {
+            "severity": "major",
+            "claim": "MCP client on the phone is a real feature but the plan understates its cost. MCP is a stdio/SSE protocol designed for local processes. Speaking MCP from a phone over Tailscale to a desk-hosted MCP server requires either (a) a custom HTTP+SSE bridge written on both ends, or (b) routing every MCP call through shay-relay as an opaque proxy. Tool schemas, sampling, resources, prompts, and roots all need to be marshaled across the WAN. Schema drift between client and server SDK versions is a known MCP pain point. Building this as part of KMP shared core (so it works identically on iOS and Android) adds another expect/actual surface. Plan should either spec the wire format explicitly or scope MCP as 'phone displays the desk's tool registry, calls are proxied through shay-relay opaquely' \u2014 much smaller and probably what was meant.",
+            "rebuttal": "Implementing a real MCP client in pure Kotlin (so it compiles to both iOS and Android via KMP) means re-implementing the protocol from scratch \u2014 Anthropic's official SDKs are Python and TypeScript only. That is a multi-week engineering effort and an ongoing maintenance burden as the spec evolves."
+          },
+          {
+            "severity": "major",
+            "claim": "The capability matrix conflates 'capability Shay COULD ship' with 'capability Shay WILL ship in 14 weeks.' Many checks in the Shay target column (CarPlay, HealthKit, Continuity Handoff, Wear OS tile with approval, Watch app with full per-run drill-down, basic-memory bidirectional read, Smart Connections WebGL graph, screen share during voice) are each 2-4 week features individually. The 14-row 'beats every incumbent' claim is the load-bearing strategic argument of the doc, but it relies on shipping all 14 simultaneously. Recommend marking each check with the phase it appears in, and being honest that V1 (Phase 1+2) only beats incumbents on ~5 rows: per-message brain switcher, brain-independent voice channel, MCP client, on-device LLM, cross-brain context handoff. That's still a real wedge \u2014 but it's a different positioning story.",
+            "rebuttal": "The capability matrix is the strategic anchor of the plan, and if 9 of the 14 winning rows are deferred to Phase 3 and Phase 4 (which may never ship realistically), the V1 differentiation story is much smaller than advertised."
+          }
+        ],
+        "minor_issues": [
+          "Tailscale dependency is acknowledged but the 'guided onboarding with embedded SSO' mitigation is hand-wavy \u2014 Tailscale's iOS SDK does not support embedded sign-in in the way described; user has to install the Tailscale app separately and consent to the VPN profile. This is a real onboarding cliff.",
+          "Apple's 'frequent-updates' entitlement for Live Activities is not auto-granted; it requires justification in App Review and is sometimes denied. Plan should note review risk.",
+          "Critical Alerts entitlement requires separate Apple approval and is rarely granted to non-emergency apps. Listing it as 'user toggleable' implies it will be available \u2014 it probably won't be.",
+          "Cost estimate ignores Tailscale onboarding engineering, certificate rotation for APNs auth keys, and the time-cost of Apple Developer Program reviews for each new entitlement.",
+          "'Apple Intelligence spring-2026 third-party voice composition' is treated as a confirmed distribution channel; its actual surface area for third-party App Intents remains constrained and should not be load-bearing.",
+          "Brain provider TOS risk is rated 'Low' but OpenAI and Anthropic both have terms that constrain how their models can be presented alongside competitors; the in-product 'cost/latency badge' UX directly comparison-shops them. At minimum 'Medium' and worth a real legal pass.",
+          "Voice channel 'Gemini Live default, OpenAI Realtime premium' \u2014 the $0.00165/min figure is audio-input only; full-duplex with output is meaningfully higher. The '100\u00d7 cost win' claim needs the actual math shown.",
+          "Plan says 'basic-memory read-only sync' but doesn't say how \u2014 Obsidian vault sync to iOS without iCloud or a third-party sync service is non-trivial. SAF on Android is also limited for large vaults.",
+          "Smart Connections WebGL graph viewer is listed casually but is a real visualization engineering task with performance ceilings on phones (>2000 nodes degrades on mid-tier hardware).",
+          "App Intents catalog of 10 intents is listed as a Phase 3 deliverable but each intent requires careful schema design, donation, parameter resolution, and snippet view \u2014 realistically ~2-3 days each, so ~3-4 weeks just for App Intents.",
+          "No mention of crash reporting, analytics, or error telemetry infrastructure \u2014 solo dev needs this to triage production issues without being chained to the device.",
+          "No mention of how Fritz tests Wear OS without a Wear device, or watchOS approval flows without a paired Apple Watch \u2014 both are required hardware purchases.",
+          "WhisperKit 'Large V3 Turbo bundled' adds 1.6GB to IPA \u2014 this is on top of the Gemma bundle. The plan double-counts on-device model weight elsewhere.",
+          "Plan does not address how Fritz will reconcile his existing FAMtastic 'Studio is managed by launchd, never start manually' rule with a phone-triggered relay that needs to wake/restart the desk runtime \u2014 there is a real coordination question with the existing launchd contract."
+        ]
+      }
+    ],
+    "r2": [
+      {
+        "overall": "revise-minor",
+        "strengths": [
+          "All four blockers from the prior critique are now decisively resolved: computer-use bridge cut to Px, bundled LLM weights removed, background voice constrained to CallKit, and destructive App Intents gated on biometric. The plan no longer hand-waves Guideline 2.5.2, 2.5.4, 4.2.7, or 5.1.1.",
+          "KMP rejection is now correctly defended against the actual repo state \u2014 153 Swift files in shay-desktop, zero Kotlin files anywhere \u2014 and the dual-store, dual-toolchain, dual-on-device-LLM tax is named honestly. iOS-only V1 is the right solo-dev call.",
+          "The on-device story is now honest: Tier A (NLTagger + CoreML, every device, ~5MB bundle) is load-bearing and ubiquitous; Tier B (Apple FM) is bonus on eligible devices. This decouples the routing-layer narrative from FM's 4K ceiling and ~30\u201340% install-base eligibility \u2014 both of which are real and were ignored in V1.",
+          "MCP is correctly repositioned as proxy-display through a typed JSON envelope on shay-relay rather than a from-scratch KMP client of stdio/SSE/sampling/resources/prompts/roots. Saves weeks of reimplementation while preserving the user-visible value.",
+          "Phase plan is now honest: 6+6+8=20 weeks, each phase ends with a TestFlight build and a named exit gate, and the comparison-shopping/BYOK framing keeps the brain-switcher UI inside vendor TOS. Risk #9 was correctly upgraded from Low to Medium.",
+          "Launchd contract is now reconciled cleanly \u2014 shay-relay is its own job, never starts/restarts com.famtastic.studio. Verified against the existing ~/Library/LaunchAgents/com.famtastic.studio.plist, which matches the plan's described behavior.",
+          "Per-provider consent screens (Anthropic / OpenAI / Google) instead of aggregated disclosure clears the 5.1.1 rejection vector that the V1 draft would have hit, and the Apple Sign-In-only stance sidesteps 4.8 parity until Android returns."
+        ],
+        "major_issues": [],
+        "minor_issues": [
+          "Phase 3 App Intents math doesn't add up: \u00a710 says '10 intents; each intent budgeted at 2\u20133 days \u2026 total ~3 weeks.' Ten intents at 2.5 days is 25 days \u2248 5 weeks, not 3. Either trim the catalog to ~6 intents for V1 or extend the App Intents budget \u2014 leaving the arithmetic inconsistent will bite at week 16.",
+          "Hours-vs-weeks reconciliation is off. \u00a711 says 410 Fritz hours at 25 focused hrs/week, which is ~16.4 weeks, but \u00a710 and \u00a711 both promise 20 weeks. The slack is presumably ramp/research/admin, but the plan should either name that explicitly (e.g. '410 build hours + ~90h ramp/admin = 500h / 25h-wk = 20 weeks') or fix one of the numbers.",
+          "Tailscale-based WoL is hand-waved. Tailscale doesn't forward magic packets through the tunnel \u2014 WoL requires a Tailscale subnet router on the LAN to relay the broadcast, and Macs are notoriously flaky about WoL over Wi-Fi (and won't respond from deep sleep / Power Nap states without specific firmware support). For Fritz's always-on Mac mini this is fine, but \u00a75's 'phone calls a tiny /wake endpoint on the home router's Tailscale node' implies a topology that needs a Tailscale subnet router with WoL-broadcast permissions configured. Spell that out or drop the WoL path and rely on the always-on assumption.",
+          "iOS 26 SpeechAnalyzer is the Phase 2 default STT, but the plan never names a deployment target or a fallback for pre-iOS-26 devices. If V1 ships in late 2026 the eligible base is likely fine, but with no fallback path and WhisperKit explicitly removed, any user on iOS 17/18 has no STT in V1. Either set deployment target to iOS 26 (and own the install-base cost in \u00a72 footnote) or budget a fallback STT path in Phase 2.",
+          "Watch approve-from-wrist UX gets degraded by the (correct) biometric round-trip on the paired phone. The plan calls it 'non-negotiable' for compliance but doesn't say the obvious thing to the user: you still have to pick up your phone, so 'approve from wrist' really means 'see the approval prompt on your wrist; finish it on your phone.' Flag this in \u00a78 / \u00a73 #10 so the value prop isn't oversold.",
+          "Crash reporting / analytics / telemetry is parked in Phase 3, but TestFlight #1 in Phase 1 will be running for 14 weeks before observability lands. Move at least Sentry (or equivalent) and a minimal event pipeline into Phase 1 so Phase 1+2 TestFlight crashes are debuggable.",
+          "'frequent-updates entitlement requested but not assumed; Apple approval can take 1\u20134 weeks' is slightly outdated. NSSupportsLiveActivitiesFrequentUpdates is a self-declared Info.plist key, not an Apple-granted entitlement \u2014 it's enforced by an OS-level energy budget at runtime, not by an approval queue. The mitigation (graceful fallback) is still correct, but the framing in \u00a79, \u00a711, and Risk #7 should be updated to 'system-throttled' rather than 'Apple-approved.'",
+          "Cloudflare Tunnel listed as a fallback to the Tailscale onboarding cliff in Risk #3 is a one-liner that masks a real second design (CF Access policy, tunnel daemon on the desk, public hostname). Either remove it as a V1 mitigation or name the additional design cost. As written it makes the cliff sound shallower than it is.",
+          "iCloud Drive basic-memory sync in Phase 3 isn't risk-rated. UIDocument file providers over an Obsidian vault with thousands of small markdown files have well-known conflict and indexing issues, especially when the desk is writing concurrently. Add a row to \u00a712 or downgrade the feature to a read-only snapshot pull-on-demand rather than a sync.",
+          "\u00a75 mentions 'APNs auth-key rotation' as a relay responsibility. APNs .p8 auth keys are long-lived credentials (Apple revokes only on request); they don't rotate on a schedule. The relay should generate provider tokens (JWTs signed with the .p8) and rotate those every ~30\u201360 min per APNs guidance \u2014 that's the actual operational concern. Minor phrasing fix."
+        ]
+      },
+      {
+        "major_issues": [
+          {
+            "claim": "Apple Foundation Models 'eligible device' framing still understates the eligibility gate and the App Store risk of advertising FM-dependent features.",
+            "rebuttal": "\u00a77 narrows FM eligibility to 'iPhone 15 Pro / 16+ in 2026, ~30-40% active install' and treats FM as bonus on top of Tier A. That's directionally right, but the plan still ships an Offline mode row in \u00a72 marked '\u2713 [P1] FM-eligible devices; queued-for-cloud on others' and a brain-switcher row that lists 'On-device FM (eligible only)' as a first-class brain. App Store reviewers and users on non-eligible hardware will see those affordances and have them silently disappear. Apple's HIG (Apple Intelligence section) and the App Review precedent on Apple Intelligence-only features both push toward (a) feature-flagging the FM brain entirely out of the switcher on ineligible devices rather than greying it, and (b) not marketing 'true offline' as a V1 capability when the majority install base only gets the 'queued' fallback. The plan should either drop 'Offline mode (true)' from the V1 wedge or rename the row to 'Offline drafting on Apple Intelligence devices; queued elsewhere' so the matrix is not overstating. Same for the \u00a73 #12 'Offline path' headline.",
+            "severity": "major"
+          },
+          {
+            "claim": "Apple Foundation Models availability cannot be assumed for an app that ships to all iOS 18/26 devices without an explicit Apple Intelligence runtime check and a documented fallback that survives the user toggling Apple Intelligence off.",
+            "rebuttal": "The plan treats FM as 'provisioned by the OS' and 'free on eligible devices.' That's true only when (1) the device is on the eligible SKU list, (2) the user is in a supported region/language, (3) Apple Intelligence is enabled in Settings, and (4) the model assets have finished their on-device download (which can take hours after first opt-in and re-downloads after OS updates). None of those are addressed. Risk #4 covers the 4K ceiling but not the availability matrix. Concretely: a user on an iPhone 15 Pro in an unsupported locale, or with Apple Intelligence toggled off, or mid-asset-download, will get a SystemLanguageModel.availability != .available result and the FM brain row in \u00a73 #1 and the offline path in \u00a73 #12 both silently fail. The plan needs an explicit availability check in the routing decision tree in \u00a77 and a UX state for 'FM unavailable on this device right now' that is distinct from 'FM not on this hardware.' Otherwise the V1 wedge claim 'On-device LLM (any) \u2713 [P1]' is fragile against reviewer testing and against the 1.5 / 2.3.1 'accurately represent functionality' guideline.",
+            "severity": "major"
+          },
+          {
+            "claim": "The 'BYOK-only, no IAP' posture in \u00a79 needs a sharper read of Guideline 3.1.1 around external account configuration and reader-app rules.",
+            "rebuttal": "\u00a79 says 'V1 is BYOK-only with no in-app subscription or token-pack purchases. Account creation does not link to a website billing page.' That's the right instinct but the guideline surface is more specific than the plan acknowledges. 3.1.1 forbids buttons, external links, or other calls to action that direct customers to purchasing mechanisms other than IAP for digital content/services used in the app. The brain switcher exposes Anthropic/OpenAI/Google as in-app services consumed via user-supplied keys; if the onboarding has any 'Get an Anthropic key' or 'Sign up at console.anthropic.com' link, that is the exact pattern that has triggered rejections in BYOK AI apps in 2025-2026. The mitigation is to (a) require keys to be pasted from outside the app with no in-app link to the vendor's signup or billing, (b) document this in the App Review notes, and (c) confirm the reader-app/External Link Account entitlement is not needed. The plan should call this out in \u00a76 (auth + pair) and \u00a79, not leave it implicit. Risk #9 in \u00a712 covers comparison-shopping TOS but not the 3.1.1 external-link surface.",
+            "severity": "major"
+          }
+        ],
+        "minor_issues": [
+          "\u00a72 capability matrix marks 'On-device LLM (any) \u2713 [P1] Apple FM on eligible devices only' \u2014 the parenthetical belongs in the legend column too, otherwise the row reads as a flat win versus Claude/ChatGPT which is misleading on non-eligible devices.",
+          "\u00a77 'Tier A latency budget \u226430ms p95 on A15+' is reasonable but the plan should specify the floor device the app supports. If V1 supports iOS 17 minimum that includes A13 (iPhone 11), where NLTagger + a custom CoreML classifier will routinely exceed 100ms warm-start. The 'dispatch optimistically to last-selected brain' fallback works, but the supported-device floor should be stated in \u00a710 exit gates.",
+          "\u00a79 mentions iOS 26 SpeechAnalyzer as default STT \u2014 the deployment target needs to be explicit. If V1 requires iOS 26, the addressable install base in 2026 is materially smaller than the FM eligibility cohort and the plan should say so; if V1 supports iOS 18, there needs to be an SFSpeechRecognizer fallback path documented for Phase 2.",
+          "\u00a78 Live Activities '4 simultaneous cap' \u2014 iOS itself caps active Live Activities per app and the system may evict at its discretion; the plan should note that the 4 cap is a self-imposed UX limit, not the OS guarantee, and that eviction is observable via ActivityKit state.",
+          "\u00a79 'Age rating 17+ to match Claude/ChatGPT' \u2014 fine, but if any App Intent surfaces output through Siri/voice-only contexts, App Review has been stricter about unrestricted generative output in those surfaces; worth noting in the App Intents catalog work in P3.",
+          "\u00a711 'APNs auth key rotation: budget ~1hr per rotation; need P256 keys' \u2014 APNs auth keys (.p8) don't expire and don't need rotation on a schedule; the line conflates auth keys with provider tokens (which are JWTs signed with the .p8 and rotate hourly). Worth correcting so the ops budget reflects the JWT-refresh cron, not a key rotation ritual.",
+          "\u00a75 architecture diagram shows 'APNs auth-key rotation' inside shay-relay \u2014 same conflation; the relay rotates the JWT, not the auth key."
+        ],
+        "strengths": [
+          "Computer-use bridge is cleanly cut to Px and the 4.2.7 reasoning is correctly stated rather than hand-waved.",
+          "Bundled LLM weights are removed from V1 with the right reasoning (App Thinning contradiction, install conversion, FM provisioned by OS).",
+          "Background voice is correctly scoped to CallKit-only, which is the actual mitigation for the 2.5.4 rejection pattern that has hit ChatGPT-clones.",
+          "App Intents destructive composition gating on biometric is the right call and the plan accepts the cost to the voice-composition narrative honestly.",
+          "KMP rejection for V1 is well-defended against Fritz's actual skill stack and the 20-week timeline; the Swift-shared-core-now / Kotlin-extract-later sequencing is the right solo-dev move.",
+          "Per-provider consent screens replacing aggregated disclosure is the correct read of 5.1.1 / 5.1.2(i) precedent.",
+          "Frequent-updates entitlement is requested but not assumed, with graceful fallback documented \u2014 the right posture given Apple's inconsistent approval pattern.",
+          "Watch-initiated approval round-tripping biometric on the paired phone is the correct mitigation for the 'watch unlocked, phone locked, consequential action' rejection vector.",
+          "Launchd contract reconciliation (shay-relay as its own job, never touches com.famtastic.studio) honors the project's non-negotiable studio process rule."
+        ],
+        "overall": "revise-minor"
+      }
+    ]
+  }
+}

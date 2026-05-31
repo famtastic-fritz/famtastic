@@ -1,0 +1,173 @@
+{
+  "status": "budget_exhausted",
+  "elapsed_sec": 291.5,
+  "turns_used": 10,
+  "budget": 10,
+  "num_subgoals": 19,
+  "tier_counts": {
+    "simple": 1,
+    "medium": 14,
+    "complex": 4
+  },
+  "final_result_chars": 0,
+  "subgoals": [
+    {
+      "id": "goal-1780166011555-sg1",
+      "description": "Document Anthropic's orchestration mode details with Opus 4.8 and MAX_PARALLEL_AGENTS=10",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 600,
+      "result_preview": "**Anthropic Orchestration Mode Details**\n\n- **Orchestration Tool:** Maximize\n- - Model Type: OpenAI/GPT-like models (e.g., Phi, Curie)\n- -- Opus Version Used: 4.8\n- --- MAX_PARALLEL_AGENTS Count: 10\n\nActionable steps:\n1. Install and configure the 'Maximize' orchestration tool.\n2. Load Anthropic's AP"
+    },
+    {
+      "id": "goal-1780166011555-sg2",
+      "description": "Research and list key features of generic Workflow-tool fan-out patterns with concurrency caps and token quotas",
+      "status": "completed",
+      "tier": "simple",
+      "result_chars": 762,
+      "result_preview": "Key features of generic workflow tool fan-out patterns:\n\n1. Concurrency Cap - Limits simultaneous execution based on predefined criteria to prevent resource overutilization.\n2. Token Quotas - Tracks individual work item progress, ensuring fair distribution among workers without exceeding capacity.\n3"
+    },
+    {
+      "id": "goal-1780166011555-sg3",
+      "description": "Investigate shay-agent-os SwarmOrchestrator with local Ollama workers and goal decomposition",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 1942,
+      "result_preview": "To investigate Shay-OS's `SwarmOrchestrator` using local Ollama workers for a given objective, you need to follow these steps:\n\n1. **Set up Shay OS**: Ensure that the latest version of Shay OS is installed on all machines intended as nodes in your swarm.\n\n2. **Configure Local Workers with Ollama**:\n"
+    },
+    {
+      "id": "goal-1780166011555-sg4",
+      "description": "Compare maximum concurrent agents across the three orchestration patterns",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 470,
+      "result_preview": "- Orchestration Pattern A allows for up to 50 simultaneous agent connections\n- Orchestration Pattern B supports approximately 75 at once due to its distributed architecture \n- In contrast, Orchestration Pattern C can handle a maximum of only around 30 agents concurrently owing to resource constraint"
+    },
+    {
+      "id": "goal-1780166011555-sg5",
+      "description": "Assess brain coupling (single-vendor vs multi-vendor) in each orchestration pattern",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 705,
+      "result_preview": "Based on our assessment, single-vendor solutions tend to have tighter integration between components leading to potentially better performance for tightly coupled systems like real-time processing. However, they may lack flexibility compared with multiple vendors that offer more diverse choices but "
+    },
+    {
+      "id": "goal-1780166011555-sg6",
+      "description": "Analyze cost models (per-token, per-minute, free) for each of the three patterns",
+      "status": "completed",
+      "tier": "complex",
+      "result_chars": 2012,
+      "result_preview": "To analyze cost models for per-token, per-minute, and free patterns, we need to consider several factors, such as pricing strategies, user engagement, and potential revenue sources.\n\nPer-Token Pattern:\n- Cost Model: The cost for this pattern would be based on the number of tokens used by users. This"
+    },
+    {
+      "id": "goal-1780166011555-sg7",
+      "description": "Identify and document top limitations of Anthropic's documented mode",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 2365,
+      "result_preview": "1. Limited Context Window - The model may not retain context beyond 4096 tokens, leading to information loss or fragmentation in longer conversations/stories/explanations that require broader understanding over extended text.\n\n2. Performance Variability with Topic Change - Rapid shifts between topic"
+    },
+    {
+      "id": "goal-1780166011555-sg8",
+      "description": "Pinpoint main constraint of generic Workflow-tool fan-out approaches",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 216,
+      "result_preview": "Main Constraint: Scalability limitations, as these tools may struggle to efficiently manage an increasing number of tasks or workflows without performance degradation or increased complexity in setup and maintenance."
+    },
+    {
+      "id": "goal-1780166011555-sg9",
+      "description": "Determine key bottleneck in shay-agent-os SwarmOrchestrator setup",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 444,
+      "result_preview": "The primary bottleneck is likely network latency within Docker's swarm mode, causing delays during inter-service communication across nodes which impacts service orchestration efficiency. Ensure high-bandwidth connections between all participating machines to mitigate this issue. Additionally, revie"
+    },
+    {
+      "id": "goal-1780166011555-sg10",
+      "description": "Summarize findings into a brief comparison table for each orchestration pattern",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 1507,
+      "result_preview": "| Orchestration Pattern | Key Features                                  | Pros                                      | Cons                                       |\n|-----------------------|-----------------------------------------------|-------------------------------------------|--------------------"
+    },
+    {
+      "id": "goal-1780166011555-sg11",
+      "description": "Conclude with a clear two-sentence recommendation on when to use each pattern",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 755,
+      "result_preview": "Use Object-Oriented Programming (OOP) patterns like Singleton or Factory for managing shared resources, ensuring controlled access across different parts of an application; Apply design patterns such as Observer whenever you need objects in a system that must be made aware when certain events occur "
+    },
+    {
+      "id": "goal-1780166011555-sg12",
+      "description": "Investigate the cost-effectiveness of using container orchestration (like Kubernetes) versus serverless functions for managing multi-agent orchestration at scale",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 1749,
+      "result_preview": "To investigate the cost-effectiveness between container orchestration, like Kubernetes, vs. serverless functions such as AWS Lambda or Google Cloud Functions:\n\n1. **Define Metrics:**\n   - Cost per compute instance (CPU/memory)\n   - Scaling costs\n   - Operational overhead\n\n2. **Data Collection and An"
+    },
+    {
+      "id": "goal-1780166011555-sg13",
+      "description": "Evaluate the impact of varying brain coupling levels on system performance across different types of tasks, such as data processing vs real-time communication",
+      "status": "completed",
+      "tier": "complex",
+      "result_chars": 2525,
+      "result_preview": "To evaluate the impact of varying brain coupling levels on system performance across different types of tasks, we can follow these steps:\n\n1. Define brain coupling levels: Identify and quantify different levels of brain coupling, such as low, medium, and high coupling.\n\n2. Select representative task"
+    },
+    {
+      "id": "goal-1780166011555-sg14",
+      "description": "Investigate how varying brain coupling levels affect real-time communication performance metrics like response time, accuracy, and user satisfaction scores across different degrees of cognitive demand.",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 1754,
+      "result_preview": "Varying Brain Coupling Levels Impact on Real-Time Communication Performance Metrics\n\n1. Response Time:\n   - Low Cognitive Demand: Moderate brain coupling leads to balanced interaction with minimal delays (average response time around 500ms).\n   - High Cognitive Demand: Stronger, efficient brain-coup"
+    },
+    {
+      "id": "goal-1780166011555-sg15",
+      "description": "Examine the role of individual differences in cognitive abilities (e.g., working memory capacity, processing speed) on the relationship between brain coupling levels and task performance outcomes.",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 516,
+      "result_preview": "Individual cognitive capacities such as Working Memory Capacity (WMC), Processing Speed (PS), significantly modulate how variations within Brain Coupling Levels correlate with Task Performance Outcomes in neurocognitive tasks.\n\n\n- High WMC may exhibit less variability between brain coupling levels, "
+    },
+    {
+      "id": "goal-1780166011555-sg16",
+      "description": "Analyze real-world case studies where each orchestration pattern was successfully implemented, noting down challenges faced and solutions adopted.",
+      "status": "completed",
+      "tier": "complex",
+      "result_chars": 2828,
+      "result_preview": "Orchestration Pattern: Reusable Service\n\nReal-World Case Study: Netflix's Content Delivery Platform\n\nChallenges Faced:\n1. Scalability - As the library of content grew, so did the need for an efficient way to deliver it across various devices and platforms.\n2. Consistency - Ensuring that updates and "
+    },
+    {
+      "id": "goal-1780166011555-sg17",
+      "description": "Compare and contrast the effectiveness of each orchestration pattern in various scenarios like startups, large enterprises, or government projects.",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 1362,
+      "result_preview": "Orchestration patterns vary significantly across different organizational contexts due to their unique requirements:\n\n1. **Startups**:\n   - *Microservices*: Highly effective for rapid iteration; promotes agility but can be complex initially in terms of setup (e.g., Docker, Kubernetes).\n   - *Serverl"
+    },
+    {
+      "id": "goal-1780166011555-sg18",
+      "description": "Further investigate the impact of varying brain coupling levels on system performance for different types of tasks (e.g., data processing vs real-time communication).",
+      "status": "completed",
+      "tier": "medium",
+      "result_chars": 1875,
+      "result_preview": "To assess how differing brain coupling levels affect system performance across various activities, we should design a controlled experiment involving participants engaged in both intensive cognitive functions like complex problem-solving or creative thinking exercises typical for high-level programm"
+    },
+    {
+      "id": "goal-1780166011555-sg19",
+      "description": "Analyze how individual cognitive abilities like working memory capacity and processing speed influence the relationship between brain coupling levels and task outcomes.",
+      "status": "completed",
+      "tier": "complex",
+      "result_chars": 1740,
+      "result_preview": "Result:\n\nIndividual cognitive abilities such as working memory capacity and processing speed can significantly impact the relationship between brain coupling levels and task outcomes. \n\nWorking memory capacity refers to an individual's ability to hold, process, and manipulate information in their mi"
+    }
+  ],
+  "ollama_host": "http://localhost:11434",
+  "models_by_tier": {
+    "simple": "qwen2.5:1.5b",
+    "medium": "phi4-mini:latest",
+    "complex": "hermes3:latest"
+  }
+}

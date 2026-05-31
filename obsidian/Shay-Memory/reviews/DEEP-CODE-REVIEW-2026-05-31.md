@@ -2,7 +2,13 @@
 title: Deep Code + Security Review — shay-desktop-electron (2026-05-31)
 date: 2026-05-31
 author: code-review agent (Fritz overnight)
-tags: [review, desktop, security, architecture, do-not-repeat]
+tags:
+- review
+- desktop
+- security
+- architecture
+- do-not-repeat
+permalink: shay-memory/reviews/deep-code-review-2026-05-31
 ---
 
 # Deep Code Review — shay-desktop-electron
