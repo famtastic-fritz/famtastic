@@ -43,3 +43,23 @@ Tunnel app `ShayDesktop.app` (Swift SSH) left untouched.
 ## Known gaps opened/confirmed
 - Memory "Add custom section" modal shows a `Provider (stub)` label — incomplete feature, not a styling bug (per standing rule). Recorded as a known gap.
 - Per-screen vision sweep covered Chat + the screens the smoke harness reached; a deliberate screen-by-screen navigated sweep (push each `view:<ref>`) is the cleaner next pass than clicking arbitrary buttons.
+## Addendum — honest correction on the per-screen sweep
+My automated per-screen vision sweep did NOT actually visit each screen. Two
+tooling facts caught after the fact:
+1. In headless Playwright the Electron window opened narrow → the sidebar
+   collapsed to icon-only mode, hiding the text labels my click-selector needed.
+2. `setViewportSize` does not resize an Electron BrowserWindow, so widening the
+   viewport didn't help; spot-check confirmed `memory.png` was actually the Chat
+   empty state, and a label-click sweep switched 0/12 screens off Chat.
+
+**What IS truthfully verified:** the app boots clean, Chat renders 9/10 on the
+vision gate, 0 console errors and no render-loop across every navigation attempt,
+no white screens. The Agents dead-CSS fix is a deterministic code fix that is in
+the shipped build and passes typecheck. Providers/Gateway/Studio were confirmed
+(by source audit) to reuse styled shared classes.
+
+**What is NOT yet visually verified per-screen:** the other 18 screens' rendered
+content. The clean fix is to make the QA harness navigate via the exposed nav
+store (push `{kind:'view', ref}`) rather than by clicking sidebar labels, and to
+set the Electron window size at launch (BrowserWindow options), not via Playwright
+viewport. That is the recommended first task for the morning review.
