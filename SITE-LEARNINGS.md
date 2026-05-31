@@ -6284,3 +6284,34 @@ To restore Claude: top up at claude.ai/settings/usage, wait for the Max rolling-
 **Net architecture:** basic-memory = agent write+recall (local, scoped to Shay-Memory); Smart Connections = human visual brain + on-device embeddings over the whole vault; both operate on plain markdown so basic-memory's wikilinked notes appear as nodes in the Visualizer. No API keys, no LLM extraction, no cognee.
 
 **DO-NOT-REPEAT (2026-05-29, see buglog #207): never point a basic-memory project at the hand-authored vault.** Tested giving Shay whole-vault semantic recall by pointing a basic-memory project at `~/famtastic/obsidian`; on reindex it **mutated 2 hand-authored notes** (injected `permalink:` frontmatter, stripped trailing newline/whitespace) **even with `ensure_frontmatter_on_sync: false`** — that flag does not prevent file rewrites. Also: basic-memory hard-refuses nested projects (can't have whole-vault + Shay-Memory subfolder) and its `project default` CLI is buggy (config vs internal-DB desync). Reverted to Shay-Memory-only scope; repaired the 2 files (one byte-exact, one content-complete — they're untracked in git so no perfect backup). **Whole-vault SEMANTIC recall for the agent must come from Smart Connections' on-device embeddings via `smart-connections-mcp` (security-gated build, pending approval), NOT basic-memory.** Whole-vault KEYWORD recall is already provided by `mcp-obsidian`. Safety protocol that caught the mutation: hash-baseline every `*.md` before, diff after, git/whitespace-revert.
+
+---
+
+## Shay surgical-edit harness (2026-05-30) — how Shay safely edits her own living files
+
+**Where:** `shay-agent-os/components/swarm/pipeline.py`. Functions: `build_app`, `surgical_patch`, `multi_file_code_job`, helpers `_fuzzy_replace`, `_is_render_spine`. Bridge target: `~/.shay/hermes-agent/tools/{fuzzy_match,file_operations,patch_parser}.py`.
+
+**The model (build_app GATE 1 = whole-project typecheck):**
+- After decomposing a goal into a file manifest, `build_app` **classifies each file by existence**:
+  - NEW files → `multi_file_code_job` (full generation; correct for greenfield).
+  - EXISTING files → `surgical_patch` (anchored replacements, **never full-regen**). NEW files are created first so existing-file edits that import them still typecheck.
+- `surgical_patch` matches anchors via `_fuzzy_replace` (exact fast-path, then hermes `fuzzy_find_and_replace` for whitespace tolerance; falls back to exact if the fork/py3.10+ is unavailable). Each iteration rebuilds from the pristine original; rollback on failure.
+- `_is_render_spine(path)` = existing + >150 lines + JSX `return (`/`</` or `Provider`. Spine files get a prompt rule forcing **≥2 small ADDITIVE anchors** (add a const, then swap one return line) — never one block-spanning anchor.
+
+**Three root causes fixed (buglog #219), in the order they bit ralph U1:**
+1. **Orphaned primitive** — `surgical_patch` existed but nothing called it; `build_app`→`multi_file_code_job` full-regenerated App.tsx and dropped `</ThemeProvider>` (TS17008). Fix: existence-based routing above.
+2. **Prompt truncation** — edit-planning showed `cur[:6000]`; App.tsx's routing block sits past char 6000, so the brain never saw it and **hallucinated `switch`/`activeScreen` anchors that don't exist**. Fix: show `cur[:24000]` (whole file when reasonable). This was the decisive fix.
+3. **Wrong interpreter** — `.ralph/loop.py`'s `python3` shebang = system 3.9, where the hermes 3.10+ primitives can't import and fuzzy silently degraded. Fix: `loop.py` re-execs under `~/famtastic/shay-shay/.venv/bin/python3` (3.13).
+- Plus: edit-derivation retries 3× and **logs the raw brain output** so a non-JSON fallback response can't silently kill a unit.
+
+**Proof:** Shay drove ralph U1 herself in 22s — two clean micro-patches (`screenRegistry` const + `chat={activeScreen}` swap), passing typecheck AND full `npm run build`. The build also surfaced a pre-existing CSS bug (missing `}` in `Soul/Soul.module.css`, buglog #220) that typecheck is blind to.
+
+**Reuse-before-build:** background research confirmed the fork already shipped `patch_v4a` + `_check_lint_delta` (mirrors Cline/OpenCode post-edit LSP). We ADAPTED `fuzzy_find_and_replace` rather than hand-rolling. Hermes issue #342 ("expose Hermes tools AS an MCP server") is about interop, not edit quality — not relevant here. Escalation path if fuzzy-anchored proves weak: ts-morph/ast-grep structural edits (guaranteed-balanced output), then Morph fast-apply (paid).
+
+### Known Gaps (updated 2026-05-30)
+- **The ralph loop is typecheck-gated, NOT render-gated, per unit.** A unit can pass typecheck and still render wrong or fail `npm run build` (CSS, runtime). Render-spine units require a by-hand `npm run build` + render check until per-screen render-test autogen exists. This is the top open item before turning the full U2–U20 queue loose unattended.
+- `runtime_render_gate` exists but `build_app` only runs it when the caller passes a `render_test`; the ralph loop passes none. Per-screen render-test autogen is unbuilt.
+- New skills identified but not yet minted: `micro-patch-living-file`, `render-spine-guard`, `structural-prepass` (tree-sitter token cut), `code-graph-context` (graph-as-context, à la Understand-Anything).
+
+### Autonomous run result + new gap (2026-05-30, second entry)
+Full ralph U2–U20 run: 11 landed (U1,U2,U6,U7,U10,U11,U12,U17,U18,U19,U20), 9 blocked. App cumulatively typechecks + builds clean. **NEW KNOWN GAP — new-file brace-drop:** the surgical/micro-patch protection in build_app only routes EXISTING files through anchored edits; NEW files still go through multi_file_code_job full-generation, so a large new screen (e.g. Kanban) can drop a brace (TS1005) and block. Fix path: apply the same render-spine micro-decomposition (or a post-gen syntax-repair/format pass via prettier) to new files above a size threshold. Blocked punch-list: U3 Memory, U4 Settings, U5 Providers (TS contract), U8 AgentMonitor + U14 Diagnostics (anchor miss on shared component index — wider-context fix), U9 Kanban + U15 Gateway + U16 CaptureInbox (TS in generated screen), U13 Logs (shell exit 2 infra). Grounding win: injecting the real hermesAPI method list from index.d.ts eliminated the invented-method-name failure class (U2 went from 3 blocks to a 33s pass).
