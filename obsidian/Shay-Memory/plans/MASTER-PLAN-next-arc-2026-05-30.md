@@ -16,9 +16,9 @@ permalink: shay-memory/plans/master-plan-next-arc-2026-05-30
 > - [x] **Phase 0** — loop hygiene (scoped commit/rollback, --units, run-state) ✅
 > - [x] **Phase 1A** — new-file brace-drop deterministic repair ✅
 > - [x] **Phase 1B** — anchor-miss re-anchor ✅
-> - [~] **Phase 1C** — recover blocked units: **17/20 landed**; 3 left (U5 JSX-tag, U8/U14 App.tsx edit hygiene)
+> - [x] **Phase 1C** — recover blocked units: **20/20 landed** ✅ (U5 via grounding; U8 AgentMonitor + U14 Diagnostics hand-wired)
 > - [x] **Phase 2** — functional launch test ✅ (found+fixed dead preload bridge + window.hermesAPI undefined; app boots, IPC alive)
-> - [ ] **Phase 3** — adoption tracks (tool-registry, obsidian-wiki, SkillNet, memory spike, Kanban) + companion app — NEXT
+> - [~] **Phase 3** — adoption tracks (STARTING: 3A tool-registry) (tool-registry, obsidian-wiki, SkillNet, memory spike, Kanban) + companion app — NEXT
 > - Bonus fixes landed: 7 code-review findings; path-doubling resolver bug; Telegram push notifications.
 > - Directive: run to completion, fix bugs in-loop, DEFER decisions to end.
 
