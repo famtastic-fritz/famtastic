@@ -760,11 +760,19 @@ Output ONLY the complete file content. No markdown, no fences, no explanation.""
         # 2. Write all files (resolve non-absolute / wrong-root paths against cwd)
         def _resolve_path(path: str) -> str:
             p = Path(path).expanduser()
-            if p.is_absolute() and (p.exists() or p.parent.exists()):
-                return str(p)
+            if p.is_absolute():
+                # Accept any absolute path ALREADY UNDER the project root, even if
+                # its parent dir is new (new screen folder). The old `p.parent.exists()`
+                # guard failed here and doubled the path (cwd/Users/.../cwd/src/...).
+                try:
+                    p.resolve().relative_to(Path(cwd).resolve())
+                    return str(p)
+                except ValueError:
+                    pass
+                if p.exists() or p.parent.exists():
+                    return str(p)
             # model gave a project-relative path like "/src/..." or "src/..."
-            cand = Path(cwd) / path.lstrip("/")
-            return str(cand)
+            return str(Path(cwd) / path.lstrip("/"))
 
         files_written = []
         write_errors = []
@@ -1091,8 +1099,14 @@ Return ONLY JSON: {{"manifest": [{{"path":"...","instruction":"..."}}], "rationa
     # existing-file patches that import them still typecheck.
     def _resolve(path: str) -> str:
         p = Path(path).expanduser()
-        if p.is_absolute() and (p.exists() or p.parent.exists()):
-            return str(p)
+        if p.is_absolute():
+            try:
+                p.resolve().relative_to(Path(project_root).resolve())
+                return str(p)  # absolute & under root → accept even if parent is new
+            except ValueError:
+                pass
+            if p.exists() or p.parent.exists():
+                return str(p)
         return str(Path(project_root) / path.lstrip("/"))
 
     new_files, existing_files = [], []
