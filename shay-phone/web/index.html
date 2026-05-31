@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Shay" />
+<meta name="theme-color" content="#0b0b12" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<title>Shay</title>
+<style>
+  :root { --bg:#0b0b12; --panel:#15151f; --panel2:#1d1d2b; --accent:#7c5cff; --accent2:#ff5c8a; --text:#e9e9f2; --muted:#8a8aa0; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--text);
+    font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  body { display:flex; flex-direction:column;
+    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+  header { padding:14px 18px 10px; display:flex; align-items:center; gap:10px; }
+  header .dot { width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  header h1 { font-size:19px; margin:0; font-weight:700; letter-spacing:.3px; }
+  #brainsel { margin-left:auto; background:var(--panel2); color:var(--text); border:1px solid #2a2a3c;
+    border-radius:10px; padding:6px 8px; font-size:13px; max-width:48%; }
+  header .brain { width:100%; flex-basis:100%; font-size:11px; color:var(--muted); text-align:right; margin-top:2px; }
+  .views { flex:1; overflow:hidden; position:relative; }
+  .view { position:absolute; inset:0; display:none; flex-direction:column; }
+  .view.active { display:flex; }
+  /* chat */
+  #log { flex:1; overflow-y:auto; padding:8px 14px 4px; -webkit-overflow-scrolling:touch; }
+  .msg { max-width:86%; margin:7px 0; padding:10px 13px; border-radius:16px; white-space:pre-wrap; word-wrap:break-word; }
+  .msg.you { margin-left:auto; background:var(--accent); color:#fff; border-bottom-right-radius:5px; }
+  .msg.shay { background:var(--panel2); border-bottom-left-radius:5px; }
+  .msg.sys { background:transparent; color:var(--muted); font-size:13px; text-align:center; max-width:100%; }
+  .composer { display:flex; gap:8px; padding:10px 12px; background:var(--panel); }
+  textarea,input,button { font:inherit; }
+  #ti { flex:1; resize:none; max-height:120px; background:var(--panel2); color:var(--text);
+    border:none; border-radius:14px; padding:11px 14px; }
+  .send { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;
+    border:none; border-radius:14px; padding:0 18px; font-weight:700; }
+  /* capture */
+  .cap { flex:1; display:flex; flex-direction:column; padding:14px; gap:12px; }
+  .kinds { display:flex; gap:8px; }
+  .kinds button { flex:1; padding:11px; border-radius:12px; border:1px solid #2a2a3c;
+    background:var(--panel); color:var(--text); font-weight:600; }
+  .kinds button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  #captext { flex:1; background:var(--panel2); color:var(--text); border:none;
+    border-radius:14px; padding:14px; resize:none; font-size:16px; }
+  .capsave { padding:14px; border-radius:14px; border:none; font-weight:700; font-size:16px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  /* recent */
+  #recent,#asks { flex:1; overflow-y:auto; padding:10px 14px; }
+  .note { background:var(--panel); border-radius:12px; padding:11px 13px; margin:8px 0; }
+  .note .n { font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .ask { background:var(--panel); border-radius:14px; padding:14px; margin:10px 0; border-left:3px solid var(--accent2); }
+  .ask .k { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--accent2); margin-bottom:6px; }
+  .ask .q { font-size:16px; margin-bottom:10px; }
+  .ask .ctx { font-size:13px; color:var(--muted); margin-bottom:10px; white-space:pre-wrap; }
+  .ask .opts { display:flex; flex-wrap:wrap; gap:8px; }
+  .ask .opts button { flex:1; min-width:40%; padding:11px; border-radius:11px; border:none; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  .ask .freerow { display:flex; gap:8px; margin-top:8px; }
+  .ask .freerow input { flex:1; background:var(--panel2); color:var(--text); border:none; border-radius:11px; padding:11px; }
+  .ask .freerow button { background:var(--accent); border:none; color:#fff; border-radius:11px; padding:0 16px; font-weight:700; }
+  .badge { display:none; background:var(--accent2); color:#fff; border-radius:10px; font-size:10px;
+    padding:1px 6px; margin-left:4px; font-weight:700; }
+  .badge.show { display:inline-block; }
+  /* tabs */
+  nav { display:flex; background:var(--panel); border-top:1px solid #22223200; }
+  nav button { flex:1; background:none; border:none; color:var(--muted); padding:11px 0 14px;
+    font-size:11px; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  nav button.on { color:var(--accent); }
+  nav .ic { font-size:20px; }
+  .toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%);
+    background:#000a; color:#fff; padding:9px 16px; border-radius:20px; font-size:14px;
+    opacity:0; transition:.25s; pointer-events:none; }
+  .toast.show { opacity:1; }
+  /* jobs */
+  #jobs-panel { flex:1; overflow-y:auto; padding:10px 14px; }
+  .jobs-dispatch-btn { display:block; width:100%; padding:16px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; border:none; border-radius:16px; font-size:17px; font-weight:700;
+    margin-bottom:14px; letter-spacing:.2px; }
+  .job-card { background:var(--panel); border-radius:14px; padding:13px 14px;
+    margin:8px 0; border-left:3px solid var(--panel2); }
+  .job-card.queued  { border-left-color:#f5c842; }
+  .job-card.running { border-left-color:#4ab8ff; }
+  .job-card.completed { border-left-color:#4cde82; }
+  .job-card.failed,
+  .job-card.cancelled { border-left-color:#ff5c5c; }
+  .job-top { display:flex; align-items:flex-start; gap:10px; margin-bottom:6px; }
+  .job-goal { flex:1; font-size:15px; font-weight:600;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .job-pill { font-size:11px; font-weight:700; border-radius:8px; padding:3px 8px;
+    white-space:nowrap; text-transform:uppercase; letter-spacing:.4px; }
+  .pill-queued  { background:#f5c84222; color:#f5c842; }
+  .pill-running { background:#4ab8ff22; color:#4ab8ff; }
+  .pill-completed { background:#4cde8222; color:#4cde82; }
+  .pill-failed,
+  .pill-cancelled { background:#ff5c5c22; color:#ff5c5c; }
+  .job-meta { font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .job-progress { font-size:13px; color:var(--text); background:var(--panel2);
+    border-radius:9px; padding:8px 10px; margin-bottom:6px; white-space:pre-wrap; word-break:break-word; }
+  .job-actions { display:flex; gap:8px; margin-top:6px; }
+  .job-view-btn { flex:1; padding:9px; border-radius:10px; border:1px solid #2a2a3c;
+    background:var(--panel2); color:var(--text); font-size:13px; font-weight:600; }
+  .job-cancel-btn { padding:9px 14px; border-radius:10px; border:none;
+    background:#ff5c5c22; color:#ff5c5c; font-size:13px; font-weight:700; }
+  .running-dot { display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:#4ab8ff; animation:pulse 1.2s infinite; vertical-align:middle; margin-right:4px; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  /* dispatch modal */
+  .modal-overlay { position:fixed; inset:0; background:#000b; z-index:100;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:.2s; }
+  .modal-overlay.open { opacity:1; pointer-events:auto; }
+  .modal-sheet { background:var(--panel); border-radius:22px 22px 0 0;
+    padding:20px 18px 36px; width:100%; max-width:560px; }
+  .modal-title { font-size:17px; font-weight:700; margin-bottom:14px; }
+  .modal-label { font-size:13px; color:var(--muted); margin:12px 0 5px; }
+  #dispatch-goal { width:100%; background:var(--panel2); color:var(--text); border:none;
+    border-radius:13px; padding:13px; font:inherit; font-size:15px; resize:none; }
+  .policy-grid { display:flex; gap:8px; margin-bottom:14px; }
+  .policy-btn { flex:1; padding:10px 6px; border-radius:11px; border:1px solid #2a2a3c;
+    background:var(--panel2); color:var(--muted); font-size:12px; font-weight:600; text-align:center; }
+  .policy-btn.on { border-color:var(--accent); color:var(--accent); background:#7c5cff18; }
+  .modal-dispatch-btn { display:block; width:100%; padding:16px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:700; }
+  .modal-cancel-btn { display:block; width:100%; padding:12px; border:none;
+    background:transparent; color:var(--muted); font-size:14px; margin-top:8px; }
+  /* job detail overlay */
+  .detail-overlay { position:fixed; inset:0; background:var(--bg); z-index:200;
+    display:none; flex-direction:column; }
+  .detail-overlay.open { display:flex; }
+  .detail-header { display:flex; align-items:center; gap:12px; padding:14px 16px;
+    border-bottom:1px solid #22223288; }
+  .detail-back { background:none; border:none; color:var(--accent); font-size:16px; font-weight:700; padding:4px 0; }
+  .detail-title { font-size:16px; font-weight:700; flex:1; }
+  .detail-body { flex:1; overflow-y:auto; padding:16px; }
+  .detail-section { margin-bottom:16px; }
+  .detail-section h3 { font-size:12px; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--muted); margin:0 0 6px; }
+  .detail-output { background:var(--panel); border-radius:12px; padding:13px;
+    font-size:14px; white-space:pre-wrap; word-break:break-word; }
+  .detail-progress-item { font-size:13px; padding:5px 0; border-bottom:1px solid #22223244; }
+  .detail-progress-item:last-child { border-bottom:none; }
+  .detail-ts { color:var(--muted); font-size:11px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="dot"></div>
+  <h1>Shay</h1>
+  <select id="brainsel" aria-label="Brain"></select>
+  <span class="brain" id="brain"></span>
+</header>
+
+<div class="views">
+  <section class="view active" id="v-chat">
+    <div id="log"></div>
+    <div class="composer">
+      <textarea id="ti" rows="1" placeholder="Talk to Shay…"></textarea>
+      <button class="send" id="send">→</button>
+    </div>
+  </section>
+
+  <section class="view" id="v-capture">
+    <div class="cap">
+      <div class="kinds">
+        <button data-k="note" class="on">📝 Note</button>
+        <button data-k="idea">💡 Idea</button>
+        <button data-k="diary">📔 Diary</button>
+      </div>
+      <textarea id="captext" placeholder="Capture a thought… it lands straight in your vault."></textarea>
+      <button class="capsave" id="capsave">Save to vault</button>
+    </div>
+  </section>
+
+  <section class="view" id="v-recent">
+    <div id="recent"></div>
+  </section>
+
+  <section class="view" id="v-asks">
+    <div id="asks"></div>
+  </section>
+
+  <section class="view" id="v-jobs">
+    <div id="jobs-panel">
+      <button class="jobs-dispatch-btn" id="dispatch-open-btn">🚀 Dispatch a Job</button>
+      <div id="jobs-list"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Dispatch modal -->
+<div class="modal-overlay" id="dispatch-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Dispatch a Job to Shay</div>
+    <div class="modal-label">What should Shay do?</div>
+    <textarea id="dispatch-goal" rows="4" placeholder="Describe the goal clearly. Shay will pick this up and run autonomously."></textarea>
+    <div class="modal-label">Policy</div>
+    <div class="policy-grid" id="policy-grid">
+      <button class="policy-btn" data-p="free-maximal">Free maximal</button>
+      <button class="policy-btn on" data-p="balanced">Balanced</button>
+      <button class="policy-btn" data-p="speed-first">Speed first</button>
+    </div>
+    <button class="modal-dispatch-btn" id="dispatch-submit-btn">Dispatch →</button>
+    <button class="modal-cancel-btn" id="dispatch-cancel-btn">Cancel</button>
+  </div>
+</div>
+
+<!-- Job detail overlay -->
+<div class="detail-overlay" id="job-detail">
+  <div class="detail-header">
+    <button class="detail-back" id="detail-back-btn">← Back</button>
+    <div class="detail-title" id="detail-title"></div>
+    <span class="job-pill" id="detail-pill"></span>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<nav>
+  <button data-v="chat" class="on"><span class="ic">💬</span>Chat</button>
+  <button data-v="capture"><span class="ic">✍️</span>Capture</button>
+  <button data-v="jobs"><span class="ic">🚀</span>Jobs<span class="badge" id="jobsbadge"></span></button>
+  <button data-v="asks"><span class="ic">🔔</span>Asks<span class="badge" id="askbadge"></span></button>
+  <button data-v="recent"><span class="ic">🗂</span>Recent</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const qs = new URLSearchParams(location.search);
+let TOKEN = qs.get('k') || localStorage.getItem('shay_token') || '';
+if (qs.get('k')) localStorage.setItem('shay_token', qs.get('k'));
+const H = () => ({'Content-Type':'application/json','X-Shay-Token':TOKEN});
+const log = document.getElementById('log');
+const brainEl = document.getElementById('brain');
+const brainSel = document.getElementById('brainsel');
+let history = [];
+let chosenBrain = localStorage.getItem('shay_brain') || 'auto';
+
+async function loadBrains(){
+  let opts = [{id:'auto',label:'Auto (smart fallback)',available:true}];
+  try{ const r=await fetch('/api/brains',{headers:H()}); const j=await r.json();
+    opts = opts.concat(j.brains||[]); }catch(e){}
+  brainSel.innerHTML='';
+  opts.forEach(b=>{ const o=document.createElement('option'); o.value=b.id;
+    o.textContent=(b.id==='auto'?'':(b.available?'● ':'○ '))+b.label;
+    brainSel.appendChild(o); });
+  brainSel.value = chosenBrain;
+}
+brainSel.onchange=()=>{ chosenBrain=brainSel.value; localStorage.setItem('shay_brain',chosenBrain); };
+
+function toast(t){ const e=document.getElementById('toast'); e.textContent=t; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1600); }
+function add(role, text){ const d=document.createElement('div'); d.className='msg '+role; d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight; return d; }
+
+async function send(){
+  const ti=document.getElementById('ti'); const text=ti.value.trim(); if(!text) return;
+  ti.value=''; ti.style.height='auto'; add('you',text); history.push({role:'user',content:text});
+  const thinking=add('shay','…');
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:H(),body:JSON.stringify({messages:history,brain:chosenBrain})});
+    const j=await r.json();
+    if(j.error){ thinking.textContent='⚠️ '+j.error; return; }
+    thinking.textContent=j.reply; history.push({role:'assistant',content:j.reply});
+    brainEl.textContent=(j.brain||'')+(j.used_context?' · using your notes':'');
+  }catch(e){ thinking.textContent='⚠️ network: '+e; }
+}
+document.getElementById('send').onclick=send;
+const ti=document.getElementById('ti');
+ti.addEventListener('input',()=>{ti.style.height='auto';ti.style.height=Math.min(ti.scrollHeight,120)+'px';});
+ti.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+
+// capture
+let kind='note';
+document.querySelectorAll('.kinds button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.kinds button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); kind=b.dataset.k;
+});
+document.getElementById('capsave').onclick=async()=>{
+  const t=document.getElementById('captext'); const text=t.value.trim(); if(!text)return;
+  try{ const r=await fetch('/api/capture',{method:'POST',headers:H(),body:JSON.stringify({kind,text})});
+    const j=await r.json();
+    if(j.saved){ t.value=''; toast('Saved → '+j.saved); } else toast('⚠️ '+(j.error||'failed'));
+  }catch(e){ toast('⚠️ '+e); }
+};
+
+// recent
+async function loadRecent(){
+  const box=document.getElementById('recent'); box.innerHTML='Loading…';
+  try{ const r=await fetch('/api/recent',{headers:H()}); const j=await r.json();
+    box.innerHTML=''; (j.notes||[]).forEach(n=>{ const d=document.createElement('div'); d.className='note';
+      const when=new Date(n.ts*1000).toLocaleString();
+      const meta=document.createElement('div'); meta.className='n'; meta.textContent=n.name+' · '+when;
+      const body=document.createElement('div'); body.textContent=n.preview;
+      d.appendChild(meta); d.appendChild(body); box.appendChild(d); });
+    if(!box.children.length) box.innerHTML='<div class="note">No notes yet. Capture one!</div>';
+  }catch(e){ box.innerHTML='⚠️ '+e; }
+}
+
+// asks — the Claude-Code-style approval/question flow
+async function loadAsks(){
+  const box=document.getElementById('asks');
+  let asks=[];
+  try{ const r=await fetch('/api/asks',{headers:H()}); const j=await r.json(); asks=j.asks||[]; }
+  catch(e){ box.textContent='⚠️ '+e; return asks; }
+  box.innerHTML='';
+  if(!asks.length){ const d=document.createElement('div'); d.className='note';
+    d.textContent='No pending approvals or questions. When Shay needs you mid-task, it shows up here.'; box.appendChild(d); }
+  asks.forEach(a=>{ box.appendChild(a.kind==='interview'?renderInterview(a):renderSingle(a)); });
+  return asks;
+}
+function renderSingle(a){
+  const d=document.createElement('div'); d.className='ask';
+  const k=document.createElement('div'); k.className='k'; k.textContent=a.kind==='approval'?'⚠ approval needed':'❓ question'; d.appendChild(k);
+  const q=document.createElement('div'); q.className='q'; q.textContent=a.question; d.appendChild(q);
+  if(a.context){ const c=document.createElement('div'); c.className='ctx'; c.textContent=a.context; d.appendChild(c); }
+  if((a.options||[]).length){ const o=document.createElement('div'); o.className='opts';
+    a.options.forEach(opt=>{ const btn=document.createElement('button'); btn.textContent=opt;
+      btn.onclick=()=>answerAsk(a.id,opt); o.appendChild(btn); }); d.appendChild(o); }
+  const fr=document.createElement('div'); fr.className='freerow';
+  const inp=document.createElement('input'); inp.placeholder='Or type an answer…';
+  const snd=document.createElement('button'); snd.textContent='Send';
+  snd.onclick=()=>{ if(inp.value.trim()) answerAsk(a.id,inp.value.trim()); };
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&inp.value.trim())answerAsk(a.id,inp.value.trim());});
+  fr.appendChild(inp); fr.appendChild(snd); d.appendChild(fr);
+  return d;
+}
+function renderInterview(a){
+  const d=document.createElement('div'); d.className='ask';
+  const k=document.createElement('div'); k.className='k'; k.textContent='📋 interview'; d.appendChild(k);
+  const t=document.createElement('div'); t.className='q'; t.textContent=a.title||'Interview'; d.appendChild(t);
+  if(a.context){ const c=document.createElement('div'); c.className='ctx'; c.textContent=a.context; d.appendChild(c); }
+  if(a.url){ const link=document.createElement('a'); link.href=a.url; link.target='_blank';
+    link.textContent='↗ Open the thing to review'; link.style.cssText='display:block;color:var(--accent);margin-bottom:10px;'; d.appendChild(link); }
+  const inputs=[];
+  (a.questions||[]).forEach((q,qi)=>{
+    const qb=document.createElement('div'); qb.style.cssText='margin:12px 0 4px;font-weight:600;'; qb.textContent=(qi+1)+'. '+q.q; d.appendChild(qb);
+    const inp=document.createElement('input'); inp.className='qinp'; inp.placeholder='Your answer…';
+    inp.style.cssText='width:100%;background:var(--panel2);color:var(--text);border:none;border-radius:11px;padding:11px;margin-top:4px;';
+    if((q.options||[]).length){ const o=document.createElement('div'); o.className='opts'; o.style.marginTop='6px';
+      q.options.forEach(opt=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=opt;
+        btn.onclick=()=>{ inp.value=opt; }; o.appendChild(btn); }); d.appendChild(o); }
+    d.appendChild(inp); inputs.push(inp);
+  });
+  const sub=document.createElement('button'); sub.className='capsave'; sub.style.marginTop='12px'; sub.textContent='Submit interview';
+  sub.onclick=()=>{ const answers=inputs.map(i=>i.value.trim());
+    if(answers.some(x=>!x)){ toast('Answer all questions first'); return; }
+    answerInterview(a.id,answers); };
+  d.appendChild(sub);
+  return d;
+}
+async function answerAsk(id,answer){
+  try{ await fetch('/api/answer',{method:'POST',headers:H(),body:JSON.stringify({id,answer})});
+    toast('Answered: '+answer); loadAsks(); refreshBadge(); }
+  catch(e){ toast('⚠️ '+e); }
+}
+async function answerInterview(id,answers){
+  try{ await fetch('/api/answer',{method:'POST',headers:H(),body:JSON.stringify({id,answers})});
+    toast('Interview submitted ✓'); loadAsks(); refreshBadge(); }
+  catch(e){ toast('⚠️ '+e); }
+}
+async function refreshBadge(){
+  if(!TOKEN) return;
+  try{ const r=await fetch('/api/asks',{headers:H()}); const j=await r.json();
+    const n=(j.asks||[]).length; const b=document.getElementById('askbadge');
+    b.textContent=n; b.classList.toggle('show',n>0); }catch(e){}
+}
+
+// tabs
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  const v=b.dataset.v;
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('active');
+  if(v==='recent') loadRecent();
+  if(v==='asks') loadAsks();
+  if(v==='jobs') loadJobs();
+});
+
+if(!TOKEN){ add('sys','No access token. Open the link Fritz was given (with ?k=…).'); }
+else { add('sys','Shay v0 — pick a brain up top (Auto falls back Claude → Codex → Gemini). Capture saves to your vault. When Shay needs approval or has a question mid-task, the 🔔 Asks tab lights up.'); loadBrains(); refreshBadge(); refreshJobsBadge(); setInterval(refreshBadge, 5000); setInterval(autoRefreshJobs, 5000); }
+// Service worker + Web Push (real lock-screen notifications on installed Android PWA).
+function urlB64ToUint8(s){ const pad='='.repeat((4-s.length%4)%4); const b=(s+pad).replace(/-/g,'+').replace(/_/g,'/'); const raw=atob(b); return Uint8Array.from([...raw].map(c=>c.charCodeAt(0))); }
+async function enablePush(reg){
+  try{
+    if(!('PushManager' in window)) return;
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ add('sys','Notifications not enabled — tap 🔔 Enable later to turn on push.'); return; }
+    const vr = await fetch('/api/vapid',{headers:H()}); const {publicKey}= await vr.json();
+    if(!publicKey){ return; }
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){ sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlB64ToUint8(publicKey)}); }
+    await fetch('/api/subscribe',{method:'POST',headers:H(),body:JSON.stringify({subscription:sub})});
+    add('sys','✅ Push enabled — Shay will buzz this phone on DONE / BLOCKED / approvals.');
+  }catch(e){ add('sys','Push setup skipped: '+e); }
+}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    // Auto-prompt for push once the app is opened with a token.
+    if(TOKEN && 'Notification' in window && Notification.permission!=='denied'){ enablePush(reg); }
+  }).catch(()=>{});
+}
+
+// ── Jobs ──────────────────────────────────────────────────────────────────
+
+let selectedPolicy = 'balanced';
+let jobsAutoRefresh = false; // true when any job is active (queued/running)
+
+// Dispatch modal
+document.getElementById('dispatch-open-btn').onclick = () => openDispatchModal();
+
+document.querySelectorAll('.policy-btn').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.policy-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  selectedPolicy = b.dataset.p;
+});
+
+document.getElementById('dispatch-cancel-btn').onclick = closeDispatchModal;
+document.getElementById('dispatch-modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('dispatch-modal')) closeDispatchModal();
+});
+
+function openDispatchModal() {
+  const m = document.getElementById('dispatch-modal');
+  m.classList.add('open');
+  document.getElementById('dispatch-goal').focus();
+}
+
+function closeDispatchModal() {
+  document.getElementById('dispatch-modal').classList.remove('open');
+}
+
+document.getElementById('dispatch-submit-btn').onclick = async () => {
+  const goal = document.getElementById('dispatch-goal').value.trim();
+  if(!goal){ toast('Enter a goal first'); return; }
+  try {
+    const r = await fetch('/api/dispatch', {method:'POST', headers:H(),
+      body: JSON.stringify({goal, policy: selectedPolicy, priority: 1})});
+    const j = await r.json();
+    if(j.id) {
+      toast('Job dispatched ✓');
+      document.getElementById('dispatch-goal').value = '';
+      closeDispatchModal();
+      loadJobs();
+      refreshJobsBadge();
+    } else {
+      toast('⚠️ ' + (j.error || 'failed'));
+    }
+  } catch(e) { toast('⚠️ ' + e); }
+};
+
+// Jobs list
+async function loadJobs() {
+  const box = document.getElementById('jobs-list');
+  try {
+    const r = await fetch('/api/jobs', {headers: H()});
+    const j = await r.json();
+    const jobs = j.jobs || [];
+    renderJobsList(jobs, box);
+    // Enable auto-refresh if any job is active
+    jobsAutoRefresh = jobs.some(j => j.status === 'queued' || j.status === 'running');
+  } catch(e) {
+    box.innerHTML = '<div class="note">⚠️ ' + e + '</div>';
+  }
+}
+
+function renderJobsList(jobs, box) {
+  box.innerHTML = '';
+  if(!jobs.length) {
+    const d = document.createElement('div'); d.className = 'note';
+    d.textContent = 'No jobs yet. Hit "Dispatch a Job" to send Shay a goal.';
+    box.appendChild(d);
+    return;
+  }
+  jobs.forEach(j => box.appendChild(buildJobCard(j)));
+}
+
+function jobStatusPill(status) {
+  const icons = {queued:'🟡', running:'🔵', completed:'✅', failed:'❌', cancelled:'🚫'};
+  return (icons[status] || '❓') + ' ' + status;
+}
+
+function elapsedStr(job) {
+  const start = job.started || job.created;
+  const end = job.completed || Date.now() / 1000;
+  const secs = Math.round(end - start);
+  if(secs < 60) return secs + 's';
+  if(secs < 3600) return Math.floor(secs/60) + 'm ' + (secs%60) + 's';
+  return Math.floor(secs/3600) + 'h ' + Math.floor((secs%3600)/60) + 'm';
+}
+
+function buildJobCard(j) {
+  const card = document.createElement('div');
+  card.className = 'job-card ' + j.status;
+
+  // Top row: goal + status pill
+  const top = document.createElement('div'); top.className = 'job-top';
+  const goal = document.createElement('div'); goal.className = 'job-goal';
+  goal.textContent = j.goal;
+  const pill = document.createElement('span');
+  pill.className = 'job-pill pill-' + j.status;
+  if(j.status === 'running') pill.innerHTML = '<span class="running-dot"></span>' + j.status.toUpperCase();
+  else pill.textContent = jobStatusPill(j.status);
+  top.appendChild(goal); top.appendChild(pill);
+  card.appendChild(top);
+
+  // Meta: elapsed + policy
+  const meta = document.createElement('div'); meta.className = 'job-meta';
+  meta.textContent = elapsedStr(j) + ' · ' + j.policy;
+  card.appendChild(meta);
+
+  // Latest progress message
+  const prog = j.progress || [];
+  if(prog.length) {
+    const last = prog[prog.length - 1];
+    const pd = document.createElement('div'); pd.className = 'job-progress';
+    pd.textContent = last.message + (last.percent != null ? ' (' + last.percent + '%)' : '');
+    card.appendChild(pd);
+  }
+
+  // Actions
+  const actions = document.createElement('div'); actions.className = 'job-actions';
+  const viewBtn = document.createElement('button'); viewBtn.className = 'job-view-btn';
+  viewBtn.textContent = 'View full output';
+  viewBtn.onclick = () => openJobDetail(j.id);
+  actions.appendChild(viewBtn);
+  if(j.status === 'queued' || j.status === 'running') {
+    const cancelBtn = document.createElement('button'); cancelBtn.className = 'job-cancel-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = async () => {
+      if(!confirm('Cancel this job?')) return;
+      try {
+        const r = await fetch('/api/job/cancel', {method:'POST', headers:H(),
+          body: JSON.stringify({id: j.id})});
+        const res = await r.json();
+        if(res.ok) { toast('Job cancelled'); loadJobs(); refreshJobsBadge(); }
+        else toast('⚠️ ' + (res.error || 'failed'));
+      } catch(e) { toast('⚠️ ' + e); }
+    };
+    actions.appendChild(cancelBtn);
+  }
+  card.appendChild(actions);
+  return card;
+}
+
+// Job detail overlay
+document.getElementById('detail-back-btn').onclick = () => {
+  document.getElementById('job-detail').classList.remove('open');
+  loadJobs(); // refresh list on way back
+};
+
+async function openJobDetail(jid) {
+  const overlay = document.getElementById('job-detail');
+  overlay.classList.add('open');
+  document.getElementById('detail-title').textContent = 'Loading…';
+  document.getElementById('detail-body').innerHTML = '';
+  try {
+    const r = await fetch('/api/job?id=' + jid, {headers: H()});
+    const j = await r.json();
+    renderJobDetail(j);
+  } catch(e) {
+    document.getElementById('detail-body').innerHTML = '⚠️ ' + e;
+  }
+}
+
+function renderJobDetail(j) {
+  document.getElementById('detail-title').textContent = j.goal.slice(0, 60) + (j.goal.length > 60 ? '…' : '');
+  const pill = document.getElementById('detail-pill');
+  pill.className = 'job-pill pill-' + j.status;
+  pill.textContent = jobStatusPill(j.status);
+
+  const body = document.getElementById('detail-body');
+  body.innerHTML = '';
+
+  // Goal
+  const gs = document.createElement('div'); gs.className = 'detail-section';
+  const gh = document.createElement('h3'); gh.textContent = 'Goal'; gs.appendChild(gh);
+  const gp = document.createElement('div'); gp.className = 'detail-output';
+  gp.textContent = j.goal; gs.appendChild(gp); body.appendChild(gs);
+
+  // Meta
+  const ms = document.createElement('div'); ms.className = 'detail-section';
+  const meta = document.createElement('div'); meta.style.cssText = 'font-size:13px;color:var(--muted);';
+  meta.textContent = [
+    'Policy: ' + j.policy,
+    'Created: ' + new Date(j.created * 1000).toLocaleString(),
+    j.started ? 'Started: ' + new Date(j.started * 1000).toLocaleString() : null,
+    j.completed ? 'Completed: ' + new Date(j.completed * 1000).toLocaleString() : null,
+    'Elapsed: ' + elapsedStr(j),
+  ].filter(Boolean).join('\n');
+  ms.appendChild(meta); body.appendChild(ms);
+
+  // Progress log
+  if((j.progress || []).length) {
+    const ps = document.createElement('div'); ps.className = 'detail-section';
+    const ph = document.createElement('h3'); ph.textContent = 'Progress log'; ps.appendChild(ph);
+    j.progress.forEach(p => {
+      const pi = document.createElement('div'); pi.className = 'detail-progress-item';
+      const ts = document.createElement('span'); ts.className = 'detail-ts';
+      ts.textContent = new Date(p.ts * 1000).toLocaleTimeString() + '  ';
+      pi.appendChild(ts);
+      pi.appendChild(document.createTextNode(p.message + (p.percent != null ? ' (' + p.percent + '%)' : '')));
+      ps.appendChild(pi);
+    });
+    body.appendChild(ps);
+  }
+
+  // Output
+  if(j.output) {
+    const os = document.createElement('div'); os.className = 'detail-section';
+    const oh = document.createElement('h3'); oh.textContent = 'Output'; os.appendChild(oh);
+    const op = document.createElement('div'); op.className = 'detail-output';
+    op.textContent = j.output; os.appendChild(op); body.appendChild(os);
+  }
+}
+
+// Badge + auto-refresh
+async function refreshJobsBadge() {
+  if(!TOKEN) return;
+  try {
+    const r = await fetch('/api/jobs', {headers: H()});
+    const j = await r.json();
+    const active = (j.jobs || []).filter(j => j.status === 'queued' || j.status === 'running').length;
+    const b = document.getElementById('jobsbadge');
+    b.textContent = active; b.classList.toggle('show', active > 0);
+    jobsAutoRefresh = active > 0;
+  } catch(e) {}
+}
+
+function autoRefreshJobs() {
+  // Refresh badge always; reload list if Jobs tab is active and jobs are running
+  refreshJobsBadge();
+  const jobsTabActive = document.getElementById('v-jobs').classList.contains('active');
+  if(jobsAutoRefresh && jobsTabActive) loadJobs();
+}
+</script>
+</body>
+</html>

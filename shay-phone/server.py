@@ -42,6 +42,61 @@ VAULT = Path.home() / "famtastic" / "obsidian" / "Shay-Memory"
 INBOX = VAULT / "inbox"
 ASKS = ROOT / "asks"      # pending approval/question requests from Shay jobs
 JOBS_FILE = ROOT / "jobs.json"  # persistent job queue
+WEBPUSH_KEYS = Path.home() / ".shay" / "webpush.json"   # VAPID keypair (private)
+WEBPUSH_SUBS = Path.home() / ".shay" / "webpush-subs.json"  # device subscriptions
+
+
+def _wp_keys():
+    try:
+        return json.loads(WEBPUSH_KEYS.read_text())
+    except Exception:
+        return {}
+
+
+def _wp_subs():
+    try:
+        return json.loads(WEBPUSH_SUBS.read_text())
+    except Exception:
+        return []
+
+
+def wp_subscribe(sub: dict) -> dict:
+    subs = _wp_subs()
+    ep = sub.get("endpoint")
+    if ep and not any(s.get("endpoint") == ep for s in subs):
+        subs.append(sub)
+        WEBPUSH_SUBS.write_text(json.dumps(subs, indent=2))
+    return {"ok": True, "count": len(subs)}
+
+
+def wp_push(title: str, body: str, url: str = "/") -> dict:
+    """Send a Web Push to every subscribed device. Prunes dead (410/404) subs."""
+    keys = _wp_keys()
+    subs = _wp_subs()
+    if not keys or not subs:
+        return {"ok": False, "reason": "no keys or no subscriptions", "count": len(subs)}
+    try:
+        from pywebpush import webpush, WebPushException
+    except Exception as e:
+        return {"ok": False, "reason": f"pywebpush missing: {e}"}
+    payload = json.dumps({"title": title, "body": body, "url": url})
+    live, sent = [], 0
+    for s in subs:
+        try:
+            webpush(subscription_info=s, data=payload,
+                    vapid_private_key=keys["private_key"],
+                    vapid_claims={"sub": keys.get("subject", "mailto:fritz@example.com")})
+            live.append(s); sent += 1
+        except WebPushException as ex:
+            code = getattr(getattr(ex, "response", None), "status_code", 0)
+            if code in (404, 410):
+                continue  # dead subscription — drop it
+            live.append(s)  # transient — keep
+        except Exception:
+            live.append(s)
+    if len(live) != len(subs):
+        WEBPUSH_SUBS.write_text(json.dumps(live, indent=2))
+    return {"ok": True, "sent": sent, "subs": len(live)}
 PORT = int(os.environ.get("SHAY_PHONE_PORT", "8787"))
 
 OPENROUTER_MODEL = os.environ.get("SHAY_PHONE_MODEL", "anthropic/claude-sonnet-4.6")
@@ -537,6 +592,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/ping":
                 return self._send(200, {"ok": True})
             # Jobs API (GET)
+            if path == "/api/vapid":
+                return self._send(200, {"publicKey": _wp_keys().get("public_key", "")})
             if path == "/api/arc":
                 # Live heartbeat feed for the all-night master-plan arc. Reads the
                 # orchestrator's run-state ledger directly (decoupled from the job
@@ -584,6 +641,13 @@ class Handler(BaseHTTPRequestHandler):
             if not text.strip():
                 return self._send(400, {"error": "empty"})
             return self._send(200, do_capture(kind, text))
+        if path == "/api/subscribe":  # phone-side: register for Web Push
+            sub = payload.get("subscription") or payload
+            return self._send(200, wp_subscribe(sub))
+        if path == "/api/push":  # agent-side: send a Web Push to all devices
+            return self._send(200, wp_push(
+                payload.get("title", "Shay"), payload.get("body", ""),
+                payload.get("url", "/")))
         if path == "/api/ask":  # agent-side: create a pending approval/question
             return self._send(200, create_ask(
                 payload.get("kind", "question"),

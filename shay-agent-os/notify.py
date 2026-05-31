@@ -132,6 +132,8 @@ def heartbeat(phase: str, msg: str, pct=None) -> None:
     if any(k in msg for k in ("DONE", "BLOCKED", "SIGN-OFF", "FAILED", "complete",
                               "arc", "start")) or phase == "SIGN-OFF":
         telegram_push(f"🤖 Shay · {phase}\n{msg}")
+        # Web Push to the installed Android PWA (native lock-screen notification).
+        _post("/api/push", {"title": f"Shay · {phase}", "body": msg[:180], "url": "/"})
 
 
 def checkpoint(name: str, data: dict) -> None:
