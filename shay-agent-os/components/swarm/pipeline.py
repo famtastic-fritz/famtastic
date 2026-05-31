@@ -515,6 +515,144 @@ def _fuzzy_replace(text: str, anchor: str, replacement: str):
         return text, False
 
 
+def _balance_scan(src: str):
+    """Find unbalanced (){}[] at end-of-file, ignoring delimiters inside strings,
+    template literals, and comments. Returns the closer string to APPEND at EOF
+    (e.g. '}\\n)' ), or '' if balanced. JSX/string/comment-aware so it does not
+    false-positive on {'}'} or // } or /* ) */.
+
+    This is the deterministic first-pass repair for the NEW-FILE brace-drop class
+    (TS1005 '}' expected) — most dropped closers surface as unclosed scopes at EOF.
+    It does NOT attempt to fix a closer dropped mid-file (where a later close would
+    bind the wrong opener) — prettier --check still fails those and they route to
+    the capped brain repair."""
+    pairs = {")": "(", "]": "[", "}": "{"}
+    openers = {"(": ")", "[": "]", "{": "}"}
+    stack = []  # list of expected closer chars
+    i, n = 0, len(src)
+    # template-literal expression depth stack: True when inside `...${ HERE }...`
+    tmpl_stack = []  # each entry = brace depth at which the ${ opened
+    while i < n:
+        c = src[i]
+        nxt = src[i + 1] if i + 1 < n else ""
+        # comments
+        if c == "/" and nxt == "/":
+            j = src.find("\n", i)
+            i = n if j == -1 else j
+            continue
+        if c == "/" and nxt == "*":
+            j = src.find("*/", i + 2)
+            i = n if j == -1 else j + 2
+            continue
+        # string literals
+        if c in ("'", '"'):
+            i += 1
+            while i < n and src[i] != c:
+                if src[i] == "\\":
+                    i += 2; continue
+                i += 1
+            i += 1
+            continue
+        # template literal
+        if c == "`":
+            i += 1
+            while i < n:
+                if src[i] == "\\":
+                    i += 2; continue
+                if src[i] == "`":
+                    i += 1; break
+                if src[i] == "$" and i + 1 < n and src[i + 1] == "{":
+                    # enter expression — track until matching }
+                    stack.append("}"); tmpl_stack.append(len(stack))
+                    i += 2
+                    # fall back to normal scanning for the expression
+                    break
+                i += 1
+            continue
+        if c in openers:
+            stack.append(openers[c])
+        elif c in pairs:
+            if stack and stack[-1] == c:
+                stack.pop()
+                if tmpl_stack and len(stack) < tmpl_stack[-1]:
+                    tmpl_stack.pop()
+            # unmatched close → mid-file imbalance we don't auto-fix; bail safe
+            else:
+                return ""
+        i += 1
+    if not stack:
+        return ""
+    # append the missing closers in reverse (LIFO) order
+    return "".join(reversed(stack))
+
+
+def _syntax_validate_and_repair(file_path: str, cwd: str, brain: str = "claude",
+                                error_hint: str = "", max_brain: int = 2):
+    """Validate a freshly-generated file parses; repair NEW-FILE brace-drops.
+
+    Order (deterministic first, brain last — adversarial-review verdict):
+      1. `npx prettier --check` with explicit parser → parse gate (no import
+         resolution needed, unlike project tsc).
+      2. On parse failure: deterministic _balance_scan closer-append, re-check.
+      3. Still failing: capped brain repair (<=max_brain), full file as context,
+         NEVER trusting a compiler line:col as the edit site.
+    Returns {"ok", "method", "attempts"}. Never raises."""
+    p = Path(file_path).expanduser()
+    if not p.suffix.lower() in (".ts", ".tsx", ".js", ".jsx"):
+        return {"ok": True, "method": "skip-nonjs", "attempts": 0}
+    parser = "typescript" if p.suffix.lower() in (".ts", ".tsx") else "babel"
+
+    def _parses() -> bool:
+        try:
+            shell(f"cd {cwd} && npx prettier --parser {parser} --check {_q(str(p))} 2>&1",
+                  cwd=cwd, timeout=60, trust_gate=False)
+            return True
+        except RuntimeError as exc:
+            # prettier --check fails on STYLE diffs too; only a parse error means broken.
+            return "SyntaxError" not in str(exc) and "Unexpected" not in str(exc) \
+                   and "expected" not in str(exc).lower()
+
+    if _parses():
+        return {"ok": True, "method": "clean", "attempts": 0}
+
+    # 2. deterministic balance-scan
+    src = p.read_text(errors="ignore")
+    closers = _balance_scan(src)
+    if closers:
+        p.write_text(src.rstrip() + "\n" + "\n".join(closers) + "\n")
+        if _parses():
+            logger.info(f"[syntax-repair] {p.name}: closed {closers!r} deterministically (0 brain)")
+            return {"ok": True, "method": "balance-scan", "attempts": 0}
+        p.write_text(src)  # revert if it didn't help
+
+    # 3. capped brain repair (pinned code-tier)
+    from .brain_client import BrainChain
+    for attempt in range(1, max_brain + 1):
+        bc = BrainChain(preferred=brain)
+        fixed = bc.call_prompt(
+            f"""This file has a SYNTAX error (it does not parse). Output the COMPLETE
+corrected file content — no markdown, no fences, no explanation. Fix ONLY the
+syntax (balance every brace/paren/bracket and close every JSX tag); do NOT change
+behavior. Diagnostic (the reported line is often NOT the real drop site — reason
+about the whole file):
+{error_hint[:600]}
+
+CURRENT FILE ({p.name}):
+{src[:16000]}""",
+            timeout=150.0)
+        p.write_text(_strip_fences(fixed))
+        if _parses():
+            logger.info(f"[syntax-repair] {p.name}: brain-repaired (attempt {attempt})")
+            return {"ok": True, "method": f"brain-{attempt}", "attempts": attempt}
+    p.write_text(src)  # give up → restore original so rollback is clean
+    logger.warning(f"[syntax-repair] {p.name}: could not repair after {max_brain} brain attempts")
+    return {"ok": False, "method": "failed", "attempts": max_brain}
+
+
+def _q(s: str) -> str:
+    return "'" + s.replace("'", "'\\''") + "'"
+
+
 def _is_render_spine(file_path: str) -> bool:
     """Heuristic: an existing file whose edits are dangerous to do as one big
     block — large AND carries a JSX return / provider tree. These must be edited
@@ -630,6 +768,16 @@ Output ONLY the complete file content. No markdown, no fences, no explanation.""
                     logger.error(f"  write failed {g['path']}: {exc}")
 
         logger.info(f"  wrote {len(files_written)}/{len(manifest)} files")
+
+        # 2a. SYNTAX VALIDATE + REPAIR each written file BEFORE the project test
+        # (Phase 1A). Catches the NEW-FILE brace-drop class deterministically so
+        # the project typecheck isn't burned on a TS1005 the brain can re-drop.
+        for fw in files_written:
+            try:
+                _syntax_validate_and_repair(fw, cwd=cwd, brain=brain,
+                                            error_hint=last_error)
+            except Exception as exc:
+                logger.warning(f"  syntax-repair skipped for {Path(fw).name}: {exc}")
 
         # 2b. GUARD against vacuous pass — a build that wrote nothing is NOT a pass,
         # even if the test passes (the test may have been passing at baseline).
