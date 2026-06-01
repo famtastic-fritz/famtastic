@@ -4,7 +4,7 @@ type: note
 permalink: shay-memory/repo-docs/changelog
 ---
 
-<!-- mirrored 2026-05-31T20:44:18.393569 from ~/famtastic/CHANGELOG.md -->
+<!-- mirrored 2026-06-01T06:14:19.858578 from ~/famtastic/CHANGELOG.md -->
 
 ## 2026-05-30 — Anti-truncation synthesis + .ralph autonomous build loop
 

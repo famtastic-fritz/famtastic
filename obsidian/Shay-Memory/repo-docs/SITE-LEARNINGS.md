@@ -4,7 +4,7 @@ type: note
 permalink: shay-memory/repo-docs/site-learnings
 ---
 
-<!-- mirrored 2026-05-31T20:44:18.393737 from ~/famtastic/SITE-LEARNINGS.md -->
+<!-- mirrored 2026-06-01T06:14:19.859015 from ~/famtastic/SITE-LEARNINGS.md -->
 
 # FAMtastic Ecosystem — Site Learnings
 

@@ -1,3 +1,9 @@
+---
+title: SHAY-SETTINGS-INVENTORY
+type: note
+permalink: shay-memory/system/shay-settings-inventory
+---
+
 # Shay-Shay — Full Settings Inventory
 _Generated 2026-05-31 from live ~/.shay/config.yaml. Regenerate after any config change._
 

@@ -1,6 +1,6 @@
 ---
 title: Cerebrum (mirrored for Shay)
-synced: 2026-05-31 20:44:18.390764
+synced: 2026-06-01 06:14:19.856507
 source: .wolf/cerebrum.md
 tags:
 - cerebrum
