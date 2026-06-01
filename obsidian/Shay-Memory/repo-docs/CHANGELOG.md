@@ -4,7 +4,7 @@ type: note
 permalink: shay-memory/repo-docs/changelog
 ---
 
-<!-- mirrored 2026-06-01T06:44:19.909572 from ~/famtastic/CHANGELOG.md -->
+<!-- mirrored 2026-06-01T14:44:24.912554 from ~/famtastic/CHANGELOG.md -->
 
 ## 2026-05-30 — Anti-truncation synthesis + .ralph autonomous build loop
 
@@ -92,3 +92,5 @@ Drove the adversarially-reviewed master plan autonomously. Phase 0 (scoped loop 
 
 ## 2026-05-31 — Shay Desktop overnight UI sprint + learning loop
 Ran Shay's post-learning loop (8 lessons captured into her pipeline store, mirrored to Obsidian + .wolf/cerebrum) and minted 7 new skills under shay-agent-os/skills/ (render-spine-guard, visual-qa-gate, dead-wire-detector, typed-screen-manifest, settings-store-snapshot-cache, claude-desktop-style-match, micro-patch-living-file). Fixed a real bug in Shay Desktop: the Agents screen had 100% dead CSS (kebab classNames with an orphaned, never-imported module stylesheet) — added a global stylesheet and import. Styled SettingsShell field controls (checkboxes/inputs) and widened the status pill label. Rebuilt/repackaged/reinstalled v0.4.3; smoke gate passed (0 console errors), Chat scored 9/10 on the vision gate; the `onChatChunk` vision flag was verified a harness artifact, not a real bug. Punch-list (chat-tab truncation, settings sub-nav micro-clips, profile-avatar verify) deferred to the morning review.
+## 2026-06-01 — Workspace dormant features wired: all capability flags green
+Lit up all four dormant Shay Workspace capability flags (kanban, mcp, enhancedChat, conductor) so the upstream hermes-workspace v2.3 harness now sees Shay's brain as a full-capability backend. kanban + mcp endpoints already existed (the prior workflow's "all false" verdict was a stale Workspace capability-cache + stale gateway process — corrected after a coordinated full-stack restart). enhancedChat needed only a gateway restart to load already-committed SSE routes; conductor needed a real missions CRUD API (new shay_cli/conductor_missions.py, JSON store at $SHAY_HOME/conductor/, GET/POST/GET-one/DELETE matching workspace's SwarmMission shape). Verified by live probes against a fresh boot: all 4 flags true, baseline zero regression. Honest deferred follow-up: conductor missions + swarm-shim non-chat verbs REGISTER work but don't yet EXECUTE workers — shay-agent-os isn't importable from the shay-shay/dashboard venvs; bridging swarm execution is the next frontier. Commits: 3b3d4d7, b2e4113, 881be91, 534a14d (shay-shay); a48e552, bd155f7 (famtastic).
