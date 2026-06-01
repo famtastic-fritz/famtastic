@@ -65,4 +65,4 @@ against the live dashboard, wrong bearer is rejected with 401 by
 `auth_middleware`.
 
 ## Commit SHA
-See final agent message.
+`6763909` (in `shay-shay` repo, branch `main`)
