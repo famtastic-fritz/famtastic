@@ -1,0 +1,291 @@
+# Shay-Shay — Full Settings Inventory
+_Generated 2026-05-31 from live ~/.shay/config.yaml. Regenerate after any config change._
+
+**47 ON / 30 OFF** of 77 toggles; 204 value settings.
+
+## Toggles — ON
+- ✅ `approvals.mcp_reload_confirm`
+- ✅ `bedrock.discovery.enabled`
+- ✅ `browser.auto_local_for_private_urls`
+- ✅ `checkpoints.auto_prune`
+- ✅ `checkpoints.delete_orphans`
+- ✅ `checkpoints.enabled`
+- ✅ `compression.enabled`
+- ✅ `cron.wrap_response`
+- ✅ `curator.backup.enabled`
+- ✅ `curator.enabled`
+- ✅ `curator.trace_grounded`
+- ✅ `delegation.inherit_mcp_toolsets`
+- ✅ `delegation.orchestrator_enabled`
+- ✅ `discord.auto_thread`
+- ✅ `discord.reactions`
+- ✅ `discord.require_mention`
+- ✅ `display.inline_diffs`
+- ✅ `display.interim_assistant_messages`
+- ✅ `display.persistent_output`
+- ✅ `display.show_cost`
+- ✅ `display.streaming`
+- ✅ `group_sessions_per_user`
+- ✅ `kanban.dispatch_in_gateway`
+- ✅ `matrix.require_mention`
+- ✅ `mattermost.require_mention`
+- ✅ `memory.memory_enabled`
+- ✅ `memory.user_profile_enabled`
+- ✅ `model_catalog.enabled`
+- ✅ `onboarding.seen.busy_input_prompt`
+- ✅ `onboarding.seen.openclaw_residue_cleanup`
+- ✅ `onboarding.seen.tool_progress_prompt`
+- ✅ `openrouter.response_cache`
+- ✅ `platforms.api_server.enabled`
+- ✅ `platforms.telegram.enabled`
+- ✅ `prompt_caching.long_lived_prefix`
+- ✅ `security.redact_secrets`
+- ✅ `security.tirith_enabled`
+- ✅ `security.tirith_fail_open`
+- ✅ `sessions.vacuum_after_prune`
+- ✅ `skills.template_vars`
+- ✅ `slack.require_mention`
+- ✅ `stt.enabled`
+- ✅ `terminal.auto_source_bashrc`
+- ✅ `terminal.container_persistent`
+- ✅ `terminal.persistent_shell`
+- ✅ `tool_loop_guardrails.warnings_enabled`
+- ✅ `voice.beep_enabled`
+
+## Toggles — OFF
+- ⬜ `agent.verbose`
+- ⬜ `approvals.destructive_slash_confirm`
+- ⬜ `browser.allow_private_urls`
+- ⬜ `browser.camofox.managed_persistence`
+- ⬜ `browser.record_sessions`
+- ⬜ `delegation.subagent_auto_approve`
+- ⬜ `display.bell_on_complete`
+- ⬜ `display.cleanup_progress`
+- ⬜ `display.compact`
+- ⬜ `display.runtime_footer.enabled`
+- ⬜ `display.show_reasoning`
+- ⬜ `display.timestamps`
+- ⬜ `display.tool_progress_command`
+- ⬜ `display.tui_auto_resume_recent`
+- ⬜ `hooks_auto_accept`
+- ⬜ `network.force_ipv4`
+- ⬜ `privacy.redact_pii`
+- ⬜ `routing.cost_aware`
+- ⬜ `security.allow_private_urls`
+- ⬜ `security.website_blocklist.enabled`
+- ⬜ `sessions.auto_prune`
+- ⬜ `skills.guard_agent_created`
+- ⬜ `skills.inline_shell`
+- ⬜ `streaming.enabled`
+- ⬜ `telegram.reactions`
+- ⬜ `terminal.docker_mount_cwd_to_workspace`
+- ⬜ `terminal.docker_run_as_host_user`
+- ⬜ `tool_loop_guardrails.hard_stop_enabled`
+- ⬜ `updates.pre_update_backup`
+- ⬜ `voice.auto_tts`
+
+## Value settings
+- `_config_version` = `23`
+- `agent.api_max_retries` = `3`
+- `agent.gateway_auto_continue_freshness` = `3600`
+- `agent.gateway_notify_interval` = `180`
+- `agent.gateway_timeout` = `1800`
+- `agent.gateway_timeout_warning` = `900`
+- `agent.image_input_mode` = `auto`
+- `agent.max_turns` = `90`
+- `agent.personalities.catgirl` = `You are Neko-chan, an anime catgirl AI assistant, nya~! Add 'nya' and cat-like expressions to your speech. Use kaomoji like (=^･ω･^=) and ฅ^•ﻌ•^ฅ. Be playful and curious like a cat, nya~!`
+- `agent.personalities.concise` = `You are a concise assistant. Keep responses brief and to the point.`
+- `agent.personalities.creative` = `You are a creative assistant. Think outside the box and offer innovative solutions.`
+- `agent.personalities.helpful` = `You are a helpful, friendly AI assistant.`
+- `agent.personalities.hype` = `YOOO LET'S GOOOO!!! 🔥🔥🔥 I am SO PUMPED to help you today! Every question is AMAZING and we're gonna CRUSH IT together! This is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS! 💪😤🚀`
+- `agent.personalities.kawaii` = `You are a kawaii assistant! Use cute expressions like (◕‿◕), ★, ♪, and ~! Add sparkles and be super enthusiastic about everything! Every response should feel warm and adorable desu~! ヽ(>∀<☆)ノ`
+- `agent.personalities.noir` = `The rain hammered against the terminal like regrets on a guilty conscience. They call me Shay-Shay - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?`
+- `agent.personalities.philosopher` = `Greetings, seeker of wisdom. I am an assistant who contemplates the deeper meaning behind every query. Let us examine not just the 'how' but the 'why' of your questions. Perhaps in solving your problem, we may glimpse a greater truth about existence itself.`
+- `agent.personalities.pirate` = `Arrr! Ye be talkin' to Captain Shay-Shay, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!`
+- `agent.personalities.shakespeare` = `Hark! Thou speakest with an assistant most versed in the bardic arts. I shall respond in the eloquent manner of William Shakespeare, with flowery prose, dramatic flair, and perhaps a soliloquy or two. What light through yonder terminal breaks?`
+- `agent.personalities.surfer` = `Duuude! You're chatting with the chillest AI on the web, bro! Everything's gonna be totally rad. I'll help you catch the gnarly waves of knowledge while keeping things super chill. Cowabunga! 🤙`
+- `agent.personalities.teacher` = `You are a patient teacher. Explain concepts clearly with examples.`
+- `agent.personalities.technical` = `You are a technical expert. Provide detailed, accurate technical information.`
+- `agent.personalities.uwu` = `hewwo! i'm your fwiendwy assistant uwu~ i wiww twy my best to hewp you! *nuzzles your code* OwO what's this? wet me take a wook! i pwomise to be vewy hewpful >w<`
+- `agent.reasoning_effort` = `medium`
+- `agent.restart_drain_timeout` = `180`
+- `agent.tool_use_enforcement` = `auto`
+- `approvals.cron_mode` = `auto`
+- `approvals.mode` = `manual`
+- `approvals.timeout` = `60`
+- `auxiliary.approval.model` = `gemini-2.5-flash`
+- `auxiliary.approval.provider` = `gemini`
+- `auxiliary.approval.timeout` = `30`
+- `auxiliary.compression.model` = `gemini-2.5-flash`
+- `auxiliary.compression.provider` = `gemini`
+- `auxiliary.compression.timeout` = `120`
+- `auxiliary.curator.model` = `gemini-2.5-flash`
+- `auxiliary.curator.provider` = `gemini`
+- `auxiliary.curator.timeout` = `600`
+- `auxiliary.mcp.model` = `gemini-2.5-flash`
+- `auxiliary.mcp.provider` = `gemini`
+- `auxiliary.mcp.timeout` = `30`
+- `auxiliary.session_search.max_concurrency` = `3`
+- `auxiliary.session_search.model` = `gemini-2.5-flash`
+- `auxiliary.session_search.provider` = `gemini`
+- `auxiliary.session_search.timeout` = `30`
+- `auxiliary.skills_hub.model` = `gemini-2.5-flash`
+- `auxiliary.skills_hub.provider` = `gemini`
+- `auxiliary.skills_hub.timeout` = `30`
+- `auxiliary.title_generation.model` = `gemini-2.5-flash`
+- `auxiliary.title_generation.provider` = `gemini`
+- `auxiliary.title_generation.timeout` = `30`
+- `auxiliary.triage_specifier.model` = `gemini-2.5-flash`
+- `auxiliary.triage_specifier.provider` = `gemini`
+- `auxiliary.triage_specifier.timeout` = `120`
+- `auxiliary.vision.download_timeout` = `30`
+- `auxiliary.vision.model` = `gemini-2.5-flash`
+- `auxiliary.vision.provider` = `gemini`
+- `auxiliary.vision.timeout` = `120`
+- `auxiliary.web_extract.model` = `gemini-2.5-flash`
+- `auxiliary.web_extract.provider` = `gemini`
+- `auxiliary.web_extract.timeout` = `360`
+- `bedrock.discovery.refresh_interval` = `3600`
+- `bedrock.guardrail.stream_processing_mode` = `async`
+- `bedrock.guardrail.trace` = `disabled`
+- `browser.command_timeout` = `30`
+- `browser.dialog_policy` = `must_respond`
+- `browser.dialog_timeout_s` = `300`
+- `browser.engine` = `auto`
+- `browser.inactivity_timeout` = `120`
+- `checkpoints.max_file_size_mb` = `10`
+- `checkpoints.max_snapshots` = `20`
+- `checkpoints.max_total_size_mb` = `500`
+- `checkpoints.min_interval_hours` = `24`
+- `checkpoints.retention_days` = `7`
+- `code_execution.max_tool_calls` = `50`
+- `code_execution.mode` = `project`
+- `code_execution.timeout` = `300`
+- `compression.hygiene_hard_message_limit` = `400`
+- `compression.protect_last_n` = `20`
+- `compression.target_ratio` = `0.2`
+- `compression.threshold` = `0.5`
+- `context.engine` = `compressor`
+- `curator.archive_after_days` = `90`
+- `curator.backup.keep` = `5`
+- `curator.interval_hours` = `168`
+- `curator.min_idle_hours` = `2`
+- `curator.stale_after_days` = `30`
+- `dashboard.theme` = `default`
+- `delegation.api_key` = `ollama`
+- `delegation.base_url` = `http://localhost:11434/v1`
+- `delegation.child_timeout_seconds` = `600`
+- `delegation.max_concurrent_children` = `30`
+- `delegation.max_iterations` = `45`
+- `delegation.max_spawn_depth` = `2`
+- `delegation.model` = `hermes3:latest`
+- `delegation.provider` = `custom`
+- `delegation.reasoning_effort` = `medium`
+- `display.background_process_notifications` = `all`
+- `display.busy_input_mode` = `interrupt`
+- `display.copy_shortcut` = `auto`
+- `display.ephemeral_system_ttl` = `0`
+- `display.final_response_markdown` = `strip`
+- `display.language` = `en`
+- `display.persistent_output_max_lines` = `200`
+- `display.personality` = `concise`
+- `display.resume_display` = `full`
+- `display.skin` = `default`
+- `display.tool_preview_length` = `0`
+- `display.tool_progress` = `all`
+- `display.tui_status_indicator` = `kaomoji`
+- `display.user_message_preview.first_lines` = `2`
+- `display.user_message_preview.last_lines` = `2`
+- `file_read_max_chars` = `100000`
+- `goals.max_turns` = `20`
+- `human_delay.max_ms` = `2500`
+- `human_delay.min_ms` = `800`
+- `human_delay.mode` = `off`
+- `kanban.dispatch_interval_seconds` = `60`
+- `kanban.failure_limit` = `2`
+- `logging.backup_count` = `3`
+- `logging.level` = `INFO`
+- `logging.max_size_mb` = `5`
+- `mcp_servers.basic-memory.command` = `/Users/famtasticfritz/.local/bin/basic-memory`
+- `mcp_servers.basic-memory.connect_timeout` = `60`
+- `mcp_servers.basic-memory.timeout` = `120`
+- `mcp_servers.context7.connect_timeout` = `30`
+- `mcp_servers.context7.timeout` = `60`
+- `mcp_servers.context7.url` = `https://mcp.context7.com/mcp`
+- `mcp_servers.obsidian.command` = `mcp-obsidian`
+- `mcp_servers.obsidian.connect_timeout` = `30`
+- `mcp_servers.obsidian.timeout` = `30`
+- `mcp_servers.vault-search.connect_timeout` = `30`
+- `mcp_servers.vault-search.timeout` = `60`
+- `mcp_servers.vault-search.url` = `http://127.0.0.1:8766/mcp`
+- `memory.flush_min_turns` = `6`
+- `memory.memory_char_limit` = `2200`
+- `memory.nudge_interval` = `10`
+- `memory.user_char_limit` = `1375`
+- `model.default` = `google/gemini-2.5-flash`
+- `model.provider` = `openrouter`
+- `model_catalog.ttl_hours` = `24`
+- `model_catalog.url` = `https://shay-shay.nousresearch.com/docs/api/model-catalog.json`
+- `openrouter.min_coding_score` = `0.65`
+- `openrouter.response_cache_ttl` = `300`
+- `platforms.api_server.extra.host` = `127.0.0.1`
+- `platforms.api_server.extra.port` = `8642`
+- `prompt_caching.cache_ttl` = `5m`
+- `prompt_caching.long_lived_ttl` = `1h`
+- `routing.daily_budget_usd` = `0`
+- `security.tirith_path` = `tirith`
+- `security.tirith_timeout` = `5`
+- `session_reset.at_hour` = `4`
+- `session_reset.idle_minutes` = `1440`
+- `session_reset.mode` = `none`
+- `sessions.min_interval_hours` = `24`
+- `sessions.retention_days` = `90`
+- `skills.creation_nudge_interval` = `15`
+- `skills.inline_shell_timeout` = `10`
+- `skills.max_count` = `40`
+- `stt.local.model` = `base`
+- `stt.mistral.model` = `voxtral-mini-latest`
+- `stt.openai.model` = `whisper-1`
+- `stt.provider` = `local`
+- `terminal.backend` = `local`
+- `terminal.container_cpu` = `1`
+- `terminal.container_disk` = `51200`
+- `terminal.container_memory` = `5120`
+- `terminal.cwd` = `.`
+- `terminal.daytona_image` = `nikolaik/python-nodejs:python3.11-nodejs20`
+- `terminal.docker_image` = `nikolaik/python-nodejs:python3.11-nodejs20`
+- `terminal.lifetime_seconds` = `300`
+- `terminal.modal_image` = `nikolaik/python-nodejs:python3.11-nodejs20`
+- `terminal.modal_mode` = `auto`
+- `terminal.singularity_image` = `docker://nikolaik/python-nodejs:python3.11-nodejs20`
+- `terminal.timeout` = `180`
+- `terminal.vercel_runtime` = `node24`
+- `tool_loop_guardrails.hard_stop_after.exact_failure` = `5`
+- `tool_loop_guardrails.hard_stop_after.idempotent_no_progress` = `5`
+- `tool_loop_guardrails.hard_stop_after.same_tool_failure` = `8`
+- `tool_loop_guardrails.warn_after.exact_failure` = `2`
+- `tool_loop_guardrails.warn_after.idempotent_no_progress` = `2`
+- `tool_loop_guardrails.warn_after.same_tool_failure` = `3`
+- `tool_output.max_bytes` = `50000`
+- `tool_output.max_line_length` = `2000`
+- `tool_output.max_lines` = `2000`
+- `tts.edge.voice` = `en-US-AriaNeural`
+- `tts.elevenlabs.model_id` = `eleven_multilingual_v2`
+- `tts.elevenlabs.voice_id` = `pNInz6obpgDQGcFmaJgB`
+- `tts.mistral.model` = `voxtral-mini-tts-2603`
+- `tts.mistral.voice_id` = `c69964a6-ab8b-4f8a-9465-ec0925096ec8`
+- `tts.neutts.device` = `cpu`
+- `tts.neutts.model` = `neuphonic/neutts-air-q4-gguf`
+- `tts.openai.model` = `gpt-4o-mini-tts`
+- `tts.openai.voice` = `alloy`
+- `tts.piper.voice` = `en_US-lessac-medium`
+- `tts.provider` = `edge`
+- `tts.xai.bit_rate` = `128000`
+- `tts.xai.language` = `en`
+- `tts.xai.sample_rate` = `24000`
+- `tts.xai.voice_id` = `eve`
+- `updates.backup_keep` = `5`
+- `voice.max_recording_seconds` = `120`
+- `voice.record_key` = `ctrl+b`
+- `voice.silence_duration` = `3.0`
+- `voice.silence_threshold` = `200`

@@ -1,3 +1,8 @@
+---
+title: next-phase-architecture
+type: note
+permalink: shay-memory/research/next-phase-architecture
+---
 
 ## Backlog add (2026-05-31): metric-grounded Curator (from OpenJarvis eval)
 Shay already self-improves (skill_manage create/edit/patch/delete + Curator LLM review).

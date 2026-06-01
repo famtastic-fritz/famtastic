@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-01T00:52:10.467Z
-> Files: 1168 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-01T01:08:54.582Z
+> Files: 1178 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -980,10 +980,12 @@
 
 ## obsidian/Shay-Memory/research/
 
+- `claude-mem-evaluation-2026-05-31.md` — claude-mem Evaluation — 2026-05-31 (~1897 tok)
 - `free-models-discovery-2026-05-31.md` — Free / Open LLM Discovery — Shay Worker-Lane Brains (~1719 tok)
 - `hermes-capabilities-audit-2026-05-31.md` — Hermes / Shay-Shay Capability Audit — What We Use vs What We're Leaving on the Table (~3688 tok)
 - `kanban-setup-correct-2026-05-31.md` — Correct Kanban Setup for an Efficient Multi-Agent Swarm (~3784 tok)
 - `next-phase-architecture-2026-05-31.md` — Next-Phase AI-OS Architecture — Shay-Shay OS (2026-05-31) (~4729 tok)
+- `openjarvis-adopt-impl-2026-05-31.md` — OpenJarvis ADOPT-NOW implementation — Shay-Shay (~1599 tok)
 - `page-agent-review-2026-05-31.md` — Review: alibaba/page-agent — fit for the FAMtastic stack (~1884 tok)
 - `plugins-discovery-2026-05-31.md` — Plugins Discovery — Shay/Hermes + Desktop (~2556 tok)
 - `provider-self-registration-design-2026-05-31.md` — Provider Self-Registration Design — Shay adds & authenticates new providers herself (~4997 tok)
@@ -1619,11 +1621,19 @@
 - `manifest.webmanifest` (~147 tok)
 - `sw.js` — Minimal service worker — makes the PWA installable + caches the shell + Web Push. (~471 tok)
 
+## shay-shay/
+
+- `run_agent.py` — _OpenAIProxy: write, flush, fileno, isatty + 4 more (~228113 tok)
+
 ## shay-shay/agent/
 
 - `anthropic_adapter.py` — Anthropic Messages API adapter for Shay-Shay. (~25530 tok)
+- `cost_telemetry.py` — Cost / energy telemetry — a routing-aware view over recorded usage. (~4086 tok)
+- `curator.py` — Curator — background skill maintenance orchestrator. (~22860 tok)
+- `insights.py` — InsightsEngine: generate (~11306 tok)
 - `plugin_llm.py` — Declares class (~11250 tok)
-- `prompt_builder.py` — System prompt assembly -- identity, platform hints, skills index, context files. (~20187 tok)
+- `prompt_builder.py` — System prompt assembly -- identity, platform hints, skills index, context files. (~20487 tok)
+- `skill_utils.py` — Lightweight skill metadata utilities shared by prompt_builder and skills_tool. (~5596 tok)
 
 ## shay-shay/gateway/
 
@@ -1640,6 +1650,15 @@
 ## shay-shay/obsidian/Shay-Memory/reviews/
 
 - `QA-REPORT-FINAL-2026-05-31.md` — Shay Desktop — Final QA Report (2026-05-31) (~656 tok)
+
+## shay-shay/shay_cli/
+
+- `config.py` — from: get_managed_system, is_managed, get_managed_update_command, recommended_update_command + 6 mor (~63159 tok)
+
+## shay-shay/tests/agent/
+
+- `test_cost_telemetry.py` — Tests for agent/cost_telemetry.py — cost/energy routing telemetry. (~1960 tok)
+- `test_curator_trace_grounded.py` — Tests for the trace-grounded curator review (Feature 2). (~1653 tok)
 
 ## site-studio/
 
