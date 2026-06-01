@@ -1,14 +1,15 @@
-# Fritz Context — 2026-06-01T06:25:15.583358
+# Fritz Context — 2026-06-01T07:00:44.774282
 
-**Front App:** Claude
+**Front App:** Google Chrome
 **CWD:** /Users/famtasticfritz/.shay/scripts
 
 ## Running Apps
 
-- Google ChromeNotesPreviewFinderCodexMSTeamsClaudeScript EditorSystem SettingsElectron
+- Google ChromeNotesPreviewFinderCodexMSTeamsClaudeScript EditorSystem SettingsElectronShay DesktopSafari
 
 ## Browser Tabs
 
+- Start Page | favorites://
 
 ## Recent Downloads
 
