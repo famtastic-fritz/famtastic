@@ -238,3 +238,19 @@ Schema: `plans/CLOSEOUT-SCHEMA.md`. Packets land at
 `plans/<plan-id>/closeouts/<date>-<verdict>.json`. Terminal verdicts
 auto-remove the plan from `active_parent_ids`. Memory candidates in the
 packet auto-flow into the chat-capture pipeline.
+
+## Default Operating Mode: Ultracode (standing directive)
+
+Operate in **ultracode mode by default** for every substantial task in this repo,
+without waiting to be asked:
+- Author and run multi-agent Workflows by default for substantive work (research,
+  design, build, review) — don't pause to ask "should I orchestrate this?"
+- Do not hedge on token/credit cost. Optimize for the most exhaustive, correct result.
+- Drive work to its goal; don't stop to report and wait when the next step is clear.
+  Track multi-step goals as TodoWrite tasks and keep going until the gates are green.
+- Lean on the quality patterns: adversarial-verify, judge panels, completeness critics,
+  loop-until-dry, two-gate builds (typecheck + runtime render gate), surgical edits.
+- Solo single-agent work only for trivial/conversational turns.
+
+Real cloud-orchestration commands available when wanted: `/ultraplan` (cloud planning),
+`/ultrareview` (cloud multi-agent code review).

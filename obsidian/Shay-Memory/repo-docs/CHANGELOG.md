@@ -4,7 +4,7 @@ type: note
 permalink: shay-memory/repo-docs/changelog
 ---
 
-<!-- mirrored 2026-05-31T02:44:06.637430 from ~/famtastic/CHANGELOG.md -->
+<!-- mirrored 2026-05-31T20:44:18.393569 from ~/famtastic/CHANGELOG.md -->
 
 ## 2026-05-30 — Anti-truncation synthesis + .ralph autonomous build loop
 
@@ -89,3 +89,6 @@ Turned the ralph loop loose on the full U2–U20 desktop queue after grounding e
 
 ## 2026-05-31 — All-night arc: desktop 20/20 + functional launch + monitoring + Phase 3A
 Drove the adversarially-reviewed master plan autonomously. Phase 0 (scoped loop hygiene), 1A (deterministic brace-drop repair), 1B (re-anchor), recovered all 20 desktop units (5 mechanically, last 2 hand-wired). Phase 2 launch test found+fixed two latent runtime bugs (dead preload sandbox/node:fs bridge; window.hermesAPI undefined) — app now boots with a live IPC bridge. Built the monitoring spine (/api/arc feed + arc.html + Telegram + Web Push installable on Android), re-ran Shay's companion research with the correct clone-and-exceed mandate, and shipped Phase 3A (multi-provider tool registry). Phase 3 install/vault-mutation tracks (obsidian-wiki, SkillNet, memory spike, Kanban) deferred to a guarded greenlight (ARC-DECISIONS-2026-05-31.md). Recorded capability backlog (phone-side control v2, brief-reader near-term, agent identity+credentials v2/v3).
+
+## 2026-05-31 — Shay Desktop overnight UI sprint + learning loop
+Ran Shay's post-learning loop (8 lessons captured into her pipeline store, mirrored to Obsidian + .wolf/cerebrum) and minted 7 new skills under shay-agent-os/skills/ (render-spine-guard, visual-qa-gate, dead-wire-detector, typed-screen-manifest, settings-store-snapshot-cache, claude-desktop-style-match, micro-patch-living-file). Fixed a real bug in Shay Desktop: the Agents screen had 100% dead CSS (kebab classNames with an orphaned, never-imported module stylesheet) — added a global stylesheet and import. Styled SettingsShell field controls (checkboxes/inputs) and widened the status pill label. Rebuilt/repackaged/reinstalled v0.4.3; smoke gate passed (0 console errors), Chat scored 9/10 on the vision gate; the `onChatChunk` vision flag was verified a harness artifact, not a real bug. Punch-list (chat-tab truncation, settings sub-nav micro-clips, profile-avatar verify) deferred to the morning review.

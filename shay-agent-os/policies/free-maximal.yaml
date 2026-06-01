@@ -1,0 +1,32 @@
+# free-maximal.yaml — Zero cloud cost. Quality ceiling is local model capability.
+# Use when: no credits available, exploration runs, high-volume batch work.
+name: free-maximal
+description: All-local Ollama. No cloud cost. Lower quality ceiling.
+
+brains:
+  worker: ollama
+  judge: ollama            # hermes3 — acceptable for simple tasks
+  synth: ollama
+  verify: ollama
+  fallback: ollama
+
+worker_tiers:
+  medium: phi4-mini:latest
+  complex: hermes3:latest
+
+concurrency:
+  max_workers: 3
+  judge_timeout: 60
+  synth_timeout: 90
+  worker_timeout: 45
+
+quality:
+  enable_anchor_check: true   # still on — cheap local call
+  enable_adversarial_verify: false  # off — same model reviewing itself = theater
+  min_synthesis_chars: 300
+  budget_default: 10
+
+cost_posture: free
+note: >
+  Adversarial verify disabled because reviewer==author when all brains are ollama.
+  The D-5 reviewer!=author rule requires a different model for the verify step.

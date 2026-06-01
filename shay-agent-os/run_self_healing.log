@@ -1,0 +1,48 @@
+[20:12:57] === SELF-HEALING LOOP TEST ===
+[20:12:57]     Hard task + failure recording + lesson capture
+[20:12:57] 
+Step 1: checking buglog for prior lessons on this task...
+[20:12:57]   No prior IPC lessons in buglog
+[20:12:57] 
+Step 2: setting up Shay's dispatcher...
+[20:12:57] 
+Step 3: reading codebase context...
+[20:12:57]   preload: 3000 chars | IPC examples: 0 chars
+[20:12:57] 
+Step 4: starting self-healing iteration loop
+[20:12:57]   Output: /Users/famtasticfritz/famtastic/shay-desktop-electron/src/main/domains/skills.ts
+[20:12:57]   Test: npm run typecheck:node (checks main process types)
+[20:12:57] 
+==================================================
+[20:12:57] ITERATION 1/3
+[20:12:57] ==================================================
+[20:12:57]   Calling Shay's brain...
+[20:13:04]   Response: 1840 chars in 6.8s via claude
+[20:13:04]   Writing 1840 chars to skills.ts...
+[20:13:04]   Written ✓
+[20:13:04]   Running typecheck:node...
+[20:13:05]   ❌ TYPECHECK FAILED in 1.3s — 1 TS error(s):
+[20:13:05]      src/main/domains/skills.ts(1,1): error TS6133: 'ipcMain' is declared but its value is never read.
+[20:13:05]   → buglog entry #213 written
+[20:13:05]   → lesson written to self-healing-lesson-2026-05-30.md
+[20:13:05] 
+==================================================
+[20:13:05] ITERATION 2/3
+[20:13:05] ==================================================
+[20:13:05]   Injecting error from iteration 1 into context...
+[20:13:05]   Calling Shay's brain...
+[20:13:11]   Response: 1128 chars in 5.7s via claude
+[20:13:11]   Writing 1128 chars to skills.ts...
+[20:13:11]   Written ✓
+[20:13:11]   Running typecheck:node...
+[20:13:12]   ✅ TYPECHECK PASSED in 1.2s
+[20:13:12]   → success logged to buglog as entry #214
+[20:13:12]   → lesson written to self-healing-lesson-2026-05-30.md
+[20:13:12] 
+==================================================
+[20:13:12] FINAL RESULT
+[20:13:12] ==================================================
+[20:13:12] ✅ SUCCESS in 2 iteration(s)
+[20:13:12]    skills.ts written and typechecks clean
+[20:13:12]    Lesson saved to Obsidian
+[20:13:12]    Success recorded in buglog

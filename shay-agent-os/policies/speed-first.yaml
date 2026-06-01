@@ -1,0 +1,32 @@
+# speed-first.yaml — Fastest wall-clock. All cloud, all Claude.
+# PRECONDITION: Codex must be confirmed available before selecting this policy.
+# Auto-check runs at SwarmOrchestrator.start() — policy falls back to balanced
+# if the precondition fails.
+name: speed-first
+description: All-cloud Claude. Fastest. Requires Codex/Claude credits.
+
+brains:
+  worker: claude           # even workers on Claude — maximum quality + speed
+  judge: claude
+  synth: claude
+  verify: openrouter       # reviewer != author still enforced
+  fallback: gemini
+
+worker_tiers:
+  medium: claude           # no local models in this policy
+  complex: claude
+
+concurrency:
+  max_workers: 8           # higher ceiling — cloud not Ollama-bound
+  judge_timeout: 60
+  synth_timeout: 90
+  worker_timeout: 45
+
+quality:
+  enable_anchor_check: true
+  enable_adversarial_verify: true
+  min_synthesis_chars: 800
+  budget_default: 12
+
+cost_posture: premium
+precondition: "codex_available_check"   # fails gracefully to balanced if not met

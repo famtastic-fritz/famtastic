@@ -1,6 +1,6 @@
 ---
 title: Cerebrum (mirrored for Shay)
-synced: 2026-05-31 02:44:06.635261
+synced: 2026-05-31 20:44:18.390764
 source: .wolf/cerebrum.md
 tags:
 - cerebrum
@@ -582,3 +582,13 @@ A typecheck gate is NOT sufficient for core-render-path changes — the SessionN
 To EDIT an existing file, use anchored surgical replacement (`surgical_patch()`), NOT full-file regeneration. Proven 2026-05-30: `multi_file_code_job` regenerating a 250-line App.tsx dropped braces every iteration (TS1005) and failed 4x → rolled back. Switching to `surgical_patch` (brain rewrites only the small anchored region) mounted two real screens (Soul, Models) into the core render path, FIRST try each, both gates green. Rule: new file → full generation is fine; existing file edit → surgical anchored edits. Both protected by the two-gate build (typecheck + runtime_render_gate).
 
 ## Do-Not-Repeat (2026-05-31): 'done' = runs+reachable+looks-right+usable, NOT just compiles. The QA gate (npm run qa: runtime contract check + vision judge) + adversarial review must be REQUIRED loop gates, not hand-run. Confirm the target app/file before editing (space-vs-no-space trap). Never self-attest 'done' — require vision/reviewer/human signal. Verify generated code + .d.ts against runtime.
+
+## Do-Not-Repeat (2026-05-31 — Shay Desktop UI sprint)
+- useSyncExternalStore getSnapshot MUST return a cached/stable reference (React #185). Never return a fresh Set/object per call.
+- Never leave a screen wired to a placeholder `<div>` when a real implementation exists — cross-check the registry against disk; prefer a typed screen manifest.
+- Scan `ipcMain.handle(` with a newline-tolerant parser; single-line grep silently stubs multi-line channel registrations.
+- Chat-specific chrome (mode pills, Pinned/Recents, New session) is screen-scoped to navView==='chat', not global shell.
+- Electron desktop defaults to the designed DARK theme; system/light on a light-mode Mac renders a flat-white "broken" screen.
+- "No handler registered for X" must degrade to defaults, not surface raw error text.
+- Definition of done for any UI unit = launches + nav-reachable + 0 console errors + vision score >=8, NOT just typecheck-green.
+- 7 skills minted to shay-agent-os/skills/ encode these: micro-patch-living-file, render-spine-guard, visual-qa-gate, claude-desktop-style-match, settings-store-snapshot-cache, dead-wire-detector, typed-screen-manifest.
