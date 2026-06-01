@@ -1,0 +1,52 @@
+/* shay-chrome.css — Shay Web visible rebrand overlay
+ *
+ * Loaded by hermes-webui via HERMES_WEBUI_EXTENSION_STYLESHEET_URLS.
+ * Source upstream stays read-only (_refs/hermes-webui-v0.51).
+ *
+ * Strategy:
+ *   - Override CSS custom properties at :root and :root.dark for the Shay palette.
+ *   - Hide the inline Hermes caduceus inside .app-titlebar-icon (JS replaces it).
+ *   - Theme-color meta is updated by JS to match the new sidebar.
+ *
+ * Palette (Part-3 decisions doc §3):
+ *   Shay Blue   #1E5BFF
+ *   Shay Gold   #F5C542
+ *   Shay Red    #E63946
+ *   Shay Ink    #0D0D1A
+ *   Shay Cream  #FEFCF7
+ */
+
+:root {
+  --accent: #1E5BFF;
+  --accent-hover: #0D3FCC;
+  --accent-text: #FEFCF7;
+  --accent-bg: rgba(30, 91, 255, 0.10);
+  --accent-bg-strong: rgba(30, 91, 255, 0.20);
+  --gold: #F5C542;
+  --shay-blue: #1E5BFF;
+  --shay-gold: #F5C542;
+  --shay-red: #E63946;
+}
+
+:root.dark,
+.dark {
+  --accent: #4D7BFF;
+  --accent-hover: #6A92FF;
+  --accent-text: #FEFCF7;
+  --accent-bg: rgba(77, 123, 255, 0.15);
+  --accent-bg-strong: rgba(77, 123, 255, 0.28);
+  --gold: #F5C542;
+}
+
+/* The original Hermes caduceus SVG ships inline in the titlebar.
+ * JS replaces its innerHTML on DOMContentLoaded; this rule keeps
+ * any residual <svg> hidden if the JS swap hasn't run yet. */
+.app-titlebar-icon > svg.hermes-legacy-mark { display: none !important; }
+
+/* Optional: nudge the titlebar mark to render cleanly at icon size. */
+.app-titlebar-icon img.shay-mark,
+.app-titlebar-icon svg.shay-mark {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

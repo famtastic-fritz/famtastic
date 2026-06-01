@@ -16,8 +16,41 @@ shay-environments/shay-web/
   .env.example           — committed template
   run-shay-web.sh        — boot script
   hermes-cli-shim/       — pip-installable `hermes_cli` -> `shay_cli` shim
+  chrome/                — Part-3 visible rebrand overlay (CSS+JS+SVG)
   README.md
 ```
+
+## Visible rebrand (Part 3)
+
+The `chrome/` directory is wired to upstream hermes-webui via its native
+extension contract (`api/extensions.py`). Three env vars (set in `.env`)
+plug it in without modifying any upstream file:
+
+```
+HERMES_WEBUI_EXTENSION_DIR=…/shay-environments/shay-web/chrome
+HERMES_WEBUI_EXTENSION_STYLESHEET_URLS=/extensions/shay-chrome.css
+HERMES_WEBUI_EXTENSION_SCRIPT_URLS=/extensions/shay-chrome.js
+```
+
+Files:
+
+| File | Purpose |
+|---|---|
+| `shay-chrome.css` | Overrides `--accent`, `--accent-hover`, `--gold` and related CSS custom properties at `:root` and `:root.dark` to the Shay palette (Blue `#1E5BFF`, Gold `#F5C542`, Red `#E63946`). Hides legacy caduceus mark if JS hasn't run yet. |
+| `shay-chrome.js` | IIFE that (1) sets `window._botName='Shay'` before `applyBotName()`, (2) swaps `#appTitlebarTitle` text to "Shay Web", (3) replaces the inline caduceus SVG in `.app-titlebar-icon` with the Shay monogram, (4) rewrites favicon + apple-touch + theme-color + apple-mobile-web-app-title, (5) installs a `MutationObserver` on `<title>` to pin it against `applyBotName` clobbers, (6) post-i18n DOM/attribute sweep replacing residual "Hermes" → "Shay" in titlebar, onboarding modal, settings, dashboard tooltips, (7) re-runs on panel transitions. |
+| `shay-mark.svg` | Shay monogram (S in Shay Blue with a gold magic-wand burst). Used as the titlebar mark and as a reference asset. |
+| `shay-favicon.svg` | Vector favicon, served at `/extensions/shay-favicon.svg`. |
+
+**Known limits (deferred to Tier B per the Part-3 decisions):**
+
+- `_refs/hermes-webui-v0.51/static/manifest.json` still names the PWA
+  "Hermes"; JS cannot override that after install. Already-installed PWAs
+  keep the old name until reinstall. A future reverse-proxy `/manifest.json`
+  rewrite is the proper fix.
+- The Shay mark + favicon are placeholders generated inline; full-color
+  variants from `muapi-logo-branding` will land in a follow-up.
+- `i18n.js` "Hermes" strings are swept by the post-i18n DOM walk, not by
+  patching the `t()` catalog itself; a future i18n monkey-patch is cleaner.
 
 ## Start / stop
 
