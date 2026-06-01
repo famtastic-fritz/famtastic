@@ -95,3 +95,101 @@ dashboard's process env).
   v1. Workspace degrades gracefully without it; `gateway-status` shows
   `mcp:false`, `conductor:false`, `kanban:false` and those features stay
   disabled.
+
+## Part 3 — Visible rebrand (Shay chrome overlay)
+
+The `chrome/` directory contains the Tier-A visible rebrand overlay for
+Shay Workspace. No edits land in `_refs/hermes-workspace-v2.3/`.
+
+```
+chrome/
+  shay-chrome.css     theme + boot-splash overrides
+  shay-chrome.js      preload script: title pin, icon/manifest rewrite,
+                      splash <img> swap, meta description rewrite
+  shay-favicon.svg    placeholder Shay monogram (regenerate via
+                      muapi-logo-branding — flagged follow-up)
+```
+
+The overlay overrides the visible chrome surfaces enumerated in
+`plans/shay-environments/PART-3-DECISIONS.md §4.3`:
+title (`use-page-title.ts:3`, `__root.tsx:129`), favicon /
+apple-touch-icon / manifest links (`__root.tsx:166-186`), boot-splash
+`<img>` src + alt (`__root.tsx:473-474`), meta description
+(`__root.tsx:134`), and the theme CSS custom properties declared at
+`styles.css:712` and `:1086`.
+
+### Activation status
+
+**Dev mode (`run-shay-workspace.sh`):** the overlay **is active** via the
+local Node proxy `dev-with-overlay.mjs`. The script spawns upstream Vite
+on :3000 as a subprocess and serves the chrome-injected app on
+**http://127.0.0.1:3002**. The proxy intercepts HTML responses and injects
+the chrome `<link>`/`<script>` tags, and serves `/shay-chrome.css` +
+`/shay-chrome.js` from this directory's `chrome/`. Raw upstream is still
+reachable on :3000 if needed. See
+`plans/shay-environments/PART-3-CHROME-WIRING-REPORT.md` for verification.
+
+The Electron preload path described below is still the right target for
+the packaged distribution — the dev-mode proxy is staging only.
+
+**Packaged Electron distribution (deferred follow-up):** a thin Shay
+Workspace.app wrapper that loads the workspace `dist/` (or
+http://127.0.0.1:3000 in dev) with:
+
+```js
+new BrowserWindow({
+  webPreferences: {
+    preload: path.join(process.env.SHAY_CHROME_DIR, 'shay-chrome.js'),
+    contextIsolation: false,  // overlay must touch DOM directly
+  },
+})
+```
+
+…activates the overlay end-to-end. That wrapper also handles the
+electron-builder Tier-B work (`appId=com.famtastic.shayworkspace`,
+`productName=Shay Workspace`, `copyright`, DMG title, GitHub publish
+target, `package.json name/description`) which is **out of scope for
+Part 3** per `PART-3-DECISIONS.md §5`.
+
+### Inject pattern for the future wrapper
+
+The wrapper registers a `file://` protocol handler (or a tiny local
+static server) that maps `/shay-chrome/*` requests to
+`$SHAY_CHROME_DIR/*`, then sets `window.__SHAY_CHROME_ASSET_BASE__ =
+'/shay-chrome'` before the preload runs so `shay-chrome.js` can resolve
+its assets without hardcoding absolute paths. The preload then:
+
+1. Monkey-patches `document.title` setter + installs a `<title>`
+   MutationObserver — defeats `BASE_TITLE` writes from
+   `use-page-title.ts` and any TanStack head-manager re-renders.
+2. Rewrites `<link rel=icon|apple-touch-icon|manifest>` hrefs to
+   `/shay-chrome/*` assets. The manifest is replaced with a
+   `data:application/manifest+json` URL so `public/manifest.json` stays
+   untouched.
+3. Observes `document.body` for the boot-splash `<img>` nodes and
+   swaps their `src` + `alt` to Shay equivalents.
+4. Rewrites `meta[name=description]`, `meta[property="og:title|og:description"]`,
+   and `meta[name="apple-mobile-web-app-title"]`.
+5. Injects `<link rel=stylesheet href="/shay-chrome/shay-chrome.css">`
+   which overrides the Hermes theme tokens at `:root[data-theme=…]`.
+
+### Assets — placeholder status
+
+`chrome/shay-favicon.svg` is a placeholder generated inline (Shay Blue
+field, Shay Cream "S", Shay Gold 3-point burst at upper-right) because
+the `muapi-logo-branding` skill is not reachable from inside the
+workflow agent that ran Part 3 Apply. The full asset set —
+`shay-avatar.webp`, `shay-banner.png`, `shay-banner-light.png`,
+`shay-icon-192.png`, `shay-icon-512.png`, `shay-apple-touch.png`,
+`shay-favicon.ico`, plus refined SVG variants — must be regenerated via
+`muapi-logo-branding` using the verbatim brief in
+`plans/shay-environments/PART-3-DECISIONS.md §7`. Until then,
+`shay-chrome.js` will 404 on every asset path except `shay-favicon.svg`
+and `shay-chrome.css`. That is acceptable for staging; the wrapper
+follow-up will block on the asset regeneration.
+
+### Env reference
+
+`SHAY_CHROME_DIR` (added in `.env` and `.env.example`) points the
+future Electron wrapper at this overlay directory. It is unused by
+`npm run dev`.

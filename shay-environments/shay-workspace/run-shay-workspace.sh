@@ -18,8 +18,18 @@ set -a
 . "$HERE/.env"
 set +a
 
-cd "$UPSTREAM"
-
-# Headless Vite/TanStack dev server (the Node + /api surface only).
-# For the full Electron app, swap to:  npm run electron:dev
-exec npm run dev
+# Boot via the local overlay proxy (dev-with-overlay.mjs) so Shay chrome
+# (shay-chrome.css + shay-chrome.js) is injected into upstream's index.html
+# at serve time without modifying _refs/. The proxy starts upstream Vite
+# internally on :3000 and re-serves the chrome-injected app on :3002.
+#
+# Default URLs:
+#   http://127.0.0.1:3002 — Shay Workspace (chrome injected)
+#   http://127.0.0.1:3000 — raw upstream (no chrome)
+#
+# To bypass the overlay, comment the exec below and uncomment the upstream
+# block:
+#   cd "$UPSTREAM"
+#   exec npm run dev
+cd "$HERE"
+exec node dev-with-overlay.mjs
