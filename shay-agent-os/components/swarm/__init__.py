@@ -29,6 +29,7 @@ from .pipeline import (
     ground_claim, plan_completeness_gate, capture_planning_lesson, prior_planning_lessons,
     planning_loop, refine_to_target, synthesize_sections,
     multi_file_code_job, build_app, runtime_render_gate, surgical_patch,
+    enforce_reviewer_not_author, SameBrainReviewError,
 )
 from .goal_loop import GoalLoop
 from .trust_mode import TrustMode, TrustLevel
@@ -49,6 +50,7 @@ __all__ = [
     "list_skills", "get_skill", "use_skill",
     "ground_claim", "plan_completeness_gate", "capture_planning_lesson", "prior_planning_lessons",
     "planning_loop", "refine_to_target", "synthesize_sections", "multi_file_code_job", "build_app", "runtime_render_gate", "surgical_patch",
+    "enforce_reviewer_not_author", "SameBrainReviewError",
     "GoalLoop",
     "TrustMode", "TrustLevel",
     "ErrorRecovery", "RecoveryStrategy",

@@ -40,6 +40,57 @@ POLICIES_DIR = Path(__file__).parent.parent.parent / "policies"
 
 
 # ---------------------------------------------------------------------------
+# Reviewer-brain independence (B4)
+#
+# A review is only meaningful if the reviewer is a DIFFERENT brain than the one
+# that authored the artifact — a brain reviewing its own output rubber-stamps.
+# Every DispatchResult already carries ``brain_used``; we enforce here that a
+# review step never accepts a verdict produced by the author's brain. This is a
+# HARD block: a same-brain review raises rather than silently passing.
+# ---------------------------------------------------------------------------
+
+class SameBrainReviewError(RuntimeError):
+    """Raised when a reviewer brain is the same as the author brain."""
+
+
+def enforce_reviewer_not_author(author_brain: Optional[str],
+                                reviewer_brain: Optional[str],
+                                *, context: str = "review") -> None:
+    """Hard-block a review performed by the author's own brain.
+
+    Uses the already-stamped ``brain_used`` values. If either brain is unknown
+    (None/empty) we cannot prove independence, so we allow it (the caller had no
+    author stamp to compare against). When both are known and equal, raise."""
+    if not author_brain or not reviewer_brain:
+        return
+    if author_brain == reviewer_brain:
+        raise SameBrainReviewError(
+            f"{context}: reviewer brain '{reviewer_brain}' is the same as the "
+            f"author brain '{author_brain}' — reviewer must differ from author."
+        )
+
+
+def _independent_review_results(author_brain: Optional[str],
+                                results: List[DispatchResult],
+                                *, context: str = "review") -> List[DispatchResult]:
+    """Filter reviewer results down to those NOT produced by the author brain.
+
+    Each dropped result is logged. If author_brain is unknown, all results pass
+    through (nothing to compare against)."""
+    if not author_brain:
+        return results
+    kept: List[DispatchResult] = []
+    for r in results:
+        if r.brain_used and r.brain_used == author_brain:
+            logger.warning(
+                "[%s] dropping same-brain review verdict from '%s' "
+                "(author brain) — reviewer must differ", context, author_brain)
+            continue
+        kept.append(r)
+    return kept
+
+
+# ---------------------------------------------------------------------------
 # Core primitives
 # ---------------------------------------------------------------------------
 
@@ -125,14 +176,23 @@ def adversarial_verify(
     n: int = 3,
     lenses: Optional[List[str]] = None,
     threshold: float = 0.5,
+    author_brain: Optional[str] = None,
+    reviewer_brain: str = "auto",
 ) -> bool:
     """
     Spawn N skeptic agents each trying to REFUTE the claim from a different lens.
     Returns True (claim survives) if fewer than threshold*n agents refute it.
 
-    Implements the reviewer!=author rule: uses the dispatcher's verify brain,
-    not the synth brain.
+    Enforces the reviewer!=author rule (B4): when ``author_brain`` is provided
+    (the brain that produced the claim), any reviewer verdict stamped with that
+    same brain is DROPPED before scoring — a brain may not review its own work.
+    If that leaves zero independent reviewers, the review HARD-FAILS (raises
+    SameBrainReviewError) rather than silently passing an un-reviewed claim.
+    Pass ``reviewer_brain`` to steer reviewers onto a different brain than the
+    author (defaults to "auto").
     """
+    enforce_reviewer_not_author(author_brain, reviewer_brain,
+                                context="adversarial_verify")
     if not lenses:
         lenses = ["factual-accuracy", "internal-consistency", "completeness"]
     lenses = (lenses * n)[:n]
@@ -146,14 +206,22 @@ Try to REFUTE this claim. Default to refuted=true if uncertain.
 CLAIM: {claim}
 
 Return ONLY JSON: {{"refuted": true|false, "reason": "one sentence"}}""",
-            brain="auto",
+            brain=reviewer_brain,
             tier="medium",
         )
         for i in range(n)
     ]
     results = dispatcher.fan_out(tasks)
+    independent = _independent_review_results(author_brain, results,
+                                              context="adversarial_verify")
+    if author_brain and not independent:
+        raise SameBrainReviewError(
+            f"adversarial_verify: every reviewer ran on the author brain "
+            f"'{author_brain}' — no independent review possible."
+        )
+    effective_n = len(independent)
     refutations = 0
-    for r in results:
+    for r in independent:
         if r.status == "completed":
             try:
                 verdict = _parse_json(r.output or "")
@@ -161,8 +229,10 @@ Return ONLY JSON: {{"refuted": true|false, "reason": "one sentence"}}""",
                     refutations += 1
             except Exception:
                 refutations += 1  # parse failure = treat as refuted
-    survived = refutations < (threshold * n)
-    logger.info(f"adversarial_verify: {refutations}/{n} refuted → {'SURVIVED' if survived else 'KILLED'}")
+    survived = refutations < (threshold * effective_n)
+    logger.info(
+        f"adversarial_verify: {refutations}/{effective_n} refuted "
+        f"(of {n} dispatched) → {'SURVIVED' if survived else 'KILLED'}")
     return survived
 
 
