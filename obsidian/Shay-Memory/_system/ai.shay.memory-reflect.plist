@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Standalone launchd entry for the nightly Shay-Memory reflection pass.
+  This is NOT loaded automatically and does NOT touch ~/.shay/config.yaml or the
+  gateway. To activate (attended):
+    cp ai.shay.memory-reflect.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/ai.shay.memory-reflect.plist
+  Runs daily at 03:00.
+-->
+<plist version="1.0"><dict>
+  <key>Label</key><string>ai.shay.memory-reflect</string>
+  <key>ProgramArguments</key><array>
+    <string>/usr/bin/python3</string>
+    <string>/Users/famtasticfritz/famtastic/obsidian/Shay-Memory/_system/reflect.py</string>
+  </array>
+  <key>StartCalendarInterval</key><dict>
+    <key>Hour</key><integer>3</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/tmp/shay-memory-reflect.log</string>
+  <key>StandardErrorPath</key><string>/tmp/shay-memory-reflect.log</string>
+</dict></plist>
