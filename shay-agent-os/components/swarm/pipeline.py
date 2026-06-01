@@ -682,6 +682,14 @@ def _is_render_spine(file_path: str) -> bool:
         return False
 
 
+# ---------------------------------------------------------------------------
+# Content-budget seam: new files whose instruction exceeds this limit are
+# generated section-by-section via synthesize_sections() rather than in one
+# capped brain call.  Tune this (or replace with rlm-rs budget) as needed.
+CONTENT_BUDGET_CHARS: int = 16_000
+# ---------------------------------------------------------------------------
+
+
 def multi_file_code_job(
     manifest: List[Dict[str, str]],
     test_cmd: str,
@@ -733,6 +741,46 @@ def multi_file_code_job(
                 err_ctx = ""
                 if last_error:
                     err_ctx = f"\n\nThe PROJECT FAILED TO COMPILE last iteration. Fix YOUR file if it contributes to:\n{last_error[:1500]}"
+
+                # ── synthesize_sections branch ──────────────────────────────
+                # For NEW files (no existing content) whose instruction alone
+                # exceeds the single-call content budget, generate section-by-
+                # section and assemble.  This avoids mid-file truncation on large
+                # files without changing the single-call path for small files.
+                if not existing and len(instruction) > CONTENT_BUDGET_CHARS:
+                    logger.info(
+                        f"[multi_file_code_job] {Path(path).name}: instruction "
+                        f"{len(instruction):,} chars > budget {CONTENT_BUDGET_CHARS:,} "
+                        "— routing to synthesize_sections()"
+                    )
+                    goal_for_file = (
+                        f"Write the complete source for {Path(path).name}.\n\n"
+                        f"INSTRUCTION:\n{instruction}\n\n"
+                        f"SHARED CONTEXT:\n{context[:2000]}"
+                    )
+                    # Split instruction into ~2-5 logical sections by blank-line
+                    # paragraphs; cap at 6 sections so each call stays focused.
+                    raw_paras = [p.strip() for p in instruction.split("\n\n") if p.strip()]
+                    # Merge tiny paras; keep at most 6 sections
+                    sections: List[str] = []
+                    for para in raw_paras:
+                        title = para.splitlines()[0][:80].strip("# ").strip() or f"Part {len(sections)+1}"
+                        if len(sections) >= 6:
+                            sections[-1] = sections[-1] + " / " + title
+                        else:
+                            sections.append(title)
+                    if not sections:
+                        sections = ["Complete implementation"]
+                    assembled = synthesize_sections(
+                        goal=goal_for_file,
+                        sections=sections,
+                        dispatcher=dispatcher,
+                        context=context[:3000],
+                        brain=brain,
+                    )
+                    return {"path": path, "content": _strip_fences(assembled)}
+                # ── end synthesize_sections branch ───────────────────────────
+
                 bc = BrainChain(preferred=brain)
                 out = bc.call_prompt(
                     f"""You are writing ONE file as part of a coordinated multi-file change.
