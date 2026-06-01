@@ -12,12 +12,12 @@ Per the Phase 2 honest framing (v3.1 plan §7.5):
   (b) ~two weeks of dispatcher-substrate work if and only if the
   LocalSwarmDispatcher degradation triggers fire."
 
-Trigger conditions (from plan §7.7):
-  - fan_out wall-clock > 2× LocalSwarmDispatcher on identical task set
-  - checkpoint round-trip fails a crash-recovery test
-  - Ollama queue saturation > 80% on a 20-task fan-out
-
-Until those trigger, use LocalSwarmDispatcher.
+B2: fan_out is now a REAL parallel fan-out — N tasks run concurrently under
+an asyncio semaphore bounded at max_concurrency, instead of serially. Each
+brain call is blocking urllib, so it runs in a worker thread via
+asyncio.to_thread; the semaphore caps how many are in flight at once.
+Redis Streams durability is still deferred (export/import remain in-memory
+JSONL), but the throughput trigger from plan §7.7 is now addressed.
 """
 from __future__ import annotations
 
@@ -32,19 +32,12 @@ from .dispatcher import Dispatcher, DispatchTask, DispatchResult
 
 logger = logging.getLogger("swarm.asyncio_dispatcher")
 
-STUB_WARNING = (
-    "AsyncioDispatcher is a Phase-2 stub. It satisfies the Dispatcher protocol "
-    "but delegates to BrainChain sequentially. Redis Streams persistence and "
-    "true async fan-out are deferred — promote this stub if LocalSwarmDispatcher "
-    "triggers the degradation conditions in plan §7.7."
-)
-
-
 class AsyncioDispatcher(Dispatcher):
     """
-    Stub implementation. Satisfies the Dispatcher protocol so patterns and
-    pipelines can be authored against it today. Promotes to full async fan-out
-    when the trigger fires.
+    Real parallel dispatcher. Satisfies the Dispatcher protocol and runs N
+    tasks concurrently under an asyncio semaphore bounded at max_concurrency.
+    Redis Streams durability is still deferred (checkpoints are in-memory
+    JSONL), but fan-out is no longer serial.
     """
 
     def __init__(
@@ -53,39 +46,69 @@ class AsyncioDispatcher(Dispatcher):
         preferred_brain: str = "claude",
         policy: Optional[Dict[str, Any]] = None,
     ):
-        logger.warning(STUB_WARNING)
-        self.max_concurrency = max_concurrency
-        self._brain = BrainChain(preferred=preferred_brain)
+        self.max_concurrency = max(1, int(max_concurrency))
+        self._preferred_brain = preferred_brain
         self.policy = policy or {}
         self._completed: List[DispatchResult] = []
 
+    def _run_one(self, task: DispatchTask) -> DispatchResult:
+        """Execute a single task on its own BrainChain (thread-safe — each call
+        gets a fresh chain so concurrent calls don't clobber last_brain)."""
+        t0 = time.time()
+        try:
+            brain = BrainChain(preferred=self._preferred_brain)
+            output = brain.call_prompt(task.prompt, timeout=task.timeout)
+            return DispatchResult(
+                task_id=task.id,
+                status="completed",
+                output=output,
+                brain_used=brain.last_brain,
+                elapsed=time.time() - t0,
+            )
+        except Exception as exc:
+            return DispatchResult(
+                task_id=task.id,
+                status="failed",
+                error=str(exc),
+                elapsed=time.time() - t0,
+            )
+
+    async def _fan_out_async(self, tasks: List[DispatchTask]) -> List[DispatchResult]:
+        sem = asyncio.Semaphore(self.max_concurrency)
+
+        async def _bounded(task: DispatchTask) -> DispatchResult:
+            async with sem:
+                # Blocking urllib brain call runs in a worker thread so the
+                # event loop can keep up-to max_concurrency calls in flight.
+                return await asyncio.to_thread(self._run_one, task)
+
+        # gather preserves input order in its result list.
+        return await asyncio.gather(*[_bounded(t) for t in tasks])
+
     def fan_out(self, tasks: List[DispatchTask]) -> List[DispatchResult]:
         """
-        Stub: runs tasks sequentially through BrainChain.
-        Production path: asyncio.gather() with semaphore bounded at max_concurrency.
+        Dispatch all tasks CONCURRENTLY (semaphore-bounded at max_concurrency)
+        and return results in the same order as the input tasks.
         """
-        results = []
-        for task in tasks:
-            t0 = time.time()
-            try:
-                output = self._brain.call_prompt(task.prompt, timeout=task.timeout)
-                r = DispatchResult(
-                    task_id=task.id,
-                    status="completed",
-                    output=output,
-                    brain_used=self._brain.last_brain,
-                    elapsed=time.time() - t0,
-                )
-            except Exception as exc:
-                r = DispatchResult(
-                    task_id=task.id,
-                    status="failed",
-                    error=str(exc),
-                    elapsed=time.time() - t0,
-                )
-            results.append(r)
-            self._completed.append(r)
-        return results
+        if not tasks:
+            return []
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            # No loop running — normal synchronous caller path.
+            results = asyncio.run(self._fan_out_async(tasks))
+        else:
+            # Called from inside an existing event loop — run the parallel
+            # fan-out on a dedicated loop in a worker thread to avoid nesting.
+            import concurrent.futures
+
+            def _runner() -> List[DispatchResult]:
+                return asyncio.run(self._fan_out_async(tasks))
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                results = ex.submit(_runner).result()
+        self._completed.extend(results)
+        return list(results)
 
     def export_checkpoint(self) -> str:
         return "\n".join(json.dumps({
@@ -104,8 +127,9 @@ class AsyncioDispatcher(Dispatcher):
 
     def health(self) -> Dict[str, Any]:
         return {
-            "dispatcher": "AsyncioDispatcher (stub)",
+            "dispatcher": "AsyncioDispatcher",
             "max_concurrency": self.max_concurrency,
-            "note": "Sequential stub — promote when degradation triggers fire",
+            "note": "Parallel fan-out (asyncio semaphore + to_thread); "
+                    "Redis Streams durability deferred",
             "completed_tasks": len(self._completed),
         }
