@@ -32,6 +32,17 @@ from typing import List, Dict, Optional
 logger = logging.getLogger("swarm.brain_client")
 
 ENV_FILE = Path.home() / ".shay" / ".env"
+
+# Model + provider each brain route actually bills against. Used by the
+# cost-telemetry hook below so per-call $-cost can be estimated through
+# Shay-Shay's existing pricing tables (agent.cost_telemetry / usage_pricing).
+# Local routes (ollama) carry no $ and are recorded at zero.
+_BRAIN_BILLING: Dict[str, Dict[str, Optional[str]]] = {
+    "claude": {"model": "claude-sonnet-4-6", "provider": "anthropic"},
+    "openrouter": {"model": "anthropic/claude-sonnet-4.6", "provider": "openrouter"},
+    "gemini": {"model": "gemini-2.5-flash", "provider": "google"},
+    "ollama": {"model": "hermes3:latest", "provider": "local"},
+}
 SHAY_SYSTEM = (
     "You are a task-execution brain inside Shay's multi-agent swarm. "
     "Be precise, concise, and return only what is asked. "
@@ -179,6 +190,155 @@ _CHAIN = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Cost telemetry hook (B1)
+#
+# Reuses Shay-Shay's existing cost accounting rather than duplicating it:
+#   agent.cost_telemetry.request_cost() — turns a token estimate into $-cost
+#   + an energy weight via the official-docs pricing tables.
+#
+# Behavior is OBSERVE-ONLY: every routed call records an estimated $-cost into
+# a process-rolling total. A *low-funds NOTIFY* (not a spend cap — nothing is
+# ever blocked) fires once when the rolling total crosses a soft threshold.
+# The threshold defaults to $0, which disables the notify entirely, so adding
+# this hook changes no behavior until the operator opts in via env
+# SWARM_COST_NOTIFY_USD (or by calling configure_cost_notify()).
+# ---------------------------------------------------------------------------
+
+# Rough char→token ratio for estimating usage when the provider doesn't echo
+# token counts back (our stdlib callers read only the text body). 4 chars/token
+# is the standard coarse approximation.
+_CHARS_PER_TOKEN = 4
+
+
+def _import_cost_telemetry():
+    """Best-effort import of Shay-Shay's cost telemetry. Returns the module or
+    None. Guarded because the swarm can run in a venv where shay-shay isn't on
+    the path — in that case cost recording silently no-ops."""
+    try:
+        from agent import cost_telemetry  # type: ignore
+        from agent.usage_pricing import CanonicalUsage  # type: ignore
+        return cost_telemetry, CanonicalUsage
+    except Exception:
+        # Try adding the sibling shay-shay checkout to sys.path once.
+        try:
+            import sys
+            shay = Path.home() / "famtastic" / "shay-shay"
+            if shay.exists() and str(shay) not in sys.path:
+                sys.path.insert(0, str(shay))
+            from agent import cost_telemetry  # type: ignore
+            from agent.usage_pricing import CanonicalUsage  # type: ignore
+            return cost_telemetry, CanonicalUsage
+        except Exception:
+            return None
+
+
+class CostMeter:
+    """Process-rolling estimated-spend meter with an optional low-funds NOTIFY.
+
+    This is intentionally a soft signal: it never blocks a call. When the
+    rolling estimated spend crosses ``notify_usd`` (default 0 = disabled) it
+    fires the notify callback exactly once. The default callback routes to the
+    swarm logger; a real low-funds surface can be injected.
+    """
+
+    def __init__(
+        self,
+        notify_usd: float = 0.0,
+        notify_cb: Optional["callable"] = None,
+    ):
+        self.notify_usd = float(notify_usd or 0.0)
+        self.total_usd = 0.0
+        self.calls = 0
+        self.by_brain: Dict[str, float] = {}
+        self._notified = False
+        self._notify_cb = notify_cb or self._default_notify
+        self._tel = None  # lazy (module, CanonicalUsage) tuple
+
+    @staticmethod
+    def _default_notify(total_usd: float, threshold: float) -> None:
+        logger.warning(
+            "[cost] LOW-FUNDS NOTIFY — rolling swarm spend ~$%.4f crossed "
+            "soft threshold $%.4f (notify only, no cap applied)",
+            total_usd, threshold,
+        )
+
+    def configure(self, notify_usd: Optional[float] = None,
+                  notify_cb: Optional["callable"] = None) -> None:
+        if notify_usd is not None:
+            self.notify_usd = float(notify_usd or 0.0)
+            self._notified = False  # re-arm on reconfigure
+        if notify_cb is not None:
+            self._notify_cb = notify_cb
+
+    def record(self, brain: str, prompt: str, output: str) -> float:
+        """Estimate + record the $-cost of one routed call. Returns the
+        estimated $ for that call (0.0 when un-priceable / local)."""
+        if self._tel is None:
+            self._tel = _import_cost_telemetry()
+        amount = 0.0
+        billing = _BRAIN_BILLING.get(brain, {})
+        if self._tel and billing.get("provider") != "local":
+            cost_telemetry, CanonicalUsage = self._tel
+            try:
+                in_tok = max(0, len(prompt) // _CHARS_PER_TOKEN)
+                out_tok = max(0, len(output) // _CHARS_PER_TOKEN)
+                usage = CanonicalUsage(input_tokens=in_tok, output_tokens=out_tok)
+                rc = cost_telemetry.request_cost(
+                    billing.get("model") or brain,
+                    usage,
+                    provider=billing.get("provider"),
+                )
+                if rc.amount_usd:
+                    amount = float(rc.amount_usd)
+            except Exception as exc:
+                logger.debug("[cost] estimate failed for %s: %s", brain, exc)
+        self.total_usd += amount
+        self.calls += 1
+        self.by_brain[brain] = self.by_brain.get(brain, 0.0) + amount
+        self._maybe_notify()
+        return amount
+
+    def _maybe_notify(self) -> None:
+        if (
+            not self._notified
+            and self.notify_usd > 0
+            and self.total_usd >= self.notify_usd
+        ):
+            self._notified = True
+            try:
+                self._notify_cb(self.total_usd, self.notify_usd)
+            except Exception as exc:
+                logger.debug("[cost] notify callback raised: %s", exc)
+
+    def snapshot(self) -> Dict[str, object]:
+        return {
+            "total_usd": round(self.total_usd, 6),
+            "calls": self.calls,
+            "by_brain": {k: round(v, 6) for k, v in self.by_brain.items()},
+            "notify_usd": self.notify_usd,
+            "notified": self._notified,
+        }
+
+
+def _initial_notify_threshold() -> float:
+    try:
+        return float(_env().get("SWARM_COST_NOTIFY_USD", "0") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+# Shared process-wide meter. Every BrainChain records into this so the rolling
+# total spans the whole swarm run, not a single chain instance.
+COST_METER = CostMeter(notify_usd=_initial_notify_threshold())
+
+
+def configure_cost_notify(notify_usd: float,
+                          notify_cb: Optional["callable"] = None) -> None:
+    """Opt in to the low-funds NOTIFY at a soft $ threshold (0 disables)."""
+    COST_METER.configure(notify_usd=notify_usd, notify_cb=notify_cb)
+
+
 class BrainChain:
     """
     Routes a call through Claude → OpenRouter → Gemini → Ollama.
@@ -188,6 +348,7 @@ class BrainChain:
     def __init__(self, preferred: Optional[str] = None):
         self.preferred = preferred
         self.last_brain: Optional[str] = None
+        self.last_cost_usd: float = 0.0
 
     def call(
         self,
@@ -203,6 +364,13 @@ class BrainChain:
             try:
                 result = fn(messages, system, timeout)
                 self.last_brain = name
+                # Record estimated $-cost of this routed call (observe-only;
+                # fires a low-funds NOTIFY near the soft threshold, never caps).
+                try:
+                    prompt_text = " ".join(m.get("content", "") for m in messages)
+                    self.last_cost_usd = COST_METER.record(name, prompt_text, result)
+                except Exception as exc:
+                    logger.debug("[cost] record failed: %s", exc)
                 if errors:
                     logger.info(f"[brain] answered via {name} (tried: {', '.join(errors)})")
                 else:

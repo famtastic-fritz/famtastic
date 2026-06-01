@@ -13,7 +13,10 @@ __version__ = "0.1.0"
 
 from .message_bus import MessageBus, Message
 from .worker_pool import WorkerPool, TaskPriority
-from .brain_client import BrainChain, BrainAvailabilityCheck
+from .brain_client import (
+    BrainChain, BrainAvailabilityCheck,
+    CostMeter, COST_METER, configure_cost_notify,
+)
 from .dispatcher import Dispatcher, DispatchTask, DispatchResult
 from .local_swarm_dispatcher import LocalSwarmDispatcher
 from .asyncio_dispatcher import AsyncioDispatcher
@@ -36,6 +39,7 @@ __all__ = [
     "MessageBus", "Message",
     "WorkerPool", "TaskPriority",
     "BrainChain", "BrainAvailabilityCheck",
+    "CostMeter", "COST_METER", "configure_cost_notify",
     "Dispatcher", "DispatchTask", "DispatchResult",
     "LocalSwarmDispatcher", "AsyncioDispatcher",
     "agent", "parallel", "pipeline",
