@@ -109,4 +109,4 @@ is reachable, just on 3000 in dev.
 ## Commit
 
 Subject: `feat(shay-environments): boot Shay Workspace`
-SHA: _filled in after commit_
+SHA: `1e1f075`
