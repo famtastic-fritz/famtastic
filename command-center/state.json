@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T13:13:39.453Z",
+  "generated_at": "2026-06-02T13:15:53.002Z",
   "scoring_model": {
     "profitByTag": {
       "site-execution": 90,
@@ -55,11 +55,11 @@
     "needsYou": 8,
     "blocked": 0,
     "inProgress": 4,
-    "openTasks": 16,
+    "openTasks": 15,
     "agents": 3,
     "sites": 1,
-    "capabilities": 22,
-    "proofs": 33
+    "capabilities": 23,
+    "proofs": 34
   },
   "stageCounts": {
     "Checkpoint (stalled)": 6,
@@ -244,18 +244,18 @@
       "stageEmoji": "🟢",
       "needsYou": false,
       "needsYouReason": "",
-      "openTasks": 3,
+      "openTasks": 2,
       "totalTasks": 4,
       "momentumDays": 0,
       "autonomy": 97,
       "profit": 40,
-      "nextAction": "Design the single channel-agnostic reach fabric, generalizing Shay's working Telegram delivery (push/SMS/voice/email open; glasses/watch/Siri are mirrored phone notifications only).",
+      "nextAction": "Turn on a real channel (set RESEND_API_KEY/Telegram envs) and define the virtual-body (voice-first) approach.",
       "blocker": "No hard blocker. Device platform lock-ins (Apple/Meta/Amazon) will constrain some reach channels — to be characterized by the research.",
       "runner": "Claude",
       "closeoutVerdict": null,
       "remainingWork": [],
       "hasActiveRun": false,
-      "proofCount": 1
+      "proofCount": 2
     },
     {
       "id": "fritz-companion-app",
@@ -582,6 +582,11 @@
       "id": "work.outbox",
       "status": "v1-draft-only",
       "invocation": "platform work outbox [list|--check|show <id>|approve <id>|send <id>]"
+    },
+    {
+      "id": "reach.send",
+      "status": "v1-console-live",
+      "invocation": "platform reach send \"<message>\" [--title=] [--urgency=] [--channels=a,b]"
     }
   ],
   "runs": [

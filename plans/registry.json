@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-06-02T13:13:14.410Z",
+  "updated_at": "2026-06-02T13:15:52.971Z",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -617,8 +617,8 @@
       "group": "shay_assistant",
       "fritz_priority": "high",
       "plan_path": "plans/shay-omnipresent-assistant/plan.json",
-      "current_workstream": "Landscape research delivered (reach-fabric thesis, voice-first persona, defer avatar). Next is the unified reach-fabric service design.",
-      "next_action": "Design the single channel-agnostic reach fabric, generalizing Shay's working Telegram delivery (push/SMS/voice/email open; glasses/watch/Siri are mirrored phone notifications only).",
+      "current_workstream": "Reach Fabric BUILT (lib/reach-fabric/): one send() with channel fallback, console always live, email/telegram on keys, sms/push manual_required. Next: virtual-body approach + first non-Telegram channel turned on with real creds.",
+      "next_action": "Turn on a real channel (set RESEND_API_KEY/Telegram envs) and define the virtual-body (voice-first) approach.",
       "open_blockers": "No hard blocker. Device platform lock-ins (Apple/Meta/Amazon) will constrain some reach channels — to be characterized by the research.",
       "originator": "Fritz",
       "origin_surface": "Claude Code (web)",
@@ -652,7 +652,7 @@
         "Shay (Hermes-based, ~/.shay/) is the runtime to extend, not replace."
       ],
       "next_action_items": [
-        "task-2026-06-02-007"
+        "task-2026-06-02-008"
       ]
     },
     {
