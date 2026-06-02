@@ -27,8 +27,10 @@ platform/capabilities/billing/mark-paid.sh FAM-202606-tonys-barber-shop-care-pla
 ## Inputs and outputs
 
 - **Input contract:** `invoice-spec.schema.json` (client, line items, rates,
-  one_time vs recurring, currency, discount, tax, due terms). See
-  `examples/sample-engagement.json` for a realistic $397/mo deal.
+  one_time vs recurring, currency, discount, tax, due terms, optional
+  structured `payment` block). See `examples/sample-engagement.json` for a
+  realistic $397/mo deal, and `examples/sample-engagement-cashapp.json` for a
+  $100 setup-deposit deal with a Cash App pay block.
 - **Outputs (under `platform/billing/`, override with env vars below):**
   - `invoices/<invoice-number>.json` — structured invoice record
   - `invoices/<invoice-number>.md` — human-readable invoice (markdown)
@@ -54,6 +56,66 @@ Environment overrides (handy for tests / dry runs):
   and keeps the invoice JSON's state in sync. Refuses double-paid.
 - Every run appends an audit line to `platform/invocations/<date>.jsonl`.
 - No script calls any external API.
+- **Cash App / generic pay link rendering** via the optional `payment` block —
+  see below.
+
+## Payment block (`payment`)
+
+The spec accepts an optional structured `payment` object so an invoice can show
+a real "Pay this invoice" call to action. It is fully backward compatible:
+invoices with no `payment` block render exactly as before (the legacy
+`payment_instructions` free text). The math, numbering, and dates are unchanged
+by this block — the total is computed first and only then formatted into the
+pay line/link.
+
+```json
+"payment": {
+  "method": "cashapp",          // "cashapp" | "link" | "manual"
+  "cashtag": "$FritzMedine",     // required for cashapp; keep the leading '$'
+  "link": "https://...",         // required for method=link
+  "instructions": "free text"    // optional, rendered under the pay line
+}
+```
+
+Rendering by method (in both the `.md` and `.json`):
+
+- **`cashapp`** (requires `cashtag`):
+  - A pay line: `Pay USD <total> via Cash App to <cashtag>`
+  - A tappable Cash App link in the **amount-prefilled** format
+    `https://cash.app/<cashtag>/<amount>`, where the cashtag **keeps its
+    leading `$`** and `<amount>` is the invoice total with two decimals —
+    e.g. `https://cash.app/$FritzMedine/100.00`.
+  - A plain profile-link fallback `https://cash.app/<cashtag>` (e.g.
+    `https://cash.app/$FritzMedine`) in case the prefilled-amount link does not
+    populate on the recipient's device.
+- **`link`**: renders the provided generic URL as the "Pay now" button/line
+  (works for PayPal.me, Stripe Payment Links, hosted invoice URLs, etc.).
+- **`manual`** (or block absent): no link; keeps the existing
+  "remit via agreed method" free text from `payment_instructions`.
+
+### Cash App link format (verified)
+
+The amount-prefilled link is `https://cash.app/$cashtag/<amount>` — the `$` is
+part of the path and the amount is a plain decimal. Confirmed against Cash
+App's cashtag docs (`https://cash.app/$cashtag` is the base profile URL) and
+the documented amount-prefill form `cash.app/$cashtag/<amount>`. Sources:
+Cash App cashtags help (cash.app/help/us/en-us/3123-cashtags) and the Square
+developer forum thread documenting `cash.app/$cashtag/123`. Because device
+behavior for the prefilled amount can vary, the generator always also emits the
+bare profile link as a fallback.
+
+> **Cashtag is a placeholder.** `examples/sample-engagement-cashapp.json` uses
+> `$FritzMedine` as a stand-in. Replace it with Fritz's real, claimed Cash App
+> $cashtag before sending — the link only works against a real cashtag.
+
+## Delivery / sending
+
+This script **never sends anything** and the network in the build environment
+is firewalled. Actually delivering the invoice (and the pay link) to the client
+happens on **Fritz's machine** via the **Reach Fabric / Resend** send path
+(reusing `studio.resend.api_key`). `generate-invoice` only produces the
+`.json` + `.md` artifacts and updates the ledger; emailing/sending them is a
+separate, manual step performed where outbound network and credentials exist.
 
 ## What is `manual_required` / stubbed
 

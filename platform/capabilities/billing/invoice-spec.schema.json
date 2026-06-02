@@ -122,7 +122,34 @@
     },
     "payment_instructions": {
       "type": "string",
-      "description": "How the client pays. Until a payment provider is chosen (PayPal vs Stripe vs GoDaddy), this is free text. Sending and online payment are manual_required."
+      "description": "How the client pays. Free text fallback. Superseded by the structured `payment` block when present, but still rendered alongside it as the terms/notes line."
+    },
+    "payment": {
+      "type": "object",
+      "description": "Structured pay-this-invoice details. When method=cashapp + a cashtag is present, the generator renders a 'Pay this invoice' line and a tappable Cash App link (https://cash.app/<cashtag>/<amount>). When method=link, the provided link is rendered as the pay button. When method=manual or this block is absent, behavior is unchanged (free-text remit instructions).",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["cashapp", "link", "manual"],
+          "default": "manual",
+          "description": "cashapp = render Cash App pay line + link from cashtag. link = render the provided generic payment link. manual = no link, free-text remit instructions only."
+        },
+        "cashtag": {
+          "type": "string",
+          "description": "Cash App $cashtag including the leading '$', e.g. '$FritzMedine'. Used to build https://cash.app/<cashtag>/<amount>. Required when method=cashapp.",
+          "pattern": "^\\$[A-Za-z][A-Za-z0-9_]{0,19}$"
+        },
+        "link": {
+          "type": "string",
+          "description": "Generic payment URL (e.g. a PayPal.me, Stripe Payment Link, or hosted invoice URL). Required when method=link.",
+          "format": "uri"
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Optional free-text payment instructions rendered under the pay line regardless of method."
+        }
+      }
     }
   }
 }
