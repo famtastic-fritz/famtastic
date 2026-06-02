@@ -1,5 +1,13 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Autonomous content engine (2026-06-02)
+
+`scripts/content-engine/` — Fritz's chosen hands-off revenue path (he explicitly does not want to be involved). A quality-gated SEO/affiliate content site generator that runs on a cron. Pieces: `config.json` (niche, long-tail keywords, monetization, quality gate, deploy target), `lib.js` (helpers + graceful BrainInterface loader), `generate-article.js` (one article per keyword, production path = `site-studio/lib/brain-interface.js` `BrainInterface.execute()`, **deterministic template fallback when network/LLM unavailable** — never crashes), `assemble-site.js` (articles/*.md → static `dist/`: per-article HTML + index + sitemap.xml + robots.txt), `run.js` (orchestrator → `results/<date>.json`, idempotent/cron-safe — skips existing articles), `publish.sh` (honest deploy stub: prints the exact `netlify deploy`/GH-Pages command + crontab line; deploy runs on Fritz's Mac with a vaulted token).
+
+Quality gate is REAL (rejected a filler test article with 6 reasons): min 700 words, ≥3 H2, FTC disclosure required, FAQ required, ≤4% filler-phrase ratio, banned-phrase list — built to survive Google's "scaled content abuse" policy. Niche = **backyard chicken keeping** (chosen from `NICHE-AND-MONETIZATION.md`: non-YMYL, durable demand, Amazon + display-ad fit; stay on gear/husbandry NOT vet diagnosis). Generated output (`articles/`, `dist/`, `results/`) is **gitignored** — regenerated on Fritz's Mac with the real LLM; the engine code is the deliverable. Proof: ran offline → 9 articles, all gate-PASS, 10-page site, disclosure + `rel="nofollow sponsored"` links verified.
+
+**Honest gaps (do-not-misstate):** revenue is a months-long compounding ranking game (~$0 early); ad/affiliate networks pay to a BANK account, not Cash App (so the `$FAMtasticFritz` cashtag does NOT apply here); and the Amazon Associates / ad-network accounts + domain are one-time steps that are legally Fritz-only — an agent cannot create a monetization account as him. Tracked on the board as plan `autonomous-content-engine`.
+
 ## Money rails: Cash App billing + credential skill + Resend runbook + security (2026-06-02)
 
 **Owner payment identity (brain fact, 2026-06-02)** — Fritz's Cash App cashtag is **`$FAMtasticFritz`** (Fitzgerald Medine, `https://cash.app/$FAMtasticFritz`). Stored canonically at **`platform/config/owner-profile.json`** (`payment.cashapp.cashtag`) — public receive-info, committed to git (not the vault). `generate-invoice.sh` reads it via the `OWNER_PROFILE` env var and auto-fills it when a `cashapp` invoice omits `cashtag`. This is the single source of truth for "where does FAMtastic get paid."

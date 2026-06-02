@@ -1,0 +1,73 @@
+{
+  "_purpose": "Configuration for the FAMtastic autonomous content/affiliate engine. niche + target_keywords are set from the keyword-research deliverable (NICHE-AND-MONETIZATION.md). Everything here is non-secret config; the Amazon tag is a public associates ID, not an API key.",
+
+  "niche": "backyard chicken keeping",
+  "_niche_note": "Chosen by Shay from NICHE-AND-MONETIZATION.md (primary recommendation): non-YMYL hobby, durable+growing demand, abundant reviewable gear, proven Amazon + display-ad model. Stay on setup/gear/husbandry — NOT veterinary diagnosis (keeps it out of YMYL). Fritz can override the niche here if he disagrees.",
+
+  "target_keywords": [
+    "best automatic chicken coop door for cold climates",
+    "best chicken coop for 4 backyard hens small yard",
+    "best automatic chicken feeder to stop rats",
+    "how to predator-proof a chicken run from raccoons",
+    "quietest chicken breeds for suburban backyards",
+    "how to keep chickens cool in summer heat",
+    "best chicken waterer that won't freeze in winter",
+    "how much space do chickens need in a coop and run",
+    "best bedding for chicken coop pine vs hemp vs sand"
+  ],
+  "_target_keywords_note": "Low-competition long-tail set from NICHE-AND-MONETIZATION.md (primary niche). Long-tail (4+ words, clear buyer intent) is the whole game for a new site — head terms will not rank for months/years.",
+
+  "site_title": "The Backyard Flock",
+  "site_tagline": "Honest, tested gear and setup guides for keeping happy backyard chickens.",
+  "base_url": "https://example.com",
+  "_base_url_note": "PLACEHOLDER. Set to Fritz's real domain once chosen. Used for canonical URLs, sitemap.xml, and robots.txt.",
+
+  "language": "en",
+
+  "monetization": {
+    "amazon_associates_tag": "REPLACE-WITH-YOUR-TAG-20",
+    "_amazon_tag_note": "PLACEHOLDER. Fritz must create an Amazon Associates account and paste his real tracking tag here (looks like 'something-20'). Affiliate link slots in articles get this tag appended. The engine CANNOT create this account for him — it is legally his.",
+    "ad_network": "none",
+    "_ad_network_note": "One of: 'none' | 'adsense' | 'ezoic' | 'mediavine' | 'raptive'. Most ad networks require minimum traffic (Mediavine 50k sessions/mo, Raptive 100k pageviews/mo). AdSense has no minimum but pays little. Start 'none'; add later.",
+    "disclosure_text": "Disclosure: This page contains affiliate links. As an Amazon Associate and affiliate partner, we earn from qualifying purchases at no extra cost to you. We only recommend products we believe are genuinely worth your money."
+  },
+
+  "quality_gate": {
+    "min_words": 700,
+    "min_h2_sections": 3,
+    "require_disclosure": true,
+    "require_faq": true,
+    "max_filler_ratio": 0.04,
+    "_filler_note": "Rejects an article if more than 4% of sentences are obvious filler phrases (e.g. 'in today's fast-paced world', 'when it comes to'). Scaled-content slop is the #1 thing Google's 'scaled content abuse' policy targets.",
+    "banned_phrases": [
+      "in today's fast-paced world",
+      "in the world of",
+      "when it comes to",
+      "look no further",
+      "the perfect choice for you",
+      "in conclusion, it is clear that",
+      "without a doubt, this is",
+      "elevate your"
+    ]
+  },
+
+  "author": {
+    "_note": "Author/byline. Defaults pull from platform/config/owner-profile.json at runtime if left blank.",
+    "name": "",
+    "bio": "Backyard chicken keeper who has built coops, fought raccoons, and tested more feeders and waterers than the flock needed. Every pick here is chosen for real-world value, not commission size."
+  },
+
+  "deploy": {
+    "target": "netlify",
+    "_target_note": "One of: 'netlify' | 'github-pages'. Read by publish.sh to print the exact deploy command. Actual deploy runs on Fritz's Mac with his deploy token from the vault — it does not and cannot run in this firewalled container.",
+    "netlify_site_name": "the-backyard-flock",
+    "github_pages_repo": "famtastic-fritz/the-backyard-flock"
+  },
+
+  "output_dir": "dist",
+  "articles_dir": "articles",
+  "results_dir": "results",
+
+  "brain": "claude",
+  "_brain_note": "Which BrainInterface brain to use for the production article path: 'claude' | 'gemini' | 'codex'. When BrainInterface / network is unavailable (e.g. this firewalled container), the engine automatically falls back to a deterministic local template generator so the pipeline still produces real files."
+}
