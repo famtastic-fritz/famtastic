@@ -1,6 +1,6 @@
 {
   "$schema_version": "1.0",
-  "generated_at": "2026-06-02T13:15:52.962Z",
+  "generated_at": "2026-06-02T15:12:50.750Z",
   "capabilities": [
     {
       "id": "site.add",
@@ -496,6 +496,42 @@
         "SMS (Twilio): provision a number and vault reach/twilio.* + reach/twilio.to to enable",
         "Push (Web Push/VAPID): pair the Shay companion app, generate a VAPID keypair, vault reach/vapid.* + reach/push.subscription, and install the web-push npm package",
         "Email and Telegram require no manual step beyond vaulting their keys; console fallback needs nothing"
+      ]
+    },
+    {
+      "id": "vault.register-credential",
+      "invocation": "platform vault register-credential <service> [--key <vault-key>]",
+      "implementation": "capabilities/vault/register-credential.sh",
+      "backing_service": "macOS Keychain (via vault/vault.sh write) — friendly-name allowlist mapping service -> canonical vault key, with per-capability verification guidance",
+      "status": "v1",
+      "reads_from_vault": [],
+      "writes_to_vault": [
+        "studio.resend.api_key (service: resend)",
+        "reach/resend.api_key (service: reach-resend)",
+        "reach/email.to (service: reach-email-to)",
+        "reach/email.from (service: reach-email-from)",
+        "studio.godaddy.api_key (service: godaddy)",
+        "studio.godaddy.api_secret (service: godaddy-secret)",
+        "netlify.auth_token (service: netlify)",
+        "reach/telegram.bot_token (service: telegram)",
+        "reach/telegram.chat_id (service: telegram-chat)",
+        "reach/twilio.account_sid (service: twilio-sid)",
+        "reach/twilio.auth_token (service: twilio-token)",
+        "reach/twilio.from_number (service: twilio-from)",
+        "reach/twilio.to (service: twilio-to)",
+        "jira.api_token (service: jira)",
+        "github.token (service: github)",
+        "cpanel.api_token (service: cpanel)",
+        "<custom> (via --key override)"
+      ],
+      "spec_fields_read": [],
+      "spec_fields_written": [
+        "platform/invocations/<date>.jsonl (capability=vault.register-credential audit line, value-free)"
+      ],
+      "manual_steps": [
+        "Run on Fritz's Mac: vault is Keychain-backed and provider APIs are firewalled from the cloud sandbox",
+        "Supply the secret via the CRED_VALUE env var or stdin — NEVER as a CLI argument (shell history + process table leak)",
+        "After registering, run the printed verification step and confirm live vs manual_required"
       ]
     }
   ]
