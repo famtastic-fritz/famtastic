@@ -37,7 +37,7 @@
         <li><a href="#faq">FAQ</a></li>
       </ul>
 
-      <a href="#apply" class="btn btn--primary nav-cta">Book Strategy Call</a>
+      <a href="#apply" data-booking class="btn btn--primary nav-cta">Book Strategy Call</a>
 
       <input type="checkbox" id="nav-toggle" aria-hidden="true">
       <label class="nav-toggle-label" for="nav-toggle" aria-label="Toggle menu">
@@ -49,7 +49,7 @@
         <a href="#roi">ROI</a>
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
-        <a href="#apply" class="btn btn--primary btn--block">Book Strategy Call</a>
+        <a href="#apply" data-booking class="btn btn--primary btn--block">Book Strategy Call</a>
       </div>
     </div>
   </nav>
@@ -70,7 +70,7 @@
         <h1>Your business runs itself.<br><span class="text-gradient">You run your business.</span></h1>
         <p class="lede">Autonomous operating infrastructure that captures demand, qualifies buyers, converts pipeline, and delivers fulfillment — with founder control at every gate.</p>
         <div class="hero-actions">
-          <a href="#apply" class="btn btn--primary btn--lg">Book Strategy Call</a>
+          <a href="#apply" data-booking class="btn btn--primary btn--lg">Book Strategy Call</a>
           <a href="#rollout" class="btn btn--ghost btn--lg">View 30-Day Rollout</a>
         </div>
         <div class="hero-trust">
@@ -255,7 +255,7 @@
             <li>KPI board: cash/day &amp; conversion</li>
             <li>Outbound swarm discipline</li>
           </ul>
-          <a href="#apply" class="btn btn--primary btn--block">Book Strategy Call</a>
+          <a href="#apply" data-booking class="btn btn--primary btn--block">Book Strategy Call</a>
         </div>
         <div class="price-card reveal">
           <div class="tier">Scale</div>
@@ -291,6 +291,10 @@
         <div class="apply-form reveal">
           <form id="apply-form" novalidate>
             <div id="apply-form-inner">
+              <div class="hp-field" aria-hidden="true">
+                <label for="f-company-website">Company website</label>
+                <input type="text" id="f-company-website" name="company_website" tabindex="-1" autocomplete="off">
+              </div>
               <div class="form-row">
                 <div class="field">
                   <label for="f-name">Name</label>
@@ -369,7 +373,7 @@
         <h2>Put the execution on autopilot.</h2>
         <p class="lede">Keep the part that needs you — the strategy, the relationships, the mission. Hand the rest to an operating system that never sleeps.</p>
         <div class="hero-actions">
-          <a href="#apply" class="btn btn--primary btn--lg">Book Strategy Call</a>
+          <a href="#apply" data-booking class="btn btn--primary btn--lg">Book Strategy Call</a>
           <a href="#roi" class="btn btn--ghost btn--lg">Run the ROI numbers</a>
         </div>
       </div>
@@ -405,6 +409,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/config.js"></script>
   <script src="assets/js/landing.js"></script>
 </body>
 </html>

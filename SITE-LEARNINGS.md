@@ -6326,8 +6326,29 @@ all `NAV_SKELETON` classes present, logo wiring present, 2 real SVG dividers,
 **0 inline style attributes**, all referenced assets resolve (200), `node --check`
 clean.
 
+**Lead backend (added same session):** `agent-business-os/api/lead/` — an Azure
+Static Web Apps function (anonymous `POST /api/lead`, `function.json` route
+`lead`, `host.json` extension bundle v4, `api/package.json` deps
+`@azure/data-tables`). `index.js` validates `name`/`email`/`bottleneck`,
+computes `fitScore` 0–100 → `hot`/`warm`/`nurture` with 15/60/240-min SLA, drops
+spam via a `company_website` honeypot, then **fail-soft** persists to Azure
+Table (`LEADS_TABLE_CONNECTION_STRING`, `LEADS_TABLE_NAME` default
+`inboundleads`), forwards to a webhook (`LEAD_WEBHOOK_URL`/`LEAD_WEBHOOK_TOKEN`),
+and alerts Telegram (`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`/`TELEGRAM_THREAD_ID`).
+With no env vars it still returns `200`. Verified via a mock-context harness:
+valid-hot→200 fit100, missing-email→400, honeypot→200 (silently dropped),
+GET→405, raw-string body→200. Front-end config in
+`dist/assets/js/config.js` (`window.ABOS_LEAD_ENDPOINT='/api/lead'`,
+`window.ABOS_BOOKING_URL=''`); `landing.js` routes every `[data-booking]`
+"Book Strategy Call" CTA to the booking URL when set. Deploy via
+`.github/workflows/azure-static-web-apps-agent-business-os.yml` (gated on repo
+var `ABOS_DEPLOY_ENABLED=='true'` + secret `AZURE_STATIC_WEB_APPS_API_TOKEN_ABOS`).
+`dist/staticwebapp.config.json` adds security headers + nav fallback.
+
 **Known gaps:** (1) not visually screenshotted — no Chromium/Playwright in this
-container, so layout verified structurally only; (2) lead backend + booking
-(Cal.com/Calendly) links not yet connected — CTAs jump to the on-page form;
-(3) social-proof row uses generic placeholders pending real logos/testimonials;
-(4) not deployed and DNS not pointed.
+container, so layout verified structurally only; (2) not deployed — the Azure
+SWA resource, deploy token secret, and `ABOS_DEPLOY_ENABLED` var don't exist yet,
+and lead persistence/notify env vars are unset (function returns 200 but stores
+nothing until configured); (3) `ABOS_BOOKING_URL` is blank — CTAs scroll to the
+form until a Cal.com/Calendly URL is set; (4) social-proof row uses generic
+placeholders pending real logos/testimonials; (5) DNS not pointed.

@@ -1,0 +1,17 @@
+{
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "routes": [
+    { "route": "/api/lead", "methods": ["POST"] }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/api/*", "/*.{xml,txt,svg,ico}"]
+  },
+  "mimeTypes": {
+    ".svg": "image/svg+xml"
+  }
+}

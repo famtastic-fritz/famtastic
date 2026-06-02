@@ -13,6 +13,19 @@
 
   var fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
+  /* ---------- Booking links ----------
+     When window.ABOS_BOOKING_URL is set, "Book Strategy Call" CTAs open the
+     scheduler in a new tab instead of scrolling to the on-page form. */
+  (function wireBooking() {
+    var url = window.ABOS_BOOKING_URL || '';
+    if (!url) return;
+    document.querySelectorAll('[data-booking]').forEach(function (a) {
+      a.setAttribute('href', url);
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+    });
+  })();
+
   /* ---------- Nav: scrolled state + close mobile menu on click ---------- */
   var nav = document.querySelector('.site-nav');
   var navToggle = document.getElementById('nav-toggle');
@@ -121,6 +134,7 @@
         bottleneck:  val('bottleneck'),
         lift:        val('lift'),
         start7:      val('start7'),
+        company_website: val('company_website'), // honeypot — real users leave this blank
         utm:         attribution(),
         submitted_at: new Date().toISOString()
       };

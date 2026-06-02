@@ -24,12 +24,19 @@ into a single, distinctive FAMtastic landing page. Canonical destination:
 ## Structure
 
 ```
-sites/site-agent-business-os/
+agent-business-os/
 ├── README.md
 ├── spec.json                  # FAMtastic site spec
-└── dist/                      # deploy artifact (publish this directory)
+├── api/                       # Azure Static Web Apps lead backend
+│   ├── host.json
+│   ├── package.json           # @azure/data-tables
+│   └── lead/
+│       ├── function.json      # anonymous POST → /api/lead
+│       └── index.js           # validate, score, persist, webhook + Telegram
+└── dist/                      # deploy artifact (app root)
     ├── index.html             # single-page landing
     ├── netlify.toml
+    ├── staticwebapp.config.json
     ├── robots.txt
     ├── sitemap.xml
     └── assets/
@@ -40,6 +47,7 @@ sites/site-agent-business-os/
         │   ├── base.css       # tokens, reset, nav, footer, dividers, buttons
         │   └── landing.css    # layered hero, sections, calculator, pricing, form
         └── js/
+            ├── config.js      # runtime config: lead endpoint + booking URL
             └── landing.js     # nav state, reveals, ROI calculator, lead form
 ```
 
@@ -50,40 +58,67 @@ wiring, and zero inline styles. No build step — it's static HTML/CSS/JS.
 ## Local preview
 
 ```bash
-cd sites/site-agent-business-os/dist
+cd agent-business-os/dist
 python3 -m http.server 8080
 # open http://localhost:8080
 ```
 
-## Wiring the lead form to a backend
+## Lead backend
 
-The qualification form posts to whatever endpoint you set on
-`window.ABOS_LEAD_ENDPOINT`. Until that's set, leads are stored in
-`localStorage` under the `abos_leads` key so nothing is lost.
+The qualification form POSTs JSON to `window.ABOS_LEAD_ENDPOINT` (set in
+`dist/assets/js/config.js`, default `/api/lead`). If the request fails — or the
+endpoint is blank — the lead is saved to `localStorage` under `abos_leads` so
+nothing is ever lost.
 
-```html
-<!-- add before assets/js/landing.js -->
-<script>window.ABOS_LEAD_ENDPOINT = "/api/lead";</script>
-```
+The backend lives in `api/lead/` as an **Azure Static Web Apps function**
+(anonymous `POST /api/lead`). It validates `name`, `email`, and `bottleneck`;
+scores fit (0–100) into `hot` / `warm` / `nurture` with a 15 / 60 / 240-minute
+response SLA; drops spam via a `company_website` honeypot; then persists and
+notifies. **Every integration is optional and fails soft** — with no env vars
+set it still returns `200` so the form keeps working.
 
-The original concept repo ships Azure Static Web Apps Functions
-(`/api/lead`, `/api/leads`, `/api/kpi`) — point `ABOS_LEAD_ENDPOINT` at
-`/api/lead` to reuse that backend, or any endpoint that accepts a JSON POST
-with `{ name, email, revenue, bottleneck, lift, start7, utm, submitted_at }`.
+Payload:
+`{ name, email, revenue, bottleneck, lift, start7, company_website, utm, submitted_at }`
+
+Configure via app settings (all optional):
+
+| Env var | Effect |
+|---|---|
+| `LEADS_TABLE_CONNECTION_STRING` | Persist to Azure Table Storage |
+| `LEADS_TABLE_NAME` | Table name (default `inboundleads`) |
+| `LEAD_WEBHOOK_URL` / `LEAD_WEBHOOK_TOKEN` | Forward each lead to a webhook |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` / `TELEGRAM_THREAD_ID` | Telegram alerts |
+
+### Booking link
+
+Set `window.ABOS_BOOKING_URL` in `dist/assets/js/config.js` to a Cal.com /
+Calendly URL and every "Book Strategy Call" CTA opens the scheduler in a new
+tab. Leave it blank and the CTAs scroll to the on-page qualification form.
 
 ## Deploy
 
-Static — deploy the `dist/` directory to any host:
+**Azure Static Web Apps (recommended — includes the lead function):**
+Workflow at `.github/workflows/azure-static-web-apps-agent-business-os.yml`
+(app root `agent-business-os/dist`, API `agent-business-os/api`). To enable it:
+1. Create an Azure Static Web Apps resource.
+2. Add repo secret `AZURE_STATIC_WEB_APPS_API_TOKEN_ABOS` (the deployment token).
+3. Add repo variable `ABOS_DEPLOY_ENABLED = true`.
+4. Push to `main` — the workflow uploads `dist/` + `api/`.
 
-- **Netlify:** publish `dist/` (config in `dist/netlify.toml`).
-- **Azure Static Web Apps / GitHub Pages / Vercel:** serve `dist/` as the site root.
+**Static-only hosts** (Netlify / Vercel / GitHub Pages): publish `dist/`. The
+lead form falls back to `localStorage` unless you point `ABOS_LEAD_ENDPOINT` at
+a function you host separately.
 
 Set DNS for `agentbusinessos.com` at the host once deployed.
 
 ## Status / next steps
 
 - [x] Landing page, ROI calculator, qualification funnel, FAQ, pricing
-- [ ] Connect `ABOS_LEAD_ENDPOINT` to a live lead backend
-- [ ] Wire booking link (Cal.com / Calendly) into "Book Strategy Call" CTAs
-- [ ] Add real logos/testimonials to the social-proof row once available
+- [x] Lead backend (`api/lead`) — validation, fit scoring, honeypot, Azure Table + webhook + Telegram, all fail-soft
+- [x] Front-end wired to `/api/lead` with `localStorage` fallback
+- [x] Booking-link hook (`ABOS_BOOKING_URL`) on every "Book Strategy Call" CTA
+- [ ] Set a real `ABOS_BOOKING_URL` (Cal.com / Calendly)
+- [ ] Create the Azure SWA resource + secret/variable, then push to `main`
+- [ ] Configure lead env vars (table / webhook / Telegram)
+- [ ] Add real logos/testimonials to the social-proof row
 - [ ] Point `agentbusinessos.com` DNS at the chosen host

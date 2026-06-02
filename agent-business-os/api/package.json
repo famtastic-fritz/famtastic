@@ -1,0 +1,10 @@
+{
+  "name": "agent-business-os-api",
+  "version": "1.0.0",
+  "description": "Lead capture function for Agent Business OS (Azure Static Web Apps).",
+  "main": "lead/index.js",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@azure/data-tables": "^13.3.0"
+  }
+}
