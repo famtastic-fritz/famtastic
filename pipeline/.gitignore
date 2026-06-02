@@ -1,0 +1,6 @@
+data/*.jsonl
+data/heartbeats/
+data/pids.txt
+data/pipeline.lock
+logs/
+__pycache__/

@@ -62,7 +62,17 @@ while engaged.
 
 ## Phase status
 
-- **Phase 1 (this): Command Center** — DONE. Monitoring + income + ideas + kill switch.
-- Phase 2: Income evaluation depth (Stripe/PayPal live creds, idea scoring tuning).
-- Phase 3: Lead-gen / customer-response / follow-up agents that register here, heartbeat, and honor the kill switch.
-- Phase 4: Autonomous orchestration on a schedule.
+- **Phase 1: Command Center** — DONE. Monitoring + income + ideas + kill switch.
+- **Phase 2: Income + funnel evaluation** — DONE. Stripe HMAC webhooks, PayPal (unverified-until-creds), manual entry, idea de-noising, and the `collectors/pipeline.js` funnel view. Live Stripe/PayPal creds + public tunnel still required to capture real online payments.
+- **Phase 3: Autonomous agents** — DONE. `pipeline/agents/{outreach,responder,followup}.py` (+ patched `scout.py`) all register here, heartbeat, write to the shared JSONL stores (`pipeline/lib/store.py`), draft copy (`pipeline/lib/copywriter.py`), and route every send through the gated `pipeline/lib/sender.py`.
+- **Phase 4: Orchestration** — DONE. `pipeline/agents/supervisor.py` (launchd `com.famtastic.pipeline`) starts every agent and auto-restarts any that die OR go heartbeat-stale.
+
+### Arming real sends
+Agents are **disarmed by default** — they draft and queue but do not transmit.
+To go live: set `SEND_ARMED=true` + `SMTP_HOST/PORT/USER/PASS/FROM_EMAIL` in the
+`com.famtastic.pipeline` plist environment, then `launchctl kickstart -k`. The
+kill switch overrides arming at all times.
+
+### Seeding the funnel
+- `POST /api/leads {title, contact, budget, score, source}` → outreach agent acts on score ≥ `OUTREACH_MIN_SCORE` (default 70).
+- `POST /api/inbound {from, subject, body}` → responder drafts/sends a reply.

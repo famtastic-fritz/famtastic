@@ -21,6 +21,7 @@ async function refresh() {
   renderHealth(d.health);
   renderIncome(d.income);
   renderIdeas(d.ideas);
+  if (d.pipeline) renderPipeline(d.pipeline);
   renderAlerts(d.alerts, d.health, d.killSwitch);
   $('clock').textContent = new Date().toLocaleTimeString();
 }
@@ -73,6 +74,34 @@ function renderIdeas(idea) {
       <div class="meta">${price}${i.recurring ? '/mo' : ''} · ${i.sources.length} source(s)</div>`;
     ul.appendChild(li);
   }
+}
+
+function renderPipeline(p) {
+  const f = p.funnel;
+  $('pipeSub').textContent = `${p.outreach.sent} sent · ${p.outreach.drafted} drafted · ${p.outreach.blocked} blocked`;
+  const stages = [
+    ['leads', f.leads, ''], ['contacted', f.contacted, ''], ['replied', f.replied, ''],
+    ['won', f.won, 'won'], ['dead', f.dead, 'dead']
+  ];
+  $('funnel').innerHTML = stages.map(([l, v, c]) =>
+    `<div class="fstage ${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+  const ob = $('outbound');
+  const sends = [];
+  if (p.outreach.total) sends.push(['outreach', p.outreach]);
+  if (p.followups.total) sends.push(['follow-ups', p.followups]);
+  if (p.responses.total) sends.push(['responses', p.responses]);
+  if (!sends.length) { ob.innerHTML = '<div class="empty">No outbound yet. Seed a lead to start the loop.</div>'; }
+  else {
+    ob.innerHTML = sends.map(([name, s]) =>
+      `<li><span>${esc(name)}</span><span>${s.sent} sent · ${s.drafted} draft${s.blocked ? ' · ' + s.blocked + ' blocked' : ''}</span></li>`).join('');
+  }
+
+  const tl = $('topLeads');
+  if (!p.topLeads.length) { tl.innerHTML = '<div class="empty">No leads yet.</div>'; return; }
+  tl.innerHTML = p.topLeads.map((l) =>
+    `<li><span class="score">${l.score}</span><div class="nm">${esc(l.title)}</div>
+      <div class="meta">${l.budget ? '$' + l.budget + ' · ' : ''}${esc(l.status)}<span class="tag ${esc(l.status)}"></span> · ${esc(l.source)}</div></li>`).join('');
 }
 
 function renderAlerts(alerts, health, kill) {

@@ -23,8 +23,10 @@ const crypto = require('crypto');
 const processHealth = require('./collectors/process-health');
 const income = require('./collectors/income-ledger');
 const ideas = require('./collectors/ideas');
+const pipeline = require('./collectors/pipeline');
 
 const PORT = Number(process.env.COMMAND_CENTER_PORT || 7878);
+const REPO_ROOT = path.resolve(__dirname, '..');
 const DATA_DIR = path.join(__dirname, 'data');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const REGISTRY_PATH = path.join(DATA_DIR, 'agents-registry.json');
@@ -164,6 +166,7 @@ async function buildStatus() {
   const health = await processHealth.collect(registry, now);
   const inc = income.collect(now);
   const idea = ideas.collect();
+  const pipe = pipeline.collect();
   const kill = readKillSwitch();
   const alerts = [];
   for (const a of health.agents) {
@@ -173,8 +176,9 @@ async function buildStatus() {
   }
   if (kill.engaged) alerts.push({ level: 'critical', msg: 'KILL SWITCH ENGAGED — autonomous sending halted' });
   if (inc.unverifiedCount > 0) alerts.push({ level: 'warn', msg: `${inc.unverifiedCount} unverified income event(s)` });
+  if (pipe.inbound.unhandled > 0) alerts.push({ level: 'warn', msg: `${pipe.inbound.unhandled} unhandled inbound message(s)` });
 
-  return { ts: now, health, income: inc, ideas: idea, killSwitch: kill, alerts };
+  return { ts: now, health, income: inc, ideas: idea, pipeline: pipe, killSwitch: kill, alerts };
 }
 
 /* ---------- request router ---------- */
@@ -188,6 +192,47 @@ const server = http.createServer(async (req, res) => {
     if (method === 'GET' && p === '/api/processes') return sendJSON(res, 200, await processHealth.collect(loadRegistry(), nowSec()));
     if (method === 'GET' && p === '/api/income') return sendJSON(res, 200, income.collect(nowSec()));
     if (method === 'GET' && p === '/api/ideas') return sendJSON(res, 200, ideas.collect());
+    if (method === 'GET' && p === '/api/pipeline') return sendJSON(res, 200, pipeline.collect());
+
+    // Inject an inbound message (for the responder to handle). Lets you feed
+    // the customer-response loop from a webhook, IMAP poller, or manual test.
+    if (method === 'POST' && p === '/api/inbound') {
+      const body = await readBody(req);
+      let parsed = {};
+      try { parsed = JSON.parse(body.toString('utf8') || '{}'); } catch {}
+      if (!parsed.from) return sendJSON(res, 400, { ok: false, error: 'from required' });
+      const rec = {
+        id: parsed.id || `in_${Date.now()}`,
+        from: parsed.from,
+        subject: parsed.subject || '(no subject)',
+        body: parsed.body || '',
+        received_at: nowSec(),
+        handled: false
+      };
+      fs.mkdirSync(path.join(REPO_ROOT, 'pipeline', 'data'), { recursive: true });
+      fs.appendFileSync(path.join(REPO_ROOT, 'pipeline', 'data', 'inbound.jsonl'), JSON.stringify(rec) + '\n');
+      return sendJSON(res, 200, { ok: true, inbound: rec });
+    }
+
+    // Inject a lead (for the outreach agent). Lets you seed the funnel directly.
+    if (method === 'POST' && p === '/api/leads') {
+      const body = await readBody(req);
+      let parsed = {};
+      try { parsed = JSON.parse(body.toString('utf8') || '{}'); } catch {}
+      const rec = {
+        id: parsed.id || `lead_${Date.now()}`,
+        source: parsed.source || 'manual',
+        title: parsed.title || '(untitled)',
+        contact: parsed.contact || parsed.email || null,
+        budget: parsed.budget || null,
+        score: typeof parsed.score === 'number' ? parsed.score : 75,
+        status: 'new',
+        found_at: nowSec()
+      };
+      fs.mkdirSync(path.join(REPO_ROOT, 'pipeline', 'data'), { recursive: true });
+      fs.appendFileSync(path.join(REPO_ROOT, 'pipeline', 'data', 'leads.jsonl'), JSON.stringify(rec) + '\n');
+      return sendJSON(res, 200, { ok: true, lead: rec });
+    }
 
     if (method === 'GET' && p === '/api/kill-switch') return sendJSON(res, 200, readKillSwitch());
     if (method === 'POST' && p === '/api/kill-switch') {

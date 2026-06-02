@@ -1,37 +1,45 @@
 {
-  "_comment": "Every service the Command Center monitors. status = alive(PID) + heartbeat freshness. Add an entry here and the dashboard tracks it automatically. maxStaleSec: how long a heartbeat can be silent before the agent is flagged HUNG. Set heartbeat to null for services that don't write one (PID-only liveness).",
+  "_comment": "Every service the Command Center monitors. status = alive(PID) + heartbeat freshness. Add an entry here and the dashboard tracks it automatically. maxStaleSec: how long a heartbeat can be silent before the agent is flagged HUNG. Set heartbeat to null for PID-only liveness.",
   "agents": [
+    {
+      "name": "supervisor",
+      "label": "Supervisor (orchestrator)",
+      "group": "pipeline",
+      "match": "agents/supervisor.py",
+      "heartbeat": "pipeline/data/heartbeats/supervisor.json",
+      "maxStaleSec": 90
+    },
     {
       "name": "scout",
       "label": "Lead Scout",
       "group": "pipeline",
-      "match": "pipeline/agents/scout.py",
+      "match": "agents/scout.py",
       "heartbeat": "pipeline/data/heartbeats/scout.json",
       "maxStaleSec": 420
     },
     {
-      "name": "builder",
-      "label": "Asset Builder",
+      "name": "outreach",
+      "label": "Outreach Agent",
       "group": "pipeline",
-      "match": "pipeline/agents/builder.py",
-      "heartbeat": "pipeline/data/heartbeats/builder.json",
-      "maxStaleSec": 420
+      "match": "agents/outreach.py",
+      "heartbeat": "pipeline/data/heartbeats/outreach.json",
+      "maxStaleSec": 300
     },
     {
-      "name": "closer",
-      "label": "Deal Closer",
+      "name": "responder",
+      "label": "Customer Responder",
       "group": "pipeline",
-      "match": "pipeline/agents/closer.py",
-      "heartbeat": "pipeline/data/heartbeats/closer.json",
-      "maxStaleSec": 420
+      "match": "agents/responder.py",
+      "heartbeat": "pipeline/data/heartbeats/responder.json",
+      "maxStaleSec": 240
     },
     {
-      "name": "monitor",
-      "label": "Pipeline Monitor",
+      "name": "followup",
+      "label": "Follow-up Agent",
       "group": "pipeline",
-      "match": "pipeline/agents/monitor.py",
-      "heartbeat": "pipeline/data/heartbeats/monitor.json",
-      "maxStaleSec": 420
+      "match": "agents/followup.py",
+      "heartbeat": "pipeline/data/heartbeats/followup.json",
+      "maxStaleSec": 600
     },
     {
       "name": "studio",
@@ -40,14 +48,6 @@
       "match": "do node server.js",
       "heartbeat": null,
       "maxStaleSec": null
-    },
-    {
-      "name": "email-agent",
-      "label": "Customer Email Agent",
-      "group": "comms",
-      "match": "email-agent/server.js",
-      "heartbeat": "email-agent/data/heartbeat.json",
-      "maxStaleSec": 600
     }
   ]
 }
