@@ -46,6 +46,7 @@ async function run() {
       currency: deal.currency || 'USD',
       status: 'manual_pending',
       hostedUrl: '',
+      stripeInvoiceId: '',
       cashAppUrl: money.cashAppLink(amount),
       sentAt: new Date().toISOString(),
       dueAt,
@@ -54,7 +55,7 @@ async function run() {
     };
 
     const res = money.sendStripeInvoice(deal.email, amount, deal.description, TERMS_DAYS);
-    if (res.ok) { inv.status = 'sent'; inv.hostedUrl = res.hostedUrl; }
+    if (res.ok) { inv.status = 'sent'; inv.hostedUrl = res.hostedUrl; inv.stripeInvoiceId = res.stripeInvoiceId || ''; }
 
     db.invoices.push(inv);
     deal.status = 'invoiced';

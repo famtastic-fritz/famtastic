@@ -18,6 +18,7 @@ delete process.env.TELEGRAM_BOT_TOKEN; // stdout-only alerts
 
 const store = require('./lib/store');
 const capture = require('./capture-agent');
+const sync = require('./sync-agent');
 const qualifier = require('./qualifier-agent');
 const sdr = require('./sdr-agent');
 const billing = require('./billing-agent');
@@ -122,6 +123,37 @@ const daysAgo = (n) => new Date(Date.now() - n * 864e5).toISOString();
   await sdr.run();
   db = store.load();
   ok(db.deals.find((d) => d.leadId === pat.id).status === 'open', 'deal still open after re-run (no auto-win)');
+
+  console.log('13) sync-agent auto-ingests a live lead and auto-reconciles a payment');
+  // A local invoice carrying a Stripe id (as billing would record in live mode).
+  db = store.load();
+  db.deals.push({ id: 'deal_sync', email: 'win@sync.io', name: 'Win Sync', amount: 5000, currency: 'USD', status: 'invoiced' });
+  db.invoices.push({ id: 'inv_sync', dealId: 'deal_sync', email: 'win@sync.io', amount: 5000, currency: 'USD', status: 'sent', stripeInvoiceId: 'in_LIVE123', remindersSent: 0, paidAt: null, dueAt: daysAgo(-1) });
+  store.save(db);
+  // The Azure Table rows the deployed functions would have written.
+  const fixture = path.join(tmp, 'table.json');
+  fs.writeFileSync(fixture, JSON.stringify([
+    { formType: 'qualification', name: 'New Inbound', email: 'fresh@inbound.io', revenue: 70000, bottleneck: 'lead_volume', lift: 40000, start7: 'yes' },
+    { rowKey: 'paid-in_LIVE123', status: 'collected', invoiceId: 'in_LIVE123', email: 'win@sync.io', amount: 5000, paidAt: new Date().toISOString() }
+  ]));
+  process.env.ABOS_SYNC_FIXTURE = fixture;
+  const sy = await sync.run();
+  db = store.load();
+  ok(sy.ingested === 1 && db.leads.some((l) => l.email === 'fresh@inbound.io'), 'inbound lead auto-ingested from the table');
+  ok(sy.paid === 1 && db.invoices.find((i) => i.id === 'inv_sync').status === 'paid', 'payment auto-reconciled by Stripe invoice id');
+  const sy2 = await sync.run();
+  ok(sy2.ingested === 0 && sy2.paid === 0, 'sync is idempotent (no double ingest/pay)');
+  delete process.env.ABOS_SYNC_FIXTURE;
+
+  console.log('14) auto-close mode removes the human win');
+  process.env.ABOS_AUTO_CLOSE = '1';
+  capture.ingest({ name: 'Auto Close', email: 'auto@close.io', revenue: 90000, bottleneck: 'close_rate', lift: 60000, start7: 'yes' });
+  await qualifier.run();
+  const ac = await sdr.run();
+  db = store.load();
+  const acDeal = db.deals.find((d) => d.email === 'auto@close.io');
+  ok(ac.autoClosed >= 1 && acDeal && acDeal.status === 'won', 'hot deal auto-closed to won without a human');
+  delete process.env.ABOS_AUTO_CLOSE;
 
   console.log(`\n${fail === 0 ? 'PASS' : 'FAIL'} — ${pass} passed, ${fail} failed`);
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {}

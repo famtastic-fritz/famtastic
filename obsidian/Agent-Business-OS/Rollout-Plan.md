@@ -216,16 +216,24 @@ platform capability.
 
 ## 8. Rollout sequence (build order)
 
-> **Built 2026-06-02:** Stripe collections rail (`payments/invoice.sh` +
-> `api/stripe-webhook`) and the **full agent loop** — `capture` / `qualifier` /
-> `sdr` / `billing` / `monitor` / `memo` (`agent-business-os/agents/`,
-> dependency-free, lifecycle-tested **24/24**). One `tick` runs qualify → sdr →
-> billing → monitor; CLI-proven end to end: cold lead → qualified → contacted →
-> deal opened → (human `win`) → invoiced → paid → **collected ($ cash/day)**,
-> with alerts + a daily brain digest. The only human gate in the happy path is
-> closing the deal (`win`) and, by decision, money-out. Remaining: the
-> webhook→store paid-sync + lead→store sync (Azure Table ↔ pipeline.json),
-> outbound capture sourcing, live credentials, and the Azure deploy.
+> **Built 2026-06-02 — now fully no-touch in software:** Stripe collections rail
+> (`payments/invoice.sh` + `api/stripe-webhook`), the **full agent loop**
+> (`sync` / `capture` / `qualifier` / `sdr` / `billing` / `monitor` / `memo`,
+> dependency-free, lifecycle-tested **28/28**), and a **perpetual launchd runner**
+> (`ops/launchd/install.sh` — tick every 15m, memo daily). `sync-agent` auto-bridges
+> the deployed functions to the agents (inbound leads in, payments reconciled by
+> Stripe invoice id), and `ABOS_AUTO_CLOSE=1` removes the human `win`. CLI-proven
+> with zero human commands: inbound lead → qualified → auto-closed → invoiced →
+> paid → **collected**. An operator skill (`.claude/skills/agent-business-os`)
+> lets any session run/diagnose it.
+>
+> **The only things still needing a human — because they're identity-bound, not
+> code:** a real Stripe account + key, a Cash App cashtag, an Azure account +
+> deploy token, and DNS. No software can sign up for a bank/processor as you.
+> Once those credentials are in the vault + Azure app settings (see
+> `Go-Live-Runbook.md`) and `install.sh` is run once, it operates with no further
+> human involvement. (Outbound lead *sourcing* at scale is the remaining optional
+> growth lever.)
 
 
 1. **Wave 1 — Wire the rails (1 sitting):** `vault write` the payment secrets;

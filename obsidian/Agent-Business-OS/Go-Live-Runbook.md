@@ -47,41 +47,35 @@ In `dist/assets/js/config.js`:
 - `ABOS_LEAD_ENDPOINT` = `/api/lead` (already set)
 - `ABOS_BOOKING_URL` = your Cal.com/Calendly link (CTAs open the scheduler)
 
-## Step 5 — Schedule the agents (autonomy)
+## Step 5 — Start the perpetual runner (one command)
 
-```cron
-*/15 * * * *  cd ~/famtastic/agent-business-os && ABOS_LIVE_BILLING=1 node agents/run.js tick >> ~/abos-tick.log 2>&1
-0    8 * * *  cd ~/famtastic/agent-business-os && node agents/run.js memo               >> ~/abos-memo.log 2>&1
+```bash
+bash ~/famtastic/agent-business-os/ops/launchd/install.sh
 ```
 
-(Or register via the platform cron capability once that wrapper lands.)
+That loads two launchd jobs — `tick` every 15 min (in live billing + auto-close
+mode) and `memo` daily at 08:00 — so it runs forever with no babysitting.
+`launchctl list | grep abos` to confirm; `install.sh uninstall` to stop. On
+Linux, use the cron snippet in `agents/README.md` instead.
 
 ---
 
-## The two integration seams still to wire (the only real code left)
+## The integration seams — now automatic (built 2026-06-02)
 
-The deployed functions write to **Azure Table**; the agents read the local
-**`ops/pipeline.json`**. In production they must sync. Both are small and belong
-in a `sync-agent`:
+Both seams are wired and tested; no manual `ingest`/`mark-paid` needed.
 
-### Seam A — lead → store (inbound)
-`api/lead` lands a lead in Azure Table. A `sync-agent` (or the function itself,
-via a queue) should call `capture.ingest(lead)` so the qualifier/sdr pick it up.
-Dedupe is already handled by `capture.ingest` (by email).
+- **Lead → store:** `sync-agent` reads the Azure Table (`LEADS_TABLE_CONNECTION_STRING`,
+  env or vault `payments/leads_table_connection_string`) and calls `capture.ingest`
+  for new inbound leads. Runs first in every `tick`.
+- **Payment → store:** `invoice.sh` now emits the Stripe invoice id, billing stores
+  it as `stripeInvoiceId`, and `sync-agent` flips the matching local invoice to
+  `paid` from webhook payment rows (match by Stripe invoice id, else by email→open
+  deal). Reconciliation is hands-off.
 
-### Seam B — payment → store (reconciliation)
-`api/stripe-webhook` marks a row collected in Azure Table. To flip the matching
-**local** invoice to `paid`, the billing agent must record the **Stripe invoice
-id** on the local invoice when it issues one (today `money.sendStripeInvoice`
-returns only the hosted URL — also capture `in_…` id), and the sync matches
-webhook `invoice.id` → local invoice → set `paid`. Until wired,
-`run.js mark-paid <localInvoiceId>` is the manual stand-in.
-
-> **Recommendation when you wire this:** have `invoice.sh` print the Stripe
-> invoice id alongside the URL, store it as `stripeInvoiceId` on the local
-> invoice, and key the sync off it. That's the one change that makes
-> reconciliation fully hands-off. It needs a live Stripe key to test, which is
-> why it isn't built yet — building it blind would be untested money code.
+The only requirement is that the Azure functions persist to a table (set
+`LEADS_TABLE_CONNECTION_STRING` app setting) and the Stripe webhook is configured
+(Step 3). Cash App payments, which have no webhook, remain the one manual-confirm
+path by nature.
 
 ## Guardrails in force (by your decision)
 

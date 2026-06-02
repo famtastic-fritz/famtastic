@@ -33,8 +33,8 @@ function cashAppLink(amount) {
   return t ? `https://cash.app/$${t}/${amount}` : '';
 }
 
-// Returns { ok, hostedUrl } or { ok:false, reason }. Only attempts a real charge
-// when ABOS_LIVE_BILLING=1 (so tests/dry-runs never hit Stripe).
+// Returns { ok, hostedUrl, stripeInvoiceId } or { ok:false, reason }. Only attempts
+// a real charge when ABOS_LIVE_BILLING=1 (so tests/dry-runs never hit Stripe).
 function sendStripeInvoice(email, amount, description, termsDays) {
   if (process.env.ABOS_LIVE_BILLING !== '1') return { ok: false, reason: 'dry_run' };
   if (!vaultRead('payments/stripe.secret_key')) return { ok: false, reason: 'no_key' };
@@ -44,8 +44,9 @@ function sendStripeInvoice(email, amount, description, termsDays) {
       [email, String(amount), description || 'Agent Business OS', String(termsDays)],
       { encoding: 'utf8' }
     );
-    const url = (out.match(/https:\/\/\S+/) || [])[0] || '';
-    return { ok: true, hostedUrl: url };
+    const url = (out.match(/^URL=(.+)$/m) || out.match(/https:\/\/\S+/) || [])[1] || (out.match(/https:\/\/\S+/) || [])[0] || '';
+    const id = (out.match(/^INVOICE_ID=(.+)$/m) || [])[1] || '';
+    return { ok: true, hostedUrl: url, stripeInvoiceId: id };
   } catch (err) {
     return { ok: false, reason: (err && err.message) || 'invoice_failed' };
   }

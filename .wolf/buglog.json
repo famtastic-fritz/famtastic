@@ -3460,6 +3460,18 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-02"
+    },
+    {
+      "id": "bug-187",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "ABOS_AUTO_CLOSE had no effect when set after the module was required (test asserted auto-close but deal stayed open)",
+      "file": "agent-business-os/agents/sdr-agent.js",
+      "root_cause": "AUTO_CLOSE was read into a module-level const at require time, so env set later (per-run, in tests or between runs) was ignored. Same class as the monitor CASH_TARGET / lead-function patterns: env captured at load instead of at call.",
+      "fix": "Read process.env.ABOS_AUTO_CLOSE inside run() at call time rather than as a module-level const. Rule: per-run/toggleable env must be read at call time, not module load.",
+      "tags": ["agents", "env", "config", "node"],
+      "related_bugs": [186],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
     }
   ]
 }

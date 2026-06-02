@@ -84,4 +84,6 @@ printf '{"at":"%s","capability":"payments.invoice","rail":"stripe","invoice":"%s
   "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$INV_ID" "$AMOUNT" >> "$LEDGER"
 
 echo "invoice $INV_ID sent to $EMAIL"
-echo "$URL"
+# Machine-parseable lines for callers (money.js captures these).
+echo "INVOICE_ID=$INV_ID"
+echo "URL=$URL"

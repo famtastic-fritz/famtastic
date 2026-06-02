@@ -9,6 +9,7 @@ only for drafting copy (a later hook), never for deciding who paid.
 
 | Agent | What it does | Side effects |
 |-------|--------------|--------------|
+| `sync-agent` | Bridges the live Azure functions ↔ store: pulls inbound leads in, flips invoices to `paid` from webhook payment rows (match by Stripe invoice id, else email→open deal). No-op without a table connection | mutates leads/invoices |
 | `capture-agent` | Ingests + dedupes + scores an inbound lead into the store (outbound sourcing is a later hook) | adds a lead |
 | `qualifier-agent` | Scores any unscored lead, routes hot/warm → `qualified`, else `nurtured` | mutates leads |
 | `sdr-agent` | First-touch qualified leads (clears SLA clock) → `conversion`; opens a deal for hot leads. **Never marks `won`** | mutates leads/deals |
@@ -16,9 +17,26 @@ only for drafting copy (a later hook), never for deciding who paid.
 | `monitor-agent` | Computes KPIs (cash/day, pipeline, funnel), SLA breaches, overdue/escalated → `ops/health.json` + tiered alerts | read-only on pipeline; writes health snapshot |
 | `memo-agent` | Daily digest (KPIs + activity) into `obsidian/Agent-Business-OS/digests/` | writes a markdown note |
 
-`tick` runs them in pipeline order: **qualify → sdr → billing → monitor**. The one
-human signal in the loop is closing a deal (`win <dealId>`) — the sdr opens the
-opportunity but never fabricates a win.
+`tick` runs them in pipeline order: **sync → qualify → sdr → billing → monitor**.
+
+### Fully autonomous mode (no human in the loop)
+
+Set `ABOS_AUTO_CLOSE=1` and the sdr treats a qualified hot inbound as the close
+trigger — it opens *and* wins the deal so billing sends the pay page immediately,
+with no human `win`. Tradeoff: some invoiced leads won't pay; dunning + lapse
+handle that, and you only ever **collect** when they actually pay. Money-out
+(refunds/payouts) is still never automated. Leave the flag unset to keep `win` a
+human signal.
+
+## Run it forever (macOS launchd)
+
+```bash
+bash agent-business-os/ops/launchd/install.sh            # tick every 15m + memo daily 08:00
+bash agent-business-os/ops/launchd/install.sh uninstall  # stop
+```
+
+The installed runner sets `ABOS_LIVE_BILLING=1` and `ABOS_AUTO_CLOSE=1`. On Linux,
+use cron instead (snippet below).
 
 ## Run
 
