@@ -109,9 +109,15 @@ invoice with `"method": "link"` instead of `"cashapp"`. That gives a real hosted
 pay page with the amount baked in. Use `cashapp` for the lightweight P2P nudge,
 `link` when you need the amount locked.
 
-> **Cashtag is a placeholder.** `examples/sample-engagement-cashapp.json` uses
-> `$FritzMedine` as a stand-in. Replace it with Fritz's real, claimed Cash App
-> $cashtag before sending — the link only works against a real cashtag.
+### Default cashtag (owner profile)
+
+You don't have to repeat the cashtag in every spec. When a `cashapp` payment
+block omits `cashtag`, the generator falls back to
+`payment.cashapp.cashtag` in **`platform/config/owner-profile.json`** — the
+canonical store for Fritz's public payment handle, currently
+**`$FAMtasticFritz`** (`https://cash.app/$FAMtasticFritz`, Fitzgerald Medine).
+A cashtag is public receive-info, so it lives in git; real secrets stay in the
+vault. Pass an explicit `cashtag` in a spec only to override the default.
 
 ## Delivery / sending
 

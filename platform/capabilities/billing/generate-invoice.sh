@@ -33,7 +33,7 @@ command -v node >/dev/null 2>&1 || { echo "generate-invoice: node is required" >
 # Compute the invoice. In --check mode the node helper validates inputs and prints the
 # computed summary WITHOUT writing any files. In emit mode it writes the JSON + markdown
 # and returns the invoice number / paths on stdout as a single JSON line.
-RESULT="$(node - "$SPEC_FILE" "$OUT_DIR" "$MODE" <<'NODE'
+RESULT="$(OWNER_PROFILE="$PLATFORM_ROOT/config/owner-profile.json" node - "$SPEC_FILE" "$OUT_DIR" "$MODE" <<'NODE'
 const fs = require('fs');
 const path = require('path');
 
@@ -114,9 +114,18 @@ if (spec.payment && typeof spec.payment === 'object') {
   if (!['cashapp', 'link', 'manual'].includes(method)) fail(`payment.method must be one of cashapp|link|manual`);
   payment = { method, instructions: spec.payment.instructions || null };
   if (method === 'cashapp') {
-    const cashtag = spec.payment.cashtag;
+    // Cashtag resolution: spec wins, else fall back to the canonical owner
+    // profile (platform/config/owner-profile.json). A cashtag is public
+    // receive-info, so the default lives in git, not the vault.
+    let cashtag = spec.payment.cashtag;
+    if (!cashtag && process.env.OWNER_PROFILE) {
+      try {
+        const op = JSON.parse(fs.readFileSync(process.env.OWNER_PROFILE, 'utf8'));
+        cashtag = op && op.payment && op.payment.cashapp && op.payment.cashapp.cashtag;
+      } catch (_) { /* no profile; fall through to the validation error below */ }
+    }
     if (!cashtag || !/^\$[A-Za-z][A-Za-z0-9_]{0,19}$/.test(cashtag)) {
-      fail("payment.cashtag is required for method=cashapp and must look like '$Name'");
+      fail("payment.cashtag is required for method=cashapp (or set payment.cashapp.cashtag in config/owner-profile.json) and must look like '$Name'");
     }
     // Amount-prefilled tappable link; cashtag keeps its leading '$'.
     // e.g. https://cash.app/$Fritz/397.00

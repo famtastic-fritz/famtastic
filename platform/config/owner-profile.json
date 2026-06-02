@@ -1,0 +1,17 @@
+{
+  "_purpose": "Canonical owner identity + PUBLIC payment handles for FAMtastic. A Cash App $cashtag is shareable receive-info (printed on a QR), NOT a secret like an API key, so it is safe to store here in git. Capabilities and agents read this as the default payer/receiver. Real secrets still live in the vault.",
+  "owner": {
+    "legal_name": "Fitzgerald Medine",
+    "display_name": "Fritz",
+    "email": "fritz.medine@gmail.com"
+  },
+  "payment": {
+    "default_method": "cashapp",
+    "cashapp": {
+      "cashtag": "$FAMtasticFritz",
+      "profile_url": "https://cash.app/$FAMtasticFritz",
+      "account_name": "Fitzgerald Medine"
+    }
+  },
+  "last_updated": "2026-06-02"
+}

@@ -97,6 +97,8 @@ registry before first use.
 
 <!-- How the user likes things done. Code style, tools, patterns, communication. -->
 
+- **Owner Cash App cashtag (2026-06-02):** Fritz's Cash App is **`$FAMtasticFritz`** (account: Fitzgerald Medine, `https://cash.app/$FAMtasticFritz`). This is PUBLIC receive-info (printed on a QR), not a secret — safe in git. Canonical store: `platform/config/owner-profile.json` (`payment.cashapp.cashtag`). `billing.generate-invoice` auto-falls-back to it when a `cashapp` invoice omits the cashtag. Any "who do we get paid to / what's the cashtag" question resolves from owner-profile.json — do NOT ask Fritz again.
+
 ## Key Learnings
 
 - **Interior hero chevron absolute-bottom pattern:** Interior-hero chevron is `position: absolute` at section bottom (z-index above plaque), with an exaggerated bounce that travels up and overlaps the marker text. In-flow chevron cannot reach section bottom because the marker band pushes it out of view. This is the canonical interior-hero chevron pattern.

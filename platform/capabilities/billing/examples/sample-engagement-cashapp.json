@@ -1,5 +1,5 @@
 {
-  "_note": "PLACEHOLDER cashtag. Fritz MUST replace '$FritzMedine' below with his real Cash App $cashtag before this invoice is sent. The generated Cash App pay link is https://cash.app/<cashtag>/<total> and only works with a real, claimed cashtag.",
+  "_note": "Uses Fritz's real Cash App $cashtag ($FAMtasticFritz). If you OMIT the cashtag here, the generator falls back to payment.cashapp.cashtag in platform/config/owner-profile.json. The link https://cash.app/$FAMtasticFritz/<total> is a P2P nudge; for a guaranteed amount use an official Cash App Payment Link via method:link.",
   "engagement_id": "lunas-flower-shop-site-deposit",
   "engagement_type": "one_time",
   "site_tag": "site-lunas-flower-shop",
@@ -33,7 +33,7 @@
   },
   "payment": {
     "method": "cashapp",
-    "cashtag": "$FritzMedine",
+    "cashtag": "$FAMtasticFritz",
     "instructions": "Once paid, reply with a screenshot or the Cash App confirmation so we can mark the invoice paid and schedule your build kickoff."
   },
   "payment_instructions": "Pay via Cash App using the link below, or contact us for an alternate method."
