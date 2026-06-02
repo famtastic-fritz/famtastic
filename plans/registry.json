@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-05-05T16:20:00.000-04:00",
+  "updated_at": "2026-06-02T12:48:46.224Z",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -44,14 +44,24 @@
     "plan_2026_05_05_platform_site_promotion",
     "plan_2026_05_05_chat_capture_learn_optimize",
     "plan_2026_05_05_agent_coordination",
-    "plan_2026_05_05_workbench_per_page_design"
+    "plan_2026_05_05_workbench_per_page_design",
+    "mission-control-command-center"
   ],
   "labels": {
     "plan_2026_05_05_workbench_per_page_design": {
       "label": "workbench-per-page-design",
-      "tags": ["platform-upgrades", "studio-ui", "design-research", "ux", "creation-platform"],
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "design-research",
+        "ux",
+        "creation-platform"
+      ],
       "role": "research",
-      "feeds_into": ["plan_2026_05_05_ops_workspace_gui", "studio-workbench-foundation"],
+      "feeds_into": [
+        "plan_2026_05_05_ops_workspace_gui",
+        "studio-workbench-foundation"
+      ],
       "note": "Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05."
     },
     "plan_2026_05_05_platform_site_promotion": {
@@ -149,6 +159,21 @@
         "plan_2026_05_05_chat_capture_learn_optimize"
       ],
       "note": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate."
+    },
+    "mission-control-command-center": {
+      "label": "command-center",
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "ops",
+        "shay-shay",
+        "mission-control"
+      ],
+      "role": "domain",
+      "feeds_into": [
+        "plan_2026_05_05_ops_workspace_gui"
+      ],
+      "note": "Mission Control / Command Center: aggregates plans+tasks+runs+proofs+agents+sites+capabilities into a mobile-first dashboard, a Virtual-Fritz briefing, and a JSON snapshot. Scores every plan by stage/momentum/autonomy/profitability."
     }
   },
   "_label_role_legend": {
@@ -486,6 +511,59 @@
         "Freshness field not yet present on jobs/runs records.",
         "No WebSocket /ws/ops channel exists.",
         "Record-type visual language not yet codified in design tokens."
+      ]
+    },
+    {
+      "id": "mission-control-command-center",
+      "title": "Mission Control / Command Center",
+      "status": "active",
+      "status_label": "Active parent plan",
+      "group": "command_center",
+      "plan_path": "plans/mission-control-command-center/plan.json",
+      "current_workstream": "v1 generator shipped (dashboard + briefing + snapshot) reading live ledgers; next is delivery surfaces (CLI/cron/Studio/phone) and unblocking the Shay billing+work capabilities it tracks.",
+      "next_action": "Wire fam-hub command-center + daily cron, surface in Studio Ops via /api/ops, and push the morning briefing to phone.",
+      "open_blockers": "No hard blocker. Send paths for billing (payment provider) and work (Jira/Slack creds) are Fritz decisions, tracked as tasks.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "complete_v1_then_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "generator",
+          "path": "scripts/command-center/build-command-center.js"
+        },
+        {
+          "label": "dashboard",
+          "path": "command-center/index.html"
+        },
+        {
+          "label": "briefing",
+          "path": "command-center/briefing.md"
+        },
+        {
+          "label": "shay readiness roadmap",
+          "path": "docs/shay-fritz-ready/ROADMAP.md"
+        }
+      ],
+      "tasks": [
+        "Add fam-hub command-center command + daily regen cron",
+        "Surface Command Center snapshot in Studio Ops via /api/ops",
+        "Push morning briefing to phone (Resend email / Telegram)",
+        "Decide payment provider to unblock billing.generate-invoice send path",
+        "Vault Jira/Slack creds to unblock work.draft-ticket-reply / draft-standup send"
+      ],
+      "assumptions": [
+        "The dashboard reads ledgers read-only; it never mutates plan/task state.",
+        "Scoring is heuristic and tunable in the generator SCORING block."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-001",
+        "task-2026-06-02-002",
+        "task-2026-06-02-003",
+        "task-2026-06-02-004",
+        "task-2026-06-02-005"
       ]
     }
   ],

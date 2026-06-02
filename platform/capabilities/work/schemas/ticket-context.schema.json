@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "famtastic.work.ticket-context",
+  "title": "Work Ticket Context",
+  "description": "Input for work/draft-ticket-reply.sh. Describes a single Jira (or Jira-like) ticket plus Fritz's intent so Shay can draft a reply and a suggested status transition for human approval. NEVER auto-sent.",
+  "type": "object",
+  "required": ["ticket_id", "summary", "intent"],
+  "additionalProperties": false,
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "description": "Jira-style key, e.g. AMA-1423 or NIBS-77.",
+      "pattern": "^[A-Z][A-Z0-9]+-[0-9]+$"
+    },
+    "project": {
+      "type": "string",
+      "description": "Logical workstream / project this ticket belongs to (e.g. AMA, NIBS).",
+      "maxLength": 64
+    },
+    "summary": {
+      "type": "string",
+      "description": "Ticket title / summary line.",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "status": {
+      "type": "string",
+      "description": "Current ticket status, e.g. 'In Progress', 'In Review', 'Blocked'.",
+      "maxLength": 64
+    },
+    "assignee": {
+      "type": "string",
+      "description": "Current assignee display name or email.",
+      "maxLength": 128
+    },
+    "reporter": {
+      "type": "string",
+      "description": "Who raised the ticket / who Fritz is replying to.",
+      "maxLength": 128
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["Lowest", "Low", "Medium", "High", "Highest"],
+      "description": "Jira priority. Optional; influences drafted tone/urgency."
+    },
+    "latest_comment": {
+      "type": "object",
+      "description": "The most recent comment on the ticket that Fritz is responding to.",
+      "additionalProperties": false,
+      "properties": {
+        "author": { "type": "string", "maxLength": 128 },
+        "at": { "type": "string", "description": "ISO-8601 timestamp." },
+        "body": { "type": "string", "maxLength": 8000 }
+      }
+    },
+    "intent": {
+      "type": "string",
+      "description": "Fritz's plain-language note about what he wants the reply to accomplish. This is the steering signal for the draft.",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "suggested_transition": {
+      "type": "string",
+      "description": "Optional explicit target status Fritz wants. If omitted the draft proposes one from the intent.",
+      "maxLength": 64
+    },
+    "tone": {
+      "type": "string",
+      "enum": ["concise", "collaborative", "direct", "formal"],
+      "default": "concise",
+      "description": "Voice for the drafted reply."
+    }
+  }
+}

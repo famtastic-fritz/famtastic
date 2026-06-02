@@ -1,0 +1,41 @@
+{
+  "_note": "Capability records for the billing class, ready to merge into platform/registry/capabilities.json (append to the capabilities[] array). Same shape as existing entries. Parent session performs the merge.",
+  "capabilities": [
+    {
+      "id": "billing.generate-invoice",
+      "invocation": "platform billing generate-invoice <engagement.json> [--check]",
+      "implementation": "capabilities/billing/generate-invoice.sh",
+      "backing_service": "local fs (invoice generation); payment provider OPEN — PayPal vs Stripe vs GoDaddy, no provider wired",
+      "status": "v1-no-send",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": ["client", "line_items", "discount", "tax", "terms", "currency", "engagement_type", "billing_period", "vendor", "invoice_number", "issue_date", "payment_instructions"],
+      "spec_fields_written": ["platform/billing/invoices/<invoice-number>.json", "platform/billing/invoices/<invoice-number>.md", "platform/billing/ledger.jsonl"],
+      "manual_steps": ["Choose payment provider (PayPal vs Stripe vs GoDaddy) before any send/charge", "Render PDF from markdown (stubbed, no renderer wired)", "Deliver invoice to client (email/portal send not implemented)", "Generate payable link / collect payment (requires chosen provider credentials)"]
+    },
+    {
+      "id": "billing.list-invoices",
+      "invocation": "platform billing list-invoices [--state=draft|sent|paid|void] [--json]",
+      "implementation": "capabilities/billing/list-invoices.sh",
+      "backing_service": "local fs (billing ledger)",
+      "status": "v1",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": ["platform/billing/ledger.jsonl"],
+      "spec_fields_written": [],
+      "manual_steps": []
+    },
+    {
+      "id": "billing.mark-paid",
+      "invocation": "platform billing mark-paid <invoice-number> [--method=<m>] [--reference=<r>] [--date=<YYYY-MM-DD>] [--check]",
+      "implementation": "capabilities/billing/mark-paid.sh",
+      "backing_service": "local fs (billing ledger); payment confirmation is manual — no provider reconciliation",
+      "status": "v1-manual-confirm",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": ["platform/billing/ledger.jsonl", "platform/billing/invoices/<invoice-number>.json"],
+      "spec_fields_written": ["platform/billing/ledger.jsonl (state=paid)", "platform/billing/invoices/<invoice-number>.json (state=paid)"],
+      "manual_steps": ["Verify funds actually landed — paid state is manually asserted, not provider-reconciled", "Automatic paid detection requires chosen provider webhook/credentials (OPEN)"]
+    }
+  ]
+}

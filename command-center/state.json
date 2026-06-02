@@ -1,0 +1,495 @@
+{
+  "generated_at": "2026-06-02T12:51:41.075Z",
+  "scoring_model": {
+    "profitByTag": {
+      "site-execution": 90,
+      "reunion": 85,
+      "deploy": 75,
+      "release-management": 75,
+      "rollback": 60,
+      "platform-upgrades": 45,
+      "build-pipeline": 45,
+      "memory": 40,
+      "intelligence": 40,
+      "ledgers": 40,
+      "capture": 40,
+      "studio-ui": 35,
+      "ux": 35,
+      "design-research": 30,
+      "governance": 25,
+      "multi-agent": 25
+    },
+    "profitByRole": {
+      "site-project": 90,
+      "chassis": 50,
+      "substrate": 45,
+      "domain": 45,
+      "governance": 25
+    },
+    "externalBlockerWords": [
+      "external",
+      "access",
+      "config",
+      "netlify",
+      "dns",
+      "godaddy",
+      "cpanel",
+      "payment",
+      "secret",
+      "credential",
+      "creds",
+      "api key",
+      "auth",
+      "domain",
+      "production",
+      "resend",
+      "mysql",
+      "php",
+      "backend secrets"
+    ],
+    "staleDays": 14
+  },
+  "kpis": {
+    "activePlans": 9,
+    "needsYou": 8,
+    "blocked": 0,
+    "inProgress": 1,
+    "openTasks": 5,
+    "agents": 3,
+    "sites": 1,
+    "capabilities": 22,
+    "proofs": 32
+  },
+  "stageCounts": {
+    "Checkpoint (stalled)": 6,
+    "In progress": 1,
+    "Needs tasking": 2
+  },
+  "plans": [
+    {
+      "id": "studio-workbench-foundation",
+      "title": "Studio Workbench Foundation",
+      "role": "chassis",
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "shell",
+        "workbench"
+      ],
+      "stage": "checkpoint_stale",
+      "stageLabel": "Checkpoint (stalled)",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
+      "openTasks": 0,
+      "totalTasks": 6,
+      "momentumDays": 28,
+      "autonomy": 97,
+      "profit": 50,
+      "nextAction": "Develop executable checklists for Workbench default-shell cutover and Media Studio control unification; the frozen foundation, registry-backed Plan mode, and Shay context provider are complete.",
+      "blocker": "No hard blocker. Remaining work is implementation planning and sequencing for default-shell cutover and Media Studio unification.",
+      "runner": "Codex",
+      "closeoutVerdict": "checkpoint_complete",
+      "remainingWork": [
+        "Default-shell cutover (replace old Studio shell with Workbench)",
+        "Media Studio control unification between prompt-first surface and production mini-app"
+      ],
+      "hasActiveRun": false,
+      "proofCount": 4
+    },
+    {
+      "id": "plan-task-run-intelligence",
+      "title": "Plan, Task, Run, and Capture Intelligence",
+      "role": "substrate",
+      "tags": [
+        "platform-upgrades",
+        "ledgers",
+        "intelligence",
+        "capture"
+      ],
+      "stage": "checkpoint_stale",
+      "stageLabel": "Checkpoint (stalled)",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
+      "openTasks": 0,
+      "totalTasks": 10,
+      "momentumDays": 28,
+      "autonomy": 97,
+      "profit": 45,
+      "nextAction": "Develop executable checklists for automatic status-packet regeneration and reviewed capture-packet promotion into canonical memory.",
+      "blocker": "No hard blocker. Ledger substrate and first capture pass exist; automation and promotion rules remain to be specified before implementation.",
+      "runner": "Codex",
+      "closeoutVerdict": "checkpoint_complete",
+      "remainingWork": [
+        "Automatic status-packet regeneration from source ledgers",
+        "Reviewed capture-packet promotion into canonical memory (PARTIALLY SOLVED by chat-capture-learn-optimize MVP)"
+      ],
+      "hasActiveRun": true,
+      "proofCount": 8
+    },
+    {
+      "id": "build-intent-fulfillment-trace",
+      "title": "Build Intent, Fulfillment Trace, and Workflow Data",
+      "role": "substrate",
+      "tags": [
+        "platform-upgrades",
+        "build-pipeline",
+        "tracing"
+      ],
+      "stage": "checkpoint_stale",
+      "stageLabel": "Checkpoint (stalled)",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
+      "openTasks": 0,
+      "totalTasks": 5,
+      "momentumDays": 28,
+      "autonomy": 97,
+      "profit": 45,
+      "nextAction": "Develop the phase-two visualizer checklist for stage/event matching, missing-stage detection, and proposed patch preview on top of the live inspect/trace/propose surface.",
+      "blocker": "No hard blocker. Phase 1 catalog and visualizer are complete; deeper trace semantics need action-item definition before implementation.",
+      "runner": "Codex",
+      "closeoutVerdict": "checkpoint_complete",
+      "remainingWork": [
+        "Phase 2: stage/event matching and proposed patch preview",
+        "Workflow-as-data phase 2 and fulfillment diagnostics"
+      ],
+      "hasActiveRun": false,
+      "proofCount": 4
+    },
+    {
+      "id": "plan_2026_05_05_ops_workspace_gui",
+      "title": "FAMtastic Studio Operations Workspace GUI",
+      "role": "domain",
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "ops",
+        "shay-shay",
+        "agent-management"
+      ],
+      "stage": "checkpoint_stale",
+      "stageLabel": "Checkpoint (stalled)",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
+      "openTasks": 0,
+      "totalTasks": 0,
+      "momentumDays": 28,
+      "autonomy": 82,
+      "profit": 45,
+      "nextAction": "Build the Ops read/freshness substrate before command mutations or Jobs tab UI implementation.",
+      "blocker": "No Ops API surface, /ws/ops stream, record freshness field, or record-type visual tokens exist yet.",
+      "runner": "Codex",
+      "closeoutVerdict": "checkpoint_complete",
+      "remainingWork": [
+        "ALL further sub-tab implementation paused pending plan_2026_05_05_workbench_per_page_design",
+        "User reframed FAMtastic as creation platform on 2026-05-05; previous trajectory was building website-style chrome with empty rooms",
+        "Resume implementation only after the per-page-type research lands and a consolidation plan picks Path A/B/C from STUDIO-SHELL-RECONCILIATION-2026-05-05.md"
+      ],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "mission-control-command-center",
+      "title": "Mission Control / Command Center",
+      "role": "domain",
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "ops",
+        "shay-shay",
+        "mission-control"
+      ],
+      "stage": "in_progress",
+      "stageLabel": "In progress",
+      "stageEmoji": "🟢",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 5,
+      "totalTasks": 5,
+      "momentumDays": 0,
+      "autonomy": 97,
+      "profit": 45,
+      "nextAction": "Wire fam-hub command-center + daily cron, surface in Studio Ops via /api/ops, and push the morning briefing to phone.",
+      "blocker": "No hard blocker. Send paths for billing (payment provider) and work (Jira/Slack creds) are Fritz decisions, tracked as tasks.",
+      "runner": "Claude",
+      "closeoutVerdict": null,
+      "remainingWork": [],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "plan_2026_05_05_platform_site_promotion",
+      "title": "site-promotion",
+      "role": "substrate",
+      "tags": [
+        "platform-upgrades",
+        "deploy",
+        "release-management",
+        "rollback"
+      ],
+      "stage": "needs_tasking",
+      "stageLabel": "Needs tasking",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "Needs you to define the next tasks (or close it out).",
+      "openTasks": 0,
+      "totalTasks": 0,
+      "momentumDays": 28,
+      "autonomy": 57,
+      "profit": 75,
+      "nextAction": "Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven.",
+      "blocker": "",
+      "runner": "unassigned",
+      "closeoutVerdict": "needs_tasking",
+      "remainingWork": [
+        "platform/capabilities/site/promote.sh — dev→staging→main with date-based release tags",
+        "platform/capabilities/site/rollback.sh — revert to previous or named tag",
+        "Assisted-manual UI pattern (open vendor URL + poll for completion)",
+        "Apply to MBSH as first user"
+      ],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "plan_2026_05_05_chat_capture_learn_optimize",
+      "title": "chat-capture-learn-optimize",
+      "role": "substrate",
+      "tags": [
+        "platform-upgrades",
+        "memory",
+        "shay-shay",
+        "intelligence",
+        "ledgers"
+      ],
+      "stage": "checkpoint_stale",
+      "stageLabel": "Checkpoint (stalled)",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
+      "openTasks": 0,
+      "totalTasks": 0,
+      "momentumDays": 28,
+      "autonomy": 72,
+      "profit": 45,
+      "nextAction": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read.",
+      "blocker": "",
+      "runner": "unassigned",
+      "closeoutVerdict": "checkpoint_complete",
+      "remainingWork": [
+        "Cron schedule for memory-digest.js (Mon 9am)",
+        "Adversarial review loop applied to memory promotions",
+        "Smarter classifier to reduce near-duplicate type matches"
+      ],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "plan_2026_05_05_agent_coordination",
+      "title": "agent-coordination",
+      "role": "governance",
+      "tags": [
+        "platform-upgrades",
+        "governance",
+        "multi-agent"
+      ],
+      "stage": "checkpoint_stale",
+      "stageLabel": "Checkpoint (stalled)",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
+      "openTasks": 0,
+      "totalTasks": 0,
+      "momentumDays": 28,
+      "autonomy": 72,
+      "profit": 45,
+      "nextAction": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate.",
+      "blocker": "",
+      "runner": "unassigned",
+      "closeoutVerdict": "checkpoint_complete",
+      "remainingWork": [
+        "Per-surface branch naming convention enforcement",
+        "Pre-commit hook for agent-checkin auto-run",
+        "Promotion of 30 candidate entries to active (human review)",
+        "False-positive reduction in checkin script (today's run flagged 7 stale/merged branches as overlap)"
+      ],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "plan_2026_05_05_workbench_per_page_design",
+      "title": "workbench-per-page-design",
+      "role": "research",
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "design-research",
+        "ux",
+        "creation-platform"
+      ],
+      "stage": "needs_tasking",
+      "stageLabel": "Needs tasking",
+      "stageEmoji": "🟡",
+      "needsYou": true,
+      "needsYouReason": "Needs you to define the next tasks (or close it out).",
+      "openTasks": 0,
+      "totalTasks": 0,
+      "momentumDays": 14,
+      "autonomy": 57,
+      "profit": 45,
+      "nextAction": "Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05.",
+      "blocker": "",
+      "runner": "unassigned",
+      "closeoutVerdict": "needs_tasking",
+      "remainingWork": [
+        "Reconfirm whether the page-type research deliverables in docs/design-research are accepted, stale, or need refresh against the newer Studio IA.",
+        "Generate a fresh task set or superseding shell-rebuild plan before any more Workbench UI implementation."
+      ],
+      "hasActiveRun": false,
+      "proofCount": 0
+    }
+  ],
+  "agents": [
+    {
+      "name": "claude",
+      "model": "claude-sonnet-4-20250514"
+    },
+    {
+      "name": "gemini",
+      "model": "gemini-2.5-pro"
+    },
+    {
+      "name": "codex",
+      "model": "native"
+    }
+  ],
+  "sites": [
+    {
+      "tag": "site-mbsh-reunion",
+      "location": "studio-sandbox"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "site.add",
+      "status": "v1",
+      "invocation": "platform site add <tag>"
+    },
+    {
+      "id": "db.add",
+      "status": "v1",
+      "invocation": "platform db add <site> <env>"
+    },
+    {
+      "id": "db.apply-schema",
+      "status": "v1",
+      "invocation": "platform db apply-schema <site> <env>"
+    },
+    {
+      "id": "dns.register-subdomain",
+      "status": "v1-manual-prompt",
+      "invocation": "platform dns register-subdomain <site> <subdomain> <type> <value>"
+    },
+    {
+      "id": "email.verify-resend-domain",
+      "status": "v1-manual-dns",
+      "invocation": "platform email verify-resend-domain <site>"
+    },
+    {
+      "id": "deploy.connect-netlify",
+      "status": "v1-manual-prompt",
+      "invocation": "platform deploy connect-netlify <site>"
+    },
+    {
+      "id": "deploy.backend",
+      "status": "v1",
+      "invocation": "platform deploy backend <site>"
+    },
+    {
+      "id": "cron.register",
+      "status": "v1-manual-prompt",
+      "invocation": "platform cron register <site>"
+    },
+    {
+      "id": "cors.lockdown",
+      "status": "v1",
+      "invocation": "platform cors lockdown <site> <env>"
+    },
+    {
+      "id": "smoke.test",
+      "status": "v1",
+      "invocation": "platform smoke test <site>"
+    },
+    {
+      "id": "studio.bootstrap-services",
+      "status": "v1",
+      "invocation": "platform studio bootstrap-services [--check]"
+    },
+    {
+      "id": "studio.configure-resend",
+      "status": "v1",
+      "invocation": "platform studio configure-resend [--check]"
+    },
+    {
+      "id": "studio.send-test-email",
+      "status": "v1",
+      "invocation": "platform studio send-test-email <recipient>"
+    },
+    {
+      "id": "studio.provision-site",
+      "status": "v1",
+      "invocation": "platform studio provision-site <site> [--check] [--proof]"
+    },
+    {
+      "id": "vault.read",
+      "status": "v1",
+      "invocation": "platform vault read <secret-id>"
+    },
+    {
+      "id": "vault.write",
+      "status": "v1",
+      "invocation": "platform vault write <secret-id> <value>"
+    },
+    {
+      "id": "billing.generate-invoice",
+      "status": "v1-no-send",
+      "invocation": "platform billing generate-invoice <engagement.json> [--check]"
+    },
+    {
+      "id": "billing.list-invoices",
+      "status": "v1",
+      "invocation": "platform billing list-invoices [--state=draft|sent|paid|void] [--json]"
+    },
+    {
+      "id": "billing.mark-paid",
+      "status": "v1-manual-confirm",
+      "invocation": "platform billing mark-paid <invoice-number> [--method=<m>] [--reference=<r>] [--date=<YYYY-MM-DD>] [--check]"
+    },
+    {
+      "id": "work.draft-ticket-reply",
+      "status": "v1-draft-only",
+      "invocation": "platform work draft-ticket-reply <ctx.json> [--check]"
+    },
+    {
+      "id": "work.draft-standup",
+      "status": "v1-draft-only",
+      "invocation": "platform work draft-standup [<input.json>] [--check]"
+    },
+    {
+      "id": "work.outbox",
+      "status": "v1-draft-only",
+      "invocation": "platform work outbox [list|--check|show <id>|approve <id>|send <id>]"
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "run-2026-05-04-consolidation-apply",
+      "plan_id": "plan-task-run-intelligence",
+      "status": "active",
+      "target": "complete_p0_then_report",
+      "current_step": "MBSH leftovers grouped: media/story readiness is completed with launch-safe generated/derivative assets and rights manifest; live deploy proof remains blocked only by external production access/config."
+    }
+  ]
+}

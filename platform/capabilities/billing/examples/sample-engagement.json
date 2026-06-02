@@ -1,0 +1,39 @@
+{
+  "engagement_id": "tonys-barber-shop-care-plan",
+  "engagement_type": "recurring",
+  "site_tag": "site-tonys-barber-shop",
+  "currency": "USD",
+  "vendor": {
+    "name": "FAMtastic",
+    "email": "fritz.medine@gmail.com",
+    "website": "famtastic.dev"
+  },
+  "client": {
+    "name": "Tony's Barber Shop",
+    "contact": "Tony Marchetti",
+    "email": "tony@tonysbarbershop.com",
+    "address": "418 Edgewood Ave SE, Atlanta, GA 30312"
+  },
+  "billing_period": {
+    "start": "2026-06-01",
+    "end": "2026-06-30",
+    "label": "June 2026"
+  },
+  "line_items": [
+    {
+      "description": "Home-services website — hosting, care plan & content updates",
+      "quantity": 1,
+      "unit": "month",
+      "unit_price": 397.00
+    }
+  ],
+  "tax": {
+    "label": "GA Sales Tax",
+    "rate_percent": 0
+  },
+  "terms": {
+    "net_days": 14,
+    "notes": "Recurring monthly retainer. Cancel anytime with 30 days written notice."
+  },
+  "payment_instructions": "Payment link to follow once FAMtastic's payment provider is finalized. Until then, remit via the agreed method on file."
+}

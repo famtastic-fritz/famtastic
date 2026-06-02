@@ -85,3 +85,8 @@ scripts/Screenshot*
 
 # Generated media/build outputs
 /remotion/out/
+
+# Shay capability runtime output (generated invoices, ledgers, approval drafts).
+# The capability scripts + schemas + examples are tracked; their output is not.
+/platform/billing/
+/platform/capabilities/work/outbox/*.json

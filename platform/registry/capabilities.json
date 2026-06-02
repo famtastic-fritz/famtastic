@@ -1,6 +1,6 @@
 {
   "$schema_version": "1.0",
-  "generated_at": "2026-05-02T20:00:00.000Z",
+  "generated_at": "2026-06-02T12:47:11.422Z",
   "capabilities": [
     {
       "id": "site.add",
@@ -8,10 +8,18 @@
       "implementation": "capabilities/site/add-site.sh",
       "backing_service": "local fs + git + GitHub API (optional)",
       "status": "v1",
-      "reads_from_vault": ["github.token (optional)"],
+      "reads_from_vault": [
+        "github.token (optional)"
+      ],
       "writes_to_vault": [],
       "spec_fields_read": [],
-      "spec_fields_written": ["tag", "site_name", "site_repo.path", "site_repo.remote", "created_at"],
+      "spec_fields_written": [
+        "tag",
+        "site_name",
+        "site_repo.path",
+        "site_repo.remote",
+        "created_at"
+      ],
       "manual_steps": []
     },
     {
@@ -20,10 +28,21 @@
       "implementation": "capabilities/db/add-db.sh",
       "backing_service": "GoDaddy MariaDB via cpanel-mcp + local Homebrew/Docker for dev",
       "status": "v1",
-      "reads_from_vault": ["cpanel.api_token", "cpanel.account"],
-      "writes_to_vault": ["sites/<tag>/db_password.<env>"],
-      "spec_fields_read": ["tag", "backend.database.name", "backend.database.user"],
-      "spec_fields_written": ["backend.database.<env>.provisioned_at"],
+      "reads_from_vault": [
+        "cpanel.api_token",
+        "cpanel.account"
+      ],
+      "writes_to_vault": [
+        "sites/<tag>/db_password.<env>"
+      ],
+      "spec_fields_read": [
+        "tag",
+        "backend.database.name",
+        "backend.database.user"
+      ],
+      "spec_fields_written": [
+        "backend.database.<env>.provisioned_at"
+      ],
       "manual_steps": []
     },
     {
@@ -32,10 +51,20 @@
       "implementation": "capabilities/db/apply-schema.sh",
       "backing_service": "SSH → mysql CLI",
       "status": "v1",
-      "reads_from_vault": ["sites/<tag>/db_password.<env>", "ssh.<host>.identity_file"],
+      "reads_from_vault": [
+        "sites/<tag>/db_password.<env>",
+        "ssh.<host>.identity_file"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["backend.database.schema_path", "backend.cpanel_account", "backend.cpanel_host"],
-      "spec_fields_written": ["backend.database.<env>.schema_applied_at", "backend.database.<env>.tables_count"],
+      "spec_fields_read": [
+        "backend.database.schema_path",
+        "backend.cpanel_account",
+        "backend.cpanel_host"
+      ],
+      "spec_fields_written": [
+        "backend.database.<env>.schema_applied_at",
+        "backend.database.<env>.tables_count"
+      ],
       "manual_steps": []
     },
     {
@@ -44,11 +73,23 @@
       "implementation": "capabilities/dns/register-subdomain.sh",
       "backing_service": "cPanel UAPI/MCP Zone Editor primary; GoDaddy direct DNS API optional fallback",
       "status": "v1-manual-prompt",
-      "reads_from_vault": ["studio.cpanel.api_token", "studio.godaddy.api_key (optional fallback)", "studio.godaddy.api_secret (optional fallback)", "godaddy.api_key (legacy optional)", "godaddy.api_secret (legacy optional)"],
+      "reads_from_vault": [
+        "studio.cpanel.api_token",
+        "studio.godaddy.api_key (optional fallback)",
+        "studio.godaddy.api_secret (optional fallback)",
+        "godaddy.api_key (legacy optional)",
+        "godaddy.api_secret (legacy optional)"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["environments.production.custom_domain"],
-      "spec_fields_written": ["dns.<subdomain>.registered_at"],
-      "manual_steps": ["cPanel/GoDaddy Zone Editor UI until cPanel DNS wrapper is added"]
+      "spec_fields_read": [
+        "environments.production.custom_domain"
+      ],
+      "spec_fields_written": [
+        "dns.<subdomain>.registered_at"
+      ],
+      "manual_steps": [
+        "cPanel/GoDaddy Zone Editor UI until cPanel DNS wrapper is added"
+      ]
     },
     {
       "id": "email.verify-resend-domain",
@@ -56,11 +97,21 @@
       "implementation": "capabilities/email/verify-resend-domain.sh",
       "backing_service": "Resend API + GoDaddy DNS (manual DKIM record adds)",
       "status": "v1-manual-dns",
-      "reads_from_vault": ["studio.resend.api_key", "resend.api_key (legacy)"],
+      "reads_from_vault": [
+        "studio.resend.api_key",
+        "resend.api_key (legacy)"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["backend.email_sending_domain"],
-      "spec_fields_written": ["backend.email_sending_domain_state", "backend.email_sending_domain_verified_at"],
-      "manual_steps": ["Add DKIM/SPF/DMARC records to GoDaddy DNS Zone Editor"]
+      "spec_fields_read": [
+        "backend.email_sending_domain"
+      ],
+      "spec_fields_written": [
+        "backend.email_sending_domain_state",
+        "backend.email_sending_domain_verified_at"
+      ],
+      "manual_steps": [
+        "Add DKIM/SPF/DMARC records to GoDaddy DNS Zone Editor"
+      ]
     },
     {
       "id": "deploy.connect-netlify",
@@ -68,11 +119,23 @@
       "implementation": "capabilities/deploy/connect-netlify.sh",
       "backing_service": "Netlify (manual UI today; could automate via Chrome MCP later)",
       "status": "v1-manual-prompt",
-      "reads_from_vault": ["studio.netlify.auth_token (optional)", "netlify.auth_token (legacy optional)"],
-      "writes_to_vault": ["sites/<tag>/netlify_site_id"],
-      "spec_fields_read": ["site_repo.remote"],
-      "spec_fields_written": ["environments.staging.netlify_site_id", "environments.staging.url"],
-      "manual_steps": ["Netlify UI: Import from Git → Connect to GitHub repo"]
+      "reads_from_vault": [
+        "studio.netlify.auth_token (optional)",
+        "netlify.auth_token (legacy optional)"
+      ],
+      "writes_to_vault": [
+        "sites/<tag>/netlify_site_id"
+      ],
+      "spec_fields_read": [
+        "site_repo.remote"
+      ],
+      "spec_fields_written": [
+        "environments.staging.netlify_site_id",
+        "environments.staging.url"
+      ],
+      "manual_steps": [
+        "Netlify UI: Import from Git → Connect to GitHub repo"
+      ]
     },
     {
       "id": "deploy.backend",
@@ -80,10 +143,19 @@
       "implementation": "capabilities/deploy/deploy-backend.sh",
       "backing_service": "rsync + SSH",
       "status": "v1",
-      "reads_from_vault": ["ssh.<host>.identity_file"],
+      "reads_from_vault": [
+        "ssh.<host>.identity_file"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["backend.cpanel_account", "backend.cpanel_host", "site_repo.path"],
-      "spec_fields_written": ["backend.deployed_at", "backend.deploy_revision"],
+      "spec_fields_read": [
+        "backend.cpanel_account",
+        "backend.cpanel_host",
+        "site_repo.path"
+      ],
+      "spec_fields_written": [
+        "backend.deployed_at",
+        "backend.deploy_revision"
+      ],
       "manual_steps": []
     },
     {
@@ -92,11 +164,19 @@
       "implementation": "capabilities/cron/register-crons.sh",
       "backing_service": "cPanel cron (manual UI today)",
       "status": "v1-manual-prompt",
-      "reads_from_vault": ["cpanel.api_token"],
+      "reads_from_vault": [
+        "cpanel.api_token"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["backend.cron"],
-      "spec_fields_written": ["backend.cron[].registered_at"],
-      "manual_steps": ["cPanel Cron Jobs UI"]
+      "spec_fields_read": [
+        "backend.cron"
+      ],
+      "spec_fields_written": [
+        "backend.cron[].registered_at"
+      ],
+      "manual_steps": [
+        "cPanel Cron Jobs UI"
+      ]
     },
     {
       "id": "cors.lockdown",
@@ -104,10 +184,17 @@
       "implementation": "capabilities/cors/lockdown.sh",
       "backing_service": "SSH → patch production secrets file",
       "status": "v1",
-      "reads_from_vault": ["ssh.<host>.identity_file"],
+      "reads_from_vault": [
+        "ssh.<host>.identity_file"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["backend.security_rules.cors_pattern_origins", "environments.<env>.netlify_site_id"],
-      "spec_fields_written": ["backend.security_rules.cors_locked_at"],
+      "spec_fields_read": [
+        "backend.security_rules.cors_pattern_origins",
+        "environments.<env>.netlify_site_id"
+      ],
+      "spec_fields_written": [
+        "backend.security_rules.cors_locked_at"
+      ],
       "manual_steps": []
     },
     {
@@ -116,10 +203,18 @@
       "implementation": "capabilities/smoke/test-endpoints.sh",
       "backing_service": "curl + DB query verification",
       "status": "v1",
-      "reads_from_vault": ["sites/<tag>/db_password.production"],
+      "reads_from_vault": [
+        "sites/<tag>/db_password.production"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["backend.endpoints", "environments.production.url"],
-      "spec_fields_written": ["last_smoke_test.timestamp", "last_smoke_test.results"],
+      "spec_fields_read": [
+        "backend.endpoints",
+        "environments.production.url"
+      ],
+      "spec_fields_written": [
+        "last_smoke_test.timestamp",
+        "last_smoke_test.results"
+      ],
       "manual_steps": []
     },
     {
@@ -128,11 +223,27 @@
       "implementation": "capabilities/studio/bootstrap-services.sh",
       "backing_service": "Site Studio service auth + platform vault",
       "status": "v1",
-      "reads_from_vault": ["studio.resend.api_key", "studio.netlify.auth_token", "studio.cpanel.api_token", "studio.godaddy.api_key (optional fallback)", "studio.godaddy.api_secret (optional fallback)", "studio.db.admin_password"],
-      "writes_to_vault": ["studio.resend.api_key", "studio.cpanel.api_token", "sites/mbsh-reunion-v2/db_password.production", "sites/mbsh-reunion-v2/db_ref.production"],
+      "reads_from_vault": [
+        "studio.resend.api_key",
+        "studio.netlify.auth_token",
+        "studio.cpanel.api_token",
+        "studio.godaddy.api_key (optional fallback)",
+        "studio.godaddy.api_secret (optional fallback)",
+        "studio.db.admin_password"
+      ],
+      "writes_to_vault": [
+        "studio.resend.api_key",
+        "studio.cpanel.api_token",
+        "sites/mbsh-reunion-v2/db_password.production",
+        "sites/mbsh-reunion-v2/db_ref.production"
+      ],
       "spec_fields_read": [],
-      "spec_fields_written": ["~/.config/famtastic/studio-config.json service_auth"],
-      "manual_steps": ["Only provider-enforced login/token actions when no reusable session or token exists"]
+      "spec_fields_written": [
+        "~/.config/famtastic/studio-config.json service_auth"
+      ],
+      "manual_steps": [
+        "Only provider-enforced login/token actions when no reusable session or token exists"
+      ]
     },
     {
       "id": "studio.configure-resend",
@@ -140,11 +251,20 @@
       "implementation": "capabilities/studio/configure-resend.sh",
       "backing_service": "Site Studio notification email via Resend",
       "status": "v1",
-      "reads_from_vault": ["studio.resend.api_key"],
+      "reads_from_vault": [
+        "studio.resend.api_key"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["Resend verified domains"],
-      "spec_fields_written": ["~/.config/famtastic/studio-config.json notifications.email", "~/.config/famtastic/studio-config.json service_auth.resend.studio_sender"],
-      "manual_steps": ["Verify a FAMTastic-owned sending domain later if the current verified domain is site-specific"]
+      "spec_fields_read": [
+        "Resend verified domains"
+      ],
+      "spec_fields_written": [
+        "~/.config/famtastic/studio-config.json notifications.email",
+        "~/.config/famtastic/studio-config.json service_auth.resend.studio_sender"
+      ],
+      "manual_steps": [
+        "Verify a FAMTastic-owned sending domain later if the current verified domain is site-specific"
+      ]
     },
     {
       "id": "studio.send-test-email",
@@ -152,9 +272,13 @@
       "implementation": "capabilities/studio/send-test-email.sh",
       "backing_service": "Site Studio notification email via Resend",
       "status": "v1",
-      "reads_from_vault": ["studio.resend.api_key"],
+      "reads_from_vault": [
+        "studio.resend.api_key"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["~/.config/famtastic/studio-config.json notifications.email"],
+      "spec_fields_read": [
+        "~/.config/famtastic/studio-config.json notifications.email"
+      ],
       "spec_fields_written": [],
       "manual_steps": []
     },
@@ -164,11 +288,28 @@
       "implementation": "capabilities/studio/provision-site.sh",
       "backing_service": "Site Studio service layer consumed by generated sites",
       "status": "v1",
-      "reads_from_vault": ["studio.resend.api_key", "studio.netlify.auth_token", "studio.cpanel.api_token", "studio.godaddy.api_key (optional fallback)", "studio.godaddy.api_secret (optional fallback)", "sites/<tag>/db_password.production", "sites/<tag>/db_ref.production"],
+      "reads_from_vault": [
+        "studio.resend.api_key",
+        "studio.netlify.auth_token",
+        "studio.cpanel.api_token",
+        "studio.godaddy.api_key (optional fallback)",
+        "studio.godaddy.api_secret (optional fallback)",
+        "sites/<tag>/db_password.production",
+        "sites/<tag>/db_ref.production"
+      ],
       "writes_to_vault": [],
-      "spec_fields_read": ["backend.database", "backend.email_sending_domain", "backend.subdomain", "environments.production.custom_domain"],
-      "spec_fields_written": ["proofs/studio-service-auth-<site>-<date>.json"],
-      "manual_steps": ["Only unresolved provider auth, DNS, or SSH trust work surfaced by bootstrap"]
+      "spec_fields_read": [
+        "backend.database",
+        "backend.email_sending_domain",
+        "backend.subdomain",
+        "environments.production.custom_domain"
+      ],
+      "spec_fields_written": [
+        "proofs/studio-service-auth-<site>-<date>.json"
+      ],
+      "manual_steps": [
+        "Only unresolved provider auth, DNS, or SSH trust work surfaced by bootstrap"
+      ]
     },
     {
       "id": "vault.read",
@@ -193,6 +334,136 @@
       "spec_fields_read": [],
       "spec_fields_written": [],
       "manual_steps": []
+    },
+    {
+      "id": "billing.generate-invoice",
+      "invocation": "platform billing generate-invoice <engagement.json> [--check]",
+      "implementation": "capabilities/billing/generate-invoice.sh",
+      "backing_service": "local fs (invoice generation); payment provider OPEN — PayPal vs Stripe vs GoDaddy, no provider wired",
+      "status": "v1-no-send",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": [
+        "client",
+        "line_items",
+        "discount",
+        "tax",
+        "terms",
+        "currency",
+        "engagement_type",
+        "billing_period",
+        "vendor",
+        "invoice_number",
+        "issue_date",
+        "payment_instructions"
+      ],
+      "spec_fields_written": [
+        "platform/billing/invoices/<invoice-number>.json",
+        "platform/billing/invoices/<invoice-number>.md",
+        "platform/billing/ledger.jsonl"
+      ],
+      "manual_steps": [
+        "Choose payment provider (PayPal vs Stripe vs GoDaddy) before any send/charge",
+        "Render PDF from markdown (stubbed, no renderer wired)",
+        "Deliver invoice to client (email/portal send not implemented)",
+        "Generate payable link / collect payment (requires chosen provider credentials)"
+      ]
+    },
+    {
+      "id": "billing.list-invoices",
+      "invocation": "platform billing list-invoices [--state=draft|sent|paid|void] [--json]",
+      "implementation": "capabilities/billing/list-invoices.sh",
+      "backing_service": "local fs (billing ledger)",
+      "status": "v1",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": [
+        "platform/billing/ledger.jsonl"
+      ],
+      "spec_fields_written": [],
+      "manual_steps": []
+    },
+    {
+      "id": "billing.mark-paid",
+      "invocation": "platform billing mark-paid <invoice-number> [--method=<m>] [--reference=<r>] [--date=<YYYY-MM-DD>] [--check]",
+      "implementation": "capabilities/billing/mark-paid.sh",
+      "backing_service": "local fs (billing ledger); payment confirmation is manual — no provider reconciliation",
+      "status": "v1-manual-confirm",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": [
+        "platform/billing/ledger.jsonl",
+        "platform/billing/invoices/<invoice-number>.json"
+      ],
+      "spec_fields_written": [
+        "platform/billing/ledger.jsonl (state=paid)",
+        "platform/billing/invoices/<invoice-number>.json (state=paid)"
+      ],
+      "manual_steps": [
+        "Verify funds actually landed — paid state is manually asserted, not provider-reconciled",
+        "Automatic paid detection requires chosen provider webhook/credentials (OPEN)"
+      ]
+    },
+    {
+      "id": "work.draft-ticket-reply",
+      "invocation": "platform work draft-ticket-reply <ctx.json> [--check]",
+      "implementation": "capabilities/work/draft-ticket-reply.sh",
+      "backing_service": "local drafting only (Jira API manual_required / vault-key-pending; Gmail MCP possible future backing for ticket-thread triage)",
+      "status": "v1-draft-only",
+      "reads_from_vault": [
+        "jira.api_token (pending)",
+        "jira.base_url (pending)",
+        "jira.email (pending)"
+      ],
+      "writes_to_vault": [],
+      "spec_fields_read": [],
+      "spec_fields_written": [
+        "capabilities/work/outbox/<draft_id>.json"
+      ],
+      "manual_steps": [
+        "Approve the drafted reply via 'platform work outbox approve <id>'",
+        "Send to Jira manually until jira.api_token / jira.base_url / jira.email are vaulted and a send step is built — auto-send is disabled by design"
+      ]
+    },
+    {
+      "id": "work.draft-standup",
+      "invocation": "platform work draft-standup [<input.json>] [--check]",
+      "implementation": "capabilities/work/draft-standup.sh",
+      "backing_service": "local drafting from input JSON or FAMtastic runs/tasks ledgers (Slack/Teams/email posting manual_required / vault-key-pending)",
+      "status": "v1-draft-only",
+      "reads_from_vault": [
+        "slack.webhook (optional, pending)"
+      ],
+      "writes_to_vault": [],
+      "spec_fields_read": [
+        "runs/runs.jsonl",
+        "tasks/tasks.jsonl"
+      ],
+      "spec_fields_written": [
+        "capabilities/work/outbox/<draft_id>.json"
+      ],
+      "manual_steps": [
+        "Approve the drafted standup via 'platform work outbox approve <id>'",
+        "Post to the team channel manually until a messaging credential (optional slack.webhook) is vaulted and a send step is built — auto-send is disabled by design"
+      ]
+    },
+    {
+      "id": "work.outbox",
+      "invocation": "platform work outbox [list|--check|show <id>|approve <id>|send <id>]",
+      "implementation": "capabilities/work/outbox.sh",
+      "backing_service": "local outbox state machine (draft -> approved); send is inert/manual_required",
+      "status": "v1-draft-only",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": [
+        "capabilities/work/outbox/<draft_id>.json"
+      ],
+      "spec_fields_written": [
+        "capabilities/work/outbox/<draft_id>.json (state, approved_by, approved_at)"
+      ],
+      "manual_steps": [
+        "'send' is intentionally blocked — surfaces manual_required and never transmits without explicit human action and vaulted credentials"
+      ]
     }
   ]
 }

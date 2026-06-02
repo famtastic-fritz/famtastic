@@ -1,0 +1,41 @@
+{
+  "_note": "Ready-to-merge capability records for platform/registry/capabilities.json. Append these three objects into the top-level `capabilities` array. Do NOT edit capabilities.json from this file's authoring session — the parent session merges.",
+  "capabilities": [
+    {
+      "id": "work.draft-ticket-reply",
+      "invocation": "platform work draft-ticket-reply <ctx.json> [--check]",
+      "implementation": "capabilities/work/draft-ticket-reply.sh",
+      "backing_service": "local drafting only (Jira API manual_required / vault-key-pending; Gmail MCP possible future backing for ticket-thread triage)",
+      "status": "v1-draft-only",
+      "reads_from_vault": ["jira.api_token (pending)", "jira.base_url (pending)", "jira.email (pending)"],
+      "writes_to_vault": [],
+      "spec_fields_read": [],
+      "spec_fields_written": ["capabilities/work/outbox/<draft_id>.json"],
+      "manual_steps": ["Approve the drafted reply via 'platform work outbox approve <id>'", "Send to Jira manually until jira.api_token / jira.base_url / jira.email are vaulted and a send step is built — auto-send is disabled by design"]
+    },
+    {
+      "id": "work.draft-standup",
+      "invocation": "platform work draft-standup [<input.json>] [--check]",
+      "implementation": "capabilities/work/draft-standup.sh",
+      "backing_service": "local drafting from input JSON or FAMtastic runs/tasks ledgers (Slack/Teams/email posting manual_required / vault-key-pending)",
+      "status": "v1-draft-only",
+      "reads_from_vault": ["slack.webhook (optional, pending)"],
+      "writes_to_vault": [],
+      "spec_fields_read": ["runs/runs.jsonl", "tasks/tasks.jsonl"],
+      "spec_fields_written": ["capabilities/work/outbox/<draft_id>.json"],
+      "manual_steps": ["Approve the drafted standup via 'platform work outbox approve <id>'", "Post to the team channel manually until a messaging credential (optional slack.webhook) is vaulted and a send step is built — auto-send is disabled by design"]
+    },
+    {
+      "id": "work.outbox",
+      "invocation": "platform work outbox [list|--check|show <id>|approve <id>|send <id>]",
+      "implementation": "capabilities/work/outbox.sh",
+      "backing_service": "local outbox state machine (draft -> approved); send is inert/manual_required",
+      "status": "v1-draft-only",
+      "reads_from_vault": [],
+      "writes_to_vault": [],
+      "spec_fields_read": ["capabilities/work/outbox/<draft_id>.json"],
+      "spec_fields_written": ["capabilities/work/outbox/<draft_id>.json (state, approved_by, approved_at)"],
+      "manual_steps": ["'send' is intentionally blocked — surfaces manual_required and never transmits without explicit human action and vaulted credentials"]
+    }
+  ]
+}

@@ -225,6 +225,14 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Chat Session-Break Divider** *(2026-04-25)* — `addChatSessionBreak(label, opts)` in `index.html` inserts a styled divider into `#chat-messages` on TAG change (via `handleSiteSwitch`) and on WS reconnect (via `ws.onopen` after `/api/config` resolves). Dedupe via `__lastChatBreakTag` and `__lastChatBreakKey`. CSS: `.chat-session-break` in `studio-chat.css`.
 
+### Command Center / Mission Control *(2026-06-02)*
+
+**Command Center generator** — `scripts/command-center/build-command-center.js` (no deps). Read-only aggregator over the live ledgers (registry, tasks, runs, proofs, agents, capabilities, sites) that emits `command-center/{index.html, briefing.md, state.json}`: a mobile-first dashboard (Chart.js CDN — plan-health doughnut + autonomy×profit quadrant), a "Virtual Fritz" daily briefing, and a machine snapshot. Per-plan it derives **stage / momentum / autonomy / profit**; scoring is tunable in the `SCORING` constant. Tracked as plan `mission-control-command-center`. This is the visual cockpit the "Mission Control visual orchestration" gaps called for, built as an independent ledger reader (see Known Gaps: reconcile with `buildMissionControlSnapshot()`).
+
+**Shay billing capability** — `platform/capabilities/billing/{generate-invoice,list-invoices,mark-paid}.sh` + `invoice-spec.schema.json`. Real invoice generation (math, numbering, ledger state machine); send/PDF/payable-link are `manual_required` pending a payment-provider decision. Registered in `platform/registry/capabilities.json` as `billing.*`.
+
+**Shay work-ops capability** — `platform/capabilities/work/{draft-ticket-reply,draft-standup,outbox}.sh`. Drafts Jira replies and team standups (the latter reads `runs.jsonl`/`tasks.jsonl`) with a hard human-approval-before-send gate; send is `manual_required` pending vaulted `jira.*`/`slack.webhook`. Registered as `work.*`. Roadmap: `docs/shay-fritz-ready/ROADMAP.md`.
+
 ---
 
 ## API Endpoints (Full)
@@ -341,6 +349,9 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | MBSH runtime endpoint execution | Tier 1 | Backend inventory and browser-level RSVP/sponsor submission proof are complete. Runtime execution now depends on Studio-managed service provisioning: vaulted Studio Resend/cPanel/site DB refs exist, but production `API_BASE_URL` remains `null` until backend origin generation, cPanel DNS/addon-domain automation still needs wrapper coverage or manual UI, and SSH host-key trust blocks backend deploy/smoke. |
 | MBSH archival/crowd-sourced media replacement | Tier 2 | Launch-safe generated/derivative story assets now exist and have a rights manifest. Future real archival/crowd-sourced replacements still need source attribution, permission, and approval logging before publishing. |
 | Pipeline visualizer depth | Tier 1 | Workbench phase 1 renders inspect/trace/propose from the workflow catalog and trace API. Stage/event matching, missing-stage detection, and proposed patch preview are still missing. |
+| Command Center reconciliation | Tier 1 | New 2026-06-02. `scripts/command-center/build-command-center.js` reads the ledgers directly rather than through the existing `lib/famtastic/mission-control/index.js` `buildMissionControlSnapshot()`. Two readers of the same data is exactly the parallel-implementation smell the 2026-05-05 rule warns against — reconcile so one is the source (prefer the generator consuming the snapshot, or the library consuming the generator's `state.json`). |
+| Command Center delivery surfaces | Tier 1 | New 2026-06-02. The generator runs manually only — no `fam-hub command-center` command, no regen cron, not served via Studio `/api/ops`, and no automatic phone delivery of `briefing.md`. Tracked as `mission-control-command-center` tasks 001-003. |
+| Shay billing/work send paths | Tier 1 | New 2026-06-02. `billing.*` generates invoices and `work.*` drafts ticket replies/standups, but both stop at `manual_required`: billing needs a payment-provider decision (PayPal/Stripe/GoDaddy); work needs vaulted `jira.api_token`/`base_url`/`email` (+ optional `slack.webhook`). Tracked as `mission-control-command-center` tasks 004-005. Work drafting is also deterministic (no LLM rewrite pass yet). |
 
 ### Closed 2026-04-25 — Baseline failure closure
 
@@ -671,7 +682,7 @@ The full iterative roadmap is in `architecture/2026-04-25-outstanding-plan.md`.
 
 Quick view:
 
-**Immediate (next session):** JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX.
+**Immediate (next session):** Command Center delivery surfaces (`fam-hub command-center` + daily regen cron, serve `state.json` via Studio `/api/ops`, push `briefing.md` to phone) and reconcile it with `buildMissionControlSnapshot()`; decide the payment provider to unblock `billing.*`; JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX.
 
 **Near-term (this week):** Edge case test suite design (5 categories); Wizard-of-Oz orchestrated build session; Reunion site (July 12 deadline).
 
