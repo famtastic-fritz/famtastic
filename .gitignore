@@ -90,3 +90,6 @@ scripts/Screenshot*
 # The capability scripts + schemas + examples are tracked; their output is not.
 /platform/billing/
 /platform/capabilities/work/outbox/*.json
+
+# Finance agents fetched market-data cache (results + sample-data stay tracked)
+/scripts/finance-agents/.cache/

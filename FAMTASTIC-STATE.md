@@ -233,6 +233,12 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Shay work-ops capability** — `platform/capabilities/work/{draft-ticket-reply,draft-standup,outbox}.sh`. Drafts Jira replies and team standups (the latter reads `runs.jsonl`/`tasks.jsonl`) with a hard human-approval-before-send gate; send is `manual_required` pending vaulted `jira.*`/`slack.webhook`. Registered as `work.*`. Roadmap: `docs/shay-fritz-ready/ROADMAP.md`.
 
+**Reach Fabric** *(2026-06-02)* — `lib/reach-fabric/`. One `sendReach({message,title,urgency,channels})` that walks channels by urgency/availability with a guaranteed console fallback and a per-send JSONL audit line. Adapters: console (always), email (Resend), telegram, sms (Twilio), push (Web Push/VAPID) — missing creds → skipped, never throws. Capability `reach.send` (registry now 23). The spine that lets Shay reach Fritz on any channel.
+
+**Companion App PWA** *(2026-06-02)* — `companion-app/`. Installable, offline-capable, no-build PWA: Chat (pluggable `CHAT_ENDPOINT`, mock until the Shay gateway is wired) + a Today tab from `command-center/state.json`. The phone clone of talking to the second-in-command. Run `python3 -m http.server` from the dir, open on phone, Add to Home Screen.
+
+**Financial agents** *(2026-06-02)* — `scripts/finance-agents/`. Greenfield (no prior financial code in the brain). 6 strategy agents report a $10-stake leaderboard from a keyless Stooq feed; live execution (Alpaca paper) is gated. NOTE: the cloud container firewalls the market feed, so committed results are labeled SAMPLE data — on an open network it pulls real data.
+
 ---
 
 ## API Endpoints (Full)
@@ -352,6 +358,9 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Command Center reconciliation | Tier 1 | New 2026-06-02. `scripts/command-center/build-command-center.js` reads the ledgers directly rather than through the existing `lib/famtastic/mission-control/index.js` `buildMissionControlSnapshot()`. Two readers of the same data is exactly the parallel-implementation smell the 2026-05-05 rule warns against — reconcile so one is the source (prefer the generator consuming the snapshot, or the library consuming the generator's `state.json`). |
 | Command Center delivery surfaces | Tier 1 | New 2026-06-02. The generator runs manually only — no `fam-hub command-center` command, no regen cron, not served via Studio `/api/ops`, and no automatic phone delivery of `briefing.md`. Tracked as `mission-control-command-center` tasks 001-003. |
 | Shay billing/work send paths | Tier 1 | New 2026-06-02. `billing.*` generates invoices and `work.*` drafts ticket replies/standups, but both stop at `manual_required`: billing needs a payment-provider decision (PayPal/Stripe/GoDaddy); work needs vaulted `jira.api_token`/`base_url`/`email` (+ optional `slack.webhook`). Tracked as `mission-control-command-center` tasks 004-005. Work drafting is also deterministic (no LLM rewrite pass yet). |
+| Reach Fabric live channels | Tier 1 | New 2026-06-02. Only `console` is active with zero creds; `email`+`telegram` need their env vars set; `sms` (Twilio number) and `push` (VAPID keypair + companion-app pairing + `web-push`) are manual_required. |
+| Companion App backend + push | Tier 1 | New 2026-06-02. The PWA runs on a built-in mock until `CHAT_ENDPOINT` points at the real Shay gateway (off-LAN access needs `API_SERVER_KEY` per the Shay master plan), and push delivery depends on the Reach Fabric push channel. `state.json` is a copied snapshot — re-copy/symlink on dashboard regen. |
+| Financial agents market data + go-live | Tier 1 | New 2026-06-02. The cloud container firewalls the keyless Stooq feed (HTTP 403), so committed results are SAMPLE/synthetic — real numbers require running on an open network. Live brokerage execution (Alpaca paper API) needs broker creds and is gated. A single session is noise; needs daily aggregation. |
 
 ### Closed 2026-04-25 — Baseline failure closure
 

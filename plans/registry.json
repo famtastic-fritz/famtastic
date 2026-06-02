@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-06-02T13:15:52.971Z",
+  "updated_at": "2026-06-02T13:17:05.025Z",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -663,8 +663,8 @@
       "group": "companion_app",
       "fritz_priority": "high",
       "plan_path": "plans/fritz-companion-app/plan.json",
-      "current_workstream": "Define the architecture: a phone-first chat client that talks to Shay the same way this session does, plus push so Shay reaches out.",
-      "next_action": "Choose the stack (PWA vs React Native vs reuse shay-desktop) and spec the question/answer loop + push.",
+      "current_workstream": "Companion App PWA BUILT (companion-app/): installable, offline app-shell, Chat (pluggable CHAT_ENDPOINT, mock until wired) + Today tab from command-center/state.json. Open it on the phone, Add to Home Screen.",
+      "next_action": "Point CHAT_ENDPOINT at the real Shay gateway (off-LAN auth via API_SERVER_KEY) and wire push via the Reach Fabric.",
       "open_blockers": "No hard blocker. Push delivery and any app-store path are device-platform decisions.",
       "originator": "Fritz",
       "origin_surface": "Claude Code (web)",
@@ -694,8 +694,7 @@
         "It shares the reach fabric with shay-omnipresent-assistant."
       ],
       "next_action_items": [
-        "task-2026-06-02-010",
-        "task-2026-06-02-011"
+        "task-2026-06-02-013"
       ]
     },
     {
@@ -706,8 +705,8 @@
       "group": "financial_agents",
       "fritz_priority": "high",
       "plan_path": "plans/financial-agents/plan.json",
-      "current_workstream": "Building the paper-trading simulation harness (keyless market data + several strategy agents) and running today’s $10-stake leaderboard.",
-      "next_action": "Run the leaderboard on the latest session, report which agent won and the $10 outcomes; then decide whether to track daily and which to consider for live paper-trading.",
+      "current_workstream": "Harness BUILT + ran (scripts/finance-agents/). 6 strategy agents, $10 leaderboard. In THIS cloud container the market feed (Stooq) is firewalled so numbers are SAMPLE/synthetic; on an open network run.js pulls real data automatically.",
+      "next_action": "Run on an open network for the real session; decide daily cron cadence; gate Alpaca paper-trading for live execution.",
       "open_blockers": "No hard blocker for simulation. Live brokerage execution requires a broker account + API keys (Alpaca paper API) — a Fritz decision, gated.",
       "originator": "Fritz",
       "origin_surface": "Claude Code (web)",
@@ -736,8 +735,8 @@
         "Paper/simulation only until a broker decision is made."
       ],
       "next_action_items": [
-        "task-2026-06-02-014",
-        "task-2026-06-02-015"
+        "task-2026-06-02-016",
+        "task-2026-06-02-017"
       ]
     }
   ],
