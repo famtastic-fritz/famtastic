@@ -1341,6 +1341,7 @@
 - `advertising.mjs` — scheduler + publish via governance gate (~700 tok)
 - `publishers.mjs` — YT/TikTok/IG adapters (dry-run stage; live stubs) (~700 tok)
 - `feedback.mjs` — metrics (sim/real) → niche weights → learnings (~900 tok)
+- `client-upsell.mjs` — discover site clients, branded promo + draft offer email (~1000 tok)
 
 ## autopilot/tests/
 

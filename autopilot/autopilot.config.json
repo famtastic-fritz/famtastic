@@ -12,6 +12,9 @@
   "format": "vertical",
   "fps": 30,
   "scenes": 5,
+  "client_limit": 10,
+  "client_offer": "5 branded short videos a month for $250",
+  "client_from_email": "you@yourstudio.com",
   "seed_niches": [
     "personal finance",
     "productivity",

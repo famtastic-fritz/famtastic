@@ -17,10 +17,12 @@ hard cap · auto-discover niches by ROI.
 | 2 | Collection engine (faceless gen + QA + SEO + affiliate + render) | ✅ done |
 | 3 | Advertising (scheduler + publisher adapters, dry-run) | ✅ done |
 | 4 | Feedback loop (metrics → niche weights → learnings) | ✅ done |
+| 5a | **Client-upsell agent** (branded promos + draft offer emails) | ✅ done |
 | 3.5 | **Live platform uploads** (official APIs) | ⬜ todo — needs account creds |
 | 4.5 | **Real analytics ingestion** (replace simulated) | ⬜ todo — needs API creds |
+| 5a.1 | Live client email send (Resend/SMTP) | ⬜ todo — needs sender creds |
 | 2.5 | AI b-roll + thumbnails via `buildMuapiPlan` | ⬜ todo |
-| 5 | client-upsell + build-and-flip agents | ⬜ todo |
+| 5b | build-and-flip channel-growth tracker | ⬜ todo |
 | 6 | Hardening (prod cron, breakers, dashboard) | ⬜ todo |
 
 ## Verified (2026-06-02)

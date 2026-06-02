@@ -87,12 +87,28 @@
       "acceptance": ["Per-scene images sourced within budget", "thumbnail rendered"]
     },
     {
-      "id": "ws_money_agents",
-      "title": "Phase 5 — client-upsell + build-and-flip monetization agents",
+      "id": "ws_client_upsell",
+      "title": "Phase 5a — client-upsell agent (promos + draft offer emails for existing site clients)",
+      "status": "done",
+      "priority": "P1",
+      "outputs": ["autopilot/stages/client-upsell.mjs"],
+      "acceptance": ["Discovers clients from sites/ + ../famtastic-sites/", "Extracts brand accent from spec.json", "Generates branded promo + staged offer email", "Verified against site-mbsh-reunion with a real rendered MP4"]
+    },
+    {
+      "id": "ws_flip_tracker",
+      "title": "Phase 5b — build-and-flip channel-growth tracker",
       "status": "todo",
       "priority": "P2",
-      "outputs": ["autopilot/stages/client-upsell.mjs", "autopilot/stages/flip-tracker.mjs"],
-      "acceptance": ["Auto promo videos + draft emails for existing site clients", "channel growth tracked toward sale thresholds"]
+      "outputs": ["autopilot/stages/flip-tracker.mjs"],
+      "acceptance": ["Channel growth tracked toward sale thresholds", "Flags sale-ready candidates"]
+    },
+    {
+      "id": "ws_client_email_send",
+      "title": "Phase 5a.1 — live client email send (Resend/SMTP)",
+      "status": "todo",
+      "priority": "P2",
+      "outputs": ["autopilot/lib/email.mjs"],
+      "acceptance": ["With sender + provider creds and live=true, offer emails actually send", "Bounce/reply handling"]
     },
     {
       "id": "ws_hardening",
@@ -103,5 +119,5 @@
       "acceptance": ["Scheduled ticks run in prod", "consecutive-failure breaker", "status dashboard"]
     }
   ],
-  "open_task_ids": ["ws_live_publishing", "ws_real_analytics", "ws_broll", "ws_money_agents", "ws_hardening"]
+  "open_task_ids": ["ws_live_publishing", "ws_real_analytics", "ws_broll", "ws_flip_tracker", "ws_client_email_send", "ws_hardening"]
 }

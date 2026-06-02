@@ -13,6 +13,7 @@
 
 import fs from "node:fs";
 import { tick } from "./orchestrator.mjs";
+import { runClientUpsell } from "./stages/client-upsell.mjs";
 import { loadConfig, stopFlagPath, AUTOPILOT_ROOT } from "./lib/paths.mjs";
 import { read } from "./lib/ledger.mjs";
 import { spentToday, remainingToday } from "./lib/budget.mjs";
@@ -43,6 +44,28 @@ async function main() {
           `$${summary.spent_today_usd}/${config.spend_cap_usd_per_day} spent · health=${summary.health}`,
       );
     }
+    return;
+  }
+
+  if (cmd === "clients") {
+    console.log("💼 client-upsell — branded promos + draft offer emails for your site clients\n");
+    const items = await runClientUpsell(config);
+    if (!items.length) {
+      console.log("  No clients found. The agent scans sites/ and ../famtastic-sites/ for spec.json.");
+      return;
+    }
+    for (const it of items) {
+      if (it.status === "failed") {
+        console.log(`  ✗ ${it.tag} — ${it.reason}`);
+        continue;
+      }
+      console.log(`  ✓ ${it.name}  (${it.vertical || "—"}, accent ${it.accent})`);
+      console.log(`     promo : "${it.promo_topic}"`);
+      console.log(`     video : ${it.video_path ? it.video_path : "spec staged (run with --render for MP4)"}`);
+      console.log(`     email : ${it.email_status} — "${it.email_subject}"`);
+    }
+    console.log(`\n✅ ${items.filter((i) => i.status === "ready").length} client bundle(s) staged in autopilot/out/clients/`);
+    console.log(`   $${spentToday()}/${config.spend_cap_usd_per_day} spent today. Set client_from_email + OPENAI_API_KEY to upgrade + send.`);
     return;
   }
 
@@ -97,6 +120,7 @@ async function main() {
   console.log(`  concepts        : ${read("concepts").length}`);
   console.log(`  inventory       : ${read("inventory").length}`);
   console.log(`  published       : ${read("published").length}`);
+  console.log(`  client bundles  : ${read("clients").length}`);
   console.log(`  runs            : ${runs.length}`);
   if (last) console.log(`  last run        : ${last.at} · ${last.status} · health=${last.health || "?"}`);
 }

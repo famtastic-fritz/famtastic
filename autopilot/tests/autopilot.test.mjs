@@ -12,6 +12,7 @@ import { requestSpend, spentToday, remainingToday } from "../lib/budget.mjs";
 import { checkGovernance, isStopped } from "../lib/governance.mjs";
 import { runConcept } from "../stages/concept.mjs";
 import { runFeedback } from "../stages/feedback.mjs";
+import { extractBrand } from "../stages/client-upsell.mjs";
 import { tick } from "../orchestrator.mjs";
 import { read } from "../lib/ledger.mjs";
 
@@ -114,6 +115,25 @@ test("orchestrator: a full dry-run tick produces inventory + staged posts", asyn
   assert.ok(read("concepts", { root }).length === 3);
   assert.ok(read("inventory", { root }).length === 3);
   assert.ok(read("published", { root }).length === 9);
+});
+
+test("client-upsell: extractBrand pulls name, vertical, and a vivid accent", () => {
+  const spec = {
+    site_name: "Tony's Barber Shop",
+    business_type: "barber",
+    deployed_url: "https://tonys.example.com",
+    design_brief: { tone: ["clean", "classic"], visual_direction: { palette: "#0A0A0A and #1E40AF accents on #FFFFFF" } },
+  };
+  const brand = extractBrand(spec);
+  assert.equal(brand.name, "Tony's Barber Shop");
+  assert.equal(brand.vertical, "barber");
+  assert.equal(brand.url, "https://tonys.example.com");
+  assert.equal(brand.accent, "#1E40AF", "picks the vivid color, not black/white");
+});
+
+test("client-upsell: extractBrand falls back to a vertical default accent", () => {
+  const brand = extractBrand({ site_name: "Bloom", business_type: "florist", design_brief: {} });
+  assert.equal(brand.accent, "#db2777"); // florist default
 });
 
 test("orchestrator: STOP halts the tick before any work", async () => {

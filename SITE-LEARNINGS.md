@@ -57,9 +57,25 @@ ledgers and can dispatch into the job queue later.
 `tick` produces 3 concepts → 3 specs → 9 staged posts → feedback; and one real
 4.1MB MP4 rendered through the autopilot (`tick --render`) via the headless_shell.
 
+### Client-upsell agent (added 2026-06-02, fastest-money path)
+`stages/client-upsell.mjs` — `discoverClients()` scans `sites/` and the sibling
+`../famtastic-sites/` for `spec.json`; `extractBrand(spec)` returns
+`{name, vertical, tone, accent, url}` where `accent` is hex-mined from
+`design_brief.visual_direction` / `style_fingerprint` / `brand_mark`, filtered
+to a vivid color via `isVivid()` (drops near-black/white/gray), with per-vertical
+fallbacks (`VERTICAL_ACCENT`). `runClientUpsell()` generates a branded promo with
+the faceless generator in the client's accent, optionally renders, and drafts +
+stages a personalized offer email (`out/clients/<tag>/email.txt`, governance-gated
+to dry-run). CLI: `node autopilot/cli.mjs clients [--render]`. Config:
+`client_limit`, `client_offer`, `client_from_email`. Verified against the real
+`site-mbsh-reunion` (accent `#C8102E`, real MP4 rendered, offer email staged).
+
 ### Known Gaps opened
 - **Live platform uploads are stubbed** (`publishers.mjs` `*Upload()` throw until
   wired). Publishing stages bundles until account credentials + `config.live`.
+- **Client offer emails are staged, not sent** — live send needs a real
+  from-address + Resend/SMTP creds (`ws_client_email_send`). `build-and-flip`
+  channel-growth tracker (`ws_flip_tracker`) is still todo.
 - **Analytics are simulated** (`simulated: true`) until platform analytics creds
   exist; the learning loop runs on simulated scores.
 - **No AI b-roll / thumbnail generation yet** — backgrounds are gradients;
