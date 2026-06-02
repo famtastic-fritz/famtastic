@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "spend_cap_usd_per_day": 5,
+  "platforms": ["youtube", "tiktok", "instagram"],
+  "money_models": ["affiliate", "ad_revenue", "client_service", "build_and_flip"],
+  "niche_strategy": "auto_roi",
+  "videos_per_tick": 3,
+  "explore_ratio": 0.2,
+  "live": false,
+  "render": false,
+  "render_cap_per_tick": 1,
+  "format": "vertical",
+  "fps": 30,
+  "scenes": 5,
+  "seed_niches": [
+    "personal finance",
+    "productivity",
+    "tech tips",
+    "health habits",
+    "history facts",
+    "psychology",
+    "side hustles",
+    "cooking hacks"
+  ],
+  "cost_estimates_usd": {
+    "script_llm": 0.01,
+    "voiceover": 0.02,
+    "broll_image": 0.04,
+    "render": 0.0
+  }
+}

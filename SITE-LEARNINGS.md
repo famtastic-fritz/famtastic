@@ -1,5 +1,76 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Autopilot — autonomous faceless-video business (2026-06-02)
+
+Built `autopilot/` on top of the faceless video generator: a self-running
+content factory (`concept → collection → advertising → feedback`) meant to run
+unattended. Architecture and phasing live in `autopilot/ROLLOUT-PLAN.md`;
+operator manual in `autopilot/README.md`.
+
+### Loop + files
+- **`stages/concept.mjs`** — explore/exploit bandit over a niche portfolio.
+  `nicheWeights()` averages learned performance (prior 0.5); `runConcept()`
+  picks niches (epsilon = `explore_ratio`), generates deterministic topics,
+  dedupes by `fingerprint`, scores `predicted_roi`, appends to `concepts` ledger.
+- **`stages/collection.mjs`** — `runCollection()` (async) budget-gates paid
+  steps, calls the faceless `generateVideoSpec()`, runs `qaCheck()`, builds
+  per-platform `buildMetadata()` (SEO + affiliate links), optionally renders
+  (bounded by `render_cap_per_tick` + budget), appends `inventory` ledger,
+  writes bundle to `out/<concept-id>/`.
+- **`stages/advertising.mjs`** + **`stages/publishers.mjs`** — `runAdvertising()`
+  schedules (best-hour heuristics) and publishes per platform through the
+  governance gate. Publishers share `publish(bundle, gov, dir)`; dry-run writes
+  `<platform>.staged.json`; live calls are stubbed integration points
+  (`youtubeUpload`/`tiktokUpload`/`instagramUpload`). Appends `published` ledger.
+- **`stages/feedback.mjs`** — `runFeedback()` pulls or **simulates** metrics
+  (`simulateMetrics()` deterministic from predicted ROI), appends `performance`,
+  updates niche weights (closing the ROI loop), emits `learnings` (memory
+  candidates) for niches over 0.6 / under 0.3.
+- **`orchestrator.mjs`** — `tick()` runs all stages, gathers events, calls
+  `evaluateRunHealth`, appends `runs` ledger. **`cli.mjs`** —
+  `tick|status|report|stop|resume|config`.
+
+### Autonomy/safety primitives
+- **`lib/budget.mjs`** — hard daily cap (`spend_cap_usd_per_day`, default $5).
+  `requestSpend()` grants/denies; over-cap → caller degrades to free path.
+- **`lib/governance.mjs`** — `checkGovernance(action)` returns
+  `live|dry-run|blocked`. Outward actions (publish/email/comment) need
+  `config.live === true` **and** `hasCredsFor(platform)`, else dry-run. `STOP`
+  file = kill switch.
+- **`lib/ledger.mjs`** — append-only JSONL with secret redaction; mirrors to the
+  data-center ledger via `lib/interop.mjs`.
+- **`lib/vault.mjs`** — env → vault credential resolution; `CRED_MAP` defines the
+  keys (`OPENAI_API_KEY`, `YOUTUBE_TOKEN`, `TIKTOK_TOKEN`, `IG_TOKEN`, …).
+- **`lib/render.mjs`** — `findBrowser()` auto-detects the Playwright
+  `headless_shell`; `renderSpec()` runs the Remotion CLI.
+- **`install-cron.sh`** — cron (Linux) / launchd (macOS) installer, default 6h.
+
+### Reuse (from recon)
+data-center `appendLedgerRecord` (CJS, no native deps) and `evaluateRunHealth`
+are reused via `createRequire` in `lib/interop.mjs`. The SQLite job queue
+(`site-studio/lib/job-queue.js`) is **not** hard-depended on because
+`better-sqlite3` is not installed in all environments — autopilot uses JSONL
+ledgers and can dispatch into the job queue later.
+
+### Verified
+7 unit tests pass (`node --test autopilot/tests/autopilot.test.mjs`); a full
+`tick` produces 3 concepts → 3 specs → 9 staged posts → feedback; and one real
+4.1MB MP4 rendered through the autopilot (`tick --render`) via the headless_shell.
+
+### Known Gaps opened
+- **Live platform uploads are stubbed** (`publishers.mjs` `*Upload()` throw until
+  wired). Publishing stages bundles until account credentials + `config.live`.
+- **Analytics are simulated** (`simulated: true`) until platform analytics creds
+  exist; the learning loop runs on simulated scores.
+- **No AI b-roll / thumbnail generation yet** — backgrounds are gradients;
+  thumbnail is a frame index. Wiring to `media-studio` `buildMuapiPlan()` is the
+  next step.
+- **Money-model agents partial:** affiliate-matcher is built; `client-upsell`
+  (productized service) and `build-and-flip` tracking are designed in the plan
+  but not yet implemented.
+- **Job-queue/cron not wired in this sandbox** — `better-sqlite3` absent; cron
+  installer present but not installed here.
+
 ## Faceless Video Generator on the Remotion engine (2026-06-02)
 
 Added a faceless short-form video generator to the `remotion/` package. It is

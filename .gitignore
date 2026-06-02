@@ -85,3 +85,11 @@ scripts/Screenshot*
 
 # Generated media/build outputs
 /remotion/out/
+
+# Autopilot runtime state & rendered output (regenerated each run)
+/autopilot/state/
+/autopilot/out/
+/autopilot/STOP
+
+# Autopilot runtime ledgers mirrored into the data-center
+data-center/ledgers/autopilot-*.jsonl
