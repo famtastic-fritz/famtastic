@@ -1,7 +1,15 @@
 # Studio Capability Registry
 
-Last updated: 2026-04-08 (media providers updated)
+Last updated: 2026-06-02 (added humanize-writing skill)
 Source: cli-handoff-pattern.json (street-family-reunion session)
+
+---
+
+## Installed Skills
+
+| Skill | Location | Purpose |
+|---|---|---|
+| **humanize-writing** | `.claude/skills/humanize-writing/` + `shay-agent-os/skills/humanize-writing/` | Standing prose-output filter — strips AI tells, normalizes burstiness/sentence rhythm, calibrates to Fritz's voice. Applies automatically to any written output >3 paragraphs. References must be fully loaded before applying. Source: `github.com/aaaronmiller/humanize-writing` (installed 2026-06-02). Available to Claude Code AND Shay (shay-agent-os). |
 
 ---
 

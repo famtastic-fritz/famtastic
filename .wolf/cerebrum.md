@@ -176,6 +176,8 @@ registry before first use.
 
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
+- [2026-06-02] "Shay" is her OWN project, NOT `site-studio/shay-shay/`. That folder is only the Studio chat orchestrator persona. The real Shay agent core lives in `shay-shay/` (gitignored, on Fritz's Mac), the swarm pipeline in `shay-agent-os/` (tracked — skills live in `shay-agent-os/skills/<name>/SKILL.md`), and the runtime home in `~/.shay/` (SOUL.md, kanban, gateway). To "give Shay a skill," install into `shay-agent-os/skills/`, NOT `site-studio/shay-shay/`.
+- [2026-06-02] Don't count only branch-based sessions when asked "what did sessions do" — Shay runs her own task stream recorded in `obsidian/Shay-Memory/` (builds/, plans/, reflections/). Check there too.
 - [2026-05-14] Do NOT add rope-continues-into-bleed pattern unless the scene plate has a stanchion endpoint baked in that the rope can visually anchor to. The pattern fails when the rope has no destination.
 - [2026-03-25] Never mutate module-level state inside a function that looks like a pure reader (buildPromptContext). Return the resolved value and let the caller mutate.
 - [2026-03-25] When extracting shared CSS, only strip blocks whose content matches what was extracted — don't blindly strip all non-data-page style blocks.

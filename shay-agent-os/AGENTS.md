@@ -95,6 +95,20 @@ Trust mode is stored in `useDashboardStore` and should be synchronized with the 
 - Use lightweight human-readable notes in plans/captures instead.
 - No plan may stay `status: active` with zero open tasks for more than one session. Run `node scripts/plans/audit.js` at session end.
 
+## Installed Skills (`skills/`)
+
+Skills are directories of `skills/<name>/SKILL.md` (+ optional `references/`). Current:
+`dead-wire-detector`, `typed-screen-manifest`, `claude-desktop-style-match`,
+`render-spine-guard`, `visual-qa-gate`, `micro-patch-living-file`,
+`settings-store-snapshot-cache`, `humanize-writing`.
+
+- **humanize-writing** (added 2026-06-02, from github.com/aaaronmiller/humanize-writing)
+  is a **standing output filter**: before Shay emits any prose longer than ~3
+  paragraphs (reports, emails, posts, docs, briefings, marketing copy), apply it —
+  load every file in `skills/humanize-writing/references/` first, then strip AI
+  tells, normalize burstiness, and calibrate to Fritz's voice. Same skill is
+  installed for Claude Code at `.claude/skills/humanize-writing/`.
+
 ## Local LLM Models (Ollama)
 
 | Model | Size | Role |

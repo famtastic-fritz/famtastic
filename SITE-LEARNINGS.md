@@ -1,5 +1,36 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Brain Sync Contract + session-to-brain tying (2026-06-02)
+
+The Obsidian brain is `obsidian/` on `main` (vault with smart-connections plugin;
+`Shay-Memory/` holds 202+ notes — builds, plans, reflections, research). Sessions must
+leave a trace there tied to their id. Enforcement: `scripts/brain/session-checkpoint.js`
+(dependency-free, never throws) is wired into `.claude/settings.json` hooks —
+**SessionStart** creates `obsidian/05-Captures/sessions/<date>/SESSION-<short-id>.md`
+(frontmatter: `session_id` from `CLAUDE_CODE_SESSION_ID`, `branch`, `start_sha`, timestamps);
+**PreCompact** appends a checkpoint line (this is the "periodic" guarantee — long sessions
+compact); **Stop** appends the git delta (commits in `start_sha..HEAD`) and marks the note
+ended. The agent still writes the "What this session did" substance per the contract in
+`CLAUDE.md` ("Brain Sync Contract"). Convergence rule: if a branch predates `obsidian/` on
+main, merge `origin/main` before brain work or notes hit add/add conflicts.
+
+**Why it exists:** a 48h audit found four 2026-06-02 Claude Code sessions siloed — three
+branched from a 2026-05-29 base (before the vault landed 05-30), wrote only to per-branch
+`SITE-LEARNINGS`/`CHANGELOG`/`.wolf`, and none merged to main, so the brain got zero of that
+day's Claude Code work. Shay (on `main`) writes cleanly to `obsidian/Shay-Memory/` — the model
+to match. Full reconciliation in `obsidian/05-Captures/sessions/2026-06-02/INDEX.md`.
+
+## humanize-writing skill (2026-06-02)
+
+Installed from `github.com/aaaronmiller/humanize-writing` (commit 4b59839) to BOTH
+`.claude/skills/humanize-writing/` (Claude Code) and `shay-agent-os/skills/humanize-writing/`
+(Shay). It's a standing prose-output filter — strips AI tells, normalizes burstiness/sentence
+rhythm, calibrates voice; auto-activates for any written output over ~3 paragraphs. **Must load
+every file in `references/` before applying.** Registered in
+`obsidian/06-Capabilities/Agent-Capability-Matrix.md`, `docs/capability-registry.md`, and
+Shay's `shay-agent-os/AGENTS.md` (standing output filter). NOTE: Shay ≠ `site-studio/shay-shay/`
+(that's the Studio chat persona); her real home is `shay-agent-os/` + `~/.shay/`.
+
 ## Autonomous content engine (2026-06-02)
 
 `scripts/content-engine/` — Fritz's chosen hands-off revenue path (he explicitly does not want to be involved). A quality-gated SEO/affiliate content site generator that runs on a cron. Pieces: `config.json` (niche, long-tail keywords, monetization, quality gate, deploy target), `lib.js` (helpers + graceful BrainInterface loader), `generate-article.js` (one article per keyword, production path = `site-studio/lib/brain-interface.js` `BrainInterface.execute()`, **deterministic template fallback when network/LLM unavailable** — never crashes), `assemble-site.js` (articles/*.md → static `dist/`: per-article HTML + index + sitemap.xml + robots.txt), `run.js` (orchestrator → `results/<date>.json`, idempotent/cron-safe — skips existing articles), `publish.sh` (honest deploy stub: prints the exact `netlify deploy`/GH-Pages command + crontab line; deploy runs on Fritz's Mac with a vaulted token).
