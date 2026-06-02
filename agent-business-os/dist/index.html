@@ -19,6 +19,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/landing.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://agentbusinessos.com/#org",
+        "name": "Agent Business OS",
+        "url": "https://agentbusinessos.com",
+        "logo": "https://agentbusinessos.com/assets/logo-icon.svg",
+        "slogan": "Your business runs itself. You run your business."
+      },
+      {
+        "@type": "Service",
+        "name": "Agent Business OS — autonomous revenue operations",
+        "provider": { "@id": "https://agentbusinessos.com/#org" },
+        "serviceType": "Done-for-you AI revenue operations (capture, qualify, convert, fulfill)",
+        "areaServed": "US",
+        "audience": { "@type": "Audience", "audienceType": "Founder-led agencies, consultants, and service businesses" },
+        "offers": [
+          { "@type": "Offer", "name": "Starter", "price": "2500", "priceCurrency": "USD" },
+          { "@type": "Offer", "name": "Performance Sprint", "price": "3500", "priceCurrency": "USD" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "Is this fully autonomous?", "acceptedAnswer": { "@type": "Answer", "text": "Operations can be highly autonomous — capture, qualification, follow-up, and fulfillment run on agents. Strategy and mission decisions remain founder-controlled, with escalation thresholds and auditable logs at every gate." } },
+          { "@type": "Question", "name": "Can this run with my existing tools?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The approach is integration-first — we wire the OS into your current CRM and stack, and only replace a tool when it's an active bottleneck." } },
+          { "@type": "Question", "name": "How fast do I see something working?", "acceptedAnswer": { "@type": "Answer", "text": "Time to first signal is 48–96 hours. The full four-layer rollout runs over 30 days, with weekly optimization loops after." } }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 

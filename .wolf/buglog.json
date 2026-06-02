@@ -3472,6 +3472,18 @@
       "related_bugs": [186],
       "occurrences": 1,
       "last_seen": "2026-06-02"
+    },
+    {
+      "id": "bug-188",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "growth-agent ignored ABOS_OUTREACH_CAP when set per-run (same module-load env trap as bug-187)",
+      "file": "agent-business-os/agents/growth-agent.js",
+      "root_cause": "DAILY_CAP was a module-level const read at require time, so a cap set later (tests/per-run) had no effect — the recurring 'read env at load not at call' pattern.",
+      "fix": "Replaced the const with a dailyCap() helper read inside run(). STANDING RULE for these agents: any env that can change per run must be read at call time, never as a module-level const.",
+      "tags": ["agents", "env", "config", "node", "recurring"],
+      "related_bugs": [186, 187],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
     }
   ]
 }

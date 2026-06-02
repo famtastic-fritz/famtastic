@@ -26,6 +26,7 @@ const sdr = require('./sdr-agent');
 const billing = require('./billing-agent');
 const monitor = require('./monitor-agent');
 const memo = require('./memo-agent');
+const growth = require('./growth-agent');
 
 // One full cycle: pull live leads/payments → qualify → contact/open → invoice/dun → measure.
 async function tick() {
@@ -92,6 +93,7 @@ async function main() {
     case 'billing': console.log('billing:', JSON.stringify(await billing.run())); break;
     case 'monitor': { const h = await monitor.run(); console.log('monitor:', h.status); break; }
     case 'memo': console.log('memo:', memo.run()); break;
+    case 'growth': { const r = growth.run(); console.log(`growth: ${r.worklisted} queued, ${r.remaining} remaining → ${r.file}`); break; }
     case 'mark-paid': markPaid(arg); break;
     case 'win': win(arg); break;
     case 'status': status(); break;
@@ -105,7 +107,7 @@ async function main() {
       break;
     }
     default:
-      console.log('usage: run.js <tick|sync|ingest|qualify|sdr|billing|monitor|memo|mark-paid|win|status|seed|loop>');
+      console.log('usage: run.js <tick|sync|ingest|qualify|sdr|billing|monitor|memo|growth|mark-paid|win|status|seed|loop>');
       process.exit(cmd ? 1 : 0);
   }
 }

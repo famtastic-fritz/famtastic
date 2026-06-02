@@ -24,6 +24,7 @@ const sdr = require('./sdr-agent');
 const billing = require('./billing-agent');
 const monitor = require('./monitor-agent');
 const memo = require('./memo-agent');
+const growth = require('./growth-agent');
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { pass++; console.log('  ✓ ' + msg); } else { fail++; console.log('  ✗ ' + msg); } }
@@ -154,6 +155,24 @@ const daysAgo = (n) => new Date(Date.now() - n * 864e5).toISOString();
   const acDeal = db.deals.find((d) => d.email === 'auto@close.io');
   ok(ac.autoClosed >= 1 && acDeal && acDeal.status === 'won', 'hot deal auto-closed to won without a human');
   delete process.env.ABOS_AUTO_CLOSE;
+
+  console.log('15) growth-agent builds a capped, idempotent outreach worklist');
+  const prospects = path.join(tmp, 'prospects.json');
+  fs.writeFileSync(prospects, JSON.stringify([
+    { id: 'g1', name: 'A One', company: 'Co1', email: 'a@one.io', channel: 'email', segment: 'agencies' },
+    { id: 'g2', name: 'B Two', channel: 'linkedin', handle: 'in/btwo', segment: 'consultants' },
+    { id: 'g3', name: 'C Three', channel: 'referral', segment: 'local service' }
+  ]));
+  process.env.ABOS_PROSPECTS = prospects;
+  process.env.ABOS_WORKLIST_DIR = tmp;
+  process.env.ABOS_OUTREACH_CAP = '2';
+  const g1 = growth.run();
+  ok(g1.worklisted === 2 && g1.remaining === 1, 'first run queues the cap (2), 1 remaining');
+  ok(fs.existsSync(g1.file) && /Outreach worklist/.test(fs.readFileSync(g1.file, 'utf8')), 'worklist file written with copy');
+  const g2 = growth.run();
+  ok(g2.worklisted === 1 && g2.remaining === 0, 'second run queues the rest (no repeats)');
+  const g3 = growth.run();
+  ok(g3.worklisted === 0, 'third run is a no-op (all touched)');
 
   console.log(`\n${fail === 0 ? 'PASS' : 'FAIL'} — ${pass} passed, ${fail} failed`);
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {}

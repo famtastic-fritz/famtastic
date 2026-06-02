@@ -2,4 +2,6 @@
 pipeline.json
 health.json
 events.jsonl
+touches.json
+worklist-*.md
 *.tmp
