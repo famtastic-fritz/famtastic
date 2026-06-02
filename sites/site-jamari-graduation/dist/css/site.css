@@ -4,17 +4,21 @@
    ============================================================ */
 
 :root {
-  --navy:        #0a1a3f;
-  --navy-deep:   #060914;
-  --navy-soft:   #11224d;
-  --orange:      #ff6a1a;
-  --orange-soft: #ff8c4d;
-  --gold:        #ffc24b;
-  --ink:         #eaf0ff;
-  --ink-dim:     #9fb0d6;
-  --line:        rgba(159,176,214,0.16);
-  --glass:       rgba(17,34,77,0.55);
-  --glass-brd:   rgba(255,255,255,0.08);
+  /* Monarch Knights — Black · Red · Silver */
+  --navy:        #14151c;  /* charcoal panel */
+  --navy-deep:   #060608;  /* near-black bg */
+  --navy-soft:   #1c1e29;
+  --orange:      #e11331;  /* knight crimson */
+  --orange-soft: #ff3a54;
+  --gold:        #c9cedb;  /* metallic silver */
+  --silver:      #c9cedb;
+  --silver-hi:   #eef1f6;
+  --crimson:     #e11331;
+  --ink:         #eef1f6;
+  --ink-dim:     #9aa3b6;
+  --line:        rgba(154,163,182,0.16);
+  --glass:       rgba(28,30,41,0.6);
+  --glass-brd:   rgba(255,255,255,0.09);
   --radius:      20px;
   --maxw:        1180px;
   --ease:        cubic-bezier(0.16, 1, 0.3, 1);
@@ -40,9 +44,9 @@ body::before {
   content: "";
   position: fixed; inset: 0; z-index: -2;
   background:
-    radial-gradient(1100px 700px at 80% -10%, rgba(255,106,26,0.18), transparent 60%),
-    radial-gradient(900px 600px at 10% 10%, rgba(50,90,200,0.20), transparent 55%),
-    linear-gradient(180deg, #060914 0%, #070b1a 50%, #060914 100%);
+    radial-gradient(1100px 700px at 80% -10%, rgba(225,19,49,0.20), transparent 60%),
+    radial-gradient(900px 600px at 10% 10%, rgba(201,206,219,0.10), transparent 55%),
+    linear-gradient(180deg, #060608 0%, #0b0b10 50%, #060608 100%);
 }
 body::after {
   content: "";
@@ -227,6 +231,20 @@ section { position: relative; padding: clamp(4.5rem, 10vw, 8rem) 0; }
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
 .reveal.in { opacity: 1; transform: none; }
 .reveal.d1 { transition-delay: .08s; } .reveal.d2 { transition-delay: .16s; } .reveal.d3 { transition-delay: .24s; } .reveal.d4 { transition-delay: .32s; }
+
+/* ============================================================ SCHOOL CREST / KNIGHTS */
+.crest-band { text-align: center; }
+.crest { width: clamp(120px, 18vw, 180px); height: auto; margin: 0 auto 1.4rem; display: block; filter: drop-shadow(0 12px 30px rgba(225,19,49,0.28)); }
+.crest .metal { fill: none; stroke: var(--silver); stroke-width: 4; }
+.crest .field { fill: #0c0c10; stroke: var(--silver); stroke-width: 4; }
+.crest .jewel { fill: var(--crimson); }
+.crest .mono  { fill: var(--silver-hi); font-family: var(--font-d); font-weight: 700; }
+.crest .small { fill: var(--silver); font-family: var(--font-d); font-weight: 600; letter-spacing: .14em; }
+.school-facts { display: flex; flex-wrap: wrap; gap: 1rem 2.4rem; justify-content: center; margin-top: 1.6rem; }
+.school-facts .f { text-align: center; }
+.school-facts .f b { display: block; font-family: var(--font-d); color: var(--silver-hi); font-size: 1.05rem; }
+.school-facts .f span { color: var(--ink-dim); font-size: .76rem; letter-spacing: .14em; text-transform: uppercase; }
+.crimson-rule { width: 90px; height: 3px; margin: 0 auto; background: linear-gradient(90deg, transparent, var(--crimson), transparent); border: 0; }
 
 /* ============================================================ UTILITIES (replace inline styles) */
 .congrats { font-size: .34em; letter-spacing: .04em; font-weight: 600; display: block; margin-bottom: .4rem; }

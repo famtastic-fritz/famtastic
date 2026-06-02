@@ -12,11 +12,11 @@
 
   var REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var COLORS = {
-    navy:   0x14264f,
-    orange: 0xff6a1a,
-    gold:   0xffc24b,
-    white:  0xeaf0ff,
-    blue:   0x3a6bd6
+    navy:   0x16171f,   // charcoal
+    orange: 0xe11331,   // knight crimson
+    gold:   0xc9cedb,   // metallic silver
+    white:  0xeef1f6,
+    blue:   0x8a90a3    // steel
   };
 
   function makeRenderer(canvas) {
@@ -77,6 +77,34 @@
     return cap;
   }
 
+  /* ---------- Monarch crown (silver + crimson jewels) ---------- */
+  function buildCrown() {
+    var crown = new THREE.Group();
+    var silver = new THREE.MeshStandardMaterial({ color: COLORS.gold, roughness: 0.22, metalness: 0.95, emissive: 0x14151c, emissiveIntensity: 0.2 });
+    var jewel  = new THREE.MeshStandardMaterial({ color: COLORS.orange, roughness: 0.15, metalness: 0.5, emissive: 0x8a0a1c, emissiveIntensity: 0.85 });
+
+    // band
+    var band = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.34, 48, 1, true), silver);
+    crown.add(band);
+    var rimTop = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.05, 16, 48), silver); rimTop.rotation.x = Math.PI/2; rimTop.position.y = 0.17; crown.add(rimTop);
+    var rimBot = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.06, 16, 48), silver); rimBot.rotation.x = Math.PI/2; rimBot.position.y = -0.17; crown.add(rimBot);
+
+    // points (spikes) with jewels
+    var spikes = 8;
+    for (var i = 0; i < spikes; i++) {
+      var a = (i / spikes) * Math.PI * 2;
+      var x = Math.cos(a) * 0.62, z = Math.sin(a) * 0.62;
+      var spike = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.42, 16), silver);
+      spike.position.set(x, 0.36, z); crown.add(spike);
+      var tip = new THREE.Mesh(new THREE.SphereGeometry(0.07, 18, 18), jewel);
+      tip.position.set(x, 0.6, z); crown.add(tip);
+      // jewel set into the band
+      var bj = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), jewel);
+      bj.position.set(Math.cos(a)*0.63, 0, Math.sin(a)*0.63); crown.add(bj);
+    }
+    return crown;
+  }
+
   /* ---------- confetti point cloud ---------- */
   function buildConfetti(count, spread) {
     var g = new THREE.BufferGeometry();
@@ -113,9 +141,11 @@
     var rim = new THREE.PointLight(COLORS.orange, 2.2, 18); rim.position.set(-4, 2, 2); scene.add(rim);
     var fill = new THREE.PointLight(COLORS.blue, 1.4, 18); fill.position.set(4, -2, 3); scene.add(fill);
 
-    var cap = buildCap(); scene.add(cap);
+    var hero3d = new THREE.Group(); scene.add(hero3d);
+    var cap = buildCap(); cap.position.y = -0.35; hero3d.add(cap);
+    var crown = buildCrown(); crown.position.y = 1.0; hero3d.add(crown);
 
-    var confetti = buildConfetti(420, 12); scene.add(confetti);
+    var confetti = buildConfetti(460, 12); scene.add(confetti);
 
     // faint starfield
     var starG = new THREE.BufferGeometry(); var sN = 600; var sp = new Float32Array(sN * 3);
@@ -144,10 +174,11 @@
       requestAnimationFrame(loop);
       if (!visible) return;
       t += 0.01;
-      // cap float + spin
-      cap.rotation.y += REDUCE ? 0.002 : 0.006;
-      cap.position.y = Math.sin(t) * 0.12 + 0.1;
-      cap.rotation.z = Math.sin(t * 0.7) * 0.05;
+      // crowned-graduate float + spin
+      hero3d.rotation.y += REDUCE ? 0.002 : 0.006;
+      hero3d.position.y = Math.sin(t) * 0.12 + 0.1;
+      hero3d.rotation.z = Math.sin(t * 0.7) * 0.04;
+      crown.rotation.y -= REDUCE ? 0.003 : 0.012;   // crown counter-spins for sparkle
       // confetti fall + recycle
       var p = confetti.geometry.attributes.position.array, vel = confetti.userData.vel, sprd = confetti.userData.spread;
       for (var i = 0; i < confetti.userData.count; i++) {
