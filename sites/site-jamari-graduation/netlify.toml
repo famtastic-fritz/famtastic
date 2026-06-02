@@ -1,0 +1,4 @@
+# Git-connected deploy (Netlify → GitHub): point base at the dist folder.
+[build]
+  publish = "dist"
+  command = ""
