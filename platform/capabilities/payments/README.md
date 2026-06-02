@@ -10,8 +10,16 @@ degrading** when a rail can't do something autonomously.
 | Invocation | Backing | Status |
 |---|---|---|
 | `payments payment-link <amount> [note]` | Cash App `$cashtag` (from vault) | ✓ builds a `cash.app/$tag/<amount>` link — no money moves |
+| `payments invoice <email> <amount> [desc] [days]` | Stripe API (from vault) | ✓ creates + sends a Stripe invoice with a Cash App alt link in the footer |
 | `payments reconcile <invoice-id>` | Stripe webhook *or* Cash App | ⚠ Stripe = autonomous (webhook-owned); Cash App = `manual_required` |
-| `payments invoice <deal-id>` (Stripe) | Stripe API | ✗ not built — Wave 3, gated on rail decision (Q1) |
+
+**Reconciliation is the webhook, not this CLI.** The autonomous "mark paid" path
+is `agent-business-os/api/stripe-webhook` — Stripe calls it the moment a payment
+clears, it verifies the signature, stamps the lead `collected`, and alerts
+Telegram. `reconcile` here only *reports* who owns reconciliation.
+
+**Rail decision (2026-06-02): Stripe + Cash App alt link.**
+**Autonomy decision: money-in fully autonomous; money-out (refunds/payouts) gated.**
 
 ## Credentials (vault IDs — values never in git)
 

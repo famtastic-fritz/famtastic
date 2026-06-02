@@ -5,7 +5,8 @@
     "Referrer-Policy": "strict-origin-when-cross-origin"
   },
   "routes": [
-    { "route": "/api/lead", "methods": ["POST"] }
+    { "route": "/api/lead", "methods": ["POST"] },
+    { "route": "/api/stripe-webhook", "methods": ["POST"] }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",

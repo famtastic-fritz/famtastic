@@ -27,12 +27,15 @@ into a single, distinctive FAMtastic landing page. Canonical destination:
 agent-business-os/
 ├── README.md
 ├── spec.json                  # FAMtastic site spec
-├── api/                       # Azure Static Web Apps lead backend
+├── api/                       # Azure Static Web Apps backend
 │   ├── host.json
 │   ├── package.json           # @azure/data-tables
-│   └── lead/
-│       ├── function.json      # anonymous POST → /api/lead
-│       └── index.js           # validate, score, persist, webhook + Telegram
+│   ├── lead/
+│   │   ├── function.json      # anonymous POST → /api/lead
+│   │   └── index.js           # validate, score, persist, webhook + Telegram
+│   └── stripe-webhook/        # autonomous collections reconciliation
+│       ├── function.json      # anonymous POST → /api/stripe-webhook
+│       └── index.js           # verify Stripe signature → mark collected + alert
 └── dist/                      # deploy artifact (app root)
     ├── index.html             # single-page landing
     ├── netlify.toml
@@ -88,6 +91,17 @@ Configure via app settings (all optional):
 | `LEADS_TABLE_NAME` | Table name (default `inboundleads`) |
 | `LEAD_WEBHOOK_URL` / `LEAD_WEBHOOK_TOKEN` | Forward each lead to a webhook |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` / `TELEGRAM_THREAD_ID` | Telegram alerts |
+
+### Collections (Stripe + Cash App)
+
+Invoices are issued by the `payments` platform capability
+(`platform/capabilities/payments/invoice.sh` — Stripe invoice + Cash App alt
+link in the footer, key read from the vault). Reconciliation is autonomous via
+`api/stripe-webhook`: Stripe POSTs it the instant a payment clears, it verifies
+the signature (`STRIPE_WEBHOOK_SECRET`), stamps the lead `collected`, and alerts
+Telegram. Point your Stripe webhook at `https://<host>/api/stripe-webhook` and
+set `STRIPE_WEBHOOK_SECRET` as an app setting. **Money-out (refunds/payouts)
+stays human-gated.**
 
 ### Booking link
 

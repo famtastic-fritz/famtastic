@@ -30,6 +30,22 @@ platform/vault/vault.sh list                                   # IDs only, no va
 | `studio.resend.api_key` / `resend.api_key` | Email send (invoices, follow-ups) via Resend |
 | `cpanel.api_token` | Hosting / deploy |
 
+## Local (agent-side) vs deployed (Azure) — same secret, two homes
+
+- **Agent-side capability scripts** (`platform/capabilities/payments/*`) read from
+  the **Keychain vault** by these IDs. This is where the `billing-agent` runs.
+- **Deployed Azure functions** (`/api/lead`, `/api/stripe-webhook`) can't reach
+  the Keychain — they read **Azure app settings (env vars)**. At deploy time, copy
+  each vault value into the matching app setting:
+
+  | Vault ID | Azure app setting |
+  |---|---|
+  | `payments/stripe.secret_key` | `STRIPE_SECRET_KEY` (if a function needs it) |
+  | `payments/stripe.webhook_secret` | `STRIPE_WEBHOOK_SECRET` |
+  | — | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `LEADS_TABLE_CONNECTION_STRING` |
+
+  The vault stays the single source of truth; app settings are deploy-time copies.
+
 ## The rule
 
 - **Secrets:** Keychain vault only. Agents `vault read <id>`; Fritz `vault write` once.

@@ -91,7 +91,7 @@ vault on demand.
 
 | Agent | Job | Runs on | Reads | Writes | Can act without a human? |
 |-------|-----|---------|-------|--------|--------------------------|
-| `billing-agent` | Issue invoice / payment link, send, dun overdue | on deal `won` + cron | deal, **vault payment creds** | `invoice`, `payment` | **DECISION — see §7** |
+| `billing-agent` | Issue invoice / payment link, send, dun overdue | on deal `won` + cron | deal, **vault payment creds** | `invoice`, `payment` | ✅ money-in (issue/send/reconcile/dun); ❌ money-out gated |
 | `orchestrator` | Dispatch jobs, resolve dependencies, enforce caps | continuous | job queue | job state | ✅ (dispatch only) |
 | `monitor-agent` | Health, SLA breaches, error rates, KPI thresholds | continuous | ledgers, endpoints | alerts | ✅ alert-only |
 | `memo-agent` | Daily KPI digest + weekly decision memo into this brain | cron | all ledgers | Obsidian notes | ✅ |
@@ -161,7 +161,7 @@ app info in the brain"). Two realities shape it:
   autonomous reconciliation, receipts, and dunning.
 
 **Recommendation:** Stripe as the *autonomous* rail; Cash App as a *human-friendly
-alt link* on the invoice. This is the decision in §7-Q1.
+alt link* on the invoice. **DECIDED 2026-06-02: Stripe + Cash App alt link.**
 
 ### 6b. Collections flow (rail-agnostic)
 
@@ -200,17 +200,17 @@ platform capability.
 
 ---
 
-## 7. Open decisions (need your call before money moves)
+## 7. Decisions (locked 2026-06-02)
 
-I built everything above that's safe without your input. These three reshape the
-collections + autonomy design and involve your money/credentials, so I'm not
-guessing them:
-
-- **Q1 — Payment rail:** Cash App only / Stripe (autonomous) + Cash App alt / something else.
-- **Q2 — Credential storage:** Keychain vault + brain reference (recommended) vs. literally in an Obsidian note (I'll flag the git-leak risk but it's your call).
-- **Q3 — Money autonomy:** how far the `billing-agent` goes before a human gate
-  (issue+send+reconcile+dun fully auto, vs. issue auto / "mark paid" gated, vs.
-  every invoice approved).
+- **Q1 — Payment rail → Stripe + Cash App alt link.** Stripe is the autonomous
+  rail (invoices, hosted pay pages, webhooks, auto-reconcile, receipts). Every
+  invoice also carries a Cash App `$cashtag` link as a human-friendly alternative.
+- **Q2 — Credential storage → Keychain vault + brain reference.** Real keys live
+  in `platform/vault/vault.sh`; this brain holds only the map (`Credentials.md`).
+  Nothing secret is committed to git.
+- **Q3 — Money autonomy → fully autonomous money-in.** `billing-agent` issues,
+  sends, reconciles (Stripe webhook), and runs dunning with no human gate.
+  **Money-out (refunds, payouts) is always human-gated** — the one hard line.
 
 ---
 
