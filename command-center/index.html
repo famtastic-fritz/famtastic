@@ -17,7 +17,8 @@
   .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
   .kpi b{display:block;font-size:26px;line-height:1}
   .kpi span{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
-  .kpi.alert b{color:#f5b342}.kpi.danger b{color:#ef4444}
+  .kpi.alert b{color:#f5b342}.kpi.danger b{color:#ef4444}.kpi.star{border-color:#5a4a22}.kpi.star b{color:#ffd479}
+  .card[data-priority="true"]{border-color:#ffd479;box-shadow:0 0 0 1px rgba(255,212,121,.25)}
   section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:18px}
   section h2{font-size:15px;margin:0 0 12px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
   .needs-list{margin:0;padding-left:18px}.needs-list li{margin:6px 0}
@@ -50,15 +51,16 @@
 <div class="wrap">
   <header>
     <h1>⬡ FAMtastic Command Center</h1>
-    <div class="sub">Mission Control · generated Tue, 02 Jun 2026 12:51:41 GMT · source: live repo ledgers</div>
+    <div class="sub">Mission Control · generated Tue, 02 Jun 2026 12:56:49 GMT · source: live repo ledgers</div>
   </header>
 
   <div class="kpis">
-    <div class="kpi"><b>9</b><span>Active plans</span></div>
+    <div class="kpi"><b>11</b><span>Active plans</span></div>
+    <div class="kpi star"><b>2</b><span>⭐ Your priorities</span></div>
     <div class="kpi alert"><b>8</b><span>Need you</span></div>
     <div class="kpi "><b>0</b><span>Blocked (ext)</span></div>
-    <div class="kpi"><b>1</b><span>In progress</span></div>
-    <div class="kpi"><b>5</b><span>Open tasks</span></div>
+    <div class="kpi"><b>3</b><span>In progress</span></div>
+    <div class="kpi"><b>13</b><span>Open tasks</span></div>
     <div class="kpi"><b>3</b><span>Agents</span></div>
     <div class="kpi"><b>22</b><span>Capabilities</span></div>
     <div class="kpi"><b>32</b><span>Proofs logged</span></div>
@@ -79,7 +81,37 @@
 
   <section>
     <h2>All active plans</h2>
-    <div class="cards"><div class="card" data-needs="true">
+    <div class="cards"><div class="card" data-needs="false" data-priority="true">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">⭐ product</span>
+    </div>
+    <h3>Fritz Companion App</h3>
+    <div class="tags"><span class="tag">shay-shay</span><span class="tag">companion-app</span><span class="tag">mobile</span><span class="tag">chat</span></div>
+    <div class="metrics">
+      <div><b>4/4</b><span>tasks</span></div>
+      <div><b>0d ago</b><span>last move</span></div>
+      <div><b>97</b><span>autonomy</span></div>
+      <div><b>80</b><span>profit</span></div>
+    </div>
+    
+    <p class="next"><b>Next:</b> Choose the stack (PWA vs React Native vs reuse shay-desktop) and spec the question/answer loop + push.</p>
+  </div><div class="card" data-needs="false" data-priority="true">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">⭐ product</span>
+    </div>
+    <h3>Shay — Omnipresent Virtual Assistant</h3>
+    <div class="tags"><span class="tag">shay-shay</span><span class="tag">virtual-assistant</span><span class="tag">omnipresent</span><span class="tag">reach-fabric</span></div>
+    <div class="metrics">
+      <div><b>4/4</b><span>tasks</span></div>
+      <div><b>0d ago</b><span>last move</span></div>
+      <div><b>97</b><span>autonomy</span></div>
+      <div><b>40</b><span>profit</span></div>
+    </div>
+    
+    <p class="next"><b>Next:</b> Land the landscape report, then design the single reach-fabric service and pick the build-on base.</p>
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Needs tasking</span>
       <span class="role">substrate</span>
@@ -94,7 +126,7 @@
     </div>
     <div class="needs">⚠ Needs you to define the next tasks (or close it out).</div>
     <p class="next"><b>Next:</b> Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven.</p>
-  </div><div class="card" data-needs="true">
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
       <span class="role">chassis</span>
@@ -109,7 +141,7 @@
     </div>
     <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
     <p class="next"><b>Next:</b> Develop executable checklists for Workbench default-shell cutover and Media Studio control unification; the frozen foundation, registry-backed Plan mode, and Shay context provider are complete.</p>
-  </div><div class="card" data-needs="true">
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
       <span class="role">substrate</span>
@@ -124,7 +156,7 @@
     </div>
     <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
     <p class="next"><b>Next:</b> Develop executable checklists for automatic status-packet regeneration and reviewed capture-packet promotion into canonical memory.</p>
-  </div><div class="card" data-needs="true">
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
       <span class="role">substrate</span>
@@ -139,7 +171,7 @@
     </div>
     <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
     <p class="next"><b>Next:</b> Develop the phase-two visualizer checklist for stage/event matching, missing-stage detection, and proposed patch preview on top of the live inspect/trace/propose surface.</p>
-  </div><div class="card" data-needs="true">
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
       <span class="role">domain</span>
@@ -154,7 +186,7 @@
     </div>
     <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
     <p class="next"><b>Next:</b> Build the Ops read/freshness substrate before command mutations or Jobs tab UI implementation.</p>
-  </div><div class="card" data-needs="true">
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
       <span class="role">substrate</span>
@@ -169,7 +201,7 @@
     </div>
     <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
     <p class="next"><b>Next:</b> Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read.</p>
-  </div><div class="card" data-needs="true">
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
       <span class="role">governance</span>
@@ -184,7 +216,7 @@
     </div>
     <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
     <p class="next"><b>Next:</b> Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate.</p>
-  </div><div class="card" data-needs="true">
+  </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Needs tasking</span>
       <span class="role">research</span>
@@ -199,7 +231,7 @@
     </div>
     <div class="needs">⚠ Needs you to define the next tasks (or close it out).</div>
     <p class="next"><b>Next:</b> Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05.</p>
-  </div><div class="card" data-needs="false">
+  </div><div class="card" data-needs="false" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
       <span class="role">domain</span>
@@ -229,7 +261,7 @@
 </div>
 
 <script>
-const SNAP = {"stageCounts":{"Checkpoint (stalled)":6,"In progress":1,"Needs tasking":2},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":true},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":true},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":true},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"Mission Control / Command Center","autonomy":97,"profit":45,"needsYou":false},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true},{"title":"chat-capture-learn-optimize","autonomy":72,"profit":45,"needsYou":true},{"title":"agent-coordination","autonomy":72,"profit":45,"needsYou":true},{"title":"workbench-per-page-design","autonomy":57,"profit":45,"needsYou":true}]};
+const SNAP = {"stageCounts":{"Checkpoint (stalled)":6,"In progress":3,"Needs tasking":2},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":true},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":true},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":true},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"Mission Control / Command Center","autonomy":97,"profit":45,"needsYou":false},{"title":"Shay — Omnipresent Virtual Assistant","autonomy":97,"profit":40,"needsYou":false},{"title":"Fritz Companion App","autonomy":97,"profit":80,"needsYou":false},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true},{"title":"chat-capture-learn-optimize","autonomy":72,"profit":45,"needsYou":true},{"title":"agent-coordination","autonomy":72,"profit":45,"needsYou":true},{"title":"workbench-per-page-design","autonomy":57,"profit":45,"needsYou":true}]};
 const stageColors = {"In progress":"#2dd4a7","Checkpoint":"#3b82f6","Checkpoint (stalled)":"#f5b342","Needs tasking":"#f5b342","Blocked (external)":"#ef4444","Stale":"#94a3b8","Completed":"#22c55e"};
 new Chart(document.getElementById('healthChart'), {
   type:'doughnut',

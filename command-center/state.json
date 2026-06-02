@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T12:51:41.075Z",
+  "generated_at": "2026-06-02T12:56:49.219Z",
   "scoring_model": {
     "profitByTag": {
       "site-execution": 90,
@@ -50,11 +50,12 @@
     "staleDays": 14
   },
   "kpis": {
-    "activePlans": 9,
+    "activePlans": 11,
+    "priorities": 2,
     "needsYou": 8,
     "blocked": 0,
-    "inProgress": 1,
-    "openTasks": 5,
+    "inProgress": 3,
+    "openTasks": 13,
     "agents": 3,
     "sites": 1,
     "capabilities": 22,
@@ -62,7 +63,7 @@
   },
   "stageCounts": {
     "Checkpoint (stalled)": 6,
-    "In progress": 1,
+    "In progress": 3,
     "Needs tasking": 2
   },
   "plans": [
@@ -76,6 +77,7 @@
         "shell",
         "workbench"
       ],
+      "priorityHigh": false,
       "stage": "checkpoint_stale",
       "stageLabel": "Checkpoint (stalled)",
       "stageEmoji": "🟡",
@@ -107,6 +109,7 @@
         "intelligence",
         "capture"
       ],
+      "priorityHigh": false,
       "stage": "checkpoint_stale",
       "stageLabel": "Checkpoint (stalled)",
       "stageEmoji": "🟡",
@@ -137,6 +140,7 @@
         "build-pipeline",
         "tracing"
       ],
+      "priorityHigh": false,
       "stage": "checkpoint_stale",
       "stageLabel": "Checkpoint (stalled)",
       "stageEmoji": "🟡",
@@ -169,6 +173,7 @@
         "shay-shay",
         "agent-management"
       ],
+      "priorityHigh": false,
       "stage": "checkpoint_stale",
       "stageLabel": "Checkpoint (stalled)",
       "stageEmoji": "🟡",
@@ -202,6 +207,7 @@
         "shay-shay",
         "mission-control"
       ],
+      "priorityHigh": false,
       "stage": "in_progress",
       "stageLabel": "In progress",
       "stageEmoji": "🟢",
@@ -221,6 +227,67 @@
       "proofCount": 0
     },
     {
+      "id": "shay-omnipresent-assistant",
+      "title": "Shay — Omnipresent Virtual Assistant",
+      "role": "product",
+      "tags": [
+        "shay-shay",
+        "virtual-assistant",
+        "omnipresent",
+        "reach-fabric",
+        "voice",
+        "avatar"
+      ],
+      "priorityHigh": true,
+      "stage": "in_progress",
+      "stageLabel": "In progress",
+      "stageEmoji": "🟢",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 4,
+      "totalTasks": 4,
+      "momentumDays": 0,
+      "autonomy": 97,
+      "profit": 40,
+      "nextAction": "Land the landscape report, then design the single reach-fabric service and pick the build-on base.",
+      "blocker": "No hard blocker. Device platform lock-ins (Apple/Meta/Amazon) will constrain some reach channels — to be characterized by the research.",
+      "runner": "Claude",
+      "closeoutVerdict": null,
+      "remainingWork": [],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "fritz-companion-app",
+      "title": "Fritz Companion App",
+      "role": "product",
+      "tags": [
+        "shay-shay",
+        "companion-app",
+        "mobile",
+        "chat",
+        "reach-fabric"
+      ],
+      "priorityHigh": true,
+      "stage": "in_progress",
+      "stageLabel": "In progress",
+      "stageEmoji": "🟢",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 4,
+      "totalTasks": 4,
+      "momentumDays": 0,
+      "autonomy": 97,
+      "profit": 80,
+      "nextAction": "Choose the stack (PWA vs React Native vs reuse shay-desktop) and spec the question/answer loop + push.",
+      "blocker": "No hard blocker. Push delivery and any app-store path are device-platform decisions.",
+      "runner": "Claude",
+      "closeoutVerdict": null,
+      "remainingWork": [],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
       "id": "plan_2026_05_05_platform_site_promotion",
       "title": "site-promotion",
       "role": "substrate",
@@ -230,6 +297,7 @@
         "release-management",
         "rollback"
       ],
+      "priorityHigh": false,
       "stage": "needs_tasking",
       "stageLabel": "Needs tasking",
       "stageEmoji": "🟡",
@@ -264,6 +332,7 @@
         "intelligence",
         "ledgers"
       ],
+      "priorityHigh": false,
       "stage": "checkpoint_stale",
       "stageLabel": "Checkpoint (stalled)",
       "stageEmoji": "🟡",
@@ -295,6 +364,7 @@
         "governance",
         "multi-agent"
       ],
+      "priorityHigh": false,
       "stage": "checkpoint_stale",
       "stageLabel": "Checkpoint (stalled)",
       "stageEmoji": "🟡",
@@ -329,6 +399,7 @@
         "ux",
         "creation-platform"
       ],
+      "priorityHigh": false,
       "stage": "needs_tasking",
       "stageLabel": "Needs tasking",
       "stageEmoji": "🟡",

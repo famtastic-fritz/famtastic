@@ -12,6 +12,8 @@ Shipped the workshop dashboard / Mission Control v1 and two new Shay platform ca
 
 **Registry** — all six new capability records merged into `platform/registry/capabilities.json` (now 22 capabilities). **Roadmap** — `docs/shay-fritz-ready/ROADMAP.md` ranks Shay's Fritz-readiness gaps by autonomy×profit (payment-provider decision first, then invoicing, then two-way digest / phone companion).
 
+**Fritz-priority tracking (same-day follow-up)** — the generator now reads a `fritz_priority`/`priority: "high"` field on a plan record or its registry label and treats *Fritz's stated priority* as a first-class signal distinct from the profit heuristic: a ⭐ KPI tile, a ⭐ card badge with a gold accent, a "Your priorities" section at the top of `briefing.md`, and priority-first ordering in both the cards and the needs-you list. Two high-priority product plans were registered (`shay-omnipresent-assistant`, `fritz-companion-app`) with 4 open tasks each, so the board finally shows work in motion. A background research workstream writes `docs/shay-fritz-ready/VIRTUAL-ASSISTANT-LANDSCAPE.md` (omnipresent-assistant landscape: products, OSS building blocks, reach/notification fabric, virtual-body options, recommended build-on stack).
+
 ## Agent OS — Software Design Document & Architecture Foundation (2026-05-27)
 
 Created a comprehensive Software Design Document for the Agent OS multi-agent orchestration system. The SDD lives at `~/famtastic/docs/AGENT-OS-SDD.md` (26KB, 12 sections). Rowboat (14.6K stars) is the intended fork base. ECC (affaan-m/ECC hackathon winner) was deep-researched for architectural patterns — buddy consensus, inter-agent Telegram bus, agent taxonomy — but has zero source code, so it serves as pattern reference only.
