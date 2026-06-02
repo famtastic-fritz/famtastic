@@ -17,6 +17,9 @@ delete process.env.ABOS_LIVE_BILLING; // force dry-run (no Stripe)
 delete process.env.TELEGRAM_BOT_TOKEN; // stdout-only alerts
 
 const store = require('./lib/store');
+const capture = require('./capture-agent');
+const qualifier = require('./qualifier-agent');
+const sdr = require('./sdr-agent');
 const billing = require('./billing-agent');
 const monitor = require('./monitor-agent');
 const memo = require('./memo-agent');
@@ -94,6 +97,31 @@ const daysAgo = (n) => new Date(Date.now() - n * 864e5).toISOString();
   console.log('8) idempotency — a second billing run is a no-op');
   s = await billing.run();
   ok(s.issued === 0 && s.reminded === 0 && s.escalated === 0, 'no duplicate work on re-run');
+
+  console.log('9) capture ingests a raw hot lead (scored on intake)');
+  let r = capture.ingest({ name: 'Pat Cruz', email: 'pat@hot.io', revenue: 80000, bottleneck: 'close_rate', lift: 50000, start7: 'yes' });
+  ok(r.created && r.lead.priority === 'hot' && r.lead.fitScore >= 75, 'lead ingested and scored hot');
+  ok(!capture.ingest({ email: 'pat@hot.io' }).created, 'duplicate email is rejected');
+
+  console.log('10) qualifier routes it to qualified');
+  let qs = await qualifier.run();
+  db = store.load();
+  let pat = db.leads.find((l) => l.email === 'pat@hot.io');
+  ok(qs.qualified >= 1 && pat.status === 'qualified' && pat.stage === 'decision', 'lead qualified + routed');
+
+  console.log('11) sdr contacts the lead and opens a deal');
+  let ss = await sdr.run();
+  db = store.load();
+  pat = db.leads.find((l) => l.email === 'pat@hot.io');
+  let patDeal = db.deals.find((d) => d.leadId === pat.id);
+  ok(ss.contacted >= 1 && !!pat.firstContactAt, 'lead contacted (SLA clock cleared)');
+  ok(ss.dealsOpened >= 1 && patDeal && patDeal.status === 'open', 'deal opened (status open, not won)');
+  ok(pat.status === 'converted', 'lead marked converted');
+
+  console.log('12) sdr never fabricates a win — closing stays a human signal');
+  await sdr.run();
+  db = store.load();
+  ok(db.deals.find((d) => d.leadId === pat.id).status === 'open', 'deal still open after re-run (no auto-win)');
 
   console.log(`\n${fail === 0 ? 'PASS' : 'FAIL'} — ${pass} passed, ${fail} failed`);
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {}

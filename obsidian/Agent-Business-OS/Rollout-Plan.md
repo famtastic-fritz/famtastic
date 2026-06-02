@@ -217,12 +217,15 @@ platform capability.
 ## 8. Rollout sequence (build order)
 
 > **Built 2026-06-02:** Stripe collections rail (`payments/invoice.sh` +
-> `api/stripe-webhook`) and the `billing-agent` / `monitor-agent` / `memo-agent`
-> runtimes (`agent-business-os/agents/`, dependency-free, lifecycle-tested 17/17).
-> A won deal now auto-invoices, dunning + escalation run, payment closes the
-> deal, and cash/day + alerts + a daily brain digest are live. Remaining:
-> `qualifier`/`sdr`/`capture` runtimes, the webhook→store paid-sync, live
-> credentials, and the Azure deploy.
+> `api/stripe-webhook`) and the **full agent loop** — `capture` / `qualifier` /
+> `sdr` / `billing` / `monitor` / `memo` (`agent-business-os/agents/`,
+> dependency-free, lifecycle-tested **24/24**). One `tick` runs qualify → sdr →
+> billing → monitor; CLI-proven end to end: cold lead → qualified → contacted →
+> deal opened → (human `win`) → invoiced → paid → **collected ($ cash/day)**,
+> with alerts + a daily brain digest. The only human gate in the happy path is
+> closing the deal (`win`) and, by decision, money-out. Remaining: the
+> webhook→store paid-sync + lead→store sync (Azure Table ↔ pipeline.json),
+> outbound capture sourcing, live credentials, and the Azure deploy.
 
 
 1. **Wave 1 — Wire the rails (1 sitting):** `vault write` the payment secrets;

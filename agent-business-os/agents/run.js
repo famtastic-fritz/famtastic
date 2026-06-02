@@ -19,14 +19,20 @@
  */
 
 const store = require('./lib/store');
+const capture = require('./capture-agent');
+const qualifier = require('./qualifier-agent');
+const sdr = require('./sdr-agent');
 const billing = require('./billing-agent');
 const monitor = require('./monitor-agent');
 const memo = require('./memo-agent');
 
+// One full cycle, in pipeline order: qualify → contact/open → invoice/dun → measure.
 async function tick() {
+  const q = await qualifier.run();
+  const s = await sdr.run();
   const b = await billing.run();
   const h = await monitor.run();
-  return { billing: b, status: h.status };
+  return { qualifier: q, sdr: s, billing: b, status: h.status };
 }
 
 function markPaid(invId) {
@@ -77,6 +83,9 @@ async function main() {
   const [cmd, arg] = process.argv.slice(2);
   switch (cmd) {
     case 'tick': console.log('tick:', JSON.stringify(await tick())); break;
+    case 'ingest': { let j = {}; try { j = JSON.parse(arg || '{}'); } catch (_) { console.error('ingest: arg must be JSON'); process.exit(1); } console.log('ingest:', JSON.stringify(capture.ingest(j))); break; }
+    case 'qualify': console.log('qualifier:', JSON.stringify(await qualifier.run())); break;
+    case 'sdr': console.log('sdr:', JSON.stringify(await sdr.run())); break;
     case 'billing': console.log('billing:', JSON.stringify(await billing.run())); break;
     case 'monitor': { const h = await monitor.run(); console.log('monitor:', h.status); break; }
     case 'memo': console.log('memo:', memo.run()); break;
@@ -93,7 +102,7 @@ async function main() {
       break;
     }
     default:
-      console.log('usage: run.js <tick|billing|monitor|memo|mark-paid|win|status|seed|loop>');
+      console.log('usage: run.js <tick|ingest|qualify|sdr|billing|monitor|memo|mark-paid|win|status|seed|loop>');
       process.exit(cmd ? 1 : 0);
   }
 }

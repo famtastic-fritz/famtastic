@@ -9,21 +9,29 @@ only for drafting copy (a later hook), never for deciding who paid.
 
 | Agent | What it does | Side effects |
 |-------|--------------|--------------|
+| `capture-agent` | Ingests + dedupes + scores an inbound lead into the store (outbound sourcing is a later hook) | adds a lead |
+| `qualifier-agent` | Scores any unscored lead, routes hot/warm → `qualified`, else `nurtured` | mutates leads |
+| `sdr-agent` | First-touch qualified leads (clears SLA clock) → `conversion`; opens a deal for hot leads. **Never marks `won`** | mutates leads/deals |
 | `billing-agent` | Won deal → issue invoice (Stripe when live+keyed, else manual-pending w/ Cash App link) → dunning on overdue (capped, then escalate) → deal `collected` on payment | mutates pipeline; money-out NOT implemented (human-gated) |
 | `monitor-agent` | Computes KPIs (cash/day, pipeline, funnel), SLA breaches, overdue/escalated → `ops/health.json` + tiered alerts | read-only on pipeline; writes health snapshot |
 | `memo-agent` | Daily digest (KPIs + activity) into `obsidian/Agent-Business-OS/digests/` | writes a markdown note |
+
+`tick` runs them in pipeline order: **qualify → sdr → billing → monitor**. The one
+human signal in the loop is closing a deal (`win <dealId>`) — the sdr opens the
+opportunity but never fabricates a win.
 
 ## Run
 
 ```bash
 cd agent-business-os
-node agents/run.js seed            # load a demo pipeline to try it
-node agents/run.js tick            # billing + monitor (one cycle)
-node agents/run.js win <dealId>    # mark a deal won → next tick invoices it
-node agents/run.js mark-paid <id>  # payment landed (webhook/manual) → next tick collects
-node agents/run.js memo            # write today's digest
-node agents/run.js status          # print current KPIs/health
-node agents/test.js                # full lifecycle test (no network)
+node agents/run.js seed              # load a demo pipeline to try it
+node agents/run.js ingest '<json>'   # land an inbound lead {name,email,revenue,bottleneck,lift,start7}
+node agents/run.js tick              # qualify → sdr → billing → monitor (one cycle)
+node agents/run.js win <dealId>      # close a deal → next tick invoices it
+node agents/run.js mark-paid <id>    # payment landed (webhook/manual) → next tick collects
+node agents/run.js memo              # write today's digest
+node agents/run.js status            # print current KPIs/health
+node agents/test.js                  # full lifecycle test (no network) — 24 checks
 ```
 
 ## Autonomy (production)
