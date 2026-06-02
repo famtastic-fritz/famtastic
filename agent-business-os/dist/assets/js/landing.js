@@ -26,6 +26,22 @@
     });
   })();
 
+  /* ---------- Cash App pay buttons ----------
+     When window.ABOS_CASHTAG is set, any [data-pay-amount] CTA becomes a real
+     Cash App payment link (cash.app/$tag/<amount>) that opens to pay you. */
+  (function wireCashApp() {
+    var tag = (window.ABOS_CASHTAG || '').replace(/^\$/, '');
+    if (!tag) return;
+    document.querySelectorAll('[data-pay-amount]').forEach(function (a) {
+      var amount = a.getAttribute('data-pay-amount');
+      a.setAttribute('href', 'https://cash.app/$' + tag + '/' + amount);
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+      a.removeAttribute('data-booking'); // pay link wins over booking/scroll
+      if (a.getAttribute('data-pay-label')) a.textContent = a.getAttribute('data-pay-label');
+    });
+  })();
+
   /* ---------- Nav: scrolled state + close mobile menu on click ---------- */
   var nav = document.querySelector('.site-nav');
   var navToggle = document.getElementById('nav-toggle');
@@ -160,6 +176,7 @@
     });
 
     function saveLead(data) {
+      stash(data); // always keep a local backup, regardless of transport
       if (LEAD_ENDPOINT) {
         return fetch(LEAD_ENDPOINT, {
           method: 'POST',
@@ -167,9 +184,18 @@
           body: JSON.stringify(data)
         }).then(function (r) { if (!r.ok) throw new Error('bad status'); return r; });
       }
-      // No backend configured yet — persist locally.
-      stash(data);
-      return Promise.resolve();
+      // No backend: post as a Netlify Form (captured automatically on Netlify;
+      // harmless 404 → caught → localStorage backup elsewhere).
+      var body = new URLSearchParams();
+      body.set('form-name', 'qualify');
+      Object.keys(data).forEach(function (k) {
+        body.set(k, typeof data[k] === 'object' ? JSON.stringify(data[k]) : String(data[k]));
+      });
+      return fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      }).then(function (r) { if (!r.ok) throw new Error('bad status'); return r; });
     }
 
     function stash(data) {

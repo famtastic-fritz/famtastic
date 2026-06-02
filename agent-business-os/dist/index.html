@@ -241,7 +241,7 @@
             <li>Lead intake + attribution</li>
             <li>Founder control plane &amp; logs</li>
           </ul>
-          <a href="#apply" class="btn btn--ghost btn--block">Start here</a>
+          <a href="#apply" data-pay-amount="2500" data-pay-label="Pay $2,500 with Cash App" class="btn btn--ghost btn--block">Start here</a>
         </div>
         <div class="price-card featured reveal">
           <div class="tier">Performance Sprint</div>
@@ -289,7 +289,8 @@
         </div>
 
         <div class="apply-form reveal">
-          <form id="apply-form" novalidate>
+          <form id="apply-form" name="qualify" method="POST" data-netlify="true" netlify-honeypot="company_website" novalidate>
+            <input type="hidden" name="form-name" value="qualify">
             <div id="apply-form-inner">
               <div class="hp-field" aria-hidden="true">
                 <label for="f-company-website">Company website</label>
