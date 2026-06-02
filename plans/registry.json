@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-06-02T13:17:05.025Z",
+  "updated_at": "2026-06-02T16:41:32.668Z",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -48,7 +48,8 @@
     "mission-control-command-center",
     "shay-omnipresent-assistant",
     "fritz-companion-app",
-    "financial-agents"
+    "financial-agents",
+    "autonomous-content-engine"
   ],
   "labels": {
     "plan_2026_05_05_workbench_per_page_design": {
@@ -737,6 +738,48 @@
       "next_action_items": [
         "task-2026-06-02-016",
         "task-2026-06-02-017"
+      ]
+    },
+    {
+      "id": "autonomous-content-engine",
+      "title": "Autonomous Content Engine — Hands-off SEO/Affiliate Site",
+      "status": "active",
+      "status_label": "Active parent plan (Fritz priority)",
+      "group": "autonomous_content_engine",
+      "fritz_priority": "high",
+      "plan_path": "plans/autonomous-content-engine/plan.json",
+      "current_workstream": "Engine BUILT (scripts/content-engine/): quality-gated article generator (reuses brain-interface.js, deterministic offline fallback), static-site assembler, cron publish stub. Niche+monetization research delivered. Runs offline here; live LLM + deploy run on Fritz Mac.",
+      "next_action": "Fritz one-time setup: create Amazon Associates / ad-network account + point a domain at deploy target + approve niche. Then schedule the publish cron.",
+      "open_blockers": "Monetization accounts are Fritz-only (cannot be automated). Revenue is months out; this is the lowest-involvement, slowest path by Fritz design choice.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "build_run_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "content engine",
+          "path": "scripts/content-engine/"
+        },
+        {
+          "label": "niche+monetization research",
+          "path": "scripts/content-engine/NICHE-AND-MONETIZATION.md"
+        }
+      ],
+      "tasks": [
+        "Build quality-gated content engine (generate + assemble + publish)",
+        "Research+pick niche and monetization setup",
+        "Run offline proof: generate sample articles + static site",
+        "Fritz one-time: monetization accounts + domain + niche approval; then cron"
+      ],
+      "assumptions": [
+        "Lowest-involvement seed chosen by Fritz; slowest path.",
+        "Quality-gated to survive Google scaled-content-abuse policy."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-ace-03",
+        "task-2026-06-02-ace-04"
       ]
     }
   ],

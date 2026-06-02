@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T13:17:05.064Z",
+  "generated_at": "2026-06-02T16:41:32.733Z",
   "scoring_model": {
     "profitByTag": {
       "site-execution": 90,
@@ -50,20 +50,21 @@
     "staleDays": 14
   },
   "kpis": {
-    "activePlans": 12,
-    "priorities": 3,
+    "activePlans": 13,
+    "priorities": 4,
     "needsYou": 8,
     "blocked": 0,
     "inProgress": 4,
     "openTasks": 10,
     "agents": 3,
     "sites": 1,
-    "capabilities": 23,
+    "capabilities": 24,
     "proofs": 36
   },
   "stageCounts": {
     "Checkpoint (stalled)": 6,
     "In progress": 4,
+    "Checkpoint": 1,
     "Needs tasking": 2
   },
   "plans": [
@@ -316,6 +317,30 @@
       "remainingWork": [],
       "hasActiveRun": false,
       "proofCount": 1
+    },
+    {
+      "id": "autonomous-content-engine",
+      "title": "Autonomous Content Engine — Hands-off SEO/Affiliate Site",
+      "role": "plan",
+      "tags": [],
+      "priorityHigh": true,
+      "stage": "checkpoint",
+      "stageLabel": "Checkpoint",
+      "stageEmoji": "🔵",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 0,
+      "totalTasks": 0,
+      "momentumDays": 0,
+      "autonomy": 82,
+      "profit": 40,
+      "nextAction": "Fritz one-time setup: create Amazon Associates / ad-network account + point a domain at deploy target + approve niche. Then schedule the publish cron.",
+      "blocker": "Monetization accounts are Fritz-only (cannot be automated). Revenue is months out; this is the lowest-involvement, slowest path by Fritz design choice.",
+      "runner": "Claude",
+      "closeoutVerdict": null,
+      "remainingWork": [],
+      "hasActiveRun": false,
+      "proofCount": 0
     },
     {
       "id": "plan_2026_05_05_platform_site_promotion",
@@ -587,6 +612,11 @@
       "id": "reach.send",
       "status": "v1-console-live",
       "invocation": "platform reach send \"<message>\" [--title=] [--urgency=] [--channels=a,b]"
+    },
+    {
+      "id": "vault.register-credential",
+      "status": "v1",
+      "invocation": "platform vault register-credential <service> [--key <vault-key>]"
     }
   ],
   "runs": [
