@@ -93,16 +93,21 @@ Rendering by method (in both the `.md` and `.json`):
 - **`manual`** (or block absent): no link; keeps the existing
   "remit via agreed method" free text from `payment_instructions`.
 
-### Cash App link format (verified)
+### Cash App link format (honest caveat — read this)
 
-The amount-prefilled link is `https://cash.app/$cashtag/<amount>` — the `$` is
-part of the path and the amount is a plain decimal. Confirmed against Cash
-App's cashtag docs (`https://cash.app/$cashtag` is the base profile URL) and
-the documented amount-prefill form `cash.app/$cashtag/<amount>`. Sources:
-Cash App cashtags help (cash.app/help/us/en-us/3123-cashtags) and the Square
-developer forum thread documenting `cash.app/$cashtag/123`. Because device
-behavior for the prefilled amount can vary, the generator always also emits the
-bare profile link as a fallback.
+The generator emits `https://cash.app/<cashtag>/<amount>` (e.g.
+`https://cash.app/$FritzMedine/100.00`). **The amount pre-fill on that path is
+NOT an officially documented Cash App feature** — `https://cash.app/$cashtag` is
+the only officially supported link, and the trailing amount may or may not
+pre-fill depending on the device/app version. The generator therefore always
+also emits the bare profile link and a "send `<amount>`" instruction as the
+reliable fallback.
+
+**For a guaranteed amount, use an official Cash App Payment Link:** create one in
+the Cash App app (Money tab → Payment Link / request), then put that URL in the
+invoice with `"method": "link"` instead of `"cashapp"`. That gives a real hosted
+pay page with the amount baked in. Use `cashapp` for the lightweight P2P nudge,
+`link` when you need the amount locked.
 
 > **Cashtag is a placeholder.** `examples/sample-engagement-cashapp.json` uses
 > `$FritzMedine` as a stand-in. Replace it with Fritz's real, claimed Cash App
