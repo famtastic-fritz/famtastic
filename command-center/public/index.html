@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FAMtastic Command Center</title>
+<link rel="stylesheet" href="/css/dashboard.css" />
+</head>
+<body>
+<header class="topbar" id="topbar">
+  <div class="brand">
+    <span class="dot" id="globalDot"></span>
+    <h1>Command Center</h1>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">—</span>
+    <button id="killBtn" class="kill">KILL SWITCH</button>
+  </div>
+</header>
+
+<div id="alerts" class="alerts"></div>
+
+<main class="grid">
+  <!-- HEALTH -->
+  <section class="panel">
+    <h2>Agent Health <span class="sub" id="healthSub"></span></h2>
+    <div id="agents" class="agents"></div>
+  </section>
+
+  <!-- INCOME -->
+  <section class="panel">
+    <h2>Real Income <span class="sub">money that actually landed</span></h2>
+    <div class="income-stats">
+      <div class="stat"><div class="v" id="incToday">$0</div><div class="l">Today</div></div>
+      <div class="stat"><div class="v" id="incWeek">$0</div><div class="l">7 days</div></div>
+      <div class="stat"><div class="v" id="incMonth">$0</div><div class="l">30 days</div></div>
+      <div class="stat"><div class="v" id="incAll">$0</div><div class="l">All time</div></div>
+    </div>
+    <div class="manual">
+      <input id="mAmount" type="number" placeholder="$ amount" />
+      <input id="mDesc" type="text" placeholder="customer / deal" />
+      <button id="mAdd">Log deal</button>
+    </div>
+    <ul id="incRecent" class="recent"></ul>
+  </section>
+
+  <!-- IDEAS -->
+  <section class="panel">
+    <h2>Idea Backlog <span class="sub" id="ideaSub"></span></h2>
+    <ul id="ideasReal" class="ideas"></ul>
+  </section>
+
+  <!-- PIPELINE / AUTONOMOUS BUSINESS -->
+  <section class="panel wide">
+    <h2>Autonomous Pipeline <span class="sub" id="pipeSub"></span></h2>
+    <div class="funnel" id="funnel"></div>
+    <div class="pipe-cols">
+      <div>
+        <h3>Outbound</h3>
+        <ul id="outbound" class="recent"></ul>
+      </div>
+      <div>
+        <h3>Top leads</h3>
+        <ul id="topLeads" class="ideas"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

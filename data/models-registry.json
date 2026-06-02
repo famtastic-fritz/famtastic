@@ -1,0 +1,366 @@
+{
+  "version": 1,
+  "updated": "2026-05-31",
+  "note": "Canonical model registry: what each model CLAIMS (specs/capabilities) + how it should be used. Source of truth for the desktop Models definition page. The 3-day model-discovery cron appends/updates entries; new claims land in the Inbox for review.",
+  "models": [
+    {
+      "id": "nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "openrouter",
+      "status": "verified-reachable",
+      "claims": {
+        "params": "120B (A12B active/MoE)",
+        "context": "long-context reasoning",
+        "cost": "FREE on OpenRouter",
+        "strengths": [
+          "reasoning",
+          "long-context"
+        ],
+        "source": "https://openrouter.ai/nvidia/nemotron-3-super-120b-a12b:free"
+      },
+      "use": "candidate worker brain \u2014 free, good for swarm bulk + long-context reasoning lanes"
+    },
+    {
+      "id": "google/gemini-2.5-flash",
+      "provider": "openrouter/gemini",
+      "status": "active-default",
+      "claims": {
+        "context": "1M",
+        "cost": "cheap",
+        "strengths": [
+          "fast",
+          "cheap",
+          "long-context"
+        ]
+      },
+      "use": "default worker brain (all lanes currently)"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "status": "capped",
+      "claims": {
+        "strengths": [
+          "coding",
+          "design-sensitive UI",
+          "reasoning"
+        ],
+        "cost": "weekly subscription cap (extra-usage off)"
+      },
+      "use": "high-value orchestration/design only \u2014 scarce"
+    },
+    {
+      "id": "gpt-5.3-codex",
+      "provider": "codex",
+      "status": "available",
+      "claims": {
+        "strengths": [
+          "coding"
+        ],
+        "cost": "ChatGPT subscription via codex OAuth"
+      },
+      "use": "coding worker brain candidate"
+    },
+    {
+      "id": "hermes3:latest",
+      "provider": "ollama-local",
+      "status": "active-local",
+      "claims": {
+        "cost": "FREE local",
+        "strengths": [
+          "always-available",
+          "private"
+        ]
+      },
+      "use": "local fallback / privacy / offline"
+    },
+    {
+      "id": "gemma4",
+      "provider": "ollama-local",
+      "status": "candidate-local",
+      "claims": {
+        "cost": "FREE local",
+        "source": "https://ollama.com/library/gemma4",
+        "strengths": [
+          "local",
+          "private",
+          "new Google open model"
+        ]
+      },
+      "use": "local worker brain candidate (private/offline, Mac-mini host) \u2014 pull via `ollama pull gemma4`",
+      "note": "surfaced by Fritz; was in the original PDF report I could not extract"
+    },
+    {
+      "id": "google-antigravity",
+      "provider": "google",
+      "status": "evaluate",
+      "kind": "agentic-platform/tool",
+      "claims": {
+        "source": "https://antigravity.google/",
+        "strengths": [
+          "agentic IDE / coding platform"
+        ]
+      },
+      "use": "NOT a model brain \u2014 Google's agentic coding platform. Evaluate as a tool/competitor + possible integration target, not a worker lane"
+    },
+    {
+      "id": "gemini-omni",
+      "provider": "google",
+      "status": "evaluate",
+      "claims": {
+        "strengths": [
+          "multimodal (omni: text/vision/audio)"
+        ],
+        "cost": "TBD"
+      },
+      "use": "multimodal candidate \u2014 vision/audio for the vision-QA gate + mobile/glasses layer; confirm exact id/availability"
+    },
+    {
+      "id": "step-3.7-flash",
+      "provider": "hermes-portal",
+      "status": "parked",
+      "claims": {
+        "cost": "FREE via Hermes Portal (inside Hermes Agent)",
+        "strengths": [
+          "free",
+          "flash/fast"
+        ],
+        "source": "Hermes Agent \u2192 Hermes Portal option"
+      },
+      "use": "free worker brain candidate via the Hermes Portal provider \u2014 verify provider config + exact model id, then wire to a lane",
+      "note": "surfaced by Fritz 2026-05-31 | PARKED 2026-05-31: Nous Portal is subscription-gated + device-code login returned 400; not pursuing now."
+    },
+    {
+      "id": "qwen/qwen3-coder:free",
+      "provider": "openrouter",
+      "status": "candidate",
+      "claims": {
+        "params": "MoE coder",
+        "context": "1M",
+        "cost": "FREE on OpenRouter (20 req/min, 200 req/day)",
+        "strengths": [
+          "coding",
+          "long-context",
+          "agentic tool-use"
+        ],
+        "source": "https://openrouter.ai/qwen/qwen3-coder:free"
+      },
+      "use": "TOP pick for the CODING lane \u2014 strongest free coding model, 1M ctx; rate-limited so use for non-bursty code-gen / fallback to gpt-5.3-codex"
+    },
+    {
+      "id": "deepseek/deepseek-v4-flash:free",
+      "provider": "openrouter",
+      "status": "candidate",
+      "claims": {
+        "context": "1M",
+        "cost": "FREE on OpenRouter (20 req/min, 200 req/day)",
+        "strengths": [
+          "reasoning",
+          "coding",
+          "long-context",
+          "native reasoning chain"
+        ],
+        "source": "https://openrouter.ai/deepseek/deepseek-v4-flash:free"
+      },
+      "use": "TOP pick for the RESEARCH / REASONING lane \u2014 native reasoning, 1M ctx, free; pairs with Qwen3-Coder for build+reason swarm"
+    },
+    {
+      "id": "moonshotai/kimi-k2.6:free",
+      "provider": "openrouter",
+      "status": "candidate",
+      "claims": {
+        "context": "262K",
+        "cost": "FREE on OpenRouter (20 req/min, 200 req/day)",
+        "strengths": [
+          "agentic",
+          "coding",
+          "tool-use",
+          "vision",
+          "long-horizon agent workflows"
+        ],
+        "source": "https://openrouter.ai/moonshotai/kimi-k2.6:free"
+      },
+      "use": "AGENTIC / TOOL-USE lane candidate \u2014 strongest open agentic model; vision-capable for the vision-QA gate"
+    },
+    {
+      "id": "openai/gpt-oss-120b:free",
+      "provider": "openrouter",
+      "status": "candidate",
+      "claims": {
+        "context": "131K",
+        "cost": "FREE on OpenRouter (20 req/min, 200 req/day)",
+        "strengths": [
+          "coding",
+          "general",
+          "OpenAI open-weight"
+        ],
+        "source": "https://openrouter.ai/openai/gpt-oss-120b:free"
+      },
+      "use": "general-purpose / coding fallback lane \u2014 also runnable on Groq/Cerebras free tiers for speed"
+    },
+    {
+      "id": "google/gemma-4-31b-it:free",
+      "provider": "openrouter",
+      "status": "candidate",
+      "claims": {
+        "context": "262K",
+        "cost": "FREE on OpenRouter (20 req/min, 200 req/day)",
+        "strengths": [
+          "vision",
+          "tool-use",
+          "Google open model"
+        ],
+        "source": "https://openrouter.ai/google/gemma-4-31b-it:free"
+      },
+      "use": "VISION lane candidate \u2014 vision+tools, also pullable locally via Ollama (gemma4) for the Mac-mini private lane"
+    },
+    {
+      "id": "nvidia/nemotron-nano-9b-v2:free",
+      "provider": "openrouter",
+      "status": "candidate",
+      "claims": {
+        "context": "128K",
+        "cost": "FREE on OpenRouter (20 req/min, 200 req/day)",
+        "strengths": [
+          "lightweight",
+          "efficient",
+          "fast"
+        ],
+        "source": "https://openrouter.ai/nvidia/nemotron-nano-9b-v2:free"
+      },
+      "use": "MOBILE-EDGE / cheap-bulk lane candidate \u2014 small fast model for classification/triage; also free via NVIDIA NIM (build.nvidia.com)"
+    },
+    {
+      "id": "liquid/lfm-2.5-1.2b-thinking:free",
+      "provider": "openrouter",
+      "status": "candidate",
+      "claims": {
+        "context": "33K",
+        "cost": "FREE on OpenRouter (20 req/min, 200 req/day)",
+        "strengths": [
+          "reasoning",
+          "tiny/edge-deployable (1.2B)"
+        ],
+        "source": "https://openrouter.ai/liquid/lfm-2.5-1.2b-thinking:free"
+      },
+      "use": "MOBILE-EDGE lane candidate \u2014 1.2B reasoning model small enough for on-device/glasses layer"
+    },
+    {
+      "id": "groq-free-tier",
+      "provider": "groq",
+      "status": "candidate",
+      "kind": "inference-provider",
+      "claims": {
+        "cost": "FREE tier, no credit card (30 req/min, 6K tokens/min, 14.4K req/day)",
+        "strengths": [
+          "ultra-fast inference (~315+ TPS)",
+          "open-weight catalog: gpt-oss, llama, qwen, gemma"
+        ],
+        "source": "https://console.groq.com/docs/rate-limits"
+      },
+      "use": "SPEED provider \u2014 host free open-weight models for latency-sensitive lanes; pair with OpenRouter for failover"
+    },
+    {
+      "id": "cerebras-free-tier",
+      "provider": "cerebras",
+      "status": "candidate",
+      "kind": "inference-provider",
+      "claims": {
+        "cost": "FREE tier 1M tokens/day, no credit card (30 req/min, 60-100K tokens/min, 8192 ctx cap on free)",
+        "strengths": [
+          "fastest inference (~2600 TPS)",
+          "1M tokens/day generous volume",
+          "open-weight: llama, qwen, gpt-oss"
+        ],
+        "source": "https://inference-docs.cerebras.ai/support/rate-limits"
+      },
+      "use": "HIGH-VOLUME FREE provider \u2014 best daily token budget for bulk swarm work; note 8K context cap on free tier limits long-context lanes"
+    },
+    {
+      "id": "google-ai-studio-free",
+      "provider": "google",
+      "status": "candidate",
+      "kind": "inference-provider",
+      "claims": {
+        "cost": "FREE tier (Flash ~15 RPM / 1M TPM / 1500 RPD; Pro ~2 RPM / 32K TPM)",
+        "strengths": [
+          "Gemini 2.5/3 Flash",
+          "1M context",
+          "multimodal vision/audio",
+          "OAuth via Google account"
+        ],
+        "source": "https://ai.google.dev/gemini-api/docs/rate-limits"
+      },
+      "use": "LONG-CONTEXT + VISION free lane \u2014 Gemini Flash free tier complements the existing paid gemini-2.5-flash default; OAuth, no card. Free limits cut 50-80% in Dec 2025"
+    },
+    {
+      "id": "nvidia-nim-free",
+      "provider": "nvidia",
+      "status": "candidate",
+      "kind": "inference-provider",
+      "claims": {
+        "cost": "FREE API key via build.nvidia.com",
+        "strengths": [
+          "Nemotron family + open models",
+          "hosted, no local GPU"
+        ],
+        "source": "https://build.nvidia.com"
+      },
+      "use": "free hosting for Nemotron lanes (reasoning/long-context) without burning OpenRouter daily quota"
+    },
+    {
+      "id": "huggingface-inference-free",
+      "provider": "huggingface",
+      "status": "candidate",
+      "kind": "inference-provider",
+      "claims": {
+        "cost": "Free tier $0.10/month credit, no markup on provider rates",
+        "strengths": [
+          "20+ open models routed across providers",
+          "trending: GLM-4.7, DeepSeek-V4, Kimi K2.6, Qwen3, SmolLM3-3B"
+        ],
+        "source": "https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026"
+      },
+      "use": "discovery/eval surface \u2014 cheap way to test trending open models before wiring a lane; tiny monthly credit so not for production volume"
+    }
+  ],
+  "meta": {
+    "_provider_free_caps": {
+      "note": "Free-tier caps for the free-limit counter to track. Verify/update via the 3-day discovery cron.",
+      "openrouter:free": {
+        "req_per_min": 20,
+        "req_per_day": 200,
+        "scope": "shared across ALL :free models on the key"
+      },
+      "cerebras:free": {
+        "tokens_per_day": 1000000,
+        "context_max": 8192
+      },
+      "groq:free": {
+        "note": "fast ~315 TPS, per-model RPM/TPD limits"
+      },
+      "nvidia-nim:free": {
+        "note": "free Nemotron hosting, rate-limited"
+      },
+      "google-ai-studio:free": {
+        "note": "Gemini free tier, RPM/RPD limits"
+      },
+      "nous-portal": {
+        "note": "subscription, not free; free-for-subscribers rotating list"
+      }
+    },
+    "free_limit_counter": {
+      "status": "PLANNED",
+      "desc": "Track per-model/provider usage (rpm/rpd/tpd) vs caps above; surface near-limit + exhausted; feed credential-pool rotation + low-funds notification."
+    },
+    "build_lane_policy": {
+      "credits_ok_for_builds": true,
+      "ladder": [
+        "moonshotai/kimi-k2.6:free or paid",
+        "deepseek/deepseek-v4-flash",
+        "claude-sonnet-4-6 (escalate on repeated block)"
+      ],
+      "note": "Mid-tier build brains (Kimi/DeepSeek on OpenRouter) before falling to capped Claude. Fritz OK spending OpenRouter credits on builds.",
+      "swarm_scale_goal": "300 agents \u2014 spread across OpenRouter+Cerebras+Groq+NIM+Ollama to dodge per-provider rate caps (no hard ceiling exists)."
+    }
+  }
+}

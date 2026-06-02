@@ -1,59 +1,18 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-05-09T04:00:20.623Z
-> Files: 687 tracked | Anatomy hits: 0 | Misses: 0
-
-
-## MBSH RSVP hero Phase 3.4 marker-band structure (2026-05-14)
-
-- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP `.hero-stage` remains sealed/unchanged. The `.marker-band` contains the HTML/CSS `.marker-plaque`, `.marker-bulbs-top` as the first plaque child with 20 `.marker-bulb` spans, four `.marker-corner` diamonds, centered `.marker-line-1` / `.marker-line-2`, the existing `.bleed-bulb-row`, `.bleed-light-spill`, and the direct-child `.chevron.layer--chevron.scroll-teaser` targeting `#rsvp-form`.
-- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.4 marker-only overrides inset `.marker-band` with 4vw edge padding, make the top bulb crown prominent, position the chevron absolutely at the section bottom with bounce-over-text, preserve reduced-motion coverage, and add mobile marker text/bulb containment.
-
-## MBSH RSVP hero Phase 3.3 structure (2026-05-14)
-
-- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP marker band now contains an HTML/CSS `.marker-plaque` with four `.marker-corner` diamond spans, 20 `.marker-bulb` nodes in `.marker-bulbs-top`, centered `.marker-line-1` / `.marker-line-2` text, the existing full-width `.bleed-bulb-row`, and the double-chevron scroll button. The previous marker SVG object and rope-extension object were removed.
-- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.3 overrides style the HTML/CSS marker plaque, top marker bulb chase, mobile 10-bulb marker reduction, 12-bulb mobile bottom row, no-rope cleanup, and reduced-motion marker-bulb behavior while preserving the 2/3 + 1/3 band layout.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/03-scene-marker.svg` — deleted; marker plaque is now HTML/CSS in `frontend/rsvp.html`.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — deleted; the rope-continues concept was removed because it had no convincing visual endpoint.
-
-
-## MBSH RSVP hero Phase 3.2 structure (2026-05-14)
-
-- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP marker band now contains a full-width marker plaque, 20-bulb full-width chase row, double-chevron scroll button, async font/premiere stylesheet loading, and the now-superseded rope experiment, which Phase 3.3 removed.
-- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.2 overrides make `.marker-band` a single-column full-width plaque/bulbs/chevron grid, center the hero headline, enforce mobile title containment, apply exaggerated `chevronBounce`.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/03-scene-marker.svg` — superseded and deleted in Phase 3.3; marker is now HTML/CSS.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — superseded and deleted in Phase 3.3; rope concept removed.
-
-## MBSH RSVP hero Phase 3.1 structure (2026-05-14)
-
-- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — RSVP hero HTML now splits the opening into `.hero-stage` plus `.marker-band`, removes the duplicate `.reel-hero__back` medallion, and keeps the center MENU medallion.
-- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 3.1 two-band layout, prominent marker plaque sizing, intensified two-position camera flashes, marker-band spill/bulb/chevron placement, mobile fit, reduced-motion coverage, and the former rope overflow fix superseded by Phase 3.3 removal.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — deleted in Phase 3.3; rope concept removed.
-
-## MBSH RSVP hero Phase 4 assets (2026-05-14)
-
-- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — live RSVP page preserves Preview-B and includes additive Phase 4 atmosphere nodes.
-- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Phase 4 motion polish, deferred wow details, interaction/form bridge, mobile title cleanup, and bleed-spill artifact fix.
-
-## MBSH RSVP hero Phase 3 assets (2026-05-14)
-
-- `../famtastic-sites/mbsh-reunion/frontend/rsvp.html` — live RSVP page now wired to Variant B hero composition.
-- `../famtastic-sites/mbsh-reunion/frontend/css/premiere.css` — Preview-B alignment, essential atmosphere, bleed, mobile/reduced-motion rules.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/01-environment-640.webp` — mobile responsive environment derivative.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/01-environment-960.webp` — tablet responsive environment derivative.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/01-environment-1280.webp` — desktop responsive environment derivative.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/02b-harry-3d-render-transparent-768.webp` — live optimized Variant B Harry.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/03-scene-marker.svg` — deleted in Phase 3.3; marker is now HTML/CSS.
-- `../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/04-rope-extension.svg` — deleted in Phase 3.3; rope concept removed.
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-01T01:08:54.582Z
+> Files: 1178 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
 - `.zshrc` (~122 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~1766 tok)
+- `shay-audit-2026-05-28.md` — Shay-Shay / Hermes Agent — Installation Audit (~6772 tok)
 - `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~21700 tok)
 
 ## ../../../tmp/
 
+- `extract-jprime.py` — Extract files_to_write from J' workflow output and write each to disk. (~331 tok)
 - `lane-b-smoke.js` — path: req, record (~2043 tok)
 - `migrate-brain.js` — One-shot migration: .brain entries → memory/<type>/<slug>.md (lifecycle: candidate) (~4104 tok)
 - `refinement-smoke.js` — API routes: GET (2 endpoints) (~1123 tok)
@@ -61,6 +20,17 @@
 - `ws-build.js` — Declares WebSocket (~1028 tok)
 - `ws-build2.js` — WebSocket: sendBuildMessage (~1476 tok)
 - `ws-build3.js` — WebSocket: finish (~1185 tok)
+
+## ../../../tmp/ncs-v2/
+
+- `index.html` — National CAD Standard — United States | V6.0 (~2421 tok)
+- `motion.js` — io: runCounter, initParallax, initNav + 3 more (~1227 tok)
+- `style.css` — Styles: 94 rules, 27 vars (~3715 tok)
+- `v1.html` — National CAD Standard — United States | V6.0 (~2355 tok)
+
+## ../.basic-memory/
+
+- `config.json` (~737 tok)
 
 ## ../.claude/
 
@@ -77,6 +47,7 @@
 ## ../.claude/plans/
 
 - `floofy-dancing-mccarthy.md` — Per-Site Repo Architecture + Studio State URLs (~1614 tok)
+- `no-dude-this-is-zesty-minsky.md` — Game Plan: 7 parallel workstreams → Shay-Shay AI Operating System (~2108 tok)
 - `purring-riding-brook.md` — Plan: Reconcile the Two Workbench Shells (~2437 tok)
 - `tidy-snacking-gizmo.md` — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop (~730 tok)
 
@@ -84,12 +55,62 @@
 
 - `feedback_docs_always_pushed.md` (~420 tok)
 - `feedback_dynamic_crud.md` — Declares should (~486 tok)
-- `MEMORY.md` — Memory Index (~175 tok)
+- `MEMORY.md` — Memory Index (~624 tok)
+- `project_codex_subscription_capped.md` — Declares of (~436 tok)
 - `project_template_upload_future.md` — Declares names (~444 tok)
 
 ## ../.config/famtastic/
 
 - `studio-config.json` (~264 tok)
+
+## ../.shay/
+
+- `.gitignore` — Git ignore rules (~76 tok)
+- `config.yaml` (~4569 tok)
+
+## ../.shay/cron/
+
+- `jobs.json` (~2708 tok)
+
+## ../.shay/memories/
+
+- `MEMORY.md` — Declares names (~957 tok)
+
+## ../.shay/plans/
+
+- `ai-news-sources.md` — AI News Sources (~716 tok)
+- `api-vs-subscription.md` — API vs Subscription — Brain Cost Audit (~1014 tok)
+- `capabilities-checklist.md` — Shay-Shay Capabilities Checklist (~1151 tok)
+- `component-studio-audit.md` — Component Studio — Audit (~782 tok)
+- `data-center-plan-revised.md` — May-19 Data Center Plan — Revision Notes (2026-05-28) (~1147 tok)
+- `existing-plans-inventory.md` — Existing Plans Inventory (~1531 tok)
+- `HANDOFF-2026-05-28.md` — HANDOFF — 2026-05-28 (~1163 tok)
+- `master-plan.md` — Shay-Shay Master Plan (~2611 tok)
+- `media-studio-audit.md` — Media Studio — Audit (~688 tok)
+- `morning-interview.md` — Morning Interview — Monetization Readiness (Fritz × Shay) (~654 tok)
+
+## ../.shay/scripts/
+
+- `curator_autorun.sh` — Autonomous Curator runner (Shay cron, --no-agent). (~481 tok)
+- `mbsh-swarm-launch.py` — MBSH Premiere revival — 6-stream agent swarm (Claude orchestrator + Ollama workers via delegate_task (~1341 tok)
+- `overnight_ops.py` — Overnight ops control plane for Shay. (~5992 tok)
+- `overnight-batch.py` — Overnight batch runner — 8 research/synthesis jobs, max 3 concurrent, all on Claude. (~1758 tok)
+- `rerun-cited.py` — Re-run two research docs with mandatory web citations. (~1492 tok)
+- `set-anthropic-key.sh` — Securely set ANTHROPIC_API_KEY in ~/.shay/.env (for Claude Sonnet 4.6 as primary brain). (~530 tok)
+- `set-gemini-key.sh` — Securely set GEMINI_API_KEY in ~/.shay/.env. (~416 tok)
+- `use-claude-subscription.sh` — Route Shay's default brain through the Claude Code MAX SUBSCRIPTION (OAuth), not the API key. (~848 tok)
+
+## ../.shay/skills/autonomous-ai-agents/goal-decompose/
+
+- `SKILL.md` — Goal Decompose (~689 tok)
+
+## ../.shay/skills/communication/token-optimizer/
+
+- `SKILL.md` — Token Optimizer (~549 tok)
+
+## ../.shay/tools/vault-semantic-mcp/
+
+- `server.py` — Read-only whole-vault semantic search MCP server for Shay. (~1747 tok)
 
 ## ../Library/Application Support/Claude/
 
@@ -98,6 +119,7 @@
 ## ../Library/LaunchAgents/
 
 - `com.famtastic.studio.plist` (~606 tok)
+- `com.famtastic.vault-search.plist` (~344 tok)
 
 ## ../famtastic-convergence-dossier/.claude/agents/
 
@@ -222,9 +244,15 @@
 - `index.html` — MBSH Class of &rsquo;96 — 30th Reunion (~981 tok)
 - `rsvp.html` — RSVP — MBSH Class of &rsquo;96 30th Reunion (~2243 tok)
 
+## ../famtastic-sites/mbsh-reunion/frontend/ Phase 3 RSVP touchpoints
+
+
 ## ../famtastic-sites/mbsh-reunion/frontend/assets/brand-mark/rejected/
 
 - `rejection-notes.md` — Brand Mark — Rejection Notes (~546 tok)
+
+## ../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/
+
 
 ## ../famtastic-sites/mbsh-reunion/frontend/assets/story/rejected/
 
@@ -252,27 +280,13 @@
 - `screenshot-hero.js` — screenshot-hero.js — Capture hero at iPhone 14 (390x844) and desktop (1440x900). (~584 tok)
 - `screenshot-story.js` — screenshot-story.js — Capture each Story moment + event details panel (~630 tok)
 
-
-## ../famtastic-sites/mbsh-reunion/frontend/assets/heroes/rsvp/
-
-- `01-environment-1280.webp` — RSVP Phase 3 optimized environment derivative for live hero proof.
-- `02b-harry-3d-render-transparent-768.webp` — RSVP Phase 3 optimized Variant B Harry derivative for live hero proof.
-- RSVP marker plaque — now HTML/CSS in `frontend/rsvp.html` with `.marker-bulb` chase.
-- RSVP rope-extension SVG — deleted in Phase 3.3; do not recreate without a baked-in endpoint.
-
-## ../famtastic-sites/mbsh-reunion/frontend/ Phase 3 RSVP touchpoints
-
-- `rsvp.html` — Live RSVP page now contains `section.reel-hero--rsvp`, `.bleed-bridge`, and `.rsvp-form-section`.
-- `css/premiere.css` — RSVP Phase 3 atmosphere, marker band, mobile, reduced-motion, and performance-safe visual rules.
-- `js/premiere.js` — RSVP-scoped optimized medallion asset and no full-page injected backdrop overlay on RSVP.
-
 ## ./
 
 - `.gitignore` — Git ignore rules (~531 tok)
 - `.mcp.json` (~47 tok)
 - `AGENT-COORDINATION.md` — Agent Coordination (~877 tok)
 - `AGENTS.md` — AGENTS.md (~196 tok)
-- `CHANGELOG.md` — FAMtastic Changelog (~27327 tok)
+- `CHANGELOG.md` — 2026-05-30 — Phase 2+3a complete: Dispatcher protocol + pipeline primitives + Gate 3a PASS (~4686 tok)
 - `CHANGELOG.md` — FAMtastic Changelog (~26622 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2625 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2775 tok)
@@ -283,11 +297,12 @@
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
-- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~75376 tok)
+- `SHAY-MASTER-PLAN-2026-05-28.md` — SHAY-SHAY MASTER PLAN — 2026-05-28 (~1499 tok)
+- `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~114551 tok)
 
 ## .claude/
 
-- `launch.json` (~110 tok)
+- `launch.json` (~160 tok)
 - `settings.json` (~441 tok)
 - `settings.local.json` (~2026 tok)
 
@@ -536,6 +551,24 @@
 
 - `hub-ci.yml` — /*.sh scripts/* || true (~270 tok)
 
+## MBSH RSVP hero Phase 3 assets (2026-05-14)
+
+
+## MBSH RSVP hero Phase 3.1 structure (2026-05-14)
+
+
+## MBSH RSVP hero Phase 3.2 structure (2026-05-14)
+
+
+## MBSH RSVP hero Phase 3.3 structure (2026-05-14)
+
+
+## MBSH RSVP hero Phase 3.4 marker-band structure (2026-05-14)
+
+
+## MBSH RSVP hero Phase 4 assets (2026-05-14)
+
+
 ## Ops Workspace (added 2026-05-05)
 
 - `docs/ops/inventory-2026-05-05.json` — First Ops debt inventory snapshot (~600 tok)
@@ -716,6 +749,10 @@
 - `latest-convo__20250923-1200.md` — FAMtastic Agent Hub Summary (~289 tok)
 - `site-fritz-fitness__20250923-1100.md` — Fritz Fitness Site Development Summary (~223 tok)
 
+## data/
+
+- `models-registry.json` (~3011 tok)
+
 ## diagnostics/
 
 - `2026-04-24-jjba-postmortem.md` — FAMtastic Studio — Diagnostic Report (~3036 tok)
@@ -824,6 +861,149 @@
 
 - `no-overflow-x-hidden-on-html-or-body.md` — Never set overflow-x: hidden on html or body (~199 tok)
 
+## obsidian/Shay-Memory/
+
+- `conversation-2026-05-29.md` — Conversation history — 2026-05-29 (~5336 tok)
+
+## obsidian/Shay-Memory/_system/
+
+- `ai.shay.memory-reflect.plist` (~291 tok)
+- `MEMORY-SCHEMA-L0-L3.md` — Shay Memory Schema — L0→L3 Layering (Tencent-style) (~1248 tok)
+- `reflect.py` — Nightly memory reflection / consolidation pass for the Shay-Memory vault. (~2059 tok)
+
+## obsidian/Shay-Memory/desk-redesign/
+
+- `spec-2026-05-29.md` — Shay Desktop — Redesign Spec (~2721 tok)
+
+## obsidian/Shay-Memory/desk-redesign/desk-redesign/
+
+- `cli-desktop-parity-2026-05-30.md` — Executive summary (~8458 tok)
+- `FINAL-REPORT-2026-05-30.md` — Executive summary (~9419 tok)
+
+## obsidian/Shay-Memory/desk-redesign/phase-0/
+
+- `deps.md` — Summary (~816 tok)
+- `error-boundaries.md` — Scope shipped (~784 tok)
+- `icons-shortcuts.md` — What was built (~699 tok)
+- `ipc-domains.md` — Summary (~1108 tok)
+- `settings-keychain.md` — What I built (~994 tok)
+- `state.md` — Phase 0 — Zustand store skeleton (~1373 tok)
+- `theme.md` — Phase 0 — Theme + density + focus + motion tokens (~1184 tok)
+- `verify.md` — Phase 0 — Verify Report (~1149 tok)
+
+## obsidian/Shay-Memory/desk-redesign/phase-1/
+
+- `block-renderer.md` — Built (~1047 tok)
+- `cleanup.md` — Phase 1 — cleanup worker (~494 tok)
+- `interactive-block.md` — Scope shipped (~1154 tok)
+- `sse-parser.md` — Phase 1 — sse-parser worker (~903 tok)
+- `typed-blocks.md` — Status (~1278 tok)
+- `verify.md` — Phase 1 verification — Chat core (~1531 tok)
+- `virtualization.md` — Phase 1 — virtualization worker (~1514 tok)
+
+## obsidian/Shay-Memory/desk-redesign/phase-2/
+
+- `appshell.md` — Scope delivered (~1144 tok)
+- `chat-tabs.md` — Phase 2 — chat-tabs (~975 tok)
+- `cleanup.md` — Phase 2 — cleanup pass (~1024 tok)
+- `command-palette.md` — Scope shipped (~972 tok)
+- `sessions-rpc.md` — Summary (~1397 tok)
+- `sidebar.md` — Status (~1252 tok)
+- `topbar.md` — Phase 2 — TopBar (~1187 tok)
+- `verify.md` — Phase 2 — Verification Report (~1028 tok)
+
+## obsidian/Shay-Memory/desk-redesign/phase-3/
+
+- `cleanup.md` — Phase 3 cleanup — progress note (~1019 tok)
+- `composer.md` — Phase 3 — Composer (~1528 tok)
+- `media-row.md` — Phase 3 — `media-row` worker (~1621 tok)
+- `rightpanel.md` — Phase 3 — RightPanel (rightpanel label) (~1306 tok)
+- `slotstrip.md` — Phase 3 slotstrip — progress note (~2556 tok)
+- `stores-services.md` — Scope completed (~1523 tok)
+- `tasks-notifs-status.md` — Scope shipped (~1437 tok)
+- `verify.md` — Phase 3 Verify Report (~695 tok)
+
+## obsidian/Shay-Memory/desk-redesign/phase-4/
+
+- `account-cluster.md` — Scope delivered (~1650 tok)
+- `appearance-cluster.md` — Phase 4 — Appearance Cluster (Themes / Shortcuts / Language) (~1525 tok)
+- `capabilities-cluster.md` — Scope delivered (~1710 tok)
+- `cleanup.md` — Phase 4 — cleanup (~220 tok)
+- `desktop-cluster.md` — Scope delivered (~2070 tok)
+- `notifs-voice-cluster.md` — Phase 4 · notifs-voice-cluster — progress note (~1189 tok)
+- `settings-integration.md` — Phase 4 — settings-integration (~2168 tok)
+- `settings-shell.md` — Scope delivered (~1491 tok)
+- `verify.md` — Phase 4 — Verify (~1036 tok)
+
+## obsidian/Shay-Memory/desk-redesign/phase-5/
+
+- `auth-ui.md` — Phase 5 — auth-ui (~939 tok)
+- `cleanup.md` — Phase 5 · cleanup — Settings barrel + nav overrides (~741 tok)
+- `diagnostics-ui.md` — Phase 5 — Diagnostics UI (label: diagnostics-ui) (~1123 tok)
+- `logs-ui.md` — Phase 5 — Logs UI (label: logs-ui) (~1126 tok)
+- `mcp-ui.md` — Phase 5 — MCP Admin UI (label: mcp-ui) (~1428 tok)
+- `notifications-plugins-ui.md` — Phase 5 · notifications-plugins-ui (~1479 tok)
+- `oauth-helpers-and-gateway.md` — Phase 5 — oauth-helpers-and-gateway (~1151 tok)
+
+## obsidian/Shay-Memory/desk-redesign/phase-6/
+
+- `a11y-focus.md` — Phase 6 — a11y-focus (~1840 tok)
+- `final-report.md` — Scope (~284 tok)
+- `lint-fix.md` — Phase 6 — lint-fix (~548 tok)
+- `motion-virt.md` — Phase 6 — motion-virt (~1417 tok)
+- `parity-audit.md` — Phase 6 — Parity Audit (label: parity-audit) (~743 tok)
+- `tiptap-swap.md` — Phase 6 — TipTap composer swap (~1602 tok)
+
+## obsidian/Shay-Memory/learnings/
+
+- `external-research-scan-2026-05-30.md` — Reuse-before-build scan — projects evaluated 2026-05-30 (~1408 tok)
+- `phase1-lessons-2026-05-30.md` — Phase 1 Swarm Engine — Lessons Learned (~1343 tok)
+- `process-improvements-2026-05-30.md` — Process Improvements — Multi-Day Session Retrospective (~1387 tok)
+- `skill-recommendations-2026-05-30.md` — Skill Recommendations — Shay's Swarm Get-Smarter Loop (~1628 tok)
+
+## obsidian/Shay-Memory/plans/
+
+- `ARC-DECISIONS-2026-05-31.md` — End-of-Arc Decisions Report (~1031 tok)
+- `CAPABILITY-BACKLOG-2026-05-31.md` — Capability Backlog — recorded for Shay, not yet built (~994 tok)
+- `COMPANION-APP-prd-2026-05-30.md` — Shay Companion App — PRD (~1022 tok)
+- `DESKTOP-CANONICAL-2026-05-31.md` — Shay apps — the CORRECT map (confirmed by Fritz 2026-05-31) (~624 tok)
+- `SKILLS-disclosure-design-2026-05-30.md` — Skills disclosure — keep all 160, stop paying for them every call (~1088 tok)
+- `skills-screen-plan-2026-05-30.md` — Skills Browser Screen — Implementation Plan (~4872 tok)
+
+## obsidian/Shay-Memory/post-review/
+
+- `comparison-report-2026-05-30.md` — J′ vs Shay-Swarm — Head-to-Head Orchestration Benchmark (2026-05-30) (~2963 tok)
+- `shay-self-orchestration-plan-2026-05-30.md` — Shay Self-Orchestration + Companion App — Master Plan (v2) (~11604 tok)
+- `swarm-architecture-2026-05-30.md` — SHAY SWARM ARCHITECTURE (v2) (~26941 tok)
+- `swarm-benchmark.py` — log, main (~1672 tok)
+- `v2-build-plan-2026-05-30.md` — Shay Desktop V2 — Brain-Agnostic Build Plan (~10946 tok)
+
+## obsidian/Shay-Memory/research/
+
+- `claude-mem-evaluation-2026-05-31.md` — claude-mem Evaluation — 2026-05-31 (~1897 tok)
+- `free-models-discovery-2026-05-31.md` — Free / Open LLM Discovery — Shay Worker-Lane Brains (~1719 tok)
+- `hermes-capabilities-audit-2026-05-31.md` — Hermes / Shay-Shay Capability Audit — What We Use vs What We're Leaving on the Table (~3688 tok)
+- `kanban-setup-correct-2026-05-31.md` — Correct Kanban Setup for an Efficient Multi-Agent Swarm (~3784 tok)
+- `next-phase-architecture-2026-05-31.md` — Next-Phase AI-OS Architecture — Shay-Shay OS (2026-05-31) (~4729 tok)
+- `openjarvis-adopt-impl-2026-05-31.md` — OpenJarvis ADOPT-NOW implementation — Shay-Shay (~1599 tok)
+- `page-agent-review-2026-05-31.md` — Review: alibaba/page-agent — fit for the FAMtastic stack (~1884 tok)
+- `plugins-discovery-2026-05-31.md` — Plugins Discovery — Shay/Hermes + Desktop (~2556 tok)
+- `provider-self-registration-design-2026-05-31.md` — Provider Self-Registration Design — Shay adds & authenticates new providers herself (~4997 tok)
+- `SHAY-OS-MASTER-PLAN-2026-05-31.md` — Shay-Shay OS — Master Plan (2026-05-31) (~1355 tok)
+- `swarm-patterns-passA-2026-05-31.md` — Swarm Orchestration Patterns — Pass A (2026-05-31) (~2207 tok)
+- `swarm-patterns-passB-2026-05-31.md` — Swarm Orchestration Patterns — Pass B (Independent) (~2797 tok)
+- `track4-safe-prep-2026-05-31.md` — Track 4 (ADOPT plumbing) — Safe Prep Phase Report, 2026-05-31 (~1977 tok)
+- `track4-safe-subset-done-2026-05-31.md` — Track 4 — SAFE filesystem-only subset, completion report (2026-05-31) (~1114 tok)
+- `train-our-own-models-strategy-2026-05-31.md` — Train Our Own Models — Strategy (~2902 tok)
+
+## obsidian/Shay-Memory/reviews/
+
+- `ADVERSARIAL-REVIEW-adopt-plan-2026-05-31.md` — Adversarial Review — ADOPT-PLAN-2026-05-31 (~3793 tok)
+- `ADVERSARIAL-REVIEW-master-plan-2026-05-31.md` — Adversarial Review — Shay-Shay OS Master Plan (2026-05-31) (~4527 tok)
+- `PAGES-AND-CLI-MAP-2026-05-31.md` — Shay Desktop — Pages & CLI Coverage Map (~4854 tok)
+- `PER-PAGE-UI-DISCOVERY-2026-05-31.md` — Shay Desktop — Per-Page UI Discovery & Evaluation (~7833 tok)
+- `UI-SPRINT-RESULT-2026-05-31.md` — Shay Desktop — Overnight UI Sprint Result (2026-05-31) (~1003 tok)
+
 ## plans/
 
 - `CLOSEOUT-SCHEMA.md` — Plan Closeout / Checkpoint Schema (~929 tok)
@@ -834,6 +1014,10 @@
 
 - `plan.json` (~1269 tok)
 - `README.md` — Project documentation (~531 tok)
+
+## plans/shay-phone-app/
+
+- `PLAN.md` — SHAY PHONE APP — Build Plan (iOS + Android) — Revision 3 (~17771 tok)
 
 ## schemas/
 
@@ -922,6 +1106,559 @@
 
 - `audit.js` — scripts/plans/audit.js — read-only plan/task ledger audit. (~1825 tok)
 - `closeout.js` — scripts/plans/closeout.js — write a closeout/checkpoint packet for a plan. (~2038 tok)
+
+## shay-agent-os/
+
+- `launch-agent.py` — write_heartbeat, log_line, launch (~1155 tok)
+- `notify.py` — telegram_push, start_arc, heartbeat, checkpoint (~1987 tok)
+- `run_companion_research.py` — log, mk (~1777 tok)
+- `run_hard_code_job.py` — names: log (~2154 tok)
+- `run_phase3b.py` — log, load_context, main (~2141 tok)
+- `run_real_code_job.py` — definitions: log (~1794 tok)
+- `run_self_healing.py` — names: log, record_failure, record_success, write_lesson (~3974 tok)
+- `run_ui_swarm_fix.py` — names: log (~1830 tok)
+- `run_ultimate_plan.py` — log, mk (~1664 tok)
+- `sync_lessons_to_shay.py` — sync_cerebrum, sync_buglog, sync_repo_docs, main (~1164 tok)
+
+## shay-agent-os/components/swarm/
+
+- `__init__.py` (~569 tok)
+- `asyncio_dispatcher.py` — AsyncioDispatcher: fan_out, export_checkpoint, import_checkpoint, health (~1144 tok)
+- `brain_client.py` — BrainChain: call, call_prompt (~2484 tok)
+- `dispatcher.py` — class: fan_out, export_checkpoint, import_checkpoint, health + 3 more (~1083 tok)
+- `goal_loop.py` — GoalStatus: run, start, step (~5657 tok)
+- `local_swarm_dispatcher.py` — LocalSwarmDispatcher: fan_out, export_checkpoint, import_checkpoint, health (~2051 tok)
+- `pipeline.py` — class: agent, parallel, pipeline, process_item + 6 more (~23541 tok)
+
+## shay-agent-os/components/tools/
+
+- `registry.py` — class: register, names, serialize, invoke + 2 more (~1420 tok)
+
+## shay-agent-os/docs/
+
+- `SHAY-SWARM-ARCHITECTURE.md` — SHAY SWARM ARCHITECTURE (v2) (~26223 tok)
+
+## shay-agent-os/policies/
+
+- `balanced.yaml` — balanced.yaml — Default policy (recommended). (~328 tok)
+- `free-maximal.yaml` — free-maximal.yaml — Zero cloud cost. Quality ceiling is local model capability. (~270 tok)
+- `speed-first.yaml` — speed-first.yaml — Fastest wall-clock. All cloud, all Claude. (~287 tok)
+
+## shay-desktop-electron/
+
+- `package.json` — Node.js package manifest (~843 tok)
+
+## shay-desktop-electron/.ralph/
+
+- `electron-smoke.mjs` — Phase 2 — functional smoke: launch the REAL built Electron app, prove it (~772 tok)
+- `loop.py` — log, load_prd, save_prd, next_pending (~6510 tok)
+- `qa_gate.mjs` — qa_gate.mjs — the "render-QA superpower": one gate that SEES + VERIFIES. (~786 tok)
+- `visual_qa.py` — judge, main (~940 tok)
+
+## shay-desktop-electron/docs/
+
+- `SHAY-DESKTOP-V2-REBUILD-PLAN.md` — Shay Desktop — V2 Rebuild Plan (Draft 3, post-R2-critique) (~12443 tok)
+
+## shay-desktop-electron/src/main/
+
+- `account-domain.ts` — Account / Billing domain — Phase 4 stub. (~779 tok)
+- `auth-pool.ts` — auth-pool.ts — thin desktop backend over the real `shay auth` CLI for (~1725 tok)
+- `diagnostics.ts` — Diagnostics orchestrator — Phase 5. (~7187 tok)
+- `index.ts` — AuthAddInput: openExternalUrl, createWindow, setupIPC (~12824 tok)
+- `insights.ts` — Insights — usage analytics surface. (~2807 tok)
+- `keychain.test.ts` — `safeStorage` stub. We swap the implementation between tests to exercise (~1527 tok)
+- `keychain.ts` — Keychain — thin wrapper around Electron's `safeStorage` with a strict, (~1790 tok)
+- `notifications-dnd.ts` — Do-not-disturb evaluator + per-category delivery rules. (~1374 tok)
+- `notifications-os.ts` — OS notification adapter — Phase 3. (~679 tok)
+- `notifications-store.ts` — Notifications store — Phase 3 sqlite-backed inbox. (~2083 tok)
+- `security-center.ts` — security-center.ts — desktop backend for the Security screen (H7). Thin (~1124 tok)
+- `sessions-overlay.ts` — Sessions overlay — Phase 2. (~2613 tok)
+- `sessions-rpc.ts` — Sessions write-RPC adapter — Phase 2. (~2444 tok)
+- `settings-handler.ts` — Consolidated settings IPC backed by a single JSON file under (~1744 tok)
+- `skills.ts` — Parse SKILL.md frontmatter (YAML between --- markers) for name/description. (~2287 tok)
+- `sse-parser-typed.test.ts` — Helper — frame a typed event as the gateway emits it on the wire. (~3118 tok)
+- `sse-parser-typed.ts` — Typed SSE parser — Phase 1 chat-core feed. (~1998 tok)
+- `sse-parser.ts` — Extracted SSE parsing logic — testable without Electron or HTTP. (~1394 tok)
+
+## shay-desktop-electron/src/main/domains/
+
+- `account.ts` — Account domain — Phase 4 IPC scaffold. (~552 tok)
+- `auth.ts` — Auth domain — Phase 0 scaffold. (~768 tok)
+- `capture.ts` — Capture domain — Phase 3. (~4296 tok)
+- `diagnostics.ts` — Diagnostics domain — Phase 5 implementation. (~1820 tok)
+- `index.ts` — Domain registry — Phase 0 scaffold. (~1051 tok)
+- `keychain.ts` — Keychain domain — Phase 0 PLACEHOLDER. (~761 tok)
+- `logs.ts` — Logs domain — Phase 5 implementation. (~4496 tok)
+- `mcp.ts` — MCP domain — Phase 5 implementation. (~6844 tok)
+- `notifications.ts` — Notifications domain — Phase 3 implementation. (~2337 tok)
+- `panels-popout.ts` — panels-popout — main-process factory that pops a right-panel tab into (~1201 tok)
+- `panels.ts` — Panels domain — Phase 0 scaffold. (~1083 tok)
+- `plugins.ts` — Plugins domain — Phase 5 (Admin / MCP / Auth). (~5314 tok)
+- `sessions.ts` — Sessions domain — Phase 0 scaffold. (~1237 tok)
+- `settings.ts` — Settings domain — Phase 4 wiring. (~2757 tok)
+- `tasks.ts` — Tasks domain — Phase 3 implementation. (~2809 tok)
+
+## shay-desktop-electron/src/main/ipc/
+
+- `models-registry.ts` — REGISTRY_PATH: registerModelsRegistryHandlers (~556 tok)
+
+## shay-desktop-electron/src/main/oauth/
+
+- `anthropic-setup-token.ts` — Anthropic "setup token" paste-back helper — Phase 5 auth-keychain. (~1691 tok)
+- `nous-device-auth.ts` — Nous device-auth OAuth helper — Phase 5 auth-keychain. (~2212 tok)
+- `spotify-pkce.ts` — Spotify PKCE OAuth helper — Phase 5 auth-keychain. (~2418 tok)
+
+## shay-desktop-electron/src/preload/
+
+- `auth-domain.ts` — Typed `window.shay.auth` API surface — Phase 5. (~2421 tok)
+- `capture-domain.ts` — capture-domain.ts — preload-side typed surface for `shay.capture.*`. (~830 tok)
+- `diagnostics-domain.ts` — Typed `window.shay.diagnostics` API surface — Phase 5. (~546 tok)
+- `domains.ts` — Namespaced preload bindings — Phase 0 scaffold. (~1257 tok)
+- `generated-bindings.ts` — AUTO-GENERATED — binds EVERY typed HermesAPI method (buglog #233). Real (~4784 tok)
+- `index.d.ts` — Declares ElectronAPI (~5997 tok)
+- `index.ts` — Declares electronAPI (~2228 tok)
+- `logs-domain.ts` — Typed `window.shay.logs` API surface — Phase 5. (~570 tok)
+- `mcp-domain.ts` — Typed `window.shay.mcp` API surface — Phase 5 (recovery). (~506 tok)
+- `plugins-domain.ts` — Typed `window.shay.plugins` API surface — Phase 5. (~650 tok)
+- `sessions-domain.ts` — Typed `window.shay.sessions` API surface — Phase 2. (~1171 tok)
+- `settings-domain.ts` — Settings preload surface — Phase 4. (~1046 tok)
+
+## shay-desktop-electron/src/renderer/src/
+
+- `App.tsx` — MainShell mounts the Phase 2 three-column `AppShell` with the (~3060 tok)
+- `main.tsx` (~114 tok)
+
+## shay-desktop-electron/src/renderer/src/admin/auth/
+
+- `AddCredentialDialog.tsx` — <AddCredentialDialog> — Phase 5 Auth admin stepper. (~3035 tok)
+- `ApiServerKeyPanel.tsx` — <ApiServerKeyPanel> — Phase 5 Auth admin. (~1751 tok)
+- `AuthPage.module.css` — Styles: 58 rules (~2570 tok)
+- `AuthPage.tsx` — Settings · Authentication — Phase 5 admin surface. (~2658 tok)
+- `CredentialPoolTable.tsx` — <CredentialPoolTable> — Phase 5 Auth admin. (~1224 tok)
+- `FallbackChainEditor.tsx` — <FallbackChainEditor> — Phase 5 Auth admin. (~1490 tok)
+- `index.ts` — Auth admin barrel — Phase 5. (~296 tok)
+- `OAuthLoginDialog.tsx` — <OAuthLoginDialog> — Phase 5 Auth admin. (~2508 tok)
+
+## shay-desktop-electron/src/renderer/src/admin/diagnostics/
+
+- `DebugShareDialog.tsx` — <DebugShareDialog> — typed confirmation modal that explains what goes (~1046 tok)
+- `DiagnosticsPage.module.css` — Styles: 24 rules (~870 tok)
+- `DiagnosticsPage.tsx` — Settings · Diagnostics — Phase 5 admin surface. (~953 tok)
+- `DoctorRunner.tsx` — <DoctorRunner> — runs the diagnostics suite and renders results. (~1385 tok)
+- `DumpPanel.tsx` — <DumpPanel> — generates a sanitized diagnostic dump. (~615 tok)
+- `ExportImportPanel.tsx` — <ExportImportPanel> — Export and import settings / sessions. (~1564 tok)
+- `index.ts` — admin/diagnostics barrel — Phase 5. (~226 tok)
+- `ResetDeskDialog.tsx` — <ResetDeskDialog> — destructive reset gesture. (~1251 tok)
+- `UpdateChannelPanel.tsx` — <UpdateChannelPanel> — read/write the auto-updater channel. (~926 tok)
+
+## shay-desktop-electron/src/renderer/src/admin/logs/
+
+- `index.ts` — Admin · Logs — Phase 5 barrel. (~204 tok)
+- `LogFilters.tsx` — <LogFilters> — Phase 5 admin / Logs viewer. (~1908 tok)
+- `LogRow.tsx` — <LogRow> — Phase 5 admin / Logs viewer. (~926 tok)
+- `LogsPage.module.css` — Styles: 41 rules (~1668 tok)
+- `LogsPage.tsx` — <LogsPage> — Phase 5 admin / Logs viewer. (~1791 tok)
+- `LogStream.tsx` — <LogStream> — Phase 5 admin / Logs viewer. (~2194 tok)
+
+## shay-desktop-electron/src/renderer/src/admin/mcp/
+
+- `AddMcpServerDialog.tsx` — <AddMcpServerDialog> — Phase 5 admin/mcp UI. (~4352 tok)
+- `ConfigureMcpServerDialog.tsx` — <ConfigureMcpServerDialog> — Phase 5 admin/mcp UI. (~471 tok)
+- `index.ts` — admin/mcp barrel — Phase 5. (~260 tok)
+- `McpLoginDialog.tsx` — <McpLoginDialog> — Phase 5 admin/mcp UI. (~1856 tok)
+- `McpServerRow.tsx` — <McpServerRow> — Phase 5 admin/mcp UI. (~1379 tok)
+- `McpServersPage.module.css` — Styles: 60 rules (~2253 tok)
+- `McpServersPage.tsx` — <McpServersPage> — Phase 5 admin/mcp UI. (~2818 tok)
+- `McpToolList.tsx` — <McpToolList> — Phase 5 admin/mcp UI. (~1221 tok)
+- `TestMcpServerDialog.tsx` — <TestMcpServerDialog> — Phase 5 admin/mcp UI. (~1326 tok)
+
+## shay-desktop-electron/src/renderer/src/admin/notifications/
+
+- `CategoryRulesTable.tsx` — <CategoryRulesTable> — Phase 5 admin-side per-category rule editor. (~1816 tok)
+- `DndScheduler.tsx` — <DndScheduler> — Phase 5 admin-side weekly quiet-hours editor. (~2535 tok)
+- `index.ts` — Admin · Notifications barrel. (~174 tok)
+- `NotificationsAdminPage.module.css` — NotificationsAdminPage — Phase 5 (Admin / MCP / Auth). (~594 tok)
+- `NotificationsAdminPage.tsx` — <NotificationsAdminPage> — Phase 5 (Admin / MCP / Auth). (~1779 tok)
+
+## shay-desktop-electron/src/renderer/src/admin/plugins/
+
+- `index.ts` — Admin · Plugins barrel. (~196 tok)
+- `InstallPluginDialog.tsx` — <InstallPluginDialog> — Phase 5 admin/plugins. (~3636 tok)
+- `PluginCard.tsx` — <PluginCard> — Phase 5 admin/plugins. (~1259 tok)
+- `PluginDetailsDrawer.tsx` — <PluginDetailsDrawer> — Phase 5 admin/plugins drawer. (~2046 tok)
+- `PluginsPage.module.css` — PluginsPage — Phase 5 component-scoped chrome. (~2072 tok)
+- `PluginsPage.tsx` — <PluginsPage> — Phase 5 admin/plugins entry. (~2255 tok)
+
+## shay-desktop-electron/src/renderer/src/admin/tasks/
+
+- `BackgroundTasksCenter.module.css` — Styles: 67 rules (~2913 tok)
+- `TaskFilters.tsx` — <TaskFilters> — Phase 5 BackgroundTasksCenter filters bar. (~2542 tok)
+- `TaskHistoryTable.tsx` — <TaskHistoryTable> — Phase 5 BackgroundTasksCenter table. (~3026 tok)
+
+## shay-desktop-electron/src/renderer/src/assets/
+
+- `main.css` — Styles: 73 rules, 67 vars (~26516 tok)
+
+## shay-desktop-electron/src/renderer/src/components/
+
+- `ErrorBoundary.tsx` — Optional custom fallback. Preserved from the original API. When (~1256 tok)
+- `ThemeProvider.tsx` — ThemeContext (~614 tok)
+
+## shay-desktop-electron/src/renderer/src/components/boundaries/
+
+- `FeatureBoundary.tsx` — Children that this boundary will guard. (~1514 tok)
+- `index.ts` — Public barrel for boundary components introduced in Phase 0. (~101 tok)
+
+## shay-desktop-electron/src/renderer/src/components/chat/
+
+- `BlockRenderer.tsx` — <BlockRenderer> — switch over `block.kind` and render the matching variant. (~1016 tok)
+- `CollapsibleWrapper.tsx` — <CollapsibleWrapper> — generic show-more / show-less wrapper. (~1307 tok)
+- `index.ts` — Shared chat-chrome primitives — Phase 1, Shay Desktop redesign. (~228 tok)
+- `InteractiveBlock.module.css` — Styles: 39 rules (~2261 tok)
+- `InteractiveBlock.tsx` — <InteractiveBlock> — unified chrome primitive for chat blocks that need a (~3484 tok)
+- `MessageRowV2.tsx` — MessageRowV2 — typed-block chat row used by VirtualMessageList. (~2230 tok)
+- `PanelChrome.tsx` — <PanelChrome> — thinner variant of <InteractiveBlock> for right-panel (~1530 tok)
+- `useStickToBottom.ts` — useStickToBottom — sticky-scroll hook for VirtualMessageList. (~2092 tok)
+- `VirtualMessageList.module.css` — Styles: 1 rules (~1045 tok)
+- `VirtualMessageList.tsx` — VirtualMessageList — react-virtuoso-backed chat list for Phase 1. (~2652 tok)
+
+## shay-desktop-electron/src/renderer/src/components/chat/blocks/
+
+- `AskUserBlock.tsx` — <AskUserBlock> — typed "Shay asks you something" interactive prompt. (~1565 tok)
+- `CodeBlock.tsx` — <CodeBlock> — syntax-highlighted code with copy / run / save / open actions. (~1791 tok)
+- `FileDiffBlock.tsx` — <FileDiffBlock> — inline OR side-by-side toggle, accept/reject per hunk. (~2979 tok)
+- `index.ts` — Block variant barrel — Phase 1 (Chat core). (~1378 tok)
+- `MediaBlock.tsx` — <MediaBlock> — inline image / audio / video / generic file. (~1476 tok)
+- `ProseBlock.tsx` — <ProseBlock> — markdown body, auto-collapses past ~50 lines. (~529 tok)
+- `RunThisBlock.tsx` — <RunThisBlock> — "Shay wants to run this in your terminal" approval prompt. (~1569 tok)
+- `TerminalBlock.tsx` — <TerminalBlock> — capped-height terminal output with show-more, ANSI colors (~2368 tok)
+- `ThinkingBlock.tsx` — <ThinkingBlock> — hidden by default; reveals the model's thinking trace. (~830 tok)
+- `ToolCallBlock.tsx` — <ToolCallBlock> — collapsed one-liner by default. Click expands to show (~1454 tok)
+
+## shay-desktop-electron/src/renderer/src/components/detail/
+
+- `CliVerbPanel.module.css` — Styles: 16 rules (~612 tok)
+- `CliVerbPanel.tsx` — CliVerbPanel — renders an item's full set of CLI-equivalent verbs as a column (~1151 tok)
+- `DetailDrawer.module.css` — Styles: 10 rules (~454 tok)
+- `DetailDrawer.tsx` — DetailDrawer — a reusable slide-in right-side panel for per-item detail + (~593 tok)
+- `index.ts` — Declares DetailDrawerProps (~45 tok)
+
+## shay-desktop-electron/src/renderer/src/components/icons/
+
+- `index.tsx` — <Icon name="send" /> — semantic icon component for the Shay Desktop redesign. (~500 tok)
+- `registry.ts` — Icon registry — maps semantic names to lucide-react components. (~1196 tok)
+
+## shay-desktop-electron/src/renderer/src/composer/
+
+- `AnnotateModal.tsx` — AnnotateModal — in-Desk annotator scaffold (Phase 3). (~3753 tok)
+- `AttachmentChip.tsx` — AttachmentChip — single attachment pill rendered inside <MediaRow>. (~2134 tok)
+- `CaptureToolbar.tsx` — CaptureToolbar — set of capture buttons rendered at the tail of <MediaRow>. (~2088 tok)
+- `Composer.module.css` — Styles: 41 rules (~2026 tok)
+- `Composer.tsx` — <Composer /> — Phase 6 TipTap composer. (~5282 tok)
+- `ComposerToolbar.tsx` — <ComposerToolbar /> — optional thin toolbar above the textarea. (~316 tok)
+- `InspectPanel.tsx` — InspectPanel — modal that shows what Shay will actually send to the model. (~1956 tok)
+- `MediaRow.module.css` — Styles: 49 rules (~2332 tok)
+- `MediaRow.tsx` — MediaRow — horizontal attachments strip rendered above the composer. (~2526 tok)
+- `ReusePicker.tsx` — ReusePicker — modal grid of previously-attached files, ordered by recency. (~1469 tok)
+- `SlotStrip.module.css` — Styles: 42 rules (~2235 tok)
+- `SlotStrip.tsx` — <SlotStrip> — bottom-row Slot framework. (~2132 tok)
+
+## shay-desktop-electron/src/renderer/src/composer/extensions/
+
+- `index.ts` — composer/extensions — trigger contract + TipTap extension factory. (~2228 tok)
+- `MentionExtension.ts` — MentionExtension — `@` trigger built on `@tiptap/suggestion`. (~702 tok)
+- `ShellExtension.ts` — ShellExtension — `!` trigger built on `@tiptap/suggestion`. (~734 tok)
+- `SlashExtension.ts` — SlashExtension — TipTap extension that opens the slash-command popover. (~1255 tok)
+
+## shay-desktop-electron/src/renderer/src/composer/slots/
+
+- `ContextIndicator.tsx` — <ContextIndicator> — Slot E in the bottom-row SlotStrip. (~1023 tok)
+- `index.ts` — Barrel for the bottom-row Slot variants. (~268 tok)
+- `MicButton.tsx` — <MicButton> — Slot C in the bottom-row SlotStrip. (~2098 tok)
+- `ModeDropdown.tsx` — <ModeDropdown> — Slot D in the bottom-row SlotStrip. (~1102 tok)
+- `ModelPill.tsx` — <ModelPill> — Slot F in the bottom-row SlotStrip. (~2866 tok)
+- `PinnedActions.tsx` — <PinnedActions> — Slot A in the bottom-row SlotStrip. (~1925 tok)
+- `PlusMenuButton.tsx` — <PlusMenuButton> — Slot B in the bottom-row SlotStrip. (~1665 tok)
+- `SlotShell.tsx` — <SlotShell> — chrome wrapper for an individual slot in the SlotStrip. (~690 tok)
+
+## shay-desktop-electron/src/renderer/src/composer/triggers/
+
+- `MentionPicker.tsx` — <MentionPicker /> — `@` trigger source. (~1537 tok)
+- `ShellPreview.tsx` — <ShellPreview /> — `!` trigger source. (~489 tok)
+- `SlashCommandsPicker.tsx` — <SlashCommandsPicker /> — `/` trigger source. (~1011 tok)
+- `TriggerPopover.tsx` — <TriggerPopover /> — anchored popover for `/`, `@`, `!` triggers. (~1323 tok)
+
+## shay-desktop-electron/src/renderer/src/lib/
+
+- `command-registry.test.ts` — Declares ids (~1421 tok)
+- `command-registry.ts` — Command registry — single source of truth for the ⌘K Command Palette. (~3271 tok)
+- `errors.ts` — Severity buckets used by reporters / UI affordances. (~1366 tok)
+- `focus-trap.ts` — useFocusTrap — keyboard-focus containment hook for modal surfaces. (~1292 tok)
+- `perf-budget.ts` — perf-budget — dev-only render budget helpers. (~952 tok)
+- `shortcuts.test.ts` — Declares ShortcutId (~560 tok)
+- `shortcuts.ts` — Keyboard shortcuts manifest + `useShortcuts` hook for the Shay Desktop redesign. (~2142 tok)
+
+## shay-desktop-electron/src/renderer/src/notifications/
+
+- `index.ts` — Notifications — barrel for Phase 3 surfaces. (~104 tok)
+- `NotificationCenter.module.css` — Styles: 34 rules (~1522 tok)
+- `NotificationCenter.tsx` — <NotificationCenter> — portal-backed overlay listing notifications. (~2436 tok)
+- `NotificationToast.module.css` — Styles: 13 rules (~662 tok)
+- `NotificationToast.tsx` — <NotificationToast> — ephemeral toast for new in-app pulses. (~1269 tok)
+
+## shay-desktop-electron/src/renderer/src/right/
+
+- `index.ts` — Right-panel barrel — Phase 3 / Spec §6. (~252 tok)
+- `PanelHeader.tsx` — <PanelHeader> — thin wrapper around <PanelChrome> for right-panel variants. (~494 tok)
+- `PanelTab.tsx` — <PanelTab> — single chrome-style tab rendered inside <PanelTabsRow>. (~991 tok)
+- `PanelTabsRow.tsx` — <PanelTabsRow> — chrome-style horizontal tab strip for the right panel. (~3061 tok)
+- `RightPanel.tsx` — <RightPanel> — composition root for the right-side panel surface. (~3536 tok)
+- `TaskRow.module.css` — Styles: 24 rules (~800 tok)
+- `TaskRow.tsx` — <TaskRow> — single-row representation of a background task inside the (~1425 tok)
+- `TaskTrayStrip.module.css` — Styles: 24 rules (~832 tok)
+- `TaskTrayStrip.tsx` — <TaskTrayStrip> — sticky bottom strip of the RightPanel. (~2135 tok)
+- `usePanelAutoSwitch.ts` — usePanelAutoSwitch — subscribes to the active chat tab's most-recent (~1394 tok)
+
+## shay-desktop-electron/src/renderer/src/right/variants/
+
+- `BackgroundTasksPanel.tsx` — <BackgroundTasksPanel> — right-panel variant that surfaces every entry in (~1388 tok)
+- `CustomPanel.tsx` — <CustomPanel> — placeholder shell for the "Custom" right-panel variant. (~334 tok)
+- `DiffPanel.tsx` — <DiffPanel> — placeholder shell for the "Diff" right-panel variant. (~300 tok)
+- `FilesPanel.tsx` — <FilesPanel> — placeholder shell for the "Files" right-panel variant. (~291 tok)
+- `index.ts` — Right-panel variants barrel — Phase 3 / Spec §6. (~460 tok)
+- `PlanPanel.tsx` — <PlanPanel> — placeholder shell for the "Plan" right-panel variant. (~296 tok)
+- `PreviewPanel.tsx` — <PreviewPanel> — sandbox iframe placeholder for the right-panel "Preview" (~570 tok)
+- `TerminalPanel.tsx` — <TerminalPanel> — placeholder shell for the "Terminal" right-panel variant. (~322 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/
+
+- `manifest.ts` — manifest.ts — SINGLE SOURCE OF TRUTH for the desktop's screens + navigation IA. (~1560 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Agents/
+
+- `Agents.global.css` — Styles: 32 rules (~1552 tok)
+- `Agents.module.css` — Styles: 32 rules (~1356 tok)
+- `Agents.tsx` — AgentAvatar (~2417 tok)
+- `index.tsx` — AgentAvatar (~2465 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Chat/
+
+- `ChatHeader.tsx` — UsageBadge (~2175 tok)
+- `ChatInput.tsx` — Add files from external sources (drop overlay).  Returns errors. (~4287 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Inbox/
+
+- `Inbox.module.css` — Styles: 20 rules (~719 tok)
+- `Inbox.tsx` — Inbox.tsx (H8) — a single aggregated stream of things that need a glance: (~2169 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Insights/
+
+- `Insights.module.css` — Styles: 31 rules (~1130 tok)
+- `Insights.tsx` — Insights — native usage-analytics screen for the Agent OS domain. (~2963 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Providers/
+
+- `Providers.tsx` — Providers (~7104 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Security/
+
+- `Security.module.css` — Styles: 15 rules (~550 tok)
+- `Security.tsx` — Security.tsx (H7) — surfaces three real `shay` security subsystems: (~1967 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Settings/
+
+- `Settings.tsx` — Local-storage flag controlling whether the legacy 1079-LOC Settings (~11285 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Skills/
+
+- `Skills.module.css` — Styles: 49 rules (~2248 tok)
+- `Skills.tsx` — Skills (~5421 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/Soul/
+
+- `Soul.module.css` — Styles: 34 rules (~2020 tok)
+
+## shay-desktop-electron/src/renderer/src/services/
+
+- `auth-service.ts` — Renderer-side auth service — Phase 5. (~2187 tok)
+- `capture-service.ts` — Renderer-side capture service — Phase 3. (~963 tok)
+- `diagnostics-service.ts` — Renderer-side diagnostics service — Phase 5. (~1357 tok)
+- `logs-service.ts` — Renderer-side logs service — Phase 5. (~1048 tok)
+- `mcp-service.ts` — Renderer-side MCP service — Phase 5 (recovery). (~1766 tok)
+- `notifications-service.ts` — Renderer-side notifications service — Phase 3. (~1135 tok)
+- `plugins-service.ts` — Renderer-side plugins service — Phase 5 (Admin / MCP / Auth). (~1336 tok)
+- `sessions-service.ts` — Renderer-side sessions service — Phase 2. (~1237 tok)
+- `settings-service.ts` — settings-service — Phase 4 thin wrapper over the consolidated (~2628 tok)
+- `tasks-service.ts` — Renderer-side tasks service — Phase 3. (~1156 tok)
+
+## shay-desktop-electron/src/renderer/src/settings/
+
+- `index.ts` — Settings barrel — Phase 4 chrome + primitives. (~441 tok)
+- `SettingsField.tsx` — <SettingsField> — consistent label + help + control layout primitive. (~635 tok)
+- `SettingsFooter.tsx` — <SettingsFooter> — sticky Save / Discard bar shown when the active (~370 tok)
+- `SettingsHeader.tsx` — <SettingsHeader> — page title + subtitle + optional action area. (~273 tok)
+- `SettingsNav.tsx` — <SettingsNav> — left rail of the Settings shell. (~2321 tok)
+- `SettingsPage.tsx` — <SettingsPage> — wrapper primitive that every Settings sub-page composes. (~467 tok)
+- `SettingsShell.module.css` — Styles: 62 rules (~2833 tok)
+- `SettingsShell.tsx` — <SettingsShell> — Phase 4 Settings container. (~2702 tok)
+- `useSettingsGroup.ts` — useSettingsGroup — typed hook for Settings sub-pages. (~3281 tok)
+
+## shay-desktop-electron/src/renderer/src/settings/pages/
+
+- `Account.tsx` — Settings · Account — Phase 4 sub-page. (~2780 tok)
+- `Billing.tsx` — Settings · Billing — Phase 4 sub-page. (~3038 tok)
+- `Capabilities.tsx` — Settings · Capabilities — Phase 4 capabilities-cluster. (~1802 tok)
+- `Connectors.tsx` — Settings · Connectors — Phase 4 capabilities-cluster. (~3138 tok)
+- `Cowork.tsx` — Settings · Cowork — Phase 4 capabilities-cluster. (~2552 tok)
+- `DesktopDeveloper.tsx` — <DesktopDeveloper> — Settings → Desktop app → Developer. (~3145 tok)
+- `DesktopExtensions.tsx` — <DesktopExtensions> — Settings → Desktop app → Extensions. (~4304 tok)
+- `DesktopGeneral.tsx` — <DesktopGeneral> — Settings → Desktop app → General. (~1651 tok)
+- `General.tsx` — Settings · General — Phase 4 sub-page. (~2850 tok)
+- `index.ts` — Settings sub-page barrel — Phase 4. (~692 tok)
+- `Language.tsx` — Settings → Language (App) — Phase 4 sub-page. (~3119 tok)
+- `Notifications.tsx` — Settings → Notifications sub-page (Phase 4 · notifs-voice-cluster). (~6421 tok)
+- `Privacy.tsx` — Settings · Privacy — Phase 4 sub-page. (~2586 tok)
+- `ShayCode.tsx` — Settings · Shay Code — Phase 4 capabilities-cluster. (~3557 tok)
+- `Shortcuts.tsx` — Settings → Shortcuts (Appearance) — Phase 4 keymap editor. (~3939 tok)
+- `Themes.tsx` — Settings → Themes (Appearance) — Phase 4 sub-page. (~5604 tok)
+- `Usage.tsx` — Settings · Usage — Phase 4 sub-page. (~3598 tok)
+- `VoiceAudio.tsx` — Settings → Voice / Audio sub-page (Phase 4 · notifs-voice-cluster). (~6752 tok)
+
+## shay-desktop-electron/src/renderer/src/shell/
+
+- `AppShell.module.css` — Styles: 24 rules (~1023 tok)
+- `AppShell.tsx` — AppShell — Phase 2 three-column resizable grid for Shay Desktop. (~4677 tok)
+- `AppShellSlots.tsx` — AppShellSlots — typed slot contracts for the Phase 2 three-column AppShell. (~800 tok)
+- `ChatSplitArea.tsx` — ChatSplitArea — horizontal split shell that hosts one or two chat panes. (~1580 tok)
+- `ChatTab.tsx` — ChatTab — single chrome-style tab rendered inside ChatTabsRow. (~1636 tok)
+- `ChatTabsRow.module.css` — Styles: 35 rules (~2076 tok)
+- `ChatTabsRow.tsx` — ChatTabsRow — chrome-style horizontal tab strip for the chat surface. (~4271 tok)
+- `CommandPalette.module.css` — Styles: 24 rules (~1264 tok)
+- `CommandPalette.tsx` — <CommandPalette /> — ⌘K command palette overlay. (~3798 tok)
+- `DomainRail.module.css` — Styles: 6 rules (~320 tok)
+- `DomainRail.tsx` — DomainRail — the icon-only OUTER rail (level 1 of the two-level IA). (~609 tok)
+- `ElapsedTimer.tsx` — <ElapsedTimer> — TopBar elapsed-time indicator. (~879 tok)
+- `index.ts` — Shell barrel — Phase 2 three-column AppShell exports. (~134 tok)
+- `ProfileMenuButton.tsx` — <ProfileMenuButton> — bottom-of-sidebar profile chip + popover menu. (~2892 tok)
+- `ProjectChip.tsx` — <ProjectChip> — TopBar chip showing the active project, with a popover that (~1350 tok)
+- `SecondaryNav.module.css` — Styles: 9 rules (~428 tok)
+- `SecondaryNav.tsx` — SecondaryNav — the contextual left-nav (level 2 of the two-level IA). (~672 tok)
+- `SessionNamePicker.tsx` — <SessionNamePicker> — TopBar inline-editable session name + dropdown. (~2612 tok)
+- `Sidebar.module.css` — Styles: 79 rules (~3747 tok)
+- `Sidebar.tsx` — <Sidebar> — left-column shell composed of mode tabs, primary actions, (~4312 tok)
+- `SidebarCustomSections.tsx` — <SidebarCustomSections> — drag-reorderable list of user-defined sections. (~1464 tok)
+- `SidebarModeTabs.tsx` — <SidebarModeTabs> — Chat / Cowork / Code tab row at the top of the sidebar. (~876 tok)
+- `SidebarPrimaryActions.tsx` — <SidebarPrimaryActions> — primary action column under the mode tabs. (~1115 tok)
+- `SidebarSection.tsx` — <SidebarSection> — generic collapsible section with optional drag-reorder. (~1937 tok)
+- `TopBar.module.css` — Styles: 43 rules (~2094 tok)
+- `TopBar.tsx` — <TopBar> — Shay Desktop redesign top shell row. (~3428 tok)
+- `TopBarOverflow.tsx` — <TopBarOverflow> — TopBar ⋮ overflow menu. (~1114 tok)
+
+## shay-desktop-electron/src/renderer/src/status/
+
+- `index.ts` — Status — barrel for the Phase 3 StatusBar surface. (~98 tok)
+- `StatusBar.module.css` — Styles: 5 rules (~366 tok)
+- `StatusBar.tsx` — <StatusBar> — unified pill bar mounted at the very bottom of AppShell. (~2006 tok)
+- `StatusPill.module.css` — Styles: 21 rules (~802 tok)
+- `StatusPill.tsx` — <StatusPill> — atomic dot+label pill used across the Shay Desktop shell. (~1047 tok)
+
+## shay-desktop-electron/src/renderer/src/stores/
+
+- `attachments.ts` — Attachments slice — Phase 3 expansion. (~1138 tok)
+- `chat.ts` — Exports ScrollState, SearchOverlayState, PerTabChatState, ChatState + 2 more (~1047 tok)
+- `composer.ts` — Composer slice — Phase 3 expansion. (~1093 tok)
+- `connection.ts` — Exports ConnectionState, useConnectionStore, useConnection (~333 tok)
+- `customize.ts` — Customize slice — Phase 3 expansion. (~1392 tok)
+- `index.ts` — Convenience re-exports for the Zustand store skeleton. Import from (~519 tok)
+- `mode.ts` — Exports ModeState, useModeStore, useMode (~181 tok)
+- `model.ts` — Exports ModelState, useModelStore, useModel (~364 tok)
+- `nav.ts` — Exports NavState, useNavStore, useNav (~468 tok)
+- `notifications.ts` — Notifications slice — Phase 3 expansion. (~1524 tok)
+- `panels.ts` — Panels slice — Phase 3 expansion. (~1251 tok)
+- `sessions.ts` — Exports SessionsState, useSessionsStore, useSessions (~500 tok)
+- `settings.ts` — Settings is grouped by panel. Each group is an opaque dictionary; (~691 tok)
+- `sidebar.ts` — Exports CustomSectionConfig, SidebarState, useSidebarStore, useSidebar (~766 tok)
+- `slots.ts` — Exports PinnedActionId, SlotsState, useSlotsStore, useSlots (~481 tok)
+- `tabs.ts` — Exports TabsState, useTabsStore, useTabs (~695 tok)
+- `tasks.ts` — Tasks slice — Phase 3 expansion. (~2663 tok)
+- `types.ts` — Shared types referenced by multiple Zustand store slices. (~801 tok)
+
+## shay-desktop-electron/src/renderer/src/styles/
+
+- `compat.css` — Styles: 39 vars (~708 tok)
+- `density.ts` — Density levels. Order is meaningful — compact is the tightest packing, (~1520 tok)
+- `motion.ts` — Motion duration constants in milliseconds. Values mirror the (~1552 tok)
+- `README.md` — Project documentation (~954 tok)
+- `theme.ts` — Read the user's stored theme preference. Falls back to `"system"` if (~1412 tok)
+- `tokens.css` — Styles: 2 rules, 262 vars (~4406 tok)
+
+## shay-desktop-electron/src/renderer/src/test/
+
+- `app-render-smoke.test.tsx` — Durable render smoke: mounts the real <App/> in jsdom with every native API (~788 tok)
+
+## shay-desktop-electron/src/shared/
+
+- `messages.test.ts` — If a new Block variant lands without a switch arm, this function will (~2674 tok)
+- `messages.ts` — Typed chat-message Block taxonomy + SSE event taxonomy for the Phase 1 (~3679 tok)
+- `settings-schema.ts` — Settings schema — typed groups for the consolidated `settings.get/set` IPC (~4902 tok)
+
+## shay-desktop-electron/src/shared/i18n/locales/en/
+
+- `chat.ts` — Declares not (~832 tok)
+- `providers.ts` — Declares oauth (~180 tok)
+- `skills.ts` (~418 tok)
+
+## shay-phone/
+
+- `ask_shay.py` — ask, queue_interview, interview, update_job (~1654 tok)
+- `README.md` — Project documentation (~933 tok)
+- `server.py` — wp_subscribe, wp_push, load_env, vault_context (~8128 tok)
+
+## shay-phone/web/
+
+- `arc.html` — Shay · Arc (~699 tok)
+- `index.html` — Shay (~8655 tok)
+- `manifest.webmanifest` (~147 tok)
+- `sw.js` — Minimal service worker — makes the PWA installable + caches the shell + Web Push. (~471 tok)
+
+## shay-shay/
+
+- `run_agent.py` — _OpenAIProxy: write, flush, fileno, isatty + 4 more (~228113 tok)
+
+## shay-shay/agent/
+
+- `anthropic_adapter.py` — Anthropic Messages API adapter for Shay-Shay. (~25530 tok)
+- `cost_telemetry.py` — Cost / energy telemetry — a routing-aware view over recorded usage. (~4086 tok)
+- `curator.py` — Curator — background skill maintenance orchestrator. (~22860 tok)
+- `insights.py` — InsightsEngine: generate (~11306 tok)
+- `plugin_llm.py` — Declares class (~11250 tok)
+- `prompt_builder.py` — System prompt assembly -- identity, platform hints, skills index, context files. (~20487 tok)
+- `skill_utils.py` — Lightweight skill metadata utilities shared by prompt_builder and skills_tool. (~5596 tok)
+
+## shay-shay/gateway/
+
+- `desk_auth_routes.py` — Desk auth routes — Phase 5 scaffold. (~2783 tok)
+- `desk_logs_routes.py` — Desk logs routes — Phase 5 scaffold. (~1203 tok)
+- `desk_mcp_routes.py` — Desk MCP admin routes — Phase 5 scaffold. (~2494 tok)
+- `desk_sessions_routes.py` — Desk sessions write-RPC routes — Phase 2 scaffold. (~3378 tok)
+- `desk_tasks_routes.py` — Desk background-tasks routes — Phase 3 scaffold. (~2361 tok)
+
+## shay-shay/obsidian/Shay-Memory/research/
+
+- `openjarvis-evaluation-2026-05-31.md` — OpenJarvis Evaluation for Shay (~2081 tok)
+
+## shay-shay/obsidian/Shay-Memory/reviews/
+
+- `QA-REPORT-FINAL-2026-05-31.md` — Shay Desktop — Final QA Report (2026-05-31) (~656 tok)
+
+## shay-shay/shay_cli/
+
+- `config.py` — from: get_managed_system, is_managed, get_managed_update_command, recommended_update_command + 6 mor (~63159 tok)
+
+## shay-shay/tests/agent/
+
+- `test_cost_telemetry.py` — Tests for agent/cost_telemetry.py — cost/energy routing telemetry. (~1960 tok)
+- `test_curator_trace_grounded.py` — Tests for the trace-grounded curator review (Feature 2). (~1653 tok)
 
 ## site-studio/
 

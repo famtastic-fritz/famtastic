@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "sites/site-street-family-reunion/dist"],
       "autoPort": true
+    },
+    {
+      "name": "ncs-v2",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8899", "--directory", "/tmp/ncs-v2"],
+      "port": 8899
     }
   ]
 }

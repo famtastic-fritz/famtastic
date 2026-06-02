@@ -1,0 +1,53 @@
+{
+  "_comment": "Every service the Command Center monitors. status = alive(PID) + heartbeat freshness. Add an entry here and the dashboard tracks it automatically. maxStaleSec: how long a heartbeat can be silent before the agent is flagged HUNG. Set heartbeat to null for PID-only liveness.",
+  "agents": [
+    {
+      "name": "supervisor",
+      "label": "Supervisor (orchestrator)",
+      "group": "pipeline",
+      "match": "agents/supervisor.py",
+      "heartbeat": "pipeline/data/heartbeats/supervisor.json",
+      "maxStaleSec": 90
+    },
+    {
+      "name": "scout",
+      "label": "Lead Scout",
+      "group": "pipeline",
+      "match": "agents/scout.py",
+      "heartbeat": "pipeline/data/heartbeats/scout.json",
+      "maxStaleSec": 420
+    },
+    {
+      "name": "outreach",
+      "label": "Outreach Agent",
+      "group": "pipeline",
+      "match": "agents/outreach.py",
+      "heartbeat": "pipeline/data/heartbeats/outreach.json",
+      "maxStaleSec": 300
+    },
+    {
+      "name": "responder",
+      "label": "Customer Responder",
+      "group": "pipeline",
+      "match": "agents/responder.py",
+      "heartbeat": "pipeline/data/heartbeats/responder.json",
+      "maxStaleSec": 240
+    },
+    {
+      "name": "followup",
+      "label": "Follow-up Agent",
+      "group": "pipeline",
+      "match": "agents/followup.py",
+      "heartbeat": "pipeline/data/heartbeats/followup.json",
+      "maxStaleSec": 600
+    },
+    {
+      "name": "studio",
+      "label": "FAMtastic Studio",
+      "group": "core",
+      "match": "do node server.js",
+      "heartbeat": null,
+      "maxStaleSec": null
+    }
+  ]
+}

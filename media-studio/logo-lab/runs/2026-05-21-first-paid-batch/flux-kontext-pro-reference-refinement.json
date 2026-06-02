@@ -1,0 +1,33 @@
+{
+  "id": "ffa8b662-bbd5-4266-abcd-4382ef760a99",
+  "inputs": {
+    "prompt": "Refine this FAMtastic logo concept into a production-ready modern brand mark while preserving the original spirit: big playful dimensional FAM letters, green starburst energy, colorful optimistic identity, and clear separation between FAM and tastic. Improve legibility of the F, make the word FAMtastic correctly spelled and readable, reduce visual clutter, create a premium-but-fun vector-logo feel suitable for dark elegant screens, app icon crops, website headers, and motion graphics. Keep it bold, culturally fluent, not generic startup, not childish clipart. Clean centered logo on plain background.",
+    "images_list": [
+      "https://cdn.muapi.ai/outputs/5460a2732d0d4cc4a5f3a5913f27a798.jpg"
+    ],
+    "aspect_ratio": "1:1",
+    "num_images": 1
+  },
+  "outputs": [
+    "https://cdn.muapi.ai/outputs/8c97a91fe4c64ab597d9d3e0bc38496c.jpg"
+  ],
+  "urls": {
+    "get": "https://api.muapi.ai/api/v1/predictions/ffa8b662-bbd5-4266-abcd-4382ef760a99/result"
+  },
+  "has_nsfw_contents": [
+    false
+  ],
+  "status": "completed",
+  "created_at": "2026-05-21T19:49:49.370218+00:00",
+  "error": "",
+  "executionTime": 13468.302,
+  "timings": {
+    "inference": 13468.302
+  },
+  "cost": {
+    "amount_usd": 0.03,
+    "amount_credits": 2,
+    "bonus_credits_used": 0,
+    "refunded": false
+  }
+}

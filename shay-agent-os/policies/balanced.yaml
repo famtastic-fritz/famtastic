@@ -1,0 +1,32 @@
+# balanced.yaml — Default policy (recommended).
+# Workers: local Ollama (free). Judge + synth: Claude via direct API.
+# Adversarial verify: Claude (1 call) — reviewer != author rule enforced.
+# Works today with the keys currently in ~/.shay/.env.
+name: balanced
+description: Local workers + Claude judge/synth. Best quality-per-dollar.
+
+brains:
+  worker: ollama          # free, local, handles grunt parallelism
+  judge: claude           # Claude direct (sk-ant-api key) or falls to openrouter
+  synth: claude           # same
+  verify: openrouter      # reviewer != author: different model than synth
+  fallback: gemini        # always-available backstop
+
+worker_tiers:
+  medium: phi4-mini:latest
+  complex: hermes3:latest
+  # simple/qwen2.5:1.5b dropped Phase 1 — too weak
+
+concurrency:
+  max_workers: 4          # honest local ceiling before Ollama queues
+  judge_timeout: 90
+  synth_timeout: 120
+  worker_timeout: 60
+
+quality:
+  enable_anchor_check: true
+  enable_adversarial_verify: true
+  min_synthesis_chars: 500
+  budget_default: 15      # Phase 1 lesson: 10 exhausts on complex tasks
+
+cost_posture: balanced    # mindful of Claude credits

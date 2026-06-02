@@ -1,0 +1,14 @@
+{
+  "name": "famtastic-command-center",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Single source of truth: live agent health, real income, de-noised idea backlog, autonomous-send kill switch.",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

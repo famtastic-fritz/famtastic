@@ -1,0 +1,30 @@
+[
+  {
+    "source": "/Users/famtasticfritz/Downloads/logo1.png",
+    "file": "specs/008-phase2a-media-studio-logo-brand/assets/input/original-logo-candidate-logo1.png",
+    "note": "Original/old FAMtastic logo direction from Downloads",
+    "sha256": "353c3f20334f2e9a6c01adfdf3a6a7b03b8a83e7ac1e63ce4e1107fbc905b70a",
+    "bytes": 633017
+  },
+  {
+    "source": "/Users/famtasticfritz/Downloads/-temp-FAM-logo.jpg",
+    "file": "specs/008-phase2a-media-studio-logo-brand/assets/input/original-logo-candidate-temp-fam.jpg",
+    "note": "Original/old FAMtastic logo candidate from Downloads",
+    "sha256": "7114b65ef6985cb266be5f34774c626aa4958692f38a0d77fc343916c43ce363",
+    "bytes": 87294
+  },
+  {
+    "source": "/Users/famtasticfritz/famtastic-local-archive/pre-phase2-cleanup-20260521-141203/worktrees/epic-mclean-4f7046/muapi-outputs/composite_7.3_x_fam5.jpg",
+    "file": "specs/008-phase2a-media-studio-logo-brand/assets/input/liked-concept-composite-7-3-x-fam5.jpg",
+    "note": "Preferred concept Fritz liked as starting point",
+    "sha256": "83fdb9bd95e19f734c317c28082483e36103ba30fd24ad9c7ee4453d314eac42",
+    "bytes": 215183
+  },
+  {
+    "source": "/Users/famtasticfritz/famtastic-local-archive/pre-phase2-cleanup-20260521-141203/worktrees/epic-mclean-4f7046/muapi-outputs/0fb25c9be0dc487ab9e2008bd6d74bc0.jpg",
+    "file": "specs/008-phase2a-media-studio-logo-brand/assets/input/secondary-concept-0fb25c9.jpg",
+    "note": "Secondary concept with useful pieces",
+    "sha256": "02b1bfc094b947cdd72fbccac676043b6d2168ec1823b2760c8f02e368ebfad7",
+    "bytes": 86461
+  }
+]

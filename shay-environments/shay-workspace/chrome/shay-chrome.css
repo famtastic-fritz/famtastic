@@ -1,0 +1,61 @@
+/* shay-chrome.css — Part 3 visible rebrand overlay for Shay Workspace
+ *
+ * Targets the Hermes Workspace theme tokens declared at:
+ *   _refs/hermes-workspace-v2.3/src/styles.css:712  (Hermes Workspace Themes)
+ *   _refs/hermes-workspace-v2.3/src/styles.css:1086 (Hermes Nous variant)
+ *
+ * Strategy: override the CSS custom properties on :root[data-theme=…]
+ * selectors without editing upstream. This file is injected by
+ * shay-chrome.js as a <style> tag at document-ready.
+ *
+ * Palette (per plans/shay-environments/PART-3-DECISIONS.md §3):
+ *   Shay Blue   #1E5BFF — primary
+ *   Shay Gold   #F5C542 — accent / wand burst
+ *   Shay Red    #E63946 — alert
+ *   Shay Ink    #0D0D1A — dark surface
+ *   Shay Cream  #FEFCF7 — light surface
+ */
+
+:root,
+:root[data-theme="light"],
+:root[data-theme="hermes"],
+:root[data-theme="hermes-light"] {
+  --accent: #1E5BFF;
+  --accent-hover: #1748cc;
+  --primary: #1E5BFF;
+  --gold: #F5C542;
+  --alert: #E63946;
+  --bg: #FEFCF7;
+  --surface: #FEFCF7;
+}
+
+:root[data-theme="dark"],
+:root[data-theme="hermes-dark"],
+:root[data-theme="hermes-nous"] {
+  --accent: #1E5BFF;
+  --accent-hover: #4778ff;
+  --primary: #1E5BFF;
+  --gold: #F5C542;
+  --alert: #E63946;
+  --bg: #0D0D1A;
+  --surface: #0D0D1A;
+}
+
+/* Boot-splash background — softens Hermes banner area to Shay Ink while
+ * the JS swap of the <img> elements is racing the first paint. */
+.boot-splash,
+[data-boot-splash],
+#boot-splash {
+  background: #0D0D1A !important;
+}
+
+/* Reduce visibility of any residual Hermes wordmark images during the
+ * brief window before shay-chrome.js rewrites their src. */
+img[src*="claude-banner"],
+img[src*="claude-avatar"] {
+  opacity: 0;
+  transition: opacity 160ms ease-in;
+}
+img[data-shay-rebranded="1"] {
+  opacity: 1 !important;
+}
