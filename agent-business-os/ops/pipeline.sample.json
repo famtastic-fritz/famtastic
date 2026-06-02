@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "_comment": "Sample pipeline shape for Agent Business OS agents. Real data lives in pipeline.json (gitignored). Copy this to pipeline.json or run `node agents/run.js seed`.",
+  "leads": [
+    {
+      "id": "lead_sample1",
+      "name": "Jordan Rivera",
+      "email": "jordan@acme.io",
+      "revenue": 60000,
+      "bottleneck": "follow_up",
+      "lift": 40000,
+      "start7": "yes",
+      "fitScore": 100,
+      "priority": "hot",
+      "responseSlaMinutes": 15,
+      "stage": "conversion",
+      "status": "qualified",
+      "createdAt": "2026-06-02T00:00:00.000Z",
+      "firstContactAt": "2026-06-02T00:05:00.000Z"
+    }
+  ],
+  "deals": [
+    {
+      "id": "deal_sample1",
+      "leadId": "lead_sample1",
+      "email": "jordan@acme.io",
+      "name": "Jordan Rivera",
+      "amount": 3500,
+      "currency": "USD",
+      "description": "ABOS Performance Sprint — setup",
+      "status": "won",
+      "wonAt": "2026-06-02T00:10:00.000Z"
+    }
+  ],
+  "invoices": []
+}

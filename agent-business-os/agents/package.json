@@ -1,0 +1,13 @@
+{
+  "name": "agent-business-os-agents",
+  "version": "1.0.0",
+  "description": "Virtual agent runtimes (billing, monitor, memo) for Agent Business OS.",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node test.js",
+    "tick": "node run.js tick",
+    "monitor": "node run.js monitor",
+    "memo": "node run.js memo"
+  }
+}

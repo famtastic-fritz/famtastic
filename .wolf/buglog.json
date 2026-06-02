@@ -3448,6 +3448,18 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-02"
+    },
+    {
+      "id": "bug-186",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "monitor-agent reported status 'critical' even after an escalated invoice was paid",
+      "file": "agent-business-os/agents/monitor-agent.js",
+      "root_cause": "The escalated-invoice alert counted any invoice with escalated===true, including ones whose status had since become 'paid'. The historical escalated flag persisted on the invoice, so a fully collected deal kept the dashboard in critical.",
+      "fix": "Count escalated alerts only among non-paid invoices: invoices.filter(i => i.escalated && i.status !== 'paid'). Alerts must reflect currently-actionable state, not historical flags.",
+      "tags": ["agents", "monitoring", "kpi", "state"],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
     }
   ]
 }

@@ -214,7 +214,16 @@ platform capability.
 
 ---
 
-## 8. Rollout sequence (build order once Q1–Q3 are answered)
+## 8. Rollout sequence (build order)
+
+> **Built 2026-06-02:** Stripe collections rail (`payments/invoice.sh` +
+> `api/stripe-webhook`) and the `billing-agent` / `monitor-agent` / `memo-agent`
+> runtimes (`agent-business-os/agents/`, dependency-free, lifecycle-tested 17/17).
+> A won deal now auto-invoices, dunning + escalation run, payment closes the
+> deal, and cash/day + alerts + a daily brain digest are live. Remaining:
+> `qualifier`/`sdr`/`capture` runtimes, the webhook→store paid-sync, live
+> credentials, and the Azure deploy.
+
 
 1. **Wave 1 — Wire the rails (1 sitting):** `vault write` the payment secrets;
    finish the `payments` capability for the chosen rail; set `/api/lead` env vars
