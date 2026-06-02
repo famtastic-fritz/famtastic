@@ -1,0 +1,53 @@
+{
+  "_comment": "Every service the Command Center monitors. status = alive(PID) + heartbeat freshness. Add an entry here and the dashboard tracks it automatically. maxStaleSec: how long a heartbeat can be silent before the agent is flagged HUNG. Set heartbeat to null for services that don't write one (PID-only liveness).",
+  "agents": [
+    {
+      "name": "scout",
+      "label": "Lead Scout",
+      "group": "pipeline",
+      "match": "pipeline/agents/scout.py",
+      "heartbeat": "pipeline/data/heartbeats/scout.json",
+      "maxStaleSec": 420
+    },
+    {
+      "name": "builder",
+      "label": "Asset Builder",
+      "group": "pipeline",
+      "match": "pipeline/agents/builder.py",
+      "heartbeat": "pipeline/data/heartbeats/builder.json",
+      "maxStaleSec": 420
+    },
+    {
+      "name": "closer",
+      "label": "Deal Closer",
+      "group": "pipeline",
+      "match": "pipeline/agents/closer.py",
+      "heartbeat": "pipeline/data/heartbeats/closer.json",
+      "maxStaleSec": 420
+    },
+    {
+      "name": "monitor",
+      "label": "Pipeline Monitor",
+      "group": "pipeline",
+      "match": "pipeline/agents/monitor.py",
+      "heartbeat": "pipeline/data/heartbeats/monitor.json",
+      "maxStaleSec": 420
+    },
+    {
+      "name": "studio",
+      "label": "FAMtastic Studio",
+      "group": "core",
+      "match": "do node server.js",
+      "heartbeat": null,
+      "maxStaleSec": null
+    },
+    {
+      "name": "email-agent",
+      "label": "Customer Email Agent",
+      "group": "comms",
+      "match": "email-agent/server.js",
+      "heartbeat": "email-agent/data/heartbeat.json",
+      "maxStaleSec": 600
+    }
+  ]
+}
