@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T12:57:59.683Z",
+  "generated_at": "2026-06-02T13:13:39.453Z",
   "scoring_model": {
     "profitByTag": {
       "site-execution": 90,
@@ -50,12 +50,12 @@
     "staleDays": 14
   },
   "kpis": {
-    "activePlans": 11,
-    "priorities": 2,
+    "activePlans": 12,
+    "priorities": 3,
     "needsYou": 8,
     "blocked": 0,
-    "inProgress": 3,
-    "openTasks": 12,
+    "inProgress": 4,
+    "openTasks": 16,
     "agents": 3,
     "sites": 1,
     "capabilities": 22,
@@ -63,7 +63,7 @@
   },
   "stageCounts": {
     "Checkpoint (stalled)": 6,
-    "In progress": 3,
+    "In progress": 4,
     "Needs tasking": 2
   },
   "plans": [
@@ -281,6 +281,36 @@
       "profit": 80,
       "nextAction": "Choose the stack (PWA vs React Native vs reuse shay-desktop) and spec the question/answer loop + push.",
       "blocker": "No hard blocker. Push delivery and any app-store path are device-platform decisions.",
+      "runner": "Claude",
+      "closeoutVerdict": null,
+      "remainingWork": [],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "financial-agents",
+      "title": "Financial Agents — Market Watch & $10 Leaderboard",
+      "role": "product",
+      "tags": [
+        "shay-shay",
+        "finance",
+        "trading",
+        "automation",
+        "agents"
+      ],
+      "priorityHigh": true,
+      "stage": "in_progress",
+      "stageLabel": "In progress",
+      "stageEmoji": "🟢",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 4,
+      "totalTasks": 4,
+      "momentumDays": 0,
+      "autonomy": 97,
+      "profit": 40,
+      "nextAction": "Run the leaderboard on the latest session, report which agent won and the $10 outcomes; then decide whether to track daily and which to consider for live paper-trading.",
+      "blocker": "No hard blocker for simulation. Live brokerage execution requires a broker account + API keys (Alpaca paper API) — a Fritz decision, gated.",
       "runner": "Claude",
       "closeoutVerdict": null,
       "remainingWork": [],

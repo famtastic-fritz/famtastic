@@ -51,16 +51,16 @@
 <div class="wrap">
   <header>
     <h1>⬡ FAMtastic Command Center</h1>
-    <div class="sub">Mission Control · generated Tue, 02 Jun 2026 12:57:59 GMT · source: live repo ledgers</div>
+    <div class="sub">Mission Control · generated Tue, 02 Jun 2026 13:13:39 GMT · source: live repo ledgers</div>
   </header>
 
   <div class="kpis">
-    <div class="kpi"><b>11</b><span>Active plans</span></div>
-    <div class="kpi star"><b>2</b><span>⭐ Your priorities</span></div>
+    <div class="kpi"><b>12</b><span>Active plans</span></div>
+    <div class="kpi star"><b>3</b><span>⭐ Your priorities</span></div>
     <div class="kpi alert"><b>8</b><span>Need you</span></div>
     <div class="kpi "><b>0</b><span>Blocked (ext)</span></div>
-    <div class="kpi"><b>3</b><span>In progress</span></div>
-    <div class="kpi"><b>12</b><span>Open tasks</span></div>
+    <div class="kpi"><b>4</b><span>In progress</span></div>
+    <div class="kpi"><b>16</b><span>Open tasks</span></div>
     <div class="kpi"><b>3</b><span>Agents</span></div>
     <div class="kpi"><b>22</b><span>Capabilities</span></div>
     <div class="kpi"><b>33</b><span>Proofs logged</span></div>
@@ -111,6 +111,21 @@
     </div>
     
     <p class="next"><b>Next:</b> Design the single channel-agnostic reach fabric, generalizing Shay's working Telegram delivery (push/SMS/voice/email open; glasses/watch/Siri are mirrored phone notifications only).</p>
+  </div><div class="card" data-needs="false" data-priority="true">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">⭐ product</span>
+    </div>
+    <h3>Financial Agents — Market Watch &amp; $10 Leaderboard</h3>
+    <div class="tags"><span class="tag">shay-shay</span><span class="tag">finance</span><span class="tag">trading</span><span class="tag">automation</span></div>
+    <div class="metrics">
+      <div><b>4/4</b><span>tasks</span></div>
+      <div><b>0d ago</b><span>last move</span></div>
+      <div><b>97</b><span>autonomy</span></div>
+      <div><b>40</b><span>profit</span></div>
+    </div>
+    
+    <p class="next"><b>Next:</b> Run the leaderboard on the latest session, report which agent won and the $10 outcomes; then decide whether to track daily and which to consider for live paper-trading.</p>
   </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Needs tasking</span>
@@ -261,7 +276,7 @@
 </div>
 
 <script>
-const SNAP = {"stageCounts":{"Checkpoint (stalled)":6,"In progress":3,"Needs tasking":2},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":true},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":true},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":true},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"Mission Control / Command Center","autonomy":97,"profit":45,"needsYou":false},{"title":"Shay — Omnipresent Virtual Assistant","autonomy":97,"profit":40,"needsYou":false},{"title":"Fritz Companion App","autonomy":97,"profit":80,"needsYou":false},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true},{"title":"chat-capture-learn-optimize","autonomy":72,"profit":45,"needsYou":true},{"title":"agent-coordination","autonomy":72,"profit":45,"needsYou":true},{"title":"workbench-per-page-design","autonomy":57,"profit":45,"needsYou":true}]};
+const SNAP = {"stageCounts":{"Checkpoint (stalled)":6,"In progress":4,"Needs tasking":2},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":true},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":true},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":true},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"Mission Control / Command Center","autonomy":97,"profit":45,"needsYou":false},{"title":"Shay — Omnipresent Virtual Assistant","autonomy":97,"profit":40,"needsYou":false},{"title":"Fritz Companion App","autonomy":97,"profit":80,"needsYou":false},{"title":"Financial Agents — Market Watch & $10 Leaderboard","autonomy":97,"profit":40,"needsYou":false},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true},{"title":"chat-capture-learn-optimize","autonomy":72,"profit":45,"needsYou":true},{"title":"agent-coordination","autonomy":72,"profit":45,"needsYou":true},{"title":"workbench-per-page-design","autonomy":57,"profit":45,"needsYou":true}]};
 const stageColors = {"In progress":"#2dd4a7","Checkpoint":"#3b82f6","Checkpoint (stalled)":"#f5b342","Needs tasking":"#f5b342","Blocked (external)":"#ef4444","Stale":"#94a3b8","Completed":"#22c55e"};
 new Chart(document.getElementById('healthChart'), {
   type:'doughnut',

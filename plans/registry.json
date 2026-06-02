@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-06-02T12:57:59.650Z",
+  "updated_at": "2026-06-02T13:13:14.410Z",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -47,7 +47,8 @@
     "plan_2026_05_05_workbench_per_page_design",
     "mission-control-command-center",
     "shay-omnipresent-assistant",
-    "fritz-companion-app"
+    "fritz-companion-app",
+    "financial-agents"
   ],
   "labels": {
     "plan_2026_05_05_workbench_per_page_design": {
@@ -203,6 +204,19 @@
       ],
       "role": "product",
       "note": "A companion app that works like how Fritz talks to his second-in-command right now: ask questions, get answers, run the operation from his pocket. Mobile-first chat client over the Shay gateway + the Command Center briefing, with push so Shay can reach him."
+    },
+    "financial-agents": {
+      "label": "financial-agents",
+      "priority": "high",
+      "tags": [
+        "shay-shay",
+        "finance",
+        "trading",
+        "automation",
+        "agents"
+      ],
+      "role": "product",
+      "note": "Fleet of paper-trading strategy agents that watch the markets, make predictions, and report effectiveness as a $10-stake leaderboard. Net-new — no prior financial code existed in the brain. Sim/paper first; live brokerage (Alpaca) is a later, gated step."
     }
   },
   "_label_role_legend": {
@@ -682,6 +696,48 @@
       "next_action_items": [
         "task-2026-06-02-010",
         "task-2026-06-02-011"
+      ]
+    },
+    {
+      "id": "financial-agents",
+      "title": "Financial Agents — Market Watch & $10 Leaderboard",
+      "status": "active",
+      "status_label": "Active parent plan (Fritz priority)",
+      "group": "financial_agents",
+      "fritz_priority": "high",
+      "plan_path": "plans/financial-agents/plan.json",
+      "current_workstream": "Building the paper-trading simulation harness (keyless market data + several strategy agents) and running today’s $10-stake leaderboard.",
+      "next_action": "Run the leaderboard on the latest session, report which agent won and the $10 outcomes; then decide whether to track daily and which to consider for live paper-trading.",
+      "open_blockers": "No hard blocker for simulation. Live brokerage execution requires a broker account + API keys (Alpaca paper API) — a Fritz decision, gated.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "build_run_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "simulation harness",
+          "path": "scripts/finance-agents/run.js"
+        },
+        {
+          "label": "today leaderboard",
+          "path": "scripts/finance-agents/results/"
+        }
+      ],
+      "tasks": [
+        "Build paper-trading sim harness (keyless data + strategy agents)",
+        "Run today’s $10-stake leaderboard and report effectiveness",
+        "Decide daily tracking cadence + which agents advance",
+        "Gate: wire Alpaca paper-trading for live execution (needs broker keys)"
+      ],
+      "assumptions": [
+        "Single-session result is noise; the harness measures agents over time.",
+        "Paper/simulation only until a broker decision is made."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-014",
+        "task-2026-06-02-015"
       ]
     }
   ],
