@@ -35,10 +35,15 @@ function main() {
   const hook = readStdin();
   const event = (hook.hook_event_name || process.argv[2] || 'checkpoint').toLowerCase();
   const root = process.env.CLAUDE_PROJECT_DIR || sh('git rev-parse --show-toplevel') || process.cwd();
-  const sessionId = hook.session_id || process.env.CLAUDE_CODE_SESSION_ID || 'unknown-session';
+  // Session id resolves from (in order): hook payload, Claude Code's env, a
+  // generic BRAIN_SESSION_ID any agent surface can set (Codex/Gemini/Cowork/Shay).
+  const sessionId = hook.session_id || process.env.CLAUDE_CODE_SESSION_ID
+                 || process.env.BRAIN_SESSION_ID || 'unknown-session';
   const shortId = sessionId.slice(0, 8);
-  const branch = sh(`git -C "${root}" rev-parse --abbrev-ref HEAD`) || 'detached';
-  const head = sh(`git -C "${root}" rev-parse --short HEAD`) || '0000000';
+  // One git call for branch + short head (line 1 = branch, line 2 = sha).
+  const rp = sh(`git -C "${root}" rev-parse --abbrev-ref HEAD --short HEAD`).split('\n');
+  const branch = rp[0] || 'detached';
+  const head = rp[1] || '0000000';
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
   const stamp = now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
@@ -95,7 +100,7 @@ _(filled on stop)_
     const startSha = (content.match(/start_sha:\s*(\w+)/) || [])[1] || head;
     const range = `${startSha}..${head}`;
     const commits = sh(`git -C "${root}" log --no-merges --pretty=format:'- %h %s' ${range}`) || '- (no commits recorded this session)';
-    const files = sh(`git -C "${root}" diff --stat ${range} | tail -1`) || '';
+    const files = sh(`git -C "${root}" diff --shortstat ${range}`) || '';
     const delta = `## Git delta\n**Range:** \`${range}\`\n\n${commits}\n\n${files ? '**Files:** ' + files + '\n' : ''}`;
     content = content.replace(/## Git delta\n[\s\S]*$/m, delta + `\n_ended: ${stamp}_\n`);
     content = content.replace(/status: active/, 'status: ended');

@@ -6410,3 +6410,61 @@ Built the full autonomous business stack on top of the Command Center, all monit
 - **No inbound ingestion wired**: `responder.py` reads `data/inbound.jsonl` but nothing populates it yet except `POST /api/inbound`. The existing `email-agent/server.js` (IMAP) is not yet connected to write inbound records.
 - **Copy is template-based**: `copywriter.py` is deterministic templates, not LLM-generated — swap the `draft_*` functions to upgrade.
 - **Stripe/PayPal still not live** (carried from Phase 1): endpoints verify signatures but no account/tunnel connected.
+
+## 2026-06-02 — Odysseus integration + brain-wiring universality + hook fix
+
+### Odysseus (self-hosted AI workspace)
+Integrated **Odysseus** (`github.com/pewdiepie-archdaemon/odysseus`) — a
+local-first self-hosted AI workspace (Chat, Agent on opencode+MCP, Cookbook local
+model serving, Deep Research, Compare, Documents, Memory/Skills via
+ChromaDB+fastembed, Email, Notes/Tasks, CalDAV Calendar). **Scope: Odysseus only,
+deep** (the other 8 HexSec-carousel tools are mostly hosted SaaS — recorded once
+in the write-up, not installed). Files:
+- `scripts/odysseus/install-odysseus.sh` — idempotent Mac installer (clone/update,
+  seeds private `.env`, loopback-only unless `ODYSSEUS_LAN=1`, `--start` to launch
+  native Apple-Silicon at `:7860`). `scripts/odysseus/README.md`.
+- `docs/odysseus/ODYSSEUS-WRITEUP.md` — capability map + FAMtastic fit + security
+  posture + the other-8 one-liners.
+- `docs/odysseus/tutorial-claude.html` + `tutorial-shay.html` — **two independent
+  visual tutorials** (Claude = builder/IDE angle; Shay = agent-OS/swarm angle,
+  Claude-drafted starter for Shay to replace).
+- `.claude/agents/odysseus.md` — Claude operator subagent (install/start/health/
+  route table; loopback+auth rules; launchd boundary).
+- `shay-agent-os/odysseus/{INSTALL-FOR-SHAY.md,install-odysseus-shay.sh}` — Shay's
+  headless instance (`~/odysseus-shay`, port **7870**, admin=shay) + her task list.
+- `shay-agent-os/agents/odysseus.md` — Shay's operator agent (local-serving
+  economics: route bulk/low-stakes swarm work to local models, reserve cloud Opus).
+
+### Brain-wiring universality (every agent surface now leaves a trace)
+- `scripts/brain/session-checkpoint.js` — added `BRAIN_SESSION_ID` env fallback
+  (after `CLAUDE_CODE_SESSION_ID`) so any surface can write a trace; combined the
+  branch+head git calls; switched stop delta to `git diff --shortstat`.
+- `scripts/agents` (`action_run`) — one `brain_trace start/stop` call wires
+  **claude/gemini/codex** via `fam-hub agent run` (stable id `famhub-<agent>-<tag>`).
+- `shay-agent-os/brain_checkpoint.py` — Python wrapper (`checkpoint("start"/"stop")`)
+  shelling to the node writer with `AI_AGENT=shay`; wired a `start` into
+  `shay-agent-os/launch-agent.py`.
+
+### The dead-hook fix (root cause: gitignored hook dir)
+`.claude/settings.json` referenced six `.wolf/hooks/*.js` files, but `.wolf/hooks/`
+is **gitignored** (`.gitignore:36`) — so they were never committed, absent on every
+clone, and failed on every tool call. Fix: removed the 5 no-op refs; implemented
+the one real hook (OpenWolf memory trail) at a **tracked** path
+`scripts/brain/openwolf-post-write.js` (PostToolUse Write/Edit → appends one line
+to the gitignored `.wolf/memory.md`). All hook targets are now tracked + present.
+
+### Known Gaps (updated 2026-06-02, Odysseus + wiring)
+- **Odysseus not yet installed on Fritz's Mac** — this was an ephemeral cloud
+  container; install scripts + agents are committed, but `install-odysseus.sh`
+  must be run on the Mac (Pages site `pewdiepie-archdaemon.github.io/odysseus`
+  was 403 from the container; the git repo cloned fine).
+- **Shay's tutorial is a Claude-drafted starter** — Shay must author her genuine
+  independent version on her next run (task in `INSTALL-FOR-SHAY.md`).
+- **`run_*.py` drivers + Cowork still untraced** — `launch-agent.py` and the
+  fam-hub path are wired; the individual Shay `run_*.py` drivers and Cowork still
+  need a `brain_checkpoint` call.
+- **`portfolio-revenue-model.md` lost** — the only concrete "1000-site revenue
+  model" artifact is referenced by Shay build records but committed nowhere;
+  recover or mark artifact-lost.
+- **FAMTASTIC-STATE.md not regenerated** — Rule 6 triggered (new scripts/agents);
+  full regen deferred to avoid a risky half-rewrite in an oversized session.

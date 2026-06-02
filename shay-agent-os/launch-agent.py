@@ -19,6 +19,12 @@ import json
 import signal
 from pathlib import Path
 
+try:
+    from brain_checkpoint import checkpoint as brain_checkpoint
+except Exception:  # never let a missing brain bridge break a launch
+    def brain_checkpoint(*_a, **_k):
+        return None
+
 LOG_DIR = Path.home() / "famtastic/shay-agent-os/logs"
 HEARTBEAT_DIR = LOG_DIR / "heartbeat"
 PID_DIR = LOG_DIR / "pids"
@@ -74,6 +80,9 @@ def launch(agent_name: str, prompt_file: str):
 
     write_heartbeat(agent_name, "starting", "ALIVE", f"Launching with prompt: {prompt_path}")
     log_line(agent_name, "LAUNCH — Starting Shay instance")
+
+    # Brain Sync Contract: leave a session trace tied to this run's id.
+    brain_checkpoint("start", session_id=f"shay-{agent_name}", agent="shay")
 
     # Spawn Shay with prompt via stdin to avoid shell quoting issues
     # Using -z flag which reads prompt from argument (safer than -q with shell expansion)

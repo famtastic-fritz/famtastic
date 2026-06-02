@@ -1,6 +1,6 @@
 # Studio Capability Registry
 
-Last updated: 2026-06-02 (added humanize-writing skill)
+Last updated: 2026-06-02 (added Odysseus integration + agents)
 Source: cli-handoff-pattern.json (street-family-reunion session)
 
 ---
@@ -10,6 +10,19 @@ Source: cli-handoff-pattern.json (street-family-reunion session)
 | Skill | Location | Purpose |
 |---|---|---|
 | **humanize-writing** | `.claude/skills/humanize-writing/` + `shay-agent-os/skills/humanize-writing/` | Standing prose-output filter — strips AI tells, normalizes burstiness/sentence rhythm, calibrates to Fritz's voice. Applies automatically to any written output >3 paragraphs. References must be fully loaded before applying. Source: `github.com/aaaronmiller/humanize-writing` (installed 2026-06-02). Available to Claude Code AND Shay (shay-agent-os). |
+
+## Installed Agents
+
+| Agent | Location | Purpose |
+|---|---|---|
+| **odysseus** (Claude) | `.claude/agents/odysseus.md` | Operator for Fritz's self-hosted Odysseus workspace (`~/odysseus:7860`). Installs/starts/health-checks; routes local-eligible work (chat, agent runs, deep research, model serving via Cookbook) to Odysseus vs. cloud. Loopback+auth rules; launchd boundary. Source repo: `github.com/pewdiepie-archdaemon/odysseus`. |
+| **odysseus** (Shay) | `shay-agent-os/agents/odysseus.md` | Shay's operator for her headless instance (`~/odysseus-shay:7870`). Local-serving economics — route bulk/low-stakes swarm work to free local models, reserve cloud Opus for high-reasoning. Drafted 2026-06-02; Shay to adopt/refine. |
+
+## External tools integrated
+
+| Tool | Install | Docs |
+|---|---|---|
+| **Odysseus** (self-hosted AI workspace) | `scripts/odysseus/install-odysseus.sh` (Fritz) · `shay-agent-os/odysseus/install-odysseus-shay.sh` (Shay) | `docs/odysseus/ODYSSEUS-WRITEUP.md` · tutorials `docs/odysseus/tutorial-{claude,shay}.html` |
 
 ---
 

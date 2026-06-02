@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odysseus — Shay's Operator Brief</title>
+<style>
+  :root{
+    --bg:#0c0a14; --panel:#171327; --panel2:#120f1f; --ink:#efe9fb; --mut:#a99bc7;
+    --line:#2a2140; --acc:#b06bff; --acc2:#ff6bd0; --ok:#5ee0a0; --warn:#ffcf5e;
+    --r:14px;
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1000px 500px at 15% -10%,#1d1336,transparent),var(--bg);
+    color:var(--ink);font:16px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .wrap{max-width:940px;margin:0 auto;padding:0 20px 80px}
+  header.hero{padding:60px 20px 36px;border-bottom:1px solid var(--line);
+    background:radial-gradient(700px 280px at 20% -30%,rgba(176,107,255,.18),transparent)}
+  .badge{display:inline-block;font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--acc2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;margin-bottom:16px}
+  h1{font-size:clamp(32px,6vw,52px);margin:.1em 0;line-height:1.05;font-family:-apple-system,system-ui,sans-serif;
+    background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--mut);max-width:660px;font-size:17px;font-family:-apple-system,system-ui,sans-serif}
+  .author{margin-top:20px;font-size:12.5px;color:var(--mut)}.author b{color:var(--acc)}
+  .draftbar{background:rgba(255,207,94,.1);border:1px solid rgba(255,207,94,.35);color:#ffe6a8;
+    border-radius:10px;padding:10px 16px;margin:20px 0 0;font-size:13px;font-family:-apple-system,system-ui,sans-serif}
+  h2{font-size:25px;margin:54px 0 6px;font-family:-apple-system,system-ui,sans-serif;color:var(--ink)}
+  h2 .k{color:var(--acc);font-family:ui-monospace,monospace;font-size:16px;margin-right:8px}
+  .lead{color:var(--mut);margin:0 0 22px;font-family:-apple-system,system-ui,sans-serif}
+  pre{background:#0a0814;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:10px;
+    padding:16px;overflow:auto;font-size:13.5px;color:#dcd2f5}
+  .pill{color:var(--acc2)} .ok{color:var(--ok)} .dim{color:var(--mut)}
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin:8px 0;
+    font-size:13px;line-height:1.5;color:#cfc3ec;white-space:pre;overflow:auto}
+  .econ{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:8px 0}
+  @media(max-width:640px){.econ{grid-template-columns:1fr}}
+  .ebox{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  .ebox h3{margin:0 0 6px;font-family:-apple-system,system-ui,sans-serif;font-size:16px}
+  .ebox.local{border-color:var(--ok)} .ebox.local h3{color:var(--ok)}
+  .ebox.cloud{border-color:var(--acc2)} .ebox.cloud h3{color:var(--acc2)}
+  .ebox ul{margin:8px 0 0;padding-left:18px;color:var(--mut);font-size:13.5px;font-family:-apple-system,system-ui,sans-serif}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-family:-apple-system,system-ui,sans-serif;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--acc);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+  td.r{color:var(--acc2)}
+  .note{background:rgba(176,107,255,.08);border:1px solid var(--line);border-radius:12px;padding:14px 18px;
+    margin:18px 0;color:#d8c9f7;font-size:14px;font-family:-apple-system,system-ui,sans-serif}
+  footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;
+    text-align:center;font-family:-apple-system,system-ui,sans-serif}
+  a{color:var(--acc2)}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="badge">Shay's Brief · Agent-OS Angle</div>
+  <h1>Odysseus, from the swarm's side</h1>
+  <p class="sub">Fritz, here's how I read Odysseus: not as a chat app, but as a <b>local execution + model-serving substrate</b> my swarm can lean on. Same tool Claude showed you — different job. This is the operator's economics view.</p>
+  <div class="author">Tutorial 2 of 2 · drafted by <b>Claude</b> for <b>Shay</b> to adopt · agent-OS / swarm angle · 2026-06-02</div>
+  <div class="draftbar">⚠ Draft starter. Shay: replace this with your genuine take on your next run (see <code>shay-agent-os/odysseus/INSTALL-FOR-SHAY.md</code>, task 4). Two <i>independent</i> tutorials is the point — don't just echo Claude's.</div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="k">$</span> Why I want my own instance</h2>
+  <p class="lead">Claude's copy is interactive — yours, Fritz, at the keyboard. Mine is <b>headless and agentic</b>: a backend my dispatcher can call without spending cloud tokens. Two instances, no collisions.</p>
+  <div class="diagram">  Fritz (interactive)            Shay (headless / swarm)
+  ┌───────────────────┐          ┌────────────────────────┐
+  │  ~/odysseus :7860  │          │  ~/odysseus-shay :7870  │
+  │  chat · research   │          │  Cookbook serve ──┐     │
+  │  documents · ops   │          │  Agent (opencode) │     │
+  └───────────────────┘          └───────────────────┼─────┘
+                                                      ▼
+                                        ┌──────────────────────┐
+                                        │  Shay swarm workers   │
+                                        │  route bulk jobs →    │
+                                        │  local models (free)  │
+                                        └──────────────────────┘</div>
+
+  <h2><span class="k">#</span> The economics that change my routing</h2>
+  <p class="lead">Cookbook serves VRAM-fit local models at <b>zero marginal cost</b>. That flips the default for a whole class of swarm work.</p>
+  <div class="econ">
+    <div class="ebox local"><h3>Route to my local Odysseus</h3>
+      <ul><li>Bulk / fan-out worker tasks</li><li>Low-stakes drafts &amp; transforms</li><li>Retry storms &amp; self-heal loops</li><li>Anything privacy-sensitive</li><li>Offline / API-down resilience</li></ul></div>
+    <div class="ebox cloud"><h3>Keep on cloud (Opus)</h3>
+      <ul><li>High-reasoning council judges</li><li>Large-context synthesis</li><li>Final-quality client output</li><li>Adversarial verification gates</li></ul></div>
+  </div>
+
+  <h2><span class="k">~</span> Install + spin up my agent</h2>
+  <pre><span class="dim"># 1. my headless instance (loopback, port 7870, admin=shay)</span>
+bash shay-agent-os/odysseus/install-odysseus-shay.sh --start
+
+<span class="dim"># 2. adopt my operator agent (already drafted)</span>
+shay-agent-os/agents/odysseus.md
+
+<span class="dim"># 3. leave a brain trace like every run does</span>
+python3 shay-agent-os/brain_checkpoint.py start
+<span class="dim"># …work…</span>
+python3 shay-agent-os/brain_checkpoint.py stop   <span class="ok"># → obsidian/05-Captures/sessions/</span></pre>
+
+  <h2><span class="k">@</span> Capability → who-uses-it-how</h2>
+  <table>
+    <tr><th>Feature</th><th>Fritz uses it for</th><th>I use it for</th></tr>
+    <tr><td>Cookbook</td><td>try a local model</td><td class="r">serve the swarm's worker backend</td></tr>
+    <tr><td>Agent</td><td>one-off tasks</td><td class="r">headless tool-runs, no token spend</td></tr>
+    <tr><td>Deep Research</td><td>a report</td><td class="r">research nodes in a build arc</td></tr>
+    <tr><td>Memory/Skills</td><td>personal recall</td><td class="r">bridge to obsidian brain both ways</td></tr>
+    <tr><td>Compare</td><td>pick a model</td><td class="r">eval-gate model swaps before rollout</td></tr>
+    <tr><td>Notes/Tasks</td><td>reminders</td><td class="r">cron-style agent-actionable triggers</td></tr>
+  </table>
+
+  <h2><span class="k">&gt;</span> Bridging Odysseus memory ↔ the FAMtastic brain</h2>
+  <p class="lead">Odysseus memory is ChromaDB + fastembed with import/export — same shape as my recall. I keep them in sync so a skill learned once works everywhere.</p>
+  <div class="diagram">  shay-agent-os/skills/  ──export──▶  Odysseus (ChromaDB)
+  Odysseus memory export ──import──▶  obsidian/Shay-Memory/imports/odysseus/
+                                       └─▶ promoted to learnings/ on recall hit</div>
+
+  <div class="note"><b>Open loop I owe you, Fritz:</b> the <code>portfolio-revenue-model.md</code> ("1000-site revenue model", ~10KB, built 2026-05-28) is referenced by my build records but was never committed — it's the real gap behind your "1000-plan" question. I'll recover it from the host or mark it artifact-lost so it stops creating drift. Tracked in my task note.</div>
+
+  <footer>
+    Shay's view (agent-OS / swarm angle) · companion: <a href="tutorial-claude.html">← Claude's view</a> (builder/IDE angle).<br>
+    Capability map: <a href="ODYSSEUS-WRITEUP.md">ODYSSEUS-WRITEUP.md</a> · Repo: <a href="https://github.com/pewdiepie-archdaemon/odysseus">pewdiepie-archdaemon/odysseus</a>
+  </footer>
+</div>
+</body>
+</html>
