@@ -1,0 +1,41 @@
+{
+  "site_name": "Agent Business OS",
+  "tag": "site-agent-business-os",
+  "business_type": "autonomous_revenue_operations",
+  "pages": ["index"],
+  "domain": "agentbusinessos.com",
+  "tagline": "Your business runs itself. You run your business.",
+  "colors": {
+    "primary": "#6d5efc",
+    "secondary": "#8b7bff",
+    "accent": "#2dd4bf",
+    "signal": "#ffb020",
+    "ink": "#0a0b12"
+  },
+  "fonts": {
+    "heading": "Space Grotesk",
+    "body": "Inter"
+  },
+  "design_brief": {
+    "approved": true,
+    "must_have_sections": [
+      "hero",
+      "metric_strip",
+      "problem",
+      "four_layer_architecture",
+      "30_day_rollout",
+      "roi_calculator",
+      "pricing",
+      "qualification_form",
+      "faq",
+      "final_cta"
+    ],
+    "tone": "premium, control-plane / operating-system, confident",
+    "icp": "Founder-led services, agencies, and operators with active delivery targeting $10k-$100k monthly revenue lift"
+  },
+  "source": {
+    "concept_repo": "https://github.com/IAMGODIAM/zero-human-business-landing",
+    "note": "Adapted from the zero-human / Agent Business OS landing concept into a FAMtastic-built site."
+  },
+  "last_updated": "2026-06-02"
+}

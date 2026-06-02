@@ -3436,6 +3436,18 @@
       ],
       "occurrences": 48,
       "last_seen": "2026-05-29"
+    },
+    {
+      "id": "bug-185",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "Qualification form name validation always failed: 'Please enter your name.' even when filled",
+      "file": "agent-business-os/dist/assets/js/landing.js",
+      "root_cause": "Read the name input as form.name, but HTMLFormElement.name resolves to the form element's own name IDL attribute (empty string), not the child control named 'name'. So form.name.value was undefined and validation rejected every submission.",
+      "fix": "Read all controls via a val() helper using form.elements[field] (form.elements.namedItem), which returns the named control regardless of collisions with built-in form properties.",
+      "tags": ["javascript", "forms", "dom", "html"],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
     }
   ]
 }

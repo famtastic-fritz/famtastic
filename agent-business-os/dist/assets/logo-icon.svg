@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Agent Business OS">
+  <defs>
+    <linearGradient id="abos-icon-g" x1="6" y1="3" x2="42" y2="43" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8b7bff"/>
+      <stop offset="1" stop-color="#2dd4bf"/>
+    </linearGradient>
+  </defs>
+  <!-- enclave / control boundary -->
+  <path d="M24 3 41.2 13v22L24 45 6.8 35V13z" stroke="url(#abos-icon-g)" stroke-width="2.4" fill="none" stroke-linejoin="round"/>
+  <!-- spokes to the four execution layers -->
+  <g stroke="url(#abos-icon-g)" stroke-width="2" stroke-linecap="round">
+    <path d="M24 24V12"/>
+    <path d="M24 24h12"/>
+    <path d="M24 24v12"/>
+    <path d="M24 24H12"/>
+  </g>
+  <!-- four layer nodes -->
+  <g fill="#2dd4bf">
+    <circle cx="24" cy="12" r="2.7"/>
+    <circle cx="36" cy="24" r="2.7"/>
+    <circle cx="24" cy="36" r="2.7"/>
+    <circle cx="12" cy="24" r="2.7"/>
+  </g>
+  <!-- control plane -->
+  <circle cx="24" cy="24" r="4.6" fill="#6d5efc"/>
+  <circle cx="24" cy="24" r="1.7" fill="#0a0b12"/>
+</svg>
