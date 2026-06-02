@@ -314,9 +314,16 @@ P.S. If you post on social, tag #Jamari2026 so we can find and reshare it! 🎉
 
 These were generated for this campaign in the real Knights palette (black/red/silver) using Jamari's portrait (duotoned to match) and a custom crown crest. Drop them straight into posts.
 
+**Cover — 3 art directions were generated and critiqued; the Terminal/Dev cut won and is the default `carousel-cover.png`:**
+
+| File | Size | Direction | Use |
+|------|------|-----------|-----|
+| `carousel-cover.png` | 1080×1080 | **Terminal/Dev (winner)** | Feed hero / carousel slide 1 — future-developer energy |
+| `carousel-editorial.png` | 1080×1080 | Editorial (portrait) | Alt cover if you want his photo front-and-center |
+| `carousel-heraldic.png` | 1080×1080 | Heraldic (crest) | Alt cover for a formal/ceremonial post |
+
 | File | Size | Use |
 |------|------|-----|
-| `carousel-cover.png` | 1080×1080 | Instagram carousel slide 1 / feed hero |
 | `card-quote-1.png` | 1080×1080 | "cap & gown is just the screenshot" quote card |
 | `card-quote-2.png` | 1080×1080 | "Once a Knight, always a Knight" (Knights' Code) |
 | `card-quote-3.png` | 1080×1080 | "Coconut Creek to the codebase" |
