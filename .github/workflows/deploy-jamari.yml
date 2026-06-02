@@ -6,34 +6,38 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure Pages (auto-enable)
-        uses: actions/configure-pages@v5
+      - name: Publish dist to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./sites/site-jamari-graduation/dist
+          publish_branch: gh-pages
+          force_orphan: true
 
-      - name: Upload site artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: sites/site-jamari-graduation/dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Enable GitHub Pages (gh-pages branch, root)
+        run: |
+          repo="${{ github.repository }}"
+          auth="Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
+          accept="Accept: application/vnd.github+json"
+          body='{"source":{"branch":"gh-pages","path":"/"}}'
+          echo "Creating Pages site..."
+          code=$(curl -sS -o /tmp/p.json -w "%{http_code}" -X POST -H "$auth" -H "$accept" \
+            "https://api.github.com/repos/$repo/pages" -d "$body" || true)
+          echo "POST -> $code"; cat /tmp/p.json || true
+          if [ "$code" != "201" ] && [ "$code" != "409" ]; then
+            echo "Trying PUT (update existing source)..."
+            curl -sS -X PUT -H "$auth" -H "$accept" \
+              "https://api.github.com/repos/$repo/pages" -d "$body" || true
+          fi
+          echo "Final Pages config:"
+          curl -sS -H "$auth" -H "$accept" "https://api.github.com/repos/$repo/pages" || true
