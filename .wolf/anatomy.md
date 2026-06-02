@@ -1292,3 +1292,23 @@
 ## tools/cpanel-mcp/src/types/
 
 - `cpanel.ts` — Exports CpanelConfig, CpanelResponse, CpanelErrorData, FileManagerItem + 11 more (~784 tok)
+
+## remotion/src/pipeline/ (faceless video generator — pure Node)
+
+- `core.mjs` — deterministic spec builder: FORMATS, timeWords, buildSpec, gradient palette (~1100 tok)
+- `script.mjs` — topic→script via OpenAI w/ templated fallback (~700 tok)
+- `tts.mjs` — OpenAI/ElevenLabs TTS + self-contained MP3 duration parser (~900 tok)
+- `index.mjs` — generateVideoSpec orchestrator; writes out/<slug>.spec.json (~450 tok)
+- `core.test.mjs` — 13 node:test unit tests, no deps/network (~900 tok)
+
+## remotion/src/faceless/ (Remotion composition)
+
+- `FacelessVideo.tsx` — "FacelessVideo" composition + calculateMetadata (any length/format) (~700 tok)
+- `Scene.tsx` — Ken Burns / gradient bg + scrim + captions + audio (~650 tok)
+- `Captions.tsx` — word-by-word karaoke captions (~500 tok)
+- `schema.ts` — zod facelessSchema mirroring buildSpec output (~550 tok)
+- `demo.spec.json` — committed demo spec used as Studio defaultProps (~2200 tok)
+
+## remotion/bin/
+
+- `faceless.mjs` — CLI: node bin/faceless.mjs "<topic>" [--format --scenes --render] (~700 tok)

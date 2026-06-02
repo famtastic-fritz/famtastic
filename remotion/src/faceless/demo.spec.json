@@ -1,0 +1,493 @@
+{
+  "meta": {
+    "topic": "how compound interest builds wealth",
+    "title": "How Compound Interest Builds Wealth",
+    "slug": "how-compound-interest-builds-wealth",
+    "format": "vertical",
+    "fps": 30,
+    "width": 1080,
+    "height": 1920,
+    "createdAt": "2026-06-02T02:53:54.229Z",
+    "sceneCount": 5,
+    "estimatedSeconds": 32
+  },
+  "voice": {
+    "provider": "none",
+    "model": null,
+    "voice": null,
+    "hasAudio": false
+  },
+  "theme": {
+    "accent": "#34d399",
+    "fontFamily": "Inter"
+  },
+  "scenes": [
+    {
+      "id": "scene-1",
+      "text": "Stop overthinking how compound interest builds wealth.",
+      "kind": "hook",
+      "words": [
+        {
+          "word": "Stop",
+          "startMs": 250,
+          "endMs": 628,
+          "emphasis": false
+        },
+        {
+          "word": "overthinking",
+          "startMs": 628,
+          "endMs": 1342,
+          "emphasis": true
+        },
+        {
+          "word": "how",
+          "startMs": 1342,
+          "endMs": 1678,
+          "emphasis": false
+        },
+        {
+          "word": "compound",
+          "startMs": 1678,
+          "endMs": 2224,
+          "emphasis": true
+        },
+        {
+          "word": "interest",
+          "startMs": 2224,
+          "endMs": 2770,
+          "emphasis": true
+        },
+        {
+          "word": "builds",
+          "startMs": 2770,
+          "endMs": 3232,
+          "emphasis": false
+        },
+        {
+          "word": "wealth.",
+          "startMs": 3232,
+          "endMs": 4014,
+          "emphasis": false
+        }
+      ],
+      "durationInFrames": 134,
+      "durationMs": 4464,
+      "background": {
+        "type": "gradient",
+        "gradient": [
+          "#0f172a",
+          "#1e3a8a"
+        ],
+        "image": null,
+        "kenBurns": true,
+        "kenBurnsSeed": 0
+      },
+      "audioSrc": null
+    },
+    {
+      "id": "scene-2",
+      "text": "Here's what almost nobody tells you about how compound interest builds wealth.",
+      "kind": "body",
+      "words": [
+        {
+          "word": "Here's",
+          "startMs": 250,
+          "endMs": 670,
+          "emphasis": false
+        },
+        {
+          "word": "what",
+          "startMs": 670,
+          "endMs": 1048,
+          "emphasis": false
+        },
+        {
+          "word": "almost",
+          "startMs": 1048,
+          "endMs": 1510,
+          "emphasis": false
+        },
+        {
+          "word": "nobody",
+          "startMs": 1510,
+          "endMs": 1972,
+          "emphasis": false
+        },
+        {
+          "word": "tells",
+          "startMs": 1972,
+          "endMs": 2392,
+          "emphasis": false
+        },
+        {
+          "word": "you",
+          "startMs": 2392,
+          "endMs": 2728,
+          "emphasis": false
+        },
+        {
+          "word": "about",
+          "startMs": 2728,
+          "endMs": 3148,
+          "emphasis": false
+        },
+        {
+          "word": "how",
+          "startMs": 3148,
+          "endMs": 3484,
+          "emphasis": false
+        },
+        {
+          "word": "compound",
+          "startMs": 3484,
+          "endMs": 4030,
+          "emphasis": true
+        },
+        {
+          "word": "interest",
+          "startMs": 4030,
+          "endMs": 4576,
+          "emphasis": true
+        },
+        {
+          "word": "builds",
+          "startMs": 4576,
+          "endMs": 5038,
+          "emphasis": false
+        },
+        {
+          "word": "wealth.",
+          "startMs": 5038,
+          "endMs": 5820,
+          "emphasis": false
+        }
+      ],
+      "durationInFrames": 189,
+      "durationMs": 6270,
+      "background": {
+        "type": "gradient",
+        "gradient": [
+          "#111827",
+          "#065f46"
+        ],
+        "image": null,
+        "kenBurns": true,
+        "kenBurnsSeed": 1
+      },
+      "audioSrc": null
+    },
+    {
+      "id": "scene-3",
+      "text": "Most people get how compound interest builds wealth wrong because they skip the fundamentals.",
+      "kind": "body",
+      "words": [
+        {
+          "word": "Most",
+          "startMs": 250,
+          "endMs": 628,
+          "emphasis": false
+        },
+        {
+          "word": "people",
+          "startMs": 628,
+          "endMs": 1090,
+          "emphasis": false
+        },
+        {
+          "word": "get",
+          "startMs": 1090,
+          "endMs": 1426,
+          "emphasis": false
+        },
+        {
+          "word": "how",
+          "startMs": 1426,
+          "endMs": 1762,
+          "emphasis": false
+        },
+        {
+          "word": "compound",
+          "startMs": 1762,
+          "endMs": 2308,
+          "emphasis": true
+        },
+        {
+          "word": "interest",
+          "startMs": 2308,
+          "endMs": 2854,
+          "emphasis": true
+        },
+        {
+          "word": "builds",
+          "startMs": 2854,
+          "endMs": 3316,
+          "emphasis": false
+        },
+        {
+          "word": "wealth",
+          "startMs": 3316,
+          "endMs": 3778,
+          "emphasis": false
+        },
+        {
+          "word": "wrong",
+          "startMs": 3778,
+          "endMs": 4198,
+          "emphasis": false
+        },
+        {
+          "word": "because",
+          "startMs": 4198,
+          "endMs": 4702,
+          "emphasis": true
+        },
+        {
+          "word": "they",
+          "startMs": 4702,
+          "endMs": 5080,
+          "emphasis": false
+        },
+        {
+          "word": "skip",
+          "startMs": 5080,
+          "endMs": 5458,
+          "emphasis": false
+        },
+        {
+          "word": "the",
+          "startMs": 5458,
+          "endMs": 5794,
+          "emphasis": false
+        },
+        {
+          "word": "fundamentals.",
+          "startMs": 5794,
+          "endMs": 6828,
+          "emphasis": true
+        }
+      ],
+      "durationInFrames": 219,
+      "durationMs": 7278,
+      "background": {
+        "type": "gradient",
+        "gradient": [
+          "#1a0b2e",
+          "#7c3aed"
+        ],
+        "image": null,
+        "kenBurns": true,
+        "kenBurnsSeed": 2
+      },
+      "audioSrc": null
+    },
+    {
+      "id": "scene-4",
+      "text": "The first thing that actually moves the needle is consistency, not intensity.",
+      "kind": "body",
+      "words": [
+        {
+          "word": "The",
+          "startMs": 250,
+          "endMs": 586,
+          "emphasis": false
+        },
+        {
+          "word": "first",
+          "startMs": 586,
+          "endMs": 1006,
+          "emphasis": false
+        },
+        {
+          "word": "thing",
+          "startMs": 1006,
+          "endMs": 1426,
+          "emphasis": false
+        },
+        {
+          "word": "that",
+          "startMs": 1426,
+          "endMs": 1804,
+          "emphasis": false
+        },
+        {
+          "word": "actually",
+          "startMs": 1804,
+          "endMs": 2350,
+          "emphasis": true
+        },
+        {
+          "word": "moves",
+          "startMs": 2350,
+          "endMs": 2770,
+          "emphasis": false
+        },
+        {
+          "word": "the",
+          "startMs": 2770,
+          "endMs": 3106,
+          "emphasis": false
+        },
+        {
+          "word": "needle",
+          "startMs": 3106,
+          "endMs": 3568,
+          "emphasis": false
+        },
+        {
+          "word": "is",
+          "startMs": 3568,
+          "endMs": 3862,
+          "emphasis": false
+        },
+        {
+          "word": "consistency,",
+          "startMs": 3862,
+          "endMs": 4694,
+          "emphasis": true
+        },
+        {
+          "word": "not",
+          "startMs": 4694,
+          "endMs": 5030,
+          "emphasis": false
+        },
+        {
+          "word": "intensity.",
+          "startMs": 5030,
+          "endMs": 5938,
+          "emphasis": true
+        }
+      ],
+      "durationInFrames": 192,
+      "durationMs": 6388,
+      "background": {
+        "type": "gradient",
+        "gradient": [
+          "#0c0a09",
+          "#9a3412"
+        ],
+        "image": null,
+        "kenBurns": true,
+        "kenBurnsSeed": 3
+      },
+      "audioSrc": null
+    },
+    {
+      "id": "scene-5",
+      "text": "Follow for more on how compound interest builds wealth — your future self will thank you.",
+      "kind": "cta",
+      "words": [
+        {
+          "word": "Follow",
+          "startMs": 250,
+          "endMs": 712,
+          "emphasis": false
+        },
+        {
+          "word": "for",
+          "startMs": 712,
+          "endMs": 1048,
+          "emphasis": false
+        },
+        {
+          "word": "more",
+          "startMs": 1048,
+          "endMs": 1426,
+          "emphasis": false
+        },
+        {
+          "word": "on",
+          "startMs": 1426,
+          "endMs": 1720,
+          "emphasis": false
+        },
+        {
+          "word": "how",
+          "startMs": 1720,
+          "endMs": 2056,
+          "emphasis": false
+        },
+        {
+          "word": "compound",
+          "startMs": 2056,
+          "endMs": 2602,
+          "emphasis": true
+        },
+        {
+          "word": "interest",
+          "startMs": 2602,
+          "endMs": 3148,
+          "emphasis": true
+        },
+        {
+          "word": "builds",
+          "startMs": 3148,
+          "endMs": 3610,
+          "emphasis": false
+        },
+        {
+          "word": "wealth",
+          "startMs": 3610,
+          "endMs": 4072,
+          "emphasis": false
+        },
+        {
+          "word": "—",
+          "startMs": 4072,
+          "endMs": 4312,
+          "emphasis": false
+        },
+        {
+          "word": "your",
+          "startMs": 4312,
+          "endMs": 4690,
+          "emphasis": false
+        },
+        {
+          "word": "future",
+          "startMs": 4690,
+          "endMs": 5152,
+          "emphasis": false
+        },
+        {
+          "word": "self",
+          "startMs": 5152,
+          "endMs": 5530,
+          "emphasis": false
+        },
+        {
+          "word": "will",
+          "startMs": 5530,
+          "endMs": 5908,
+          "emphasis": false
+        },
+        {
+          "word": "thank",
+          "startMs": 5908,
+          "endMs": 6328,
+          "emphasis": false
+        },
+        {
+          "word": "you.",
+          "startMs": 6328,
+          "endMs": 6984,
+          "emphasis": false
+        }
+      ],
+      "durationInFrames": 224,
+      "durationMs": 7434,
+      "background": {
+        "type": "gradient",
+        "gradient": [
+          "#082f49",
+          "#0e7490"
+        ],
+        "image": null,
+        "kenBurns": true,
+        "kenBurnsSeed": 4
+      },
+      "audioSrc": null
+    }
+  ],
+  "totalDurationInFrames": 958
+}

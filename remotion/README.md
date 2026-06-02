@@ -20,12 +20,25 @@ rendered piece of the FAMtastic brand. The studios consume it:
 
 | ID | Format | Purpose |
 |---|---|---|
+| `FacelessVideo`          | any | **Faceless video generator** — topic→script→voiceover→captioned short. See [`FACELESS.md`](FACELESS.md) |
 | `FAMtasticLogo-Luminous` | 1920×1080 | Primary brand-mark animation, luminous-core burst |
 | `FAMtasticLogo-Dark`     | 1920×1080 | Alt brand-mark animation, dark-pigment burst |
 | `FAMtasticLogo-Square`   | 1080×1080 | Square crop for social / avatars |
 
-Compositions live in [`src/FAMtasticLogo.tsx`](src/FAMtasticLogo.tsx).
-Registered in [`src/Root.tsx`](src/Root.tsx).
+Brand-mark compositions live in [`src/FAMtasticLogo.tsx`](src/FAMtasticLogo.tsx).
+The faceless generator lives in [`src/faceless/`](src/faceless/) (composition) +
+[`src/pipeline/`](src/pipeline/) (Node pipeline) + [`bin/faceless.mjs`](bin/faceless.mjs) (CLI).
+All registered in [`src/Root.tsx`](src/Root.tsx).
+
+### Faceless videos — quick start
+
+```bash
+node bin/faceless.mjs "how compound interest builds wealth"   # → out/<slug>.spec.json
+node bin/faceless.mjs "best coffee in atlanta" --render        # → out/<slug>.mp4
+```
+
+Works with zero API keys (templated script + silent video). Full docs:
+[`FACELESS.md`](FACELESS.md) · monetization paths: [`MONETIZATION.md`](MONETIZATION.md).
 
 ## Brand assets
 

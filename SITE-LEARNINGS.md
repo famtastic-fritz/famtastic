@@ -1,5 +1,92 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Faceless Video Generator on the Remotion engine (2026-06-02)
+
+Added a faceless short-form video generator to the `remotion/` package. It is
+FAMtastic's interpretation of the SamurAIGPT
+[AI-Faceless-Video-Generator](https://github.com/SamurAIGPT/AI-Faceless-Video-Generator).
+That reference project is a Python/Colab pipeline (GPT script → gTTS → SadTalker
+talking-head) and is **GPU-bound**. We deliberately did NOT port SadTalker.
+Instead we built the *captioned-b-roll/voiceover* faceless format (the one that
+actually retains on Shorts/Reels/TikTok) on top of the Remotion engine we
+already own — so it runs anywhere Node runs, no GPU, no Python.
+
+### Pipeline (pure Node, zero required deps for the logic)
+
+`remotion/src/pipeline/`:
+- **`core.mjs`** — deterministic, dependency-free, network-free. Exports
+  `FORMATS` (`vertical` 1080×1920 / `square` 1080×1080 / `wide` 1920×1080),
+  `slugify()`, `wordDurationMs()`, `isEmphasis()`, `timeWords()`,
+  `msToFrames()`, `gradientForIndex()` (6-gradient rotating palette), and
+  `buildSpec(script, opts)` which emits the render-ready `video-spec.json`.
+  Word timing uses a ~150 wpm length-weighted speaking-rate model with a
+  per-scene lead-in (250ms) and tail (450ms); word timings are contiguous and
+  non-overlapping. If a scene carries real audio (`audioDurationMs`), the scene
+  length locks to the audio, otherwise to the estimate.
+- **`script.mjs`** — `generateScript(topic, opts)`. Uses `OPENAI_API_KEY`
+  (gpt-4o-mini, JSON mode) when present; otherwise `templateScript()` returns a
+  real (non-lorem) hook → beats → CTA structure. Always sets `scenes[0].kind =
+  "hook"` and last `= "cta"`.
+- **`tts.mjs`** — `synthesizeVoiceover(script, opts)`. OpenAI TTS
+  (`gpt-4o-mini-tts`) preferred, ElevenLabs (`eleven_turbo_v2_5`) fallback, else
+  no audio (silent video). Includes `estimateMp3DurationMs(buf)` — a self-
+  contained MP3 frame parser (skips ID3v2, sums CBR/VBR frame durations) so we
+  get clip length with **no ffmpeg**.
+- **`index.mjs`** — `generateVideoSpec(topic, opts)` orchestrator. Writes
+  `out/<slug>.spec.json` and any audio to `public/faceless/<slug>/`.
+- **`core.test.mjs`** — 13 `node:test` unit tests, run via `npm test` (no
+  install/network/browser). All passing.
+
+### Remotion composition
+
+`remotion/src/faceless/`:
+- **`schema.ts`** — `facelessSchema` (zod) mirrors `buildSpec()` output; the spec
+  is the contract between the Node pipeline and the React renderer.
+- **`FacelessVideo.tsx`** — composition `FacelessVideo`. `calculateFacelessMetadata`
+  reads duration + width/height from the spec, so ONE composition renders any
+  length and any format. Includes a progress bar and persistent FAMtastic brand
+  chip. Registered in `src/Root.tsx` with `defaultProps` = committed
+  `src/faceless/demo.spec.json` (so `npm run dev` previews it live).
+- **`Scene.tsx`** — per-scene background (Ken Burns zoom/drift on an image, or an
+  animated radial gradient), legibility scrim, captions, optional `<Audio>`.
+- **`Captions.tsx`** — word-by-word "karaoke" captions; current word highlighted
+  in the accent color, emphasized words stay accent-colored.
+
+### CLI
+
+`remotion/bin/faceless.mjs`: `node bin/faceless.mjs "<topic>" [--format
+vertical|square|wide] [--scenes N] [--voice id] [--accent #hex] [--render]`.
+package.json scripts: `faceless`, `test`, `render:faceless`. Docs:
+`remotion/FACELESS.md` (usage/architecture) and `remotion/MONETIZATION.md`
+(revenue paths). tsconfig gained `resolveJsonModule: true` so Root.tsx can
+import the demo spec.
+
+### Verified in-sandbox
+
+`npm install` (ok), `npx tsc` (clean), `npm test` (13/13), demo spec generates
+(5 scenes / 958 frames / ~32s vertical), and a real MP4 renders.
+
+### Known Gaps opened
+
+- **Remotion's Chromium download is blocked by this sandbox's network allowlist**
+  (`remotion.media` → 403 "Host not in allowlist"). Worked around by rendering
+  against the Playwright Chromium **headless_shell** already installed at
+  `/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`
+  via `--browser-executable`. NOTE: the full `chrome` binary fails ("Old Headless
+  mode has been removed") — must use the `headless_shell` build. Off-sandbox,
+  `npm install` provisions Chromium automatically and no flag is needed.
+- **No B-roll / stock footage sourcing.** Backgrounds are gradients unless a
+  per-scene `image` path is supplied in the spec. Wiring this to the existing
+  stock-photo service / muapi image gen is the obvious next step.
+- **No background music bed** and **no SFX**.
+- **No Studio/web UI front-end** — CLI + programmatic API only. Intended Studio
+  integration (per-client promo videos) and media-studio batch use are designed
+  for via the spec contract but not yet wired.
+- **Caption timing is estimated, not forced-aligned**, when audio is present —
+  word timings come from the speaking-rate model, not from the actual audio
+  waveform. Good enough for the karaoke effect; not frame-accurate lip-level
+  sync (which the faceless format doesn't need).
+
 ## Agent OS — Software Design Document & Architecture Foundation (2026-05-27)
 
 Created a comprehensive Software Design Document for the Agent OS multi-agent orchestration system. The SDD lives at `~/famtastic/docs/AGENT-OS-SDD.md` (26KB, 12 sections). Rowboat (14.6K stars) is the intended fork base. ECC (affaan-m/ECC hackathon winner) was deep-researched for architectural patterns — buddy consensus, inter-agent Telegram bus, agent taxonomy — but has zero source code, so it serves as pattern reference only.

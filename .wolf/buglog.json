@@ -3436,6 +3436,22 @@
       ],
       "occurrences": 48,
       "last_seen": "2026-05-29"
+    },
+    {
+      "id": "bug-faceless-chromium",
+      "timestamp": "2026-06-02T03:00:18.021Z",
+      "error_message": "Remotion render failed: 403 \"Host not in allowlist\" downloading chromium-headless-shell from remotion.media; then \"Old Headless mode has been removed\" when pointed at the full chrome binary.",
+      "file": "remotion/bin/faceless.mjs",
+      "root_cause": "This sandbox network policy blocks remotion.media so Remotion cannot auto-download its Chromium. The Playwright full chrome at /opt/pw-browsers/chromium-1194 only supports new headless mode, which Remotions launcher does not use.",
+      "fix": "Render with --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell (the headless_shell build, NOT the full chrome binary). Off-sandbox, npm install provisions Chromium automatically and no flag is needed.",
+      "tags": [
+        "remotion",
+        "render",
+        "chromium",
+        "sandbox",
+        "network-allowlist",
+        "faceless"
+      ]
     }
   ]
 }

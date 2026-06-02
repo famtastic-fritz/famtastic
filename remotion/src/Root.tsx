@@ -1,5 +1,12 @@
 import { Composition } from "remotion";
 import { FAMtasticLogo, famtasticLogoSchema } from "./FAMtasticLogo";
+import {
+  FacelessVideo,
+  facelessSchema,
+  calculateFacelessMetadata,
+} from "./faceless/FacelessVideo";
+import type { FacelessProps } from "./faceless/schema";
+import demoSpec from "./faceless/demo.spec.json";
 
 // Each <Composition> is an entry in the Remotion studio sidebar.
 // Brand-mark compositions live in this file; render via:
@@ -8,6 +15,24 @@ import { FAMtasticLogo, famtasticLogoSchema } from "./FAMtasticLogo";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* ---- Faceless video generator ----
+          Dimensions + duration come from the spec via calculateMetadata,
+          so this one composition renders vertical/square/wide at any
+          length. Generate a spec with `node bin/faceless.mjs "<topic>"`,
+          then render with --props=<spec.json>. */}
+      <Composition
+        id="FacelessVideo"
+        component={FacelessVideo}
+        schema={facelessSchema}
+        defaultProps={demoSpec as unknown as FacelessProps}
+        calculateMetadata={calculateFacelessMetadata}
+        durationInFrames={900}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+
+      {/* ---- Brand marks ---- */}
       <Composition
         id="FAMtasticLogo-Luminous"
         component={FAMtasticLogo}
