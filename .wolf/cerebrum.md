@@ -98,6 +98,7 @@ registry before first use.
 <!-- How the user likes things done. Code style, tools, patterns, communication. -->
 
 - **Owner Cash App cashtag (2026-06-02):** Fritz's Cash App is **`$FAMtasticFritz`** (account: Fitzgerald Medine, `https://cash.app/$FAMtasticFritz`). This is PUBLIC receive-info (printed on a QR), not a secret — safe in git. Canonical store: `platform/config/owner-profile.json` (`payment.cashapp.cashtag`). `billing.generate-invoice` auto-falls-back to it when a `cashapp` invoice omits the cashtag. Any "who do we get paid to / what's the cashtag" question resolves from owner-profile.json — do NOT ask Fritz again.
+- **Merge to main at end of each work block (2026-06-04, Fritz-approved):** Don't let a feature branch drift dozens of commits ahead of `main` — Shay and other agents run off `main` and can't see un-merged work, which caused a "Claude said / Shay can't find it" phantom-data incident. At the end of each meaningful block, after committing+pushing the feature branch, **fast-forward `main`**: `git push origin HEAD:main` (only when it's a clean fast-forward — `git rev-list --count HEAD..origin/main` must be 0; if main diverged, do a real merge and resolve, never force). This keeps the shared brain on `main` current for every surface.
 
 ## Key Learnings
 
