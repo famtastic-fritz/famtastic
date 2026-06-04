@@ -33,7 +33,7 @@ spent only on decisions.
 |---|---|---|---|
 | **Primary** | `gemini` / `gemini-3.1-pro-preview` | smartest brain | metered (cheap; Flash even cheaper) |
 | Fallback 1 | `gemini` / `gemini-2.5-pro` | same key, stable GA (preview-breakage insurance) | metered |
-| Fallback 2 | `copilot` / `claude-sonnet-4.6` | different provider+family (quota/outage insurance) | **Copilot Pro $9 flat** |
+| Fallback 2 | `copilot` / `claude-sonnet-4.6` | different provider+family (quota/outage insurance) | **Copilot FREE for now** (Pro sign-ups paused by GitHub 2026-06-04 — Free gives limited Sonnet; get Pro when reopened) |
 | Fallback 3 | `openai-codex` | another flat-rate brain (rejoins June 7) | sub (flat) |
 
 Reasoning effort: **medium**. Max turns: 90.
@@ -61,7 +61,7 @@ Reasoning effort: **medium**. Max turns: 90.
 
 ## The 5 decisions (2026-06-04)
 
-1. **Copilot → Pro** ($9-10). Upgrade at https://github.com/github-copilot/signup
+1. **Copilot → Pro** ($10) — DECIDED, but **BLOCKED 2026-06-04: GitHub paused new Copilot Pro sign-ups.** Staying on **Copilot Free** (still a usable Sonnet fallback); revisit when sign-ups reopen. NOT a blocker — frontier capacity is covered by Gemini + Codex + Claude Code. (Note: the $4 "GitHub Pro" base plan is unrelated and does NOT unlock Copilot Pro.)
 2. **Add Codex** as a 4th brain fallback (auto-rejoins June 7)
 3. **Bulk routing:** Claude Code = complex, OpenCode Go = simple
 4. **Web research:** Tavily free tier (Shay's web tool); Perplexity kept for deep research
@@ -87,7 +87,7 @@ local) instead of escalating cost. Spend premium brain tokens on decisions, not 
 
 ## Setup checklist — to "finish + verify" (priority 1)
 
-- [ ] Upgrade Copilot Pro → github.com/github-copilot/signup
+- [~] Copilot Pro → **blocked (sign-ups paused)**; stay on Copilot Free for now, revisit when reopened
 - [ ] `shay fallback add` → **OpenAI Codex** (4th brain lane)
 - [ ] `opencode auth login` → select opencode → paste Go key → `opencode` → `/models` pick a Go model
 - [ ] Confirm Claude Code on subscription: `echo $ANTHROPIC_API_KEY` (empty) + `claude` shows your account
