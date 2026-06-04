@@ -93,3 +93,6 @@ scripts/Screenshot*
 
 # Finance agents fetched market-data cache (results + sample-data stay tracked)
 /scripts/finance-agents/.cache/
+
+# Recovered raw agent transcripts (organized output goes to obsidian/07-Research)
+research-recovery/
