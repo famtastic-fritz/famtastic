@@ -30,11 +30,18 @@ if have rembg; then
 elif python3 -c "import rembg" 2>/dev/null; then
   python3 -m rembg i "$IN" "$OUT"; method="rembg (ML, python -m)"
 elif have magick || have convert; then
-  # Solid-background removal: knock out near-white, keep alpha.
-  "$(mg)" "$IN" -fuzz 12% -transparent white -trim +repage "$OUT"
-  method="ImageMagick fuzz (solid-bg)"
-  echo "[logo-transparent] used ImageMagick — best for solid white/light backgrounds." >&2
-  echo "[logo-transparent] for photos/gradients/shadows: pip install rembg (better)." >&2
+  MG="$(mg)"
+  # Auto-detect the background color from the top-left corner, so this works for
+  # black, white, or any solid background — not just white.
+  BG="$("$MG" "$IN" -format '%[pixel:p{0,0}]' info: 2>/dev/null || echo white)"
+  # Floodfill from a corner removes ONLY the contiguous background of that color,
+  # preserving same-color pixels inside the artwork (e.g. black outlines in letters).
+  "$MG" "$IN" -alpha set -bordercolor "$BG" -border 1 \
+    -fuzz 12% -fill none -draw "alpha 0,0 floodfill" \
+    -shave 1x1 -trim +repage "$OUT"
+  method="ImageMagick floodfill (solid bg: $BG)"
+  echo "[logo-transparent] removed solid background '$BG'. For soft glows/shadows," >&2
+  echo "[logo-transparent] rembg (pip install rembg) gives cleaner edges." >&2
 else
   cat >&2 <<EOF
 No background-removal tool found. Install one:
