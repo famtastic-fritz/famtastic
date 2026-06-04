@@ -11,6 +11,7 @@ Source: cli-handoff-pattern.json (street-family-reunion session)
 |---|---|---|
 | **humanize-writing** | `.claude/skills/humanize-writing/` + `shay-agent-os/skills/humanize-writing/` | Standing prose-output filter — strips AI tells, normalizes burstiness/sentence rhythm, calibrates to Fritz's voice. Applies automatically to any written output >3 paragraphs. References must be fully loaded before applying. Source: `github.com/aaaronmiller/humanize-writing` (installed 2026-06-02). Available to Claude Code AND Shay (shay-agent-os). |
 | **ask-claude** | `scripts/ask-claude` + `shay-agent-os/skills/ask-claude/` | Phone-a-friend line to Claude (Opus/Sonnet) for any non-Claude brain. Lets Shay escalate hard/high-stakes decisions and get a decisive second opinion. Wraps `scripts/claude-cli` (auth'd `claude` CLI), falls back to `scripts/agents run claude`. `scripts/ask-claude [--context FILE] "question"`. Installed 2026-06-04. |
+| **logo-transparent** | `scripts/logo-transparent.sh` + `.claude/skills/logo-transparent/` + `shay-agent-os/skills/logo-transparent/` | Background removal + cleanup for logos/images → transparent PNG. Prefers `rembg` (ML, any background), falls back to ImageMagick fuzz for solid/white backgrounds, trims margins. `scripts/logo-transparent.sh <input> [output]`. **Runs locally** where the file + tools live (Mac/Studio) — not in a fresh cloud container. Installed 2026-06-04. |
 
 ## Installed Agents
 
