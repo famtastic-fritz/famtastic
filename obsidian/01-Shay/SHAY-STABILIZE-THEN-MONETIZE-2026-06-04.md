@@ -29,12 +29,28 @@
 Real driver: *Fritz needs revenue now*; the tooling spiral kept pulling him off it.
 
 ## The finite plan
+### ROOT CAUSE (found 2026-06-04): config-precedence override
+Hermes/Shay loads config in layers — **persisted overrides (`workspace-overrides.json`) → env
+(`HERMES_HOME`/`SHAY_HOME`) → `active_profile` / `mcp-overlay.json` → base `config.yaml`**. A higher
+layer kept overriding Fritz's edits to base `config.yaml` → "changes didn't stick" → frustration →
+**she nuked herself.** This is ALSO why SOUL reverted. One root cause, every symptom. The last task
+before the nuke: configure + optimize all 5 memory types — which failed because the config wouldn't
+persist. **Fix the precedence FIRST or everything reverts again.**
+
+### The 5 memory types (from `MEMORY-SCHEMA-L0-L3.md`)
+L0 raw (logs/transcripts) · L1 episodic (session/day summaries) · L2 semantic (durable facts) ·
+L3 reflective (identity/constraints) · + working memory (the 2,200-char live buffer = 5th).
+Local: sqlite-vec + fastembed, picked up via the obsidian + basic-memory MCP servers. No external source.
+
 ### Phase 1 — Stabilize (today)
-1. **Recover persona** — find the persona file, restore alongside SOUL.
-2. **Reconnect memory** — restore the prior sqlite-vec + fastembed recall wiring, point at
-   `~/famtastic/obsidian/`, rebuild the index. (Reconnect, not rebuild.)
-3. **Git-back identity** — commit SOUL + persona into the famtastic repo (`obsidian/01-Shay/`)
-   so a future nuke = `git restore`, not a loss. (Optionally merge AI-Boss-Mode directives in.)
+1. **Fix config override FIRST** — find which layer wins (env home / active_profile / mcp-overlay),
+   edit THERE so changes persist. Without this, steps 2-4 revert.
+2. **Configure + optimize the 5 memory types** at the winning layer.
+3. **Reconnect memory** — restore sqlite-vec + fastembed wiring + basic-memory/obsidian MCP →
+   `~/famtastic/obsidian/`, rebuild the index. (Reconnect, not rebuild — she was wired before.)
+4. **Recover persona** — find the persona file ("black sista" + more), restore alongside SOUL.
+5. **Git-back identity** — commit SOUL + persona + the working memory config into the repo
+   (`obsidian/01-Shay/`) so a future nuke = `git restore`, not a loss.
 
 ### Phase 2 — Monetize (next)
 - Pick ONE concrete revenue play (the Agent-OS-Build doc's "AI Revenue Rescue Sprint" — home
