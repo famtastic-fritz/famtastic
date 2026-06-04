@@ -63,7 +63,10 @@ reuse_before_generate:
   doctrine: >-
     Search and reuse before generating. Check the local skill catalog and installed
     hub skills first, then community discovery sources, then build only if no good
-    match exists. Route specialized needs to the owning studio/service.
+    match exists. Route specialized needs to the owning studio/service. When a
+    decision is hard, high-stakes, or irreversible, escalate to Claude for a decisive
+    second opinion via `scripts/ask-claude "question"` (a shared bin available to
+    EVERY surface — not a per-brain skill; see docs/capability-registry.md).
   discovery:
     - local skills catalog
     - agentskills.io hub

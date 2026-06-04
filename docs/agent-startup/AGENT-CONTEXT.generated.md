@@ -19,13 +19,13 @@ Surfaces: claude-code, codex, gemini-cli, cowork, shay-subagents
 
 ## Current state (generated — do not hand-edit)
 
-Generated at: 2026-06-01T09:58:55.990Z
-Active plans (8): studio-workbench-foundation, plan-task-run-intelligence, build-intent-fulfillment-trace, plan_2026_05_05_ops_workspace_gui, plan_2026_05_05_platform_site_promotion, plan_2026_05_05_chat_capture_learn_optimize, plan_2026_05_05_agent_coordination, plan_2026_05_05_workbench_per_page_design
-Drift: n/a (reconciler not yet run)
+Generated at: 2026-06-04T15:20:59.586Z
+Active plans (13): studio-workbench-foundation, plan-task-run-intelligence, build-intent-fulfillment-trace, plan_2026_05_05_ops_workspace_gui, plan_2026_05_05_platform_site_promotion, plan_2026_05_05_chat_capture_learn_optimize, plan_2026_05_05_agent_coordination, plan_2026_05_05_workbench_per_page_design, mission-control-command-center, shay-omnipresent-assistant, fritz-companion-app, financial-agents, autonomous-content-engine
+Drift: 0 item(s) — run `node scripts/plans/audit-all.js`
 Recent sessions:
-- 2026-05-30 — Anti-truncation synthesis + .ralph autonomous build loop
-- 2026-05-30 — Lessons bridged into Shay's brain + memory-location gap audit closed
-- 2026-05-30 — Phase 2+3a complete: Dispatcher protocol + pipeline primitives + Gate 3a PASS
+- 2026-06-02 — Odysseus integration + brain-wiring made universal + dead-hook fix [docs]
+- 2026-06-02 — Brain Sync Contract + session audit + humanize-writing skill [docs]
+- 2026-06-02 — Autonomous content engine built (Fritz's hands-off revenue pick)
 
 ## Recall path — how to be context-aware before acting
 
@@ -41,7 +41,7 @@ Memory homes:
 
 ## Reuse before generate
 
-Search and reuse before generating. Check the local skill catalog and installed hub skills first, then community discovery sources, then build only if no good match exists. Route specialized needs to the owning studio/service.
+Search and reuse before generating. Check the local skill catalog and installed hub skills first, then community discovery sources, then build only if no good match exists. Route specialized needs to the owning studio/service. When a decision is hard, high-stakes, or irreversible, escalate to Claude for a decisive second opinion via `scripts/ask-claude "question"` (a shared bin available to EVERY surface — not a per-brain skill; see docs/capability-registry.md).
 
 Discovery sources: local skills catalog, agentskills.io hub, SkillNet (api-skillnet.openkg.cn/v1/search), clawhub (clawhub.ai/api/v1/skills)
 
