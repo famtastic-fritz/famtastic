@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+#
+# ask-claude — get a second opinion from Claude (Opus/Sonnet) from any agent surface.
+#
+# Built so Shay (whose brain may be running on Gemini/Ollama) — or any non-Claude
+# agent — can escalate a hard decision to Claude and get decisive advice back.
+# This is the "phone a friend" line for the swarm. It wraps the existing Claude
+# adapter (scripts/claude-cli → the authenticated `claude` CLI); no new creds.
+#
+# Usage:
+#   scripts/ask-claude "Should I use a Safe or EOA for the trading agent wallet?"
+#   echo "long question…" | scripts/ask-claude
+#   scripts/ask-claude --context plans/financial-agents/README.md "What's the risk here?"
+#
+# Requires: an authenticated `claude` CLI on the host (or ANTHROPIC_API_KEY via the
+# fam-hub agent path). Exits non-zero with a clear message if neither is available.
+#
+set -euo pipefail
+ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+CONTEXT_FILE=""
+if [ "${1:-}" = "--context" ]; then
+  CONTEXT_FILE="${2:-}"; shift 2 || true
+fi
+
+QUESTION="${*:-}"
+[ -n "$QUESTION" ] || QUESTION="$(cat)"
+[ -n "${QUESTION// /}" ] || { echo "usage: scripts/ask-claude [--context FILE] \"question\"   (or pipe via stdin)" >&2; exit 2; }
+
+PREAMBLE="You are Claude, acting as trusted second-in-command and advisor to another AI agent (Shay) inside the FAMtastic ecosystem. Give direct, decisive, well-reasoned advice — lead with the recommendation, then the why. Be concise. If context is missing, state your assumption and answer anyway rather than asking for more."
+
+CONTEXT_BLOCK=""
+if [ -n "$CONTEXT_FILE" ] && [ -f "$CONTEXT_FILE" ]; then
+  CONTEXT_BLOCK="
+
+RELEVANT CONTEXT (from $CONTEXT_FILE):
+$(head -c 12000 "$CONTEXT_FILE")"
+fi
+
+PROMPT="$PREAMBLE
+$CONTEXT_BLOCK
+
+QUESTION FROM SHAY:
+$QUESTION"
+
+# Brain trace (best-effort — never block the consult).
+if command -v node >/dev/null 2>&1 && [ -f "$ROOT/scripts/brain/session-checkpoint.js" ]; then
+  AI_AGENT=ask-claude BRAIN_SESSION_ID="ask-claude-$(date +%Y%m%d%H%M%S)" CLAUDE_PROJECT_DIR="$ROOT" \
+    node "$ROOT/scripts/brain/session-checkpoint.js" start >/dev/null 2>&1 || true
+fi
+
+# Prefer the direct adapter; fall back to the fam-hub agent runner.
+if [ -x "$ROOT/scripts/claude-cli" ] && command -v claude >/dev/null 2>&1; then
+  printf '%s' "$PROMPT" | "$ROOT/scripts/claude-cli"
+elif [ -x "$ROOT/scripts/agents" ]; then
+  "$ROOT/scripts/agents" run claude "ask-claude" "" "$PROMPT"
+else
+  echo "ask-claude: no Claude path available. Need an authenticated 'claude' CLI (scripts/claude-cli) or scripts/agents + ANTHROPIC_API_KEY." >&2
+  exit 1
+fi
