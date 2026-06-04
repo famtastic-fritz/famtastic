@@ -23,7 +23,7 @@ the home dir (not the app bundle), so they usually **survive a reinstall.** Harv
 them (read-only on the source):
 
 ```bash
-scripts/recover-codex-research.sh 2026-05-28      # the heavy day (adjust the date)
+scripts/recover-codex-research.sh 2026-06-02      # the heavy Codex-usage day (confirmed by Fritz)
 scripts/recover-codex-research.sh                 # or harvest everything
 ```
 
@@ -37,7 +37,7 @@ and writes an `INDEX.md`.
 - `git reflog` / `git stash list` in any repo Codex was writing to
 - Browser history for the day (the sources that were researched)
 - Any files Codex wrote (search the repo + `~` for files modified on that date:
-  `find ~ -newermt 2026-05-28 ! -newermt 2026-05-29 -type f 2>/dev/null`)
+  `find ~ -newermt 2026-06-02 ! -newermt 2026-06-03 -type f 2>/dev/null`)
 
 ## Step 2 — ORGANIZE it into the brain (Claude synthesizes)
 
@@ -92,7 +92,7 @@ The reinstall + backup-restore risks silent loss. Shay must reconcile her own br
 ### One-shot kickoff for Shay
 ```bash
 # 1. recover
-scripts/recover-codex-research.sh 2026-05-28
+scripts/recover-codex-research.sh 2026-06-02
 # 2. organize (Claude)
 scripts/ask-claude --context research-recovery/codex/INDEX.md "Organize this into obsidian/07-Research/ … (see Step 2)"
 # 3. then work Steps 4–5: re-gather skills/learnings + verify + commit
