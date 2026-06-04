@@ -29,13 +29,30 @@
 Real driver: *Fritz needs revenue now*; the tooling spiral kept pulling him off it.
 
 ## The finite plan
-### ROOT CAUSE (found 2026-06-04): config-precedence override
-Hermes/Shay loads config in layers — **persisted overrides (`workspace-overrides.json`) → env
-(`HERMES_HOME`/`SHAY_HOME`) → `active_profile` / `mcp-overlay.json` → base `config.yaml`**. A higher
-layer kept overriding Fritz's edits to base `config.yaml` → "changes didn't stick" → frustration →
-**she nuked herself.** This is ALSO why SOUL reverted. One root cause, every symptom. The last task
-before the nuke: configure + optimize all 5 memory types — which failed because the config wouldn't
-persist. **Fix the precedence FIRST or everything reverts again.**
+### ROOT CAUSE — CORRECTED (2026-06-04, after diffing config)
+**My "config-precedence override strips her changes" hypothesis was WRONG.** The diff
+(`config.yaml.save` vs `config.yaml`) proved the live config is healthy and CURRENT: Claude
+primary, the full fallback chain (gemini, codex), and Tavily are all correctly saved. The `.save`
+was *bigger* only because it held ~22 lines of commented-out boilerplate that got cleaned out.
+**Nothing is being clobbered — today's changes all stuck.**
+
+Two real findings instead:
+1. **`memory.provider: ''` is EMPTY + zero MCP servers registered** → she has only the 2,200-char
+   working buffer + 1,375-char user profile, NO semantic/vault recall. **THIS is "not wired to
+   Obsidian / feels off."** The `mcp:` block at config line ~174 is subsystem model-assignment,
+   NOT server wiring.
+2. **`shay model` picker is a cosmetic display bug** — a Claude Code session rewrote model-selection
+   with a new naming convention, so the picker doesn't list the configured models. But the models
+   ARE configured (diff proves it; `shay fallback list` shows them). The data is fine; the menu is
+   out of sync. Low priority.
+
+### The ONE remaining technical gap
+Set `memory.provider` + register **basic-memory** and **vault-semantic-search** MCP servers pointed
+at `~/famtastic/obsidian/`, then build the local sqlite-vec/fastembed index. All local, no external
+source. (Exact shay-shay syntax TBD from `shay mcp --help` / `shay memory --help`.)
+
+### ⚠️ Security
+Tavily API key was exposed in a terminal paste (`tvly-dev-…`) — **rotate it** at tavily.com.
 
 ### The 5 memory types (from `MEMORY-SCHEMA-L0-L3.md`)
 L0 raw (logs/transcripts) · L1 episodic (session/day summaries) · L2 semantic (durable facts) ·
