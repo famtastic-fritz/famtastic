@@ -35,9 +35,9 @@ spent only on decisions.
 | Fallback 1 | `gemini` / `gemini-2.5-pro` | stable GA — reliable first catch | metered (cheap) |
 | Fallback 2 | `copilot` / `claude-sonnet-4.6` | different provider, outage insurance | Copilot FREE (Pro paused) |
 | Fallback 3 | `gemini` / `gemini-3.1-pro-preview` | preview — last | metered |
-| _(pending)_ | `openai-codex` | add when it rejoins **June 7** (4th flat-rate brain) | sub (flat) |
+| Fallback 4 | `openai-codex` / `gpt-5.4` | flat-rate backup brain (ChatGPT/Codex sub via official CLI) | sub (flat) |
 
-> Configured + verified 2026-06-04 via `shay fallback list`. **Primary brain = Claude Max via Claude Code auth mode (the subscription, NOT the metered API key).** Max ALSO powers the Claude Code bulk-worker lane — same quota — but orchestration is low-volume and *simple* bulk routes to OpenCode Go, so headroom is preserved. If Max ever caps: brain drops to Gemini (cheap), workers to OpenCode Go / free. Reasoning effort: **medium**. Max turns: 90.
+> Verified 2026-06-04 via `shay fallback list`: Primary claude-sonnet-4-6 → gemini-2.5-pro → copilot-sonnet → gemini-3.1-pro → gpt-5.4(codex). A `shay model`→Codex slip had briefly made gpt-5.4 the default; flipped back to Claude. **Model landscape, free lanes, and how to add any new frontier model: see `SHAY-MODEL-LANDSCAPE.md`.** **Primary brain = Claude Max via Claude Code auth mode (the subscription, NOT the metered API key).** Max ALSO powers the Claude Code bulk-worker lane — same quota — but orchestration is low-volume and *simple* bulk routes to OpenCode Go, so headroom is preserved. If Max ever caps: brain drops to Gemini (cheap), workers to OpenCode Go / free. Reasoning effort: **medium**. Max turns: 90.
 
 ## Worker lanes (delegated — NOT in Shay's config; configured in each agent's own tool)
 
