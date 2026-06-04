@@ -58,6 +58,21 @@ Local: sqlite-vec + fastembed, picked up via the obsidian + basic-memory MCP ser
 - NOTE: there is **no literal "1000 sites" list** — that's the north-star vision (1,000 products
   @ $100/mo), not a deliverable.
 
+## GUI / phone — corrected understanding (2026-06-04)
+- **The GUI command center is DONE + wired** (Fritz confirms) — the web UI (hermes webui on
+  `127.0.0.1:8787`) / workspace. Not a sprawling unfinished project. Needs only "final wiring."
+- **Fritz's real phone goal** = "work like Claude Code from my phone — answer build questions,
+  brainstorm, dispatch builds." That is the Claude-Code-on-phone experience = **a web UI in the
+  phone browser talking to a remote agent.** He does NOT need the native app to get it.
+- **Fast path to phone:** expose the EXISTING Shay web UI to his phone over **Tailscale/tunnel**
+  (hours, free, no App Store). That IS the "final wiring."
+- **The native iOS/Android app** (`plans/shay-phone-app/PLAN.md`, status: proposal awaiting
+  approval) = weeks + App Store. **PARK it.** The web-UI-over-Tailscale path delivers the
+  experience now.
+- **Dependency:** surfaces (web UI / phone) are windows onto the runtime. A surface over a runtime
+  whose config won't stick + memory isn't wired = a broken Shay on a nice screen. **Fix the runtime
+  (override + memory) FIRST**, then expose the surface.
+
 ## Parked (not now)
-- GUI command center (desktop / Electron workspace / web-ui) — pick ONE direction LATER.
+- Native phone app build (`shay-phone-app`) — use web-UI-over-Tailscale instead, for now.
 - Retire `~/agentic-os/` (third-party clone) and the dead `.hermes` soul stubs.
