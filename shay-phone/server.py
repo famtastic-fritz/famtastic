@@ -28,6 +28,7 @@ import glob
 import shutil
 import tempfile
 import subprocess
+import threading
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -44,6 +45,34 @@ ASKS = ROOT / "asks"      # pending approval/question requests from Shay jobs
 JOBS_FILE = ROOT / "jobs.json"  # persistent job queue
 WEBPUSH_KEYS = Path.home() / ".shay" / "webpush.json"   # VAPID keypair (private)
 WEBPUSH_SUBS = Path.home() / ".shay" / "webpush-subs.json"  # device subscriptions
+
+
+def _ensure_vapid_keys() -> None:
+    """Generate VAPID keypair and write to WEBPUSH_KEYS if it doesn't exist."""
+    if WEBPUSH_KEYS.exists():
+        return
+    try:
+        from py_vapid import Vapid
+        from cryptography.hazmat.primitives.serialization import (
+            Encoding, PublicFormat, PrivateFormat, NoEncryption
+        )
+        import base64
+        v = Vapid()
+        v.generate_keys()
+        private_pem = v.private_key.private_bytes(
+            Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
+        ).decode()
+        public_raw = v.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+        public_b64 = base64.urlsafe_b64encode(public_raw).rstrip(b"=").decode()
+        WEBPUSH_KEYS.parent.mkdir(parents=True, exist_ok=True)
+        WEBPUSH_KEYS.write_text(json.dumps({
+            "private_key": private_pem,
+            "public_key": public_b64,
+            "subject": "mailto:fritz.medine@gmail.com",
+        }, indent=2))
+        print("[shay-phone] VAPID keys generated → ~/.shay/webpush.json", file=sys.stderr)
+    except Exception as exc:
+        print(f"[shay-phone] VAPID key generation failed: {exc}", file=sys.stderr)
 
 
 def _wp_keys():
@@ -98,6 +127,68 @@ def wp_push(title: str, body: str, url: str = "/") -> dict:
         WEBPUSH_SUBS.write_text(json.dumps(live, indent=2))
     return {"ok": True, "sent": sent, "subs": len(live)}
 PORT = int(os.environ.get("SHAY_PHONE_PORT", "8787"))
+
+# ---------------------------------------------------------------------------
+# Local Whisper STT — faster-whisper, base.en model, lazy-loaded on first use.
+# Model is loaded ONCE at module level (first /api/stt call) to avoid slowing boot.
+# ---------------------------------------------------------------------------
+_whisper_model = None
+_whisper_lock = None
+
+
+def _get_whisper():
+    """Return the WhisperModel, lazy-initialising on first call."""
+    global _whisper_model, _whisper_lock
+    import threading
+    if _whisper_lock is None:
+        _whisper_lock = threading.Lock()
+    with _whisper_lock:
+        if _whisper_model is None:
+            try:
+                from faster_whisper import WhisperModel
+                _whisper_model = WhisperModel("base.en", device="cpu", compute_type="int8")
+                print("[shay-phone] Whisper base.en loaded", file=sys.stderr)
+            except Exception as exc:
+                print(f"[shay-phone] Whisper load failed: {exc}", file=sys.stderr)
+                raise
+    return _whisper_model
+
+
+def do_stt(audio_bytes: bytes, content_type: str) -> dict:
+    """Transcribe audio bytes using local Whisper. Returns {text} or {text, error}."""
+    # Determine file extension from content type
+    ext_map = {
+        "audio/webm": ".webm",
+        "audio/ogg": ".ogg",
+        "audio/wav": ".wav",
+        "audio/wave": ".wav",
+        "audio/x-wav": ".wav",
+        "audio/mpeg": ".mp3",
+        "audio/mp4": ".m4a",
+        "audio/aiff": ".aiff",
+        "audio/x-aiff": ".aiff",
+    }
+    ct_base = (content_type or "").split(";")[0].strip().lower()
+    ext = ext_map.get(ct_base, ".webm")
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tf:
+            tf.write(audio_bytes)
+            tmp_path = tf.name
+
+        model = _get_whisper()
+        segments, _info = model.transcribe(tmp_path, beam_size=5, language="en")
+        text = " ".join(seg.text.strip() for seg in segments).strip()
+        return {"text": text}
+    except Exception as exc:
+        return {"text": "", "error": str(exc)}
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
 
 OPENROUTER_MODEL = os.environ.get("SHAY_PHONE_MODEL", "anthropic/claude-sonnet-4.6")
 GEMINI_MODEL = "gemini-2.5-flash"
@@ -288,6 +379,27 @@ def brain_available(bid: str) -> bool:
     return False
 
 
+PHONE_SESSION_LOG = INBOX / "phone-session.md"
+
+
+def _vault_append_exchange(user_msg: str, assistant_reply: str) -> None:
+    """Append a timestamped exchange tail to the phone-session vault log.
+    Single-writer sequential append — called only from do_chat after success."""
+    try:
+        INBOX.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        reply_tail = assistant_reply[-500:] if len(assistant_reply) > 500 else assistant_reply
+        block = (
+            f"\n## {ts}\n"
+            f"**User:** {user_msg.strip()}\n\n"
+            f"**Shay:** {reply_tail.strip()}\n"
+        )
+        with open(PHONE_SESSION_LOG, "a", encoding="utf-8") as fh:
+            fh.write(block)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[shay-phone] vault append failed: {exc}", file=sys.stderr)
+
+
 def do_chat(messages: list, preferred: str = "auto") -> dict:
     last_user = next((m["content"] for m in reversed(messages)
                       if m["role"] == "user"), "")
@@ -304,6 +416,8 @@ def do_chat(messages: list, preferred: str = "auto") -> dict:
                    "used_context": bool(ctx)}
             if errors:
                 out["note"] = " | ".join(errors)
+            # W2.3 — append exchange to vault for cross-session continuity
+            _vault_append_exchange(last_user, reply)
             return out
         except Exception as exc:  # noqa: BLE001
             errors.append(f"{b['label']}: {exc}")
@@ -417,7 +531,6 @@ def get_ask(aid: str) -> dict:
 # report progress, and mark it complete. Persistent in jobs.json (JSON array).
 # ---------------------------------------------------------------------------
 
-import threading
 _jobs_lock = threading.Lock()
 
 def _load_jobs() -> list:
@@ -654,9 +767,135 @@ def _brief_open_jobs() -> list:
         return [{"error": f"jobs read failed: {e}"}]
 
 
+IDEAS_DIR = Path.home() / "famtastic" / "ideas" / "capture"
+DATA_CENTER_LEDGERS = Path.home() / "famtastic" / "data-center" / "ledgers"
+SITES_DIR = Path.home() / "famtastic" / "sites"
+SHAY_CONFIG = Path.home() / ".shay" / "config.yaml"
+SHAY_ACTIVE_SITE = Path.home() / ".shay" / "active-site.txt"
+
+
+def _brief_open_asks() -> dict:
+    """W4.1 section: pending asks count + titles."""
+    try:
+        asks = list_pending_asks()
+        return {
+            "count": len(asks),
+            "titles": [a.get("question", "")[:80] for a in asks[:5]],
+        }
+    except Exception as e:
+        return {"skipped": f"asks read failed: {e}"}
+
+
+def _brief_ideas() -> dict:
+    """W4.1 section: top few ideas from ~/famtastic/ideas/capture/."""
+    try:
+        if not IDEAS_DIR.exists():
+            return {"skipped": "ideas dir not found"}
+        entries = []
+        for d in sorted(IDEAS_DIR.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+            if not d.is_dir():
+                continue
+            # Try manifest.json first, then idea.md
+            mf = d / "manifest.json"
+            idea_md = d / "idea.md"
+            title = None
+            state = None
+            if mf.exists():
+                try:
+                    m = json.loads(mf.read_text())
+                    title = m.get("idea") or m.get("tag") or d.name
+                    state = m.get("state")
+                except Exception:
+                    pass
+            if title is None and idea_md.exists():
+                try:
+                    first_line = idea_md.read_text(errors="ignore").strip().splitlines()[0]
+                    title = re.sub(r"^#\s*", "", first_line)[:80]
+                except Exception:
+                    title = d.name
+            if title:
+                entry = {"title": title}
+                if state:
+                    entry["state"] = state
+                entries.append(entry)
+            if len(entries) >= 5:
+                break
+        return {"count": len(list(IDEAS_DIR.iterdir())), "top": entries}
+    except Exception as e:
+        return {"skipped": f"ideas read failed: {e}"}
+
+
+def _brief_datacenter_digest() -> dict:
+    """W4.1 section: rows per ledger in the last 86400s. Pure Python, no subprocess."""
+    try:
+        if not DATA_CENTER_LEDGERS.exists():
+            return {"skipped": "ledgers dir not found"}
+        cutoff = time.time() - 86400
+        result = {}
+        for ledger_path in sorted(DATA_CENTER_LEDGERS.glob("*.jsonl")):
+            count = 0
+            try:
+                for raw_line in ledger_path.read_text(errors="ignore").splitlines():
+                    raw_line = raw_line.strip()
+                    if not raw_line:
+                        continue
+                    try:
+                        row = json.loads(raw_line)
+                    except Exception:
+                        continue
+                    ts = row.get("ts") or row.get("timestamp") or row.get("at")
+                    if ts is None:
+                        continue
+                    if isinstance(ts, str):
+                        try:
+                            import datetime as _dt
+                            ts = _dt.datetime.fromisoformat(
+                                ts.replace("Z", "+00:00")).timestamp()
+                        except Exception:
+                            continue
+                    if float(ts) >= cutoff:
+                        count += 1
+            except Exception:
+                continue
+            result[ledger_path.stem] = count
+        return result if result else {"skipped": "no ledger rows in last 24h"}
+    except Exception as e:
+        return {"skipped": f"ledger read failed: {e}"}
+
+
+def _brief_promoted_intel() -> dict:
+    """W4.1 section: pending promoted intel findings for the active site."""
+    try:
+        # Determine active site tag: active-site.txt > config.yaml active_site key
+        tag = None
+        if SHAY_ACTIVE_SITE.exists():
+            tag = SHAY_ACTIVE_SITE.read_text().strip() or None
+        if not tag and SHAY_CONFIG.exists():
+            for line in SHAY_CONFIG.read_text().splitlines():
+                m = re.match(r"^\s*active[_-]site\s*:\s*(.+)", line, re.IGNORECASE)
+                if m:
+                    tag = m.group(1).strip().strip('"').strip("'")
+                    break
+        if not tag:
+            return {"skipped": "no active site tag found"}
+        promo_path = SITES_DIR / tag / "intelligence-promotions.json"
+        if not promo_path.exists():
+            return {"skipped": f"no promotions file for {tag}"}
+        promos = json.loads(promo_path.read_text())
+        pending = [
+            {"title": p.get("title", ""), "severity": p.get("severity", ""),
+             "category": p.get("category", "")}
+            for p in promos
+            if isinstance(p, dict) and p.get("status") != "dismissed"
+        ][:5]
+        return {"site": tag, "count": len(pending), "findings": pending}
+    except Exception as e:
+        return {"skipped": f"intel read failed: {e}"}
+
+
 def assemble_daily_brief() -> dict:
-    """Assemble the three-section daily brief. Each section is isolated — an
-    error in one section does not prevent the others from being returned."""
+    """Assemble the daily brief. Each section is isolated — an error in one
+    section does not prevent the others from being returned."""
     brief = {}
 
     try:
@@ -674,8 +913,260 @@ def assemble_daily_brief() -> dict:
     except Exception as e:
         brief["open_jobs"] = {"error": str(e)}
 
+    # W4.1 — four new sections, each silently skipped on any failure
+    try:
+        brief["open_asks"] = _brief_open_asks()
+    except Exception as e:
+        brief["open_asks"] = {"skipped": str(e)}
+
+    try:
+        brief["ideas"] = _brief_ideas()
+    except Exception as e:
+        brief["ideas"] = {"skipped": str(e)}
+
+    try:
+        brief["datacenter_digest"] = _brief_datacenter_digest()
+    except Exception as e:
+        brief["datacenter_digest"] = {"skipped": str(e)}
+
+    try:
+        brief["promoted_intel"] = _brief_promoted_intel()
+    except Exception as e:
+        brief["promoted_intel"] = {"skipped": str(e)}
+
     brief["generated_at"] = time.time()
     return brief
+
+
+# ---------------------------------------------------------------------------
+# Research Gate — W3.2
+# POST /api/research/gate  →  {job_id, ask_id}  (non-blocking)
+# Background thread picks up active research jobs every ~5s and runs them.
+# ---------------------------------------------------------------------------
+
+DATA_CENTER = Path.home() / "famtastic" / "data-center"
+RESEARCH_CAP_FILE = Path.home() / ".shay" / "research-jobs-today.json"
+RESEARCH_CAP_DAILY = 3  # max Gemini fan-out calls per day
+
+
+def _research_cap_ok() -> bool:
+    """Return True if under daily cap; increment counter if so."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    try:
+        data = json.loads(RESEARCH_CAP_FILE.read_text()) if RESEARCH_CAP_FILE.exists() else {}
+    except Exception:
+        data = {}
+    if data.get("date") != today:
+        data = {"date": today, "count": 0}
+    if data["count"] >= RESEARCH_CAP_DAILY:
+        return False
+    data["count"] += 1
+    RESEARCH_CAP_FILE.parent.mkdir(parents=True, exist_ok=True)
+    RESEARCH_CAP_FILE.write_text(json.dumps(data))
+    return True
+
+
+def _research_today_count() -> int:
+    today = datetime.now().strftime("%Y-%m-%d")
+    try:
+        data = json.loads(RESEARCH_CAP_FILE.read_text()) if RESEARCH_CAP_FILE.exists() else {}
+        return data.get("count", 0) if data.get("date") == today else 0
+    except Exception:
+        return 0
+
+
+def dispatch_research_job(topic: str) -> dict:
+    """Create a research job with kind='research' and topic stored in goal."""
+    with _jobs_lock:
+        jobs = _load_jobs()
+        jid = datetime.now().strftime("%Y%m%d%H%M%S%f")
+        job = {
+            "id": jid,
+            "goal": topic,
+            "kind": "research",
+            "policy": "balanced",
+            "priority": 1,
+            "status": "pending",   # pending → active (on approve) | cancelled (on reject)
+            "created": time.time(),
+            "started": None,
+            "completed": None,
+            "output": None,
+            "progress": [],
+        }
+        jobs.insert(0, job)
+        _save_jobs(jobs)
+    return job
+
+
+def _set_job_status(jid: str, status: str) -> None:
+    with _jobs_lock:
+        jobs = _load_jobs()
+        for j in jobs:
+            if j.get("id") == jid:
+                j["status"] = status
+                if status == "cancelled":
+                    j["completed"] = time.time()
+                _save_jobs(jobs)
+                return
+
+
+def do_research_gate(topic: str) -> dict:
+    """Non-blocking: generate scope summary, create job + ask, return IDs."""
+    # Cheap Gemini call for the scope summary
+    scope = ""
+    try:
+        summary_msg = [{"role": "user", "content":
+            f"In 2 sentences, summarize what a research brief on '{topic}' would cover."}]
+        scope = call_gemini(summary_msg, "")
+    except Exception as exc:
+        scope = f"(scope summary unavailable: {exc})"
+
+    job = dispatch_research_job(topic)
+    jid = job["id"]
+
+    question = (
+        f"Research request: \"{topic}\"\n\n"
+        f"Scope: {scope}\n\n"
+        f"Estimated cost: ~$0.05–0.20 for a thorough search"
+    )
+    ask = create_ask(
+        "research_scope",
+        question,
+        options=["Approve", "Reject"],
+        context=json.dumps({"job_id": jid, "topic": topic}),
+    )
+    return {"job_id": jid, "ask_id": ask["id"]}
+
+
+def _run_single_research_job(job: dict) -> None:
+    """Execute one research job in the background thread."""
+    jid = job["id"]
+    topic = job.get("goal", "")
+
+    try:
+        # Mark running
+        _set_job_status(jid, "running")
+        job_progress(jid, "Starting research fan-out…", 10)
+
+        # Daily cap check
+        if not _research_cap_ok():
+            count = _research_today_count()
+            create_ask(
+                "research_cap",
+                f"Research cap reached ({count}/{RESEARCH_CAP_DAILY} today) for topic: \"{topic}\". Raise cap?",
+                options=["Skip for now"],
+                context=json.dumps({"job_id": jid, "topic": topic}),
+            )
+            _set_job_status(jid, "cancelled")
+            job_complete(jid, "Cancelled: daily research cap reached.", status="cancelled")
+            return
+
+        # Fan-out: 3 Gemini calls on sub-angles
+        angles = [
+            f"What are the main use cases and benefits of: {topic}? Keep it concise.",
+            f"What are the key challenges, limitations, or trade-offs with: {topic}?",
+            f"What tools, products, or resources are most relevant to: {topic}?",
+        ]
+        fan_results = []
+        for i, angle in enumerate(angles):
+            job_progress(jid, f"Researching angle {i+1}/3…", 20 + i * 20)
+            try:
+                result = call_gemini([{"role": "user", "content": angle}], "")
+                fan_results.append(f"### Angle {i+1}\n{result}")
+            except Exception as exc:
+                fan_results.append(f"### Angle {i+1}\n(error: {exc})")
+
+        job_progress(jid, "Synthesizing report…", 80)
+
+        # Synthesis with Anthropic (Sonnet-class)
+        synthesis_prompt = (
+            f"You are a research analyst. Synthesize the following research notes on \"{topic}\" "
+            f"into a concise, cited markdown report. Include a summary, key findings, and recommendations.\n\n"
+            + "\n\n".join(fan_results)
+        )
+        try:
+            report_md = call_anthropic(
+                [{"role": "user", "content": synthesis_prompt}], ""
+            )
+        except Exception:
+            # Fall back to Gemini for synthesis if Anthropic unavailable
+            report_md = call_gemini(
+                [{"role": "user", "content": synthesis_prompt}], ""
+            )
+
+        # Write report to data-center
+        report_dir = DATA_CENTER / "jobs" / f"research-{jid}"
+        report_dir.mkdir(parents=True, exist_ok=True)
+        report_path = report_dir / "report.md"
+        report_path.write_text(
+            f"# Research Report: {topic}\n\n"
+            f"**Generated:** {datetime.now().isoformat()}\n\n"
+            f"{report_md}\n"
+        )
+
+        # Append to ledger
+        ledger_path = DATA_CENTER / "ledgers" / "research-jobs.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(ledger_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({
+                "ts": time.time(),
+                "job_id": jid,
+                "topic": topic,
+                "status": "complete",
+                "report_path": str(report_path),
+            }) + "\n")
+
+        # Mark complete and notify
+        job_complete(jid, str(report_path), status="completed")
+        create_ask(
+            "research_done",
+            f"Research ready: {topic}",
+            options=["View"],
+            context=str(report_path),
+        )
+        job_progress(jid, "Report written ✓", 100)
+
+    except Exception as exc:
+        print(f"[shay-phone] research job {jid} failed: {exc}", file=sys.stderr)
+        job_complete(jid, f"Error: {exc}", status="failed")
+
+
+def _research_worker_loop() -> None:
+    """Background daemon thread: scan for active research jobs every 5s."""
+    while True:
+        try:
+            with _jobs_lock:
+                jobs = _load_jobs()
+            for job in jobs:
+                if job.get("status") == "active" and job.get("kind") == "research":
+                    # Claim it immediately (set to running) before releasing lock
+                    _set_job_status(job["id"], "running")
+                    # Run in a sub-thread so the watcher loop keeps scanning
+                    t = threading.Thread(
+                        target=_run_single_research_job,
+                        args=(dict(job),),
+                        daemon=True,
+                    )
+                    t.start()
+        except Exception as exc:
+            print(f"[shay-phone] research worker error: {exc}", file=sys.stderr)
+        time.sleep(5)
+
+
+def _handle_research_scope_answer(ask: dict, answer: str) -> None:
+    """Hook called from answer_ask when the ask kind is 'research_scope'."""
+    try:
+        ctx = json.loads(ask.get("context", "{}"))
+    except Exception:
+        ctx = {}
+    jid = ctx.get("job_id")
+    if not jid:
+        return
+    if answer == "Approve":
+        _set_job_status(jid, "active")
+    else:
+        _set_job_status(jid, "cancelled")
+        job_complete(jid, "Rejected by Fritz.", status="cancelled")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -736,6 +1227,9 @@ class Handler(BaseHTTPRequestHandler):
             # Jobs API (GET)
             if path == "/api/vapid":
                 return self._send(200, {"publicKey": _wp_keys().get("public_key", "")})
+            if path == "/api/vapid-public":
+                # W4.2: auth-gated endpoint returning the VAPID public key for frontend subscribe
+                return self._send(200, {"publicKey": _wp_keys().get("public_key", "")})
             if path == "/api/arc":
                 # Live heartbeat feed for the all-night master-plan arc. Reads the
                 # orchestrator's run-state ledger directly (decoupled from the job
@@ -753,7 +1247,7 @@ class Handler(BaseHTTPRequestHandler):
                 })
             if path == "/api/daily-brief":
                 brief = assemble_daily_brief()
-                # Build a 1-line plain-English summary for the Ask card
+                # Build a 1-line plain-English summary for the Ask card + push notification
                 agent_list = brief.get("agents", [])
                 running_count = sum(1 for a in agent_list
                                     if isinstance(a, dict) and a.get("status") == "running")
@@ -762,15 +1256,23 @@ class Handler(BaseHTTPRequestHandler):
                 rev_total = rev.get("total", 0) if isinstance(rev, dict) else 0
                 jobs = brief.get("open_jobs", [])
                 open_jobs_count = len(jobs) if isinstance(jobs, list) else 0
+                asks_info = brief.get("open_asks", {})
+                asks_count = asks_info.get("count", 0) if isinstance(asks_info, dict) else 0
                 summary = (
                     f"{running_count}/{total_agents} agents running, "
                     f"${rev_total:.2f} revenue last 24h, "
-                    f"{open_jobs_count} open job(s)."
+                    f"{open_jobs_count} open job(s), "
+                    f"{asks_count} ask(s) pending."
                 )
                 try:
                     create_ask("daily_brief", summary, [], context=json.dumps(brief))
                 except Exception:
                     pass  # ask creation failure must not break the brief response
+                # W4.2: push notification for daily brief
+                try:
+                    wp_push("☀️ Shay Daily Brief", summary, "/")
+                except Exception:
+                    pass  # push failure must not break the brief response
                 return self._send(200, brief)
             if path == "/api/jobs":
                 return self._send(200, {"jobs": list_jobs()})
@@ -790,6 +1292,15 @@ class Handler(BaseHTTPRequestHandler):
         if not self._authed():
             return self._send(403, {"error": "bad or missing token"})
         length = int(self.headers.get("Content-Length", "0"))
+
+        # /api/stt — raw audio body (not JSON), handled before JSON parse
+        if path == "/api/stt":
+            audio_bytes = self.rfile.read(length) if length > 0 else b""
+            if not audio_bytes:
+                return self._send(200, {"text": "", "error": "empty audio"})
+            ct = self.headers.get("Content-Type", "audio/webm")
+            return self._send(200, do_stt(audio_bytes, ct))
+
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
         except Exception:  # noqa: BLE001
@@ -827,8 +1338,17 @@ class Handler(BaseHTTPRequestHandler):
             if "answers" in payload:
                 return self._send(200, answer_interview(
                     payload.get("id", ""), payload.get("answers") or []))
-            return self._send(200, answer_ask(payload.get("id", ""),
-                                              payload.get("answer", "")))
+            aid = payload.get("id", "")
+            answer = payload.get("answer", "")
+            # Peek at the ask before answering so we can hook on kind
+            existing_ask = get_ask(aid)
+            result = answer_ask(aid, answer)
+            if isinstance(existing_ask, dict) and existing_ask.get("kind") == "research_scope":
+                try:
+                    _handle_research_scope_answer(existing_ask, answer)
+                except Exception as exc:
+                    print(f"[shay-phone] research_scope hook error: {exc}", file=sys.stderr)
+            return self._send(200, result)
         # Jobs API (POST)
         if path == "/api/dispatch":
             # Phone-side: Fritz dispatches a new job goal
@@ -864,6 +1384,11 @@ class Handler(BaseHTTPRequestHandler):
             if not jid:
                 return self._send(400, {"error": "id required"})
             return self._send(200, job_cancel(jid))
+        if path == "/api/research/gate":
+            topic = (payload.get("topic") or "").strip()
+            if not topic:
+                return self._send(400, {"error": "topic required"})
+            return self._send(200, do_research_gate(topic))
         return self._send(404, {"error": "no such api"})
 
 
@@ -871,6 +1396,12 @@ def main():
     if not TOKEN:
         print("[shay-phone] FATAL: no token in .token", file=sys.stderr)
         sys.exit(1)
+    # Ensure VAPID keys exist (generates on first run)
+    _ensure_vapid_keys()
+    # Start background research worker
+    worker = threading.Thread(target=_research_worker_loop, daemon=True)
+    worker.start()
+    print("[shay-phone] research worker started", file=sys.stderr)
     ThreadingHTTPServer.allow_reuse_address = True
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[shay-phone] serving on 0.0.0.0:{PORT} "

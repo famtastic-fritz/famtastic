@@ -1,0 +1,36 @@
+{
+  "id": "c8713e52-c013-4f51-9314-bca9c876a053",
+  "inputs": {
+    "prompt": "Square mobile app icon for 'FAMtastic', a joyful yet premium personal AI assistant. Centerpiece: a single bold glossy 3D letter F monogram in a luminous FAMtastic brand gradient — royal blue into golden yellow into vivid red — with a lush vibrant green palm-frond grass burst spraying upward behind it. Rounded-square iOS/Android app icon, centered with generous padding, glossy reflective finish, soft depth and shadow, premium app-store quality, instantly recognizable at small sizes, crisp, modern, NO text, NO wordmark, NO letters other than the F. Dramatic near-black charcoal background hex 0f0f0e for a dark app UI; the glossy F and green palm burst glow vividly against the dark; cinematic premium.",
+    "aspect_ratio": "1:1",
+    "num_images": 1
+  },
+  "outputs": [
+    "https://cdn.muapi.ai/outputs/2113d0a8395445c080682b43fd0824aa.png"
+  ],
+  "urls": {
+    "get": "https://api.muapi.ai/api/v1/predictions/c8713e52-c013-4f51-9314-bca9c876a053/result"
+  },
+  "has_nsfw_contents": [
+    false
+  ],
+  "status": "completed",
+  "created_at": "2026-06-03T23:45:09.316784+00:00",
+  "error": "",
+  "executionTime": 29414.011,
+  "timings": {
+    "inference": 29414.011
+  },
+  "cost": {
+    "amount_usd": 0.04,
+    "amount_credits": 3,
+    "bonus_credits_used": 0,
+    "refunded": false
+  }
+}
+Downloading https://cdn.muapi.ai/outputs/2113d0a8395445c080682b43fd0824aa.png → 
+/Users/famtasticfritz/famtastic/media-studio/logo-lab/runs/2026-06-03-app-icon/c
+oncept2-dark-gpt4o/2113d0a8395445c080682b43fd0824aa.png
+  Saved 
+/Users/famtasticfritz/famtastic/media-studio/logo-lab/runs/2026-06-03-app-icon/c
+oncept2-dark-gpt4o/2113d0a8395445c080682b43fd0824aa.png
