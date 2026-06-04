@@ -536,6 +536,148 @@ def do_recent(n: int = 15) -> dict:
     return {"notes": out}
 
 
+AGENTS_REGISTRY = Path.home() / "famtastic" / "command-center" / "data" / "agents-registry.json"
+REVENUE_LEDGER = Path.home() / "famtastic" / "command-center" / "data" / "revenue.jsonl"
+
+
+def _brief_agents() -> list:
+    """Section 1: agent health from agents-registry.json + launchctl list."""
+    registry = []
+    try:
+        data = json.loads(AGENTS_REGISTRY.read_text())
+        registry = data.get("agents", [])
+    except Exception as e:
+        return [{"error": f"registry read failed: {e}"}]
+
+    # Parse launchctl list for famtastic|shay lines
+    lctl_by_label: dict = {}
+    try:
+        result = subprocess.run(
+            ["launchctl", "list"],
+            capture_output=True, text=True, timeout=10
+        )
+        for line in result.stdout.splitlines():
+            parts = line.split("\t")
+            if len(parts) >= 3 and re.search(r"famtastic|shay", parts[2], re.IGNORECASE):
+                # columns: PID  LastExitStatus  Label
+                label = parts[2].strip()
+                pid = parts[0].strip()
+                exit_code = parts[1].strip()
+                lctl_by_label[label] = {
+                    "pid": None if pid == "-" else pid,
+                    "exit_code": exit_code,
+                }
+    except Exception:
+        pass  # launchctl unavailable — status from registry only
+
+    out = []
+    for agent in registry:
+        name = agent.get("name", "unknown")
+        label_match = agent.get("match", "")
+        # Try to find a matching launchd entry by label containing name
+        status = "unknown"
+        pid = None
+        for lbl, info in lctl_by_label.items():
+            if name in lbl or label_match in lbl:
+                pid = info["pid"]
+                status = "running" if pid else (
+                    "stopped" if info["exit_code"] == "0" else f"exit:{info['exit_code']}"
+                )
+                break
+        out.append({"name": name, "label": agent.get("label", name), "status": status, "pid": pid})
+
+    # Also include any launchd shay/famtastic services not in the registry
+    registry_names = {a.get("name", "") for a in registry}
+    for lbl, info in lctl_by_label.items():
+        short = lbl.split(".")[-1]
+        if not any(n in lbl for n in registry_names):
+            pid = info["pid"]
+            status = "running" if pid else (
+                "stopped" if info["exit_code"] == "0" else f"exit:{info['exit_code']}"
+            )
+            out.append({"name": lbl, "label": lbl, "status": status, "pid": pid})
+
+    return out
+
+
+def _brief_revenue_24h() -> dict:
+    """Section 2: revenue in the last 24h from revenue.jsonl."""
+    cutoff = time.time() - 86400
+    total = 0.0
+    count = 0
+    try:
+        if REVENUE_LEDGER.exists():
+            for line in REVENUE_LEDGER.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    ts = entry.get("timestamp") or entry.get("ts") or entry.get("at")
+                    if ts is None:
+                        continue
+                    # Support ISO strings and unix timestamps
+                    if isinstance(ts, str):
+                        import datetime as _dt
+                        try:
+                            ts = _dt.datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+                        except Exception:
+                            continue
+                    if float(ts) >= cutoff:
+                        total += float(entry.get("amount", 0))
+                        count += 1
+                except Exception:
+                    continue
+    except Exception as e:
+        return {"error": f"revenue read failed: {e}"}
+    return {"total": round(total, 2), "count": count}
+
+
+def _brief_open_jobs() -> list:
+    """Section 3: open/active jobs from the job queue."""
+    active_statuses = {"active", "pending", "running", "queued"}
+    try:
+        jobs = list_jobs(limit=100)
+        out = []
+        for j in jobs:
+            if j.get("status") in active_statuses:
+                progress = j.get("progress") or []
+                progress_tail = progress[-1]["message"] if progress else None
+                out.append({
+                    "id": j["id"],
+                    "goal": j.get("goal", ""),
+                    "status": j.get("status", ""),
+                    "progress_tail": progress_tail,
+                })
+        return out
+    except Exception as e:
+        return [{"error": f"jobs read failed: {e}"}]
+
+
+def assemble_daily_brief() -> dict:
+    """Assemble the three-section daily brief. Each section is isolated — an
+    error in one section does not prevent the others from being returned."""
+    brief = {}
+
+    try:
+        brief["agents"] = _brief_agents()
+    except Exception as e:
+        brief["agents"] = {"error": str(e)}
+
+    try:
+        brief["revenue_24h"] = _brief_revenue_24h()
+    except Exception as e:
+        brief["revenue_24h"] = {"error": str(e)}
+
+    try:
+        brief["open_jobs"] = _brief_open_jobs()
+    except Exception as e:
+        brief["open_jobs"] = {"error": str(e)}
+
+    brief["generated_at"] = time.time()
+    return brief
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):  # quieter logs; never log query strings w/ token
         pass
@@ -609,6 +751,27 @@ class Handler(BaseHTTPRequestHandler):
                     "events": (data.get("events") or [])[-40:],
                     "checkpoints": data.get("checkpoints", {}),
                 })
+            if path == "/api/daily-brief":
+                brief = assemble_daily_brief()
+                # Build a 1-line plain-English summary for the Ask card
+                agent_list = brief.get("agents", [])
+                running_count = sum(1 for a in agent_list
+                                    if isinstance(a, dict) and a.get("status") == "running")
+                total_agents = len(agent_list) if isinstance(agent_list, list) else 0
+                rev = brief.get("revenue_24h", {})
+                rev_total = rev.get("total", 0) if isinstance(rev, dict) else 0
+                jobs = brief.get("open_jobs", [])
+                open_jobs_count = len(jobs) if isinstance(jobs, list) else 0
+                summary = (
+                    f"{running_count}/{total_agents} agents running, "
+                    f"${rev_total:.2f} revenue last 24h, "
+                    f"{open_jobs_count} open job(s)."
+                )
+                try:
+                    create_ask("daily_brief", summary, [], context=json.dumps(brief))
+                except Exception:
+                    pass  # ask creation failure must not break the brief response
+                return self._send(200, brief)
             if path == "/api/jobs":
                 return self._send(200, {"jobs": list_jobs()})
             if path == "/api/job":
@@ -708,6 +871,7 @@ def main():
     if not TOKEN:
         print("[shay-phone] FATAL: no token in .token", file=sys.stderr)
         sys.exit(1)
+    ThreadingHTTPServer.allow_reuse_address = True
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[shay-phone] serving on 0.0.0.0:{PORT} "
           f"(openrouter={'yes' if ENV.get('OPENROUTER_API_KEY') else 'NO'}, "
