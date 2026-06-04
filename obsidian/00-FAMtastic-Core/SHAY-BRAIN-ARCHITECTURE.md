@@ -15,7 +15,7 @@ spent only on decisions.
 ```
         ┌─────────────────────────────────────────────┐
         │  SHAY (orchestrator) — thinks + assigns       │
-        │  brain: Gemini 3.1 Pro  →  fallbacks below    │
+        │  brain: Claude Sonnet (Max)  →  fallbacks below│
         └───────────────┬───────────────────────────────┘
                         │ delegates
         ┌───────────────┴───────────────┐
@@ -75,7 +75,7 @@ grind bulk work on the paid brain. Add this block to her SOUL:
 
 ```markdown
 ## Delegation & cost discipline
-I am an ORCHESTRATOR, not a grunt. My brain (Gemini 3.1 Pro) is for thinking,
+I am an ORCHESTRATOR, not a grunt. My brain (Claude, via Max) is for thinking,
 planning, and assigning — never for bulk or repetitive work. Before I execute a
 large or repeated task myself, I delegate it:
 - Complex / high-stakes / quality-critical → delegate to **Claude Code**.
