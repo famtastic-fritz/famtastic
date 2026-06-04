@@ -31,12 +31,13 @@ spent only on decisions.
 
 | Order | Provider / Model | Why | Cost |
 |---|---|---|---|
-| **Primary** | `gemini` / `gemini-3.1-pro-preview` | smartest brain | metered (cheap; Flash even cheaper) |
-| Fallback 1 | `gemini` / `gemini-2.5-pro` | same key, stable GA (preview-breakage insurance) | metered |
-| Fallback 2 | `copilot` / `claude-sonnet-4.6` | different provider+family (quota/outage insurance) | **Copilot FREE for now** (Pro sign-ups paused by GitHub 2026-06-04 — Free gives limited Sonnet; get Pro when reopened) |
-| Fallback 3 | `openai-codex` | another flat-rate brain (rejoins June 7) | sub (flat) |
+| **Primary** | `anthropic` (**Claude Code** auth mode) / `claude-sonnet` (switch to Opus for hard sessions) | flat-rate top agentic brain via **Claude Max** — NO per-token billing on thinking | **Max sub (flat)** |
+| Fallback 1 | `gemini` / `gemini-3.1-pro-preview` | strong metered overflow when Max busy/capped | metered (cheap) |
+| Fallback 2 | `gemini` / `gemini-2.5-pro` | stable GA | metered |
+| Fallback 3 | `copilot` / `claude-sonnet-4.6` | different provider | Copilot FREE (Pro paused) |
+| Fallback 4 | `openai-codex` | another flat-rate brain (rejoins June 7) | sub (flat) |
 
-Reasoning effort: **medium**. Max turns: 90.
+> **Primary brain = Claude Max via Claude Code auth mode (the subscription, NOT the metered API key).** Max ALSO powers the Claude Code bulk-worker lane — same quota — but orchestration is low-volume and *simple* bulk routes to OpenCode Go, so headroom is preserved. If Max ever caps: brain drops to Gemini (cheap), workers to OpenCode Go / free. Reasoning effort: **medium**. Max turns: 90.
 
 ## Worker lanes (delegated — NOT in Shay's config; configured in each agent's own tool)
 
