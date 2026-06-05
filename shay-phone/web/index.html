@@ -24,6 +24,13 @@
   #brainsel { margin-left:auto; background:var(--panel2); color:var(--text); border:1px solid #2a2a3c;
     border-radius:10px; padding:6px 8px; font-size:13px; max-width:48%; }
   header .brain { width:100%; flex-basis:100%; font-size:11px; color:var(--muted); text-align:right; margin-top:2px; }
+  #mute-btn { background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:8px;
+    color:var(--muted); font-size:20px; line-height:1; flex-shrink:0; }
+  #mute-btn.muted { color:#ff5c5c44; }
+  #notif-btn { background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:8px;
+    color:var(--muted); font-size:18px; line-height:1; flex-shrink:0; transition:.15s; }
+  #notif-btn.enabled { color:#4cde82; }
+  #notif-btn.denied { color:#ff5c5c44; cursor:default; }
   .views { flex:1; overflow:hidden; position:relative; }
   .view { position:absolute; inset:0; display:none; flex-direction:column; }
   .view.active { display:flex; }
@@ -76,6 +83,14 @@
     background:#000a; color:#fff; padding:9px 16px; border-radius:20px; font-size:14px;
     opacity:0; transition:.25s; pointer-events:none; }
   .toast.show { opacity:1; }
+  /* mic button */
+  #mic-btn { background:none; border:none; cursor:pointer; padding:0 4px; border-radius:14px;
+    color:var(--muted); font-size:22px; line-height:1; flex-shrink:0; transition:.15s; }
+  #mic-btn.listening { color:var(--accent2); animation:pulse 1.2s infinite; }
+  #mic-btn:disabled { opacity:.35; cursor:default; }
+  #mic-status { font-size:11px; color:var(--accent2); text-align:center; padding:2px 12px 0;
+    min-height:16px; display:none; }
+  #mic-status.show { display:block; }
   /* jobs */
   #jobs-panel { flex:1; overflow-y:auto; padding:10px 14px; }
   .jobs-dispatch-btn { display:block; width:100%; padding:16px;
@@ -154,14 +169,18 @@
   <div class="dot"></div>
   <h1>Shay</h1>
   <select id="brainsel" aria-label="Brain"></select>
+  <button id="notif-btn" aria-label="Enable push notifications" title="Enable push notifications">🔔</button>
+  <button id="mute-btn" aria-label="Toggle voice output" title="Toggle voice output">🔊</button>
   <span class="brain" id="brain"></span>
 </header>
 
 <div class="views">
   <section class="view active" id="v-chat">
     <div id="log"></div>
+    <div id="mic-status"></div>
     <div class="composer">
-      <textarea id="ti" rows="1" placeholder="Talk to Shay…"></textarea>
+      <button id="mic-btn" aria-label="Voice input" title="Hold to record, release to transcribe">🎙</button>
+      <textarea id="ti" rows="1" placeholder="Talk to Shay… or /research <topic>"></textarea>
       <button class="send" id="send">→</button>
     </div>
   </section>
@@ -236,6 +255,27 @@ let TOKEN = qs.get('k') || localStorage.getItem('shay_token') || '';
 if (qs.get('k')) localStorage.setItem('shay_token', qs.get('k'));
 const H = () => ({'Content-Type':'application/json','X-Shay-Token':TOKEN});
 const log = document.getElementById('log');
+
+// TTS — browser SpeechSynthesis, free, no server dependency
+window._ttsEnabled = localStorage.getItem('shay_tts') !== 'off';
+const muteBtn = document.getElementById('mute-btn');
+function _updateMuteBtn() {
+  muteBtn.textContent = window._ttsEnabled ? '🔊' : '🔇';
+  muteBtn.classList.toggle('muted', !window._ttsEnabled);
+  muteBtn.title = window._ttsEnabled ? 'Mute voice output' : 'Unmute voice output';
+}
+_updateMuteBtn();
+muteBtn.onclick = () => {
+  window._ttsEnabled = !window._ttsEnabled;
+  localStorage.setItem('shay_tts', window._ttsEnabled ? 'on' : 'off');
+  _updateMuteBtn();
+  if (!window._ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+};
+function ttsSpeak(text) {
+  if (!window._ttsEnabled || !window.speechSynthesis || !text) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
 const brainEl = document.getElementById('brain');
 const brainSel = document.getElementById('brainsel');
 let history = [];
@@ -258,6 +298,28 @@ function add(role, text){ const d=document.createElement('div'); d.className='ms
 
 async function send(){
   const ti=document.getElementById('ti'); const text=ti.value.trim(); if(!text) return;
+
+  // /research <topic> — posts to research gate and queues a scope-approval ask
+  const resMatch = text.match(/^\/research\s+(.+)/i);
+  if(resMatch){
+    ti.value=''; ti.style.height='auto';
+    const topic = resMatch[1].trim();
+    add('you', text);
+    const thinking = add('shay','Queuing research scope…');
+    try{
+      const r = await fetch('/api/research/gate',{method:'POST',headers:H(),body:JSON.stringify({topic})});
+      const j = await r.json();
+      if(j.job_id){
+        thinking.textContent = '🔬 Scope card queued — check Asks tab to approve or reject.';
+        toast('Scope card queued — check Asks tab');
+        refreshBadge();
+      } else {
+        thinking.textContent = '⚠️ ' + (j.error || 'research gate failed');
+      }
+    }catch(e){ thinking.textContent='⚠️ network: '+e; }
+    return;
+  }
+
   ti.value=''; ti.style.height='auto'; add('you',text); history.push({role:'user',content:text});
   const thinking=add('shay','…');
   try{
@@ -265,6 +327,7 @@ async function send(){
     const j=await r.json();
     if(j.error){ thinking.textContent='⚠️ '+j.error; return; }
     thinking.textContent=j.reply; history.push({role:'assistant',content:j.reply});
+    ttsSpeak(j.reply);
     brainEl.textContent=(j.brain||'')+(j.used_context?' · using your notes':'');
   }catch(e){ thinking.textContent='⚠️ network: '+e; }
 }
@@ -382,25 +445,75 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 
 if(!TOKEN){ add('sys','No access token. Open the link Fritz was given (with ?k=…).'); }
 else { add('sys','Shay v0 — pick a brain up top (Auto falls back Claude → Codex → Gemini). Capture saves to your vault. When Shay needs approval or has a question mid-task, the 🔔 Asks tab lights up.'); loadBrains(); refreshBadge(); refreshJobsBadge(); setInterval(refreshBadge, 5000); setInterval(autoRefreshJobs, 5000); }
-// Service worker + Web Push (real lock-screen notifications on installed Android PWA).
-function urlB64ToUint8(s){ const pad='='.repeat((4-s.length%4)%4); const b=(s+pad).replace(/-/g,'+').replace(/_/g,'/'); const raw=atob(b); return Uint8Array.from([...raw].map(c=>c.charCodeAt(0))); }
-async function enablePush(reg){
-  try{
-    if(!('PushManager' in window)) return;
-    const perm = await Notification.requestPermission();
-    if(perm !== 'granted'){ add('sys','Notifications not enabled — tap 🔔 Enable later to turn on push.'); return; }
-    const vr = await fetch('/api/vapid',{headers:H()}); const {publicKey}= await vr.json();
-    if(!publicKey){ return; }
-    let sub = await reg.pushManager.getSubscription();
-    if(!sub){ sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlB64ToUint8(publicKey)}); }
-    await fetch('/api/subscribe',{method:'POST',headers:H(),body:JSON.stringify({subscription:sub})});
-    add('sys','✅ Push enabled — Shay will buzz this phone on DONE / BLOCKED / approvals.');
-  }catch(e){ add('sys','Push setup skipped: '+e); }
+// ── Push Notifications (W4.2) ─────────────────────────────────────────────
+function urlB64ToUint8(s){
+  const pad='='.repeat((4-s.length%4)%4);
+  const b=(s+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(b);
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
 }
+
+let _swReg = null; // cached SW registration
+
+function _updateNotifBtn(state) {
+  // state: 'off' | 'enabled' | 'denied'
+  const btn = document.getElementById('notif-btn');
+  if(!btn) return;
+  btn.classList.remove('enabled','denied');
+  if(state === 'enabled'){ btn.classList.add('enabled'); btn.title = 'Push notifications ON'; }
+  else if(state === 'denied'){ btn.classList.add('denied'); btn.title = 'Notifications blocked in browser settings'; }
+  else { btn.title = 'Enable push notifications'; }
+}
+
+async function subscribePush(reg, silent) {
+  try {
+    if(!('PushManager' in window)){ if(!silent) toast('Push not supported in this browser'); return false; }
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      _updateNotifBtn('denied');
+      if(!silent) toast('Notifications blocked — check browser settings');
+      return false;
+    }
+    // Fetch public key from auth-gated endpoint
+    const vr = await fetch('/api/vapid-public',{headers:H()});
+    const {publicKey} = await vr.json();
+    if(!publicKey){ if(!silent) toast('VAPID key missing — restart server'); return false; }
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlB64ToUint8(publicKey)});
+    }
+    await fetch('/api/subscribe',{method:'POST',headers:H(),body:JSON.stringify({subscription:sub.toJSON()})});
+    _updateNotifBtn('enabled');
+    if(!silent) toast('🔔 Push notifications enabled');
+    return true;
+  } catch(e) {
+    if(!silent) toast('Push setup failed: '+e);
+    return false;
+  }
+}
+
+document.getElementById('notif-btn').onclick = async () => {
+  if(!TOKEN){ toast('No token — open the link with ?k=…'); return; }
+  if(!_swReg){ toast('Service worker not ready yet'); return; }
+  if(Notification.permission === 'denied'){
+    toast('Notifications blocked — check browser settings'); return;
+  }
+  const ok = await subscribePush(_swReg, false);
+  if(ok) add('sys','✅ Push enabled — Shay will notify this phone on daily brief / done / blocked.');
+};
+
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').then(reg=>{
-    // Auto-prompt for push once the app is opened with a token.
-    if(TOKEN && 'Notification' in window && Notification.permission!=='denied'){ enablePush(reg); }
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    _swReg = reg;
+    // Reflect current permission state on the bell button
+    if('Notification' in window){
+      if(Notification.permission === 'granted') _updateNotifBtn('enabled');
+      else if(Notification.permission === 'denied') _updateNotifBtn('denied');
+    }
+    // Auto-subscribe silently if already granted (re-registers subscription on new installs)
+    if(TOKEN && 'Notification' in window && Notification.permission === 'granted'){
+      subscribePush(reg, true);
+    }
   }).catch(()=>{});
 }
 
@@ -636,6 +749,122 @@ function autoRefreshJobs() {
   const jobsTabActive = document.getElementById('v-jobs').classList.contains('active');
   if(jobsAutoRefresh && jobsTabActive) loadJobs();
 }
+
+// ── Mic / local Whisper STT ────────────────────────────────────────────────
+(function() {
+  const micBtn = document.getElementById('mic-btn');
+  const micStatus = document.getElementById('mic-status');
+  const tiEl = document.getElementById('ti');
+
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let micStream = null;
+  let recording = false;
+
+  function setMicStatus(msg, show) {
+    micStatus.textContent = msg;
+    micStatus.classList.toggle('show', !!show);
+  }
+
+  async function startRecording() {
+    if (recording) return;
+    // Guard: no HTTPS = getUserMedia will throw; surface a friendly message.
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      setMicStatus('mic needs HTTPS — enable Tailscale certs', true);
+      setTimeout(() => setMicStatus('', false), 3500);
+      return;
+    }
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch(e) {
+      if (e.name === 'NotAllowedError') {
+        setMicStatus('mic permission denied', true);
+      } else if (e.name === 'NotFoundError') {
+        setMicStatus('no mic found', true);
+      } else {
+        setMicStatus('mic needs HTTPS — enable Tailscale certs', true);
+      }
+      setTimeout(() => setMicStatus('', false), 3500);
+      return;
+    }
+    audioChunks = [];
+    // Prefer webm/opus; fall back to browser default
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+    mediaRecorder = mimeType ? new MediaRecorder(micStream, { mimeType }) : new MediaRecorder(micStream);
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = handleStop;
+    mediaRecorder.start();
+    recording = true;
+    micBtn.classList.add('listening');
+    setMicStatus('listening…', true);
+  }
+
+  function stopRecording() {
+    if (!recording || !mediaRecorder) return;
+    recording = false;
+    mediaRecorder.stop();
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    micBtn.classList.remove('listening');
+    setMicStatus('transcribing…', true);
+  }
+
+  async function handleStop() {
+    if (!audioChunks.length) { setMicStatus('', false); return; }
+    const mimeType = mediaRecorder.mimeType || 'audio/webm';
+    const blob = new Blob(audioChunks, { type: mimeType });
+    audioChunks = [];
+    micBtn.disabled = true;
+    try {
+      const r = await fetch('/api/stt?k=' + encodeURIComponent(TOKEN), {
+        method: 'POST',
+        headers: { 'Content-Type': mimeType },
+        body: blob,
+      });
+      const j = await r.json();
+      setMicStatus('', false);
+      if (j.error && !j.text) {
+        toast('STT error: ' + j.error);
+      } else if (j.text) {
+        // Insert into textarea; let Fritz review then send manually
+        tiEl.value = (tiEl.value ? tiEl.value + ' ' : '') + j.text;
+        tiEl.style.height = 'auto';
+        tiEl.style.height = Math.min(tiEl.scrollHeight, 120) + 'px';
+        tiEl.focus();
+      } else {
+        toast('(no speech detected)');
+      }
+    } catch(e) {
+      setMicStatus('', false);
+      toast('STT failed: ' + e);
+    } finally {
+      micBtn.disabled = false;
+    }
+  }
+
+  // Tap to toggle: press starts, press again stops.
+  // Also supports hold-to-record on mobile (touchstart/touchend).
+  let holdTimer = null;
+  let holdMode = false;
+
+  micBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    holdMode = true;
+    startRecording();
+  }, { passive: false });
+
+  micBtn.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (holdMode) { holdMode = false; stopRecording(); }
+  }, { passive: false });
+
+  micBtn.addEventListener('click', e => {
+    if (holdMode) return; // already handled by touch events
+    if (recording) { stopRecording(); }
+    else { startRecording(); }
+  });
+})();
 </script>
 </body>
 </html>

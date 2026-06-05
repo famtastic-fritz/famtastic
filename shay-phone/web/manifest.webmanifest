@@ -1,7 +1,7 @@
 {
-  "name": "Shay",
-  "short_name": "Shay",
-  "description": "Fritz's personal AI assistant — chat, capture, diary.",
+  "name": "Shay Shay",
+  "short_name": "Shay Shay",
+  "description": "Fritz's personal AI assistant — chat, capture, get unstuck.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
