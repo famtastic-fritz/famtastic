@@ -99,8 +99,13 @@ substrate; the work below makes them one system.
 ## Status / what's left (honest)
 - [x] Spine, endpoint, WS follower, dashboard wiring, fleet bridge — built + gated.
 - [x] **Phone bridged to the spine** — emits on all write-actions + `/api/feed` read.
-- [ ] **Phone UI:** add an Activity/Feed tab to `web/index.html` that polls `/api/feed`
-      (the backend half is done; the rendering half remains).
+- [x] **Phone UI: Feed tab** — added a 6th nav item (`≋ Feed`) in `web/index.html`
+      that polls `/api/feed` every 5s and renders the unified activity list (dot color
+      by severity, agent + source label, relative time). **Also fixed the service
+      worker:** `sw.js` was **cache-first on `index.html`** (`shay-v1`) — the reason UI
+      changes never appeared on the installed PWA. Bumped to `shay-v2` and made HTML
+      **network-first** so future changes show on next load. (Needs the Mac to pull +
+      restart the phone server; the SW self-updates on next visit.)
 - [ ] **One agents truth:** dashboard + phone must read agents from the SAME source.
       Today: dashboard=live orchestrator, phone=`command-center/data/agents-registry.json`.
       Pick one (recommend: orchestrator emits heartbeats into the registry, or both read

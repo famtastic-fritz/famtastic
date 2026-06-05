@@ -1,6 +1,8 @@
 // Minimal service worker — makes the PWA installable + caches the shell + Web Push.
-// Network-first for API, cache-first for the static shell.
-const CACHE = 'shay-v1-companion';
+// API: never cached. HTML/navigations: network-first (so UI updates show up
+// immediately, not trapped behind a stale cache). Icons/manifest: cache-first.
+// Bump CACHE whenever the shell changes — activate purges every older cache.
+const CACHE = 'shay-v2-companion';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -14,9 +16,19 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.pathname.startsWith('/api/')) return; // never cache API
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
-  );
+  const isHTML = e.request.mode === 'navigate' ||
+    url.pathname.endsWith('/') || url.pathname.endsWith('.html');
+  if (isHTML) {
+    // Network-first: always try fresh HTML, fall back to cache offline.
+    e.respondWith(
+      fetch(e.request)
+        .then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(e.request, cp)).catch(()=>{}); return r; })
+        .catch(() => caches.match(e.request).then(r => r || caches.match('index.html')))
+    );
+    return;
+  }
+  // Static assets (icons, manifest): cache-first.
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
 
 // Web Push — real lock-screen notifications for the installed Android PWA.

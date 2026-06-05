@@ -243,6 +243,14 @@ nav button .badge.show{display:flex}
       <div id="taskList"></div>
     </section>
 
+    <!-- ══════════ FEED ══════════ -->
+    <section class="view" data-view="feed">
+      <div class="eyebrow">Activity</div>
+      <div class="h-big">Feed</div>
+      <p class="sub">Everything happening across every surface — one truth, live.</p>
+      <div id="feedList"></div>
+    </section>
+
     <!-- ══════════ CHAT ══════════ -->
     <section class="view" data-view="chat" style="padding:0;flex-direction:column;height:100%">
       <div id="chatLog" style="flex:1;overflow-y:auto;padding:18px 16px 8px"></div>
@@ -330,6 +338,7 @@ nav button .badge.show{display:flex}
   <nav id="nav">
     <button data-go="brief" class="on"><span class="ni">☀</span><span class="nl">Brief</span></button>
     <button data-go="tasks"><span class="ni">⚡</span><span class="nl">Tasks</span><span class="badge" id="bgTasks"></span></button>
+    <button data-go="feed"><span class="ni">≋</span><span class="nl">Feed</span></button>
     <button data-go="chat"><span class="ni">✦</span><span class="nl">Chat</span></button>
     <button data-go="dispatch"><span class="ni">▷</span><span class="nl">Dispatch</span><span class="badge" id="bgDisp"></span></button>
     <button data-go="you"><span class="ni">○</span><span class="nl">You</span></button>
@@ -400,10 +409,58 @@ function go(v){
   $('#chatComposer').style.display = v==='chat' ? 'flex' : 'none';
   if(v==='brief') loadBrief();
   if(v==='tasks') loadTasks();
+  if(v==='feed') loadFeed();
   if(v==='dispatch') loadApprovals();
   if(v==='you') loadYou();
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.go));
+
+/* ───────────────────────── FEED ─────────────────────────
+   The unified activity feed — reads the SAME spine the web dashboard streams
+   (GET /api/feed). Start a job here or on the dashboard, answer one of Shay's
+   questions anywhere — it shows up in this list. One truth, every surface. */
+const FEED_DOT={info:'gray',success:'cyan',warn:'amber',error:'rose'};
+const FEED_SRC={phone:'Phone',"agent-os":'Dashboard',fleet:'Fleet',git:'Git',external:'External'};
+function feedAgo(iso){
+  if(!iso) return '';
+  const d=(Date.now()-new Date(iso).getTime())/1000;
+  if(d<60) return 'just now';
+  if(d<3600) return Math.floor(d/60)+'m ago';
+  if(d<86400) return Math.floor(d/3600)+'h ago';
+  return Math.floor(d/86400)+'d ago';
+}
+async function loadFeed(silent){
+  try{
+    const r=await api('/api/feed?limit=60');
+    renderFeed(Array.isArray(r.events)? r.events : []);
+  }catch(e){
+    if(!silent) $('#feedList').innerHTML='<div class="empty"><div class="ic">⚠</div>Could not reach the gateway.</div>';
+  }
+}
+function renderFeed(events){
+  if(!events.length){
+    $('#feedList').innerHTML='<div class="empty"><div class="ic">≋</div>No activity yet.<br>Start a job or wait for Shay.</div>';
+    return;
+  }
+  let html='';
+  events.forEach(e=>{
+    const sev=FEED_DOT[e.severity]||'gray';
+    const who=e.agentId? esc(e.agentId) : '';
+    const src=FEED_SRC[e.source]||esc(e.source||'');
+    const meta=[who,src].filter(Boolean).join(' · ');
+    html += `<div class="card" style="padding:11px 13px;margin-bottom:9px">
+      <div class="row spread" style="align-items:flex-start;gap:10px">
+        <div class="row" style="gap:9px;align-items:flex-start">
+          <span class="dot ${sev}" style="margin-top:5px"></span>
+          <div><div style="font-size:13.5px;line-height:1.36">${esc(e.message)}</div>
+            ${meta?`<div class="tiny dim" style="margin-top:4px">${meta}</div>`:''}</div>
+        </div>
+        <span class="tiny dim mono" style="white-space:nowrap">${feedAgo(e.timestamp)}</span>
+      </div></div>`;
+  });
+  $('#feedList').innerHTML=html;
+}
+setInterval(()=>{ if(CUR==='feed') loadFeed(true); }, 5000);
 
 /* ───────────────────────── BRIEF ───────────────────────── */
 function statCard(n,l,cls){ return `<div class="stat"><div class="n ${cls||''}">${n}</div><div class="l">${l}</div></div>`; }
