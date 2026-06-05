@@ -1,870 +1,740 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Shay" />
-<meta name="theme-color" content="#0b0b12" />
-<link rel="manifest" href="manifest.webmanifest" />
-<link rel="apple-touch-icon" href="icon-180.png" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#08090B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Shay</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b0b12; --panel:#15151f; --panel2:#1d1d2b; --accent:#7c5cff; --accent2:#ff5c8a; --text:#e9e9f2; --muted:#8a8aa0; }
-  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { margin:0; height:100%; background:var(--bg); color:var(--text);
-    font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
-  body { display:flex; flex-direction:column;
-    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
-  header { padding:14px 18px 10px; display:flex; align-items:center; gap:10px; }
-  header .dot { width:30px;height:30px;border-radius:9px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2)); }
-  header h1 { font-size:19px; margin:0; font-weight:700; letter-spacing:.3px; }
-  #brainsel { margin-left:auto; background:var(--panel2); color:var(--text); border:1px solid #2a2a3c;
-    border-radius:10px; padding:6px 8px; font-size:13px; max-width:48%; }
-  header .brain { width:100%; flex-basis:100%; font-size:11px; color:var(--muted); text-align:right; margin-top:2px; }
-  #mute-btn { background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:8px;
-    color:var(--muted); font-size:20px; line-height:1; flex-shrink:0; }
-  #mute-btn.muted { color:#ff5c5c44; }
-  #notif-btn { background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:8px;
-    color:var(--muted); font-size:18px; line-height:1; flex-shrink:0; transition:.15s; }
-  #notif-btn.enabled { color:#4cde82; }
-  #notif-btn.denied { color:#ff5c5c44; cursor:default; }
-  .views { flex:1; overflow:hidden; position:relative; }
-  .view { position:absolute; inset:0; display:none; flex-direction:column; }
-  .view.active { display:flex; }
-  /* chat */
-  #log { flex:1; overflow-y:auto; padding:8px 14px 4px; -webkit-overflow-scrolling:touch; }
-  .msg { max-width:86%; margin:7px 0; padding:10px 13px; border-radius:16px; white-space:pre-wrap; word-wrap:break-word; }
-  .msg.you { margin-left:auto; background:var(--accent); color:#fff; border-bottom-right-radius:5px; }
-  .msg.shay { background:var(--panel2); border-bottom-left-radius:5px; }
-  .msg.sys { background:transparent; color:var(--muted); font-size:13px; text-align:center; max-width:100%; }
-  .composer { display:flex; gap:8px; padding:10px 12px; background:var(--panel); }
-  textarea,input,button { font:inherit; }
-  #ti { flex:1; resize:none; max-height:120px; background:var(--panel2); color:var(--text);
-    border:none; border-radius:14px; padding:11px 14px; }
-  .send { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;
-    border:none; border-radius:14px; padding:0 18px; font-weight:700; }
-  /* capture */
-  .cap { flex:1; display:flex; flex-direction:column; padding:14px; gap:12px; }
-  .kinds { display:flex; gap:8px; }
-  .kinds button { flex:1; padding:11px; border-radius:12px; border:1px solid #2a2a3c;
-    background:var(--panel); color:var(--text); font-weight:600; }
-  .kinds button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
-  #captext { flex:1; background:var(--panel2); color:var(--text); border:none;
-    border-radius:14px; padding:14px; resize:none; font-size:16px; }
-  .capsave { padding:14px; border-radius:14px; border:none; font-weight:700; font-size:16px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
-  /* recent */
-  #recent,#asks { flex:1; overflow-y:auto; padding:10px 14px; }
-  .note { background:var(--panel); border-radius:12px; padding:11px 13px; margin:8px 0; }
-  .note .n { font-size:12px; color:var(--muted); margin-bottom:4px; }
-  .ask { background:var(--panel); border-radius:14px; padding:14px; margin:10px 0; border-left:3px solid var(--accent2); }
-  .ask .k { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--accent2); margin-bottom:6px; }
-  .ask .q { font-size:16px; margin-bottom:10px; }
-  .ask .ctx { font-size:13px; color:var(--muted); margin-bottom:10px; white-space:pre-wrap; }
-  .ask .opts { display:flex; flex-wrap:wrap; gap:8px; }
-  .ask .opts button { flex:1; min-width:40%; padding:11px; border-radius:11px; border:none; font-weight:700;
-    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
-  .ask .freerow { display:flex; gap:8px; margin-top:8px; }
-  .ask .freerow input { flex:1; background:var(--panel2); color:var(--text); border:none; border-radius:11px; padding:11px; }
-  .ask .freerow button { background:var(--accent); border:none; color:#fff; border-radius:11px; padding:0 16px; font-weight:700; }
-  .badge { display:none; background:var(--accent2); color:#fff; border-radius:10px; font-size:10px;
-    padding:1px 6px; margin-left:4px; font-weight:700; }
-  .badge.show { display:inline-block; }
-  /* tabs */
-  nav { display:flex; background:var(--panel); border-top:1px solid #22223200; }
-  nav button { flex:1; background:none; border:none; color:var(--muted); padding:11px 0 14px;
-    font-size:11px; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:3px; }
-  nav button.on { color:var(--accent); }
-  nav .ic { font-size:20px; }
-  .toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%);
-    background:#000a; color:#fff; padding:9px 16px; border-radius:20px; font-size:14px;
-    opacity:0; transition:.25s; pointer-events:none; }
-  .toast.show { opacity:1; }
-  /* mic button */
-  #mic-btn { background:none; border:none; cursor:pointer; padding:0 4px; border-radius:14px;
-    color:var(--muted); font-size:22px; line-height:1; flex-shrink:0; transition:.15s; }
-  #mic-btn.listening { color:var(--accent2); animation:pulse 1.2s infinite; }
-  #mic-btn:disabled { opacity:.35; cursor:default; }
-  #mic-status { font-size:11px; color:var(--accent2); text-align:center; padding:2px 12px 0;
-    min-height:16px; display:none; }
-  #mic-status.show { display:block; }
-  /* jobs */
-  #jobs-panel { flex:1; overflow-y:auto; padding:10px 14px; }
-  .jobs-dispatch-btn { display:block; width:100%; padding:16px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    color:#fff; border:none; border-radius:16px; font-size:17px; font-weight:700;
-    margin-bottom:14px; letter-spacing:.2px; }
-  .job-card { background:var(--panel); border-radius:14px; padding:13px 14px;
-    margin:8px 0; border-left:3px solid var(--panel2); }
-  .job-card.queued  { border-left-color:#f5c842; }
-  .job-card.running { border-left-color:#4ab8ff; }
-  .job-card.completed { border-left-color:#4cde82; }
-  .job-card.failed,
-  .job-card.cancelled { border-left-color:#ff5c5c; }
-  .job-top { display:flex; align-items:flex-start; gap:10px; margin-bottom:6px; }
-  .job-goal { flex:1; font-size:15px; font-weight:600;
-    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .job-pill { font-size:11px; font-weight:700; border-radius:8px; padding:3px 8px;
-    white-space:nowrap; text-transform:uppercase; letter-spacing:.4px; }
-  .pill-queued  { background:#f5c84222; color:#f5c842; }
-  .pill-running { background:#4ab8ff22; color:#4ab8ff; }
-  .pill-completed { background:#4cde8222; color:#4cde82; }
-  .pill-failed,
-  .pill-cancelled { background:#ff5c5c22; color:#ff5c5c; }
-  .job-meta { font-size:12px; color:var(--muted); margin-bottom:6px; }
-  .job-progress { font-size:13px; color:var(--text); background:var(--panel2);
-    border-radius:9px; padding:8px 10px; margin-bottom:6px; white-space:pre-wrap; word-break:break-word; }
-  .job-actions { display:flex; gap:8px; margin-top:6px; }
-  .job-view-btn { flex:1; padding:9px; border-radius:10px; border:1px solid #2a2a3c;
-    background:var(--panel2); color:var(--text); font-size:13px; font-weight:600; }
-  .job-cancel-btn { padding:9px 14px; border-radius:10px; border:none;
-    background:#ff5c5c22; color:#ff5c5c; font-size:13px; font-weight:700; }
-  .running-dot { display:inline-block; width:7px; height:7px; border-radius:50%;
-    background:#4ab8ff; animation:pulse 1.2s infinite; vertical-align:middle; margin-right:4px; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-  /* dispatch modal */
-  .modal-overlay { position:fixed; inset:0; background:#000b; z-index:100;
-    display:flex; align-items:flex-end; justify-content:center;
-    opacity:0; pointer-events:none; transition:.2s; }
-  .modal-overlay.open { opacity:1; pointer-events:auto; }
-  .modal-sheet { background:var(--panel); border-radius:22px 22px 0 0;
-    padding:20px 18px 36px; width:100%; max-width:560px; }
-  .modal-title { font-size:17px; font-weight:700; margin-bottom:14px; }
-  .modal-label { font-size:13px; color:var(--muted); margin:12px 0 5px; }
-  #dispatch-goal { width:100%; background:var(--panel2); color:var(--text); border:none;
-    border-radius:13px; padding:13px; font:inherit; font-size:15px; resize:none; }
-  .policy-grid { display:flex; gap:8px; margin-bottom:14px; }
-  .policy-btn { flex:1; padding:10px 6px; border-radius:11px; border:1px solid #2a2a3c;
-    background:var(--panel2); color:var(--muted); font-size:12px; font-weight:600; text-align:center; }
-  .policy-btn.on { border-color:var(--accent); color:var(--accent); background:#7c5cff18; }
-  .modal-dispatch-btn { display:block; width:100%; padding:16px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:700; }
-  .modal-cancel-btn { display:block; width:100%; padding:12px; border:none;
-    background:transparent; color:var(--muted); font-size:14px; margin-top:8px; }
-  /* job detail overlay */
-  .detail-overlay { position:fixed; inset:0; background:var(--bg); z-index:200;
-    display:none; flex-direction:column; }
-  .detail-overlay.open { display:flex; }
-  .detail-header { display:flex; align-items:center; gap:12px; padding:14px 16px;
-    border-bottom:1px solid #22223288; }
-  .detail-back { background:none; border:none; color:var(--accent); font-size:16px; font-weight:700; padding:4px 0; }
-  .detail-title { font-size:16px; font-weight:700; flex:1; }
-  .detail-body { flex:1; overflow-y:auto; padding:16px; }
-  .detail-section { margin-bottom:16px; }
-  .detail-section h3 { font-size:12px; text-transform:uppercase; letter-spacing:.6px;
-    color:var(--muted); margin:0 0 6px; }
-  .detail-output { background:var(--panel); border-radius:12px; padding:13px;
-    font-size:14px; white-space:pre-wrap; word-break:break-word; }
-  .detail-progress-item { font-size:13px; padding:5px 0; border-bottom:1px solid #22223244; }
-  .detail-progress-item:last-child { border-bottom:none; }
-  .detail-ts { color:var(--muted); font-size:11px; }
+/* ─────────────────────────────────────────────────────────────
+   Shay Companion — FAMtastic-grade dark surface. Electric indigo.
+   Single accent. Status = cyan/amber/rose/gray. No generic AI gray.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --bg0:#08090B; --bg1:#101216; --bg2:#171A20; --bg3:#1F232B; --bg4:#2A2C2F;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.12);
+  --ink:#F4F5F7; --ink2:#AEB3BD; --ink3:#6C727E;
+  --indigo:#5B4FE8; --indigo-dim:rgba(91,79,232,.16); --indigo-line:rgba(91,79,232,.42);
+  --cyan:#36D6E7; --amber:#F5B14C; --rose:#F2566B; --gray:#5A616E; --green:#3FD08A;
+  --r:18px; --r2:13px; --r3:10px;
+  --shadow:0 10px 40px -12px rgba(0,0,0,.7);
+  --sab:env(safe-area-inset-bottom); --sat:env(safe-area-inset-top);
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg0); color:var(--ink); font-family:var(--body);
+  font-size:15px; line-height:1.45; overflow:hidden;
+  -webkit-font-smoothing:antialiased; letter-spacing:.1px;
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, rgba(91,79,232,.14), transparent 60%),
+    radial-gradient(80% 50% at 100% 0%, rgba(54,214,231,.05), transparent 55%);
+}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+input,textarea,select{font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:0;height:0}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+#app{display:flex;flex-direction:column;height:100dvh;max-width:560px;margin:0 auto;position:relative}
+
+/* TOP BAR */
+header{
+  display:flex;align-items:center;gap:11px;
+  padding:calc(var(--sat) + 13px) 18px 13px;
+  background:linear-gradient(180deg,rgba(8,9,11,.96),rgba(8,9,11,.62));
+  backdrop-filter:blur(14px); position:relative; z-index:5;
+  border-bottom:1px solid var(--line);
+}
+.glyph{width:30px;height:30px;flex:none;filter:drop-shadow(0 2px 8px rgba(91,79,232,.5))}
+.brand{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.3px}
+.brand small{font-family:var(--body);font-weight:450;color:var(--ink3);font-size:11.5px;display:block;letter-spacing:.4px;margin-top:-2px}
+.hdr-spacer{flex:1}
+.hdr-dot{width:8px;height:8px;border-radius:50%;background:var(--gray);transition:.3s}
+.hdr-dot.live{background:var(--green);box-shadow:0 0 10px var(--green)}
+.hdr-dot.off{background:var(--rose)}
+
+/* VIEWPORT */
+main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative}
+.view{display:none;padding:18px 16px 26px;animation:rise .34s cubic-bezier(.2,.7,.2,1)}
+.view.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.eyebrow{font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink3);margin:4px 2px 11px}
+.h-big{font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:.2px;margin:2px 0 3px}
+.sub{color:var(--ink2);font-size:13.5px;margin:0 0 18px}
+
+.card{background:linear-gradient(180deg,var(--bg2),var(--bg1));border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;margin-bottom:13px;box-shadow:var(--shadow)}
+.card.tap{transition:transform .14s,border-color .2s}
+.card.tap:active{transform:scale(.985);border-color:var(--line2)}
+.row{display:flex;align-items:center;gap:11px}
+.spread{justify-content:space-between}
+.muted{color:var(--ink2)} .dim{color:var(--ink3)}
+.tiny{font-size:12px} .small{font-size:13px}
+
+.dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--gray)}
+.dot.cyan{background:var(--cyan);box-shadow:0 0 9px var(--cyan)}
+.dot.amber{background:var(--amber);box-shadow:0 0 9px var(--amber)}
+.dot.rose{background:var(--rose);box-shadow:0 0 9px var(--rose)}
+.dot.gray{background:var(--gray)}
+.dot.pulse{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:var(--bg3);color:var(--ink2);border:1px solid var(--line)}
+.pill.indigo{background:var(--indigo-dim);color:#B9B2FF;border-color:var(--indigo-line)}
+.pill.cyan{color:var(--cyan);border-color:rgba(54,214,231,.4)}
+.pill.amber{color:var(--amber);border-color:rgba(245,177,76,.4)}
+.pill.rose{color:var(--rose);border-color:rgba(242,86,107,.4)}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px}
+.stat{background:linear-gradient(180deg,var(--bg2),var(--bg1));border:1px solid var(--line);border-radius:var(--r2);padding:13px 14px}
+.stat .n{font-family:var(--display);font-weight:600;font-size:26px;letter-spacing:.3px;line-height:1}
+.stat .l{font-size:11.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin-top:6px}
+.stat .n.cyan{color:var(--cyan)} .stat .n.amber{color:var(--amber)} .stat .n.green{color:var(--green)} .stat .n.indigo{color:#B9B2FF}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--r2);font-weight:600;font-size:15px;letter-spacing:.2px;background:var(--bg3);border:1px solid var(--line2);transition:transform .12s,filter .2s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:linear-gradient(180deg,#6A5FF0,#4F43DC);border:none;box-shadow:0 8px 22px -8px rgba(91,79,232,.8)}
+.btn.primary:active{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.sm{width:auto;padding:10px 15px;font-size:14px}
+.btn.danger{color:var(--rose);border-color:rgba(242,86,107,.4)}
+.btn:disabled{opacity:.4}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;margin:0 -2px}
+.chip{flex:none;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;background:var(--bg2);border:1px solid var(--line);color:var(--ink2)}
+.chip.on{background:var(--indigo-dim);border-color:var(--indigo-line);color:#C7C1FF}
+
+.field{width:100%;background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r2);padding:13px 14px;font-size:15px;color:var(--ink);resize:none;outline:none;transition:border-color .2s}
+.field:focus{border-color:var(--indigo-line)}
+label.lbl{display:block;font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;margin:0 2px 7px;font-weight:600}
+.seg{display:flex;background:var(--bg1);border:1px solid var(--line);border-radius:var(--r2);padding:4px;gap:4px}
+.seg button{flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:500;color:var(--ink2)}
+.seg button.on{background:var(--indigo-dim);color:#C7C1FF}
+
+#chatLog{display:flex;flex-direction:column;gap:11px}
+.msg{max-width:84%;padding:11px 14px;border-radius:16px;font-size:14.5px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;animation:rise .26s ease}
+.msg.user{align-self:flex-end;background:linear-gradient(180deg,#5B4FE8,#4a3fd0);border-bottom-right-radius:5px}
+.msg.shay{align-self:flex-start;background:var(--bg2);border:1px solid var(--line);border-bottom-left-radius:5px}
+.msg.sys{align-self:center;background:transparent;color:var(--ink3);font-size:12.5px;text-align:center;border:1px dashed var(--line)}
+.msg .who{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;font-weight:600}
+
+/* THINKING — breathing cyan dots, never a spinner */
+.think{align-self:flex-start;display:flex;gap:6px;padding:14px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:16px;border-bottom-left-radius:5px}
+.think span{width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:breathe 1.3s ease-in-out infinite}
+.think span:nth-child(2){animation-delay:.22s}.think span:nth-child(3){animation-delay:.44s}
+@keyframes breathe{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
+
+.composer{display:flex;gap:9px;align-items:flex-end;padding:11px 14px calc(var(--sab) + 11px);background:linear-gradient(0deg,var(--bg0) 70%,transparent);border-top:1px solid var(--line)}
+.composer .field{flex:1;max-height:120px}
+.icon-btn{width:46px;height:46px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#6A5FF0,#4F43DC);font-size:19px}
+.icon-btn:active{transform:scale(.93)}
+.icon-btn.alt{background:var(--bg3);border:1px solid var(--line2)}
+
+.empty{text-align:center;padding:46px 24px;color:var(--ink3)}
+.empty .ic{font-size:30px;margin-bottom:12px;opacity:.6}
+
+.log{display:flex;flex-direction:column;gap:0;margin-top:6px}
+.log .li{display:flex;gap:11px;padding:9px 0;border-top:1px solid var(--line)}
+.log .li:first-child{border-top:none}
+.log .li .tk{font-size:12px;color:var(--ink3);flex:none;width:54px;text-align:right}
+.log .li .tx{font-size:13.5px;color:var(--ink2);flex:1}
+
+nav{display:flex;background:linear-gradient(0deg,var(--bg1),rgba(16,18,22,.86));backdrop-filter:blur(16px);border-top:1px solid var(--line2);padding:7px 6px calc(var(--sab) + 7px);position:relative;z-index:5}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;color:var(--ink3);position:relative;transition:color .2s}
+nav button .ni{font-size:19px;line-height:1;transition:transform .2s}
+nav button .nl{font-size:10px;font-weight:600;letter-spacing:.4px}
+nav button.on{color:#C7C1FF}
+nav button.on .ni{transform:translateY(-1px)}
+nav button.on::before{content:"";position:absolute;top:-7px;width:26px;height:3px;border-radius:3px;background:var(--indigo);box-shadow:0 0 10px var(--indigo)}
+nav button .badge{position:absolute;top:0;right:calc(50% - 20px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--rose);color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center}
+nav button .badge.show{display:flex}
+
+/* ─── INTERVIEW CARD / ASK SHEET — the centerpiece ─── */
+.scrim{position:fixed;inset:0;background:rgba(4,5,7,.66);backdrop-filter:blur(3px);z-index:40;opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:560px;margin:0 auto;
+  background:linear-gradient(180deg,var(--bg2),var(--bg1));
+  border:1px solid var(--indigo-line);border-bottom:none;border-radius:24px 24px 0 0;
+  box-shadow:0 -20px 60px -20px rgba(91,79,232,.5),0 -2px 0 rgba(91,79,232,.25);
+  padding:8px 18px calc(var(--sab) + 20px);
+  transform:translateY(110%);transition:transform .42s cubic-bezier(.2,.8,.2,1);
+  max-height:88dvh;overflow-y:auto}
+.sheet.on{transform:none}
+.grab{width:38px;height:4px;border-radius:3px;background:var(--line2);margin:6px auto 14px}
+.asking{display:inline-flex;align-items:center;gap:7px;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#C7C1FF;background:var(--indigo-dim);border:1px solid var(--indigo-line);padding:6px 12px;border-radius:999px;margin-bottom:14px}
+.asking .bd{display:flex;gap:4px}.asking .bd i{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:breathe 1.3s infinite}
+.asking .bd i:nth-child(2){animation-delay:.22s}.asking .bd i:nth-child(3){animation-delay:.44s}
+.q-h{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.25;margin:2px 0 6px}
+.q-ctx{font-size:13.5px;color:var(--ink2);margin-bottom:16px;white-space:pre-wrap}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:14px;margin-bottom:9px;background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r2);transition:transform .12s,border-color .2s,background .2s}
+.opt:active{transform:scale(.98)}
+.opt.sel{border-color:var(--indigo-line);background:var(--indigo-dim)}
+.opt .rk{width:21px;height:21px;flex:none;border-radius:50%;border:2px solid var(--line2);margin-top:1px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.opt.sel .rk{border-color:var(--indigo);background:var(--indigo)}
+.opt.sel .rk::after{content:"✓";font-size:12px;font-weight:700;color:#fff}
+.opt .ot{font-weight:600;font-size:15px} .opt .od{font-size:13px;color:var(--ink2);margin-top:2px;display:block}
+.q-own{width:100%;background:var(--bg1);border:1px dashed var(--line2);border-radius:var(--r2);padding:13px 14px;font-size:14.5px;color:var(--ink);outline:none;margin-bottom:14px}
+.q-own:focus{border-style:solid;border-color:var(--indigo-line)}
+.dots{display:flex;gap:7px;justify-content:center;margin:4px 0 16px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)}
+.dots i.on{background:var(--indigo);box-shadow:0 0 8px var(--indigo)}.dots i.done{background:#C7C1FF}
+.plan{background:var(--bg1);border:1px solid var(--indigo-line);border-radius:var(--r2);padding:15px;margin-bottom:14px}
+.plan .pl{font-family:var(--display);font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#C7C1FF;margin-bottom:9px}
+.plan .prow{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+.plan .prow:first-of-type{border-top:none}
+.plan .prow b{color:var(--ink3);font-weight:600;min-width:74px;flex:none}
+
+#toast{position:fixed;left:50%;bottom:calc(var(--sab) + 86px);transform:translate(-50%,20px);z-index:80;background:var(--bg4);border:1px solid var(--line2);color:var(--ink);padding:11px 17px;border-radius:13px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;transition:.3s;box-shadow:var(--shadow);max-width:90%}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+#gate{position:fixed;inset:0;z-index:100;background:var(--bg0);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+#gate.on{display:flex}
+.shimmer{background:linear-gradient(90deg,var(--ink3),var(--ink),var(--ink3));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:sh 3s linear infinite}
+@keyframes sh{to{background-position:200% center}}
 </style>
 </head>
 <body>
-<header>
-  <div class="dot"></div>
-  <h1>Shay</h1>
-  <select id="brainsel" aria-label="Brain"></select>
-  <button id="notif-btn" aria-label="Enable push notifications" title="Enable push notifications">🔔</button>
-  <button id="mute-btn" aria-label="Toggle voice output" title="Toggle voice output">🔊</button>
-  <span class="brain" id="brain"></span>
-</header>
 
-<div class="views">
-  <section class="view active" id="v-chat">
-    <div id="log"></div>
-    <div id="mic-status"></div>
-    <div class="composer">
-      <button id="mic-btn" aria-label="Voice input" title="Hold to record, release to transcribe">🎙</button>
-      <textarea id="ti" rows="1" placeholder="Talk to Shay… or /research <topic>"></textarea>
-      <button class="send" id="send">→</button>
-    </div>
-  </section>
+<div id="app">
+  <header>
+    <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#7C72FF"/><stop offset="1" stop-color="#4F43DC"/></linearGradient></defs>
+      <path d="M16 2 L29 9 V23 L16 30 L3 23 V9 Z" stroke="url(#g)" stroke-width="1.6" fill="rgba(91,79,232,.10)"/>
+      <path d="M16 9.5 L22 13 V20 L16 23.5 L10 20 V13 Z" fill="url(#g)"/>
+      <circle cx="16" cy="16.5" r="2.1" fill="#08090B"/>
+    </svg>
+    <div class="brand">Shay<small>AI-Boss · remote</small></div>
+    <div class="hdr-spacer"></div>
+    <div class="hdr-dot" id="hdrDot" title="connection"></div>
+  </header>
 
-  <section class="view" id="v-capture">
-    <div class="cap">
-      <div class="kinds">
-        <button data-k="note" class="on">📝 Note</button>
-        <button data-k="idea">💡 Idea</button>
-        <button data-k="diary">📔 Diary</button>
+  <main>
+    <!-- ══════════ BRIEF ══════════ -->
+    <section class="view" data-view="brief">
+      <div class="eyebrow">Morning brief</div>
+      <div class="h-big" id="briefHello">Good morning, Fritz.</div>
+      <p class="sub" id="briefLine">Pull the latest from the command center.</p>
+      <div class="stats" id="briefStats"></div>
+      <div id="briefBody"></div>
+      <button class="btn primary" id="briefRefresh" style="margin-top:6px">☀ Generate fresh brief</button>
+    </section>
+
+    <!-- ══════════ TASKS ══════════ -->
+    <section class="view" data-view="tasks">
+      <div class="eyebrow">Sessions</div>
+      <div class="h-big">Tasks</div>
+      <p class="sub">What Shay is working on — live.</p>
+      <div class="chips" id="taskChips">
+        <button class="chip on" data-f="all">All</button>
+        <button class="chip" data-f="working">Working</button>
+        <button class="chip" data-f="input">Needs input</button>
+        <button class="chip" data-f="done">Done</button>
       </div>
-      <textarea id="captext" placeholder="Capture a thought… it lands straight in your vault."></textarea>
-      <button class="capsave" id="capsave">Save to vault</button>
-    </div>
-  </section>
+      <div id="taskList"></div>
+    </section>
 
-  <section class="view" id="v-recent">
-    <div id="recent"></div>
-  </section>
+    <!-- ══════════ CHAT ══════════ -->
+    <section class="view" data-view="chat" style="padding:0;flex-direction:column;height:100%">
+      <div id="chatLog" style="flex:1;overflow-y:auto;padding:18px 16px 8px"></div>
+    </section>
 
-  <section class="view" id="v-asks">
-    <div id="asks"></div>
-  </section>
+    <!-- ══════════ DISPATCH ══════════ -->
+    <section class="view" data-view="dispatch">
+      <div class="eyebrow">Hand it to Shay</div>
+      <div class="h-big">Dispatch</div>
+      <p class="sub">Approvals waiting, and a new job to start.</p>
 
-  <section class="view" id="v-jobs">
-    <div id="jobs-panel">
-      <button class="jobs-dispatch-btn" id="dispatch-open-btn">🚀 Dispatch a Job</button>
-      <div id="jobs-list"></div>
-    </div>
-  </section>
-</div>
+      <div id="approvals"></div>
 
-<!-- Dispatch modal -->
-<div class="modal-overlay" id="dispatch-modal">
-  <div class="modal-sheet">
-    <div class="modal-title">Dispatch a Job to Shay</div>
-    <div class="modal-label">What should Shay do?</div>
-    <textarea id="dispatch-goal" rows="4" placeholder="Describe the goal clearly. Shay will pick this up and run autonomously."></textarea>
-    <div class="modal-label">Policy</div>
-    <div class="policy-grid" id="policy-grid">
-      <button class="policy-btn" data-p="free-maximal">Free maximal</button>
-      <button class="policy-btn on" data-p="balanced">Balanced</button>
-      <button class="policy-btn" data-p="speed-first">Speed first</button>
-    </div>
-    <button class="modal-dispatch-btn" id="dispatch-submit-btn">Dispatch →</button>
-    <button class="modal-cancel-btn" id="dispatch-cancel-btn">Cancel</button>
+      <div class="card">
+        <label class="lbl">New job goal</label>
+        <textarea class="field" id="dispGoal" rows="3" placeholder="e.g. Draft 3 cold-outreach emails for the web-studio leads and queue them for my review."></textarea>
+        <label class="lbl" style="margin-top:13px">Autonomy</label>
+        <div class="seg" id="dispPolicy">
+          <button data-p="cautious">Cautious</button>
+          <button data-p="balanced" class="on">Balanced</button>
+          <button data-p="autonomous">Autonomous</button>
+        </div>
+        <button class="btn primary" id="dispSend" style="margin-top:14px">▷ Dispatch to Shay</button>
+      </div>
+
+      <div class="card">
+        <label class="lbl">Quick capture → vault inbox</label>
+        <div class="seg" id="capKind" style="margin-bottom:10px">
+          <button data-k="note" class="on">Note</button>
+          <button data-k="idea">Idea</button>
+          <button data-k="diary">Diary</button>
+        </div>
+        <textarea class="field" id="capText" rows="2" placeholder="Drop a thought…"></textarea>
+        <button class="btn ghost" id="capSave" style="margin-top:11px">Save to inbox</button>
+      </div>
+    </section>
+
+    <!-- ══════════ YOU ══════════ -->
+    <section class="view" data-view="you">
+      <div class="eyebrow">Settings</div>
+      <div class="h-big">You &amp; Shay</div>
+      <p class="sub">How much rope Shay gets, and how she reaches you.</p>
+
+      <div class="card">
+        <label class="lbl">Default autonomy</label>
+        <div class="seg" id="autoMode">
+          <button data-m="suggest">Suggest</button>
+          <button data-m="copilot" class="on">Copilot</button>
+          <button data-m="autopilot">Autopilot</button>
+        </div>
+        <p class="tiny dim" id="autoDesc" style="margin:11px 2px 0">Copilot — Shay acts, but checks in at the decision points.</p>
+      </div>
+
+      <div class="card">
+        <div class="row spread" style="margin-bottom:4px">
+          <div><b>Push notifications</b><div class="tiny dim">Input · approval · complete · brief</div></div>
+          <div class="pill" id="pushPill">off</div>
+        </div>
+        <button class="btn" id="pushBtn" style="margin-top:10px">Enable lock-screen alerts</button>
+        <button class="btn ghost sm" id="pushTest" style="margin-top:8px;width:100%">Send test notification</button>
+        <label class="lbl" style="margin-top:14px">Daily notification budget</label>
+        <div class="seg" id="notifBudget">
+          <button data-b="3">3</button><button data-b="5" class="on">5</button>
+          <button data-b="10">10</button><button data-b="0">∞</button>
+        </div>
+        <div class="row spread" style="margin-top:14px">
+          <div><b>Quiet hours</b><div class="tiny dim">Batch alerts overnight</div></div>
+          <input type="text" class="field mono" id="quiet" value="22:00–7:30" style="width:120px;text-align:center;padding:9px">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row spread" style="margin-bottom:11px"><b>Mac health</b><span class="tiny dim" id="macTs">—</span></div>
+        <div id="macHealth"><div class="tiny dim">Open Brief to load agent status.</div></div>
+      </div>
+
+      <div class="card">
+        <label class="lbl">Chat brain</label>
+        <select class="field" id="brainSel"><option value="auto">Auto (best available)</option></select>
+        <div class="tiny dim" style="margin-top:14px">Token stored on this device · <button id="forget" style="color:var(--rose)">forget &amp; sign out</button></div>
+      </div>
+    </section>
+  </main>
+
+  <nav id="nav">
+    <button data-go="brief" class="on"><span class="ni">☀</span><span class="nl">Brief</span></button>
+    <button data-go="tasks"><span class="ni">⚡</span><span class="nl">Tasks</span><span class="badge" id="bgTasks"></span></button>
+    <button data-go="chat"><span class="ni">✦</span><span class="nl">Chat</span></button>
+    <button data-go="dispatch"><span class="ni">▷</span><span class="nl">Dispatch</span><span class="badge" id="bgDisp"></span></button>
+    <button data-go="you"><span class="ni">○</span><span class="nl">You</span></button>
+  </nav>
+
+  <div class="composer" id="chatComposer" style="display:none">
+    <textarea class="field" id="chatInput" rows="1" placeholder="Talk to Shay…"></textarea>
+    <button class="icon-btn alt" id="chatMic" title="voice">🎙</button>
+    <button class="icon-btn" id="chatSend" title="send">↑</button>
   </div>
 </div>
 
-<!-- Job detail overlay -->
-<div class="detail-overlay" id="job-detail">
-  <div class="detail-header">
-    <button class="detail-back" id="detail-back-btn">← Back</button>
-    <div class="detail-title" id="detail-title"></div>
-    <span class="job-pill" id="detail-pill"></span>
-  </div>
-  <div class="detail-body" id="detail-body"></div>
+<!-- INTERVIEW CARD / ASK SHEET -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="grab"></div>
+  <div id="sheetBody"></div>
 </div>
 
-<nav>
-  <button data-v="chat" class="on"><span class="ic">💬</span>Chat</button>
-  <button data-v="capture"><span class="ic">✍️</span>Capture</button>
-  <button data-v="jobs"><span class="ic">🚀</span>Jobs<span class="badge" id="jobsbadge"></span></button>
-  <button data-v="asks"><span class="ic">🔔</span>Asks<span class="badge" id="askbadge"></span></button>
-  <button data-v="recent"><span class="ic">🗂</span>Recent</button>
-</nav>
-<div class="toast" id="toast"></div>
+<div id="toast"></div>
+
+<!-- ACCESS GATE -->
+<div id="gate">
+  <svg class="glyph" viewBox="0 0 32 32" style="width:54px;height:54px;margin-bottom:18px">
+    <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7C72FF"/><stop offset="1" stop-color="#4F43DC"/></linearGradient></defs>
+    <path d="M16 2 L29 9 V23 L16 30 L3 23 V9 Z" stroke="url(#g2)" stroke-width="1.6" fill="rgba(91,79,232,.10)"/>
+    <path d="M16 9.5 L22 13 V20 L16 23.5 L10 20 V13 Z" fill="url(#g2)"/></svg>
+  <div class="h-big shimmer">Shay needs a key</div>
+  <p class="sub" style="max-width:300px">Open the paired link Fritz was given — it carries the access token (<span class="mono">?k=…</span>). Or paste it below.</p>
+  <input class="field" id="gateTok" placeholder="paste token" style="max-width:300px;text-align:center;margin-bottom:12px">
+  <button class="btn primary" id="gateGo" style="max-width:300px">Unlock</button>
+</div>
 
 <script>
+/* ───────────────────────── core ───────────────────────── */
 const qs = new URLSearchParams(location.search);
 let TOKEN = qs.get('k') || localStorage.getItem('shay_token') || '';
-if (qs.get('k')) localStorage.setItem('shay_token', qs.get('k'));
-const H = () => ({'Content-Type':'application/json','X-Shay-Token':TOKEN});
-const log = document.getElementById('log');
+if (qs.get('k')) { localStorage.setItem('shay_token', qs.get('k')); history.replaceState({}, '', location.pathname); }
+const H = () => ({ 'Content-Type':'application/json', 'X-Shay-Token':TOKEN });
+const $ = s => document.querySelector(s);
+const el = (t,c,h) => { const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e; };
+const esc = s => String(s==null?'':s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+const ago = ts => { if(!ts)return ''; const d=Date.now()/1000-ts; if(d<60)return'just now'; if(d<3600)return Math.floor(d/60)+'m ago'; if(d<86400)return Math.floor(d/3600)+'h ago'; return Math.floor(d/86400)+'d ago'; };
+const clock = ts => ts ? new Date(ts*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
 
-// TTS — browser SpeechSynthesis, free, no server dependency
-window._ttsEnabled = localStorage.getItem('shay_tts') !== 'off';
-const muteBtn = document.getElementById('mute-btn');
-function _updateMuteBtn() {
-  muteBtn.textContent = window._ttsEnabled ? '🔊' : '🔇';
-  muteBtn.classList.toggle('muted', !window._ttsEnabled);
-  muteBtn.title = window._ttsEnabled ? 'Mute voice output' : 'Unmute voice output';
+async function api(path, opts={}) {
+  const r = await fetch(path + (path.includes('?')?'&':'?') + 'k=' + encodeURIComponent(TOKEN), { headers:H(), ...opts });
+  setLive(r.ok);
+  if (r.status === 403) { gate(); throw new Error('unauthorized'); }
+  return r.json();
 }
-_updateMuteBtn();
-muteBtn.onclick = () => {
-  window._ttsEnabled = !window._ttsEnabled;
-  localStorage.setItem('shay_tts', window._ttsEnabled ? 'on' : 'off');
-  _updateMuteBtn();
-  if (!window._ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
-};
-function ttsSpeak(text) {
-  if (!window._ttsEnabled || !window.speechSynthesis || !text) return;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+function setLive(ok){ const d=$('#hdrDot'); d.className='hdr-dot '+(ok?'live':'off'); }
+let toastT;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2600); }
+
+function gate(){ $('#gate').classList.add('on'); }
+$('#gateGo').onclick = () => { const v=$('#gateTok').value.trim(); if(!v)return; TOKEN=v; localStorage.setItem('shay_token',v); $('#gate').classList.remove('on'); boot(); };
+$('#forget').onclick = () => { localStorage.removeItem('shay_token'); location.reload(); };
+
+/* ───────────────────────── navigation ───────────────────────── */
+let CUR='brief';
+function go(v){
+  CUR=v;
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.dataset.view===v));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on', b.dataset.go===v));
+  const chatView=$('section[data-view=chat]');
+  chatView.style.display = v==='chat' ? 'flex' : 'none';
+  $('#chatComposer').style.display = v==='chat' ? 'flex' : 'none';
+  if(v==='brief') loadBrief();
+  if(v==='tasks') loadTasks();
+  if(v==='dispatch') loadApprovals();
+  if(v==='you') loadYou();
 }
-const brainEl = document.getElementById('brain');
-const brainSel = document.getElementById('brainsel');
-let history = [];
-let chosenBrain = localStorage.getItem('shay_brain') || 'auto';
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.go));
 
-async function loadBrains(){
-  let opts = [{id:'auto',label:'Auto (smart fallback)',available:true}];
-  try{ const r=await fetch('/api/brains',{headers:H()}); const j=await r.json();
-    opts = opts.concat(j.brains||[]); }catch(e){}
-  brainSel.innerHTML='';
-  opts.forEach(b=>{ const o=document.createElement('option'); o.value=b.id;
-    o.textContent=(b.id==='auto'?'':(b.available?'● ':'○ '))+b.label;
-    brainSel.appendChild(o); });
-  brainSel.value = chosenBrain;
+/* ───────────────────────── BRIEF ───────────────────────── */
+function statCard(n,l,cls){ return `<div class="stat"><div class="n ${cls||''}">${n}</div><div class="l">${l}</div></div>`; }
+let LAST_BRIEF=null;
+async function loadBrief(silent){
+  try{ const b=await api('/api/daily-brief'); LAST_BRIEF=b; renderBrief(b); }
+  catch(e){ if(!silent) $('#briefBody').innerHTML='<div class="empty"><div class="ic">⚠</div>Could not reach the gateway.</div>'; }
 }
-brainSel.onchange=()=>{ chosenBrain=brainSel.value; localStorage.setItem('shay_brain',chosenBrain); };
-
-function toast(t){ const e=document.getElementById('toast'); e.textContent=t; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1600); }
-function add(role, text){ const d=document.createElement('div'); d.className='msg '+role; d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight; return d; }
-
-async function send(){
-  const ti=document.getElementById('ti'); const text=ti.value.trim(); if(!text) return;
-
-  // /research <topic> — posts to research gate and queues a scope-approval ask
-  const resMatch = text.match(/^\/research\s+(.+)/i);
-  if(resMatch){
-    ti.value=''; ti.style.height='auto';
-    const topic = resMatch[1].trim();
-    add('you', text);
-    const thinking = add('shay','Queuing research scope…');
-    try{
-      const r = await fetch('/api/research/gate',{method:'POST',headers:H(),body:JSON.stringify({topic})});
-      const j = await r.json();
-      if(j.job_id){
-        thinking.textContent = '🔬 Scope card queued — check Asks tab to approve or reject.';
-        toast('Scope card queued — check Asks tab');
-        refreshBadge();
-      } else {
-        thinking.textContent = '⚠️ ' + (j.error || 'research gate failed');
-      }
-    }catch(e){ thinking.textContent='⚠️ network: '+e; }
-    return;
-  }
-
-  ti.value=''; ti.style.height='auto'; add('you',text); history.push({role:'user',content:text});
-  const thinking=add('shay','…');
-  try{
-    const r=await fetch('/api/chat',{method:'POST',headers:H(),body:JSON.stringify({messages:history,brain:chosenBrain})});
-    const j=await r.json();
-    if(j.error){ thinking.textContent='⚠️ '+j.error; return; }
-    thinking.textContent=j.reply; history.push({role:'assistant',content:j.reply});
-    ttsSpeak(j.reply);
-    brainEl.textContent=(j.brain||'')+(j.used_context?' · using your notes':'');
-  }catch(e){ thinking.textContent='⚠️ network: '+e; }
-}
-document.getElementById('send').onclick=send;
-const ti=document.getElementById('ti');
-ti.addEventListener('input',()=>{ti.style.height='auto';ti.style.height=Math.min(ti.scrollHeight,120)+'px';});
-ti.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
-
-// capture
-let kind='note';
-document.querySelectorAll('.kinds button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.kinds button').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on'); kind=b.dataset.k;
-});
-document.getElementById('capsave').onclick=async()=>{
-  const t=document.getElementById('captext'); const text=t.value.trim(); if(!text)return;
-  try{ const r=await fetch('/api/capture',{method:'POST',headers:H(),body:JSON.stringify({kind,text})});
-    const j=await r.json();
-    if(j.saved){ t.value=''; toast('Saved → '+j.saved); } else toast('⚠️ '+(j.error||'failed'));
-  }catch(e){ toast('⚠️ '+e); }
-};
-
-// recent
-async function loadRecent(){
-  const box=document.getElementById('recent'); box.innerHTML='Loading…';
-  try{ const r=await fetch('/api/recent',{headers:H()}); const j=await r.json();
-    box.innerHTML=''; (j.notes||[]).forEach(n=>{ const d=document.createElement('div'); d.className='note';
-      const when=new Date(n.ts*1000).toLocaleString();
-      const meta=document.createElement('div'); meta.className='n'; meta.textContent=n.name+' · '+when;
-      const body=document.createElement('div'); body.textContent=n.preview;
-      d.appendChild(meta); d.appendChild(body); box.appendChild(d); });
-    if(!box.children.length) box.innerHTML='<div class="note">No notes yet. Capture one!</div>';
-  }catch(e){ box.innerHTML='⚠️ '+e; }
-}
-
-// asks — the Claude-Code-style approval/question flow
-async function loadAsks(){
-  const box=document.getElementById('asks');
-  let asks=[];
-  try{ const r=await fetch('/api/asks',{headers:H()}); const j=await r.json(); asks=j.asks||[]; }
-  catch(e){ box.textContent='⚠️ '+e; return asks; }
-  box.innerHTML='';
-  if(!asks.length){ const d=document.createElement('div'); d.className='note';
-    d.textContent='No pending approvals or questions. When Shay needs you mid-task, it shows up here.'; box.appendChild(d); }
-  asks.forEach(a=>{ box.appendChild(a.kind==='interview'?renderInterview(a):renderSingle(a)); });
-  return asks;
-}
-function renderSingle(a){
-  const d=document.createElement('div'); d.className='ask';
-  const k=document.createElement('div'); k.className='k'; k.textContent=a.kind==='approval'?'⚠ approval needed':'❓ question'; d.appendChild(k);
-  const q=document.createElement('div'); q.className='q'; q.textContent=a.question; d.appendChild(q);
-  if(a.context){ const c=document.createElement('div'); c.className='ctx'; c.textContent=a.context; d.appendChild(c); }
-  if((a.options||[]).length){ const o=document.createElement('div'); o.className='opts';
-    a.options.forEach(opt=>{ const btn=document.createElement('button'); btn.textContent=opt;
-      btn.onclick=()=>answerAsk(a.id,opt); o.appendChild(btn); }); d.appendChild(o); }
-  const fr=document.createElement('div'); fr.className='freerow';
-  const inp=document.createElement('input'); inp.placeholder='Or type an answer…';
-  const snd=document.createElement('button'); snd.textContent='Send';
-  snd.onclick=()=>{ if(inp.value.trim()) answerAsk(a.id,inp.value.trim()); };
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&inp.value.trim())answerAsk(a.id,inp.value.trim());});
-  fr.appendChild(inp); fr.appendChild(snd); d.appendChild(fr);
-  return d;
-}
-function renderInterview(a){
-  const d=document.createElement('div'); d.className='ask';
-  const k=document.createElement('div'); k.className='k'; k.textContent='📋 interview'; d.appendChild(k);
-  const t=document.createElement('div'); t.className='q'; t.textContent=a.title||'Interview'; d.appendChild(t);
-  if(a.context){ const c=document.createElement('div'); c.className='ctx'; c.textContent=a.context; d.appendChild(c); }
-  if(a.url){ const link=document.createElement('a'); link.href=a.url; link.target='_blank';
-    link.textContent='↗ Open the thing to review'; link.style.cssText='display:block;color:var(--accent);margin-bottom:10px;'; d.appendChild(link); }
-  const inputs=[];
-  (a.questions||[]).forEach((q,qi)=>{
-    const qb=document.createElement('div'); qb.style.cssText='margin:12px 0 4px;font-weight:600;'; qb.textContent=(qi+1)+'. '+q.q; d.appendChild(qb);
-    const inp=document.createElement('input'); inp.className='qinp'; inp.placeholder='Your answer…';
-    inp.style.cssText='width:100%;background:var(--panel2);color:var(--text);border:none;border-radius:11px;padding:11px;margin-top:4px;';
-    if((q.options||[]).length){ const o=document.createElement('div'); o.className='opts'; o.style.marginTop='6px';
-      q.options.forEach(opt=>{ const btn=document.createElement('button'); btn.type='button'; btn.textContent=opt;
-        btn.onclick=()=>{ inp.value=opt; }; o.appendChild(btn); }); d.appendChild(o); }
-    d.appendChild(inp); inputs.push(inp);
-  });
-  const sub=document.createElement('button'); sub.className='capsave'; sub.style.marginTop='12px'; sub.textContent='Submit interview';
-  sub.onclick=()=>{ const answers=inputs.map(i=>i.value.trim());
-    if(answers.some(x=>!x)){ toast('Answer all questions first'); return; }
-    answerInterview(a.id,answers); };
-  d.appendChild(sub);
-  return d;
-}
-async function answerAsk(id,answer){
-  try{ await fetch('/api/answer',{method:'POST',headers:H(),body:JSON.stringify({id,answer})});
-    toast('Answered: '+answer); loadAsks(); refreshBadge(); }
-  catch(e){ toast('⚠️ '+e); }
-}
-async function answerInterview(id,answers){
-  try{ await fetch('/api/answer',{method:'POST',headers:H(),body:JSON.stringify({id,answers})});
-    toast('Interview submitted ✓'); loadAsks(); refreshBadge(); }
-  catch(e){ toast('⚠️ '+e); }
-}
-async function refreshBadge(){
-  if(!TOKEN) return;
-  try{ const r=await fetch('/api/asks',{headers:H()}); const j=await r.json();
-    const n=(j.asks||[]).length; const b=document.getElementById('askbadge');
-    b.textContent=n; b.classList.toggle('show',n>0); }catch(e){}
-}
-
-// tabs
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
-  const v=b.dataset.v;
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  document.getElementById('v-'+v).classList.add('active');
-  if(v==='recent') loadRecent();
-  if(v==='asks') loadAsks();
-  if(v==='jobs') loadJobs();
-});
-
-if(!TOKEN){ add('sys','No access token. Open the link Fritz was given (with ?k=…).'); }
-else { add('sys','Shay v0 — pick a brain up top (Auto falls back Claude → Codex → Gemini). Capture saves to your vault. When Shay needs approval or has a question mid-task, the 🔔 Asks tab lights up.'); loadBrains(); refreshBadge(); refreshJobsBadge(); setInterval(refreshBadge, 5000); setInterval(autoRefreshJobs, 5000); }
-// ── Push Notifications (W4.2) ─────────────────────────────────────────────
-function urlB64ToUint8(s){
-  const pad='='.repeat((4-s.length%4)%4);
-  const b=(s+pad).replace(/-/g,'+').replace(/_/g,'/');
-  const raw=atob(b);
-  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
-}
-
-let _swReg = null; // cached SW registration
-
-function _updateNotifBtn(state) {
-  // state: 'off' | 'enabled' | 'denied'
-  const btn = document.getElementById('notif-btn');
-  if(!btn) return;
-  btn.classList.remove('enabled','denied');
-  if(state === 'enabled'){ btn.classList.add('enabled'); btn.title = 'Push notifications ON'; }
-  else if(state === 'denied'){ btn.classList.add('denied'); btn.title = 'Notifications blocked in browser settings'; }
-  else { btn.title = 'Enable push notifications'; }
-}
-
-async function subscribePush(reg, silent) {
-  try {
-    if(!('PushManager' in window)){ if(!silent) toast('Push not supported in this browser'); return false; }
-    const perm = await Notification.requestPermission();
-    if(perm !== 'granted'){
-      _updateNotifBtn('denied');
-      if(!silent) toast('Notifications blocked — check browser settings');
-      return false;
-    }
-    // Fetch public key from auth-gated endpoint
-    const vr = await fetch('/api/vapid-public',{headers:H()});
-    const {publicKey} = await vr.json();
-    if(!publicKey){ if(!silent) toast('VAPID key missing — restart server'); return false; }
-    let sub = await reg.pushManager.getSubscription();
-    if(!sub){
-      sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlB64ToUint8(publicKey)});
-    }
-    await fetch('/api/subscribe',{method:'POST',headers:H(),body:JSON.stringify({subscription:sub.toJSON()})});
-    _updateNotifBtn('enabled');
-    if(!silent) toast('🔔 Push notifications enabled');
-    return true;
-  } catch(e) {
-    if(!silent) toast('Push setup failed: '+e);
-    return false;
-  }
-}
-
-document.getElementById('notif-btn').onclick = async () => {
-  if(!TOKEN){ toast('No token — open the link with ?k=…'); return; }
-  if(!_swReg){ toast('Service worker not ready yet'); return; }
-  if(Notification.permission === 'denied'){
-    toast('Notifications blocked — check browser settings'); return;
-  }
-  const ok = await subscribePush(_swReg, false);
-  if(ok) add('sys','✅ Push enabled — Shay will notify this phone on daily brief / done / blocked.');
-};
-
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').then(reg => {
-    _swReg = reg;
-    // Reflect current permission state on the bell button
-    if('Notification' in window){
-      if(Notification.permission === 'granted') _updateNotifBtn('enabled');
-      else if(Notification.permission === 'denied') _updateNotifBtn('denied');
-    }
-    // Auto-subscribe silently if already granted (re-registers subscription on new installs)
-    if(TOKEN && 'Notification' in window && Notification.permission === 'granted'){
-      subscribePush(reg, true);
-    }
-  }).catch(()=>{});
-}
-
-// ── Jobs ──────────────────────────────────────────────────────────────────
-
-let selectedPolicy = 'balanced';
-let jobsAutoRefresh = false; // true when any job is active (queued/running)
-
-// Dispatch modal
-document.getElementById('dispatch-open-btn').onclick = () => openDispatchModal();
-
-document.querySelectorAll('.policy-btn').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.policy-btn').forEach(x => x.classList.remove('on'));
-  b.classList.add('on');
-  selectedPolicy = b.dataset.p;
-});
-
-document.getElementById('dispatch-cancel-btn').onclick = closeDispatchModal;
-document.getElementById('dispatch-modal').addEventListener('click', e => {
-  if(e.target === document.getElementById('dispatch-modal')) closeDispatchModal();
-});
-
-function openDispatchModal() {
-  const m = document.getElementById('dispatch-modal');
-  m.classList.add('open');
-  document.getElementById('dispatch-goal').focus();
-}
-
-function closeDispatchModal() {
-  document.getElementById('dispatch-modal').classList.remove('open');
-}
-
-document.getElementById('dispatch-submit-btn').onclick = async () => {
-  const goal = document.getElementById('dispatch-goal').value.trim();
-  if(!goal){ toast('Enter a goal first'); return; }
-  try {
-    const r = await fetch('/api/dispatch', {method:'POST', headers:H(),
-      body: JSON.stringify({goal, policy: selectedPolicy, priority: 1})});
-    const j = await r.json();
-    if(j.id) {
-      toast('Job dispatched ✓');
-      document.getElementById('dispatch-goal').value = '';
-      closeDispatchModal();
-      loadJobs();
-      refreshJobsBadge();
-    } else {
-      toast('⚠️ ' + (j.error || 'failed'));
-    }
-  } catch(e) { toast('⚠️ ' + e); }
-};
-
-// Jobs list
-async function loadJobs() {
-  const box = document.getElementById('jobs-list');
-  try {
-    const r = await fetch('/api/jobs', {headers: H()});
-    const j = await r.json();
-    const jobs = j.jobs || [];
-    renderJobsList(jobs, box);
-    // Enable auto-refresh if any job is active
-    jobsAutoRefresh = jobs.some(j => j.status === 'queued' || j.status === 'running');
-  } catch(e) {
-    box.innerHTML = '<div class="note">⚠️ ' + e + '</div>';
-  }
-}
-
-function renderJobsList(jobs, box) {
-  box.innerHTML = '';
-  if(!jobs.length) {
-    const d = document.createElement('div'); d.className = 'note';
-    d.textContent = 'No jobs yet. Hit "Dispatch a Job" to send Shay a goal.';
-    box.appendChild(d);
-    return;
-  }
-  jobs.forEach(j => box.appendChild(buildJobCard(j)));
-}
-
-function jobStatusPill(status) {
-  const icons = {queued:'🟡', running:'🔵', completed:'✅', failed:'❌', cancelled:'🚫'};
-  return (icons[status] || '❓') + ' ' + status;
-}
-
-function elapsedStr(job) {
-  const start = job.started || job.created;
-  const end = job.completed || Date.now() / 1000;
-  const secs = Math.round(end - start);
-  if(secs < 60) return secs + 's';
-  if(secs < 3600) return Math.floor(secs/60) + 'm ' + (secs%60) + 's';
-  return Math.floor(secs/3600) + 'h ' + Math.floor((secs%3600)/60) + 'm';
-}
-
-function buildJobCard(j) {
-  const card = document.createElement('div');
-  card.className = 'job-card ' + j.status;
-
-  // Top row: goal + status pill
-  const top = document.createElement('div'); top.className = 'job-top';
-  const goal = document.createElement('div'); goal.className = 'job-goal';
-  goal.textContent = j.goal;
-  const pill = document.createElement('span');
-  pill.className = 'job-pill pill-' + j.status;
-  if(j.status === 'running') pill.innerHTML = '<span class="running-dot"></span>' + j.status.toUpperCase();
-  else pill.textContent = jobStatusPill(j.status);
-  top.appendChild(goal); top.appendChild(pill);
-  card.appendChild(top);
-
-  // Meta: elapsed + policy
-  const meta = document.createElement('div'); meta.className = 'job-meta';
-  meta.textContent = elapsedStr(j) + ' · ' + j.policy;
-  card.appendChild(meta);
-
-  // Latest progress message
-  const prog = j.progress || [];
-  if(prog.length) {
-    const last = prog[prog.length - 1];
-    const pd = document.createElement('div'); pd.className = 'job-progress';
-    pd.textContent = last.message + (last.percent != null ? ' (' + last.percent + '%)' : '');
-    card.appendChild(pd);
-  }
-
-  // Actions
-  const actions = document.createElement('div'); actions.className = 'job-actions';
-  const viewBtn = document.createElement('button'); viewBtn.className = 'job-view-btn';
-  viewBtn.textContent = 'View full output';
-  viewBtn.onclick = () => openJobDetail(j.id);
-  actions.appendChild(viewBtn);
-  if(j.status === 'queued' || j.status === 'running') {
-    const cancelBtn = document.createElement('button'); cancelBtn.className = 'job-cancel-btn';
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.onclick = async () => {
-      if(!confirm('Cancel this job?')) return;
-      try {
-        const r = await fetch('/api/job/cancel', {method:'POST', headers:H(),
-          body: JSON.stringify({id: j.id})});
-        const res = await r.json();
-        if(res.ok) { toast('Job cancelled'); loadJobs(); refreshJobsBadge(); }
-        else toast('⚠️ ' + (res.error || 'failed'));
-      } catch(e) { toast('⚠️ ' + e); }
-    };
-    actions.appendChild(cancelBtn);
-  }
-  card.appendChild(actions);
-  return card;
-}
-
-// Job detail overlay
-document.getElementById('detail-back-btn').onclick = () => {
-  document.getElementById('job-detail').classList.remove('open');
-  loadJobs(); // refresh list on way back
-};
-
-async function openJobDetail(jid) {
-  const overlay = document.getElementById('job-detail');
-  overlay.classList.add('open');
-  document.getElementById('detail-title').textContent = 'Loading…';
-  document.getElementById('detail-body').innerHTML = '';
-  try {
-    const r = await fetch('/api/job?id=' + jid, {headers: H()});
-    const j = await r.json();
-    renderJobDetail(j);
-  } catch(e) {
-    document.getElementById('detail-body').innerHTML = '⚠️ ' + e;
-  }
-}
-
-function renderJobDetail(j) {
-  document.getElementById('detail-title').textContent = j.goal.slice(0, 60) + (j.goal.length > 60 ? '…' : '');
-  const pill = document.getElementById('detail-pill');
-  pill.className = 'job-pill pill-' + j.status;
-  pill.textContent = jobStatusPill(j.status);
-
-  const body = document.getElementById('detail-body');
-  body.innerHTML = '';
-
-  // Goal
-  const gs = document.createElement('div'); gs.className = 'detail-section';
-  const gh = document.createElement('h3'); gh.textContent = 'Goal'; gs.appendChild(gh);
-  const gp = document.createElement('div'); gp.className = 'detail-output';
-  gp.textContent = j.goal; gs.appendChild(gp); body.appendChild(gs);
-
-  // Meta
-  const ms = document.createElement('div'); ms.className = 'detail-section';
-  const meta = document.createElement('div'); meta.style.cssText = 'font-size:13px;color:var(--muted);';
-  meta.textContent = [
-    'Policy: ' + j.policy,
-    'Created: ' + new Date(j.created * 1000).toLocaleString(),
-    j.started ? 'Started: ' + new Date(j.started * 1000).toLocaleString() : null,
-    j.completed ? 'Completed: ' + new Date(j.completed * 1000).toLocaleString() : null,
-    'Elapsed: ' + elapsedStr(j),
-  ].filter(Boolean).join('\n');
-  ms.appendChild(meta); body.appendChild(ms);
-
-  // Progress log
-  if((j.progress || []).length) {
-    const ps = document.createElement('div'); ps.className = 'detail-section';
-    const ph = document.createElement('h3'); ph.textContent = 'Progress log'; ps.appendChild(ph);
-    j.progress.forEach(p => {
-      const pi = document.createElement('div'); pi.className = 'detail-progress-item';
-      const ts = document.createElement('span'); ts.className = 'detail-ts';
-      ts.textContent = new Date(p.ts * 1000).toLocaleTimeString() + '  ';
-      pi.appendChild(ts);
-      pi.appendChild(document.createTextNode(p.message + (p.percent != null ? ' (' + p.percent + '%)' : '')));
-      ps.appendChild(pi);
+function renderBrief(b){
+  const agents = Array.isArray(b.agents)? b.agents : [];
+  const running = agents.filter(a=>a&&a.status==='running').length;
+  const rev = (b.revenue_24h&&b.revenue_24h.total)||0;
+  const jobs = Array.isArray(b.open_jobs)? b.open_jobs.filter(j=>!j.error) : [];
+  const asks = (b.open_asks&&b.open_asks.count)||0;
+  const h=new Date().getHours();
+  $('#briefHello').textContent = (h<12?'Good morning':h<18?'Good afternoon':'Good evening')+', Fritz.';
+  $('#briefLine').textContent = `${running}/${agents.length} agents up · $${(+rev).toFixed(2)} last 24h · ${jobs.length} open job${jobs.length===1?'':'s'} · ${asks} ask${asks===1?'':'s'}.`;
+  $('#briefStats').innerHTML =
+    statCard(`${running}<span class="dim" style="font-size:15px">/${agents.length}</span>`,'Agents up', running?'cyan':'') +
+    statCard('$'+(+rev).toFixed(0),'Revenue 24h', rev>0?'green':'') +
+    statCard(jobs.length,'Open jobs', jobs.length?'indigo':'') +
+    statCard(asks,'Asks waiting', asks?'amber':'');
+  let html='';
+  if(jobs.length){
+    html += `<div class="eyebrow" style="margin-top:8px">In flight</div>`;
+    jobs.slice(0,4).forEach(j=>{
+      html += `<div class="card tap" onclick="openJob('${j.id}')"><div class="row" style="gap:9px"><span class="dot cyan pulse"></span><b style="font-size:14.5px">${esc((j.goal||'').slice(0,60))}</b></div>${j.progress_tail?`<div class="tiny dim" style="margin-top:7px;padding-left:20px">${esc(j.progress_tail.slice(0,90))}</div>`:''}</div>`;
     });
-    body.appendChild(ps);
   }
+  const ideas = (b.ideas&&Array.isArray(b.ideas.top))? b.ideas.top : [];
+  if(ideas.length){
+    html += `<div class="eyebrow" style="margin-top:14px">Fresh ideas</div><div class="card">`;
+    ideas.slice(0,4).forEach(i=> html+=`<div class="row" style="padding:6px 0;gap:9px"><span class="dot gray"></span><span class="small">${esc(i.title||'')}</span></div>`);
+    html += `</div>`;
+  }
+  const intel = (b.promoted_intel&&Array.isArray(b.promoted_intel.findings))? b.promoted_intel.findings : [];
+  if(intel.length){
+    html += `<div class="eyebrow" style="margin-top:14px">Promoted intel · ${esc(b.promoted_intel.site||'')}</div><div class="card">`;
+    intel.forEach(f=> html+=`<div class="row spread" style="padding:6px 0"><span class="small">${esc(f.title)}</span><span class="pill ${f.severity==='major'?'rose':'amber'}">${esc(f.severity||'')}</span></div>`);
+    html += `</div>`;
+  }
+  const dc = b.datacenter_digest;
+  if(dc && !dc.skipped && Object.keys(dc).length){
+    const parts=Object.entries(dc).map(([k,v])=>`${esc(k)} <b style="color:var(--ink)">${v}</b>`).join(' · ');
+    html += `<div class="tiny dim" style="text-align:center;margin:16px 4px 2px">Data Center 24h — ${parts}</div>`;
+  }
+  $('#briefBody').innerHTML = html || '<div class="empty"><div class="ic">✓</div>All quiet. Nothing needs you right now.</div>';
+}
+$('#briefRefresh').onclick = async () => {
+  $('#briefRefresh').textContent='Assembling…'; $('#briefRefresh').disabled=true;
+  await loadBrief(); $('#briefRefresh').textContent='☀ Generate fresh brief'; $('#briefRefresh').disabled=false;
+  toast('Brief refreshed'); refreshBadges();
+};
 
-  // Output
-  if(j.output) {
-    const os = document.createElement('div'); os.className = 'detail-section';
-    const oh = document.createElement('h3'); oh.textContent = 'Output'; os.appendChild(oh);
-    const op = document.createElement('div'); op.className = 'detail-output';
-    op.textContent = j.output; os.appendChild(op); body.appendChild(os);
+/* ───────────────────────── TASKS ───────────────────────── */
+let TASK_FILTER='all', JOBS=[];
+const jobDot = s => ({running:'cyan',queued:'amber',completed:'gray',cancelled:'gray',failed:'rose'}[s]||'gray');
+const jobLabel = s => ({running:'Working',queued:'Queued',completed:'Done',cancelled:'Cancelled',failed:'Failed'}[s]||s);
+document.querySelectorAll('#taskChips .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#taskChips .chip').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+  TASK_FILTER=c.dataset.f; renderTasks();
+});
+async function loadTasks(){ try{ const d=await api('/api/jobs'); JOBS=d.jobs||[]; renderTasks(); }catch(e){} }
+function matchFilter(j){
+  if(TASK_FILTER==='all')return true;
+  if(TASK_FILTER==='working')return j.status==='running';
+  if(TASK_FILTER==='input')return j.status==='queued';
+  if(TASK_FILTER==='done')return ['completed','cancelled','failed'].includes(j.status);
+  return true;
+}
+function renderTasks(){
+  const list=$('#taskList'); const rows=JOBS.filter(matchFilter);
+  if(!rows.length){ list.innerHTML='<div class="empty"><div class="ic">⚡</div>No sessions here.<br><span class="tiny">Dispatch a goal to get Shay moving.</span></div>'; return; }
+  list.innerHTML = rows.map(j=>{
+    const tail = (j.progress&&j.progress.length)? j.progress[j.progress.length-1].message : (j.output? String(j.output).slice(0,80):'');
+    return `<div class="card tap" onclick="openJob('${j.id}')">
+      <div class="row spread">
+        <div class="row" style="gap:10px;flex:1;min-width:0"><span class="dot ${jobDot(j.status)} ${j.status==='running'?'pulse':''}"></span>
+        <b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(j.goal||'Untitled job')}</b></div>
+        <span class="pill ${j.status==='running'?'cyan':j.status==='queued'?'amber':j.status==='failed'?'rose':''}">${jobLabel(j.status)}</span>
+      </div>
+      ${tail?`<div class="tiny dim" style="margin-top:8px;padding-left:20px">${esc(tail.slice(0,100))}</div>`:''}
+      <div class="tiny dim" style="margin-top:7px;padding-left:20px">${esc(ago(j.created))}${j.policy?' · '+esc(j.policy):''}</div>
+    </div>`;
+  }).join('');
+}
+async function openJob(id){
+  let j; try{ j=await api('/api/job?id='+id); }catch(e){ return; }
+  if(j.error){ toast(j.error); return; }
+  const prog=j.progress||[];
+  let logHtml = prog.length ? prog.map(p=>`<div class="li"><div class="tk mono">${clock(p.ts)}</div><div class="tx">${esc(p.message)}${p.percent!=null?` <span class="dim">(${p.percent}%)</span>`:''}</div></div>`).join('') : '<div class="tiny dim" style="padding:8px 0">No activity logged yet.</div>';
+  let body = `
+    <span class="asking" style="color:var(--ink2);background:var(--bg3);border-color:var(--line2)"><span class="dot ${jobDot(j.status)} ${j.status==='running'?'pulse':''}"></span>${jobLabel(j.status)}</span>
+    <div class="q-h">${esc(j.goal||'')}</div>
+    <div class="tiny dim" style="margin:-2px 0 16px">Dispatched ${esc(ago(j.created))}${j.policy?' · '+esc(j.policy):''}${j.priority?' · P'+j.priority:''}</div>`;
+  if(j.output){ body += `<div class="plan"><div class="pl">Result</div><div class="small" style="white-space:pre-wrap">${esc(String(j.output).slice(0,1200))}</div></div>`; }
+  body += `<div class="eyebrow" style="margin:6px 2px 4px">Activity</div><div class="log">${logHtml}</div>`;
+  if(['queued','running'].includes(j.status)){
+    body += `<button class="btn danger" style="margin-top:18px" onclick="cancelJob('${j.id}')">Cancel job</button>`;
   }
+  openSheet(body);
+}
+async function cancelJob(id){ const r=await api('/api/job/cancel',{method:'POST',body:JSON.stringify({id})}); toast(r.ok?'Job cancelled':(r.error||'failed')); closeSheet(); loadTasks(); }
+
+/* ───────────────────────── CHAT ───────────────────────── */
+const CHAT=[]; let CHAT_BRAIN='auto', CHAT_SEEDED=false;
+function addMsg(role, text, who){
+  const log=$('#chatLog');
+  const m=el('div','msg '+role); if(who) m.appendChild(el('div','who',esc(who))); m.appendChild(document.createTextNode(text));
+  log.appendChild(m); log.scrollTop=log.scrollHeight; return m;
+}
+function thinking(on){
+  let t=$('#thinkRow');
+  if(on){ if(!t){ t=el('div','think','<span></span><span></span><span></span>'); t.id='thinkRow'; $('#chatLog').appendChild(t); $('#chatLog').scrollTop=1e9; } }
+  else if(t) t.remove();
+}
+async function sendChat(){
+  const inp=$('#chatInput'); const text=inp.value.trim(); if(!text)return;
+  inp.value=''; inp.style.height='auto'; addMsg('user',text); CHAT.push({role:'user',content:text});
+  thinking(true);
+  try{
+    const r=await api('/api/chat',{method:'POST',body:JSON.stringify({messages:CHAT,brain:CHAT_BRAIN})});
+    thinking(false);
+    if(r.error){ addMsg('sys','⚠ '+r.error); return; }
+    addMsg('shay',r.reply,r.brain); CHAT.push({role:'assistant',content:r.reply});
+  }catch(e){ thinking(false); addMsg('sys','⚠ Could not reach Shay.'); }
+}
+$('#chatSend').onclick=sendChat;
+$('#chatInput').addEventListener('input',e=>{ e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight,120)+'px'; });
+$('#chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendChat(); } });
+$('#chatMic').onclick=()=>recordVoice($('#chatInput'));
+
+/* ───────────────────────── DISPATCH ───────────────────────── */
+let DISP_POLICY='balanced', CAP_KIND='note';
+document.querySelectorAll('#dispPolicy button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#dispPolicy button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); DISP_POLICY=b.dataset.p; });
+document.querySelectorAll('#capKind button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#capKind button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); CAP_KIND=b.dataset.k; });
+$('#dispSend').onclick=async()=>{
+  const goal=$('#dispGoal').value.trim(); if(!goal){ toast('Give Shay a goal first'); return; }
+  $('#dispSend').disabled=true; $('#dispSend').textContent='Dispatching…';
+  try{ await api('/api/dispatch',{method:'POST',body:JSON.stringify({goal,policy:DISP_POLICY,priority:1})});
+    $('#dispGoal').value=''; toast('Dispatched ✓ — find it in Tasks'); refreshBadges();
+  }catch(e){ toast('Dispatch failed'); }
+  $('#dispSend').disabled=false; $('#dispSend').textContent='▷ Dispatch to Shay';
+};
+$('#capSave').onclick=async()=>{
+  const text=$('#capText').value.trim(); if(!text){ toast('Nothing to save'); return; }
+  try{ await api('/api/capture',{method:'POST',body:JSON.stringify({kind:CAP_KIND,text})}); $('#capText').value=''; toast('Saved to vault inbox'); }
+  catch(e){ toast('Save failed'); }
+};
+async function loadApprovals(){
+  let asks=[]; try{ asks=(await api('/api/asks')).asks||[]; }catch(e){}
+  ALL_ASKS=asks;
+  const approvals=asks.filter(a=>a.kind==='approval');
+  const box=$('#approvals');
+  if(!approvals.length){ box.innerHTML=''; return; }
+  box.innerHTML = `<div class="eyebrow">Waiting on you · ${approvals.length}</div>` + approvals.map(a=>`
+    <div class="card tap" onclick="openAsk('${a.id}')" style="border-color:var(--indigo-line)">
+      <div class="row spread"><span class="pill amber">Approval needed</span><span class="tiny dim">${esc(ago(a.created))}</span></div>
+      <div style="margin-top:9px;font-weight:600;font-size:15px">${esc((a.question||'').slice(0,120))}</div>
+      <div class="tiny" style="color:#C7C1FF;margin-top:8px">Tap to review →</div>
+    </div>`).join('');
 }
 
-// Badge + auto-refresh
-async function refreshJobsBadge() {
-  if(!TOKEN) return;
-  try {
-    const r = await fetch('/api/jobs', {headers: H()});
-    const j = await r.json();
-    const active = (j.jobs || []).filter(j => j.status === 'queued' || j.status === 'running').length;
-    const b = document.getElementById('jobsbadge');
-    b.textContent = active; b.classList.toggle('show', active > 0);
-    jobsAutoRefresh = active > 0;
-  } catch(e) {}
+/* ───────────────────────── YOU ───────────────────────── */
+const AUTO_DESC={suggest:'Suggest — Shay proposes, you trigger everything.',copilot:'Copilot — Shay acts, but checks in at the decision points.',autopilot:'Autopilot — Shay runs end-to-end, pings you only when blocked.'};
+function loadPref(k,d){ return localStorage.getItem('shay_'+k)||d; }
+function savePref(k,v){ localStorage.setItem('shay_'+k,v); }
+document.querySelectorAll('#autoMode button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#autoMode button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); savePref('autonomy',b.dataset.m); $('#autoDesc').textContent=AUTO_DESC[b.dataset.m]; });
+document.querySelectorAll('#notifBudget button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#notifBudget button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); savePref('budget',b.dataset.b); });
+$('#quiet').onchange=e=>savePref('quiet',e.target.value);
+$('#brainSel').onchange=e=>{ CHAT_BRAIN=e.target.value; savePref('brain',e.target.value); };
+function loadYou(){
+  const a=loadPref('autonomy','copilot');
+  document.querySelectorAll('#autoMode button').forEach(x=>x.classList.toggle('on',x.dataset.m===a));
+  $('#autoDesc').textContent=AUTO_DESC[a];
+  const bg=loadPref('budget','5'); document.querySelectorAll('#notifBudget button').forEach(x=>x.classList.toggle('on',x.dataset.b===bg));
+  $('#quiet').value=loadPref('quiet','22:00–7:30');
+  const pushed=Notification.permission==='granted'&&loadPref('pushed','');
+  $('#pushPill').textContent = pushed?'on':'off';
+  $('#pushPill').className = 'pill'+(pushed?' cyan':'');
+  if(LAST_BRIEF&&Array.isArray(LAST_BRIEF.agents)){
+    const ag=LAST_BRIEF.agents.filter(x=>x&&x.name);
+    $('#macTs').textContent=clock(LAST_BRIEF.generated_at);
+    $('#macHealth').innerHTML=ag.slice(0,8).map(x=>`<div class="row spread" style="padding:6px 0"><div class="row" style="gap:9px"><span class="dot ${x.status==='running'?'cyan':x.status==='stopped'?'gray':'rose'}"></span><span class="small">${esc(x.label||x.name)}</span></div><span class="tiny dim mono">${esc(x.status)}</span></div>`).join('')||'<div class="tiny dim">No agents registered.</div>';
+  }
+  loadBrains();
+}
+async function loadBrains(){
+  try{ const d=await api('/api/brains'); const sel=$('#brainSel'); const cur=loadPref('brain','auto');
+    sel.innerHTML='<option value="auto">Auto (best available)</option>'+ (d.brains||[]).map(b=>`<option value="${b.id}" ${b.available?'':'disabled'}>${esc(b.label)}${b.available?'':' · offline'}</option>`).join('');
+    sel.value=cur; CHAT_BRAIN=cur;
+  }catch(e){}
 }
 
-function autoRefreshJobs() {
-  // Refresh badge always; reload list if Jobs tab is active and jobs are running
-  refreshJobsBadge();
-  const jobsTabActive = document.getElementById('v-jobs').classList.contains('active');
-  if(jobsAutoRefresh && jobsTabActive) loadJobs();
+/* ───────────────────────── PUSH ───────────────────────── */
+function urlB64ToUint8(b64){ const pad='='.repeat((4-b64.length%4)%4); const s=(b64+pad).replace(/-/g,'+').replace(/_/g,'/'); const raw=atob(s); return Uint8Array.from([...raw].map(c=>c.charCodeAt(0))); }
+$('#pushBtn').onclick=async()=>{
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)){ toast('Push not supported here'); return; }
+  try{
+    const perm=await Notification.requestPermission(); if(perm!=='granted'){ toast('Permission denied'); return; }
+    const reg=await navigator.serviceWorker.ready;
+    const {publicKey}=await api('/api/vapid');
+    if(!publicKey){ toast('Server has no VAPID key yet'); return; }
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8(publicKey)});
+    await api('/api/subscribe',{method:'POST',body:JSON.stringify({subscription:sub})});
+    savePref('pushed','1'); $('#pushPill').textContent='on'; $('#pushPill').className='pill cyan'; toast('Lock-screen alerts on ✓');
+  }catch(e){ toast('Push setup failed'); }
+};
+$('#pushTest').onclick=async()=>{ try{ await api('/api/push',{method:'POST',body:JSON.stringify({title:'✦ Shay',body:'Test alert — your lock screen is wired.',url:'/'})}); toast('Sent — check your lock screen'); }catch(e){ toast('Send failed'); } };
+
+/* ───────────────────────── VOICE (STT) ───────────────────────── */
+let MR, CHUNKS=[];
+async function recordVoice(target){
+  if(MR&&MR.state==='recording'){ MR.stop(); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    MR=new MediaRecorder(stream); CHUNKS=[];
+    MR.ondataavailable=e=>CHUNKS.push(e.data);
+    MR.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const blob=new Blob(CHUNKS,{type:'audio/webm'}); toast('Transcribing…');
+      try{ const r=await fetch('/api/stt?k='+encodeURIComponent(TOKEN),{method:'POST',headers:{'Content-Type':blob.type},body:blob}); const d=await r.json();
+        if(d.text){ target.value=(target.value?target.value+' ':'')+d.text; target.dispatchEvent(new Event('input')); } else toast(d.error||'No speech'); }
+      catch(e){ toast('STT failed'); }
+    };
+    MR.start(); toast('🎙 Listening — tap mic to stop');
+  }catch(e){ toast('Mic unavailable'); }
 }
 
-// ── Mic / local Whisper STT ────────────────────────────────────────────────
-(function() {
-  const micBtn = document.getElementById('mic-btn');
-  const micStatus = document.getElementById('mic-status');
-  const tiEl = document.getElementById('ti');
+/* ───────────────── INTERVIEW CARD / ASK SHEET ───────────────── */
+let ALL_ASKS=[], SURFACED=null, IV={ask:null,idx:0,answers:[],sel:null};
+function openSheet(html){ $('#sheetBody').innerHTML=html; $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); }
+function closeSheet(){ $('#scrim').classList.remove('on'); $('#sheet').classList.remove('on'); }
+$('#scrim').onclick=closeSheet;
+function parseOpt(o){ if(typeof o==='object'&&o){ return {t:o.label||o.title||o.t||'',d:o.description||o.d||''}; } const s=String(o); const i=s.indexOf(' — '); return i>0?{t:s.slice(0,i),d:s.slice(i+3)}:{t:s,d:''}; }
+function optHtml(opts){ return `<div id="optWrap">`+opts.map((o,i)=>`<button class="opt" data-i="${i}" onclick="pickOpt(this)"><span class="rk"></span><span><span class="ot">${esc(o.t)}</span>${o.d?`<span class="od">${esc(o.d)}</span>`:''}</span></button>`).join('')+`</div>`; }
 
-  let mediaRecorder = null;
-  let audioChunks = [];
-  let micStream = null;
-  let recording = false;
-
-  function setMicStatus(msg, show) {
-    micStatus.textContent = msg;
-    micStatus.classList.toggle('show', !!show);
+async function openAsk(id){
+  let a=ALL_ASKS.find(x=>x.id===id); if(!a){ try{a=await api('/api/ask?id='+id);}catch(e){return;} }
+  if(!a||a.error)return;
+  if(a.kind==='interview'){ startInterview(a); return; }
+  renderSingleAsk(a);
+}
+function renderSingleAsk(a){
+  const opts=(a.options||[]).map(parseOpt);
+  IV={ask:a,idx:0,answers:[],sel:null,opts,single:true};
+  let body=`<div class="asking"><span class="bd"><i></i><i></i><i></i></span>Shay is asking</div>`;
+  if(a.kind==='approval' && a.context){
+    body+=`<div class="q-h">${esc(a.question)}</div>`;
+    body+=`<div class="plan"><div class="pl">The plan</div><div class="small" style="white-space:pre-wrap">${esc(String(a.context).slice(0,1000))}</div></div>`;
+    body+=`<div class="row" style="gap:10px"><button class="btn primary" onclick="answerSingle('approve')">Approve &amp; start</button><button class="btn ghost" onclick="answerSingle('adjust')">Let's adjust</button></div>`;
+    openSheet(body); return;
   }
+  body+=`<div class="q-h">${esc(a.question)}</div>`;
+  if(a.context) body+=`<div class="q-ctx">${esc(String(a.context).slice(0,400))}</div>`;
+  if(opts.length) body+=optHtml(opts);
+  body+=`<input class="q-own" id="ownAns" placeholder="${opts.length?'…or type your own answer':'Type your answer'}">`;
+  body+=`<button class="btn primary" onclick="submitSingle()">Submit answer</button>`;
+  openSheet(body);
+}
+function pickOpt(btn){ document.querySelectorAll('#optWrap .opt').forEach(o=>o.classList.remove('sel')); btn.classList.add('sel'); IV.sel=IV.opts[+btn.dataset.i].t; const o=$('#ownAns'); if(o)o.value=''; }
+function submitSingle(){ const own=$('#ownAns').value.trim(); const ans=own||IV.sel; if(!ans){ toast('Pick an option or type an answer'); return; } answerSingle(ans); }
+async function answerSingle(answer){
+  try{ await api('/api/answer',{method:'POST',body:JSON.stringify({id:IV.ask.id,answer})}); toast('Sent to Shay ✓'); }catch(e){ toast('Failed'); }
+  closeSheet(); refreshBadges(); if(CUR==='dispatch')loadApprovals();
+}
 
-  async function startRecording() {
-    if (recording) return;
-    // Guard: no HTTPS = getUserMedia will throw; surface a friendly message.
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-      setMicStatus('mic needs HTTPS — enable Tailscale certs', true);
-      setTimeout(() => setMicStatus('', false), 3500);
-      return;
+function startInterview(a){ IV={ask:a,idx:0,answers:[],sel:null,opts:[],single:false}; renderInterviewStep(); }
+function renderInterviewStep(){
+  const a=IV.ask, qs=a.questions||[];
+  if(IV.idx>=qs.length){ renderInterviewPlan(); return; }
+  const q=qs[IV.idx]; const opts=(q.options||[]).map(parseOpt); IV.opts=opts; IV.sel=null;
+  const dots=qs.map((_,i)=>`<i class="${i<IV.idx?'done':i===IV.idx?'on':''}"></i>`).join('');
+  let body=`<div class="asking"><span class="bd"><i></i><i></i><i></i></span>Shay is asking · ${esc(a.title||'Interview')}</div>`;
+  body+=`<div class="dots">${dots}</div>`;
+  body+=`<div class="q-h">${esc(q.q)}</div>`;
+  if(opts.length) body+=optHtml(opts);
+  body+=`<input class="q-own" id="ownAns" placeholder="${opts.length?'…or type your own':'Type your answer'}">`;
+  body+=`<button class="btn primary" onclick="nextInterview()">${IV.idx===qs.length-1?'Review plan →':'Next →'}</button>`;
+  openSheet(body);
+}
+function nextInterview(){
+  const own=$('#ownAns').value.trim(); const ans=own||IV.sel;
+  if(!ans){ toast('Answer to continue'); return; }
+  IV.answers[IV.idx]=ans; IV.idx++; renderInterviewStep();
+}
+function renderInterviewPlan(){
+  const a=IV.ask, qs=a.questions||[];
+  let rows=qs.map((q,i)=>`<div class="prow"><b>${esc((q.q||'').slice(0,26))}</b><span>${esc(IV.answers[i]||'—')}</span></div>`).join('');
+  let body=`<div class="asking"><span class="bd"><i></i><i></i><i></i></span>Ready to confirm</div>`;
+  body+=`<div class="q-h">${esc(a.title||'Your plan')}</div>`;
+  if(a.context) body+=`<div class="q-ctx">${esc(String(a.context).slice(0,300))}</div>`;
+  body+=`<div class="plan"><div class="pl">Your answers</div>${rows}</div>`;
+  body+=`<div class="row" style="gap:10px"><button class="btn primary" onclick="submitInterview()">Approve &amp; start</button><button class="btn ghost" onclick="IV.idx=0;renderInterviewStep()">Let's adjust</button></div>`;
+  openSheet(body);
+}
+async function submitInterview(){
+  try{ await api('/api/answer',{method:'POST',body:JSON.stringify({id:IV.ask.id,answers:IV.answers})}); toast('Plan approved — Shay is on it ✓'); }catch(e){ toast('Failed'); }
+  closeSheet(); refreshBadges();
+}
+
+/* ─────────── badges + ambient ask surfacing ─────────── */
+async function refreshBadges(){
+  try{
+    const [asks,jobs]=await Promise.all([api('/api/asks').then(d=>d.asks||[]).catch(()=>[]), api('/api/jobs').then(d=>d.jobs||[]).catch(()=>[])]);
+    ALL_ASKS=asks;
+    const questions=asks.filter(a=>['question','interview','research_scope'].includes(a.kind));
+    const approvals=asks.filter(a=>a.kind==='approval');
+    const working=jobs.filter(j=>j.status==='running').length;
+    setBadge('#bgDisp',approvals.length);
+    setBadge('#bgTasks',working);
+    const fresh=questions[questions.length-1];
+    if(fresh && fresh.id!==SURFACED && !$('#sheet').classList.contains('on')){
+      SURFACED=fresh.id; openAsk(fresh.id);
     }
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch(e) {
-      if (e.name === 'NotAllowedError') {
-        setMicStatus('mic permission denied', true);
-      } else if (e.name === 'NotFoundError') {
-        setMicStatus('no mic found', true);
-      } else {
-        setMicStatus('mic needs HTTPS — enable Tailscale certs', true);
-      }
-      setTimeout(() => setMicStatus('', false), 3500);
-      return;
-    }
-    audioChunks = [];
-    // Prefer webm/opus; fall back to browser default
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
-    mediaRecorder = mimeType ? new MediaRecorder(micStream, { mimeType }) : new MediaRecorder(micStream);
-    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
-    mediaRecorder.onstop = handleStop;
-    mediaRecorder.start();
-    recording = true;
-    micBtn.classList.add('listening');
-    setMicStatus('listening…', true);
-  }
+  }catch(e){}
+}
+function setBadge(sel,n){ const b=$(sel); if(!b)return; if(n>0){ b.textContent=n; b.classList.add('show'); } else b.classList.remove('show'); }
 
-  function stopRecording() {
-    if (!recording || !mediaRecorder) return;
-    recording = false;
-    mediaRecorder.stop();
-    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
-    micBtn.classList.remove('listening');
-    setMicStatus('transcribing…', true);
-  }
-
-  async function handleStop() {
-    if (!audioChunks.length) { setMicStatus('', false); return; }
-    const mimeType = mediaRecorder.mimeType || 'audio/webm';
-    const blob = new Blob(audioChunks, { type: mimeType });
-    audioChunks = [];
-    micBtn.disabled = true;
-    try {
-      const r = await fetch('/api/stt?k=' + encodeURIComponent(TOKEN), {
-        method: 'POST',
-        headers: { 'Content-Type': mimeType },
-        body: blob,
-      });
-      const j = await r.json();
-      setMicStatus('', false);
-      if (j.error && !j.text) {
-        toast('STT error: ' + j.error);
-      } else if (j.text) {
-        // Insert into textarea; let Fritz review then send manually
-        tiEl.value = (tiEl.value ? tiEl.value + ' ' : '') + j.text;
-        tiEl.style.height = 'auto';
-        tiEl.style.height = Math.min(tiEl.scrollHeight, 120) + 'px';
-        tiEl.focus();
-      } else {
-        toast('(no speech detected)');
-      }
-    } catch(e) {
-      setMicStatus('', false);
-      toast('STT failed: ' + e);
-    } finally {
-      micBtn.disabled = false;
-    }
-  }
-
-  // Tap to toggle: press starts, press again stops.
-  // Also supports hold-to-record on mobile (touchstart/touchend).
-  let holdTimer = null;
-  let holdMode = false;
-
-  micBtn.addEventListener('touchstart', e => {
-    e.preventDefault();
-    holdMode = true;
-    startRecording();
-  }, { passive: false });
-
-  micBtn.addEventListener('touchend', e => {
-    e.preventDefault();
-    if (holdMode) { holdMode = false; stopRecording(); }
-  }, { passive: false });
-
-  micBtn.addEventListener('click', e => {
-    if (holdMode) return; // already handled by touch events
-    if (recording) { stopRecording(); }
-    else { startRecording(); }
-  });
-})();
+/* ───────────────────────── boot ───────────────────────── */
+async function boot(){
+  if(!TOKEN){ gate(); return; }
+  if('serviceWorker'in navigator){ try{ await navigator.serviceWorker.register('sw.js'); }catch(e){} }
+  if(!CHAT_SEEDED){ addMsg('sys','Talk to Shay, or hand her a job from Dispatch. She runs on your Mac — this is just the remote.'); CHAT_SEEDED=true; }
+  go('brief');
+  refreshBadges();
+  setInterval(refreshBadges, 12000);
+  setInterval(()=>{ if(CUR==='tasks')loadTasks(); if(CUR==='brief')loadBrief(true); if(CUR==='dispatch')loadApprovals(); }, 15000);
+}
+boot();
 </script>
 </body>
 </html>
