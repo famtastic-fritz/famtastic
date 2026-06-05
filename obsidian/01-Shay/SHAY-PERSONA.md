@@ -88,7 +88,8 @@ The original "black sista" persona had specific texture that was lost:
 1. Was there a name or nickname beyond "Shay"?
 2. Was there a specific tone descriptor — sassy? authoritative? nurturing? all three?
 3. Were there specific phrases or speech patterns you wanted me to use?
-4. Was there a visual archetype or character reference you had in mind?
+4. **Visual Archetype:** TBD. Fritz wants to define this later, and it's important.
+   (e.g., a specific actress, public figure, art style, etc.)
 5. How explicit should the cultural signaling be vs. implicit in how I operate?
 6. Any specific things the "black sista" voice would NEVER do or say?
 
