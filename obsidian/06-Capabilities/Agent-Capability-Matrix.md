@@ -1,6 +1,6 @@
 # Agent Capability Matrix
 
-Last updated: 2026-05-27
+Last updated: 2026-06-02 (added humanize-writing skill; installed for Claude Code + Shay)
 
 ## Legend
 - ✅ = Installed & Active
@@ -71,6 +71,20 @@ Last updated: 2026-05-27
 | **Anthropic Cybersecurity** | 754 | ❌ Not installed | Free | Security, MITRE ATT&CK | Clone + point agent |
 | **Open Design** | 132 | ❌ Not installed | Free | Design systems, media gen | `pnpm + Node 22` |
 | **MeiGen MCP** | 1,446 prompts | ❌ Not installed | 💰 Key | Image/video generation | `npm install -g meigen` |
+
+### Installed Studio / Claude Code Skills (`.claude/skills/`)
+
+Shared skill pool available to any Claude Code or Studio session. Mirrored to Shay's own pool (`shay-agent-os/skills/`) where noted.
+
+| Skill | Status | Cost | Best For | Installed where |
+|-------|--------|------|----------|-----------------|
+| **humanize-writing** | ✅ Active | Free | Remove AI tells, normalize burstiness, voice-calibrate prose >3 paragraphs | `.claude/skills/` **+ `shay-agent-os/skills/`** |
+| adobe-firefly | ✅ Active | 💰 Key | AI image generation | `.claude/skills/` |
+| brainstorm / site-studio / export-site | ✅ Active | API usage | Site factory flows | `.claude/skills/` |
+| register-credential | ✅ Active | Free | Vault a secret + verify the dependent capability | `.claude/skills/` |
+| remotion-best-practices | ✅ Active | Free | Remotion video creation | `.claude/skills/` |
+
+Source for humanize-writing: `github.com/aaaronmiller/humanize-writing` (installed 2026-06-02).
 
 ---
 

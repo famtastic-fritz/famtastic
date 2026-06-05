@@ -1,0 +1,6 @@
+# Generated output — regenerated on every run. The ENGINE is the deliverable,
+# not these offline template-fallback artifacts. On Fritz's Mac the real
+# BrainInterface LLM path produces the publish-quality versions of these.
+articles/
+dist/
+results/

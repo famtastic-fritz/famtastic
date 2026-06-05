@@ -1,0 +1,40 @@
+{
+  "_note": "Uses Fritz's real Cash App $cashtag ($FAMtasticFritz). If you OMIT the cashtag here, the generator falls back to payment.cashapp.cashtag in platform/config/owner-profile.json. The link https://cash.app/$FAMtasticFritz/<total> is a P2P nudge; for a guaranteed amount use an official Cash App Payment Link via method:link.",
+  "engagement_id": "lunas-flower-shop-site-deposit",
+  "engagement_type": "one_time",
+  "site_tag": "site-lunas-flower-shop",
+  "currency": "USD",
+  "vendor": {
+    "name": "FAMtastic",
+    "email": "fritz.medine@gmail.com",
+    "website": "famtastic.dev"
+  },
+  "client": {
+    "name": "Luna's Flower Shop",
+    "contact": "Luna Reyes",
+    "email": "luna@lunasflowershop.com",
+    "address": "1247 Memorial Dr SE, Atlanta, GA 30317"
+  },
+  "line_items": [
+    {
+      "description": "Home-services website build — setup deposit (50% to start)",
+      "quantity": 1,
+      "unit": "project",
+      "unit_price": 100.00
+    }
+  ],
+  "tax": {
+    "label": "GA Sales Tax",
+    "rate_percent": 0
+  },
+  "terms": {
+    "net_days": 7,
+    "notes": "Setup deposit is due before build kickoff. Balance invoiced on launch."
+  },
+  "payment": {
+    "method": "cashapp",
+    "cashtag": "$FAMtasticFritz",
+    "instructions": "Once paid, reply with a screenshot or the Cash App confirmation so we can mark the invoice paid and schedule your build kickoff."
+  },
+  "payment_instructions": "Pay via Cash App using the link below, or contact us for an alternate method."
+}

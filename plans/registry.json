@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-05-05T16:20:00.000-04:00",
+  "updated_at": "2026-06-02T16:41:32.668Z",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -44,14 +44,28 @@
     "plan_2026_05_05_platform_site_promotion",
     "plan_2026_05_05_chat_capture_learn_optimize",
     "plan_2026_05_05_agent_coordination",
-    "plan_2026_05_05_workbench_per_page_design"
+    "plan_2026_05_05_workbench_per_page_design",
+    "mission-control-command-center",
+    "shay-omnipresent-assistant",
+    "fritz-companion-app",
+    "financial-agents",
+    "autonomous-content-engine"
   ],
   "labels": {
     "plan_2026_05_05_workbench_per_page_design": {
       "label": "workbench-per-page-design",
-      "tags": ["platform-upgrades", "studio-ui", "design-research", "ux", "creation-platform"],
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "design-research",
+        "ux",
+        "creation-platform"
+      ],
       "role": "research",
-      "feeds_into": ["plan_2026_05_05_ops_workspace_gui", "studio-workbench-foundation"],
+      "feeds_into": [
+        "plan_2026_05_05_ops_workspace_gui",
+        "studio-workbench-foundation"
+      ],
       "note": "Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05."
     },
     "plan_2026_05_05_platform_site_promotion": {
@@ -149,6 +163,61 @@
         "plan_2026_05_05_chat_capture_learn_optimize"
       ],
       "note": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate."
+    },
+    "mission-control-command-center": {
+      "label": "command-center",
+      "tags": [
+        "platform-upgrades",
+        "studio-ui",
+        "ops",
+        "shay-shay",
+        "mission-control"
+      ],
+      "role": "domain",
+      "feeds_into": [
+        "plan_2026_05_05_ops_workspace_gui"
+      ],
+      "note": "Mission Control / Command Center: aggregates plans+tasks+runs+proofs+agents+sites+capabilities into a mobile-first dashboard, a Virtual-Fritz briefing, and a JSON snapshot. Scores every plan by stage/momentum/autonomy/profitability."
+    },
+    "shay-omnipresent-assistant": {
+      "label": "shay-omnipresent",
+      "priority": "high",
+      "tags": [
+        "shay-shay",
+        "virtual-assistant",
+        "omnipresent",
+        "reach-fabric",
+        "voice",
+        "avatar"
+      ],
+      "role": "product",
+      "note": "Build Shay into a true omnipresent virtual assistant: manager-grade, with a virtual body, reachable everywhere (phone, web, voice/Alexa, smartwatch, AR/smart glasses). Research-first; assume it does not exist as one product and compose it from the best pieces."
+    },
+    "fritz-companion-app": {
+      "label": "companion-app",
+      "priority": "high",
+      "tags": [
+        "shay-shay",
+        "companion-app",
+        "mobile",
+        "chat",
+        "reach-fabric"
+      ],
+      "role": "product",
+      "note": "A companion app that works like how Fritz talks to his second-in-command right now: ask questions, get answers, run the operation from his pocket. Mobile-first chat client over the Shay gateway + the Command Center briefing, with push so Shay can reach him."
+    },
+    "financial-agents": {
+      "label": "financial-agents",
+      "priority": "high",
+      "tags": [
+        "shay-shay",
+        "finance",
+        "trading",
+        "automation",
+        "agents"
+      ],
+      "role": "product",
+      "note": "Fleet of paper-trading strategy agents that watch the markets, make predictions, and report effectiveness as a $10-stake leaderboard. Net-new — no prior financial code existed in the brain. Sim/paper first; live brokerage (Alpaca) is a later, gated step."
     }
   },
   "_label_role_legend": {
@@ -486,6 +555,231 @@
         "Freshness field not yet present on jobs/runs records.",
         "No WebSocket /ws/ops channel exists.",
         "Record-type visual language not yet codified in design tokens."
+      ]
+    },
+    {
+      "id": "mission-control-command-center",
+      "title": "Mission Control / Command Center",
+      "status": "active",
+      "status_label": "Active parent plan",
+      "group": "command_center",
+      "plan_path": "plans/mission-control-command-center/plan.json",
+      "current_workstream": "v1 generator shipped (dashboard + briefing + snapshot) reading live ledgers; next is delivery surfaces (CLI/cron/Studio/phone) and unblocking the Shay billing+work capabilities it tracks.",
+      "next_action": "Wire fam-hub command-center + daily cron, surface in Studio Ops via /api/ops, and push the morning briefing to phone.",
+      "open_blockers": "No hard blocker. Send paths for billing (payment provider) and work (Jira/Slack creds) are Fritz decisions, tracked as tasks.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "complete_v1_then_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "generator",
+          "path": "scripts/command-center/build-command-center.js"
+        },
+        {
+          "label": "dashboard",
+          "path": "command-center/index.html"
+        },
+        {
+          "label": "briefing",
+          "path": "command-center/briefing.md"
+        },
+        {
+          "label": "shay readiness roadmap",
+          "path": "docs/shay-fritz-ready/ROADMAP.md"
+        }
+      ],
+      "tasks": [
+        "Add fam-hub command-center command + daily regen cron",
+        "Surface Command Center snapshot in Studio Ops via /api/ops",
+        "Push morning briefing to phone (Resend email / Telegram)",
+        "Decide payment provider to unblock billing.generate-invoice send path",
+        "Vault Jira/Slack creds to unblock work.draft-ticket-reply / draft-standup send"
+      ],
+      "assumptions": [
+        "The dashboard reads ledgers read-only; it never mutates plan/task state.",
+        "Scoring is heuristic and tunable in the generator SCORING block."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-001",
+        "task-2026-06-02-002",
+        "task-2026-06-02-003",
+        "task-2026-06-02-004",
+        "task-2026-06-02-005"
+      ]
+    },
+    {
+      "id": "shay-omnipresent-assistant",
+      "title": "Shay — Omnipresent Virtual Assistant",
+      "status": "active",
+      "status_label": "Active parent plan (Fritz priority)",
+      "group": "shay_assistant",
+      "fritz_priority": "high",
+      "plan_path": "plans/shay-omnipresent-assistant/plan.json",
+      "current_workstream": "Reach Fabric BUILT (lib/reach-fabric/): one send() with channel fallback, console always live, email/telegram on keys, sms/push manual_required. Next: virtual-body approach + first non-Telegram channel turned on with real creds.",
+      "next_action": "Turn on a real channel (set RESEND_API_KEY/Telegram envs) and define the virtual-body (voice-first) approach.",
+      "open_blockers": "No hard blocker. Device platform lock-ins (Apple/Meta/Amazon) will constrain some reach channels — to be characterized by the research.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "research_then_design",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "landscape research",
+          "path": "docs/shay-fritz-ready/VIRTUAL-ASSISTANT-LANDSCAPE.md"
+        },
+        {
+          "label": "readiness roadmap",
+          "path": "docs/shay-fritz-ready/ROADMAP.md"
+        },
+        {
+          "label": "shay master plan",
+          "path": "SHAY-MASTER-PLAN-2026-05-28.md"
+        }
+      ],
+      "tasks": [
+        "Research the omnipresent-assistant landscape (products, OSS building blocks, reach channels, virtual-body options)",
+        "Design the unified reach fabric (push/SMS/voice/Telegram/email/Alexa/wearable/glasses) as one service",
+        "Define the virtual-body approach (avatar + voice + persona) with cost/latency tradeoffs",
+        "Phase the path: Telegram-only today -> multi-channel -> voice/avatar -> wearables/glasses",
+        "Pick the build-on base from the research and scaffold the first reach channel beyond Telegram"
+      ],
+      "assumptions": [
+        "The assistant does not exist as a single product; compose it.",
+        "Shay (Hermes-based, ~/.shay/) is the runtime to extend, not replace."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-008"
+      ]
+    },
+    {
+      "id": "fritz-companion-app",
+      "title": "Fritz Companion App",
+      "status": "active",
+      "status_label": "Active parent plan (Fritz priority)",
+      "group": "companion_app",
+      "fritz_priority": "high",
+      "plan_path": "plans/fritz-companion-app/plan.json",
+      "current_workstream": "Companion App PWA BUILT (companion-app/): installable, offline app-shell, Chat (pluggable CHAT_ENDPOINT, mock until wired) + Today tab from command-center/state.json. Open it on the phone, Add to Home Screen.",
+      "next_action": "Point CHAT_ENDPOINT at the real Shay gateway (off-LAN auth via API_SERVER_KEY) and wire push via the Reach Fabric.",
+      "open_blockers": "No hard blocker. Push delivery and any app-store path are device-platform decisions.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "define_then_mvp",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "command center (the pattern to mirror)",
+          "path": "command-center/index.html"
+        },
+        {
+          "label": "shay master plan (Phase 3 phone companion)",
+          "path": "SHAY-MASTER-PLAN-2026-05-28.md"
+        }
+      ],
+      "tasks": [
+        "Define companion-app architecture: chat client <-> Shay gateway, mirroring the way Fritz talks to his second-in-command now",
+        "Choose the stack (PWA vs React Native vs reuse shay-desktop Electron)",
+        "Spec the question/answer loop + multi-device session sync",
+        "MVP: phone-accessible chat that reaches Shay and surfaces the daily briefing",
+        "Wire push notifications so Shay can reach Fritz first (the reach-me path)"
+      ],
+      "assumptions": [
+        "This is the phone-companion already named in the Shay master plan Phase 3.",
+        "It shares the reach fabric with shay-omnipresent-assistant."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-013"
+      ]
+    },
+    {
+      "id": "financial-agents",
+      "title": "Financial Agents — Market Watch & $10 Leaderboard",
+      "status": "active",
+      "status_label": "Active parent plan (Fritz priority)",
+      "group": "financial_agents",
+      "fritz_priority": "high",
+      "plan_path": "plans/financial-agents/plan.json",
+      "current_workstream": "Harness BUILT + ran (scripts/finance-agents/). 6 strategy agents, $10 leaderboard. In THIS cloud container the market feed (Stooq) is firewalled so numbers are SAMPLE/synthetic; on an open network run.js pulls real data automatically.",
+      "next_action": "Run on an open network for the real session; decide daily cron cadence; gate Alpaca paper-trading for live execution.",
+      "open_blockers": "No hard blocker for simulation. Live brokerage execution requires a broker account + API keys (Alpaca paper API) — a Fritz decision, gated.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "build_run_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "simulation harness",
+          "path": "scripts/finance-agents/run.js"
+        },
+        {
+          "label": "today leaderboard",
+          "path": "scripts/finance-agents/results/"
+        }
+      ],
+      "tasks": [
+        "Build paper-trading sim harness (keyless data + strategy agents)",
+        "Run today’s $10-stake leaderboard and report effectiveness",
+        "Decide daily tracking cadence + which agents advance",
+        "Gate: wire Alpaca paper-trading for live execution (needs broker keys)"
+      ],
+      "assumptions": [
+        "Single-session result is noise; the harness measures agents over time.",
+        "Paper/simulation only until a broker decision is made."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-016",
+        "task-2026-06-02-017"
+      ]
+    },
+    {
+      "id": "autonomous-content-engine",
+      "title": "Autonomous Content Engine — Hands-off SEO/Affiliate Site",
+      "status": "active",
+      "status_label": "Active parent plan (Fritz priority)",
+      "group": "autonomous_content_engine",
+      "fritz_priority": "high",
+      "plan_path": "plans/autonomous-content-engine/plan.json",
+      "current_workstream": "Engine BUILT (scripts/content-engine/): quality-gated article generator (reuses brain-interface.js, deterministic offline fallback), static-site assembler, cron publish stub. Niche+monetization research delivered. Runs offline here; live LLM + deploy run on Fritz Mac.",
+      "next_action": "Fritz one-time setup: create Amazon Associates / ad-network account + point a domain at deploy target + approve niche. Then schedule the publish cron.",
+      "open_blockers": "Monetization accounts are Fritz-only (cannot be automated). Revenue is months out; this is the lowest-involvement, slowest path by Fritz design choice.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": "Claude Code",
+      "run_target": "build_run_report",
+      "handling": "auto_approved_warn_log_notify",
+      "proof": [
+        {
+          "label": "content engine",
+          "path": "scripts/content-engine/"
+        },
+        {
+          "label": "niche+monetization research",
+          "path": "scripts/content-engine/NICHE-AND-MONETIZATION.md"
+        }
+      ],
+      "tasks": [
+        "Build quality-gated content engine (generate + assemble + publish)",
+        "Research+pick niche and monetization setup",
+        "Run offline proof: generate sample articles + static site",
+        "Fritz one-time: monetization accounts + domain + niche approval; then cron"
+      ],
+      "assumptions": [
+        "Lowest-involvement seed chosen by Fritz; slowest path.",
+        "Quality-gated to survive Google scaled-content-abuse policy."
+      ],
+      "next_action_items": [
+        "task-2026-06-02-ace-03",
+        "task-2026-06-02-ace-04"
       ]
     }
   ],

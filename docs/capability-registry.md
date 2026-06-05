@@ -1,7 +1,32 @@
 # Studio Capability Registry
 
-Last updated: 2026-04-08 (media providers updated)
+Last updated: 2026-06-02 (added Odysseus integration + agents)
 Source: cli-handoff-pattern.json (street-family-reunion session)
+
+---
+
+## Installed Skills
+
+| Skill | Location | Purpose |
+|---|---|---|
+| **humanize-writing** | `.claude/skills/humanize-writing/` + `shay-agent-os/skills/humanize-writing/` | Standing prose-output filter — strips AI tells, normalizes burstiness/sentence rhythm, calibrates to Fritz's voice. Applies automatically to any written output >3 paragraphs. References must be fully loaded before applying. Source: `github.com/aaaronmiller/humanize-writing` (installed 2026-06-02). Available to Claude Code AND Shay (shay-agent-os). |
+| **ask-claude** | `scripts/ask-claude` + `shay-agent-os/skills/ask-claude/` | Phone-a-friend line to Claude (Opus/Sonnet) for any non-Claude brain. Lets Shay escalate hard/high-stakes decisions and get a decisive second opinion. Wraps `scripts/claude-cli` (auth'd `claude` CLI), falls back to `scripts/agents run claude`. `scripts/ask-claude [--context FILE] "question"`. Installed 2026-06-04. |
+| **logo-transparent** | `scripts/logo-transparent.sh` + `.claude/skills/logo-transparent/` + `shay-agent-os/skills/logo-transparent/` | Background removal + cleanup for logos/images → transparent PNG. Prefers `rembg` (ML, any background), falls back to ImageMagick floodfill with **auto-detected corner color** (handles black/white/any solid bg), trims margins. `scripts/logo-transparent.sh <input> [output]`. **Runs locally** where the file + tools live (Mac/Studio) — not in a fresh cloud container. Installed 2026-06-04. |
+| **gap-analysis** | `.claude/skills/gap-analysis/` + `shay-agent-os/skills/gap-analysis/` | Repeatable deep-investigation method: inventory what exists → define what's needed → diff → coverage table + sequenced fixes (severity/owner). The method behind the brain-wiring audit. Reproduce via `scripts/ask-claude "Run a gap-analysis on X…"`. Installed 2026-06-04. |
+| **recover-codex-research** | `scripts/recover-codex-research.sh` + `obsidian/00-FAMtastic-Core/RESEARCH-RECOVERY-PLAYBOOK.md` | Harvests Codex session transcripts (`~/.codex/sessions/rollout-*.jsonl`) into local staging + readable markdown so a heavy research day survives a reinstall; Claude then organizes them into `obsidian/07-Research/`. Read-only on source; staging gitignored. Installed 2026-06-04. |
+
+## Installed Agents
+
+| Agent | Location | Purpose |
+|---|---|---|
+| **odysseus** (Claude) | `.claude/agents/odysseus.md` | Operator for Fritz's self-hosted Odysseus workspace (`~/odysseus:7860`). Installs/starts/health-checks; routes local-eligible work (chat, agent runs, deep research, model serving via Cookbook) to Odysseus vs. cloud. Loopback+auth rules; launchd boundary. Source repo: `github.com/pewdiepie-archdaemon/odysseus`. |
+| **odysseus** (Shay) | `shay-agent-os/agents/odysseus.md` | Shay's operator for her headless instance (`~/odysseus-shay:7870`). Local-serving economics — route bulk/low-stakes swarm work to free local models, reserve cloud Opus for high-reasoning. Drafted 2026-06-02; Shay to adopt/refine. |
+
+## External tools integrated
+
+| Tool | Install | Docs |
+|---|---|---|
+| **Odysseus** (self-hosted AI workspace) | `scripts/odysseus/install-odysseus.sh` (Fritz) · `shay-agent-os/odysseus/install-odysseus-shay.sh` (Shay) | `docs/odysseus/ODYSSEUS-WRITEUP.md` · tutorials `docs/odysseus/tutorial-{claude,shay}.html` |
 
 ---
 

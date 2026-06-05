@@ -6,52 +6,32 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/session-start.js\"",
-            "timeout": 5
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/brain/session-checkpoint.js\"",
+            "timeout": 8
           }
         ]
       }
     ],
-    "PreToolUse": [
+    "PreCompact": [
       {
-        "matcher": "Read",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-read.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-write.js\"",
-            "timeout": 5
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/brain/session-checkpoint.js\"",
+            "timeout": 8
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/post-read.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/post-write.js\"",
-            "timeout": 10
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/brain/openwolf-post-write.js\"",
+            "timeout": 5
           }
         ]
       }
@@ -62,8 +42,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/stop.js\"",
-            "timeout": 10
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/brain/session-checkpoint.js\"",
+            "timeout": 8
           }
         ]
       }

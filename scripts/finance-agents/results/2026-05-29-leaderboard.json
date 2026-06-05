@@ -1,0 +1,230 @@
+{
+  "generatedAt": "2026-06-02T13:15:40.804Z",
+  "simulation": true,
+  "liveBrokerage": false,
+  "dataSource": "SAMPLE",
+  "isSampleData": true,
+  "session": "2026-05-29",
+  "priorSession": "2026-05-28",
+  "stake": 10,
+  "basket": [
+    {
+      "display": "SPY",
+      "source": "SAMPLE:synthetic (NOT real market data)",
+      "kind": "etf"
+    },
+    {
+      "display": "QQQ",
+      "source": "SAMPLE:synthetic (NOT real market data)",
+      "kind": "etf"
+    },
+    {
+      "display": "AAPL",
+      "source": "SAMPLE:synthetic (NOT real market data)",
+      "kind": "stock"
+    },
+    {
+      "display": "NVDA",
+      "source": "SAMPLE:synthetic (NOT real market data)",
+      "kind": "stock"
+    },
+    {
+      "display": "TSLA",
+      "source": "SAMPLE:synthetic (NOT real market data)",
+      "kind": "stock"
+    },
+    {
+      "display": "BTC-USD",
+      "source": "SAMPLE:synthetic (NOT real market data)",
+      "kind": "crypto"
+    }
+  ],
+  "sessionMoves": [
+    {
+      "symbol": "SPY",
+      "prevClose": 576.6999,
+      "close": 576.1677,
+      "ret": -0.0009228369902612936
+    },
+    {
+      "symbol": "QQQ",
+      "prevClose": 472.5381,
+      "close": 473.8892,
+      "ret": 0.0028592403448526814
+    },
+    {
+      "symbol": "AAPL",
+      "prevClose": 242.9072,
+      "close": 243.3819,
+      "ret": 0.0019542442545960464
+    },
+    {
+      "symbol": "NVDA",
+      "prevClose": 161.4844,
+      "close": 163.3801,
+      "ret": 0.011739214438051013
+    },
+    {
+      "symbol": "TSLA",
+      "prevClose": 340.7781,
+      "close": 338.355,
+      "ret": -0.007110492135498076
+    },
+    {
+      "symbol": "BTC-USD",
+      "prevClose": 89563.25,
+      "close": 91857.32,
+      "ret": 0.025613965549486056
+    }
+  ],
+  "leaderboard": [
+    {
+      "rank": 1,
+      "agent": "Mean-Reversion",
+      "prediction": "Oversold bounce: BTC-USD got hit hardest yesterday (-1.50%), so it rebounds today.",
+      "pick": "BTC-USD",
+      "legs": [
+        {
+          "symbol": "BTC-USD",
+          "weight": 1,
+          "ret": 0.025613965549486056,
+          "prevClose": 89563.25,
+          "close": 91857.32
+        }
+      ],
+      "returnPct": 0.025613965549486056,
+      "startValue": 10,
+      "endValue": 10.2561
+    },
+    {
+      "rank": 2,
+      "agent": "Volatility-Breakout",
+      "prediction": "NVDA closed above its 20-day high (+0.86% over the breakout level). Chasing the breakout today.",
+      "pick": "NVDA",
+      "legs": [
+        {
+          "symbol": "NVDA",
+          "weight": 1,
+          "ret": 0.011739214438051013,
+          "prevClose": 161.4844,
+          "close": 163.3801
+        }
+      ],
+      "returnPct": 0.011739214438051013,
+      "startValue": 10,
+      "endValue": 10.1174
+    },
+    {
+      "rank": 3,
+      "agent": "Equal-Weight Basket",
+      "prediction": "Diversify: hold all 6 names equally; no single bet, just the basket's drift.",
+      "pick": "SPY+QQQ+AAPL+NVDA+TSLA+BTC-USD",
+      "legs": [
+        {
+          "symbol": "SPY",
+          "weight": 0.16666666666666666,
+          "ret": -0.0009228369902612936,
+          "prevClose": 576.6999,
+          "close": 576.1677
+        },
+        {
+          "symbol": "QQQ",
+          "weight": 0.16666666666666666,
+          "ret": 0.0028592403448526814,
+          "prevClose": 472.5381,
+          "close": 473.8892
+        },
+        {
+          "symbol": "AAPL",
+          "weight": 0.16666666666666666,
+          "ret": 0.0019542442545960464,
+          "prevClose": 242.9072,
+          "close": 243.3819
+        },
+        {
+          "symbol": "NVDA",
+          "weight": 0.16666666666666666,
+          "ret": 0.011739214438051013,
+          "prevClose": 161.4844,
+          "close": 163.3801
+        },
+        {
+          "symbol": "TSLA",
+          "weight": 0.16666666666666666,
+          "ret": -0.007110492135498076,
+          "prevClose": 340.7781,
+          "close": 338.355
+        },
+        {
+          "symbol": "BTC-USD",
+          "weight": 0.16666666666666666,
+          "ret": 0.025613965549486056,
+          "prevClose": 89563.25,
+          "close": 91857.32
+        }
+      ],
+      "returnPct": 0.005688889243537738,
+      "startValue": 10,
+      "endValue": 10.0569
+    },
+    {
+      "rank": 4,
+      "agent": "Trend-Follow (SMA10/20)",
+      "prediction": "AAPL is in a confirmed uptrend (price>SMA10>SMA20). Riding the trend today.",
+      "pick": "AAPL",
+      "legs": [
+        {
+          "symbol": "AAPL",
+          "weight": 1,
+          "ret": 0.0019542442545960464,
+          "prevClose": 242.9072,
+          "close": 243.3819
+        }
+      ],
+      "returnPct": 0.0019542442545960464,
+      "startValue": 10,
+      "endValue": 10.0195
+    },
+    {
+      "rank": 5,
+      "agent": "Buy-&-Hold SPY (baseline)",
+      "prediction": "Stay invested in the broad market (SPY); time in market beats timing it.",
+      "pick": "SPY",
+      "legs": [
+        {
+          "symbol": "SPY",
+          "weight": 1,
+          "ret": -0.0009228369902612936,
+          "prevClose": 576.6999,
+          "close": 576.1677
+        }
+      ],
+      "returnPct": -0.0009228369902612936,
+      "startValue": 10,
+      "endValue": 9.9908
+    },
+    {
+      "rank": 6,
+      "agent": "Momentum",
+      "prediction": "Strength persists: TSLA led yesterday (2.51%), so it keeps running today.",
+      "pick": "TSLA",
+      "legs": [
+        {
+          "symbol": "TSLA",
+          "weight": 1,
+          "ret": -0.007110492135498076,
+          "prevClose": 340.7781,
+          "close": 338.355
+        }
+      ],
+      "returnPct": -0.007110492135498076,
+      "startValue": 10,
+      "endValue": 9.9289
+    }
+  ],
+  "winner": {
+    "agent": "Mean-Reversion",
+    "endValue": 10.2561,
+    "returnPct": 0.025613965549486056
+  }
+}

@@ -207,6 +207,50 @@ already been done and mistakes that have already been fixed.
 
 See `.wolf/OPENWOLF.md` for the full operating protocol.
 
+## Brain Sync Contract (Non-Negotiable)
+
+The Obsidian brain (`obsidian/`) is the shared, cross-session memory — the place
+Fritz reads to find patterns across every agent and session. Work that never
+reaches the brain is invisible and effectively didn't happen. Every session —
+Claude Code, Codex, Gemini, Cowork, Shay — MUST leave a trace in the brain, tied
+to its session id. This is enforced three ways; do not rely on memory alone.
+
+### Rule 1: Every session is tied to the brain by its session id
+
+Each session's canonical id is `CLAUDE_CODE_SESSION_ID` (Shay uses her build/run
+id). A per-session note lives at
+`obsidian/05-Captures/sessions/<YYYY-MM-DD>/SESSION-<short-id>.md`. The note's
+frontmatter records `session_id`, `branch`, `start_sha`, and timestamps. Never
+write an anonymous session — always tie work to the id so Fritz can trace any
+change back to the session that made it.
+
+### Rule 2: Write to the brain periodically, not just at the end
+
+The session note is created automatically at SessionStart and updated at every
+context compaction (PreCompact) and at session end (Stop) by
+`scripts/brain/session-checkpoint.js` (wired in `.claude/settings.json`). Those
+hooks guarantee the scaffold, the timeline, and the git delta. **You are still
+responsible for the substance:** before any compaction and before ending, fill in
+the note's "What this session did" section (2–6 sentences: goals, what shipped,
+what's deferred). At natural milestones during long work — a feature landed, a
+decision made, a gap discovered — append a line to the note rather than waiting.
+
+### Rule 3: Promote durable knowledge into the right brain folder
+
+The session note is the trace; durable knowledge still goes to its home:
+learnings → `.wolf/cerebrum.md` + `obsidian/Shay-Memory/learnings/`, bugs →
+`.wolf/buglog.json`, capabilities/skills → `obsidian/06-Capabilities/`,
+architecture → `SITE-LEARNINGS.md`. The session note should link to whatever it
+promoted. A session that only touched the auto-scaffold but discovered something
+durable has not met this contract.
+
+### Rule 4: Branch from a base that HAS the brain
+
+If your branch predates `obsidian/` on `main`, merge `origin/main` in before
+doing brain work — otherwise your notes create add/add conflicts and never
+converge. (This is the convergence bug that left four 2026-06-02 sessions
+siloed; see `obsidian/05-Captures/sessions/`.)
+
 ## Agent Coordination (Paused)
 
 Agent check-in is temporarily disabled by Fritz because the current overlap

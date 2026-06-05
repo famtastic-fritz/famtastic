@@ -71,12 +71,26 @@ action_run(){
   # Export ORIG_PROMPT so log-jsonl records the actual user turn (not "unknown")
   export ORIG_PROMPT="$prompt"
 
+  # Brain Sync Contract: every agent surface leaves a session trace tied to its
+  # id. One call here covers claude/gemini/codex run through fam-hub. Stable id
+  # per (agent,tag) so repeated runs append to one note instead of spawning many.
+  brain_trace(){
+    local phase="$1"
+    command -v node >/dev/null 2>&1 || return 0
+    [ -f "$ROOT/scripts/brain/session-checkpoint.js" ] || return 0
+    AI_AGENT="$agent" BRAIN_SESSION_ID="famhub-${agent}-${tag}" CLAUDE_PROJECT_DIR="$ROOT" \
+      node "$ROOT/scripts/brain/session-checkpoint.js" "$phase" >/dev/null 2>&1 || true
+  }
+  brain_trace start
+
   case "$agent" in
     claude)  printf "%s" "$prompt" | "$ROOT/scripts/claude-cli" | "$ROOT/scripts/log-jsonl" "claude" "$tag" ;;
     gemini)  printf "%s" "$prompt" | "$ROOT/scripts/gemini-cli" | "$ROOT/scripts/log-jsonl" "gemini" "$tag" ;;
     codex)   printf "%s" "$prompt" | "$ROOT/scripts/codex-cli"  | "$ROOT/scripts/log-jsonl" "codex"  "$tag" ;;
     *) echo "usage: scripts/agents run {claude|gemini|codex} <tag> [history-file] \"prompt…\""; exit 2;;
   esac
+
+  brain_trace stop
 }
 
 action_status(){

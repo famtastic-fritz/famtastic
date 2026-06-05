@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shay">
+<!-- Point the chat client at the real Shay gateway later, e.g.:
+     <meta name="shay-endpoint" content="https://gateway.example/api/chat"> -->
+<meta name="shay-endpoint" content="">
+<title>Shay — Command</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-512.png">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --bg:#0b0e14;--panel:#141925;--panel2:#1b2230;--ink:#e8edf6;--mut:#8b97ad;
+    --line:#222b3b;--accent:#2dd4a7;--accent-deep:#0c1f1a;--accent-line:#14342b;
+    --warn:#f5b342;--danger:#ef4444;--star:#ffd479;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
+    --tabbar-h:62px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;overscroll-behavior-y:none;
+  }
+  button{font-family:inherit}
+  .app{display:flex;flex-direction:column;height:100dvh;max-width:680px;margin:0 auto;position:relative}
+
+  /* ── Top bar ───────────────────────────────────────────── */
+  .topbar{
+    flex:0 0 auto;padding:calc(var(--safe-top) + 12px) 16px 12px;
+    display:flex;align-items:center;gap:11px;
+    background:linear-gradient(180deg,#10141f 0%,rgba(16,20,31,.85) 100%);
+    border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
+    backdrop-filter:blur(8px);
+  }
+  .avatar{
+    width:36px;height:36px;border-radius:11px;flex:0 0 auto;
+    background:radial-gradient(120% 120% at 30% 20%,#2dd4a7 0%,#0e7a5f 60%,#0a4a3a 100%);
+    display:grid;place-items:center;color:#04140f;font-weight:800;font-size:16px;
+    box-shadow:0 0 0 1px rgba(45,212,167,.35),0 4px 14px rgba(45,212,167,.18);
+  }
+  .topbar .who{flex:1;min-width:0}
+  .topbar .who b{display:block;font-size:15.5px;letter-spacing:-.2px;line-height:1.15}
+  .topbar .who span{display:flex;align-items:center;gap:5px;color:var(--mut);font-size:12px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent)}
+  .dot.mock{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+  .topbar .clear{
+    background:transparent;border:1px solid var(--line);color:var(--mut);
+    border-radius:9px;padding:7px 10px;font-size:12px;cursor:pointer;
+  }
+  .topbar .clear:active{background:var(--panel2)}
+
+  /* ── Views ─────────────────────────────────────────────── */
+  .view{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+  .view.active{display:block}
+  #view-chat.active{display:flex;flex-direction:column}
+
+  /* ── Chat ──────────────────────────────────────────────── */
+  .messages{flex:1 1 auto;overflow-y:auto;padding:16px 14px 8px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:84%;padding:10px 13px;border-radius:16px;font-size:14.5px;white-space:pre-wrap;word-wrap:break-word;line-height:1.45}
+  .msg.user{align-self:flex-end;background:var(--accent);color:#04140f;border-bottom-right-radius:5px;font-weight:500}
+  .msg.shay{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .msg.shay .tag-mock{display:block;margin-top:7px;font-size:11px;color:var(--warn);letter-spacing:.3px}
+  .msg.system{align-self:center;background:transparent;color:var(--mut);font-size:12px;text-align:center;padding:4px 8px;max-width:90%}
+  .typing{align-self:flex-start;display:flex;gap:4px;padding:13px;background:var(--panel);border:1px solid var(--line);border-radius:16px;border-bottom-left-radius:5px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--mut);animation:blink 1.3s infinite both}
+  .typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
+  @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+  .empty{margin:auto;text-align:center;padding:30px 24px;color:var(--mut);max-width:340px}
+  .empty .big{font-size:34px;margin-bottom:10px}
+  .empty b{color:var(--ink);font-size:17px;display:block;margin-bottom:6px}
+  .suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:20px;padding:8px 13px;font-size:13px;cursor:pointer}
+  .chip:active{border-color:var(--accent);color:var(--accent)}
+
+  .composer{
+    flex:0 0 auto;display:flex;gap:9px;align-items:flex-end;padding:10px 12px;
+    padding-bottom:calc(10px + var(--safe-bottom));
+    background:var(--panel);border-top:1px solid var(--line);
+  }
+  .composer textarea{
+    flex:1;resize:none;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    border-radius:14px;padding:11px 13px;font-size:15px;line-height:1.35;max-height:140px;outline:none;
+  }
+  .composer textarea:focus{border-color:var(--accent)}
+  .composer textarea::placeholder{color:var(--mut)}
+  .send{
+    flex:0 0 auto;width:44px;height:44px;border-radius:13px;border:none;cursor:pointer;
+    background:var(--accent);color:#04140f;font-size:20px;display:grid;place-items:center;
+    transition:opacity .15s,transform .1s;
+  }
+  .send:disabled{opacity:.4;cursor:default}
+  .send:active:not(:disabled){transform:scale(.92)}
+
+  /* ── Today ─────────────────────────────────────────────── */
+  .today{padding:16px 14px calc(20px + var(--safe-bottom))}
+  .today h2{font-size:13px;margin:22px 0 11px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+  .today h2:first-child{margin-top:4px}
+  .briefing-head{font-size:13px;color:var(--mut);margin:0 0 4px}
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px}
+  .kpi b{display:block;font-size:26px;line-height:1;letter-spacing:-.5px}
+  .kpi span{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.4px;margin-top:3px;display:block}
+  .kpi.alert b{color:var(--warn)}.kpi.danger b{color:var(--danger)}
+  .kpi.star{border-color:#5a4a22}.kpi.star b{color:var(--star)}
+
+  .needs-card{background:var(--panel);border:1px solid #5a4a22;border-radius:14px;padding:13px 14px;margin-bottom:9px}
+  .needs-card b{font-size:14.5px;display:block;margin-bottom:3px}
+  .needs-card .why{color:var(--warn);font-size:12.5px;margin:0 0 7px}
+  .needs-card .next{color:var(--mut);font-size:12.5px;margin:0}
+  .needs-card .ask{
+    margin-top:9px;background:var(--accent-deep);color:var(--accent);border:1px solid var(--accent-line);
+    border-radius:9px;padding:6px 11px;font-size:12px;cursor:pointer;
+  }
+  .needs-card .ask:active{background:#0e2a22}
+
+  .prio{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;border-left:3px solid var(--star)}
+  .prio .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .prio b{font-size:14.5px}
+  .prio .stage{font-size:11px;color:var(--mut);white-space:nowrap}
+  .prio .next{color:var(--mut);font-size:12.5px;margin:6px 0 0}
+  .prio .ask{margin-top:9px;background:var(--accent-deep);color:var(--accent);border:1px solid var(--accent-line);border-radius:9px;padding:6px 11px;font-size:12px;cursor:pointer}
+
+  .stamp{color:var(--mut);font-size:11.5px;text-align:center;margin-top:18px}
+  .stamp.stale{color:var(--warn)}
+  .loading,.errbox{color:var(--mut);text-align:center;padding:40px 20px;font-size:14px}
+  .errbox{color:var(--warn)}
+
+  /* ── Tab bar ───────────────────────────────────────────── */
+  .tabbar{
+    flex:0 0 auto;display:flex;background:var(--panel);border-top:1px solid var(--line);
+    padding-bottom:var(--safe-bottom);position:sticky;bottom:0;z-index:20;
+  }
+  .tab{
+    flex:1;background:none;border:none;color:var(--mut);padding:9px 0 7px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;
+  }
+  .tab svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .tab.active{color:var(--accent)}
+  .tab .badge{
+    position:absolute;transform:translate(13px,-6px);background:var(--warn);color:#04140f;
+    font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;
+    display:grid;place-items:center;padding:0 4px;
+  }
+  .tab-wrap{position:relative;display:flex;flex-direction:column;align-items:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="avatar">S</div>
+    <div class="who">
+      <b>Shay</b>
+      <span><i class="dot" id="status-dot"></i><span id="status-text">Second-in-command</span></span>
+    </div>
+    <button class="clear" id="btn-clear" title="Clear conversation">Clear</button>
+  </div>
+
+  <!-- CHAT VIEW -->
+  <section id="view-chat" class="view active" aria-label="Chat">
+    <div class="messages" id="messages"></div>
+    <div class="composer">
+      <textarea id="input" rows="1" placeholder="Ask Shay anything…" autocomplete="off"></textarea>
+      <button class="send" id="btn-send" aria-label="Send">↑</button>
+    </div>
+  </section>
+
+  <!-- TODAY VIEW -->
+  <section id="view-today" class="view" aria-label="Today">
+    <div class="today" id="today">
+      <div class="loading">Loading your briefing…</div>
+    </div>
+  </section>
+
+  <!-- TAB BAR -->
+  <nav class="tabbar">
+    <button class="tab active" data-view="chat">
+      <div class="tab-wrap">
+        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8A8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>
+      </div>
+      Chat
+    </button>
+    <button class="tab" data-view="today">
+      <div class="tab-wrap">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span class="badge" id="needs-badge" style="display:none">0</span>
+      </div>
+      Today
+    </button>
+  </nav>
+</div>
+
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed:', err));
+    });
+  }
+</script>
+</body>
+</html>

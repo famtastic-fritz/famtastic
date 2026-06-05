@@ -1,0 +1,17 @@
+{
+  "ticket_id": "AMA-1423",
+  "project": "AMA",
+  "summary": "Member export job times out for orgs with >50k contacts",
+  "status": "In Progress",
+  "assignee": "fritz.medine",
+  "reporter": "dana.kohl",
+  "priority": "High",
+  "latest_comment": {
+    "author": "dana.kohl",
+    "at": "2026-06-01T18:42:00Z",
+    "body": "Any update here? Support is getting pinged by two enterprise accounts. Do we have a workaround we can give them before the real fix lands?"
+  },
+  "intent": "Let Dana know I root-caused it to the synchronous CSV build holding the request open. I'm moving the export to the background worker queue, ETA end of week. Offer the interim workaround: they can request a date-bounded export (<=30 days) which stays under the timeout. Move the ticket to In Review once I push the worker change.",
+  "suggested_transition": "In Review",
+  "tone": "collaborative"
+}

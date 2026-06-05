@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://famtastic.dev/platform/billing/invoice-spec.schema.json",
+  "title": "FAMtastic Engagement / Invoice Spec",
+  "description": "Input contract for billing.generate-invoice. Describes a single billable engagement (one-time project or recurring retainer). The generator computes line totals, subtotal, tax, grand total, invoice number, issue date, and due date from this spec. No payment provider is contacted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["client", "line_items", "terms"],
+  "properties": {
+    "engagement_id": {
+      "type": "string",
+      "description": "Stable slug for the engagement, e.g. 'tonys-barber-shop-site'. Used to derive the invoice number when one is not supplied.",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "engagement_type": {
+      "type": "string",
+      "enum": ["one_time", "recurring"],
+      "default": "one_time",
+      "description": "one_time = single project invoice. recurring = retainer; the generator stamps the billing period on the invoice."
+    },
+    "site_tag": {
+      "type": "string",
+      "description": "Optional FAMtastic site tag this engagement is tied to, e.g. 'site-tonys-barber-shop'."
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["USD", "EUR", "GBP", "CAD", "AUD"],
+      "default": "USD"
+    },
+    "vendor": {
+      "type": "object",
+      "description": "Who is billing. Defaults to FAMtastic when omitted.",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "default": "FAMtastic" },
+        "email": { "type": "string", "format": "email" },
+        "address": { "type": "string" },
+        "website": { "type": "string" }
+      }
+    },
+    "client": {
+      "type": "object",
+      "description": "Who is being billed.",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "contact": { "type": "string", "description": "Primary contact person." },
+        "email": { "type": "string", "format": "email" },
+        "address": { "type": "string" }
+      }
+    },
+    "invoice_number": {
+      "type": "string",
+      "description": "Explicit invoice number. When omitted, the generator derives one as FAM-<YYYYMM>-<engagement_id-or-client-slug>[-<period>]."
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date the invoice is issued. Defaults to today (UTC) at generation time."
+    },
+    "billing_period": {
+      "type": "object",
+      "description": "Required-by-convention for recurring engagements; stamped onto the invoice. Ignored for one_time.",
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" },
+        "label": { "type": "string", "description": "Human label, e.g. 'June 2026'." }
+      }
+    },
+    "line_items": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Billable lines. amount = round(quantity * unit_price, 2).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "unit_price"],
+        "properties": {
+          "description": { "type": "string" },
+          "quantity": { "type": "number", "exclusiveMinimum": 0, "default": 1 },
+          "unit": {
+            "type": "string",
+            "description": "Unit label for the rate, e.g. 'month', 'hour', 'project', 'page'.",
+            "default": "each"
+          },
+          "unit_price": { "type": "number", "minimum": 0, "description": "Rate per unit in the invoice currency." }
+        }
+      }
+    },
+    "discount": {
+      "type": "object",
+      "description": "Optional single discount applied to the subtotal before tax.",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "default": "Discount" },
+        "type": { "type": "string", "enum": ["flat", "percent"], "default": "flat" },
+        "value": { "type": "number", "minimum": 0, "description": "Flat amount in currency, or percent (0-100) when type=percent." }
+      },
+      "required": ["value"]
+    },
+    "tax": {
+      "type": "object",
+      "description": "Optional tax applied to (subtotal - discount).",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "default": "Tax" },
+        "rate_percent": { "type": "number", "minimum": 0, "maximum": 100, "default": 0 }
+      },
+      "required": ["rate_percent"]
+    },
+    "terms": {
+      "type": "object",
+      "description": "Due terms. due_date is computed as issue_date + net_days unless an explicit due_date is given.",
+      "additionalProperties": false,
+      "properties": {
+        "net_days": { "type": "integer", "minimum": 0, "default": 14, "description": "Days from issue to due. 0 = due on receipt." },
+        "due_date": { "type": "string", "format": "date", "description": "Explicit due date; overrides net_days when present." },
+        "notes": { "type": "string", "description": "Free-text terms note, e.g. 'Recurring monthly. Cancel anytime with 30 days notice.'" }
+      }
+    },
+    "payment_instructions": {
+      "type": "string",
+      "description": "How the client pays. Free text fallback. Superseded by the structured `payment` block when present, but still rendered alongside it as the terms/notes line."
+    },
+    "payment": {
+      "type": "object",
+      "description": "Structured pay-this-invoice details. When method=cashapp + a cashtag is present, the generator renders a 'Pay this invoice' line and a tappable Cash App link (https://cash.app/<cashtag>/<amount>). When method=link, the provided link is rendered as the pay button. When method=manual or this block is absent, behavior is unchanged (free-text remit instructions).",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["cashapp", "link", "manual"],
+          "default": "manual",
+          "description": "cashapp = render Cash App pay line + link from cashtag. link = render the provided generic payment link. manual = no link, free-text remit instructions only."
+        },
+        "cashtag": {
+          "type": "string",
+          "description": "Cash App $cashtag including the leading '$', e.g. '$FritzMedine'. Used to build https://cash.app/<cashtag>/<amount>. Required when method=cashapp.",
+          "pattern": "^\\$[A-Za-z][A-Za-z0-9_]{0,19}$"
+        },
+        "link": {
+          "type": "string",
+          "description": "Generic payment URL (e.g. a PayPal.me, Stripe Payment Link, or hosted invoice URL). Required when method=link.",
+          "format": "uri"
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Optional free-text payment instructions rendered under the pay line regardless of method."
+        }
+      }
+    }
+  }
+}

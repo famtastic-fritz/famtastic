@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odysseus — Claude's Visual Guide</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121a23; --panel2:#0f161e; --ink:#e8eef5; --mut:#8aa0b4;
+    --line:#1f2c39; --acc:#35d29a; --acc2:#4ea3ff; --warn:#ffb454; --bad:#ff6b6b;
+    --r:16px; --shadow:0 10px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#13202b,transparent),var(--bg);
+    color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px 80px}
+  header.hero{padding:64px 20px 40px;text-align:center;border-bottom:1px solid var(--line);
+    background:radial-gradient(800px 300px at 50% -40%,rgba(53,210,154,.16),transparent)}
+  .badge{display:inline-block;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--acc);border:1px solid var(--line);border-radius:999px;padding:6px 14px;margin-bottom:18px}
+  h1{font-size:clamp(34px,6vw,56px);margin:.1em 0;line-height:1.05;
+    background:linear-gradient(90deg,#fff,var(--acc));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--mut);max-width:640px;margin:14px auto 0;font-size:18px}
+  .author{margin-top:22px;font-size:13px;color:var(--mut)}
+  .author b{color:var(--acc2)}
+  h2{font-size:28px;margin:56px 0 8px;display:flex;align-items:center;gap:12px}
+  h2 .n{font-size:14px;color:var(--bg);background:var(--acc);width:30px;height:30px;border-radius:8px;
+    display:grid;place-items:center;font-weight:700}
+  .lead{color:var(--mut);margin:0 0 24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:var(--r);padding:18px;transition:transform .15s ease,border-color .15s ease}
+  .card:hover{transform:translateY(-4px);border-color:var(--acc)}
+  .card .ico{font-size:22px}.card h3{margin:8px 0 4px;font-size:16px}.card p{margin:0;color:var(--mut);font-size:13.5px}
+  .card .map{margin-top:10px;font-size:12px;color:var(--acc2)}
+  .flow{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0}
+  .step{display:grid;grid-template-columns:46px 1fr;gap:16px;padding:16px 0;border-bottom:1px dashed var(--line)}
+  .step:last-child{border-bottom:0}
+  .step .dot{width:34px;height:34px;border-radius:50%;background:var(--panel);border:1px solid var(--acc);
+    color:var(--acc);display:grid;place-items:center;font-weight:700}
+  .step code{background:#0a1219;border:1px solid var(--line);padding:2px 7px;border-radius:6px;color:var(--acc);font-size:13px}
+  .step h4{margin:2px 0 4px}.step p{margin:0;color:var(--mut);font-size:14px}
+  .decision{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:6px 22px;margin-top:10px}
+  .row{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}.row .tag{flex:0 0 110px;font-weight:700;font-size:13px}
+  .go{color:var(--acc)} .stay{color:var(--acc2)}
+  .row p{margin:0;color:var(--mut);font-size:14.5px}
+  .power{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-left:3px solid var(--acc);border-radius:12px;padding:16px 18px;margin:12px 0}
+  .power b{color:var(--ink)} .power code{color:var(--acc)}
+  .note{background:rgba(255,180,84,.08);border:1px solid rgba(255,180,84,.3);border-radius:12px;padding:14px 18px;margin:18px 0;color:#ffd9a3;font-size:14px}
+  .cta{text-align:center;margin-top:48px}
+  .cta code{display:inline-block;background:#06223a;border:1px solid var(--acc2);color:#cfe7ff;padding:12px 18px;border-radius:10px;font-size:14px}
+  footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;text-align:center}
+  a{color:var(--acc2)}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="badge">Claude's Guide · Builder's Angle</div>
+  <h1>Odysseus</h1>
+  <p class="sub">Your private, self-hosted AI workspace — the ChatGPT/Claude UI, but running on your own Mac, on your own data. Here's why it earns a spot next to FAMtastic Studio, and how to actually get value from it.</p>
+  <div class="author">Tutorial 1 of 2 · authored by <b>Claude Code</b> · the build-companion view · 2026-06-02</div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="n">1</span> The one-sentence why</h2>
+  <p class="lead">Everything FAMtastic leans on the cloud for — chat, research, agent runs — now has a <b>local mirror you fully own</b>. When an API is down, rate-limited, or you're working on something that shouldn't leave the box, Odysseus covers you. Think of it as a <b>private second brain that never phones home</b>.</p>
+
+  <h2><span class="n">2</span> What's inside (and what it maps to)</h2>
+  <p class="lead">Ten capabilities in one app. The blue line shows the FAMtastic tool you already know it as.</p>
+  <div class="grid">
+    <div class="card"><div class="ico">💬</div><h3>Chat</h3><p>Any local model or API — adding providers is trivial.</p><div class="map">↔ Studio / Shay chat</div></div>
+    <div class="card"><div class="ico">🤖</div><h3>Agent</h3><p>Hand it tools, it runs the whole task. Built on opencode + MCP.</p><div class="map">↔ Claude subagents</div></div>
+    <div class="card"><div class="ico">🍳</div><h3>Cookbook</h3><p>Scans your hardware, recommends models by VRAM fit, one-click serve.</p><div class="map">★ new superpower</div></div>
+    <div class="card"><div class="ico">🔬</div><h3>Deep Research</h3><p>Multi-step gather → read → synthesize into a visual report.</p><div class="map">↔ deep-research skill</div></div>
+    <div class="card"><div class="ico">⚖️</div><h3>Compare</h3><p>Blind side-by-side model bake-off, no bias.</p><div class="map">★ new</div></div>
+    <div class="card"><div class="ico">📝</div><h3>Documents</h3><p>Multi-tab editor; you write, AI assists — not the reverse.</p><div class="map">↔ Studio docs</div></div>
+    <div class="card"><div class="ico">🧠</div><h3>Memory / Skills</h3><p>Persistent ChromaDB + fastembed; the agent evolves with you.</p><div class="map">↔ .wolf + obsidian brain</div></div>
+    <div class="card"><div class="ico">📬</div><h3>Email</h3><p>IMAP/SMTP with AI triage: urgency, tags, summaries, draft replies.</p><div class="map">★ ops surface</div></div>
+    <div class="card"><div class="ico">✅</div><h3>Notes & Tasks</h3><p>Reminders + cron-style tasks the agent can act on.</p><div class="map">↔ plans / kanban</div></div>
+    <div class="card"><div class="ico">📅</div><h3>Calendar</h3><p>Local-first CalDAV sync (Apple, Nextcloud, Fastmail).</p><div class="map">★ ops surface</div></div>
+  </div>
+
+  <h2><span class="n">3</span> Get it running in 90 seconds</h2>
+  <div class="flow">
+    <div class="step"><div class="dot">1</div><div><h4>Install</h4><p><code>bash ~/famtastic/scripts/odysseus/install-odysseus.sh --start</code> — clones, seeds a private <code>.env</code>, and launches on Apple Silicon (GPU-capable).</p></div></div>
+    <div class="step"><div class="dot">2</div><div><h4>Open & log in</h4><p>Visit <code>http://127.0.0.1:7860</code>. Grab the <b>temp admin password printed in your terminal</b>, log in, and change it in Settings.</p></div></div>
+    <div class="step"><div class="dot">3</div><div><h4>Add a model</h4><p>Settings → providers. Point at Ollama/OpenRouter/OpenAI, <i>or</i> open <b>Cookbook</b>, let it scan your Mac, and one-click a model that fits your VRAM.</p></div></div>
+    <div class="step"><div class="dot">4</div><div><h4>Drive it via the agent</h4><p>From Claude Code, the <code>odysseus</code> subagent knows how to install, start, health-check, and route work here. Just ask.</p></div></div>
+  </div>
+
+  <h2><span class="n">4</span> When to reach for Odysseus vs. stay in the cloud</h2>
+  <p class="lead">The honest decision rule — local isn't always the answer.</p>
+  <div class="decision">
+    <div class="row"><div class="tag go">Go local →</div><p>Sensitive data you don't want leaving the box · bulk/low-stakes generation · offline or API-down moments · running models at zero marginal cost · email/calendar/notes ops · blind model comparisons.</p></div>
+    <div class="row"><div class="tag stay">Stay cloud →</div><p>Top-tier reasoning (latest Opus) · very large context windows · the FAMtastic site-build pipeline (Studio is tuned for it) · anything where quality &gt; privacy/cost.</p></div>
+  </div>
+
+  <h2><span class="n">5</span> Five power moves</h2>
+  <div class="power"><b>1. Make it your private research desk.</b> Deep Research runs the whole gather→synthesize loop locally and hands you a visual, cited report — no tokens spent, nothing logged off-box.</div>
+  <div class="power"><b>2. Run a model bake-off before you commit.</b> Use <b>Compare</b> blind-test to pick the right local model for a job, then serve the winner from <b>Cookbook</b>.</div>
+  <div class="power"><b>3. Bridge it to the brain.</b> Odysseus memory exports cleanly; pull it into <code>obsidian/</code> and push your skills the other way so both brains learn once.</div>
+  <div class="power"><b>4. Turn your inbox into an agent surface.</b> Email triage + Notes/Tasks means the agent can summarize, draft, and act on reminders — great for the client-ops/acquisition side.</div>
+  <div class="power"><b>5. Keep it on a leash.</b> The Agent has shell access by design. Scope its tools like Claude Code's, keep it on loopback, rotate that first password.</div>
+
+  <div class="note"><b>Safety in one line:</b> loopback-only by default, auth always on, never expose port 7860 to the public internet — LAN/Tailscale only, and rotate the first-run admin password immediately.</div>
+
+  <div class="cta">
+    <p style="color:var(--mut)">Ready? One command:</p>
+    <code>bash ~/famtastic/scripts/odysseus/install-odysseus.sh --start</code>
+  </div>
+
+  <footer>
+    Claude's view (builder/IDE angle) · companion tutorial: <a href="tutorial-shay.html">Shay's view →</a> (agent-OS / swarm angle).<br>
+    Full capability map &amp; security notes: <a href="ODYSSEUS-WRITEUP.md">ODYSSEUS-WRITEUP.md</a> · Repo: <a href="https://github.com/pewdiepie-archdaemon/odysseus">pewdiepie-archdaemon/odysseus</a>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "author": "Fritz Medine",
+  "workstream": "NIBS",
+  "date": "2026-06-02",
+  "format": "ytb",
+  "tone": "concise",
+  "activity": {
+    "yesterday": [
+      "Closed NIBS-77 — fixed the timezone drift in the scheduled digest send.",
+      "Reviewed the ingest pipeline PR and left two change requests.",
+      "Paired with Priya on the retry/backoff design for the webhook consumer."
+    ],
+    "today": [
+      "Land the webhook retry/backoff change behind a flag.",
+      "Start NIBS-81 — audit-log retention policy spike.",
+      "Write up the export-timeout root cause for the AMA thread."
+    ],
+    "blockers": [
+      "Still need staging creds for the new audit-log datastore — pinged ops yesterday, no reply yet."
+    ]
+  }
+}

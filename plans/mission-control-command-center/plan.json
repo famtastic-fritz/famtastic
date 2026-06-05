@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "id": "mission-control-command-center",
+  "title": "Mission Control / Command Center",
+  "status": "active",
+  "role": "domain",
+  "originator": "Fritz",
+  "origin_surface": "Claude Code (web)",
+  "current_runner": "Claude",
+  "summary": "A single mobile-first view that organizes everything Fritz has in flight. The generator reads the live repo ledgers (plans/registry.json, tasks/tasks.jsonl, runs/runs.jsonl, proofs/proof-ledger.jsonl, agents/catalog.json, platform/registry/capabilities.json, sites) and emits command-center/{index.html, briefing.md, state.json}. Every active plan is scored on stage, momentum, autonomy, and profitability, and the briefing names what needs Fritz, the most profitable next move, and the most autonomous win.",
+  "completed_scope": [
+    "v1 generator shipped: scripts/command-center/build-command-center.js (no external deps).",
+    "Mobile-first dashboard with KPI tiles, a 'Needs you now' list, a plan-health doughnut, and an autonomy x profit quadrant chart (Chart.js via CDN).",
+    "Virtual-Fritz daily briefing (briefing.md) and machine-readable snapshot (state.json).",
+    "Heuristic, tunable scoring model documented in the generator SCORING block.",
+    "Sibling Shay capabilities scaffolded and registered: billing.* (invoice generation) and work.* (Jira/standup drafting), plus docs/shay-fritz-ready/ROADMAP.md."
+  ],
+  "open_tasks": [
+    "task-2026-06-02-001",
+    "task-2026-06-02-002",
+    "task-2026-06-02-003",
+    "task-2026-06-02-004",
+    "task-2026-06-02-005"
+  ],
+  "assumptions": [
+    "The dashboard reads ledgers read-only; it never mutates plan/task state.",
+    "Scoring is heuristic and tunable; profit ~= revenue-proximity by tag/role, autonomy ~= how much can proceed without Fritz."
+  ],
+  "known_gaps": [
+    "Generator is run manually today — no fam-hub command and no cron yet (task 001).",
+    "Not yet served by Studio /api/ops or mounted in the Workbench/Shay Desk (task 002).",
+    "No automatic delivery of the morning briefing to Fritz's phone yet (task 003).",
+    "billing.* and work.* capabilities generate/draft only; send paths are blocked on a payment-provider decision and Jira/Slack creds (tasks 004-005)."
+  ]
+}

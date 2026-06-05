@@ -1,5 +1,78 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Brain Sync Contract + session-to-brain tying (2026-06-02)
+
+The Obsidian brain is `obsidian/` on `main` (vault with smart-connections plugin;
+`Shay-Memory/` holds 202+ notes — builds, plans, reflections, research). Sessions must
+leave a trace there tied to their id. Enforcement: `scripts/brain/session-checkpoint.js`
+(dependency-free, never throws) is wired into `.claude/settings.json` hooks —
+**SessionStart** creates `obsidian/05-Captures/sessions/<date>/SESSION-<short-id>.md`
+(frontmatter: `session_id` from `CLAUDE_CODE_SESSION_ID`, `branch`, `start_sha`, timestamps);
+**PreCompact** appends a checkpoint line (this is the "periodic" guarantee — long sessions
+compact); **Stop** appends the git delta (commits in `start_sha..HEAD`) and marks the note
+ended. The agent still writes the "What this session did" substance per the contract in
+`CLAUDE.md` ("Brain Sync Contract"). Convergence rule: if a branch predates `obsidian/` on
+main, merge `origin/main` before brain work or notes hit add/add conflicts.
+
+**Why it exists:** a 48h audit found four 2026-06-02 Claude Code sessions siloed — three
+branched from a 2026-05-29 base (before the vault landed 05-30), wrote only to per-branch
+`SITE-LEARNINGS`/`CHANGELOG`/`.wolf`, and none merged to main, so the brain got zero of that
+day's Claude Code work. Shay (on `main`) writes cleanly to `obsidian/Shay-Memory/` — the model
+to match. Full reconciliation in `obsidian/05-Captures/sessions/2026-06-02/INDEX.md`.
+
+## humanize-writing skill (2026-06-02)
+
+Installed from `github.com/aaaronmiller/humanize-writing` (commit 4b59839) to BOTH
+`.claude/skills/humanize-writing/` (Claude Code) and `shay-agent-os/skills/humanize-writing/`
+(Shay). It's a standing prose-output filter — strips AI tells, normalizes burstiness/sentence
+rhythm, calibrates voice; auto-activates for any written output over ~3 paragraphs. **Must load
+every file in `references/` before applying.** Registered in
+`obsidian/06-Capabilities/Agent-Capability-Matrix.md`, `docs/capability-registry.md`, and
+Shay's `shay-agent-os/AGENTS.md` (standing output filter). NOTE: Shay ≠ `site-studio/shay-shay/`
+(that's the Studio chat persona); her real home is `shay-agent-os/` + `~/.shay/`.
+
+## Autonomous content engine (2026-06-02)
+
+`scripts/content-engine/` — Fritz's chosen hands-off revenue path (he explicitly does not want to be involved). A quality-gated SEO/affiliate content site generator that runs on a cron. Pieces: `config.json` (niche, long-tail keywords, monetization, quality gate, deploy target), `lib.js` (helpers + graceful BrainInterface loader), `generate-article.js` (one article per keyword, production path = `site-studio/lib/brain-interface.js` `BrainInterface.execute()`, **deterministic template fallback when network/LLM unavailable** — never crashes), `assemble-site.js` (articles/*.md → static `dist/`: per-article HTML + index + sitemap.xml + robots.txt), `run.js` (orchestrator → `results/<date>.json`, idempotent/cron-safe — skips existing articles), `publish.sh` (honest deploy stub: prints the exact `netlify deploy`/GH-Pages command + crontab line; deploy runs on Fritz's Mac with a vaulted token).
+
+Quality gate is REAL (rejected a filler test article with 6 reasons): min 700 words, ≥3 H2, FTC disclosure required, FAQ required, ≤4% filler-phrase ratio, banned-phrase list — built to survive Google's "scaled content abuse" policy. Niche = **backyard chicken keeping** (chosen from `NICHE-AND-MONETIZATION.md`: non-YMYL, durable demand, Amazon + display-ad fit; stay on gear/husbandry NOT vet diagnosis). Generated output (`articles/`, `dist/`, `results/`) is **gitignored** — regenerated on Fritz's Mac with the real LLM; the engine code is the deliverable. Proof: ran offline → 9 articles, all gate-PASS, 10-page site, disclosure + `rel="nofollow sponsored"` links verified.
+
+**Honest gaps (do-not-misstate):** revenue is a months-long compounding ranking game (~$0 early); ad/affiliate networks pay to a BANK account, not Cash App (so the `$FAMtasticFritz` cashtag does NOT apply here); and the Amazon Associates / ad-network accounts + domain are one-time steps that are legally Fritz-only — an agent cannot create a monetization account as him. Tracked on the board as plan `autonomous-content-engine`.
+
+## Money rails: Cash App billing + credential skill + Resend runbook + security (2026-06-02)
+
+**Owner payment identity (brain fact, 2026-06-02)** — Fritz's Cash App cashtag is **`$FAMtasticFritz`** (Fitzgerald Medine, `https://cash.app/$FAMtasticFritz`). Stored canonically at **`platform/config/owner-profile.json`** (`payment.cashapp.cashtag`) — public receive-info, committed to git (not the vault). `generate-invoice.sh` reads it via the `OWNER_PROFILE` env var and auto-fills it when a `cashapp` invoice omits `cashtag`. This is the single source of truth for "where does FAMtastic get paid."
+
+**Cash App billing** — `platform/capabilities/billing/generate-invoice.sh` gained an optional `payment` block in `invoice-spec.schema.json`: `{ method: "cashapp"|"link"|"manual", cashtag (^\$[A-Za-z][A-Za-z0-9_]{0,19}$), link, instructions }`. `cashapp` renders a pay line + `https://cash.app/<cashtag>/<amount>` + a bare-profile fallback; `link` renders a provided hosted URL; absent/`manual` keeps the legacy `**Payment:**` line (byte-for-byte backward compatible — old specs just gain `"payment": null`). **Honest caveat (do-not-misstate):** the `cash.app/$cashtag/<amount>` amount-prefill is NOT an officially documented Cash App feature — only `https://cash.app/$cashtag` is official. For a locked amount, create an in-app Cash App Payment Link and use `method:"link"`. Example: `examples/sample-engagement-cashapp.json`.
+
+**register-credential skill** — `.claude/skills/register-credential/SKILL.md` (user-invocable) is the one sanctioned way to vault a secret and verify the dependent capability. Backed by `platform/capabilities/vault/register-credential.sh`: a friendly-name→canonical-vault-key allowlist (resend→`studio.resend.api_key`, godaddy, netlify, telegram, twilio, jira, github, cpanel, reach-*), reads the secret from `CRED_VALUE` env or stdin (NEVER argv, to avoid shell-history leakage), **never echoes the value**, writes a value-free audit line to `platform/invocations/`. Registered as `vault.register-credential` (registry now 24). NOTE: not yet wired into the `platform vault` dispatcher subcommand — invoke by direct path (documented in the skill + runbook); one-line follow-up to add the subcommand.
+
+**Resend go-live runbook** — `docs/runbooks/RESEND-REACH-GO-LIVE.md`: exact on-Mac steps (`printf '%s' '<key>' | ./platform/capabilities/vault/register-credential.sh resend`, then `node lib/reach-fabric/selftest.js`, then `./platform/capabilities/reach/send.sh "..." --channels=email`). Explains why it CANNOT run from the cloud sandbox: the vault is macOS-Keychain-backed (local), and the sandbox network is firewalled — `curl https://api.resend.com` returns 403, same as every external provider/data API. **This firewall is a standing environment fact for cloud sessions: no real outbound email/SMS/market-data/payment from here; those run on Fritz's machine.**
+
+**Security exposure** — recon for the Resend key found ALL production secrets in plaintext in the Drive doc "FAMtastic API's" (Resend, Anthropic, OpenAI, OpenRouter, GitHub PAT, Netlify, GoDaddy/cPanel, MySQL pw, Gemini, Pinecone, Perplexity, fal.ai, ElevenLabs, Unsplash pw). Logged at `docs/SECURITY-CREDENTIAL-EXPOSURE-2026-06-02.md` (classes + rotation checklist, no values). No secrets are committed to git. **Fast-cash playbook** at `docs/shay-fritz-ready/FAST-CASH-TODAY.md` (ranked same-day $100 plays; #1 = collect on already-owed work, frictionless Cash App pay line).
+
+## Reach Fabric + Companion App PWA + financial agents (2026-06-02)
+
+**Reach Fabric** — `lib/reach-fabric/` is the channel-agnostic outbound bus the landscape research called for. `index.js` exports `sendReach({message,title,urgency,channels})`: it resolves channel order (explicit `channels` pin, else the urgency policy in `config.js` for low/normal/high/critical), tries each *available* adapter in turn, stops at first success, always appends `console` as the terminal fallback, and writes a JSONL audit line to `platform/invocations/<date>.jsonl`. Returns `{ delivered_via, attempts[], fellback, manual_required, audit_written }`. Adapters live in `lib/reach-fabric/adapters/` and each exports `{ name, isAvailable(), send() }`: `console` (always), `email` (Resend via `RESEND_API_KEY`, default sender `studio@send.mbsh96reunion.com`), `telegram` (`TELEGRAM_BOT_TOKEN`+`TELEGRAM_CHAT_ID`), `sms` (Twilio `TWILIO_*`+`REACH_SMS_TO`), `push` (Web Push/VAPID, lazy-requires optional `web-push`). Adapters return reason strings instead of throwing when creds are absent, so the fallback chain always completes. CLI: `lib/reach-fabric/cli.js`; capability shim `platform/capabilities/reach/send.sh` (`platform reach send "<msg>" [--title=] [--urgency=] [--channels=]`) hydrates vaulted reach secrets into env and falls back to `studio.resend.api_key`. Registered as `reach.send` (registry now 23 capabilities). `selftest.js` strips creds and asserts console fallback + audit line — passing. Live today: console always; email+telegram the moment their env vars exist. manual_required: sms (Twilio number), push (pair the companion app + VAPID keypair + `web-push`).
+
+**Companion App PWA** — `companion-app/` is a no-build, dependency-free installable PWA: the pocket version of talking to your second-in-command. `index.html` has a Chat view (streaming-reveal bubbles, persisted to `localStorage`) and a Today view; `app.js` resolves a pluggable `CHAT_ENDPOINT` (`window.SHAY_ENDPOINT` → `<meta name="shay-endpoint">` → built-in mock that labels itself "(mock — no backend wired)"), POSTs `{message, history}`, and renders `reply`/`text`/`message`/`content`. The Today tab fetches `./state.json` (a copy of `command-center/state.json` — re-copy/symlink when the dashboard regenerates) and renders KPIs + "Needs you now" + ⭐ priorities, with "Ask Shay →" deep-links. `manifest.webmanifest` (standalone, theme `#0b0e14`, SVG + 512 PNG maskable icon under `icons/`) + `sw.js` (cache-first app shell, network-first `state.json`) make it installable + offline. Run: `cd companion-app && python3 -m http.server 8099`, open `http://<LAN-IP>:8099/` on the phone, Add to Home Screen. Verified serving 200s for shell/manifest/sw/icons/state.json.
+
+**Financial agents** — `scripts/finance-agents/` is greenfield (a brain grep found zero prior financial/trading code — all "trading/stock/crypto" hits were stock photos / job queue / UI "portfolio"). `data.js` fetches keyless **Stooq** daily CSV (`https://stooq.com/q/d/l/?s=<sym>&i=d`) with a `.cache/` write-through (gitignored) and a labeled SAMPLE fallback under `sample-data/`. `agents.js` defines 6 pure-function strategy agents (momentum, mean-reversion, SMA10/20 trend-follow, buy-&-hold SPY baseline, equal-weight basket, volatility-breakout), each emitting a prediction + a $10-stake outcome for the latest session. `run.js` prints a leaderboard and writes `results/<date>-leaderboard.json` + `<date>-report.md`. **Environment gotcha (do-not-misread):** in this cloud container Stooq is firewalled (HTTP 403, "host not in allowlist") even with the sandbox disabled, so the run falls back to SAMPLE data and labels it loudly (`"isSampleData": true`, console + report banner). The committed `results/2026-05-29-*` are therefore SYNTHETIC, not real market prices — on Fritz's open network `node scripts/finance-agents/run.js` pulls real Stooq data automatically. One session is noise; the harness is built to run daily and aggregate. Live brokerage (Alpaca paper API) is manual_required, gated on broker creds. OSS to know later: `virattt/ai-hedge-fund`, `TauricResearch/TradingAgents`, `microsoft/qlib`, `freqtrade`, `backtrader`.
+
+## Command Center / Mission Control + Shay billing & work-ops capabilities (2026-06-02)
+
+Shipped the workshop dashboard / Mission Control v1 and two new Shay platform capabilities.
+
+**Command Center generator** — `scripts/command-center/build-command-center.js` (no external deps, run from repo root). Read-only aggregator over the live ledgers: `plans/registry.json` (active = `active_parent_ids` minus `terminated_parent_ids`, matching `scripts/plans/audit.js`), `tasks/tasks.jsonl`, `runs/runs.jsonl`, `proofs/proof-ledger.jsonl`, `agents/catalog.json`, `platform/registry/capabilities.json`, and the `sites/` + `../famtastic-sites/` directories. Per-plan it reads the latest closeout packet from `plans/<id>/closeouts/` and computes: **stage** (`in_progress`/`checkpoint`/`checkpoint_stale`/`needs_tasking`/`blocked_external`/`stale`/`completed`), **momentum** (days since latest closeout/registry update), **autonomy** (0–100: auto-approval + assigned runner + no external blocker raise it), and **profit** (0–100: revenue-proximity by tag/role). Emits `command-center/{index.html, briefing.md, state.json}`. `index.html` is self-contained, mobile-first, Chart.js via CDN (plan-health doughnut + autonomy×profit scatter). `briefing.md` is the "Virtual Fritz" daily read (needs-you / most-profitable / most-autonomous). `state.json` is the machine snapshot for Studio Ops / Shay Desk to consume. Scoring lives in the `SCORING` constant at the top of the generator and is meant to be tuned. Tracked as plan `mission-control-command-center` (5 open tasks). Command-center output files ARE committed (the deliverable); the dashboard treats the new plan as the only one in motion.
+
+**Shay billing capability** — `platform/capabilities/billing/` follows the `platform/capabilities/<class>/<verb>.sh` pattern (resolves PLATFORM_ROOT/HUB_ROOT, `set -euo pipefail`, appends audit lines to `platform/invocations/<date>.jsonl`, surfaces `manual_required` explicitly, no external API calls). `generate-invoice.sh` (status `v1-no-send`) does real end-to-end invoice math (line totals, flat/percent discount, tax on discounted base, derived invoice number `FAM-<YYYYMM>-<slug>`, issue/due dates) and writes `<num>.json` + `<num>.md` + upserts `platform/billing/ledger.jsonl`. `list-invoices.sh` (`v1`) and `mark-paid.sh` (`v1-manual-confirm`, draft|sent→paid) round out the state machine. Input contract: `invoice-spec.schema.json`; sample at `examples/sample-engagement.json` ($397/mo care plan for Tony's Barber Shop). Send/PDF/payable-link are `manual_required` until a payment provider (PayPal vs Stripe vs GoDaddy) is chosen — `reads_from_vault` is intentionally empty. Runtime output under `platform/billing/` is gitignored.
+
+**Shay work-ops capability** — `platform/capabilities/work/` lets Shay draft Jira ticket replies and team standups with a **hard human-approval-before-send gate** (auto-send disabled in code; `outbox send` is intentionally inert). `draft-ticket-reply.sh` and `draft-standup.sh` (both `v1-draft-only`) do real deterministic drafting — `draft-standup.sh` reads `runs/runs.jsonl` + `tasks/tasks.jsonl` when no input JSON is given — writing to `outbox/<draft_id>.json`. `outbox.sh` runs the `draft→approved` state machine. Schemas under `schemas/`, samples under `examples/`. Send is `manual_required` pending vaulted `jira.api_token`/`jira.base_url`/`jira.email` (+ optional `slack.webhook`). Drafting is deterministic (no LLM call) — an LLM rewrite pass is the natural v2. Runtime drafts (`outbox/*.json`) are gitignored; `.gitkeep` is tracked.
+
+**Registry** — all six new capability records merged into `platform/registry/capabilities.json` (now 22 capabilities). **Roadmap** — `docs/shay-fritz-ready/ROADMAP.md` ranks Shay's Fritz-readiness gaps by autonomy×profit (payment-provider decision first, then invoicing, then two-way digest / phone companion).
+
+**Fritz-priority tracking (same-day follow-up)** — the generator now reads a `fritz_priority`/`priority: "high"` field on a plan record or its registry label and treats *Fritz's stated priority* as a first-class signal distinct from the profit heuristic: a ⭐ KPI tile, a ⭐ card badge with a gold accent, a "Your priorities" section at the top of `briefing.md`, and priority-first ordering in both the cards and the needs-you list. Two high-priority product plans were registered (`shay-omnipresent-assistant`, `fritz-companion-app`) with 4 open tasks each, so the board finally shows work in motion. A background research workstream writes `docs/shay-fritz-ready/VIRTUAL-ASSISTANT-LANDSCAPE.md` (omnipresent-assistant landscape: products, OSS building blocks, reach/notification fabric, virtual-body options, recommended build-on stack).
+
 ## Agent OS — Software Design Document & Architecture Foundation (2026-05-27)
 
 Created a comprehensive Software Design Document for the Agent OS multi-agent orchestration system. The SDD lives at `~/famtastic/docs/AGENT-OS-SDD.md` (26KB, 12 sections). Rowboat (14.6K stars) is the intended fork base. ECC (affaan-m/ECC hackathon winner) was deep-researched for architectural patterns — buddy consensus, inter-agent Telegram bus, agent taxonomy — but has zero source code, so it serves as pattern reference only.
@@ -6337,3 +6410,61 @@ Built the full autonomous business stack on top of the Command Center, all monit
 - **No inbound ingestion wired**: `responder.py` reads `data/inbound.jsonl` but nothing populates it yet except `POST /api/inbound`. The existing `email-agent/server.js` (IMAP) is not yet connected to write inbound records.
 - **Copy is template-based**: `copywriter.py` is deterministic templates, not LLM-generated — swap the `draft_*` functions to upgrade.
 - **Stripe/PayPal still not live** (carried from Phase 1): endpoints verify signatures but no account/tunnel connected.
+
+## 2026-06-02 — Odysseus integration + brain-wiring universality + hook fix
+
+### Odysseus (self-hosted AI workspace)
+Integrated **Odysseus** (`github.com/pewdiepie-archdaemon/odysseus`) — a
+local-first self-hosted AI workspace (Chat, Agent on opencode+MCP, Cookbook local
+model serving, Deep Research, Compare, Documents, Memory/Skills via
+ChromaDB+fastembed, Email, Notes/Tasks, CalDAV Calendar). **Scope: Odysseus only,
+deep** (the other 8 HexSec-carousel tools are mostly hosted SaaS — recorded once
+in the write-up, not installed). Files:
+- `scripts/odysseus/install-odysseus.sh` — idempotent Mac installer (clone/update,
+  seeds private `.env`, loopback-only unless `ODYSSEUS_LAN=1`, `--start` to launch
+  native Apple-Silicon at `:7860`). `scripts/odysseus/README.md`.
+- `docs/odysseus/ODYSSEUS-WRITEUP.md` — capability map + FAMtastic fit + security
+  posture + the other-8 one-liners.
+- `docs/odysseus/tutorial-claude.html` + `tutorial-shay.html` — **two independent
+  visual tutorials** (Claude = builder/IDE angle; Shay = agent-OS/swarm angle,
+  Claude-drafted starter for Shay to replace).
+- `.claude/agents/odysseus.md` — Claude operator subagent (install/start/health/
+  route table; loopback+auth rules; launchd boundary).
+- `shay-agent-os/odysseus/{INSTALL-FOR-SHAY.md,install-odysseus-shay.sh}` — Shay's
+  headless instance (`~/odysseus-shay`, port **7870**, admin=shay) + her task list.
+- `shay-agent-os/agents/odysseus.md` — Shay's operator agent (local-serving
+  economics: route bulk/low-stakes swarm work to local models, reserve cloud Opus).
+
+### Brain-wiring universality (every agent surface now leaves a trace)
+- `scripts/brain/session-checkpoint.js` — added `BRAIN_SESSION_ID` env fallback
+  (after `CLAUDE_CODE_SESSION_ID`) so any surface can write a trace; combined the
+  branch+head git calls; switched stop delta to `git diff --shortstat`.
+- `scripts/agents` (`action_run`) — one `brain_trace start/stop` call wires
+  **claude/gemini/codex** via `fam-hub agent run` (stable id `famhub-<agent>-<tag>`).
+- `shay-agent-os/brain_checkpoint.py` — Python wrapper (`checkpoint("start"/"stop")`)
+  shelling to the node writer with `AI_AGENT=shay`; wired a `start` into
+  `shay-agent-os/launch-agent.py`.
+
+### The dead-hook fix (root cause: gitignored hook dir)
+`.claude/settings.json` referenced six `.wolf/hooks/*.js` files, but `.wolf/hooks/`
+is **gitignored** (`.gitignore:36`) — so they were never committed, absent on every
+clone, and failed on every tool call. Fix: removed the 5 no-op refs; implemented
+the one real hook (OpenWolf memory trail) at a **tracked** path
+`scripts/brain/openwolf-post-write.js` (PostToolUse Write/Edit → appends one line
+to the gitignored `.wolf/memory.md`). All hook targets are now tracked + present.
+
+### Known Gaps (updated 2026-06-02, Odysseus + wiring)
+- **Odysseus not yet installed on Fritz's Mac** — this was an ephemeral cloud
+  container; install scripts + agents are committed, but `install-odysseus.sh`
+  must be run on the Mac (Pages site `pewdiepie-archdaemon.github.io/odysseus`
+  was 403 from the container; the git repo cloned fine).
+- **Shay's tutorial is a Claude-drafted starter** — Shay must author her genuine
+  independent version on her next run (task in `INSTALL-FOR-SHAY.md`).
+- **`run_*.py` drivers + Cowork still untraced** — `launch-agent.py` and the
+  fam-hub path are wired; the individual Shay `run_*.py` drivers and Cowork still
+  need a `brain_checkpoint` call.
+- **`portfolio-revenue-model.md` lost** — the only concrete "1000-site revenue
+  model" artifact is referenced by Shay build records but committed nowhere;
+  recover or mark artifact-lost.
+- **FAMTASTIC-STATE.md not regenerated** — Rule 6 triggered (new scripts/agents);
+  full regen deferred to avoid a risky half-rewrite in an oversized session.

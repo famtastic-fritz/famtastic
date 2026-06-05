@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "famtastic.work.standup-input",
+  "title": "Work Standup Input",
+  "description": "Input for work/draft-standup.sh. Provides recent activity so Shay can draft a yesterday/today/blockers standup or status update for human approval. NEVER auto-sent. If 'activity' is omitted, the script falls back to reading the FAMtastic runs/tasks ledgers.",
+  "type": "object",
+  "required": ["author"],
+  "additionalProperties": false,
+  "properties": {
+    "author": {
+      "type": "string",
+      "description": "Who the standup is posted as (Fritz's display name or handle).",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "workstream": {
+      "type": "string",
+      "description": "Which engagement / team this standup is for (e.g. AMA, NIBS).",
+      "maxLength": 64
+    },
+    "date": {
+      "type": "string",
+      "description": "Standup date, YYYY-MM-DD. Defaults to today if omitted."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["ytb", "status"],
+      "default": "ytb",
+      "description": "'ytb' = Yesterday/Today/Blockers standup. 'status' = narrative status update."
+    },
+    "tone": {
+      "type": "string",
+      "enum": ["concise", "collaborative", "direct", "formal"],
+      "default": "concise"
+    },
+    "activity": {
+      "type": "object",
+      "description": "Explicit activity. If present, used verbatim instead of the ledger fallback.",
+      "additionalProperties": false,
+      "properties": {
+        "yesterday": {
+          "type": "array",
+          "description": "Things completed / progressed since last update.",
+          "items": { "type": "string", "maxLength": 500 }
+        },
+        "today": {
+          "type": "array",
+          "description": "Planned work for the upcoming period.",
+          "items": { "type": "string", "maxLength": 500 }
+        },
+        "blockers": {
+          "type": "array",
+          "description": "Blockers / asks. Empty array means 'no blockers'.",
+          "items": { "type": "string", "maxLength": 500 }
+        }
+      }
+    }
+  }
+}

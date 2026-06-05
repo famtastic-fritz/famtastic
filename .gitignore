@@ -85,3 +85,14 @@ scripts/Screenshot*
 
 # Generated media/build outputs
 /remotion/out/
+
+# Shay capability runtime output (generated invoices, ledgers, approval drafts).
+# The capability scripts + schemas + examples are tracked; their output is not.
+/platform/billing/
+/platform/capabilities/work/outbox/*.json
+
+# Finance agents fetched market-data cache (results + sample-data stay tracked)
+/scripts/finance-agents/.cache/
+
+# Recovered raw agent transcripts (organized output goes to obsidian/07-Research)
+research-recovery/
