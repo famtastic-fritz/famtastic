@@ -44,6 +44,7 @@ export interface SystemMetrics {
 }
 
 const API_BASE = 'http://localhost:8643/api'
+const WS_BASE = API_BASE.replace(/^http/, 'ws').replace(/\/api$/, '/ws')
 
 interface DashboardState {
   agents: Agent[]
@@ -71,6 +72,8 @@ interface DashboardState {
   executeCommand: (command: string) => void
   fetchAgents: () => Promise<void>
   fetchTasks: () => Promise<void>
+  fetchEvents: () => Promise<void>
+  connectEventStream: () => () => void
   checkApiHealth: () => Promise<void>
 }
 
@@ -257,6 +260,82 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       })
     } catch {
       // ignore
+    }
+  },
+
+  // Load the recent backlog from the spine (newest-first, capped server-side).
+  fetchEvents: async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/events?limit=200`)
+      if (!resp.ok) return
+      const data = await resp.json()
+      if (Array.isArray(data.events)) {
+        set({ events: data.events.slice(0, 500), apiConnected: true })
+      }
+    } catch {
+      set({ apiConnected: false })
+    }
+  },
+
+  // Live stream: subscribe to /ws/events and prepend each new event. Returns a
+  // disconnect fn; auto-reconnects with backoff until disconnected. The backend
+  // follower only sends events from connect-time forward, so this never double-
+  // counts the backlog already loaded by fetchEvents().
+  connectEventStream: () => {
+    let ws: WebSocket | null = null
+    let closed = false
+    let retry = 0
+
+    const open = () => {
+      if (closed) return
+      try {
+        ws = new WebSocket(`${WS_BASE}/events`)
+      } catch {
+        scheduleReconnect()
+        return
+      }
+      ws.onopen = () => {
+        retry = 0
+        set({ apiConnected: true })
+      }
+      ws.onmessage = (msg) => {
+        try {
+          const ev = JSON.parse(msg.data) as ActivityEvent
+          // The server acks client pings with {type:'ack'} — ignore those.
+          if (ev && (ev as { type?: string }).type === 'ack') return
+          if (ev && ev.id && ev.message) get().addEvent(ev)
+        } catch {
+          // ignore malformed frames
+        }
+      }
+      ws.onclose = () => {
+        if (!closed) scheduleReconnect()
+      }
+      ws.onerror = () => {
+        try {
+          ws?.close()
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    const scheduleReconnect = () => {
+      if (closed) return
+      retry = Math.min(retry + 1, 6)
+      const delay = Math.min(1000 * 2 ** retry, 30000)
+      setTimeout(open, delay)
+    }
+
+    open()
+
+    return () => {
+      closed = true
+      try {
+        ws?.close()
+      } catch {
+        // ignore
+      }
     }
   },
 

@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from components.swarm import SwarmOrchestrator
+from api import event_log
 
 logger = logging.getLogger("api.server")
 logging.basicConfig(
@@ -43,10 +44,46 @@ def get_orchestrator() -> SwarmOrchestrator:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     get_orchestrator()
-    yield
-    if _orch is not None:
-        _orch.stop()
-        logger.info("SwarmOrchestrator stopped")
+    event_log.system("Command-center API online", severity="success")
+    follower = asyncio.create_task(_event_follower())
+    try:
+        yield
+    finally:
+        follower.cancel()
+        try:
+            await follower
+        except (asyncio.CancelledError, Exception):  # noqa: BLE001
+            pass
+        if _orch is not None:
+            _orch.stop()
+            logger.info("SwarmOrchestrator stopped")
+
+
+async def _event_follower(poll_interval: float = 1.0) -> None:
+    """Tail the event spine and push new appends to all WebSocket clients.
+
+    Polling (not inotify) keeps it portable across mac/linux and works no matter
+    which process wrote the line — the agent-os orchestrator, cron, the kanban
+    hook, or the Node fleet bridge. We start at the current end of file so a
+    fresh client sees only events from connect-time forward; the initial
+    backlog is served by GET /api/events.
+    """
+    offset = event_log.file_size()
+    while True:
+        try:
+            await asyncio.sleep(poll_interval)
+            if not _connected_websockets:
+                # No listeners — keep the offset moving so we don't replay a
+                # backlog to the next client that connects.
+                offset = event_log.file_size()
+                continue
+            offset, new_events = event_log.read_since(offset)
+            for ev in new_events:
+                await broadcast_event(ev)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001 — follower must never die
+            logger.error(f"Event follower error: {exc}")
 
 
 app = FastAPI(
@@ -95,6 +132,8 @@ async def heartbeat(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Receive agent heartbeat."""
     agent_id = payload.get("agent_id", "unknown")
     logger.info(f"Heartbeat from {agent_id}")
+    event_log.emit(type="heartbeat", message=f"Heartbeat from {agent_id}",
+                   severity="info", agent_id=agent_id, source="agent-os")
     return {"received": True, "agent_id": agent_id, "timestamp": asyncio.get_event_loop().time()}
 
 

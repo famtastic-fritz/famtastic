@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from api import event_log
 from api.server import get_orchestrator
 
 router = APIRouter()
@@ -58,6 +59,8 @@ async def create_task(payload: TaskCreate) -> Dict[str, Any]:
         priority=priority,
         timeout=payload.timeout,
     )
+    event_log.task_start(f"Task submitted: {payload.prompt[:80]}", source="agent-os",
+                         task_id=tid, model_tier=payload.model_tier)
     return {"task_id": tid, "status": "submitted"}
 
 
@@ -85,6 +88,8 @@ async def create_goal(payload: GoalCreate) -> Dict[str, Any]:
     """Submit a goal to the goal loop (async)."""
     orch = get_orchestrator()
     session = orch.goal_async(payload.description, payload.session_id)
+    event_log.emit(type="command", message=f"Goal started: {payload.description[:80]}",
+                   severity="info", source="agent-os", session_id=session.id)
     return {
         "session_id": session.id,
         "status": session.status,
