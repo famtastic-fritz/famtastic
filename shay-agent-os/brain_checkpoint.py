@@ -17,8 +17,6 @@ Usage (import):
 
 Contract: never raises, never blocks — a brain-write failure must not break a run.
 """
-from __future__ import annotations  # PEP 604 (str | None) syntax on Python 3.9
-
 import os
 import subprocess
 import sys
@@ -31,30 +29,22 @@ WRITER = ROOT / "scripts" / "brain" / "session-checkpoint.js"
 
 def checkpoint(phase: str, session_id: str | None = None, agent: str = "shay",
                note: str | None = None) -> None:
-    """Fire a brain checkpoint.
+    """Fire a brain checkpoint. phase is 'start'/'stop'/'progress' (or any label).
 
-    phase  : 'start' | 'stop' | 'progress' | any event label.
-    note   : optional one-line "what I'm doing right now"; lands in the session
-             note's Timeline so mid-session work isn't lost between start/stop.
-
-    Session id resolves to the REAL agent session when available — explicit arg,
-    then CLAUDE_CODE_SESSION_ID (Claude Code), then BRAIN_SESSION_ID (any other
-    surface) — and only falls back to a generated shay-<timestamp> as a last
-    resort. This keeps every trace tied to one session id, not fragmented.
+    Call this FREQUENTLY mid-run (every few turns, before compaction, on surface
+    switch) with a one-line `note` so nothing is lost between start and stop.
+    Pass Shay's REAL session_id so every trace ties to her session.
     """
     try:
         if not WRITER.exists():
             return
-        sid = (session_id
-               or os.environ.get("CLAUDE_CODE_SESSION_ID")
-               or os.environ.get("BRAIN_SESSION_ID")
-               or f"shay-{time.strftime('%Y%m%d%H%M%S')}")
+        sid = session_id or os.environ.get("BRAIN_SESSION_ID") \
+            or f"shay-{time.strftime('%Y%m%d%H%M%S')}"
         env = {**os.environ,
                "AI_AGENT": agent,
                "BRAIN_SESSION_ID": sid,
+               "BRAIN_NOTE": note or "",
                "CLAUDE_PROJECT_DIR": str(ROOT)}
-        if note:
-            env["BRAIN_NOTE"] = str(note)
         subprocess.run(["node", str(WRITER), phase],
                        env=env, cwd=str(ROOT),
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -65,13 +55,7 @@ def checkpoint(phase: str, session_id: str | None = None, agent: str = "shay",
 
 
 if __name__ == "__main__":
-    # CLI: brain_checkpoint.py <phase> [session_id] [--note "text"]
-    argv = sys.argv[1:]
-    note_val = None
-    if "--note" in argv:
-        i = argv.index("--note")
-        note_val = argv[i + 1] if i + 1 < len(argv) else None
-        argv = argv[:i] + argv[i + 2:]
-    phase = argv[0] if len(argv) > 0 else "checkpoint"
-    sid = argv[1] if len(argv) > 1 else None
-    checkpoint(phase, sid, note=note_val)
+    phase = sys.argv[1] if len(sys.argv) > 1 else "checkpoint"
+    sid = sys.argv[2] if len(sys.argv) > 2 else None
+    note = sys.argv[3] if len(sys.argv) > 3 else None
+    checkpoint(phase, sid, note=note)

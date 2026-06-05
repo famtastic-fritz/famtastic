@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GIGS — An Exhibition of Eight Ready Proposals · Studio FAMtastic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08090b; --wall:#0f1013; --frame:#161719; --frame2:#1e2022;
+    --line:#2a2c2f; --ink:#f0f0f2; --dim:#8a8c90;
+    --indigo:#5b4fe8; --indigo-soft:#8b84f0; --amber:#f5a623; --cyan:#00c2a8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;z-index:0;
+    background:radial-gradient(1200px 600px at 70% -10%,rgba(91,79,232,.18),transparent 60%),
+               radial-gradient(900px 500px at 0% 110%,rgba(0,194,168,.10),transparent 55%)}
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:clamp(20px,5vw,64px) clamp(16px,4vw,40px) 80px}
+
+  /* ---- Header / exhibition plate ---- */
+  .kicker{font-family:Space Grotesk;font-weight:500;letter-spacing:.32em;text-transform:uppercase;
+    font-size:12px;color:var(--indigo-soft)}
+  h1{font-family:Space Grotesk;font-weight:700;letter-spacing:-.02em;line-height:.95;
+    font-size:clamp(44px,11vw,118px);margin:.18em 0 .1em;
+    background:linear-gradient(92deg,#fff 10%,var(--indigo-soft) 55%,var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--dim);max-width:60ch;font-size:clamp(14px,2.2vw,17px);line-height:1.6}
+  .meta{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:22px;font-size:12.5px;color:var(--dim);
+    font-family:Space Grotesk;letter-spacing:.04em}
+  .meta b{color:var(--ink);font-weight:500}
+  .rule{height:1px;background:linear-gradient(90deg,var(--line),transparent);margin:34px 0 8px}
+
+  /* ---- Controls ---- */
+  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:26px 0 30px}
+  .bar .lbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-family:Space Grotesk;margin-right:4px}
+  .chip{font-family:Space Grotesk;font-size:12.5px;letter-spacing:.02em;color:var(--dim);
+    background:var(--frame);border:1px solid var(--line);padding:8px 14px;border-radius:999px;cursor:pointer;
+    transition:.18s}
+  .chip:hover{color:var(--ink);border-color:var(--indigo)}
+  .chip.on{color:#fff;background:linear-gradient(180deg,#241f4d,#1a1735);border-color:var(--indigo);
+    box-shadow:0 0 0 1px var(--indigo) inset}
+  .hint{margin-left:auto;font-size:12px;color:var(--dim)}
+  .hint b{color:var(--indigo-soft)}
+
+  /* ---- Gallery ---- */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:18px}
+  .piece{perspective:1400px;cursor:pointer;opacity:0;transform:translateY(14px);
+    animation:rise .6s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .card{position:relative;height:248px;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+  .piece.flip .card{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;
+    background:linear-gradient(168deg,var(--frame),#101113)}
+  .piece:hover .card{transform:translateY(-6px)}
+  .piece.flip:hover .card{transform:rotateY(180deg) translateY(-6px)}
+  .face:hover{border-color:var(--indigo)}
+  .no{font-family:Space Grotesk;font-weight:700;font-size:13px;color:var(--indigo-soft);letter-spacing:.1em}
+  .ttl{font-family:Space Grotesk;font-weight:500;font-size:19px;line-height:1.18;margin-top:auto}
+  .medium{font-size:12px;color:var(--dim);margin-top:8px;letter-spacing:.02em}
+  .val{font-family:Space Grotesk;font-weight:700;font-size:22px;margin-top:14px;color:var(--ink)}
+  .val span{font-size:12px;font-weight:400;color:var(--dim)}
+  .stamp{position:absolute;top:16px;right:16px;font-family:Space Grotesk;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--cyan);border:1px solid rgba(0,194,168,.4);border-radius:999px;padding:4px 9px}
+  .back{transform:rotateY(180deg);background:linear-gradient(168deg,#191634,#101018);justify-content:space-between}
+  .back .q{font-family:Space Grotesk;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--indigo-soft)}
+  .pitch{font-size:16px;line-height:1.5;margin:12px 0;color:var(--ink)}
+  .ready{font-size:11.5px;color:var(--cyan);letter-spacing:.04em;display:flex;align-items:center;gap:7px}
+  .ready::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+
+  /* ---- Curator notes ---- */
+  .section-h{font-family:Space Grotesk;font-weight:700;letter-spacing:-.01em;font-size:clamp(24px,4vw,34px);margin:64px 0 6px}
+  .section-h .em{color:var(--amber)}
+  .notes{display:grid;gap:12px;margin-top:22px}
+  .note{border-left:2px solid var(--amber);background:linear-gradient(90deg,rgba(245,166,35,.07),transparent);
+    padding:14px 18px;border-radius:0 12px 12px 0}
+  .note b{font-family:Space Grotesk;color:var(--amber);font-weight:500;font-size:13px;letter-spacing:.04em;display:block;margin-bottom:3px}
+  .note p{color:var(--dim);font-size:14.5px;line-height:1.55}
+
+  /* ---- Two exits ---- */
+  .exits{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+  .exit{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;padding:26px;
+    min-height:200px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:.22s;
+    background:linear-gradient(165deg,var(--frame),#0d0e10)}
+  .exit:hover{transform:translateY(-5px);border-color:var(--indigo)}
+  .exit .tag{font-family:Space Grotesk;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+  .exit h3{font-family:Space Grotesk;font-weight:700;font-size:23px;margin:10px 0 8px;line-height:1.1}
+  .exit p{color:var(--dim);font-size:13.5px;line-height:1.5}
+  .exit .glow{position:absolute;inset:0;opacity:0;transition:.3s;pointer-events:none}
+  .exit:hover .glow{opacity:1}
+  .exitA .glow{background:radial-gradient(400px 200px at 80% 0,rgba(245,166,35,.16),transparent)}
+  .exitB .glow{background:radial-gradient(400px 200px at 80% 0,rgba(91,79,232,.22),transparent)}
+  .exitB{box-shadow:0 0 0 1px rgba(91,79,232,.25) inset}
+  .pick{margin-top:14px;font-family:Space Grotesk;font-size:12px;letter-spacing:.06em;color:var(--indigo-soft)}
+  .exitA .pick{color:var(--amber)}
+
+  footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-size:12px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:Space Grotesk;letter-spacing:.04em}
+  @media(max-width:560px){.exits{grid-template-columns:1fr}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Studio FAMtastic · Exhibition No. 01</div>
+  <h1>GIGS</h1>
+  <p class="sub">Eight ready proposals, hung like canvases. Each one is already written — tap a piece to turn it and read its statement. This is the React wing; the artist works in more media than this.</p>
+  <div class="meta">
+    <span>Curated for <b>Fritz Medine</b></span><span>Medium · <b>React + adjacents</b></span>
+    <span>Status · <b>8 of 8 drafted</b></span><span>Valuation · <b>$25–80 / hr</b></span>
+  </div>
+  <div class="rule"></div>
+
+  <div class="bar">
+    <span class="lbl">Sort</span>
+    <button class="chip on" data-sort="no">By number</button>
+    <button class="chip" data-sort="val">By valuation ↓</button>
+    <span class="hint">tap a piece to <b>flip</b> it</span>
+  </div>
+
+  <div class="gallery" id="gallery"></div>
+
+  <h2 class="section-h">Curator's <span class="em">Notes</span></h2>
+  <p class="sub">Every honest exhibition tells you what you're really looking at.</p>
+  <div class="notes">
+    <div class="note"><b>These postings aren't live.</b><p>Upwork's bots blocked the scrape — treat these as a map of the terrain, not a menu to order from. You browse the live wall; Shay tailors the matching proposal; you submit.</p></div>
+    <div class="note"><b>It's all one color — React.</b><p>The artist is more than React. New wings of this gallery open the moment you name your other media.</p></div>
+    <div class="note"><b>Gig work is a performance, not a painting.</b><p>It needs your hand nightly — proposals, replies, deadlines. That's the opposite of the hands-off life you asked for. Worth seeing before you commit the room.</p></div>
+  </div>
+
+  <h2 class="section-h">Two <span class="em" style="color:var(--indigo-soft)">Exits</span></h2>
+  <div class="exits">
+    <div class="exit exitA"><div class="glow"></div>
+      <span class="tag">Exit A</span><h3>Grind the Gigs</h3>
+      <p>Fast cash in your real skill. Browse live, send the drafted proposals, win one. Active, hands-on, not passive — but money this month.</p>
+      <span class="pick">→ needs your hand</span></div>
+    <div class="exit exitB"><div class="glow"></div>
+      <span class="tag">Exit B</span><h3>Build &amp; They Come</h3>
+      <p>The Store wing. List your Site-Studio templates on Creative Market; buyers arrive on their own. The hands-off exhibition you actually asked for.</p>
+      <span class="pick">→ FRITZ-HANDS-OFF-INCOME-PLAY.md</span></div>
+  </div>
+
+  <footer><span>STUDIO FAMTASTIC</span><span>“Manifest the extraordinary from the ordinary.”</span></footer>
+</div>
+
+<script>
+  const PIECES=[
+    {n:1,t:"SaaS Dashboard",m:"React · TypeScript · Redux",lo:25,hi:40,p:"Turn a client's raw B2B data into a dashboard that sells the whole product on first paint."},
+    {n:2,t:"Firebase Full-Stack App",m:"React · Firebase · Auth",lo:30,hi:50,p:"Idea to live MVP — auth, database, deploy — in days, not weeks."},
+    {n:3,t:"GraphQL / Apollo Integration",m:"React · GraphQL · Apollo",lo:40,hi:70,p:"One clean query layer. Kill the REST spaghetti, ship a faster app."},
+    {n:4,t:"Redux State Optimization",m:"React · Redux Toolkit",lo:35,hi:60,p:"Take a sluggish, tangled state layer and make the whole app feel instant."},
+    {n:5,t:"TypeScript Migration",m:"React · TypeScript",lo:40,hi:65,p:"Catch the bugs before the users do. Convert a shaky JS codebase into a safe one."},
+    {n:6,t:"Component Library (Storybook)",m:"React · Storybook",lo:40,hi:70,p:"One design system, documented — every team that touches it ships faster."},
+    {n:7,t:"Shopify Headless E-commerce",m:"React · Shopify",lo:45,hi:80,p:"Storefronts that load fast and convert. Headless speed, custom soul."},
+    {n:8,t:"Performance Optimization",m:"React · Web Vitals",lo:50,hi:75,p:"Shave the seconds. Lift LCP, FID, every metric that moves conversion."},
+  ];
+  const g=document.getElementById('gallery');
+  function render(list){
+    g.innerHTML='';
+    list.forEach((d,i)=>{
+      const el=document.createElement('div');
+      el.className='piece';el.style.animationDelay=(i*55)+'ms';
+      el.innerHTML=`
+        <div class="card">
+          <div class="face front">
+            <span class="stamp">drafted</span>
+            <span class="no">No. ${String(d.n).padStart(2,'0')}</span>
+            <div class="ttl">${d.t}</div>
+            <div class="medium">${d.m}</div>
+            <div class="val">$${d.lo}–${d.hi}<span> / hr</span></div>
+          </div>
+          <div class="face back">
+            <span class="q">Artist's statement</span>
+            <p class="pitch">“${d.p}”</p>
+            <span class="ready">proposal written — ready to send</span>
+          </div>
+        </div>`;
+      el.addEventListener('click',()=>el.classList.toggle('flip'));
+      g.appendChild(el);
+    });
+  }
+  render(PIECES);
+  document.querySelectorAll('[data-sort]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-sort]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    const s=b.dataset.sort;
+    const list=[...PIECES].sort((a,c)=> s==='val' ? (c.hi-a.hi)||(c.lo-a.lo) : a.n-c.n);
+    render(list);
+  }));
+</script>
+</body>
+</html>

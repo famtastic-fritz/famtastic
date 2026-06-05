@@ -12,6 +12,14 @@ Shay is an **ORCHESTRATOR, not a worker.** Her brain thinks, plans, and *assigns
 The actual work is **delegated** to cheaper lanes so expensive brain tokens are
 spent only on decisions.
 
+> **ENFORCED RULE (Fritz, 2026-06-05): "Brains just orchestrate. Automations do NOT go
+> through the brain."** The brain only orchestrates (notice/plan/assign — low volume);
+> all automation/worker calls run on separate lanes (local Ollama $0, Groq free, Codex
+> for complex bulk), never the brain. **Consequence:** a cheap flat brain is plenty —
+> e.g. GLM Coding Plan Lite ($18, ~80 prompts/5h) comfortably covers orchestration
+> because the heavy swarm volume never touches it. This is what makes the cheap-flat-brain
+> + free/local-workers architecture work.
+
 ```
         ┌─────────────────────────────────────────────┐
         │  SHAY (orchestrator) — thinks + assigns       │

@@ -12,13 +12,6 @@
  * complete per the Brain Sync Contract in CLAUDE.md. The hook guarantees the
  * scaffold + timestamps + git delta; the agent supplies the narrative.
  *
- * Mid-session progress: beyond start/compact/stop, an agent can fire a
- * note-bearing checkpoint so work between start and stop isn't lost when Fritz
- * switches surfaces. Two equivalent forms:
- *     node session-checkpoint.js progress "what I'm doing right now"
- *     BRAIN_NOTE="what I'm doing right now" node session-checkpoint.js progress
- * The note is appended to the Timeline as `- <stamp> — progress: <note> @ <sha>`.
- *
  * Contract: never throws, never blocks, always exit 0. Hooks must not break a
  * session if the brain write fails.
  */
@@ -47,17 +40,10 @@ function main() {
   const sessionId = hook.session_id || process.env.CLAUDE_CODE_SESSION_ID
                  || process.env.BRAIN_SESSION_ID || 'unknown-session';
   const shortId = sessionId.slice(0, 8);
-  // Optional one-line progress note (BRAIN_NOTE env, or argv[3]). Lands in the
-  // timeline so mid-session work between start and stop is not lost. Hooks pass
-  // none; agent-driven `checkpoint("progress", note=…)` calls pass one.
-  const note = (process.env.BRAIN_NOTE || process.argv[3] || '').trim().replace(/\s+/g, ' ');
-  // Branch + short head. NOTE: these must be two separate rev-parse calls —
-  // `git rev-parse --abbrev-ref HEAD --short HEAD` does NOT work, because
-  // --abbrev-ref is a mode that stays on for every following rev, so BOTH come
-  // back as the branch name (the bug that made start_sha a branch and every
-  // git delta a no-op `main..main` range).
-  const branch = sh(`git -C "${root}" rev-parse --abbrev-ref HEAD`) || 'detached';
-  const head = sh(`git -C "${root}" rev-parse --short HEAD`) || '0000000';
+  // One git call for branch + short head (line 1 = branch, line 2 = sha).
+  const rp = sh(`git -C "${root}" rev-parse --abbrev-ref HEAD --short HEAD`).split('\n');
+  const branch = rp[0] || 'detached';
+  const head = rp[1] || '0000000';
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
   const stamp = now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
@@ -90,7 +76,7 @@ status: active
 _(agent: replace this line — 2–6 sentences on goals, what shipped, what's deferred)_
 
 ## Timeline
-- ${stamp} — session started on \`${branch}\` @ ${head}${note ? ` — ${note}` : ''}
+- ${stamp} — session started on \`${branch}\` @ ${head}
 
 ## Git delta
 _(filled on stop)_
@@ -102,13 +88,16 @@ _(filled on stop)_
 
   let content = fs.readFileSync(file, 'utf8');
 
-  // Append a timeline entry for this event.
-  const label = event === 'precompact' ? 'context compaction checkpoint'
+  // Append a timeline entry for this event, with an optional one-line substance
+  // note (BRAIN_NOTE env or argv[3]) so frequent mid-session checkpoints capture
+  // WHAT happened, not just WHEN — nothing gets lost when a surface switches.
+  const note = (process.env.BRAIN_NOTE || process.argv[3] || '').trim();
+  const labelBase = event === 'precompact' ? 'context compaction checkpoint'
               : event === 'stop' ? 'session stop'
               : event;
-  const entry = note ? `${label}: ${note}` : label;
+  const label = note ? `${labelBase}: ${note}` : labelBase;
   content = content.replace(/(## Timeline\n(?:.*\n)*?)(\n## )/m,
-    (m, tl, tail) => `${tl}- ${stamp} — ${entry} @ ${head}\n${tail}`);
+    (m, tl, tail) => `${tl}- ${stamp} — ${label} @ ${head}\n${tail}`);
 
   // On stop, compute the git delta since start and mark the note ended.
   if (event === 'stop') {

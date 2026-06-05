@@ -29,3 +29,12 @@
 The machinery (Site Studio, invoice generation, Cash App) is ready; the bottleneck is **a willing human with $100, not code.** The autonomous assets (content engine, finance agents, companion) earn **nothing this week**. Highest-leverage move: spend 10 minutes checking if any owed/unbilled work exists — if yes, Shay invoices + nudges NOW; if not, send the $99 warm broadcast. Both take <1 hr, cost $0, and the billing infra is ready.
 
 **Key tension to name:** *autonomous ≠ fast money.* The truly hands-off assets are slow-burn; the fast cash needs Fritz's human touch (one message to one person).
+
+## UPDATE 2026-06-05 — the real money trail was UNTRACKED (now committed)
+The audit missed `revenue-plans/` + `1000-IDEAS.md` because they were untracked (not in git, invisible to the cloud clone). Now committed. Findings:
+- **`1000-IDEAS.md` = low-signal brainstorm matrix** — ~15-20 products × ~50 monetization patterns (token-optimizer, FinceptTerminal each get the same Chrome-ext/course/ebook/podcast treatment). Inspiration only, NOT a vetted pipeline.
+- **`revenue-plans/` = the ACTUAL warm trail (this is the gold):**
+  - **Upwork React gigs** (`1_upwork_react_gigs/`) — 10 job types + **8 drafted proposals** + gig-sniper. Fritz IS a React dev. **#1 fastest move: apply to live React postings with these today.** $500–5k/gig, Upwork handles payment.
+  - **NCS → Paul** (`2_ncs_modernization_pitch/`) — $5K modernization pitch to a named prospect + pricing + contact strategy. BUT drafted on assumptions ("Paul [Last Name?]", "Assessment (Assumed)") — needs Fritz to confirm Paul is real/reachable.
+  - **NIBS AI-automation** (`3_ai_automation_pitch_for_nibs/`) — pitch + pricing, Fritz's existing NIBS context.
+- **Revised #1 money move:** send the pre-drafted **Upwork React proposals** to live gigs (Fritz's skill + ready proposals + marketplace buyers + built-in payment). Then tighten NCS/Paul if reachable. This beats both the 1000-list and cold outreach.
