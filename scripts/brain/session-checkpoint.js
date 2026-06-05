@@ -88,10 +88,14 @@ _(filled on stop)_
 
   let content = fs.readFileSync(file, 'utf8');
 
-  // Append a timeline entry for this event.
-  const label = event === 'precompact' ? 'context compaction checkpoint'
+  // Append a timeline entry for this event, with an optional one-line substance
+  // note (BRAIN_NOTE env or argv[3]) so frequent mid-session checkpoints capture
+  // WHAT happened, not just WHEN — nothing gets lost when a surface switches.
+  const note = (process.env.BRAIN_NOTE || process.argv[3] || '').trim();
+  const labelBase = event === 'precompact' ? 'context compaction checkpoint'
               : event === 'stop' ? 'session stop'
               : event;
+  const label = note ? `${labelBase}: ${note}` : labelBase;
   content = content.replace(/(## Timeline\n(?:.*\n)*?)(\n## )/m,
     (m, tl, tail) => `${tl}- ${stamp} — ${label} @ ${head}\n${tail}`);
 

@@ -27,8 +27,14 @@ ROOT = Path(__file__).resolve().parents[1]          # ~/famtastic
 WRITER = ROOT / "scripts" / "brain" / "session-checkpoint.js"
 
 
-def checkpoint(phase: str, session_id: str | None = None, agent: str = "shay") -> None:
-    """Fire a brain checkpoint. phase is 'start' or 'stop' (or any event label)."""
+def checkpoint(phase: str, session_id: str | None = None, agent: str = "shay",
+               note: str | None = None) -> None:
+    """Fire a brain checkpoint. phase is 'start'/'stop'/'progress' (or any label).
+
+    Call this FREQUENTLY mid-run (every few turns, before compaction, on surface
+    switch) with a one-line `note` so nothing is lost between start and stop.
+    Pass Shay's REAL session_id so every trace ties to her session.
+    """
     try:
         if not WRITER.exists():
             return
@@ -37,6 +43,7 @@ def checkpoint(phase: str, session_id: str | None = None, agent: str = "shay") -
         env = {**os.environ,
                "AI_AGENT": agent,
                "BRAIN_SESSION_ID": sid,
+               "BRAIN_NOTE": note or "",
                "CLAUDE_PROJECT_DIR": str(ROOT)}
         subprocess.run(["node", str(WRITER), phase],
                        env=env, cwd=str(ROOT),
@@ -50,4 +57,5 @@ def checkpoint(phase: str, session_id: str | None = None, agent: str = "shay") -
 if __name__ == "__main__":
     phase = sys.argv[1] if len(sys.argv) > 1 else "checkpoint"
     sid = sys.argv[2] if len(sys.argv) > 2 else None
-    checkpoint(phase, sid)
+    note = sys.argv[3] if len(sys.argv) > 3 else None
+    checkpoint(phase, sid, note=note)
