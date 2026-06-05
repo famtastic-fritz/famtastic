@@ -11,10 +11,11 @@ rest of the "20" are metered, IDE-locked, or scams — listed so you know what t
 
 ## Plain-English: what GLM & Poe are (+ the limits)
 **GLM (Z.ai / Zhipu AI):** frontier model family from a major Chinese lab ("Z.ai" = its international brand).
-GLM-5.1 is the flagship — Claude-Sonnet/GPT class for coding. The "GLM Coding Plan" is a flat sub with API
+GLM-5.1 is the flagship — ~Claude Opus 4.6 class for coding/agentic. The "GLM Coding Plan" is a flat sub with API
 access that drops into Shay.
 - **Limits:** Lite **$18/mo** ≈ ~80 prompts / rolling 5-hour window (+ weekly cap); Pro $30 ≈ ~200/5h; Max $80 ≈ ~800/5h. ("Prompt" ≈ one turn.)
 - **Role:** the everyday FLAT workhorse brain — never metered, never 429s.
+- **WIRING (verified 2026-06-05):** the Coding Plan subscription endpoint is **`https://api.z.ai/api/coding/paas/v4`** (NOT `/api/openai/v1` — that's the metered *general* API and 404s/needs a balance). Key in `~/.shay/.env` as `GLM_API_KEY`. **Flagship model id = `glm-5.1`** (also `glm-4.7`, `glm-5-turbo`; don't settle for `glm-4.6` — it's older). Lite includes all of them.
 
 **Poe (by Quora):** one sub = access to MANY models (Claude Opus, GPT-5.5, Gemini, hundreds) via one app + one official API.
 - **Limits:** **$19.99/mo = 1,000,000 points/month** (monthly reset). Cost per message varies by model: cheap (~50 pts) → thousands of calls; Claude Opus (~15,000 pts/msg) → ~60–70 messages. A wallet, not unlimited.
