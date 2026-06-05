@@ -6,6 +6,26 @@
 > Goal: a clickable, good-looking **Shay remote control** on Fritz's phone — like Claude Code's
 > mobile "Code" tab + the interview style — cheaply, soon.
 
+## ⚡ UPDATE 2026-06-05 — Fritz is ANDROID + Tailscale done + a PWA ALREADY EXISTS
+Three facts change the path (confirmed from session history):
+1. **A working Companion PWA already exists** at `~/famtastic/companion-app/` (index.html, app.js,
+   sw.js service worker, manifest.webmanifest, icons) with **web-push already wired** (VAPID +
+   subscribe/push, commits 66b26ff/d96a3a2). `PART-4-DESIGN.md` already concluded "ship a PWA over
+   Tailscale." → **REUSE + POLISH it; do NOT build a new Capacitor app from scratch.**
+2. **Fritz is on ANDROID** — where PWAs do reliable installable home-screen + web-push (the iOS
+   limitation that pushed us toward Capacitor does NOT apply). So **PWA is the right path for him.**
+   Capacitor APK = optional later upgrade (native share-sheet/badge), not needed for MVP.
+3. **Tailscale is already configured** → connectivity solved; no relay needed (the relay-default in
+   the old plan was only to dodge Apple App Review — irrelevant for Android sideload/PWA).
+4. **Run BOTH surfaces** — it's the documented "four-surface family" (Shay Desktop / Web / Workspace
+   / Companion), and PART-3 VERIFIED Web + Workspace both reach the SAME Shay brain. Keep **Workspace
+   as the rich Mac control surface** + **Web UI as the light base** + **the PWA as the phone**. Same
+   sessions/memory underneath. No conflict.
+
+**Revised plan:** polish the existing `companion-app` PWA to the UX/visual spec below → serve over
+Tailscale → install on the Android home screen. The Capacitor/iOS material below stays as the
+future option. Use the paste-ready prompt at the very bottom (now PWA-reuse).
+
 ## The decision (all three agents agree)
 - **Surface:** standardize on the **Shay Web UI** (hermes-webui v0.51). It's already a browser app — expose it and the phone gets the full working Shay. (Workspace = richer but Electron + overhead; revisit for swarm-monitoring later. Desktop = can't run on a phone.)
 - **App shell:** **Capacitor 6 wrapper** around that web UI → real home-screen icon + reliable push, via **TestFlight in ~1 week, $0 incremental** (Apple dev already paid). PWA rejected (iOS background push unreliable — the "job done" signal would drop). Full native (`shay-phone-app/PLAN.md`) = **Phase 2**, not abandoned.
@@ -41,30 +61,31 @@ Dark layered surfaces (#08090B→#2A2C2F); single accent **electric indigo #5B4F
 
 ---
 
-## PASTE-READY — Claude Code build session prompt
+## PASTE-READY — Claude Code build session prompt (Android PWA · salvage plumbing · REBUILD the experience)
 ```
-Build "Shay Companion" — a Capacitor 6 iOS app that wraps the existing Shay web UI
-(hermes-webui v0.51) into a home-screen remote control for Shay, my Mac-resident AI agent.
-Full design + architecture brief: obsidian/01-Shay/SHAY-COMPANION-BUILD-BRIEF.md
-(raw research: obsidian/05-Captures/research/2026-06-05-mobile-companion/). Read it first.
+Rebuild the Shay phone companion for Android. SALVAGE only the working PLUMBING from the existing
+~/famtastic/companion-app/ PWA — the service worker (sw.js), web-push (VAPID + subscribe/push),
+manifest, and gateway/auth wiring. THROW OUT its UI/UX ENTIRELY. Fritz HATED the old look, feel,
+and experience — do NOT preserve any of it. Build the experience fresh to the spec in
+obsidian/01-Shay/SHAY-COMPANION-BUILD-BRIEF.md (raw research:
+obsidian/05-Captures/research/2026-06-05-mobile-companion/). Read both first.
 
-Context:
-- Shay runs on my Mac via the hermes/shay gateway (FastAPI, web UI at 127.0.0.1:8787).
-- Apple Developer Program is paid. Tailscale available. Goal: TestFlight build, MVP scope.
+Context: Fritz is on ANDROID and already runs Tailscale (connectivity solved, no relay needed).
+Shay gateway over HTTP+SSE: gateway :8642 (API_SERVER_KEY), dashboard :9119 (SHAY_DASHBOARD_TOKEN),
+web UI :8787. command-center/state.json feeds the morning brief.
 
-MVP (this session):
-1. Mac gateway prep: set host 127.0.0.1 -> 0.0.0.0; install Caddy; Caddyfile reverse_proxy
-   localhost:8787 under the Tailscale MagicDNS host; caddy start.
-2. Add Bearer-token auth to the gateway (openssl rand -hex 32 in ~/.shay/config.yaml;
-   require Authorization: Bearer on all routes).
-3. Scaffold ~/famtastic/shay-phone/ (Capacitor 6: @capacitor/core,cli,ios,push-notifications,
-   preferences,barcode-scanner). appId dev.famtastic.shay, appName Shay, webDir www.
-4. First-launch QR pair screen -> store {host, token} in Keychain (@capacitor/preferences);
-   subsequent launches open https://{host}:8787 in WKWebView, injecting the Bearer header.
-5. Apply the visual shell: dark, electric-indigo accent, Space Grotesk + Inter, icon + splash.
-6. npx cap add ios; cap sync; archive for TestFlight.
+Build to spec:
+1. BRAND-NEW UI (the old one is rejected): dark layered surfaces, electric-indigo (#5B4FE8) accent,
+   Space Grotesk + Inter, 5-tab IA (Brief / Tasks / Chat / Dispatch / You), breathing-dot "thinking"
+   indicator (never a spinner). Target feel = Claude Code's "Code" remote-control tab — NOT the old companion-app.
+2. Interview Card: render AskUserQuestion (1-4 Qs, 2-4 options, single/multi-select, "type your own",
+   progress dots) → ends in a read-only plan card (Approve & Start / Let's adjust).
+3. Wire the 5 jobs to the gateway: live session list (Tasks), morning Brief (command-center/state.json),
+   interview Chat (SSE), Dispatch/approve, web-push notifications (4 types + daily budget cap).
+4. Serve over Tailscale (Caddy TLS in front if the browser needs HTTPS); confirm it installs to the
+   Android home screen (manifest + icons) with working web-push.
+5. Keep Shay Web UI + Workspace both functional (four-surface family, same brain).
+6. COMMIT companion-app changes — never leave it uncommitted (it got nuked once).
 
-Then propose Wk2 (Cloudflare Worker push relay + gateway job hooks + morning-brief push).
-Use the brief's 5-tab IA and Interview Card spec for any companion-native screens.
-Commit the shay-phone project to its own repo; do NOT let it get nuked uncommitted.
+Capacitor APK is a later optional upgrade for native share-sheet/badge — not needed for this MVP.
 ```
