@@ -9,6 +9,19 @@ Truly flat-rate LLM access is **rare** — and it does **not** exist for frontie
 But it DOES exist, and ~7 options are genuinely **flat AND wireable into Shay** (OpenAI-compatible). The
 rest of the "20" are metered, IDE-locked, or scams — listed so you know what to ignore.
 
+## Plain-English: what GLM & Poe are (+ the limits)
+**GLM (Z.ai / Zhipu AI):** frontier model family from a major Chinese lab ("Z.ai" = its international brand).
+GLM-5.1 is the flagship — Claude-Sonnet/GPT class for coding. The "GLM Coding Plan" is a flat sub with API
+access that drops into Shay.
+- **Limits:** Lite **$18/mo** ≈ ~80 prompts / rolling 5-hour window (+ weekly cap); Pro $30 ≈ ~200/5h; Max $80 ≈ ~800/5h. ("Prompt" ≈ one turn.)
+- **Role:** the everyday FLAT workhorse brain — never metered, never 429s.
+
+**Poe (by Quora):** one sub = access to MANY models (Claude Opus, GPT-5.5, Gemini, hundreds) via one app + one official API.
+- **Limits:** **$19.99/mo = 1,000,000 points/month** (monthly reset). Cost per message varies by model: cheap (~50 pts) → thousands of calls; Claude Opus (~15,000 pts/msg) → ~60–70 messages. A wallet, not unlimited.
+- **Role:** the "I need real Claude/GPT-5 today" wallet — use sparingly for frontier; burns fast on Opus.
+
+**The combo ≈ $38/mo, fully flat:** GLM ($18) daily brain + Poe ($20) frontier-on-demand. No metering, no free-tier walls — the "stuck in the water" cure.
+
 ## TIER 1 — FLAT *and* Shay-usable (the real answer) ✅
 | # | Provider | Flat $/mo | Models | Why it works for Shay |
 |---|---|---|---|---|
