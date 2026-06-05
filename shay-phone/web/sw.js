@@ -1,6 +1,6 @@
 // Minimal service worker — makes the PWA installable + caches the shell + Web Push.
 // Network-first for API, cache-first for the static shell.
-const CACHE = 'shay-v0-11-push';
+const CACHE = 'shay-v1-companion';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

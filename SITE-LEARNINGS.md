@@ -6468,3 +6468,62 @@ to the gitignored `.wolf/memory.md`). All hook targets are now tracked + present
   recover or mark artifact-lost.
 - **FAMTASTIC-STATE.md not regenerated** — Rule 6 triggered (new scripts/agents);
   full regen deferred to avoid a risky half-rewrite in an oversized session.
+
+## 2026-06-05 — Shay phone companion UI rebuilt (5-tab PWA + Interview Card)
+
+**What & where.** Rebuilt `shay-phone/web/` from scratch to the spec in
+`obsidian/01-Shay/SHAY-COMPANION-BUILD-BRIEF.md`. The old v0 skin was rejected;
+only the UI was replaced. Files touched: `shay-phone/web/index.html` (single-file
+PWA, ~720 lines), `shay-phone/web/manifest.webmanifest` (renamed to "Shay", dark
+`#08090B` theme), `shay-phone/web/sw.js` (cache bumped `shay-v1-companion`),
+`shay-phone/README.md`. **No backend changes** — `server.py` already exposed every
+endpoint the UI needs.
+
+**Architecture decision — backend was already complete.** `shay-phone/server.py`
+(stdlib-only, launchd `com.famtastic.shay-phone`, binds `0.0.0.0:8787`, token auth
+via `?k=`/`X-Shay-Token`) already had: `/api/daily-brief` (`assemble_daily_brief()`),
+`/api/jobs` + `/api/job?id=` + `/api/job/cancel` + `/api/dispatch` (`jobs.json`),
+`/api/chat` + `/api/brains` (`BRAINS` = claude/openrouter/codex/gemini with
+availability), `/api/capture`, `/api/asks` + `/api/ask?id=` + `/api/answer` +
+`/api/interview` (`asks/*.json`), and web-push (`/api/vapid`, `/api/subscribe`,
+`/api/push` via pywebpush/py_vapid, keys at `~/.shay/webpush.json`, subs at
+`~/.shay/webpush-subs.json`). The rebuild was therefore pure frontend against a
+fixed contract.
+
+**5-tab IA** (bottom nav, electric-indigo `#5B4FE8` accent, Space Grotesk + Inter,
+status dots cyan/amber/rose/gray, breathing-cyan-dots thinking indicator):
+Brief / Tasks / Chat / Dispatch / You — each tab's loader matches a server endpoint
+shape documented above. A 12s `refreshBadges()` poller drives nav badges (running
+job count on Tasks, pending approvals on Dispatch) and **auto-surfaces** the newest
+pending ask of kind `question`/`interview`/`research_scope`.
+
+**Interview Card (centerpiece).** Bottom-attached sheet (`.sheet`/`.scrim`).
+`renderSingleAsk()` handles `/api/ask` records (kind `question`/`approval`/
+`research_scope`); `kind:"approval"` with `context` renders a read-only plan card +
+Approve/Adjust. `startInterview()`→`renderInterviewStep()`→`renderInterviewPlan()`
+walks multi-question `/api/interview` records (`questions[{q,options,type,answer}]`)
+with progress dots, ending in a plan card → `submitInterview()` POSTs
+`/api/answer {id, answers[]}`. Option strings are split into title/description on
+`" — "` by `parseOpt()`. Single answers POST `/api/answer {id, answer}`.
+
+**Gotchas captured.** (1) `/api/daily-brief` has a **side effect**: every call
+creates a `daily_brief`-kind ask (and fires a push). The UI must NOT surface
+`daily_brief` asks as questions — only `question`/`interview`/`research_scope` are
+surfaced; approvals go to the Dispatch queue. (2) Web Push `PushManager` requires a
+**secure context** — Tailscale `*.ts.net` and `localhost` qualify, a bare LAN
+`http://` IP does not. (3) VAPID keys generate only in `main()` at server start via
+`_ensure_vapid_keys()`; a server instance that predates the pywebpush install
+returns an empty `publicKey` until restarted (`launchctl stop com.famtastic.shay-phone`).
+
+### Known Gaps (added 2026-06-05)
+- **Chat is request/response, not SSE.** The brief mentions streaming; `/api/chat`
+  returns the full reply in one shot. Breathing-dots cover the wait. SSE is a later
+  upgrade.
+- **Autonomy modes + notification budget + quiet hours are client-side only.**
+  Stored in `localStorage`; they label intent but are not enforced server-side
+  (no gateway-side budget cap or quiet-hours batching yet).
+- **`/api/daily-brief` ask spam.** Each brief load appends a `daily_brief` ask to
+  `asks/`; these accumulate (cleaned manually this session). A TTL/dedupe on
+  `daily_brief` asks, or moving the brief off the ask channel, is the real fix.
+- **No QR pairing yet.** Token is pasted/in the URL; the brief's QR-pair-to-Keychain
+  flow is unbuilt (fine for Android localStorage, revisit for multi-device).
