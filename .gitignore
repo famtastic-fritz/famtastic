@@ -96,3 +96,7 @@ scripts/Screenshot*
 
 # Recovered raw agent transcripts (organized output goes to obsidian/07-Research)
 research-recovery/
+
+# Python bytecode (build artifacts — never track)
+__pycache__/
+*.pyc
