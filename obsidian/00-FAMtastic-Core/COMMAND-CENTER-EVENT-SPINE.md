@@ -65,22 +65,55 @@ idempotent via `~/.shay/fleet-bridge-cursor.json` (session mtimes + last sha).
 Read-only on the vault, append-only on the spine. Tested: 78 events first run,
 0 on re-run. **Run on a cron (every ~2 min) or on demand:** `node scripts/brain/fleet-events-bridge.js`.
 
+### 6. Phone ↔ dashboard bridge — `shay-phone/server.py`
+The phone (:8787) was a **separate island** with its own data (asks/jobs/brief) and
+NEVER touched the spine. Now it reads + writes the SAME `~/.shay/events.jsonl`:
+- **Write:** `emit_event()` fires from every phone write-action — `dispatch_job`,
+  `create_ask`, `answer_ask`, `answer_interview`, `job_progress/complete/cancel`.
+  So *start a job on the phone → the dashboard's live feed shows it* (proven
+  cross-process: phone writes, agent-os `event_log.read_tail()` reads them,
+  tagged `source:"phone"`).
+- **Read:** `GET /api/feed?limit=N` (+ `read_feed()`) returns the same events the
+  dashboard streams, so the phone can render the identical activity feed.
+
+## Fritz's spec (2026-06-05) — "phone = a window into the one system"
+> "phone as an interface of my workspace/UI/dashboard. check crons + kanban, if Shay
+> has a question I answer on my phone, if I start a job from my phone it reflects
+> everywhere." → **One backend, many windows.** Not three apps; one system, mirrored.
+
+The reality found: there are **4** overlapping front-ends/backends — `command-center/`
+(Node hub + `agents-registry.json`, revenue/process/ideas), `shay-agent-os` React
+dashboard (:8643, agents/tasks/events/trust), `shay-phone` (:8787, asks/jobs/brief/
+chat/capture), and a stale `companion-app/`. They each held a *private truth* (e.g.
+phone's "6/15 agents" comes from `agents-registry.json`; the dashboard's agent count
+comes from the live orchestrator — they can't agree). The spine is the convergence
+substrate; the work below makes them one system.
+
 ## Per-surface rendering (Shay had this right)
 - **Web UI / Workspace (rich):** the three-pane dashboard, real-time via WS. ✅ done.
-- **Telegram (push channel, not a canvas):** do NOT render a board there. Instead:
-  push on state-changes, `/board` `/jobs` `/feed` text snapshots, morning digest.
-  **← still to build.**
+- **Phone (rich-ish window):** now bridged to the spine both ways (✅ feed in/out);
+  still needs a feed TAB in `shay-phone/web/index.html` + crons/kanban sections.
+- **Telegram (push channel, not a canvas):** push on state-changes, `/board /jobs
+  /feed` text snapshots, morning digest. **← still to build.**
 
 ## Status / what's left (honest)
 - [x] Spine, endpoint, WS follower, dashboard wiring, fleet bridge — built + gated.
+- [x] **Phone bridged to the spine** — emits on all write-actions + `/api/feed` read.
+- [ ] **Phone UI:** add an Activity/Feed tab to `web/index.html` that polls `/api/feed`
+      (the backend half is done; the rendering half remains).
+- [ ] **One agents truth:** dashboard + phone must read agents from the SAME source.
+      Today: dashboard=live orchestrator, phone=`command-center/data/agents-registry.json`.
+      Pick one (recommend: orchestrator emits heartbeats into the registry, or both read
+      a unified `/api/state`) so the counts finally agree.
+- [ ] **Crons:** no surface shows them. Add a collector (read `crontab -l` + the
+      `shay-agent-os/cron` + `scripts/*cron*` definitions) → `/api/crons` on both.
+- [ ] **Kanban:** not built as a live board (only research notes exist). Decide store
+      (kanban.db / JSON lanes), expose `/api/kanban`, render on dashboard + phone, and
+      emit lane-moves to the spine.
 - [ ] Install the fleet bridge on a cron on the Mac (so external sessions show live).
-- [ ] Richer agent-os emitters: emit `task_complete`/`task_fail` from the worker pool
-      itself (currently emitted on submit/goal-start; completion not yet wired).
-- [ ] Kanban mutations → spine (kanban.db hook). The board pane still reads tasks via
-      `/api/tasks`; kanban-as-lanes is not yet a distinct source.
+- [ ] Worker-pool completion emitters (agent-os side emits on submit/goal-start only).
 - [ ] Telegram alerting layer + `/board /jobs /feed` + daily digest.
-- [ ] Confirm `~/.shay/events.jsonl` rotation policy before it grows unbounded
-      (read_tail over-reads then trims; fine for a feed, add rotation when large).
+- [ ] `~/.shay/events.jsonl` rotation before it grows unbounded.
 
 ## Run it (Mac)
 ```bash

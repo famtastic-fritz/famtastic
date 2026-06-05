@@ -46,6 +46,75 @@ JOBS_FILE = ROOT / "jobs.json"  # persistent job queue
 WEBPUSH_KEYS = Path.home() / ".shay" / "webpush.json"   # VAPID keypair (private)
 WEBPUSH_SUBS = Path.home() / ".shay" / "webpush-subs.json"  # device subscriptions
 
+# Shared command-center event spine. Every phone action (start a job, answer an
+# ask, dispatch) appends here so the web dashboard's live feed reflects it — one
+# truth, every window. Schema matches shay-agent-os/api/event_log.py exactly so a
+# line maps 1:1 to a dashboard ActivityEvent. Override with $SHAY_EVENTS_LOG.
+EVENTS_LOG = Path(os.environ.get(
+    "SHAY_EVENTS_LOG", str(Path.home() / ".shay" / "events.jsonl")
+)).expanduser()
+
+
+def emit_event(etype: str, message: str, severity: str = "info",
+               agent_id: str | None = None, **meta) -> None:
+    """Append one event to the shared spine. Best-effort: never raise into a
+    request path. source='phone' so the feed shows where the action originated."""
+    import uuid as _uuid
+    valid_types = {"heartbeat", "task_start", "task_complete", "task_fail",
+                   "log", "error", "command", "system"}
+    event = {
+        "id": "evt-" + _uuid.uuid4().hex[:12],
+        "timestamp": datetime.now().astimezone().isoformat(),
+        "type": etype if etype in valid_types else "log",
+        "agentId": agent_id,
+        "message": message,
+        "severity": severity if severity in {"info", "warn", "error", "success"} else "info",
+        "source": "phone",
+    }
+    if meta:
+        event["meta"] = meta
+    try:
+        EVENTS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        line = json.dumps(event, ensure_ascii=False) + "\n"
+        with open(EVENTS_LOG, "a", encoding="utf-8") as fh:
+            try:
+                import fcntl
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+                try:
+                    fh.write(line)
+                    fh.flush()
+                finally:
+                    fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+            except ImportError:
+                fh.write(line)
+                fh.flush()
+    except Exception:  # noqa: BLE001 — emitting must never break a request
+        pass
+
+
+def read_feed(limit: int = 50) -> list:
+    """Read the most-recent events from the shared spine, newest first. This is
+    the read side of the same file emit_event() writes and the web dashboard
+    streams — so the phone's feed and the dashboard's feed are identical."""
+    if not EVENTS_LOG.exists():
+        return []
+    try:
+        with open(EVENTS_LOG, "r", encoding="utf-8") as fh:
+            lines = fh.readlines()
+    except Exception:  # noqa: BLE001
+        return []
+    out = []
+    for raw in lines[-limit:]:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            out.append(json.loads(raw))
+        except json.JSONDecodeError:
+            continue
+    out.reverse()
+    return out
+
 
 def _ensure_vapid_keys() -> None:
     """Generate VAPID keypair and write to WEBPUSH_KEYS if it doesn't exist."""
@@ -457,6 +526,8 @@ def create_ask(kind: str, question: str, options, context: str = "") -> dict:
            "status": "pending", "answer": None,
            "created": time.time(), "answered": None}
     _ask_path(aid).write_text(json.dumps(rec))
+    emit_event("command", f"Shay is asking: {question[:120]}", severity="warn",
+               agent_id="shay", ask_id=aid, kind=kind)
     return rec
 
 
@@ -490,6 +561,8 @@ def answer_interview(aid: str, answers) -> dict:
     rec["status"] = "answered"
     rec["answered"] = time.time()
     fp.write_text(json.dumps(rec))
+    emit_event("command", f"Fritz completed interview: {rec.get('title', aid)}",
+               severity="success", agent_id="fritz", ask_id=aid)
     return {"ok": True, "id": aid}
 
 
@@ -516,6 +589,8 @@ def answer_ask(aid: str, answer: str) -> dict:
     rec["status"] = "answered"
     rec["answered"] = time.time()
     fp.write_text(json.dumps(rec))
+    emit_event("command", f"Fritz answered an ask: {str(answer)[:120]}",
+               severity="success", agent_id="fritz", ask_id=aid)
     return {"ok": True, "id": aid}
 
 
@@ -569,6 +644,8 @@ def dispatch_job(goal: str, policy: str = "balanced", priority: int = 1) -> dict
         }
         jobs.insert(0, job)           # newest first
         _save_jobs(jobs)
+    emit_event("task_start", f"Job dispatched from phone: {goal[:120]}",
+               severity="info", agent_id="fritz", job_id=jid, policy=policy)
     return job
 
 
@@ -603,6 +680,8 @@ def job_progress(jid: str, message: str, percent=None) -> dict:
                     entry["percent"] = percent
                 j.setdefault("progress", []).append(entry)
                 _save_jobs(jobs)
+                emit_event("log", f"Job progress: {message[:120]}", severity="info",
+                           agent_id="shay", job_id=jid, percent=percent)
                 return {"ok": True, "id": jid}
     return {"error": "no such job"}
 
@@ -619,6 +698,11 @@ def job_complete(jid: str, output: str, status: str = "completed") -> dict:
                 if j.get("started") is None:
                     j["started"] = time.time()
                 _save_jobs(jobs)
+                ok = status == "completed"
+                emit_event("task_complete" if ok else "task_fail",
+                           f"Job {status}: {j.get('goal', jid)[:120]}",
+                           severity="success" if ok else "error",
+                           agent_id="shay", job_id=jid)
                 return {"ok": True, "id": jid}
     return {"error": "no such job"}
 
@@ -633,6 +717,8 @@ def job_cancel(jid: str) -> dict:
                     j["status"] = "cancelled"
                     j["completed"] = time.time()
                     _save_jobs(jobs)
+                    emit_event("system", f"Job cancelled from phone: {j.get('goal', jid)[:120]}",
+                               severity="warn", agent_id="fritz", job_id=jid)
                     return {"ok": True, "id": jid}
                 return {"error": f"job is already {j.get('status')}"}
     return {"error": "no such job"}
@@ -1283,6 +1369,17 @@ class Handler(BaseHTTPRequestHandler):
                 if j is None:
                     return self._send(404, {"error": "no such job"})
                 return self._send(200, j)
+            if path == "/api/feed":
+                # The unified activity feed from the shared spine — the SAME
+                # events the web dashboard shows. This is what makes the phone a
+                # window into the one system (every surface, one truth).
+                from urllib.parse import urlparse, parse_qs
+                lim = parse_qs(urlparse(self.path).query).get("limit", ["50"])[0]
+                try:
+                    lim = max(1, min(int(lim), 500))
+                except ValueError:
+                    lim = 50
+                return self._send(200, {"events": read_feed(lim)})
             return self._send(404, {"error": "no such api"})
         return self._serve_static()
 
