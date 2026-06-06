@@ -94,7 +94,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174", "http://127.0.0.1:5174"],
+    # Allow the dashboard from localhost (dev) AND the phone over Tailscale
+    # (*.ts.net MagicDNS, any port). A regex echoes the matched origin back, so
+    # this stays compatible with allow_credentials (unlike a "*" wildcard).
+    # Private LAN/tailnet tool — not exposed to the public internet.
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|[\w-]+\.ts\.net)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
