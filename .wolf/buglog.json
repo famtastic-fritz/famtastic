@@ -4400,5 +4400,25 @@
       "planning",
       "self-learning"
     ]
+  },
+  {
+    "id": "shay-compression-ctx-floor",
+    "timestamp": "2026-06-06T01:04:02.158420",
+    "error_message": "Failed to initialize agent: Auxiliary compression model qwen3:14b context (40,960) is below the minimum 64,000 required for compression.",
+    "file": "~/.shay/config.yaml (shay CLI runtime, not in repo) \u2192 auxiliary.compression",
+    "root_cause": "Shay auto-summarizes/compresses context when the window fills using an AUX model. The configured compression model qwen3:14b is served by Ollama at its default num_ctx 40,960, which is under the compressor hard floor of 64,000 \u2192 agent init aborts. Recurs because ~/.shay/config.yaml is runtime (not git-tracked) and resets on nuke/reinstall, dropping any prior override.",
+    "fix": "Point compression at a big-context local model already installed: set auxiliary.compression.model: hermes3:latest (131K native ctx) and context_length: 131072. Robust alternative (keep qwen3): set auxiliary.compression.context_length: 65536 AND ensure Ollama serves qwen3 with num_ctx>=65536. Durable restore snippet tracked at shay-agent-os/config/shay-aux-compression.fix.yaml; apply after any ~/.shay reset.",
+    "tags": [
+      "shay",
+      "compression",
+      "context-window",
+      "aux-model",
+      "config",
+      "recurring",
+      "ollama"
+    ],
+    "related_bugs": [],
+    "occurrences": 2,
+    "last_seen": "2026-06-06T01:04:02.158420"
   }
 ]

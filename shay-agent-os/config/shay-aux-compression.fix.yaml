@@ -1,0 +1,35 @@
+# Shay aux-compression fix — known-good override for ~/.shay/config.yaml
+#
+# THE BUG (recurring): on agent init Shay fails with
+#   "Auxiliary compression model qwen3:14b context (40,960) is below the
+#    minimum 64,000 required for compression."
+# Shay compresses context when the window fills, using an AUXILIARY model.
+# qwen3:14b is served by Ollama at 40,960 ctx — under the 64,000 hard floor →
+# init aborts. It RECURS because ~/.shay/config.yaml is runtime (not in git) and
+# resets on nuke/reinstall, dropping the prior override. This file is the tracked
+# record so the fix can always be re-applied. See .wolf/buglog.json
+# (id: shay-compression-ctx-floor).
+#
+# ── APPLY (on the Mac) ──────────────────────────────────────────────────────
+# Edit ~/.shay/config.yaml so the `auxiliary.compression` block matches the
+# RECOMMENDED stanza below, then restart Shay (`shay doctor` to verify).
+# Recommended because hermes3 is already installed (it's the swarm's `complex`
+# worker model) and has 131K native context — no Ollama num_ctx tuning needed,
+# clears the floor permanently.
+
+auxiliary:
+  compression:
+    model: hermes3:latest        # 131K native context — clears the 64,000 floor
+    context_length: 131072
+
+# ── ALTERNATIVE (keep qwen3) ────────────────────────────────────────────────
+# If you'd rather keep qwen3 for compression, the floor is cleared by raising
+# its context, but you ALSO have to make Ollama actually serve it that large:
+#
+# auxiliary:
+#   compression:
+#     model: qwen3:14b
+#     context_length: 65536      # >= 64,000 floor
+#
+# and ensure Ollama runs qwen3 with num_ctx >= 65536 (qwen3 supports it natively;
+# the default 40,960 is the trap). hermes3 above avoids this extra step.
