@@ -261,6 +261,11 @@ def do_stt(audio_bytes: bytes, content_type: str) -> dict:
 
 OPENROUTER_MODEL = os.environ.get("SHAY_PHONE_MODEL", "anthropic/claude-sonnet-4.6")
 GEMINI_MODEL = "gemini-2.5-flash"
+# GLM Coding Plan (Z.ai) — Shay's flat-rate primary brain. OpenAI-compatible.
+# Endpoint is the CODING plan path (NOT /api/openai/v1, which is the metered
+# general API). Key = GLM_API_KEY in ~/.shay/.env. Flagship model = glm-5.1.
+GLM_BASE = os.environ.get("GLM_BASE_URL", "https://api.z.ai/api/coding/paas/v4")
+GLM_MODEL = os.environ.get("SHAY_PHONE_GLM_MODEL", "glm-5.1")
 
 SHAY_SYSTEM = (
     "You are Shay, Fritz's personal AI assistant. You are warm, direct, and "
@@ -334,6 +339,30 @@ def call_anthropic(messages: list, ctx: str) -> str:
     with urllib.request.urlopen(req, timeout=90) as r:
         data = json.loads(r.read())
     return "".join(b.get("text", "") for b in data.get("content", [])).strip()
+
+
+def call_glm(messages: list, ctx: str) -> str:
+    """GLM-5.1 via the Z.ai Coding Plan (flat-rate). OpenAI-compatible chat API —
+    this is Shay's real working brain, so the phone talks to the same model."""
+    key = ENV.get("GLM_API_KEY")
+    if not key:
+        raise RuntimeError("no GLM_API_KEY in ~/.shay/.env")
+    sys_prompt = SHAY_SYSTEM
+    if ctx:
+        sys_prompt += "\n\n# Relevant notes from Fritz's vault:\n" + ctx
+    body = {
+        "model": GLM_MODEL,
+        "messages": [{"role": "system", "content": sys_prompt}] + messages,
+        "max_tokens": 1024,
+    }
+    req = urllib.request.Request(
+        GLM_BASE.rstrip("/") + "/chat/completions",
+        data=json.dumps(body).encode(),
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=90) as r:
+        data = json.loads(r.read())
+    return data["choices"][0]["message"]["content"].strip()
 
 
 def call_openrouter(messages: list, ctx: str) -> str:
@@ -425,9 +454,11 @@ def call_gemini(messages: list, ctx: str) -> str:
     return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 
-# Brain registry. Order = default fallback preference ("lean on Claude"):
-# Claude direct → Codex CLI → Claude via OpenRouter → Gemini.
+# Brain registry. Order = default fallback preference. GLM-5.1 (flat-rate, Shay's
+# real brain) is primary so the phone uses the same working model — never metered,
+# never free-capped. Claude/Codex/Gemini stay as fallbacks for when they're funded.
 BRAINS = [
+    {"id": "glm", "label": "GLM-5.1 (flat)", "fn": call_glm},
     {"id": "claude", "label": "Claude (direct)", "fn": call_anthropic},
     {"id": "openrouter", "label": "Claude (OpenRouter)", "fn": call_openrouter},
     {"id": "codex", "label": "Codex CLI", "fn": call_codex_cli},
@@ -437,6 +468,8 @@ BRAINS = [
 
 def brain_available(bid: str) -> bool:
     """Credential/binary presence (NOT live quota — runtime fallback handles caps)."""
+    if bid == "glm":
+        return bool(ENV.get("GLM_API_KEY"))
     if bid == "claude":
         return ENV.get("ANTHROPIC_API_KEY", "").startswith("sk-ant-api")
     if bid == "codex":
@@ -1502,7 +1535,8 @@ def main():
     ThreadingHTTPServer.allow_reuse_address = True
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[shay-phone] serving on 0.0.0.0:{PORT} "
-          f"(openrouter={'yes' if ENV.get('OPENROUTER_API_KEY') else 'NO'}, "
+          f"(glm={'yes' if ENV.get('GLM_API_KEY') else 'NO'}, "
+          f"openrouter={'yes' if ENV.get('OPENROUTER_API_KEY') else 'NO'}, "
           f"gemini={'yes' if ENV.get('GEMINI_API_KEY') else 'NO'})")
     srv.serve_forever()
 
