@@ -9,29 +9,32 @@ function ApiPoller() {
   const checkApiHealth = useDashboardStore((s) => s.checkApiHealth)
   const fetchAgents = useDashboardStore((s) => s.fetchAgents)
   const fetchTasks = useDashboardStore((s) => s.fetchTasks)
+  const fetchBoard = useDashboardStore((s) => s.fetchBoard)
   const fetchEvents = useDashboardStore((s) => s.fetchEvents)
   const connectEventStream = useDashboardStore((s) => s.connectEventStream)
 
   useEffect(() => {
-    // Initial sync — agents/tasks poll, events load backlog then stream live.
+    // Initial sync — agents/tasks/board poll, events load backlog then stream live.
     checkApiHealth()
     fetchAgents()
     fetchTasks()
+    fetchBoard()
     fetchEvents()
     const disconnect = connectEventStream()
 
-    // Poll agents/tasks every 5s (the event feed is push, not polled).
+    // Poll agents/tasks/board every 5s (the event feed is push, not polled).
     const interval = setInterval(() => {
       checkApiHealth()
       fetchAgents()
       fetchTasks()
+      fetchBoard()
     }, 5000)
 
     return () => {
       clearInterval(interval)
       disconnect()
     }
-  }, [checkApiHealth, fetchAgents, fetchTasks, fetchEvents, connectEventStream])
+  }, [checkApiHealth, fetchAgents, fetchTasks, fetchBoard, fetchEvents, connectEventStream])
 
   return null
 }

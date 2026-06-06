@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  LayoutGrid,
   Loader2,
   Play,
   Send,
@@ -11,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useDashboardStore, type Task } from '@/hooks/useDashboardStore'
+import { Board } from '@/components/Board'
 
 function TaskItem({ task }: { task: Task }) {
   const statusIcons = {
@@ -70,7 +72,8 @@ export function Workspace() {
   const selectedAgentId = useDashboardStore((s) => s.selectedAgentId)
   const agents = useDashboardStore((s) => s.agents)
 
-  const [activeTab, setActiveTab] = useState<'tasks' | 'results'>('tasks')
+  const board = useDashboardStore((s) => s.board)
+  const [activeTab, setActiveTab] = useState<'board' | 'tasks' | 'results'>('board')
 
   const handleSubmitGoal = () => {
     if (!goalInput.trim()) return
@@ -131,6 +134,19 @@ export function Workspace() {
 
       <div className="flex items-center gap-4 px-6 py-2 border-b border-slate-800">
         <button
+          onClick={() => setActiveTab('board')}
+          className={cn(
+            'inline-flex items-center gap-1 text-xs font-medium pb-1 border-b-2 transition-colors',
+            activeTab === 'board'
+              ? 'text-blue-400 border-blue-400'
+              : 'text-slate-500 border-transparent hover:text-slate-300'
+          )}
+        >
+          <LayoutGrid className="h-3 w-3" />
+          Board
+          {board.total > 0 && <span className="text-[10px] text-slate-500">({board.total})</span>}
+        </button>
+        <button
           onClick={() => setActiveTab('tasks')}
           className={cn(
             'text-xs font-medium pb-1 border-b-2 transition-colors',
@@ -174,9 +190,11 @@ export function Workspace() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === 'tasks' ? (
-          <div className="space-y-2">
+      <div className="flex-1 overflow-hidden p-4">
+        {activeTab === 'board' ? (
+          <Board />
+        ) : activeTab === 'tasks' ? (
+          <div className="space-y-2 h-full overflow-y-auto">
             {runningTasks.map((task) => (
               <TaskItem key={task.id} task={task} />
             ))}
@@ -197,7 +215,7 @@ export function Workspace() {
             )}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 h-full overflow-y-auto">
             {completedTasks
               .filter((t) => t.result)
               .map((task) => (

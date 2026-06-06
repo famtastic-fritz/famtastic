@@ -43,6 +43,33 @@ export interface SystemMetrics {
   eventsPerMinute: number
 }
 
+// A task as it lives in kanban.db (the one job store) — surfaced by GET /api/board.
+export interface BoardTask {
+  id: string
+  title: string
+  status: string
+  assignee?: string | null
+  priority?: number | null
+  created_by?: string | null
+  created_at?: number | null
+  started_at?: number | null
+  completed_at?: number | null
+  result?: string | null
+  session_id?: string | null
+}
+
+export interface BoardData {
+  lanes: Record<string, BoardTask[]>
+  counts: Record<string, number>
+  total: number
+  available: boolean
+}
+
+// Lane order for rendering the board (matches kanban VALID_STATUSES flow).
+export const BOARD_LANES = [
+  'triage', 'todo', 'scheduled', 'ready', 'running', 'review', 'done', 'blocked', 'archived',
+] as const
+
 // Resolve the API host from wherever the page is served, so ONE build works on
 // the laptop (localhost) and on the phone over Tailscale (the tailnet host) — no
 // rebuild, no hardcoded machine. The API (uvicorn) listens on :8643 on the same
@@ -88,8 +115,10 @@ interface DashboardState {
   updateTask: (id: string, updates: Partial<Task>) => void
   updateAgent: (id: string, updates: Partial<Agent>) => void
   executeCommand: (command: string) => void
+  board: BoardData
   fetchAgents: () => Promise<void>
   fetchTasks: () => Promise<void>
+  fetchBoard: () => Promise<void>
   fetchEvents: () => Promise<void>
   connectEventStream: () => () => void
   checkApiHealth: () => Promise<void>
@@ -137,6 +166,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   commandInput: '',
   goalInput: '',
   apiConnected: false,
+  board: { lanes: {}, counts: {}, total: 0, available: false },
 
   setTrustMode: (mode) => set({ trustMode: mode }),
 
@@ -278,6 +308,18 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       })
     } catch {
       // ignore
+    }
+  },
+
+  // The kanban board (the one job store) — lanes of tasks from ~/.shay/kanban.db.
+  fetchBoard: async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/board`)
+      if (!resp.ok) return
+      const data = (await resp.json()) as BoardData
+      if (data && data.lanes) set({ board: data, apiConnected: true })
+    } catch {
+      // ignore — the board pane shows its empty state
     }
   },
 
