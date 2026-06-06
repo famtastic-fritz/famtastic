@@ -33,15 +33,20 @@ PHONE Dispatch ──> `shay kanban create <goal> --idempotency-key <id> --creat
                         │
    ┌────────────────────┼─────────────────────────┐
    ▼                    ▼                          ▼
-`shay kanban daemon`   PHONE Tasks tab           LAPTOP dashboard board
-(existing worker —     reads kanban.db           reads kanban.db lanes
-runs tasks, writes      (/api/jobs)              (/api/board)
-runs/events/result)
+GATEWAY dispatcher     PHONE Tasks tab           LAPTOP dashboard board
+(EMBEDDED in the       reads kanban.db           reads kanban.db lanes
+gateway pid, 60s tick   (/api/jobs)              (/api/board)
+— picks up tasks in
+status ready/todo,
+spawns a worker)
                         │
                  events.jsonl spine  (still the live nerve; task_events → spine bridge)
 ```
-- **No new runner.** `job-runner.py` + `jobs.json` are *retired* (kept as backup) — the
-  kanban `daemon`/`dispatch` already executes tasks with retries, runs, and events.
+- **No new runner, no separate daemon.** `job-runner.py` + `jobs.json` are *retired*
+  (kept as backup). The kanban dispatcher is **embedded in the gateway** (pid on :8642,
+  60-second tick) — `shay kanban daemon` is deprecated. A task created with
+  `--status ready` (or `todo`) is picked up on the next tick and a worker is spawned;
+  retries, runs, and events are handled there.
 - **Idempotency key = the phone job id** so retries never double-create.
 - The event **spine stays the nerve** — bridge `task_events` → `events.jsonl` so the
   phone Feed + dashboard feed still light up (one small shim, not a new pipeline).
@@ -57,13 +62,15 @@ runs/events/result)
 ## Division of labor (decided)
 **Shay (Mac — owns kanban + phone runtime, can test the CLI live):**
 - STEP 1: `shay-phone/server.py` `dispatch_job()` → shell out to
-  `shay kanban create <goal> --idempotency-key <jobid> --created-by phone --json`,
-  return the kanban task id; keep `emit_event("task_start", source="phone")`.
+  `shay kanban create <goal> --status ready --idempotency-key <jobid> --created-by phone --json`,
+  return the kanban task id; keep `emit_event("task_start", source="phone")`. (`--status
+  ready` so the gateway's embedded dispatcher picks it up on the next 60s tick.)
 - STEP 2: `/api/jobs` + Tasks tab → read `kanban.db` `tasks` (newest first, by lane).
-- STEP 3: ensure `shay kanban daemon` (or `dispatch`) is running so created tasks
-  execute; bridge `task_events`/completion → `events.jsonl` (Feed stays live).
-- STEP 5: stop `job-runner.py`, archive `jobs.json` (one-time import of any open jobs
-  via `shay kanban create --idempotency-key`).
+- STEP 3: nothing to start — the dispatcher is **already embedded in the running
+  gateway** (60s tick). Just bridge `task_events`/completion → `events.jsonl` so the
+  Feed stays live.
+- STEP 5: stop `job-runner.py` (pid 20298), archive `jobs.json` (one-time import of any
+  open jobs via `shay kanban create --idempotency-key`).
 
 **Claude (repo — testable against a mock kanban.db with this schema, no phone-file overlap):**
 - STEP 4: `shay-agent-os/api` → `GET /api/board` reading `~/.shay/kanban.db` grouped by
