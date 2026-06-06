@@ -99,6 +99,21 @@ substrate; the work below makes them one system.
 ## Status / what's left (honest)
 - [x] Spine, endpoint, WS follower, dashboard wiring, fleet bridge — built + gated.
 - [x] **Phone bridged to the spine** — emits on all write-actions + `/api/feed` read.
+- [x] **THE JOB LOOP (the "usable" core)** — `scripts/shay/job-runner.py`. The phone
+      could ADD jobs (Dispatch → `shay-phone/jobs.json`) and VIEW jobs (Tasks tab →
+      `/api/jobs`), but **nothing ran them** — they sat `queued` forever (the real
+      "not in sync / not usable"). The runner polls the store, runs each queued job
+      through Shay's gateway (`:8642` OpenAI-compat chat), writes progress + result
+      back, and emits `task_complete`/`task_fail` to the spine → the phone's Tasks +
+      Feed go live. Stdlib-only, flock-safe (shares `jobs.json` with the phone),
+      `--once` to drain, `SHAY_JOB_RUNNER_MOCK=1` for tests. Proven end-to-end in mock:
+      dispatch → queued → running → completed-with-output, full event trail.
+      **RUN ON THE MAC:** `python3 ~/famtastic/scripts/shay/job-runner.py` (daemon).
+      Interim store = `jobs.json`; **kanban.db consolidation is the follow-up** (make
+      dispatches land in kanban.db + dashboard render a real board from it).
+- [x] **`ui-ux-advisor` skill** — `.claude/skills/` + `shay-agent-os/skills/`. The
+      reusable design/IA lens (one model · many scaled views · no cram-the-desktop ·
+      no duplicate truths) for "how should this look on phone vs laptop" questions.
 - [x] **Phone UI: Feed tab** — added a 6th nav item (`≋ Feed`) in `web/index.html`
       that polls `/api/feed` every 5s and renders the unified activity list (dot color
       by severity, agent + source label, relative time). **Also fixed the service
