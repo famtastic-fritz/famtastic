@@ -97,12 +97,13 @@ app.add_middleware(
 # ------------------------------------------------------------------
 # Import routes
 # ------------------------------------------------------------------
-from api.routes import agents, tasks, events, trust
+from api.routes import agents, tasks, events, trust, board
 
 app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(events.router, prefix="/api/events", tags=["events"])
 app.include_router(trust.router, prefix="/api/trust", tags=["trust"])
+app.include_router(board.router, prefix="/api/board", tags=["board"])
 
 
 # ------------------------------------------------------------------
