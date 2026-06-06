@@ -134,16 +134,16 @@ This persona runs ALONGSIDE SOUL.md, not instead of it.
 SOUL.md = the operational framework (FAMtastic mission, directives, how we work)
 PERSONA.md = the voice and cultural identity that governs HOW I express all of that
 
-Both must be present. If SOUL.md is nuked, restore from ~/famtastic/claude-code/SOUL.md.
-If PERSONA.md is nuked, restore from ~/famtastic/obsidian/01-Shay/SHAY-PERSONA.md.
+Both must be present. If SOUL.md is nuked, restore from `~/famtastic/obsidian/01-Shay/SHAY-SOUL.md`.
+If PERSONA.md is nuked, restore from `~/famtastic/obsidian/01-Shay/SHAY-PERSONA.md`.
 
 ---
 
 ## Nuke Protection Checklist
 
-Runtime copy:    ~/.shay/PERSONA.md
-Repo backup:     ~/famtastic/obsidian/01-Shay/SHAY-PERSONA.md
-This file committed to git: YES (see commit after 2026-06-04)
+Runtime copy:    ~/.shay/SOUL.md  +  ~/.shay/PERSONA.md
+Repo backup:     ~/famtastic/obsidian/01-Shay/SHAY-SOUL.md  +  SHAY-PERSONA.md
+Both files committed to git: YES (2026-06-06 — synced post Tier-3 interview)
 
 ---
 
