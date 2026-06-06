@@ -19,26 +19,18 @@ from fastapi.middleware.cors import CORSMiddleware
 # Ensure components/swarm is on path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from components.swarm import SwarmOrchestrator
 from api import event_log
+
+# Orchestrator accessor lives in api.deps (a leaf module) so the route modules
+# can import it without importing api.server — breaking the import cycle that
+# crashed `python -m api.server`. See api/deps.py.
+from api.deps import get_orchestrator, stop_orchestrator
 
 logger = logging.getLogger("api.server")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
 )
-
-# Global orchestrator instance
-_orch: Optional[SwarmOrchestrator] = None
-
-
-def get_orchestrator() -> SwarmOrchestrator:
-    global _orch
-    if _orch is None:
-        _orch = SwarmOrchestrator(num_workers=3, log_level="INFO")
-        _orch.start()
-        logger.info("SwarmOrchestrator started via API server")
-    return _orch
 
 
 @asynccontextmanager
@@ -54,9 +46,7 @@ async def lifespan(app: FastAPI):
             await follower
         except (asyncio.CancelledError, Exception):  # noqa: BLE001
             pass
-        if _orch is not None:
-            _orch.stop()
-            logger.info("SwarmOrchestrator stopped")
+        stop_orchestrator()
 
 
 async def _event_follower(poll_interval: float = 1.0) -> None:

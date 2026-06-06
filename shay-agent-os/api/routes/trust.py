@@ -9,7 +9,7 @@ from typing import Any, Dict
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from api.server import get_orchestrator
+from api.deps import get_orchestrator
 
 router = APIRouter()
 

@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter
 
-from api.server import get_orchestrator
+from api.deps import get_orchestrator
 
 router = APIRouter()
 
