@@ -100,3 +100,7 @@ research-recovery/
 # Python bytecode (build artifacts — never track)
 __pycache__/
 *.pyc
+
+# Dashboard API venv (created by command-center-up.sh)
+shay-agent-os/.venv/
+

@@ -25,6 +25,30 @@ ok()  { printf '  \033[32m✓\033[0m %s\n' "$1"; }
 no()  { printf '  \033[31m✗\033[0m %s\n' "$1"; }
 wait_port() { for _ in $(seq 1 "${2:-15}"); do listening "$1" && return 0; sleep 1; done; return 1; }
 
+# Resolve a Python that has fastapi for the Dashboard API. macOS system python3 is
+# 3.9 (CommandLineTools) with no fastapi — the original failure. Prefer (1) an
+# explicit $SHAY_API_PYTHON, (2) a dedicated repo venv, (3) any python3 that
+# already imports fastapi, else (4) create the venv and install the deps. Echoes
+# the interpreter path. The venv lives at shay-agent-os/.venv (gitignored).
+DASH_VENV="$REPO/shay-agent-os/.venv"
+resolve_api_python() {
+  if [ -n "${SHAY_API_PYTHON:-}" ] && "$SHAY_API_PYTHON" -c 'import fastapi' 2>/dev/null; then echo "$SHAY_API_PYTHON"; return; fi
+  if [ -x "$DASH_VENV/bin/python" ] && "$DASH_VENV/bin/python" -c 'import fastapi' 2>/dev/null; then echo "$DASH_VENV/bin/python"; return; fi
+  local p
+  for p in python3.12 python3.11 python3.13 python3; do
+    command -v "$p" >/dev/null 2>&1 && "$p" -c 'import fastapi' 2>/dev/null && { command -v "$p"; return; }
+  done
+  # None found — build the venv from the newest available base python.
+  local base=""
+  for p in python3.12 python3.11 python3.13 python3; do command -v "$p" >/dev/null 2>&1 && { base="$p"; break; }; done
+  [ -z "$base" ] && return 1
+  echo "→ creating dashboard venv ($DASH_VENV) + installing fastapi/uvicorn…" >&2
+  "$base" -m venv "$DASH_VENV" >/dev/null 2>&1 || return 1
+  "$DASH_VENV/bin/python" -m pip install -q --upgrade pip >/dev/null 2>&1
+  "$DASH_VENV/bin/python" -m pip install -q fastapi "uvicorn[standard]" websockets requests >/dev/null 2>&1 || return 1
+  echo "$DASH_VENV/bin/python"
+}
+
 echo "→ Command center: pulling latest…"
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 git fetch origin "$BRANCH" >/dev/null 2>&1 && git merge --ff-only "origin/$BRANCH" >/dev/null 2>&1 \
@@ -33,8 +57,13 @@ git fetch origin "$BRANCH" >/dev/null 2>&1 && git merge --ff-only "origin/$BRANC
 # 1. Dashboard API :8643
 if listening 8643; then ok "Dashboard API already up (:8643)"; else
   echo "→ starting Dashboard API (:8643)…"
-  ( cd "$REPO/shay-agent-os" && nohup python3 -m api.server >/tmp/shay-dash-api.log 2>&1 & )
-  if wait_port 8643; then ok "Dashboard API (:8643)"; else no "Dashboard API failed — see /tmp/shay-dash-api.log"; fi
+  API_PY="$(resolve_api_python)"
+  if [ -z "$API_PY" ]; then
+    no "Dashboard API: no python with fastapi (install python3.11+ and re-run)"
+  else
+    ( cd "$REPO/shay-agent-os" && nohup "$API_PY" -m api.server >/tmp/shay-dash-api.log 2>&1 & )
+    if wait_port 8643; then ok "Dashboard API (:8643)  [$API_PY]"; else no "Dashboard API failed — see /tmp/shay-dash-api.log"; fi
+  fi
 fi
 
 # 2. Dashboard UI :5174  (serve the built console)
