@@ -11,7 +11,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from api import event_log
-from api.server import get_orchestrator
+from api.deps import get_orchestrator
 
 router = APIRouter()
 
