@@ -43,8 +43,26 @@ export interface SystemMetrics {
   eventsPerMinute: number
 }
 
-const API_BASE = 'http://localhost:8643/api'
-const WS_BASE = API_BASE.replace(/^http/, 'ws').replace(/\/api$/, '/ws')
+// Resolve the API host from wherever the page is served, so ONE build works on
+// the laptop (localhost) and on the phone over Tailscale (the tailnet host) — no
+// rebuild, no hardcoded machine. The API (uvicorn) listens on :8643 on the same
+// host that serves the dashboard. Override with VITE_API_BASE at build time if the
+// API ever moves behind a reverse proxy on a different origin.
+// Protocol follows the page (http→ws, https→wss) to avoid mixed-content blocks.
+function resolveApiBase(): string {
+  const env = (import.meta as unknown as { env?: Record<string, string> }).env
+  const override = env?.VITE_API_BASE
+  if (override) return override.replace(/\/$/, '')
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const proto = window.location.protocol === 'https:' ? 'https' : 'http'
+    return `${proto}://${window.location.hostname}:8643`
+  }
+  return 'http://localhost:8643'
+}
+
+const API_ORIGIN = resolveApiBase()
+const API_BASE = `${API_ORIGIN}/api`
+const WS_BASE = `${API_ORIGIN.replace(/^http/, 'ws')}/ws`
 
 interface DashboardState {
   agents: Agent[]
