@@ -116,6 +116,39 @@ that.** Separate by purpose:
   agent-internal, or (c) exists only because hermes shipped it. "Hermes had it" is not
   a reason to keep it in Shay.
 
+## STRUCTURAL PRINCIPLES (the rebuild retro — sharpened)
+Independently surfaced by Shay's "what would I build different" retro and confirmed by
+the tooling research. Bake these into the shape of the code:
+1. **Modules, not workflows.** Each capability is an independently-callable module that
+   emits structured output; any output can feed any other. Workflows are *thin recipes*
+   over modules — never monolithic chained flows with logic baked into the chain.
+2. **Author content during, never extract after.** The structured spec/data is the
+   source of truth; rendered output (HTML/UI) is derived FROM it and never re-parsed back.
+   "Scraping-after is where the lies live." (Same law as declarative config above.)
+3. **Proof gate is real, with a pyramid under it.** Fast unit tests below; the
+   acceptance gate is **real browser (Playwright) + cross-surface parity** — never a
+   shortcut test that can pass while the system lies. Don't run Playwright to check a pure
+   function; don't trust a unit test to prove the UI.
+4. **The gap log is a first-class data model.** Every failure auto-writes a structured
+   gap record (not after-the-fact markdown). The gap log + a thinking-log (observation vs
+   interpretation kept separate) feed the research modules — make them automatic + queryable.
+5. **Studios/components are peers over the shared bus, not nested.** Site / Media /
+   Component / Thoughts are siblings that call each other through the EXISTING bus
+   (`events.jsonl` + `kanban.db` + the gateway). Reuse that bus; don't build a new heavy
+   one, and don't over-decompose for a solo operator.
+6. **Skills are the unit of reuse.** The moment a pattern is used twice, it becomes a
+   skill module. Skills survive across sessions/agents; scattered docs don't.
+
+## DEPLOYMENT — two nodes (cheap, always-on)
+- **VPS (Hetzner, ~$5–10/mo, always-on):** the persistent home — gateway, cron, Telegram
+  bridge, orchestration, and the **flat-rate brain** (GLM etc.). Never sleeps. NOTE: a
+  cheap VPS has **no GPU** — it is NOT a $0 local-inference node.
+- **Mac mini (local, $0 ongoing):** local **Ollama** ($0 brain) for heavy/bulk + failover.
+  Same codebase, different runtime env.
+- **Link with Tailscale:** the VPS dispatches heavy jobs *down* to the Mac's Ollama when
+  it's awake; the flat-rate brain covers orchestration always. Don't deploy the *old* messy
+  stack to the VPS — the VPS is the target for THIS clean build.
+
 ## THE GENERATOR LIFECYCLE (the "self-bootstrapping unit")
 `shay init <surface>` (desktop|dashboard|cli) → scaffolds a surface **pre-wired** with
 the `core/` clients. `shay migrate` → moves/settles settings + data on upgrade.
