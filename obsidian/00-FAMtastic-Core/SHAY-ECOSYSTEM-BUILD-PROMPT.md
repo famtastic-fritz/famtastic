@@ -96,6 +96,26 @@ Gemini Flash — NEVER the premium brain for this). Adversarially verify every c
   contract** (a manifest + a `register()` hook) so future components (component studio,
   mediation, new surfaces) plug in without forking core.
 
+## COMMAND & SETTINGS UX — rethink it, don't port the sprawl
+The hermes CLI is a flat sea of ~50 commands that mixes three things; **do not inherit
+that.** Separate by purpose:
+- **CLI = DOING.** A *small* set of daily verbs (chat, dispatch, `doctor`) + lifecycle
+  (`init/migrate/update`). That's the human surface.
+- **Config = ONE declarative source of truth.** The config file IS the settings. Any
+  setting command is thin sugar that edits the file + re-validates — it must NOT keep a
+  parallel copy of state (that two-sources-of-truth drift is what caused a real
+  defaults-override-then-nuke incident). `doctor` validates the file is coherent.
+- **Settings = a UI/TUI pane**, not a verb-per-knob. Put settings (models, fallbacks,
+  memory, MCP, keys) in the **dashboard** (visual, whole-picture, validated on save)
+  and a TUI screen for headless. Nobody should memorize `fallback add …` to switch a
+  brain — they should see a form.
+- **Agent-internal verbs are hidden/namespaced** (e.g. `shay _internal kanban claim`).
+  The kanban worker verbs (claim/heartbeat/runs/dispatch) are for the dispatcher, NOT
+  the human — keep them off the top-level surface.
+- **Fluff test:** drop any command that (a) duplicates the config/UI, (b) is
+  agent-internal, or (c) exists only because hermes shipped it. "Hermes had it" is not
+  a reason to keep it in Shay.
+
 ## THE GENERATOR LIFECYCLE (the "self-bootstrapping unit")
 `shay init <surface>` (desktop|dashboard|cli) → scaffolds a surface **pre-wired** with
 the `core/` clients. `shay migrate` → moves/settles settings + data on upgrade.
