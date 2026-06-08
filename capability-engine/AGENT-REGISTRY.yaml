@@ -1,0 +1,646 @@
+# FAMtastic Agent Registry
+# Every compute lane available for task dispatch
+# Updated: 2026-06-08
+# Purpose: Shay queries this to know WHO can do WHAT, at what COST and SPEED
+
+# ============================================================================
+# TIER 1: SUBSCRIPTION (Flat rate — already paid)
+# ============================================================================
+
+sub-zai-glm51:
+  id: sub-zai-glm51
+  model: glm-5.1
+  provider: z-ai
+  cost_tier: subscription
+  plan: Z.ai Coding Plan (check your tier — Lite $9, Pro $30, Max $72/mo)
+  limits:
+    rpm: null
+    tpm: null
+    rpd_rolling: "~80-1,600 prompts per 5hr window"
+    context_window: 128K
+  capabilities:
+    - brain-reasoning
+    - orchestration
+    - conversation
+    - code-generation
+    - planning
+    - research-synthesis
+    - review
+  quality_scores:
+    reasoning: 8
+    coding: 7
+    speed: 6
+    reliability: 7
+  status: active
+  role: BRAIN — Shay's primary thinking lane. PROTECTED. Never dispatch workers here.
+  notes: "Rolling 5hr + weekly caps. This is the Queen. Workers use other lanes."
+
+sub-zai-glm46:
+  id: sub-zai-glm46
+  model: glm-4.6
+  provider: z-ai
+  cost_tier: subscription
+  plan: Same as glm-5.1 (shared pool)
+  limits:
+    rpm: null
+    tpm: null
+    rpd_rolling: "Same pool as glm-5.1"
+    context_window: 128K
+  capabilities:
+    - code-generation
+    - code-review
+    - reasoning
+    - planning
+  quality_scores:
+    reasoning: 7
+    coding: 7
+    speed: 7
+    reliability: 7
+  status: configured
+  role: WORKER — can use for coding tasks if brain is not saturated
+  notes: "Shares subscription pool with glm-5.1. Use only when glm-5.1 has headroom."
+
+sub-zai-glm47:
+  id: sub-zai-glm47
+  model: glm-4.7
+  provider: z-ai
+  cost_tier: subscription
+  plan: Same as glm-5.1 (shared pool)
+  limits:
+    rpm: null
+    tpm: null
+    rpd_rolling: "Same pool as glm-5.1"
+    context_window: 128K
+  capabilities:
+    - code-generation
+    - reasoning
+    - planning
+    - review
+  quality_scores:
+    reasoning: 8
+    coding: 8
+    speed: 6
+    reliability: 7
+  status: configured
+  role: WORKER — premium reasoning, shares subscription pool
+  notes: "Better quality than 4.6, slower. Same pool constraint applies."
+
+sub-oauth-codex:
+  id: sub-oauth-codex
+  model: gpt-5.4
+  provider: openai-codex
+  cost_tier: subscription
+  plan: OpenAI ChatGPT Plus/Pro (~$20/mo)
+  limits:
+    rpm: null
+    tpm: null
+    rpd_rolling: "Usage-based limits, resets monthly"
+    context_window: 200K
+  capabilities:
+    - code-generation
+    - code-review
+    - debugging
+    - planning
+    - reasoning
+    - testing
+  quality_scores:
+    reasoning: 9
+    coding: 9
+    speed: 7
+    reliability: 8
+  status: capped
+  role: WORKER — premium coding and reasoning
+  notes: "CAPPED until June 10. Codex app was causing token leak via VS Code extension. Fritz closed it manually. Resets 10th."
+  cap_reset: "2026-06-10"
+
+# ============================================================================
+# TIER 2: FREE CLOUD (Keys set, no cost)
+# ============================================================================
+
+free-groq-llama33:
+  id: free-groq-llama33
+  model: llama-3.3-70b-versatile
+  provider: groq
+  cost_tier: free
+  limits:
+    rpm: 30
+    tpm: 30000
+    rpd: 14400
+    context_window: 128K
+  capabilities:
+    - classification
+    - routing
+    - fast-inference
+    - summarization
+    - text-extraction
+    - format-conversion
+    - code-review
+  quality_scores:
+    reasoning: 6
+    coding: 6
+    speed: 10
+    reliability: 8
+  status: active
+  role: FAST WORKER — classification, routing, quick tasks
+  notes: "500+ tok/s. Best for tasks that need speed over depth. 14.4K requests/day is massive."
+
+free-groq-llama4-scout:
+  id: free-groq-llama4-scout
+  model: llama-4-scout
+  provider: groq
+  cost_tier: free
+  limits:
+    rpm: 30
+    tpm: 30000
+    rpd: 14400
+    context_window: 256K
+  capabilities:
+    - classification
+    - fast-inference
+    - summarization
+    - long-context-tasks
+  quality_scores:
+    reasoning: 6
+    coding: 6
+    speed: 9
+    reliability: 7
+  status: available
+  role: FAST WORKER — larger context than llama-3.3
+  notes: "Not yet configured in config.yaml. Same Groq key works. Add to credential pool."
+
+free-cerebras-llama33:
+  id: free-cerebras-llama33
+  model: llama-3.3-70b
+  provider: cerebras
+  cost_tier: free
+  limits:
+    rpm: null
+    tpd: 1000000
+    rpd: null
+    context_window: 128K
+  capabilities:
+    - classification
+    - routing
+    - fast-inference
+    - summarization
+    - batch-processing
+    - format-conversion
+  quality_scores:
+    reasoning: 6
+    coding: 6
+    speed: 10
+    reliability: 8
+  status: active
+  role: HIGH-VOLUME WORKER — 1M tokens/day, 2,600 tok/s
+  notes: "Daily budget champion. Best for high-volume batch tasks. Speed is insane."
+
+free-cerebras-qwen3-235b:
+  id: free-cerebras-qwen3-235b
+  model: qwen3-235b-instruct
+  provider: cerebras
+  cost_tier: free
+  limits:
+    rpm: null
+    tpd: 1000000
+    rpd: null
+    context_window: 64K
+  capabilities:
+    - reasoning
+    - analysis
+    - code-review
+    - planning
+  quality_scores:
+    reasoning: 8
+    coding: 7
+    speed: 7
+    reliability: 7
+  status: available
+  role: REASONING WORKER — strong reasoning on free tier
+  notes: "Not yet configured. Same Cerebras key. 1M tok/day shared with llama-3.3."
+
+free-gemini-pro:
+  id: free-gemini-pro
+  model: gemini-2.5-pro
+  provider: google-ai-studio
+  cost_tier: free
+  limits:
+    rpm: 2
+    tpm: null
+    rpd: 50
+    context_window: 1M
+  capabilities:
+    - deep-reasoning
+    - vision-analysis
+    - multimodal-input
+    - code-generation
+    - research-synthesis
+    - planning
+  quality_scores:
+    reasoning: 9
+    coding: 8
+    speed: 5
+    reliability: 7
+  status: active
+  role: REASONING WORKER — deep thinking, vision, multimodal
+  notes: "Only 50/day. Reserve for tasks that need deep reasoning or vision. Multimodal accepts text+image+video."
+
+free-gemini-pro31:
+  id: free-gemini-pro31
+  model: gemini-3.1-pro-preview
+  provider: google-ai-studio
+  cost_tier: free
+  limits:
+    rpm: 2
+    tpm: null
+    rpd: 50
+    context_window: 1M
+  capabilities:
+    - deep-reasoning
+    - vision-analysis
+    - multimodal-input
+    - code-generation
+    - research-synthesis
+  quality_scores:
+    reasoning: 9
+    coding: 8
+    speed: 5
+    reliability: 6
+  status: active
+  role: REASONING WORKER — latest model, cutting edge
+  notes: "Preview model. Same 50/day limit. Use for benchmarking against 2.5-pro."
+
+free-gemini-flash:
+  id: free-gemini-flash
+  model: gemini-2.5-flash
+  provider: google-ai-studio
+  cost_tier: free
+  limits:
+    rpm: 10
+    tpm: 250000
+    rpd: 1500
+    context_window: 1M
+  capabilities:
+    - summarization
+    - classification
+    - format-conversion
+    - fast-inference
+    - multimodal-input
+    - vision-analysis
+    - code-generation
+  quality_scores:
+    reasoning: 7
+    coding: 7
+    speed: 8
+    reliability: 9
+  status: available
+  role: GENERAL WORKER — generous free tier, multimodal
+  notes: "Not yet configured. 1.5K/day is the most generous free tier. Should be the default free worker."
+
+free-openr-qwen-coder:
+  id: free-openr-qwen-coder
+  model: qwen/qwen3-coder:free
+  provider: openrouter
+  cost_tier: free
+  limits:
+    rpm: 20
+    tpm: null
+    rpd: 1000
+    context_window: 1M
+  capabilities:
+    - code-generation
+    - code-review
+    - debugging
+    - architecture-planning
+    - code-refactoring
+  quality_scores:
+    reasoning: 8
+    coding: 9
+    speed: 6
+    reliability: 7
+  status: active
+  role: CODING WORKER — strongest free coding model
+  notes: "1M context window. Specialized for code. Rate limits tighten under load."
+
+free-openr-kimi:
+  id: free-openr-kimi
+  model: moonshotai/kimi-k2.6:free
+  provider: openrouter
+  cost_tier: free
+  limits:
+    rpm: 20
+    tpm: null
+    rpd: 200
+    context_window: 128K
+  capabilities:
+    - reasoning
+    - analysis
+    - summarization
+    - general-qa
+  quality_scores:
+    reasoning: 7
+    coding: 6
+    speed: 6
+    reliability: 6
+  status: active
+  role: REASONING WORKER — general reasoning backup
+  notes: "Free models on OpenRouter can be flaky. Rate limits tighten. Good backup, not primary."
+
+# ============================================================================
+# TIER 3: LOCAL OLLAMA (Zero cost, on M5 16GB)
+# ============================================================================
+
+local-olm-hermes3:
+  id: local-olm-hermes3
+  model: hermes3:latest
+  provider: ollama
+  cost_tier: local
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: 131K
+  capabilities:
+    - compression
+    - session-search
+    - summarization
+    - general-qa
+    - text-processing
+  quality_scores:
+    reasoning: 6
+    coding: 5
+    speed: 5
+    reliability: 8
+  status: active
+  role: INTERNAL AUXILIARY — compression, session search
+  notes: "Currently loaded. Used by Shay's auxiliary systems. 4.7GB model."
+
+local-olm-qwen3:
+  id: local-olm-qwen3
+  model: qwen3:14b
+  provider: ollama
+  cost_tier: local
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: 128K
+  capabilities:
+    - skills-hub
+    - triage
+    - approval
+    - mcp-processing
+    - title-generation
+    - curator
+  quality_scores:
+    reasoning: 7
+    coding: 6
+    speed: 5
+    reliability: 8
+  status: active
+  role: INTERNAL AUXILIARY — skills, triage, approval, MCP
+  notes: "Currently loaded. 9.3GB model. Can only run ~2 large models simultaneously on 16GB."
+
+local-olm-deepseek-r1:
+  id: local-olm-deepseek-r1
+  model: deepseek-r1:latest
+  provider: ollama
+  cost_tier: local
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: 128K
+  capabilities:
+    - deep-reasoning
+    - code-analysis
+    - debugging
+    - chain-of-thought
+  quality_scores:
+    reasoning: 8
+    coding: 7
+    speed: 3
+    reliability: 7
+  status: installed
+  role: LOCAL REASONING — deep analysis, chain-of-thought
+  notes: "5.2GB. Must swap with hermes3 or qwen3 to run. Slow but thorough reasoning."
+
+local-olm-gemma4:
+  id: local-olm-gemma4
+  model: gemma4:latest
+  provider: ollama
+  cost_tier: local
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: 128K
+  capabilities:
+    - general-qa
+    - summarization
+    - multimodal-potential
+  quality_scores:
+    reasoning: 7
+    coding: 6
+    speed: 5
+    reliability: 7
+  status: installed
+  role: LOCAL GENERAL — general purpose, potential multimodal
+  notes: "9.6GB. Large. Must swap with other models to run."
+
+local-olm-wizardlm:
+  id: local-olm-wizardlm
+  model: wizardlm-uncensored:latest
+  provider: ollama
+  cost_tier: local
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: null
+  capabilities:
+    - unfiltered-generation
+    - creative-writing
+    - brainstorming
+  quality_scores:
+    reasoning: 5
+    coding: 4
+    speed: 4
+    reliability: 6
+  status: installed
+  role: LOCAL UNCENSORED — when FAMtastic unbounded mandate requires it
+  notes: "7.4GB. Must swap to run. Uncensored for creative/unbounded tasks."
+
+local-olm-phi4-mini:
+  id: local-olm-phi4-mini
+  model: phi4-mini:latest
+  provider: ollama
+  cost_tier: local
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: null
+  capabilities:
+    - classification
+    - routing
+    - fast-inference
+    - lightweight-tasks
+  quality_scores:
+    reasoning: 5
+    coding: 4
+    speed: 9
+    reliability: 7
+  status: installed
+  role: LOCAL LIGHTWEIGHT — classification, routing, quick tasks
+  notes: "2.5GB. Small enough to run alongside larger models. Good for routing decisions."
+
+local-olm-qwen25-tiny:
+  id: local-olm-qwen25-tiny
+  model: qwen2.5:1.5b
+  provider: ollama
+  cost_tier: local
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: null
+  capabilities:
+    - classification
+    - routing
+    - ultra-lightweight
+  quality_scores:
+    reasoning: 3
+    coding: 3
+    speed: 10
+    reliability: 6
+  status: installed
+  role: LOCAL ULTRA-LIGHT — routing, embedding, barely-there tasks
+  notes: "986MB. Can run alongside anything. Good for simple routing decisions."
+
+# ============================================================================
+# TIER 4: POTENTIAL ADDITIONS (Not yet configured — ready to activate)
+# ============================================================================
+
+pot-minimax-m27:
+  id: pot-minimax-m27
+  model: M2.7 / M2.7-highspeed
+  provider: minimax
+  cost_tier: paid
+  plan: "$10/mo (Lite), $20/mo (Standard), $40/mo (Pro)"
+  limits:
+    rpm: null
+    tpm: null
+    rpd_rolling: "~100-300 prompts per 5hr"
+    context_window: null
+  capabilities:
+    - code-generation
+    - reasoning
+    - tts-generation
+    - image-generation
+    - music-generation
+  quality_scores:
+    reasoning: 7
+    coding: 7
+    speed: 9
+    reliability: 7
+  status: gap
+  role: DEDICATED WORKER + MEDIA — fast inference, includes TTS/image/music
+  notes: "$20/mo plan: users report never running out. Includes media models — covers Media Studio. BEST VALUE for dedicated worker lane."
+
+pot-qwen-coding:
+  id: pot-qwen-coding
+  model: Qwen3.5-Plus / Qwen3-Coder
+  provider: alibaba-cloud
+  cost_tier: paid
+  plan: "$10/mo"
+  limits:
+    rpm: null
+    tpm: null
+    rpd: 1200
+    context_window: 1M
+  capabilities:
+    - code-generation
+    - code-review
+    - debugging
+    - architecture-planning
+  quality_scores:
+    reasoning: 8
+    coding: 9
+    speed: 7
+    reliability: 7
+  status: gap
+  role: DEDICATED CODING — 1M context, 1,200 requests/day
+  notes: "$10/mo for dedicated coding lane. Qwen3-Coder is specialized for code. Good budget option."
+
+pot-kimi-code:
+  id: pot-kimi-code
+  model: Kimi K2.5
+  provider: moonshot-ai
+  cost_tier: paid
+  plan: "~$7/wk (~$28/mo)"
+  limits:
+    rpm: null
+    tpm: null
+    rpd_rolling: "300-1,200 calls per 5hr"
+    context_window: null
+  capabilities:
+    - code-generation
+    - reasoning
+    - analysis
+  quality_scores:
+    reasoning: 7
+    coding: 7
+    speed: 7
+    reliability: 6
+  status: gap
+  role: ALTERNATIVE CODING — Moonshot's flagship
+  notes: "Weekly subscription model. 100 TPS. Good for burst coding tasks."
+
+pot-glm47-flash:
+  id: pot-glm47-flash
+  model: GLM-4.7-Flash
+  provider: z-ai
+  cost_tier: free
+  limits:
+    rpm: null
+    tpm: null
+    rpd: null
+    context_window: null
+  capabilities:
+    - code-generation
+    - classification
+    - summarization
+    - fast-inference
+  quality_scores:
+    reasoning: 6
+    coding: 6
+    speed: 8
+    reliability: 7
+  status: gap
+  role: FREE GLM WORKER — separate from paid subscription
+  notes: "FREE model from Z.ai. Not the same as subscription models. Separate pool. Worth adding immediately — zero cost."
+
+pot-signup-credits:
+  id: pot-signup-credits
+  model: various
+  provider: various
+  cost_tier: free-credits
+  plan: "One-time sign-up credits: OpenAI $5, Anthropic $5, xAI $25, Together AI $25-100. Total $200+"
+  limits:
+    rpm: varies
+    tpm: varies
+    rpd: varies
+    context_window: varies
+  capabilities:
+    - code-generation
+    - reasoning
+    - analysis
+    - premium-model-access
+  quality_scores:
+    reasoning: 9
+    coding: 9
+    speed: 7
+    reliability: 8
+  status: gap
+  role: PREMIUM ACCESS — grab credits for one-time premium model use
+  notes: "$200+ available across 15+ providers. No card needed for most. OpenRouter $10 credit bumps free model limits to 1K RPD."

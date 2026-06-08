@@ -1,0 +1,650 @@
+# FAMtastic Capability Matrix
+# Every capability the platform needs, mapped to agents who can deliver
+# Status: available = built & working | partial = some pieces exist | gap = not built
+# Updated: 2026-06-08
+
+# ============================================================================
+# SITE STUDIO
+# ============================================================================
+
+site-interview:
+  name: "Client Interview & Spec Collection"
+  category: site-studio
+  status: partial
+  required_for: [site-building, ecommerce-setup]
+  agents: [sub-zai-glm51]
+  workflow_steps:
+    - gather-requirements
+    - ask-clarifying-questions
+    - produce-spec-document
+    - validate-with-client
+  quality_notes: "Shay can interview via conversation. No structured interview flow yet. MBSH committee rejected assumptions — must validate against historical objections."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+spec-generation:
+  name: "Site Specification Generation"
+  category: site-studio
+  status: partial
+  required_for: [site-building, ecommerce-setup]
+  agents: [sub-zai-glm51, sub-oauth-codex, free-openr-qwen-coder]
+  workflow_steps:
+    - parse-interview-notes
+    - generate-structured-spec
+    - define-components
+    - map-content-structure
+  quality_notes: "Can generate specs manually. No automated spec-to-scaffold pipeline yet."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+site-scaffolding:
+  name: "Site Structure Generation"
+  category: site-studio
+  status: partial
+  required_for: [site-building, ecommerce-setup]
+  agents: [free-openr-qwen-coder, sub-oauth-codex, sub-zai-glm51]
+  workflow_steps:
+    - generate-html-structure
+    - apply-theme
+    - wire-components
+    - create-page-hierarchy
+  quality_notes: "Site Studio exists (fam-hub site). MBSH site built and live. Interview flow has gaps. fam-hub CLI is operational."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+site-preview:
+  name: "Live Site Preview"
+  category: site-studio
+  status: available
+  required_for: [site-building]
+  agents: [sub-zai-glm51]
+  workflow_steps:
+    - start-local-server
+    - render-site
+    - open-browser
+  quality_notes: "fam-hub site preview works. Local server renders generated sites."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+site-deploy:
+  name: "Site Deployment to Production"
+  category: site-studio
+  status: partial
+  required_for: [site-building]
+  agents: [sub-zai-glm51]
+  workflow_steps:
+    - build-production-assets
+    - upload-to-hosting
+    - configure-domain
+    - verify-ssl
+  quality_notes: "MBSH deployed successfully. Process is manual, not automated. No CI/CD pipeline."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+content-authoring:
+  name: "Content Authoring During Generation"
+  category: site-studio
+  status: partial
+  required_for: [site-building]
+  agents: [sub-zai-glm51, free-groq-llama33, free-gemini-flash]
+  workflow_steps:
+    - author-copy-from-spec
+    - generate-headlines
+    - write-body-content
+    - source-images
+  quality_notes: "Hard-won lesson: content must be authored during generation, not extracted after. This rule exists because we violated it."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+responsive-design:
+  name: "Responsive/Mobile Design"
+  category: site-studio
+  status: available
+  required_for: [site-building]
+  agents: [free-openr-qwen-coder, sub-oauth-codex]
+  workflow_steps:
+    - apply-responsive-styles
+    - test-breakpoints
+    - optimize-mobile
+  quality_notes: "Standard CSS responsive. MBSH site is responsive."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+theme-generation:
+  name: "Custom Theme Generation"
+  category: site-studio
+  status: partial
+  required_for: [site-building, brand-identity]
+  agents: [sub-zai-glm51, free-openr-qwen-coder]
+  workflow_steps:
+    - define-color-palette
+    - set-typography
+    - create-component-styles
+    - build-dark-light-variants
+  quality_notes: "Theme system exists in site-studio. Custom theme generation per client is manual."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# HOSTING & DOMAIN
+# ============================================================================
+
+domain-registration:
+  name: "Domain Registration & Purchase"
+  category: hosting
+  status: gap
+  required_for: [site-building, ecommerce-setup]
+  agents: []
+  workflow_steps:
+    - check-availability
+    - purchase-domain
+    - configure-dns
+    - verify-propagation
+  quality_notes: "NOT BUILT. Reseller account exists (GoDaddy wholesale) but not automated. Reseller neglected ~10 years. 30-min cash unlock potential."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+domain-transfer:
+  name: "Domain Transfer Between Registrars"
+  category: hosting
+  status: gap
+  required_for: [site-building]
+  agents: []
+  workflow_steps:
+    - initiate-transfer
+    - authorize-transfer
+    - update-dns
+    - verify
+  quality_notes: "NOT BUILT. Reseller account should support this."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+dns-management:
+  name: "DNS Record Management"
+  category: hosting
+  status: gap
+  required_for: [site-building, hosting-setup]
+  agents: []
+  workflow_steps:
+    - set-a-records
+    - set-cname
+    - set-mx-records
+    - configure-txt
+    - verify-propagation
+  quality_notes: "NOT AUTOMATED. Manual via registrar panel. Need API integration."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+ssl-provisioning:
+  name: "SSL Certificate Provisioning"
+  category: hosting
+  status: partial
+  required_for: [site-building, hosting-setup]
+  agents: []
+  workflow_steps:
+    - generate-certificate
+    - install-on-server
+    - force-https
+    - verify
+  quality_notes: "Let's Encrypt available. Not automated in pipeline."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+hosting-setup:
+  name: "Hosting Environment Setup"
+  category: hosting
+  status: partial
+  required_for: [site-building, ecommerce-setup]
+  agents: []
+  workflow_steps:
+    - provision-server-or-directory
+    - configure-web-server
+    - set-up-deploy-target
+    - verify-access
+  quality_notes: "Hetzner box exists ($5/mo). GoDaddy reseller for domains. No automated hosting provision pipeline."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# ECOMMERCE
+# ============================================================================
+
+ecommerce-backend:
+  name: "Ecommerce Backend System"
+  category: ecommerce
+  status: gap
+  required_for: [ecommerce-setup]
+  agents: []
+  workflow_steps:
+    - set-up-product-database
+    - configure-cart
+    - set-up-checkout-flow
+    - connect-payment-gateway
+    - configure-order-management
+  quality_notes: "NOT BUILT. Major capability gap. No ecommerce infrastructure exists."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+product-catalog:
+  name: "Product Catalog Management"
+  category: ecommerce
+  status: gap
+  required_for: [ecommerce-setup]
+  agents: []
+  workflow_steps:
+    - define-product-schema
+    - import-products
+    - set-categories-filters
+    - configure-display
+  quality_notes: "NOT BUILT. Needs database + admin interface."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+payment-processing:
+  name: "Payment Processing Integration"
+  category: ecommerce
+  status: gap
+  required_for: [ecommerce-setup]
+  agents: []
+  workflow_steps:
+    - select-gateway
+    - integrate-sdk
+    - configure-webhooks
+    - test-transactions
+  quality_notes: "NOT BUILT. Stripe, Square, PayPal options available. No integration done."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+order-management:
+  name: "Order Management System"
+  category: ecommerce
+  status: gap
+  required_for: [ecommerce-setup]
+  agents: []
+  workflow_steps:
+    - order-tracking
+    - status-updates
+    - customer-notifications
+    - fulfillment-integration
+  quality_notes: "NOT BUILT."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+shipping-integration:
+  name: "Shipping & Fulfillment"
+  category: ecommerce
+  status: gap
+  required_for: [ecommerce-setup]
+  agents: []
+  workflow_steps:
+    - connect-carriers
+    - calculate-rates
+    - generate-labels
+    - track-shipments
+  quality_notes: "NOT BUILT. Requires carrier API integrations."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# MEDIA STUDIO
+# ============================================================================
+
+image-generation:
+  name: "AI Image Generation"
+  category: media-studio
+  status: partial
+  required_for: [site-building, brand-identity, content-creation]
+  agents: [sub-zai-glm51]
+  workflow_steps:
+    - craft-prompt
+    - generate-image
+    - select-best
+    - optimize-for-web
+  quality_notes: "Shay has image_generate tool. FAL/OpenAI backend. Logo generation has been terrible — need different approach. MiniMax plan would add image models."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+video-generation:
+  name: "AI Video Generation"
+  category: media-studio
+  status: gap
+  required_for: [media-production]
+  agents: []
+  workflow_steps:
+    - script-generation
+    - generate-video
+    - edit-compose
+    - export
+  quality_notes: "NOT BUILT. Engine selection still open. Shay has video toolset available."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+logo-design:
+  name: "Logo & Brand Mark Design"
+  category: media-studio
+  status: gap
+  required_for: [brand-identity, site-building]
+  agents: []
+  workflow_steps:
+    - define-brand-philosophy
+    - generate-concepts
+    - iterate-on-direction
+    - produce-final-assets
+  quality_notes: "Logo generation has been terrible. Per Tier-3 interview Q4: FAMtastic IS the seed symbol. The brief needs philosophy, not just aesthetic. Completely different approach needed."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+brand-identity:
+  name: "Full Brand Identity System"
+  category: media-studio
+  status: gap
+  required_for: [site-building, product-launch]
+  agents: []
+  workflow_steps:
+    - define-brand-voice
+    - create-visual-system
+    - produce-style-guide
+    - generate-brand-assets
+  quality_notes: "NOT BUILT. Needs logo + color + typography + voice. All gaps."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# COMPONENT STUDIO
+# ============================================================================
+
+component-generation:
+  name: "HTML/Component Generation"
+  category: component-studio
+  status: gap
+  required_for: [site-building, component-studio]
+  agents: [free-openr-qwen-coder]
+  workflow_steps:
+    - define-component-spec
+    - generate-html-css-js
+    - test-in-isolation
+    - package-for-reuse
+  quality_notes: "NOT BUILT AS STUDIO. Can generate components via agents. No studio infrastructure."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+mobile-app:
+  name: "Mobile App Development"
+  category: component-studio
+  status: gap
+  required_for: [component-studio]
+  agents: []
+  workflow_steps:
+    - define-app-spec
+    - choose-framework
+    - develop
+    - test
+    - deploy
+  quality_notes: "NOT BUILT. Greenfield."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+game-development:
+  name: "Game Development"
+  category: component-studio
+  status: gap
+  required_for: [component-studio]
+  agents: []
+  workflow_steps:
+    - design-game
+    - develop
+    - test
+    - deploy
+  quality_notes: "NOT BUILT. Greenfield."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# PLATFORM & ORCHESTRATION
+# ============================================================================
+
+task-planning:
+  name: "Task Decomposition & Planning"
+  category: orchestration
+  status: partial
+  required_for: [everything]
+  agents: [sub-zai-glm51]
+  workflow_steps:
+    - receive-task
+    - decompose-into-capabilities
+    - check-capability-matrix
+    - identify-gaps
+    - build-dispatch-plan
+  quality_notes: "THIS IS WHAT WE'RE BUILDING RIGHT NOW. Dispatch Planner skill + capability matrix. Shay can plan manually. Need automated pre-dispatch."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+agent-dispatch:
+  name: "Agent Dispatch & Management"
+  category: orchestration
+  status: partial
+  required_for: [everything]
+  agents: [sub-zai-glm51]
+  workflow_steps:
+    - select-agent-for-task
+    - configure-delegate-task
+    - monitor-execution
+    - collect-results
+    - handle-failures
+  quality_notes: "delegate_task works. No pre-dispatch planning layer. No agent benchmarking. No process tracking. Child timeout = 600s killed some tasks."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+code-review:
+  name: "Automated Code Review"
+  category: orchestration
+  status: partial
+  required_for: [site-building, code-quality]
+  agents: [sub-oauth-codex, free-openr-qwen-coder, free-gemini-pro]
+  workflow_steps:
+    - receive-code
+    - run-static-analysis
+    - agent-review
+    - produce-review-report
+    - suggest-fixes
+  quality_notes: "Adversarial review is standard per SOUL.md. No automated review pipeline. Codex + Shay review manually."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+testing:
+  name: "Automated Testing"
+  category: orchestration
+  status: partial
+  required_for: [site-building, code-quality]
+  agents: []
+  workflow_steps:
+    - write-tests
+    - run-test-suite
+    - report-results
+    - flag-failures
+  quality_notes: "Playwright browser automation is the standard (per SOUL.md). No WebSocket shortcuts. Test infrastructure exists but not automated in pipeline."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+deployment:
+  name: "Automated Deployment Pipeline"
+  category: orchestration
+  status: gap
+  required_for: [site-building, hosting-setup]
+  agents: []
+  workflow_steps:
+    - build-assets
+    - run-tests
+    - deploy-to-target
+    - verify-deployment
+    - rollback-if-failed
+  quality_notes: "NOT AUTOMATED. Manual deploy process. No CI/CD."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+monitoring:
+  name: "Site & Service Monitoring"
+  category: orchestration
+  status: gap
+  required_for: [hosting-setup, site-maintenance]
+  agents: []
+  workflow_steps:
+    - set-up-health-checks
+    - monitor-uptime
+    - alert-on-failure
+    - log-metrics
+  quality_notes: "NOT BUILT. No uptime monitoring. No alerting."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# RESEARCH
+# ============================================================================
+
+market-research:
+  name: "Market Research & Analysis"
+  category: research
+  status: partial
+  required_for: [site-building, product-launch, competitive-positioning]
+  agents: [sub-zai-glm51, free-gemini-pro, free-gemini-flash]
+  workflow_steps:
+    - define-research-scope
+    - search-web
+    - analyze-competitors
+    - synthesize-findings
+    - produce-report
+  quality_notes: "Shay can research via web_search + web_extract. No structured research module. Research is a reusable MODULE per Modular Workflow Thesis."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+competitor-analysis:
+  name: "Competitor Analysis"
+  category: research
+  status: partial
+  required_for: [site-building, product-launch]
+  agents: [sub-zai-glm51, free-gemini-pro]
+  workflow_steps:
+    - identify-competitors
+    - analyze-their-sites
+    - compare-features
+    - identify-gaps
+  quality_notes: "Can do manually. No automated analysis pipeline."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+technology-evaluation:
+  name: "Technology & Tool Evaluation"
+  category: research
+  status: partial
+  required_for: [platform-decisions]
+  agents: [sub-zai-glm51, free-gemini-flash]
+  workflow_steps:
+    - define-evaluation-criteria
+    - research-options
+    - test-contenders
+    - produce-comparison
+    - recommend
+  quality_notes: "Can research via web. No structured evaluation framework. This report IS a technology evaluation — proves the capability exists manually."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# CONTENT
+# ============================================================================
+
+blog-writing:
+  name: "Blog & Article Writing"
+  category: content
+  status: partial
+  required_for: [famtastic-thoughts, seo, content-marketing]
+  agents: [sub-zai-glm51, free-gemini-flash, free-groq-llama33]
+  workflow_steps:
+    - define-topic
+    - research
+    - draft
+    - edit
+    - publish
+  quality_notes: "FAMtastic Thoughts studio exists conceptually. Blog infrastructure not built. Quality bar: honest, raw, well-preserved."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+seo-optimization:
+  name: "SEO Optimization"
+  category: content
+  status: gap
+  required_for: [site-building, content-marketing]
+  agents: []
+  workflow_steps:
+    - keyword-research
+    - on-page-optimization
+    - meta-tag-generation
+    - schema-markup
+    - performance-optimization
+  quality_notes: "NOT BUILT. No SEO pipeline."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+social-media-content:
+  name: "Social Media Content Generation"
+  category: content
+  status: gap
+  required_for: [marketing, brand-awareness]
+  agents: []
+  workflow_steps:
+    - define-campaign
+    - generate-content
+    - schedule-posts
+    - track-engagement
+  quality_notes: "NOT BUILT."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+# ============================================================================
+# REVENUE
+# ============================================================================
+
+reseller-management:
+  name: "Reseller Account Management"
+  category: revenue
+  status: gap
+  required_for: [domain-registration, hosting-setup, income-generation]
+  agents: []
+  workflow_steps:
+    - activate-reseller-account
+    - set-up-wholesale-pricing
+    - integrate-domain-api
+    - integrate-hosting-api
+    - set-up-billing
+  quality_notes: "CRITICAL GAP. GoDaddy reseller account exists, neglected ~10 years. Fritz called it '30-min cash unlock cha-ching lane.' Live income pipeline. Reactivation = immediate revenue."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+invoicing:
+  name: "Client Invoicing System"
+  category: revenue
+  status: gap
+  required_for: [income-generation, client-management]
+  agents: []
+  workflow_steps:
+    - create-invoice
+    - send-to-client
+    - track-payment
+    - generate-receipt
+  quality_notes: "NOT BUILT. No billing infrastructure."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08
+
+subscription-billing:
+  name: "Recurring Subscription Billing"
+  category: revenue
+  status: gap
+  required_for: [saas-products, recurring-revenue]
+  agents: []
+  workflow_steps:
+    - define-plans
+    - set-up-billing-cycle
+    - manage-subscriptions
+    - handle-upgrades-downgrades
+  quality_notes: "NOT BUILT. Needed for $100/mo product model."
+  discovered: 2026-06-08
+  last_updated: 2026-06-08

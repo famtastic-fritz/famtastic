@@ -1,0 +1,256 @@
+# FAMtastic Gap Tracker
+# Every capability gap discovered, prioritized, tracked to resolution
+# Updated: 2026-06-08
+
+gaps:
+
+  # ============================================================================
+  # CRITICAL — Blocks revenue or core platform function
+  # ============================================================================
+
+  gap-reseller-activation:
+    gap_id: gap-reseller-activation
+    capability: reseller-management
+    triggered_by: "Tier-3 interview — Fritz identified reseller account as 30-min cash unlock"
+    priority: critical
+    revenue_impact: HIGH — immediate income pipeline, neglected 10 years, live cha-ching lane
+    resolution_plan: "Reactivate GoDaddy reseller account, integrate API, set up domain registration flow, configure wholesale pricing"
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+    notes: "Fritz's words: '30-min cash unlock.' This is the fastest path to FAMtastic income. GoDaddy wholesale rates need re-verification quarterly."
+
+  gap-domain-registration:
+    gap_id: gap-domain-registration
+    capability: domain-registration
+    triggered_by: "Capability matrix audit — no automated domain purchase flow"
+    priority: critical
+    revenue_impact: HIGH — blocks site-building end-to-end, every client needs a domain
+    resolution_plan: "Build domain registration flow using GoDaddy reseller API. Check availability → purchase → configure DNS → verify."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+    notes: "Depends on reseller account reactivation (gap-reseller-activation)."
+
+  gap-ecommerce-backend:
+    gap_id: gap-ecommerce-backend
+    capability: ecommerce-backend
+    triggered_by: "Capability matrix audit — no ecommerce infrastructure exists"
+    priority: critical
+    revenue_impact: HIGH — ecommerce is a premium tier service, high-value client offering
+    resolution_plan: "Evaluate: build custom vs integrate Shopify/Stripe/WooCommerce. Research module needed first."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+    notes: "This is a BUILD, not a quick fix. Needs its own research module + planning module + build module per thesis."
+
+  gap-dispatch-planner:
+    gap_id: gap-dispatch-planner
+    capability: task-planning
+    triggered_by: "Fritz's request for pre-delegate planning layer — 'shay do this task' should auto-plan which agents get dispatched"
+    priority: critical
+    revenue_impact: INDIRECT — blocks efficient scaling of all other capabilities
+    resolution_plan: "Build dispatch-planner skill with: decompose → check matrix → select agents → log gaps → build plan → feed delegate_task. BEING BUILT THIS SESSION."
+    status: in-progress
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-deployment-pipeline:
+    gap_id: gap-deployment-pipeline
+    capability: deployment
+    triggered_by: "Capability matrix audit — no CI/CD, manual deploys only"
+    priority: critical
+    revenue_impact: MEDIUM — slows delivery, increases error risk
+    resolution_plan: "Build automated deploy pipeline: build → test → deploy → verify → rollback. Hook into fam-hub site deploy."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  # ============================================================================
+  # HIGH — Important but not blocking immediate revenue
+  # ============================================================================
+
+  gap-dns-management:
+    gap_id: gap-dns-management
+    capability: dns-management
+    triggered_by: "Capability matrix audit — no automated DNS management"
+    priority: high
+    revenue_impact: MEDIUM — needed for every site deployment
+    resolution_plan: "Build DNS management via registrar API. A records, CNAME, MX, TXT. Depends on reseller activation."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-ssl-automation:
+    gap_id: gap-ssl-automation
+    capability: ssl-provisioning
+    triggered_by: "Capability matrix audit — SSL is manual"
+    priority: high
+    revenue_impact: LOW-MEDIUM — manual but not blocking
+    resolution_plan: "Automate Let's Encrypt certificate generation and renewal."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-logo-design:
+    gap_id: gap-logo-design
+    capability: logo-design
+    triggered_by: "Tier-3 interview Q4 — logo generation terrible, needs philosophy not aesthetic"
+    priority: high
+    revenue_impact: MEDIUM — blocks brand identity which blocks premium pricing
+    resolution_plan: "Different approach: brief must include philosophy (seed symbol = FAMtastic). Research different AI approaches or human designer for initial concept."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-brand-identity:
+    gap_id: gap-brand-identity
+    capability: brand-identity
+    triggered_by: "Capability matrix audit — no brand system exists"
+    priority: high
+    revenue_impact: HIGH — blocks premium positioning, FAMU cruise June 26 launch event
+    resolution_plan: "Build after logo direction is set. Voice + colors + typography + style guide. FAMU cruise deadline June 26."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+    deadline: "2026-06-26 — FAMU cruise brand launch"
+
+  gap-monitoring:
+    gap_id: gap-monitoring
+    capability: monitoring
+    triggered_by: "Capability matrix audit — no uptime monitoring or alerting"
+    priority: high
+    revenue_impact: MEDIUM — client sites going down undetected = lost trust
+    resolution_plan: "Set up health checks on Hetzner box. Uptime monitoring (could use cron + web check). Alert via Telegram."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-seo:
+    gap_id: gap-seo
+    capability: seo-optimization
+    triggered_by: "Capability matrix audit — no SEO pipeline"
+    priority: high
+    revenue_impact: MEDIUM — SEO is a sellable service add-on
+    resolution_plan: "Build SEO module: keyword research, on-page optimization, meta tags, schema markup."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  # ============================================================================
+  # MEDIUM — Needed for scale but not blocking current work
+  # ============================================================================
+
+  gap-video-generation:
+    gap_id: gap-video-generation
+    capability: video-generation
+    triggered_by: "Capability matrix audit — Media Studio video not built"
+    priority: medium
+    revenue_impact: MEDIUM — Media Studio offering
+    resolution_plan: "Evaluate engines. Engine selection still open per SOUL.md."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-component-studio:
+    gap_id: gap-component-studio
+    capability: component-generation
+    triggered_by: "Capability matrix audit — Component Studio is greenfield"
+    priority: medium
+    revenue_impact: LOW currently — future studio
+    resolution_plan: "Define Component Studio scope. HTML elements through mobile apps and games."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-social-media:
+    gap_id: gap-social-media
+    capability: social-media-content
+    triggered_by: "Capability matrix audit — no social media pipeline"
+    priority: medium
+    revenue_impact: MEDIUM — marketing channel
+    resolution_plan: "Build social media content generation + scheduling module."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-invoicing:
+    gap_id: gap-invoicing
+    capability: invoicing
+    triggered_by: "Capability matrix audit — no billing infrastructure"
+    priority: medium
+    revenue_impact: HIGH long-term — but manual invoicing works short-term
+    resolution_plan: "Build or integrate invoicing system. Stripe integration for payments."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-subscription-billing:
+    gap_id: gap-subscription-billing
+    capability: subscription-billing
+    triggered_by: "1,000 products model — each $100/mo revenue seed needs recurring billing"
+    priority: medium
+    revenue_impact: HIGH long-term — needed for SaaS model
+    resolution_plan: "Integrate Stripe subscriptions or similar. Needed for $100/mo product model."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-agent-benchmarking:
+    gap_id: gap-agent-benchmarking
+    capability: technology-evaluation
+    triggered_by: "Fritz's request — need to swap agents for same task and compare quality"
+    priority: medium
+    revenue_impact: INDIRECT — improves all dispatch decisions
+    resolution_plan: "Build benchmark harness: same task → 3 agents → compare quality/speed/cost → feed matrix"
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-process-tracker:
+    gap_id: gap-process-tracker
+    capability: agent-dispatch
+    triggered_by: "Fritz's request — need to track subagent processes and outcomes"
+    priority: medium
+    revenue_impact: INDIRECT — feeds capability data, improves dispatch
+    resolution_plan: "Log every dispatch: agent, task, duration, success, quality, cost. Feed into matrix over time."
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  # ============================================================================
+  # LOW — Nice to have, not blocking
+  # ============================================================================
+
+  gap-mobile-app:
+    gap_id: gap-mobile-app
+    capability: mobile-app
+    triggered_by: "Capability matrix audit — Component Studio greenfield"
+    priority: low
+    revenue_impact: LOW — future offering
+    resolution_plan: "Research frameworks. React Native, Flutter, or native?"
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-game-development:
+    gap_id: gap-game-development
+    capability: game-development
+    triggered_by: "Capability matrix audit — Component Studio greenfield"
+    priority: low
+    revenue_impact: LOW — future offering
+    resolution_plan: "Research game engines. Phaser, Unity, Godot?"
+    status: open
+    discovered: 2026-06-08
+    resolved: null
+
+  gap-domain-transfer:
+    gap_id: gap-domain-transfer
+    capability: domain-transfer
+    triggered_by: "Capability matrix audit — no transfer automation"
+    priority: low
+    revenue_impact: LOW — infrequent need
+    resolution_plan: "Build after domain-registration flow. Same API, different endpoint."
+    status: open
+    discovered: 2026-06-08
+    resolved: null

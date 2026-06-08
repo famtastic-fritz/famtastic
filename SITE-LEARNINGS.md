@@ -6527,3 +6527,54 @@ returns an empty `publicKey` until restarted (`launchctl stop com.famtastic.shay
   `daily_brief` asks, or moving the brief off the ask channel, is the real fix.
 - **No QR pairing yet.** Token is pasted/in the URL; the brief's QR-pair-to-Keychain
   flow is unbuilt (fine for Android localStorage, revisit for multi-device).
+
+## Capability Engine — agent routing, gap tracking, and dispatch planning (2026-06-08)
+
+Built a structured capability engine to answer the recurring question: "which agent should do this task?" The engine is four interlocking components that together form a pre-delegation decision layer.
+
+### Architecture
+
+**Agent Registry** (`AGENT-REGISTRY.yaml`) — 25 agent lanes cataloged with tier, cost model, capabilities, constraints, and quality rating. Each lane is a concrete dispatchable endpoint (a Claude Code session, Codex, a local Ollama model, a free cloud service, etc.), not an abstraction.
+
+**Capability Matrix** (`CAPABILITY-MATRIX.yaml`) — 35 capabilities across 8 categories (code generation, research, reasoning, creative/media, system operations, data/analysis, communication, orchestration). Each capability entry maps which agent lanes can perform it, at what quality/speed/context level. This is the lookup table the dispatch planner queries.
+
+**Gap Tracker** (`GAP-TRACKER.yaml`) — 18 prioritized capability gaps. Each gap records: what's needed, which agent lane is blocked, what's missing (a credential, a subscription, a local model, an integration), and priority (blocking/high/medium/low). The gap tracker is the engine's honest constraint ledger — it prevents dispatching to lanes that will fail.
+
+**Dispatch Planner** (`dispatch-planner` skill) — a pre-delegation workflow that any agent surface runs before handing off work. The workflow is: **decompose** the task into required capabilities → **check** the capability matrix for which lanes provide those capabilities → **select** the best available lane by cost/quality/speed tradeoff → **log gaps** for any capabilities no lane currently provides → **build plan** with fallback chains → **dispatch**.
+
+### The brain-vs-worker lane separation principle
+
+Agent lanes split into two roles: **brain** lanes (orchestrators that plan, reason, verify, and synthesize — expensive, high-context, slow) and **worker** lanes (executors that code, search, transform, and generate — cheap, fast, narrow). A brain lane should never do worker work; a worker lane should never do brain work. The dispatch planner enforces this separation. Claude/Codex/Gemini are brain lanes; Qwen 1.5B/Phi-4-mini/free cloud agents are worker lanes. The M5 16GB Mac can run 2 large Ollama models simultaneously, constraining local worker lanes to at most 2 concurrent local workers.
+
+### Agent routing hierarchy
+
+The routing priority is: **free > subscription > paid**. Within each tier, tradeoffs are:
+
+1. **Free lanes** (9 cloud + 8 local = 17 total) — zero marginal cost, but limited by rate caps, context windows, and quality. Free cloud lanes include Gemini Flash (via API), ChatGPT free tier, and various sign-up-credit services. Local lanes are Ollama models (Qwen 2.5, Phi-4-mini, Hermes 3, DeepSeek-R1, etc.) running on the M5.
+
+2. **Subscription lanes** (4 total) — Claude Max ($100/mo, weekly cap), Codex ($100/mo, monthly credit cap), Gemini Pro (included with Google One), ChatGPT Plus ($20/mo). Already paid for, so marginal cost is zero within caps, but caps are real and burn fast.
+
+3. **Paid lanes** — per-token API calls (Anthropic direct, OpenAI direct, OpenRouter) or monthly subscriptions for new services. MiniMax at $20/mo was identified as the best-value paid worker lane for bulk code/reasoning tasks.
+
+**Key finding:** $200+ in available sign-up credits across free-tier services (MiniMax, Together AI, Groq, Mistral, etc.) provide significant unpaid capacity for worker tasks if the capability gaps (credential storage, API integration, model routing) are closed.
+
+### Hardware constraint: M5 16GB
+
+The M5 Mac with 16GB unified memory can run at most 2 large Ollama models simultaneously (e.g., Qwen 2.5 7B + Phi-4-mini 3.8B). Smaller models (1.5B) can coexist with 2 larger ones. The dispatch planner checks current Ollama load before routing to a local worker lane. If 2 large models are loaded, new local tasks queue or route to a free cloud lane instead.
+
+### The pre-delegation workflow
+
+Before any agent delegates work, it runs:
+
+1. **Decompose** — break the task into required capabilities
+2. **Check** — query the capability matrix for lanes that provide each capability
+3. **Select** — pick the best available lane (free first, then subscription, then paid)
+4. **Log gaps** — record any capabilities with no available lane in the gap tracker
+5. **Build plan** — construct the dispatch plan with fallback chains
+6. **Dispatch** — send the work to the selected lane
+
+This workflow is codified in the `dispatch-planner` skill and is the standard pre-flight check for all multi-agent delegation in the FAMtastic ecosystem.
+
+### Key finding: 25 lanes, but capability gaps block execution
+
+The agent registry lists 25 dispatchable lanes (4 subscription, 9 free cloud, 8 local, 4 potential additions). However, the gap tracker records 18 capability gaps — missing credentials, unwired integrations, capped subscriptions, and uninstalled local models. The most impactful gaps are: no standalone Anthropic API key (blocked on subscription cap), Codex credits exhausted until June 10, no paid worker subscription (MiniMax $20/mo recommended), and several free-cloud services not yet integrated. The capability engine makes these gaps visible and trackable so each dispatch either succeeds or produces an honest gap record instead of a silent failure.
