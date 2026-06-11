@@ -196,3 +196,7 @@ bugs: PHP proxy.php was following Node's auth 302 redirects (follow_location
 must be 0), and Node binds to IPv6 by default (must set host to 127.0.0.1
 in entry.mjs args). Checkout (/checkout) and order-confirmation routes added
 to .htaccess. PayPal live mode deferred — sandbox only for now.
+
+## 2026-06-11 — QC pass, infrastructure root-cause fixes, auth page hardening
+
+Discovered that the server .env only had 3 PayPal variables — MYSQL and all other credentials were never written there, causing every DB operation to 500. Fixed by scp-ing the full local .env and restarting Node with --env-file (handles spaces in MYSQL_DATABASE value). Fixed the .htaccess overwrite problem by moving the canonical file into public/ so it deploys with every build. Created AuthLayout.astro and switched all three auth pages (login, register, admin login) off DashboardLayout so the sidebar no longer appears before users log in. Fixed the RegisterForm bug where confirmPassword was never sent in the POST body. Removed GoDaddy phone (480) 624-2500 from all public-facing areas (footer, schema.org JSON-LD, auth pages). Standardized all "Talk to a Human" CTAs to /contact. Replaced all dead store.famtastichosting.com links with local page routes. Admin login verified working: admin@famtastichosting.com / FamAdmin2026!. Customer registration and login verified working. Remaining: Add to Cart buttons on product pages (infrastructure is ready), PayPal sandbox browser test (requires clicking through the actual flow).
