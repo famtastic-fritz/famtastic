@@ -6578,3 +6578,78 @@ This workflow is codified in the `dispatch-planner` skill and is the standard pr
 ### Key finding: 25 lanes, but capability gaps block execution
 
 The agent registry lists 25 dispatchable lanes (4 subscription, 9 free cloud, 8 local, 4 potential additions). However, the gap tracker records 18 capability gaps — missing credentials, unwired integrations, capped subscriptions, and uninstalled local models. The most impactful gaps are: no standalone Anthropic API key (blocked on subscription cap), Codex credits exhausted until June 10, no paid worker subscription (MiniMax $20/mo recommended), and several free-cloud services not yet integrated. The capability engine makes these gaps visible and trackable so each dispatch either succeeds or produces an honest gap record instead of a silent failure.
+
+---
+
+## FAMtastic Hosting — Astro SSR on GoDaddy cPanel (2026-06-10)
+
+### Astro SSR deployment: entry.mjs hardcodes build-machine paths
+
+When `@astrojs/node` adapter builds in standalone mode, the generated
+`dist/server/entry.mjs` contains hardcoded `file:///` paths pointing to the
+build machine's filesystem. On a different server these paths don't exist,
+causing the server to fail to serve static files from the correct location.
+
+**Symptom:** Server starts but API routes return 404 even though the routes
+appear in the manifest. Root cause is the _args object having wrong paths.
+
+**Fix:** After every rsync deploy, patch the entry.mjs on the server:
+```bash
+DIST=/home/nineoo/public_html/famtastichosting.com/site/dist
+sed -i "s|file:///Users/famtasticfritz/.*/dist/client/|file://${DIST}/client/|g" ${DIST}/server/entry.mjs
+sed -i "s|file:///Users/famtasticfritz/.*/dist/server/|file://${DIST}/server/|g" ${DIST}/server/entry.mjs
+```
+
+**Alternative:** Use environment-relative paths in astro.config.mjs by
+configuring the adapter with `output: 'server'` and a custom
+`server.config.mjs` that reads `DIST_PATH` from env.
+
+### nvm node binary not in PATH for non-interactive SSH
+
+When running SSH commands via heredoc (`ssh host << 'ENDSSH'`), the
+non-interactive shell does not source `~/.bashrc`, so `nvm` and the
+versioned node binary are not in PATH. `node` resolves to the system
+Node (v14.8.0 on this cPanel host) instead of the nvm-installed v20.
+
+**Fix:** Use the full nvm binary path:
+```bash
+NODE=/home/nineoo/.nvm/versions/node/v20.20.2/bin/node
+nohup env PORT=3001 HOST=127.0.0.1 ... $NODE entry.mjs &
+```
+
+### Dynamic import('bcryptjs') breaks in ESM context
+
+In Astro SSR routes, `const bcrypt = await import('bcryptjs')` returns
+the module namespace object. For CommonJS modules like bcryptjs, the
+actual exports are on `.default`. Calling `bcrypt.compare()` throws
+`TypeError: bcrypt.compare is not a function`.
+
+**Fix:** Use the existing `verifyPassword()` helper from `lib/auth/password.ts`
+which uses a static `import bcrypt from 'bcryptjs'` — that correctly resolves
+the default export.
+
+### sessions table schema must be consistent across all auth routes
+
+The sessions table uses: `session_id` (varchar 128, PRIMARY KEY), `expires`
+(int unsigned, unix timestamp), `data` (text, JSON blob `{user_id: number}`).
+
+Admin login.ts was inserting with the wrong columns (`id, user_id, token,
+expires_at`) causing silent failures. The `extractSession()` middleware in
+`lib/auth/middleware.ts` joins on `session_id` and uses `JSON_EXTRACT(data,
+'$.user_id')`, so all inserts must use the `session_id/expires/data` schema.
+
+### orders table: godaddy_order_id is NOT NULL
+
+The `orders` table has `godaddy_order_id varchar(64) NOT NULL UNIQUE`.
+For MVP orders created before real GoDaddy provisioning, use a placeholder:
+```javascript
+const placeholderOrderId = `FAM-${crypto.randomUUID()}`;
+```
+This satisfies the NOT NULL constraint and is distinguishable from real
+GoDaddy order IDs by the `FAM-` prefix.
+
+### products table uses _cents suffix on pricing columns
+
+Price columns are `wholesale_price_cents` and `retail_price_cents` (integers
+in cents). Any code using `wholesale_price` or `retail_price` (no suffix)
+will fail with "Unknown column" from MySQL.

@@ -170,3 +170,13 @@ New package @shay/senses shipped (it had no home in the canonical 8 — flagged 
 
 ## 2026-06-08 — Phase 8: Skin (surfaces) — final build phase
 @shay/surfaces shipped: thin gateway clients (CLI, web, phone, MCP) over a GatewayClient contract with local/remote/mock implementations. Surfaces carry zero brain/memory logic (verified by import grep + doctor check). 260 tests passing, typecheck clean, additive-only. All 8 build phases (0-8) complete on branch shay-platform-build; STOPPING before Phase 9 (cutover) which requires Fritz at the keyboard.
+
+## 2026-06-10 — FAMtastic Hosting facelift: auth + purchase flow live
+
+Full auth layer (register/login/logout/admin-login) wired to MySQL with bcrypt
+and session tokens; purchase flow endpoint (`POST /api/orders/create`) created;
+admin login fixed (wrong sessions schema + broken dynamic bcrypt import); products
+price column names corrected (_cents suffix); admin user seeded; all 10 E2E tests
+pass via https://famtastichosting.com. Deferred: real GoDaddy order provisioning,
+godaddy_shopper_id linking for per-customer billing/domains/hosting, Node restart
+supervisor (manual restart required after crash).
