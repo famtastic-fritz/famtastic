@@ -6654,21 +6654,37 @@ Price columns are `wholesale_price_cents` and `retail_price_cents` (integers
 in cents). Any code using `wholesale_price` or `retail_price` (no suffix)
 will fail with "Unknown column" from MySQL.
 
-### PayPal checkout flow — server-side only, capture before DB write
+### PayPal checkout flow — server-side only, snapshot-then-capture
 
 PayPal JS SDK v2 is used in sandbox mode. The full flow:
 
 1. `/checkout` (SSR page, prerender=false) — reads cart from `fam_cart_session`
    cookie, renders order summary + PayPal Buttons widget
-2. `POST /api/checkout/create-order` — reads cart, calls PayPal Orders API
-   `POST /v2/checkout/orders` with CAPTURE intent, returns `paypalOrderId`
-3. PayPal JS SDK handles the customer approval flow in the iframe
-4. `POST /api/checkout/capture-order` — captures the approved PayPal order
-   (`POST /v2/checkout/orders/{id}/capture`), writes orders rows to DB
-   (one per product, `status='paid'`, `godaddy_order_id='PAYPAL-{id}'`),
-   clears the cart. If DB write fails, logs error but does NOT fail the
-   customer response — payment is already captured.
-5. Browser redirects to `/order-confirmation?orderId=&amount=&paypal=`
+2. `POST /api/checkout/create-order` — reads cart, creates PayPal order via
+   `POST /v2/checkout/orders` with CAPTURE intent, **snapshots cart into
+   `checkout_snapshots`** (keyed by paypalOrderId to prevent TOCTOU/cart-swap).
+   Returns `paypalOrderId`.
+3. PayPal JS SDK handles customer approval in the iframe
+4. `POST /api/checkout/capture-order` — verifies snapshot exists and matches
+   session, captures payment, writes orders rows to DB (one per product,
+   **`status='processing'`**, `product_id=item.product_id` from snapshot,
+   `godaddy_order_id='PAYPAL-{id}'`). Uses a transaction to atomically mark
+   snapshot 'captured' and insert orders — preventing replay attacks.
+   If DB write fails after capture, persists to `orphan_payments` table and
+   returns `success:false` (no silent money loss).
+5. Cart is cleared. Browser redirects to `/order-confirmation`.
+
+**Guest checkout is supported.** `orders.user_id` is nullable — NULL means
+the buyer did not have an account. `getSession()` is called optimistically;
+if the user is not logged in, `user_id=NULL` is inserted.
+
+**Order status model (canonical):**
+- `pending` — created but not paid
+- `processing` — PayPal payment captured, awaiting admin fulfillment
+- `active` — provisioned and active in GoDaddy
+- `cancelled` — cancelled by admin or customer
+- `failed` — provisioning failed
+- `expired` — subscription expired
 
 **Key files:**
 - `src/lib/paypal/client.ts` — `getAccessToken()`, `createPayPalOrder(cents)`,
@@ -6684,11 +6700,19 @@ credentials in PAYPAL_CLIENT_ID / PAYPAL_SECRET. The API base switches
 automatically between `https://api-m.sandbox.paypal.com` and `https://api-m.paypal.com`.
 
 **Admin fulfillment queue:**
-- `GET /api/admin/local-orders?status=paid` — lists paid orders awaiting
-  provisioning (requires admin auth)
-- `PUT /api/admin/local-orders` body `{orderId, status: 'fulfilled'|'cancelled'}`
-- `/admin/orders` shows fulfillment queue at top with "Mark Fulfilled" button
-  per order; the row fades out and removes on success
+- `GET /api/admin/local-orders?status=processing` — lists 'processing' orders
+  awaiting provisioning (requires admin auth)
+- `PUT /api/admin/local-orders` body `{orderId, status: 'active'|'cancelled'}`
+- `/admin/orders` shows fulfillment queue at top; "Mark Fulfilled" sets
+  `status='active'` — row fades out and removes on success
+
+**Known gaps (as of 2026-06-11):**
+- `orders.description` field exists in schema but capture-order does not
+  populate it (would be useful for guest order lookup later)
+- No cron purges stale `checkout_snapshots` with `status='pending'`
+- GoDaddy postback integration has not been tested end-to-end (no live GoDaddy
+  credentials in dev environment)
+- Guest orders (user_id=NULL) show customer email as '—' in fulfillment queue
 
 ### Apache proxy.php must set follow_location=0
 
