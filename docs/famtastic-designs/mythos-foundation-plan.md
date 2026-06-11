@@ -1,6 +1,8 @@
 # Mythos Foundation Plan — FAMtastic Designs Foundation MVP
 
-_Generated: 2026-06-11 · Status: draft for Fritz review · Source: mythos-master-prompt-v2.md + foundation-findings.md + infrastructure-inputs.md + ChatGPT foundation interview (2026-06-11) + repo reality audit_
+_Generated: 2026-06-11 · Status: patched per review · Source: mythos-master-prompt-v2.md + foundation-findings.md + infrastructure-inputs.md + ChatGPT foundation interview (2026-06-11) + repo reality audit_
+
+_Revision 2026-06-11 (v2.1): patched in place per `mythos-plan-patch-prompt-2026-06-11.md` (ChatGPT/CJ review) — generator boundary strengthened, geography corrected to Treasure Coast/South Florida, Church Connect elevated to signature campaign, Cash Sprint claim-path QA added, Fritz-review calibration model, expanded launch-blocking list. The pre-patch version is preserved in git history (commit 12f1bbe)._
 
 > **Standing assumption A1 (Fritz-confirmed during interview):** Proof Engine v1 builds on the existing fam-hub site factory as its execution backend, but is architected as a separate orchestration layer with a **swappable generator boundary**. All other open details proceed on labeled assumptions with decision points — nothing in this plan stalls on missing information.
 >
@@ -192,6 +194,22 @@ famtasticdesigns.com
 
 One shared Proof Engine, four campaign skins. A campaign = config record (`Campaign` object, §13) defining persona, signals, proof template emphasis, outreach angles, offer ladder, and metrics. Adding campaign #5 is a config + template exercise, not new code.
 
+**Campaign hierarchy (patched per 2026-06-11 review — these are not four equal cards):**
+
+- **Church Connect — the signature campaign.** The flagship proof of FAMtastic differentiation. Churches gather support weekly; FAMtastic shows how digital giving, streaming, events, member access, visitor follow-up, and mobile connection support giving, attendance, and engagement all week. Fritz's gut insight stays front and center.
+- **Local Services — the proven fast-cash lane.** Carries near-term deposits while signature accounts mature.
+- **Nonprofits — the close cousin to churches.** Shared proof features (donate/volunteer/events), shared respect rules.
+- **Professional Services — the higher-ticket authority lane.** One serious client can pay for the whole system.
+
+**Sharpened campaign angles:**
+
+| Campaign | Angle | First proof must show | Offer |
+|---|---|---|---|
+| Church Connect | Your church already gathers support weekly. Let's make giving, streaming, events, and member connection easier all week. | Giving button, livestream hub, event registration, visitor follow-up, prayer request, member access | Founding Church Connect setup + flexible deposit |
+| Nonprofits | Your mission needs a clearer donation, volunteer, and event path. | Donate, volunteer, event signup, sponsor credibility, impact story | Nonprofit Growth Proof + donation/event setup |
+| Local Services | Turn local searches into calls, bookings, and jobs. | Click-to-call, booking, reviews, service areas, before/after gallery | Claim your local business proof |
+| Professional Services | One serious client can pay for the whole system. | Authority homepage, consultation CTA, lead magnet, booking, credibility blocks | Professional Authority Site |
+
 | | 1. Church Connect | 2. Nonprofits | 3. Local Service | 4. Professional |
 |---|---|---|---|---|
 | **Persona** | Pastor / ministry leader / trustee board of a small-to-mid church | ED / founder / volunteer coordinator of a community org | Owner-operator (lawn, cleaning, trainers, barbers, detailers, contractors) | Tax prep, consultants, realtors, insurance, coaches |
@@ -245,15 +263,58 @@ The revenue core. **Design principle: orchestration layer over existing componen
    13. Lessons learned → skills     │
 ```
 
-**Generator boundary contract (the swappable seam):**
+**Orchestration ownership (patched per 2026-06-11 review — this is a hard boundary):**
 
-```
-generate_proof(lead, campaign, scan_findings) → ProofArtifact
-  ProofArtifact = { pages[], dist_path, preview_url, build_log,
-                    cost_estimate, generator_id, generator_version }
+> **Site Studio / fam-hub is a generation worker. The FAMtastic Proof Engine is the orchestrator.**
+
+The Proof Engine — never the factory — owns: campaign selection, lead classification, scan facts, lead scoring, proof-level decision, claim strategy, personalization rules, outreach rules, QA gates, event tracking, lesson capture, and skill creation. The factory executes proof/site generation behind the boundary and decides nothing about the funnel.
+
+**Generator boundary contract (the swappable seam — strengthened):**
+
+```text
+ProofRequest = {
+  lead_snapshot,                            // frozen copy — generator never reads live DB
+  campaign_key,
+  campaign_config_version,                  // pin: which config produced this proof
+  proof_level: L1 | L2 | L3,
+  scan_findings,
+  source_facts_allowed_for_personalization, // ONLY these facts may appear in copy
+  required_blocks,                          // campaign-mandated sections
+  forbidden_claims,                         // e.g. invented metrics, guarantees
+  asset_policy,                             // logo rule, image sourcing
+  tone_policy,
+  claim_cta_policy,
+  expiration_policy,
+  qa_policy,                                // which checklist version gates this proof
+  requester_agent,
+  request_reason
+}
+
+generate_proof(ProofRequest) → ProofArtifact
+
+ProofArtifact = {
+  proof_id,
+  generator_id, generator_version,
+  campaign_config_version,                  // echoed for audit
+  pages, page_map,
+  dist_path, preview_url,
+  proof_manifest,                           // machine-readable: blocks present, assets used
+  source_facts_used,                        // must be ⊆ source_facts_allowed
+  claims_made,                              // every claim, traceable to a fact
+  cta_map,
+  qa_checklist_result,
+  screenshot_paths, mobile_snapshot_paths,
+  build_log,
+  cost_estimate, cost_actual,
+  rollback_or_delete_path,
+  regeneration_reason,                      // null on first build
+  failure_reason_enum                       // null on success
+}
 ```
 
-v1 implementation calls the factory headlessly: write `spec.json` from lead + scan data → invoke build → `runPostProcessing()` (mandatory — no bypass) → deploy `dist/` to the previews host → return URL. Anything that satisfies the contract can replace it later without touching the engine.
+The engine validates `source_facts_used ⊆ source_facts_allowed_for_personalization` and `claims_made` against `forbidden_claims` **before** the proof can reach `qa_review` — fabrication is caught structurally, not by vibes.
+
+v1 implementation calls the factory headlessly: write `spec.json` from the ProofRequest → invoke build → `runPostProcessing()` (mandatory — no bypass) → deploy `dist/` to the previews host → screenshot pass → return the ProofArtifact. Anything that satisfies the contract can replace it later without touching the engine.
 
 **Proof depth ladder (cost control):**
 
@@ -265,7 +326,19 @@ Cold outreach gets L1 with "want the full preview?" as the click incentive — p
 
 **State machine (Proof):** `queued → generating → qa_review → ready → sent → clicked → claimed | expired | rejected`. Every transition logged with timestamp, agent, model/tool, cost — this powers §17 and §20's observability.
 
-**AI quality review (step 6):** fixed binary checklist, NOT a 0–10 vibe score (standing lesson from cerebrum): correct business name everywhere / no placeholder text / no broken images / logo rule respected (real or styled text, never placeholder) / mobile renders / claims match scan facts / campaign-appropriate tone / CTA + claim link present / loads under threshold. Any failure → flagged to Fritz. Pass → eligible for send (Wave 1–2: Fritz approves all sends; Wave 3: auto-send above confidence threshold, per Fritz's F-then-A answer).
+**AI quality review (step 6):** fixed binary checklist, NOT a 0–10 vibe score (standing lesson from cerebrum): correct business name everywhere / no placeholder text / no broken images / logo rule respected (real or styled text, never placeholder) / mobile renders / claims match scan facts / campaign-appropriate tone / CTA + claim link present / loads under threshold. Any failure → flagged to Fritz. Pass → eligible for send under the **calibration-first review model** (patched per 2026-06-11 review; preserves Fritz's F-then-A answer without making him the bottleneck):
+
+```text
+Wave 1: Fritz reviews the first 5 sends per campaign + high-value church/system
+        leads + anything flagged by QA, compliance, sensitive-language,
+        uncertainty, or high-risk gates. AI quality review handles normal
+        cases after calibration.
+Wave 2: Fritz reviews flags/exceptions only. Auto-send stays blocked until
+        graduation criteria (§36) are met.
+Wave 3: Auto-send for L1 low-risk proofs that pass all gates and meet the
+        confidence threshold. Church/nonprofit may keep a stricter review
+        cycle longer if the data shows risk.
+```
 
 ---
 
@@ -446,7 +519,7 @@ Track the **business build itself**, not just leads — using the `Workstream` o
 | **Lead Scorer** | Signals → 0–100 + reason codes | findings → score | T2 Haiku structured, **batched** | static weight formula | Low (batched) | Score inflation/drift vs outcomes | Score-vs-outcome audit monthly |
 | **Campaign Strategist** | Tune angles/offers from results | weekly metrics → config changes | T3 | T4 escalation if stuck | Low-med | Overreacting to small samples | Config changes approved by Fritz |
 | **Proof Generator** | Drive generator boundary | lead + campaign → ProofArtifact | **T1 site factory** (flat-rate Claude sub — near-zero marginal cost) | retry, then park | Low marginal; **subscription-cap risk** | Cap exhaustion silently stalling the queue | QA gate downstream |
-| **Outreach Writer** | Personalized, signal-grounded drafts | lead + proof + findings → email draft | T3 Sonnet | T2 Haiku for L1 teasers | Med (per-draft Sonnet) | Generic/mismatched pitch (the credibility killer) | First 50 sends: all; then flagged only |
+| **Outreach Writer** | Personalized, signal-grounded drafts | lead + proof + findings → email draft | T3 Sonnet | T2 Haiku for L1 teasers | Med (per-draft Sonnet) | Generic/mismatched pitch (the credibility killer) | First 5 per campaign (calibration); then flags + high-value only |
 | **Compliance/Deliverability Checker** | Seven-gate enforcement | draft + contact → pass/park | T2 Haiku checklist + deterministic checks | deterministic-only | Low | False-pass (worst case: compliance incident) | Every parked draft |
 | **Quality Reviewer** | Binary proof checklist (§10) | ProofArtifact → pass/flag | T3 Sonnet (vision-capable pass on screenshots later) | T2 checklist | Med | Rubber-stamping broken proofs | Every flag |
 | **Pricing/Package Recommender** | Map proof+signals → offer | lead + proof → package rec | T2 structured | rules table | Low | Under-pricing systems deals | Custom quotes always |
@@ -465,7 +538,7 @@ Track the **business build itself**, not just leads — using the `Workstream` o
 
 **Failure-mode notes baked in from the buglog (recurring classes):** cap-aware routing (subscription limits silently flipping to paid is the #1 historical failure — every T1 agent must 429→explicit fallback, never silent billing); prompt/template drift (skeletons and checklists injected literally into prompts, never "use good judgment"); async lifecycle races (one proof job = one owned directory + state row; no concurrent writes to a lead); classifier misroutes (default to the cheap/safe intent; sampled audits).
 
-**Autonomy posture (per §Automation Philosophy):** agents run the loop end-to-end; Fritz touches: high-value leads, QA flags, sensitive church/nonprofit language, payment issues, custom replies, uncertainty parks. Start gated (Fritz approves all sends), earn auto-send (§36 criteria).
+**Autonomy posture (per §Automation Philosophy, calibration-first):** agents run the loop end-to-end; Fritz touches: the first 5 sends per campaign (calibration), high-value leads, QA flags, sensitive church/nonprofit language, payment issues, custom replies, uncertainty parks. AI review handles normal cases after calibration; auto-send is earned per §36 criteria.
 
 ---
 
@@ -585,7 +658,7 @@ Verdicts: **USE NOW** / **PILOT** (narrow test) / **DEFER** / **AVOID**.
 
 ## 22. Google Ecosystem Integration Plan
 
-- **Maps/Places API** — lead discovery backbone (campaign category × geography queries; ratings/review-count/website-presence fields feed scoring directly). USE NOW.
+- **Maps/Places API** — lead discovery backbone (campaign category × geography queries; ratings/review-count/website-presence fields feed scoring directly). First-market queries target the Treasure Coast/Palm Beach primary geography (§32), expanding to Broward/Miami-Dade, then Florida statewide. USE NOW.
 - **Google Business Profile signals** — scanner checks GBP existence/completeness/photos/hours; "bad or missing GBP" is a top qualified-lead signal and a concrete outreach hook. USE NOW (via Places data + page fetch; the GBP management API needs client authorization — that's a *fulfillment upsell*, not a scanning tool).
 - **Search Console + GA4** — installed on famtasticdesigns.com at launch; offered to every client site as part of "Grow It" tracking. USE NOW.
 - **Google Sheets** — optional mirror of the leads table for Fritz's mobile review convenience (one-way export; the DB stays canonical). PILOT.
@@ -654,7 +727,7 @@ Resend (key exists — verify domain on day 1) carries all automated mail:
 - **CAN-SPAM posture (US B2B cold email is lawful when compliant):** accurate header/from, non-deceptive subject, physical postal address in footer, visible working unsubscribe honored immediately and permanently, no harvested-via-prohibited-means lists. **Assumption A4:** US-only outreach at MVP — if Canada/EU prospects enter, CASL/GDPR consent rules are stricter; geography filter until then.
 - **Truthfulness rule (stronger than the law):** every personalization claim traceable to a scan finding; no fake personalization, no mismatched pitch, no invented metrics ("could help increase giving" framing, never "will increase giving 40%").
 - **Volume discipline:** warm-up curve (§14); per-domain daily caps; stop-loss rule — bounce > 5% or complaint > 0.1% in any 24h window → engine auto-pauses outreach and pages Fritz.
-- **Sensitive-category handling:** church/nonprofit drafts always pass the Brand Guardian's respect check; during Waves 1–2, all church sends human-reviewed.
+- **Sensitive-category handling:** church/nonprofit drafts always pass the Brand Guardian's respect check; calibration-first review (§10) applies — Fritz reviews the first 5 per campaign plus all high-value church/system leads and every sensitive-language flag; church/nonprofit may keep a stricter review cycle longer if the data shows risk.
 - **Channels:** email only at MVP. No SMS (TCPA risk), no automated DMs, no scraping behind logins.
 - **The seven send-gates (§14) are the enforcement mechanism — compliance is code, not intention.**
 
@@ -674,7 +747,7 @@ Resend (key exists — verify domain on day 1) carries all automated mail:
 
 **Option B (maximum-reuse, fastest):** factory-built static showroom (skip React; Tier-1 immersion only via GSAP/CSS + one vanilla Three.js hero) on Netlify + same backend. Choose if Wave-1 speed matters more than the full showroom — the proof engine doesn't care which shell fronts it. **Option C (enterprise-bridge):** Drupal/Next hybrid leveraging Fritz's Drupal depth (an old Drupal `site-famtastic-designs` exists in `sites/`) — explicitly **rejected for MVP** (slowest to immersive), but Drupal remains the multi-tier factory's enterprise lane later.
 
-**Recommendation: A for the showroom, with B's Tier-1-first sequencing inside it** (static-looking immersive pages ship first; the 3D entry scene lands Wave 2 without blocking revenue).
+**Decision (confirmed by 2026-06-11 review): Architecture: Option A. Launch discipline: Option B.** Build on the proper Next.js/component foundation from the start — no throwaway landing page — but ship Tier-1 immersion first (motion, scroll, workflow visuals, proof cards, dashboard visuals) and never wait on the full 3D entry scene before collecting deposits. The R3F scene matures inside the Option-A foundation while revenue runs. The MVP remains a **FAMtastic Designs Foundation MVP**, not a landing page.
 
 ## 29. Recommended Repos / Plugins / Frameworks / APIs
 
@@ -710,12 +783,20 @@ Resend (key exists — verify domain on day 1) carries all automated mail:
 
 Goal: **a deposit is possible by day 7** without waiting for any Wave-2 infrastructure.
 
+**Claim Path QA (hard gate, patched per 2026-06-11 review):** no proof outreach sends until this full path works end-to-end, verified by walking it:
+
+```text
+proof page → claim page → pay/book → confirmation → onboarding/start → admin status change → Fritz notification
+```
+
+Required conversion pieces (launch-blocking, mirrored in §36): trust/credibility block ("Why FAMtastic / Why Fritz / Why this is real"); clear claim terms; scope limits; revision limits; what happens after deposit; what is/isn't included; book-a-call path for churches/nonprofits/professionals; reply routing to a monitored inbox; payment fallback clarity (Cash App rail visible); compliant footer with physical-mailing-address placeholder; privacy/terms basics; success confirmation flow after payment.
+
 | Day | Ship | Detail |
 |---|---|---|
 | **1** | Infrastructure truths | D1 domain/DNS confirmed; Resend domain verification started; email identities created; GoDaddy DB evaluated (§23); Stripe account check (D4) |
-| **2** | Claimable shell v0 | One FAMtastic-grade landing (factory-built is fine): definition, proof promise, /preview form (can post to email initially), pricing, claim CTAs → Stripe Payment Links; deploy |
-| **3** | Proof batch #1 | Hand-pick 10 leads × 4 campaigns (Maps + Fritz's local knowledge, incl. the few personal-network candidates); factory generates L1 proofs; private slugs on previews host |
-| **4** | Outreach batch #1 | Personalized drafts (signal-grounded), 7-gate checked, **Fritz approves each**, ≤ 20 sends from previews@; track via Resend |
+| **2** | Claimable shell + **claim path QA** | Preview/landing shell live; pricing/claim options visible; trust + claim-terms/scope blocks live; Stripe Payment Link or fallback live; booking link live; post-payment confirmation live; onboarding/start form (or temporary intake) live; admin status change or manual status tracker live; support/reply inbox confirmed; **full claim path walked and passing** |
+| **3** | Proof batch #1 | Hand-pick 10 leads × 4 campaigns (Maps + Fritz's local knowledge in the Treasure Coast/Palm Beach primary geography, incl. the few personal-network candidates); factory generates L1 proofs; private slugs on previews host |
+| **4** | Outreach batch #1 | Personalized drafts (signal-grounded), 7-gate checked, **calibration review: Fritz approves the first 5 per campaign**, ≤ 20 sends from previews@; track via Resend |
 | **5** | Proof batch #2 + follow-up plumbing | 10–20 more proofs; click-tracking reviewed; reply handling (fritz@) |
 | **6** | Iterate on signal | Double down on whichever campaign clicked/replied; revise angles; second sends within warm-up caps |
 | **7** | Close + assess | Call every replier; claim pages exercised; first deposit target; scorecard v0 → Week-2 plan adjusted |
@@ -737,7 +818,7 @@ Fill-in-later items, each with its decision point:
 - [ ] Resend domain verification status for famtasticdesigns.com
 - [ ] Physical mailing address for CAN-SPAM footer
 - [ ] Calendar/booking tool for call-first paths (Cal.com free tier suggested)
-- [ ] Outreach geography radius (suggested: metro Atlanta + drivable, then statewide) — A4 US-only stands
+- [x] Outreach geography (corrected per 2026-06-11 review — A4 US-only stands). **Primary:** Port St. Lucie, Fort Pierce, Stuart, Treasure Coast, Palm Beach County. **Secondary:** Fort Lauderdale, Broward County, Miami, Miami-Dade County. **Expansion:** Florida statewide; Atlanta/Southeast only with a specific strategic reason later. Rationale: this is the region Fritz can credibly understand, reference, and serve.
 - [ ] Exact starter-package "includes" lists per campaign (draft in §15/§29 files)
 - [ ] Old logo file location + color extraction for the temporary text treatment
 - [ ] How Fritz prefers to review parks/flags — default: notify@ email digest + admin queue (mobile-friendly)
@@ -760,16 +841,16 @@ Fill-in-later items, each with its decision point:
 
 ## 34. Files to Create Next
 
-Order matters — each unblocks the next build step:
+Order matters — each unblocks the next build step. (Sequence revised per the 2026-06-11 patch prompt: agents first, then workflow/campaign methodology, then build specs. These are build-ready specifications, not generic docs.)
 
-1. **`docs/famtastic-designs/design.md`** — brand definition, FAM logic, temp logo treatment, colors, type, spacing, motion rules, 3D/immersive rules, component styles, CTA rules, accessibility. *Unblocks showroom build.*
-2. **`docs/famtastic-designs/pages.md`** — site map, page templates, route classes, page-creation rules, campaign page pattern, private preview pattern, SEO rules, content hierarchy. *Unblocks page production.*
-3. **`docs/famtastic-designs/backend.md`** — full schemas for §13 objects, API endpoints, status machines, admin requirements, sync design. *Unblocks API + DB build.*
-4. **`docs/famtastic-designs/email-system.md`** — identities, DNS records, templates, sequences, webhook handling, suppression logic, warm-up schedule. *Unblocks day-1 DNS work.*
-5. **`docs/famtastic-designs/campaigns.md`** — the four campaign configs in full (personas, signals, angles, offers, templates). *Unblocks proof batch #1.*
-6. **`docs/famtastic-designs/agents.md`** — §19 expanded to full per-agent specs (all 13 attributes), prompts, checklists. *Unblocks engine v1.*
-7. **`docs/famtastic-designs/workflows.md`** — lead→proof→outreach→claim→onboarding→fulfillment→lessons workflows as step-by-step specs with owners and gates. *Unblocks orchestration code.*
-8. **`docs/famtastic-designs/vendor-capability-matrix.md`** — §20/§21 expanded with live pricing/quota notes per provider; updated by the Cost Auditor. 
+1. **`docs/famtastic-designs/agents.md`** — ✅ **created with this patch.** Every agent as an operating unit (mission, decision authority, methodology, budgets, retry/escalation rules, logs, metrics) + the shared AgentTaskLog schema. *Unblocks engine v1.*
+2. **`docs/famtastic-designs/workflows.md`** — the 13 minimum workflows (lead discovery, lead scoring, presence scan, proof generation, proof QA, claim path QA, outreach send, reply handling, payment/deposit, onboarding, fulfillment, weekly campaign review, lesson-to-skill promotion), each with trigger, steps, responsible agent, inputs/outputs, decision gates, failure handling, logs, cost controls, human review triggers, completion criteria. *Unblocks orchestration code.*
+3. **`docs/famtastic-designs/campaigns.md`** — the four campaign configs in full (personas, signals, sharpened angles from §9, offers, templates, geography). *Unblocks proof batch #1.*
+4. **`docs/famtastic-designs/backend.md`** — full schemas for §13 objects + AgentTaskLog, API endpoints, status machines, admin requirements, sync design. *Unblocks API + DB build.*
+5. **`docs/famtastic-designs/email-system.md`** — identities, DNS records, templates, sequences, webhook handling, suppression logic, warm-up schedule. *Unblocks day-1 DNS work.*
+6. **`docs/famtastic-designs/design.md`** — brand definition, FAM logic, temp logo treatment, colors, type, spacing, motion rules, 3D/immersive rules, component styles, CTA rules, accessibility. *Unblocks showroom build.*
+7. **`docs/famtastic-designs/pages.md`** — site map, page templates, route classes, page-creation rules, campaign page pattern, private preview pattern, SEO rules, content hierarchy. *Unblocks page production.*
+8. **`docs/famtastic-designs/vendor-capability-matrix.md`** — §20/§21 expanded with live pricing/quota notes per provider; updated by the Cost Auditor.
 9. **`docs/famtastic-designs/native-feature-experiments.md`** — §35 experiment cards with results columns.
 10. **`docs/famtastic-designs/roadmap.md`** — §30/§31 as the living tracked version, tied to workstreams.
 
@@ -801,14 +882,23 @@ Each experiment: hypothesis → method → success criterion → decision.
 
 | Launch-blocking | Non-blocking (ship without, track as known gaps) |
 |---|---|
-| Deposit path works end-to-end | 3D entry scene polish |
-| Proof links private, fast, mobile-correct | Proof gallery breadth |
-| 7 send-gates enforced in code | Auto-send (earned later) |
-| SPF/DKIM/DMARC verified | Admin UI polish (tables suffice) |
-| Suppression/unsubscribe honored | Onboarding nudge automation |
-| QA checklist gating sends | Monthly client report automation |
-| Lighthouse perf ≥ 80 mobile on public marketing pages (§6) | Lighthouse on admin/preview routes |
-| Metrics: deposits/clicks/forms per campaign | Cross-provider routing experiments complete |
+| Deposit path works end-to-end (full claim path QA, §31) | 3D entry scene polish |
+| Booking link works for churches/nonprofits/professionals | Proof gallery breadth |
+| Claim terms / scope limits / revision limits / what's included visible | Auto-send (earned later) |
+| Trust/credibility block ("Why FAMtastic / Why Fritz / Why this is real") | Admin UI polish (tables suffice) |
+| Proof links private, fast, mobile-correct | Onboarding nudge automation |
+| 7 send-gates enforced in code | Monthly client report automation |
+| SPF/DKIM/DMARC verified | Cross-provider routing experiments complete |
+| Suppression/unsubscribe honored | Full client portal |
+| Physical mailing address placeholder/solution in compliant footer | Lighthouse on admin/preview routes |
+| Privacy/terms basics published | |
+| Reply routing to a monitored inbox | |
+| Payment fallback clarity (Cash App rail visible) | |
+| Post-payment success confirmation flow | |
+| QA checklist gating sends | |
+| Core metrics captured: deposits/clicks/forms per campaign | |
+| Mobile-friendly review queue or review digest for Fritz | |
+| Lighthouse perf ≥ 80 mobile on public marketing pages (§6) | |
 
 **Metrics that prove the plan is working (30-day bars):** ≥ 2 deposits; proof click rate ≥ 8% of delivered; reply rate ≥ 3%; form completions ≥ 10; cost per proof < $0.50 API-lane marginal; one campaign showing clear lead over others (the engine's whole point).
 
@@ -818,13 +908,13 @@ Each experiment: hypothesis → method → success criterion → decision.
 
 | Fritz reviews manually | Automatically evaluated |
 |---|---|
-| First 50 outreach sends, all church sends | QA checklist on every proof |
+| First 5 sends per campaign (calibration), high-value church/system leads, sensitive-language flags | QA checklist on every proof |
 | Flagged proofs + parked drafts | 7 send-gates |
 | Custom quotes + prospect replies | Bounce/complaint thresholds + auto-pause |
 | Weekly scorecard read + kill/scale calls | Cost per proof + cap utilization alerts |
 | Skill promotions | Lesson capture triggers |
 
-**Auto-send graduation gate (the F→A transition Fritz chose):** across the last 100 Fritz-reviewed drafts, rejection rate < 2% AND zero rejections in the most recent 25 AND clean deliverability for 14 days → auto-send enabled for L1 proofs scoring confidence ≥ threshold; church/nonprofit remain human-reviewed for another cycle.
+**Auto-send graduation gate (the F→A transition Fritz chose, adapted to calibration-first review):** 100 AI-QA-passed sends with (a) Fritz rejection rate < 5% on everything he did review (calibration sets + flags + spot-checks), (b) zero rejections in his most recent 25 reviews, and (c) clean deliverability for 14 days → auto-send enabled for L1 low-risk proofs meeting the confidence threshold; church/nonprofit may keep a stricter review cycle longer if the data shows risk.
 
 ## 37. Final Recommendation
 
@@ -834,7 +924,7 @@ The brutal truth applied to this plan: the single biggest risk is not technical 
 
 Three commitments this plan asks of Fritz:
 
-1. **Approve sends daily during Waves 1–2** (15 minutes, mobile, from the queue) — the engine generates; the human gate earns the trust that unlocks auto-send.
+1. **Work the exception queue daily during Waves 1–2** (10 minutes, mobile) — calibrate the first 5 sends per campaign, then only flags, high-value leads, and parks. The engine generates; the calibrated AI gate earns the trust that unlocks auto-send.
 2. **Let the data pick the winning campaign** — gut says churches; the engine will confirm or redirect by day 30. Both outcomes are wins because four lanes run in parallel.
 3. **Feed the loop** — every close, every miss, every lesson goes into the system. The compounding (skills, vertical knowledge, proof gallery, routing data) is what turns a freelance hustle into the FAMtastic operating system.
 
