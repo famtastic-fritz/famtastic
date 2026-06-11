@@ -1,3 +1,7 @@
+## 2026-06-11 — FAMtastic Hosting cart + admin CMS deploy
+
+Three parallel feature streams merged into main and deployed to production: GoDaddy shopper/order API integration (non-blocking shopper account creation on register, orders API wired), shopping cart with guest session persistence (server-side cart storage, add/remove/clear/update endpoints, CartButton and CartDrawer Svelte components), and admin CMS product and content editor (product CRUD with wholesale/retail pricing, content block editor, image upload). Merge conflict in register.ts resolved by combining the real bcrypt+MySQL implementation with the new GoDaddy shopper wiring; conflict in admin/products/index.ts resolved by aligning column names to the actual schema (wholesale_price, retail_price). Build clean, deployed via rsync, entry.mjs paths patched, Node restarted. Smoke tests: homepage 200, /api/cart 200 with JSON, /api/customer/products 302 to login (correct — auth-gated). Deferred: GoDaddy API credentials not yet set on server (shopper creation will log warnings but not fail registration), PayPal/Stripe webhook wiring not started, no process supervisor for Node crash recovery.
+
 ## 2026-06-10 — FAMtastic Hosting auth + dashboard wire (phase 1 complete)
 
 Wired complete customer authentication, session management, and dashboard for the GoDaddy reseller facelift. Phase 1 delivers: signup/login/logout API endpoints, protected dashboard, session storage schema, and end-to-end test suite. Auth endpoints currently use mock session handling (TODO: bcrypt + real MySQL integration). All routes return 200/201 with JSON responses and set httpOnly cookies. Astro configured for hybrid mode (static marketing pages + server-side API/dashboard). Build passes. Committed to GitHub. Pushed to DEPLOY-STATE.md + vault session record. Next: integrate bcrypt + MySQL for production authentication.
@@ -180,3 +184,15 @@ price column names corrected (_cents suffix); admin user seeded; all 10 E2E test
 pass via https://famtastichosting.com. Deferred: real GoDaddy order provisioning,
 godaddy_shopper_id linking for per-customer billing/domains/hosting, Node restart
 supervisor (manual restart required after crash).
+
+## 2026-06-11 — PayPal sandbox checkout and admin fulfillment queue
+
+Built the full PayPal checkout flow: cart → create-order → PayPal JS SDK
+approval → capture-order → order-confirmation page. Orders are written to
+the local DB (status='paid', godaddy_order_id='PAYPAL-{id}') and the cart
+is cleared on capture. Admin orders page now shows a fulfillment queue for
+paid PayPal orders with a "Mark Fulfilled" button. Fixed two deployment
+bugs: PHP proxy.php was following Node's auth 302 redirects (follow_location
+must be 0), and Node binds to IPv6 by default (must set host to 127.0.0.1
+in entry.mjs args). Checkout (/checkout) and order-confirmation routes added
+to .htaccess. PayPal live mode deferred — sandbox only for now.
