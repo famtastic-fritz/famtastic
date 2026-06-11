@@ -6778,6 +6778,26 @@ This reads `.env` without shell parsing and handles spaces in values correctly.
 
 The server's bash profile runs `tput` which fails without a terminal (exits non-zero). Multi-command SSH strings reliably return exit 255 and never run. Workaround: write a `/bin/sh` script, scp it, and execute with `/bin/sh script.sh`. Simple one-liners (`ssh host "echo hello"`) work fine.
 
+### FAMtastic Hosting cPanel SSR deploy contract (2026-06-11)
+
+For `~/famtastic/famtastic-sites/famtastic-hosting`, the live cPanel deploy must treat Apache-served files and the Node runtime as two different sync targets.
+
+- `deploy.sh` root rsync to `/home/nineoo/public_html/famtastichosting.com/` must use `--delete` but exclude `site/` so static deploys never wipe the Node runtime directory.
+- The runtime lives at `/home/nineoo/public_html/famtastichosting.com/site/` and must receive: `dist/`, `package.json`, `package-lock.json`, `.env`, `scripts/migrate-db.js`, and root `start.sh`.
+- `start.sh` is a required runtime artifact and must be source-controlled. It launches `/home/nineoo/.nvm/versions/node/v20.20.2/bin/node --env-file=/home/nineoo/public_html/famtastichosting.com/site/.env /home/nineoo/public_html/famtastichosting.com/site/dist/server/entry.mjs` after killing any prior `entry.mjs` process.
+- Do NOT launch `server.mjs` on this host. The proven path is to patch generated `dist/server/entry.mjs` after every build and run that file directly.
+- Post-build patch sequence on the server is load-bearing: rewrite local `file:///Users/famtasticfritz/.../dist/...` paths to `file:///home/nineoo/public_html/famtastichosting.com/site/dist/...`, then patch `"host": false` → `"host": "127.0.0.1"` and `"port": 4321` → `"port": 3001` in `dist/server/entry.mjs` before restart.
+- Smoke-test proof for a healthy deploy: homepage 200, `/api/cart` 200 with JSON, and `POST /api/checkout/create-order` returns a JSON 400 (`No cart session found`) rather than a 5xx when no cart cookie exists.
+
+### MariaDB JSON migration compatibility on cPanel (2026-06-11)
+
+The cPanel host MariaDB rejects `CAST(... AS JSON)` inside `INSERT ... SELECT` migrations.
+
+- In `scripts/migrate-db.js`, rebuild steps for `checkout_snapshots` and `orphan_payments` must use `JSON_VALID(items_json)` guards instead of `CAST(items_json AS JSON)`.
+- Safe pattern for required JSON columns: empty/invalid → `JSON_ARRAY()`.
+- Safe pattern for optional JSON columns: empty/invalid → `NULL`.
+- This is the difference between a successful guest-checkout migration and a hard SQL syntax failure during recovery.
+
 ### DashboardLayout vs AuthLayout
 
 Pre-auth pages (login, register) must use `AuthLayout`, not `DashboardLayout`. `DashboardLayout` renders `PageShell.svelte` which includes the full sidebar + topbar. On login pages this shows broken navigation and exposed GoDaddy phone number before users are authenticated.
