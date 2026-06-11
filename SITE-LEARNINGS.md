@@ -6653,3 +6653,81 @@ GoDaddy order IDs by the `FAM-` prefix.
 Price columns are `wholesale_price_cents` and `retail_price_cents` (integers
 in cents). Any code using `wholesale_price` or `retail_price` (no suffix)
 will fail with "Unknown column" from MySQL.
+
+### PayPal checkout flow — server-side only, capture before DB write
+
+PayPal JS SDK v2 is used in sandbox mode. The full flow:
+
+1. `/checkout` (SSR page, prerender=false) — reads cart from `fam_cart_session`
+   cookie, renders order summary + PayPal Buttons widget
+2. `POST /api/checkout/create-order` — reads cart, calls PayPal Orders API
+   `POST /v2/checkout/orders` with CAPTURE intent, returns `paypalOrderId`
+3. PayPal JS SDK handles the customer approval flow in the iframe
+4. `POST /api/checkout/capture-order` — captures the approved PayPal order
+   (`POST /v2/checkout/orders/{id}/capture`), writes orders rows to DB
+   (one per product, `status='paid'`, `godaddy_order_id='PAYPAL-{id}'`),
+   clears the cart. If DB write fails, logs error but does NOT fail the
+   customer response — payment is already captured.
+5. Browser redirects to `/order-confirmation?orderId=&amount=&paypal=`
+
+**Key files:**
+- `src/lib/paypal/client.ts` — `getAccessToken()`, `createPayPalOrder(cents)`,
+  `capturePayPalOrder(id)` — all server-side only, reads PAYPAL_CLIENT_ID /
+  PAYPAL_SECRET / PAYPAL_ENV from env
+- `src/pages/api/checkout/create-order.ts`
+- `src/pages/api/checkout/capture-order.ts`
+- `src/pages/checkout.astro`
+- `src/pages/order-confirmation.astro`
+
+**PayPal env switching:** Set `PAYPAL_ENV=live` in .env and provide live
+credentials in PAYPAL_CLIENT_ID / PAYPAL_SECRET. The API base switches
+automatically between `https://api-m.sandbox.paypal.com` and `https://api-m.paypal.com`.
+
+**Admin fulfillment queue:**
+- `GET /api/admin/local-orders?status=paid` — lists paid orders awaiting
+  provisioning (requires admin auth)
+- `PUT /api/admin/local-orders` body `{orderId, status: 'fulfilled'|'cancelled'}`
+- `/admin/orders` shows fulfillment queue at top with "Mark Fulfilled" button
+  per order; the row fades out and removes on success
+
+### Apache proxy.php must set follow_location=0
+
+PHP's HTTP stream context defaults to `follow_location: 1`, which causes
+`file_get_contents` to silently follow Node's 302 redirects (auth redirects).
+When it follows, it receives both the 302 Location header AND the final 200
+page, then forwards both to Apache — causing Apache to emit a 500 double-
+redirect error.
+
+**Fix:** Always set `'follow_location' => 0, 'max_redirects' => 0` in the
+HTTP context options in proxy.php. This causes Node's 302 to be forwarded
+to the browser directly, which follows it properly.
+
+### Node binds to IPv6 by default on this cPanel host
+
+When `host: false` (the Astro Node adapter default), the server binds to
+`::1` (IPv6 loopback). The PHP proxy uses `http://127.0.0.1:3001` (IPv4),
+so connection is refused.
+
+**Fix:** Set `"host": "127.0.0.1"` in the `_args` object in `entry.mjs`
+after each build. This forces IPv4 binding and the PHP proxy can connect.
+
+### entry.mjs patch sequence after every build
+
+Every `npm run build` generates `dist/server/entry.mjs` with build-machine
+file:// URLs and Astro defaults. Before deploying, apply these patches:
+
+```bash
+# 1. Replace build-machine client path with server file:// URL
+sed -i '' 's|"client": "file:///Users/famtasticfritz.*dist/client/"|"client": "file:///home/nineoo/public_html/famtastichosting.com/site/dist/client/"|' dist/server/entry.mjs
+
+# 2. Set server path (was empty string after first patch)
+sed -i '' 's|"server": "",|"server": "file:///home/nineoo/public_html/famtastichosting.com/site/dist/server/",|' dist/server/entry.mjs
+
+# 3. Bind to IPv4 (default is false which binds to IPv6 ::1)
+sed -i '' 's|"host": false|"host": "127.0.0.1"|' dist/server/entry.mjs
+
+# 4. Set port to 3001 (proxy.php target)
+sed -i '' 's|"port": 4321|"port": 3001|' dist/server/entry.mjs
+```
+
+Then rsync entry.mjs to the server, or include it in the full dist/ rsync.
