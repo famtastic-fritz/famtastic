@@ -50,13 +50,13 @@ Surfaces: claude-code, codex, gemini-cli, cowork, shay-subagents
 
 ## Current state (generated — do not hand-edit)
 
-Generated at: 2026-06-04T15:20:59.586Z
+Generated at: 2026-06-08T23:09:00.164Z
 Active plans (13): studio-workbench-foundation, plan-task-run-intelligence, build-intent-fulfillment-trace, plan_2026_05_05_ops_workspace_gui, plan_2026_05_05_platform_site_promotion, plan_2026_05_05_chat_capture_learn_optimize, plan_2026_05_05_agent_coordination, plan_2026_05_05_workbench_per_page_design, mission-control-command-center, shay-omnipresent-assistant, fritz-companion-app, financial-agents, autonomous-content-engine
 Drift: 0 item(s) — run `node scripts/plans/audit-all.js`
 Recent sessions:
+- 2026-06-05 — Command-center event spine (one board, fleet-wide) [docs]
 - 2026-06-02 — Odysseus integration + brain-wiring made universal + dead-hook fix [docs]
 - 2026-06-02 — Brain Sync Contract + session audit + humanize-writing skill [docs]
-- 2026-06-02 — Autonomous content engine built (Fritz's hands-off revenue pick)
 
 ## Recall path — how to be context-aware before acting
 
