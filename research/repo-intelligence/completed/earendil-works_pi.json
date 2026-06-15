@@ -1,0 +1,45 @@
+{
+  "url": "https://github.com/earendil-works/pi",
+  "owner": "earendil-works",
+  "repo": "pi",
+  "analyzed_at": "2026-06-01 21:46:53",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_backend",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 5873643,
+    "JavaScript": 355446,
+    "CSS": 22724,
+    "Shell": 18867,
+    "C": 6941,
+    "HTML": 2225,
+    "PowerShell": 1670,
+    "Batchfile": 338
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 95,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "AI agent toolkit: coding agent CLI, unified LLM API, TUI & web UI libraries, Slack bot, vLLM pods",
+  "stars": 58635,
+  "language": "TypeScript",
+  "topics": [],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:46:50Z",
+  "open_issues": 48,
+  "forks": 7021
+}

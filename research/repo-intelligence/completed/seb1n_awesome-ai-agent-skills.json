@@ -1,0 +1,25 @@
+{
+  "url": "https://github.com/seb1n/awesome-ai-agent-skills",
+  "owner": "seb1n",
+  "repo": "awesome-ai-agent-skills",
+  "analyzed_at": "2026-06-01 21:49:55",
+  "tech_stack": {
+    "detected_categories": []
+  },
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {
+    "score": 0,
+    "reasons": [],
+    "tier": "LOW"
+  },
+  "description": "",
+  "stars": 0,
+  "language": "Unknown",
+  "topics": [],
+  "license": "Unknown",
+  "last_updated": "",
+  "open_issues": 0,
+  "forks": 0
+}

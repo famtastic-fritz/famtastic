@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/multica-ai/andrej-karpathy-skills",
+  "owner": "multica-ai",
+  "repo": "andrej-karpathy-skills",
+  "analyzed_at": "2026-06-01 21:46:48",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": "A single CLAUDE.md file to improve Claude Code behavior, derived from Andrej Karpathy's observations on LLM coding pitfalls.",
+  "stars": 164842,
+  "language": null,
+  "topics": [],
+  "error": "'NoneType' object has no attribute 'get'"
+}

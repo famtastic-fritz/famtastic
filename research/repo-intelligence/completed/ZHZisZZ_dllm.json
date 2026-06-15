@@ -1,0 +1,38 @@
+{
+  "url": "https://github.com/ZHZisZZ/dllm",
+  "owner": "ZHZisZZ",
+  "repo": "dllm",
+  "analyzed_at": "2026-06-01 21:45:43",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 948847,
+    "Shell": 2251
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 50,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "dLLM: Simple Diffusion Language Modeling",
+  "stars": 2547,
+  "language": "Python",
+  "topics": [
+    "discrete-diffusion-models",
+    "llm",
+    "nlp"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-01T22:48:40Z",
+  "open_issues": 16,
+  "forks": 268
+}

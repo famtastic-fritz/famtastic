@@ -1,0 +1,34 @@
+{
+  "url": "https://github.com/openbmb/minicpm",
+  "owner": "openbmb",
+  "repo": "minicpm",
+  "analyzed_at": "2026-06-01 21:50:10",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Jupyter Notebook": 121382,
+    "Python": 109756,
+    "Shell": 8461
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 40,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "MiniCPM5-1B: A SOTA 1B on-device LLM, small yet powerful.",
+  "stars": 9332,
+  "language": "Jupyter Notebook",
+  "topics": [],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T00:42:02Z",
+  "open_issues": 16,
+  "forks": 609
+}

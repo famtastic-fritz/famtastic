@@ -1,0 +1,40 @@
+{
+  "url": "https://github.com/FareedKhan-dev/train-llm-from-scratch",
+  "owner": "FareedKhan-dev",
+  "repo": "train-llm-from-scratch",
+  "analyzed_at": "2026-06-01 21:43:19",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Jupyter Notebook": 152690,
+    "Python": 38141
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 40,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "A straightforward method for training your LLM, from downloading data to generating text.",
+  "stars": 3736,
+  "language": "Jupyter Notebook",
+  "topics": [
+    "gemini",
+    "large-language-models",
+    "llm",
+    "openai",
+    "training",
+    "transformers"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:42:06Z",
+  "open_issues": 6,
+  "forks": 518
+}

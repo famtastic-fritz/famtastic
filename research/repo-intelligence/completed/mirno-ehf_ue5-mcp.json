@@ -1,0 +1,28 @@
+{
+  "url": "https://github.com/mirno-ehf/ue5-mcp?fbclid=Iwb21leASIzYVjbGNrBIjNPWV4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHih8BckHDmUpoBUNM9nVHHBr4A2Bj6DuJghgQvOf8pipUN2mIMBXUIqqOtlE_aem_nmup5sI7gh50UFyhW3f0fA",
+  "owner": "mirno-ehf",
+  "repo": "ue5-mcp",
+  "analyzed_at": "2026-06-01 21:49:45",
+  "tech_stack": {
+    "detected_categories": []
+  },
+  "dependencies": [],
+  "languages": {
+    "message": "API rate limit exceeded for 108.215.202.240. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
+    "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 0,
+    "reasons": [],
+    "tier": "LOW"
+  },
+  "description": "",
+  "stars": 0,
+  "language": "Unknown",
+  "topics": [],
+  "license": "Unknown",
+  "last_updated": "",
+  "open_issues": 0,
+  "forks": 0
+}

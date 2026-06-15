@@ -1,0 +1,42 @@
+{
+  "url": "https://github.com/deanpeters/Product-Manager-Skills",
+  "owner": "deanpeters",
+  "repo": "Product-Manager-Skills",
+  "analyzed_at": "2026-06-01 21:45:22",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Shell": 108534,
+    "Python": 102962
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 70,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Product Management skills framework built on battle-tested methods for Claude Code, Cowork, Codex, and AI agents.",
+  "stars": 4677,
+  "language": "Shell",
+  "topics": [
+    "ai-agents",
+    "ai-product-management",
+    "claude-skills",
+    "pm-frameworks",
+    "product-management"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:24:06Z",
+  "open_issues": 1,
+  "forks": 598
+}

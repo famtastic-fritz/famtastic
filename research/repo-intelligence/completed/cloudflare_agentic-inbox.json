@@ -1,0 +1,38 @@
+{
+  "url": "https://github.com/cloudflare/agentic-inbox",
+  "owner": "cloudflare",
+  "repo": "agentic-inbox",
+  "analyzed_at": "2026-06-01 21:49:20",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 320671,
+    "CSS": 484
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 95,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "A self-hosted email client with an AI agent, running entirely on Cloudflare Workers",
+  "stars": 3800,
+  "language": "TypeScript",
+  "topics": [],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:47:40Z",
+  "open_issues": 38,
+  "forks": 492
+}

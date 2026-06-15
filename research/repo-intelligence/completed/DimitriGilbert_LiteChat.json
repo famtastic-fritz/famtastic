@@ -1,0 +1,49 @@
+{
+  "url": "https://github.com/DimitriGilbert/LiteChat",
+  "owner": "DimitriGilbert",
+  "repo": "LiteChat",
+  "analyzed_at": "2026-06-01 21:47:47",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mobile"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 3500550,
+    "CSS": 51905,
+    "Shell": 36379,
+    "JavaScript": 18404,
+    "HTML": 2785,
+    "Ruby": 2548,
+    "PHP": 2364,
+    "Python": 1964
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 65,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "A modern, local first AI chat app for your browser. ",
+  "stars": 52,
+  "language": "TypeScript",
+  "topics": [
+    "agents",
+    "ai",
+    "chat-application",
+    "llm",
+    "local-llm",
+    "pwa"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-05-20T07:58:07Z",
+  "open_issues": 18,
+  "forks": 10
+}

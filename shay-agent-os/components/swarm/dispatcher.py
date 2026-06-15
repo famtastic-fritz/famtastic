@@ -32,6 +32,7 @@ class DispatchTask:
     tier: str = "medium"         # medium | complex (simple/qwen dropped Phase 1)
     timeout: float = 90.0
     context: Dict[str, Any] = field(default_factory=dict)
+    skill_file: Optional[str] = None # Path to SKILL.md for dynamic injection
 
 
 @dataclass

@@ -1,6 +1,6 @@
 ---
 title: Buglog Lessons (mirrored for Shay)
-synced: 2026-06-01 06:44:19.908272
+synced: 2026-06-15 15:16:44.099057
 source: .wolf/buglog.json
 tags:
 - buglog
@@ -10,42 +10,6 @@ permalink: shay-memory/lessons-mirror/buglog-mirror
 ---
 
 # Buglog — last 30 lessons (mirrored into Shay's vault)
-
-## #232 (2026-05-31)
-**Issue:** [planning] build_app: Promote Providers screen to live CRUD via keychain IPC. Type scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=["src/renderer/src/screens/Providers/index.tsx(193,6): error TS17008: JSX element 'div' has no corresponding closing tag.", "src/renderer/src/screens/Providers/in
-**Root cause:** typecheck: cross-file contract or a runtime render issue the brain couldn't resolve
-**Fix:** narrow the manifest, add grounded context, or split into smaller builds
-**Tags:** ['build-app', 'multi-file', 'typecheck', 'planning', 'self-learning']
-
-## #233 (2026-05-31)
-**Issue:** [planning] build_app: Create CaptureInbox screen reading the Shay-Memory/inbox cap scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=["shell exit 2: \n> shay-desktop@0.4.3 typecheck:node\n> tsc --noEmit -p tsconfig.node.json --composite false\n\n\n> shay-desktop@0.4.3 typecheck:web\n> tsc --noE
-**Root cause:** typecheck: cross-file contract or a runtime render issue the brain couldn't resolve
-**Fix:** FIXED: generated preload bindings for all 140 typed methods — 96 bound to real main channels (83 invoke + 13 events), 44 graceful stubs for unimplemented backends. QA gate (.ralph/qa_gate.mjs contract-check + visual_qa.py vision judge, npm run qa) now PASSES: 0 missing, 0 console errors. Remaining: real backends for the 44 stubbed features (tracked) + cosmetic CSS.
-**Tags:** ['build-app', 'multi-file', 'typecheck', 'planning', 'self-learning']
-
-## #234 (2026-05-31)
-**Issue:** [planning] build_app: Promote Providers screen to live CRUD via keychain IPC. Type scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=["src/renderer/src/screens/Providers/index.tsx(210,6): error TS17008: JSX element 'div' has no corresponding closing tag.", 'src/renderer/src/screens/Providers/in
-**Root cause:** typecheck: cross-file contract or a runtime render issue the brain couldn't resolve
-**Fix:** narrow the manifest, add grounded context, or split into smaller builds
-**Tags:** ['build-app', 'multi-file', 'typecheck', 'planning', 'self-learning']
-
-## #235 (2026-05-31)
-**Issue:** [planning] build_app: Create src/renderer/src/screens/AgentMonitor/index.tsx showi scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=["shell exit 2: \n> shay-desktop@0.4.3 typecheck:node\n> tsc --noEmit -p tsconfig.node.json --composite false\n\n\n> shay-desktop@0.4.3 typecheck:web\n> tsc --noE
-**Root cause:** typecheck: cross-file contract or a runtime render issue the brain couldn't resolve
-**Fix:** narrow the manifest, add grounded context, or split into smaller builds
-**Tags:** ['build-app', 'multi-file', 'typecheck', 'planning', 'self-learning']
-
-## #236 (2026-05-31)
-**Issue:** [planning] build_app: Create Diagnostics screen showing system health; register ro scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=["shell exit 2: \n> shay-desktop@0.4.3 typecheck:node\n> tsc --noEmit -p tsconfig.node.json --composite false\n\n\n> shay-desktop@0.4.3 typecheck:web\n> tsc --noE
-**Root cause:** typecheck: cross-file contract or a runtime render issue the brain couldn't resolve
-**Fix:** narrow the manifest, add grounded context, or split into smaller builds
-**Tags:** ['build-app', 'multi-file', 'typecheck', 'planning', 'self-learning']
-
-## #231 ()
-**Issue:** Electron app: 'Unable to load preload script ... module not found: node:fs' — window.hermesAPI/shay never exposed at runtime
-**Root cause:** preload/domains.ts imports buildPreloadBindings (value) from main/domains/* which co-locate node:fs main-process code; electron-vite bundles node:fs into the sandboxed preload (sandbox:true), which cannot load it. Latent since the domains refactor (Desk Phase 5); undetected because nothing launched the real app — typecheck/build/jsdom all pass.
-**Fix:** sandbox:false on main window (contextIsolation kept). TODO clean: split buildPreloadBindings into fs-free preload-safe modules, restore sandbox:true. Found by the Phase 2 Playwright electron launch smoke (.ralph/electron-smoke.mjs).
-**Tags:** ['electron', 'preload', 'sandbox', 'node:fs', 'ipc-bridge', 'phase2']
 
 ## #232 ()
 **Issue:** window.hermesAPI undefined at runtime; renderer uses it 190x
@@ -190,3 +154,39 @@ permalink: shay-memory/lessons-mirror/buglog-mirror
 **Root cause:** build_app's per-file context window is too small for full screens; typecheck/build don't catch missing-runtime-IPC-handler; only a navigated render+console-error sweep does
 **Fix:** For real screen builds, spawn a full-context Claude build-agent (full repo read, gate-before-commit) — it shipped 5 screens clean where build_app blocked 5; QA = navigated Playwright-electron sweep (domain-first nav) + console/page-error capture + vision judge; this caught the models:list mismatch; Vision model over-flags ellipsis truncation — weight functionality (0 console errors) over vision style nitpicks; fix shared nav/label width once
 **Tags:** ['build-agent', 'qa', 'ipc', 'do-not-repeat', 'desktop', 'planning', 'self-learning']
+
+## #shay-compression-ctx-floor (2026-06-06T01:04:02.158420)
+**Issue:** Failed to initialize agent: Auxiliary compression model qwen3:14b context (40,960) is below the minimum 64,000 required for compression.
+**Root cause:** Shay auto-summarizes/compresses context when the window fills using an AUX model. The configured compression model qwen3:14b is served by Ollama at its default num_ctx 40,960, which is under the compressor hard floor of 64,000 → agent init aborts. Recurs because ~/.shay/config.yaml is runtime (not git-tracked) and resets on nuke/reinstall, dropping any prior override.
+**Fix:** Point compression at a big-context local model already installed: set auxiliary.compression.model: hermes3:latest (131K native ctx) and context_length: 131072. Robust alternative (keep qwen3): set auxiliary.compression.context_length: 65536 AND ensure Ollama serves qwen3 with num_ctx>=65536. Durable restore snippet tracked at shay-agent-os/config/shay-aux-compression.fix.yaml; apply after any ~/.shay reset.
+**Tags:** ['shay', 'compression', 'context-window', 'aux-model', 'config', 'recurring', 'ollama']
+
+## #bug-274 (2026-06-08T13:57:39.448685Z)
+**Issue:** Streaming failed after partial delivery, not retrying: The read operation timed out (Shay gateway, glm-5.1 via Z.AI). Long answers truncated to a few-hundred-char stub.
+**Root cause:** Stream httpx read timeout is a flat 120s for cloud providers (SHAY_STREAM_READ_TIMEOUT default, run_agent.py:7774). GLM-5.1 is a reasoning model; on long outputs the gap between streamed tokens exceeds 120s, triggering ReadTimeout. On stream timeout the code logs 'not retrying' and does NOT fail over to fallback_providers (codex/ollama/gemini), so one slow reasoning gap kills the whole turn with no recovery. Worse for longer answers.
+**Fix:** Immediate: raise read timeout for the glm provider (per-provider request timeout override, or SHAY_STREAM_READ_TIMEOUT=600 in the gateway launchd env) + restart gateway. Durable: on stream stall, fail over to next provider instead of 'not retrying'; size read/idle timeout to provider class (reasoning models get a longer idle budget) and detect true stalls via heartbeat, not a flat read timeout.
+**Tags:** ['shay', 'gateway', 'streaming', 'timeout', 'glm', 'z.ai', 'failover', 'reasoning-model', 'brain-router']
+
+## #bug-275 (2026-06-08T14:26:53.919966Z)
+**Issue:** web_extract LLM summarization failed: Gemini HTTP 404 models/glm-5.1 is not found for API version v1beta (43 occurrences).
+**Root cause:** auxiliary.web_extract was provider:auto with empty model. 'auto' resolved to the Gemini endpoint but passed the global default model id 'glm-5.1', which is not a Gemini model -> 404. Same latent risk in other auto+empty entries (vision needs a vision model so keep auto; kanban_decomposer/profile_describer share the risk).
+**Fix:** Pinned auxiliary.web_extract to local ollama hermes3:latest (base_url http://localhost:11434/v1), matching compression/session_search. Zero-cost, no endpoint/key mismatch. Restart gateway to apply.
+**Tags:** ['shay', 'config', 'auxiliary', 'web_extract', 'gemini', '404', 'model-provider-mismatch', 'ollama']
+
+## #bug-276 (2026-06-08T22:08:05.960879Z)
+**Issue:** agent.auxiliary_client: resolve_provider_client: unknown provider 'ollama' | root: Fallback to ollama failed: provider not configured. Whole agent call dies after paid providers exhausted (glm 429, groq 401, cerebras 400).
+**Root cause:** model_aliases (local-olm-*) and fallback_providers referenced provider:ollama, but 'ollama' was never defined in the top-level providers: dict. resolve_provider_client resolves named providers via _get_named_custom_provider which reads providers:; no built-in ollama in PROVIDER_REGISTRY (resolve_provider('ollama')->'custom'), so without a providers: entry it logs 'unknown provider' and returns (None,None).
+**Fix:** Added ollama to providers: in ~/.shay/config.yaml (base_url http://localhost:11434/v1, key_env OLLAMA_API_KEY, api_mode chat_completions). load_config caches on (mtime,size) so the edit auto-invalidates — no gateway restart. Ollama needs no key; resolver substitutes 'no-key-required'. Verified end-to-end through Shay's resolved client.
+**Tags:** ['shay', 'config', 'ollama', 'fallback', 'provider-resolution', 'unknown-provider', 'local-model']
+
+## #bug-277 (2026-06-08T22:08:05.960879Z)
+**Issue:** HTTP 400: messages.N.assistant.reasoning_content: property 'messages.N.assistant.reasoning_content' is unsupported (provider=custom base_url=https://api.cerebras.ai/v1 model=llama-3.3-70b).
+**Root cause:** reasoning_content carries chain-of-thought and is REQUIRED by thinking providers (GLM/z.ai, DeepSeek V4, Kimi) which 400 if it's omitted on replayed tool-call turns, so Shay bakes it into persisted history. Strict OpenAI-compat backends (Cerebras, Groq, Mistral, Fireworks) reject the unknown field with 400. Existing strip only fired for non-string values; no provider-aware strip existed. Cerebras resolves via the generic 'custom' provider path, so name-only detection misses it.
+**Fix:** Added AIAgent._provider_rejects_reasoning_content() (matches provider name {cerebras,groq,mistral,fireworks} AND base_url host). Strip reasoning_content for those providers at both api_message build sites after _copy_reasoning_content_for_api. Works during fallback (self.provider/base_url updated in place; api_messages rebuilt each attempt). 83 reasoning/custom-provider tests pass; thinking-provider echo-back unaffected.
+**Tags:** ['shay', 'run_agent', 'reasoning_content', 'cerebras', 'groq', 'strict-openai-compat', '400', 'thinking-mode']
+
+## #bug-278 (2026-06-08T22:42:56.063386Z)
+**Issue:** HTTP 400 exceed_context_size_error: request (12690 tokens) exceeds the available context size (4096 tokens) ... n_ctx:4096. Then: 'Context length exceeded: max compression attempts (3) reached.' Shay stepped down 131072->128000 (too slowly) and gave up.
+**Root cause:** Ollama.app launches llama-server with -c 4096 (its default) regardless of the model's trained max. OLLAMA_CONTEXT_LENGTH was unset. Shay's query_ollama_num_ctx reads the GGUF max (131072) from /api/show, NOT the runtime -c, so Shay thought it had 131k, never compressed below 4k, and every real prompt (Shay's SOUL+PERSONA baseline alone is ~7k tokens) 400'd. Same root cause made qwen3 'feel too small' earlier — it was the 4096 ceiling, not the 41k model limit. Hardware limit: 16GB RAM caps a local 8B context to ~16-32k; 131k KV would need ~17GB.
+**Fix:** Enabled flash-attn + q8_0 KV-cache quantization on the Ollama server (launchctl setenv OLLAMA_FLASH_ATTENTION=1, OLLAMA_KV_CACHE_TYPE=q8_0) so 32k KV fits in ~2GB instead of ~4GB; restarted Ollama.app. Created model variants hermes3-32k / deepseek-r1-32k / qwen3-32k with 'PARAMETER num_ctx 32768' baked in (Modelfile FROM base — shares weights). num_ctx in the Modelfile makes BOTH Ollama load at 32k AND query_ollama_num_ctx report 32768 (it reads Modelfile params), so Shay's compression threshold is correct for the brain AND every fallback. Pointed config model.default + fallback_providers at the -32k variants and set model.context_length:32768. Verified: llama-server loads -c 32768 + q8_0 K/V + flash-attn on; a 15k-token prompt that previously 400'd now succeeds. NOTE: the KV-quant env is launchctl-session-scoped (resets on reboot); persistence via a login LaunchAgent was proposed but NOT installed (needs Fritz approval). num_ctx variants DO persist.
+**Tags:** ['shay', 'ollama', 'context-window', 'num_ctx', 'kv-cache-quant', 'q8_0', '16gb-ram', 'config', '400', 'exceed_context_size']

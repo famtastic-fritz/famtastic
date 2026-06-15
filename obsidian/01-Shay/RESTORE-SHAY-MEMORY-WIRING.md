@@ -1,3 +1,9 @@
+---
+title: RESTORE-SHAY-MEMORY-WIRING
+type: note
+permalink: famtastic/01-shay/restore-shay-memory-wiring
+---
+
 # RESTORE Shay Memory Wiring — executable handoff (2026-06-04)
 
 > Hand this to Shay herself OR a local Claude Code session **on Fritz's Mac**. It re-registers the

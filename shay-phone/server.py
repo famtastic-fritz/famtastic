@@ -27,6 +27,7 @@ import time
 import glob
 import shutil
 import tempfile
+import sqlite3
 import subprocess
 import threading
 import urllib.request
@@ -53,6 +54,48 @@ WEBPUSH_SUBS = Path.home() / ".shay" / "webpush-subs.json"  # device subscriptio
 EVENTS_LOG = Path(os.environ.get(
     "SHAY_EVENTS_LOG", str(Path.home() / ".shay" / "events.jsonl")
 )).expanduser()
+
+# ---------------------------------------------------------------------------
+# Kanban dispatch feature flag (STEP 1, STEP 2, STEP 3).
+# OFF (default) → legacy jobs.json codepaths, unchanged behavior.
+# ON  (KANBAN_DISPATCH=1) → dispatch to `shay kanban create`, read from
+#     kanban.db, and run the task_events → events.jsonl bridge thread.
+# Read once at import; runtime flip requires restart (matches the spec's
+# "cutover behind a feature flag" framing).
+# ---------------------------------------------------------------------------
+KANBAN_DISPATCH = os.environ.get("KANBAN_DISPATCH") == "1"
+
+# Path to the kanban SQLite DB. Default: ~/.shay/kanban.db (verified live, WAL).
+KANBAN_DB = Path(os.environ.get(
+    "KANBAN_DB", str(Path.home() / ".shay" / "kanban.db")
+))
+
+
+class _KanbanUnavailable(RuntimeError):
+    """Raised when `shay kanban create` fails or returns malformed output.
+
+    Caught by the /api/dispatch route handler and translated to HTTP 503.
+    Carrying a structured exception (rather than returning a phantom dict) ensures
+    the route layer can decide the response status without inspecting magic
+    sentinel fields.
+    """
+
+
+# Map kanban lane → legacy phone status for the Tasks tab.
+# Phone UI badges know: queued | running | completed | failed | cancelled.
+# Reviewer decision E1: keep the lossy map for STEP 1-3; native kanban statuses
+# are also exposed as `kanban_status` for a future UI rev.
+_KANBAN_STATUS_MAP = {
+    "triage":    "queued",
+    "todo":      "queued",
+    "scheduled": "queued",
+    "ready":     "queued",
+    "running":   "running",
+    "review":    "running",
+    "done":      "completed",
+    "blocked":   "failed",
+    "archived":  "cancelled",
+}
 
 
 def emit_event(etype: str, message: str, severity: str = "info",
@@ -658,24 +701,175 @@ def _save_jobs(jobs: list) -> None:
     JOBS_FILE.write_text(json.dumps(jobs, indent=2))
 
 
+# ---------------------------------------------------------------------------
+# Kanban helpers (STEP 1 + STEP 2)
+# ---------------------------------------------------------------------------
+
+def _kanban_create(goal: str, jid: str, priority: int, policy: str) -> dict:
+    """Shell out to `shay kanban create` and return the parsed --json task.
+
+    Raises `_KanbanUnavailable` on any failure. Caller MUST catch and translate
+    to HTTP 503. We deliberately do NOT return None + phantom record (Reviewer
+    bug #3): a phantom dict has no backing store and vanishes on next refresh.
+
+    v2 changes from v1:
+    - `--body` is no longer passed (Reviewer bug #5). The body column is the
+      task spec read by workers and rendered in board card previews; overloading
+      it with JSON metadata pollutes both. Policy is preserved on the phone
+      response only.
+    """
+    cmd = [
+        "shay", "kanban", "create", goal,
+        "--idempotency-key", jid,
+        "--created-by", "phone",
+        "--priority", str(priority),
+        "--json",
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        raise _KanbanUnavailable(f"kanban subprocess failed: {exc}") from exc
+    if proc.returncode != 0:
+        raise _KanbanUnavailable(
+            f"kanban create rc={proc.returncode}: {proc.stderr.strip()[:200]}"
+        )
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise _KanbanUnavailable(
+            f"kanban create returned non-JSON: {proc.stdout[:200]}"
+        ) from exc
+
+
+def _kanban_task_to_job(row: sqlite3.Row) -> dict:
+    """Translate a kanban tasks row to the legacy job dict shape so the
+    existing phone UI doesn't need a rewrite. Carries the native kanban
+    status as `kanban_status` for callers that want it."""
+    kt_status = row["status"]
+    return {
+        "id": row["idempotency_key"] or row["id"],  # phone jid, fallback to kanban id
+        "kanban_task_id": row["id"],
+        "goal": row["title"],
+        "policy": None,                              # not tracked natively in kanban
+        "priority": int(row["priority"] or 0),
+        "status": _KANBAN_STATUS_MAP.get(kt_status, kt_status),
+        "kanban_status": kt_status,
+        "created": int(row["created_at"] or 0),
+        "started": int(row["started_at"]) if row["started_at"] else None,
+        "completed": int(row["completed_at"]) if row["completed_at"] else None,
+        "output": row["result"],
+        "progress": [],                              # kanban uses task_events, not inline progress
+    }
+
+
+def _kanban_list_jobs(limit: int = 50) -> list:
+    """Read tasks from kanban.db newest-first. Excludes archived (Reviewer
+    bug #7 — list view hides cancelled to match kanban UX; direct lookups
+    still resolve archived). Opens a fresh connection per call (SQLite is
+    fast for <10k rows; avoids cross-thread lifetime issues).
+
+    Default limit raised to 50 (per swarm task spec) to better surface the
+    kanban backlog in the phone Tasks tab; the public list_jobs() wrapper
+    keeps its 20 default for back-compat with callers that don't pass one.
+    """
+    if not KANBAN_DB.exists():
+        return []
+    conn = sqlite3.connect(str(KANBAN_DB), timeout=3)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT id, title, status, priority, created_at, started_at, "
+            "completed_at, result, idempotency_key "
+            "FROM tasks WHERE status != 'archived' "
+            "ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [_kanban_task_to_job(r) for r in rows]
+
+
+def _kanban_get_job(jid: str) -> dict | None:
+    """Look up by phone jid (idempotency_key) first, then by kanban task id.
+    Does NOT exclude archived — direct lookups must resolve cancelled jobs so
+    the phone history view keeps working (Reviewer bug #7 / option b).
+
+    CRITICAL FIX from v1 (Reviewer bug #1):
+      v1:  WHERE idempotency_key = ? OR id = ? AND status != 'archived'
+      v2:  WHERE (idempotency_key = ? OR id = ?)
+    SQL binds AND tighter than OR, so the v1 form would parse as
+    `idempotency_key = ? OR (id = ? AND status != 'archived')`, returning
+    archived tasks matched by idempotency_key alone. We no longer filter
+    archived here at all (see bug #7), which sidesteps the precedence bug
+    entirely. The parenthesized form is preserved in the SQL as a guardrail
+    for future editors.
+    """
+    if not KANBAN_DB.exists():
+        return None
+    conn = sqlite3.connect(str(KANBAN_DB), timeout=3)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT id, title, status, priority, created_at, started_at, "
+            "completed_at, result, idempotency_key "
+            "FROM tasks WHERE (idempotency_key = ? OR id = ?) "
+            "LIMIT 1",
+            (jid, jid),
+        ).fetchone()
+    finally:
+        conn.close()
+    return _kanban_task_to_job(row) if row else None
+
+
 def dispatch_job(goal: str, policy: str = "balanced", priority: int = 1) -> dict:
-    """Create a new job entry, append to jobs.json, return it."""
-    with _jobs_lock:
-        jobs = _load_jobs()
+    """Create a new job. Branches on KANBAN_DISPATCH.
+
+    - OFF (default): legacy jobs.json path, unchanged behavior. Jid regenerated
+      inside the lock on microsecond collision (Reviewer bug #10).
+    - ON: shells out to `shay kanban create`; phone jid becomes the idempotency
+      key. On kanban failure, raises `_KanbanUnavailable` — the route handler
+      is responsible for translating to HTTP 503 (Reviewer bug #3 / E4).
+
+    Timestamps are coerced to int to match the kanban schema and avoid int/float
+    drift in JSON consumers (Reviewer bug #9).
+    """
+    if KANBAN_DISPATCH:
         jid = datetime.now().strftime("%Y%m%d%H%M%S%f")
-        job = {
-            "id": jid,
+        kt = _kanban_create(goal, jid, priority, policy)  # raises on failure
+        emit_event(
+            "task_start", f"Job dispatched to kanban: {goal[:120]}",
+            severity="info", agent_id="fritz", job_id=jid,
+            kanban_task_id=kt.get("id"), policy=policy,
+        )
+        return {
+            "id": jid,                          # phone-side ID (stable, /api/job?id=…)
+            "kanban_task_id": kt.get("id"),     # kanban task ID (e.g. t_286a97d5)
             "goal": goal,
-            "policy": policy,
-            "priority": priority,
-            "status": "queued",       # queued | running | completed | failed | cancelled
-            "created": time.time(),
+            "policy": policy,                   # preserved phone-side only
+            "priority": int(kt.get("priority") or priority),
+            "status": "queued",                 # logical view; kanban status is `ready`
+            "created": int(kt.get("created_at") or time.time()),
             "started": None,
             "completed": None,
             "output": None,
-            "progress": [],           # [{message, percent, ts}]
+            "progress": [],
         }
-        jobs.insert(0, job)           # newest first
+
+    # ---- Legacy path (unchanged semantics; collision-safe jid) ----
+    with _jobs_lock:
+        jobs = _load_jobs()
+        # Regenerate jid on collision so two same-microsecond dispatches can't
+        # produce two jobs with identical ids (Reviewer bug #10).
+        existing_ids = {j.get("id") for j in jobs}
+        jid = datetime.now().strftime("%Y%m%d%H%M%S%f")
+        while jid in existing_ids:
+            jid = datetime.now().strftime("%Y%m%d%H%M%S%f")
+        job = {
+            "id": jid, "goal": goal, "policy": policy, "priority": priority,
+            "status": "queued", "created": int(time.time()),
+            "started": None, "completed": None, "output": None, "progress": [],
+        }
+        jobs.insert(0, job)
         _save_jobs(jobs)
     emit_event("task_start", f"Job dispatched from phone: {goal[:120]}",
                severity="info", agent_id="fritz", job_id=jid, policy=policy)
@@ -683,14 +877,18 @@ def dispatch_job(goal: str, policy: str = "balanced", priority: int = 1) -> dict
 
 
 def list_jobs(limit: int = 20) -> list:
-    """Return up to `limit` jobs, newest first."""
+    """Return up to `limit` jobs, newest first. Branches on KANBAN_DISPATCH."""
+    if KANBAN_DISPATCH:
+        return _kanban_list_jobs(limit)
     with _jobs_lock:
         jobs = _load_jobs()
     return jobs[:limit]
 
 
 def get_job(jid: str) -> dict | None:
-    """Return one job by id, or None if not found."""
+    """Return one job by id, or None if not found. Branches on KANBAN_DISPATCH."""
+    if KANBAN_DISPATCH:
+        return _kanban_get_job(jid)
     with _jobs_lock:
         jobs = _load_jobs()
     for j in jobs:
@@ -1288,6 +1486,174 @@ def _handle_research_scope_answer(ask: dict, answer: str) -> None:
         job_complete(jid, "Rejected by Fritz.", status="cancelled")
 
 
+# ---------------------------------------------------------------------------
+# Kanban task_events → events.jsonl bridge (STEP 3).
+# When KANBAN_DISPATCH=1, the kanban dispatcher writes lifecycle events to
+# the task_events table. This tailer polls every ~5s for new rows, translates
+# them to the events.jsonl schema (already consumed by emit_event / read_feed
+# / the dashboard Activity feed), and appends. This is what keeps the phone
+# Feed tab lit when jobs move through the kanban lifecycle.
+# ---------------------------------------------------------------------------
+
+_KANBAN_BRIDGE_INTERVAL = 5  # seconds; balances responsiveness vs. SQLite load
+
+_KANBAN_BRIDGE_STATE_PATH = Path("~/.shay/kanban-bridge-state.json").expanduser()
+
+# task_events.kind -> (events.jsonl type, severity). Source of truth: every
+# `_append_event` call in `kanban_db.py` plus every direct INSERT in
+# `plugin_api.py` (Reviewer bug #2). The v1 map was largely fabricated; the
+# keys `started`, `failed`, `progress`, `timeout` do not exist in the live
+# emission path. Verified kinds (alphabetical) — DO NOT DEVIATE:
+_KANBAN_KIND_MAP = {
+    "created":                              ("task_start",    "info"),
+    "spawned":                              ("task_start",    "info"),    # worker process spawned = real "run begin"
+    "claimed":                              ("log",           "info"),
+    "reclaimed":                            ("log",           "info"),
+    "scheduled":                            ("log",           "info"),
+    "promoted":                             ("log",           "info"),
+    "assigned":                             ("log",           "info"),
+    "heartbeat":                            ("log",           "info"),    # noisy; consider suppressing in v3
+    "commented":                            ("log",           "info"),
+    "edited":                               ("system",        "info"),
+    "reprioritized":                        ("system",        "info"),
+    "linked":                               ("log",           "info"),
+    "unlinked":                             ("log",           "info"),
+    "decomposed":                           ("system",        "info"),
+    "completed":                            ("task_complete", "success"),
+    "gave_up":                              ("task_fail",     "error"),   # terminal failure after retries exhausted
+    "timed_out":                            ("task_fail",     "error"),
+    "blocked":                              ("task_fail",     "warn"),
+    "unblocked":                            ("system",        "info"),
+    "archived":                             ("system",        "info"),
+    "respawn_guarded":                      ("task_fail",     "warn"),
+    "claim_extended":                       ("log",           "info"),
+    "claim_rejected":                       ("log",           "warn"),
+    "completion_blocked_hallucination":     ("task_fail",     "error"),
+    "suspected_hallucinated_references":    ("log",           "warn"),
+    "protocol_violation":                   ("task_fail",     "error"),
+    "stale":                                ("system",        "info"),
+    "tip_scratch_workspace":                ("log",           "info"),
+    "attachment_removed":                   ("system",        "info"),
+    "status":                               ("system",        "info"),    # generic status transitions from dashboard API
+}
+# TOTAL: 30 entries (Reviewer-verified)
+
+
+def _load_bridge_state() -> int:
+    """Read persisted last_id from the state file.
+
+    Returns 0 on any error (first run, missing file, corrupt JSON).
+    Reviewer bug #12 / decision E6: persists the bridge cursor across
+    phone-server restarts so the feed doesn't get a duplicate burst of
+    the last N events every time the server bounces.
+    """
+    try:
+        return int(json.loads(_KANBAN_BRIDGE_STATE_PATH.read_text()).get("last_id", 0))
+    except Exception:
+        return 0
+
+
+def _save_bridge_state(last_id: int) -> None:
+    """Persist last_id; best-effort write, swallow errors.
+
+    Failure to persist is non-fatal — at worst the next restart re-emits
+    the last batch (Reviewer bug #12).
+    """
+    try:
+        _KANBAN_BRIDGE_STATE_PATH.write_text(json.dumps({"last_id": last_id}))
+    except Exception:
+        pass
+
+
+def _kanban_event_tailer() -> None:
+    """Background thread: poll task_events for rows newer than last seen id,
+    translate, and append to events.jsonl via emit_event().
+
+    State (last_id) is persisted to ~/.shay/kanban-bridge-state.json so a
+    phone restart does NOT re-emit the last 50 events as duplicates
+    (Reviewer bug #12 / E6). On first run (no state file) we prime with
+    the most recent 50 events; subsequent restarts resume cleanly.
+
+    Connection lifetime: opened + closed per tick via try/finally so a
+    transient SQLITE_BUSY on execute/fetchall cannot leak the fd
+    (Reviewer bug #6). `conn = None` initialization guarantees the
+    finally block never sees an unbound name.
+
+    Gates (Reviewer bug #8 / #13):
+      - Thread is started only when KANBAN_DISPATCH AND KANBAN_DB.exists()
+      - Loop body re-checks KANBAN_DB.exists() each tick so the thread
+        bails cleanly to sleep if the DB is moved/deleted mid-flight.
+    """
+    last_id = _load_bridge_state()
+
+    # First-run priming: if state file doesn't exist, jump to MAX(id)-50 so
+    # the feed isn't empty. Subsequent runs use the persisted cursor.
+    if last_id == 0 and KANBAN_DB.exists():
+        conn = None
+        try:
+            conn = sqlite3.connect(str(KANBAN_DB), timeout=3)
+            row = conn.execute(
+                "SELECT COALESCE(MAX(id), 0) - 50 FROM task_events"
+            ).fetchone()
+            last_id = max(0, row[0]) if row else 0
+        except Exception as exc:
+            print(f"[shay-phone] kanban bridge prime error: {exc}", file=sys.stderr)
+            last_id = 0
+        finally:
+            if conn is not None:
+                conn.close()
+
+    while True:
+        # Re-check DB existence; bail to sleep if removed mid-flight
+        # (Reviewer bug #13).
+        if not KANBAN_DB.exists():
+            time.sleep(_KANBAN_BRIDGE_INTERVAL)
+            continue
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(KANBAN_DB), timeout=3)
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT id, task_id, run_id, kind, payload, created_at "
+                "FROM task_events WHERE id > ? ORDER BY id ASC LIMIT 200",
+                (last_id,),
+            ).fetchall()
+        except Exception as exc:
+            print(f"[shay-phone] kanban bridge read error: {exc}", file=sys.stderr)
+            time.sleep(_KANBAN_BRIDGE_INTERVAL)
+            continue
+        finally:
+            if conn is not None:
+                conn.close()
+
+        for r in rows:
+            last_id = r["id"]
+            kind = r["kind"] or "log"
+            etype, severity = _KANBAN_KIND_MAP.get(kind, ("log", "info"))
+            # Resolve a friendly message: try payload JSON, fall back to kind.
+            msg = f"Task {r['task_id']} {kind}"
+            try:
+                payload = json.loads(r["payload"]) if r["payload"] else {}
+                if isinstance(payload, dict):
+                    msg = payload.get("message") or payload.get("title") or msg
+            except json.JSONDecodeError:
+                pass
+            emit_event(
+                etype, msg, severity=severity,
+                agent_id="kanban",
+                task_id=r["task_id"],
+                run_id=r["run_id"],
+                kanban_event_id=r["id"],
+                kanban_kind=kind,
+            )
+
+        # Persist cursor after each batch so restart resumes cleanly
+        # (Reviewer bug #12 / E6).
+        _save_bridge_state(last_id)
+        time.sleep(_KANBAN_BRIDGE_INTERVAL)
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):  # quieter logs; never log query strings w/ token
         pass
@@ -1485,13 +1851,27 @@ class Handler(BaseHTTPRequestHandler):
             goal = (payload.get("goal") or "").strip()
             if not goal:
                 return self._send(400, {"error": "goal required"})
-            job = dispatch_job(
-                goal=goal,
-                policy=payload.get("policy", "balanced"),
-                priority=int(payload.get("priority", 1)),
-            )
+            try:
+                job = dispatch_job(
+                    goal=goal,
+                    policy=payload.get("policy", "balanced"),
+                    priority=int(payload.get("priority", 1)),
+                )
+            except _KanbanUnavailable as exc:
+                # 503 = service unavailable; phone UI handles non-200.
+                # We do NOT return a phantom "failed" job (Reviewer bug #3).
+                print(f"[shay-phone] dispatch failed: {exc}", file=sys.stderr)
+                return self._send(503, {
+                    "error": "kanban unavailable",
+                    "detail": str(exc)[:300],
+                })
             return self._send(200, job)
         if path == "/api/job/progress":
+            if KANBAN_DISPATCH:
+                return self._send(410, {
+                    "error": "kanban mode active",
+                    "hint": "use `shay kanban comment <task_id>` or wait for v3 pass-through",
+                })
             # Agent-side: append progress message to a running job
             jid = payload.get("id", "")
             message = payload.get("message", "")
@@ -1499,6 +1879,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "id and message required"})
             return self._send(200, job_progress(jid, message, payload.get("percent")))
         if path == "/api/job/complete":
+            if KANBAN_DISPATCH:
+                return self._send(410, {
+                    "error": "kanban mode active",
+                    "hint": "use `shay kanban complete <task_id> --result <output>` or wait for v3 pass-through",
+                })
             # Agent-side: mark job completed (or failed)
             jid = payload.get("id", "")
             if not jid:
@@ -1509,6 +1894,11 @@ class Handler(BaseHTTPRequestHandler):
                 status=payload.get("status", "completed"),
             ))
         if path == "/api/job/cancel":
+            if KANBAN_DISPATCH:
+                return self._send(410, {
+                    "error": "kanban mode active",
+                    "hint": "use `shay kanban archive <task_id>` or wait for v3 pass-through",
+                })
             # Phone-side: cancel a queued or running job
             jid = payload.get("id", "")
             if not jid:
@@ -1532,6 +1922,13 @@ def main():
     worker = threading.Thread(target=_research_worker_loop, daemon=True)
     worker.start()
     print("[shay-phone] research worker started", file=sys.stderr)
+    # Start kanban event bridge (only when KANBAN_DISPATCH=1; Reviewer bug #8 / E7).
+    # When the flag is OFF the bridge is a no-op anyway, and avoiding the thread
+    # saves a per-5s SQLite open/close + fd lifecycle.
+    if KANBAN_DISPATCH and KANBAN_DB.exists():
+        bridge = threading.Thread(target=_kanban_event_tailer, daemon=True)
+        bridge.start()
+        print("[shay-phone] kanban event bridge started", file=sys.stderr)
     ThreadingHTTPServer.allow_reuse_address = True
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[shay-phone] serving on 0.0.0.0:{PORT} "

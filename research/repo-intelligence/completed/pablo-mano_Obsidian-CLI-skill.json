@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/pablo-mano/Obsidian-CLI-skill",
+  "owner": "pablo-mano",
+  "repo": "Obsidian-CLI-skill",
+  "analyzed_at": "2026-06-01 21:46:41",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": "Obsidian Skill for Claude Code and other agents ",
+  "stars": 283,
+  "language": "HTML",
+  "topics": [],
+  "error": "'NoneType' object has no attribute 'get'"
+}

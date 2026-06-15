@@ -1,0 +1,50 @@
+{
+  "url": "https://github.com/alexgreensh/token-optimizer",
+  "owner": "alexgreensh",
+  "repo": "token-optimizer",
+  "analyzed_at": "2026-06-01 21:46:31",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 1472787,
+    "TypeScript": 515271,
+    "HTML": 308400,
+    "JavaScript": 36772,
+    "Shell": 28158
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Find the ghost tokens. Fix them. Survive compaction. Avoid context quality decay. ",
+  "stars": 1186,
+  "language": "Python",
+  "topics": [
+    "agentskills",
+    "claude-code",
+    "claude-code-skill",
+    "claude-plugin",
+    "context-engineering",
+    "context-window",
+    "ghost-tokens",
+    "token-optimization",
+    "token-optimizer",
+    "token-usage"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:04:50Z",
+  "open_issues": 1,
+  "forks": 94
+}

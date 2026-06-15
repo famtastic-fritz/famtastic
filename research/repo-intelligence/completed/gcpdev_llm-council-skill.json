@@ -1,0 +1,38 @@
+{
+  "url": "https://github.com/gcpdev/llm-council-skill",
+  "owner": "gcpdev",
+  "repo": "llm-council-skill",
+  "analyzed_at": "2026-06-01 21:47:13",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 6874
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 65,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "A skill to claude code that enables brainstorming with other LLMs (ChatGPT, Gemini) before presenting the implementation plan to the user",
+  "stars": 183,
+  "language": "Python",
+  "topics": [
+    "claude-code-skill",
+    "claude-code-skills",
+    "claude-skills"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-01T09:56:43Z",
+  "open_issues": 2,
+  "forks": 25
+}

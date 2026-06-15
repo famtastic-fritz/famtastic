@@ -1,0 +1,48 @@
+{
+  "url": "https://github.com/Open-LLM-VTuber/Open-LLM-VTuber",
+  "owner": "Open-LLM-VTuber",
+  "repo": "Open-LLM-VTuber",
+  "analyzed_at": "2026-06-01 21:49:15",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 646398,
+    "JavaScript": 18633,
+    "HTML": 3737
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Talk to any LLM with hands-free voice interaction, voice interruption, and Live2D taking face running locally across platforms",
+  "stars": 8006,
+  "language": "Python",
+  "topics": [
+    "ai",
+    "ai-companion",
+    "ai-vtuber",
+    "ai-waifu",
+    "chatbots",
+    "live2d",
+    "live2d-web",
+    "llm",
+    "neuro-sama",
+    "ollama"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:31:23Z",
+  "open_issues": 121,
+  "forks": 1054
+}

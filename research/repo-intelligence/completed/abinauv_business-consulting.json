@@ -1,0 +1,48 @@
+{
+  "url": "https://github.com/abinauv/business-consulting",
+  "owner": "abinauv",
+  "repo": "business-consulting",
+  "analyzed_at": "2026-06-01 21:45:58",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {
+    "score": 25,
+    "reasons": [
+      "AI/ML capabilities for automation"
+    ],
+    "tier": "LOW"
+  },
+  "description": "Business consulting plugin for Claude \u2014 16 skills, 24 commands, 5 industry overlays. Market research, competitive analysis, financial modeling, strategy frameworks, pricing, M&A, digital transformation, risk, talent, and more.",
+  "stars": 15,
+  "language": null,
+  "topics": [
+    "benchmarking",
+    "business-consulting",
+    "claude-code-plugin",
+    "claude-cowork",
+    "claude-plugin",
+    "competitive-analysis",
+    "consulting-frameworks",
+    "customer-insights",
+    "digital-transformation",
+    "innovation-strategy",
+    "management-consulting",
+    "market-research",
+    "pricing-strategy",
+    "risk-management",
+    "saas-metrics",
+    "strategy-consulting",
+    "swot-analysis",
+    "talent-strategy"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-05-13T23:12:50Z",
+  "open_issues": 0,
+  "forks": 0
+}

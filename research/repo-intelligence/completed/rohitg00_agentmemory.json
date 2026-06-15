@@ -1,0 +1,55 @@
+{
+  "url": "https://github.com/rohitg00/agentmemory",
+  "owner": "rohitg00",
+  "repo": "agentmemory",
+  "analyzed_at": "2026-06-01 21:46:51",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 2276083,
+    "JavaScript": 208701,
+    "HTML": 192932,
+    "CSS": 39610,
+    "Shell": 24739,
+    "Python": 14754,
+    "Dockerfile": 5107
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "#1 Persistent memory for AI coding agents based on real-world benchmarks",
+  "stars": 20517,
+  "language": "TypeScript",
+  "topics": [
+    "agentmemory",
+    "agents",
+    "ai",
+    "claude",
+    "claudecode",
+    "codex",
+    "copilot",
+    "cursor",
+    "genai",
+    "harness",
+    "hermes",
+    "memory",
+    "openclaw"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:42:20Z",
+  "open_issues": 216,
+  "forks": 1689
+}

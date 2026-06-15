@@ -1,0 +1,33 @@
+{
+  "url": "https://github.com/liuchong/awesome-roadmaps?fbclid=Iwb21leASIwKdjbGNrBIjAn2V4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHnPkuZ6JphpPoc-cS23Po9V1900yVyg5tKpo613EDrGI_4Q_DA5k5ip4-hwJ_aem_c6wgKe1EearaFQ0pImEO1g",
+  "owner": "liuchong",
+  "repo": "awesome-roadmaps",
+  "analyzed_at": "2026-06-01 21:46:19",
+  "tech_stack": {
+    "detected_categories": []
+  },
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {
+    "score": 15,
+    "reasons": [
+      "High community adoption"
+    ],
+    "tier": "LOW"
+  },
+  "description": "A curated list of roadmaps.",
+  "stars": 6992,
+  "language": null,
+  "topics": [
+    "awesome",
+    "awesome-list",
+    "lists",
+    "resources",
+    "roadmap"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-01T21:17:10Z",
+  "open_issues": 1,
+  "forks": 464
+}

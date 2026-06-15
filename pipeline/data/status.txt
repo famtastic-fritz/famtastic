@@ -1,0 +1,3 @@
+Pipeline started: agents running
+Issue: Scout hanging on Reddit API
+Fix needed: Add timeouts, logging

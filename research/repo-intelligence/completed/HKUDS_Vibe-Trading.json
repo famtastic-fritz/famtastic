@@ -1,0 +1,54 @@
+{
+  "url": "https://github.com/HKUDS/Vibe-Trading",
+  "owner": "HKUDS",
+  "repo": "Vibe-Trading",
+  "analyzed_at": "2026-06-01 21:49:00",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 3947806,
+    "TypeScript": 328706,
+    "HTML": 73667,
+    "JavaScript": 28088,
+    "CSS": 23317,
+    "Shell": 11116,
+    "Jinja": 2391,
+    "Dockerfile": 2133
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "\"Vibe-Trading: Your Personal Trading Agent\"",
+  "stars": 9350,
+  "language": "Python",
+  "topics": [
+    "ai-agent",
+    "algorithmic-trading",
+    "backtesting",
+    "fintech",
+    "llm",
+    "mcp",
+    "multi-agent",
+    "python",
+    "quantitative-finance",
+    "trading"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:47:47Z",
+  "open_issues": 5,
+  "forks": 1922
+}

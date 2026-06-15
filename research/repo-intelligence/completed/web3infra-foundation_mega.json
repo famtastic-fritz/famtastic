@@ -1,0 +1,61 @@
+{
+  "url": "https://github.com/web3infra-foundation/mega",
+  "owner": "web3infra-foundation",
+  "repo": "mega",
+  "analyzed_at": "2026-06-01 21:50:05",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 4927913,
+    "Rust": 3203529,
+    "Python": 84912,
+    "CSS": 58454,
+    "Shell": 56728,
+    "JavaScript": 52597,
+    "EJS": 20037,
+    "Dockerfile": 12035,
+    "Batchfile": 10626,
+    "HTML": 5979,
+    "PowerShell": 3246,
+    "Starlark": 233,
+    "RenderScript": 1
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 65,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "Mega is an open-source implementation of Google Piper \u2014 a Git-compatible monorepo engine built for the AI Agent era.",
+  "stars": 485,
+  "language": "TypeScript",
+  "topics": [
+    "agent",
+    "agent-infrastructure",
+    "ai",
+    "ai-agents",
+    "buck2",
+    "decentralised",
+    "git",
+    "google",
+    "hacktoberfest",
+    "monorepo",
+    "p2p",
+    "p2p-git",
+    "piper",
+    "rust"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-01T19:03:32Z",
+  "open_issues": 0,
+  "forks": 123
+}

@@ -1,0 +1,27 @@
+{
+  "url": "https://github.com/doeixd/opencode-ralph-rlm",
+  "owner": "doeixd",
+  "repo": "opencode-ralph-rlm",
+  "analyzed_at": "2026-06-01 21:50:02",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": "OpenCode plugin: Ralph outer loop + RLM inner loop \u2014 iterative AI development with file-first discipline and sub-agent support",
+  "stars": 11,
+  "language": "TypeScript",
+  "topics": [
+    "agentic-ai",
+    "ai-agent",
+    "bun",
+    "developer-tools",
+    "effect-ts",
+    "llm",
+    "opencode",
+    "opencode-plugin",
+    "recursive-language-model",
+    "typescript"
+  ],
+  "error": "'NoneType' object has no attribute 'get'"
+}

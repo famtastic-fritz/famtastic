@@ -1,0 +1,54 @@
+{
+  "url": "https://github.com/rtk-ai/rtk",
+  "owner": "rtk-ai",
+  "repo": "rtk",
+  "analyzed_at": "2026-06-01 21:46:36",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Rust": 2315896,
+    "Shell": 127622,
+    "TypeScript": 40173,
+    "Python": 21264,
+    "Ruby": 1178
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 85,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies",
+  "stars": 57481,
+  "language": "Rust",
+  "topics": [
+    "agentic-coding",
+    "ai-coding",
+    "anthropic",
+    "claude-code",
+    "cli",
+    "command-line-tool",
+    "cost-reduction",
+    "developer-tools",
+    "llm",
+    "open-source",
+    "productivity",
+    "rust",
+    "token-optimization"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:44:18Z",
+  "open_issues": 1036,
+  "forks": 3527
+}

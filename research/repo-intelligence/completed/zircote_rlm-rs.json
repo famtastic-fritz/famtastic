@@ -1,0 +1,62 @@
+{
+  "url": "https://github.com/zircote/rlm-rs",
+  "owner": "zircote",
+  "repo": "rlm-rs",
+  "analyzed_at": "2026-06-01 21:50:00",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "database",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Rust": 528189,
+    "MDX": 247966,
+    "JavaScript": 27237,
+    "Makefile": 4880,
+    "Ruby": 714,
+    "TypeScript": 270
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 70,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "CLI integration potential"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Rust CLI implementing the Recursive Language Model (RLM) pattern for Claude Code. Process documents 100x larger than context windows through intelligent chunking, SQLite persistence, and recursive sub-LLM orchestration.",
+  "stars": 50,
+  "language": "Rust",
+  "topics": [
+    "ai-tools",
+    "chunking",
+    "claude",
+    "claude-code",
+    "cli",
+    "command-line",
+    "context-window",
+    "devtools",
+    "document-processing",
+    "llm",
+    "mit-license",
+    "mmap",
+    "rayon",
+    "recursive-language-model",
+    "rlm",
+    "rust",
+    "rust-2024",
+    "semantic-chunking",
+    "sqlite",
+    "text-processing"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-01T23:49:33Z",
+  "open_issues": 2,
+  "forks": 4
+}

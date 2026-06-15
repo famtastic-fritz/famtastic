@@ -1,0 +1,54 @@
+{
+  "url": "https://github.com/Adam-CAD/CADAM",
+  "owner": "Adam-CAD",
+  "repo": "CADAM",
+  "analyzed_at": "2026-06-01 21:50:20",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_frontend",
+      "mobile"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 1384501,
+    "PLpgSQL": 93508,
+    "CSS": 21581,
+    "JavaScript": 12708,
+    "GLSL": 4521
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "CADAM is the open source text-to-CAD web application",
+  "stars": 3858,
+  "language": "TypeScript",
+  "topics": [
+    "agents",
+    "ai",
+    "ai-agents",
+    "cad",
+    "llms",
+    "mechnical-engineering",
+    "openscad",
+    "react",
+    "robotics",
+    "stl",
+    "text-to-cad",
+    "wasm"
+  ],
+  "license": "GPL-3.0",
+  "last_updated": "2026-06-02T00:31:53Z",
+  "open_issues": 15,
+  "forks": 514
+}

@@ -1,0 +1,56 @@
+{
+  "url": "https://github.com/OpenHands/OpenHands",
+  "owner": "OpenHands",
+  "repo": "OpenHands",
+  "analyzed_at": "2026-06-01 21:47:42",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 6976400,
+    "TypeScript": 3910477,
+    "Go Template": 91548,
+    "Jinja": 25308,
+    "Makefile": 17733,
+    "CSS": 15894,
+    "JavaScript": 14972,
+    "Shell": 8749,
+    "Dockerfile": 8740,
+    "Mako": 1339
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 95,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "\ud83d\ude4c OpenHands: AI-Driven Development",
+  "stars": 75607,
+  "language": "Python",
+  "topics": [
+    "agent",
+    "artificial-intelligence",
+    "chatgpt",
+    "claude-ai",
+    "cli",
+    "developer-tools",
+    "gpt",
+    "llm",
+    "openai"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:47:19Z",
+  "open_issues": 368,
+  "forks": 9585
+}

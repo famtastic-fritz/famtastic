@@ -1,0 +1,52 @@
+{
+  "url": "https://github.com/affaan-m/ECC",
+  "owner": "affaan-m",
+  "repo": "ECC",
+  "analyzed_at": "2026-06-01 21:47:32",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "JavaScript": 3626265,
+    "Rust": 1818827,
+    "Python": 326664,
+    "Shell": 188622,
+    "TypeScript": 57389,
+    "Swift": 8371,
+    "CSS": 4037,
+    "PowerShell": 1547
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+  "stars": 202263,
+  "language": "JavaScript",
+  "topics": [
+    "ai-agents",
+    "anthropic",
+    "claude",
+    "claude-code",
+    "developer-tools",
+    "llm",
+    "mcp",
+    "productivity"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:47:15Z",
+  "open_issues": 53,
+  "forks": 31032
+}

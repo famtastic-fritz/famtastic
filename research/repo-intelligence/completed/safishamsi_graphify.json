@@ -1,0 +1,49 @@
+{
+  "url": "https://github.com/safishamsi/graphify",
+  "owner": "safishamsi",
+  "repo": "graphify",
+  "analyzed_at": "2026-06-01 21:47:08",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "database",
+      "mobile",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 2190460
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 65,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "AI coding assistant skill (Claude Code, Codex, OpenCode, Cursor, Gemini CLI, and more). Turn any folder of code, SQL schemas, R scripts, shell scripts, docs, papers, images, or videos into a queryable knowledge graph. App code + database schema + infrastructure in one graph.",
+  "stars": 57953,
+  "language": "Python",
+  "topics": [
+    "antigravity",
+    "claude-code",
+    "codex",
+    "gemini",
+    "graphrag",
+    "knowledge-graph",
+    "leiden",
+    "openclaw",
+    "rag",
+    "skills",
+    "tree-sitter"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:38:42Z",
+  "open_issues": 279,
+  "forks": 6057
+}

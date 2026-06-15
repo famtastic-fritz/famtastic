@@ -1,0 +1,36 @@
+{
+  "url": "https://github.com/unclecode/crawl4ai",
+  "owner": "unclecode",
+  "repo": "crawl4ai",
+  "analyzed_at": "2026-06-01 21:46:04",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 4399327,
+    "JavaScript": 35549,
+    "Shell": 9301,
+    "Dockerfile": 7017
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 50,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "\ud83d\ude80\ud83e\udd16 Crawl4AI: Open-source LLM Friendly Web Crawler & Scraper. Don't be shy, join here: https://discord.gg/jP8KfhDhyN",
+  "stars": 67556,
+  "language": "Python",
+  "topics": [],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:21:41Z",
+  "open_issues": 85,
+  "forks": 6904
+}

@@ -1,0 +1,54 @@
+{
+  "url": "https://github.com/heygen-com/hyperframes",
+  "owner": "heygen-com",
+  "repo": "hyperframes",
+  "analyzed_at": "2026-06-01 21:49:25",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_frontend",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 8026984,
+    "JavaScript": 386515,
+    "Shell": 27523,
+    "Python": 26835,
+    "CSS": 16325,
+    "Dockerfile": 2013
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Write HTML. Render video. Built for agents.",
+  "stars": 23195,
+  "language": "TypeScript",
+  "topics": [
+    "ai",
+    "animation",
+    "ffmpeg",
+    "framework",
+    "gsap",
+    "html",
+    "mcp",
+    "puppeteer",
+    "rendering",
+    "typescript",
+    "video"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:48:59Z",
+  "open_issues": 49,
+  "forks": 2154
+}

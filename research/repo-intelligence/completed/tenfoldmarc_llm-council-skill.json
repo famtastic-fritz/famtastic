@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/tenfoldmarc/llm-council-skill",
+  "owner": "tenfoldmarc",
+  "repo": "llm-council-skill",
+  "analyzed_at": "2026-06-01 21:47:27",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": null,
+  "stars": 187,
+  "language": null,
+  "topics": [],
+  "error": "'NoneType' object has no attribute 'get'"
+}

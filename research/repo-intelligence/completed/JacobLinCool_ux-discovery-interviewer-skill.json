@@ -1,0 +1,40 @@
+{
+  "url": "https://github.com/JacobLinCool/ux-discovery-interviewer-skill",
+  "owner": "JacobLinCool",
+  "repo": "ux-discovery-interviewer-skill",
+  "analyzed_at": "2026-06-01 21:45:19",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {
+    "score": 55,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "An agent skill for coding agents (e.g., Codex, Claude Code) that conducts structured UX research discovery interviews, guiding users from vague product ideas to clear discovery insights.",
+  "stars": 4,
+  "language": null,
+  "topics": [
+    "agent-skill",
+    "ai-agents",
+    "claude-code",
+    "codex",
+    "coding-agents",
+    "product-discovery",
+    "user-interviews",
+    "ux-research"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-05-25T11:41:42Z",
+  "open_issues": 0,
+  "forks": 0
+}

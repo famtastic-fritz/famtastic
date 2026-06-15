@@ -1,3 +1,9 @@
+---
+title: SHAY-BRAIN-FIX-HANDOFF-2026-06-05
+type: note
+permalink: famtastic/01-shay/shay-brain-fix-handoff-2026-06-05
+---
+
 # Shay Brain Fix — one-pass handoff (2026-06-05)
 
 > For the local Claude Code session on the Mac. shay-shay = gitignored repo at ~/famtastic/shay-shay

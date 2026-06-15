@@ -1,0 +1,46 @@
+{
+  "url": "https://github.com/charmbracelet/crush",
+  "owner": "charmbracelet",
+  "repo": "crush",
+  "analyzed_at": "2026-06-01 21:47:10",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Go": 3048275,
+    "Go Template": 35104,
+    "JavaScript": 10347,
+    "CSS": 4257,
+    "HTML": 4039,
+    "Nix": 1043,
+    "Shell": 716
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Glamourous agentic coding for all \ud83d\udc98",
+  "stars": 24905,
+  "language": "Go",
+  "topics": [
+    "agentic-ai",
+    "ai",
+    "llms",
+    "ravishing"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:39:46Z",
+  "open_issues": 471,
+  "forks": 1771
+}

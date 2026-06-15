@@ -1,3 +1,9 @@
+---
+title: SHAY-SURFACES-MAP-AND-LAUNCH
+type: note
+permalink: famtastic/01-shay/shay-surfaces-map-and-launch
+---
+
 # Shay Surfaces — Map & Launch
 
 > Recreated 2026-06-05 from the surface READMEs + live verification. The file

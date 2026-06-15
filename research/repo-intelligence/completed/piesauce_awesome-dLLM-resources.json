@@ -1,0 +1,42 @@
+{
+  "url": "https://github.com/piesauce/awesome-dLLM-resources",
+  "owner": "piesauce",
+  "repo": "awesome-dLLM-resources",
+  "analyzed_at": "2026-06-01 21:45:45",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 1872
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 35,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "Automation-friendly language"
+    ],
+    "tier": "LOW"
+  },
+  "description": "Frequently updated list of dLLM (Diffusion Large Language Models) papers, models, and other resources",
+  "stars": 40,
+  "language": "Python",
+  "topics": [
+    "decoding",
+    "diffusion-models",
+    "discrete-diffusion-models",
+    "dllm",
+    "inference",
+    "llm",
+    "masked-diffusion-llm",
+    "nlp",
+    "rl"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T00:39:59Z",
+  "open_issues": 1,
+  "forks": 4
+}

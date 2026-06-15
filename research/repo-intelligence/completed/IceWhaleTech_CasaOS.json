@@ -1,0 +1,50 @@
+{
+  "url": "https://github.com/IceWhaleTech/CasaOS?fbclid=Iwb21leASI2B1jbGNrBIjX1WV4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHmZvoqOPzUcTlzVmvdJp0HQOSlYitKEe3J7XSExUWn8rC-emoe4uf3ikDZ1r_aem_ojL1bbIv7RA-AlIZWNOTfg",
+  "owner": "IceWhaleTech",
+  "repo": "CasaOS",
+  "analyzed_at": "2026-06-01 21:50:31",
+  "tech_stack": {
+    "detected_categories": [
+      "automation",
+      "web_frontend",
+      "web_backend",
+      "cloud_devops"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Go": 333964,
+    "Shell": 34712,
+    "HTML": 628,
+    "Makefile": 269
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 55,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "CasaOS - A simple, easy-to-use, elegant open-source Personal Cloud system.",
+  "stars": 33997,
+  "language": "Go",
+  "topics": [
+    "casaos",
+    "docker",
+    "golang",
+    "home-automation",
+    "home-cloud",
+    "home-server",
+    "iot",
+    "raspberry",
+    "self-hosted",
+    "vuejs"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-01T20:48:49Z",
+  "open_issues": 799,
+  "forks": 1927
+}
