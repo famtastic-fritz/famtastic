@@ -1,3 +1,9 @@
+---
+title: Revenue-Sprint-Tracker
+type: note
+permalink: famtastic/08-revenue/revenue-sprint-tracker
+---
+
 # Revenue Sprint Tracker
 
 Sprint: Agent OS Revenue — $10k-15k/month target

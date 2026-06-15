@@ -1,3 +1,9 @@
+---
+title: Fritz-Context-2026-06-01
+type: note
+permalink: famtastic/daily/fritz-context-2026-06-01
+---
+
 # Fritz Context — 2026-06-01T07:00:44.774282
 
 **Front App:** Google Chrome

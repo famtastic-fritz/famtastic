@@ -9,6 +9,7 @@ tags:
 - phase2
 status: needs-future-convo
 bucket: 02-Site-Studio
+permalink: famtastic/02-site-studio/media-component-studio-status-2026-05-29
 ---
 
 # Media Studio + Component Studio — Real Status 2026-05-29

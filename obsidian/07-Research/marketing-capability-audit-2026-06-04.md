@@ -3,7 +3,9 @@ date: 2026-06-04
 session: claude-code
 type: capability-audit
 topic: marketing/media toolkit — claimed vs. real
-trigger: Shay (on Gemini) proposed a "Show Don't Tell" campaign citing skills that don't exist
+trigger: Shay (on Gemini) proposed a "Show Don't Tell" campaign citing skills that
+  don't exist
+permalink: famtastic/07-research/marketing-capability-audit-2026-06-04
 ---
 
 # Marketing toolkit — ground truth (claimed vs. installed)

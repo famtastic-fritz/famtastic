@@ -1,3 +1,9 @@
+---
+title: FRITZ-HANDS-OFF-INCOME-PLAY
+type: note
+permalink: famtastic/08-revenue/fritz-hands-off-income-play
+---
+
 # Fritz's Hands-Off Income Play (2026-06-05)
 
 > Synthesis of a 3-agent overnight swarm (repos · marketplace landscape · tailored play). Raw reports

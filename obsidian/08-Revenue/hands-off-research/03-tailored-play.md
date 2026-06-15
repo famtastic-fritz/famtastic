@@ -1,3 +1,9 @@
+---
+title: 03-tailored-play
+type: note
+permalink: famtastic/08-revenue/hands-off-research/03-tailored-play
+---
+
 # Hands-Off Income — Tailored Play (agent 3 of 3)
 > Overnight swarm, 2026-06-05. Raw. Synthesized into FRITZ-HANDS-OFF-INCOME-PLAY.md.
 

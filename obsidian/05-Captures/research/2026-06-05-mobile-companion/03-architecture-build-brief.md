@@ -1,3 +1,9 @@
+---
+title: 03-architecture-build-brief
+type: note
+permalink: famtastic/05-captures/research/2026-06-05-mobile-companion/03-architecture-build-brief
+---
+
 # Mobile Companion — Architecture + Clickable-App Path (agent 3 of 3)
 > Background swarm, 2026-06-05. Raw report. Synthesized into the final build brief once all 3 land.
 

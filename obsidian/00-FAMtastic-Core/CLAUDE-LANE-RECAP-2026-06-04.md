@@ -1,3 +1,9 @@
+---
+title: CLAUDE-LANE-RECAP-2026-06-04
+type: note
+permalink: famtastic/00-famtastic-core/claude-lane-recap-2026-06-04
+---
+
 # Claude's Lane — Plan Recap for Shay (2026-06-04)
 
 > **Fritz → Shay:** this is the state of everything in **Claude's lane** (the Claude

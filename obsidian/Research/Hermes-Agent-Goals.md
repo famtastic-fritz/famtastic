@@ -1,3 +1,9 @@
+---
+title: Hermes-Agent-Goals
+type: note
+permalink: famtastic/research/hermes-agent-goals
+---
+
 # Hermes Agent — Persistent Goals (/goal) — Full Documentation
 
 Extracted from: https://hermes-agent.nousresearch.com/docs/user-guide/features/goals

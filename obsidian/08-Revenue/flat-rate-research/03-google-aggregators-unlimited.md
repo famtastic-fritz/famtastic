@@ -1,3 +1,9 @@
+---
+title: 03-google-aggregators-unlimited
+type: note
+permalink: famtastic/08-revenue/flat-rate-research/03-google-aggregators-unlimited
+---
+
 # Flat-Rate Brains — Google / Aggregators / "Unlimited" (agent 3 of 3)
 > Background swarm 2026-06-05. Raw. Synthesized into FLAT-RATE-BRAINS.md.
 

@@ -1,3 +1,9 @@
+---
+title: SHAY-COMPANION-BUILD-BRIEF
+type: note
+permalink: famtastic/01-shay/shay-companion-build-brief
+---
+
 # Shay Companion — Mobile Build Brief (2026-06-05)
 
 > Synthesis of a 3-agent research swarm (surface / UX-UI / architecture). Raw reports in

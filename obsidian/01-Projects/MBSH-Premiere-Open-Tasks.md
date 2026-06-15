@@ -1,3 +1,9 @@
+---
+title: MBSH-Premiere-Open-Tasks
+type: note
+permalink: famtastic/01-projects/mbsh-premiere-open-tasks
+---
+
 # MBSH Premiere Experience — Open Tasks & Review
 
 **Created:** 2026-05-29

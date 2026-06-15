@@ -1,3 +1,9 @@
+---
+title: FAMTASTIC-OPERATING-PLAN-V3-FINAL-2026-04-27
+type: note
+permalink: famtastic/05-captures/archive/famtastic-operating-plan-v3-final-2026-04-27
+---
+
 # FAMtastic Operating Plan V3-final — 2026-04-27
 
 **Status:** Ship-ready (Codex MINOR-ONLY, wording patches applied)

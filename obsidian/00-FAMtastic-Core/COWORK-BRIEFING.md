@@ -1,3 +1,9 @@
+---
+title: COWORK-BRIEFING
+type: note
+permalink: famtastic/00-famtastic-core/cowork-briefing
+---
+
 # FAMtastic — Cowork Briefing
 
 **Purpose of this document:** You are being onboarded into FAMtastic as a third pillar of a workflow that has been running on two pillars for too long. This is the cheat code. Read it once before doing anything. It will make you ten times more useful in your first hour than you would be otherwise.

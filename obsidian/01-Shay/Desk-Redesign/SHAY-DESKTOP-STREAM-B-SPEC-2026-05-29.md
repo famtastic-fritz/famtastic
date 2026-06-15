@@ -1,3 +1,9 @@
+---
+title: SHAY-DESKTOP-STREAM-B-SPEC-2026-05-29
+type: note
+permalink: famtastic/01-shay/desk-redesign/shay-desktop-stream-b-spec-2026-05-29
+---
+
 # Shay Desktop Rewrite (Stream B) - Core Specification
 
 **Status:** Draft - Canonical Reference for Phase 2, Stream B

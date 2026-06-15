@@ -1,3 +1,9 @@
+---
+title: SKILL-LIBRARY-ARCHITECTURE
+type: note
+permalink: famtastic/01-shay/skill-library-architecture
+---
+
 # FAMtastic Skill Library — Architecture & Build Plan
 
 **Status:** Reference plan, captured 2026-05-10

@@ -1,3 +1,9 @@
+---
+title: SHAY-COMPANION-V2-PUNCHLIST
+type: note
+permalink: famtastic/01-shay/shay-companion-v2-punchlist
+---
+
 # Shay Companion — v2 Punch-List (Fritz feedback, 2026-06-05)
 
 > MVP is live on Fritz's Android over Tailscale and he's "happy for the most part." These are the

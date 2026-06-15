@@ -1,3 +1,9 @@
+---
+title: 01-surface-comparison
+type: note
+permalink: famtastic/05-captures/research/2026-06-05-mobile-companion/01-surface-comparison
+---
+
 # Mobile Companion — Surface Comparison (agent 1 of 3)
 > Background swarm, 2026-06-05. Raw report. Synthesized into the final build brief once all 3 land.
 

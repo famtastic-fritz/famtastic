@@ -1,3 +1,9 @@
+---
+title: REVENUE-SCORECARD-2026-06-05
+type: note
+permalink: famtastic/08-revenue/revenue-scorecard-2026-06-05
+---
+
 # FAMtastic Revenue Scorecard (2026-06-05)
 
 > Background audit of every revenue asset in the repo. Repo-grounded, no vaporware passes.

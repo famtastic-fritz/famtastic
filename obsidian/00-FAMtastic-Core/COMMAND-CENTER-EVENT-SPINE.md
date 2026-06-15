@@ -1,3 +1,9 @@
+---
+title: COMMAND-CENTER-EVENT-SPINE
+type: note
+permalink: famtastic/00-famtastic-core/command-center-event-spine
+---
+
 # Command Center — the Event Spine (built 2026-06-05)
 
 > One board, one truth. This is the architecture + status for Shay's command center:

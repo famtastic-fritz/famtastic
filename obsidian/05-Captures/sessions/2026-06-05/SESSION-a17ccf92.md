@@ -7,6 +7,7 @@ start_sha: main
 started: 2026-06-05 00:57 UTC
 agent: claude-code_2-1-162_harness
 status: active
+permalink: famtastic/05-captures/sessions/2026-06-05/session-a17ccf92
 ---
 
 # Session a17ccf92 — 2026-06-05

@@ -1,3 +1,9 @@
+---
+title: VAULT-INDEX
+type: note
+permalink: famtastic/00-famtastic-core/vault-index
+---
+
 # FAMtastic Vault Index
 *Last updated: 2026-05-29*
 

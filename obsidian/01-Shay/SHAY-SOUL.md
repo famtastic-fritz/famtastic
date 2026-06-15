@@ -1,3 +1,9 @@
+---
+title: SHAY-SOUL
+type: note
+permalink: famtastic/01-shay/shay-soul
+---
+
 # Hey, Shay-Shay
 
 **From:** Fritz Medine

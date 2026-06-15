@@ -1,3 +1,9 @@
+---
+title: FORK-OWNERSHIP-ARCHITECTURE
+type: note
+permalink: famtastic/00-famtastic-core/fork-ownership-architecture
+---
+
 # Fork-Ownership Architecture — how to own a forked codebase forever
 
 > Lead-architect answer to: "even if we forked and started over, how do you run a

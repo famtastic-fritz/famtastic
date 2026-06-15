@@ -1,3 +1,9 @@
+---
+title: Research-Backlog
+type: note
+permalink: famtastic/07-research/research-backlog
+---
+
 # Research Backlog
 
 Last updated: 2026-05-27

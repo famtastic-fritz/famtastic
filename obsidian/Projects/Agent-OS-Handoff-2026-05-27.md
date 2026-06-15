@@ -1,3 +1,9 @@
+---
+title: Agent-OS-Handoff-2026-05-27
+type: note
+permalink: famtastic/projects/agent-os-handoff-2026-05-27
+---
+
 # Agent OS Build — Handoff Doc
 Date: $(date)
 Session: [Reference to current conversation]

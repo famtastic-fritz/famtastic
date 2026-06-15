@@ -1,3 +1,9 @@
+---
+title: MASTER-RESEARCH-INDEX
+type: note
+permalink: famtastic/07-research/master-research-index
+---
+
 # Master Research Index — what we paid for, organized
 
 > Built 2026-06-04 by Claude (session on `main`). Consolidates the research that

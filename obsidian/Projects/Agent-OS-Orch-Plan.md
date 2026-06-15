@@ -1,3 +1,9 @@
+---
+title: Agent-OS-Orch-Plan
+type: note
+permalink: famtastic/projects/agent-os-orch-plan
+---
+
 # Agent Orchestration Plan — Shay-Shay Agent OS
 ## Auto-generated from interview findings
 

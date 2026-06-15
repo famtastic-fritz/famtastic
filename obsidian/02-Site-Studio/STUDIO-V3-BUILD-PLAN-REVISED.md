@@ -1,3 +1,9 @@
+---
+title: STUDIO-V3-BUILD-PLAN-REVISED
+type: note
+permalink: famtastic/02-site-studio/studio-v3-build-plan-revised
+---
+
 # FAMtastic Site Studio v3 — Revised Build Plan
 ## Incorporating Codex Adversarial Review + Session Decisions
 

@@ -1,3 +1,9 @@
+---
+title: AGENT-WORKBENCH-GENERATOR-PROMPT
+type: note
+permalink: famtastic/00-famtastic-core/agent-workbench-generator-prompt
+---
+
 # Agent Workbench — App-Generator Prompt
 
 > Paste-ready prompt for an app/code generator. It's a functional SPEC for an original,

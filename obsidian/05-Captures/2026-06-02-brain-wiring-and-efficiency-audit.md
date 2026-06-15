@@ -4,6 +4,7 @@ session: 67ea8b26
 type: audit
 topic: brain-wiring + hook efficiency
 status: findings + fixes applied
+permalink: famtastic/05-captures/2026-06-02-brain-wiring-and-efficiency-audit
 ---
 
 # Brain-wiring & hook efficiency audit (2026-06-02)

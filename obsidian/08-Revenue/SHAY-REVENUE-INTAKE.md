@@ -1,3 +1,9 @@
+---
+title: SHAY-REVENUE-INTAKE
+type: note
+permalink: famtastic/08-revenue/shay-revenue-intake
+---
+
 # Shay Revenue Intake — what Shay needs from Fritz (2026-06-05)
 
 > Fill the blanks, hand to Shay, she executes. Grouped by task. Shay already HAS the templates,

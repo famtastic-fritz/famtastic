@@ -1,3 +1,9 @@
+---
+title: SHAY-PERSONA
+type: note
+permalink: famtastic/01-shay/shay-persona
+---
+
 # SHAY PERSONA — Voice, Identity, Cultural Frame
 
 **Status:** Reconstructed 2026-06-04. Original "black sista" source content was lost when
