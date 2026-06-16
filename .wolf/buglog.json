@@ -3438,20 +3438,52 @@
       "last_seen": "2026-05-29"
     },
     {
-      "id": "bug-faceless-chromium",
-      "timestamp": "2026-06-02T03:00:18.021Z",
-      "error_message": "Remotion render failed: 403 \"Host not in allowlist\" downloading chromium-headless-shell from remotion.media; then \"Old Headless mode has been removed\" when pointed at the full chrome binary.",
-      "file": "remotion/bin/faceless.mjs",
-      "root_cause": "This sandbox network policy blocks remotion.media so Remotion cannot auto-download its Chromium. The Playwright full chrome at /opt/pw-browsers/chromium-1194 only supports new headless mode, which Remotions launcher does not use.",
-      "fix": "Render with --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell (the headless_shell build, NOT the full chrome binary). Off-sandbox, npm install provisions Chromium automatically and no flag is needed.",
-      "tags": [
-        "remotion",
-        "render",
-        "chromium",
-        "sandbox",
-        "network-allowlist",
-        "faceless"
-      ]
+      "id": "bug-185",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "Qualification form name validation always failed: 'Please enter your name.' even when filled",
+      "file": "agent-business-os/dist/assets/js/landing.js",
+      "root_cause": "Read the name input as form.name, but HTMLFormElement.name resolves to the form element's own name IDL attribute (empty string), not the child control named 'name'. So form.name.value was undefined and validation rejected every submission.",
+      "fix": "Read all controls via a val() helper using form.elements[field] (form.elements.namedItem), which returns the named control regardless of collisions with built-in form properties.",
+      "tags": ["javascript", "forms", "dom", "html"],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
+    },
+    {
+      "id": "bug-186",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "monitor-agent reported status 'critical' even after an escalated invoice was paid",
+      "file": "agent-business-os/agents/monitor-agent.js",
+      "root_cause": "The escalated-invoice alert counted any invoice with escalated===true, including ones whose status had since become 'paid'. The historical escalated flag persisted on the invoice, so a fully collected deal kept the dashboard in critical.",
+      "fix": "Count escalated alerts only among non-paid invoices: invoices.filter(i => i.escalated && i.status !== 'paid'). Alerts must reflect currently-actionable state, not historical flags.",
+      "tags": ["agents", "monitoring", "kpi", "state"],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
+    },
+    {
+      "id": "bug-187",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "ABOS_AUTO_CLOSE had no effect when set after the module was required (test asserted auto-close but deal stayed open)",
+      "file": "agent-business-os/agents/sdr-agent.js",
+      "root_cause": "AUTO_CLOSE was read into a module-level const at require time, so env set later (per-run, in tests or between runs) was ignored. Same class as the monitor CASH_TARGET / lead-function patterns: env captured at load instead of at call.",
+      "fix": "Read process.env.ABOS_AUTO_CLOSE inside run() at call time rather than as a module-level const. Rule: per-run/toggleable env must be read at call time, not module load.",
+      "tags": ["agents", "env", "config", "node"],
+      "related_bugs": [186],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
+    },
+    {
+      "id": "bug-188",
+      "timestamp": "2026-06-02T00:00:00.000Z",
+      "error_message": "growth-agent ignored ABOS_OUTREACH_CAP when set per-run (same module-load env trap as bug-187)",
+      "file": "agent-business-os/agents/growth-agent.js",
+      "root_cause": "DAILY_CAP was a module-level const read at require time, so a cap set later (tests/per-run) had no effect — the recurring 'read env at load not at call' pattern.",
+      "fix": "Replaced the const with a dailyCap() helper read inside run(). STANDING RULE for these agents: any env that can change per run must be read at call time, never as a module-level const.",
+      "tags": ["agents", "env", "config", "node", "recurring"],
+      "related_bugs": [186, 187],
+      "occurrences": 1,
+      "last_seen": "2026-06-02"
     }
   ]
 }

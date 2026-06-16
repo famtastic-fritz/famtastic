@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p1",
+    "name": "Alex Rivera",
+    "company": "Rivera Media (agency)",
+    "email": "alex@riveramedia.example",
+    "channel": "email",
+    "segment": "agency owners",
+    "note": "You posted about leads slipping through the cracks — that's exactly the gap I close."
+  },
+  {
+    "id": "p2",
+    "name": "Sam Okafor",
+    "company": "Okafor Consulting",
+    "channel": "linkedin",
+    "handle": "linkedin.com/in/samokafor",
+    "segment": "founder-led consultants",
+    "note": "Loved your post on speed-to-lead."
+  },
+  {
+    "id": "p3",
+    "name": "Jess Tran",
+    "channel": "referral",
+    "segment": "local service businesses",
+    "note": "Asking my network for intros to people drowning in manual follow-up."
+  }
+]
