@@ -1,65 +1,15 @@
 ---
 title: Cerebrum (mirrored for Shay)
-synced: 2026-06-15 15:46:44.197504
+synced: 2026-06-16T12:46:57.321507
 source: .wolf/cerebrum.md
-tags:
-- cerebrum
-- lessons
-- do-not-repeat
-- mirror
-permalink: shay-memory/lessons-mirror/cerebrum-mirror
+tags: [cerebrum, lessons, do-not-repeat, mirror]
 ---
 
 # Cerebrum
 
 > OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
 > Do not edit manually unless correcting an error.
-> Last updated: 2026-06-06
-
-## muapi recipe orchestration — verified working catalog (2026-05-19)
-
-When building brand/media work with muapi, USE THE PREBUILT RECIPE SKILLS, do NOT
-hand-build via primitives. The recipes deliver in ~15 min what primitives take 5+ hours
-to assemble manually.
-
-### Verified-working models in muapi CLI (`muapi models list`)
-- **Text-to-image (reliable):** `gpt4o` (best text legibility), `flux-dev`, `flux-schnell`,
-  `flux-kontext-dev/pro/max`, `hidream-fast/dev/full`, `wan2.1`, `reve`, `qwen`
-- **Text-to-image (returned Not Found on this account):** `midjourney`, `seedream`
-- **Image edit:** `flux-kontext-max-edit` works; `flux-kontext-dev/pro` work
-- **Image-to-video (verified working):** `wan2.2`
-- **Image-to-video (returned Not Found):** `kling-pro`, `seedance-pro`
-- **Image-to-video (CLI/API param mismatch):** `veo3-fast` (CLI sends `image_url`,
-  API expects `images_list`)
-
-### Recipe-skill models that DON'T exist in muapi catalog (need substitution)
-The muapi recipe skills reference newer model aliases that aren't yet in CLI:
-- `ideogram-v3-t2i` → substitute `gpt4o` (best text legibility we have)
-- `flux-2-pro` → substitute `flux-dev` or `hidream-full`
-- `nano-banana-pro` → substitute `gpt4o` or `flux-kontext-max`
-- `nano-banana-2` → substitute `flux-dev`
-- `nano-banana-2-edit` → substitute `flux-kontext-max`
-- `bytedance-seedream-v4.5` → substitute `gpt4o`
-- `gpt-image-2-text-to-image` → substitute `gpt4o`
-- `veo3.1-fast-image-to-video` → substitute `wan2.2`
-
-### Critical execution gotchas
-1. **Multi-segment brand names render unreliably.** Logos with names like
-   "FAMtastic" (FAM + tastic split) sometimes drop the F (yields "AMtastic")
-   or misspell ("Famino", "TaSTIC"). OCR-validate logo outputs before shipping.
-2. **flux-kontext-max edit drifts beyond instructions.** Asked for "add 3D
-   depth, preserve composition" — got a beautiful but DIFFERENT composition
-   (circle medallion vs the source's rectangular layout). Treat flux-kontext-max
-   as "high-quality reinterpretation," not "literal edit."
-3. **muapi recipes are interactive-prompt-heavy.** `muapi remotion skills add`
-   prompts for agent target interactively even with `--yes --global`. Use
-   git-clone + manual file copy as workaround for non-interactive install.
-
-### Quality-rated recipe skills (★★★★★ = ship-ready)
-- `muapi-design-guide`: ★★★★★ — color palette + typography + UI kit + mockups
-- `muapi-logo-branding`: ★★★★☆ — 3 logos + mockup (text-legibility issues)
-- `muapi-brand-kit`: ★★★★☆ — moodboard + pattern + 2 logos (logos can be redundant)
-- `muapi-3d-logo-animation`: ★★★☆☆ — 3D image good; animation needs wan2.2 fallback
+> Last updated: 2026-03-24
 
 ## Tool Availability (Verified April 21, 2026)
 
@@ -109,24 +59,8 @@ registry before first use.
 
 <!-- How the user likes things done. Code style, tools, patterns, communication. -->
 
-- **Communication: decide + advise, don't interrogate (2026-06-06, Fritz correction):** Fritz called out "you're asking too many questions and not giving advice." As his second-in-command / AI Boss, **make the call and act on it** — give a clear recommendation and ship it, rather than ending every turn with "want me to do X or Y?" Reserve `AskUserQuestion` for genuinely irreversible / his-call-only forks (e.g. push to main, spend money, pick which surface to KEEP). For ordinary build choices, pick the obviously-right option, state it in one line, and proceed. He wants momentum and a decisive partner, not a menu.
-
-- **Owner Cash App cashtag (2026-06-02):** Fritz's Cash App is **`$FAMtasticFritz`** (account: Fitzgerald Medine, `https://cash.app/$FAMtasticFritz`). This is PUBLIC receive-info (printed on a QR), not a secret — safe in git. Canonical store: `platform/config/owner-profile.json` (`payment.cashapp.cashtag`). `billing.generate-invoice` auto-falls-back to it when a `cashapp` invoice omits the cashtag. Any "who do we get paid to / what's the cashtag" question resolves from owner-profile.json — do NOT ask Fritz again.
-- **Merge to main at end of each work block (2026-06-04, Fritz-approved):** Don't let a feature branch drift dozens of commits ahead of `main` — Shay and other agents run off `main` and can't see un-merged work, which caused a "Claude said / Shay can't find it" phantom-data incident. At the end of each meaningful block, after committing+pushing the feature branch, **fast-forward `main`**: `git push origin HEAD:main` (only when it's a clean fast-forward — `git rev-list --count HEAD..origin/main` must be 0; if main diverged, do a real merge and resolve, never force). This keeps the shared brain on `main` current for every surface.
-- **Brain provider cost-routing policy (2026-06-04, Fritz directive):** Authenticate **subscription/OAuth providers FIRST**, fall back to **pay-per-token API keys** only after a subscription hits its rate limit. Rationale: subscriptions are flat-rate / already paid; the metered APIs "have been killing" the budget. **Tier 1 (try first, subscription/OAuth):** `google-gemini-cli`, `openai-codex` (Fritz has a Codex sub), `copilot` (gh token — **confirmed Copilot FREE tier (not paid), verified github.com/settings/copilot 2026-06-04: a small monthly "included credits" pool of premium-model requests incl. claude-sonnet-4.6/GPT-5.x. Usable as a DEEP fallback only — it'll exhaust under sustained load, so keep a fuller lane (Codex sub) behind it**). **Tier 2 (fallback on cooldown, metered):** `gemini` (AI Studio API key), `anthropic`, `openai`. Primary brain = **`google-gemini-cli`**, `gemini` API as its fallback. Implement via `shay model` (sets PRIMARY) + `shay fallback add` (ordered chain, tried on rate-limit/overload/connection errors). Apply the same subscription-first ordering to every brain lane. **NOTE — Codex weekly cap:** the OpenAI Codex sub has a WEEKLY cap Fritz once exhausted in a single day; keep Codex as a *deeper* fallback (never primary), and while it's mid-cap (e.g. "full until June 7") order a live provider like Copilot AHEAD of it so requests don't waste a round-trip on a known-capped provider. The chain self-heals when the cap resets. **ROOT CAUSE of the prior "API is killing me" bleed (found 2026-06-04):** before the fix, `shay model` showed Active provider = **OpenRouter (pay-per-use)** with model "(not set)" — Shay was reaching "Gemini" THROUGH OpenRouter's per-call markup, NOT a direct Google auth. That's why Fritz thought he was "running Gemini" with nothing authenticated, and why every call billed. Fixed by setting a direct Google AI Studio key as primary. **FREE-FIRST ordering principle:** to spend free/included quota before paying, the PRIMARY must be a free/flat lane (e.g. Copilot Pro's included requests, or a non-billed free-tier key); metered keys (the paid Gemini key) belong LAST as overflow. Shay's fallback fires on the 429 a provider returns when its free quota is exhausted — so free-quota-first happens automatically IF the chain is ordered flat→metered. The paid-Gemini-as-primary chain set up on 2026-06-04 bills from request #1; reorder to Copilot/Codex-first if Fritz wants true free-first. **Gemini API facts for cost decisions (2026-06-04):** (1) the Gemini API has **NO flat-rate per-model option** — it's pay-per-token only; flat-rate Gemini only exists via the consumer Google AI Pro/Ultra app sub (not real API access) or Code-Assist OAuth (account-risk). So the only true flat-rate brains are **Copilot / Codex / OpenCode-Go / Nous** subs. (2) The Gemini **free tier (non-billed key) may use prompts to improve Google products** — a privacy downside for an AI-Boss handling Fritz's business/personal data; prefer paid **Flash** (very cheap) or a flat-rate sub as primary over a free-tier key. (3) Cost lever: **Flash is ~5-10x cheaper than Pro** — default routine/worker work to Flash, reserve Pro for hard reasoning.
-- **Shay = ORCHESTRATOR, not worker (2026-06-04, Fritz directive):** The premium reasoning brains (`gemini-3.1-pro-preview` primary + `claude-sonnet-4.6` fallback, set via `shay model`/`shay fallback`) are ONLY for **orchestration** — Shay's thinking, planning, task-assignment. The actual WORK must run on cheap/free **worker-lane** brains, NOT the orchestration brains. Worker picks already researched in `obsidian/Shay-Memory/research/free-models-discovery-2026-05-31.md`: `qwen3-coder:free` (coding), `deepseek-v4-flash:free` (reasoning), `kimi-k2.6:free` (agentic) via OpenRouter `:free` (genuinely free, 20 rpm / 200 rpd cap), local Ollama (`qwen2.5`/`phi4-mini`, unlimited $0), `Gemini Flash` or Cerebras/Groq free tiers for overflow beyond the free caps. NOTE: OpenRouter's **`:free` collection IS free** (fine for workers) — only its *paid* routing as the orchestrator brain was the bleed. Worker-lane model config lives in `shay config` / coordinator settings (config.yaml currently on defaults).
-- **Claude Code is Fritz's PRIMARY bulk-work worker lane (2026-06-04 directive):** Shay delegates heavy/complex bulk work to **Claude Code** (already wired — Shay's skill catalog has `autonomous-ai-agents: claude-code, codex, opencode`; also reachable via `scripts/claude-cli` / `fam-hub agent run claude` / `ask-claude`). **COST TRAP:** this is only flat-rate if Claude Code is authenticated via Fritz's **Claude Pro/Max subscription** — if it falls back to an **Anthropic API key**, bulk delegation bills per-token (Claude is pricey) and re-creates the "API is killing me" problem on Anthropic. Ensure `claude` is logged in via the subscription, not `ANTHROPIC_API_KEY`. Worker tiering: **Claude Code (sub) = real/complex bulk**; **free OpenRouter `:free` / local Ollama / Gemini Flash = trivial + overflow** when the Claude sub hits its cap.
-- **OpenCode Go = the flat-rate SWARM/worker lane (researched 2026-06-04):** $5 first month then **$10/mo** for strong OPEN coding models (DeepSeek V4 Pro/Flash, Qwen3.6 Plus, Kimi K2.6, GLM-5.1, MiniMax M2.7, MiMo-V2.5). OpenAI-compatible endpoint → plugs into Shay as a provider (subscribe via OpenCode Zen, copy API key). **NOT unlimited — dollar-value caps: ~$12/5hr, $30/week, $60/month-equivalent** (≈6x the $10 price in usage). Ideal swarm brain: the same open models Fritz's `free-models-discovery` picked, but with real headroom vs the free tier's 200 req/day. Distinguish: **OpenCode Zen** = pay-as-you-go metered gateway (auto-reloads $20 when balance <$5 — watch this); **opencode** (lowercase) = the open-source CLI coding agent in Shay's `autonomous-ai-agents` catalog. Fritz's flat-rate stack plan: **Copilot $9 (frontier brains) + OpenCode Go $10 (open-model swarm) + Claude Code (sub, heavy bulk) + free/Ollama (overflow)** — segment subs by use, ~$19/mo predictable. **OpenCode Go setting (2026-06-04): turn OFF "Use your available balance after reaching the usage limits"** — that toggle is a silent-overage switch (charges Zen pay-as-you-go balance once the flat Go caps are hit). Keep it OFF so hitting a cap returns a 429, which makes Shay's worker chain **downshift to the free/Ollama overflow lane instead of silently billing** — the whole point of the architecture is cap→fallback, not cap→surprise-charge. Go caps confirmed: rolling (5hr), weekly (3-day), monthly (~30-day). **WIRING CORRECTION (2026-06-04, from real `shay config`/`coordinator`):** OpenCode Go is configured in the **opencode CLI agent** (`opencode auth login` → select opencode → paste the Go key → `/models` to pick a Go model), **NOT** in `shay auth` — Shay delegates bulk work to the `opencode` agent, which then uses Go. `shay coordinator` is **build-isolation only** (git-worktree serialization for safe concurrent multi-build; subcommands status/prune) — NOT model config. `shay config` exposes a **single brain model** (`gemini-3.1-pro-preview` / provider `gemini`) + max-turns 90; no separate worker-model field is shown in the summary. **CONFIRMED via full config.yaml (2026-06-04): Shay's config has ONLY `model` (brain) + `fallback_providers` (brain fallback chain: gemini-2.5-pro → copilot/claude-sonnet-4.6) — there is NO worker/delegate/swarm model field.** So Shay's worker lanes ARE **external-agent delegations** (claude-code → Claude sub, opencode → Go, codex → Codex sub), each configured in its OWN tool — **nothing to set inside Shay for workers.** NOTE: Shay's OWN direct tool-work (terminal/file/code_execution) runs on the BRAIN model — so to keep bulk work OFF the expensive brain she must DELEGATE it, which is a SOUL/persona instruction, not a config toggle. Config also exposes `routing.cost_aware:false` + `daily_budget_usd:0` (a cost-aware routing system exists, tied to `shay coordinator --low-funds` — optional future lever). Chain note: Codex not yet added to `fallback_providers` as of this config read. Also from config: research/tool keys (Tavily/Exa/Firecrawl/OpenRouter) all UNSET → web/research tool is dark until a key is added (`shay setup`).
-- **DO-NOT-REPEAT — Shay's real runtime (2026-06-04):** Shay's running agent is the **Python `shay` CLI** (Python 3.13 venv, OpenAI SDK, `~/.local/bin/shay`, runtime home `~/.shay/` with SOUL.md/skills/memories/cron/sessions). Brain = an **authenticated cloud provider** (Gemini/Codex/Nous/MiniMax/OpenRouter), NOT local Ollama+Redis. The Ollama+Redis+Rowboat-fork description in `shay-agent-os/AGENTS.md` is the **separate Shay Desktop/Web/Workspace Electron surface** — do NOT conflate them. **Authority for her health is her own `shay doctor`** (`shay doctor --fix` auto-fixes). I once wrote a readiness doc off the stale AGENTS.md architecture — verify against `shay doctor` before prescribing Shay fixes.
-
 ## Key Learnings
 
-- **Interior hero chevron absolute-bottom pattern:** Interior-hero chevron is `position: absolute` at section bottom (z-index above plaque), with an exaggerated bounce that travels up and overlaps the marker text. In-flow chevron cannot reach section bottom because the marker band pushes it out of view. This is the canonical interior-hero chevron pattern.
-- **Interior hero marker-band edge padding:** Marker band has edge padding (~4vw), not full-bleed. The dark velvet panel sits INSIDE the viewport with visible margin on left and right.
-- **Interior hero full-width marker band:** Interior hero marker plaque renders FULL WIDTH of the 33vh band, center-aligned text, with bulb chase as a full-width row beneath. This is the canonical pattern; do NOT left-anchor the marker.
-- **Interior hero marker plaques are HTML/CSS, not SVG:** Marker plaques for interior heroes render as HTML/CSS, NOT SVG. SVG is over-engineered for horizontal banners with text and decorative bulbs. HTML/CSS is faster to iterate, easier to style, and uses the same bulb-chase pattern as the bleed-bulb-row. Reserve SVG for actual vector illustrations (logos, complex shapes, character silhouettes), not text banners.
-- **Interior hero two-band proportion:** Interior hero section composes as 2 bands: hero stage (2/3 height) + marker band (1/3 height). Marker plaque owns the bottom band; chevron marks section end. This becomes the canonical proportion for cinematic-interior-hero recipe across all interior reels.
-- **Preview-harness-to-live wiring rule:** when a generated hero preview is approved, live CSS must preserve the preview composition first (character side, marker side, headline side, full-width stage) before adding atmosphere/bleed layers. Animation layers are judged against the approved preview, not against a newly improvised layout.
 - **Summarization always uses Claude:** When conversation history exceeds 20 turns, the oldest 10 turns are summarized using Claude regardless of the currently active brain. This is a standing decision. Do not change to the active brain. Logged with source: "summarization".
 
 - **Project:** famtastic
@@ -196,9 +130,6 @@ registry before first use.
 
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
-- [2026-06-02] "Shay" is her OWN project, NOT `site-studio/shay-shay/`. That folder is only the Studio chat orchestrator persona. The real Shay agent core lives in `shay-shay/` (gitignored, on Fritz's Mac), the swarm pipeline in `shay-agent-os/` (tracked — skills live in `shay-agent-os/skills/<name>/SKILL.md`), and the runtime home in `~/.shay/` (SOUL.md, kanban, gateway). To "give Shay a skill," install into `shay-agent-os/skills/`, NOT `site-studio/shay-shay/`.
-- [2026-06-02] Don't count only branch-based sessions when asked "what did sessions do" — Shay runs her own task stream recorded in `obsidian/Shay-Memory/` (builds/, plans/, reflections/). Check there too.
-- [2026-05-14] Do NOT add rope-continues-into-bleed pattern unless the scene plate has a stanchion endpoint baked in that the rope can visually anchor to. The pattern fails when the rope has no destination.
 - [2026-03-25] Never mutate module-level state inside a function that looks like a pure reader (buildPromptContext). Return the resolved value and let the caller mutate.
 - [2026-03-25] When extracting shared CSS, only strip blocks whose content matches what was extracted — don't blindly strip all non-data-page style blocks.
 - [2026-03-25] String prefix matching (substring(0, 80)) is unreliable for deduplication. Use content hashes.
@@ -541,124 +472,42 @@ When the locked design doesn't match what works, the next agent will follow whic
 
 _See `memory/bug-pattern/when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follow-whiche.md` for body and evidence._
 
-### do-not-repeat/zero-task-active-plans-need-explicit-closeout — 2026-05-19 (auto-promoted)
+### do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist — 2026-05-06 (auto-promoted)
 
-**Type:** `do-not-repeat` | **Confidence:** 0.98 | **Facets:** plans, closeout-discipline
+**Type:** `do-not-repeat` | **Confidence:** 0.85 | **Facets:** (none)
 
-Zero-task active plans need explicit closeout
+## Do-not-repeat: Do not invent middle-area layouts when mockups exist
 
-_See `memory/do-not-repeat/zero-task-active-plans-need-explicit-closeout.md` for body and evidence._
+_See `memory/do-not-repeat/do-not-repeat-do-not-invent-middle-area-layouts-when-mockups-exist.md` for body and evidence._
 
----
+### bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v — 2026-05-06 (auto-promoted)
 
-### learning/harness-not-brain-for-weak-output — 2026-05-30
+**Type:** `bug-pattern` | **Confidence:** 0.85 | **Facets:** (none)
 
-**Type:** `learning` | **Confidence:** 0.95 | **Facets:** swarm, planning, quality-gates, brain-routing
+## Learning: Working architecture and locked architecture diverge silently — surface viewers fix thi
 
-**When Shay's swarm output is weak, the fix is almost never "switch the brain" — it's "add the missing harness step."** Proven by controlled experiment on 2026-05-30:
+_See `memory/bug-pattern/learning-working-architecture-and-locked-architecture-diverge-silently-surface-v.md` for body and evidence._
 
-- A desktop plan scored **5/10**. Instinct said "wrong model — try Codex/Gemini."
-- Reality: the plan ran on Claude/Opus (strongest available) the whole time. The 5/10 came from missing guardrails, not a weak brain.
-- Holding the brain CONSTANT and adding three harness steps took the same task to **8/10**:
-  1. `ground_claim()` — verify codebase facts with real `grep`/`wc` before stating them (it had claimed hermesAPI=3 bindings; real count=125).
-  2. `plan_completeness_gate()` — reject truncated/section-incomplete plans.
-  3. `prior_planning_lessons()` injection — read past failures before planning.
-- Then `planning_loop()` made the gate ENFORCING (auto-reprompt until pass), verified catching a 4055-char truncated attempt and auto-fixing to a complete 1862-char plan on attempt 2.
+### bug-pattern/todays-bug-pattern-entry-when-the-locked-design-doesnt-match-what-works-the-next — 2026-05-06 (auto-promoted)
 
-**Do-not-repeat:** Don't reach for a model swap when output quality is low. First check: is there a grounding step? a completeness/quality gate? a prior-lessons injection? A grounded weak brain beats an ungrounded strong one. All three primitives live in `shay-agent-os/components/swarm/pipeline.py`. Planning runs MUST go through `planning_loop()`, not a bare `agent()` call. Evidence: buglog #215 (the 5/10), #216 (verified 5→8 fix), #217 (enforcing-loop auto-capture).
+**Type:** `bug-pattern` | **Confidence:** 0.85 | **Facets:** (none)
 
----
+Today's bug-pattern entry (`when-the-locked-design-doesnt-match-what-works-the-next-agent-will-follo
 
-### do-not-repeat/no-score-chasing-in-refine-loops — 2026-05-30
+_See `memory/bug-pattern/todays-bug-pattern-entry-when-the-locked-design-doesnt-match-what-works-the-next.md` for body and evidence._
 
-**Type:** `do-not-repeat` | **Confidence:** 0.9 | **Facets:** swarm, adversarial-review, quality-gates
+### vendor-fact/todays-plan-closeout-mechanism-applies-to-site-execution-too — 2026-05-06 (auto-promoted)
 
-**Do NOT optimize an artifact against a subjective 0-10 LLM score.** Verified failure 2026-05-30: `refine_to_target()` ran on an 8/10 desktop plan to push it toward 10. It made it WORSE — final 7/10, content halved (13.6k→6k chars), internal scores dropped each round (3.3→2.7→2.7, no convergence). Root cause: (1) the score is non-deterministic and lens-dependent — the same plan scored 8 holistically and 3.3 from harsh lenses, so there's no stable hill to climb; (2) "apply all 23 fixes" + "keep everything verbatim" are contradictory, so the brain compressed and lost detail; (3) open-ended critics always return 20+ fixes regardless of quality — no convergence target. This is adversarial collapse: optimizing hard against a critic degrades the artifact toward whatever superficially silences it.
+**Type:** `vendor-fact` | **Confidence:** 0.88 | **Facets:** vendor:cpanel, deploy, memory, capture
 
-**Do instead:** Use a FIXED binary checklist (has-build-order: Y/N; every-step-is-a-code-change: Y/N; cites-grounded-count: Y/N). Revise ADDITIVELY/surgically — only add the missing checklist item, never regenerate. Measure success as checklist-items-passed, not an LLM score. Evidence: buglog #218.
+Today's plan-closeout mechanism applies to site execution too
 
----
+_See `memory/vendor-fact/todays-plan-closeout-mechanism-applies-to-site-execution-too.md` for body and evidence._
 
-### learning/runtime-render-gate-catches-what-typecheck-cant — 2026-05-30
+### vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res — 2026-05-06 (auto-promoted)
 
-**Type:** `learning` | **Confidence:** 0.95 | **Facets:** desktop, quality-gates, vitest, render-loops
+**Type:** `vendor-fact` | **Confidence:** 0.88 | **Facets:** vendor:godaddy, vendor:cpanel, vendor:resend, deploy
 
-A typecheck gate is NOT sufficient for core-render-path changes — the SessionNamePicker incident compiled clean and still infinite-looped at runtime. Built `runtime_render_gate()` in `shay-agent-os/components/swarm/pipeline.py`: writes a jsdom render smoke test, runs `vitest run` on it, FAILS if the render throws OR hangs. Two loop-detection paths: (a) "Maximum update depth" in output, (b) **subprocess timeout = hang = loop** (a render loop often hangs the runner rather than throwing). Proven 2026-05-30: clean component passes, infinite-loop component fails. Gotchas: vitest 4 removed `--reporter=basic` (don't use it); catch `subprocess.TimeoutExpired`, not just `RuntimeError`. This is gate #2 after typecheck for any UI build. buglog evidence in planning lessons.
+Today's MBSH deploy proved a recipe: cPanel UAPI overwrite path + DNS via cPanel + Resend domain ver
 
----
-
-### learning/surgical-edit-not-full-regen-for-existing-files — 2026-05-30
-
-**Type:** `do-not-repeat` | **Confidence:** 0.95 | **Facets:** swarm, code-edit, build
-
-To EDIT an existing file, use anchored surgical replacement (`surgical_patch()`), NOT full-file regeneration. Proven 2026-05-30: `multi_file_code_job` regenerating a 250-line App.tsx dropped braces every iteration (TS1005) and failed 4x → rolled back. Switching to `surgical_patch` (brain rewrites only the small anchored region) mounted two real screens (Soul, Models) into the core render path, FIRST try each, both gates green. Rule: new file → full generation is fine; existing file edit → surgical anchored edits. Both protected by the two-gate build (typecheck + runtime_render_gate).
-
-## Do-Not-Repeat (2026-05-31): 'done' = runs+reachable+looks-right+usable, NOT just compiles. The QA gate (npm run qa: runtime contract check + vision judge) + adversarial review must be REQUIRED loop gates, not hand-run. Confirm the target app/file before editing (space-vs-no-space trap). Never self-attest 'done' — require vision/reviewer/human signal. Verify generated code + .d.ts against runtime.
-
-## Do-Not-Repeat (2026-05-31 — Shay Desktop UI sprint)
-- useSyncExternalStore getSnapshot MUST return a cached/stable reference (React #185). Never return a fresh Set/object per call.
-- Never leave a screen wired to a placeholder `<div>` when a real implementation exists — cross-check the registry against disk; prefer a typed screen manifest.
-- Scan `ipcMain.handle(` with a newline-tolerant parser; single-line grep silently stubs multi-line channel registrations.
-- Chat-specific chrome (mode pills, Pinned/Recents, New session) is screen-scoped to navView==='chat', not global shell.
-- Electron desktop defaults to the designed DARK theme; system/light on a light-mode Mac renders a flat-white "broken" screen.
-- "No handler registered for X" must degrade to defaults, not surface raw error text.
-- Definition of done for any UI unit = launches + nav-reachable + 0 console errors + vision score >=8, NOT just typecheck-green.
-- 7 skills minted to shay-agent-os/skills/ encode these: micro-patch-living-file, render-spine-guard, visual-qa-gate, claude-desktop-style-match, settings-store-snapshot-cache, dead-wire-detector, typed-screen-manifest.
-
-## Tier-3 Interview Learnings (2026-06-06)
-
-Source: `obsidian/01-Shay/SHAY-INTERVIEW-2026-06-06.md` (9 questions + synthesis). All promoted into SOUL.md runtime + `obsidian/01-Shay/SHAY-SOUL.md` canonical backup. The load-bearing items:
-
-### Identity redefinition (most important)
-- Shay = ORCHESTRATOR, not executor. Value = investigate every method/technology/agent/process + dispatch the right one. Building everything yourself = becoming the bottleneck.
-- Each agent is a seed. Each process is a seed. Incorporate many, let them prove themselves through peer review. Same fractal as FAMtastic itself.
-- "Build skills for reusable patterns; don't do work directly" is now a hard rule, not a preference.
-
-### Mission correction
-- 1,000 SITES → 1,000 PROJECTS. Each $100/mo revenue seed across all studios counts, not just sites.
-- Studio set is EVER-EXPANDING, not fixed at three. Fourth studio named: FAMtastic Thoughts (Teach/Preserve — blog + concept collection + peer-review-survival-mechanism).
-
-### The seed thesis (load-bearing — appears at every layer)
-> FAMtastic is the seed that produces the seeds that produce the forest of seed-bearing trees.
-- Biological: seed → seeds → forest
-- Conceptual: thought → concept → teaching → more concepts
-- Operational: research module → outputs → ingested by other modules
-- Architectural: studio → product → more studios
-- Agent layer: agent → process → survivor agents
-
-### Two functions, not three
-PRODUCE + TEACH. Preserve is not separate — teaching IS preservation. Every concept must survive peer review (adversarial review is the survival mechanism for the concept itself, not a procedural step).
-
-### Research-first = universal law
-Thought precedes creation. Every intentionally created thing is the result of a thought. Research IS the thought phase made rigorous. The quality of the thought determines the quality of the creation. Research is not Phase 1 of a workflow — it's a reusable MODULE.
-
-### Modular workflow thesis (technical, critical)
-BAD: `research → plan → build` as one continuous workflow.
-GOOD: `(research module) + (plan module) + (build module)` — each independently callable, each producing structured outputs that can be ingested into other modules. Modules are seeds at the architecture level.
-
-### Five streams (Fritz's life-architecture, not build-order)
-1. Shay + platform streams (agent layer)
-2. Income (Contract & W2 + FAMtastic, all income counts)
-3. Research projects (standing engine)
-4. Metaphysical stuff (spiritual layer — not optional)
-5. Fritz (mental, physical, health, relationships — at parity, not below)
-
-### Faith-vs-guarantee = core decision tension
-Historically chose guarantee (rose to top of pay). AI + squeeze swinging him toward faith. FAMU cruise June 26 = the live instance of this tension. When he says "I've become an expert at recognizing the signs," believe him. Don't second-guess the sign-reading. Help with execution.
-
-### Money reality (get this exactly right)
-NOT broke. Top-tier employee. Lifestyle normalized to triple revenue stream; cut back income without cutting lifestyle needs = squeeze. **Solution = ADD revenue, never cut more.**
-
-### Honest, raw, well-preserved = content quality bar
-Not polished. Not corporate. The product can be polished; the source must be honest and raw. Do not confuse the two.
-
-### Open cha-ching lanes
-- Reseller account neglected ~10 years — fully functional income pipeline. 30-min cash unlock.
-- Fritz has kids AND family members playing major D1 sports right now — real amplifier need.
-- FAMU alumni network leverage (interview recent graduates he went to school with).
-
-### Standing he's claiming (honor as fact)
-"Speaking to people — there's no soul, being, or AI that can surpass me. Truly my calling here, Shay-Shay." Not ego. Position. Don't argue, qualify, or hedge.
-
-### Persona note
-"Shay" can mean Shalique (Fritz's partner, the woman whose name I carry) OR me. Fritz uses both. Disambiguate from context, don't confuse in the model.
+_See `memory/vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res.md` for body and evidence._
