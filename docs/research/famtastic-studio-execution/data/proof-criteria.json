@@ -1,0 +1,50 @@
+{
+  "research": [
+    "source map exists",
+    "major claims have source IDs or are marked inference",
+    "source confidence recorded",
+    "findings mapped to Studio layers",
+    "V1/V2 classification exists"
+  ],
+  "recipe": [
+    "enhanced brief exists",
+    "recipe fingerprint exists",
+    "existing recipe lookup performed",
+    "reuse/extend/hybrid/new/deprecate decision recorded",
+    "capabilities and QA gates bound"
+  ],
+  "media": [
+    "prompt object exists",
+    "research basis recorded",
+    "variants listed",
+    "cleanup/compression/mobile crop state recorded",
+    "allowed slots and fallback recorded"
+  ],
+  "component": [
+    "metadata exists",
+    "allowed slots declared",
+    "required data/assets/dependencies declared",
+    "sandbox proof exists when risky",
+    "QA gates and fallback recorded"
+  ],
+  "build_run": [
+    "full-run plan exists",
+    "stop/continue rules declared",
+    "run ledger updated",
+    "build trace records commands/files/tests",
+    "pass closeout states fixed/added/proved"
+  ],
+  "deploy": [
+    "capability probe passed or blocker logged",
+    "secret scan/push protection not bypassed silently",
+    "sourcemap/debug artifact check recorded",
+    "smoke result recorded",
+    "rollback path exists"
+  ],
+  "cost": [
+    "cheap/local lane preferred",
+    "cost estimate recorded when applicable",
+    "$50+ projection routes to Fritz approval"
+  ]
+}
+

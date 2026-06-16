@@ -1,0 +1,123 @@
+[
+  {
+    "name": "Replit Agent",
+    "category": "ai_app_builder",
+    "what_it_is": "Browser IDE agent with planning, checkpoints, deploys, and usage billing.",
+    "strengths": ["integrated runtime", "checkpoint cost visibility", "usage dashboard", "budgets and alerts"],
+    "misses": ["research is not the first-class build root", "checkpoint cost can reflect effort without proving value"],
+    "borrow": ["visible usage", "checkpoint/resume", "rollback framing"],
+    "avoid": ["cost opacity inside complex checkpoints"],
+    "exploit": ["connect every checkpoint to proof and learning"],
+    "source_ids": ["replit-agent-billing"],
+    "confidence": "high"
+  },
+  {
+    "name": "Bolt.new",
+    "category": "ai_app_builder",
+    "what_it_is": "Prompt/run/edit/deploy browser app builder using WebContainers.",
+    "strengths": ["fast live preview", "no local setup", "full-stack browser runtime"],
+    "misses": ["preview/debug can be the bottleneck", "proof and deploy readiness are not the core differentiator"],
+    "borrow": ["instant runnable preview"],
+    "avoid": ["treating preview as completion"],
+    "exploit": ["preview plus QA/proof/capability truth"],
+    "source_ids": ["bolt-github"],
+    "confidence": "high"
+  },
+  {
+    "name": "v0",
+    "category": "ai_app_builder",
+    "what_it_is": "Natural-language app/UI builder integrated with Vercel deployment.",
+    "strengths": ["UI generation", "project/deploy continuity", "Vercel integrations"],
+    "misses": ["strategy/research not mandatory before generation"],
+    "borrow": ["prompt-to-project-to-deploy continuity"],
+    "avoid": ["UI-first generation without intelligence"],
+    "exploit": ["research-backed prompt objects and recipe proof"],
+    "source_ids": ["vercel-v0-docs"],
+    "confidence": "high"
+  },
+  {
+    "name": "Lovable",
+    "category": "ai_app_builder",
+    "what_it_is": "Full-stack natural-language app platform with code, deployment, backend, auth, database, and integrations.",
+    "strengths": ["broad full-stack lifecycle", "GitHub sync", "shared workspaces"],
+    "misses": ["production readiness can still require external proof discipline"],
+    "borrow": ["full lifecycle workspace model"],
+    "avoid": ["confusing generated app with production-proven app"],
+    "exploit": ["proof-first launch path and learning capture"],
+    "source_ids": ["lovable-docs"],
+    "confidence": "high"
+  },
+  {
+    "name": "Dyad",
+    "category": "ai_app_builder",
+    "what_it_is": "Local open-source AI app builder.",
+    "strengths": ["local control", "open-source", "BYO model flexibility"],
+    "misses": ["local setup burden", "proof depends on local discipline"],
+    "borrow": ["local-first cheap lane", "open artifact posture"],
+    "avoid": ["operator setup burden without guidance"],
+    "exploit": ["guided local capability checks"],
+    "source_ids": ["dyad-github"],
+    "confidence": "high"
+  },
+  {
+    "name": "Claude Code",
+    "category": "agentic_coding",
+    "what_it_is": "Coding agent with hooks, statusline, subagent/task event lifecycle.",
+    "strengths": ["hook lifecycle", "task telemetry", "statusline cost/progress patterns"],
+    "misses": ["technical surface can be too terminal-centric for Studio operators"],
+    "borrow": ["hooks/events/status concepts"],
+    "avoid": ["burying operator control in config files"],
+    "exploit": ["turn agent events into Studio Run Control UX"],
+    "source_ids": ["claude-code-statusline", "claude-code-hooks"],
+    "confidence": "high"
+  },
+  {
+    "name": "OpenAI Codex cloud",
+    "category": "agentic_coding",
+    "what_it_is": "Cloud coding agent in sandboxed repo tasks with PR handoff.",
+    "strengths": ["isolated cloud tasks", "parallel work", "GitHub PR output"],
+    "misses": ["cloud environment can hide setup assumptions"],
+    "borrow": ["sandbox per task", "PR handoff"],
+    "avoid": ["cloud-only assumptions"],
+    "exploit": ["capability truth plus local/cloud lane choice"],
+    "source_ids": ["openai-codex-docs"],
+    "confidence": "high"
+  },
+  {
+    "name": "GitHub Copilot coding agent",
+    "category": "agentic_coding",
+    "what_it_is": "GitHub-native coding agent that can be assigned work and create PRs.",
+    "strengths": ["issue-to-PR workflow", "human merge boundary"],
+    "misses": ["platform-generated output can be opaque"],
+    "borrow": ["native branch/PR workflow"],
+    "avoid": ["unreviewed auto-generated PR content"],
+    "exploit": ["PR proof packet and review checklist"],
+    "source_ids": ["github-copilot-agent"],
+    "confidence": "high"
+  },
+  {
+    "name": "Cursor Background Agents",
+    "category": "agentic_coding",
+    "what_it_is": "Asynchronous remote coding agents that work on branches.",
+    "strengths": ["background status", "takeover", "branch push handoff", "environment setup"],
+    "misses": ["data retention/repo permission assumptions"],
+    "borrow": ["background run panel", "takeover control"],
+    "avoid": ["vendor-only durable state"],
+    "exploit": ["repo-native durable run ledger"],
+    "source_ids": ["cursor-background-agents"],
+    "confidence": "high"
+  },
+  {
+    "name": "Windsurf Cascade",
+    "category": "agentic_coding",
+    "what_it_is": "IDE agent with code/chat modes, planning, todos, checkpoints, workflows, deploys.",
+    "strengths": ["built-in todo planning", "checkpoints", "linter/tool awareness"],
+    "misses": ["deploy from agent can bypass product approval if unmanaged"],
+    "borrow": ["todo/run plan UX", "checkpointing"],
+    "avoid": ["public deploy without approval/proof"],
+    "exploit": ["approval center and deploy proof gates"],
+    "source_ids": ["windsurf-cascade"],
+    "confidence": "high"
+  }
+]
+

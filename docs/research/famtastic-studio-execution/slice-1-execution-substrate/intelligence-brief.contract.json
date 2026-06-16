@@ -1,0 +1,46 @@
+{
+  "contract_id": "studio.execution_substrate.intelligence_brief.v1",
+  "object_type": "intelligence_brief",
+  "purpose": "Capture the research-backed starting point for a FAMtastic Studio build or iteration before generation begins.",
+  "studio_layer": "Intelligence Layer",
+  "primary_agent_role": "Research Strategist",
+  "supporting_agent_roles": ["Recipe Architect", "Prompt Strategist", "Shay Guide"],
+  "required_fields": {
+    "id": "Stable unique identifier.",
+    "project_tag": "Studio project or site tag.",
+    "source_brief": "Original user/client request or iteration objective.",
+    "research_depth": "Selected research depth.",
+    "audience": "Primary audience/customer/user segment.",
+    "opportunity": "Research-backed opportunity or differentiator.",
+    "positioning": "Strategic positioning statement.",
+    "source_ids": "Array of source identifiers or local artifacts used.",
+    "open_questions": "Questions that matter before build execution.",
+    "status": "Lifecycle status.",
+    "created_at": "ISO-8601 timestamp."
+  },
+  "optional_fields": {
+    "constraints": "Known project, cost, brand, launch, or implementation constraints.",
+    "related_site": "Site slug/tag if the brief applies to an existing site.",
+    "research_summary": "Short source-backed research summary.",
+    "assumptions": "Explicit assumptions made by the agent.",
+    "next_recommended_action": "Recommended next action after brief approval/proof."
+  },
+  "allowed_values": {
+    "research_depth": ["fast", "standard", "deep", "expert"],
+    "status": ["draft", "ready_for_recipe", "blocked", "superseded", "archived"]
+  },
+  "relationships": {
+    "feeds": ["recipe_decision", "prompt_object", "run_ledger"],
+    "read_by": ["Mission Control", "Research Screen", "Shay Home", "Run Control"],
+    "proofed_by": ["research proof checklist", "source map", "Shay readback"]
+  },
+  "proof_validation_expectations": [
+    "Required fields are present.",
+    "source_ids references exist or are marked as local artifacts.",
+    "open_questions are actionable or explicitly empty.",
+    "status is one of the allowed values.",
+    "No generation/build action starts before this object exists for serious work."
+  ],
+  "example_fixture_path": "docs/research/famtastic-studio-execution/slice-1-execution-substrate/fixtures/intelligence-brief.example.json"
+}
+

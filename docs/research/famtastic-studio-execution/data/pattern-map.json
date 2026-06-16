@@ -1,0 +1,66 @@
+[
+  {
+    "id": "intelligence-before-generation",
+    "name": "Intelligence before generation",
+    "description": "Research, opportunity, positioning, and recipe resolution happen before build generation.",
+    "maps_to": ["Intelligence Layer", "Research Screen", "Recipe Composer"],
+    "v1": true
+  },
+  {
+    "id": "prompt-object-lineage",
+    "name": "Prompt objects with lineage",
+    "description": "Prompts carry source basis, target slot, constraints, variants, QA, and status.",
+    "maps_to": ["Prompt Registry", "Media Library", "Build Trace"],
+    "v1": true
+  },
+  {
+    "id": "preview-not-proof",
+    "name": "Preview is not proof",
+    "description": "Runnable preview is evidence but does not prove deploy, auth, DB, security, or production readiness.",
+    "maps_to": ["QA Board", "Deploy Center", "Capability Truth"],
+    "v1": true
+  },
+  {
+    "id": "guarded-checkpoints",
+    "name": "Guarded checkpoints",
+    "description": "Checkpoints track proof and resume state, but do not require Fritz approval unless stop conditions trigger.",
+    "maps_to": ["Run Control", "Build Ledger"],
+    "v1": true
+  },
+  {
+    "id": "branch-pr-proof",
+    "name": "Branch/PR proof packet",
+    "description": "Agent work lands as branch/PR with proof, risks, commands, and rollback note.",
+    "maps_to": ["Deploy Center", "Approval Center", "Build Trace"],
+    "v1": true
+  },
+  {
+    "id": "capability-truth",
+    "name": "Capability Truth before autonomy",
+    "description": "Capability means handler plus last probe plus proof plus fallback plus cost/approval rule.",
+    "maps_to": ["Capability Truth Layer"],
+    "v1": true
+  },
+  {
+    "id": "component-slot-mutation",
+    "name": "Component/slot mutation",
+    "description": "Classify changes and use smallest safe component/slot mutation instead of page rewrites.",
+    "maps_to": ["Component Studio", "Component Installer", "QA Board"],
+    "v1": true
+  },
+  {
+    "id": "active-media-registry",
+    "name": "Media Library as active registry",
+    "description": "Assets track prompt lineage, variants, approvals, allowed slots, usage, fallbacks, and QA.",
+    "maps_to": ["Media Studio", "Asset Board", "Media Library"],
+    "v1": true
+  },
+  {
+    "id": "server-strangler",
+    "name": "Server strangler modularization",
+    "description": "Map responsibilities, extract one module at a time, prove no behavior drift.",
+    "maps_to": ["Ops Workspace", "Server Modularization Track"],
+    "v1": true
+  }
+]
+

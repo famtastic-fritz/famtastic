@@ -1,551 +1,5 @@
 # FAMtastic Ecosystem — Site Learnings
 
-## Brain Sync Contract + session-to-brain tying (2026-06-02)
-
-The Obsidian brain is `obsidian/` on `main` (vault with smart-connections plugin;
-`Shay-Memory/` holds 202+ notes — builds, plans, reflections, research). Sessions must
-leave a trace there tied to their id. Enforcement: `scripts/brain/session-checkpoint.js`
-(dependency-free, never throws) is wired into `.claude/settings.json` hooks —
-**SessionStart** creates `obsidian/05-Captures/sessions/<date>/SESSION-<short-id>.md`
-(frontmatter: `session_id` from `CLAUDE_CODE_SESSION_ID`, `branch`, `start_sha`, timestamps);
-**PreCompact** appends a checkpoint line (this is the "periodic" guarantee — long sessions
-compact); **Stop** appends the git delta (commits in `start_sha..HEAD`) and marks the note
-ended. The agent still writes the "What this session did" substance per the contract in
-`CLAUDE.md` ("Brain Sync Contract"). Convergence rule: if a branch predates `obsidian/` on
-main, merge `origin/main` before brain work or notes hit add/add conflicts.
-
-**Why it exists:** a 48h audit found four 2026-06-02 Claude Code sessions siloed — three
-branched from a 2026-05-29 base (before the vault landed 05-30), wrote only to per-branch
-`SITE-LEARNINGS`/`CHANGELOG`/`.wolf`, and none merged to main, so the brain got zero of that
-day's Claude Code work. Shay (on `main`) writes cleanly to `obsidian/Shay-Memory/` — the model
-to match. Full reconciliation in `obsidian/05-Captures/sessions/2026-06-02/INDEX.md`.
-
-## humanize-writing skill (2026-06-02)
-
-Installed from `github.com/aaaronmiller/humanize-writing` (commit 4b59839) to BOTH
-`.claude/skills/humanize-writing/` (Claude Code) and `shay-agent-os/skills/humanize-writing/`
-(Shay). It's a standing prose-output filter — strips AI tells, normalizes burstiness/sentence
-rhythm, calibrates voice; auto-activates for any written output over ~3 paragraphs. **Must load
-every file in `references/` before applying.** Registered in
-`obsidian/06-Capabilities/Agent-Capability-Matrix.md`, `docs/capability-registry.md`, and
-Shay's `shay-agent-os/AGENTS.md` (standing output filter). NOTE: Shay ≠ `site-studio/shay-shay/`
-(that's the Studio chat persona); her real home is `shay-agent-os/` + `~/.shay/`.
-
-## Autonomous content engine (2026-06-02)
-
-`scripts/content-engine/` — Fritz's chosen hands-off revenue path (he explicitly does not want to be involved). A quality-gated SEO/affiliate content site generator that runs on a cron. Pieces: `config.json` (niche, long-tail keywords, monetization, quality gate, deploy target), `lib.js` (helpers + graceful BrainInterface loader), `generate-article.js` (one article per keyword, production path = `site-studio/lib/brain-interface.js` `BrainInterface.execute()`, **deterministic template fallback when network/LLM unavailable** — never crashes), `assemble-site.js` (articles/*.md → static `dist/`: per-article HTML + index + sitemap.xml + robots.txt), `run.js` (orchestrator → `results/<date>.json`, idempotent/cron-safe — skips existing articles), `publish.sh` (honest deploy stub: prints the exact `netlify deploy`/GH-Pages command + crontab line; deploy runs on Fritz's Mac with a vaulted token).
-
-Quality gate is REAL (rejected a filler test article with 6 reasons): min 700 words, ≥3 H2, FTC disclosure required, FAQ required, ≤4% filler-phrase ratio, banned-phrase list — built to survive Google's "scaled content abuse" policy. Niche = **backyard chicken keeping** (chosen from `NICHE-AND-MONETIZATION.md`: non-YMYL, durable demand, Amazon + display-ad fit; stay on gear/husbandry NOT vet diagnosis). Generated output (`articles/`, `dist/`, `results/`) is **gitignored** — regenerated on Fritz's Mac with the real LLM; the engine code is the deliverable. Proof: ran offline → 9 articles, all gate-PASS, 10-page site, disclosure + `rel="nofollow sponsored"` links verified.
-
-**Honest gaps (do-not-misstate):** revenue is a months-long compounding ranking game (~$0 early); ad/affiliate networks pay to a BANK account, not Cash App (so the `$FAMtasticFritz` cashtag does NOT apply here); and the Amazon Associates / ad-network accounts + domain are one-time steps that are legally Fritz-only — an agent cannot create a monetization account as him. Tracked on the board as plan `autonomous-content-engine`.
-
-## Money rails: Cash App billing + credential skill + Resend runbook + security (2026-06-02)
-
-**Owner payment identity (brain fact, 2026-06-02)** — Fritz's Cash App cashtag is **`$FAMtasticFritz`** (Fitzgerald Medine, `https://cash.app/$FAMtasticFritz`). Stored canonically at **`platform/config/owner-profile.json`** (`payment.cashapp.cashtag`) — public receive-info, committed to git (not the vault). `generate-invoice.sh` reads it via the `OWNER_PROFILE` env var and auto-fills it when a `cashapp` invoice omits `cashtag`. This is the single source of truth for "where does FAMtastic get paid."
-
-**Cash App billing** — `platform/capabilities/billing/generate-invoice.sh` gained an optional `payment` block in `invoice-spec.schema.json`: `{ method: "cashapp"|"link"|"manual", cashtag (^\$[A-Za-z][A-Za-z0-9_]{0,19}$), link, instructions }`. `cashapp` renders a pay line + `https://cash.app/<cashtag>/<amount>` + a bare-profile fallback; `link` renders a provided hosted URL; absent/`manual` keeps the legacy `**Payment:**` line (byte-for-byte backward compatible — old specs just gain `"payment": null`). **Honest caveat (do-not-misstate):** the `cash.app/$cashtag/<amount>` amount-prefill is NOT an officially documented Cash App feature — only `https://cash.app/$cashtag` is official. For a locked amount, create an in-app Cash App Payment Link and use `method:"link"`. Example: `examples/sample-engagement-cashapp.json`.
-
-**register-credential skill** — `.claude/skills/register-credential/SKILL.md` (user-invocable) is the one sanctioned way to vault a secret and verify the dependent capability. Backed by `platform/capabilities/vault/register-credential.sh`: a friendly-name→canonical-vault-key allowlist (resend→`studio.resend.api_key`, godaddy, netlify, telegram, twilio, jira, github, cpanel, reach-*), reads the secret from `CRED_VALUE` env or stdin (NEVER argv, to avoid shell-history leakage), **never echoes the value**, writes a value-free audit line to `platform/invocations/`. Registered as `vault.register-credential` (registry now 24). NOTE: not yet wired into the `platform vault` dispatcher subcommand — invoke by direct path (documented in the skill + runbook); one-line follow-up to add the subcommand.
-
-**Resend go-live runbook** — `docs/runbooks/RESEND-REACH-GO-LIVE.md`: exact on-Mac steps (`printf '%s' '<key>' | ./platform/capabilities/vault/register-credential.sh resend`, then `node lib/reach-fabric/selftest.js`, then `./platform/capabilities/reach/send.sh "..." --channels=email`). Explains why it CANNOT run from the cloud sandbox: the vault is macOS-Keychain-backed (local), and the sandbox network is firewalled — `curl https://api.resend.com` returns 403, same as every external provider/data API. **This firewall is a standing environment fact for cloud sessions: no real outbound email/SMS/market-data/payment from here; those run on Fritz's machine.**
-
-**Security exposure** — recon for the Resend key found ALL production secrets in plaintext in the Drive doc "FAMtastic API's" (Resend, Anthropic, OpenAI, OpenRouter, GitHub PAT, Netlify, GoDaddy/cPanel, MySQL pw, Gemini, Pinecone, Perplexity, fal.ai, ElevenLabs, Unsplash pw). Logged at `docs/SECURITY-CREDENTIAL-EXPOSURE-2026-06-02.md` (classes + rotation checklist, no values). No secrets are committed to git. **Fast-cash playbook** at `docs/shay-fritz-ready/FAST-CASH-TODAY.md` (ranked same-day $100 plays; #1 = collect on already-owed work, frictionless Cash App pay line).
-
-## Reach Fabric + Companion App PWA + financial agents (2026-06-02)
-
-**Reach Fabric** — `lib/reach-fabric/` is the channel-agnostic outbound bus the landscape research called for. `index.js` exports `sendReach({message,title,urgency,channels})`: it resolves channel order (explicit `channels` pin, else the urgency policy in `config.js` for low/normal/high/critical), tries each *available* adapter in turn, stops at first success, always appends `console` as the terminal fallback, and writes a JSONL audit line to `platform/invocations/<date>.jsonl`. Returns `{ delivered_via, attempts[], fellback, manual_required, audit_written }`. Adapters live in `lib/reach-fabric/adapters/` and each exports `{ name, isAvailable(), send() }`: `console` (always), `email` (Resend via `RESEND_API_KEY`, default sender `studio@send.mbsh96reunion.com`), `telegram` (`TELEGRAM_BOT_TOKEN`+`TELEGRAM_CHAT_ID`), `sms` (Twilio `TWILIO_*`+`REACH_SMS_TO`), `push` (Web Push/VAPID, lazy-requires optional `web-push`). Adapters return reason strings instead of throwing when creds are absent, so the fallback chain always completes. CLI: `lib/reach-fabric/cli.js`; capability shim `platform/capabilities/reach/send.sh` (`platform reach send "<msg>" [--title=] [--urgency=] [--channels=]`) hydrates vaulted reach secrets into env and falls back to `studio.resend.api_key`. Registered as `reach.send` (registry now 23 capabilities). `selftest.js` strips creds and asserts console fallback + audit line — passing. Live today: console always; email+telegram the moment their env vars exist. manual_required: sms (Twilio number), push (pair the companion app + VAPID keypair + `web-push`).
-
-**Companion App PWA** — `companion-app/` is a no-build, dependency-free installable PWA: the pocket version of talking to your second-in-command. `index.html` has a Chat view (streaming-reveal bubbles, persisted to `localStorage`) and a Today view; `app.js` resolves a pluggable `CHAT_ENDPOINT` (`window.SHAY_ENDPOINT` → `<meta name="shay-endpoint">` → built-in mock that labels itself "(mock — no backend wired)"), POSTs `{message, history}`, and renders `reply`/`text`/`message`/`content`. The Today tab fetches `./state.json` (a copy of `command-center/state.json` — re-copy/symlink when the dashboard regenerates) and renders KPIs + "Needs you now" + ⭐ priorities, with "Ask Shay →" deep-links. `manifest.webmanifest` (standalone, theme `#0b0e14`, SVG + 512 PNG maskable icon under `icons/`) + `sw.js` (cache-first app shell, network-first `state.json`) make it installable + offline. Run: `cd companion-app && python3 -m http.server 8099`, open `http://<LAN-IP>:8099/` on the phone, Add to Home Screen. Verified serving 200s for shell/manifest/sw/icons/state.json.
-
-**Financial agents** — `scripts/finance-agents/` is greenfield (a brain grep found zero prior financial/trading code — all "trading/stock/crypto" hits were stock photos / job queue / UI "portfolio"). `data.js` fetches keyless **Stooq** daily CSV (`https://stooq.com/q/d/l/?s=<sym>&i=d`) with a `.cache/` write-through (gitignored) and a labeled SAMPLE fallback under `sample-data/`. `agents.js` defines 6 pure-function strategy agents (momentum, mean-reversion, SMA10/20 trend-follow, buy-&-hold SPY baseline, equal-weight basket, volatility-breakout), each emitting a prediction + a $10-stake outcome for the latest session. `run.js` prints a leaderboard and writes `results/<date>-leaderboard.json` + `<date>-report.md`. **Environment gotcha (do-not-misread):** in this cloud container Stooq is firewalled (HTTP 403, "host not in allowlist") even with the sandbox disabled, so the run falls back to SAMPLE data and labels it loudly (`"isSampleData": true`, console + report banner). The committed `results/2026-05-29-*` are therefore SYNTHETIC, not real market prices — on Fritz's open network `node scripts/finance-agents/run.js` pulls real Stooq data automatically. One session is noise; the harness is built to run daily and aggregate. Live brokerage (Alpaca paper API) is manual_required, gated on broker creds. OSS to know later: `virattt/ai-hedge-fund`, `TauricResearch/TradingAgents`, `microsoft/qlib`, `freqtrade`, `backtrader`.
-
-## Command Center / Mission Control + Shay billing & work-ops capabilities (2026-06-02)
-
-Shipped the workshop dashboard / Mission Control v1 and two new Shay platform capabilities.
-
-**Command Center generator** — `scripts/command-center/build-command-center.js` (no external deps, run from repo root). Read-only aggregator over the live ledgers: `plans/registry.json` (active = `active_parent_ids` minus `terminated_parent_ids`, matching `scripts/plans/audit.js`), `tasks/tasks.jsonl`, `runs/runs.jsonl`, `proofs/proof-ledger.jsonl`, `agents/catalog.json`, `platform/registry/capabilities.json`, and the `sites/` + `../famtastic-sites/` directories. Per-plan it reads the latest closeout packet from `plans/<id>/closeouts/` and computes: **stage** (`in_progress`/`checkpoint`/`checkpoint_stale`/`needs_tasking`/`blocked_external`/`stale`/`completed`), **momentum** (days since latest closeout/registry update), **autonomy** (0–100: auto-approval + assigned runner + no external blocker raise it), and **profit** (0–100: revenue-proximity by tag/role). Emits `command-center/{index.html, briefing.md, state.json}`. `index.html` is self-contained, mobile-first, Chart.js via CDN (plan-health doughnut + autonomy×profit scatter). `briefing.md` is the "Virtual Fritz" daily read (needs-you / most-profitable / most-autonomous). `state.json` is the machine snapshot for Studio Ops / Shay Desk to consume. Scoring lives in the `SCORING` constant at the top of the generator and is meant to be tuned. Tracked as plan `mission-control-command-center` (5 open tasks). Command-center output files ARE committed (the deliverable); the dashboard treats the new plan as the only one in motion.
-
-**Shay billing capability** — `platform/capabilities/billing/` follows the `platform/capabilities/<class>/<verb>.sh` pattern (resolves PLATFORM_ROOT/HUB_ROOT, `set -euo pipefail`, appends audit lines to `platform/invocations/<date>.jsonl`, surfaces `manual_required` explicitly, no external API calls). `generate-invoice.sh` (status `v1-no-send`) does real end-to-end invoice math (line totals, flat/percent discount, tax on discounted base, derived invoice number `FAM-<YYYYMM>-<slug>`, issue/due dates) and writes `<num>.json` + `<num>.md` + upserts `platform/billing/ledger.jsonl`. `list-invoices.sh` (`v1`) and `mark-paid.sh` (`v1-manual-confirm`, draft|sent→paid) round out the state machine. Input contract: `invoice-spec.schema.json`; sample at `examples/sample-engagement.json` ($397/mo care plan for Tony's Barber Shop). Send/PDF/payable-link are `manual_required` until a payment provider (PayPal vs Stripe vs GoDaddy) is chosen — `reads_from_vault` is intentionally empty. Runtime output under `platform/billing/` is gitignored.
-
-**Shay work-ops capability** — `platform/capabilities/work/` lets Shay draft Jira ticket replies and team standups with a **hard human-approval-before-send gate** (auto-send disabled in code; `outbox send` is intentionally inert). `draft-ticket-reply.sh` and `draft-standup.sh` (both `v1-draft-only`) do real deterministic drafting — `draft-standup.sh` reads `runs/runs.jsonl` + `tasks/tasks.jsonl` when no input JSON is given — writing to `outbox/<draft_id>.json`. `outbox.sh` runs the `draft→approved` state machine. Schemas under `schemas/`, samples under `examples/`. Send is `manual_required` pending vaulted `jira.api_token`/`jira.base_url`/`jira.email` (+ optional `slack.webhook`). Drafting is deterministic (no LLM call) — an LLM rewrite pass is the natural v2. Runtime drafts (`outbox/*.json`) are gitignored; `.gitkeep` is tracked.
-
-**Registry** — all six new capability records merged into `platform/registry/capabilities.json` (now 22 capabilities). **Roadmap** — `docs/shay-fritz-ready/ROADMAP.md` ranks Shay's Fritz-readiness gaps by autonomy×profit (payment-provider decision first, then invoicing, then two-way digest / phone companion).
-
-**Fritz-priority tracking (same-day follow-up)** — the generator now reads a `fritz_priority`/`priority: "high"` field on a plan record or its registry label and treats *Fritz's stated priority* as a first-class signal distinct from the profit heuristic: a ⭐ KPI tile, a ⭐ card badge with a gold accent, a "Your priorities" section at the top of `briefing.md`, and priority-first ordering in both the cards and the needs-you list. Two high-priority product plans were registered (`shay-omnipresent-assistant`, `fritz-companion-app`) with 4 open tasks each, so the board finally shows work in motion. A background research workstream writes `docs/shay-fritz-ready/VIRTUAL-ASSISTANT-LANDSCAPE.md` (omnipresent-assistant landscape: products, OSS building blocks, reach/notification fabric, virtual-body options, recommended build-on stack).
-
-## Agent OS — Software Design Document & Architecture Foundation (2026-05-27)
-
-Created a comprehensive Software Design Document for the Agent OS multi-agent orchestration system. The SDD lives at `~/famtastic/docs/AGENT-OS-SDD.md` (26KB, 12 sections). Rowboat (14.6K stars) is the intended fork base. ECC (affaan-m/ECC hackathon winner) was deep-researched for architectural patterns — buddy consensus, inter-agent Telegram bus, agent taxonomy — but has zero source code, so it serves as pattern reference only.
-
-**Architectural decisions captured:** Redis-backed message bus (replace Rowboat's default messaging), functional agent naming (no emojis/animals), trust mode spectrum (`paranoid` → `cautious` → `trusted` → `godmode`) with buddy consensus via NAND gate, `/goal` loop engine (judge model, turn budget, fail-open defaults), swarm execution with configurable parallelism and backpressure, heartbeat protocol (30s intervals, dead agent detection at 90s), and reporter agent for human narration.
-
-**Agent taxonomy defined:** Orchestrator tier (plan/delegate/verify/reporter) using Claude 4 / Kimi k1 / Codex, Worker tier (cheap/code/reasoning/local/vision/web) using Qwen 1.5B / Phi-4-mini / Hermes 3B / DeepSeek-R1, and Studio Bridge agents (site/media/component) calling fam-hub APIs.
-
-**Model registry includes cost-per-1M tokens and capability tiers.** Qwen 2.5 1.5B and Phi-4-mini 3.8B are primary free local workers via Ollama. Kimi k1 at $0.60/M is the reasoning orchestrator. Codex at $1.50/M is the code worker. Claude 4 Opus at $15.00/M is reserved for planning/verification only.
-
-**Implementation phases:** Phase 0 (fork Rowboat + Redis + Ollama workers), Phase 1 (orchestration + trust modes + heartbeat + dashboard shell), Phase 2 (studio bridges + revenue agents + cost tracking), Phase 3 (500-agent scaling + advanced routing + notifications).
-
-**Known gaps recorded:** Kimi API key not yet acquired; Claude Code auth intermittent; no notification system built; Redis not yet running; ECC has no source code; Open WebUI still uninstalled but now explicitly deprioritized in favor of custom dashboard.
-
-**Related artifacts:** `~/famtastic/docs/AGENT-OS-SDD.md`, `~/famtastic/obsidian/Projects/Agent-OS-Handoff-2026-05-27.md`, `~/.shay/session-checkpoints/agent-os-session-20260527-174734.json`.
-
-## FAMtastic Hosting — Auth + Dashboard System (2026-06-10)
-
-All 7 integration tasks completed in a single autonomous run. Status upgraded from `ready_for_integration_phase` to `production_ready`.
-
-**Files built:**
-- `api/server.py` — FastAPI server on port 8643, CORS for dashboard on 5174
-- `api/routes/agents.py`, `tasks.py`, `events.py`, `trust.py` — REST endpoints
-- `api/websocket.py` — WebSocket event broadcaster
-- `bridges/site_bridge.py`, `media_bridge.py`, `component_bridge.py`, `base_bridge.py` — Studio bridge stubs with graceful fallback
-- `reporter/heartbeat.py`, `status_reporter.py`, `blocker_detector.py` — Health monitoring, stale-worker detection, escalation
-- `cron/autonomous-run.yaml`, `cron/run-autonomous-check.sh` — Cron configuration every 5 minutes
-- `tests/e2e/test_goal_loop.py`, `test_error_recovery.py`, `test_trust_mode.py` — 14 E2E tests
-- `components/dashboard/src/hooks/useDashboardStore.ts` — Added `syncTrustMode()`, `setTrustModeRemote()`, `fetchAgents()`, `fetchTasks()`, `checkApiHealth()`
-- `components/dashboard/src/App.tsx` — Added `ApiPoller` component for 5s polling loop
-- `components/dashboard/src/components/Sidebar.tsx` — Trust mode selector wired to `/api/trust`, shows API connection indicator
-
-**Test results:** 20/20 pass (14 E2E + 6 unit/integration). Tested: goal decomposition with Ollama subgoals, async goal polling, trust mode gates (paranoid blocks, godmode allows, cautious triggers), error recovery retry/escalation, message bus pub/sub, worker pool task submission.
-
-**Blockers resolved:** `test_swarm.py::test_trust_mode` failed because system `~/.shay/trust-mode.json` had `level: trusted` persistently. Fixed test to use an isolated temp config via `TrustMode(config_path=...)`. Queue order test `test_message_bus` failed because previously seeded Redis keys polluted the test; flushing `swarm:queue:test_queue` and `swarm:state:test_key` resolved.
-
-**Known gaps (updated):** Studio bridges are stubs — actual `fam-hub site`, media generation API, and Component Studio integration pending. WebSocket event stream not yet consumed by dashboard (only polled REST). Worker pool hardcoded to 3 workers; scaling to 500 needs architecture work. Dashboard `ActivityPanel` is not yet real-time via WS. `launchd` plist for cron is documented but not activated.
-
-**How to run:**
-```bash
-# API server
-cd ~/famtastic/shay-agent-os && python3 api/server.py
-# Dashboard dev
-cd components/dashboard && npm run dev
-# Tests
-python3 -m pytest components/swarm/test_swarm.py tests/e2e/ -v
-# Heartbeat once
-python3 -m reporter.heartbeat --once
-```
-
-## Final pre-Phase-2 consolidation and archive cleanup (2026-05-21)
-
-The active plan of record for the next work cycle is `plans/PHASE2-VISUAL-WORKFLOWS-BRAND-SYSTEMS.md`. A final pre-Phase-2 cleanup harvested broader pre-Shay-Shay worktree material into `docs/archive/pre-shay-shay/full-snapshots/` instead of merging stale app/UI work wholesale. The archive includes the convergence dossier docs/process and studio-execution research snapshot, experimental agent/bootstrap skills from the adoring-merkle Claude worktree, and temporary Site Studio stubs from great-gauss as reference-only evidence.
-
-Phase 2A now has concrete starting inputs tracked in main: `brand/FAMTASTIC-BRAND-MARK.md` records the current FAMtastic brand mark manifesto/production rules, and `remotion/` contains the current FAMtastic logo motion composition source and recipes. Bulk MuAPI logo/media WIPs from the epic-mclean worktree were preserved in the local cleanup archive and indexed by `docs/archive/pre-shay-shay/local-artifact-manifests/epic-mclean-muapi-logo-outputs.md` rather than committed as large binary output. Local nested repos/probes such as `shay-shay/`, `shay-desktop*/`, `_tool-probes/`, and generated Remotion output are intentionally ignored by the hub repo; useful conclusions must be promoted into docs, Data Center records, plans, or separate repos before they count as incorporated.
-
-## Post-evaluation contract and Phase 1 opportunity forecast (2026-05-21)
-
-Added the shared post-evaluation substrate at `lib/famtastic/post-eval/index.js`. It exports `buildPostEval()`, `recordPostEval()`, `listPostEvalRecords()`, `extractPhaseOneOpportunitySeeds()`, and `renderPostEvalReport()`. Post-eval records write sanitized JSON to `data-center/post-eval/<evaluation_id>.json`, Markdown reports to `data-center/reports/post-eval/<evaluation_id>.md`, and ledger rows to `data-center/ledgers/post-eval.jsonl`; `lib/famtastic/data-center/index.js` now treats `post-eval/` and `schemas/post-eval-record.schema.json` as first-class Data Center structure.
-
-`Mission Control` now reads post-eval records via `lib/famtastic/mission-control/index.js` and exposes `summary.post_eval`, `post_eval[]`, opportunity counts, and high-priority counts. `scripts/mission-control-report.js` renders post-eval counts and recent post-eval records in the CLI status view. `scripts/post-eval-phase1.js` runs the Phase 1 foundation post-evaluation and Phase 2 opportunity forecast against the real closeout, Phase 2 plan, and live Perplexity research proofs.
-
-The live Phase 1 post-eval produced `data-center/reports/post-eval/posteval_phase1_20260521.md` and identified 15 opportunities, including: mandatory post-eval closeout for all studio jobs, research-first post-eval skill/workflow, Media Studio brand/logo workflow skill, Site Studio build/edit/enhance workflow skill, FAMtastic logo/brand prompt recipe, research-backed asset prompt enhancer, component decomposition before generation, cross-studio request/response broker, visual workflow prototype surface, and Second Brain promotion rules. Verification lives in `tests/post-eval-tests.js`, expanded `tests/mission-control-tests.js`, and expanded `tests/data-center-tests.js`.
-
-## Wave 7 Site Studio quality-flow hook (2026-05-21)
-
-Added the shared Site Studio quality-flow module at `lib/famtastic/site-quality-flow/index.js`. It exports `extractPlatformNeeds()`, `buildCrossStudioContract()`, and `buildSiteQualityFlowContext()`. The module turns a site spec/user message into research, Media Studio, and Component Studio needs, then emits a prompt-ready `SITE QUALITY FLOW` block that encodes the platform contract: research first, search/reuse before generate, route specialized needs to the owning studio, return structured results to the caller, record proof in Data Center, and save reusable output back to the owning studio.
-
-`site-studio/server.js::buildPromptContext()` now calls `buildSiteQualityFlowContext({ hubRoot: HUB_ROOT, spec, userMessage, requestType, maxComponentCandidates: 3 })` and appends `siteQualityFlow.promptBlock` to `briefContext`. This means Site Studio build prompts now include build-time media requests (hero image, gallery assets, video/motion, logo/brand assets), component reuse requests (slideshow/gallery/carousel, hero, testimonials, pricing), Component Studio search-before-build candidates from `buildComponentReuseContext()`, and dry-run Media Studio planning language that explicitly says not to invent missing/generated assets.
-
-Verification lives in `tests/site-quality-flow-tests.js` and `site-studio/tests/site-quality-flow-integration.test.js`. Focused proof passed `node tests/site-quality-flow-tests.js` and `cd site-studio && npm test -- --run tests/site-quality-flow-integration.test.js`. This is still a prompt/context contract and backend hook, not the full cross-studio request broker or polished Site Studio workflow UI.
-
-## Phase 2 direction: Visual Workflows & Brand Systems (2026-05-21)
-
-Phase 2 should start with product-value workflows, not Mission Control first. The agreed order is: Media Studio through FAMtastic logo/brand creation, Site Studio useful build/edit/enhance workflow, Component Studio from real repeated site/media needs, Mission Control visual orchestration, Data Center/Research Center/Second Brain visual UI, and Shay Desk Office tab integration. The FAMtastic logo/brand system is the anchor artifact because it exercises Media Studio, research-shaped prompting, DESIGN.md/tokens, Site Studio visual direction, Component Studio style rules, and Shay/FAMtastic identity in one concrete workflow.
-
-## Wave 6 Component Studio wrapper foundation (2026-05-21)
-
-Added the first search-before-build Component Studio substrate. `lib/famtastic/component-studio/index.js` exports `loadComponentCatalog()`, `searchComponents()`, `buildComponentReuseContext()`, `createComponentProofJob()`, and `appendComponentLedgerRecord()`. The catalog loader preserves `components/library.json` as the canonical index but also scans `components/*/component.json`, so manifest-only components are discoverable even when the registry is stale.
-
-Component search is deterministic and local for this wave: keyword/type/group scoring over component IDs, names, descriptions, slots, fields, tags, and usage count. `buildComponentReuseContext()` emits a build-prompt-ready block that tells Site Studio to reuse existing components before generating new ones and preserve `data-component-ref`, `data-field-id`, slots, CSS variables, dependencies, and provenance. `scripts/component-studio-search.js` is the CLI proof/search surface and can create zero-site-write proof jobs with `--create-proof`.
-
-Component reuse proofs write Data Center jobs with `kind: component_reuse`, `job.json`, `events.jsonl`, `report.md`, and `outputs/component-reuse-proof.json`, plus sanitized ledger rows in `data-center/ledgers/component-reuse.jsonl`. Mission Control now excludes `component_reuse` jobs from research jobs and exposes `summary.component_reuse` plus a `component_reuse` array. Verification lives in `tests/component-studio-tests.js`; focused proof reran `tests/mission-control-tests.js`, `tests/media-studio-wrapper-tests.js`, `node scripts/component-studio-search.js --query 'cinematic hero with video background and CTA' --type hero --json`, `node scripts/plans/audit.js`, and `git diff --check`. Known gaps: build prompt injection is deferred to Wave 7; registry drift remains (9 manifests found, 6 `library.json` entries); no visual Component Studio UI exists yet; search is not semantic/vector-backed.
-
-## Wave 5 Media Studio wrapper foundation (2026-05-21)
-
-Added the first bounded Media Studio substrate without spending provider credits. `media-studio/model-aliases.json` seeds MuAPI model intent routes and fallbacks (`hero-image`/`text-to-image` → `flux-dev -> flux-kontext-max -> gpt4o`, `image-to-video` → `wan2.2 -> wan2.1-i2v` with the prior `veo3-fast` mismatch note). `media-studio/lib/index.js` exports `resolveModelAlias()`, `buildMuapiPlan()`, `createMediaJob()`, and `appendAssetLedgerRecord()`; all paths default to dry-run and use prompt hashes for dedup/proof.
-
-`createMediaJob()` writes Data Center jobs with `kind: media_generation`, `job.json`, `events.jsonl`, `report.md`, and `outputs/generation-proof.json`. Media asset lifecycle rows go through the existing sanitized Data Center ledger path at `data-center/ledgers/media-assets.jsonl`, so secret-looking keys/values are redacted before persistence. `scripts/media-studio-plan.js` is the local CLI planner; it supports `--json` and `--create-job`, but `--spend` intentionally throws because paid media generation remains gated by Fritz approval.
-
-Mission Control now includes media generation visibility. `lib/famtastic/mission-control/index.js` filters Data Center jobs with `kind: media_generation`, reports `summary.media_generations`, and returns a `media_generations` array while preserving generic proof discovery from `jobs/*/outputs/*`. Verification lives in `tests/media-studio-wrapper-tests.js`; focused proof also reran `tests/mission-control-tests.js`, `tests/data-center-tests.js`, and `git diff --check`. Live zero-spend proof job: `data-center/jobs/media-20260521150816-wave-5-dry-run-hero-proof/`. Known gaps: actual MuAPI generation is not wired; OCR/text validation and composition-preservation guard are proof fields only; Remotion render execution remains next-step composition wiring; there is still no Media Studio visual UI.
-
-## Wave 4 Mission Control reader/projection (2026-05-20)
-
-Added the first bounded Mission Control / visual observability slice as a reader over the existing Data Center rather than a new store. `lib/famtastic/mission-control/index.js` now exports `buildMissionControlSnapshot(options)`, which reads `data-center/jobs/*/job.json`, `data-center/witness/*.jsonl`, `data-center/claims/*.json`, `data-center/decisions/*.json`, `data-center/ledgers/*.jsonl`, Data Center job `outputs/`, and the raw `captures/inbox/` count/sample. It derives research job counts, latest witness pass/fail state, claim/decision summaries, needs-Fritz items, stale/blocked items, proof artifacts, and raw capture inbox counts without writing derived state back to the Data Center.
-
-Added `scripts/mission-control-report.js` as the local report surface. It supports human terminal output plus `--json`, `--root`, `--hub-root`, and `--stale-after-hours` for deterministic tests and future Desktop/Mission Control consumers. `tests/mission-control-tests.js` uses a temp Data Center fixture to prove jobs, witness checks, claims, decisions, needs-Fritz events, stale/blocked projection, proof discovery, raw capture preservation, argument parsing, and human rendering.
-
-Wave 4 also registered Data Center claim `claim_a3b0cb120202f00c` and decision `decision_cce22f61a71f6dac` to document the reader-only design choice. Proof and status live at `shay-shay/observations/SHAY-WAVE4-MISSION-CONTROL-PROOF-2026-05-20.md` and `shay-shay/observations/SHAY-WAVE4-STATUS-2026-05-20.md`; the spec packet lives at `specs/004-mission-control-observability/`. Known gaps preserved/opened: no Desktop/cockpit UI yet; live autopilot summaries are not included until real run-event ingestion reaches the Data Center; proof discovery currently starts with Data Center job outputs and proof-like Data Center ledger rows rather than every older root proof ledger.
-
-## Wave 3 data-center ingestion and knowledge layer foundation (2026-05-20)
-
-Extended the existing Data Center in place rather than creating a parallel knowledge store. `lib/famtastic/data-center/index.js` now adds local source, claim, and decision primitives on top of the Wave 1/2 job/ledger/witness substrate. Raw capture remains exactly where Fritz corrected it should remain: `captures/inbox/` and `captures/review/` are the raw capture box, and Wave 3 ingests from those folders into `data-center/sources/*.json` plus a compact `data-center/sources/index.json` for idempotent rescans.
-
-Source records now carry `source_id`, `kind`, `path`, `relative_path`, `title`, `summary`, `excerpt`, `hash`, timestamps, queue, byte size, and provenance. Claim records link to one or more source IDs and include `confidence`, `status`, `tags`, and provenance. Decision records link to sources, claims, and specs with `rationale` and `status`. All of these reuse the existing redaction path so secret-bearing keys and token-like values are removed before persistence, including excerpts/summaries derived from raw files.
-
-Added `scripts/data-center-ingest.js` as the bounded local ingestion path. It supports `--dry-run` and `--json`, scans the raw capture box only, and writes no source records during dry runs. Focused proof lives in `tests/data-center-tests.js` and `tests/data-center-ingest-tests.js`, covering ingestion idempotency, redaction, and source/claim/decision linkage. Known gaps preserved: no graph/second-brain projection for claims and decisions yet; no promotion workflow on top of the primitives yet; and non-capture evidence lanes such as repo docs and research outputs are future ingestion expansions rather than part of this bounded slice.
-
-## Wave 2 witness ledger and autopilot foundation (2026-05-19)
-
-Extended the existing Data Center foundation instead of creating a parallel observability store. `lib/famtastic/data-center/index.js` now provisions `data-center/witness/` and `schemas/capability-witness.schema.json`, and exports `appendWitnessRecord()` plus `readWitnessRecords()`. Witness records are append-only JSONL files keyed by capability and include `capability`, `status`, `durationMs`, `issuedAt`, `platform`, `os`, bounded `metadata`, and optional `baseline`; the records reuse the same secret-redaction path as general ledger writes, so witness metadata does not need its own sanitization branch.
-
-Added `scripts/witness-check.js` as the bounded local registration path for existing capability proofs. The current checks are `data-center-smoke`, `second-brain-export-smoke`, and `research-router-metadata-test`. The last one intentionally reuses the real Site Studio regression command (`npm test -- --run tests/research-router.test.js` in `site-studio/`) rather than cloning its assertions into another harness. Running `node scripts/witness-check.js --json` appends witness rows under `data-center/witness/*.jsonl` and carries forward previous status/duration into a simple baseline delta when earlier witness rows exist.
-
-Added `lib/famtastic/autopilot/index.js` for Mercury-inspired wave-run health classification. The current implementation is intentionally deterministic and local: it consumes recent step/tool/event summaries and classifies `productive`, `suspicious`, or `stuck` based on three fixed metrics only: success rate, action diversity, and repeated-action streak. It does not stop or alter external processes; it is a status signal for later Mission Control/Desktop surfacing. Tests in `tests/autopilot-tests.js` prove the three required verdicts, and `tests/witness-check-tests.js` proves witness registration/baseline behavior without network calls.
-
-Known gaps opened/preserved: witness history is local JSONL only and has no visual Mission Control surface yet; baseline comparison is currently last-run only, not trend-aware; autopilot input is still bounded synthetic/local event summaries rather than live Shay/Desktop/tool traces; and no automatic remediation or lane-skipping behavior exists yet because this wave is status-only by design.
-
-## Research Data Center foundation and second-brain proof (2026-05-19)
-
-Implemented the first research-first foundation slice: `site-studio/lib/research-router.js` now handles `skipCache` and `forceSource` without the old `cached is not defined` failure, and `queryResearch()` preserves provider `meta` so Perplexity citations/search results/usage can flow to downstream proof. `site-studio/lib/research-registry.js::queryPerplexity()` now reads `PERPLEXITY_API_KEY` or `PPLX_API_KEY` from process env and stores response metadata (`citations`, `search_results`, `usage`, `cost`/`usage_cost`, request id, model, status code) under `meta` without printing or persisting secrets. Regression coverage lives at `site-studio/tests/research-router.test.js`.
-
-Added the local FAMtastic Data Center substrate at `lib/famtastic/data-center/index.js` with `ensureDataCenter()`, `createResearchJob()`, `appendLedgerRecord()`, `listCaptureInbox()`, and `sanitizeRecord()`. The default root is `~/famtastic/data-center/`, with folders `sources/`, `jobs/`, `ledgers/`, `claims/`, `citations/`, `decisions/`, `artifacts/`, `graphs/`, `reports/`, `schemas/`, `cache/`, and `exports/`; each job gets `uploads/`, `workspace/`, `outputs/`, `sources/`, `events.jsonl`, and `report.md`. `appendLedgerRecord()` writes sanitized JSONL and redacts secret-looking keys/values; coverage is in `tests/data-center-tests.js`.
-
-Added `scripts/research-job.js`, which loads `~/.shay/.env` locally, calls the shared `lib/famtastic/research` proxy, creates a Data Center job, writes `research-events.jsonl`, and emits `outputs/research-proof.json` plus `report.md`. Live proof jobs created `data-center/jobs/research-20260519225124-perplexity-metadata-preservation-proof/`, `data-center/jobs/research-20260519225143-swarm-worker-a-research-synthesis-structure/`, and `data-center/jobs/research-20260519225150-swarm-worker-b-research-shaped-sdd/`; together they proved Perplexity metadata capture and a bounded 2-worker research swarm with cited outputs.
-
-Added the first second-brain projection layer at `lib/famtastic/second-brain/index.js`, exporting Data Center research jobs to Markdown notes under `second-brain/Research/` and Obsidian canvas-style graph files under `second-brain/Canvases/`. Coverage is in `tests/second-brain-tests.js`. Created the first research-shaped SDD packet at `specs/001-research-data-center-foundation/` with `capture.md`, `research.md`, `sources.md`, `claims.md`, `spec.md`, `plan.md`, `tasks.md`, `proof.md`, `decision-log.md`, and `learn.md`.
-
-Known gaps preserved/opened: Data Center ingestion only lists the existing capture inbox so far and does not yet promote captures into claims/decisions automatically; `lib/famtastic/research/index.js` still proxies Site Studio instead of owning research natively; Mission Control visual panels are not built yet; Perplexity cost is returned nested at `usage.cost` in tested responses and should be normalized in a follow-up; the broad `site-studio/tests/unit.test.js` suite currently fails before execution because `site-studio/public/js/shay-bridge-client.js` is missing, unrelated to this research slice.
-
-## Shay long-run capability discovery: research proof, Media Studio, Component Studio, visual workflows (2026-05-19)
-
-Long-run capability discovery artifacts were written under `~/famtastic/shay-shay/observations/`: `SHAY-LONG-RUN-CAPABILITY-REPORT-2026-05-19.md`, `SHAY-SOURCE-TAGGED-CAPABILITY-MAP-2026-05-19.md`, `SHAY-IMPLEMENTATION-PLAN-AFTER-CAPABILITY-DISCOVERY-2026-05-19.md`, `SHAY-CAPABILITY-INSTALL-EVAL-LEDGER-2026-05-19.md`, and heartbeat file `SHAY-LONG-RUN-STATUS-2026-05-19.md`. This pass intentionally treats Shay as broader ambient intelligence/orchestration and treats Site Studio, Media Studio, and Component Studio as FAMtastic ecosystem studios that Shay can coordinate, observe, research for, and learn from.
-
-Research proof: Perplexity itself was live-verified via process environment only, with no key printed or persisted. A tiny `sonar` request to `https://api.perplexity.ai/chat/completions` returned HTTP 200 with response keys `choices`, `citations`, `created`, `id`, `model`, `object`, `search_results`, and `usage`; usage included `completion_tokens`, `cost`, `prompt_tokens`, `search_context_size`, and `total_tokens`. Follow-up implementation fixed `site-studio/lib/research-registry.js::queryPerplexity()` so it now accepts `PERPLEXITY_API_KEY` or `PPLX_API_KEY`, preserves `citations`, `search_results`, `usage`, `cost`/`usage_cost`, request id, model, and status code under `meta`, and never prints the key.
-
-Research router fix: `site-studio/lib/research-router.js::queryResearch()` previously had a real `ReferenceError: cached is not defined` bug when `skipCache:true` or `forceSource` bypassed the cache branch. The fix hoists `cached` to function scope, returns `stale:false` for fresh cache hits, preserves `result.meta`, and is covered by `site-studio/tests/research-router.test.js` for `skipCache`, `forceSource`, and Perplexity metadata. `lib/famtastic/research/index.js` remains a scaffold/proxy into Site Studio, and `scripts/intelligence-loop` is still a cross-site pending-review aggregator, not the full data collector/research loop.
-
-Media Studio recommendation: keep `muapi` CLI as the primary agent-accessible provider bridge, keep the installed `/Users/famtasticfritz/skills/muapi-*` recipe skills as recipe corpus through a wrapper, adapt the `image-and-video-gen` skill's provider/cost/verification rules, and use `~/famtastic/remotion/` as the deterministic composition/render layer. Skip Open Generative AI GUI for now because the downloaded DMG is redundant with the CLI/MCP path for agent workflows. The first Media Studio wrapper slice should add `media-studio/lib/muapi-wrapper.js`, `model-aliases.json`, `asset-ledger.js`, and `scripts/probe-models.js`, with model health/fallback, OCR/text validation, brand-context injection, asset/cost ledgers, and preview metadata.
-
-Component Studio recommendation: use `~/src/open-design/packages/registry-protocol` as the starter architecture, Open Design's 4-layer token/design-system model and `craft/animation-discipline.md` as the contract/rulebook, and existing `~/famtastic/components/<component>/component.json` files as seed content to migrate. Component Studio should be a schema-first Lego factory with typed slots, versioning, preview proof, reduced-motion support, provenance, search-before-build, and cross-studio handoff; shadcn/Magic UI/21st.dev/ReactBits/Aceternity patterns are inspiration, not raw architecture.
-
-Visual workflow recommendation: enable/spike `agents-observe` for immediate Claude Code worker visibility when Docker is running, but build a Shay-native run/workflow schema first (`run`, `agent`, `step`, `tool_call`, `artifact`, `decision`, `cost`, `blocker`, `review`, `learning`, `adjustment`). Langflow and Dify remain isolated spikes; AutoGen Studio is blocked by the host Python 3.9/toolchain, and Microsoft Agent Framework DevUI was not proven as a standalone local UI.
-
-Known gaps added/preserved: Pinecone was not live-proven in this pass; shared research is still proxied through Site Studio; Media Studio has no wrapper implementation; Component Studio lacks architecture/typed-slot schema; no Shay-native cockpit/run schema exists yet; FAMTASTIC-STATE.md still needs a later full regeneration to reflect these discovery artifacts and updated known gaps.
-
-## Shay-Shay intelligence ledger substrate (2026-05-19)
-
-Shay-Shay now has the first local substrate for the continuous intelligence loop Fritz requested: `~/famtastic/shay-shay/agent/intelligence_ledger.py`. It provides a profile-aware append-only JSONL event ledger at `get_shay_home() / "intelligence/events.jsonl"`, so default `~/.shay` and profile homes such as `~/.shay/profiles/<name>` remain isolated. The module exposes `append_event()`, `read_events()`, `summarize_events()`, `intelligence_home()`, `events_path()`, and `is_enabled()`; writes default on and can be disabled with `SHAY_INTELLIGENCE_ENABLED=0|false|no|off|disabled`.
-
-The ledger currently stores sanitized event records only when code explicitly calls `append_event()`; it is not yet wired into the main `run_agent.py` loop, memory manager, kanban, goals, gateway, desktop API, or cron briefings. Event records include `id`, `ts`, `type`, `source`, `session_id`, `task_id`, `summary`, and sanitized `metadata`; obvious secret-bearing metadata keys (`api_key`, `token`, `secret`, `password`, `credential`, `authorization`) and long token-looking string values are redacted before disk write. Tests live at `~/famtastic/shay-shay/tests/agent/test_intelligence_ledger.py` and cover profile-scoped paths, append/read/filter/limit behavior, disabled mode, corrupt-row tolerance, redaction basics, and summary counts.
-
-Known gap: this is Wave 1 foundation only. The next intelligence-loop work is to hook selected lifecycle events into the ledger, add an analyzer/report command, create concise briefing output, and expose the latest status to Shay Desktop after the shape is proven.
-
-## Shay Desktop Electron install and lineage correction (2026-05-19)
-
-The primary Shay Desktop lineage is the Electron + React + TypeScript app from `https://github.com/fathah/hermes-desktop`, cloned at `~/famtastic/shay-desktop-electron/`. This is the repo matching Fritz's screenshot: Chat, Sessions, Profiles, Office, Models, Providers, Skills, Persona/Soul, Memory, Tools, Schedules, Gateway, Settings, and Kanban. The app was rebranded and installed as `/Applications/Shay Desktop.app` with `CFBundleName=Shay Desktop`, `CFBundleIdentifier=com.famtastic.shaydesktop`, executable `Shay Desktop`, and Electron `userData` under `~/Library/Application Support/shay-desktop`. It is ad-hoc signed and `codesign --verify --deep --strict /Applications/Shay\ Desktop.app` passes.
-
-Electron rebrand/adaptation files include `package.json`/`package-lock.json` (`name=shay-desktop`, FAMtastic metadata), `electron-builder.yml` (`productName=Shay Desktop`, `appId=com.famtastic.shaydesktop`, `executableName=shay-desktop`, notarization disabled for local build), `dev-app-update.yml`, `src/main/index.ts` (`app.name`, app user model id, `app.setPath('userData', .../shay-desktop)`, GitHub menu links, notifications), `src/main/installer.ts` (compatibility exports still named `HERMES_*` but resolving `SHAY_HOME`/`~/.shay`, `SHAY_REPO`/`~/famtastic/shay-shay`, `.venv/bin/shay`, and FAMtastic local-install messaging), `src/main/cronjobs.ts` (cron cwd uses `HERMES_REPO` compatibility alias), `src/main/utils.ts` (profile homes under `~/.shay/profiles/<name>`), English i18n files under `src/shared/i18n/locales/en/`, and temporary dark-glass `SS` icons at `build/icon.*`, `resources/icon.png`, and `src/renderer/src/assets/hermes.png`.
-
-Verification for the installed Electron app: `npm run typecheck` passes, `npm run test` passes 435 tests across 33 files, `CSC_IDENTITY_AUTO_DISCOVERY=false npm run build:unpack` builds `dist/mac-arm64/Shay Desktop.app`, `/Applications/Shay Desktop.app` launches as process `/Applications/Shay Desktop.app/Contents/MacOS/Shay Desktop`, the helper processes use `--user-data-dir=/Users/famtasticfritz/Library/Application Support/shay-desktop`, and the local Shay CLI behind it reports `Shay-Shay v0.13.0 (2026.5.7)` from `~/famtastic/shay-shay/.venv/bin/shay`. The original `/Applications/Hermes Agent.app` is still present and running from the upstream Electron lineage with separate `hermes-desktop` userData; the new Shay Desktop install does not overwrite it.
-
-Known gaps for the Electron app: many internal TypeScript symbols, IPC/API names, tests, and non-English/upstream docs still use `Hermes` naming for compatibility; the renderer asset filename remains `hermes.png` even though the pixels are the temporary Shay `SS` icon; the app still expects the Hermes-compatible local API server shape at `http://127.0.0.1:8642` and needs deeper verification against Shay-Shay's current gateway/API behavior screen by screen; Office/Claw3D was not yet started or verified beyond source/build coverage; no production notarized DMG was created; and the placeholder `SS` icon should be replaced once the real FAMtastic/Shay logo exists.
-
-The earlier `~/famtastic/shay-desktop/` clone is a different native Swift/macOS repo from `dodo-reach/hermes-desktop`. Treat it as a useful Shay SSH workbench/control surface, not the primary Shay Desktop lineage. It provides connection profiles plus Overview/Files/Sessions/Workflows/Cron Jobs/Kanban/Usage/Skills/Terminal surfaces over SSH and remains installed as `/Applications/ShayDesktop.app`; it does not contain the Chat/Office/Models/Providers/Persona/Memory/Gateway shell. Its seed `Local Shay` profile lives at `~/Library/Application Support/ShayDesktop/connections.json`; Swift date fields there must be numeric seconds since Apple's `2001-01-01T00:00:00Z` reference date, not ISO-8601 strings, or launch shows `Local storage error`. Known Swift-workbench gaps: `swift test --parallel` fails before running tests because this CLT test environment cannot import Swift's `Testing` module, and internal Swift module/executable names still use `HermesDesktop` even though bundle/product branding says Shay Desktop.
-
-## Shay-Shay upstream Hermes security-wave integration (2026-05-19)
-
-Shay-Shay lives at `~/famtastic/shay-shay/` as a rebranded fork of Hermes Agent, with `shay`, `SHAY_*`, and `~/.shay` as the protected product/runtime boundary. The first upstream-port wave from Hermes `v2026.5.16` was intentionally selective rather than a direct merge: security and dependency hardening were adapted while preserving Shay naming and runtime paths.
-
-Ported/adapted files: `agent/anthropic_adapter.py` separates OAuth PKCE `code_verifier` from independent `oauth_state` and validates returned state before token exchange; `model_tools.py` adds `_sanitize_tool_error()` and routes exception-path errors through it; `tools/registry.py` sanitizes registry dispatch exception strings; `tools/url_safety.py` blocks non-HTTP(S) and missing-scheme URLs; `tools/approval.py` extends dangerous-command detection for macOS `/private/{etc,var,tmp,home}` mirrors, `killall` force/regex sweeps, and `find -execdir rm`; `pyproject.toml` and `uv.lock` raise dependency floors for `anthropic`, `aiohttp`, and `cryptography`. Tests added/extended at `tests/test_sanitize_tool_error.py`, `tests/tools/test_url_safety.py`, and `tests/tools/test_approval.py`.
-
-Known gap: this Shay-Shay repo currently lacks `pytest` in `.venv`, so targeted tests were validated through `py_compile` and direct Python assertions rather than the pytest runner; install/sync the dev extra before relying on full unit-test execution.
-
-## muapi-orchestrated brand-package generation — rebuild experiment (2026-05-19)
-
-After spending 30+ rounds manually building the FAMtastic brand mark via
-primitive muapi calls + Python compositing, ran the same brand exercise
-through muapi's **prebuilt recipe skills** to measure flow quality and
-limitations. Results inform Media Studio's wrapper architecture.
-
-### Recipes executed (in order)
-1. `muapi-logo-branding` — 3 logo concepts in parallel + 1 application mockup
-2. `muapi-brand-kit` — Logo A + Logo B + moodboard + pattern (parallel)
-3. `muapi-3d-logo-animation` — 2D→3D image edit, then image-to-video animation
-4. `muapi-design-guide` — palette card + typography pairing + UI kit + real-world mockup (parallel)
-
-**Total time:** ~15 minutes for ~16 outputs, vs. 5+ hours and 30+ rounds for
-the manual approach. Order-of-magnitude improvement.
-
-### Highest-quality outputs (use as proof-of-concept references)
-- **3D medallion (flux-kontext-max edit of Logo 1):** Premium cast-metal
-  circular medallion with FAM letters inset in proper colors + green burst
-  behind. Genuinely premium brand mark quality. URL:
-  `https://cdn.muapi.ai/outputs/a0a0a7fe513544f7b3de345425ea5151.jpg`
-- **Color palette card (gpt4o):** Agency-quality design-guide page with
-  the FAMtastic wordmark + 5 hex swatches labeled (PRIMARY #1A3FAA,
-  SECONDARY #F2C40D, ACCENT #D62828, HIGHLIGHT #0F6B3C, BACKGROUND #FFFFFF +
-  text #1A1A1A). Ready to ship as page 1 of a brand book.
-- **Typography pairing sheet (gpt4o):** Editorial typography reference
-  with Heading/Subheading/Body/Caption levels, sample text "Manifesting
-  the Extraordinary from the Ordinary." Magazine-quality layout.
-- **UI components kit (gpt4o):** Figma-style component documentation
-  with brand-colored buttons, inputs, cards, badges, icons. Usable as
-  the basis of a real design system.
-- **5-second animated logo (wan2.2 image-to-video):** Polished cinematic
-  reveal of the 3D medallion. URL:
-  `https://cdn.muapi.ai/outputs/83355157a8cc49c3ae5b93ea429e7aaf.mp4`
-
-### Limitations discovered (the real constraints)
-
-1. **Model availability mismatch:** Recipe skills reference newer model
-   names (`ideogram-v3-t2i`, `flux-2-pro`, `nano-banana-pro`,
-   `nano-banana-2`, `bytedance-seedream-v4.5`, `gpt-image-2-text-to-image`,
-   `veo3.1-fast-image-to-video`) that are NOT in muapi's current CLI
-   catalog. Substitution required.
-2. **Models returning "Not Found":** `midjourney`, `seedream`,
-   `kling-pro`, `seedance-pro` all returned `{"detail":"Not Found"}` —
-   either not enabled on the account, or wrong endpoint paths in CLI.
-   `gpt4o`, `flux-dev`, `flux-kontext-max`, `wan2.2` all worked
-   reliably.
-3. **veo3-fast image-to-video CLI/API mismatch:** CLI sends `image_url`,
-   API expects `images_list`. Use `wan2.2` for i2v instead.
-4. **Multi-segment text rendering is unreliable:** Brand names like
-   "FAMtastic" (FAM + tastic) sometimes drop the F ("AMtastic") or
-   misspell ("TaSTIC", "Famino"). Single-word brands render more
-   reliably.
-5. **flux-kontext-max image edit drifts beyond the instruction:** Asked
-   for "add 3D depth, preserve composition" — got a beautiful circular
-   medallion crop that dropped "tastic" entirely. Composition not
-   preserved as instructed.
-6. **No deterministic recipe substitution:** When a recipe's specified
-   model isn't available, the executing agent has to manually map
-   substitutes. Recipes need a fallback chain in their spec.
-
-### Implications for Media Studio's wrapper
-
-The wrapper layer Media Studio needs to add on top of raw muapi recipes:
-
-1. **Model-fallback chain per call** — recipe specifies primary +
-   fallback models; wrapper tries each until one returns success
-2. **OCR validation gate** — after generating a logo with brand-name
-   text, OCR the output and verify the name renders correctly; re-run
-   if not
-3. **Composition-preservation guard** — when using image edit, capture
-   the source's content bounding box and reject outputs that drift too
-   far from it (or composite the edit back into the source frame)
-4. **Recipe template overrides** — the muapi recipe skill prompts are
-   generic; Media Studio's wrapper should inject FAMtastic-specific
-   brand context (manifesto excerpts, per-letter color rules,
-   composition rules) into every recipe invocation automatically
-5. **Asset-categorization output** — wrapper organizes outputs by
-   category (logo concept / mockup / palette / typography / UI / video)
-   for retrieval, not flat dump
-6. **Recipe-cost ledger** — record per-run cost (~40-120 credits per
-   recipe) so users see budget impact before launching a campaign
-7. **Curated final-assembly** — pick the best outputs across recipes
-   into a clean deliverable package, prune the misses
-
-### Flow quality assessment (★★★★★ = production-ready)
-
-| Recipe | Quality | Notes |
-|---|---|---|
-| `muapi-logo-branding` | ★★★★☆ | Good structure; some text issues |
-| `muapi-brand-kit` | ★★★★☆ | Moodboard + pattern useful; logos redundant after Step 1 |
-| `muapi-3d-logo-animation` | ★★★☆☆ | 3D image excellent; video needs `wan2.2` not `veo3-fast` |
-| `muapi-design-guide` | ★★★★★ | Palette card + typography sheet are agency-quality |
-
-**Overall verdict:** muapi recipes deliver a complete brand package in
-~15 minutes for ~$10-20 of credits. Manual primitive-by-primitive build
-took 5+ hours and resulted in equivalent output quality. Recipes are
-the right starting point; wrapper adds brand-specific context + quality
-gates + curation.
-
-**Hermes pass (gap → solution mapping):** Every limitation observed
-during this experiment has been mapped to a concrete proposed solution
-with sized effort and verification criteria at
-`~/famtastic/media-studio/SOLUTIONS-BACKLOG.md`. 16 backlog items totaling
-~30 hours of focused work to reach Media Studio V1.
-
-## FAMtastic Remotion engine — Media Studio foundation (2026-05-19)
-
-`~/famtastic/remotion/` is the FAMtastic shared animation & rendering engine.
-It is the foundation layer of the future **Media Studio**. Built on
-[Remotion](https://www.remotion.dev) (free for ≤3-person teams). All studios
-in the FAMtastic ecosystem will consume compositions from this package.
-
-### Architecture (the contract)
-
-Generation = **muapi** (text-to-image, text-to-video, music, voiceover,
-transcription, edit). Composition = **Remotion** (assemble, animate,
-caption, render, embed). No overlap, no double-pay.
-
-```
-~/famtastic/
-├── brand/                        # brand-mark manifesto + source PNG layers
-├── remotion/                     # shared animation engine (NEW)
-│   ├── src/FAMtasticLogo.tsx     # primary brand-mark composition (shipped)
-│   ├── src/Root.tsx              # composition registry (3 entries)
-│   ├── public/brand/             # transparent PNG layers (burst, FAM, tastic)
-│   ├── RECIPES.md                # composition catalog + future-build roadmap
-│   └── README.md                 # architecture + integration docs
-├── site-studio/                  # will import compositions (next)
-├── (future) media-studio/        # the eventual studio server + UI
-└── .claude/skills/remotion-best-practices/
-                                   # 1 SKILL.md + 36 rule files — AI agent
-                                   # auto-loads these when working on Remotion
-```
-
-### Shipped today
-
-- **3 compositions** registered: `FAMtasticLogo-Luminous`,
-  `FAMtasticLogo-Dark`, `FAMtasticLogo-Square` — all in
-  `src/FAMtasticLogo.tsx`.
-- **9 Remotion packages** installed: core + `@remotion/player`,
-  `@remotion/captions`, `@remotion/transitions`, `@remotion/google-fonts`,
-  `@remotion/shapes`, `@remotion/animation-utils`, `@remotion/media-utils`,
-  `@remotion/preload`.
-- **`remotion-best-practices` skill** copied to
-  `~/famtastic/.claude/skills/` — gives any Claude Code session in the
-  monorepo deep Remotion knowledge automatically.
-- **`launch.json`** entry `famtastic-remotion` runs `npm run dev` at
-  `localhost:3000`.
-
-### npm scripts on the package
-
-- `dev` — Remotion Studio at `localhost:3000`
-- `build` — bundle for production
-- `render:luminous` / `render:dark` / `render:square` — render named MP4s
-- `render:still` — render a still PNG at frame 60
-- `lint` — eslint + tsc
-
-### Integration contract (how studios call it)
-
-Studios bundle once, then call `selectComposition` + `renderMedia` with
-their own `inputProps` (brand colors, content, format preset). Full code
-example in `~/famtastic/remotion/README.md`.
-
-### Recipe catalog (the build roadmap)
-
-`~/famtastic/remotion/RECIPES.md` is the canonical catalog of every
-composition and integration pattern Media Studio is being built toward:
-- Phase 2 — composition library (LowerThird, TitleCard, SocialReel,
-  IntroOutro, KineticType, ProductShowcase)
-- Phase 3 — Studio integration patterns (captions overlay, music sync,
-  voiceover sync, AI-clip wrapping, multi-format batch, brand context
-  injection)
-- Phase 4 — embedded live experiences (`<Player>` embed in
-  Site-Studio-built sites, per-visitor personalization)
-- Phase 5 — AI media pipelines ("make me a 30s ad" end-to-end, social
-  variant factory, Site-Studio-triggered hero videos)
-
-Update RECIPES.md when a recipe is added/shipped/retired.
-
-### Critical rules (do not break)
-
-1. **Single contiguous brand mark** — every composition must lead with the
-   FAMtastic signature lock-up (FAM letters + burst + "tastic"). Hard-coded,
-   not optional. See `~/famtastic/brand/FAMTASTIC-BRAND-MARK.md`.
-2. **muapi for generation, Remotion for composition** — do NOT install
-   `@remotion/openai-whisper`; muapi already transcribes inside AI-Clipping.
-3. **Compositions are the moat** — invest engineering time in compositions
-   first, Studio server/UI second. Each composition is reusable forever.
-4. **Sequence frame offsets are auto-applied** — when wrapping a component
-   in `<Sequence from={N}>`, `useCurrentFrame()` inside is already 0 at
-   sequence start. Do NOT subtract N again (caught this bug 2026-05-19
-   during initial install; tastic was invisible because of double-offset).
-5. **Brand assets via `staticFile()`** — never import PNGs as ES modules;
-   use `staticFile("brand/<name>.png")` so they load in both Studio dev
-   and bundled production renders.
-
-### Known Gaps opened
-
-- No `media-studio/` server yet — Remotion is callable only via CLI today.
-  The server wrapper is Phase 3 of the build (per RECIPES.md).
-- No automated tests on compositions yet — visual regression should be
-  added before composition library scales past 5 entries.
-- `FAMtasticLogo` motion-warp FAM still doesn't have a dramatically taller
-  A — flux-kontext softened the directive. Manual SVG re-author would fix.
-- "tastic" composition uses Arial Rounded Bold as placeholder typography
-  — needs replacement with the actual FAMtastic-DNA typeface choice once
-  determined.
-- No CI hook to run `npm run lint` in `~/famtastic/remotion/` yet.
-
-## MBSH RSVP Phase 3.4 marker-band surgical fixes (2026-05-14)
-
-`~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` keeps the RSVP `.hero-stage` sealed; the hero-stage markup hash stayed unchanged during Phase 3.4. The changes are limited to `.marker-band` and children: the band now uses visible 4vw left/right padding instead of a full-bleed velvet panel, the existing HTML/CSS `.marker-plaque` carries a prominent `.marker-bulbs-top` crown of 20 glowing `.marker-bulb` nodes, and the `.chevron.layer--chevron.scroll-teaser` remains a direct `.marker-band` child with `data-scroll-target="#rsvp-form"` and two SVG paths.
-
-`frontend/css/premiere.css` now treats the interior-hero chevron as `position: absolute` at the marker-band/section bottom (`bottom: 1.5rem`, `z-index: 20`) with `chevronBounce` traveling upward over the marker text area. In-flow chevrons cannot reliably reach the section bottom because the marker band content pushes them out of the intended zone; the absolute bottom chevron is the canonical interior-hero pattern. Mobile marker containment is marker-only: at phone widths the top crown drops to 10 visible bulbs, the bottom `.bleed-bulb-row` holds 12, and `.marker-line-1` / `.marker-line-2` use tighter sizes/spacing so the text does not clip.
-
-Known gap: RSVP Phase 3.4 is complete locally and awaiting Fritz inspection before staging. The HTML/CSS marker-plaque recipe and absolute chevron pattern are canonical for future interior reels, but they have not been cloned to Tickets/Through the Years/In Memory/Capsule/Playlist yet. Mobile-throttled Lighthouse remains under 85 due to the broader existing CSS/font payload; desktop Lighthouse remains above threshold.
-
-## MBSH RSVP Phase 3.3 simplification (2026-05-14)
-
-`~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now keeps the RSVP cinematic interior hero as a two-band first viewport, but the lower `.marker-band` uses a plain HTML/CSS `.marker-plaque` instead of an SVG object. The plaque contains `.marker-corner` diamond spans, `.marker-bulbs-top` with 20 `.marker-bulb` nodes, `.marker-line-1`, and `.marker-line-2`; `frontend/css/premiere.css` owns the typography (`JetBrains Mono` scene line and `Playfair Display` title), burgundy/brass plaque treatment, marker bulb chase, mobile 10-bulb top reduction, and bottom `.bleed-bulb-row` with 20 desktop / 12 mobile bulbs.
-
-The rope extension experiment has been removed. The baked-in velvet ropes and Harry's hand-on-stanchion pose carry the “opening the path” story better than a separate SVG bridge without a believable endpoint. Do not recreate a rope-continues-into-bleed layer unless the actual scene plate includes an anchor/stanchion destination for it.
-
-Known gap: RSVP Phase 3.3 is complete locally and awaiting Fritz inspection before staging. The HTML/CSS marker-plaque recipe is canonical for future interior reels, but it has not been cloned to Tickets/Through the Years/In Memory/Capsule/Playlist yet. Mobile-throttled Lighthouse is still under 85 due to the broader existing CSS/font payload, while desktop local Lighthouse remains above threshold.
-
-## MBSH RSVP Phase 3.2 marker-band refinement (2026-05-14)
-
-`~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now treats the RSVP marker band as a full-width cinematic chapter strip instead of a left-anchored plaque area. Phase 3.2 briefly tested a full-section rope bridge and SVG marker, but Phase 3.3 superseded both: the rope layer is removed and the marker is now an HTML/CSS plaque with centered `SCENE II · INT. AUDITORIUM — NIGHT` and `LOCK YOUR SEAT` text plus 20 top bulbs.
-
-`frontend/css/premiere.css` owns the Phase 3.2 composition rules: `.marker-band` is a single-column plaque/bulbs/chevron grid, `.marker-plaque` fills the band width as HTML/CSS, `.marker-bulbs-top` animates the plaque bulbs, and `.bleed-bulb-row` spreads 20 bulbs across the band with 12 shown on phone widths, `.layer--headline` is center/right aligned, and `.chevron` uses a visible double-chevron `chevronBounce` instead of a subtle pulse. RSVP head loading now aligns the scene-image preload with the CSS LCP background and async-loads the heavy font/premiere stylesheets; desktop Lighthouse remains above threshold, but mobile-throttled npx Lighthouse still reports below 85 because of the broader existing CSS/font payload.
-
-Known gap: Phase 3.2 is complete locally and awaiting Fritz inspection before staging. The full-width marker-band recipe is now canonical for future interior reels, but it has not been cloned to Tickets/Through the Years/In Memory/Capsule/Playlist yet.
-
-## MBSH RSVP Phase 4 additive layer polish (2026-05-14)
-
-After Fritz approved the corrected Preview-B live base, RSVP received a local-only three-layer polish pass without staging push. `~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now adds Phase 4-only atmosphere nodes inside `.layer--atmosphere`: `.atmosphere-sconce`, `.atmosphere-camera-flash`, and `.atmosphere-painting-wash`; the rope glint was removed in Phase 3.3 with the rope concept. `frontend/css/premiere.css` owns the additive motion and interaction rules under the "RSVP Phase 4" block: `sconceFlicker`, `cameraFlashPop`, `paintingWashDrift`, refined `lampBreath`, `bleedBulbChase`, `rsvpChevronPulse`, guest-list form top treatment, and mobile simplification that hides the kicker and keeps the title readable on 390px screens.
-
-The important implementation lesson is that decorative bridge/spill overlays must not be boxed partial-width elements when they sit over photographic hero art. The attempted `.bleed-light-spill` element produced a visible lower-right rectangular artifact in browser proof, so Phase 4 disables that element (`display: none`) and lets the form-section/background gradients carry the warm spill instead. Local verification for Phase 4 included desktop browser visual proof, 390×844 headless mobile screenshot proof, clean browser console, `node --check frontend/js/premiere.js`, `node --check frontend/js/rsvp.js`, and `git diff --check`.
-
-Known gap: RSVP Phase 4 is complete locally and awaiting Fritz inspection before any staging push. The broader MBSH interior-page rollout is still pending; this pass intentionally touched RSVP only and did not clone the Phase 4 layer recipe to Tickets/Through the Years/In Memory/Capsule/Playlist.
-
-## MBSH RSVP Phase 3 hero wire + bleed pattern (2026-05-14)
-
-The live RSVP page in `~/famtastic-sites/mbsh-reunion/frontend/rsvp.html` now uses the approved Variant B 3D Harry direction for the production RSVP hero. The live hero is a static HTML layered composition (`section.reel-hero.reel-hero--rsvp.interior-hero`) using optimized web derivatives of `frontend/assets/heroes/rsvp/01-environment.png` and `frontend/assets/heroes/rsvp/02b-harry-3d-render-transparent.png`, while preserving `data-source-asset` pointers to the approved PNG inputs. the earlier SVG marker/rope assets were superseded in Phase 3.3 by the HTML/CSS marker and no-rope composition.
-
-The rope-continues-into-bleed bridge from the initial Phase 3 wire was removed in Phase 3.3 because it had no convincing endpoint. `frontend/css/premiere.css` owns the first-pass atmosphere loops (`tungstenPulse`, `dustRise`, `lampBreath`, `bleedBulbChase`, `spillBreath`, `rsvpChevronPulse`) plus reduced-motion/mobile simplification; `frontend/js/premiere.js` keeps RSVP page-scoped behavior by skipping the old full-page `.premiere-stage` overlay on RSVP so Lighthouse does not count decorative backdrop as LCP. Local verification for Phase 3/Preview-B correction passed with no browser console errors, SVG/XML parse checks, `node --check frontend/js/premiere.js`, `node --check frontend/js/rsvp.js`, `git diff --check`, browser visual proof of the full-width Preview-B layout, and chevron scroll to `#rsvp-form`. Desktop Lighthouse Performance is 98 after optimized RSVP assets/footer mark; mobile-throttled npx Lighthouse remains 75 because the existing 206KB `frontend/css/premiere.css` payload is render-blocking, so mobile performance cleanup is a separate known gap before staging if Fritz wants the Lighthouse gate strict on mobile.
-
-Known gap: Phase 3 is complete locally and still awaiting Fritz inspection before any staging push. The hero uses optimized WebP derivatives for performance, but the approved full-source PNGs remain in place; future polish should focus on the HTML/CSS plaque and baked-in scene plate, not a separate rope endpoint.
-
-## MBSH RSVP Phase 2 hero composition (2026-05-14)
-
-The approved RSVP artboard plan in `captures/inbox/mbsh-rsvp-hero-artboard-plan-2026-05-14.md` has now been executed locally in `~/famtastic-sites/mbsh-reunion` for RSVP only. The page composes `frontend/assets/heroes/rsvp/01-environment.png` (1536×1024 RGB theater check-in plate), `frontend/assets/heroes/rsvp/02-harry-usher-transparent.png` (1024×1536 RGBA Tier 1 Harry usher, alpha range `(0,255)`), and a hand-authored marker concept, later replaced by an HTML/CSS marker plaque through the RSVP entry in `frontend/js/page-sequence.js`, the hero assembly and scroll wiring in `frontend/js/premiere.js`, and the RSVP-only layout rules in `frontend/css/premiere.css`.
-
-Two implementation lessons matter for future reels. First, the scroll-teaser wiring must compute absolute document position with `target.getBoundingClientRect().top + window.pageYOffset`, not `target.offsetTop`, because form targets nested inside wrappers otherwise land too early and leave snap-in sections invisible. Second, if a hero is supposed to bleed into the form, RSVP-specific injected interstitials must not sit between the hero and form: `mountAllBillboards()` now skips the RSVP note-panel injection, and `frontend/rsvp.html` places the countdown after `.rsvp-form-wrap` so the hero chevron/bridge lands on `#rsvp-form`.
-
-Known gap: this RSVP Phase 2 build is complete locally and awaiting Fritz inspection; staging must remain unpushed until Fritz approves the visual result. The rest of the interior pages were intentionally not touched in this phase.
-
-## MBSH layered hero + Hi-Tide Harry tier system (2026-05-12)
-
-MBSH's interior hero concept is now locked as page-specific hero recipes with **layered scene composition required**. Captures: `captures/inbox/mbsh-scene-marker-info-panel-interview-capture-2026-05-12.md` and `captures/inbox/mbsh-hero-harry-tier-decisions-2026-05-12.md`; the reels plan is `captures/inbox/mbsh_reels_layered_experience_plan.md`. The key architectural lesson is that cinematic heroes, info panels, and chatbot avatars should not be generated as flat composites when the experience needs placement, animation, responsive control, and character identity preservation. Instead, compose independent DOM layers: scene, atmosphere, character, headline/copy, foreground/frame, and motion/status.
-
-Hi-Tide Harry now has three asset tiers: Tier 1 **Ultimate Photoreal Hero Harry** for major page hero moments; Tier 2 **Normal Photoreal Chatbot Harry** with transparent background for the assistant/avatar; and Tier 3 **Regular Hi-Tide Harry Content Images** for cards, Note-from-Usher slides, form success states, and smaller content moments. The chatbot avatar is a miniature layered composition with a marquee bulb ring frame, warm vignette scene, transparent Harry portrait, shine layer, and status layer; the bulb chase doubles as idle/listening/speaking feedback. This became a reusable skill, `cinematic-layered-character-systems`, and `famtastic-site-vibe-production` now points future site work toward character-tier definition before implementation.
-
-Animation choice is now tiered: CSS/code animation for ambient motion that code can fake, identity-locked reference-to-video for Harry character actions, and Veo-style scene video only for organic physics that code cannot convincingly reproduce. This should guide MBSH implementation and future FAMtastic cinematic sites so small asset waves stay economical while still producing high-vibe, controlled experiences. The reusable `controlled-movie-site-experience` skill now captures the broader Site Studio recipe: emotional page map first, layered heroes, mini scene markers, configurable guide panels, section-slot movement grammar, motion tiers, mobile guidance, and staging proof.
-
-### Implementation update — Super Vibe Coder + guided-reel corrective pass
-
-The MBSH site repo `~/famtastic-sites/mbsh-reunion` now implements the runtime grammar through `frontend/js/page-sequence.js`, `frontend/js/premiere.js`, and `frontend/css/premiere.css`. `page-sequence.js` is the cinematic reel map for scene number, scene title, location, hero title, hero kicker, hero copy, hero image, `heroHarry` fallback, Tier 1 `heroHarryPhoto`, `heroAction`, page-specific `heroBridge`/`heroBridgeLabel`, configurable `companion` info-panel copy, mood, and Where Next/usher copy. `premiere.js` upgrades interior `.page-header` blocks into layered full-width cinematic heroes, injects the Tier 1 photoreal Harry asset from `frontend/assets/premiere/characters/harry-photoreal-mascot-f1.png`, injects bridge/bleed layers, adds the mini-marquee Scene Marker directly under the hero, defers the chatbot bubble until after the opening hero/marker so the marker stays clean, moves the configurable Note-from-Usher billboard immediately after the marker, mounts the `info-companion` panel beside that billboard, upgrades forms with `premiere-form-wow`, and assigns page slots/heights such as `pre`, `main`, `post`, and `where-next` without rewriting every HTML page. `premiere.css` adds the full opening composition, scene/title-only lower-third marker calibration, page-specific bridge/bleed treatments (`velvet-rope`, `ticket-strip`, `film-reel`, `candle-light`, `wax-seal`, `soundwave`), companion info cards, theatrical form/card treatment with readable dark-form consent text, CTA shine, page-specific motion restraint/intensity, and mobile simplification rules.
-
-The guided interior reel map is now: Home/The Lobby Opens, RSVP/Lock Your Seat, Tickets/Claim Your Ticket, Through the Years/Roll the Memory Reel, In Memory/Hold the Light, Time Capsule/Seal the Time Capsule, and Playlist/Drop the Soundtrack. The local implementation plan lives at `captures/inbox/mbsh-interior-scene-reel-map-2026-05-14.md`. Local browser verification confirmed that Tickets, Through the Years, In Memory, Capsule, and Playlist each mount Tier 1 Harry, use scene/title-only markers, carry distinct bridge data, and keep hero+marker within roughly the first viewport on the active local preview. RSVP is now the prototype exception: `frontend/js/premiere.js` mounts `.experience-hero__scene-marker` inside the hero instead of inserting a separate `.scene-marker-marquee`, and `frontend/css/premiere.css` builds a full-viewport red-carpet check-in artboard with CSS layers for the theatre plate, marquee/doors, podium, guest list, seat cards, velvet ropes/stanchions, red-carpet bleed, light FX, photoreal Harry, and integrated lower-third marker. This pass intentionally keeps the current illustrated Harry images hidden inside billboard slides because some assets have baked checkerboard artifacts; the configured Harry voice remains, but final page-specific transparent/photoreal Harry assets are still the correct future asset direction.
-
-### Corrective planning update — RSVP artboard reset
-
-Fritz rejected the RSVP proof-asset hero as still feeling like generic slot-filling. The corrected recipe is captured in `captures/inbox/mbsh-rsvp-hero-artboard-plan-2026-05-14.md`: research the RSVP page purpose first, translate it into a movie-premiere check-in / guest-list manifest scene, then decompose it into background plate, animation/effects, prop/meaning, bleed/bridge, Tier 1 Harry, integrated scene marker, title/copy, and bottom-chevron control layers. The key learning is that the scene marker must feel physically merged into the artboard, not stacked below it, and the bottom chevron/continue control remains part of the guided movie experience on interior pages.
-
-The local reusable `image-and-video-gen` skill now captures the FAMtastic visual generation rules: Imagen 4.0 for cheap drafts, gpt-image-2 high for final hero/pose candidates, no `input_fidelity`, no `response_format`, base64 default returns, multi-anchor character identity prompts, transparent alpha verification, BiRefNet fallback, and generation cost gates.
-
-### Known Gaps opened or preserved
-
-- Existing Wave 1 assets must be added to the staging change set because the hero map references `frontend/assets/premiere/wave1/scenes/*`.
-- The current Tier 1 hero implementation reuses `frontend/assets/premiere/characters/harry-photoreal-mascot-f1.png` across all interior heroes as the proof-of-grammar asset. Final page-specific transparent/photoreal hero Harry variants, Tier 2 chatbot/advisor Harry, and Tier 3 regular content Harry remain future enhancement work.
-- RSVP Phase 3.4 has replaced the rejected prototype on the live RSVP page locally with Variant B, HTML/CSS marker plaque/bulb crown, marker-band edge padding, absolute bounce-over-text chevron, essential atmosphere, and no separate rope bridge while preserving the sealed hero-stage layout. Staging remains blocked by Fritz inspection/approval; mobile-throttled Lighthouse is still below 85 due the existing render-blocking `premiere.css`/font payload, while desktop Lighthouse is 98.
-- The current implementation uses JS runtime enhancement of existing headers for speed and blast-radius control; a later cleanup could bake the hero/scene-marker/note slots directly into HTML templates if desired.
-
-## Platform Refresh v2 implementation reconciliation (2026-05-11)
-
-`docs/platform-refresh/PLATFORM-REFRESH-V2-IMPLEMENTATION-RECONCILIATION.md` now bridges the original read-only Platform Refresh v2 packet with the newer `/studio.html` implementation work on `research/studio-intelligence-foundation-20260508`. The original packet files under `docs/platform-refresh/` remain authoritative for control-surface ownership, API/cost governance, autonomous-build contracts, dangerous-action gates, and proof discipline, but their old seven-domain Workbench/R1 navigation assumption is no longer safe to treat as current execution state without reading the reconciliation first.
-
-The newer implementation branch introduces the 12-section Studio IA (`Home`, `Sites`, `Site Builder`, `Site Settings`, `Think-Tank`, `Research Center`, `Component Studio`, `Media Studio`, `Media Library`, `Shay Shay`, `Mission Control`, `Settings`) and reports a functional `/studio.html` shell via `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md`. `docs/platform-refresh/REFRESH-READY-HANDOFF.md`, `docs/platform-refresh/FIRST-BUILD-SEQUENCE.md`, and `docs/platform-refresh/WORKSTREAM-MAP.md` now include top-of-file reconciliation notes so future agents do not execute the original first-wave plan as if it were the full current completion plan.
-
-### Known Gaps opened or preserved
-
-- The local `docs/platform-refresh-v2-cohesion` branch does not contain the newer `docs/research/famtastic-studio-execution/` implementation reports or `/studio.html` files; they were inspected from `origin/research/studio-intelligence-foundation-20260508` and must be brought into a working tree or comparison worktree before implementation continues.
-- Fritz still needs to confirm whether the 12-section `/studio.html` platform IA supersedes the old seven-domain R1 nav in all current docs.
-- `docs/platform-refresh/FIRST-BUILD-SEQUENCE.md` is now explicitly first-wave/substrate guidance, not the full completion plan for the current 12-section Studio.
-- Exact `STUDIO-ACTION-WIRING-PHASE-1/2/3-RUN-REPORT.md` files were not found under those names on the inspected implementation branch; verify whether they are uncommitted, renamed, or summarized by other run reports.
-- Local plan audit still reports `plan_2026_05_05_workbench_per_page_design` as active with no closeout, while the implementation branch run report says a `2026-05-10-needs_tasking.json` closeout exists. Resolve this during branch reconciliation.
-
 ## MBSH "The Premiere" Theme + Virtual Assistant Pattern (2026-05-05)
 
 Shipped a theme-overlay pattern (Pass 1) on the deployed `mbsh-reunion`
@@ -604,10 +58,8 @@ Gaps: `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
 - GAP-2026-05-05-03: Gemini API key expired (blocks Pass 2 raster gen)
 - GAP-2026-05-05-04: `data-premiere` flag is HTML-hardcoded; future migration to runtime config
 - GAP-2026-05-05-05: preview MCP launch.json discovery is not project-aware
-- GAP-2026-05-12-01: MBSH interior pages still behave too much like normal web pages. The unified experience grammar is documented in `captures/inbox/mbsh-page-structure-unified-assessment-2026-05-12.md`; the page-by-page implementation assessment is `captures/inbox/mbsh-page-by-page-experience-assessment-2026-05-12.md`. Deployment-critical remaining work is impactful interior heroes, visible scene markers, a true Note-from-Usher info panel/slideshow, explicit `data-page-slot` / `data-mode` / `data-height` section metadata, form/card wow-factor upgrades, mobile movement verification, staging, committee presentation, and recipe capture.
-- GAP-2026-05-12-02: Agent coordination check-in is paused because `scripts/agent-checkin.js` produced disruptive false positives. `AGENTS.md`, `CLAUDE.md`, and `AGENT-COORDINATION.md` now mark it paused; a future replacement needs lower-friction, non-blocking coordination.
 
-All 2026-05-05 gaps documented at `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`; 2026-05-12 structure/coordination gaps are captured in `captures/inbox/mbsh-page-structure-unified-assessment-2026-05-12.md`, `captures/inbox/mbsh-page-by-page-experience-assessment-2026-05-12.md`, and the paused coordination docs.
+All five documented at `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
 
 ---
 
@@ -2826,7 +2278,7 @@ main > section:first-of-type { width: 100vw; position: relative; left: 50%; marg
 **Pattern established:** Playwright drives Studio for HTML + CSS. When Studio can't write JavaScript, Playwright logs the gap and triggers CLI. CLI writes the JS, injects script tags into HTML, and Playwright verifies. High-reuse JS becomes a component in `~/famtastic/components/`.
 
 **Full documentation:** `docs/studio-cli-handoff-pattern.md`
-**Capability registry:** `docs/capability-registry.md`
+**Capability registry:** `docs/capability-registry.md`  
 **Task log:** `tests/automation/logs/cli-handoff-pattern.json`
 
 **Studio can handle:** HTML structure, CSS classes, Tailwind utilities, basic CSS transitions (hover lift, button scale), `scroll-behavior:smooth`, `loading="lazy"` attributes, static data attribute scaffolding.
@@ -2847,7 +2299,7 @@ main > section:first-of-type { width: 100vw; position: relative; left: 50%; marg
 
 ### street-family-reunion-js-pass -- 2026-04-08
 
-**Site:** `sites/site-street-family-reunion/`
+**Site:** `sites/site-street-family-reunion/`  
 **JS files added:** `dist/assets/js/parallax.js`, `slideshow.js`, `card-animations.js`, `counter-animation.js`, `smooth-scroll.js`, `lazy-load.js`
 
 **Data attributes used across all pages:**
@@ -2876,10 +2328,10 @@ Each includes HTML template, data attribute docs, platform notes (Drupal, WordPr
 
 **Primary media generation pipeline for all FAMtastic sites.**
 
-**Script:** `scripts/google-media-generate`
-**SDK:** `google.genai` v1.47.0 (NOT `google.generativeai` — different package, not installed)
-**Credentials:** `GEMINI_API_KEY` env var
-**Image model:** `imagen-4.0-generate-001` — $0.004/image, ~7s
+**Script:** `scripts/google-media-generate`  
+**SDK:** `google.genai` v1.47.0 (NOT `google.generativeai` — different package, not installed)  
+**Credentials:** `GEMINI_API_KEY` env var  
+**Image model:** `imagen-4.0-generate-001` — $0.004/image, ~7s  
 **Video model:** `veo-2.0-generate-001` — ~$0.05/video, ~33s, produces 5s MP4 ~2.4MB
 
 **Batch usage:**
@@ -2923,12 +2375,12 @@ google-media-generate --batch scripts/google-media-batch-[site].json \
 
 **Site #5. Full FAMtastic build for an independent garage sale curator. Primary purpose: Studio stress test across all 14 phases.**
 
-**Deployed:** `https://effortless-tiramisu-ed9345.netlify.app` (Netlify site ID: `d50d0586-8f28-407f-aebe-14c175a88e1d`)
-**Pages:** `index.html`, `shop.html`, `deals.html`, `about.html`, `contact.html`
+**Deployed:** `https://effortless-tiramisu-ed9345.netlify.app` (Netlify site ID: `d50d0586-8f28-407f-aebe-14c175a88e1d`)  
+**Pages:** `index.html`, `shop.html`, `deals.html`, `about.html`, `contact.html`  
 **Assets:** `dist/assets/css/main.css`, `dist/assets/buddy/` (8 PNG poses), `dist/assets/video/` (hero.mp4 + still)
 
-**Color palette:** `#E8420A` primary · `#1D4ED8` secondary · `#FBBF24` accent · `#FFFBF5` bg · `#1C1917` dark · `#16A34A` green
-**Fonts:** Bangers (display) · Nunito (body) · Permanent Marker (accent) — all Google Fonts CDN
+**Color palette:** `#E8420A` primary · `#1D4ED8` secondary · `#FBBF24` accent · `#FFFBF5` bg · `#1C1917` dark · `#16A34A` green  
+**Fonts:** Bangers (display) · Nunito (body) · Permanent Marker (accent) — all Google Fonts CDN  
 **Shared stylesheet:** `dist/assets/css/main.css` — 607 lines, defines `.starburst`, `.display-stage*`, `.product-card`, `.countdown-*`, `.category-pill`, nav, hero, footer, Buddy placement classes
 
 **Buddy mascot (11 placements):**
@@ -3996,7 +3448,7 @@ verifyOpenAIAPI() // individual probe (chat.completions.create)
 verifyCodexCLI()  // checks OPENAI_API_KEY presence + SDK instantiation
 ```
 
-Called at startup: `verifyAllAPIs().then(r => console.log('[brain-verifier] ...'))`.
+Called at startup: `verifyAllAPIs().then(r => console.log('[brain-verifier] ...'))`.  
 Returns within 5–10 seconds; non-blocking.
 
 #### `GET /api/brain-status`
@@ -4096,7 +3548,7 @@ Why ESM? Avoids bash heredoc + `echo` pipe conflict with stdin. Node readline pr
 </div>
 ```
 
-Brain buttons are clickable and send `set-brain` WS message.
+Brain buttons are clickable and send `set-brain` WS message.  
 Worker spans are display-only — show CLI tools available, not selectable.
 
 #### Per-brain model selector
@@ -6293,527 +5745,67 @@ cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting
 
 See `memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda.md`.
 
-### MBSH RSVP cinematic-interior hero Phase 3.1 proportion
+## 2026-05-10 — Studio Functional Workspace Wiring (parallel-lane run)
 
-- The RSVP `cinematic-interior-hero` recipe now uses a canonical two-band first viewport in `~/famtastic-sites/mbsh-reunion/frontend/rsvp.html`: `.hero-stage` owns 66.66svh for scene plate, Harry, headline, and atmosphere; `.marker-band` owns 33.34svh for `.marker-plaque`, `.bleed-bulb-row`, `.bleed-light-spill`, and the `.scroll-teaser` chevron targeting `#rsvp-form`.
-- The marker plaque is no longer a small hero overlay. It is the primary feature of the lower band, and the chevron marks the exact boundary before the RSVP form.
-- RSVP Phase 3.1 also removes the duplicate top-left `.reel-hero__back` medallion from `frontend/rsvp.html`; the center MENU medallion remains the canonical navigation control.
+The unified Studio shell at `/studio.html` (shipped in commits `3fa3a8c` +
+`ff9ae42` follow-ups) has been **operationalized** across all twelve
+platform sections by a parallel orchestrator + seven-lane run. The shell
+was layout-complete; this run made it work — honest where the backend
+isn't wired, real where it is.
 
-## 2026-05-29 — Shay-Shay gateway, brain topology, and ops learnings
+### Run model
 
-### Shay Desk "chat hangs" — root cause + fix
-Symptom: Shay Desktop chats hung with no response. Root cause: the gateway's pool of streaming connections to the Anthropic API went half-open under heavy load on the single Max OAuth token (an overnight batch + the MBSH swarm + cited re-runs all ran on Claude). Anthropic accepted requests but sent zero chunks; the gateway's stale-stream detector waits **180s** before killing a silent stream, so a poisoned pooled connection froze the Desk ~3 min. Confirmed in `~/.shay/logs/agent.log` ("Stream stale for 180s — no chunks received. Killing connection. model=claude-sonnet-4-6"). Immediate fix: `shay gateway restart` rebuilds a fresh pool. Prevention: (1) lower per-provider `providers.anthropic.stale_timeout_seconds` (defaults to 180s, see `shay_cli/timeouts.py`) to ~45s for fail-fast + fallback; (2) keep bulk/swarm/batch work OFF the interactive Max brain ("Claude plans + judges only, never bulk work") — route bulk to Gemini/Ollama/OpenRouter.
+- **Orchestrator + 6 parallel implementation lanes (A–F) + 1 sequential proof lane (G).**
+- Strict file-ownership scope-locks per lane in `STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md`.
+- Cross-lane integration via marker comments (`// Lane E — currentContext publish`, `{/* Lane F — RecipeSelector mount */}`) — orchestrator stitches at integration time.
+- Lane G (`tests/studio/lane-static-checks.js` + `site-studio/server/__smoke__/studio-functional-verify.js`): 85/85 static assertions PASS; browser prong BLOCKED on chromium availability in sandbox (verifier ready to run on host).
 
-### Stale git lock silently blocks a whole repo
-`~/famtastic-sites/mbsh-reunion` had `.git/HEAD.lock` + `.git/index.lock` left by a crashed git process on 2026-05-10. For 18 days every commit/branch/push failed with "Another git process seems to be running" — a major reason MBSH looked "stuck." Lesson: when a repo seems stuck, check `ls .git/*.lock`; if no git process is running and nothing holds the lock (verify with `ps`/`lsof`), the locks are stale crash residue and safe to remove.
+### Per-lane shipped
 
-### "Terminal + Desk both open" duplicates MCP servers
-MCP servers run as stdio children of each `shay` process, so a standalone CLI session + the Desk's gateway each spawn their own `cognee-mcp` + `mcp-obsidian`; two `cognee-mcp` then contend over the single `cognee_db`. Correct architecture: one gateway backend (`:8642`) with one MCP stack, with both Desk and terminal attaching as clients (proxy mode against the api_server) — which also requires setting `API_SERVER_KEY` (currently unset; `:8642` is unauthenticated). Crude per-session workaround: `shay chat --ignore-user-config` skips `mcp_servers` (but also drops model/rules/memory config).
+**Lane A — Sites + Site Builder + Site Settings.** Files: `studio/src/screens/sites.jsx`, `site-builder.jsx`, `site-settings.jsx`; new `studio/src/lib/sites-api.js`, `site-context.js`. Sites filter chips actually filter (derived honest classification, commented), Grid/List density differs, "Continue" persists `studio.lastActiveTag` to localStorage, "Continue where you left off" card reflects state. Site Builder gets a status-bar above the iframe (last-active tag chip, three honest status chips, three labeled-not-wired action buttons Preview/Inspect/Refine, Local site settings link via `window.__studioJump`). Site Settings reflects last-active tag in title, shows honest "0 overrides · matches platform" diff chip, every field has a `default` mono badge, disabled "Reset to platform" button.
 
-### Confirmed brain topology
-Interactive/orchestrator = Claude Sonnet 4.6 via Max subscription OAuth (`CLAUDE_CODE_OAUTH_TOKEN`, not API credits). Aux (10 slots) + research = direct Gemini 2.5 Flash. Fallback chain = Gemini → local Ollama `hermes3`. OpenRouter (DeepSeek/Kimi) returns 403 due to a per-KEY spend cap (not account balance — $14 present); the fix is raising the key's limit, not topping up.
+**Lane B — Media Studio + Media Library.** Files: `studio/src/screens/media-studio.jsx`, `media-library.jsx`; new `studio/src/lib/media-api.js`. Media Library reads from `/api/media?tag=<tag>` on mount (`media-routes.js` + `media-registry.js` already wired in server); summary chips show real `auto/pending/approved/deferred` counts. Media Studio variations grid stays placeholder (no fake generation); Generate / Approve / Reject / Save / Send-to-library / Assign-to-slot all `disabled={true}` with honest `Tag` labels. Action-contract debug button calls `/api/media/contract` and surfaces real shape.
 
-### Desk "Invalid API key" — gateway/Desk API_SERVER_KEY mismatch
-Symptom: Shay Desktop chats returned "Error: Invalid API key." Root cause: `API_SERVER_KEY` was set on the gateway (closing the `:8642` auth gap) but the Desktop app was **not** configured with the matching key (`desktop.json`: connectionMode `local`, `remoteApiKey` empty), so every Desk request to the api_server returned **401** — even though the Claude brain was fine server-side (agent.log showed successful `claude-sonnet-4-6` calls right next to a `127.0.0.1 "POST /v1/chat/completions" 401`). The api_server reads the key from the `API_SERVER_KEY` env var (see `shay_cli/config.py`); no `platforms.api_server.key` was set. Fix used: commented out `API_SERVER_KEY` in `~/.shay/.env` (value preserved) + `shay gateway restart` → api_server reverts to localhost-only unauthenticated and the Desk works. **Lesson: enabling `API_SERVER_KEY` requires updating BOTH ends — the gateway AND every client (Desk `remoteApiKey`, CLI/proxy). Re-enable before any remote/Hetzner exposure, and set the matching key in the Desk at the same time, or chats 401.**
+**Lane C — Component Studio.** Files: `studio/src/screens/component-studio.jsx`; new `studio/src/lib/components-api.js`. Library pane reads from `/api/components` on mount (`component-routes.js` + `component-inventory.js` were already in server). Search input debounces 200ms and calls `/api/components/check?id=` — surfaces `exists` / `near` / no-match Chip inline. Props/slots tab renders live `slots[]` and `props[]` from inventory. "Insert (surgical)" disabled with `contract ready · server route pending` Tag. Show-contract button works.
 
-### "Default brain keeps switching" — subscription depletion, NOT an API/subscription switch
-Symptom: Shay's interactive brain fell back to Gemini on every turn. Root cause: the Claude **Max subscription** (OAuth via `CLAUDE_CODE_OAUTH_TOKEN` — the **only** Anthropic credential present; no `ANTHROPIC_API_KEY` exists anywhere in `~/.shay/.env`) was **out of usage** (allowance + extra-usage overflow), returning `HTTP 400: You're out of extra usage. Add more at claude.ai/settings/usage` on every call → the fallback chain (`gemini-2.5-flash` → ollama `hermes3`) activated each turn. **It did NOT switch to API billing** — proof: the same OAuth token served `200`s yesterday 23:47–23:59, and today there are **zero 401** auth errors, only `400` usage errors (26 of them), meaning the token authenticates fine and the account is simply depleted. The `"out of extra usage / claude.ai/settings/usage"` wording is the **subscription** overflow message; API-credit exhaustion uses different wording pointing to `console.anthropic.com/billing`. Drain accelerant: the default brain had been switched to **Opus 4** (`claude-opus-4-20250514`), which burns the Max allowance several times faster than Sonnet. Diagnostic distinguisher to remember: **401 = token bad/expired; 400 "out of extra usage" = token valid, subscription depleted.**
+**Lane D — Research Center + Think-Tank.** Files: `studio/src/screens/research.jsx`, `think-tank.jsx`; new `studio/src/lib/research-api.js`, `think-tank-api.js`; new `server/research-routes.js`, `server/think-tank-routes.js`; +2 mount lines in `server.js` after line 1078: `app.use('/api/research', require('./server/research-routes').createResearchRouter(HUB_ROOT))` and `app.use('/api/think-tank', require('./server/think-tank-routes').createThinkTankRouter(HUB_ROOT))`. Research Center reads brief list live from `/api/research/briefs`; click-to-load detail panel via `/api/research/brief/:id` (title, summary, body_first_500). Depth selector has honest descriptions per depth (Fast: ~30s, Standard: ~3min, Deep: ~10min, Expert: ~30min). Think-Tank reads `captures/inbox/*.capture.json` via `/api/think-tank/captures` — falls back to seed examples with honest empty-state hint. Promote actions disabled-with-Tag.
 
-### Bulk-routing leak closure + auth hard-gate (enforcement of the "no bulk on Max brain" rule)
-The standing rule was broken at the **invocation layer**: every bulk driver shelled out `shay -z <prompt>` with **no `--provider`/`--model`**, inheriting the config default (`claude-sonnet-4-6`/anthropic) onto the interactive Max brain. Shay top-level flags are `-m/--model` and `--provider` (placed before the subcommand/oneshot; `ollama`→`custom` alias resolves local hermes3, `gemini` uses `GEMINI_API_KEY`). Fixes applied:
-- **Gemini** (research/synthesis/orchestration/cron, quality-sensitive): `~/.shay/scripts/overnight_ops.py` (~line 313 batch loop), `~/.shay/scripts/rerun-cited.py:46`, `~/.shay/scripts/mbsh-swarm-launch.py:45` (orchestrator only — its `delegate_task` workers stay on Ollama), and the 3 `no_agent:false` agent jobs in `~/.shay/cron/jobs.json` (`morning-review-2026-05-30`, both MBSH reminders) now carry `"provider":"gemini","model":"gemini-2.5-flash"`. The other 3 cron jobs are `no_agent:true` scripts; `morning-command-center`→`morning_digest.py`→`overnight_ops.py` so it inherits the Gemini fix.
-- **Local Ollama** (raw swarm grunt): `~/famtastic/shay-agent-os/launch-agent.py:80` now spawns `shay --provider ollama -m hermes3:latest chat -z … --yolo`.
-- **cognee MCP** (`~/.shay/config.yaml`): LLM repointed `anthropic`/`claude-sonnet-4-5` → `ollama`/`hermes3:latest` with `LLM_ENDPOINT: http://localhost:11434/v1`. (Was already inert — `${ANTHROPIC_API_KEY}` resolved empty — so no current drain.)
-- **Auth hard-gate** (`~/famtastic/shay-shay/agent/anthropic_adapter.py`, `resolve_anthropic_token()` step 4): a genuine `sk-ant-api*` key now only returns when `SHAY_ALLOW_ANTHROPIC_API_KEY` is set (`1/true/yes/on`); otherwise it logs a warning and returns `None` (clean failure, no silent API billing). Legacy OAuth-shaped tokens stored in `ANTHROPIC_API_KEY` are still allowed via `_is_oauth_token()`. So subscription→API billing can never fire silently.
+**Lane E — Right pane + Shay context.** Files: `studio/src/shell.jsx` (ContextPanel + collapse), `app.jsx` (collapse localStorage glue), `styles.css` (Lane E append block); new `studio/src/lib/current-context.js`. Publish hooks added by orchestrator integration to all 7 non-special screens (home, sites, site-settings, research, think-tank, media-library, settings). Each screen's hook calls `window.CurrentContext.forSection_<name>(...)` to publish a `{section, activeId, hints[], explain, nextAction, capabilityTruth[]}` object. ContextPanel renders dynamically from this. Collapse button toggles to a 36px slim-bar variant; state persisted to `studio.rightCollapsed` localStorage key. Routing chips actually call `window.__studioJump?.(target)`.
 
-To restore Claude: top up at claude.ai/settings/usage, wait for the Max rolling-window reset, or keep using Gemini. **Known gaps from this session:** the local-Ollama oneshot output rendering was not smoke-tested (routing alias is valid and the live fallback chain already uses it).
+**Lane F — Recipes + Memory Strip.** Files: `studio/src/recipe-flow.jsx` (extend with RecipeSelector wrapper), `screens/home.jsx` (mount), `screens/research.jsx` (mount), `shell.jsx` (MemoryStrip wire); new `studio/src/lib/recipes.js`, `memory-tail.js`. RecipeSelector wraps RecipeFlow with a 5-recipe Seg picker (new-site, media-to-component, component-to-site, research-to-proof preserved, research-to-build, shay-routing — node lists drawn from `WORKSPACE-RECIPES.md`). Home defaults to research-to-proof; Research Center defaults to research-to-build. MemoryStrip in `shell.jsx` reads from `/api/intelligence/runs?tag=<tag>` (via `MemoryTail.getTail`) — renders up to 5 honest run rows or a single dim "no site context" / "registry empty" reason. Static V1; no live polling.
 
-## 2026-05-29 — Shay "default to Gemini" PERMANENT FIX: Claude Code weekly cap + context-bloat (buglog #210)
+**Lane G — QA / Proof.** Files: `tests/studio/lane-static-checks.js`, `site-studio/server/__smoke__/studio-functional-verify.js`. Static checker validates: every JSX file parses via `@babel/parser`, every new lib/server JS file passes `node --check`, `server.js` parses with the 2 added mount lines, all 7 publish hooks present in their screens, RecipeSelector mounts in home + research, server.js mount block has the expected 4 lane mounts in order, studio.html loads all 9 new lib script tags, forbidden-edit files all present (no inadvertent deletes), Mission Control hosts ONLY run-centric content (drift trip-wire). 85/85 PASS.
 
-**Corrected diagnosis (earlier 'subscription depleted' was incomplete).** Anthropic introduced rolling **weekly** usage limits for Claude Code / OAuth-API access in 2025, **separate from claude.ai chat**. Shay (which spoofs Claude Code via `anthropic-beta: claude-code-20250219,oauth-2025-04-20` + the "You are Claude Code, Anthropic's official CLI" system-prompt prefix + `claude-cli/...` user-agent — see `agent/anthropic_adapter.py:596-606,1955-1963` and `_CLAUDE_CODE_SYSTEM_PREFIX` at line 305) draws from the **Claude Code bucket**. Confirmed live: Claude Desktop/web on the **same account** worked while Shay's terminal kept hitting `HTTP 400 "You're out of extra usage"`. Auth path is correctly formatted (134 successful calls earlier today prove it); the bucket itself is exhausted.
+### How it's wired in studio.html
 
-**What burned the Claude-Code cap** (and the permanent prevention):
-1. Bulk/swarm/batch on Claude (overnight) — already fixed earlier this day (buglog #206), verified: post-13:00 only `cli`/`api_server` platforms hit anthropic, no cron/swarm.
-2. **Per-call context bloat**: avg **55,548 input tokens/call**. Dominant chunk was a **~22,600-token skills-prompt block** injecting all 160 skills' name+description into every Claude turn (`agent/prompt_builder.py:988-1219`, `build_skills_system_prompt`). Plus 35 MCP tool schemas. Plus a secondary bug at `agent/plugin_llm.py:586` (`_read_main_model() or "default"`) sending the literal string `"default"` as the model → `HTTP 404: model: default` → fallback every fresh terminal session.
+`site-studio/public/studio.html` now loads 9 plain-JS lib files (no `type="text/babel"`) BEFORE the Babel-transformed JSX scripts: `site-context`, `sites-api`, `media-api`, `components-api`, `research-api`, `think-tank-api`, `current-context`, `recipes`, `memory-tail`. They each assign to a single `window.*` global so screens can pick them up as `window.SitesAPI?.listSites?.(...)` (defensive optional-chaining throughout — a missing lib doesn't crash a screen, it falls back to honest empty-state). `recipe-flow.jsx` reads `window.STUDIO_RECIPES` from `recipes.js`, so the Babel JSX scripts come after the lib block.
 
-**Permanent fix shipped (matches user's "keep Claude default, fix the burn, no billing"):**
-- **Skills cap.** Added `_read_skills_cap_config()` and `_apply_skill_count_cap()` in `agent/prompt_builder.py` (priority: `always_include` → toolset-match → alphabetical). New config `skills.max_count: 40` + `skills.always_include: [using-superpowers, memory-management, task-management, shay-shay, skill-creator, systematic-debugging, brainstorming, verification-before-completion]` in `~/.shay/config.yaml`. **Verified live: skills prompt 22,600 tok → 1,274 tok per call** (~21.3k saved). Cap config is part of the LRU cache_key so changes invalidate stale entries; cap is applied BEFORE the cached `stable` system block, preserving the 99% prompt-cache hit rate.
-- **MCP tool allowlist.** Used the existing `tools.include` filter (`tools/mcp_tool.py:2905-2938`, `_should_register`) on `mcp_servers.basic-memory` to expose 7 useful tools (`write_note, read_note, edit_note, search_notes, build_context, recent_activity, list_memory_projects`) instead of 27. **Verified live: 35 tools → 19 tools** (~3.2k tok saved). Pattern works for any heavy MCP server.
-- **`model="default"` 404 killed.** Replaced the literal-string fallback at `agent/plugin_llm.py:586` with a layered resolution: `_read_main_model()` → `load_config().model.default` → hard fallback `"claude-sonnet-4-6"`. No path can send the string `"default"` to Anthropic again.
-- **Total: ~24.5k input tokens cut per Claude call** (~55k → ~30k). Existing prompt-caching (99% hit, `run_agent.py:3412-3505,12262-12276`) untouched; cap is applied inside the cached prefix-building path so the static prefix stays stable.
+### New API surface
 
-**DO-NOT-REPEAT.** When Shay returns `400 "out of extra usage"` but Claude works in Desktop/web on the same account, the cause is the **Claude Code weekly cap**, not the account. The permanent prevention is (a) keep bulk off the Max brain (routing fixed in buglog #206), (b) cap per-call context (skills + MCP tool schemas), and (c) make sure no code path sends literal `"default"` as a model name. "Extra usage" overflow at claude.ai is intentionally off per user preference; the fallback to Gemini stays as graceful degradation when the cap does hit, but should be rare on normal interactive use after these cuts.
+- `GET /api/research/briefs` — `{briefs: [{id, filename, title, path}]}` — reads `docs/research/famtastic-studio-execution/*.md`.
+- `GET /api/research/brief/:id` — `{id, filename, title, summary, body_first_500}` — id allowlist `/^[a-zA-Z0-9._-]+$/`, `path.resolve` containment.
+- `GET /api/think-tank/captures` — `{captures: [{id, title, captured_at, source_path}]}` — reads `captures/inbox/*.capture.json`, fail-soft parse, capped at 50.
+- `GET /api/think-tank/contract` — `{contract: {capture_shape, promotion_targets}}`.
 
-## 2026-05-29 — Shay memory architecture: cognee retired, replaced by basic-memory + Smart Connections
+Both routers follow the existing `createXRouter(repoRoot)` factory pattern from `intelligence-routes.js`. Path traversal blocked via allowlist + `path.resolve` + `startsWith` containment.
 
-**Decision:** cognee is RETIRED as Shay's vault brain. It required API embeddings (defaults to OpenAI `text-embedding-3-large`, no `OPENAI_API_KEY` present) plus LLM graph-extraction — verified non-functional and finicky to make work locally (no installed Ollama embedding model; instructor structured-output flaky on hermes3). Replaced by a split, all-local stack where each tool does one job:
+### Standing rules reinforced
 
-- **basic-memory** (`uv tool install basic-memory`, binary at `~/.local/bin/basic-memory`) — Shay's WRITE + RECALL layer. MCP entry in `~/.shay/config.yaml` (`command: ~/.local/bin/basic-memory`, `args: ["mcp"]`). Project `shay-memory` → `~/famtastic/obsidian/Shay-Memory` (set as `default_project` in `~/.basic-memory/config.json`). Scoped to the subfolder ON PURPOSE — basic-memory has `ensure_frontmatter_on_sync: true`, so pointing it at the whole hand-authored vault would mutate existing notes. Uses local **FastEmbed `bge-small-en-v1.5`** (no API key). **Verified working end-to-end:** wrote a note, `basic-memory reindex` embedded it, `basic-memory tool search-notes "<semantic query>"` returned it at score 0.65 (true semantic match). On gateway restart it registered **27 MCP tools** (`mcp_basic_memory_write_note`, `_search_notes`, `_search`, `_build_context`, `_canvas`, `_edit_note`, `_list_memory_projects`, …). CLI gotchas: `tool write-note --title --folder --content` (project flag is `--project` AFTER the subcommand, or use default); `tool search-notes "<query>"` takes a POSITIONAL query (not `--query`); no `sync`/`delete-note` commands — use `reindex`/`status`/`doctor` and `edit-note`. First semantic search downloads the FastEmbed model (~5 files) from HF Hub.
-- **Smart Connections** + **Smart Connections Visualizer** (Obsidian community plugins) — the HUMAN visual brain (force-graph) + on-device embeddings (bge-micro). Installed by placing release assets (SC `4.5.0`, Visualizer `1.0.27`: `main.js`/`manifest.json`/`styles.css`) under `~/famtastic/obsidian/.obsidian/plugins/{smart-connections,smart-connections-visualizer}/` and enabling both (SC first) in `~/famtastic/obsidian/.obsidian/community-plugins.json`. **Inherent GUI step (cannot be done from CLI):** open Obsidian once → disable Restricted Mode / trust the vault → let SC index. Embeddings are computed in-app, so they don't exist until Obsidian runs SC at least once.
-- **cognee** is commented out (not deleted) in `~/.shay/config.yaml` mcp_servers; full prior config preserved in `~/.shay/config.yaml.bak-brain-*`. After restart only `obsidian` (2 tools) + `basic-memory` (27 tools) load.
+- **Mission Control containment.** Lane G drift trip-wire confirms `mission-control.jsx` contains zero RecipeSelector / Sites listing / Components listing / Media listing. Mission Control is one section among twelve.
+- **Honest action contracts.** Every unwired button (`Generate`, `Approve`, `Reject`, `Insert (surgical)`, `Promote findings`, `Reset to platform`, `Capture idea`, `New brief`, `Quick add`, etc.) is `disabled={true}` and adjacent to a `Tag` chip explaining what's deferred. No fake outputs.
+- **server.js minimal-mounts policy.** Only 2 lines added to `server.js` (the existing mount block at 1070–1078). All real route logic lives in modular `server/<name>-routes.js` files.
 
-**Blocked / deferred:** `smart-connections-mcp` (a Node bridge that lets the AGENT reuse SC's `.smart-env` embeddings — the "one shared index for human + agent" optimization). Cloning the third-party fork (`gogogadgetbytes/smart-connections-mcp`) + `npm install/build` was blocked by the auto-mode security classifier (untrusted lifecycle code). It is REDUNDANT for basic functionality — basic-memory's own FastEmbed search already gives the agent recall — so it was skipped. Revisit only if the shared-index optimization is wanted, with explicit build approval. Meanwhile `mcp-obsidian` still gives Shay file/keyword access to the whole vault.
+### Known gaps (NEW — open after this run)
 
-**Net architecture:** basic-memory = agent write+recall (local, scoped to Shay-Memory); Smart Connections = human visual brain + on-device embeddings over the whole vault; both operate on plain markdown so basic-memory's wikilinked notes appear as nodes in the Visualizer. No API keys, no LLM extraction, no cognee.
-
-**DO-NOT-REPEAT (2026-05-29, see buglog #207): never point a basic-memory project at the hand-authored vault.** Tested giving Shay whole-vault semantic recall by pointing a basic-memory project at `~/famtastic/obsidian`; on reindex it **mutated 2 hand-authored notes** (injected `permalink:` frontmatter, stripped trailing newline/whitespace) **even with `ensure_frontmatter_on_sync: false`** — that flag does not prevent file rewrites. Also: basic-memory hard-refuses nested projects (can't have whole-vault + Shay-Memory subfolder) and its `project default` CLI is buggy (config vs internal-DB desync). Reverted to Shay-Memory-only scope; repaired the 2 files (one byte-exact, one content-complete — they're untracked in git so no perfect backup). **Whole-vault SEMANTIC recall for the agent must come from Smart Connections' on-device embeddings via `smart-connections-mcp` (security-gated build, pending approval), NOT basic-memory.** Whole-vault KEYWORD recall is already provided by `mcp-obsidian`. Safety protocol that caught the mutation: hash-baseline every `*.md` before, diff after, git/whitespace-revert.
-
----
-
-## Shay surgical-edit harness (2026-05-30) — how Shay safely edits her own living files
-
-**Where:** `shay-agent-os/components/swarm/pipeline.py`. Functions: `build_app`, `surgical_patch`, `multi_file_code_job`, helpers `_fuzzy_replace`, `_is_render_spine`. Bridge target: `~/.shay/hermes-agent/tools/{fuzzy_match,file_operations,patch_parser}.py`.
-
-**The model (build_app GATE 1 = whole-project typecheck):**
-- After decomposing a goal into a file manifest, `build_app` **classifies each file by existence**:
-  - NEW files → `multi_file_code_job` (full generation; correct for greenfield).
-  - EXISTING files → `surgical_patch` (anchored replacements, **never full-regen**). NEW files are created first so existing-file edits that import them still typecheck.
-- `surgical_patch` matches anchors via `_fuzzy_replace` (exact fast-path, then hermes `fuzzy_find_and_replace` for whitespace tolerance; falls back to exact if the fork/py3.10+ is unavailable). Each iteration rebuilds from the pristine original; rollback on failure.
-- `_is_render_spine(path)` = existing + >150 lines + JSX `return (`/`</` or `Provider`. Spine files get a prompt rule forcing **≥2 small ADDITIVE anchors** (add a const, then swap one return line) — never one block-spanning anchor.
-
-**Three root causes fixed (buglog #219), in the order they bit ralph U1:**
-1. **Orphaned primitive** — `surgical_patch` existed but nothing called it; `build_app`→`multi_file_code_job` full-regenerated App.tsx and dropped `</ThemeProvider>` (TS17008). Fix: existence-based routing above.
-2. **Prompt truncation** — edit-planning showed `cur[:6000]`; App.tsx's routing block sits past char 6000, so the brain never saw it and **hallucinated `switch`/`activeScreen` anchors that don't exist**. Fix: show `cur[:24000]` (whole file when reasonable). This was the decisive fix.
-3. **Wrong interpreter** — `.ralph/loop.py`'s `python3` shebang = system 3.9, where the hermes 3.10+ primitives can't import and fuzzy silently degraded. Fix: `loop.py` re-execs under `~/famtastic/shay-shay/.venv/bin/python3` (3.13).
-- Plus: edit-derivation retries 3× and **logs the raw brain output** so a non-JSON fallback response can't silently kill a unit.
-
-**Proof:** Shay drove ralph U1 herself in 22s — two clean micro-patches (`screenRegistry` const + `chat={activeScreen}` swap), passing typecheck AND full `npm run build`. The build also surfaced a pre-existing CSS bug (missing `}` in `Soul/Soul.module.css`, buglog #220) that typecheck is blind to.
-
-**Reuse-before-build:** background research confirmed the fork already shipped `patch_v4a` + `_check_lint_delta` (mirrors Cline/OpenCode post-edit LSP). We ADAPTED `fuzzy_find_and_replace` rather than hand-rolling. Hermes issue #342 ("expose Hermes tools AS an MCP server") is about interop, not edit quality — not relevant here. Escalation path if fuzzy-anchored proves weak: ts-morph/ast-grep structural edits (guaranteed-balanced output), then Morph fast-apply (paid).
-
-### Known Gaps (updated 2026-05-30)
-- **The ralph loop is typecheck-gated, NOT render-gated, per unit.** A unit can pass typecheck and still render wrong or fail `npm run build` (CSS, runtime). Render-spine units require a by-hand `npm run build` + render check until per-screen render-test autogen exists. This is the top open item before turning the full U2–U20 queue loose unattended.
-- `runtime_render_gate` exists but `build_app` only runs it when the caller passes a `render_test`; the ralph loop passes none. Per-screen render-test autogen is unbuilt.
-- New skills identified but not yet minted: `micro-patch-living-file`, `render-spine-guard`, `structural-prepass` (tree-sitter token cut), `code-graph-context` (graph-as-context, à la Understand-Anything).
-
-### Autonomous run result + new gap (2026-05-30, second entry)
-Full ralph U2–U20 run: 11 landed (U1,U2,U6,U7,U10,U11,U12,U17,U18,U19,U20), 9 blocked. App cumulatively typechecks + builds clean. **NEW KNOWN GAP — new-file brace-drop:** the surgical/micro-patch protection in build_app only routes EXISTING files through anchored edits; NEW files still go through multi_file_code_job full-generation, so a large new screen (e.g. Kanban) can drop a brace (TS1005) and block. Fix path: apply the same render-spine micro-decomposition (or a post-gen syntax-repair/format pass via prettier) to new files above a size threshold. Blocked punch-list: U3 Memory, U4 Settings, U5 Providers (TS contract), U8 AgentMonitor + U14 Diagnostics (anchor miss on shared component index — wider-context fix), U9 Kanban + U15 Gateway + U16 CaptureInbox (TS in generated screen), U13 Logs (shell exit 2 infra). Grounding win: injecting the real hermesAPI method list from index.d.ts eliminated the invented-method-name failure class (U2 went from 3 blocks to a 33s pass).
-
-## 2026-06-01 — Agent Command Center Built
-Built agent command center at ~/famtastic/agent-command based on hermes-workspace-v2.3. Features: agent status, parallel job dispatch, cost tracking with OpenRouter $15 budget. Connected to existing hermes-agent gateway running on port 8642. Agent-command server runs on port 3000 and is operational. Files: copied hermes-workspace, built with pnpm, started server-entry.js. Config: set HERMES_API_URL in agent-command/.env to point to hermes gateway. Known gaps: need to configure cost tracking dashboard and set up OpenRouter budget alerts.
-
-## 2026-06-02 — Command Center (Phase 1): single source of truth for the ecosystem
-Replaced the fake static `command-center/index.html` (hardcoded "1,000 ideas / $50K potential", `alert()` buttons) with a real zero-dependency Node service (`command-center/server.js`, built-in `http`+`crypto`, launchd `com.famtastic.commandcenter` on port 7878). Three collectors: **process-health** (`collectors/process-health.js` — PID liveness + heartbeat freshness; PID-alive-but-stale-heartbeat = HUNG, which immediately exposed scout/builder/closer wedged for 57min — the bug `pipeline/data/status.txt` described but couldn't see), **income-ledger** (`collectors/income-ledger.js` — append-only `data/revenue.jsonl`, only real landed money from Stripe/PayPal webhooks + `POST /api/income/manual`; Stripe sig verified via HMAC-SHA256 against `STRIPE_WEBHOOK_SECRET`), and **ideas** (`collectors/ideas.js` — collapses ~475 generator-noise lines, surfaces curated dollar-bearing opportunities parsed from `revenue-plans/`: NCS $5k, AI Email Automation $5k, React Dashboard $3k). Added a **kill switch** (`POST /api/kill-switch` → `data/kill-switch.json`) as the guardrail for fully-autonomous send — Phase 3 agents must check it before contacting real customers. New heartbeat contract: `pipeline/lib/heartbeat.py` + `data/heartbeats/<name>.json`, registry at `command-center/data/agents-registry.json`; scout.py patched to emit heartbeats and use a (5,15)s Reddit timeout (fixes the documented hang). API: `/api/status`, `/api/processes`, `/api/income`, `/api/ideas`, `/healthz`. Verified live in browser (screenshot): red alarm topbar, 5 honest alerts, $497 test deal logged then cleared, real ideas ranked.
-
-### Known Gaps (updated 2026-06-02)
-- **Phase 3 not built**: lead-gen / customer-response / follow-up agents don't exist yet — the existing `pipeline/agents/{scout,builder,closer}.py` are stubs and currently HUNG; Command Center shows them honestly but doesn't fix them beyond the scout heartbeat/timeout patch.
-- **Stripe/PayPal not live**: webhook endpoints work and verify signatures, but no real Stripe/PayPal account is connected and no public tunnel is running, so income is manual-entry-only until creds + `stripe listen` (or prod tunnel) are configured. PayPal events record as `verified:false` until verify creds are added.
-- **Kill switch is advisory**: it persists state and the dashboard honors it, but no autonomous-send agent reads it yet (none exist). The contract must be enforced when Phase 3 lands.
-- **NCS opportunity double-counts**: `ncs-proposal.md` and `pitch_to_paul.md` surface as two separate $5k ideas (different titles, don't normalize-match) — same real deal.
-
-## 2026-06-02 — Phases 2–4: autonomous lead-gen / response / follow-up + supervisor
-Built the full autonomous business stack on top of the Command Center, all monitored by it. **Shared lib** (`pipeline/lib/`): `config.py` (paths + send guardrails), `store.py` (append-only JSONL stores: leads/outreach/followups/inbound/responses + `record_income()` POST to CC), `sender.py` (the single gated send choke point — refuses if kill switch engaged, draft/dry-run unless `SEND_ARMED=true` + SMTP creds), `copywriter.py` (dependency-free template copy). **Agents** (`pipeline/agents/`): `outreach.py` (scored leads → personalized outreach), `responder.py` (inbound → classified reply), `followup.py` (no-reply chase, max 2, spaced by `FOLLOWUP_AFTER_HOURS`), plus patched `scout.py`. **Phase 4 supervisor.py** (launchd `com.famtastic.pipeline`) starts all agents and auto-restarts any that die OR go heartbeat-stale — replaces the fire-and-forget `start-pipeline.sh`. **Command Center additions**: `collectors/pipeline.js` (funnel + outbound summary), `GET /api/pipeline`, `POST /api/leads`, `POST /api/inbound`, and an "Autonomous Pipeline" dashboard panel. Verified end-to-end live: seeded lead → outreach drafted (dry-run) → lead advanced to contacted; inbound injected → responder drafted reply; kill switch confirmed to return `blocked_kill_switch`; supervisor confirmed managing 4 agents with all 6 services green in the dashboard.
-
-### Known Gaps (updated 2026-06-02, Phases 2–4)
-- **Sends are disarmed**: `SEND_ARMED=false` by default and no SMTP creds set, so outreach/responder/followup only DRAFT (dry-run). Real transmission requires arming + creds in the `com.famtastic.pipeline` plist. This is intentional safety, not a bug.
-- **No real lead source wired**: `scout.py` only scrapes Reddit job subs; Upwork/LinkedIn/etc. are TODO. Real funnel volume depends on adding sources or POSTing leads to `/api/leads`.
-- **No inbound ingestion wired**: `responder.py` reads `data/inbound.jsonl` but nothing populates it yet except `POST /api/inbound`. The existing `email-agent/server.js` (IMAP) is not yet connected to write inbound records.
-- **Copy is template-based**: `copywriter.py` is deterministic templates, not LLM-generated — swap the `draft_*` functions to upgrade.
-- **Stripe/PayPal still not live** (carried from Phase 1): endpoints verify signatures but no account/tunnel connected.
-
-## 2026-06-02 — Odysseus integration + brain-wiring universality + hook fix
-
-### Odysseus (self-hosted AI workspace)
-Integrated **Odysseus** (`github.com/pewdiepie-archdaemon/odysseus`) — a
-local-first self-hosted AI workspace (Chat, Agent on opencode+MCP, Cookbook local
-model serving, Deep Research, Compare, Documents, Memory/Skills via
-ChromaDB+fastembed, Email, Notes/Tasks, CalDAV Calendar). **Scope: Odysseus only,
-deep** (the other 8 HexSec-carousel tools are mostly hosted SaaS — recorded once
-in the write-up, not installed). Files:
-- `scripts/odysseus/install-odysseus.sh` — idempotent Mac installer (clone/update,
-  seeds private `.env`, loopback-only unless `ODYSSEUS_LAN=1`, `--start` to launch
-  native Apple-Silicon at `:7860`). `scripts/odysseus/README.md`.
-- `docs/odysseus/ODYSSEUS-WRITEUP.md` — capability map + FAMtastic fit + security
-  posture + the other-8 one-liners.
-- `docs/odysseus/tutorial-claude.html` + `tutorial-shay.html` — **two independent
-  visual tutorials** (Claude = builder/IDE angle; Shay = agent-OS/swarm angle,
-  Claude-drafted starter for Shay to replace).
-- `.claude/agents/odysseus.md` — Claude operator subagent (install/start/health/
-  route table; loopback+auth rules; launchd boundary).
-- `shay-agent-os/odysseus/{INSTALL-FOR-SHAY.md,install-odysseus-shay.sh}` — Shay's
-  headless instance (`~/odysseus-shay`, port **7870**, admin=shay) + her task list.
-- `shay-agent-os/agents/odysseus.md` — Shay's operator agent (local-serving
-  economics: route bulk/low-stakes swarm work to local models, reserve cloud Opus).
-
-### Brain-wiring universality (every agent surface now leaves a trace)
-- `scripts/brain/session-checkpoint.js` — added `BRAIN_SESSION_ID` env fallback
-  (after `CLAUDE_CODE_SESSION_ID`) so any surface can write a trace; combined the
-  branch+head git calls; switched stop delta to `git diff --shortstat`.
-- `scripts/agents` (`action_run`) — one `brain_trace start/stop` call wires
-  **claude/gemini/codex** via `fam-hub agent run` (stable id `famhub-<agent>-<tag>`).
-- `shay-agent-os/brain_checkpoint.py` — Python wrapper (`checkpoint("start"/"stop")`)
-  shelling to the node writer with `AI_AGENT=shay`; wired a `start` into
-  `shay-agent-os/launch-agent.py`.
-
-### The dead-hook fix (root cause: gitignored hook dir)
-`.claude/settings.json` referenced six `.wolf/hooks/*.js` files, but `.wolf/hooks/`
-is **gitignored** (`.gitignore:36`) — so they were never committed, absent on every
-clone, and failed on every tool call. Fix: removed the 5 no-op refs; implemented
-the one real hook (OpenWolf memory trail) at a **tracked** path
-`scripts/brain/openwolf-post-write.js` (PostToolUse Write/Edit → appends one line
-to the gitignored `.wolf/memory.md`). All hook targets are now tracked + present.
-
-### Known Gaps (updated 2026-06-02, Odysseus + wiring)
-- **Odysseus not yet installed on Fritz's Mac** — this was an ephemeral cloud
-  container; install scripts + agents are committed, but `install-odysseus.sh`
-  must be run on the Mac (Pages site `pewdiepie-archdaemon.github.io/odysseus`
-  was 403 from the container; the git repo cloned fine).
-- **Shay's tutorial is a Claude-drafted starter** — Shay must author her genuine
-  independent version on her next run (task in `INSTALL-FOR-SHAY.md`).
-- **`run_*.py` drivers + Cowork still untraced** — `launch-agent.py` and the
-  fam-hub path are wired; the individual Shay `run_*.py` drivers and Cowork still
-  need a `brain_checkpoint` call.
-- **`portfolio-revenue-model.md` lost** — the only concrete "1000-site revenue
-  model" artifact is referenced by Shay build records but committed nowhere;
-  recover or mark artifact-lost.
-- **FAMTASTIC-STATE.md not regenerated** — Rule 6 triggered (new scripts/agents);
-  full regen deferred to avoid a risky half-rewrite in an oversized session.
-
-## 2026-06-05 — Shay phone companion UI rebuilt (5-tab PWA + Interview Card)
-
-**What & where.** Rebuilt `shay-phone/web/` from scratch to the spec in
-`obsidian/01-Shay/SHAY-COMPANION-BUILD-BRIEF.md`. The old v0 skin was rejected;
-only the UI was replaced. Files touched: `shay-phone/web/index.html` (single-file
-PWA, ~720 lines), `shay-phone/web/manifest.webmanifest` (renamed to "Shay", dark
-`#08090B` theme), `shay-phone/web/sw.js` (cache bumped `shay-v1-companion`),
-`shay-phone/README.md`. **No backend changes** — `server.py` already exposed every
-endpoint the UI needs.
-
-**Architecture decision — backend was already complete.** `shay-phone/server.py`
-(stdlib-only, launchd `com.famtastic.shay-phone`, binds `0.0.0.0:8787`, token auth
-via `?k=`/`X-Shay-Token`) already had: `/api/daily-brief` (`assemble_daily_brief()`),
-`/api/jobs` + `/api/job?id=` + `/api/job/cancel` + `/api/dispatch` (`jobs.json`),
-`/api/chat` + `/api/brains` (`BRAINS` = claude/openrouter/codex/gemini with
-availability), `/api/capture`, `/api/asks` + `/api/ask?id=` + `/api/answer` +
-`/api/interview` (`asks/*.json`), and web-push (`/api/vapid`, `/api/subscribe`,
-`/api/push` via pywebpush/py_vapid, keys at `~/.shay/webpush.json`, subs at
-`~/.shay/webpush-subs.json`). The rebuild was therefore pure frontend against a
-fixed contract.
-
-**5-tab IA** (bottom nav, electric-indigo `#5B4FE8` accent, Space Grotesk + Inter,
-status dots cyan/amber/rose/gray, breathing-cyan-dots thinking indicator):
-Brief / Tasks / Chat / Dispatch / You — each tab's loader matches a server endpoint
-shape documented above. A 12s `refreshBadges()` poller drives nav badges (running
-job count on Tasks, pending approvals on Dispatch) and **auto-surfaces** the newest
-pending ask of kind `question`/`interview`/`research_scope`.
-
-**Interview Card (centerpiece).** Bottom-attached sheet (`.sheet`/`.scrim`).
-`renderSingleAsk()` handles `/api/ask` records (kind `question`/`approval`/
-`research_scope`); `kind:"approval"` with `context` renders a read-only plan card +
-Approve/Adjust. `startInterview()`→`renderInterviewStep()`→`renderInterviewPlan()`
-walks multi-question `/api/interview` records (`questions[{q,options,type,answer}]`)
-with progress dots, ending in a plan card → `submitInterview()` POSTs
-`/api/answer {id, answers[]}`. Option strings are split into title/description on
-`" — "` by `parseOpt()`. Single answers POST `/api/answer {id, answer}`.
-
-**Gotchas captured.** (1) `/api/daily-brief` has a **side effect**: every call
-creates a `daily_brief`-kind ask (and fires a push). The UI must NOT surface
-`daily_brief` asks as questions — only `question`/`interview`/`research_scope` are
-surfaced; approvals go to the Dispatch queue. (2) Web Push `PushManager` requires a
-**secure context** — Tailscale `*.ts.net` and `localhost` qualify, a bare LAN
-`http://` IP does not. (3) VAPID keys generate only in `main()` at server start via
-`_ensure_vapid_keys()`; a server instance that predates the pywebpush install
-returns an empty `publicKey` until restarted (`launchctl stop com.famtastic.shay-phone`).
-
-### Known Gaps (added 2026-06-05)
-- **Chat is request/response, not SSE.** The brief mentions streaming; `/api/chat`
-  returns the full reply in one shot. Breathing-dots cover the wait. SSE is a later
-  upgrade.
-- **Autonomy modes + notification budget + quiet hours are client-side only.**
-  Stored in `localStorage`; they label intent but are not enforced server-side
-  (no gateway-side budget cap or quiet-hours batching yet).
-- **`/api/daily-brief` ask spam.** Each brief load appends a `daily_brief` ask to
-  `asks/`; these accumulate (cleaned manually this session). A TTL/dedupe on
-  `daily_brief` asks, or moving the brief off the ask channel, is the real fix.
-- **No QR pairing yet.** Token is pasted/in the URL; the brief's QR-pair-to-Keychain
-  flow is unbuilt (fine for Android localStorage, revisit for multi-device).
-
-## Capability Engine — agent routing, gap tracking, and dispatch planning (2026-06-08)
-
-Built a structured capability engine to answer the recurring question: "which agent should do this task?" The engine is four interlocking components that together form a pre-delegation decision layer.
-
-### Architecture
-
-**Agent Registry** (`AGENT-REGISTRY.yaml`) — 25 agent lanes cataloged with tier, cost model, capabilities, constraints, and quality rating. Each lane is a concrete dispatchable endpoint (a Claude Code session, Codex, a local Ollama model, a free cloud service, etc.), not an abstraction.
-
-**Capability Matrix** (`CAPABILITY-MATRIX.yaml`) — 35 capabilities across 8 categories (code generation, research, reasoning, creative/media, system operations, data/analysis, communication, orchestration). Each capability entry maps which agent lanes can perform it, at what quality/speed/context level. This is the lookup table the dispatch planner queries.
-
-**Gap Tracker** (`GAP-TRACKER.yaml`) — 18 prioritized capability gaps. Each gap records: what's needed, which agent lane is blocked, what's missing (a credential, a subscription, a local model, an integration), and priority (blocking/high/medium/low). The gap tracker is the engine's honest constraint ledger — it prevents dispatching to lanes that will fail.
-
-**Dispatch Planner** (`dispatch-planner` skill) — a pre-delegation workflow that any agent surface runs before handing off work. The workflow is: **decompose** the task into required capabilities → **check** the capability matrix for which lanes provide those capabilities → **select** the best available lane by cost/quality/speed tradeoff → **log gaps** for any capabilities no lane currently provides → **build plan** with fallback chains → **dispatch**.
-
-### The brain-vs-worker lane separation principle
-
-Agent lanes split into two roles: **brain** lanes (orchestrators that plan, reason, verify, and synthesize — expensive, high-context, slow) and **worker** lanes (executors that code, search, transform, and generate — cheap, fast, narrow). A brain lane should never do worker work; a worker lane should never do brain work. The dispatch planner enforces this separation. Claude/Codex/Gemini are brain lanes; Qwen 1.5B/Phi-4-mini/free cloud agents are worker lanes. The M5 16GB Mac can run 2 large Ollama models simultaneously, constraining local worker lanes to at most 2 concurrent local workers.
-
-### Agent routing hierarchy
-
-The routing priority is: **free > subscription > paid**. Within each tier, tradeoffs are:
-
-1. **Free lanes** (9 cloud + 8 local = 17 total) — zero marginal cost, but limited by rate caps, context windows, and quality. Free cloud lanes include Gemini Flash (via API), ChatGPT free tier, and various sign-up-credit services. Local lanes are Ollama models (Qwen 2.5, Phi-4-mini, Hermes 3, DeepSeek-R1, etc.) running on the M5.
-
-2. **Subscription lanes** (4 total) — Claude Max ($100/mo, weekly cap), Codex ($100/mo, monthly credit cap), Gemini Pro (included with Google One), ChatGPT Plus ($20/mo). Already paid for, so marginal cost is zero within caps, but caps are real and burn fast.
-
-3. **Paid lanes** — per-token API calls (Anthropic direct, OpenAI direct, OpenRouter) or monthly subscriptions for new services. MiniMax at $20/mo was identified as the best-value paid worker lane for bulk code/reasoning tasks.
-
-**Key finding:** $200+ in available sign-up credits across free-tier services (MiniMax, Together AI, Groq, Mistral, etc.) provide significant unpaid capacity for worker tasks if the capability gaps (credential storage, API integration, model routing) are closed.
-
-### Hardware constraint: M5 16GB
-
-The M5 Mac with 16GB unified memory can run at most 2 large Ollama models simultaneously (e.g., Qwen 2.5 7B + Phi-4-mini 3.8B). Smaller models (1.5B) can coexist with 2 larger ones. The dispatch planner checks current Ollama load before routing to a local worker lane. If 2 large models are loaded, new local tasks queue or route to a free cloud lane instead.
-
-### The pre-delegation workflow
-
-Before any agent delegates work, it runs:
-
-1. **Decompose** — break the task into required capabilities
-2. **Check** — query the capability matrix for lanes that provide each capability
-3. **Select** — pick the best available lane (free first, then subscription, then paid)
-4. **Log gaps** — record any capabilities with no available lane in the gap tracker
-5. **Build plan** — construct the dispatch plan with fallback chains
-6. **Dispatch** — send the work to the selected lane
-
-This workflow is codified in the `dispatch-planner` skill and is the standard pre-flight check for all multi-agent delegation in the FAMtastic ecosystem.
-
-### Key finding: 25 lanes, but capability gaps block execution
-
-The agent registry lists 25 dispatchable lanes (4 subscription, 9 free cloud, 8 local, 4 potential additions). However, the gap tracker records 18 capability gaps — missing credentials, unwired integrations, capped subscriptions, and uninstalled local models. The most impactful gaps are: no standalone Anthropic API key (blocked on subscription cap), Codex credits exhausted until June 10, no paid worker subscription (MiniMax $20/mo recommended), and several free-cloud services not yet integrated. The capability engine makes these gaps visible and trackable so each dispatch either succeeds or produces an honest gap record instead of a silent failure.
-
----
-
-## FAMtastic Hosting — Astro SSR on GoDaddy cPanel (2026-06-10)
-
-### Astro SSR deployment: entry.mjs hardcodes build-machine paths
-
-When `@astrojs/node` adapter builds in standalone mode, the generated
-`dist/server/entry.mjs` contains hardcoded `file:///` paths pointing to the
-build machine's filesystem. On a different server these paths don't exist,
-causing the server to fail to serve static files from the correct location.
-
-**Symptom:** Server starts but API routes return 404 even though the routes
-appear in the manifest. Root cause is the _args object having wrong paths.
-
-**Fix:** After every rsync deploy, patch the entry.mjs on the server:
-```bash
-DIST=/home/nineoo/public_html/famtastichosting.com/site/dist
-sed -i "s|file:///Users/famtasticfritz/.*/dist/client/|file://${DIST}/client/|g" ${DIST}/server/entry.mjs
-sed -i "s|file:///Users/famtasticfritz/.*/dist/server/|file://${DIST}/server/|g" ${DIST}/server/entry.mjs
-```
-
-**Alternative:** Use environment-relative paths in astro.config.mjs by
-configuring the adapter with `output: 'server'` and a custom
-`server.config.mjs` that reads `DIST_PATH` from env.
-
-### nvm node binary not in PATH for non-interactive SSH
-
-When running SSH commands via heredoc (`ssh host << 'ENDSSH'`), the
-non-interactive shell does not source `~/.bashrc`, so `nvm` and the
-versioned node binary are not in PATH. `node` resolves to the system
-Node (v14.8.0 on this cPanel host) instead of the nvm-installed v20.
-
-**Fix:** Use the full nvm binary path:
-```bash
-NODE=/home/nineoo/.nvm/versions/node/v20.20.2/bin/node
-nohup env PORT=3001 HOST=127.0.0.1 ... $NODE entry.mjs &
-```
-
-### Dynamic import('bcryptjs') breaks in ESM context
-
-In Astro SSR routes, `const bcrypt = await import('bcryptjs')` returns
-the module namespace object. For CommonJS modules like bcryptjs, the
-actual exports are on `.default`. Calling `bcrypt.compare()` throws
-`TypeError: bcrypt.compare is not a function`.
-
-**Fix:** Use the existing `verifyPassword()` helper from `lib/auth/password.ts`
-which uses a static `import bcrypt from 'bcryptjs'` — that correctly resolves
-the default export.
-
-### sessions table schema must be consistent across all auth routes
-
-The sessions table uses: `session_id` (varchar 128, PRIMARY KEY), `expires`
-(int unsigned, unix timestamp), `data` (text, JSON blob `{user_id: number}`).
-
-Admin login.ts was inserting with the wrong columns (`id, user_id, token,
-expires_at`) causing silent failures. The `extractSession()` middleware in
-`lib/auth/middleware.ts` joins on `session_id` and uses `JSON_EXTRACT(data,
-'$.user_id')`, so all inserts must use the `session_id/expires/data` schema.
-
-### orders table: godaddy_order_id is NOT NULL
-
-The `orders` table has `godaddy_order_id varchar(64) NOT NULL UNIQUE`.
-For MVP orders created before real GoDaddy provisioning, use a placeholder:
-```javascript
-const placeholderOrderId = `FAM-${crypto.randomUUID()}`;
-```
-This satisfies the NOT NULL constraint and is distinguishable from real
-GoDaddy order IDs by the `FAM-` prefix.
-
-### products table uses _cents suffix on pricing columns
-
-Price columns are `wholesale_price_cents` and `retail_price_cents` (integers
-in cents). Any code using `wholesale_price` or `retail_price` (no suffix)
-will fail with "Unknown column" from MySQL.
-
-### PayPal checkout flow — server-side only, snapshot-then-capture
-
-PayPal JS SDK v2 is used in sandbox mode. The full flow:
-
-1. `/checkout` (SSR page, prerender=false) — reads cart from `fam_cart_session`
-   cookie, renders order summary + PayPal Buttons widget
-2. `POST /api/checkout/create-order` — reads cart, creates PayPal order via
-   `POST /v2/checkout/orders` with CAPTURE intent, **snapshots cart into
-   `checkout_snapshots`** (keyed by paypalOrderId to prevent TOCTOU/cart-swap).
-   Returns `paypalOrderId`.
-3. PayPal JS SDK handles customer approval in the iframe
-4. `POST /api/checkout/capture-order` — verifies snapshot exists and matches
-   session, captures payment, writes orders rows to DB (one per product,
-   **`status='processing'`**, `product_id=item.product_id` from snapshot,
-   `godaddy_order_id='PAYPAL-{id}'`). Uses a transaction to atomically mark
-   snapshot 'captured' and insert orders — preventing replay attacks.
-   If DB write fails after capture, persists to `orphan_payments` table and
-   returns `success:false` (no silent money loss).
-5. Cart is cleared. Browser redirects to `/order-confirmation`.
-
-**Guest checkout is supported.** `orders.user_id` is nullable — NULL means
-the buyer did not have an account. `getSession()` is called optimistically;
-if the user is not logged in, `user_id=NULL` is inserted.
-
-**Order status model (canonical):**
-- `pending` — created but not paid
-- `processing` — PayPal payment captured, awaiting admin fulfillment
-- `active` — provisioned and active in GoDaddy
-- `cancelled` — cancelled by admin or customer
-- `failed` — provisioning failed
-- `expired` — subscription expired
-
-**Key files:**
-- `src/lib/paypal/client.ts` — `getAccessToken()`, `createPayPalOrder(cents)`,
-  `capturePayPalOrder(id)` — all server-side only, reads PAYPAL_CLIENT_ID /
-  PAYPAL_SECRET / PAYPAL_ENV from env
-- `src/pages/api/checkout/create-order.ts`
-- `src/pages/api/checkout/capture-order.ts`
-- `src/pages/checkout.astro`
-- `src/pages/order-confirmation.astro`
-
-**PayPal env switching:** Set `PAYPAL_ENV=live` in .env and provide live
-credentials in PAYPAL_CLIENT_ID / PAYPAL_SECRET. The API base switches
-automatically between `https://api-m.sandbox.paypal.com` and `https://api-m.paypal.com`.
-
-**Admin fulfillment queue:**
-- `GET /api/admin/local-orders?status=processing` — lists 'processing' orders
-  awaiting provisioning (requires admin auth)
-- `PUT /api/admin/local-orders` body `{orderId, status: 'active'|'cancelled'}`
-- `/admin/orders` shows fulfillment queue at top; "Mark Fulfilled" sets
-  `status='active'` — row fades out and removes on success
-
-**Known gaps (as of 2026-06-11):**
-- `orders.description` field exists in schema but capture-order does not
-  populate it (would be useful for guest order lookup later)
-- No cron purges stale `checkout_snapshots` with `status='pending'`
-- GoDaddy postback integration has not been tested end-to-end (no live GoDaddy
-  credentials in dev environment)
-- Guest orders (user_id=NULL) show customer email as '—' in fulfillment queue
-
-### Apache proxy.php must set follow_location=0
-
-PHP's HTTP stream context defaults to `follow_location: 1`, which causes
-`file_get_contents` to silently follow Node's 302 redirects (auth redirects).
-When it follows, it receives both the 302 Location header AND the final 200
-page, then forwards both to Apache — causing Apache to emit a 500 double-
-redirect error.
-
-**Fix:** Always set `'follow_location' => 0, 'max_redirects' => 0` in the
-HTTP context options in proxy.php. This causes Node's 302 to be forwarded
-to the browser directly, which follows it properly.
-
-### Node binds to IPv6 by default on this cPanel host
-
-When `host: false` (the Astro Node adapter default), the server binds to
-`::1` (IPv6 loopback). The PHP proxy uses `http://127.0.0.1:3001` (IPv4),
-so connection is refused.
-
-**Fix:** Set `"host": "127.0.0.1"` in the `_args` object in `entry.mjs`
-after each build. This forces IPv4 binding and the PHP proxy can connect.
-
-### entry.mjs patch sequence after every build
-
-Every `npm run build` generates `dist/server/entry.mjs` with build-machine
-file:// URLs and Astro defaults. Before deploying, apply these patches:
-
-```bash
-# 1. Replace build-machine client path with server file:// URL
-sed -i '' 's|"client": "file:///Users/famtasticfritz.*dist/client/"|"client": "file:///home/nineoo/public_html/famtastichosting.com/site/dist/client/"|' dist/server/entry.mjs
-
-# 2. Replace build-machine server path
-sed -i '' 's|"server": "file:///Users/famtasticfritz[^"]*dist/server/"|"server": "file:///home/nineoo/public_html/famtastichosting.com/site/dist/server/"|' dist/server/entry.mjs
-
-# 3. Bind to IPv4 (default is false which binds to IPv6 ::1)
-sed -i '' 's|"host": false|"host": "127.0.0.1"|' dist/server/entry.mjs
-
-# 4. Set port to 3001 (proxy.php target)
-sed -i '' 's|"port": 4321|"port": 3001|' dist/server/entry.mjs
-```
-
-Then rsync entry.mjs to the server, or include it in the full dist/ rsync.
-
-### Server .env must be complete before Node starts
-
-The server `.env` at `/home/nineoo/public_html/famtastichosting.com/site/.env` must contain ALL required variables. Do not assume variables are present — verify with:
-```bash
-ssh host "grep -o '^[A-Z_]*' /path/to/.env"
-```
-Required variables: GODADDY_API_KEY, GODADDY_API_SECRET, GODADDY_API_BASE, MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, SESSION_SECRET, PAYPAL_CLIENT_ID, PAYPAL_SECRET, PAYPAL_ENV, SITE_URL.
-
-When adding new vars or recovering from a lost .env, use `scp` to copy the full local `.env` (which is the source of truth) to the server.
-
-### Node must start with --env-file (not source .env)
-
-`source .env` breaks in bash when `MYSQL_DATABASE=FAMtastic Hosting` (space in value) — bash interprets `Hosting` as a command. Node 20 supports `--env-file` natively:
-```bash
-node --env-file=/path/to/.env dist/server/entry.mjs
-```
-This reads `.env` without shell parsing and handles spaces in values correctly.
-
-### SSH to this cPanel host: avoid complex command strings
-
-The server's bash profile runs `tput` which fails without a terminal (exits non-zero). Multi-command SSH strings reliably return exit 255 and never run. Workaround: write a `/bin/sh` script, scp it, and execute with `/bin/sh script.sh`. Simple one-liners (`ssh host "echo hello"`) work fine.
-
-### FAMtastic Hosting cPanel SSR deploy contract (2026-06-11)
-
-For `~/famtastic/famtastic-sites/famtastic-hosting`, the live cPanel deploy must treat Apache-served files and the Node runtime as two different sync targets.
-
-- `deploy.sh` root rsync to `/home/nineoo/public_html/famtastichosting.com/` must use `--delete` but exclude `site/` so static deploys never wipe the Node runtime directory.
-- The runtime lives at `/home/nineoo/public_html/famtastichosting.com/site/` and must receive: `dist/`, `package.json`, `package-lock.json`, `.env`, `scripts/migrate-db.js`, and root `start.sh`.
-- `start.sh` is a required runtime artifact and must be source-controlled. It launches `/home/nineoo/.nvm/versions/node/v20.20.2/bin/node --env-file=/home/nineoo/public_html/famtastichosting.com/site/.env /home/nineoo/public_html/famtastichosting.com/site/dist/server/entry.mjs` after killing any prior `entry.mjs` process.
-- Do NOT launch `server.mjs` on this host. The proven path is to patch generated `dist/server/entry.mjs` after every build and run that file directly.
-- Post-build patch sequence on the server is load-bearing: rewrite local `file:///Users/famtasticfritz/.../dist/...` paths to `file:///home/nineoo/public_html/famtastichosting.com/site/dist/...`, then patch `"host": false` → `"host": "127.0.0.1"` and `"port": 4321` → `"port": 3001` in `dist/server/entry.mjs` before restart.
-- Smoke-test proof for a healthy deploy: homepage 200, `/api/cart` 200 with JSON, and `POST /api/checkout/create-order` returns a JSON 400 (`No cart session found`) rather than a 5xx when no cart cookie exists.
-
-### MariaDB JSON migration compatibility on cPanel (2026-06-11)
-
-The cPanel host MariaDB rejects `CAST(... AS JSON)` inside `INSERT ... SELECT` migrations.
-
-- In `scripts/migrate-db.js`, rebuild steps for `checkout_snapshots` and `orphan_payments` must use `JSON_VALID(items_json)` guards instead of `CAST(items_json AS JSON)`.
-- Safe pattern for required JSON columns: empty/invalid → `JSON_ARRAY()`.
-- Safe pattern for optional JSON columns: empty/invalid → `NULL`.
-- This is the difference between a successful guest-checkout migration and a hard SQL syntax failure during recovery.
-
-### DashboardLayout vs AuthLayout
-
-Pre-auth pages (login, register) must use `AuthLayout`, not `DashboardLayout`. `DashboardLayout` renders `PageShell.svelte` which includes the full sidebar + topbar. On login pages this shows broken navigation and exposed GoDaddy phone number before users are authenticated.
-
-`AuthLayout` = HTML boilerplate + CSS imports only. No PageShell. Located at `src/layouts/AuthLayout.astro`.
-
-### RegisterForm must send confirmPassword in POST body
-
-`RegisterForm.svelte` sends `{ email, password, confirmPassword }` to `POST /api/auth/register`. The backend requires all three. If only `{ email, password }` is sent, the API returns "Missing required fields" every time — the form appears to work locally (client validation passes) but always fails server-side.
-
-### Disposable PHP seed scripts pattern
-
-To run one-time DB operations on the server without exposing credentials in SSH commands or storing sensitive scripts:
-1. Write PHP script that reads `.env` from a known path to get DB credentials
-2. `scp` the script to the server webroot
-3. `curl` it via HTTPS
-4. Script `unlink(__FILE__)` at the end to self-delete
-
-This avoids: embedding credentials in SSH commands (auto mode blocked), leaving scripts in the codebase, and requiring interactive MySQL access.
+- **Studio launchd boot still broken** — `site-studio/lib/{shay-shay-sessions,logger,openai-image-adapter}.js` still ungitted (cerebrum entry from 2026-05-05). Lane G's browser verifier was forced to use the fast smoke server which doesn't mount the new Lane B/C/D routers — host re-run required to close the browser-prong gap.
+- **Generate / Approve / Save / Send-to-library / Assign-to-slot** — Media Studio actions remain visible-but-disabled; provider round-trip + library write path + slot-assignment write path all unwired.
+- **Insert (surgical)** — Component Studio insertion remains visible-but-disabled; surgical-editor wiring deferred.
+- **Plan-card UI / Versions / Verify** — Site Builder native panes deferred (the iframe wrapper preserves the existing chat/build/preview flow for now).
+- **Per-site `site-settings.json` schema undefined** — Site Settings shows `0 overrides · matches platform` honestly; reads/writes for the per-site overrides file deferred.
+- **Memory strip live polling** — Lane F implementation reads once on mount and on `site` change; no SSE / interval refresh.
+- **Recipe node live status** — all V1 recipes are static (`status: idle` except the preserved Research → Proof mix). Live binding to a run ledger deferred.
+- **Captures inbox write paths (Quick add / Link source / Promote)** — Think-Tank read works; write paths deferred.
+- **Brain integration in Shay screen** — chat round-trip, currentContext readback, and route-this-thread-to-X confirmation deferred.
+- **Recipe 3 branching diamond** — rendered as linear chain in V1 with branch noted in the node summary.
+- **Component Studio variants tab** — still hard-coded placeholder set; inventory does not yet expose variants.
+- **Browser prong** — `studio-functional-verify.js` is written and runnable on host (and the prior `studio-shell-verify.js` already lands 73/73 on host); chromium not in sandbox here.

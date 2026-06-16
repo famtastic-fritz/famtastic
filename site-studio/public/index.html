@@ -4,6 +4,116 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FAMtastic Site Studio</title>
+  <!-- Embedded mode: when ?embedded=1, hide top chrome so this page can be
+       iframed inside the unified Studio shell (/studio.html). No-op otherwise. -->
+  <script>
+    (function () {
+      try {
+        if (new URLSearchParams(location.search).get('embedded') === '1') {
+          document.documentElement.classList.add('studio-embedded');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    /* The actual top chrome is <div id="top-bar"> (an id, not a class).
+       Hide it plus the restart banner and the logo image when embedded. */
+    html.studio-embedded #top-bar,
+    html.studio-embedded #restart-banner,
+    html.studio-embedded .top-bar,
+    html.studio-embedded .top-bar-logo-img { display: none !important; }
+    html.studio-embedded body { padding-top: 0 !important; }
+    html.studio-embedded .main-shell, html.studio-embedded .app-shell { top: 0 !important; }
+  </style>
+  <!-- Studio shell postMessage listener — ONLY active in embedded mode.
+       Receives intent contracts from /studio.html via window.parent.postMessage.
+       Honest action surface — handles what's safe, no-ops the rest with a console.warn. -->
+  <script>
+  (function () {
+    if (!document.documentElement.classList.contains('studio-embedded')) return;
+
+    function ack(intent, status, detail) {
+      try {
+        window.parent.postMessage(
+          { source: 'studio-builder', ack: intent, status: status, detail: detail || null, at: new Date().toISOString() },
+          '*'
+        );
+      } catch (_e) {}
+    }
+
+    function focusChatInput() {
+      // Try a few known selectors used by the legacy chat shell.
+      var sel = ['#chat-input', '#chat-textarea', 'textarea[name="chat"]', '.chat-input textarea', 'input[type="text"][placeholder*="message" i]'];
+      for (var i = 0; i < sel.length; i++) {
+        var el = document.querySelector(sel[i]);
+        if (el && typeof el.focus === 'function') { el.focus(); return true; }
+      }
+      return false;
+    }
+
+    function broadcastIntent(msg) {
+      // Tell anything in the page that wants to listen.
+      try {
+        document.dispatchEvent(new CustomEvent('studio-shell-intent', { detail: msg }));
+      } catch (_e) {}
+    }
+
+    window.addEventListener('message', function (ev) {
+      var data = ev && ev.data;
+      if (!data || data.source !== 'studio-shell') return;
+      var intent = data.intent;
+      broadcastIntent(data);
+      switch (intent) {
+        case 'continue':
+        case 'new-site':
+          // Focus the chat input so the user can resume typing.
+          var ok = focusChatInput();
+          ack(intent, ok ? 'focus' : 'no-input-found');
+          break;
+        case 'preview':
+          // Preview is implicit — the preview iframe already shows current state. Just ack.
+          ack(intent, 'acked-preview-implicit');
+          break;
+        case 'inspect':
+          // We can't yet inspect a specific target safely. Ack so the shell knows we heard.
+          ack(intent, 'acked-no-target-action', 'inspect targeting not yet wired in legacy shell');
+          break;
+        case 'refine':
+          // Refine carries payload.request — pre-fill the chat input if we can.
+          var payload = data.payload || {};
+          var req = String(payload.request || '');
+          if (req) {
+            var inputEl = document.querySelector('#chat-input') ||
+                          document.querySelector('#chat-textarea') ||
+                          document.querySelector('.chat-input textarea') ||
+                          document.querySelector('textarea[name="chat"]');
+            if (inputEl) {
+              inputEl.value = req;
+              try { inputEl.dispatchEvent(new Event('input', { bubbles: true })); } catch (_e) {}
+              inputEl.focus();
+              ack(intent, 'prefilled', { length: req.length });
+            } else {
+              ack(intent, 'no-input-found');
+            }
+          } else {
+            ack(intent, 'empty-payload');
+          }
+          break;
+        default:
+          try { console.warn('[studio-builder] unhandled intent:', intent); } catch (_e) {}
+          ack(intent, 'unhandled');
+      }
+    });
+
+    // Announce readiness so the shell knows the listener is alive.
+    try {
+      window.parent.postMessage(
+        { source: 'studio-builder', ready: true, at: new Date().toISOString() },
+        '*'
+      );
+    } catch (_e) {}
+  })();
+  </script>
   <!-- CDNs -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>

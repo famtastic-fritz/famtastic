@@ -6,10 +6,9 @@ node_modules/
 site-studio/.env
 
 # Site working directories — local only, not committed to hub repo
-# Each site gets its own repo under ~/famtastic/famtastic-sites/<tag>/
-# Anchored to root so nested directories named `sites` or `famtastic-sites` aren't caught.
+# Each site gets its own repo at ~/famtastic-sites/<tag>/
+# Anchored to root so nested directories named `sites` (e.g. docs/sites/) aren't caught.
 /sites/
-/famtastic-sites/
 
 # Local Netlify folder
 .netlify
@@ -75,33 +74,4 @@ site-studio/validation-plan.json.done
 .studio-patches/
 scripts/Screenshot*
 
-# Local nested projects / probe checkouts kept on this machine, not tracked by the hub repo.
-# Their useful conclusions must be promoted into docs, plans, Data Center records, or separate repos.
-/shay-shay/
-/shay-desktop/
-/shay-desktop-electron/
-/_tool-probes/
-/skills/
-/mbsh-recipe-test/
-
-# Generated media/build outputs
-/remotion/out/
-
-# Shay capability runtime output (generated invoices, ledgers, approval drafts).
-# The capability scripts + schemas + examples are tracked; their output is not.
-/platform/billing/
-/platform/capabilities/work/outbox/*.json
-
-# Finance agents fetched market-data cache (results + sample-data stay tracked)
-/scripts/finance-agents/.cache/
-
-# Recovered raw agent transcripts (organized output goes to obsidian/07-Research)
-research-recovery/
-
-# Python bytecode (build artifacts — never track)
-__pycache__/
-*.pyc
-
-# Dashboard API venv (created by command-center-up.sh)
-shay-agent-os/.venv/
-
+sites/*/.refinement/

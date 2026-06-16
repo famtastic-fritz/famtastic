@@ -281,10 +281,8 @@ initToolHandlers({
 require('./lib/tool-handlers').setPatchAppliedNotifier((payload) => notifyShayShayPatchApplied(payload));
 
 // --- Path safety ---
-// Validates that a page name is safe (no traversal, alphanumeric + hyphens only)
-function isValidPageName(name) {
-  return /^[a-z0-9][a-z0-9._-]*\.html$/i.test(name) && !name.includes('..');
-}
+// isValidPageName extracted to ./server/validators.js (Slice 2 Phase 1 step 1)
+const { isValidPageName, sanitizeSvg, validateAgentHtml } = require('./server/validators');
 
 // --- Multi-page state ---
 let currentPage = 'index.html';
@@ -414,26 +412,7 @@ const upload = multer({
 });
 
 // --- SVG Sanitizer ---
-function sanitizeSvg(svgContent) {
-  let clean = svgContent;
-  // Remove <script> tags — handle whitespace/case variations
-  clean = clean.replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, '');
-  clean = clean.replace(/<\s*script[^>]*\/\s*>/gi, '');
-  // Remove ALL on* event handler attributes (any casing, any quote style, unquoted)
-  clean = clean.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-  // Remove javascript:/data: URIs from ALL src-like attributes (href, src, xlink:href, poster, data, action, formaction)
-  clean = clean.replace(/((?:href|src|xlink:href|poster|data|action|formaction)\s*=\s*)(?:"(?:javascript|data\s*:)[^"]*"|'(?:javascript|data\s*:)[^']*')/gi, '$1"#"');
-  // Remove <foreignObject> (can embed arbitrary HTML)
-  clean = clean.replace(/<\s*foreignObject[\s\S]*?<\s*\/\s*foreignObject\s*>/gi, '');
-  // Remove <use> with external references
-  clean = clean.replace(/<\s*use[^>]*(?:href|xlink:href)\s*=\s*(?:"https?:[^"]*"|'https?:[^']*')[^>]*\/?\s*>(?:<\s*\/\s*use\s*>)?/gi, '');
-  // Remove <iframe>, <embed>, <object>, <applet>, <base>, <form>
-  clean = clean.replace(/<\s*(?:iframe|embed|object|applet|base|form)[\s\S]*?(?:<\s*\/\s*(?:iframe|embed|object|applet|base|form)\s*>|\/\s*>)/gi, '');
-  // Remove CSS expressions and url(javascript:) in style attributes
-  clean = clean.replace(/style\s*=\s*"[^"]*(?:expression|javascript|url\s*\(\s*['"]?\s*javascript)[^"]*"/gi, 'style=""');
-  clean = clean.replace(/style\s*=\s*'[^']*(?:expression|javascript|url\s*\(\s*['"]?\s*javascript)[^']*'/gi, "style=''");
-  return clean;
-}
+// sanitizeSvg extracted to ./server/validators.js (Slice 2 Phase 1 step 1)
 
 // --- Multi-Part SVG Extractor (Session 11 Fix 7) ---
 //
@@ -1086,6 +1065,22 @@ app.use('/api/bridge', require('./lib/bridge-routes'));
 // See docs/ops/state-contract.md and site-studio/lib/ops-api.js.
 // Mounted BEFORE any /api/:param route so static /api/ops/* paths resolve.
 app.use('/api/ops', require('./lib/ops-api'));
+
+// Intelligence routes (Slice 3 + Operator Workspace). Read-only.
+// Mounted BEFORE any /api/:param route per route-order standing rule.
+app.use('/api/intelligence', require('./server/intelligence-routes')
+  .createIntelligenceRouter(() => SITE_DIR(), SITES_ROOT));
+
+// Operator Workspace parallel-lane mounts (B/C/D/F). Each is a sibling module
+// — server.js stays orchestrator-only.
+app.use('/api/intelligence/actions', require('./server/intelligence-actions').createActionsRouter(() => SITE_DIR(), SITES_ROOT));
+app.use('/api/components', require('./server/component-routes').createComponentRouter());
+app.use('/api/media', require('./server/media-routes').createMediaRouter(() => SITE_DIR(), SITES_ROOT));
+app.use('/api/refinement', require('./server/visual-refinement-routes').createRefinementRouter(() => SITE_DIR(), SITES_ROOT));
+app.use('/api/research', require('./server/research-routes').createResearchRouter(HUB_ROOT));
+app.use('/api/think-tank', require('./server/think-tank-routes').createThinkTankRouter(HUB_ROOT));
+app.use('/api/site-settings', require('./server/site-settings-routes').createSiteSettingsRouter(SITES_ROOT));
+app.use('/api/studio-workflows', require('./server/studio-workflows-routes').createStudioWorkflowsRouter(HUB_ROOT));
 
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
@@ -10969,64 +10964,7 @@ function logAgentCall({ agent, intent, page, elapsed_ms, success, output_size, e
   console.log(`[agent] ${agent} ${intent} — ${elapsed_ms}ms, ${success ? 'OK' : 'FAIL'}, ~$${est_cost_usd.toFixed(4)}`);
 }
 
-/**
- * Validate HTML output from any agent call.
- * Returns { valid, score, issues[] } where score is 0–100.
- * Used for silent failure detection — a score < 40 triggers a fallback or warning.
- */
-function validateAgentHtml(html, page) {
-  const issues = [];
-  let score = 100;
-
-  if (!html || html.length < 500) {
-    return { valid: false, score: 0, issues: ['Output too short — likely empty or error message'] };
-  }
-
-  // Check DOCTYPE / html structure
-  if (!html.includes('<!DOCTYPE') && !html.includes('<html')) {
-    issues.push('Missing DOCTYPE or <html> tag'); score -= 20;
-  }
-
-  // Check for data-field-id (surgical editing requires it)
-  const fieldIdCount = (html.match(/data-field-id=/g) || []).length;
-  if (fieldIdCount === 0) {
-    issues.push('No data-field-id attributes — surgical editing will fail'); score -= 25;
-  } else if (fieldIdCount < 3) {
-    issues.push(`Only ${fieldIdCount} data-field-id attribute(s) — too few for surgical editing`); score -= 10;
-  }
-
-  // Check for data-section-id
-  const sectionIdCount = (html.match(/data-section-id=/g) || []).length;
-  if (sectionIdCount === 0) {
-    issues.push('No data-section-id attributes — component tracking will fail'); score -= 15;
-  }
-
-  // Check for navigation
-  if (!html.includes('<nav') && !html.includes('<header')) {
-    issues.push('No navigation element found'); score -= 10;
-  }
-
-  // Check for at least one semantic section
-  if (!html.includes('<section') && !html.includes('<main')) {
-    issues.push('No <section> or <main> element found'); score -= 10;
-  }
-
-  // Check for error messages in output (Codex sometimes returns errors as HTML)
-  const errPatterns = [/error:/i, /traceback/i, /exception:/i, /undefined is not/i, /cannot read property/i];
-  for (const p of errPatterns) {
-    if (p.test(html.substring(0, 1000))) { issues.push('Possible error output in HTML'); score -= 30; break; }
-  }
-
-  // Minimum length check based on page type
-  const minLength = page === 'index.html' ? 3000 : 1500;
-  if (html.length < minLength) {
-    issues.push(`HTML is ${html.length} chars (expected ≥ ${minLength} for ${page})`); score -= 15;
-  }
-
-  score = Math.max(0, score);
-  const valid = score >= 40;
-  return { valid, score, issues };
-}
+// validateAgentHtml extracted to ./server/validators.js (Slice 2 Phase 1 step 1)
 
 // Agent stats endpoint — reads agent-calls.jsonl, returns aggregated stats
 app.get('/api/agent/stats', (req, res) => {

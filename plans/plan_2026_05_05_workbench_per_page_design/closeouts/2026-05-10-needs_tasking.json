@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "plan_2026_05_05_workbench_per_page_design",
+  "verdict": "needs_tasking",
+  "verdict_at": "2026-05-10T00:00:00.000Z",
+  "verdict_by": "claude-code",
+  "fixed": [],
+  "added": [],
+  "proved": [],
+  "remaining_work": [
+    "Write 6 page-type design briefs: library-collection, creation-canvas, workshop-sandbox, triage, settings, editor-with-chat",
+    "Write 7 per-domain icon-set briefs: sites, brainstorm, plans, components, media, research, admin",
+    "Write 2 cross-cutting briefs: chrome-collapse pattern, glass slide-out pattern",
+    "Each brief cites at least 2 product references (Cursor, Figma, Leonardo, Linear, Codex Desktop, JSFiddle, etc.)",
+    "Produce a consolidation plan that turns the research into a buildable implementation plan"
+  ],
+  "moved_to": [],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md",
+      "note": "Today's parallel-lane run operationalized the existing /studio.html shell using the design template that already shipped (commits 3fa3a8c + ff9ae42). It did NOT do per-page-type design research — that's still this plan's open work. The shell as it stands today is the surface the design research will inform."
+    },
+    {
+      "type": "doc",
+      "ref": "docs/design/famtastic-studio/DESIGN-INGEST-REPORT.md",
+      "note": "The Claude Design template (12-screen single-page React app) is the visual foundation in play today. Per-page-type research can build on top of it."
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "decision",
+      "title": "Design research is a prerequisite, not a follow-up",
+      "body": "Per-page-type design research must precede further Workbench/Studio shell implementation work. The 2026-05-10 functional-wiring run was scoped to operationalize the EXISTING shell with honest action contracts; it did not extend page-type variety. Future shell expansion (new layouts, new chrome patterns) should land this plan's six page-type briefs first.",
+      "facets": ["studio-ui", "design-research", "process"],
+      "confidence": 0.85
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-05-11-ws-research-creation-canvas",
+    "task-2026-05-11-ws-research-chrome-glass-pattern",
+    "task-2026-05-11-ws-page-type-taxonomy-doc"
+  ]
+}

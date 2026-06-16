@@ -1,0 +1,126 @@
+/* media-api.js — thin client for /api/media and /api/media/contract.
+   Loaded by studio.html before screens. Orchestrator: add
+     <script type="text/babel" src="/studio/src/lib/media-api.js"></script>
+   in studio.html between primitives.jsx and the screens block.
+
+   Surface (window.MediaAPI):
+     getContract()        → Promise<contract|null>
+     getRegistry(tag)     → Promise<{ registry, summary, error? }>
+
+   Server contract (Lane D):
+     GET /api/media/contract → { contract, asset_shape: {...} }
+     GET /api/media?tag=<safe-tag> → { registry: { version, assets[] }, summary: { auto, pending, approved, deferred } }
+     Without ?tag the server returns 400. We do not call without a tag.
+*/
+
+(function () {
+  'use strict';
+
+  const EMPTY_REGISTRY = Object.freeze({ version: 1, assets: [] });
+  const EMPTY_SUMMARY = Object.freeze({ auto: 0, pending: 0, approved: 0, deferred: 0, draft: 0, rejected: 0, used: 0 });
+
+  function emptyResult(error) {
+    return {
+      registry: { ...EMPTY_REGISTRY },
+      summary: { ...EMPTY_SUMMARY },
+      error: error || null,
+    };
+  }
+
+  async function getContract() {
+    try {
+      const res = await fetch('/api/media/contract', { headers: { 'accept': 'application/json' } });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  async function getRegistry(tag) {
+    // Honest gate — server requires ?tag and the route 400s without it.
+    if (!tag || typeof tag !== 'string' || !tag.trim()) {
+      return emptyResult('no site context');
+    }
+    try {
+      const url = '/api/media?tag=' + encodeURIComponent(tag);
+      const res = await fetch(url, { headers: { 'accept': 'application/json' } });
+      if (!res.ok) {
+        let serverErr = 'http ' + res.status;
+        try {
+          const body = await res.json();
+          if (body && typeof body.error === 'string') serverErr = body.error;
+        } catch (_e) { /* ignore body parse errors */ }
+        return emptyResult(serverErr);
+      }
+      const body = await res.json();
+      const registry = body && body.registry && Array.isArray(body.registry.assets)
+        ? body.registry
+        : { ...EMPTY_REGISTRY };
+      const summary = body && body.summary && typeof body.summary === 'object'
+        ? Object.assign({}, EMPTY_SUMMARY, body.summary)
+        : { ...EMPTY_SUMMARY };
+      return { registry, summary, error: null };
+    } catch (err) {
+      return emptyResult(err && err.message ? err.message : 'fetch failed');
+    }
+  }
+
+  /**
+   * saveTestAsset(tag, asset) — POST /api/media/test-asset.
+   * asset must have { id, slot, prompt }; server fills the rest.
+   * Returns parsed JSON or { error }.
+   */
+  async function saveTestAsset(tag, asset) {
+    try {
+      const r = await fetch('/api/media/test-asset', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tag, asset }),
+      });
+      const text = await r.text();
+      try {
+        return JSON.parse(text);
+      } catch (_e) {
+        return { error: 'invalid_json', body: text };
+      }
+    } catch (e) {
+      return { error: String(e?.message || e) };
+    }
+  }
+
+  async function updateAssetStatus(tag, assetId, approval, note) {
+    try {
+      const r = await fetch('/api/media/asset/status', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tag, asset_id: assetId, approval, note }),
+      });
+      return await r.json();
+    } catch (e) {
+      return { ok: false, error: String(e?.message || e) };
+    }
+  }
+
+  async function assignAsset(tag, payload) {
+    try {
+      const r = await fetch('/api/media/asset/assign', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tag, ...payload }),
+      });
+      return await r.json();
+    } catch (e) {
+      return { ok: false, error: String(e?.message || e) };
+    }
+  }
+
+  /**
+   * refreshRegistry(tag) — explicit alias for getRegistry used by action-driven refreshes.
+   */
+  async function refreshRegistry(tag) {
+    return await getRegistry(tag);
+  }
+
+  window.MediaAPI = { getContract, getRegistry, saveTestAsset, updateAssetStatus, assignAsset, refreshRegistry };
+})();
