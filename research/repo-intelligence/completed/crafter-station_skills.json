@@ -1,0 +1,32 @@
+{
+  "url": "https://github.com/crafter-station/skills",
+  "owner": "crafter-station",
+  "repo": "skills",
+  "analyzed_at": "2026-06-01 21:46:34",
+  "tech_stack": {
+    "detected_categories": [
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Shell": 20467,
+    "Python": 17674
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 30,
+    "reasons": [
+      "Explicit automation/MCP tooling"
+    ],
+    "tier": "LOW"
+  },
+  "description": "agent skills, starting w/ context engineering",
+  "stars": 69,
+  "language": "Shell",
+  "topics": [],
+  "license": "MIT",
+  "last_updated": "2026-06-01T03:23:46Z",
+  "open_issues": 1,
+  "forks": 9
+}

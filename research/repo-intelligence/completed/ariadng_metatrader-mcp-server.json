@@ -1,0 +1,43 @@
+{
+  "url": "https://github.com/ariadng/metatrader-mcp-server?fbclid=Iwb21leASIw_1jbGNrBIjD32V4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHpXt1Ftpea8G3SKfMnN5sbEAeTVTeYowtcqI45MTvk1Bwaz1z8Fcr_De-IBP_aem_QNG-uaFoluwXOOSRyPQ4Mg",
+  "owner": "ariadng",
+  "repo": "metatrader-mcp-server",
+  "analyzed_at": "2026-06-01 21:46:21",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 273330
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 65,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "Model Context Protocol (MCP) to enable AI LLMs to trade using MetaTrader platform",
+  "stars": 466,
+  "language": "Python",
+  "topics": [
+    "ai",
+    "finance",
+    "investment",
+    "llm",
+    "mcp",
+    "metatrader",
+    "quantitative-finance",
+    "trading"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-01T22:20:24Z",
+  "open_issues": 12,
+  "forks": 164
+}

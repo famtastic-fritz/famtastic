@@ -1,0 +1,61 @@
+{
+  "url": "https://github.com/daytonaio/daytona#features",
+  "owner": "daytonaio",
+  "repo": "daytona",
+  "analyzed_at": "2026-06-01 21:47:05",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "database"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 5286133,
+    "MDX": 2672307,
+    "Go": 1927936,
+    "Python": 1246041,
+    "Ruby": 454761,
+    "Java": 450694,
+    "JavaScript": 140511,
+    "Astro": 87271,
+    "Shell": 82344,
+    "HTML": 65782,
+    "SCSS": 52857,
+    "Mustache": 27409,
+    "Dockerfile": 24843,
+    "EJS": 18954,
+    "CSS": 7899,
+    "Nix": 7740,
+    "Vue": 35
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Daytona is a Secure and Elastic Infrastructure for Running AI-Generated Code",
+  "stars": 72495,
+  "language": "TypeScript",
+  "topics": [
+    "agentic-workflow",
+    "ai",
+    "ai-agents",
+    "ai-runtime",
+    "ai-sandboxes",
+    "code-execution",
+    "code-interpreter",
+    "developer-tools"
+  ],
+  "license": "AGPL-3.0",
+  "last_updated": "2026-06-02T01:45:54Z",
+  "open_issues": 426,
+  "forks": 5610
+}

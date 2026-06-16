@@ -1,0 +1,35 @@
+{
+  "url": "https://github.com/VRSEN/OpenSwarm",
+  "owner": "VRSEN",
+  "repo": "OpenSwarm",
+  "analyzed_at": "2026-06-01 21:47:39",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 904188,
+    "JavaScript": 119470,
+    "Dockerfile": 1775
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 50,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "Claude code for everything except coding",
+  "stars": 2684,
+  "language": "Python",
+  "topics": [],
+  "license": "MIT",
+  "last_updated": "2026-06-01T19:35:10Z",
+  "open_issues": 25,
+  "forks": 651
+}

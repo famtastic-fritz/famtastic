@@ -1,0 +1,39 @@
+{
+  "url": "https://github.com/pbakaus/impeccable",
+  "owner": "pbakaus",
+  "repo": "impeccable",
+  "analyzed_at": "2026-06-01 21:46:24",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "JavaScript": 18563548,
+    "CSS": 839971,
+    "Astro": 406779,
+    "HTML": 131455,
+    "TypeScript": 25241,
+    "Svelte": 853,
+    "Vue": 833
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 50,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "The design language that makes your AI harness better at design.",
+  "stars": 32747,
+  "language": "JavaScript",
+  "topics": [],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:46:16Z",
+  "open_issues": 25,
+  "forks": 1784
+}

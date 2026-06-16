@@ -1,0 +1,50 @@
+{
+  "url": "https://github.com/666ghj/MiroFish",
+  "owner": "666ghj",
+  "repo": "MiroFish",
+  "analyzed_at": "2026-06-01 21:46:14",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 762814,
+    "Vue": 544927,
+    "JavaScript": 13281,
+    "HTML": 919,
+    "Dockerfile": 723
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. \u7b80\u6d01\u901a\u7528\u7684\u7fa4\u4f53\u667a\u80fd\u5f15\u64ce\uff0c\u9884\u6d4b\u4e07\u7269",
+  "stars": 63547,
+  "language": "Python",
+  "topics": [
+    "agent-memory",
+    "financial-forecasting",
+    "future-prediction",
+    "knowledge-graph",
+    "llms",
+    "multi-agent-simulation",
+    "public-opinion-analysis",
+    "python3",
+    "social-prediction",
+    "swarm-intelligence"
+  ],
+  "license": "AGPL-3.0",
+  "last_updated": "2026-06-02T01:35:59Z",
+  "open_issues": 295,
+  "forks": 9950
+}

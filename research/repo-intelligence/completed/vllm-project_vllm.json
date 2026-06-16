@@ -1,0 +1,63 @@
+{
+  "url": "https://github.com/vllm-project/vllm",
+  "owner": "vllm-project",
+  "repo": "vllm",
+  "analyzed_at": "2026-06-01 21:50:23",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 36827706,
+    "Cuda": 2562834,
+    "Rust": 2066242,
+    "C++": 1685544,
+    "Shell": 391501,
+    "CMake": 123320,
+    "C": 97629,
+    "Dockerfile": 48444,
+    "Jinja": 6924,
+    "HCL": 3408
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 50,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "A high-throughput and memory-efficient inference and serving engine for LLMs",
+  "stars": 81633,
+  "language": "Python",
+  "topics": [
+    "amd",
+    "blackwell",
+    "cuda",
+    "deepseek",
+    "deepseek-v3",
+    "gpt",
+    "gpt-oss",
+    "inference",
+    "kimi",
+    "llama",
+    "llm",
+    "llm-serving",
+    "model-serving",
+    "moe",
+    "openai",
+    "pytorch",
+    "qwen",
+    "qwen3",
+    "tpu",
+    "transformer"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:49:33Z",
+  "open_issues": 5157,
+  "forks": 17533
+}

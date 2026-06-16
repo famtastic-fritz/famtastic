@@ -4,34 +4,60 @@ type: note
 permalink: famtastic/readme
 ---
 
-# FAMtastic Agent OS — Obsidian Vault
+# FAMtastic Obsidian Vault
 
-This is the shared brain for all agents, skills, and workflows.
+> "A seed producing seeds producing forests of seed-bearers."
 
-## Folder Structure
+## Stream-Based Structure
 
-- **00-Inbox** — Raw captures, quick notes, unprocessed ideas
-- **01-Projects** — Active projects (FAMtastic, Revenue Sprints, Agent OS builds)
-- **02-Areas** — Ongoing responsibilities (Health, Finance, Learning, Relationships)
-- **03-Resources** — Reference material, tutorials, research, skills library
-- **04-Archive** — Completed projects, old research, deprecated skills
-- **05-Agent-OS** — Agent configurations, capability matrices, harness docs
-- **06-Capabilities** — Skill catalogs, tool inventories, plugin registries
-- **07-Research** — Deep research reports, competitive analysis, market scans
-- **08-Revenue** — Revenue streams, client work, pricing, proposals
-- **99-Daily** — Daily logs, standups, journal entries
+This vault is organized around Fritz's Five Streams — not around tools, projects, or arbitrary numbering. Every file has one home based on which stream it serves.
 
-## Agent Memory Contract
+### The Five Streams
 
-Every agent that touches this vault MUST:
-1. Write session summaries to `99-Daily/YYYY-MM-DD.md`
-2. Update capability matrices in `06-Capabilities/`
-3. Link research to `07-Research/` with dated entries
-4. Tag all notes with `#agent-os` or project-specific tags
+| # | Stream | Folder | Purpose |
+|---|--------|--------|---------|
+| 1 | Shay + Platform | `01-Shay-Platform/` | Agent health, skills, tooling, operations |
+| 2 | Income | `02-Income/` | Contract, W2, FAMtastic revenue. All income counts. |
+| 3 | Research | `03-Research/` | Active investigations, completed archives, raw seeds |
+| 4 | Metaphysical | `04-Metaphysical/` | Spiritual layer. Not optional. |
+| 5 | Fritz | `05-Fritz/` | Mental, physical, health, relationships. Load-bearing. |
 
-## Quick Links
+### Other Directories
 
-- [[Agent Capability Matrix]]
-- [[Current Agent Inventory]]
-- [[Revenue Sprint Tracker]]
-- [[Research Backlog]]
+| Folder | Purpose |
+|--------|---------|
+| `00-Core/` | FAMtastic DNA, core principles, build principles |
+| `01-Shay/` | Nuke-proof identity backups (SOUL.md, PERSONA.md, identity array) |
+| `06-Clients/` | Active client projects (mbsh, hosting-facelift, etc.) |
+| `07-Studios/` | Ever-expanding studio set (site-studio, media-studio, component-studio, thoughts) |
+| `inbox/` | Single unified inbox. Everything lands here first. |
+| `plans/` | Active plans (not archive — completed plans go to their stream) |
+| `builds/` | Active build packets |
+| `Shay-Memory/` | basic-memory managed. Do not edit manually. |
+
+### Memory Layers (L0-L3)
+
+| Layer | Name | Location | Empties Via |
+|-------|------|----------|-------------|
+| L0 | Inbox | `inbox/` | Triage to stream |
+| L1 | Working | Stream folders | Reflection distillation |
+| L2 | Distilled | `Shay-Memory/reflections/` | Periodic consolidation |
+| L3 | Permanent | Hot memory (in-memory) + `00-Core/` | Never purged |
+
+### Naming Convention
+
+- UPPERCASE-WITH-DASHES for canonical docs (e.g. `FAMTASTIC-CORE-BUILD-PRINCIPLES.md`)
+- lowercase-with-dashes for notes and captures (e.g. `2026-06-09-brain-wiring-audit.md`)
+- Date prefix for time-bound docs: `YYYY-MM-DD-TITLE.md`
+
+### Nuke-Proof Triad
+
+If this entire vault gets wiped:
+1. `~/.shay/SOUL.md` — runtime copy
+2. `~/.shay/PERSONA.md` — runtime copy
+3. `~/famtastic/obsidian/01-Shay/SHAY-SOUL.md` — repo backup
+4. `~/famtastic/obsidian/01-Shay/SHAY-PERSONA.md` — repo backup
+
+---
+
+*Vault restructured 2026-06-09 22:46. Old folder structure preserved (not deleted) until verified.*

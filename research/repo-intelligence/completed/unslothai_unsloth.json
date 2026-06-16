@@ -1,0 +1,65 @@
+{
+  "url": "https://github.com/unslothai/unsloth?locale=en-US",
+  "owner": "unslothai",
+  "repo": "unsloth",
+  "analyzed_at": "2026-06-01 21:46:16",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 9373014,
+    "TypeScript": 3448263,
+    "Rust": 355771,
+    "PowerShell": 273989,
+    "Shell": 265841,
+    "CSS": 51571,
+    "NSIS": 33045,
+    "JavaScript": 16632,
+    "Jupyter Notebook": 5829,
+    "HTML": 532,
+    "Batchfile": 218
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Unsloth Studio is a web UI for training and running open models like Gemma 4, Qwen3.6, DeepSeek, gpt-oss locally.",
+  "stars": 65526,
+  "language": "Python",
+  "topics": [
+    "agent",
+    "deepseek",
+    "fine-tuning",
+    "gemma",
+    "gemma3",
+    "gpt-oss",
+    "llama",
+    "llama3",
+    "llm",
+    "llms",
+    "mistral",
+    "openai",
+    "qwen",
+    "reinforcement-learning",
+    "self-hosted",
+    "text-to-speech",
+    "tts",
+    "ui",
+    "unsloth"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:40:23Z",
+  "open_issues": 1347,
+  "forks": 5858
+}

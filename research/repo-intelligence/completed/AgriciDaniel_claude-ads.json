@@ -1,0 +1,45 @@
+{
+  "url": "https://github.com/AgriciDaniel/claude-ads",
+  "owner": "AgriciDaniel",
+  "repo": "claude-ads",
+  "analyzed_at": "2026-06-01 21:49:18",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mobile"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 101996,
+    "HTML": 19313,
+    "Shell": 14967
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Comprehensive paid advertising audit & optimization skill for Claude Code. 250+ checks across Google, Meta, YouTube, LinkedIn, TikTok, Microsoft & Apple Ads with weighted scoring, parallel agents, industry templates, and AI creative generation.",
+  "stars": 5502,
+  "language": "Python",
+  "topics": [
+    "ai",
+    "ai-marketing",
+    "claude-code",
+    "claude-code-skill",
+    "marketing-automation",
+    "open-source"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:45:40Z",
+  "open_issues": 21,
+  "forks": 826
+}

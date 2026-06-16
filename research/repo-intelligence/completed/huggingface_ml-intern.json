@@ -1,0 +1,38 @@
+{
+  "url": "https://github.com/huggingface/ml-intern",
+  "owner": "huggingface",
+  "repo": "ml-intern",
+  "analyzed_at": "2026-06-01 21:50:18",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 1471627,
+    "TypeScript": 323967,
+    "Dockerfile": 1326,
+    "HTML": 734,
+    "JavaScript": 734,
+    "Shell": 580
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 50,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "\ud83e\udd17 ml-intern: an open-source ML engineer that reads papers, trains models, and ships ML models",
+  "stars": 10192,
+  "language": "Python",
+  "topics": [],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:18:53Z",
+  "open_issues": 97,
+  "forks": 1089
+}

@@ -1,0 +1,41 @@
+{
+  "url": "https://github.com/Alishahryar1/free-claude-code",
+  "owner": "Alishahryar1",
+  "repo": "free-claude-code",
+  "analyzed_at": "2026-06-01 21:43:25",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 1919208,
+    "JavaScript": 14960,
+    "PowerShell": 10605,
+    "Shell": 8365,
+    "CSS": 7134,
+    "HTML": 2537,
+    "Mermaid": 2030
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 65,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "Use claude-code for free in the terminal, VSCode extension or discord like OpenClaw (voice supported)",
+  "stars": 31613,
+  "language": "Python",
+  "topics": [],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:40:23Z",
+  "open_issues": 225,
+  "forks": 4786
+}

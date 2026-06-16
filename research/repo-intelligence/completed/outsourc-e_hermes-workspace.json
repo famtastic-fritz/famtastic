@@ -1,0 +1,54 @@
+{
+  "url": "https://github.com/outsourc-e/hermes-workspace",
+  "owner": "outsourc-e",
+  "repo": "hermes-workspace",
+  "analyzed_at": "2026-06-01 21:45:48",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_frontend",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "JavaScript": 21947235,
+    "TypeScript": 6891695,
+    "CSS": 61371,
+    "Python": 51013,
+    "Shell": 20054,
+    "Nix": 14333,
+    "PowerShell": 3272,
+    "HTML": 2910,
+    "Dockerfile": 2860
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 95,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Native web workspace for Hermes Agent \u2014 chat, terminal, memory, skills, inspector.",
+  "stars": 5214,
+  "language": "JavaScript",
+  "topics": [
+    "agent-ui",
+    "ai-workspace",
+    "hackathon",
+    "hermes-agent",
+    "nous-research",
+    "react",
+    "typescript"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:20:31Z",
+  "open_issues": 65,
+  "forks": 768
+}

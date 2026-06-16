@@ -1,0 +1,38 @@
+{
+  "url": "https://github.com/fyne-io/terminal",
+  "owner": "fyne-io",
+  "repo": "terminal",
+  "analyzed_at": "2026-06-01 21:49:02",
+  "tech_stack": {
+    "detected_categories": [
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Go": 138858
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 25,
+    "reasons": [
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "LOW"
+  },
+  "description": "A graphical terminal emulator for Linux using Fyne",
+  "stars": 314,
+  "language": "Go",
+  "topics": [
+    "cross-platform",
+    "fyne",
+    "go",
+    "golang",
+    "hacktoberfest"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-05-29T11:04:40Z",
+  "open_issues": 13,
+  "forks": 45
+}

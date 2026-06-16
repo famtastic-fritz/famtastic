@@ -1,27 +1,27 @@
 ---
-title: github-bookmarks-report-2026-06-16
+title: github-bookmarks-report-2026-06-15
 type: note
-permalink: shay-memory/research/github-bookmarks-report-2026-06-16-1
+permalink: shay-memory/research/github-bookmarks-report-2026-06-14-1
 ---
 
 # GitHub bookmarks ingestion report
 
-Generated: 2026-06-16T05:45:19.958231-04:00
+Generated: 2026-06-15T05:45:40.090971-04:00
 
 ## Source profiles
 
 - Default|fritz.medine@gmail.com: 28 GitHub bookmarks
-- Profile 1|fitzgeraldmedine@gmail.com: 170 GitHub bookmarks
+- Profile 1|fitzgeraldmedine@gmail.com: 163 GitHub bookmarks
 
 ## Totals
 
-- Raw GitHub bookmark rows: 198
-- Unique normalized GitHub URLs: 195
+- Raw GitHub bookmark rows: 191
+- Unique normalized GitHub URLs: 188
 
 ## Bucket counts (unique URLs)
 
-- agent-orchestration: 78
-- uncategorized: 68
+- agent-orchestration: 75
+- uncategorized: 64
 - business-income: 14
 - legacy-webdev: 11
 - model-infra: 8
@@ -33,8 +33,8 @@ Generated: 2026-06-16T05:45:19.958231-04:00
 
 - [nirholas/three.ws](https://github.com/nirholas/three.ws) — bucket=business-income, money=8, autonomy=2, recency=3, profile=fitzgeraldmedine@gmail.com
 - [gryszzz/open-thymos](https://github.com/gryszzz/open-thymos) — bucket=business-income, money=8, autonomy=0, recency=3, profile=fitzgeraldmedine@gmail.com
+- [abinauv/business-consulting](https://github.com/abinauv/business-consulting) — bucket=business-income, money=7, autonomy=1, recency=3, profile=fitzgeraldmedine@gmail.com
 - [AgriciDaniel/claude-ads](https://github.com/AgriciDaniel/claude-ads) — bucket=business-income, money=7, autonomy=1, recency=3, profile=fitzgeraldmedine@gmail.com
-- [abinauv/business-consulting](https://github.com/abinauv/business-consulting) — bucket=business-income, money=7, autonomy=1, recency=2, profile=fitzgeraldmedine@gmail.com
 - [aredwan-xyz/codebeez-ai-autopilot](https://github.com/aredwan-xyz/codebeez-ai-autopilot) — bucket=business-income, money=7, autonomy=1, recency=2, profile=fitzgeraldmedine@gmail.com
 - [Solo-Entrepreneur/solopreneur](https://github.com/Solo-Entrepreneur/solopreneur) — bucket=business-income, money=7, autonomy=1, recency=2, profile=fitzgeraldmedine@gmail.com
 - [AuthorizeNet/accept-sample-app](https://github.com/AuthorizeNet/accept-sample-app/blob/master/README-AcceptHosted.md) — bucket=business-income, money=8, autonomy=0, recency=0, profile=fritz.medine@gmail.com
@@ -43,29 +43,22 @@ Generated: 2026-06-16T05:45:19.958231-04:00
 - [AuthorizeNet/sample-code-php](https://github.com/AuthorizeNet/sample-code-php/blob/master/AcceptSuite/get-an-accept-payment-page.php) — bucket=business-income, money=8, autonomy=0, recency=0, profile=fritz.medine@gmail.com
 - [AuthorizeNet/sdk-php](https://github.com/AuthorizeNet/sdk-php/blob/master/lib/net/authorize/api/contract/v1/CustomerAddressType.php) — bucket=business-income, money=8, autonomy=0, recency=0, profile=fritz.medine@gmail.com
 - [AuthorizeNet/sdk-php](https://github.com/AuthorizeNet/sdk-php/tree/master/lib/net/authorize/api/contract/v1) — bucket=business-income, money=8, autonomy=0, recency=0, profile=fritz.medine@gmail.com
-- [LeoSmash-code/Hacxgent](https://github.com/LeoSmash-code/Hacxgent) — bucket=agent-orchestration, money=1, autonomy=7, recency=3, profile=fitzgeraldmedine@gmail.com
 - [sl4m3/ledgermind](https://github.com/sl4m3/ledgermind) — bucket=agent-orchestration, money=1, autonomy=7, recency=3, profile=fitzgeraldmedine@gmail.com
 - [openprose/grant-finder](https://github.com/openprose/grant-finder) — bucket=business-income, money=5, autonomy=0, recency=3, profile=fitzgeraldmedine@gmail.com
+- [aiming-lab/AutoResearchClaw](https://github.com/aiming-lab/AutoResearchClaw) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
+- [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents/blob/main/categories/10-research-analysis/market-researcher.md) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
+- [GoogleCloudPlatform/generative-ai](https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
 - [Jenqyang/Awesome-AI-Agents](https://github.com/Jenqyang/Awesome-AI-Agents) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
 - [Jenqyang/Awesome-AI-Agents](https://github.com/Jenqyang/Awesome-AI-Agents#multi-agent-task-solver-projects) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
 - [Lum1104/Understand-Anything](https://github.com/Lum1104/Understand-Anything) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
 - [openai/swarm](https://github.com/openai/swarm) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fritz.medine@gmail.com
-- [The-Swarm-Corporation/AutoHedge](https://github.com/The-Swarm-Corporation/AutoHedge) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
-- [BellaBe/strategy-os](https://github.com/BellaBe/strategy-os) — bucket=business-income, money=5, autonomy=0, recency=2, profile=fitzgeraldmedine@gmail.com
-- [0xNyk/council-of-high-intelligence](https://github.com/0xNyk/council-of-high-intelligence) — bucket=agent-orchestration, money=1, autonomy=6, recency=2, profile=fitzgeraldmedine@gmail.com
-- [666ghj/MiroFish](https://github.com/666ghj/MiroFish) — bucket=agent-orchestration, money=1, autonomy=6, recency=2, profile=fitzgeraldmedine@gmail.com
-- [affaan-m/ECC](https://github.com/affaan-m/ECC) — bucket=agent-orchestration, money=1, autonomy=6, recency=2, profile=fitzgeraldmedine@gmail.com
-- [aiming-lab/AutoResearchClaw](https://github.com/aiming-lab/AutoResearchClaw) — bucket=agent-orchestration, money=1, autonomy=6, recency=2, profile=fitzgeraldmedine@gmail.com
+- [outsourc-e/hermes-workspace](https://github.com/outsourc-e/hermes-workspace) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
+- [pablo-mano/Obsidian-CLI-skill](https://github.com/pablo-mano/Obsidian-CLI-skill) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
+- [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
+- [crafter-station/skills](https://github.com/crafter-station/skills/tree/main/context-engineering/intent-layer) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
 
 ## Most recent GitHub bookmarks
 
-- 2026-06-15T08:01:40.205649-04:00 — [duolahypercho/fusion-fable](https://github.com/duolahypercho/fusion-fable) — bucket=agent-orchestration
-- 2026-06-15T07:14:17.932165-04:00 — [BlackTechX011/HacxGPT-Jailbreak-prompts](https://github.com/BlackTechX011/HacxGPT-Jailbreak-prompts) — bucket=uncategorized
-- 2026-06-15T07:11:51.665013-04:00 — [HacxGPT-Official/HacxGPT-CLI](https://github.com/HacxGPT-Official/HacxGPT-CLI) — bucket=uncategorized
-- 2026-06-15T07:10:30.125128-04:00 — [BlackTechX011/Hacxgent](https://github.com/BlackTechX011/Hacxgent/blob/master/DOCS/SETTINGS.md) — bucket=uncategorized
-- 2026-06-15T07:05:26.863803-04:00 — [hacx-gpt/hacx-gpt.github.io](https://github.com/hacx-gpt/hacx-gpt.github.io) — bucket=uncategorized
-- 2026-06-15T07:01:24.393066-04:00 — [LeoSmash-code/Hacxgent](https://github.com/LeoSmash-code/Hacxgent) — bucket=agent-orchestration
-- 2026-06-15T06:57:06.228829-04:00 — [BirdsAreFlyingCameras/GPT-5_Jailbreak_PoC](https://github.com/BirdsAreFlyingCameras/GPT-5_Jailbreak_PoC) — bucket=agent-orchestration
 - 2026-06-15T00:49:57.750409-04:00 — [lemony-ai/cascadeflow](https://github.com/lemony-ai/cascadeflow) — bucket=agent-orchestration
 - 2026-06-14T01:54:39.467529-04:00 — [topics/agent-evaluation](https://github.com/topics/agent-evaluation) — bucket=agent-orchestration
 - 2026-06-14T01:54:34.372224-04:00 — [Giskard-AI/giskard-oss](https://github.com/Giskard-AI/giskard-oss) — bucket=agent-orchestration
@@ -79,10 +72,17 @@ Generated: 2026-06-16T05:45:19.958231-04:00
 - 2026-06-14T01:35:33.162864-04:00 — [topics/loan-management](https://github.com/topics/loan-management) — bucket=uncategorized
 - 2026-06-14T01:35:02.248446-04:00 — [todmoce/business-loan-marketplaces](https://github.com/todmoce/business-loan-marketplaces) — bucket=uncategorized
 - 2026-06-14T01:33:46.929301-04:00 — [openprose/grant-finder](https://github.com/openprose/grant-finder) — bucket=business-income
+- 2026-06-14T01:33:24.904889-04:00 — [scrtlabs/Grants](https://github.com/scrtlabs/Grants) — bucket=uncategorized
+- 2026-06-14T01:32:58.229104-04:00 — [topics/research-funding](https://github.com/topics/research-funding) — bucket=uncategorized
+- 2026-06-14T01:31:39.756132-04:00 — [deacs11/CrewAI_Grant_Funding_Opportunity_Finder_-_Eligibility_Checker_Crew](https://github.com/deacs11/CrewAI_Grant_Funding_Opportunity_Finder_-_Eligibility_Checker_Crew) — bucket=agent-orchestration
+- 2026-06-14T01:29:41.043404-04:00 — [topics/tax-preparation](https://github.com/topics/tax-preparation) — bucket=uncategorized
+- 2026-06-14T01:29:36.735538-04:00 — [api-evangelist/hanr-block](https://github.com/api-evangelist/hanr-block) — bucket=uncategorized
+- 2026-06-14T01:29:00.067726-04:00 — [Ryanczj0306/taxfill-mcp](https://github.com/Ryanczj0306/taxfill-mcp) — bucket=agent-orchestration
+- 2026-06-14T01:27:22.250576-04:00 — [selftax/selftax](https://github.com/selftax/selftax) — bucket=uncategorized
 
 ## Artifacts
 
 - JSON index: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-index-latest.json
-- JSON archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-index-2026-06-16.json
+- JSON archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-index-2026-06-15.json
 - This report: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-report-latest.md
-- Report archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-report-2026-06-16.md
+- Report archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-report-2026-06-15.md

@@ -1,0 +1,62 @@
+{
+  "url": "https://github.com/Fincept-Corporation/FinceptTerminal",
+  "owner": "Fincept-Corporation",
+  "repo": "FinceptTerminal",
+  "analyzed_at": "2026-06-01 21:49:05",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mobile",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "C++": 16260956,
+    "Python": 14148668,
+    "CMake": 181478,
+    "PowerShell": 66984,
+    "HTML": 43889,
+    "Qt Script": 21159,
+    "Shell": 19736,
+    "Dockerfile": 11705
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 85,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "FinceptTerminal is a modern finance application offering advanced market analytics, investment research, and economic data tools, designed for interactive exploration and data-driven decision-making in a user-friendly environment.",
+  "stars": 24966,
+  "language": "C++",
+  "topics": [
+    "ai-agents",
+    "algorithmic-trading",
+    "bloomberg-terminal",
+    "cpp",
+    "finance",
+    "financial-markets",
+    "fintech",
+    "good-first-issue",
+    "investment",
+    "investment-research",
+    "machine-learning",
+    "opensource",
+    "python",
+    "qt",
+    "quantitative-finance",
+    "stock-market",
+    "trading"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:26:11Z",
+  "open_issues": 17,
+  "forks": 3469
+}

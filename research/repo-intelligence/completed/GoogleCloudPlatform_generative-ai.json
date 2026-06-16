@@ -1,0 +1,73 @@
+{
+  "url": "https://github.com/GoogleCloudPlatform/generative-ai",
+  "owner": "GoogleCloudPlatform",
+  "repo": "generative-ai",
+  "analyzed_at": "2026-06-01 21:43:31",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_backend",
+      "cloud_devops"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Jupyter Notebook": 21450637,
+    "Python": 1930995,
+    "TypeScript": 713025,
+    "SCSS": 645550,
+    "JavaScript": 576089,
+    "HTML": 465633,
+    "Go": 172462,
+    "CSS": 95912,
+    "Shell": 65393,
+    "HCL": 44588,
+    "Dart": 32517,
+    "PLpgSQL": 29501,
+    "Dockerfile": 27709,
+    "C++": 25163,
+    "CMake": 19547,
+    "Ruby": 2803,
+    "Swift": 2305,
+    "Makefile": 1971,
+    "C": 1425,
+    "Kotlin": 116,
+    "Objective-C": 38,
+    "Procfile": 34
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 70,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Sample code and notebooks for Generative AI on Google Cloud, with Gemini Enterprise Agent Platform",
+  "stars": 16968,
+  "language": "Jupyter Notebook",
+  "topics": [
+    "agents",
+    "gcp",
+    "gemini",
+    "gemini-api",
+    "gen-ai",
+    "generative-ai",
+    "google",
+    "google-cloud",
+    "google-gemini",
+    "langchain",
+    "large-language-models",
+    "llm",
+    "vertex-ai",
+    "vertex-ai-gemini-api",
+    "vertexai"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T00:05:20Z",
+  "open_issues": 68,
+  "forks": 4242
+}

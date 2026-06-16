@@ -1,0 +1,45 @@
+{
+  "url": "https://github.com/VoltAgent/awesome-claude-code-subagents",
+  "owner": "VoltAgent",
+  "repo": "awesome-claude-code-subagents",
+  "analyzed_at": "2026-06-01 21:45:55",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Shell": 21015
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 70,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "A collection of 100+ specialized Claude Code subagents covering a wide range of development use cases",
+  "stars": 21023,
+  "language": "Shell",
+  "topics": [
+    "ai-agent-framework",
+    "ai-agent-tools",
+    "ai-agents",
+    "awesome",
+    "awesome-list",
+    "claude",
+    "claude-ai",
+    "claude-code-subagents",
+    "claude-subagents",
+    "subagents"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-01T23:43:12Z",
+  "open_issues": 8,
+  "forks": 2466
+}

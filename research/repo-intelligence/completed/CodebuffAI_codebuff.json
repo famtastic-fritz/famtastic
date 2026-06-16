@@ -1,0 +1,48 @@
+{
+  "url": "https://github.com/CodebuffAI/codebuff",
+  "owner": "CodebuffAI",
+  "repo": "codebuff",
+  "analyzed_at": "2026-06-01 21:46:06",
+  "tech_stack": {
+    "detected_categories": [
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 10335711,
+    "JavaScript": 119902,
+    "MDX": 101809,
+    "Shell": 48753,
+    "CSS": 13815,
+    "Tree-sitter Query": 6716,
+    "C": 988,
+    "Python": 753,
+    "PHP": 742,
+    "C++": 738,
+    "Java": 715,
+    "C#": 641,
+    "PLpgSQL": 598,
+    "Rust": 501,
+    "Go": 475,
+    "Ruby": 436
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 40,
+    "reasons": [
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "Generate code from the terminal!",
+  "stars": 6177,
+  "language": "TypeScript",
+  "topics": [],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-01T23:34:32Z",
+  "open_issues": 94,
+  "forks": 739
+}

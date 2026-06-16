@@ -1,0 +1,47 @@
+{
+  "url": "https://github.com/uezo/ChatdollKit?fbclid=Iwb21leASI265jbGNrBIja4mV4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHiKxjAcKrMrF68oDkFs41Dm-8X83n_yziBgUvoy3HLjsW1f82qtFJBvmOJh6_aem_PqPIW8-KPxHX1gBWpVl5mA",
+  "owner": "uezo",
+  "repo": "ChatdollKit",
+  "analyzed_at": "2026-06-01 21:50:38",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "cloud_devops"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "C#": 614374,
+    "JavaScript": 26444
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 70,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "ChatdollKit enables you to make your 3D model into a chatbot",
+  "stars": 1171,
+  "language": "C#",
+  "topics": [
+    "3d-model",
+    "ai-companion",
+    "azure",
+    "chatbot",
+    "chatgpt",
+    "unity",
+    "unity3d",
+    "virtualassistant",
+    "vrm",
+    "waifu"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-01T15:53:46Z",
+  "open_issues": 33,
+  "forks": 121
+}

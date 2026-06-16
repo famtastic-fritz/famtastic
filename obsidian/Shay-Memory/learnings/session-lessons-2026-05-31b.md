@@ -19,3 +19,13 @@ stalls autonomous work. KEEP approvals.mode=auto. Do NOT revert to manual. The O
 floor that remains is the catastrophic-command allowlist (sudo / delete-root / kill-process /
 recursive-delete) — a last-resort guard, not "manual mode". This was the root cause of the
 overnight protocol-violations/blocks (workers stalling on manual approval of gate commands).
+
+## CROSS-SURFACE MEMORY SILO (found via Fritz's cross-session test, 2026-06-01)
+Cross-SESSION memory works within a surface, but cross-SURFACE does NOT. Disjoint stores:
+Shay gateway = ~/.shay/memories/ ; Claude Code = ~/.claude/projects/<proj>/memory/ ; vault =
+obsidian/Shay-Memory/. A fact seeded in one is invisible to the others (proved: hermes-stale
+fact seeded into Shay's MEMORY.md was unseen by a Claude Code chat reading its own store).
+Dual-writing by hand = symptom, not fix. REAL FIX: a memory-sync layer — one canonical source
+(the vault) mirrored into every surface's store (like the lessons-sync job, but for user-profile
+memory + facts). Write-once-visible-everywhere. This is the DATA complement to AGENT-CONTEXT
+(which unifies orientation, not memory data). NEXT-PHASE item.

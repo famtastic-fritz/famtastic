@@ -175,87 +175,106 @@ A swarm is an execution package.
 
 A swarm exists to perform work that benefits from:
 - role specialization
-- parallel execution
-- cross-checking
+- parallel decomposition
 - adversarial review
-- decomposition into narrower worker roles
-- speed under time pressure
-- verification before writeback
+- model diversity
+- verification loops
+- workload isolation
 
-A swarm should always be attached to a parent plan context.
-It exists to serve plan execution, not replace plan structure.
+Every swarm must define:
+- purpose
+- parent plan/task
+- required outputs
+- worker roles
+- routing policy
+- success conditions
+- failure conditions
+- evaluation method
+- artifact contract
 
 ## 8. Routing Doctrine
 
-Routing is first-class because model choice, worker choice, and tool choice are core behavior.
+Routing is first-class and must be explicit.
 
-The system should route by cheapest-sufficient execution first, not premium-by-default.
+Routing decides:
+- which agent type is used
+- which model lane is used
+- which tools are allowed
+- whether a task stays single-worker or becomes swarm work
+- when escalation occurs
+- when cheaper lanes are sufficient
+- when premium lanes are justified
 
 Routing must consider:
 - task type
-- complexity
-- modality
-- verification risk
-- time pressure
-- budget posture
-- prior failure history
-- worker capability fit
-
-Routing should be explicit enough that the system can later explain why one path was chosen over another.
+- required modality
+- tool needs
+- urgency
+- cost ceiling
+- historical performance
+- evaluation history
+- failure recovery rules
 
 ## 9. Evaluation Doctrine
 
-Telemetry and evaluation are first-class, not afterthought logs.
+Evaluation is not a log dump.
+Evaluation is the system’s learning mechanism.
 
-The system must evaluate:
-- work quality
+Evaluation must exist at multiple levels:
+- worker run
+- swarm run
+- task
+- plan
+- project
+
+Evaluation should track at minimum:
 - correctness
-- usefulness
+- completeness
 - autonomy
 - cost efficiency
-- retry patterns
-- failure patterns
-- handoff clarity
-- verification success
+- turnaround time
+- verification outcome
+- usefulness to Fritz
+- resumability quality
 
-Evaluation exists to improve routing, decomposition, agent choice, and execution design.
+Those scores must influence future routing and swarm design.
 
 ## 10. Views Doctrine
 
-Kanban is a view, not the brain.
-Flat boards are useful as one lens, but too weak by themselves for the logic of the system.
+Views are derived from graph truth.
 
-Morning briefs should report plan truth, not just loose reminders.
-A real brief should show:
-- active plans
-- current state
-- blocked items
-- queued swarms
-- what changed
-- what needs Fritz today
+Examples:
+- kanban board
+- morning brief
+- command center
+- dependency map
+- active swarm monitor
+- cost dashboard
+- blocked-work report
+- per-lane status board
 
-Boards, briefs, dashboards, and summaries are derived surfaces from graph truth.
-They are never the source of truth.
+Views can differ.
+Truth cannot.
 
 ## 11. Permanent Object Boundaries
 
 These objects must not collapse into each other.
 
-Lane
+### Lane
 - A permanent life/business stream.
 - Exists regardless of whether any single project is active.
 - Examples: Fritz, Income, Research, Metaphysical, Shay/Platform.
 - A lane is not a sprint, campaign, or current focus.
 - A lane may contain many projects over time.
 
-Project
+### Project
 - A bounded initiative inside a lane.
 - Has a real outcome, not just activity.
 - May touch multiple repos, systems, agents, or workflows.
 - Does not become “whatever we are currently working on.”
 - Can be active, paused, blocked, dormant, or complete.
 
-Plan
+### Plan
 - The complete operational map for one project.
 - Durable, end-to-end, whole-map from the start.
 - Defines completion, dependencies, execution shape, delegation shape, and evaluation shape.
@@ -264,20 +283,20 @@ Plan
 - A plan is not a swarm.
 - A project has one canonical plan, though that plan may contain many branches, tasks, queues, and swarms.
 
-Task
+### Task
 - A concrete unit of work under a plan.
 - Small enough to assign, track, block, verify, or dispatch.
 - A task is not a project.
 - A task does not own the full strategic map.
 - A task may be handled directly, queued, or escalated into swarm execution.
 
-Queue
+### Queue
 - A first-class dispatch structure for work items waiting on execution, retry, resume, review, or scheduling.
 - A queue is not just a status bucket.
 - A queue owns ordering, readiness, eligibility, and dispatchability.
 - Queues can contain tasks, swarm requests, retries, resumptions, and review items.
 
-Swarm
+### Swarm
 - A dispatchable execution package.
 - Exists to perform work through one or more workers under a shared purpose and output contract.
 - A swarm is not a plan substitute.
@@ -288,7 +307,7 @@ Swarm
 
 Parallelism is default where dependency truth allows it.
 
-Can run in parallel
+Can run in parallel:
 - multiple lanes
 - multiple projects
 - multiple plans
@@ -296,7 +315,7 @@ Can run in parallel
 - multiple queues across plans
 - multiple swarms across projects
 
-Cannot run in parallel when blocked by
+Cannot run in parallel when blocked by:
 - explicit dependency unsatisfied
 - missing credential or runtime
 - missing tool capability
@@ -305,7 +324,7 @@ Cannot run in parallel when blocked by
 - exclusive resource lock
 - incompatible modality or environment requirement
 
-Execution states must distinguish
+Execution states must distinguish:
 - Draft: defined but not yet eligible
 - Ready: eligible to run now
 - Queued: ready but waiting for dispatch slot, budget slot, or priority turn
@@ -317,7 +336,7 @@ Execution states must distinguish
 - Failed: execution attempted but did not meet completion conditions
 - Abandoned: intentionally retired with no further execution planned
 
-Approval rule
+Approval rule:
 - Approval gates are exceptions, not defaults.
 - Approval is used only where Fritz explicitly wants human control, or where side effects are materially sensitive.
 - The doctrine must resist approval creep.
@@ -334,7 +353,7 @@ Premium execution is justified only by:
 - quality threshold unmet by cheaper lanes
 - time-criticality where delay costs more than premium routing
 
-Routing Policy
+### Routing Policy
 - The declared strategy/rules for how work should be routed.
 - Examples:
   - cheap-first
@@ -343,7 +362,7 @@ Routing Policy
   - premium lane only after cheap failure
   - browser-required tasks must use browser-capable workers
 
-Runtime Decision
+### Runtime Decision
 - The actual routing choice made for one run.
 - Must record:
   - chosen agent type
@@ -374,7 +393,7 @@ Agent Type defines a reusable worker role shape:
 - cost posture
 - retry posture
 
-Examples
+Examples:
 - source-finder
 - contradiction-checker
 - planner
@@ -403,7 +422,7 @@ Always answer:
 - producing which artifacts
 - with what result
 
-Ledger entry minimum fields
+Ledger entry minimum fields:
 - run id
 - parent lane
 - parent project
@@ -424,7 +443,7 @@ Ledger entry minimum fields
 - interpreted evaluation
 - retry/resume lineage
 
-Swarm ledger
+### Swarm ledger
 A swarm must also have a higher-level ledger entry summarizing:
 - swarm purpose
 - worker composition
@@ -440,7 +459,7 @@ A swarm must also have a higher-level ledger entry summarizing:
 
 Evaluation must explicitly separate observation from interpretation.
 
-Observation
+### Observation
 - What happened.
 - Raw, inspectable, time-bound facts.
 Examples:
@@ -451,7 +470,7 @@ Examples:
 - artifact missing required section
 - cost exceeded expected ceiling by 12%
 
-Interpretation
+### Interpretation
 - What the observations suggest.
 Examples:
 - this agent type underperforms on multimodal verification
@@ -459,7 +478,7 @@ Examples:
 - routing rule needs adjustment
 - task decomposition was too coarse
 
-Why this matters
+Why this matters:
 - mixed evaluation muddies learning
 - raw evidence must remain inspectable
 - strategic conclusions must remain revisable
@@ -478,7 +497,7 @@ Required synchronized views include:
 - blocked work view
 - cost/performance dashboard
 
-Rules
+Rules:
 - no visual surface may invent separate truth
 - changing underlying graph state updates all derived views
 - views may differ in emphasis, not in reality
@@ -518,242 +537,3 @@ That means:
 No opaque dead ends.
 No “the process was running somewhere.”
 No hidden state trapped in a terminal or chat thread.
-
-## 20. Queue and Escalation Mechanics
-
-Queue mechanics must be explicit and operational.
-
-### Queue admission rules
-A work item may enter a queue only when all of the following are true:
-- it belongs to a parent lane, project, and plan
-- it has a clear work type: task, swarm request, retry, resumption, review item, or human-decision prompt
-- it has a current state and a next eligible state
-- it has declared prerequisites
-- it has a routing policy reference
-- it has a priority or ordering basis
-- it has a cost lane or budget posture
-- it has an owner type: human-owned, direct-run, queue-run, or swarm-candidate
-
-If those fields are missing, the item stays Draft and does not enter an execution queue.
-
-### Queue rejection rules
-A queue must reject an item when:
-- no parent plan exists
-- completion criteria are missing
-- the item duplicates an existing active item without explicit supersession
-- required prerequisites are undefined
-- the item requires a modality or tool lane that does not exist
-- the item is actually a project or plan masquerading as a task
-
-Rejected items must return with a reason code, not disappear silently.
-
-### Requeue rules
-An item is requeued only when:
-- execution failed but retry is still justified
-- a blocking dependency was resolved
-- a human decision was supplied
-- verification requested one more pass
-- an interrupted run is resumable from known state
-
-Requeue must record:
-- why it was requeued
-- what changed since last attempt
-- whether routing policy changed
-- whether cost posture changed
-- retry count
-
-### Queue-to-swarm escalation rules
-An item escalates from queue item to swarm request when one or more of the following is true:
-- the work decomposes cleanly into multiple narrow roles
-- verification requires separate reviewer or breaker roles
-- the task is time-sensitive enough that parallel execution materially helps
-- the work contains multiple independent subtasks
-- the work requires multimodal or tool-diverse roles that should not be collapsed into one worker
-- the work benefits from adversarial review before writeback
-
-Escalation must not be emotional or hype-driven.
-It must be traceable to explicit need.
-
-## 21. Swarm, Hyperswarm, and Specialized-Agent Mechanics
-
-### Swarm creation thresholds
-A normal swarm is justified when at least one of these thresholds is crossed:
-- 3 or more distinct worker roles are required
-- independent subtasks can run in parallel without waiting on each other
-- verification should be separated from implementation
-- one worker would become too broad, too slow, or too context-heavy
-
-### Hyperswarm definition
-A hyperswarm is not “a bigger swarm” by vibes.
-A hyperswarm is a swarm architecture designed for aggressive atomic parallelism with:
-- many narrow workers
-- minimal context injection per worker
-- durable worker/run telemetry
-- explicit worker IDs and context packets
-- captain-visible traceability
-
-Hyperswarm is justified when:
-- the work can be decomposed into many repeatable atomic roles
-- cost control depends on cheapest-sufficient routing across many workers
-- later assessment, replay, or process-improvement analysis matters
-- the captain needs precise visibility into exactly which worker got which context and produced which output
-
-If those conditions are not true, use a normal swarm or direct execution instead.
-
-### Specialized-agent creation rules
-Create a specialized agent type when:
-- the role recurs across projects or plans
-- the role has a stable output contract
-- the role has a stable tool/modality shape
-- the role benefits from reusable routing/evaluation rules
-
-Do not create a new specialized agent type just because a task has a cool label.
-One-off novelty is not enough.
-
-### Specialized-agent ingestion rules
-External or discovered agents may be ingested only when they are captured into local doctrine as:
-- defined purpose
-- allowed tools
-- preferred model lane
-- disallowed modalities or constraints
-- output contract
-- verification expectation
-- evaluation rubric
-- cost posture
-- retry posture
-
-An ingested agent is not trusted just because it exists elsewhere.
-It must be normalized into local agent-type truth.
-
-### New-agent lifecycle
-Every new or ingested agent type moves through:
-- Proposed
-- Trial
-- Verified
-- Reusable
-- Restricted or Retired
-
-Promotion to Reusable requires:
-- at least one successful verified run
-- no unresolved output-contract ambiguity
-- evaluation notes
-- explicit routing fit
-- explicit cost posture
-
-## 22. Worker Identity, Artifact Contract, and Dependency Model
-
-### Worker identity model
-The doctrine must distinguish four layers:
-
-- Agent Type
-  The reusable role template.
-
-- Worker Template
-  A concrete operational template derived from an agent type for a specific environment, toolset, or lane.
-
-- Worker Instance
-  The instantiated worker identity assigned to one queued item or swarm role.
-
-- Worker Run
-  One actual execution event by that worker instance.
-
-This distinction prevents reusable role truth from being confused with one-off runtime behavior.
-
-### Artifact contract
-Every artifact produced by the system must declare:
-- artifact id
-- artifact type
-- parent lane/project/plan/task/swarm
-- producing worker run
-- created time
-- status: draft, review-pending, accepted, superseded, rejected
-- verification state
-- output-contract compliance state
-- linked dependencies
-- linked follow-up work if spawned
-
-Artifacts are not just files.
-They are tracked outputs with state.
-
-### Dependency object / edge model
-Dependencies must be first-class relations, not just freeform reason text.
-
-Each dependency edge must declare:
-- source object
-- target object
-- dependency type
-- blocking or non-blocking
-- satisfaction condition
-- current satisfaction state
-- evidence pointer or artifact pointer
-
-Dependency types may include:
-- requires-decision
-- requires-artifact
-- requires-credential
-- requires-completion
-- requires-review
-- requires-environment
-
-## 23. Evaluation Writeback and Plan-Parsing Mechanics
-
-### Evaluation writeback model
-Evaluation must write back into the system in explicit ways.
-
-Writeback targets:
-- routing policy adjustment
-- agent-type restriction or promotion
-- retry posture adjustment
-- decomposition rule adjustment
-- queue-priority change
-- future swarm recommendation
-- human-owned caution flag
-
-Writeback must state:
-- what observation triggered it
-- what interpretation was made
-- what rule or object changed
-- scope of change: run-only, task-class, agent-type, project, or global doctrine
-
-No silent learning.
-If the system got smarter, the writeback path should be inspectable.
-
-### Deep-dive conversation to plan-parsing mechanics
-The system must be able to take a broad Fritz conversation about life, work, stress, projects, obligations, ideas, and priorities and convert it into structured operational objects.
-
-The parsing sequence is:
-
-1. Capture raw statements without flattening them.
-2. Separate observations, desires, obligations, frustrations, ideas, and constraints.
-3. Map each item into the most likely lane.
-4. Group related items into bounded projects.
-5. For each project, create one canonical whole-map plan.
-6. Break the plan into workstreams when different execution patterns exist inside the same project.
-7. Break workstreams into tasks.
-8. Mark each task as:
-- direct execution
-- queue candidate
-- swarm candidate
-- human-owned decision
-- blocked item
-- research/inventory item
-9. Attach dependencies, cost posture, and routing posture.
-10. Produce the first executable next steps without losing the larger map.
-
-### Plan-parsing output contract
-The result of deep-dive parsing must produce, at minimum:
-- lane assignment
-- project list
-- one canonical plan per project
-- workstreams per plan where needed
-- task list per workstream
-- blocked items
-- human-decision items
-- queue candidates
-- swarm candidates
-- first-next actions
-- view-ready summary for command-center surfaces
-
-### Practical rule
-If a fresh session can read this doctrine and turn Fritz’s deep-dive conversation into those structured outputs without inventing a new planning theory, the doctrine is working.
-If it cannot, the doctrine is incomplete.

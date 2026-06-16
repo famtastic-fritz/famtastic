@@ -1,0 +1,44 @@
+{
+  "url": "https://github.com/Njengah/claude-code-cheat-sheet",
+  "owner": "Njengah",
+  "repo": "claude-code-cheat-sheet",
+  "analyzed_at": "2026-06-01 21:45:27",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_backend",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {
+    "score": 70,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Ultimate collection of Claude Code tips, tricks, hacks, and workflows that you can use to master Claude Code in minutes",
+  "stars": 1727,
+  "language": null,
+  "topics": [
+    "claude",
+    "claude-3",
+    "claude-3-opus",
+    "claude-ai",
+    "claude-api",
+    "claude-code",
+    "claude-desktop",
+    "claudecode",
+    "claudecode-mcp"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T00:28:48Z",
+  "open_issues": 5,
+  "forks": 244
+}

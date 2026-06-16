@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/ski043/7-skills-workflow",
+  "owner": "ski043",
+  "repo": "7-skills-workflow",
+  "analyzed_at": "2026-06-01 21:46:58",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": null,
+  "stars": 6,
+  "language": null,
+  "topics": [],
+  "error": "'NoneType' object has no attribute 'get'"
+}

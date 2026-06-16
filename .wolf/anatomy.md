@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-01T01:08:54.582Z
-> Files: 1178 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-04T01:27:25.892Z
+> Files: 1340 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../
 
@@ -47,17 +47,41 @@
 ## ../.claude/plans/
 
 - `floofy-dancing-mccarthy.md` — Per-Site Repo Architecture + Studio State URLs (~1614 tok)
+- `generate-app-icon-variants-for-joyful-patterson.md` — Plan — Generate FAMtastic app-icon variants via muapi (for the Shay Shay PWA) (~1031 tok)
 - `no-dude-this-is-zesty-minsky.md` — Game Plan: 7 parallel workstreams → Shay-Shay AI Operating System (~2108 tok)
 - `purring-riding-brook.md` — Plan: Reconcile the Two Workbench Shells (~2437 tok)
+- `so-do-you-have-vivid-milner.md` — Plan: Hermes → Shay-Shay rebrand — research & effort sizing (~2929 tok)
 - `tidy-snacking-gizmo.md` — Phases 3-5: Multi-Agent, Image Browser, Intelligence Loop (~730 tok)
+
+## ../.claude/projects/-Users-famtasticfritz-famtastic/92a6bccf-e474-47e2-bed4-b874396093b2/workflows/scripts/
+
+- `deep-research-tiered.js` — Exports meta (~5072 tok)
 
 ## ../.claude/projects/-Users-famtasticfritz-famtastic/memory/
 
+- `feedback_app_conversational_feel.md` (~422 tok)
 - `feedback_docs_always_pushed.md` (~420 tok)
 - `feedback_dynamic_crud.md` — Declares should (~486 tok)
-- `MEMORY.md` — Memory Index (~624 tok)
+- `feedback_model_tiering.md` (~490 tok)
+- `MEMORY.md` — Memory Index (~1223 tok)
 - `project_codex_subscription_capped.md` — Declares of (~436 tok)
+- `project_command_center.md` (~770 tok)
+- `project_hermes_webui_stale.md` — Hermes web UI — ported from a STALE version (2026-06-01) (~287 tok)
+- `project_shay_brain_routing.md` — Declares oauth (~978 tok)
+- `project_shay_north_star.md` (~465 tok)
+- `project_shay_shay_mode_spec.md` — Declares Fritz (~770 tok)
 - `project_template_upload_future.md` — Declares names (~444 tok)
+- `project_web_studio_business_live.md` (~836 tok)
+- `reference_famtastic_logo_proofs.md` (~571 tok)
+- `reference_shay_add_brain_skill.md` (~299 tok)
+
+## ../.claude/skills/shay-add-brain/
+
+- `SKILL.md` — shay-add-brain (~1034 tok)
+
+## ../.claude/skills/shay-add-brain/scripts/
+
+- `add_brain.py` — Add a model to Shay-Shay's /model switchboard (config.yaml model_aliases). (~2854 tok)
 
 ## ../.config/famtastic/
 
@@ -66,7 +90,8 @@
 ## ../.shay/
 
 - `.gitignore` — Git ignore rules (~76 tok)
-- `config.yaml` (~4569 tok)
+- `business-config.json` (~500 tok)
+- `config.yaml` (~2877 tok)
 
 ## ../.shay/cron/
 
@@ -74,7 +99,7 @@
 
 ## ../.shay/memories/
 
-- `MEMORY.md` — Declares names (~957 tok)
+- `MEMORY.md` — Declares oauth (~518 tok)
 
 ## ../.shay/plans/
 
@@ -98,6 +123,8 @@
 - `rerun-cited.py` — Re-run two research docs with mandatory web citations. (~1492 tok)
 - `set-anthropic-key.sh` — Securely set ANTHROPIC_API_KEY in ~/.shay/.env (for Claude Sonnet 4.6 as primary brain). (~530 tok)
 - `set-gemini-key.sh` — Securely set GEMINI_API_KEY in ~/.shay/.env. (~416 tok)
+- `switch-to-codex.sh` — FAMtastic: auto-switch Shay's default brain to Codex when the subscription (~610 tok)
+- `tg-notify.sh` — FAMtastic: send a one-way update to Fritz on Telegram. (~187 tok)
 - `use-claude-subscription.sh` — Route Shay's default brain through the Claude Code MAX SUBSCRIPTION (OAuth), not the API key. (~848 tok)
 
 ## ../.shay/skills/autonomous-ai-agents/goal-decompose/
@@ -112,14 +139,29 @@
 
 - `server.py` — Read-only whole-vault semantic search MCP server for Shay. (~1747 tok)
 
+## ../Desktop/
+
+- `GO-TODAY-STRATEGY.md` — 🚀 FortyEight Studio — GO-TODAY Deploy + Marketing Strategy (~1842 tok)
+- `LEAD-TRACKER.csv` (~120 tok)
+- `MORNING-MONEY-KIT.md` — ☀️ FRITZ — YOUR BUSINESS IS LIVE. Read this, then go. (~1314 tok)
+
+## ../Desktop/FRITZ-PORTFOLIO/
+
+- `index.html` — FortyEight Studio — Bold websites for local business, live in 48 hours (~3086 tok)
+
 ## ../Library/Application Support/Claude/
 
 - `claude_desktop_config.json` (~621 tok)
 
 ## ../Library/LaunchAgents/
 
+- `com.famtastic.commandcenter.plist` (~270 tok)
+- `com.famtastic.pipeline.plist` (~588 tok)
+- `com.famtastic.shay-codex-switch.plist` (~249 tok)
+- `com.famtastic.shay-phone.plist` (~215 tok)
 - `com.famtastic.studio.plist` (~606 tok)
 - `com.famtastic.vault-search.plist` (~344 tok)
+- `com.shay.dailybrief.plist` (~224 tok)
 
 ## ../famtastic-convergence-dossier/.claude/agents/
 
@@ -288,7 +330,7 @@
 - `AGENTS.md` — AGENTS.md (~196 tok)
 - `CHANGELOG.md` — 2026-05-30 — Phase 2+3a complete: Dispatcher protocol + pipeline primitives + Gate 3a PASS (~4686 tok)
 - `CHANGELOG.md` — FAMtastic Changelog (~26622 tok)
-- `CLAUDE.md` — FAMtastic Global Rules (~2625 tok)
+- `CLAUDE.md` — FAMtastic Global Rules (~3738 tok)
 - `CLAUDE.md` — FAMtastic Global Rules (~2775 tok)
 - `famtastic-dna.md` — FAMtastic DNA — Persistent Build Knowledge (~3077 tok)
 - `FAMTASTIC-SETUP.md` — FAMtastic Studio — Setup and Configuration (~3073 tok)
@@ -297,6 +339,7 @@
 - `FAMtastic-Web-Context.md` — FAMtastic — Full Project Context (~6489 tok)
 - `MANIFESTO.md` — FAMtastic (~68 tok)
 - `README.md` — Project documentation (~318 tok)
+- `research-links-2026-06-01.md` — Research Links — 2026-06-01 (~1959 tok)
 - `SHAY-MASTER-PLAN-2026-05-28.md` — SHAY-SHAY MASTER PLAN — 2026-05-28 (~1499 tok)
 - `SITE-LEARNINGS.md` — FAMtastic Ecosystem — Site Learnings (~114551 tok)
 
@@ -648,6 +691,35 @@
 - `triage.py` — triage — Categorize and prioritize captured ideas. (~924 tok)
 - `validate.py` — validate — Run validation checks on a prototype. (~1598 tok)
 
+## command-center/
+
+- `package.json` — Node.js package manifest (~99 tok)
+- `README.md` — Project documentation (~1073 tok)
+- `server.js` — FAMtastic Command Center — single source of truth. (~3684 tok)
+
+## command-center/collectors/
+
+- `ideas.js` — Idea-backlog collector. (~1702 tok)
+- `income-ledger.js` — Income ledger collector. (~947 tok)
+- `pipeline.js` — Pipeline activity collector — reads the shared JSONL stores the agents write (~808 tok)
+- `process-health.js` — Process / agent health collector. (~1090 tok)
+
+## command-center/data/
+
+- `agents-registry.json` (~462 tok)
+
+## command-center/public/
+
+- `index.html` — FAMtastic Command Center (~599 tok)
+
+## command-center/public/css/
+
+- `dashboard.css` — Styles: 62 rules, 11 vars (~1471 tok)
+
+## command-center/public/js/
+
+- `dashboard.js` — money: refresh, renderHealth, renderIncome + 3 more (~1773 tok)
+
 ## completions/
 
 - `fam-hub.bash` — Bash completion for fam-hub CLI (~943 tok)
@@ -808,6 +880,10 @@
 - `test-notes.draft.md` — Draft Notes from ChatGPT (~112 tok)
 - `wrapper-test.draft.md` — Test Content from Wrapper (~70 tok)
 
+## docs/agent-startup/
+
+- `AGENT-CONTEXT.yaml` — AGENT-CONTEXT.yaml — the single source of truth that orients every agent surface. (~845 tok)
+
 ## docs/intelligence-reports/
 
 
@@ -863,13 +939,17 @@
 
 ## obsidian/Shay-Memory/
 
+- `AGENT-OS-VISION-2026-06-01.md` — Agent OS = "Mission Control" (Fritz's real vision, captured 2026-06-01) (~715 tok)
 - `conversation-2026-05-29.md` — Conversation history — 2026-05-29 (~5336 tok)
+- `MORNING-REPORT-2026-06-01.md` — Morning Report — Overnight Master-Plan Run (2026-06-01) (~863 tok)
 
 ## obsidian/Shay-Memory/_system/
 
 - `ai.shay.memory-reflect.plist` (~291 tok)
+- `fortyeight-studio-business.md` — FortyEight Studio — canonical business record (~552 tok)
 - `MEMORY-SCHEMA-L0-L3.md` — Shay Memory Schema — L0→L3 Layering (Tencent-style) (~1248 tok)
-- `reflect.py` — Nightly memory reflection / consolidation pass for the Shay-Memory vault. (~2059 tok)
+- `reflect.py` — Nightly memory reflection / consolidation pass for the Shay-Memory vault. (~4992 tok)
+- `RUN-MODEL.md` — Shay Run Model — orchestrators, executors, capabilities, routing (canonical) (~896 tok)
 
 ## obsidian/Shay-Memory/desk-redesign/
 
@@ -956,6 +1036,7 @@
 
 ## obsidian/Shay-Memory/learnings/
 
+- `brain-routing-native-gemini-2026-06-03.md` — Brain routing fix — native free Gemini primary + local Ollama fallback (2026-06-03) (~2794 tok)
 - `external-research-scan-2026-05-30.md` — Reuse-before-build scan — projects evaluated 2026-05-30 (~1408 tok)
 - `phase1-lessons-2026-05-30.md` — Phase 1 Swarm Engine — Lessons Learned (~1343 tok)
 - `process-improvements-2026-05-30.md` — Process Improvements — Multi-Day Session Retrospective (~1387 tok)
@@ -978,8 +1059,14 @@
 - `swarm-benchmark.py` — log, main (~1672 tok)
 - `v2-build-plan-2026-05-30.md` — Shay Desktop V2 — Brain-Agnostic Build Plan (~10946 tok)
 
+## obsidian/Shay-Memory/repo-docs/
+
+- `SHAY-ENVIRONMENTS-STATE.md` — Shay Environments — Current State + Pending Decision (~1862 tok)
+
 ## obsidian/Shay-Memory/research/
 
+- `agentos-port-delta-2026-06-01.md` — Agent-OS Port Delta — what's actually missing (Z1, 2026-06-01) (~1362 tok)
+- `build-coordinator-design-2026-06-01.md` — Build Coordinator — safe concurrent multi-build (Fritz, 2026-06-01) (~702 tok)
 - `claude-mem-evaluation-2026-05-31.md` — claude-mem Evaluation — 2026-05-31 (~1897 tok)
 - `free-models-discovery-2026-05-31.md` — Free / Open LLM Discovery — Shay Worker-Lane Brains (~1719 tok)
 - `hermes-capabilities-audit-2026-05-31.md` — Hermes / Shay-Shay Capability Audit — What We Use vs What We're Leaving on the Table (~3688 tok)
@@ -1004,6 +1091,22 @@
 - `PER-PAGE-UI-DISCOVERY-2026-05-31.md` — Shay Desktop — Per-Page UI Discovery & Evaluation (~7833 tok)
 - `UI-SPRINT-RESULT-2026-05-31.md` — Shay Desktop — Overnight UI Sprint Result (2026-05-31) (~1003 tok)
 
+## pipeline/agents/
+
+- `followup.py` — Follow-up Agent — autonomous, polite persistence. (~754 tok)
+- `outreach.py` — Outreach Agent — turns scored leads into personalized outreach. (~624 tok)
+- `responder.py` — Responder Agent — autonomous customer response. (~748 tok)
+- `scout.py` — ScoutAgent: beat, scan_reddit, run (~2026 tok)
+- `supervisor.py` — Supervisor — Phase 4 autonomous orchestration. (~864 tok)
+
+## pipeline/lib/
+
+- `config.py` — Shared config + paths for pipeline agents. (~565 tok)
+- `copywriter.py` — Outreach / response / follow-up copy generation. (~734 tok)
+- `heartbeat.py` — Shared heartbeat helper for pipeline agents. (~292 tok)
+- `sender.py` — Gated outbound sender — the single choke point for anything that contacts a (~1029 tok)
+- `store.py` — Append-only JSONL stores shared by all pipeline agents. (~905 tok)
+
 ## plans/
 
 - `CLOSEOUT-SCHEMA.md` — Plan Closeout / Checkpoint Schema (~929 tok)
@@ -1015,9 +1118,36 @@
 - `plan.json` (~1269 tok)
 - `README.md` — Project documentation (~531 tok)
 
+## plans/shay-environments/
+
+- `CONDUCTOR-WIRING-REPORT.md` — Conductor Missions API — Wiring Report (~1102 tok)
+- `II-a-COMPLETION-REPORT.md` — Phase 5 — Desk Background Tasks Routes — Completion Report (~1528 tok)
+- `II-b-COMPLETION-REPORT.md` — II-b — Stable Bearer Auth for `shay dashboard` (~674 tok)
+- `PART-2-PREP-X-FINDINGS.md` — Part 2 Prep — Agent X findings (Q1 + Q4) (~5190 tok)
+- `PART-2-PREP-Y-FINDINGS.md` — Part 2 Prep — Agent Y findings (Q2 + Q3) (~4134 tok)
+- `PART-2-SUBPLAN.md` — Part 2 Sub-plan — Hookpoint map + revised work shape (~5103 tok)
+- `PART-3-CHROME-WIRING-REPORT.md` — Part 3 — Chrome delivery wiring report (~1384 tok)
+- `PART-3-DECISIONS.md` — Part 3 — Visible Rebrand Decisions (~4478 tok)
+- `PART-3-VERIFY-REPORT.md` — Part 3 — Rebrand Verification Report (~1570 tok)
+- `PART-4-DESIGN.md` — Part 4 — Shay Companion (Mobile Harness) — Design Doc (~3327 tok)
+- `PLAN.md` — Plan: Shay's Environments — multi-harness rollout (~1673 tok)
+- `SHAY-WEB-INSTALL-REPORT.md` — Shay Web Install — Completion Report (~1113 tok)
+- `SHAY-WORKSPACE-INSTALL-REPORT.md` — Shay Workspace — install report (~1093 tok)
+- `WORKSPACE-DORMANT-FEATURES-REPORT.md` — Workspace Dormant-Features Wiring — Integration Report (~2283 tok)
+
+## plans/shay-environments/scans/
+
+- `A-legacy-hookpoints.md` — Scan A — Legacy hookpoints in shay-desktop-electron/ (~5344 tok)
+- `B-webui-v0.51-hookpoints.md` — Scan B — hermes-webui v0.51 hookpoint scout (~3761 tok)
+- `C-workspace-v2.3-hookpoints.md` — Scan C — hermes-workspace v2.3 hookpoint scout (~4369 tok)
+
 ## plans/shay-phone-app/
 
 - `PLAN.md` — SHAY PHONE APP — Build Plan (iOS + Android) — Revision 3 (~17771 tok)
+
+## plans/shay-rebrand/
+
+- `PLAN.md` — Plan: Hermes → Shay rebrand — research & effort sizing (revised) (~3615 tok)
 
 ## schemas/
 
@@ -1028,6 +1158,7 @@
 ## scripts/
 
 - `agent-checkin.js` — agent-checkin.js — pre-flight coordination gate for agent surfaces. (~2231 tok)
+- `agent-context-emit.js` — agent-context-emit.js — the ONLY emitter for the cross-agent context layer. (~3910 tok)
 - `agents` — Declares yaml (~1329 tok)
 - `asset-generate` (~2542 tok)
 - `build-catalog` (~122 tok)
@@ -1104,8 +1235,16 @@
 
 ## scripts/plans/
 
+- `audit-all.js` — scripts/plans/audit-all.js — the single unified drift entry point. (~994 tok)
+- `audit-shay.js` — scripts/plans/audit-shay.js — read-only drift audit for the SHAY universe (~929 tok)
 - `audit.js` — scripts/plans/audit.js — read-only plan/task ledger audit. (~1825 tok)
 - `closeout.js` — scripts/plans/closeout.js — write a closeout/checkpoint packet for a plan. (~2038 tok)
+- `drift-reconcile.js` — scripts/plans/drift-reconcile.js — the ZERO-TOKEN drift watchdog. (~1270 tok)
+- `test-drift-detectors.js` — scripts/plans/test-drift-detectors.js — self-test gate for the anti-drift (~413 tok)
+
+## scripts/plans/lib/
+
+- `trace-graph.js` — scripts/plans/lib/trace-graph.js — the ONLY place that builds trace-graph (~6297 tok)
 
 ## shay-agent-os/
 
@@ -1122,13 +1261,16 @@
 
 ## shay-agent-os/components/swarm/
 
-- `__init__.py` (~569 tok)
-- `asyncio_dispatcher.py` — AsyncioDispatcher: fan_out, export_checkpoint, import_checkpoint, health (~1144 tok)
-- `brain_client.py` — BrainChain: call, call_prompt (~2484 tok)
+- `__init__.py` (~701 tok)
+- `asyncio_dispatcher.py` — AsyncioDispatcher: fan_out, export_checkpoint, import_checkpoint, health (~1536 tok)
+- `brain_client.py` — CostMeter: configure, record, snapshot (~4564 tok)
 - `dispatcher.py` — class: fan_out, export_checkpoint, import_checkpoint, health + 3 more (~1083 tok)
 - `goal_loop.py` — GoalStatus: run, start, step (~5657 tok)
 - `local_swarm_dispatcher.py` — LocalSwarmDispatcher: fan_out, export_checkpoint, import_checkpoint, health (~2051 tok)
-- `pipeline.py` — class: agent, parallel, pipeline, process_item + 6 more (~23541 tok)
+- `pipeline.py` — SameBrainReviewError: enforce_reviewer_not_author, agent, parallel, pipeline + 6 more (~25286 tok)
+- `test_asyncio_dispatcher.py` — _FakeDispatcher: test_fan_out_runs_concurrently, test_result_order_preserved, test_semaphore_bounds_ (~839 tok)
+- `test_cost_meter.py` — test_cloud_route_records_cost, test_local_route_is_free, test_notify_off_by_default, test_notify_fir (~729 tok)
+- `test_reviewer_independence.py` — _FakeDispatcher: fan_out, export_checkpoint, import_checkpoint, health + 8 more (~1120 tok)
 
 ## shay-agent-os/components/tools/
 
@@ -1147,6 +1289,7 @@
 ## shay-desktop-electron/
 
 - `package.json` — Node.js package manifest (~843 tok)
+- `README.md` — Project documentation (~3461 tok)
 
 ## shay-desktop-electron/.ralph/
 
@@ -1163,14 +1306,18 @@
 
 - `account-domain.ts` — Account / Billing domain — Phase 4 stub. (~779 tok)
 - `auth-pool.ts` — auth-pool.ts — thin desktop backend over the real `shay auth` CLI for (~1725 tok)
+- `build-tracker.ts` — build-tracker.ts — aggregates the durable build ledger for the desktop (~2843 tok)
 - `diagnostics.ts` — Diagnostics orchestrator — Phase 5. (~7187 tok)
-- `index.ts` — AuthAddInput: openExternalUrl, createWindow, setupIPC (~12824 tok)
+- `hermes.ts` — True only for pure remote HTTP — SSH tunnel has full local access via SSH exec (~8376 tok)
+- `index.ts` — AuthAddInput: openExternalUrl, createWindow, setupIPC (~13063 tok)
 - `insights.ts` — Insights — usage analytics surface. (~2807 tok)
+- `kanban.ts` — Exports KanbanTask, KanbanBoard, KanbanRun, KanbanComment + 21 more (~3340 tok)
 - `keychain.test.ts` — `safeStorage` stub. We swap the implementation between tests to exercise (~1527 tok)
 - `keychain.ts` — Keychain — thin wrapper around Electron's `safeStorage` with a strict, (~1790 tok)
 - `notifications-dnd.ts` — Do-not-disturb evaluator + per-category delivery rules. (~1374 tok)
 - `notifications-os.ts` — OS notification adapter — Phase 3. (~679 tok)
 - `notifications-store.ts` — Notifications store — Phase 3 sqlite-backed inbox. (~2083 tok)
+- `plan-tracker.ts` — plan-tracker.ts — live status source for the right-pane Plan-tab checklist (E2). (~2129 tok)
 - `security-center.ts` — security-center.ts — desktop backend for the Security screen (H7). Thin (~1124 tok)
 - `sessions-overlay.ts` — Sessions overlay — Phase 2. (~2613 tok)
 - `sessions-rpc.ts` — Sessions write-RPC adapter — Phase 2. (~2444 tok)
@@ -1179,6 +1326,7 @@
 - `sse-parser-typed.test.ts` — Helper — frame a typed event as the gateway emits it on the wire. (~3118 tok)
 - `sse-parser-typed.ts` — Typed SSE parser — Phase 1 chat-core feed. (~1998 tok)
 - `sse-parser.ts` — Extracted SSE parsing logic — testable without Electron or HTTP. (~1394 tok)
+- `ssh-remote.ts` — SSH-proxied implementations of all hermes operations. (~15522 tok)
 
 ## shay-desktop-electron/src/main/domains/
 
@@ -1215,17 +1363,21 @@
 - `diagnostics-domain.ts` — Typed `window.shay.diagnostics` API surface — Phase 5. (~546 tok)
 - `domains.ts` — Namespaced preload bindings — Phase 0 scaffold. (~1257 tok)
 - `generated-bindings.ts` — AUTO-GENERATED — binds EVERY typed HermesAPI method (buglog #233). Real (~4784 tok)
-- `index.d.ts` — Declares ElectronAPI (~5997 tok)
-- `index.ts` — Declares electronAPI (~2228 tok)
+- `index.d.ts` — Declares ElectronAPI (~6134 tok)
+- `index.ts` — Declares electronAPI (~2526 tok)
 - `logs-domain.ts` — Typed `window.shay.logs` API surface — Phase 5. (~570 tok)
 - `mcp-domain.ts` — Typed `window.shay.mcp` API surface — Phase 5 (recovery). (~506 tok)
 - `plugins-domain.ts` — Typed `window.shay.plugins` API surface — Phase 5. (~650 tok)
 - `sessions-domain.ts` — Typed `window.shay.sessions` API surface — Phase 2. (~1171 tok)
 - `settings-domain.ts` — Settings preload surface — Phase 4. (~1046 tok)
 
+## shay-desktop-electron/src/renderer/screens/
+
+- `AgentMonitor.tsx` — AgentMonitor — renders table (~1783 tok)
+
 ## shay-desktop-electron/src/renderer/src/
 
-- `App.tsx` — MainShell mounts the Phase 2 three-column `AppShell` with the (~3060 tok)
+- `App.tsx` — MainShell mounts the Phase 2 three-column `AppShell` with the (~3121 tok)
 - `main.tsx` (~114 tok)
 
 ## shay-desktop-electron/src/renderer/src/admin/auth/
@@ -1346,7 +1498,7 @@
 ## shay-desktop-electron/src/renderer/src/components/icons/
 
 - `index.tsx` — <Icon name="send" /> — semantic icon component for the Shay Desktop redesign. (~500 tok)
-- `registry.ts` — Icon registry — maps semantic names to lucide-react components. (~1196 tok)
+- `registry.ts` — Icon registry — maps semantic names to lucide-react components. (~1227 tok)
 
 ## shay-desktop-electron/src/renderer/src/composer/
 
@@ -1426,13 +1578,15 @@
 - `DiffPanel.tsx` — <DiffPanel> — placeholder shell for the "Diff" right-panel variant. (~300 tok)
 - `FilesPanel.tsx` — <FilesPanel> — placeholder shell for the "Files" right-panel variant. (~291 tok)
 - `index.ts` — Right-panel variants barrel — Phase 3 / Spec §6. (~460 tok)
+- `PlanChecklistPanel.module.css` — Styles: 27 rules (~855 tok)
+- `PlanChecklistPanel.tsx` — PlanChecklistPanel (E1 + E2) — the LIVE plan tracker in the right pane. (~1856 tok)
 - `PlanPanel.tsx` — <PlanPanel> — placeholder shell for the "Plan" right-panel variant. (~296 tok)
 - `PreviewPanel.tsx` — <PreviewPanel> — sandbox iframe placeholder for the right-panel "Preview" (~570 tok)
 - `TerminalPanel.tsx` — <TerminalPanel> — placeholder shell for the "Terminal" right-panel variant. (~322 tok)
 
 ## shay-desktop-electron/src/renderer/src/screens/
 
-- `manifest.ts` — manifest.ts — SINGLE SOURCE OF TRUTH for the desktop's screens + navigation IA. (~1560 tok)
+- `manifest.ts` — manifest.ts — SINGLE SOURCE OF TRUTH for the desktop's screens + navigation IA. (~1624 tok)
 
 ## shay-desktop-electron/src/renderer/src/screens/Agents/
 
@@ -1440,6 +1594,11 @@
 - `Agents.module.css` — Styles: 32 rules (~1356 tok)
 - `Agents.tsx` — AgentAvatar (~2417 tok)
 - `index.tsx` — AgentAvatar (~2465 tok)
+
+## shay-desktop-electron/src/renderer/src/screens/BuildTracker/
+
+- `BuildTracker.module.css` — Styles: 35 rules (~1263 tok)
+- `BuildTracker.tsx` — BuildTracker — native analytics screen for the durable build ledger (Task 3). (~3763 tok)
 
 ## shay-desktop-electron/src/renderer/src/screens/Chat/
 
@@ -1456,6 +1615,11 @@
 - `Insights.module.css` — Styles: 31 rules (~1130 tok)
 - `Insights.tsx` — Insights — native usage-analytics screen for the Agent OS domain. (~2963 tok)
 
+## shay-desktop-electron/src/renderer/src/screens/Kanban/
+
+- `Kanban.module.css` — Styles: 20 rules, 3 vars (~1129 tok)
+- `Kanban.tsx` — Short id chip text (e.g. "task_a1b2c3d4" → "a1b2c3d4"). (~11745 tok)
+
 ## shay-desktop-electron/src/renderer/src/screens/Providers/
 
 - `Providers.tsx` — Providers (~7104 tok)
@@ -1467,7 +1631,8 @@
 
 ## shay-desktop-electron/src/renderer/src/screens/Settings/
 
-- `Settings.tsx` — Local-storage flag controlling whether the legacy 1079-LOC Settings (~11285 tok)
+- `index.tsx` — SettingsScreen (~690 tok)
+- `Settings.tsx` — Local-storage flag controlling whether the legacy 1079-LOC Settings (~11277 tok)
 
 ## shay-desktop-electron/src/renderer/src/screens/Skills/
 
@@ -1605,43 +1770,101 @@
 ## shay-desktop-electron/src/shared/i18n/locales/en/
 
 - `chat.ts` — Declares not (~832 tok)
+- `common.ts` (~331 tok)
 - `providers.ts` — Declares oauth (~180 tok)
 - `skills.ts` (~418 tok)
 
+## shay-environments/shay-web/
+
+- `README.md` — Project documentation (~1335 tok)
+- `run-shay-web.sh` — Boot Shay Web — upstream hermes-webui v0.51 configured to talk to the Shay brain. (~219 tok)
+
+## shay-environments/shay-web/chrome/
+
+- `shay-chrome.css` — Styles: 4 rules, 15 vars (~440 tok)
+- `shay-chrome.js` — shayChrome: setTitle, swapFavicons, swapMeta + 7 more (~2378 tok)
+- `shay-favicon.svg` (~205 tok)
+- `shay-mark.svg` (~219 tok)
+
+## shay-environments/shay-web/hermes-cli-shim/
+
+- `COMPLETION-REPORT.md` — II.c — hermes_cli shim package — completion report (~1419 tok)
+- `pyproject.toml` — Re-export shim mapping hermes_cli.* imports to shay_cli for Shay-Web integration with upstream herme (~105 tok)
+- `README.md` — Project documentation (~291 tok)
+
+## shay-environments/shay-web/hermes-cli-shim/hermes_cli/
+
+- `__init__.py` — hermes_cli shim package. (~81 tok)
+- `kanban_db.py` — Re-export Shay's kanban_db as hermes_cli.kanban_db. (~172 tok)
+- `models.py` — Re-export shay_cli.models as hermes_cli.models. (~59 tok)
+- `tools_config.py` — Re-export shay_cli.tools_config as hermes_cli.tools_config. (~66 tok)
+
+## shay-environments/shay-workspace/
+
+- `README.md` — Project documentation (~1969 tok)
+- `run-shay-workspace.sh` — Boot Shay Workspace — upstream hermes-workspace v2.3 wired to talk to Shay. (~321 tok)
+
+## shay-environments/shay-workspace/chrome/
+
+- `shay-chrome.css` — Styles: 2 rules, 14 vars (~504 tok)
+- `shay-chrome.js` — shayWorkspaceChrome: rebrandTitle, installTitleObserver, rewriteIconLinks + 7 more (~2382 tok)
+- `shay-favicon.svg` (~179 tok)
+
+## shay-environments/shay-workspace/shim/
+
+- `shay-shim-cli` (~2604 tok)
+
 ## shay-phone/
 
+- `.gitignore` — Git ignore rules (~8 tok)
 - `ask_shay.py` — ask, queue_interview, interview, update_job (~1654 tok)
 - `README.md` — Project documentation (~933 tok)
-- `server.py` — wp_subscribe, wp_push, load_env, vault_context (~8128 tok)
+- `server.py` — wp_subscribe, wp_push, do_stt, load_env (~15881 tok)
 
 ## shay-phone/web/
 
 - `arc.html` — Shay · Arc (~699 tok)
-- `index.html` — Shay (~8655 tok)
-- `manifest.webmanifest` (~147 tok)
-- `sw.js` — Minimal service worker — makes the PWA installable + caches the shell + Web Push. (~471 tok)
+- `index.html` — Shay (~12528 tok)
+- `manifest.webmanifest` (~151 tok)
+- `sw.js` — Minimal service worker — makes the PWA installable + caches the shell + Web Push. (~473 tok)
 
 ## shay-shay/
 
-- `run_agent.py` — _OpenAIProxy: write, flush, fileno, isatty + 4 more (~228113 tok)
+- `.gitignore` — Git ignore rules (~370 tok)
+- `cli.py` — load_cli_config (~176019 tok)
+- `pyproject.toml` — /*", "data/**/*"] (~2592 tok)
+- `run_agent.py` — _OpenAIProxy: write, flush, fileno, isatty + 4 more (~228233 tok)
 
 ## shay-shay/agent/
 
 - `anthropic_adapter.py` — Anthropic Messages API adapter for Shay-Shay. (~25530 tok)
+- `context_compressor.py` — Automatic context window compression for long conversations. (~21576 tok)
 - `cost_telemetry.py` — Cost / energy telemetry — a routing-aware view over recorded usage. (~4086 tok)
 - `curator.py` — Curator — background skill maintenance orchestrator. (~22860 tok)
 - `insights.py` — InsightsEngine: generate (~11306 tok)
+- `memory_recall_backend.py` — Semantic + graph recall backend (memory lifecycle C4). (~4133 tok)
 - `plugin_llm.py` — Declares class (~11250 tok)
-- `prompt_builder.py` — System prompt assembly -- identity, platform hints, skills index, context files. (~20487 tok)
+- `prompt_builder.py` — System prompt assembly -- identity, platform hints, skills index, context files. (~20686 tok)
+- `recall_router.py` — Recall router (memory lifecycle C5) — flag-gated rewire onto the C4 backend. (~1375 tok)
+- `session_memo.py` — Session memo persistence — stage (b) SAVE/COMPACT of the memory lifecycle. (~1840 tok)
 - `skill_utils.py` — Lightweight skill metadata utilities shared by prompt_builder and skills_tool. (~5596 tok)
+
+## shay-shay/archive/wip-2026-06-01/
+
+- `README.md` — Project documentation (~536 tok)
 
 ## shay-shay/gateway/
 
+- `chat_stream_routes.py` — Enhanced-chat SSE route — POST /api/sessions/{session_id}/chat/stream. (~3416 tok)
 - `desk_auth_routes.py` — Desk auth routes — Phase 5 scaffold. (~2783 tok)
 - `desk_logs_routes.py` — Desk logs routes — Phase 5 scaffold. (~1203 tok)
 - `desk_mcp_routes.py` — Desk MCP admin routes — Phase 5 scaffold. (~2494 tok)
 - `desk_sessions_routes.py` — Desk sessions write-RPC routes — Phase 2 scaffold. (~3378 tok)
-- `desk_tasks_routes.py` — Desk background-tasks routes — Phase 3 scaffold. (~2361 tok)
+- `desk_tasks_routes.py` — Desk background-tasks routes — Phase 5 implementation. (~7984 tok)
+
+## shay-shay/gateway/platforms/
+
+- `api_server.py` — ResponseStore: check_api_server_requirements (~43508 tok)
 
 ## shay-shay/obsidian/Shay-Memory/research/
 
@@ -1651,14 +1874,73 @@
 
 - `QA-REPORT-FINAL-2026-05-31.md` — Shay Desktop — Final QA Report (2026-05-31) (~656 tok)
 
+## shay-shay/scripts/
+
+- `mirror_run_policy.py` — Mirror the resolved run-policy to the Obsidian vault. (~710 tok)
+
 ## shay-shay/shay_cli/
 
+- `build_coordinator.py` — Build Coordinator — safe concurrent multi-build governance. (~5954 tok)
+- `build_tracker.py` — Build Tracker — aggregate task_runs + session cost data for 'shay builds'. (~8450 tok)
+- `commands.py` — Slash command definitions and autocomplete for the Shay-Shay CLI. (~20666 tok)
+- `conductor_missions.py` — Conductor missions store for the Shay-Shay dashboard. (~2419 tok)
 - `config.py` — from: get_managed_system, is_managed, get_managed_update_command, recommended_update_command + 6 mor (~63159 tok)
+- `gateway.py` — from: running, has_process_service_mismatch (~63112 tok)
+- `handoff_restart.py` — Drain-aware gateway restart handoff (memory/ops lifecycle Z3). (~2230 tok)
+- `kanban_db.py` — SQLite-backed Kanban board for multi-profile, multi-project collaboration. (~60811 tok)
+- `main.py` (~129805 tok)
+- `mcp_config.py` — cmd_mcp_add (~9991 tok)
+- `run_router.py` — Shay Run Model router — advisory routing driven by run-policy.yaml. (~3229 tok)
+- `web_server.py` — API router (~51856 tok)
+
+## shay-shay/shay_cli/data/
+
+- `run-policy.yaml` — ============================================================================= (~1616 tok)
+
+## shay-shay/tests/
+
+- `test_build_coordinator.py` — Tests for the Build Coordinator (shay_cli/build_coordinator.py). (~1902 tok)
+- `test_handoff_restart.py` — Tests for the drain-aware gateway restart handoff (Z3). (~1045 tok)
+- `test_memory_recall_backend.py` — Tests for the semantic + graph recall backend (memory lifecycle C4). (~1115 tok)
+- `test_recall_router.py` — Tests for the flag-gated recall router (memory lifecycle C5). (~1016 tok)
+- `test_run_router.py` — Tests for the advisory Run Model router (shay_cli/run_router.py). (~1034 tok)
+- `test_session_memo.py` — Tests for the session-memo persistence (memory lifecycle stage b). (~928 tok)
 
 ## shay-shay/tests/agent/
 
 - `test_cost_telemetry.py` — Tests for agent/cost_telemetry.py — cost/energy routing telemetry. (~1960 tok)
 - `test_curator_trace_grounded.py` — Tests for the trace-grounded curator review (Feature 2). (~1653 tok)
+
+## shay-shay/tests/gateway/
+
+- `test_chat_stream_routes.py` — Tests for the enhanced-chat SSE route. (~3096 tok)
+- `test_desk_tasks_routes.py` — Tests for the Desk background-tasks routes (/v1/tasks). (~3404 tok)
+
+## shay-shay/tests/plugins/
+
+- `test_kanban_manifest_workspace_probe.py` — Proves the Workspace `capabilities.kanban=true` probe will succeed. (~1606 tok)
+
+## shay-shay/tests/run_agent/
+
+- `test_run_agent.py` — Unit tests for run_agent.py (AIAgent). (~65939 tok)
+
+## shay-shay/tests/shay_cli/
+
+- `test_conductor_missions.py` — Tests for the `/api/conductor/missions` CRUD surface. (~1776 tok)
+- `test_dashboard_bearer_auth.py` — Tests for stable bearer-token auth on the dashboard. (~1196 tok)
+- `test_kanban_core_functionality.py` — Core-functionality tests for the kanban kernel + CLI additions. (~43687 tok)
+- `test_kanban_db.py` — test_extract_task_gate_with_fenced_block, test_extract_task_gate_no_fenced_block_returns_none, test_ (~668 tok)
+- `test_mcp_api_routes.py` — Tests for the `/api/mcp*` routes that bridge shay's `mcp_servers` config (~3586 tok)
+
+## shay-shay/tests/tools/
+
+- `test_gap_discovery.py` — Tests for community gap-discovery (D4): (~2027 tok)
+
+## shay-shay/tools/
+
+- `gap_resolver.py` — GapResolver: discover, resolve (~2256 tok)
+- `skill_manager_tool.py` — Declares of (~10773 tok)
+- `skills_hub.py` — class: get_headers, is_authenticated, auth_method, search + 5 more (~35745 tok)
 
 ## site-studio/
 

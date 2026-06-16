@@ -1,0 +1,49 @@
+{
+  "url": "https://github.com/OpenBMB/VoxCPM",
+  "owner": "OpenBMB",
+  "repo": "VoxCPM",
+  "analyzed_at": "2026-06-01 21:49:31",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "message": "API rate limit exceeded for 108.215.202.240. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
+    "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 50,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "VoxCPM2: Tokenizer-Free TTS for Multilingual Speech Generation, Creative Voice Design, and True-to-Life Cloning",
+  "stars": 24280,
+  "language": "Python",
+  "topics": [
+    "audio",
+    "deeplearning",
+    "minicpm",
+    "multilingual",
+    "python",
+    "pytorch",
+    "speech",
+    "speech-synthesis",
+    "text-to-speech",
+    "tts",
+    "tts-model",
+    "voice-cloning",
+    "voice-design",
+    "voxcpm"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:48:43Z",
+  "open_issues": 113,
+  "forks": 2803
+}

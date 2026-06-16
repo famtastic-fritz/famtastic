@@ -1,0 +1,60 @@
+{
+  "url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+  "owner": "nextlevelbuilder",
+  "repo": "ui-ux-pro-max-skill",
+  "analyzed_at": "2026-06-01 21:45:29",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "web_frontend",
+      "mobile",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 381934,
+    "JavaScript": 55721,
+    "TypeScript": 32158,
+    "HTML": 16945
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 65,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "An AI SKILL that provide design intelligence for building professional UI/UX multiple platforms",
+  "stars": 86074,
+  "language": "Python",
+  "topics": [
+    "ai-skills",
+    "antigravity",
+    "claude",
+    "claude-code",
+    "codex",
+    "command-line",
+    "copilot",
+    "cursor-ai",
+    "html5",
+    "kiro",
+    "landing-page",
+    "mobile-ui",
+    "qoder",
+    "react",
+    "tailwindcss",
+    "trae",
+    "ui-design",
+    "uikit",
+    "windsurf-ai"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:42:10Z",
+  "open_issues": 163,
+  "forks": 8895
+}

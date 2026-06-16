@@ -1,0 +1,43 @@
+{
+  "url": "https://github.com/anthropics/claude-plugins-official",
+  "owner": "anthropics",
+  "repo": "claude-plugins-official",
+  "analyzed_at": "2026-06-01 21:46:01",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 492076,
+    "TypeScript": 116087,
+    "HTML": 78438,
+    "Shell": 57585,
+    "JavaScript": 28225
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Official, Anthropic-managed directory of high quality Claude Code Plugins.",
+  "stars": 29070,
+  "language": "Python",
+  "topics": [
+    "claude-code",
+    "mcp",
+    "skills"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:35:23Z",
+  "open_issues": 716,
+  "forks": 3102
+}

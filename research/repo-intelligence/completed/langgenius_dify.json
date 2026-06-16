@@ -1,0 +1,69 @@
+{
+  "url": "https://github.com/langgenius/dify",
+  "owner": "langgenius",
+  "repo": "dify",
+  "analyzed_at": "2026-06-01 21:47:44",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_frontend",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 32816993,
+    "Python": 27234089,
+    "JavaScript": 1524327,
+    "MDX": 828946,
+    "CSS": 252242,
+    "HTML": 168765,
+    "Shell": 77979,
+    "Makefile": 10543,
+    "Gherkin": 9390,
+    "Dockerfile": 6855,
+    "PHP": 6106,
+    "Mako": 518
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Production-ready platform for agentic workflow development.",
+  "stars": 143449,
+  "language": "TypeScript",
+  "topics": [
+    "agent",
+    "agentic-ai",
+    "agentic-framework",
+    "agentic-workflow",
+    "ai",
+    "automation",
+    "gemini",
+    "genai",
+    "gpt",
+    "gpt-4",
+    "llm",
+    "low-code",
+    "mcp",
+    "nextjs",
+    "no-code",
+    "openai",
+    "orchestration",
+    "python",
+    "rag",
+    "workflow"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:43:37Z",
+  "open_issues": 807,
+  "forks": 22569
+}

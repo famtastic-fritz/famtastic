@@ -1,0 +1,57 @@
+{
+  "url": "https://github.com/jo-inc/camofox-browser",
+  "owner": "jo-inc",
+  "repo": "camofox-browser",
+  "analyzed_at": "2026-06-01 21:49:22",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_backend"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "JavaScript": 825956,
+    "TypeScript": 36202,
+    "Shell": 8370,
+    "PowerShell": 5256,
+    "Dockerfile": 2720,
+    "Makefile": 1938
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Stealth headless browser for AI agents \u2014 bypass Cloudflare, bot detection, and anti-scraping. Drop-in Puppeteer/Playwright replacement.",
+  "stars": 6150,
+  "language": "JavaScript",
+  "topics": [
+    "ai-agent",
+    "anti-bot",
+    "antidetect-browser",
+    "automation",
+    "bot-detection",
+    "browser-automation",
+    "cloudflare-bypass",
+    "headless-browser",
+    "javascript",
+    "nodejs",
+    "playwright",
+    "puppeteer",
+    "scraping",
+    "stealth-browser",
+    "web-scraping"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:48:05Z",
+  "open_issues": 60,
+  "forks": 613
+}

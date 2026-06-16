@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/aiwithremy/claude-skills-llm-council",
+  "owner": "aiwithremy",
+  "repo": "claude-skills-llm-council",
+  "analyzed_at": "2026-06-01 21:47:23",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": "LLM Council \u2014 a Claude Code skill that runs your decisions through 5 AI advisors with peer review",
+  "stars": 376,
+  "language": null,
+  "topics": [],
+  "error": "'NoneType' object has no attribute 'get'"
+}

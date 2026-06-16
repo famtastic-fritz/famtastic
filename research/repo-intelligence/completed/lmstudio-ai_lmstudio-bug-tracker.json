@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/lmstudio-ai/lmstudio-bug-tracker",
+  "owner": "lmstudio-ai",
+  "repo": "lmstudio-bug-tracker",
+  "analyzed_at": "2026-06-01 21:50:25",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": "Bug tracking for the LM Studio desktop application",
+  "stars": 135,
+  "language": null,
+  "topics": [],
+  "error": "'NoneType' object has no attribute 'get'"
+}

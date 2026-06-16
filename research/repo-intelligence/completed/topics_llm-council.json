@@ -1,0 +1,29 @@
+{
+  "url": "https://github.com/topics/llm-council",
+  "owner": "topics",
+  "repo": "llm-council",
+  "analyzed_at": "2026-06-01 21:47:30",
+  "tech_stack": {
+    "detected_categories": []
+  },
+  "dependencies": [],
+  "languages": {
+    "message": "Not Found",
+    "documentation_url": "https://docs.github.com/rest/repos/repos#list-repository-languages",
+    "status": "404"
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 0,
+    "reasons": [],
+    "tier": "LOW"
+  },
+  "description": "",
+  "stars": 0,
+  "language": "Unknown",
+  "topics": [],
+  "license": "Unknown",
+  "last_updated": "",
+  "open_issues": 0,
+  "forks": 0
+}

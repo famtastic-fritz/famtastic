@@ -1,0 +1,22 @@
+{
+  "url": "https://github.com/shuntacurosu/llm_council_skill",
+  "owner": "shuntacurosu",
+  "repo": "llm_council_skill",
+  "analyzed_at": "2026-06-01 21:47:15",
+  "tech_stack": {},
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {},
+  "description": "A Claude Skill that orchestrates multiple LLMs as a council, generating collective intelligence through peer review and chairman synthesis",
+  "stars": 26,
+  "language": "Python",
+  "topics": [
+    "claude-skills",
+    "git-worktree",
+    "multi-agent",
+    "opencode",
+    "peer-review"
+  ],
+  "error": "'NoneType' object has no attribute 'get'"
+}

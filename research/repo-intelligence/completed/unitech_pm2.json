@@ -1,0 +1,52 @@
+{
+  "url": "https://github.com/unitech/pm2",
+  "owner": "unitech",
+  "repo": "pm2",
+  "analyzed_at": "2026-06-01 21:43:28",
+  "tech_stack": {
+    "detected_categories": [
+      "web_backend",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "JavaScript": 1308019,
+    "Shell": 184452,
+    "Smarty": 3505,
+    "Go Template": 1927,
+    "Dockerfile": 1885,
+    "Python": 122,
+    "PowerShell": 90,
+    "Makefile": 89
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 40,
+    "reasons": [
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "Node.js Production Process Manager with a built-in Load Balancer.",
+  "stars": 43196,
+  "language": "JavaScript",
+  "topics": [
+    "command-line",
+    "command-line-tool",
+    "deploy",
+    "load-balancer",
+    "monitoring",
+    "node",
+    "nodejs",
+    "pm2",
+    "process-manager",
+    "production"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T00:01:23Z",
+  "open_issues": 1082,
+  "forks": 2717
+}

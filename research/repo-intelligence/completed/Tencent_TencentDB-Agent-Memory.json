@@ -1,0 +1,50 @@
+{
+  "url": "https://github.com/Tencent/TencentDB-Agent-Memory",
+  "owner": "Tencent",
+  "repo": "TencentDB-Agent-Memory",
+  "analyzed_at": "2026-06-01 21:50:15",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "web_backend",
+      "database"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 1304634,
+    "Python": 121254,
+    "Shell": 114282,
+    "JavaScript": 21767
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "TencentDB Agent Memory delivers fully local long-term memory for AI Agents via a 4-tier progressive pipeline, with zero external API dependencies.",
+  "stars": 4531,
+  "language": "TypeScript",
+  "topics": [
+    "agent",
+    "ai-agent",
+    "embedding",
+    "llm",
+    "local-first",
+    "long-term-memory",
+    "memory",
+    "openclaw-plugin",
+    "vector-search"
+  ],
+  "license": "NOASSERTION",
+  "last_updated": "2026-06-02T01:38:05Z",
+  "open_issues": 59,
+  "forks": 379
+}

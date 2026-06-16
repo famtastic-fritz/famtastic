@@ -1,0 +1,43 @@
+{
+  "url": "https://github.com/arainho/awesome-api-security?fbclid=Iwb21leASI2XxjbGNrBIjZQGV4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHsMqUtDCwyCDFVx4k0Z8gqc-mHTgi7Tm7hvvwzZTueJD3twnCUF46fy50WLZ_aem_J0EFPchpdtU_Cid5oBHKBA",
+  "owner": "arainho",
+  "repo": "awesome-api-security",
+  "analyzed_at": "2026-06-01 21:50:33",
+  "tech_stack": {
+    "detected_categories": [
+      "web_backend"
+    ]
+  },
+  "dependencies": [],
+  "languages": {},
+  "architecture": {},
+  "automation_potential": {
+    "score": 15,
+    "reasons": [
+      "High community adoption"
+    ],
+    "tier": "LOW"
+  },
+  "description": "A collection of awesome API Security tools and resources. The focus goes to open-source tools and resources that benefit all the community.",
+  "stars": 3824,
+  "language": null,
+  "topics": [
+    "api-hacking",
+    "api-hacks",
+    "api-hardening",
+    "api-hunting",
+    "api-pentest",
+    "api-sec",
+    "api-security",
+    "apisec",
+    "awesome-list",
+    "fuzzing",
+    "infosec",
+    "pentest",
+    "security"
+  ],
+  "license": "GPL-3.0",
+  "last_updated": "2026-06-01T06:57:46Z",
+  "open_issues": 2,
+  "forks": 639
+}

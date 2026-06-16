@@ -1,0 +1,52 @@
+{
+  "url": "https://github.com/aiming-lab/AutoResearchClaw",
+  "owner": "aiming-lab",
+  "repo": "AutoResearchClaw",
+  "analyzed_at": "2026-06-01 21:43:23",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 4730489,
+    "HTML": 63241,
+    "Shell": 32978,
+    "JavaScript": 24607,
+    "CSS": 21930,
+    "TeX": 20435,
+    "BibTeX Style": 16841,
+    "Dockerfile": 3504
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Fully autonomous & self-evolving research from idea to paper. Chat an Idea. Get a Paper. \ud83e\udd9e",
+  "stars": 13077,
+  "language": "Python",
+  "topics": [
+    "autonomous-research",
+    "citation-verification",
+    "llm-agents",
+    "metaclaw",
+    "multi-agent-debate",
+    "openclaw",
+    "paper-generation",
+    "scientific-discovery",
+    "self-evolving"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:42:41Z",
+  "open_issues": 8,
+  "forks": 1530
+}

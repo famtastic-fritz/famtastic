@@ -1,0 +1,47 @@
+{
+  "url": "https://github.com/nesquena/hermes-webui?fbclid=Iwb21leASI4X9jbGNrBIjhd2V4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHu06s1ZLKhH1clJWY0a9hKv-6qNt82TLZTur_GG2FJCRWK3vEKyAu6Sfev-O_aem_1-2KpD8VQZjI5oySSF9H9w",
+  "owner": "nesquena",
+  "repo": "hermes-webui",
+  "analyzed_at": "2026-06-01 21:45:38",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 8123422,
+    "JavaScript": 2426995,
+    "CSS": 343766,
+    "HTML": 161465,
+    "Shell": 42084,
+    "PowerShell": 11929,
+    "Dockerfile": 3129
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Hermes WebUI: The best way to use Hermes Agent from the web or from your phone!",
+  "stars": 11368,
+  "language": "Python",
+  "topics": [
+    "agent",
+    "ai-agents",
+    "hermes",
+    "hermes-agent",
+    "nous-research"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:44:16Z",
+  "open_issues": 221,
+  "forks": 1456
+}

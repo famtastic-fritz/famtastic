@@ -1,0 +1,44 @@
+{
+  "url": "https://github.com/0xNyk/council-of-high-intelligence",
+  "owner": "0xNyk",
+  "repo": "council-of-high-intelligence",
+  "analyzed_at": "2026-06-01 21:47:25",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Shell": 22607
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 55,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation"
+    ],
+    "tier": "MEDIUM"
+  },
+  "description": "18 AI personas deliberate your hardest decisions across multiple LLM providers. Aristotle, Feynman, Kahneman, Torvalds & more \u2014 structured multi-round deliberation with genuine model diversity. One command: /council",
+  "stars": 906,
+  "language": "Shell",
+  "topics": [
+    "ai-agents",
+    "claude",
+    "claude-code",
+    "decision-making",
+    "deliberation",
+    "gemini",
+    "multi-llm",
+    "ollama",
+    "openai",
+    "prompt-engineering"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-01T20:39:46Z",
+  "open_issues": 3,
+  "forks": 95
+}

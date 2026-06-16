@@ -1,0 +1,54 @@
+{
+  "url": "https://github.com/tirth8205/code-review-graph",
+  "owner": "tirth8205",
+  "repo": "code-review-graph",
+  "analyzed_at": "2026-06-01 21:46:39",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mcp",
+      "cli_tools"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Python": 1875821,
+    "TypeScript": 174626,
+    "Shell": 5095,
+    "JavaScript": 1290
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 95,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "CLI integration potential",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "Local-first code intelligence graph for MCP and CLI. Builds a persistent map of your codebase so AI coding tools read only what matters, with benchmarked context reductions on reviews and large-repo workflows.",
+  "stars": 17846,
+  "language": "Python",
+  "topics": [
+    "ai-coding",
+    "claude",
+    "claude-code",
+    "code-review",
+    "graphrag",
+    "incremental",
+    "knowledge-graph",
+    "llm",
+    "mcp",
+    "python",
+    "static-analysis",
+    "tree-sitter"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:32:42Z",
+  "open_issues": 110,
+  "forks": 1916
+}

@@ -1,0 +1,52 @@
+{
+  "url": "https://github.com/aaif-goose/goose",
+  "owner": "aaif-goose",
+  "repo": "goose",
+  "analyzed_at": "2026-06-01 21:45:24",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "Rust": 6424021,
+    "TypeScript": 2993933,
+    "JavaScript": 168128,
+    "Shell": 160638,
+    "Python": 153247,
+    "HTML": 116428,
+    "CSS": 33323,
+    "Just": 18206,
+    "PowerShell": 12902,
+    "Dockerfile": 6647,
+    "Nix": 5170,
+    "Batchfile": 5050,
+    "HCL": 42
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 70,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "an open source, extensible AI agent that goes beyond code suggestions - install, execute, edit, and test with any LLM",
+  "stars": 46183,
+  "language": "Rust",
+  "topics": [
+    "acp",
+    "ai",
+    "ai-agents",
+    "mcp"
+  ],
+  "license": "Apache-2.0",
+  "last_updated": "2026-06-02T01:33:41Z",
+  "open_issues": 258,
+  "forks": 4785
+}

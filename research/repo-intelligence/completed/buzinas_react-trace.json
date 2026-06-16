@@ -1,0 +1,49 @@
+{
+  "url": "https://github.com/buzinas/react-trace?fbclid=Iwb21leASI4QljbGNrBIjhA2V4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHjKRuO_ePMGyjiR2Nrp-CcHEl2u-29A7EZRtdUtbIRaaa4EOr1s4AIzKyjHy_aem_mDrAQ5H4nLKciRwodJoIdw",
+  "owner": "buzinas",
+  "repo": "react-trace",
+  "analyzed_at": "2026-06-01 21:50:40",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "web_frontend"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 182565,
+    "MDX": 32800,
+    "Liquid": 7387,
+    "CSS": 2011,
+    "HTML": 363,
+    "JavaScript": 87
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 35,
+    "reasons": [
+      "AI/ML capabilities for automation",
+      "Automation-friendly language"
+    ],
+    "tier": "LOW"
+  },
+  "description": "React Trace: batteries-included React visual inspector",
+  "stars": 45,
+  "language": "TypeScript",
+  "topics": [
+    "ai",
+    "ai-tools",
+    "inspect",
+    "inspector",
+    "opencode",
+    "react",
+    "react-find",
+    "react-grab",
+    "react-inspector",
+    "react-trace"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-01T13:40:24Z",
+  "open_issues": 1,
+  "forks": 4
+}

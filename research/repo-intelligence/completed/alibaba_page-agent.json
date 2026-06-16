@@ -1,0 +1,48 @@
+{
+  "url": "https://github.com/alibaba/page-agent",
+  "owner": "alibaba",
+  "repo": "page-agent",
+  "analyzed_at": "2026-06-01 21:50:07",
+  "tech_stack": {
+    "detected_categories": [
+      "ai_ml",
+      "automation",
+      "mcp"
+    ]
+  },
+  "dependencies": [],
+  "languages": {
+    "TypeScript": 576040,
+    "JavaScript": 87988,
+    "CSS": 40421,
+    "HTML": 9419
+  },
+  "architecture": {},
+  "automation_potential": {
+    "score": 80,
+    "reasons": [
+      "Explicit automation/MCP tooling",
+      "AI/ML capabilities for automation",
+      "High community adoption",
+      "Automation-friendly language"
+    ],
+    "tier": "HIGH"
+  },
+  "description": "JavaScript in-page GUI agent. Control web interfaces with natural language.",
+  "stars": 18214,
+  "language": "TypeScript",
+  "topics": [
+    "agent",
+    "ai",
+    "ai-agents",
+    "browser-automation",
+    "javascript",
+    "mcp",
+    "typescript",
+    "web"
+  ],
+  "license": "MIT",
+  "last_updated": "2026-06-02T01:04:29Z",
+  "open_issues": 65,
+  "forks": 1553
+}

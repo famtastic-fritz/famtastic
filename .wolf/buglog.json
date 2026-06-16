@@ -4420,5 +4420,122 @@
     "related_bugs": [],
     "occurrences": 2,
     "last_seen": "2026-06-06T01:04:02.158420"
+  },
+  {
+    "id": "bug-274",
+    "timestamp": "2026-06-08T13:57:39.448685Z",
+    "error_message": "Streaming failed after partial delivery, not retrying: The read operation timed out (Shay gateway, glm-5.1 via Z.AI). Long answers truncated to a few-hundred-char stub.",
+    "file": "shay-shay/run_agent.py",
+    "root_cause": "Stream httpx read timeout is a flat 120s for cloud providers (SHAY_STREAM_READ_TIMEOUT default, run_agent.py:7774). GLM-5.1 is a reasoning model; on long outputs the gap between streamed tokens exceeds 120s, triggering ReadTimeout. On stream timeout the code logs 'not retrying' and does NOT fail over to fallback_providers (codex/ollama/gemini), so one slow reasoning gap kills the whole turn with no recovery. Worse for longer answers.",
+    "fix": "Immediate: raise read timeout for the glm provider (per-provider request timeout override, or SHAY_STREAM_READ_TIMEOUT=600 in the gateway launchd env) + restart gateway. Durable: on stream stall, fail over to next provider instead of 'not retrying'; size read/idle timeout to provider class (reasoning models get a longer idle budget) and detect true stalls via heartbeat, not a flat read timeout.",
+    "tags": [
+      "shay",
+      "gateway",
+      "streaming",
+      "timeout",
+      "glm",
+      "z.ai",
+      "failover",
+      "reasoning-model",
+      "brain-router"
+    ]
+  },
+  {
+    "id": "bug-275",
+    "timestamp": "2026-06-08T14:26:53.919966Z",
+    "error_message": "web_extract LLM summarization failed: Gemini HTTP 404 models/glm-5.1 is not found for API version v1beta (43 occurrences).",
+    "file": "~/.shay/config.yaml (auxiliary.web_extract)",
+    "root_cause": "auxiliary.web_extract was provider:auto with empty model. 'auto' resolved to the Gemini endpoint but passed the global default model id 'glm-5.1', which is not a Gemini model -> 404. Same latent risk in other auto+empty entries (vision needs a vision model so keep auto; kanban_decomposer/profile_describer share the risk).",
+    "fix": "Pinned auxiliary.web_extract to local ollama hermes3:latest (base_url http://localhost:11434/v1), matching compression/session_search. Zero-cost, no endpoint/key mismatch. Restart gateway to apply.",
+    "tags": [
+      "shay",
+      "config",
+      "auxiliary",
+      "web_extract",
+      "gemini",
+      "404",
+      "model-provider-mismatch",
+      "ollama"
+    ]
+  },
+  {
+    "id": "bug-276",
+    "title": "Shay ollama fallback fails: unknown provider 'ollama' / provider not configured",
+    "timestamp": "2026-06-08T22:08:05.960879Z",
+    "date": "2026-06-08",
+    "last_seen": "2026-06-08",
+    "occurrences": 1,
+    "status": "fixed",
+    "error_message": "agent.auxiliary_client: resolve_provider_client: unknown provider 'ollama' | root: Fallback to ollama failed: provider not configured. Whole agent call dies after paid providers exhausted (glm 429, groq 401, cerebras 400).",
+    "file": "~/.shay/config.yaml (providers:); shay_cli/runtime_provider.py _get_named_custom_provider; agent/auxiliary_client.py resolve_provider_client",
+    "root_cause": "model_aliases (local-olm-*) and fallback_providers referenced provider:ollama, but 'ollama' was never defined in the top-level providers: dict. resolve_provider_client resolves named providers via _get_named_custom_provider which reads providers:; no built-in ollama in PROVIDER_REGISTRY (resolve_provider('ollama')->'custom'), so without a providers: entry it logs 'unknown provider' and returns (None,None).",
+    "fix": "Added ollama to providers: in ~/.shay/config.yaml (base_url http://localhost:11434/v1, key_env OLLAMA_API_KEY, api_mode chat_completions). load_config caches on (mtime,size) so the edit auto-invalidates \u2014 no gateway restart. Ollama needs no key; resolver substitutes 'no-key-required'. Verified end-to-end through Shay's resolved client.",
+    "tags": [
+      "shay",
+      "config",
+      "ollama",
+      "fallback",
+      "provider-resolution",
+      "unknown-provider",
+      "local-model"
+    ],
+    "related_bugs": [
+      "bug-275"
+    ]
+  },
+  {
+    "id": "bug-277",
+    "title": "Strict providers (Cerebras/Groq) 400 on reasoning_content field from thinking-mode history",
+    "timestamp": "2026-06-08T22:08:05.960879Z",
+    "date": "2026-06-08",
+    "last_seen": "2026-06-08",
+    "occurrences": 1,
+    "status": "fixed",
+    "error_message": "HTTP 400: messages.N.assistant.reasoning_content: property 'messages.N.assistant.reasoning_content' is unsupported (provider=custom base_url=https://api.cerebras.ai/v1 model=llama-3.3-70b).",
+    "file": "~/famtastic/shay-shay/run_agent.py (_provider_rejects_reasoning_content + 2 api_message build sites ~11416, ~12237)",
+    "root_cause": "reasoning_content carries chain-of-thought and is REQUIRED by thinking providers (GLM/z.ai, DeepSeek V4, Kimi) which 400 if it's omitted on replayed tool-call turns, so Shay bakes it into persisted history. Strict OpenAI-compat backends (Cerebras, Groq, Mistral, Fireworks) reject the unknown field with 400. Existing strip only fired for non-string values; no provider-aware strip existed. Cerebras resolves via the generic 'custom' provider path, so name-only detection misses it.",
+    "fix": "Added AIAgent._provider_rejects_reasoning_content() (matches provider name {cerebras,groq,mistral,fireworks} AND base_url host). Strip reasoning_content for those providers at both api_message build sites after _copy_reasoning_content_for_api. Works during fallback (self.provider/base_url updated in place; api_messages rebuilt each attempt). 83 reasoning/custom-provider tests pass; thinking-provider echo-back unaffected.",
+    "tags": [
+      "shay",
+      "run_agent",
+      "reasoning_content",
+      "cerebras",
+      "groq",
+      "strict-openai-compat",
+      "400",
+      "thinking-mode"
+    ],
+    "related_bugs": [
+      "bug-276"
+    ]
+  },
+  {
+    "id": "bug-278",
+    "title": "Shay local Ollama brain 400s: real context was 4096, not the model's 131k max",
+    "timestamp": "2026-06-08T22:42:56.063386Z",
+    "date": "2026-06-08",
+    "last_seen": "2026-06-08",
+    "occurrences": 1,
+    "status": "fixed",
+    "error_message": "HTTP 400 exceed_context_size_error: request (12690 tokens) exceeds the available context size (4096 tokens) ... n_ctx:4096. Then: 'Context length exceeded: max compression attempts (3) reached.' Shay stepped down 131072->128000 (too slowly) and gave up.",
+    "file": "~/.shay/config.yaml (model.context_length + -32k variants); Ollama.app llama-server -c flag; agent/model_metadata.py query_ollama_num_ctx",
+    "root_cause": "Ollama.app launches llama-server with -c 4096 (its default) regardless of the model's trained max. OLLAMA_CONTEXT_LENGTH was unset. Shay's query_ollama_num_ctx reads the GGUF max (131072) from /api/show, NOT the runtime -c, so Shay thought it had 131k, never compressed below 4k, and every real prompt (Shay's SOUL+PERSONA baseline alone is ~7k tokens) 400'd. Same root cause made qwen3 'feel too small' earlier \u2014 it was the 4096 ceiling, not the 41k model limit. Hardware limit: 16GB RAM caps a local 8B context to ~16-32k; 131k KV would need ~17GB.",
+    "fix": "Enabled flash-attn + q8_0 KV-cache quantization on the Ollama server (launchctl setenv OLLAMA_FLASH_ATTENTION=1, OLLAMA_KV_CACHE_TYPE=q8_0) so 32k KV fits in ~2GB instead of ~4GB; restarted Ollama.app. Created model variants hermes3-32k / deepseek-r1-32k / qwen3-32k with 'PARAMETER num_ctx 32768' baked in (Modelfile FROM base \u2014 shares weights). num_ctx in the Modelfile makes BOTH Ollama load at 32k AND query_ollama_num_ctx report 32768 (it reads Modelfile params), so Shay's compression threshold is correct for the brain AND every fallback. Pointed config model.default + fallback_providers at the -32k variants and set model.context_length:32768. Verified: llama-server loads -c 32768 + q8_0 K/V + flash-attn on; a 15k-token prompt that previously 400'd now succeeds. NOTE: the KV-quant env is launchctl-session-scoped (resets on reboot); persistence via a login LaunchAgent was proposed but NOT installed (needs Fritz approval). num_ctx variants DO persist.",
+    "tags": [
+      "shay",
+      "ollama",
+      "context-window",
+      "num_ctx",
+      "kv-cache-quant",
+      "q8_0",
+      "16gb-ram",
+      "config",
+      "400",
+      "exceed_context_size"
+    ],
+    "related_bugs": [
+      "bug-276",
+      "bug-277"
+    ]
   }
 ]

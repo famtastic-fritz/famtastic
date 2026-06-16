@@ -38,8 +38,8 @@ ENV_FILE = Path.home() / ".shay" / ".env"
 # Shay-Shay's existing pricing tables (agent.cost_telemetry / usage_pricing).
 # Local routes (ollama) carry no $ and are recorded at zero.
 _BRAIN_BILLING: Dict[str, Dict[str, Optional[str]]] = {
-    "claude": {"model": "claude-sonnet-4-6", "provider": "anthropic"},
-    "openrouter": {"model": "anthropic/claude-sonnet-4.6", "provider": "openrouter"},
+    "claude": {"model": "gemini-2.5-pro", "provider": "gemini"},
+    "openrouter": {"model": "gemini-2.5-pro", "provider": "gemini"},
     "gemini": {"model": "gemini-2.5-flash", "provider": "google"},
     "ollama": {"model": "hermes3:latest", "provider": "local"},
 }
