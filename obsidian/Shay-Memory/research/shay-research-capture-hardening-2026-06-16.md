@@ -24,6 +24,7 @@ How should Shay make future research reusable across sessions, especially GitHub
 ## Interpretations
 - The learning loop gap is not lack of storage alone; it is lack of a repeatable artifact contract that turns one-off research into reusable memory.
 - The safest immediate fix is protocol + helper tooling + startup doctrine, not a risky runtime model switch or a fully autonomous watcher.
+- The best cheap next-step integrations are reminder/surfacing layers, not heavyweight new storage. The current markdown + JSONL shape is already good enough to start compounding.
 
 ## Capability notes
 - A new helper script now exists at shay-shay/scripts/research_capture.py to write markdown notes plus an append-only JSONL ledger entry.
@@ -38,6 +39,7 @@ How should Shay make future research reusable across sessions, especially GitHub
 ## Next actions
 - Adversarially review the new capture protocol and helper for missing major concerns.
 - Fan out a research swarm for additional ideas on durable research capture and retrieval hardening.
+- Consider a low-risk reminder layer inside proactive reflection or Command Center to surface uncaptured meaningful research without blocking fast work.
 
 ## Resume prompt
 Open the Shay research capture hardening note and continue from the observations, interpretations, and next actions.

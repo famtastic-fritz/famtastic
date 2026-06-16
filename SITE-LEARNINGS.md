@@ -1,5 +1,18 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Shay research artifact capture hardening (2026-06-16)
+
+Added a durable-research capture rule to `shay-shay/AGENTS.md` and `docs/agent-startup/AGENT-STARTUP-CONTRACT.md` so meaningful research no longer ends as disposable terminal residue. Built `shay-shay/scripts/research_capture.py`, which writes a structured markdown research note plus an append-only JSONL ledger entry under `obsidian/Shay-Memory/research/`, with explicit observation vs interpretation separation, source trace, retrieval metadata (`permalink`, `tags`, `artifact_type`), and resume context. Added the protocol doc at `shay-shay/docs/research-artifact-capture-protocol.md` plus the reusable skill at `shay-shay/skills/research/research-artifact-capture/SKILL.md`.
+
+### Verified
+- `python3 -m py_compile shay-shay/scripts/research_capture.py` passed.
+- `python3 shay-shay/scripts/research_capture.py --help` returned the expected CLI surface.
+- A live artifact write created `obsidian/Shay-Memory/research/shay-research-capture-hardening-2026-06-16.md` and appended to `obsidian/Shay-Memory/research/_ledger/research-artifacts.jsonl`.
+- Adversarial review closed the major portability issue by replacing hardcoded absolute paths with `$HOME`/environment-based defaults and adding retrieval metadata for future recall.
+
+### Known Gaps opened
+- Enforcement is still doctrine + helper driven, not a hard runtime stop. A future low-risk upgrade could surface uncaptured-research reminders inside proactive reflection or Command Center without turning every tiny lookup into ceremony.
+
 ## Proactive Shay organic capture/reflection OS (2026-06-16)
 
 Added `obsidian/Shay-Memory/_system/proactive_os.py` as the six-phase runtime behind proactive Shay intelligence. The module now discovers retrieval sources from the Shay vault plus repo-root transcript captures, expands alias variants (`convo`/`conversation`, `agent two` → `agent2`), normalizes each source into a capture record, distills captures into atomic items, ranks a tighter briefable subset for morning overlays, routes sensitive items into `obsidian/Shay-Memory/_system/runtime/proactive/private-context.jsonl`, and emits `source-registry.json`, `briefing-context.json`, `private-review.json`, `behavior-steering.json`, and `reinforcement.json`. Follow-up hardening added source-pointer age decay and ranked-focus diversity caps so stale historical packets lose ground even when they were captured recently.

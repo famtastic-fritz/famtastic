@@ -1,3 +1,6 @@
+## 2026-06-16 — Shay research capture hardening
+Added a durable-research capture rule so meaningful research now has to leave a structured artifact instead of dying as chat or terminal residue. Built `shay-shay/scripts/research_capture.py`, a protocol doc, and a reusable skill that write markdown notes plus an append-only JSONL ledger with separated observations, interpretations, source trace, and resume context. Verified the helper with `py_compile`, CLI help, and a live artifact write into `obsidian/Shay-Memory/research/`. Deferred: enforcement is still doctrine/helper-driven rather than a hard runtime gate.
+
 ## 2026-06-16 — Proactive brief decay + private review actions
 
 Tightened the proactive morning-brief ranking so older transcript packets decay harder and repeated reseller-history items stop crowding the ranked focus list. Added explicit private-review action state through `obsidian/Shay-Memory/_system/private_review_actions.py` plus `private-review-actions.json`, and wired `reflect.py` / Command Center to display that state and support approve/suppress/review decisions. Verified with `py_compile`, a live `reflect.py` run, `private_review_actions.py list`, and a full Command Center rebuild. Deferred: Command Center still shows the action path rather than clickable in-page buttons, and ranking remains heuristic rather than final.
