@@ -1,8 +1,12 @@
 ---
 title: Buglog Lessons (mirrored for Shay)
-synced: 2026-06-16T12:46:57.330494
+synced: 2026-06-16 15:46:58.292461
 source: .wolf/buglog.json
-tags: [buglog, lessons, mirror]
+tags:
+- buglog
+- lessons
+- mirror
+permalink: shay-memory/lessons-mirror/buglog-mirror
 ---
 
 # Buglog — last 30 lessons (mirrored into Shay's vault)

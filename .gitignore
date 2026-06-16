@@ -16,6 +16,13 @@ site-studio/.env
 # Claude Code worktrees — ephemeral, never tracked
 .claude/worktrees/
 
+# Local repo worktrees / sandboxes — ephemeral, never tracked
+.worktrees/
+
+# Python bytecode caches
+**/__pycache__/
+**/*.py[cod]
+
 # Claude Code local settings — captures approved Bash commands verbatim,
 # which can include inline env-var API keys. Never tracked.
 .claude/settings.local.json
@@ -54,6 +61,10 @@ site-studio/logs/
 tests/automation/logs/
 tier-comparison-results/
 diagnostics/
+obsidian/Shay-Memory/_system/runtime/*
+!obsidian/Shay-Memory/_system/runtime/proactive/
+obsidian/Shay-Memory/_system/runtime/proactive/*
+!obsidian/Shay-Memory/_system/runtime/proactive/private-review-actions.json
 
 # Built site output — dist/ is a deploy artifact, not source
 sites/*/dist/

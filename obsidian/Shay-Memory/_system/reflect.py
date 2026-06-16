@@ -47,6 +47,29 @@ import sys
 import traceback
 from pathlib import Path
 
+CURRENT_DIR = Path(__file__).resolve().parent
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
+
+from proactive_os import (
+    append_jsonl,
+    build_behavior_steering,
+    build_brief_payload,
+    build_private_context_record,
+    build_private_review_payload,
+    build_reinforcement_payload,
+    build_source_registry,
+    discover_repo_root_captures,
+    load_jsonl,
+    normalize_intake,
+    overwrite_json,
+    reflect_items,
+    select_private_items,
+    source_class_for_path,
+    split_atomic_items,
+    action_forces_from_items,
+)
+
 VAULT = Path(__file__).resolve().parent.parent  # .../Shay-Memory
 REFLECT_DIR = VAULT / "reflections"
 EPISODIC = REFLECT_DIR / "episodic"
@@ -54,6 +77,18 @@ SEMANTIC = REFLECT_DIR / "semantic"
 REFLECTIVE = REFLECT_DIR / "reflective"
 STATUS_DIR = VAULT / "_system" / "runtime"
 STATUS_FILE = STATUS_DIR / "memory-reflect-status.json"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+PROACTIVE_DIR = STATUS_DIR / "proactive"
+SOURCE_REGISTRY_FILE = PROACTIVE_DIR / "source-registry.json"
+INTAKE_LEDGER = PROACTIVE_DIR / "intake.jsonl"
+ATOMIC_LEDGER = PROACTIVE_DIR / "atomic-items.jsonl"
+PRIVATE_LEDGER = PROACTIVE_DIR / "private-context.jsonl"
+ACTION_LEDGER = PROACTIVE_DIR / "action-forces.jsonl"
+REINFORCEMENT_FILE = PROACTIVE_DIR / "reinforcement.json"
+BRIEFING_FILE = PROACTIVE_DIR / "briefing-context.json"
+STEERING_FILE = PROACTIVE_DIR / "behavior-steering.json"
+PRIVATE_REVIEW_FILE = PROACTIVE_DIR / "private-review.json"
+PRIVATE_ACTIONS_FILE = PROACTIVE_DIR / "private-review-actions.json"
 
 # Trees the pass must never read FROM (its own dated output) or recurse into.
 # NOTE: ``reflections`` is excluded so the pass never feeds on its own dated
@@ -233,10 +268,20 @@ def _read_body(path: Path) -> tuple[str, str]:
     return (str(title), body)
 
 
+def _display_rel(path: Path) -> str:
+    try:
+        return path.relative_to(VAULT).as_posix()
+    except ValueError:
+        try:
+            return path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            return str(path)
+
+
 def _extractive_episode(path: Path, title: str, body: str) -> str:
     """Original headings-only extractive summary (LLM-free fallback)."""
     headings = [l.strip() for l in body.splitlines() if l.lstrip().startswith("#")][:6]
-    rel = path.relative_to(VAULT)
+    rel = _display_rel(path)
     source_class = _source_class(path)
     lines = [f"### {title}", f"- source: `{rel}`", f"- source_class: `{source_class}`"]
     if headings:
@@ -245,16 +290,7 @@ def _extractive_episode(path: Path, title: str, body: str) -> str:
 
 
 def _source_class(path: Path) -> str:
-    rel = path.relative_to(VAULT).as_posix()
-    if rel.startswith("reflections/episodic/sessions/"):
-        return "runtime-session"
-    if rel.startswith("lessons-mirror/"):
-        return "lessons-mirror"
-    if rel.startswith("reflections/"):
-        return "reflection-output"
-    if rel.startswith("_system/"):
-        return "system-doc"
-    return "vault-note"
+    return source_class_for_path(path, VAULT, REPO_ROOT)
 
 
 def _note_signal_profile(path: Path, body: str) -> dict:
@@ -306,7 +342,7 @@ def summarise_episode(path: Path, generative: bool = True) -> str:
         return ""
     if _promotion_block_reason(path, body):
         return ""
-    rel = path.relative_to(VAULT)
+    rel = _display_rel(path)
 
     if generative:
         aux = _resolve_aux()
@@ -341,6 +377,32 @@ def _write(path: Path, content: str, dry: bool) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     print(f"wrote {path}")
+
+
+def _load_private_review_actions() -> dict[str, dict]:
+    if not PRIVATE_ACTIONS_FILE.exists():
+        return {}
+    try:
+        payload = json.loads(PRIVATE_ACTIONS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    entries = payload.get("entries") if isinstance(payload, dict) else None
+    if not isinstance(entries, list):
+        return {}
+    action_map: dict[str, dict] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        item_id = str(entry.get("item_id") or "").strip()
+        action = str(entry.get("action") or "review").strip().lower()
+        if not item_id or action not in {"review", "approve", "suppress"}:
+            continue
+        action_map[item_id] = {
+            "action": action,
+            "note": entry.get("note"),
+            "acted_at": entry.get("acted_at"),
+        }
+    return action_map
 
 
 def _score_candidate(path: Path, mtime: float, window_hours: int) -> float:
@@ -452,8 +514,11 @@ def run(window_hours: int, dry: bool) -> int:
         "status_file": str(STATUS_FILE),
     })
     discovered_sources = sorted(_iter_source_notes(window_hours), key=lambda t: t[1], reverse=True)
+    repo_root_sources = discover_repo_root_captures(REPO_ROOT, window_hours)
+    discovered_sources = sorted(discovered_sources + repo_root_sources, key=lambda t: t[1], reverse=True)
     audit = _collect_source_audit(discovered_sources)
     sources = sorted(audit["eligible"], key=lambda t: t[1], reverse=True)
+    overwrite_json(SOURCE_REGISTRY_FILE, build_source_registry(discovered_sources, VAULT, REPO_ROOT))
 
     if not sources:
         _write_status({
@@ -481,10 +546,43 @@ def run(window_hours: int, dry: bool) -> int:
         key=lambda t: t[1], reverse=True,
     )
     src_links = [
-        f"- [[{p.relative_to(VAULT).with_suffix('')}]] (score {s})"
+        f"- [[{_display_rel(p.with_suffix(''))}]] (score {s})"
         for p, s in scored
     ]
     episodes_joined = "\n\n".join(episodes)
+
+    capture_rows = []
+    atomic_rows = []
+    for idx, (path, mtime) in enumerate(sources, start=1):
+        title, body = _read_body(path)
+        if not body:
+            continue
+        capture_id = f"capture-{today}-{idx:04d}-{path.stem.lower().replace(' ', '-')[:48]}"
+        captured_at = _dt.datetime.fromtimestamp(mtime).isoformat(timespec="seconds")
+        capture = normalize_intake(path, body, _source_class(path), captured_at, capture_id)
+        capture_rows.append(capture)
+        atomic_rows.extend(split_atomic_items(capture))
+
+    private_items = select_private_items(atomic_rows)
+    private_record = build_private_context_record(private_items, [row["capture_id"] for row in capture_rows])
+    reflections = reflect_items(atomic_rows, private_record)
+    action_rows = action_forces_from_items(atomic_rows, reflections)
+    reinforcement = build_reinforcement_payload(reflections, action_rows)
+    private_action_map = _load_private_review_actions()
+    brief_payload = build_brief_payload(reflections, action_rows, private_record, private_action_map)
+    steering_payload = build_behavior_steering(reflections, private_record)
+    private_review_payload = build_private_review_payload(private_record, atomic_rows, private_action_map)
+
+    if not dry:
+        append_jsonl(INTAKE_LEDGER, capture_rows)
+        append_jsonl(ATOMIC_LEDGER, atomic_rows)
+        if private_record:
+            append_jsonl(PRIVATE_LEDGER, [private_record])
+        append_jsonl(ACTION_LEDGER, action_rows)
+        overwrite_json(REINFORCEMENT_FILE, reinforcement)
+        overwrite_json(BRIEFING_FILE, brief_payload)
+        overwrite_json(STEERING_FILE, steering_payload)
+        overwrite_json(PRIVATE_REVIEW_FILE, private_review_payload)
 
     # L1 episodic
     l1 = (
@@ -542,12 +640,22 @@ def run(window_hours: int, dry: bool) -> int:
         "discovered_source_count": len(discovered_sources),
         "source_count": len(sources),
         "episode_count": len(episodes),
+        "capture_count": len(capture_rows),
+        "atomic_item_count": len(atomic_rows),
+        "private_context_count": (len(load_jsonl(PRIVATE_LEDGER)) if PRIVATE_LEDGER.exists() else 0) + (1 if (dry and private_record) else 0),
+        "action_force_count": len(action_rows),
         "source_classes": audit["source_classes"],
         "skipped": audit["skipped"],
         "outputs": {
             "episodic": str(EPISODIC / f"{today}.md"),
             "semantic": str(SEMANTIC / f"{today}.md"),
             "reflective": str(REFLECTIVE / f"{today}.md"),
+            "source_registry": str(SOURCE_REGISTRY_FILE),
+            "briefing_context": str(BRIEFING_FILE),
+            "behavior_steering": str(STEERING_FILE),
+            "reinforcement": str(REINFORCEMENT_FILE),
+            "private_review": str(PRIVATE_REVIEW_FILE),
+            "private_review_actions": str(PRIVATE_ACTIONS_FILE),
         },
     })
     print(f"reflect: processed {len(sources)} source note(s) for {today}{' (dry-run)' if dry else ''}.")

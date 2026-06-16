@@ -1,8 +1,13 @@
 ---
 title: Cerebrum (mirrored for Shay)
-synced: 2026-06-16T12:46:57.321507
+synced: 2026-06-16 15:46:58.291653
 source: .wolf/cerebrum.md
-tags: [cerebrum, lessons, do-not-repeat, mirror]
+tags:
+- cerebrum
+- lessons
+- do-not-repeat
+- mirror
+permalink: shay-memory/lessons-mirror/cerebrum-mirror
 ---
 
 # Cerebrum
