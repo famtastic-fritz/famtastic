@@ -257,6 +257,43 @@ def _source_class(path: Path) -> str:
     return "vault-note"
 
 
+def _note_signal_profile(path: Path, body: str) -> dict:
+    """Return a deterministic signal profile for promotion gating."""
+    source_class = _source_class(path)
+    lowered = body.lower()
+    sections = {
+        "active_task": "## active task" in lowered,
+        "assistant_state": "## final assistant state" in lowered,
+        "tool_activity": "## recent tool activity" in lowered,
+        "handoff_context": "## compression handoff context" in lowered,
+    }
+    return {
+        "source_class": source_class,
+        "char_count": len(body.strip()),
+        "line_count": len([line for line in body.splitlines() if line.strip()]),
+        "sections": sections,
+    }
+
+
+def _promotion_block_reason(path: Path, body: str) -> str | None:
+    """Return a skip reason when a note is too weak for reflection input."""
+    profile = _note_signal_profile(path, body)
+    if profile["source_class"] == "reflection-output":
+        return "reflection-output"
+    if profile["source_class"] == "system-doc":
+        return "system-doc"
+    if profile["source_class"] != "runtime-session":
+        return None
+
+    sections = profile["sections"]
+    has_session_signal = any(sections.values())
+    if not has_session_signal and profile["char_count"] < 220:
+        return "runtime-session-low-signal"
+    if not sections["active_task"] and not sections["assistant_state"] and profile["line_count"] < 6:
+        return "runtime-session-no-task-state"
+    return None
+
+
 def summarise_episode(path: Path, generative: bool = True) -> str:
     """Summary of a single source note.
 
@@ -267,6 +304,8 @@ def summarise_episode(path: Path, generative: bool = True) -> str:
     title, body = _read_body(path)
     if not body:
         return ""
+    if _promotion_block_reason(path, body):
+        return ""
     rel = path.relative_to(VAULT)
 
     if generative:
@@ -276,8 +315,11 @@ def summarise_episode(path: Path, generative: bool = True) -> str:
                 "You are Shay's offline memory-consolidation agent (a 'dream' "
                 "pass). Read the session/source note below and write a tight "
                 "episodic narrative in 3-6 sentences: what happened, what was "
-                "decided, and what is still open. Do not invent facts. Never "
-                "include secrets/keys/tokens — write [REDACTED]. Output only "
+                "decided, and what is still open. Separate observation from "
+                "interpretation: report what happened, do not speculate beyond "
+                "the note. Ignore operational noise like bare timestamps, file "
+                "counts, or command chatter unless they materially changed a "
+                "decision. Do not invent facts. Never include secrets/keys/tokens — write [REDACTED]. Output only "
                 "the narrative, no preamble.\n\n"
                 f"# {title}\n\n{body[:8000]}"
             )
@@ -340,7 +382,11 @@ def _distill_semantic(episodes_text: str, dry: bool) -> str:
         "projects, decisions, or standing methods, emit one bullet prefixed "
         "with its operation: [ADD] new fact, [UPDATE] refines an existing one, "
         "or [NOOP] already known. Annotate only — never propose deletion. Be "
-        "terse and de-duplicated. Never include secrets — write [REDACTED]. "
+        "terse and de-duplicated. Promote only facts that are explicit durable "
+        "preferences, recurring constraints, standing architecture rules, or "
+        "decisions likely to matter beyond this week. Mark one-off task status, "
+        "ephemeral command output, timestamps, file counts, and transient "
+        "debug chatter as [NOOP]. Never include secrets — write [REDACTED]. "
         "Output only the bullet list.\n\n"
         f"{episodes_text[:9000]}"
     )
@@ -359,12 +405,37 @@ def _synthesise_reflective(semantic_text: str, dry: bool) -> str:
         "From the semantic candidates below, surface at most 3 STANDING "
         "patterns: recurring mistakes, durable preferences, or identity-level "
         "constraints worth promoting to L3 (SOUL/cerebrum). These REQUIRE human "
-        "ratification. One terse bullet each, marked [L3-CANDIDATE]. Never "
-        "include secrets. Output only the bullets.\n\n"
+        "ratification. Only surface a candidate when it is backed by repeated "
+        "signals or an explicit always/never-style directive. Reject one-off "
+        "task details, temporary blockers, and execution logs. One terse bullet "
+        "each, marked [L3-CANDIDATE]. Never include secrets. Output only the bullets.\n\n"
         f"{semantic_text[:8000]}"
     )
     out = aux(prompt)
     return out.strip() if out else "_(aux model returned nothing — review by hand)_"
+
+
+def _collect_source_audit(sources: list[tuple[Path, float]]) -> dict:
+    by_class: dict[str, int] = {}
+    skipped: dict[str, int] = {}
+    eligible: list[tuple[Path, float]] = []
+    for path, mtime in sources:
+        _title, body = _read_body(path)
+        if not body:
+            skipped["empty-body"] = skipped.get("empty-body", 0) + 1
+            continue
+        source_class = _source_class(path)
+        by_class[source_class] = by_class.get(source_class, 0) + 1
+        reason = _promotion_block_reason(path, body)
+        if reason:
+            skipped[reason] = skipped.get(reason, 0) + 1
+            continue
+        eligible.append((path, mtime))
+    return {
+        "eligible": eligible,
+        "source_classes": by_class,
+        "skipped": skipped,
+    }
 
 
 def run(window_hours: int, dry: bool) -> int:
@@ -380,7 +451,9 @@ def run(window_hours: int, dry: bool) -> int:
         "mode": aux_mode,
         "status_file": str(STATUS_FILE),
     })
-    sources = sorted(_iter_source_notes(window_hours), key=lambda t: t[1], reverse=True)
+    discovered_sources = sorted(_iter_source_notes(window_hours), key=lambda t: t[1], reverse=True)
+    audit = _collect_source_audit(discovered_sources)
+    sources = sorted(audit["eligible"], key=lambda t: t[1], reverse=True)
 
     if not sources:
         _write_status({
@@ -390,7 +463,10 @@ def run(window_hours: int, dry: bool) -> int:
             "window_hours": window_hours,
             "dry_run": dry,
             "mode": aux_mode,
+            "discovered_source_count": len(discovered_sources),
             "source_count": 0,
+            "source_classes": audit["source_classes"],
+            "skipped": audit["skipped"],
         })
         print(f"reflect: no L0/L1 notes modified in the last {window_hours}h — nothing to do.")
         return 0
@@ -463,8 +539,11 @@ def run(window_hours: int, dry: bool) -> int:
         "window_hours": window_hours,
         "dry_run": dry,
         "mode": aux_mode,
+        "discovered_source_count": len(discovered_sources),
         "source_count": len(sources),
         "episode_count": len(episodes),
+        "source_classes": audit["source_classes"],
+        "skipped": audit["skipped"],
         "outputs": {
             "episodic": str(EPISODIC / f"{today}.md"),
             "semantic": str(SEMANTIC / f"{today}.md"),
