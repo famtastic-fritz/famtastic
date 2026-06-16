@@ -1,3 +1,9 @@
+---
+title: Agent-OS-Build
+type: note
+permalink: famtastic/projects/agent-os-build
+---
+
 # Agent OS Build — Session Handoff
 
 Date: 2026-05-26

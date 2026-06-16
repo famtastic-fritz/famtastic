@@ -1,3 +1,9 @@
+---
+title: Fritz-Context-2026-05-28
+type: note
+permalink: famtastic/daily/fritz-context-2026-05-28
+---
+
 # Fritz Context — 2026-05-28T23:55:40.733534
 
 **Front App:** Shay Desktop

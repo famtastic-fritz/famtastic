@@ -1,3 +1,9 @@
+---
+title: README
+type: note
+permalink: famtastic/readme
+---
+
 # FAMtastic Agent OS — Obsidian Vault
 
 This is the shared brain for all agents, skills, and workflows.

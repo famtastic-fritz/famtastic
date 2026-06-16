@@ -1,3 +1,9 @@
+---
+title: DEV-REPOS-RESEARCH-SUMMARY
+type: note
+permalink: famtastic/04-research-revenue/dev-repos-research-summary
+---
+
 # dev-repos-3-001.zip — quick inspection
 
 Source ZIP: `/Users/famtasticfritz/Downloads/dev-repos-3-001.zip`

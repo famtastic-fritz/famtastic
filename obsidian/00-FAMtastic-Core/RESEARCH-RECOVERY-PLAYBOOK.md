@@ -1,3 +1,9 @@
+---
+title: RESEARCH-RECOVERY-PLAYBOOK
+type: note
+permalink: famtastic/00-famtastic-core/research-recovery-playbook
+---
+
 # Research Recovery & Consolidation Playbook (through Shay)
 
 > **Why this exists:** Fritz spent a full week of Codex subscription usage in one day

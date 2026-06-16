@@ -1,3 +1,9 @@
+---
+title: PLATFORM-INTEL-CAPTURE-2026-05-19
+type: note
+permalink: famtastic/01-shay/platform-intel-capture-2026-05-19
+---
+
 ## PLATFORM-INTEL-CAPTURE-2026-05-19.md
 
 23.85 KB •399 lines•Formatting may be inconsistent from source  
@@ -398,4 +404,4 @@ The journey from "FAMtastic Site Studio" (one app) to "FAMtastic Platform" (thre
 
 \---
 
-\*End of capture. This document should be re-read at the start of any session that touches platform-level decisions. Updates go via append \+ date stamp, not overwrite — the history is the proof.\*  
+\*End of capture. This document should be re-read at the start of any session that touches platform-level decisions. Updates go via append \+ date stamp, not overwrite — the history is the proof.\*

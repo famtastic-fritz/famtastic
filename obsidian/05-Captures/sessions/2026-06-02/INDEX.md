@@ -2,6 +2,7 @@
 type: session-index
 date: 2026-06-02
 maintained_by: SESSION-2556c576 (workshop-dashboard reconciliation)
+permalink: famtastic/05-captures/sessions/2026-06-02/index
 ---
 
 # Sessions — 2026-06-02

@@ -1,3 +1,9 @@
+---
+title: COMMAND-CENTER-UX-SPEC
+type: note
+permalink: famtastic/00-famtastic-core/command-center-ux-spec
+---
+
 # Shay Command Center — Information-Architecture Spec (2026-06-06)
 
 > Produced with the `ui-ux-advisor` skill. This is the design north-star: what

@@ -1,3 +1,9 @@
+---
+title: SHAY-STABILIZE-THEN-MONETIZE-2026-06-04
+type: note
+permalink: famtastic/01-shay/shay-stabilize-then-monetize-2026-06-04
+---
+
 # Shay: Stabilize → Monetize (decision 2026-06-04)
 
 > Conclusion of a long debugging session with Fritz. Captures the diagnosis, the

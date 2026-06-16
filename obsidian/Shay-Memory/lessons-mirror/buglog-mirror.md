@@ -1,6 +1,6 @@
 ---
 title: Buglog Lessons (mirrored for Shay)
-synced: 2026-06-01 06:44:19.908272
+synced: 2026-06-16 12:16:56.968508
 source: .wolf/buglog.json
 tags:
 - buglog
@@ -10,12 +10,6 @@ permalink: shay-memory/lessons-mirror/buglog-mirror
 ---
 
 # Buglog — last 30 lessons (mirrored into Shay's vault)
-
-## #232 (2026-05-31)
-**Issue:** [planning] build_app: Promote Providers screen to live CRUD via keychain IPC. Type scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=["src/renderer/src/screens/Providers/index.tsx(193,6): error TS17008: JSX element 'div' has no corresponding closing tag.", "src/renderer/src/screens/Providers/in
-**Root cause:** typecheck: cross-file contract or a runtime render issue the brain couldn't resolve
-**Fix:** narrow the manifest, add grounded context, or split into smaller builds
-**Tags:** ['build-app', 'multi-file', 'typecheck', 'planning', 'self-learning']
 
 ## #233 (2026-05-31)
 **Issue:** [planning] build_app: Create CaptureInbox screen reading the Shay-Memory/inbox cap scored 3/10: build failed at typecheck stage; detail: Failed at typecheck. typecheck_errors=["shell exit 2: \n> shay-desktop@0.4.3 typecheck:node\n> tsc --noEmit -p tsconfig.node.json --composite false\n\n\n> shay-desktop@0.4.3 typecheck:web\n> tsc --noE
@@ -190,3 +184,9 @@ permalink: shay-memory/lessons-mirror/buglog-mirror
 **Root cause:** build_app's per-file context window is too small for full screens; typecheck/build don't catch missing-runtime-IPC-handler; only a navigated render+console-error sweep does
 **Fix:** For real screen builds, spawn a full-context Claude build-agent (full repo read, gate-before-commit) — it shipped 5 screens clean where build_app blocked 5; QA = navigated Playwright-electron sweep (domain-first nav) + console/page-error capture + vision judge; this caught the models:list mismatch; Vision model over-flags ellipsis truncation — weight functionality (0 console errors) over vision style nitpicks; fix shared nav/label width once
 **Tags:** ['build-agent', 'qa', 'ipc', 'do-not-repeat', 'desktop', 'planning', 'self-learning']
+
+## #shay-compression-ctx-floor (2026-06-06T01:04:02.158420)
+**Issue:** Failed to initialize agent: Auxiliary compression model qwen3:14b context (40,960) is below the minimum 64,000 required for compression.
+**Root cause:** Shay auto-summarizes/compresses context when the window fills using an AUX model. The configured compression model qwen3:14b is served by Ollama at its default num_ctx 40,960, which is under the compressor hard floor of 64,000 → agent init aborts. Recurs because ~/.shay/config.yaml is runtime (not git-tracked) and resets on nuke/reinstall, dropping any prior override.
+**Fix:** Point compression at a big-context local model already installed: set auxiliary.compression.model: hermes3:latest (131K native ctx) and context_length: 131072. Robust alternative (keep qwen3): set auxiliary.compression.context_length: 65536 AND ensure Ollama serves qwen3 with num_ctx>=65536. Durable restore snippet tracked at shay-agent-os/config/shay-aux-compression.fix.yaml; apply after any ~/.shay reset.
+**Tags:** ['shay', 'compression', 'context-window', 'aux-model', 'config', 'recurring', 'ollama']

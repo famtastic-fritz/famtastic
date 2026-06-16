@@ -2,7 +2,13 @@
 title: Capability Engine
 date: 2026-06-08
 status: active
-tags: [capability-engine, agent-routing, dispatch, gap-tracking, living-system]
+tags:
+- capability-engine
+- agent-routing
+- dispatch
+- gap-tracking
+- living-system
+permalink: famtastic/01-shay/capability-engine
 ---
 
 # Capability Engine

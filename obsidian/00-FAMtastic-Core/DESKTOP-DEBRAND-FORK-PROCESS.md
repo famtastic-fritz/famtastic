@@ -1,3 +1,9 @@
+---
+title: DESKTOP-DEBRAND-FORK-PROCESS
+type: note
+permalink: famtastic/00-famtastic-core/desktop-debrand-fork-process
+---
+
 # Desktop — Fork-and-Debrand: the repeatable process
 
 > Plain and simple. An "exact copy of the hermes desktop, unbranded, in a new repo" is a

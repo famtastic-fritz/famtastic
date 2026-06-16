@@ -1,3 +1,9 @@
+---
+title: 01-open-models-as-brains
+type: note
+permalink: famtastic/05-captures/research/2026-06-04-model-landscape/01-open-models-as-brains
+---
+
 # Free Open-Weight LLMs as Agentic Brains — Mid-2026
 > Background research swarm, agent 1 of 3. Raw report — synthesized into SHAY-MODEL-LANDSCAPE.md.
 

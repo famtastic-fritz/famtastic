@@ -1,3 +1,9 @@
+---
+title: Fritz-Context-2026-05-27
+type: note
+permalink: famtastic/daily/fritz-context-2026-05-27
+---
+
 # Fritz Context — 2026-05-27T23:55:30.451689
 
 **Front App:** 

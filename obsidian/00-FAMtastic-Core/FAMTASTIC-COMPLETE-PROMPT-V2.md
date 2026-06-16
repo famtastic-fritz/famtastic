@@ -1,3 +1,9 @@
+---
+title: FAMTASTIC-COMPLETE-PROMPT-V2
+type: note
+permalink: famtastic/00-famtastic-core/famtastic-complete-prompt-v2
+---
+
 # FAMtastic Site Studio — Complete Build Prompt
 ## Phase 0: Codex Remediation → Phase 1: UX Audit → Phase 2: Integration → Phase 3: Session 5 → Phase 4: Session 6 → Phase 5: Final Report
 

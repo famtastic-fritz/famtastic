@@ -1,3 +1,9 @@
+---
+title: FAMTASTIC-CORE-BUILD-PRINCIPLES
+type: note
+permalink: famtastic/00-famtastic-core/famtastic-core-build-principles
+---
+
 # FAMtastic Core Build Principles
 ### The Living Foundation of the Empire
 

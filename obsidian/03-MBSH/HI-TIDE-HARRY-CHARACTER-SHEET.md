@@ -1,3 +1,9 @@
+---
+title: HI-TIDE-HARRY-CHARACTER-SHEET
+type: note
+permalink: famtastic/03-mbsh/hi-tide-harry-character-sheet
+---
+
 # Hi-Tide Harry — Character Sheet Spec
 
 **Status:** Pre-generation lock document

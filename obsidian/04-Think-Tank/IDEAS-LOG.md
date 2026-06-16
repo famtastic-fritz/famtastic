@@ -1,3 +1,9 @@
+---
+title: IDEAS-LOG
+type: note
+permalink: famtastic/04-think-tank/ideas-log
+---
+
 # FAMtastic Think Tank — Vetted Ideas, Ready to Build
 
 The build queue. Ideas that have been captured (in FAMtastic Thoughts), vetted, and are now ready to be designed/built. Each entry uses a creative seed-themed name — not "Lane A/B/C" — because naming is part of the philosophy.

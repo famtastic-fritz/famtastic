@@ -1,3 +1,9 @@
+---
+title: TOOLING-DECISIONS
+type: note
+permalink: famtastic/00-famtastic-core/tooling-decisions
+---
+
 # Shay Ecosystem — Tooling Decisions (Phase 0 research, 2026-06-07)
 
 > Produced by a 6-agent cheap research swarm (Sonnet) with adversarial fact-checking.

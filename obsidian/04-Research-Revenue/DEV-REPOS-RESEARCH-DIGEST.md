@@ -1,3 +1,9 @@
+---
+title: DEV-REPOS-RESEARCH-DIGEST
+type: note
+permalink: famtastic/04-research-revenue/dev-repos-research-digest
+---
+
 # dev-repos-3-001 — Research Digest
 
 Source: `/Users/famtasticfritz/Downloads/dev-repos-3-001.zip`

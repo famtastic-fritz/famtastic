@@ -1,3 +1,9 @@
+---
+title: MBSH-VIBE-RECOVERY-REPORT
+type: note
+permalink: famtastic/03-mbsh/mbsh-vibe-recovery-report
+---
+
 # MBSH Vibe Recovery and Completion Report
 
 **Captured by:** Claude Web (this conversation thread)

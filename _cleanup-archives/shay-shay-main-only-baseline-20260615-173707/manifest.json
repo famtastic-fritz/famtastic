@@ -1,0 +1,161 @@
+{
+  "created_at": "2026-06-15 17:37:07 -0400",
+  "repo": "/Users/famtasticfritz/famtastic/shay-shay",
+  "archive_dir": "/Users/famtasticfritz/famtastic/_cleanup-archives/shay-shay-main-only-baseline-20260615-173707",
+  "origin_main_before": "8b1b32c92ed48c1a0462f4a0a9eb6c0ba81f24e2",
+  "local_main_before": "dd7c44e71f442c71592bae4b49e6d21257856568",
+  "worktrees": [
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay",
+      "head": "dd7c44e71f442c71592bae4b49e6d21257856568",
+      "branch": "main"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-capability-truth-layer-20260614",
+      "head": "151f7639a6407e1303c26b81233c21f0732dea9f",
+      "branch": "feature/capability-truth-layer-20260614"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-core-identity-recovery-20260615",
+      "head": "5ee8749e08e3e30e9ac7eaa087abfd8f808d8854",
+      "branch": "recover/shay-core-identity-20260615"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-intelligence-layer-complete-20260614",
+      "head": "bde9b623e63cbb6d7364cabeb7053cf58c9e293d",
+      "branch": "feature/shay-intelligence-layer-complete-20260614"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-main-live-capability-sim-20260614",
+      "head": "bdc68d40dca8838398f5700c0f547989cff9a369",
+      "branch": "test/capability-live-main-sim-20260614"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-main-promotion-capability-truth-20260614",
+      "head": "886635d71e6ec1bfa3db5fb84679a2e92a2b5349",
+      "branch": "promotion/capability-truth-to-main-20260614"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-build",
+      "head": "e1133107ecfab041187bfc7c420175a40a0e5a05",
+      "branch": "shay-platform-build"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-hermes-removal-sandbox-20260613",
+      "head": "f6e262ef519eaa188b17875d8e821c03d0c592cc",
+      "branch": "sandbox/hermes-removal-backup-of-now-20260613"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-intelligence-layer-v1-20260614",
+      "head": "dd7c44e71f442c71592bae4b49e6d21257856568",
+      "branch": "feat/shay-intelligence-layer-v1-20260614"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-main-sync-20260613",
+      "head": "f0eb658ad800064745f54a708e1f3c057e03c539",
+      "branch": "docs/hermes-removal-control-clean-20260613"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-model-fix-broader-isolation-20260613",
+      "head": "01de5dc887989578aa079c1500ab9ec96bd6f75e",
+      "branch": "test/model-switch-broader-dependency-isolation-20260613"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-model-fix-isolation-20260613",
+      "head": "ad616713bba172f0c1904d7564c68c184b0096a5",
+      "branch": "test/model-switch-dependency-isolation-20260613"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-model-fix-test-20260613",
+      "head": "20dd4b1ad239a8ddcb560afc2fc26cb5d21fcb66",
+      "branch": "test/model-switch-6519ada-clean"
+    },
+    {
+      "path": "/Users/famtasticfritz/famtastic/shay-shay-process-intelligence-mvp-20260613",
+      "head": "adfd973f354bb60dad8a6aa042ebd204a79f4add",
+      "branch": "feat/process-intelligence-mvp-20260613"
+    }
+  ],
+  "local_branches": [
+    "chore/hermes-v2026.5.16-security-wave|f59df6a80a9435f5efae29209abd8cfd1f98c20e|2026-05-19 10:48:45 -0400",
+    "docs/hermes-removal-control-clean-20260613|f0eb658ad800064745f54a708e1f3c057e03c539|2026-06-13 23:41:46 -0400",
+    "docs/hermes-removal-control-pr-20260613|9a5319079bc427c4eb1ad9d2e14d83fbd9e08f93|2026-06-13 23:37:41 -0400",
+    "feat/process-intelligence-mvp-20260613|adfd973f354bb60dad8a6aa042ebd204a79f4add|2026-06-14 00:33:43 -0400",
+    "feat/shay-intelligence-layer-v1-20260614|dd7c44e71f442c71592bae4b49e6d21257856568|2026-06-14 01:07:24 -0400",
+    "feature/capability-truth-layer-20260614|151f7639a6407e1303c26b81233c21f0732dea9f|2026-06-14 22:55:49 -0400",
+    "feature/shay-intelligence-layer-complete-20260614|bde9b623e63cbb6d7364cabeb7053cf58c9e293d|2026-06-15 07:05:01 -0400",
+    "main|dd7c44e71f442c71592bae4b49e6d21257856568|2026-06-14 01:07:24 -0400",
+    "memory-architecture-cleanup-only|6257ae30996b9a73d5b9fafa98e6c94f709dd573|2026-06-12 16:07:56 -0400",
+    "preserve/main-intelligence-doctrine-20260615|393b5ca88bbb86336010ba99c0769ba8ee81f4af|2026-06-15 15:18:08 -0400",
+    "promotion/capability-truth-to-main-20260614|886635d71e6ec1bfa3db5fb84679a2e92a2b5349|2026-06-14 23:03:41 -0400",
+    "recover/shay-core-identity-20260615|5ee8749e08e3e30e9ac7eaa087abfd8f808d8854|2026-06-15 17:15:58 -0400",
+    "sandbox/hermes-removal-backup-of-now-20260613|f6e262ef519eaa188b17875d8e821c03d0c592cc|2026-06-13 10:13:21 -0400",
+    "shay-platform-build|e1133107ecfab041187bfc7c420175a40a0e5a05|2026-06-12 17:10:54 -0400",
+    "sync/workstream-control-map-20260613|20dd4b1ad239a8ddcb560afc2fc26cb5d21fcb66|2026-06-13 02:16:00 -0400",
+    "test/capability-live-main-sim-20260614|bdc68d40dca8838398f5700c0f547989cff9a369|2026-06-14 23:07:36 -0400",
+    "test/model-switch-6519ada-clean|20dd4b1ad239a8ddcb560afc2fc26cb5d21fcb66|2026-06-13 02:16:00 -0400",
+    "test/model-switch-broader-dependency-isolation-20260613|01de5dc887989578aa079c1500ab9ec96bd6f75e|2026-06-13 02:34:04 -0400",
+    "test/model-switch-dependency-isolation-20260613|ad616713bba172f0c1904d7564c68c184b0096a5|2026-06-13 02:30:34 -0400"
+  ],
+  "remote_branches": [
+    "origin|8b1b32c92ed48c1a0462f4a0a9eb6c0ba81f24e2|2026-06-15 17:16:16 -0400",
+    "origin/docs/hermes-removal-control-clean-20260613|f0eb658ad800064745f54a708e1f3c057e03c539|2026-06-13 23:41:46 -0400",
+    "origin/docs/hermes-removal-control-pr-20260613|95eedb60728ed6dcd42ef33f4b1a246c55841e85|2026-06-13 22:50:17 -0400",
+    "origin/feat/process-intelligence-mvp-20260613|adfd973f354bb60dad8a6aa042ebd204a79f4add|2026-06-14 00:33:43 -0400",
+    "origin/main|8b1b32c92ed48c1a0462f4a0a9eb6c0ba81f24e2|2026-06-15 17:16:16 -0400",
+    "origin/memory-architecture-cleanup-only|6257ae30996b9a73d5b9fafa98e6c94f709dd573|2026-06-12 16:07:56 -0400",
+    "origin/recover/shay-core-identity-20260615|5ee8749e08e3e30e9ac7eaa087abfd8f808d8854|2026-06-15 17:15:58 -0400",
+    "origin/shay-platform-build|e1133107ecfab041187bfc7c420175a40a0e5a05|2026-06-12 17:10:54 -0400"
+  ],
+  "pr1_saved": true,
+  "bundle": "/Users/famtasticfritz/famtastic/_cleanup-archives/shay-shay-main-only-baseline-20260615-173707/shay-shay-pre-main-only.bundle",
+  "dirty_snapshots": {
+    "shay-capability-truth-layer-20260614": [
+      ".logs/capability-truth-layer/run-20260614-222003/pip-install.log",
+      ".logs/capability-truth-layer/run-20260614-222003/py-compile.log",
+      ".logs/capability-truth-layer/run-20260614-222003/pytest-capabilities.log",
+      ".logs/capability-truth-layer/run-20260614-222003/python_-m_shay_cli.main_capabilities_decide__ingest_GitHub_repo_into_Obsidian_.log",
+      ".logs/capability-truth-layer/run-20260614-222003/python_-m_shay_cli.main_capabilities_decide__launch_HyperSwarm_.log",
+      ".logs/capability-truth-layer/run-20260614-222003/python_-m_shay_cli.main_capabilities_decide__run_local_model_classification_.log",
+      ".logs/capability-truth-layer/run-20260614-222003/python_-m_shay_cli.main_capabilities_decide__use_Anthropic_API_for_reasoning_.log",
+      ".logs/capability-truth-layer/run-20260614-222003/python_-m_shay_cli.main_capabilities_doctor.log",
+      ".logs/capability-truth-layer/run-20260614-222003/python_-m_shay_cli.main_capabilities_list.log",
+      ".logs/capability-truth-layer/run-20260614-222003/python_-m_shay_cli.main_capabilities_show_provider-routing.log",
+      ".logs/capability-truth-layer/run-20260614-222003/ruff-check.log",
+      ".logs/capability-truth-layer/run-20260614-222003/ruff-format-apply.log",
+      ".logs/capability-truth-layer/run-20260614-222003/ruff-format.log",
+      ".logs/capability-truth-layer/run-20260614-222003/summary.txt"
+    ],
+    "shay-shay-intelligence-layer-v1-20260614": [
+      "shay_shay.egg-info/PKG-INFO",
+      "shay_shay.egg-info/SOURCES.txt",
+      "shay_shay.egg-info/requires.txt",
+      "docs/run-20260614-operator-stress-test-01.json",
+      "docs/shay-asset-registry-draft-2026-06-14.yaml",
+      "docs/shay-github-capability-ingestion-strategy-2026-06-14.md",
+      "docs/shay-operator-gap-log-2026-06-14.md",
+      "docs/shay-operator-stress-test-master-report-2026-06-14.md",
+      "docs/shay-opportunity-intelligence-notes-2026-06-14.md",
+      "docs/shay-worker-control-plane-draft-2026-06-14.md"
+    ],
+    "shay-shay-main-sync-20260613": [
+      ".shay/plans/2026-06-14_184645-famtastic-continuity-master-20260614.md",
+      "docs/famtastic-continuity-captain-packet-2026-06-14.md",
+      "docs/famtastic-continuity-master-20260614.md",
+      "docs/famtastic-shay-intelligence-master-operating-map-2026-06-14.md",
+      "docs/shay-skill-preservation-promotion-packet-2026-06-14.md"
+    ],
+    "shay-shay-model-fix-broader-isolation-20260613": [
+      ".shay-test-artifacts/all_files.txt",
+      ".shay-test-artifacts/all_files_unique.txt",
+      ".shay-test-artifacts/broader_dependency_isolation_summary.txt",
+      ".shay-test-artifacts/pytest1.txt",
+      ".shay-test-artifacts/pytest2.txt"
+    ],
+    "shay-shay-model-fix-isolation-20260613": [
+      ".shay-test-artifacts/all_files.txt",
+      ".shay-test-artifacts/all_files_unique.txt",
+      ".shay-test-artifacts/dependency_isolation_summary.txt"
+    ]
+  }
+}

@@ -1,3 +1,9 @@
+---
+title: Shay-Hermes-Sibling-Architecture
+type: note
+permalink: famtastic/projects/shay-hermes-sibling-architecture
+---
+
 # Shay-Shay & Hermes: Sibling Architecture
 
 ## Philosophy

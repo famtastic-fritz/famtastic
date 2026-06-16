@@ -1,3 +1,9 @@
+---
+title: VAULT-SEMANTIC-REBUILD-HANDOFF
+type: note
+permalink: famtastic/01-shay/vault-semantic-rebuild-handoff
+---
+
 # Vault-Semantic Rebuild — handoff for Shay (2026-06-05)
 
 > Rebuild the whole-vault semantic search MCP (the "great memory" upgrade). The nuke wiped

@@ -1,3 +1,9 @@
+---
+title: 01-repo-analysis
+type: note
+permalink: famtastic/08-revenue/hands-off-research/01-repo-analysis
+---
+
 # Hands-Off Income Research — Repo Analysis (agent 1 of 3)
 > Overnight swarm, 2026-06-05. Raw. Synthesized into FRITZ-HANDS-OFF-INCOME-PLAY.md once all 3 land.
 

@@ -1,3 +1,9 @@
+---
+title: MBSH-REUNION-PLANNING-CONSOLIDATED
+type: note
+permalink: famtastic/03-mbsh/mbsh-reunion-planning-consolidated
+---
+
 # MBSH Class of '96 Reunion Site — Consolidated Planning Doc
 
 **Status:** Pre-build planning artifact

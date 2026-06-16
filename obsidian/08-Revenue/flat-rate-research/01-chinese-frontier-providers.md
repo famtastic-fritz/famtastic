@@ -1,3 +1,9 @@
+---
+title: 01-chinese-frontier-providers
+type: note
+permalink: famtastic/08-revenue/flat-rate-research/01-chinese-frontier-providers
+---
+
 # Flat-Rate Brains — Chinese/Frontier Providers (agent 1 of 3)
 > Background swarm 2026-06-05. Raw. Synthesized into FLAT-RATE-BRAINS.md once all 3 land.
 > FLAT-RATE = fixed $/month with an allowance. Metered & free-capped excluded.

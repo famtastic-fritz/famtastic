@@ -1,0 +1,27 @@
+  chore/hermes-v2026.5.16-security-wave                     f59df6a security: port upstream hardening wave
++ docs/hermes-removal-control-clean-20260613                f0eb658 (/Users/famtasticfritz/famtastic/shay-shay-main-sync-20260613) [origin/docs/hermes-removal-control-clean-20260613] docs: add clean Hermes removal control packet
+  docs/hermes-removal-control-pr-20260613                   9a53190 [origin/main: ahead 10, behind 3] docs: add PR 3 split manifest
++ feat/process-intelligence-mvp-20260613                    adfd973 (/Users/famtasticfritz/famtastic/shay-shay-process-intelligence-mvp-20260613) [origin/feat/process-intelligence-mvp-20260613] feat: add process intelligence ledger MVP [docs]
++ feat/shay-intelligence-layer-v1-20260614                  dd7c44e (/Users/famtasticfritz/famtastic/shay-shay-intelligence-layer-v1-20260614) [origin/main: behind 1] feat: add process intelligence ledger MVP [docs] (#5)
++ feature/capability-truth-layer-20260614                   151f763 (/Users/famtasticfritz/famtastic/shay-capability-truth-layer-20260614) [origin/main: ahead 1, behind 1] feat: add capability truth layer CLI
++ feature/shay-intelligence-layer-complete-20260614         bde9b62 (/Users/famtasticfritz/famtastic/shay-intelligence-layer-complete-20260614) fix: surface capability status in routing output
+* main                                                      dd7c44e [origin/main: behind 1] feat: add process intelligence ledger MVP [docs] (#5)
+  memory-architecture-cleanup-only                          6257ae3 [origin/memory-architecture-cleanup-only] docs: fix memory compaction markdown fence
+  preserve/main-intelligence-doctrine-20260615              393b5ca feat: preserve local intelligence and doctrine work
++ promotion/capability-truth-to-main-20260614               886635d (/Users/famtasticfritz/famtastic/shay-main-promotion-capability-truth-20260614) [origin/main: ahead 1, behind 1] feat: add capability truth layer CLI
++ recover/shay-core-identity-20260615                       5ee8749 (/Users/famtasticfritz/famtastic/shay-core-identity-recovery-20260615) [origin/recover/shay-core-identity-20260615] docs: remove unrelated github-to-obsidian skill
++ sandbox/hermes-removal-backup-of-now-20260613             f6e262e (/Users/famtasticfritz/famtastic/shay-shay-hermes-removal-sandbox-20260613) docs: consolidate Hermes removal promotion plan
++ shay-platform-build                                       e113310 (/Users/famtasticfritz/famtastic/shay-shay-build) docs: review platform memory runtime alignment
+  sync/workstream-control-map-20260613                      20dd4b1 [origin/main: behind 3] docs: add Shay workstream control map
++ test/capability-live-main-sim-20260614                    bdc68d4 (/Users/famtasticfritz/famtastic/shay-main-live-capability-sim-20260614) feat: add process intelligence ledger MVP [docs] (#5)
++ test/model-switch-6519ada-clean                           20dd4b1 (/Users/famtasticfritz/famtastic/shay-shay-model-fix-test-20260613) [origin/main: behind 3] docs: add Shay workstream control map
++ test/model-switch-broader-dependency-isolation-20260613   01de5dc (/Users/famtasticfritz/famtastic/shay-shay-model-fix-broader-isolation-20260613) [origin/main: ahead 9, behind 3] fix(model): stabilize model selection and provider resolution
++ test/model-switch-dependency-isolation-20260613           ad61671 (/Users/famtasticfritz/famtastic/shay-shay-model-fix-isolation-20260613) [origin/main: ahead 1, behind 3] fix(cli): model picker reads from config
+  remotes/origin/HEAD                                       -> origin/main
+  remotes/origin/docs/hermes-removal-control-clean-20260613 f0eb658 docs: add clean Hermes removal control packet
+  remotes/origin/docs/hermes-removal-control-pr-20260613    95eedb6 docs: normalize Title 6 truth surfaces
+  remotes/origin/feat/process-intelligence-mvp-20260613     adfd973 feat: add process intelligence ledger MVP [docs]
+  remotes/origin/main                                       8b1b32c docs: restore Shay identity and guard-rails packet (#6)
+  remotes/origin/memory-architecture-cleanup-only           6257ae3 docs: fix memory compaction markdown fence
+  remotes/origin/recover/shay-core-identity-20260615        5ee8749 docs: remove unrelated github-to-obsidian skill
+  remotes/origin/shay-platform-build                        e113310 docs: review platform memory runtime alignment

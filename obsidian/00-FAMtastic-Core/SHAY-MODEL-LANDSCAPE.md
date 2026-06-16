@@ -1,3 +1,9 @@
+---
+title: SHAY-MODEL-LANDSCAPE
+type: note
+permalink: famtastic/00-famtastic-core/shay-model-landscape
+---
+
 # Shay Model Landscape — free/open/frontier brains & how to add them (2026-06-04)
 
 > Synthesis of a 3-agent background research swarm (raw reports in

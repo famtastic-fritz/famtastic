@@ -1,3 +1,9 @@
+---
+title: MASTER-STATUS-2026-05-29
+type: note
+permalink: famtastic/00-inbox/master-status-2026-05-29
+---
+
 # FAMtastic Master Status Board
 **Last Updated:** 2026-05-29 — Late Night Session
 **Status Key:** ✅ Done | 🔄 In Progress | ⏸ Parked/Needs Convo | 🔥 Blocked | ⏰ Scheduled

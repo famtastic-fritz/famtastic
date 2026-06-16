@@ -1,3 +1,9 @@
+---
+title: ambient-status
+type: note
+permalink: famtastic/01-inbox/ambient-status
+---
+
 # Ambient Status — 2026-05-27 12:28
 
 ## Desktop Snapshot

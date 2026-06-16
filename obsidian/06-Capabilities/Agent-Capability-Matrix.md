@@ -1,3 +1,9 @@
+---
+title: Agent-Capability-Matrix
+type: note
+permalink: famtastic/06-capabilities/agent-capability-matrix
+---
+
 # Agent Capability Matrix
 
 Last updated: 2026-06-02 (added humanize-writing skill; installed for Claude Code + Shay)

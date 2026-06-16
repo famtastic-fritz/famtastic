@@ -1,3 +1,9 @@
+---
+title: STUDIO-V3-BUILD-PLAN-v1
+type: note
+permalink: famtastic/02-site-studio/studio-v3-build-plan-v1
+---
+
 # FAMtastic Site Studio v3 — Build Plan
 ## The Next Milestone
 

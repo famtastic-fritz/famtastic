@@ -1,5 +1,15 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Shay capability/intelligence completion wave — matrix truth + delivery-aware status (2026-06-16)
+
+In `~/famtastic/shay-shay/` on branch `feature/complete-capability-matrix-intelligence-layer`, the recovered capability truth and intelligence surfaces were pushed past the starter-grade baseline into a more usable live CLI. `shay_cli/capabilities_cmd.py` now recognizes operating-brief / delivery / critical-item-review / FAMtastic Thoughts / visual-architecture / code-driven-video asks as first-class routing patterns instead of falling back to generic matches, and `shay capabilities show compatibility-matrix` plus `shay capabilities show intelligence-layer` now expose virtual truth bundles directly from the live command surface.
+
+`shay_cli/intelligence_cmd.py` now reports `verified_delivery_path`, `action_loop_status`, `worker_control_status`, and `open_gap_count` in `intelligence_status()`, and the morning brief renderer now pulls from a structured payload that includes gap ownership, delivery/action-loop proof, worker state, and recommendation blocks. The matrix command also prints open-gap ownership summaries, so capability truth and intelligence-gap truth stop living in separate unreadable pockets.
+
+Proof run on the repo-local environment at `~/famtastic/shay-shay/.venv`: `.venv/bin/python -m pytest -q tests/test_capabilities_cmd.py tests/test_intelligence_layer.py` → 58 passed; CLI verification also ran through `shay capabilities doctor`, `shay capabilities show compatibility-matrix`, `shay capabilities show intelligence-layer`, `shay capabilities decide "deliver morning brief via today hub report"`, `shay intelligence status`, `shay intelligence matrix`, and `shay intelligence morning-brief`. Current honest truth: verified delivery is `cli_report`, the action loop is `working`, worker controls are `working`, production HyperSwarm remains intentionally gated, and context-compression continuity remains a tracked partial gap rather than a claimed completion.
+
+Known gaps kept honest: external push delivery is still not the verified production truth path here; publish flows for FAMtastic Thoughts remain review-blocked; and context compression / memory continuity is still partial. Those gaps are now surfaced more explicitly instead of being hidden behind generic "working" language.
+
 ## Morning briefing operating system bootstrap (2026-06-16)
 
 Created a first-class briefing artifact set under `obsidian/01-Shay-Platform/` so Shay can stop reconstructing morning reality from scattered chat context. The current file set is: `DEEP-DIVE-CONVERSATION-PLAN-PARSE.md` (deep-dive conversation converted into doctrine-shaped lane/project/plan/workstream/task structures), `ACTIVE-PLAN-REGISTRY.md` (current active and parked plan index), `MORNING-BRIEF-INTERVIEW.md` (interactive intake/writeback flow), `MORNING-BRIEFING-SYSTEM-SPEC.md` (system behavior and command rules), and `LATEST-BRIEFING.md` (the current operator-facing briefing artifact).

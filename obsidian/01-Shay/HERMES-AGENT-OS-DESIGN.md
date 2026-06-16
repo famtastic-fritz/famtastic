@@ -1,4 +1,10 @@
- HERMES Agent OS — Design.md
+---
+title: HERMES-AGENT-OS-DESIGN
+type: note
+permalink: famtastic/01-shay/hermes-agent-os-design
+---
+
+HERMES Agent OS — Design.md
 
 ## 1. Concept Overview
 

@@ -1,3 +1,9 @@
+---
+title: SHAY-REBRAND-PROMPT-2026-05-19
+type: note
+permalink: famtastic/05-captures/archive/shay-rebrand-prompt-2026-05-19
+---
+
 ## SHAY-REBRAND-PROMPT-2026-05-19.md
 
 9.58 KB •228 lines•Formatting may be inconsistent from source  
@@ -227,4 +233,4 @@ Once you get the Telegram notification from Hermes:
 1\. Open \`\~/famtastic/shay-shay/REBRAND-REPORT-2026-05-19.md\` and skim the changes  
 2\. Copy the contents of \`SHAY-IDENTITY-2026-05-19.md\` into \`\~/famtastic/shay-shay/SOUL.md\`, replacing the placeholder  
 3\. Run \`shay\` for the first time  
-4\. She wakes up as Shay, reads her SOUL, runs her orientation pass on the Core Five files, and is ready to work  
+4\. She wakes up as Shay, reads her SOUL, runs her orientation pass on the Core Five files, and is ready to work

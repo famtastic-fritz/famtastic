@@ -4,11 +4,11 @@ type: note
 permalink: shay-memory/repo-docs/famtastic-state
 ---
 
-<!-- mirrored 2026-06-01T06:44:19.908567 from ~/famtastic/FAMTASTIC-STATE.md -->
+<!-- mirrored 2026-06-16T12:16:56.968808 from ~/famtastic/FAMTASTIC-STATE.md -->
 
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-05-21 (Final pre-Phase-2 consolidation completed: Phase 2 plan of record is tracked, broader pre-Shay-Shay worktree references are archived under `docs/archive/pre-shay-shay/`, Phase 2A brand/remotion starting inputs are tracked, local nested repos/probes are ignored, and Phase 1 foundation remains current.)
+**Last updated:** 2026-06-16 (Morning briefing operating-system bootstrap added under `obsidian/01-Shay-Platform/`: deep-dive plan parse, active-plan registry, latest briefing artifact, interactive interview flow, and system spec. Fresh sessions can now pick up `show me my latest briefing`, `show me the plans we have`, and `start my morning briefing` from durable artifacts rather than only live chat context.)
 
 ---
 
@@ -19,6 +19,8 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 The system is currently single-user and localhost-only, built and operated by Fritz Medine. The architectural goal — captured in the canonical vision doc `docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md` — is the **Adobe Creative Cloud pattern**: separate full-identity studios (Site, Component, Media, Think Tank) atop shared Platform services (research, memory, intelligence loop, learning).
 
 **Key recent milestones:**
+
+- **2026-06-15** — Shay capability/intelligence restore baseline and repo-local environment bootstrap. Verified that `~/famtastic/shay-shay` `main` is the canonical clean baseline but not the full surviving truth of preserved Shay work. Restored the off-main capability/intelligence command surfaces into the live working tree without replaying whole branches: `shay_cli/capabilities_cmd.py`, `shay_cli/intelligence_cmd.py`, `shay_cli/intelligence_seed.py`, `tests/test_capabilities_cmd.py`, `tests/test_intelligence_layer.py`, and `shay_cli/main.py` parser wiring for `capabilities` + `intelligence`. `PERSONA.md` and `SOUL.md` were protected and unchanged. Bootstrapped `~/famtastic/shay-shay/.venv` with editable `.[dev]` install so runtime checks can use the correct interpreter/dependency set. Remaining review-later buckets from preserved branches include recall/session-memo plumbing and selected gateway/control-plane files; these should be re-imported surgically by topic rather than branch resurrection.
 
 - **2026-05-21** — Final pre-Phase-2 consolidation and clean-state prep. The current plan of record is `plans/PHASE2-VISUAL-WORKFLOWS-BRAND-SYSTEMS.md`. Broader pre-Shay-Shay worktree material was harvested into `docs/archive/pre-shay-shay/full-snapshots/` instead of merging stale UI/code wholesale; bulk MuAPI logo/media WIPs were preserved locally and indexed by `docs/archive/pre-shay-shay/local-artifact-manifests/epic-mclean-muapi-logo-outputs.md`. Phase 2A starting inputs are now tracked in main via `brand/FAMTASTIC-BRAND-MARK.md` and the `remotion/` FAMtastic logo motion composition source. Local nested repos/probes (`shay-shay/`, `shay-desktop*/`, `_tool-probes/`, etc.) are ignored by the hub repo; useful findings must be promoted into tracked docs/plans/Data Center records or separate repos.
 
@@ -233,6 +235,24 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Chat Session-Break Divider** *(2026-04-25)* — `addChatSessionBreak(label, opts)` in `index.html` inserts a styled divider into `#chat-messages` on TAG change (via `handleSiteSwitch`) and on WS reconnect (via `ws.onopen` after `/api/config` resolves). Dedupe via `__lastChatBreakTag` and `__lastChatBreakKey`. CSS: `.chat-session-break` in `studio-chat.css`.
 
+### Command Center / Mission Control *(2026-06-02)*
+
+**Command Center generator** — `scripts/command-center/build-command-center.js` (no deps). Read-only aggregator over the live ledgers (registry, tasks, runs, proofs, agents, capabilities, sites) that emits `command-center/{index.html, briefing.md, state.json}`: a mobile-first dashboard (Chart.js CDN — plan-health doughnut + autonomy×profit quadrant), a "Virtual Fritz" daily briefing, and a machine snapshot. Per-plan it derives **stage / momentum / autonomy / profit** plus a **Fritz-priority** flag (`fritz_priority`/label `priority: "high"` → ⭐ tile, card badge, "Your priorities" briefing section, priority-first sort); scoring is tunable in the `SCORING` constant. Tracked as plan `mission-control-command-center`. This is the visual cockpit the "Mission Control visual orchestration" gaps called for, built as an independent ledger reader (see Known Gaps: reconcile with `buildMissionControlSnapshot()`). Two high-priority product plans now ride this board: `shay-omnipresent-assistant` (make Shay reachable everywhere — phone/web/voice/watch/AR glasses — with a virtual body; research-first via `docs/shay-fritz-ready/VIRTUAL-ASSISTANT-LANDSCAPE.md`) and `fritz-companion-app` (a phone clone of how Fritz talks to his second-in-command; the Phase-3 phone companion).
+
+**Shay billing capability** — `platform/capabilities/billing/{generate-invoice,list-invoices,mark-paid}.sh` + `invoice-spec.schema.json`. Real invoice generation (math, numbering, ledger state machine) with an optional `payment` block — Cash App (`method:cashapp`, renders pay-line + `cash.app` link) or a hosted `link`; send/PDF are still `manual_required` (sends run on Fritz's Mac via Reach Fabric). Registered as `billing.*`.
+
+**register-credential skill + vault.register-credential** *(2026-06-02)* — `.claude/skills/register-credential/` + `platform/capabilities/vault/register-credential.sh`. The one sanctioned way to vault a secret (reads from env/stdin, never argv/echo) and verify the dependent capability. Resend go-live runbook: `docs/runbooks/RESEND-REACH-GO-LIVE.md`.
+
+**Autonomous content engine** *(2026-06-02)* — `scripts/content-engine/` (plan `autonomous-content-engine`). Fritz's chosen hands-off revenue path: quality-gated SEO/affiliate article generator (`generate-article.js`, reuses `BrainInterface`, offline template fallback), static-site assembler, cron publish. Niche: backyard chicken keeping. Quality gate enforces Google scaled-content-abuse compliance. Generated output gitignored. Honest: months to revenue, pays to a bank (not Cash App), monetization accounts are Fritz-only.
+
+**Shay work-ops capability** — `platform/capabilities/work/{draft-ticket-reply,draft-standup,outbox}.sh`. Drafts Jira replies and team standups (the latter reads `runs.jsonl`/`tasks.jsonl`) with a hard human-approval-before-send gate; send is `manual_required` pending vaulted `jira.*`/`slack.webhook`. Registered as `work.*`. Roadmap: `docs/shay-fritz-ready/ROADMAP.md`.
+
+**Reach Fabric** *(2026-06-02)* — `lib/reach-fabric/`. One `sendReach({message,title,urgency,channels})` that walks channels by urgency/availability with a guaranteed console fallback and a per-send JSONL audit line. Adapters: console (always), email (Resend), telegram, sms (Twilio), push (Web Push/VAPID) — missing creds → skipped, never throws. Capability `reach.send` (registry now 23). The spine that lets Shay reach Fritz on any channel.
+
+**Companion App PWA** *(2026-06-02)* — `companion-app/`. Installable, offline-capable, no-build PWA: Chat (pluggable `CHAT_ENDPOINT`, mock until the Shay gateway is wired) + a Today tab from `command-center/state.json`. The phone clone of talking to the second-in-command. Run `python3 -m http.server` from the dir, open on phone, Add to Home Screen.
+
+**Financial agents** *(2026-06-02)* — `scripts/finance-agents/`. Greenfield (no prior financial code in the brain). 6 strategy agents report a $10-stake leaderboard from a keyless Stooq feed; live execution (Alpaca paper) is gated. NOTE: the cloud container firewalls the market feed, so committed results are labeled SAMPLE data — on an open network it pulls real data.
+
 ---
 
 ## API Endpoints (Full)
@@ -349,6 +369,17 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | MBSH runtime endpoint execution | Tier 1 | Backend inventory and browser-level RSVP/sponsor submission proof are complete. Runtime execution now depends on Studio-managed service provisioning: vaulted Studio Resend/cPanel/site DB refs exist, but production `API_BASE_URL` remains `null` until backend origin generation, cPanel DNS/addon-domain automation still needs wrapper coverage or manual UI, and SSH host-key trust blocks backend deploy/smoke. |
 | MBSH archival/crowd-sourced media replacement | Tier 2 | Launch-safe generated/derivative story assets now exist and have a rights manifest. Future real archival/crowd-sourced replacements still need source attribution, permission, and approval logging before publishing. |
 | Pipeline visualizer depth | Tier 1 | Workbench phase 1 renders inspect/trace/propose from the workflow catalog and trace API. Stage/event matching, missing-stage detection, and proposed patch preview are still missing. |
+| Command Center reconciliation | Tier 1 | New 2026-06-02. `scripts/command-center/build-command-center.js` reads the ledgers directly rather than through the existing `lib/famtastic/mission-control/index.js` `buildMissionControlSnapshot()`. Two readers of the same data is exactly the parallel-implementation smell the 2026-05-05 rule warns against — reconcile so one is the source (prefer the generator consuming the snapshot, or the library consuming the generator's `state.json`). |
+| Command Center delivery surfaces | Tier 1 | New 2026-06-02. The generator runs manually only — no `fam-hub command-center` command, no regen cron, not served via Studio `/api/ops`, and no automatic phone delivery of `briefing.md`. Tracked as `mission-control-command-center` tasks 001-003. |
+| Shay billing/work send paths | Tier 1 | New 2026-06-02. `billing.*` generates invoices and `work.*` drafts ticket replies/standups, but both stop at `manual_required`: billing needs a payment-provider decision (PayPal/Stripe/GoDaddy); work needs vaulted `jira.api_token`/`base_url`/`email` (+ optional `slack.webhook`). Tracked as `mission-control-command-center` tasks 004-005. Work drafting is also deterministic (no LLM rewrite pass yet). |
+| Reach Fabric live channels | Tier 1 | New 2026-06-02. Only `console` is active with zero creds; `email`+`telegram` need their env vars set; `sms` (Twilio number) and `push` (VAPID keypair + companion-app pairing + `web-push`) are manual_required. |
+| Companion App backend + push | Tier 1 | New 2026-06-02. The PWA runs on a built-in mock until `CHAT_ENDPOINT` points at the real Shay gateway (off-LAN access needs `API_SERVER_KEY` per the Shay master plan), and push delivery depends on the Reach Fabric push channel. `state.json` is a copied snapshot — re-copy/symlink on dashboard regen. |
+| Financial agents market data + go-live | Tier 1 | New 2026-06-02. The cloud container firewalls the keyless Stooq feed (HTTP 403), so committed results are SAMPLE/synthetic — real numbers require running on an open network. Live brokerage execution (Alpaca paper API) needs broker creds and is gated. A single session is noise; needs daily aggregation. |
+| Cloud sandbox network firewall | Tier 1 | New 2026-06-02. Web sessions run in a firewalled sandbox: direct outbound to providers/data/payment APIs returns 403 (verified: api.resend.com, stooq.com). No real email/SMS/market-data/payment can be sent from a web session — those run on Fritz's Mac. WebSearch (via the harness) still works. |
+| Autonomous content engine revenue | Tier 1 | New 2026-06-02. `scripts/content-engine/` is built and proven offline, but revenue is a months-long ranking game (~$0 early). Pays to a BANK account, not Cash App. Three one-time steps are legally Fritz-only: create Amazon Associates + ad-network accounts, point a domain at the deploy target. Live LLM generation + deploy run on Fritz's Mac (sandbox firewalled). |
+| Cash App amount-prefill link | Tier 2 | New 2026-06-02. `billing.generate-invoice` emits `cash.app/$cashtag/<amount>`, but the amount-prefill is not an official Cash App feature and may not populate; the bare profile link is the reliable fallback. For a locked amount, use an official Cash App Payment Link via `method:"link"`. |
+| register-credential dispatcher wiring | Tier 3 | New 2026-06-02. `vault.register-credential` works by direct path (`platform/capabilities/vault/register-credential.sh`) but isn't yet a `platform vault register-credential` subcommand in the fam-hub/platform dispatcher — one-line follow-up. |
+| Production secrets exposed in Drive | Tier 1 | New 2026-06-02. All production secrets sit in plaintext in the Drive doc "FAMtastic API's". Rotation checklist at `docs/SECURITY-CREDENTIAL-EXPOSURE-2026-06-02.md`; rotate GitHub PAT, GoDaddy/cPanel, Resend first, then register via the vault and delete the Doc. |
 
 ### Closed 2026-04-25 — Baseline failure closure
 
@@ -679,7 +710,7 @@ The full iterative roadmap is in `architecture/2026-04-25-outstanding-plan.md`.
 
 Quick view:
 
-**Immediate (next session):** JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX.
+**Immediate (next session):** Command Center delivery surfaces (`fam-hub command-center` + daily regen cron, serve `state.json` via Studio `/api/ops`, push `briefing.md` to phone) and reconcile it with `buildMissionControlSnapshot()`; decide the payment provider to unblock `billing.*`; JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX.
 
 **Near-term (this week):** Edge case test suite design (5 categories); Wizard-of-Oz orchestrated build session; Reunion site (July 12 deadline).
 

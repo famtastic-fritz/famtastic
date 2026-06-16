@@ -1,3 +1,9 @@
+---
+title: Current-Agent-Inventory
+type: note
+permalink: famtastic/06-capabilities/current-agent-inventory
+---
+
 # Current Agent Inventory
 
 Last updated: 2026-05-27

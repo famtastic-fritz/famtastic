@@ -1,3 +1,9 @@
+---
+title: SHAY-ECOSYSTEM-BUILD-PROMPT
+type: note
+permalink: famtastic/00-famtastic-core/shay-ecosystem-build-prompt
+---
+
 # SHAY — Own-Ecosystem Build Brief (master prompt)
 
 > Hand this to a capable build agent (or a cheap swarm). It captures everything we

@@ -1,3 +1,9 @@
+---
+title: FRITZ-IDENTITY-ARRAY
+type: note
+permalink: famtastic/01-shay/fritz-identity-array
+---
+
 # Fritz — Identity Array (Live DB)
 
 **Purpose:** The live, growing list of Fritz's identity attributes. The MEMORY entry holds the *rule* (identity-as-array, not singularity); this file holds the *list*. Memory stays compact; this file grows freely.

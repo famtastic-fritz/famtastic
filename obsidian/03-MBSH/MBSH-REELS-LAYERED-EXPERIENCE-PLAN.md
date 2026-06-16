@@ -1,3 +1,9 @@
+---
+title: MBSH-REELS-LAYERED-EXPERIENCE-PLAN
+type: note
+permalink: famtastic/03-mbsh/mbsh-reels-layered-experience-plan
+---
+
 # MBSH — Reels of Hi-Tides
 
 ## The Full Layered Cinematic Experience Plan

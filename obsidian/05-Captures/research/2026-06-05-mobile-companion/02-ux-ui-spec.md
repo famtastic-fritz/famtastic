@@ -1,3 +1,9 @@
+---
+title: 02-ux-ui-spec
+type: note
+permalink: famtastic/05-captures/research/2026-06-05-mobile-companion/02-ux-ui-spec
+---
+
 # Mobile Companion — UX/UI Spec (agent 2 of 3)
 > Background swarm, 2026-06-05. Raw report (condensed). Full synthesis in SHAY-COMPANION-BUILD-BRIEF.md.
 

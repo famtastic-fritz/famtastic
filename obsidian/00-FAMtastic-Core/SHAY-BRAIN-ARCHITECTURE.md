@@ -1,3 +1,9 @@
+---
+title: SHAY-BRAIN-ARCHITECTURE
+type: note
+permalink: famtastic/00-famtastic-core/shay-brain-architecture
+---
+
 # Shay Brain & Worker Architecture — the locked reference (2026-06-04)
 
 > One place for the whole brain/cost setup, so it survives a restore and nobody

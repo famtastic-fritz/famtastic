@@ -1,3 +1,9 @@
+---
+title: 03-cli-as-brain-and-watchlist
+type: note
+permalink: famtastic/05-captures/research/2026-06-04-model-landscape/03-cli-as-brain-and-watchlist
+---
+
 # CLI-as-Brain (Gemini / Codex / Claude) + Frontier Watchlist — Mid-2026
 > Background research swarm, agent 3 of 3. Raw report — synthesized into SHAY-MODEL-LANDSCAPE.md once all three land.
 

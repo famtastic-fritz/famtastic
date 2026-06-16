@@ -1,3 +1,9 @@
+---
+title: MBSH-TYPOGRAPHY-AND-ICONS
+type: note
+permalink: famtastic/03-mbsh/mbsh-typography-and-icons
+---
+
 # MBSH Reunion — Typography & Icon System
 
 **Status:** Pre-build design spec

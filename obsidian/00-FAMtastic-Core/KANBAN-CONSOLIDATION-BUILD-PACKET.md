@@ -1,3 +1,9 @@
+---
+title: KANBAN-CONSOLIDATION-BUILD-PACKET
+type: note
+permalink: famtastic/00-famtastic-core/kanban-consolidation-build-packet
+---
+
 # Build Packet — Kanban Consolidation (one job store, one board)
 
 > **STEP 0 done (Shay, 2026-06-06).** The schema dump revealed the key fact that

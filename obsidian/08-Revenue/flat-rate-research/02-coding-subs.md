@@ -1,3 +1,9 @@
+---
+title: 02-coding-subs
+type: note
+permalink: famtastic/08-revenue/flat-rate-research/02-coding-subs
+---
+
 # Flat-Rate Brains — Western Coding Subs + Shay-usability (agent 2 of 3)
 > Background swarm 2026-06-05. Raw. Key question: can Shay actually USE it (OpenAI-compat API), or is it IDE-locked?
 

@@ -1,3 +1,9 @@
+---
+title: SNAPSHOT-2026-05-29-late
+type: note
+permalink: famtastic/00-inbox/snapshot-2026-05-29-late
+---
+
 # FAMtastic Session Snapshot — 2026-05-29 (Late Session)
 *Captured after full audit, file processing, and system cleanup*
 
