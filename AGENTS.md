@@ -24,6 +24,20 @@ multi-session, parallel, or otherwise concurrent work and wants coordination
 locks active. Otherwise, use lightweight human-readable notes in the active
 plan/capture/report.
 
+When the check-in condition is active and the script reports overlapping
+in-flight work, either coordinate with the other agent (read its branch,
+propose merge) or pick a different scope. Respect scope-locks declared in
+AGENT-COORDINATION.md.
+
+Even while the automatic check-in requirement is paused, agents should still
+avoid obvious known scope locks and should not knowingly overwrite another
+agent's active work.
+
+This rule exists to prevent the parallel-implementation problem where two
+agent surfaces independently solve the same problem in incompatible ways
+(observed 2026-05-05 with the .brain/ vs memory/ duplication), without
+making every ordinary single-agent task pay the noise cost.
+
 ## Plan Closeout Rule (Non-Negotiable)
 
 No plan may stay `status: active` with zero open tasks for more than one
