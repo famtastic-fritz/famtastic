@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AI Result Comparison — Media Studio mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #08080A;
+    --bg-1: #0C0C10;
+    --glass: rgba(255,255,255,0.025);
+    --glass-2: rgba(255,255,255,0.045);
+    --glass-3: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.06);
+    --border-hi: rgba(255,255,255,0.11);
+    --text-1: #F2EFE8;
+    --text-2: rgba(242,239,232,0.55);
+    --text-3: rgba(242,239,232,0.32);
+    --glow-warm: #F5C46B;
+    --glow-warm-2: #E6A856;
+    --glow-cool: #6FE0D2;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background:
+      radial-gradient(900px 600px at 78% 18%, rgba(245,196,107,0.05), transparent 60%),
+      radial-gradient(900px 600px at 18% 82%, rgba(111,224,210,0.04), transparent 60%),
+      var(--bg-0);
+    color: var(--text-1);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.45;
+    overflow: hidden;
+  }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3); }
+  .data { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.04em; color: var(--text-2); }
+  .display { font-family: Fraunces, serif; font-weight: 300; font-style: italic; }
+
+  .app { position: fixed; inset: 0; display: grid; grid-template-columns: 56px 1fr; grid-template-rows: 44px 1fr; }
+
+  /* Icon rail */
+  .icon-rail {
+    grid-row: 1 / 3;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 10px;
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  .ir-brand { width: 28px; height: 28px; border-radius: 9px;
+    background: radial-gradient(circle at 30% 30%, var(--glow-warm), var(--glow-warm-2));
+    box-shadow: 0 0 24px rgba(245,196,107,0.35), inset 0 1px 0 rgba(255,255,255,0.25); margin-bottom: 12px; }
+  .ir-btn {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: var(--glass); border: 1px solid var(--border); color: var(--text-2);
+    display: grid; place-items: center; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    transition: all 400ms var(--ease);
+  }
+  .ir-btn.active {
+    background: linear-gradient(180deg, rgba(245,196,107,0.18), rgba(245,196,107,0.04));
+    border-color: rgba(245,196,107,0.32); color: var(--text-1);
+    box-shadow: 0 0 22px -6px rgba(245,196,107,0.35);
+  }
+  .ir-spacer { flex: 1; }
+
+  /* Top bar */
+  .top-bar {
+    grid-column: 2 / 3; grid-row: 1 / 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(12,12,16,0.55);
+    backdrop-filter: blur(22px) saturate(180%);
+    z-index: 5;
+  }
+  .crumb { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 13px; }
+  .crumb b { color: var(--text-1); font-weight: 500; }
+  .crumb .sep { color: var(--text-3); }
+  .top-right { display: flex; align-items: center; gap: 14px; }
+  .kbd { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.10em;
+    padding: 4px 8px; border-radius: 7px; background: var(--glass); border: 1px solid var(--border); color: var(--text-2); }
+  .cost-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-2);
+  }
+  .cost-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-warm); box-shadow: 0 0 10px var(--glow-warm); }
+  .shay-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--glow-cool);
+    box-shadow: 0 0 16px var(--glow-cool), 0 0 32px rgba(111,224,210,0.45);
+    animation: breathe 2.8s var(--ease) infinite;
+    cursor: pointer;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.65; transform: scale(1); }
+    50%      { opacity: 1;    transform: scale(1.18); }
+  }
+
+  /* Stage */
+  .stage { grid-column: 2 / 3; grid-row: 2 / 3; position: relative; overflow: hidden; }
+
+  /* Mode switcher (sits inside the canvas top, above the work) */
+  .mode-bar {
+    position: absolute; top: 16px; left: 32px; right: 410px;
+    display: flex; align-items: center; gap: 14px;
+    z-index: 6;
+  }
+  .mode-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px;
+    background: var(--glass-2); border: 1px solid var(--border-hi); backdrop-filter: blur(20px) saturate(180%); }
+  .mode-tab {
+    padding: 6px 12px; border-radius: 8px;
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-2); font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+    transition: all 300ms var(--ease);
+  }
+  .mode-tab:hover { color: var(--text-1); }
+  .mode-tab.active {
+    background: linear-gradient(180deg, rgba(245,196,107,0.18), rgba(245,196,107,0.04));
+    border-color: rgba(245,196,107,0.3); color: var(--text-1);
+  }
+  .status-line {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.04em;
+  }
+  .status-line .pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--glow-warm); box-shadow: 0 0 12px var(--glow-warm);
+    animation: breathe 2.4s var(--ease) infinite;
+  }
+
+  /* Shared canvas surface */
+  .canvas {
+    position: absolute; inset: 0;
+    padding: 64px 32px 132px 32px;
+  }
+
+  /* GRID MODE */
+  .grid {
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 18px;
+  }
+  .tile {
+    position: relative;
+    border-radius: 18px;
+    background: linear-gradient(160deg, #1a1a22, #0d0d12);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 400ms var(--ease), transform 400ms var(--ease), box-shadow 400ms var(--ease), opacity 400ms var(--ease);
+    box-shadow: 0 20px 40px -28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .tile:hover {
+    border-color: var(--border-hi);
+    transform: translateY(-2px);
+    box-shadow: 0 28px 48px -28px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .tile.selected {
+    border-color: rgba(245,196,107,0.5);
+    box-shadow: 0 0 0 1px rgba(245,196,107,0.25), 0 0 48px -12px rgba(245,196,107,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .tile.shortlisted::before {
+    content: '✓'; position: absolute; top: 10px; left: 10px;
+    width: 22px; height: 22px; border-radius: 7px;
+    background: linear-gradient(180deg, rgba(245,196,107,0.32), rgba(245,196,107,0.14));
+    border: 1px solid rgba(245,196,107,0.45);
+    color: var(--text-1);
+    display: grid; place-items: center;
+    font-size: 12px; z-index: 2;
+    box-shadow: 0 0 16px -4px rgba(245,196,107,0.5);
+  }
+  .tile.dim { opacity: 0.55; }
+  .tile .label {
+    position: absolute; left: 12px; bottom: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3);
+  }
+  .tile .cost-chip {
+    position: absolute; right: 12px; bottom: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    color: var(--text-3); padding: 2px 7px; border-radius: 7px;
+    background: rgba(0,0,0,0.45); border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+  }
+  .tile .actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; transition: opacity 400ms var(--ease); }
+  .tile:hover .actions { opacity: 1; }
+  .tile .act {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+    color: var(--text-2); display: grid; place-items: center;
+    backdrop-filter: blur(10px); font-size: 13px; cursor: pointer;
+  }
+  .tile .act:hover { color: var(--text-1); border-color: var(--border-hi); }
+
+  /* Per-variant Shay sticky (selected tile only) */
+  .shay-sticky {
+    position: absolute; top: 44px; right: 12px;
+    width: 220px;
+    background: linear-gradient(160deg, rgba(111,224,210,0.10), rgba(111,224,210,0.02));
+    border: 1px solid rgba(111,224,210,0.25);
+    border-radius: 12px;
+    padding: 10px 12px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 12px 32px -16px rgba(0,0,0,0.7);
+    z-index: 3;
+  }
+  .shay-sticky .who { display: flex; align-items: center; gap: 6px; color: var(--glow-cool);
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; }
+  .shay-sticky .who .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-cool); box-shadow: 0 0 8px var(--glow-cool); }
+  .shay-sticky p { margin: 6px 0 0; color: var(--text-1); font-size: 12px; line-height: 1.45; }
+
+  /* Variant tile faux-image gradients */
+  .t1 { background: radial-gradient(80% 60% at 70% 30%, #f7c98d, transparent 60%), radial-gradient(60% 60% at 30% 70%, #5a2b1b, transparent 60%), linear-gradient(160deg, #1c0e08, #0a0707); }
+  .t2 { background: radial-gradient(80% 60% at 30% 30%, #ffd6a3, transparent 60%), radial-gradient(60% 60% at 70% 70%, #3b1d10, transparent 60%), linear-gradient(160deg, #1d0d06, #07050a); }
+  .t3 { background: radial-gradient(80% 60% at 50% 30%, #ffd17a, transparent 60%), radial-gradient(60% 60% at 50% 80%, #4a1f0c, transparent 60%), linear-gradient(160deg, #1a0f06, #07050a); }
+  .t4 { background: radial-gradient(80% 60% at 70% 70%, #e2a4d8, transparent 60%), radial-gradient(60% 60% at 30% 30%, #2a1140, transparent 60%), linear-gradient(160deg, #15091e, #07060c); }
+  .t5 { background: radial-gradient(80% 60% at 30% 70%, #9bc7ff, transparent 60%), radial-gradient(60% 60% at 70% 30%, #122340, transparent 60%), linear-gradient(160deg, #0a1224, #05070d); }
+  .t6 { background: radial-gradient(80% 60% at 50% 50%, #f8a76b, transparent 60%), linear-gradient(160deg, #2a1308, #08060a); }
+
+  /* SLIDER COMPARE MODE */
+  .slider-stage {
+    position: relative; height: 100%; border-radius: 18px; overflow: hidden;
+    border: 1px solid var(--border-hi);
+    box-shadow: 0 28px 60px -28px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .slider-a, .slider-b { position: absolute; inset: 0; }
+  .slider-b { clip-path: inset(0 0 0 50%); }
+  .slider-handle {
+    position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 2px; background: var(--glow-warm); transform: translateX(-1px);
+    box-shadow: 0 0 24px rgba(245,196,107,0.6);
+    cursor: ew-resize;
+  }
+  .slider-handle::after {
+    content: '◀ ▶'; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(8,8,10,0.85); border: 1px solid rgba(245,196,107,0.45);
+    backdrop-filter: blur(12px);
+    color: var(--glow-warm); font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    display: grid; place-items: center; letter-spacing: 0.1em;
+    box-shadow: 0 0 32px -6px rgba(245,196,107,0.55);
+  }
+  .slider-tag {
+    position: absolute; top: 16px; padding: 4px 10px; border-radius: 999px;
+    background: rgba(0,0,0,0.55); border: 1px solid var(--border-hi);
+    backdrop-filter: blur(12px);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em;
+    color: var(--text-1);
+  }
+  .slider-tag.a { left: 16px; }
+  .slider-tag.b { right: 16px; }
+
+  /* 2-UP FINALIST MODE */
+  .twoup {
+    height: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  }
+  .twoup .tile { cursor: default; }
+  .twoup .tile.winner-candidate { border-color: rgba(245,196,107,0.4); }
+
+  /* Prompt strip */
+  .prompt {
+    position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
+    width: min(880px, calc(100% - 64px));
+    background: var(--glass-2);
+    border: 1px solid var(--border-hi);
+    border-radius: 18px;
+    backdrop-filter: blur(26px) saturate(180%);
+    box-shadow: 0 24px 60px -32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+    z-index: 10;
+  }
+  .prompt-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; }
+  .prompt-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text-1); font-family: Inter, sans-serif; font-size: 15px; padding: 4px 0;
+  }
+  .prompt-input::placeholder { color: var(--text-3); }
+  .prompt-cta {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 13px; border-radius: 11px;
+    background: linear-gradient(180deg, rgba(245,196,107,0.22), rgba(245,196,107,0.08));
+    border: 1px solid rgba(245,196,107,0.35);
+    color: var(--text-1);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.10em;
+    cursor: pointer;
+  }
+  .prompt-meta {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 18px 10px;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    flex-wrap: wrap;
+  }
+  .chip { padding: 3px 9px; border-radius: 999px; background: var(--glass); border: 1px solid var(--border); color: var(--text-2); font-size: 10.5px; }
+
+  /* Right rail */
+  .right-rail {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 380px;
+    background: rgba(12,12,16,0.55);
+    border-left: 1px solid var(--border);
+    backdrop-filter: blur(26px) saturate(180%);
+    z-index: 8;
+    display: flex; flex-direction: column;
+    box-shadow: -24px 0 60px -32px rgba(0,0,0,0.8);
+  }
+  .rr-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+  .rr-tabs { display: flex; gap: 6px; }
+  .rr-tab {
+    padding: 6px 10px; border-radius: 8px; background: transparent; border: 1px solid transparent;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    cursor: pointer;
+  }
+  .rr-tab.active { background: var(--glass-2); border-color: var(--border-hi); color: var(--text-1); }
+  .rr-body { flex: 1; overflow: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  .shay-card {
+    background: linear-gradient(160deg, rgba(111,224,210,0.08), rgba(111,224,210,0.02));
+    border: 1px solid rgba(111,224,210,0.18);
+    border-radius: 12px; padding: 12px;
+  }
+  .shay-card.collapsed { opacity: 0.55; }
+  .shay-card .who { display: flex; align-items: center; justify-content: space-between; color: var(--glow-cool);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+  .shay-card .who .name { display: flex; align-items: center; gap: 6px; }
+  .shay-card .who .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-cool); box-shadow: 0 0 8px var(--glow-cool); }
+  .shay-card p { margin: 8px 0 0; color: var(--text-1); font-size: 13px; line-height: 1.5; }
+
+  .kbd-legend {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 12px;
+    border-radius: 12px; background: var(--glass); border: 1px solid var(--border);
+  }
+  .kbd-legend .row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-2); }
+  .kbd-legend .row b { color: var(--text-1); font-weight: 500; }
+
+  .cost-block {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-radius: 12px;
+    background: var(--glass); border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--text-2);
+  }
+  .cost-block b { color: var(--glow-warm); }
+
+  .note {
+    position: fixed; left: 76px; bottom: 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em;
+    color: var(--text-3); text-transform: uppercase; pointer-events: none;
+  }
+
+  /* Hide modes by default */
+  .mode-view { display: none; height: 100%; }
+  .mode-view.active { display: block; }
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Icon rail -->
+    <aside class="icon-rail" aria-label="Domains">
+      <div class="ir-brand" title="FAMtastic"></div>
+      <button class="ir-btn" title="Sites">S</button>
+      <button class="ir-btn" title="Brainstorm">B</button>
+      <button class="ir-btn" title="Plans">P</button>
+      <button class="ir-btn" title="Components">C</button>
+      <button class="ir-btn active" title="Media">M</button>
+      <button class="ir-btn" title="Research">R</button>
+      <div class="ir-spacer"></div>
+      <button class="ir-btn" title="Admin">A</button>
+    </aside>
+
+    <!-- Top bar -->
+    <header class="top-bar">
+      <div class="crumb">
+        <span>Media</span><span class="sep">/</span>
+        <span>Generate</span><span class="sep">/</span>
+        <b>hero · mbsh-reunion</b><span class="sep">·</span>
+        <span class="data" id="modeCrumb">grid · 6 variants · 1 selected · 3 shortlisted</span>
+      </div>
+      <div class="top-right">
+        <span class="kbd">⌘ K</span>
+        <span class="cost-pill"><span class="dot"></span><span id="batchCost">$0.24 · 6 gens</span></span>
+        <span class="shay-dot" title="Shay-Shay is here"></span>
+      </div>
+    </header>
+
+    <!-- Stage -->
+    <section class="stage">
+
+      <!-- Mode bar -->
+      <div class="mode-bar">
+        <div class="status-line"><span class="pulse"></span><span>generated 6 of 6 via Imagen 4 · 12.3s</span></div>
+        <div style="flex: 1;"></div>
+        <div class="mode-tabs" role="tablist">
+          <button class="mode-tab active" data-mode="grid" onclick="setMode('grid')">GRID</button>
+          <button class="mode-tab" data-mode="hero" onclick="setMode('hero')">HERO + THUMBS</button>
+          <button class="mode-tab" data-mode="twoup" onclick="setMode('twoup')">2-UP FINALIST</button>
+          <button class="mode-tab" data-mode="slider" onclick="setMode('slider')">SLIDER COMPARE</button>
+        </div>
+      </div>
+
+      <div class="canvas">
+
+        <!-- GRID MODE -->
+        <div class="mode-view active" id="view-grid">
+          <div class="grid" role="list">
+            <div class="tile t1 shortlisted" role="listitem">
+              <div class="actions"><div class="act" title="Regenerate (R)">↻</div><div class="act" title="Promote (S)">★</div><div class="act" title="Compare (C)">⤢</div><div class="act" title="Ask Shay why">?</div></div>
+              <div class="label">var · 01</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+            <div class="tile t2 selected shortlisted" role="listitem">
+              <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div><div class="act">?</div></div>
+              <div class="shay-sticky">
+                <div class="who"><span class="dot"></span> SHAY · WHY THIS ONE</div>
+                <p>Warmest of the six — dusk light reads as "class reunion" without leaning maudlin. Strongest single-tile candidate.</p>
+              </div>
+              <div class="label">var · 02 · selected</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+            <div class="tile t3 dim" role="listitem">
+              <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div><div class="act">?</div></div>
+              <div class="label">var · 03</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+            <div class="tile t4 shortlisted" role="listitem">
+              <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div><div class="act">?</div></div>
+              <div class="label">var · 04</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+            <div class="tile t5 dim" role="listitem">
+              <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div><div class="act">?</div></div>
+              <div class="label">var · 05</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+            <div class="tile t6 dim" role="listitem">
+              <div class="actions"><div class="act">↻</div><div class="act">★</div><div class="act">⤢</div><div class="act">?</div></div>
+              <div class="label">var · 06</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HERO + THUMBS MODE -->
+        <div class="mode-view" id="view-hero">
+          <div style="height: 100%; display: grid; grid-template-columns: 1fr 140px; gap: 18px;">
+            <div class="tile t2 selected" style="cursor: default;">
+              <div class="shay-sticky">
+                <div class="who"><span class="dot"></span> SHAY · WHY THIS ONE</div>
+                <p>Warmest of the six. Use ◀ ▶ to scrub variants without leaving focus.</p>
+              </div>
+              <div class="label">var · 02 · focused</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; overflow: auto;">
+              <div class="tile t1" style="height: 90px; flex: 0 0 auto;"><div class="label" style="font-size: 9px;">01</div></div>
+              <div class="tile t2 selected" style="height: 90px; flex: 0 0 auto;"><div class="label" style="font-size: 9px;">02</div></div>
+              <div class="tile t3" style="height: 90px; flex: 0 0 auto;"><div class="label" style="font-size: 9px;">03</div></div>
+              <div class="tile t4" style="height: 90px; flex: 0 0 auto;"><div class="label" style="font-size: 9px;">04</div></div>
+              <div class="tile t5" style="height: 90px; flex: 0 0 auto;"><div class="label" style="font-size: 9px;">05</div></div>
+              <div class="tile t6" style="height: 90px; flex: 0 0 auto;"><div class="label" style="font-size: 9px;">06</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-UP FINALIST MODE -->
+        <div class="mode-view" id="view-twoup">
+          <div class="twoup">
+            <div class="tile t2 winner-candidate selected">
+              <div class="shay-sticky">
+                <div class="who"><span class="dot"></span> SHAY · A</div>
+                <p>Warmer color temp. Confetti reads as celebratory. Class-of-'96 vibe lands.</p>
+              </div>
+              <div class="label">var · 02 · finalist A</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+            <div class="tile t4 winner-candidate">
+              <div class="shay-sticky">
+                <div class="who"><span class="dot"></span> SHAY · B</div>
+                <p>Cooler, more editorial. Strong silhouette but reads less "reunion."</p>
+              </div>
+              <div class="label">var · 04 · finalist B</div>
+              <div class="cost-chip">$0.04</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLIDER COMPARE MODE -->
+        <div class="mode-view" id="view-slider">
+          <div class="slider-stage">
+            <div class="slider-a t2"></div>
+            <div class="slider-b t4"></div>
+            <div class="slider-tag a">A · var 02</div>
+            <div class="slider-tag b">B · var 04</div>
+            <div class="slider-handle" id="sliderHandle"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Prompt strip -->
+      <div class="prompt">
+        <div class="prompt-row">
+          <span class="eyebrow" style="color: var(--text-3);">PROMPT</span>
+          <input class="prompt-input" value="warm dusk light · class of '96 · subtle confetti · 16:9" />
+          <button class="prompt-cta">REGEN <span class="kbd" style="background: rgba(0,0,0,0.25); border-color: rgba(0,0,0,0.35);">⇧ R</span></button>
+        </div>
+        <div class="prompt-meta">
+          <span class="chip">Imagen 4</span>
+          <span class="chip">16:9</span>
+          <span class="chip">cinematic</span>
+          <span class="chip">seed · 0xA12F</span>
+          <span style="margin-left: auto;">$0.04 · per regen</span>
+        </div>
+      </div>
+
+      <!-- Right rail -->
+      <aside class="right-rail" id="rr" aria-label="Right rail">
+        <div class="rr-head">
+          <div class="rr-tabs">
+            <button class="rr-tab active">SHAY</button>
+            <button class="rr-tab">TOOLS</button>
+            <button class="rr-tab">HISTORY</button>
+          </div>
+          <button class="rr-tab" title="Close" style="border: 1px solid var(--border);">×</button>
+        </div>
+        <div class="rr-body">
+
+          <div class="shay-card">
+            <div class="who"><span class="name"><span class="dot"></span> SHAY · BATCH READ</span><span style="color: var(--text-3);">6 variants</span></div>
+            <p>Six in. Strongest read is <b>var 02</b> — dusk light + confetti land. <b>04</b> is the editorial alt if you want cooler. Skip 03/05/06.</p>
+          </div>
+
+          <div class="shay-card">
+            <div class="who"><span class="name"><span class="dot"></span> SHAY · VAR 02</span><span style="color: var(--text-3);">selected</span></div>
+            <p>Warmest of the six. Confetti is subtle enough not to compete with the figures. Recommend promote-to-canonical for the index hero.</p>
+          </div>
+
+          <div class="shay-card collapsed">
+            <div class="who"><span class="name"><span class="dot"></span> SHAY · VAR 04</span><span style="color: var(--text-3);">shortlisted</span></div>
+            <p>Cooler editorial alt. Better for the about page, less for hero.</p>
+          </div>
+
+          <div class="shay-card collapsed">
+            <div class="who"><span class="name"><span class="dot"></span> SHAY · VAR 01</span><span style="color: var(--text-3);">shortlisted</span></div>
+            <p>Same warmth as 02 but figures are off-center. Pass unless we crop.</p>
+          </div>
+
+          <div class="kbd-legend">
+            <div class="row"><span>focus variant N</span><b>1 – 6</b></div>
+            <div class="row"><span>add to shortlist</span><b>⇧ 1 – 6</b></div>
+            <div class="row"><span>toggle compare mode</span><b>C</b></div>
+            <div class="row"><span>set as winner</span><b>S</b></div>
+            <div class="row"><span>regenerate selected</span><b>R</b></div>
+            <div class="row"><span>regenerate batch</span><b>⇧ R</b></div>
+            <div class="row"><span>scrub hero ◀ ▶</span><b>← →</b></div>
+          </div>
+
+          <div class="cost-block">
+            <span>this batch</span>
+            <b>$0.24</b>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <div class="note">comparison · grid → hero → 2-up → slider · use the mode tabs</div>
+
+  <script>
+    function setMode(m) {
+      document.querySelectorAll('.mode-view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + m).classList.add('active');
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+      const labels = {
+        grid: 'grid · 6 variants · 1 selected · 3 shortlisted',
+        hero: 'hero+thumbs · var 02 focused · ◀ ▶ to scrub',
+        twoup: '2-up finalist · A=var 02 · B=var 04 · S to promote',
+        slider: 'slider compare · A=var 02 · B=var 04 · drag handle',
+      };
+      document.getElementById('modeCrumb').textContent = labels[m];
+    }
+
+    // Keyboard demo
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'c' || e.key === 'C') setMode('twoup');
+      if (e.key === 'g' || e.key === 'G') setMode('grid');
+      if (e.key === 'h' || e.key === 'H') setMode('hero');
+      if (e.key === 'Escape') setMode('grid');
+    });
+
+    // Slider drag
+    (function() {
+      const stage = document.querySelector('.slider-stage');
+      const handle = document.getElementById('sliderHandle');
+      const b = document.querySelector('.slider-b');
+      let dragging = false;
+      function onMove(clientX) {
+        const r = stage.getBoundingClientRect();
+        let pct = ((clientX - r.left) / r.width) * 100;
+        pct = Math.max(2, Math.min(98, pct));
+        handle.style.left = pct + '%';
+        b.style.clipPath = `inset(0 0 0 ${pct}%)`;
+      }
+      handle.addEventListener('mousedown', () => dragging = true);
+      window.addEventListener('mouseup', () => dragging = false);
+      window.addEventListener('mousemove', (e) => { if (dragging) onMove(e.clientX); });
+    })();
+  </script>
+</body>
+</html>

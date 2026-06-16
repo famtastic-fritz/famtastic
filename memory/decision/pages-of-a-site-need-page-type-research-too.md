@@ -5,19 +5,25 @@ type: decision
 title: "Site-building inherits the page-type research discipline"
 facets: ["site-execution", "design-research"]
 confidence: 0.95
-lifecycle: active
+lifecycle: superseded
 created_at: 2026-05-06T01:50:58.608769Z
 promoted_at: 2026-05-06T01:50:58.608769Z
 promoted_by: fritz (user-canonical override)
 source_capture: cap_2026-05-06T01-49_8547
-references: []
+references: ["decision/pages-of-a-site-can-trigger-page-type-research-when-needed"]
 seen_count: 0
 last_surfaced_at: null
 auto_promoted: false
 override_reason: User-canonical session meta-learning. Regex confidence does not capture nuanced user feedback.
 ---
 
-# Site-building inherits the page-type research discipline
+# [SUPERSEDED] Site-building inherits the page-type research discipline
+
+> **SUPERSEDED 2026-05-06** by `decision/pages-of-a-site-can-trigger-page-type-research-when-needed`. The original framing made per-page research MANDATORY for every site page. User clarified it should be OPTIONAL, triggered when the user is dissatisfied with a site result. Mandatory framing is wrong because it would slow every site to a research crawl.
+
+## Original framing (kept for history)
+
+
 
 The platform-vs-website framing applies recursively: a SITE has page types too (home, contact form, RSVP, gallery, story timeline). Every new site page should follow the same recipe: research, cite 2+ references, mockup, then build.
 

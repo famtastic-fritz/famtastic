@@ -14,10 +14,10 @@
       "autoPort": true
     },
     {
-      "name": "ncs-v2",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8899", "--directory", "/tmp/ncs-v2"],
-      "port": 8899
+      "name": "mbsh-frontend",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "/Users/famtasticfritz/famtastic-sites/mbsh-reunion/frontend"],
+      "autoPort": true
     }
   ]
 }
