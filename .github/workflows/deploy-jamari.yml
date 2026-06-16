@@ -1,0 +1,58 @@
+name: Deploy Jamari site to Pages
+
+on:
+  push:
+    branches: [claude/jamari-graduation-portfolio-8yEPP]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build gh-pages and deploy (no marketplace actions)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: claude/jamari-graduation-portfolio-8yEPP
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+
+          echo "::group::Clone source branch"
+          git clone --depth 1 --branch "$BRANCH" "$remote" src
+          echo "::endgroup::"
+
+          dist="src/sites/site-jamari-graduation/dist"
+          test -f "$dist/index.html" || { echo "dist/index.html missing"; exit 1; }
+
+          out="$(mktemp -d)"
+          cp -r "$dist/." "$out/"
+          touch "$out/.nojekyll"
+
+          cd "$out"
+          git init -q -b gh-pages
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Deploy Jamari graduation site"
+          echo "::group::Push gh-pages"
+          git push -f "$remote" gh-pages
+          echo "::endgroup::"
+
+          echo "::group::Enable GitHub Pages"
+          api="https://api.github.com/repos/${REPO}/pages"
+          hdr_auth="Authorization: Bearer ${GH_TOKEN}"
+          hdr_acc="Accept: application/vnd.github+json"
+          body='{"source":{"branch":"gh-pages","path":"/"}}'
+          code=$(curl -sS -o /tmp/pages.json -w "%{http_code}" -X POST -H "$hdr_auth" -H "$hdr_acc" "$api" -d "$body" || true)
+          echo "POST /pages -> $code"; cat /tmp/pages.json 2>/dev/null || true; echo
+          if [ "$code" != "201" ]; then
+            curl -sS -X PUT -H "$hdr_auth" -H "$hdr_acc" "$api" -d "$body" || true
+          fi
+          echo "Current Pages config:"
+          curl -sS -H "$hdr_auth" -H "$hdr_acc" "$api" || true
+          echo "::endgroup::"
