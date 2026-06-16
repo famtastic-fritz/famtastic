@@ -1,5 +1,17 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Shay-Shay identity guard CLI + immutable snapshot refresh fix (2026-06-16)
+
+Added `identity_guard.py` protection hardening in `shay-shay/` so protected startup snapshots can refresh even when emergency/version copies are locked immutable on macOS. New helper flow uses `_safe_copy_replace()` + `_set_immutable_flag()` to temporarily clear `uchg`, replace the backup, then re-lock it, which closes the startup `Operation not permitted` failure when `shay config show` or other CLI entrypoints refresh the identity baseline.
+
+Added `shay_cli/identity_cmd.py` and wired new CLI commands in `shay_cli/main.py`: `shay identity status`, `shay identity snapshot`, `shay identity restore`, `shay identity lock`, and `shay identity unlock`. `status` reports live/emergency/version presence for `SOUL.md`, `PERSONA.md`, and `memories/USER.md`; `snapshot` creates a new protected manifest/version; `restore` pulls one live file back from emergency backup; `lock`/`unlock` manage immutable protection on the backup copies only, not the live editable identity files.
+
+Verification: `shay identity status --json` now passes on the live profile and reports all three identity files present with no findings; focused tests pass via `uvx --with 'pytest-xdist>=3,<4' pytest -q -o addopts='' tests/test_identity_guard.py tests/test_identity_cmd.py` (9 passed). This work belongs in the runtime protection/control lane, not the capability matrix itself, though the matrix/intelligence layer can reference identity-guard status as a readiness signal later.
+
+### Known Gaps opened
+- `shay config show` still displays `Reasoning: on` rather than the exact `reasoning_effort` value; the source of truth remains `~/.shay/config.yaml` (`agent.service_tier`, `agent.reasoning_effort`) or explicit fast-mode commands.
+- `shay identity restore` currently restores from the emergency backup only; version-targeted restore is not wired yet.
+
 ## Autopilot — autonomous faceless-video business (2026-06-02)
 
 Built `autopilot/` on top of the faceless video generator: a self-running
