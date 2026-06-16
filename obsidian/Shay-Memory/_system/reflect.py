@@ -40,9 +40,11 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import json
 import os
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 VAULT = Path(__file__).resolve().parent.parent  # .../Shay-Memory
@@ -50,6 +52,8 @@ REFLECT_DIR = VAULT / "reflections"
 EPISODIC = REFLECT_DIR / "episodic"
 SEMANTIC = REFLECT_DIR / "semantic"
 REFLECTIVE = REFLECT_DIR / "reflective"
+STATUS_DIR = VAULT / "_system" / "runtime"
+STATUS_FILE = STATUS_DIR / "memory-reflect-status.json"
 
 # Trees the pass must never read FROM (its own dated output) or recurse into.
 # NOTE: ``reflections`` is excluded so the pass never feeds on its own dated
@@ -233,10 +237,24 @@ def _extractive_episode(path: Path, title: str, body: str) -> str:
     """Original headings-only extractive summary (LLM-free fallback)."""
     headings = [l.strip() for l in body.splitlines() if l.lstrip().startswith("#")][:6]
     rel = path.relative_to(VAULT)
-    lines = [f"### {title}", f"- source: `{rel}`"]
+    source_class = _source_class(path)
+    lines = [f"### {title}", f"- source: `{rel}`", f"- source_class: `{source_class}`"]
     if headings:
         lines.append("- sections: " + "; ".join(h.lstrip("# ") for h in headings))
     return "\n".join(lines)
+
+
+def _source_class(path: Path) -> str:
+    rel = path.relative_to(VAULT).as_posix()
+    if rel.startswith("reflections/episodic/sessions/"):
+        return "runtime-session"
+    if rel.startswith("lessons-mirror/"):
+        return "lessons-mirror"
+    if rel.startswith("reflections/"):
+        return "reflection-output"
+    if rel.startswith("_system/"):
+        return "system-doc"
+    return "vault-note"
 
 
 def summarise_episode(path: Path, generative: bool = True) -> str:
@@ -265,8 +283,13 @@ def summarise_episode(path: Path, generative: bool = True) -> str:
             )
             out = aux(prompt)
             if out:
-                return f"### {title}\n- source: `{rel}`\n\n{out.strip()}"
+                return f"### {title}\n- source: `{rel}`\n- source_class: `{_source_class(path)}`\n\n{out.strip()}"
     return _extractive_episode(path, title, body)
+
+
+def _write_status(payload: dict) -> None:
+    STATUS_DIR.mkdir(parents=True, exist_ok=True)
+    STATUS_FILE.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def _write(path: Path, content: str, dry: bool) -> None:
@@ -347,9 +370,28 @@ def _synthesise_reflective(semantic_text: str, dry: bool) -> str:
 def run(window_hours: int, dry: bool) -> int:
     today = _dt.date.today().isoformat()
     now_iso = _dt.datetime.now().isoformat(timespec="seconds")
+    aux = _resolve_aux() if not dry else None
+    aux_mode = "dry-run" if dry else ("generative" if aux is not None else "extractive")
+    _write_status({
+        "status": "running",
+        "started_at": now_iso,
+        "window_hours": window_hours,
+        "dry_run": dry,
+        "mode": aux_mode,
+        "status_file": str(STATUS_FILE),
+    })
     sources = sorted(_iter_source_notes(window_hours), key=lambda t: t[1], reverse=True)
 
     if not sources:
+        _write_status({
+            "status": "idle",
+            "started_at": now_iso,
+            "finished_at": _dt.datetime.now().isoformat(timespec="seconds"),
+            "window_hours": window_hours,
+            "dry_run": dry,
+            "mode": aux_mode,
+            "source_count": 0,
+        })
         print(f"reflect: no L0/L1 notes modified in the last {window_hours}h — nothing to do.")
         return 0
 
@@ -375,7 +417,7 @@ def run(window_hours: int, dry: bool) -> int:
         f"tags:\n- memory/l1\n- reflection\n---\n\n"
         f"# Episodic reflection — {today}\n\n"
         f"Auto-generated from {len(sources)} source note(s) modified in the last "
-        f"{window_hours}h. Extractive; ratify into L2/L3 as needed.\n\n"
+        f"{window_hours}h. Mode: {aux_mode}. Ratify into L2/L3 as needed.\n\n"
         + "\n\n".join(episodes)
         + "\n\n## Sources\n"
         + "\n".join(src_links)
@@ -413,6 +455,22 @@ def run(window_hours: int, dry: bool) -> int:
     )
     _write(REFLECTIVE / f"{today}.md", l3, dry)
 
+    finished_at = _dt.datetime.now().isoformat(timespec="seconds")
+    _write_status({
+        "status": "ok",
+        "started_at": now_iso,
+        "finished_at": finished_at,
+        "window_hours": window_hours,
+        "dry_run": dry,
+        "mode": aux_mode,
+        "source_count": len(sources),
+        "episode_count": len(episodes),
+        "outputs": {
+            "episodic": str(EPISODIC / f"{today}.md"),
+            "semantic": str(SEMANTIC / f"{today}.md"),
+            "reflective": str(REFLECTIVE / f"{today}.md"),
+        },
+    })
     print(f"reflect: processed {len(sources)} source note(s) for {today}{' (dry-run)' if dry else ''}.")
     return 0
 
@@ -422,7 +480,18 @@ def main(argv=None) -> int:
     ap.add_argument("--window-hours", type=int, default=24)
     ap.add_argument("--dry-run", action="store_true", help="print actions, write nothing")
     args = ap.parse_args(argv)
-    return run(args.window_hours, args.dry_run)
+    try:
+        return run(args.window_hours, args.dry_run)
+    except Exception as exc:
+        _write_status({
+            "status": "error",
+            "failed_at": _dt.datetime.now().isoformat(timespec="seconds"),
+            "window_hours": args.window_hours,
+            "dry_run": args.dry_run,
+            "error": f"{type(exc).__name__}: {exc}",
+            "traceback": traceback.format_exc(),
+        })
+        raise
 
 
 if __name__ == "__main__":
