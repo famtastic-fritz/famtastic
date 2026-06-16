@@ -1248,3 +1248,57 @@
 ## tools/cpanel-mcp/src/types/
 
 - `cpanel.ts` — Exports CpanelConfig, CpanelResponse, CpanelErrorData, FileManagerItem + 11 more (~784 tok)
+
+## remotion/src/pipeline/ (faceless video generator — pure Node)
+
+- `core.mjs` — deterministic spec builder: FORMATS, timeWords, buildSpec, gradient palette (~1100 tok)
+- `script.mjs` — topic→script via OpenAI w/ templated fallback (~700 tok)
+- `tts.mjs` — OpenAI/ElevenLabs TTS + self-contained MP3 duration parser (~900 tok)
+- `index.mjs` — generateVideoSpec orchestrator; writes out/<slug>.spec.json (~450 tok)
+- `core.test.mjs` — 13 node:test unit tests, no deps/network (~900 tok)
+
+## remotion/src/faceless/ (Remotion composition)
+
+- `FacelessVideo.tsx` — "FacelessVideo" composition + calculateMetadata (any length/format) (~700 tok)
+- `Scene.tsx` — Ken Burns / gradient bg + scrim + captions + audio (~650 tok)
+- `Captions.tsx` — word-by-word karaoke captions (~500 tok)
+- `schema.ts` — zod facelessSchema mirroring buildSpec output (~550 tok)
+- `demo.spec.json` — committed demo spec used as Studio defaultProps (~2200 tok)
+
+## remotion/bin/
+
+- `faceless.mjs` — CLI: node bin/faceless.mjs "<topic>" [--format --scenes --render] (~700 tok)
+
+## autopilot/ (autonomous faceless-video business)
+
+- `cli.mjs` — runner: tick|status|report|stop|resume|config (~900 tok)
+- `orchestrator.mjs` — tick(): runs the 5-stage loop + health + audit (~700 tok)
+- `autopilot.config.json` — spend cap, platforms, niches, money models (~250 tok)
+- `ROLLOUT-PLAN.md` — concept→collection→advertising strategy + phases (~2600 tok)
+- `README.md` — operator manual + credential handshake (~1500 tok)
+- `install-cron.sh` — cron (Linux) / launchd (macOS) installer (~700 tok)
+
+## autopilot/lib/
+
+- `paths.mjs` — roots, state/out dirs, config loader (~350 tok)
+- `util.mjs` — sha256, seeded rng, weightedPick, dayKey (~450 tok)
+- `ledger.mjs` — append-only JSONL + secret redaction + data-center mirror (~500 tok)
+- `interop.mjs` — bridges CJS data-center + evaluateRunHealth via createRequire (~450 tok)
+- `budget.mjs` — daily budget governor ($5/day), requestSpend (~500 tok)
+- `governance.mjs` — checkGovernance (live/dry-run/blocked) + STOP kill switch (~450 tok)
+- `vault.mjs` — env→vault credential resolution, CRED_MAP (~450 tok)
+- `affiliate.mjs` — offer catalog + matchOffers (~450 tok)
+- `render.mjs` — findBrowser (headless_shell) + renderSpec via Remotion CLI (~500 tok)
+
+## autopilot/stages/
+
+- `concept.mjs` — niche ROI bandit, topic gen, dedupe (~900 tok)
+- `collection.mjs` — faceless gen + QA + metadata + affiliate + render (~1100 tok)
+- `advertising.mjs` — scheduler + publish via governance gate (~700 tok)
+- `publishers.mjs` — YT/TikTok/IG adapters (dry-run stage; live stubs) (~700 tok)
+- `feedback.mjs` — metrics (sim/real) → niche weights → learnings (~900 tok)
+- `client-upsell.mjs` — discover site clients, branded promo + draft offer email (~1000 tok)
+
+## autopilot/tests/
+
+- `autopilot.test.mjs` — 7 node:test tests (budget, governance, concept, feedback, tick) (~900 tok)

@@ -74,4 +74,22 @@ site-studio/validation-plan.json.done
 .studio-patches/
 scripts/Screenshot*
 
-sites/*/.refinement/
+# Local nested projects / probe checkouts kept on this machine, not tracked by the hub repo.
+# Their useful conclusions must be promoted into docs, plans, Data Center records, or separate repos.
+/shay-shay/
+/shay-desktop/
+/shay-desktop-electron/
+/_tool-probes/
+/skills/
+/mbsh-recipe-test/
+
+# Generated media/build outputs
+/remotion/out/
+
+# Autopilot runtime state & rendered output (regenerated each run)
+/autopilot/state/
+/autopilot/out/
+/autopilot/STOP
+
+# Autopilot runtime ledgers mirrored into the data-center
+data-center/ledgers/autopilot-*.jsonl
