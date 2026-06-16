@@ -1,7 +1,7 @@
 ---
 title: FORK-OWNERSHIP-ARCHITECTURE
 type: note
-permalink: famtastic/00-core/fork-ownership-architecture
+permalink: famtastic/00-famtastic-core/fork-ownership-architecture
 ---
 
 # Fork-Ownership Architecture — how to own a forked codebase forever

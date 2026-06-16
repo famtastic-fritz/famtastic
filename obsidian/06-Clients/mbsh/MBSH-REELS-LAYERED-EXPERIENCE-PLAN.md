@@ -1,7 +1,7 @@
 ---
 title: MBSH-REELS-LAYERED-EXPERIENCE-PLAN
 type: note
-permalink: famtastic/06-clients/mbsh/mbsh-reels-layered-experience-plan
+permalink: famtastic/03-mbsh/mbsh-reels-layered-experience-plan
 ---
 
 # MBSH — Reels of Hi-Tides

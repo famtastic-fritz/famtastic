@@ -4,7 +4,7 @@ type: note
 permalink: shay-memory/repo-docs/famtastic-state
 ---
 
-<!-- mirrored 2026-06-15T15:16:44.099757 from ~/famtastic/FAMTASTIC-STATE.md -->
+<!-- mirrored 2026-06-15T15:46:44.199161 from ~/famtastic/FAMTASTIC-STATE.md -->
 
 # FAMTASTIC-STATE.md — Canonical Project Reference
 

@@ -1,7 +1,7 @@
 ---
 title: FLAT-RATE-BRAINS
 type: note
-permalink: famtastic/02-income/flat-rate-brains
+permalink: famtastic/08-revenue/flat-rate-brains
 ---
 
 # Flat-Rate Brains for Shay — the 20, ranked & tagged (2026-06-05)

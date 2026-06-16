@@ -1,7 +1,7 @@
 ---
 title: FAMTASTIC-CORE-BUILD-PRINCIPLES
 type: note
-permalink: famtastic/00-core/famtastic-core-build-principles
+permalink: famtastic/00-famtastic-core/famtastic-core-build-principles
 ---
 
 # FAMtastic Core Build Principles

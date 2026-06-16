@@ -6,7 +6,7 @@ base_sha: 4e1b871 (2026-05-29 — predates obsidian/ on main)
 agent: claude-code
 status: reconciled-from-branch
 reconciled_by: SESSION-2556c576
-permalink: famtastic/01-shay-platform/sessions/2026-06-02/session-36j-pg
+permalink: famtastic/05-captures/sessions/2026-06-02/session-36j-pg
 ---
 
 # Session 36jPG — Faceless Video Generator

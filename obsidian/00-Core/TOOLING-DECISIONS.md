@@ -1,7 +1,7 @@
 ---
 title: TOOLING-DECISIONS
 type: note
-permalink: famtastic/00-core/tooling-decisions
+permalink: famtastic/00-famtastic-core/tooling-decisions
 ---
 
 # Shay Ecosystem — Tooling Decisions (Phase 0 research, 2026-06-07)

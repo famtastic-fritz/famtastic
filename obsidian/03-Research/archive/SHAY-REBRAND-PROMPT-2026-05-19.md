@@ -1,7 +1,7 @@
 ---
 title: SHAY-REBRAND-PROMPT-2026-05-19
 type: note
-permalink: famtastic/03-research/archive/shay-rebrand-prompt-2026-05-19
+permalink: famtastic/05-captures/archive/shay-rebrand-prompt-2026-05-19
 ---
 
 ## SHAY-REBRAND-PROMPT-2026-05-19.md

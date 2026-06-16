@@ -4,27 +4,11 @@ type: note
 permalink: shay-memory/repo-docs/changelog
 ---
 
-<!-- mirrored 2026-06-15T15:16:44.100189 from ~/famtastic/CHANGELOG.md -->
-
-## 2026-06-15 — Shay capability matrix ChatGPT Pro planning reminder [docs]
-
-Added a first-class `chatgpt-pro-planning-lane` record to Shay's capability matrix so ChatGPT Pro is treated as a cheap external planning lane instead of an implicit habit. Then refined the behavior to match Fritz's correction: major planning/architecture work now gets an optional reminder about that lane rather than a forced route change, while explicit ChatGPT planning asks still resolve honestly to the manual external lane. ChatGPT-Web-authored guardrail logic is still treated as draft material that must be audited and rewritten before it becomes Shay runtime policy. Verified with updated tests in `tests/test_capabilities_cmd.py` and `tests/test_intelligence_layer.py`. Deferred: direct ChatGPT Web integration/automation — the lane is manual copy/paste only for now.
-
-## 2026-06-14 — Shay operator stress-test truth audit [docs]
-
-Ran a bounded operator stress-test against the Shay worktree at `~/famtastic/shay-shay-intelligence-layer-v1-20260614` and produced a full control packet instead of touching production/runtime state. Verified that broad CLI surfaces are real (`status`, `doctor`, `mcp`, `gateway`, `cron`, `process`) and logged the first concrete process-intelligence run to `~/.shay/process-intelligence/`, but also found runtime-truth drift: launchd gateway and `~/.local/bin/shay` still point at the live main checkout while the stress-test worktree runs via `uv run shay`. Created new artifacts for an asset registry, worker control plane draft, GitHub capability-ingest strategy, opportunity notes, gap log, and master report. Deferred: any gateway/symlink fixes, messaging rollout, or production/account mutation; those need a separate approved runtime lane.
-
-## 2026-06-13 — FAMtastic Hosting local DB/auth/cart repair
-
-Restored the local FAMtastic Hosting dev stack after QA exposed that all write paths were failing: there was no local MySQL runtime, and Astro server routes were reading DB env vars from the wrong place. Brought up a Docker MySQL container, applied `db/schema.sql` + `db/seed.sql`, then patched `src/lib/db/pool.ts` to load `.env` via `dotenv`, which restored cart add, customer registration, customer login, and dashboard session flow on local Astro dev. Removed the fake forgot-password link from `src/components/auth/LoginForm.svelte` and replaced it with honest support copy because no recovery route exists yet. Deferred: real forgot-password/reset flow, GoDaddy shopper creation reliability (`Not Found` still logs and falls back cleanly), and PayPal browser checkout verification.
-
-## 2026-06-12 — FAMtastic Designs fix wave — launch blockers closed
-
-Closed four verified launch blockers on the famtastic-designs scaffold (~/famtastic/famtastic-sites/famtastic-designs). WF-07 hard gate replaced JSON-parse-dependent logic with exit-code truth (exit 0 = green), so the engine can now pass WF-07 when the Python QA script succeeds. All /p/* hrefs updated to /proof/* to match the existing route, six missing public route pages created (contact, services, the-famtastic-way, serve/nonprofits, serve/local-business, serve/professional), backend/php/api/.htaccess created for path-style API routing on GoDaddy shared hosting, and active_campaigns set to ["local_services"]. Build is now launch-prep ready for the Next.js/PHP/pipeline surface; real MySQL wiring, Stripe production setup, and DNS registration remain deferred.
+<!-- mirrored 2026-06-15T15:46:44.199834 from ~/famtastic/CHANGELOG.md -->
 
 ## 2026-06-11 — FAMtastic Hosting git-truth + GoDaddy deploy preflight
 
-Audited the hosting repo state after drift confusion and found two local checkouts of the same project. The canonical repo is `~/famtastic/sites/site-famtastic-hosting/`, tracking `git@github.com:famtastic-fritz/famtastic-hosting.git`; the sibling checkout at `~/famtastic/famtastic-hosting/` is drift and not deploy truth. Added a README + DEPLOY-STATE source-of-truth contract and preflight checklist so future GoDaddy deploys start by verifying the repo path, remote, and ahead/behind state before touching the server.
+Audited the hosting repo state after drift confusion and found two local checkouts of the same project. The canonical repo is `~/famtastic/famtastic-sites/famtastic-hosting/`, already tracking `git@github.com:famtastic-fritz/famtastic-hosting.git` and synced cleanly with `origin/main`; the duplicate checkout at `~/famtastic/famtastic-hosting/` was the source of confusion. Added a README + DEPLOY-STATE source-of-truth contract and preflight checklist so future GoDaddy deploys start by verifying the repo path, remote, and ahead/behind state before touching the server.
 
 ## 2026-06-11 — FAMtastic Hosting cPanel SSR deploy contract repaired
 
@@ -246,10 +230,5 @@ Executed the Mythos master prompt v2: recovered the three canonical source files
 Executed mythos-plan-patch-prompt-2026-06-11.md against the foundation plan in place (v2.1): strengthened the generator boundary to the full ProofRequest/ProofArtifact contract with the worker-not-brain principle, confirmed "Architecture: Option A / Launch discipline: Option B," corrected outreach geography from metro Atlanta to Treasure Coast/Palm Beach → South Florida, elevated Church Connect to signature campaign with sharpened angles for all four lanes, added the Claim Path QA gate and missing conversion pieces to the 7-Day Cash Sprint, replaced the first-50-sends review bottleneck with the calibration-first model (first 5 per campaign + flags), and expanded the §36 launch-blocking list. Created docs/famtastic-designs/agents.md — all 21 agents as operating units with decision authority, methodology, budgets, retry/escalation rules, and the shared AgentTaskLog schema. Next: workflows.md per the revised §34 order.
 
 ## 2026-06-11 — All remaining FAMtastic Designs child docs generated [docs]
+
 Executed mythos-run-all-child-docs-prompt-2026-06-11.md: generated the 8 remaining child planning docs (workflows.md with 16 executable workflows + master engine diagram, campaigns.md with four full configs and 25-lead test plans, backend.md with all 14 objects build-ready across the two-plane architecture, email-system.md, design.md, pages.md, roadmap.md as Phase 0→3 executable roadmap, and review-packet-2026-06-11.md). Vendor research explicitly excluded per scope. Defaults and assumptions labeled throughout; ~2,000 lines of build-ready spec. Next: one larger Shay/ChatGPT review using the exact prompt in the review packet, then Sprint Day 1.
-
-## 2026-06-12 — FAMtastic Designs: full orchestrated build scaffold
-Six-phase captain-led build: plan freeze, adversarial review, parallel swarm (7 lanes), reconciliation, and handoff. Built the canonical repo at famtastic/famtastic-sites/famtastic-designs with Next.js 15 + R3F frontend scaffold, MySQL + PHP 8 backend API, SQLite orchestration plane, Node sync worker, Python sender.py (single choke point), 10 email templates, 4 campaign configs, 16 workflow scaffolds, 18 agent definitions, and WF-07 claim path QA gate. Blocked on: domain DNS (D1), GoDaddy DB eval (D3), Stripe keys (D4), and physical mailing address before first send; WF-07 must be green before any outreach fires.
-
-## 2026-06-14 — FAMU cruise price-floor correction + booking handoff [docs]
-Updated `research/famu-rattler-cruise-2026-price-brief.md` with the strongest later direct-source pricing evidence from the FAMU/Rattler cruise run. The corrected price-floor finding is `$584.00 pp` public, `$700.15 pp` public plus party pass, versus `$806.53 pp` for the cheapest verified group-link fare. Also added a next-session booking handoff listing the exact missing details: 3/4-adult quotes, per-guest breakdown, taxes/fees, deposit, cabin category, and event-pass inclusion.

@@ -1,7 +1,7 @@
 ---
 title: SHAY-REVENUE-INTAKE
 type: note
-permalink: famtastic/02-income/shay-revenue-intake
+permalink: famtastic/08-revenue/shay-revenue-intake
 ---
 
 # Shay Revenue Intake — what Shay needs from Fritz (2026-06-05)

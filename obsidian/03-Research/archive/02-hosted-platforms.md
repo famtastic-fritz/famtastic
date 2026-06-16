@@ -1,7 +1,7 @@
 ---
 title: 02-hosted-platforms
 type: note
-permalink: famtastic/03-research/archive/02-hosted-platforms
+permalink: famtastic/05-captures/research/2026-06-04-model-landscape/02-hosted-platforms
 ---
 
 # Free & Cheap Hosted LLM Inference for an Agent Brain — Mid-2026

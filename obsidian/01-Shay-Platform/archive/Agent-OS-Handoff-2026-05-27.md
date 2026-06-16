@@ -1,7 +1,7 @@
 ---
 title: Agent-OS-Handoff-2026-05-27
 type: note
-permalink: famtastic/01-shay-platform/archive/agent-os-handoff-2026-05-27
+permalink: famtastic/projects/agent-os-handoff-2026-05-27
 ---
 
 # Agent OS Build — Handoff Doc

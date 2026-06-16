@@ -1,7 +1,7 @@
 ---
 title: MBSH-TYPOGRAPHY-AND-ICONS
 type: note
-permalink: famtastic/06-clients/mbsh/mbsh-typography-and-icons
+permalink: famtastic/03-mbsh/mbsh-typography-and-icons
 ---
 
 # MBSH Reunion — Typography & Icon System

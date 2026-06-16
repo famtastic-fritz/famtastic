@@ -1,7 +1,7 @@
 ---
 title: COWORK-BRIEFING
 type: note
-permalink: famtastic/00-core/cowork-briefing
+permalink: famtastic/00-famtastic-core/cowork-briefing
 ---
 
 # FAMtastic — Cowork Briefing

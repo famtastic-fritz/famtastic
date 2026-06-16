@@ -1,7 +1,7 @@
 ---
 title: MBSH-REUNION-PLANNING-CONSOLIDATED
 type: note
-permalink: famtastic/06-clients/mbsh/mbsh-reunion-planning-consolidated
+permalink: famtastic/03-mbsh/mbsh-reunion-planning-consolidated
 ---
 
 # MBSH Class of '96 Reunion Site — Consolidated Planning Doc

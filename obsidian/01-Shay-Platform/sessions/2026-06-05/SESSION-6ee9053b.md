@@ -7,7 +7,7 @@ start_sha: claude/workshop-dashboard-agents-jQ2wK
 started: 2026-06-05 21:01 UTC
 agent: claude-code_2-1-165_harness
 status: active
-permalink: famtastic/01-shay-platform/sessions/2026-06-05/session-6ee9053b
+permalink: famtastic/05-captures/sessions/2026-06-05/session-6ee9053b
 ---
 
 # Session 6ee9053b — 2026-06-05

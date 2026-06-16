@@ -1,7 +1,7 @@
 ---
 title: DEV-REPOS-RESEARCH-SUMMARY
 type: note
-permalink: famtastic/03-research/archive/dev-repos-research-summary
+permalink: famtastic/04-research-revenue/dev-repos-research-summary
 ---
 
 # dev-repos-3-001.zip — quick inspection

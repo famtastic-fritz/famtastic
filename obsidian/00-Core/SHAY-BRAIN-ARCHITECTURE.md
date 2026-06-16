@@ -1,7 +1,7 @@
 ---
 title: SHAY-BRAIN-ARCHITECTURE
 type: note
-permalink: famtastic/00-core/shay-brain-architecture
+permalink: famtastic/00-famtastic-core/shay-brain-architecture
 ---
 
 # Shay Brain & Worker Architecture — the locked reference (2026-06-04)

@@ -1,7 +1,7 @@
 ---
 title: SHAY-ECOSYSTEM-BUILD-PROMPT
 type: note
-permalink: famtastic/00-core/shay-ecosystem-build-prompt
+permalink: famtastic/00-famtastic-core/shay-ecosystem-build-prompt
 ---
 
 # SHAY — Own-Ecosystem Build Brief (master prompt)

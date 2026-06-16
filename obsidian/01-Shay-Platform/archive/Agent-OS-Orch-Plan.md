@@ -1,7 +1,7 @@
 ---
 title: Agent-OS-Orch-Plan
 type: note
-permalink: famtastic/01-shay-platform/archive/agent-os-orch-plan
+permalink: famtastic/projects/agent-os-orch-plan
 ---
 
 # Agent Orchestration Plan — Shay-Shay Agent OS

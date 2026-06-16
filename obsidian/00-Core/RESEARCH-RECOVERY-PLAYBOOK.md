@@ -1,7 +1,7 @@
 ---
 title: RESEARCH-RECOVERY-PLAYBOOK
 type: note
-permalink: famtastic/00-core/research-recovery-playbook
+permalink: famtastic/00-famtastic-core/research-recovery-playbook
 ---
 
 # Research Recovery & Consolidation Playbook (through Shay)

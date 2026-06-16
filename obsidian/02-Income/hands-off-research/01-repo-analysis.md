@@ -1,7 +1,7 @@
 ---
 title: 01-repo-analysis
 type: note
-permalink: famtastic/02-income/hands-off-research/01-repo-analysis
+permalink: famtastic/08-revenue/hands-off-research/01-repo-analysis
 ---
 
 # Hands-Off Income Research — Repo Analysis (agent 1 of 3)

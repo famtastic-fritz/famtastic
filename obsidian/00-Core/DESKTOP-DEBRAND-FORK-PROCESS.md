@@ -1,7 +1,7 @@
 ---
 title: DESKTOP-DEBRAND-FORK-PROCESS
 type: note
-permalink: famtastic/00-core/desktop-debrand-fork-process
+permalink: famtastic/00-famtastic-core/desktop-debrand-fork-process
 ---
 
 # Desktop — Fork-and-Debrand: the repeatable process

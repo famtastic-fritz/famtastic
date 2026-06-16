@@ -1,7 +1,7 @@
 ---
 title: 2026-06-05-claude-findings-for-brief
 type: note
-permalink: famtastic/inbox/2026-06-05-claude-findings-for-brief
+permalink: famtastic/05-captures/2026-06-05-claude-findings-for-brief
 ---
 
 # Claude's findings for Fritz's morning brief (2026-06-05)

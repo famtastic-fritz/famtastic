@@ -1,7 +1,7 @@
 ---
 title: MBSH-REVIEW-2026-05-29
 type: note
-permalink: famtastic/inbox/mbsh-review-2026-05-29
+permalink: famtastic/00-inbox/mbsh-review-2026-05-29
 ---
 
 # MBSH Reunion — Review & Open Tasks

@@ -1,7 +1,7 @@
 ---
 title: 01-chinese-frontier-providers
 type: note
-permalink: famtastic/02-income/flat-rate-research/01-chinese-frontier-providers
+permalink: famtastic/08-revenue/flat-rate-research/01-chinese-frontier-providers
 ---
 
 # Flat-Rate Brains — Chinese/Frontier Providers (agent 1 of 3)

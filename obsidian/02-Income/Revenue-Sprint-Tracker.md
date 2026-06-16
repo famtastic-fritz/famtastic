@@ -1,7 +1,7 @@
 ---
 title: Revenue-Sprint-Tracker
 type: note
-permalink: famtastic/02-income/revenue-sprint-tracker
+permalink: famtastic/08-revenue/revenue-sprint-tracker
 ---
 
 # Revenue Sprint Tracker

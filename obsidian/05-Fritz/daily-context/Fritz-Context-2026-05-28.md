@@ -1,7 +1,7 @@
 ---
 title: Fritz-Context-2026-05-28
 type: note
-permalink: famtastic/05-fritz/daily-context/fritz-context-2026-05-28
+permalink: famtastic/daily/fritz-context-2026-05-28
 ---
 
 # Fritz Context — 2026-05-28T23:55:40.733534

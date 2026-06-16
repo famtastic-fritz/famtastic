@@ -1,7 +1,7 @@
 ---
 title: KANBAN-CONSOLIDATION-BUILD-PACKET
 type: note
-permalink: famtastic/00-core/kanban-consolidation-build-packet
+permalink: famtastic/00-famtastic-core/kanban-consolidation-build-packet
 ---
 
 # Build Packet — Kanban Consolidation (one job store, one board)

@@ -1,7 +1,7 @@
 ---
 title: STUDIO-V3-BUILD-PLAN-REVISED
 type: note
-permalink: famtastic/07-studios/site-studio/studio-v3-build-plan-revised
+permalink: famtastic/02-site-studio/studio-v3-build-plan-revised
 ---
 
 # FAMtastic Site Studio v3 — Revised Build Plan

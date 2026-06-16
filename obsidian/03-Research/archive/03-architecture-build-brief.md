@@ -1,7 +1,7 @@
 ---
 title: 03-architecture-build-brief
 type: note
-permalink: famtastic/03-research/archive/03-architecture-build-brief
+permalink: famtastic/05-captures/research/2026-06-05-mobile-companion/03-architecture-build-brief
 ---
 
 # Mobile Companion — Architecture + Clickable-App Path (agent 3 of 3)

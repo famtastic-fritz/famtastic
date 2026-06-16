@@ -1,7 +1,7 @@
 ---
 title: 03-tailored-play
 type: note
-permalink: famtastic/02-income/hands-off-research/03-tailored-play
+permalink: famtastic/08-revenue/hands-off-research/03-tailored-play
 ---
 
 # Hands-Off Income — Tailored Play (agent 3 of 3)

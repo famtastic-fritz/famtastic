@@ -1,7 +1,7 @@
 ---
 title: HI-TIDE-HARRY-CHARACTER-SHEET
 type: note
-permalink: famtastic/06-clients/mbsh/hi-tide-harry-character-sheet
+permalink: famtastic/03-mbsh/hi-tide-harry-character-sheet
 ---
 
 # Hi-Tide Harry — Character Sheet Spec

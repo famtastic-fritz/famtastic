@@ -1,7 +1,7 @@
 ---
 title: DEV-REPOS-RESEARCH-DIGEST
 type: note
-permalink: famtastic/03-research/archive/dev-repos-research-digest
+permalink: famtastic/04-research-revenue/dev-repos-research-digest
 ---
 
 # dev-repos-3-001 — Research Digest

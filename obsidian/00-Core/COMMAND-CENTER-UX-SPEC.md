@@ -1,7 +1,7 @@
 ---
 title: COMMAND-CENTER-UX-SPEC
 type: note
-permalink: famtastic/00-core/command-center-ux-spec
+permalink: famtastic/00-famtastic-core/command-center-ux-spec
 ---
 
 # Shay Command Center — Information-Architecture Spec (2026-06-06)

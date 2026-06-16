@@ -1,7 +1,7 @@
 ---
 title: 02-marketplace-landscape
 type: note
-permalink: famtastic/02-income/hands-off-research/02-marketplace-landscape
+permalink: famtastic/08-revenue/hands-off-research/02-marketplace-landscape
 ---
 
 # Hands-Off Income — Marketplace Landscape (agent 2 of 3)

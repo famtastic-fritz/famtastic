@@ -1,7 +1,7 @@
 ---
 title: Hermes-Agent-Goals
 type: note
-permalink: famtastic/03-research/archive/hermes-agent-goals
+permalink: famtastic/research/hermes-agent-goals
 ---
 
 # Hermes Agent — Persistent Goals (/goal) — Full Documentation

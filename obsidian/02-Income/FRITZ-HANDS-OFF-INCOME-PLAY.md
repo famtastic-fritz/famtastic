@@ -1,7 +1,7 @@
 ---
 title: FRITZ-HANDS-OFF-INCOME-PLAY
 type: note
-permalink: famtastic/02-income/fritz-hands-off-income-play
+permalink: famtastic/08-revenue/fritz-hands-off-income-play
 ---
 
 # Fritz's Hands-Off Income Play (2026-06-05)

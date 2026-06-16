@@ -1,7 +1,7 @@
 ---
 title: Agent-OS-Build
 type: note
-permalink: famtastic/01-shay-platform/archive/agent-os-build
+permalink: famtastic/projects/agent-os-build
 ---
 
 # Agent OS Build — Session Handoff

@@ -6,7 +6,7 @@ base_sha: 326e47e (2026-06-02 — current main, carries the vault)
 agent: claude-code
 status: reconciled-from-branch
 reconciled_by: SESSION-2556c576
-permalink: famtastic/01-shay-platform/sessions/2026-06-02/session-8y-epp
+permalink: famtastic/05-captures/sessions/2026-06-02/session-8y-epp
 ---
 
 # Session 8yEPP — Jamari '26 Graduation Site

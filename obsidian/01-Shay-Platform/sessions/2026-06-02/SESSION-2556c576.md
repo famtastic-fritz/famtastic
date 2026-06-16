@@ -7,7 +7,7 @@ start_sha: 0bce53c
 started: 2026-06-02 20:36 UTC
 agent: claude-code_2-1-160_agent
 status: ended
-permalink: famtastic/01-shay-platform/sessions/2026-06-02/session-2556c576
+permalink: famtastic/05-captures/sessions/2026-06-02/session-2556c576
 ---
 
 # Session 2556c576 — 2026-06-02

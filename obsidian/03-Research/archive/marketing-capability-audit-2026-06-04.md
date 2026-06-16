@@ -5,7 +5,7 @@ type: capability-audit
 topic: marketing/media toolkit — claimed vs. real
 trigger: Shay (on Gemini) proposed a "Show Don't Tell" campaign citing skills that
   don't exist
-permalink: famtastic/03-research/archive/marketing-capability-audit-2026-06-04
+permalink: famtastic/07-research/marketing-capability-audit-2026-06-04
 ---
 
 # Marketing toolkit — ground truth (claimed vs. installed)

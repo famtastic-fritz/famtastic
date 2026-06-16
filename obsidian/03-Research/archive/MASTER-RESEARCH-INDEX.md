@@ -1,7 +1,7 @@
 ---
 title: MASTER-RESEARCH-INDEX
 type: note
-permalink: famtastic/03-research/archive/master-research-index
+permalink: famtastic/07-research/master-research-index
 ---
 
 # Master Research Index — what we paid for, organized

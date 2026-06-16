@@ -1,7 +1,7 @@
 ---
 title: SNAPSHOT-2026-05-29-late
 type: note
-permalink: famtastic/inbox/snapshot-2026-05-29-late
+permalink: famtastic/00-inbox/snapshot-2026-05-29-late
 ---
 
 # FAMtastic Session Snapshot — 2026-05-29 (Late Session)

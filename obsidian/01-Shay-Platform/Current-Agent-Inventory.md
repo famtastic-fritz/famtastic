@@ -1,7 +1,7 @@
 ---
 title: Current-Agent-Inventory
 type: note
-permalink: famtastic/01-shay-platform/current-agent-inventory
+permalink: famtastic/06-capabilities/current-agent-inventory
 ---
 
 # Current Agent Inventory

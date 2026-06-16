@@ -1,7 +1,7 @@
 ---
 title: SHAY-NUKE-RECOVERY-2026-06-04
 type: note
-permalink: famtastic/00-core/shay-nuke-recovery-2026-06-04
+permalink: famtastic/00-famtastic-core/shay-nuke-recovery-2026-06-04
 ---
 
 # Shay post-nuke recovery — diagnosis + fix (2026-06-04)

@@ -1,7 +1,7 @@
 ---
 title: 02-ux-ui-spec
 type: note
-permalink: famtastic/03-research/archive/02-ux-ui-spec
+permalink: famtastic/05-captures/research/2026-06-05-mobile-companion/02-ux-ui-spec
 ---
 
 # Mobile Companion — UX/UI Spec (agent 2 of 3)

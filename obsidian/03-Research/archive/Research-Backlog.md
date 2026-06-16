@@ -1,7 +1,7 @@
 ---
 title: Research-Backlog
 type: note
-permalink: famtastic/03-research/archive/research-backlog
+permalink: famtastic/07-research/research-backlog
 ---
 
 # Research Backlog

@@ -1,7 +1,7 @@
 ---
 title: MASTER-STATUS-2026-05-29
 type: note
-permalink: famtastic/inbox/master-status-2026-05-29
+permalink: famtastic/00-inbox/master-status-2026-05-29
 ---
 
 # FAMtastic Master Status Board

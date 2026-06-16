@@ -7,7 +7,7 @@ start_sha: 755ccb8
 started: 2026-06-02 21:02 UTC
 agent: claude-code_2-1-160_harness
 status: ended
-permalink: famtastic/01-shay-platform/sessions/2026-06-02/session-5da39f82
+permalink: famtastic/05-captures/sessions/2026-06-02/session-5da39f82
 ---
 
 # Session 5da39f82 — 2026-06-02

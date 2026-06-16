@@ -1,7 +1,7 @@
 ---
 title: IDEAS-LOG
 type: note
-permalink: famtastic/03-research/seeds/ideas-log
+permalink: famtastic/04-think-tank/ideas-log
 ---
 
 # FAMtastic Think Tank — Vetted Ideas, Ready to Build

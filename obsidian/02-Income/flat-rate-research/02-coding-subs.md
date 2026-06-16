@@ -1,7 +1,7 @@
 ---
 title: 02-coding-subs
 type: note
-permalink: famtastic/02-income/flat-rate-research/02-coding-subs
+permalink: famtastic/08-revenue/flat-rate-research/02-coding-subs
 ---
 
 # Flat-Rate Brains — Western Coding Subs + Shay-usability (agent 2 of 3)

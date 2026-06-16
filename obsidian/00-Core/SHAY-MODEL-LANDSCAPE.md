@@ -1,7 +1,7 @@
 ---
 title: SHAY-MODEL-LANDSCAPE
 type: note
-permalink: famtastic/00-core/shay-model-landscape
+permalink: famtastic/00-famtastic-core/shay-model-landscape
 ---
 
 # Shay Model Landscape — free/open/frontier brains & how to add them (2026-06-04)

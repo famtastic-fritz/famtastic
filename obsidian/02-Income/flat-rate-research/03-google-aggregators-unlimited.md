@@ -1,7 +1,7 @@
 ---
 title: 03-google-aggregators-unlimited
 type: note
-permalink: famtastic/02-income/flat-rate-research/03-google-aggregators-unlimited
+permalink: famtastic/08-revenue/flat-rate-research/03-google-aggregators-unlimited
 ---
 
 # Flat-Rate Brains — Google / Aggregators / "Unlimited" (agent 3 of 3)

@@ -1,7 +1,7 @@
 ---
 title: VAULT-INDEX
 type: note
-permalink: famtastic/00-core/vault-index
+permalink: famtastic/00-famtastic-core/vault-index
 ---
 
 # FAMtastic Vault Index

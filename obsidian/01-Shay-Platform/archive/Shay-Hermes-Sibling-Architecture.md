@@ -1,7 +1,7 @@
 ---
 title: Shay-Hermes-Sibling-Architecture
 type: note
-permalink: famtastic/01-shay-platform/archive/shay-hermes-sibling-architecture
+permalink: famtastic/projects/shay-hermes-sibling-architecture
 ---
 
 # Shay-Shay & Hermes: Sibling Architecture

@@ -1,7 +1,7 @@
 ---
 title: Agent-Capability-Matrix
 type: note
-permalink: famtastic/01-shay-platform/agent-capability-matrix
+permalink: famtastic/06-capabilities/agent-capability-matrix
 ---
 
 # Agent Capability Matrix

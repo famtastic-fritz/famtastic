@@ -1,7 +1,7 @@
 ---
 title: MBSH-V1-EXECUTION-ARTIFACT
 type: note
-permalink: famtastic/06-clients/mbsh/mbsh-v1-execution-artifact
+permalink: famtastic/03-mbsh/mbsh-v1-execution-artifact
 ---
 
 # MBSH Class of '96 Reunion Site — V1 Execution Artifact

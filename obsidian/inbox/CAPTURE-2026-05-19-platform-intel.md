@@ -4,7 +4,7 @@ date: 2026-05-19
 source: claude-web
 project: shay, studio, core
 status: processed
-permalink: famtastic/inbox/capture-2026-05-19-platform-intel
+permalink: famtastic/05-captures/capture-2026-05-19-platform-intel
 ---
 
 ## Context

@@ -1,7 +1,7 @@
 ---
 title: AGENT-WORKBENCH-GENERATOR-PROMPT
 type: note
-permalink: famtastic/00-core/agent-workbench-generator-prompt
+permalink: famtastic/00-famtastic-core/agent-workbench-generator-prompt
 ---
 
 # Agent Workbench — App-Generator Prompt

@@ -6,7 +6,7 @@ build_ids: b_* (24 builds)
 status: reconciled-from-shay-memory
 reconciled_by: SESSION-2556c576
 source: obsidian/Shay-Memory/
-permalink: famtastic/01-shay-platform/sessions/2026-06-02/session-shay-overnight-2026-05-31
+permalink: famtastic/05-captures/sessions/2026-06-02/session-shay-overnight-2026-05-31
 ---
 
 # Shay — Overnight Master-Plan Run (2026-05-31 → 06-01)

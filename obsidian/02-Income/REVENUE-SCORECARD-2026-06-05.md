@@ -1,7 +1,7 @@
 ---
 title: REVENUE-SCORECARD-2026-06-05
 type: note
-permalink: famtastic/02-income/revenue-scorecard-2026-06-05
+permalink: famtastic/08-revenue/revenue-scorecard-2026-06-05
 ---
 
 # FAMtastic Revenue Scorecard (2026-06-05)
