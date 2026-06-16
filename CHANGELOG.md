@@ -1,53 +1,12 @@
 # FAMtastic Changelog
 
-## 2026-05-05 — Ops Workspace MVP shipped
+## 2026-05-05 — Remaining plans triaged and actionized
 
-Shipped Phase 0 of the Operations Workspace inside the Workbench shell:
-the source-of-truth matrix and freshness derivation table now live as
-contracts in `docs/ops/state-contract.md` plus the single implementation in
-`site-studio/lib/ops-freshness.js`, and `scripts/ops/inventory.js` writes
-dated debt snapshots (first one committed for 2026-05-05). Wired
-`/api/ops/{jobs,runs,tasks,plans,proofs,gaps,memory,reviews,debt,needsMe}`
-read endpoints with snapshot-versioned envelopes, plus a destructive-action
-gate on `POST /api/ops/command/:action`. Built the Jobs tab UI (seven
-swimlanes, Stale Debt drawer, slide-over inspector) — polls every 5s; WS
-deferred. 15 ops tests green (`tests/ops/`). Pre-existing breakage on the
-branch — `site-studio/lib/{shay-shay-sessions,logger,openai-image-adapter}.js`
-have never been tracked in git and Studio refuses to boot under launchd
-without them — blocks live UI verification; logged as a known gap.
+Triaged the remaining plan pile into completed, blocked, ready, and proposed-design buckets. Added `plans/remaining-plan-triage-2026-05-05.md` plus checklist docs for Workbench cutover, Media Studio unification, status regeneration, capture promotion, pipeline visualizer phase 2, MBSH deploy/media readiness, and Ops Workspace GUI actionization. Corrected the Ops Workspace GUI packet so it is proposed source material, not a fifth active parent, then promoted its next work into existing-parent task rows. Deferred work is now explicit: eight ready implementation tasks and four blocked MBSH deploy/media tasks.
 
-## 2026-05-05 — Site Studio Resend notifications configured
+## 2026-05-05 — Operations Workspace GUI plan proposed
 
-Configured Site Studio itself to send notification email through Resend using `notifications.email` in `~/.config/famtastic/studio-config.json` and the existing `vault://studio.resend.api_key`. Added `fam-hub platform configure-resend`, `fam-hub platform send-test-email`, reusable `site-studio/lib/studio-mailer.js`, and proof at `proofs/studio-resend-notification-2026-05-05.json`. A real test email was accepted by Resend from `FAMtastic Site Studio <studio@send.mbsh96reunion.com>` to the configured Studio email. Deferred: verify a FAMtastic-owned sender domain such as `send.famtastic.com`; the current domain is functional but temporary.
-
-## 2026-05-05 — Site Studio service auth ownership
-
-Added Studio-owned service auth commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`. Existing local Resend, cPanel, and MBSH production DB credentials/refs were migrated into the platform vault without committing secrets, Resend API access was verified, and lower platform helpers now prefer `studio.*` provider vault IDs. MBSH deploy proof and task state now treat the reunion site as a consumer of Studio-provisioned services rather than the provider account owner. Remaining blockers are production `API_BASE_URL` generation, cPanel DNS/addon-domain automation coverage or provider UI fallback, and SSH host-key trust for backend deploy smoke.
-
-## 2026-05-05 — Reporting density made configurable
-
-Added `config/reporting-preferences.json` as the project-level response/reporting density config and `docs/operating-rules/reporting-density.md` as the operating rule. Added `fam-hub report style` to show or set `compact`, `standard`, and `detail` density. Default is `compact`; proof standards and blocker visibility do not change.
-
-## 2026-05-05 — MBSH launch blockers grouped
-
-Grouped the remaining MBSH work into one launch unblock packet at `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`. Closed the media/story blocker by adding all seven referenced story JPGs to the v2 deploy repo, adding `frontend/assets/story/RIGHTS-MANIFEST.md`, and saving Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete. Remaining MBSH launch work is the live deploy proof, blocked by external Netlify/DNS/GoDaddy/PHP/MySQL/Resend/backend config access and production `API_BASE_URL`.## 2026-05-05 — Chat Capture / Tag / Learn / Optimize pipeline (MVP shipped)
-## 2026-05-05 — Agent coordination + brain→memory migration
-Installed `AGENT-COORDINATION.md` and `scripts/agent-checkin.js` to prevent the
-parallel-implementation problem (today: cowork built `.brain/` while Claude Code
-built `memory/<type>/<id>.md`). Migrated 30 entries from cowork's `.brain/` into
-the canonical memory store as `lifecycle: candidate` (11 anti-pattern, 7
-bug-pattern, 7 decision, 4 learning, 2 rule) so they surface for human review
-before activation. Added the agent-coordination rule to `CLAUDE.md` and a new
-`AGENTS.md`. Per-surface branch naming convention and AGENT-COORDINATION.md
-auto-pruning are deferred.
-
-## 2026-05-05 — Chat Capture / Tag / Learn / Optimize pipeline (MVP shipped)
-
-Built a working capture → tag → promote → use → optimize loop end-to-end. New plan `plan_2026_05_05_chat_capture_learn_optimize` (label: `chat-capture-learn-optimize`, tags: platform-upgrades, memory, shay-shay, intelligence, ledgers). Capture adapters (manual, claude-code, cowork, codex), gated promoter with auto-allowlist (confidence>=0.85 + type in {vendor-fact, do-not-repeat, bug-pattern}), per-entry markdown store at `memory/<type>/<id>.md`, INDEX.json, append-only telemetry at `memory/usage.jsonl`, retriever, Shay context provider (with prefixed + bare facet matching), and weekly digest with auto-promote-to-candidate (NOT auto-active). Verified end-to-end against a synthetic transcript: 15 extracts → 4 auto-promoted → recall + Shay block return them with correct facets → digest produces a clean report. Deferred: cron schedule for digest; adversarial review loop for memory promotions (depends on Ops plan's loop); smarter extract classifier to reduce near-duplicate matches.
-
-## 2026-05-05 — Operations Workspace GUI plan registered
-
-Registered new parent plan `plan_2026_05_05_ops_workspace_gui` (label `ops-workspace-gui`, tags `platform-upgrades`, `studio-ui`, `ops`, `shay-shay`, `agent-management`) capturing the design for an 11-tab Operations workspace inside the Workbench shell (Pulse · Plans · Tasks · Jobs · Runs · Proofs · Agents · Reviews · Gaps · Memory · Debt). Plan defines a record-type visual language for PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW, freshness as a first-class field, and quarantines stale legacy queue items in a dedicated drawer. MVP is the Jobs tab (six lanes + Stale Debt drawer + inspector + WebSocket). Added `plans/plan_2026_05_05_ops_workspace_gui/{plan.json,README.md}`, added the plan to `plans/registry.json` `active_parent_ids` with a new `labels` block, and updated SITE-LEARNINGS.md with the plan summary plus four prerequisite known gaps (no `/api/ops/*`, no `/ws/ops`, no record `freshness` field, no record-type visual tokens). Design-only — no API, UI, or schema changes shipped.
+Created proposed plan packet `plan_2026_05_05_ops_workspace_gui` (label `ops-workspace-gui`, tags `platform-upgrades`, `studio-ui`, `ops`, `shay-shay`, `agent-management`) capturing the design for an 11-tab Operations workspace inside the Workbench shell (Pulse · Plans · Tasks · Jobs · Runs · Proofs · Agents · Reviews · Gaps · Memory · Debt). Plan defines a record-type visual language for PLAN/TASK/JOB/RUN/PROOF/GAP/MEMORY/REVIEW, freshness as a first-class field, and quarantines stale legacy queue items in a dedicated drawer. MVP is the Jobs tab (six lanes + Stale Debt drawer + inspector + WebSocket). Design-only — no API, UI, schema, or active parent-plan expansion shipped.
 
 ## 2026-05-04 — Plan registry CLI substrate
 Built the first read-only plan/task/run status substrate: `plans/registry.json`, three density contracts under `plans/templates/`, empty append-only ledgers, `FAMTASTIC-STATUS.md`, and a build report at `docs/plan-registry-build-report-2026-05-04.md`. Added `fam-hub plan list`, `fam-hub plan list --compact`, `fam-hub plan list --json`, `fam-hub plan show <id>`, `fam-hub task list`, and `fam-hub run status`. Verified JSON validity, shell syntax, standard/compact/detail plan output, and empty-ledger behavior. Deferred: task promotion, run creation, automatic status export, schema validation, and Studio Plans panel rendering.
@@ -498,11 +457,3 @@ Verified the MBSH RSVP and sponsor frontend submission paths in a real browser a
 ## 2026-05-04 — Pipeline visualizer and MBSH proof closure
 
 Added Workbench pipeline visualizer phase 1 with inspect, trace, and propose lanes backed by the workflow stage catalog and `/api/trace`, plus a new `/api/workflow/stage-catalog` endpoint. Verified it through launchd-managed Studio with Playwright and saved screenshot/JSON proof. Completed the remaining MBSH proof packets for media/story readiness, Chatbot Phase 1, content deltas, Studio reproduction audit harness, and generalized platform gaps. Remaining work is honestly blocked, not open-ended: MBSH production deploy needs external access/config, and story/gallery readiness needs seven missing image assets plus rights proof.
-
-## 2026-05-05 — MBSH "The Premiere" theme — Pass 1 shipped, Pass 2 blocked
-
-Shipped Pass 1 of the cinematic-premiere theme overlay on the deployed reunion site (`feat/premiere-theme` branch + [PR #1](https://github.com/famtastic-fritz/mbsh-reunion/pull/1) on `famtastic-fritz/mbsh-reunion`). Single body attribute feature flag (`body[data-premiere="on"]`) gates ~480 lines of new CSS (`frontend/css/premiere.css`) and ~270 lines of new JS (`frontend/js/premiere.js`); zero existing CSS/JS modified. Hi-Tide Harry was reworked from the original small chatbot bubble into a real interactive `<button>` that serves as the visible context-aware virtual assistant — keyboard-accessible, screen-reader labeled, swaps pose + contextual hint by section, click opens existing chatbot panel. Theme adds curtain rise (sessionStorage-once), title settle, Story Ken Burns, marquee bulb chase, cinema-seat row on RSVP, vinyl record on playlist, in-memoriam letterbox bands and silver rules on memorial, capsule envelope flap, patron-tier foil shimmer. Native scroll only (no GSAP, no Lenis); IntersectionObserver primary with CSS scroll-driven progressive enhancement. Pre-flight tag `v1.0-pre-premiere` pushed to origin for instant rollback. Pass 2 (3 raster assets via nano-banana — velvet curtain, patron-tier medallions, brand-mark silver-foil) blocked on expired Gemini API key — gaps captured at `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`. Site ships fully functional with CSS gradient placeholders that were intentionally designed as the v1 fallback. Deferred: Pass 2 raster swap (after Gemini key refresh), real-device mobile QA, Lighthouse run.
-
-## 2026-05-10 — Studio Functional Workspace Wiring (parallel-lane run)
-
-Operationalized all twelve sections of the unified Studio shell at `/studio.html` via a parallel orchestrator + 6 implementation lanes (A–F) + 1 sequential proof lane (G). Lane A wired Sites / Site Builder / Site Settings with last-active-tag persistence and honest action contracts; Lane B wired Media Library to live `/api/media` reads (Media Studio variations stay placeholder, generation actions disabled with honest labels); Lane C wired Component Studio library + check-existing-before-creating to live `/api/components` and `/api/components/check`; Lane D added new modular routers `server/research-routes.js` + `server/think-tank-routes.js` (+2 mount lines in `server.js`) and live brief / capture reads; Lane E rewrote `ContextPanel` for per-section contextual content + collapsible right pane with localStorage persistence; Lane F extended `RecipeFlow` to all 5 named recipes from `WORKSPACE-RECIPES.md` and wired the bottom Memory Strip to `/api/intelligence/runs`. Lane G shipped `tests/studio/lane-static-checks.js` + `site-studio/server/__smoke__/studio-functional-verify.js` — **85/85 static assertions PASS**, browser prong is BLOCKED in sandbox (chromium missing) but ready to run on host. Mission Control containment trip-wire green — it remains one section among twelve. Run controller: `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md`. Run report: `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md`. Deferred: live media generation round-trip, surgical insertion wiring, plan-card / versions / verify native panes, per-site overrides file schema, brain integration in Shay screen, recipe live-status binding, captures inbox write paths, browser-prong host re-run.

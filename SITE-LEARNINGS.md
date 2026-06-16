@@ -1,169 +1,5 @@
 # FAMtastic Ecosystem — Site Learnings
 
-## MBSH "The Premiere" Theme + Virtual Assistant Pattern (2026-05-05)
-
-Shipped a theme-overlay pattern (Pass 1) on the deployed `mbsh-reunion`
-deploy repo at `~/famtastic-sites/mbsh-reunion/frontend/`. Branch:
-`feat/premiere-theme`. PR: famtastic-fritz/mbsh-reunion#1.
-Plan: `docs/sites/site-mbsh-reunion/PREMIERE-THEME-EXPERIENCE-PLAN-2026-05-05.md`.
-Gaps: `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
-
-### What this proves about the FAMtastic factory
-
-1. **Single-attribute feature flags scale.** The whole experience is gated
-   by `body[data-premiere="on"]`. Existing CSS untouched. Flipping the
-   attribute is the rollback. Pattern is reusable for any future cinematic
-   / themed treatment on any factory-built site.
-2. **Hi-Tide Harry as virtual assistant is the prototype.** Per Fritz's
-   correction mid-session: Harry is NOT decoration — he's a context-aware
-   on-page assistant. Implemented as a real `<button>` (aria-labeled,
-   keyboard accessible), replaces the original small chatbot bubble,
-   swaps pose + contextual hint by section, click opens the chatbot panel.
-   This is the public-site instance of the broader virtual-assistant
-   pattern Fritz is prototyping with Shay on Studio. Future factory builds
-   should ship every site with the same pattern: visible character +
-   interactive + context-aware + accessible.
-3. **Adversarial-review fallback chain is missing.** When `codex-bridge`
-   rate-limited mid-session, there was no automatic fallback to a second
-   provider. Lost the review-until-trivial loop. Self-review by the
-   executing agent caught 6 real issues but is not a substitute. See
-   GAP-2026-05-05-01 for the recommended fix (chain: codex-bridge →
-   codex-official → second-Claude pass → local lint rules).
-4. **Native scroll + IntersectionObserver beats Lenis + GSAP for
-   factory-built static sites.** The plan originally called for Lenis
-   and GSAP ScrollTrigger; self-review found Lenis breaks `position:
-   sticky` and adds a11y friction with no real perf upside on modern
-   browsers. Final implementation is GSAP-free, Lenis-free; uses native
-   scroll + IO + CSS scroll-driven animations with @supports fallback.
-   Saves ~53KB and removes a class of footguns.
-5. **Pass 2 was correctly de-risked.** Most "image gen tasks" in the
-   original plan were actually pure CSS/SVG; only 3 assets needed real
-   raster gen (velvet curtain, patron-tier medallions, brand-foil).
-   When Gemini API key expired mid-session, those 3 deferred without
-   blocking the experience because the CSS placeholders were
-   intentionally designed as the v1 fallback. Lesson: separate
-   "structurally needs raster" from "would be nicer with raster" up
-   front; the second category should never block a ship.
-
-### Files added (in deploy repo, not famtastic core)
-
-- `frontend/css/premiere.css` — 480 lines, all selectors gated by `body[data-premiere="on"]`
-- `frontend/js/premiere.js` — 270 lines, IntersectionObserver-driven, no framework
-- `frontend/assets/premiere/` — directory created, empty pending Pass 2
-
-### Known Gaps opened
-
-- GAP-2026-05-05-01: Adversarial-review fallback chain missing
-- GAP-2026-05-05-02: codex-bridge MCP attempts Linear OAuth handshake unprompted
-- GAP-2026-05-05-03: Gemini API key expired (blocks Pass 2 raster gen)
-- GAP-2026-05-05-04: `data-premiere` flag is HTML-hardcoded; future migration to runtime config
-- GAP-2026-05-05-05: preview MCP launch.json discovery is not project-aware
-
-All five documented at `docs/sites/site-mbsh-reunion/GAPS-2026-05-05-premiere-session.md`.
-
----
-
-## Studio Boot Stubs for Missing Lib Modules (2026-05-05)
-
-Studio refused to boot under launchd because three modules required by
-`site-studio/server.js` had never been committed and were absent from the
-working tree:
-
-- `site-studio/lib/shay-shay-sessions.js` — required at server.js:36
-- `site-studio/lib/logger.js` — required at server.js:45
-- `site-studio/lib/openai-image-adapter.js` — required at server.js:11341
-
-Additionally, `site-studio/lib/tool-handlers.js` was missing four exports
-(`setPatchAppliedNotifier`, `setCurrentShayContext`, `isStudioTierAvailable`,
-`getStudioTierResolver`) referenced from server.js.
-
-Minimal stubs were written so Studio can boot. Each stub is marked
-`// TEMPORARY STUB — pending restoration of original implementation`.
-Behavioral notes:
-
-- `shay-shay-sessions.js`: in-memory `Map`, no persistence across restarts.
-  Sessions reset on every Studio restart.
-- `logger.js`: in-memory ring buffer of 1000 request lines, lost on restart;
-  no disk persistence.
-- `openai-image-adapter.js`: `pickProvider()` works; `editImage()` and
-  `generateImage()` throw a clear error — OpenAI image gen is non-functional
-  until the real adapter is restored. Google/Imagen path unaffected.
-- `tool-handlers.js`: appended no-op exports. `isStudioTierAvailable()`
-  returns `false`, so Studio Tier features behave as unavailable.
-
-Verified Studio boots: `curl http://localhost:3334/api/health` → 200 OK,
-`/api/ops/jobs` → 200 with seven-lane snapshot (PR #6 Ops MVP intact).
-
-### Known Gaps opened
-
-- **OpenAI image generation disabled.** `lib/openai-image-adapter.js` is a
-  stub; calls to `editImage`/`generateImage` throw. Restore the original
-  adapter implementation to re-enable the OpenAI image path.
-- **Shay-Shay sessions do not persist across Studio restarts.** Original
-  `lib/shay-shay-sessions.js` likely had richer state and persistence;
-  current stub is a plain in-memory Map.
-- **Studio Tier always reports unavailable.** `isStudioTierAvailable()` stub
-  returns false, gating off any Studio Tier-only branches in server.js.
-- **Patch-applied notifier and Shay context setter are no-ops.** Until the
-  real `tool-handlers.js` exports are restored, these signals are dropped
-  silently.
-
-## Site Studio Resend Notifications (2026-05-05)
-
-Site Studio can now send its own notification emails through Resend. The
-platform command `fam-hub platform configure-resend` writes
-`notifications.email` into `~/.config/famtastic/studio-config.json` with
-`provider: resend`, `api_key_ref: vault://studio.resend.api_key`, and sender
-identity `FAMtastic Site Studio`. `fam-hub platform send-test-email` uses
-`site-studio/lib/studio-mailer.js` and
-`site-studio/scripts/send-studio-test-email.js` to send through Resend without
-printing or committing the API key.
-
-Proof: `proofs/studio-resend-notification-2026-05-05.json`. Resend accepted a
-real test email from `FAMtastic Site Studio <studio@send.mbsh96reunion.com>` to
-the configured Studio email address.
-
-Known gap: the only verified Resend sending domain currently available is
-`send.mbsh96reunion.com`, so Studio notifications are functional but using a
-temporary sender domain. Long-term Studio/platform notifications should verify a
-FAMtastic-owned domain such as `send.famtastic.com` and rerun
-`fam-hub platform configure-resend --domain send.famtastic.com`.
-
-## Site Studio Service Auth Ownership (2026-05-05)
-
-Provider authentication now belongs to Site Studio/platform, not to generated
-sites. `fam-hub platform bootstrap-services` wraps
-`platform/capabilities/studio/bootstrap-services.sh` to check Netlify, Resend,
-cPanel/GoDaddy, DNS, DB, and SSH readiness; it migrates discoverable local
-secrets into the platform vault without printing values and writes non-secret
-`service_auth` references into `~/.config/famtastic/studio-config.json`.
-
-`fam-hub platform provision-site <site> --check --proof` wraps
-`platform/capabilities/studio/provision-site.sh` and verifies that a generated
-site consumes Studio-owned services instead of owning provider accounts. MBSH
-is the first proof: Resend API, cPanel API token, the MBSH production DB
-password, and the MBSH production DB reference were migrated into
-Studio/platform vault IDs; Resend verified via API; the proof packet lives at
-`proofs/studio-service-auth-mbsh-reunion-v2-2026-05-05.json`.
-
-For the current GoDaddy-hosted stack, cPanel UAPI/MCP is the primary
-hosting/DB/DNS control plane. GoDaddy developer API keys are optional
-registrar/direct-DNS fallback, not the credential to chase by default. Lower
-platform helpers now prefer Studio-owned vault IDs (`studio.*`) for Resend,
-cPanel/GoDaddy, and Netlify auth, with legacy ID fallback only for old local
-setups. New provider wiring should use Studio IDs exclusively.
-
-### Known Gaps opened or preserved
-
-- `config/site-config.json` in the MBSH v2 deploy repo still has
-  `API_BASE_URL: null` until Studio generates it from the provisioned backend
-  origin.
-- DNS/addon-domain automation still needs cPanel UAPI/MCP wrapper coverage; do
-  not block on GoDaddy developer API keys unless direct registrar DNS becomes
-  the chosen fallback.
-- SSH to `nineoo@FAMTASTICINC.COM` is blocked by host-key verification and
-  must be repaired once outside generated site ownership.
-
 ## Consolidated Execution Checklist (2026-05-04)
 
 Created `plans/consolidated-execution-checklist-2026-05-04.md` as the working
@@ -5442,16 +5278,8 @@ fixed in the deploy repo: `.chatbot__panel[hidden] { display: none; }`.
 The MBSH content delta packet is at
 `docs/sites/site-mbsh-reunion/content-delta-verification-2026-05-04.md`.
 The seven-page architecture is present, but launch content still needs final
-date/venue/payment values, playlist ID, seed data, and backend proof.
-
-The MBSH launch unblock packet is at
-`docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md`.
-The local media/story blocker is closed for launch-safe generated/derivative
-assets: all seven referenced `frontend/assets/story/*.jpg` files exist in the
-v2 deploy repo, provenance is recorded in
-`frontend/assets/story/RIGHTS-MANIFEST.md`, and Playwright proof is saved at
-`proofs/mbsh-story-assets-2026-05-05.json` plus `.png`. Future archival or
-crowd-sourced replacements still require attribution and approval before use.
+date/venue/payment values, story/gallery assets, playlist ID, seed data, and
+backend proof.
 
 The MBSH Studio reproduction harness is at
 `docs/sites/site-mbsh-reunion/studio-reproduction-audit-harness-2026-05-04.md`.
@@ -5473,37 +5301,49 @@ stack.
 - Pipeline visualizer phase 1 is implemented in Workbench Plan mode; stage/event matching and proposed patch preview are still missing.
 - MBSH child tasks are split and scoped. Backend endpoint inventory, RSVP/sponsor browser proof, chatbot Phase 1 proof, content delta, audit harness, and generalized gap promotion are complete.
 - MBSH backend runtime execution is blocked by missing runtime config/secrets and external deploy access; this is a deploy-proof blocker, not a source-code inventory or frontend-submit blocker.
-- MBSH launch-safe media/story readiness is complete. Future archival/crowd-sourced replacement media still needs source attribution, permission, and approval logging before replacing the generated/derivative launch assets.
+- MBSH media/story readiness is blocked by seven missing `frontend/assets/story/*.jpg` files and missing archival/gallery rights proof.
 - Console-health cleanup remains open for non-blocking Studio warnings seen during Shay proof: Tailwind CDN production warning, unsupported preload `as` value, and `/config/site-config.json` 404.
 - Theme/token update propagation rules are not implemented.
 - FAMtastic brand asset pack is not created yet.
 - Worker queue has visibility and `/api/worker-queue` polling, but still no live consumer.
 - Media Studio exists as a prompt-first Workbench surface and as a production mini-app, but generation/provider controls are not unified between the two yet.
-- Operations workspace GUI plan (`plan_2026_05_05_ops_workspace_gui`) is design-only — no Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These four prerequisites are tracked in the plan's `known_gaps_opened`.
+- Operations workspace GUI packet (`plan_2026_05_05_ops_workspace_gui`) is design-only and is not a fifth active parent plan. No Ops API surface (`/api/ops/*`), no `/ws/ops` WebSocket, no record `freshness` field, and no record-type visual tokens exist yet. These prerequisites are actionized under existing parent plans instead of expanding the registry prematurely.
 
-## Reporting Density Preference (2026-05-05)
+## Remaining Plan Triage (2026-05-05)
 
-Response/reporting density is now explicit project configuration at
-`config/reporting-preferences.json`. Current/default density is `compact`.
+`plans/remaining-plan-triage-2026-05-05.md` is the current correction pass for
+the plan pile. It separates completed plan-shaped work, externally blocked
+work, and plan-shaped asks that needed executable checklist docs.
 
-CLI:
+Completed/closed work includes Drive sync, four-plan consolidation, Workbench
+frozen foundation, Workbench Shay context provider proof, knowledge capture
+pass one, workflow-as-data phase one, pipeline visualizer phase one, three site
+workflow modes, and MBSH backend/RSVP/sponsor/chatbot/content/audit/gap proof.
 
-```bash
-fam-hub report style
-fam-hub report style compact
-fam-hub report style standard
-fam-hub report style detail
-```
+The actionization pass added checklist docs for Workbench default-shell cutover,
+Media Studio unification, status-packet regeneration, capture promotion,
+pipeline visualizer phase two, MBSH deploy access, MBSH media/story readiness,
+and Ops Workspace GUI actionization. The checklists are not implementation
+proof; they convert broad asks into task-ledger rows so the next work is
+explicitly executable or honestly blocked.
 
-`compact` is the normal completion/status shape: result, commit/proof if
-relevant, and remaining blocker. `standard` is for multi-file summaries.
-`detail` is reserved for explicit review, audit, root-cause, incident, or
-"show me everything" requests. This setting changes report shape only; it does
-not reduce proof, testing, documentation, or blocker visibility requirements.
+Open ready tasks after this pass are:
+`task-2026-05-05-008` status-packet regeneration,
+`task-2026-05-05-009` capture promotion,
+`task-2026-05-05-010` Workbench default-shell cutover,
+`task-2026-05-05-011` Media Studio unification,
+`task-2026-05-05-012` pipeline visualizer stage matching,
+`task-2026-05-05-016` Ops read/freshness substrate,
+`task-2026-05-05-017` Ops command/stream boundary definition, and
+`task-2026-05-05-018` Ops Jobs tab MVP shell.
+
+Blocked work remains MBSH deploy access/config and MBSH story/media assets:
+`task-2026-05-04-027`, `task-2026-05-04-028`,
+`task-2026-05-05-013`, and `task-2026-05-05-014`.
 
 ## Operations Workspace GUI Plan (2026-05-05)
 
-A new parent plan, `plan_2026_05_05_ops_workspace_gui`, was registered as the
+The proposed plan packet `plan_2026_05_05_ops_workspace_gui` captures the
 design spec for an Operations workspace inside the Workbench shell. It defines
 an 11-tab Ops sub-nav (Pulse, Plans, Tasks, Jobs, Runs, Proofs, Agents,
 Reviews, Gaps, Memory, Debt) and a record-type visual language so PLAN, TASK,
@@ -5514,9 +5354,10 @@ Files:
 - `plans/plan_2026_05_05_ops_workspace_gui/plan.json` — 14 workstreams, MVP
   scope, known gaps, links.
 - `plans/plan_2026_05_05_ops_workspace_gui/README.md` — human summary.
-- `plans/registry.json` — added to `active_parent_ids`; new `labels` block
-  introduced (label `ops-workspace-gui`, tags `platform-upgrades`,
-  `studio-ui`, `ops`, `shay-shay`, `agent-management`).
+- `plans/registry.json` — keeps exactly four active parent plans; the Ops GUI
+  packet is a proposed record/action source, not an active fifth parent.
+- `plans/ops-workspace-gui-actionization-checklist.md` — maps the proposed Ops
+  GUI packet into existing-parent action items.
 
 Origin: a debug session showed the UI claiming "agents waiting" while the
 real task ledger had no active work — 448 stale legacy worker-queue items
@@ -5530,282 +5371,4 @@ inspector with Cancel/Park/Promote-to-Task. WebSocket lane updates.
 Shay-Shay one-sentence queue summary. This validates the swimlane +
 inspector + WebSocket pattern every other Ops tab reuses.
 
-Status: design-only. No API, UI, or schema changes shipped yet.
-
-## Chat Capture / Tag / Learn / Optimize Pipeline (2026-05-05)
-
-Built a working capture → tag → promote → use → optimize loop. Closes the
-"learnings produced in chats never make it into canonical memory" gap.
-
-Files (this session):
-- `plans/plan_2026_05_05_chat_capture_learn_optimize/{plan.json,README.md}`
-- `captures/SCHEMA.md` — v0.2 capture-packet shape
-- `memory/TAXONOMY.md` — types (decision, rule, learning, bug-pattern, gap,
-  preference, vendor-fact, anti-pattern, do-not-repeat) + facets +
-  auto-promote allowlist + lifecycle
-- `memory/<type>/` — 8 per-type directories
-- `memory/INDEX.json` — store index
-- `memory/usage.jsonl` — append-only telemetry
-- `scripts/session-capture.js` — orchestrator
-- `scripts/capture-adapters/{manual,claude-code,cowork,codex}.js`
-- `scripts/memory-promote.js` — gated + auto-allowlist promoter
-- `scripts/memory-digest.js` — weekly digest with auto-promote-to-candidate
-- `lib/famtastic/memory/recall.js` — retriever
-- `lib/shay/memory-context.js` — Shay context provider with prefixed +
-  bare facet matching
-- `.claude/hooks/session-end-capture.sh` — Claude Code session-end hook
-- `docs/operating-rules/memory-lifecycle.md`
-- `plans/registry.json` — registered the new plan
-
-Verified end-to-end:
-- Captured a synthetic transcript (`captures/inbox/test-session-2026-05-05.md`)
-- Extracted 15 items, 4 auto-promote eligible
-- Auto-promoted 4 entries: 2 `vendor-fact`, 1 `bug-pattern`, 1 `do-not-repeat`
-- INDEX.json populated; usage.jsonl recorded `captured`, `reviewed`,
-  `auto_promoted`, `surfaced` events
-- `recall({facets:['vendor:netlify']})` returns the 2 Netlify entries
-- Shay context provider emits a RELEVANT MEMORY block when given site/plan/
-  workspace context that overlaps the entries' facets
-- `memory-digest.js` produced a digest at `~/PENDING-REVIEW.md` with new
-  entries, retroactive auto-promotion review section, no false stale flags
-
-Auto-promote rule (per TAXONOMY): confidence >= 0.85 AND type in
-{vendor-fact, do-not-repeat, bug-pattern} AND canonical_id new. All
-auto-promotions logged for retroactive human review in next weekly digest.
-
-Decisions:
-- Store: per-entry markdown with YAML frontmatter at memory/<type>/<id>.md
-- Telemetry: local-only, disable with MEMORY_TELEMETRY=off
-- Optimizer aggressiveness: report + auto-promote high-recurrence to
-  lifecycle=candidate (NOT active). Stale flagged but never auto-retired.
-
-Known gaps opened:
-- 11 of 15 extracts from the test capture were correctly gated (decisions,
-  rules, learnings) but the gating wording could be more actionable —
-  human-review UI lives in the Ops Reviews tab, which is design-only.
-- Cron registration for `memory-digest.js` requires the schedule plugin /
-  launchd setup separate from this plan.
-- Adversarial review loop applied to memory promotions depends on the Ops
-  plan's loop implementation.
-- The manual adapter's regex-based extraction sometimes mis-types entries
-  (a "do-not-repeat" sentence got tagged as both `do-not-repeat` and `rule`
-  on the second match) — first-match-wins works, but a smarter classifier
-  could eliminate near-duplicates.
-
-## Ops Workspace MVP — Phase 0 Shipped (2026-05-05)
-
-Shipped Phase 0 of `plan_2026_05_05_ops_workspace_gui` plus the Jobs tab MVP.
-All numbers below are reproducible from the inventory snapshot, not
-hardcoded.
-
-### What landed
-
-- **State contract** — `docs/ops/state-contract.md` mirrors the
-  source-of-truth matrix and freshness derivation table from `plan.json`.
-  The plan is the contract; the doc is a human mirror.
-- **Inventory script** — `scripts/ops/inventory.js` scans every Ops ledger
-  and writes `docs/ops/inventory-YYYY-MM-DD.json`. First snapshot committed
-  for 2026-05-05: 71 records (live=15 stale=4 parked=0 archived=52).
-- **Freshness library** — `site-studio/lib/ops-freshness.js` is the **single**
-  implementation of the (record_type, status, age) → freshness derivation.
-  Consumed by inventory script, ops-api, and tests so they cannot drift.
-- **Ops API surface** — `site-studio/lib/ops-api.js` mounted at
-  `/api/ops` (server.js line 1086, BEFORE any `/api/:param` route per the
-  static-routes-first cerebrum rule).
-  - GET `/api/ops/{jobs,runs,tasks,plans,proofs,gaps,memory,reviews,debt,needsMe}`
-    — every response wrapped `{snapshot_version, generated_at, source_ledgers, record_count, data}`.
-  - POST `/api/ops/command/:action` — destructive actions (purge, cancel,
-    archive, promote, migrate) return 403 without `x-ops-governance-token`.
-    Token issuance is deferred; the only accepted token in MVP is the
-    `OPS_DEV_BYPASS_DO_NOT_SHIP` constant (documented in state-contract.md).
-- **Ops tab in Workbench** — added "Ops" entry to the sidebar nav and a
-  matching tab (`tab-pane-ops`) in `index.html`. `js/ops-jobs.js` mounts
-  11 sub-tabs (only Jobs functional in MVP); `css/ops-jobs.css` and
-  `css/ops-tokens.css` link from `<head>`.
-- **Visual language tokens** — `css/ops-tokens.css` defines CSS custom
-  properties and `.ops-chip--{plan,task,job,run,proof,gap,memory,review}`
-  with the per-plan color palette (PLAN ◇ indigo, TASK ☐ slate, JOB ▶ amber,
-  RUN ● cyan, PROOF ▣ emerald, GAP △ coral, MEMORY ✦ violet, REVIEW ⛔
-  red-orange) plus freshness dots.
-- **Jobs tab** — seven swimlanes (Queued ← pending, Approving ← approved,
-  Running, Blocked, Done, Failed, Parked) polled every 5s. Stale Debt
-  drawer at the bottom shows count + Migrate / Archive / Purge (Purge
-  needs confirm); source line shows the dated inventory file driving the
-  count. Slide-over inspector with Cancel / Park / Promote-to-Task.
-  Shay-Shay one-line summary refreshed against the API snapshot, never
-  from cached state.
-- **Test substrate** — `tests/ops/` runs under `node --test` (no new deps):
-  - `freshness-derivation.test.js` — pinned (type, status, age) table
-  - `stale-cannot-inflate-live.test.js` — 1000-trial property test
-  - `destructive-action-gate.test.js` — every destructive action 403 without token
-  - `cross-link-integrity.test.js` — `buildCrossLink` writes both sides or throws
-  - `fixtures/synthetic-ledgers.js` — mixed live/idle/stale/parked records
-  - All 15 tests green: `node --test tests/ops/*.test.js`
-
-### Files added
-
-- `docs/ops/state-contract.md`
-- `docs/ops/inventory-2026-05-05.json`
-- `scripts/ops/inventory.js`
-- `site-studio/lib/ops-freshness.js`
-- `site-studio/lib/ops-api.js`
-- `site-studio/public/css/ops-tokens.css`
-- `site-studio/public/css/ops-jobs.css`
-- `site-studio/public/js/ops-jobs.js`
-- `tests/ops/{freshness-derivation,stale-cannot-inflate-live,destructive-action-gate,cross-link-integrity}.test.js`
-- `tests/ops/fixtures/synthetic-ledgers.js`
-
-### Files modified
-
-- `site-studio/server.js` — mounts `/api/ops` router
-- `site-studio/public/index.html` — links new CSS, adds sidebar nav item, adds tab pane, loads ops-jobs.js
-- `site-studio/public/js/studio-shell.js` — registers `ops` tab in `initTabs()`
-
-### Standing rule introduced
-
-Any read endpoint under `/api/ops/*` MUST wrap its data in the snapshot
-envelope `{snapshot_version, generated_at, source_ledgers, record_count, data}`.
-Any destructive command MUST refuse without a governance token.
-
-### Known gaps opened
-
-- **Studio launchd boot is broken on this branch** — `site-studio/server.js`
-  requires `./lib/{shay-shay-sessions,logger,openai-image-adapter}.js` which
-  have never been tracked in git and don't exist in the working tree.
-  Studio cannot start under launchd until someone restores them. The
-  Ops API and Jobs tab were verified by spinning up an isolated Express
-  server in-process; live in-Studio verification + Playwright proof are
-  blocked on this pre-existing breakage. NOT caused by this work.
-- **WebSocket `/ws/ops` not implemented.** Reconcile contract is documented
-  in `state-contract.md`; Jobs tab polls every 5s in MVP.
-- **Real governance token issuance deferred.** Destructive endpoints accept
-  the placeholder `OPS_DEV_BYPASS_DO_NOT_SHIP` only; production token
-  flow comes in a later commit.
-- **Cross-link schema not back-filled.** `origin_job_id`, `promoted_to_task_id`,
-  `promoted_from`, `converted_to_task_id`, `reviews_record_id` will be
-  written by new commands; existing records do not have them.
-- **Sub-tabs other than Jobs render placeholder text.** Pulse, Plans,
-  Tasks, Runs, Proofs, Agents, Reviews, Gaps, Memory, Debt all show
-  "coming soon" in MVP per plan scope.
-- **Memory tab is a stub.** Will consume `lib/famtastic/memory/recall.js`
-  in a follow-up commit.
-- **Inspector "log tail" and dependency graph are placeholders.** Real
-  log tail wiring depends on the deferred WS channel.
----
-
-## 2026-05-05 — Agent coordination + brain→memory migration
-
-Two agent surfaces (Cowork on `feat/ops-workspace-gui`, Claude Code on
-`feat/chat-capture-learn-optimize`) independently shipped competing
-cross-session memory stores: `.brain/INDEX.md + .brain/{anti-patterns,
-bugs, patterns, procedures}.md` vs `memory/<type>/<id>.md` with the
-v0.2.0 capture/promote pipeline. Neither knew about the other until both
-branches existed.
-
-This session installs the coordination layer that prevents recurrence
-and merges cowork's `.brain/` content into the canonical store.
-
-**Shipped:**
-
-- `AGENT-COORDINATION.md` — single source of truth listing every active
-  branch, its owning surface, intent, and scope-locks. Conflict-resolution
-  protocol documented.
-- `scripts/agent-checkin.js` — pre-flight overlap detector. Run with
-  `--intent "<short>"`; exits 0 (logs a row to AGENT-COORDINATION.md) or 2
-  (prints the overlapping branches). Always writes a `memory/usage.jsonl`
-  `agent_checkin` event. Detects overlap by branch-name keywords,
-  scope-lock path globs, and changed-file keyword matches.
-- 30 new `memory/<type>/*.md` entries (11 anti-pattern, 7 bug-pattern,
-  7 decision, 4 learning, 2 rule) migrated from `.brain/` with
-  `lifecycle: candidate`, `source_capture: brain-migration-2026-05-05`,
-  references back to the cowork branch.
-- `CLAUDE.md` and new `AGENTS.md` now require running `agent-checkin.js`
-  before scaffolding any new system or non-trivial workstream.
-- Plan `plan_2026_05_05_agent_coordination` registered in
-  `plans/registry.json`.
-
-**Known gaps:**
-
-- All migrated entries are `candidate` — none have been human-promoted to
-  `active`. They will not be surfaced by `lib/famtastic/memory/recall.js`
-  filters that scope to `active` only until promoted.
-- AGENT-COORDINATION.md row-pruning is manual; merged branches need to
-  be removed by hand.
-- The check-in script uses simple keyword + substring matching, not
-  semantic similarity — false positives are likely on broad keywords
-  like "memory" until scope-locks are declared on every active branch.
-- Per-surface branch naming convention deferred — too small a sample to
-  lock today.
-
-## Memory promotion (2026-05-05) — vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda
-
-**Type:** vendor-fact | **Facets:** vendor:cpanel, vendor:godaddy, deploy, site-execution
-
-cPanel UAPI overwrite is the path for backend deploy on GoDaddy hosting
-
-See `memory/vendor-fact/cpanel-uapi-overwrite-is-the-path-for-backend-deploy-on-goda.md`.
-
-## 2026-05-10 — Studio Functional Workspace Wiring (parallel-lane run)
-
-The unified Studio shell at `/studio.html` (shipped in commits `3fa3a8c` +
-`ff9ae42` follow-ups) has been **operationalized** across all twelve
-platform sections by a parallel orchestrator + seven-lane run. The shell
-was layout-complete; this run made it work — honest where the backend
-isn't wired, real where it is.
-
-### Run model
-
-- **Orchestrator + 6 parallel implementation lanes (A–F) + 1 sequential proof lane (G).**
-- Strict file-ownership scope-locks per lane in `STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md`.
-- Cross-lane integration via marker comments (`// Lane E — currentContext publish`, `{/* Lane F — RecipeSelector mount */}`) — orchestrator stitches at integration time.
-- Lane G (`tests/studio/lane-static-checks.js` + `site-studio/server/__smoke__/studio-functional-verify.js`): 85/85 static assertions PASS; browser prong BLOCKED on chromium availability in sandbox (verifier ready to run on host).
-
-### Per-lane shipped
-
-**Lane A — Sites + Site Builder + Site Settings.** Files: `studio/src/screens/sites.jsx`, `site-builder.jsx`, `site-settings.jsx`; new `studio/src/lib/sites-api.js`, `site-context.js`. Sites filter chips actually filter (derived honest classification, commented), Grid/List density differs, "Continue" persists `studio.lastActiveTag` to localStorage, "Continue where you left off" card reflects state. Site Builder gets a status-bar above the iframe (last-active tag chip, three honest status chips, three labeled-not-wired action buttons Preview/Inspect/Refine, Local site settings link via `window.__studioJump`). Site Settings reflects last-active tag in title, shows honest "0 overrides · matches platform" diff chip, every field has a `default` mono badge, disabled "Reset to platform" button.
-
-**Lane B — Media Studio + Media Library.** Files: `studio/src/screens/media-studio.jsx`, `media-library.jsx`; new `studio/src/lib/media-api.js`. Media Library reads from `/api/media?tag=<tag>` on mount (`media-routes.js` + `media-registry.js` already wired in server); summary chips show real `auto/pending/approved/deferred` counts. Media Studio variations grid stays placeholder (no fake generation); Generate / Approve / Reject / Save / Send-to-library / Assign-to-slot all `disabled={true}` with honest `Tag` labels. Action-contract debug button calls `/api/media/contract` and surfaces real shape.
-
-**Lane C — Component Studio.** Files: `studio/src/screens/component-studio.jsx`; new `studio/src/lib/components-api.js`. Library pane reads from `/api/components` on mount (`component-routes.js` + `component-inventory.js` were already in server). Search input debounces 200ms and calls `/api/components/check?id=` — surfaces `exists` / `near` / no-match Chip inline. Props/slots tab renders live `slots[]` and `props[]` from inventory. "Insert (surgical)" disabled with `contract ready · server route pending` Tag. Show-contract button works.
-
-**Lane D — Research Center + Think-Tank.** Files: `studio/src/screens/research.jsx`, `think-tank.jsx`; new `studio/src/lib/research-api.js`, `think-tank-api.js`; new `server/research-routes.js`, `server/think-tank-routes.js`; +2 mount lines in `server.js` after line 1078: `app.use('/api/research', require('./server/research-routes').createResearchRouter(HUB_ROOT))` and `app.use('/api/think-tank', require('./server/think-tank-routes').createThinkTankRouter(HUB_ROOT))`. Research Center reads brief list live from `/api/research/briefs`; click-to-load detail panel via `/api/research/brief/:id` (title, summary, body_first_500). Depth selector has honest descriptions per depth (Fast: ~30s, Standard: ~3min, Deep: ~10min, Expert: ~30min). Think-Tank reads `captures/inbox/*.capture.json` via `/api/think-tank/captures` — falls back to seed examples with honest empty-state hint. Promote actions disabled-with-Tag.
-
-**Lane E — Right pane + Shay context.** Files: `studio/src/shell.jsx` (ContextPanel + collapse), `app.jsx` (collapse localStorage glue), `styles.css` (Lane E append block); new `studio/src/lib/current-context.js`. Publish hooks added by orchestrator integration to all 7 non-special screens (home, sites, site-settings, research, think-tank, media-library, settings). Each screen's hook calls `window.CurrentContext.forSection_<name>(...)` to publish a `{section, activeId, hints[], explain, nextAction, capabilityTruth[]}` object. ContextPanel renders dynamically from this. Collapse button toggles to a 36px slim-bar variant; state persisted to `studio.rightCollapsed` localStorage key. Routing chips actually call `window.__studioJump?.(target)`.
-
-**Lane F — Recipes + Memory Strip.** Files: `studio/src/recipe-flow.jsx` (extend with RecipeSelector wrapper), `screens/home.jsx` (mount), `screens/research.jsx` (mount), `shell.jsx` (MemoryStrip wire); new `studio/src/lib/recipes.js`, `memory-tail.js`. RecipeSelector wraps RecipeFlow with a 5-recipe Seg picker (new-site, media-to-component, component-to-site, research-to-proof preserved, research-to-build, shay-routing — node lists drawn from `WORKSPACE-RECIPES.md`). Home defaults to research-to-proof; Research Center defaults to research-to-build. MemoryStrip in `shell.jsx` reads from `/api/intelligence/runs?tag=<tag>` (via `MemoryTail.getTail`) — renders up to 5 honest run rows or a single dim "no site context" / "registry empty" reason. Static V1; no live polling.
-
-**Lane G — QA / Proof.** Files: `tests/studio/lane-static-checks.js`, `site-studio/server/__smoke__/studio-functional-verify.js`. Static checker validates: every JSX file parses via `@babel/parser`, every new lib/server JS file passes `node --check`, `server.js` parses with the 2 added mount lines, all 7 publish hooks present in their screens, RecipeSelector mounts in home + research, server.js mount block has the expected 4 lane mounts in order, studio.html loads all 9 new lib script tags, forbidden-edit files all present (no inadvertent deletes), Mission Control hosts ONLY run-centric content (drift trip-wire). 85/85 PASS.
-
-### How it's wired in studio.html
-
-`site-studio/public/studio.html` now loads 9 plain-JS lib files (no `type="text/babel"`) BEFORE the Babel-transformed JSX scripts: `site-context`, `sites-api`, `media-api`, `components-api`, `research-api`, `think-tank-api`, `current-context`, `recipes`, `memory-tail`. They each assign to a single `window.*` global so screens can pick them up as `window.SitesAPI?.listSites?.(...)` (defensive optional-chaining throughout — a missing lib doesn't crash a screen, it falls back to honest empty-state). `recipe-flow.jsx` reads `window.STUDIO_RECIPES` from `recipes.js`, so the Babel JSX scripts come after the lib block.
-
-### New API surface
-
-- `GET /api/research/briefs` — `{briefs: [{id, filename, title, path}]}` — reads `docs/research/famtastic-studio-execution/*.md`.
-- `GET /api/research/brief/:id` — `{id, filename, title, summary, body_first_500}` — id allowlist `/^[a-zA-Z0-9._-]+$/`, `path.resolve` containment.
-- `GET /api/think-tank/captures` — `{captures: [{id, title, captured_at, source_path}]}` — reads `captures/inbox/*.capture.json`, fail-soft parse, capped at 50.
-- `GET /api/think-tank/contract` — `{contract: {capture_shape, promotion_targets}}`.
-
-Both routers follow the existing `createXRouter(repoRoot)` factory pattern from `intelligence-routes.js`. Path traversal blocked via allowlist + `path.resolve` + `startsWith` containment.
-
-### Standing rules reinforced
-
-- **Mission Control containment.** Lane G drift trip-wire confirms `mission-control.jsx` contains zero RecipeSelector / Sites listing / Components listing / Media listing. Mission Control is one section among twelve.
-- **Honest action contracts.** Every unwired button (`Generate`, `Approve`, `Reject`, `Insert (surgical)`, `Promote findings`, `Reset to platform`, `Capture idea`, `New brief`, `Quick add`, etc.) is `disabled={true}` and adjacent to a `Tag` chip explaining what's deferred. No fake outputs.
-- **server.js minimal-mounts policy.** Only 2 lines added to `server.js` (the existing mount block at 1070–1078). All real route logic lives in modular `server/<name>-routes.js` files.
-
-### Known gaps (NEW — open after this run)
-
-- **Studio launchd boot still broken** — `site-studio/lib/{shay-shay-sessions,logger,openai-image-adapter}.js` still ungitted (cerebrum entry from 2026-05-05). Lane G's browser verifier was forced to use the fast smoke server which doesn't mount the new Lane B/C/D routers — host re-run required to close the browser-prong gap.
-- **Generate / Approve / Save / Send-to-library / Assign-to-slot** — Media Studio actions remain visible-but-disabled; provider round-trip + library write path + slot-assignment write path all unwired.
-- **Insert (surgical)** — Component Studio insertion remains visible-but-disabled; surgical-editor wiring deferred.
-- **Plan-card UI / Versions / Verify** — Site Builder native panes deferred (the iframe wrapper preserves the existing chat/build/preview flow for now).
-- **Per-site `site-settings.json` schema undefined** — Site Settings shows `0 overrides · matches platform` honestly; reads/writes for the per-site overrides file deferred.
-- **Memory strip live polling** — Lane F implementation reads once on mount and on `site` change; no SSE / interval refresh.
-- **Recipe node live status** — all V1 recipes are static (`status: idle` except the preserved Research → Proof mix). Live binding to a run ledger deferred.
-- **Captures inbox write paths (Quick add / Link source / Promote)** — Think-Tank read works; write paths deferred.
-- **Brain integration in Shay screen** — chat round-trip, currentContext readback, and route-this-thread-to-X confirmation deferred.
-- **Recipe 3 branching diamond** — rendered as linear chain in V1 with branch noted in the node summary.
-- **Component Studio variants tab** — still hard-coded placeholder set; inventory does not yet expose variants.
-- **Browser prong** — `studio-functional-verify.js` is written and runnable on host (and the prior `studio-shell-verify.js` already lands 73/73 on host); chromium not in sandbox here.
+Status: design-only/actionized. No Ops API, UI, or schema changes shipped yet.

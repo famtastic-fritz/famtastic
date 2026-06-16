@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-05-05 (Site Studio service auth ownership added; reporting density configurable; MBSH media/story blocker closed.)
+**Last updated:** 2026-05-05 (remaining plan pile triaged, proposed Ops packet actionized, and open work normalized back into the four-plan execution substrate.)
 
 ---
 
@@ -12,10 +12,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Key recent milestones:**
 
-- **2026-05-05** — Site Studio Resend notifications. Configured Site Studio itself to send notification email through Resend with `fam-hub platform configure-resend`, `fam-hub platform send-test-email`, `site-studio/lib/studio-mailer.js`, and `site-studio/scripts/send-studio-test-email.js`. The Studio sender is `FAMtastic Site Studio`; the API key remains in `vault://studio.resend.api_key`, and a real test email was accepted by Resend. Known gap: the sender currently uses the only verified domain available, `send.mbsh96reunion.com`, until a FAMtastic-owned sending domain such as `send.famtastic.com` is verified.
-- **2026-05-05** — Site Studio service auth ownership. Added Studio-owned service commands through `fam-hub platform bootstrap-services` and `fam-hub platform provision-site <site> --check --proof`, backed by `platform/capabilities/studio/bootstrap-services.sh` and `platform/capabilities/studio/provision-site.sh`. Provider auth for Netlify, Resend, cPanel/GoDaddy, DNS, SSH, and DB now belongs to Site Studio/platform; generated sites consume vault refs and generated config. Bootstrap migrated existing local Resend API, cPanel API token, MBSH production DB password, and MBSH DB ref into the platform vault; Resend verified via API. MBSH deploy proof is reframed as blocked by Studio service provisioning: production `API_BASE_URL` is still null, cPanel DNS/addon-domain automation needs wrapper coverage, and SSH host-key verification blocks `nineoo@FAMTASTICINC.COM`.
-- **2026-05-05** — Configurable reporting density. Added `config/reporting-preferences.json` and `docs/operating-rules/reporting-density.md`. `scripts/fam-hub` now supports `fam-hub report style`, `fam-hub report style compact`, `fam-hub report style standard`, and `fam-hub report style detail`. Current/default density is `compact`; this changes response shape only, not proof standards, testing, or blocker visibility.
-- **2026-05-05** — MBSH launch unblock grouping. Added `docs/sites/site-mbsh-reunion/mbsh-launch-unblock-packet-2026-05-05.md` and closed the media/story blocker for launch-safe generated/derivative assets. The v2 deploy repo now has all seven referenced `frontend/assets/story/*.jpg` files, a `frontend/assets/story/RIGHTS-MANIFEST.md`, and Playwright proof at `proofs/mbsh-story-assets-2026-05-05.json` / `.png`. `task-2026-05-04-028` is complete; `task-2026-05-04-027` remains blocked by Studio service provisioning and generated production config/API origin. `plans/registry.json` is internally consistent again with five active parent records, including the 2026-05-05 Ops Workspace GUI parent.
+- **2026-05-05** — Remaining plan triage and actionization. Added `plans/remaining-plan-triage-2026-05-05.md` to separate completed plan-shaped work, blocked MBSH work, and remaining plan-shaped asks. Created checklist docs for Workbench default-shell cutover, Media Studio unification, automatic status-packet regeneration, capture promotion, pipeline visualizer phase 2, MBSH deploy access, MBSH media/story readiness, and Ops Workspace GUI actionization. `plans/plan_2026_05_05_ops_workspace_gui/plan.json` is treated as a proposed design packet, not a fifth active parent; `plans/registry.json` now keeps exactly four active parents and actionizes Ops work into existing parent-plan tasks. `tasks/tasks.jsonl`, `proofs/proof-ledger.jsonl`, `runs/runs.jsonl`, `FAMTASTIC-STATUS.md`, and `site-studio/public/data/workbench-plan-state.json` were updated to show eight ready implementation tasks and four blocked MBSH deploy/media tasks.
 - **2026-05-04** — Four-plan registry execution substrate. `plans/registry.json` contains exactly four active parent plans: `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`. The prior 11-record registry is backed up at `plans/registry.backup-2026-05-04.json`; stale plans are recorded as absorbed/parked metadata instead of active records. Populated `tasks/tasks.jsonl`, `runs/runs.jsonl`, and `proofs/proof-ledger.jsonl`, regenerated `FAMTASTIC-STATUS.md`, fixed `fam-hub task list` / `fam-hub run status`, and added `fam-hub plan review`, `fam-hub task promote`, and `fam-hub run start`. Workbench Plan mode renders a browser-safe consolidated state packet at `site-studio/public/data/workbench-plan-state.json`; Workbench also registers as `workbench.foundation` in `ShayContextRegistry` and has actual Shay-Shay UI proof that `context.page_context.domain = media` is seen and answered from. `fam-hub capture extract` creates review-only knowledge packets. Workflow-as-data phase 1 is cataloged, trace-instrumented, and visible through Workbench pipeline visualizer phase 1. MBSH backend inventory, RSVP/sponsor/chatbot browser proof, content delta, audit harness, and gap-promotion packets are complete; live deploy proof and media/story readiness are blocked by external access/config and missing story assets.
 - **2026-05-04** — Consolidated execution checklist. Added `plans/consolidated-execution-checklist-2026-05-04.md` as the working four-plan consolidation artifact. The surviving parent plans are `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`; `docs/famtastic-total-ask-plan.md` is parked as strategy context and mined for useful asks. Fritz marked Drive sync complete, so it is not carried as active work; workflow-as-data and the pipeline visualizer remain open under `build-intent-fulfillment-trace`. The registry rewrite, P0 task promotion, run/proof records, and status packet were applied in the follow-up four-plan registry milestone above.
 - **2026-05-04** — Plan consolidation verification proposal. Added `plans/consolidation-verification-2026-05-04.md` to reduce the current 11 same-level plan records into 4 active parent plans, 1 parked strategy context, and 6 merged/closed evidence records. The registry itself is not mutated yet; approval is required before rewriting `plans/registry.json`, archiving merged records, or promoting embedded tasks into `tasks/tasks.jsonl`.
@@ -59,7 +56,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | HTML Skeletons | `lib/famtastic-skeletons.js` | `HERO_SKELETON_TEMPLATE` (BEM double-dash vocabulary), `LOGO_SKELETON_TEMPLATE` (nav logo wiring), `LOGO_NOTE_PAGE` (parallel page logo reference), `NAV_SKELETON` (mandated nav class names). `FAMTASTIC_DEFAULT_PALETTE` (5 hex values: primary `#00A79D`, accent `#F5B800`, navy `#001F3F`, coral `#FF6B6B`, background `#FDF4E3`). |
 | Build DNA | `famtastic-dna.md` | Auto-updated by `updateFamtasticDna()` after every build. Cross-session build memory injected via CLAUDE.md `@famtastic-dna.md`. |
 | Brain Verifier | `lib/brain-verifier.js` | Startup API probes for all 3 APIs + Codex CLI. Results cached, served via `/api/brain-status`. |
-| Capability Manifest | `lib/capability-manifest.js` | `buildCapabilityManifest()` checks all env vars + CLI. `checkNetlify()` returns structured `{ ok, reason, details }` *(2026-04-25)*. Also reports Studio-owned service auth states for Resend, Studio email notifications, database, Netlify, cPanel, and DNS from platform vault/config refs. |
+| Capability Manifest | `lib/capability-manifest.js` | `buildCapabilityManifest()` checks all env vars + CLI. `checkNetlify()` returns structured `{ ok, reason, details }` *(2026-04-25)* — `cli_missing` / `credentials_missing` / `config_unreadable` / `other`. Exported for direct use by `runDeploy` preflight. |
 | Backend | Node.js + Express 4.21 | HTTP server, REST API, WebSocket. Single file: `site-studio/server.js` (~18,400 lines after baseline closure). |
 | Frontend | Single HTML file + Tailwind CDN + CSS/JS files | `site-studio/public/index.html`. VS Code-inspired layout. Brain/Worker split panel. CSS: `public/css/` (8+ files). JS: `public/js/`. |
 | Workbench Foundation Prototype | Static HTML + component CSS/JS, embedded in Studio | `site-studio/public/workbench-foundation.html`, `public/css/workbench-foundation.css`, `public/js/workbench-foundation.js`, `public/data/workbench-workspaces.json`, plus `#tab-pane-workbench` in `site-studio/public/index.html`. Follows the frozen seven-domain left rail (Sites, Brainstorm, Plans, Components, Media, Research, Admin), contract strip, collapsible domain object navigator, dynamic center workbench, live preview with translucent metadata/Shay/evidence overlays, registry-backed Plan mode, prompt-first Media Studio surface, contextual draggable/reorderable tool shelf with persisted order, bottom runs/logs/trace/approvals/proof panel, theme tokens, and modal shell. Registers `workbench.foundation` with `ShayContextRegistry`; actual Shay-Shay UI proof confirms `context.page_context` includes Workbench domain/object state. Linked from production Studio but not yet the default shell. |
@@ -81,9 +78,8 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | WebSocket | `ws` 8.18 | Real-time: chat, build progress, preview reload, brain-changed, brain-status, brain-fallback, set-brain-model, site-switched (now triggers chat session-break divider). |
 | Deploy | Netlify CLI (primary), Cloudflare Wrangler, Vercel CLI | `scripts/site-deploy`. `runDeploy()` now runs `checkNetlify()` preflight before flag mutation, has `child.on('error')` handler, parses stderr for known patterns, resets `deployInProgress` on every early-return. |
 | Testing | Vitest 4.1.1 | Current: 161/161 passing across 3 files (`unit.test.js` 110, `gap4-tier-canonicality.test.js` 28, `baseline-closure.test.js` 23). Legacy node-script test suites still in `tests/` folder (~1,236 tests across 22 suites) — not gating. |
-| Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`, `service_auth` non-secret vault refs, and `notifications.email` for Studio-owned Resend notifications. |
-| Platform Service Auth | `platform/capabilities/studio/` | `bootstrap-services.sh` checks/migrates Studio-owned provider auth into platform vault refs; `configure-resend.sh` configures Studio notification email; `send-test-email.sh` proves Studio can send; `provision-site.sh` verifies generated sites consume Studio-owned DB/email/deploy services and emits proof packets. |
-| CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research`, `plan`, `task`, `run`, `report`, and `platform` subcommands. `fam-hub platform bootstrap-services`, `configure-resend`, `send-test-email`, and `provision-site <site>` expose Studio service auth. |
+| Config | `~/.config/famtastic/studio-config.json` | Model, deploy target/team, email/SMS creds, upload limits, stock photo API keys, `hero_full_width`. |
+| CLI | Bash (`scripts/fam-hub`) | Unified dispatcher: `site`, `idea`, `agent`, `admin`, `convo`, `ingest`, `research`, `plan`, `task`, and `run` subcommands. Plan/task/run commands are read-only in the 2026-05-04 pilot substrate. |
 
 ---
 
@@ -229,27 +225,6 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | POST | `/api/shay-shay/outcome` | Suggestion outcome scoring |
 | POST | `/api/autonomous-build` | Trigger `runAutonomousBuild` (refactored to use `createSite`). |
 
-### Studio Shell Endpoints (modular routers under `site-studio/server/`)
-
-| Method | Endpoint | Purpose | Owner module |
-|--------|----------|---------|--------------|
-| GET | `/api/intelligence/sites` | List Studio-managed sites | `intelligence-routes.js` |
-| GET | `/api/intelligence/brief?tag=` | Per-site intelligence brief | `intelligence-routes.js` |
-| GET | `/api/intelligence/capability-truth?tag=` | Per-site capability truth | `intelligence-routes.js` |
-| GET | `/api/intelligence/runs?tag=` | List runs for a site | `intelligence-routes.js` |
-| GET | `/api/intelligence/runs/:runId?tag=` | Run ledger + proof + learning | `intelligence-routes.js` |
-| POST | `/api/intelligence/actions/runs/start` | Start a refinement run | `intelligence-actions.js` |
-| GET | `/api/components` | Component inventory from skeletons | `component-routes.js` |
-| GET | `/api/components/check?id=` | Diff-match proposed id against inventory | `component-routes.js` |
-| GET | `/api/components/contract` | Surgical-insertion contract schema | `component-routes.js` |
-| GET | `/api/media?tag=` | Media registry + summary for a site | `media-routes.js` |
-| GET | `/api/media/contract` | Asset shape contract | `media-routes.js` |
-| GET | `/api/refinement/...` | Visual refinement (run-scoped) | `visual-refinement-routes.js` |
-| **GET** | **`/api/research/briefs`** | **List `.md` briefs from `docs/research/famtastic-studio-execution/`** | **`research-routes.js` (NEW 2026-05-10, Lane D)** |
-| **GET** | **`/api/research/brief/:id`** | **Brief detail (title + summary + first 500 chars)** | **`research-routes.js` (NEW 2026-05-10, Lane D)** |
-| **GET** | **`/api/think-tank/captures`** | **Read `captures/inbox/*.capture.json` (cap 50)** | **`think-tank-routes.js` (NEW 2026-05-10, Lane D)** |
-| **GET** | **`/api/think-tank/contract`** | **Capture shape + promotion targets** | **`think-tank-routes.js` (NEW 2026-05-10, Lane D)** |
-
 **Route ordering rule:** Static routes must be declared BEFORE parameterized routes of the same prefix.
 
 ---
@@ -275,13 +250,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Worker queue consumer | Tier 2 | `.worker-queue.jsonl` has no live consumer process. |
 | Detailed interview mode UI | Tier 3 | 10-question detailed mode works via API only. |
 | Brain routing in build path | Tier 2 | Build/content-edit paths use Anthropic SDK (Claude only). Non-Claude brains only work for chat/brainstorm. |
-| Mission Control / Platform dashboard | Tier 2 | Closed 2026-05-10: Mission Control is now one section in the unified Studio shell at `/studio.html` (iframe-wraps `/operator.html?embedded=1`). Per `STUDIO-DRIFT-CORRECTION-NOTES.md` it must remain one section among twelve — Lane G drift trip-wire confirms zero leak. |
-| **Studio Functional Workspace — generation/insertion wiring** | Tier 1 | NEW 2026-05-10. Media Studio Generate/Approve/Save and Component Studio Insert (surgical) all visible-but-disabled with honest action contracts. Backend round-trips deferred. |
-| **Per-site `site-settings.json` schema** | Tier 2 | NEW 2026-05-10. Site Settings shows honest "0 overrides · matches platform" — schema + read/write paths deferred. |
-| **Captures inbox write paths** | Tier 2 | NEW 2026-05-10. Think-Tank Quick add / Link source / Promote actions disabled-with-Tag; read works. |
-| **Brain integration in Shay screen** | Tier 1 | NEW 2026-05-10. Shay screen ships with mode segmented control, sample chat, route-to chips — no brain round-trip yet. |
-| **Recipe live-status binding** | Tier 2 | NEW 2026-05-10. All 5 recipes from `WORKSPACE-RECIPES.md` render via `RecipeSelector`, but node statuses are static. Live binding to a run ledger deferred. |
-| **Studio shell browser-prong host re-run** | Tier 2 | NEW 2026-05-10. `studio-functional-verify.js` ready to run; sandbox lacks chromium. Host re-run will close Lane G's browser-prong gap. |
+| Mission Control / Platform dashboard | Tier 2 | No multi-site management UI beyond CLI. |
 | Template upload mode | Tier 2 | Uploading pre-built templates for Studio to tweak. |
 | Pinecone zero-vectors | Tier 3 | All Pinecone vectors use placeholder zero-vectors. |
 | seed-pinecone --vertical flag | Tier 3 | Add `--vertical <name>` for per-build auto-seeding. |
@@ -293,25 +262,10 @@ The system is currently single-user and localhost-only, built and operated by Fr
 | Workbench default shell cutover | Tier 1 | The production-linked Workbench prototype now follows the frozen seven-domain contract and has Playwright proof, but it is not yet the default Studio shell. |
 | Workbench live registry generation | Tier 1 | Workbench Plan mode now reads `site-studio/public/data/workbench-plan-state.json`, a browser-safe mirror of registry/task/run/proof state. Automatic generation from source ledgers is still missing. |
 | Media Studio unification | Tier 2 | Workbench has a prompt-first Media Studio surface and production Studio has the richer mini-app in `studio-screens.js`; generation/provider controls are not unified between them yet. |
-| Studio notification sender domain | Tier 2 | Site Studio can send through Resend now, but the configured sender currently uses `studio@send.mbsh96reunion.com` because it is the only verified Resend sending domain. Verify `send.famtastic.com` or another FAMtastic-owned sending domain for long-term platform notifications. |
-| MBSH runtime endpoint execution | Tier 1 | Backend inventory and browser-level RSVP/sponsor submission proof are complete. Runtime execution now depends on Studio-managed service provisioning: vaulted Studio Resend/cPanel/site DB refs exist, but production `API_BASE_URL` remains `null` until backend origin generation, cPanel DNS/addon-domain automation still needs wrapper coverage or manual UI, and SSH host-key trust blocks backend deploy/smoke. |
-| MBSH archival/crowd-sourced media replacement | Tier 2 | Launch-safe generated/derivative story assets now exist and have a rights manifest. Future real archival/crowd-sourced replacements still need source attribution, permission, and approval logging before publishing. |
+| MBSH runtime endpoint execution | Tier 1 | Backend inventory and browser-level RSVP/sponsor submission proof are complete, but backend runtime execution is blocked until `.env`, `.mbsh-config.local.php`, or `MBSH_CONFIG_PATH` provides DB, Resend, admin hash, CORS, and upload-path config. Production deploy proof must also set `API_BASE_URL` away from `null` and requires Netlify/DNS/GoDaddy/Resend access. |
+| MBSH media/story readiness | Tier 1 | Brand, mascot, and hero/background assets are present, but seven referenced `frontend/assets/story/*.jpg` files are missing and archival/gallery rights proof is not discoverable. |
 | Pipeline visualizer depth | Tier 1 | Workbench phase 1 renders inspect/trace/propose from the workflow catalog and trace API. Stage/event matching, missing-stage detection, and proposed patch preview are still missing. |
-
-### Closed 2026-05-10 — Studio Functional Workspace Wiring
-
-- **Studio shell operationalized** — All 12 platform sections now have working live-data reads or honest action contracts. Run controller: `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md`. Run report: `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md`.
-- **Mission Control containment formalized** — Lane G drift trip-wire asserts `mission-control.jsx` contains zero RecipeSelector / Sites / Components / Media listings. Mission Control is one section among twelve.
-- **Sites Dashboard read-only UI** — Reads `/api/intelligence/sites`, last-active-tag persists to localStorage, "Continue where you left off" reflects state.
-- **Component Studio live read** — `/api/components` + `/api/components/check?id=` debounced search + `/api/components/contract` debug endpoint.
-- **Media Library live read** — `/api/media?tag=` + summary chips reflect real `auto/pending/approved/deferred` counts.
-- **Research Center live brief reads** — New `/api/research/briefs` + `/api/research/brief/:id` with id allowlist + path-traversal containment.
-- **Think-Tank live capture reads** — New `/api/think-tank/captures` + `/api/think-tank/contract`. Reads `captures/inbox/*.capture.json` with fail-soft parse.
-- **Right pane contextualized + collapsible** — `ContextPanel` in `shell.jsx` rewritten to render per-section content from each screen's published `currentContext`. Collapse toggle persists to `studio.rightCollapsed` localStorage.
-- **5-recipe Visual Workflow** — `RecipeFlow` extended via `RecipeSelector` wrapper; all five recipes from `WORKSPACE-RECIPES.md` selectable; Home defaults to research-to-proof, Research Center defaults to research-to-build.
-- **Memory Strip live-wired** — Reads `/api/intelligence/runs?tag=` via `MemoryTail.getTail`; honest empty-state with reason copy.
-- **Server.js minimal-mounts policy** — Only 2 lines added to `server.js` (the existing mount block at 1070–1078). All real route logic lives in modular `server/<name>-routes.js` files.
-- **Lane G static-prong PASS** — 85/85 assertions pass. Browser-prong ready, BLOCKED on chromium availability in sandbox.
+| Ops Workspace GUI implementation | Tier 1 | `plans/plan_2026_05_05_ops_workspace_gui/plan.json` is proposed/design-only and actionized by `plans/ops-workspace-gui-actionization-checklist.md`. No `/api/ops/*`, `/ws/ops`, record freshness field, record-type visual tokens, or Jobs tab MVP are implemented yet. |
 
 ### Closed 2026-04-25 — Baseline failure closure
 
@@ -414,59 +368,6 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 | `.wolf/build-backlog.json` | — | Append-only build backlog. |
 | `mcp-server/server.js` | 343 | MCP server. 4 tools via stdio JSON-RPC. |
 
-### Studio Shell — unified `/studio.html` (2026-05-10 functional wiring)
-
-| File | Owner lane | Purpose |
-|------|------------|---------|
-| `site-studio/public/studio.html` | shell + orchestrator | React 18 UMD + Babel-standalone entry. Loads 9 plain-JS lib files BEFORE Babel-transformed JSX scripts. |
-| `site-studio/public/studio/styles.css` | shell + Lane E append | OKLCH dark theme tokens scoped under `.studio-shell`. Lane E append block adds collapse + per-section variants. |
-| `site-studio/public/studio/src/icons.jsx` | shell | Stroke-based icon set (~50 icons). |
-| `site-studio/public/studio/src/primitives.jsx` | shell | Card, Eyebrow, Chip, Dot, Tag, Avatar, Btn, Slot, MediaTile, Skel, Toggle, Hint, SectionHeader, ChatBubble, Meter, Field, Tabs, Seg. |
-| `site-studio/public/studio/src/shell.jsx` | shell + Lane E + Lane F | 12-item Rail, Topbar, MemoryStrip (Lane F-wired), ContextPanel (Lane E-rewritten + collapse), ShayBubble. |
-| `site-studio/public/studio/src/recipe-flow.jsx` | shell + Lane F | RecipeFlow renderer + RecipeSelector wrapper (5 recipes). |
-| `site-studio/public/studio/src/app.jsx` | shell + Lane E | Hash-router, screen registry, currentContext hook, collapse localStorage glue. |
-| `site-studio/public/studio/src/screens/home.jsx` | Lane E + Lane F | Platform Home — RecipeSelector embed, recent sites/components/media tiles. |
-| `site-studio/public/studio/src/screens/sites.jsx` | Lane A | Sites dashboard — live `/api/intelligence/sites`, filter/Grid-List, last-active-tag persist. |
-| `site-studio/public/studio/src/screens/site-builder.jsx` | Lane A | iframe-wraps `/index.html?embedded=1` + status bar (last-active tag, status chips, action buttons). |
-| `site-studio/public/studio/src/screens/site-settings.jsx` | Lane A | Two-scope (Platform / This site), honest "0 overrides" diff. |
-| `site-studio/public/studio/src/screens/think-tank.jsx` | Lane D | Capture/Cluster/Promote board, live `/api/think-tank/captures`. |
-| `site-studio/public/studio/src/screens/research.jsx` | Lane D + Lane F | Brief list + detail (live `/api/research/briefs`), depth selector, RecipeSelector embed. |
-| `site-studio/public/studio/src/screens/component-studio.jsx` | Lane C | Library + check-existing search (live `/api/components/check`), props/slots, insert (disabled). |
-| `site-studio/public/studio/src/screens/media-studio.jsx` | Lane B | Three-pane gen workspace (placeholder grid; honest disabled actions). |
-| `site-studio/public/studio/src/screens/media-library.jsx` | Lane B | Tile registry — live `/api/media?tag=`, summary chips. |
-| `site-studio/public/studio/src/screens/shay.jsx` | shell | Two-pane chat + routing/knowledge. |
-| `site-studio/public/studio/src/screens/mission-control.jsx` | shell | iframe-wraps `/operator.html?embedded=1`. ONE section among twelve — drift trip-wire enforces. |
-| `site-studio/public/studio/src/screens/settings.jsx` | shell | Seven groups (Models / Cost / Media / Components / Sites / Deployment / Theme). |
-| `site-studio/public/studio/src/lib/site-context.js` | Lane A (NEW) | `window.SiteContext` — last-active-tag persistence (localStorage). |
-| `site-studio/public/studio/src/lib/sites-api.js` | Lane A (NEW) | `window.SitesAPI` — `listSites()`, `getBrief(tag)`. |
-| `site-studio/public/studio/src/lib/media-api.js` | Lane B (NEW) | `window.MediaAPI` — `getContract()`, `getRegistry(tag)`. |
-| `site-studio/public/studio/src/lib/components-api.js` | Lane C (NEW) | `window.ComponentsAPI` — `list()`, `check(id)`, `getContract()`. |
-| `site-studio/public/studio/src/lib/research-api.js` | Lane D (NEW) | `window.ResearchAPI` — `listBriefs()`, `getBrief(id)`. |
-| `site-studio/public/studio/src/lib/think-tank-api.js` | Lane D (NEW) | `window.ThinkTankAPI` — `listCaptures()`, `getContract()`. |
-| `site-studio/public/studio/src/lib/current-context.js` | Lane E (NEW) | `window.CurrentContext` — 7 forSection_* helpers building `{section, activeId, hints, explain, nextAction, capabilityTruth}`. |
-| `site-studio/public/studio/src/lib/recipes.js` | Lane F (NEW) | `window.STUDIO_RECIPES` — 6 recipe definitions per `WORKSPACE-RECIPES.md`. |
-| `site-studio/public/studio/src/lib/memory-tail.js` | Lane F (NEW) | `window.MemoryTail` — reads `/api/intelligence/runs?tag=` for the bottom strip. |
-| `site-studio/server/intelligence-routes.js` | shell | `/api/intelligence/{sites,brief,capability-truth,runs,runs/:runId}` factory. |
-| `site-studio/server/intelligence-actions.js` | shell | `/api/intelligence/actions/runs/start` + cost-cap gate. |
-| `site-studio/server/intelligence-reader.js` | shell | Read-only file accessors with `isSafeTag` / `isSafeId` guards. |
-| `site-studio/server/intelligence-writer.js` | shell | Atomic ledger writes; $50 cost cap. |
-| `site-studio/server/component-routes.js` | shell | `/api/components`, `/api/components/check`, `/api/components/contract`. |
-| `site-studio/server/component-inventory.js` | shell | Reads `lib/famtastic-skeletons.js` exports + Levenshtein diff-match. |
-| `site-studio/server/media-routes.js` | shell | `/api/media?tag=`, `/api/media/contract`. |
-| `site-studio/server/media-registry.js` | shell | Asset shape contract; reads `<siteDir>/media/registry.json`. |
-| `site-studio/server/research-routes.js` | Lane D (NEW) | `/api/research/briefs`, `/api/research/brief/:id` — path-traversal-safe. |
-| `site-studio/server/think-tank-routes.js` | Lane D (NEW) | `/api/think-tank/captures`, `/api/think-tank/contract` — fail-soft parse. |
-| `site-studio/server/visual-refinement.js` + `-routes.js` | shell | Run-scoped visual refinement. |
-| `site-studio/server/validators.js` | shell | `isValidPageName`, `sanitizeSvg`, `validateAgentHtml`. |
-| `site-studio/server/__smoke__/operator-fast-server.js` | shell | Fast smoke harness (no credentials). |
-| `site-studio/server/__smoke__/operator-action-browser-pw.js` | shell | Playwright operator action smoke. |
-| `site-studio/server/__smoke__/studio-shell-smoke.js` | shell | Original shell smoke (23 asserts). |
-| `site-studio/server/__smoke__/studio-shell-verify.js` | shell | Independent stricter verifier (73 asserts). |
-| `site-studio/server/__smoke__/studio-functional-verify.js` | Lane G (NEW) | Functional-wiring browser verifier; ready for host re-run. |
-| `tests/studio/lane-static-checks.js` | Lane G (NEW) | Pure-Node static invariants (85 asserts; 85/85 PASS). |
-| `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-CONTROLLER.md` | orchestrator (NEW) | Lane ownership + integration order + hard-blocker list. |
-| `docs/research/famtastic-studio-execution/STUDIO-FUNCTIONAL-WORKSPACE-RUN-REPORT.md` | orchestrator (NEW) | Final 21-field run report. |
-
 ### Test Suites
 
 | Suite | Tests | Status |
@@ -514,9 +415,7 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 
 | File | Purpose |
 |------|---------|
-| `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research, plan/task/run, and report style. |
-| `config/reporting-preferences.json` | Project-level response/reporting density preferences. Current/default density is `compact`; valid densities are `compact`, `standard`, and `detail`. |
-| `docs/operating-rules/reporting-density.md` | Operating rule for final-response density and CLI usage. |
+| `scripts/fam-hub` | Unified CLI: site, idea, agent, admin, convo, ingest, research |
 | `scripts/gemini-cli` | Gemini API CLI (Node.js, gemini-2.5-flash) |
 | `scripts/orchestrator-site` | Batch site generation |
 | `scripts/stock-photo` | 3-provider stock photo downloader |
@@ -544,6 +443,9 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 | `plans/consolidation-2026-05-04.json` | Earlier proposed parent-lane consolidation packet; superseded by the applied four-parent `plans/registry.json`. |
 | `plans/consolidation-verification-2026-05-04.md` | Verification proposal that led to the applied four-parent registry; retained as evidence. |
 | `plans/consolidated-execution-checklist-2026-05-04.md` | Working four-plan execution checklist that parks the stale Total Ask as strategy context and maps remaining P0/P1/P2 asks to `studio-workbench-foundation`, `plan-task-run-intelligence`, `build-intent-fulfillment-trace`, and `site-mbsh-reunion`. |
+| `plans/remaining-plan-triage-2026-05-05.md` | Current plan-pile triage. Separates closed/completed plan-shaped work, blocked work, ready implementation work, and proposed design packets that should not become active parents yet. |
+| `plans/*-checklist.md` | Actionization checklists for Workbench default-shell cutover, Media Studio unification, status-packet regeneration, capture promotion, pipeline visualizer phase 2, MBSH deploy access, MBSH media/story readiness, and Ops Workspace GUI actionization. |
+| `plans/plan_2026_05_05_ops_workspace_gui/` | Proposed/design-only Ops Workspace GUI packet. Useful source material for Ops read/freshness substrate and Jobs tab MVP, but not an active registry parent. |
 | `plans/registry.backup-2026-05-04.json` | Backup of the prior 11-record pilot registry before the four-parent consolidation rewrite. |
 | `tasks/tasks.jsonl` | Append-only task ledger; now populated with consolidated P0/P1/P2 tasks tied to the four parent plans. |
 | `runs/runs.jsonl` | Append-only run ledger; now contains the active consolidation apply run. |
@@ -652,14 +554,9 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
   repoint the local clone's `origin` at the fork, and record the fork URL
   in `~/famtastic/tools/cpanel-mcp/PATCHES.md`. This stops every fresh
   clone or upstream pull from silently wiping the fix.
-- **MBSH service provisioning blockers:** generate production `API_BASE_URL`
-  after backend provisioning, add cPanel UAPI/MCP DNS/addon-domain wrappers or
-  complete provider/manual DNS records, and repair SSH host-key trust for
-  `nineoo@FAMTASTICINC.COM`.
-- **MBSH addon domain (provider/manual unless API is extended):** add
-  `mbsh96reunion.com` in cPanel by hand if Studio cannot automate it — the MCP
-  does not yet expose `create_addon_domain`. Tracked as the #1 Layer-2
-  extension in `docs/operating-rules/godaddy-mcp-spike.md`.
+- **MBSH addon domain (manual):** add `mbsh96reunion.com` in cPanel by hand
+  — the MCP does not yet expose `create_addon_domain`. Tracked as the #1
+  Layer-2 extension in `docs/operating-rules/godaddy-mcp-spike.md`.
 
 ---
 
@@ -669,7 +566,7 @@ The full iterative roadmap is in `architecture/2026-04-25-outstanding-plan.md`.
 
 Quick view:
 
-**Immediate (next session):** Studio shell browser-prong host re-run (`studio-functional-verify.js`); JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX. Wire one of the disabled-but-labeled actions in the Studio shell end-to-end (recommended first: Media Studio Generate → registry write → slot assign, since the adapter + telemetry + cost-monitor exist and only the round-trip is missing).
+**Immediate (next session):** JJ B&A site build + refine; fix broken header links bug; fix auto-build-trigger UX.
 
 **Near-term (this week):** Edge case test suite design (5 categories); Wizard-of-Oz orchestrated build session; Reunion site (July 12 deadline).
 
