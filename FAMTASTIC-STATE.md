@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-05-21 (Final pre-Phase-2 consolidation completed: Phase 2 plan of record is tracked, broader pre-Shay-Shay worktree references are archived under `docs/archive/pre-shay-shay/`, Phase 2A brand/remotion starting inputs are tracked, local nested repos/probes are ignored, and Phase 1 foundation remains current.)
+**Last updated:** 2026-06-16 (Morning briefing operating-system bootstrap added under `obsidian/01-Shay-Platform/`: deep-dive plan parse, active-plan registry, latest briefing artifact, interactive interview flow, and system spec. Fresh sessions can now pick up `show me my latest briefing`, `show me the plans we have`, and `start my morning briefing` from durable artifacts rather than only live chat context.)
 
 ---
 
@@ -11,6 +11,8 @@ FAMtastic Site Studio is a chat-driven website factory that generates production
 The system is currently single-user and localhost-only, built and operated by Fritz Medine. The architectural goal — captured in the canonical vision doc `docs/FAMTASTIC-VISION-CAPTURE-2026-04-24.md` — is the **Adobe Creative Cloud pattern**: separate full-identity studios (Site, Component, Media, Think Tank) atop shared Platform services (research, memory, intelligence loop, learning).
 
 **Key recent milestones:**
+
+- **2026-06-15** — Shay capability/intelligence restore baseline and repo-local environment bootstrap. Verified that `~/famtastic/shay-shay` `main` is the canonical clean baseline but not the full surviving truth of preserved Shay work. Restored the off-main capability/intelligence command surfaces into the live working tree without replaying whole branches: `shay_cli/capabilities_cmd.py`, `shay_cli/intelligence_cmd.py`, `shay_cli/intelligence_seed.py`, `tests/test_capabilities_cmd.py`, `tests/test_intelligence_layer.py`, and `shay_cli/main.py` parser wiring for `capabilities` + `intelligence`. `PERSONA.md` and `SOUL.md` were protected and unchanged. Bootstrapped `~/famtastic/shay-shay/.venv` with editable `.[dev]` install so runtime checks can use the correct interpreter/dependency set. Remaining review-later buckets from preserved branches include recall/session-memo plumbing and selected gateway/control-plane files; these should be re-imported surgically by topic rather than branch resurrection.
 
 - **2026-05-21** — Final pre-Phase-2 consolidation and clean-state prep. The current plan of record is `plans/PHASE2-VISUAL-WORKFLOWS-BRAND-SYSTEMS.md`. Broader pre-Shay-Shay worktree material was harvested into `docs/archive/pre-shay-shay/full-snapshots/` instead of merging stale UI/code wholesale; bulk MuAPI logo/media WIPs were preserved locally and indexed by `docs/archive/pre-shay-shay/local-artifact-manifests/epic-mclean-muapi-logo-outputs.md`. Phase 2A starting inputs are now tracked in main via `brand/FAMTASTIC-BRAND-MARK.md` and the `remotion/` FAMtastic logo motion composition source. Local nested repos/probes (`shay-shay/`, `shay-desktop*/`, `_tool-probes/`, etc.) are ignored by the hub repo; useful findings must be promoted into tracked docs/plans/Data Center records or separate repos.
 
