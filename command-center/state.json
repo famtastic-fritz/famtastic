@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T16:41:32.733Z",
+  "generated_at": "2026-06-16T19:45:06.784Z",
   "scoring_model": {
     "profitByTag": {
       "site-execution": 90,
@@ -50,22 +50,22 @@
     "staleDays": 14
   },
   "kpis": {
-    "activePlans": 13,
-    "priorities": 4,
-    "needsYou": 8,
+    "activePlans": 9,
+    "priorities": 0,
+    "needsYou": 5,
     "blocked": 0,
-    "inProgress": 4,
-    "openTasks": 10,
+    "inProgress": 3,
+    "openTasks": 8,
     "agents": 3,
-    "sites": 1,
+    "sites": 65,
     "capabilities": 24,
-    "proofs": 36
+    "proofs": 29
   },
   "stageCounts": {
-    "Checkpoint (stalled)": 6,
-    "In progress": 4,
-    "Checkpoint": 1,
-    "Needs tasking": 2
+    "In progress": 3,
+    "Checkpoint (stalled)": 3,
+    "Needs tasking": 2,
+    "Checkpoint": 1
   },
   "plans": [
     {
@@ -79,14 +79,14 @@
         "workbench"
       ],
       "priorityHigh": false,
-      "stage": "checkpoint_stale",
-      "stageLabel": "Checkpoint (stalled)",
-      "stageEmoji": "🟡",
-      "needsYou": true,
-      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
-      "openTasks": 0,
-      "totalTasks": 6,
-      "momentumDays": 28,
+      "stage": "in_progress",
+      "stageLabel": "In progress",
+      "stageEmoji": "🟢",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 3,
+      "totalTasks": 11,
+      "momentumDays": 42,
       "autonomy": 97,
       "profit": 50,
       "nextAction": "Develop executable checklists for Workbench default-shell cutover and Media Studio control unification; the frozen foundation, registry-backed Plan mode, and Shay context provider are complete.",
@@ -111,14 +111,14 @@
         "capture"
       ],
       "priorityHigh": false,
-      "stage": "checkpoint_stale",
-      "stageLabel": "Checkpoint (stalled)",
-      "stageEmoji": "🟡",
-      "needsYou": true,
-      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
-      "openTasks": 0,
-      "totalTasks": 10,
-      "momentumDays": 28,
+      "stage": "in_progress",
+      "stageLabel": "In progress",
+      "stageEmoji": "🟢",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 4,
+      "totalTasks": 17,
+      "momentumDays": 42,
       "autonomy": 97,
       "profit": 45,
       "nextAction": "Develop executable checklists for automatic status-packet regeneration and reviewed capture-packet promotion into canonical memory.",
@@ -130,7 +130,7 @@
         "Reviewed capture-packet promotion into canonical memory (PARTIALLY SOLVED by chat-capture-learn-optimize MVP)"
       ],
       "hasActiveRun": true,
-      "proofCount": 8
+      "proofCount": 11
     },
     {
       "id": "build-intent-fulfillment-trace",
@@ -142,14 +142,14 @@
         "tracing"
       ],
       "priorityHigh": false,
-      "stage": "checkpoint_stale",
-      "stageLabel": "Checkpoint (stalled)",
-      "stageEmoji": "🟡",
-      "needsYou": true,
-      "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
-      "openTasks": 0,
-      "totalTasks": 5,
-      "momentumDays": 28,
+      "stage": "in_progress",
+      "stageLabel": "In progress",
+      "stageEmoji": "🟢",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 1,
+      "totalTasks": 7,
+      "momentumDays": 42,
       "autonomy": 97,
       "profit": 45,
       "nextAction": "Develop the phase-two visualizer checklist for stage/event matching, missing-stage detection, and proposed patch preview on top of the live inspect/trace/propose surface.",
@@ -182,7 +182,7 @@
       "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
       "openTasks": 0,
       "totalTasks": 0,
-      "momentumDays": 28,
+      "momentumDays": 42,
       "autonomy": 82,
       "profit": 45,
       "nextAction": "Build the Ops read/freshness substrate before command mutations or Jobs tab UI implementation.",
@@ -194,151 +194,6 @@
         "User reframed FAMtastic as creation platform on 2026-05-05; previous trajectory was building website-style chrome with empty rooms",
         "Resume implementation only after the per-page-type research lands and a consolidation plan picks Path A/B/C from STUDIO-SHELL-RECONCILIATION-2026-05-05.md"
       ],
-      "hasActiveRun": false,
-      "proofCount": 0
-    },
-    {
-      "id": "mission-control-command-center",
-      "title": "Mission Control / Command Center",
-      "role": "domain",
-      "tags": [
-        "platform-upgrades",
-        "studio-ui",
-        "ops",
-        "shay-shay",
-        "mission-control"
-      ],
-      "priorityHigh": false,
-      "stage": "in_progress",
-      "stageLabel": "In progress",
-      "stageEmoji": "🟢",
-      "needsYou": false,
-      "needsYouReason": "",
-      "openTasks": 5,
-      "totalTasks": 5,
-      "momentumDays": 0,
-      "autonomy": 97,
-      "profit": 45,
-      "nextAction": "Wire fam-hub command-center + daily cron, surface in Studio Ops via /api/ops, and push the morning briefing to phone.",
-      "blocker": "No hard blocker. Send paths for billing (payment provider) and work (Jira/Slack creds) are Fritz decisions, tracked as tasks.",
-      "runner": "Claude",
-      "closeoutVerdict": null,
-      "remainingWork": [],
-      "hasActiveRun": false,
-      "proofCount": 0
-    },
-    {
-      "id": "shay-omnipresent-assistant",
-      "title": "Shay — Omnipresent Virtual Assistant",
-      "role": "product",
-      "tags": [
-        "shay-shay",
-        "virtual-assistant",
-        "omnipresent",
-        "reach-fabric",
-        "voice",
-        "avatar"
-      ],
-      "priorityHigh": true,
-      "stage": "in_progress",
-      "stageLabel": "In progress",
-      "stageEmoji": "🟢",
-      "needsYou": false,
-      "needsYouReason": "",
-      "openTasks": 2,
-      "totalTasks": 4,
-      "momentumDays": 0,
-      "autonomy": 97,
-      "profit": 40,
-      "nextAction": "Turn on a real channel (set RESEND_API_KEY/Telegram envs) and define the virtual-body (voice-first) approach.",
-      "blocker": "No hard blocker. Device platform lock-ins (Apple/Meta/Amazon) will constrain some reach channels — to be characterized by the research.",
-      "runner": "Claude",
-      "closeoutVerdict": null,
-      "remainingWork": [],
-      "hasActiveRun": false,
-      "proofCount": 2
-    },
-    {
-      "id": "fritz-companion-app",
-      "title": "Fritz Companion App",
-      "role": "product",
-      "tags": [
-        "shay-shay",
-        "companion-app",
-        "mobile",
-        "chat",
-        "reach-fabric"
-      ],
-      "priorityHigh": true,
-      "stage": "in_progress",
-      "stageLabel": "In progress",
-      "stageEmoji": "🟢",
-      "needsYou": false,
-      "needsYouReason": "",
-      "openTasks": 1,
-      "totalTasks": 4,
-      "momentumDays": 0,
-      "autonomy": 97,
-      "profit": 40,
-      "nextAction": "Point CHAT_ENDPOINT at the real Shay gateway (off-LAN auth via API_SERVER_KEY) and wire push via the Reach Fabric.",
-      "blocker": "No hard blocker. Push delivery and any app-store path are device-platform decisions.",
-      "runner": "Claude",
-      "closeoutVerdict": null,
-      "remainingWork": [],
-      "hasActiveRun": false,
-      "proofCount": 1
-    },
-    {
-      "id": "financial-agents",
-      "title": "Financial Agents — Market Watch & $10 Leaderboard",
-      "role": "product",
-      "tags": [
-        "shay-shay",
-        "finance",
-        "trading",
-        "automation",
-        "agents"
-      ],
-      "priorityHigh": true,
-      "stage": "in_progress",
-      "stageLabel": "In progress",
-      "stageEmoji": "🟢",
-      "needsYou": false,
-      "needsYouReason": "",
-      "openTasks": 2,
-      "totalTasks": 4,
-      "momentumDays": 0,
-      "autonomy": 97,
-      "profit": 40,
-      "nextAction": "Run on an open network for the real session; decide daily cron cadence; gate Alpaca paper-trading for live execution.",
-      "blocker": "No hard blocker for simulation. Live brokerage execution requires a broker account + API keys (Alpaca paper API) — a Fritz decision, gated.",
-      "runner": "Claude",
-      "closeoutVerdict": null,
-      "remainingWork": [],
-      "hasActiveRun": false,
-      "proofCount": 1
-    },
-    {
-      "id": "autonomous-content-engine",
-      "title": "Autonomous Content Engine — Hands-off SEO/Affiliate Site",
-      "role": "plan",
-      "tags": [],
-      "priorityHigh": true,
-      "stage": "checkpoint",
-      "stageLabel": "Checkpoint",
-      "stageEmoji": "🔵",
-      "needsYou": false,
-      "needsYouReason": "",
-      "openTasks": 0,
-      "totalTasks": 0,
-      "momentumDays": 0,
-      "autonomy": 82,
-      "profit": 40,
-      "nextAction": "Fritz one-time setup: create Amazon Associates / ad-network account + point a domain at deploy target + approve niche. Then schedule the publish cron.",
-      "blocker": "Monetization accounts are Fritz-only (cannot be automated). Revenue is months out; this is the lowest-involvement, slowest path by Fritz design choice.",
-      "runner": "Claude",
-      "closeoutVerdict": null,
-      "remainingWork": [],
       "hasActiveRun": false,
       "proofCount": 0
     },
@@ -360,7 +215,7 @@
       "needsYouReason": "Needs you to define the next tasks (or close it out).",
       "openTasks": 0,
       "totalTasks": 0,
-      "momentumDays": 28,
+      "momentumDays": 42,
       "autonomy": 57,
       "profit": 75,
       "nextAction": "Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven.",
@@ -395,7 +250,7 @@
       "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
       "openTasks": 0,
       "totalTasks": 0,
-      "momentumDays": 28,
+      "momentumDays": 42,
       "autonomy": 72,
       "profit": 45,
       "nextAction": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read.",
@@ -427,7 +282,7 @@
       "needsYouReason": "No movement in 2+ weeks at a checkpoint — decide the next phase or close it.",
       "openTasks": 0,
       "totalTasks": 0,
-      "momentumDays": 28,
+      "momentumDays": 42,
       "autonomy": 72,
       "profit": 45,
       "nextAction": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate.",
@@ -462,7 +317,7 @@
       "needsYouReason": "Needs you to define the next tasks (or close it out).",
       "openTasks": 0,
       "totalTasks": 0,
-      "momentumDays": 14,
+      "momentumDays": 28,
       "autonomy": 57,
       "profit": 45,
       "nextAction": "Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05.",
@@ -473,6 +328,36 @@
         "Reconfirm whether the page-type research deliverables in docs/design-research are accepted, stale, or need refresh against the newer Studio IA.",
         "Generate a fresh task set or superseding shell-rebuild plan before any more Workbench UI implementation."
       ],
+      "hasActiveRun": false,
+      "proofCount": 0
+    },
+    {
+      "id": "plan_2026_06_02_autopilot_faceless",
+      "title": "autopilot-faceless",
+      "role": "chassis",
+      "tags": [
+        "platform-upgrades",
+        "media",
+        "autonomy",
+        "monetization",
+        "agents"
+      ],
+      "priorityHigh": false,
+      "stage": "checkpoint",
+      "stageLabel": "Checkpoint",
+      "stageEmoji": "🔵",
+      "needsYou": false,
+      "needsYouReason": "",
+      "openTasks": 0,
+      "totalTasks": 0,
+      "momentumDays": 14,
+      "autonomy": 72,
+      "profit": 50,
+      "nextAction": "Autonomous faceless-video business (concept->collection->advertising->feedback) on the Remotion faceless generator. Phases 0-4 done; live publishing, real analytics, AI b-roll, money-model agents, hardening remain. Built 2026-06-02.",
+      "blocker": "",
+      "runner": "unassigned",
+      "closeoutVerdict": null,
+      "remainingWork": [],
       "hasActiveRun": false,
       "proofCount": 0
     }
@@ -493,8 +378,264 @@
   ],
   "sites": [
     {
+      "tag": ".netlify",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": ".trash",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "auntie-gale-garage-sales",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "guys-classy-shoes",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "ncs-demo",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "poc-site",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "readings-by-maria",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "readings-by-maria-codex",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "restaurant",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-altitude",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-auntie-gale",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-auntie-gale-garage-sales",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-black",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-crumb-and-crust-bakery",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-demo",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-drop-the-beat",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-famtastic-build-full",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-famtastic-com",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-famtastic-designs",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-famtastic-hosting",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-fresh-cuts-in-atlanta",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-groove-theory",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-guys-classy-shoes",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-jamari-graduation",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-jj-ba-transport",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-jj-ba-transport2",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-lawn-company",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-lunas-flower-shop",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-mario-pizza",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-marios-pizza",
+      "location": "studio-sandbox"
+    },
+    {
       "tag": "site-mbsh-reunion",
       "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-newsite",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-readings-by-maria",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-small-accounting-firm",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-street-family-reunion",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-test-new-site-for-build",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-test-restructure",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-the-best-lawn-care",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-the-daily-grind",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-the-daily-grind-in-atlanta",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-tiviewer",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-tonys-barber-shop",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "site-unknown",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "the-best-lawn-care",
+      "location": "studio-sandbox"
+    },
+    {
+      "tag": "_archive",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "famtastic-hosting",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "mbsh-reunion",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-altitude",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-auntie-gale-garage-sales",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-black",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-crumb-and-crust-bakery",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-drop-the-beat",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-fresh-cuts-in-atlanta",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-groove-theory",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-jj-ba-transport",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-jj-ba-transport2",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-lunas-flower-shop",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-marios-pizza",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-small-accounting-firm",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-test-restructure",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-the-best-lawn-care",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-the-daily-grind",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-the-daily-grind-in-atlanta",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-tonys-barber-shop",
+      "location": "deploy-repo"
+    },
+    {
+      "tag": "site-unknown",
+      "location": "deploy-repo"
     }
   ],
   "capabilities": [
@@ -625,7 +766,7 @@
       "plan_id": "plan-task-run-intelligence",
       "status": "active",
       "target": "complete_p0_then_report",
-      "current_step": "MBSH leftovers grouped: media/story readiness is completed with launch-safe generated/derivative assets and rights manifest; live deploy proof remains blocked only by external production access/config."
+      "current_step": "Remaining plan-shaped asks are actionized. The Ops Workspace GUI proposed packet was corrected out of active parents and split into existing-parent tasks. Open work is now eight ready implementation tasks plus four blocked MBSH deploy/media tasks."
     }
   ]
 }

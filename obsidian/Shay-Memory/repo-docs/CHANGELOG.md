@@ -1,4 +1,21 @@
-<!-- mirrored 2026-06-16T12:46:57.341454 from ~/famtastic/CHANGELOG.md -->
+---
+title: CHANGELOG
+type: note
+permalink: shay-memory/repo-docs/changelog
+---
+
+<!-- mirrored 2026-06-16T15:46:58.293268 from ~/famtastic/CHANGELOG.md -->
+
+## 2026-06-16 — Proactive brief decay + private review actions
+
+Tightened the proactive morning-brief ranking so older transcript packets decay harder and repeated reseller-history items stop crowding the ranked focus list. Added explicit private-review action state through `obsidian/Shay-Memory/_system/private_review_actions.py` plus `private-review-actions.json`, and wired `reflect.py` / Command Center to display that state and support approve/suppress/review decisions. Verified with `py_compile`, a live `reflect.py` run, `private_review_actions.py list`, and a full Command Center rebuild. Deferred: Command Center still shows the action path rather than clickable in-page buttons, and ranking remains heuristic rather than final.
+
+
+Added `shay-shay/scripts/model_eval_runner.py` plus a working local evaluation flow to compare hosted and Ollama-backed model lanes quickly. Verified live persona/soul files still exist, and confirmed the runtime is still in `service_tier: fast` with `reasoning_effort: low`. Hosted `gpt-5.4` passed the safe benchmark prompts cleanly; best local quick-pass candidates were `hermes3-64k`, `qwen3:14b`, and `phi4-mini-64k`, while experimental uncensored models stayed sandbox-grade. Discovered two real gaps: some Ollama models return empty stdout through `shay -z` despite answering via direct Ollama API, and child `delegate_task` swarm telemetry was not trustworthy for this benchmark class.
+
+## 2026-06-16 — Identity guard CLI and immutable snapshot repair
+
+Added Shay identity controls in `shay-shay`: `shay identity status/snapshot/restore/lock/unlock`, plus a macOS-safe immutable backup refresh path so startup checks no longer die on locked emergency files. Verified live with `shay identity status --json` and focused tests via `uvx ... pytest` (9 passed). Fast mode is still on in `~/.shay/config.yaml` (`service_tier: fast`) and reasoning is still low (`reasoning_effort: low`). Deferred: config UI still summarizes reasoning as plain `on`, and restore is emergency-backup-only for now.
 
 ## 2026-05-30 — Anti-truncation synthesis + .ralph autonomous build loop
 
@@ -92,3 +109,6 @@ Audited the sprawl of half-built "moving parts" (pipeline agents HUNG, fake `com
 
 ## 2026-06-02 — Jamari '26 graduation celebration site (standalone gift)
 Built a 3-page responsive celebration + future-dev site for Jamari Anthony Jacquet (Monarch High, Class of 2026) under `sites/site-jamari-graduation/dist/`, with out-of-the-box Three.js 3D: an animated graduation cap + confetti hero (`index.html`) and a particle-network "Future Developer" scene (`journey.html`), plus a masonry photo gallery with lightbox (`gallery.html`). Optimized 18 graduation photos from 65MB → 6.6MB (Pillow, EXIF-baked, 1600px/q82), generated an OG image + favicon, and a parallel swarm wrote a full social-media campaign + blast at `dist/campaign/CAMPAIGN.md`. An independent QA reviewer pass caught and closed a year-counter bug, a dead parallax line, and a stale lightbox alt; head `<style>` blocks and all inline styles were extracted to `css/site.css` per project rules. Deployment is hands-off-ready (drag-and-drop or git-connect) via `netlify.toml` + `DEPLOY.md` — could not deploy from the sandbox (Netlify API firewalled, no token).
+## 2026-06-16 — Proactive briefing ranking + private review surface
+
+Tightened the proactive Shay loop by ranking a morning-brief subset inside `obsidian/Shay-Memory/_system/proactive_os.py`, adding `private-review.json` output from `reflect.py`, and wiring `scripts/command-center/build-command-center.js` to show a protected private-context review section alongside the public brief. Added verification coverage for ranking/private-review behaviors, cleaned generated Command Center artifacts to pass `git diff --check`, and regenerated the live reflection + dashboard outputs. Remaining gap: ranked focus still overweights some older reseller-history decision packets, and the private review surface is display-only until approve/suppress actions exist downstream.

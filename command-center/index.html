@@ -41,6 +41,15 @@
   .metrics b{display:block;font-size:15px}.metrics span{font-size:10px;color:var(--mut)}
   .needs{font-size:12.5px;color:#f5b342;background:#241b0c;border-radius:9px;padding:8px 10px;margin:6px 0}
   .next{font-size:12.5px;color:var(--mut);margin:6px 0 0}
+  .private-review{display:grid;grid-template-columns:1fr;gap:10px}
+  .private-entry{background:#101622;border:1px solid #2d3546;border-radius:12px;padding:12px}
+  .private-entry--approve{border-color:#1f6f4a;box-shadow:0 0 0 1px rgba(45,212,167,.18) inset}
+  .private-entry--suppress{border-color:#6f2c3b;box-shadow:0 0 0 1px rgba(239,68,68,.16) inset}
+  .private-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .private-meta span{font-size:11px;background:#221626;color:#f3b6ff;border:1px solid #51335d;padding:2px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px}
+  .private-excerpt{font-size:13px;line-height:1.45}
+  .private-sub{margin-top:8px;color:var(--mut);font-size:11px}
+  .private-note{margin-top:8px;color:#cde7df;font-size:11.5px}
   .roster{display:flex;flex-wrap:wrap;gap:8px}
   .pill{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12.5px}
   footer{color:var(--mut);font-size:12px;text-align:center;margin-top:8px}
@@ -51,24 +60,71 @@
 <div class="wrap">
   <header>
     <h1>⬡ FAMtastic Command Center</h1>
-    <div class="sub">Mission Control · generated Tue, 02 Jun 2026 16:41:32 GMT · source: live repo ledgers</div>
+    <div class="sub">Mission Control · generated Tue, 16 Jun 2026 19:45:06 GMT · source: live repo ledgers</div>
   </header>
 
   <div class="kpis">
-    <div class="kpi"><b>13</b><span>Active plans</span></div>
-    <div class="kpi star"><b>4</b><span>⭐ Your priorities</span></div>
-    <div class="kpi alert"><b>8</b><span>Need you</span></div>
+    <div class="kpi"><b>9</b><span>Active plans</span></div>
+    <div class="kpi star"><b>0</b><span>⭐ Your priorities</span></div>
+    <div class="kpi alert"><b>5</b><span>Need you</span></div>
     <div class="kpi "><b>0</b><span>Blocked (ext)</span></div>
-    <div class="kpi"><b>4</b><span>In progress</span></div>
-    <div class="kpi"><b>10</b><span>Open tasks</span></div>
+    <div class="kpi"><b>3</b><span>In progress</span></div>
+    <div class="kpi"><b>8</b><span>Open tasks</span></div>
     <div class="kpi"><b>3</b><span>Agents</span></div>
     <div class="kpi"><b>24</b><span>Capabilities</span></div>
-    <div class="kpi"><b>36</b><span>Proofs logged</span></div>
+    <div class="kpi"><b>29</b><span>Proofs logged</span></div>
   </div>
 
   <section>
     <h2>🔴 Needs you now</h2>
-    <ul class="needs-list"><li><b>Studio Workbench Foundation</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>Plan, Task, Run, and Capture Intelligence</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>Build Intent, Fulfillment Trace, and Workflow Data</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>site-promotion</b> — Needs you to define the next tasks (or close it out).</li><li><b>FAMtastic Studio Operations Workspace GUI</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>chat-capture-learn-optimize</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>agent-coordination</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>workbench-per-page-design</b> — Needs you to define the next tasks (or close it out).</li></ul>
+    <ul class="needs-list"><li><b>site-promotion</b> — Needs you to define the next tasks (or close it out).</li><li><b>FAMtastic Studio Operations Workspace GUI</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>chat-capture-learn-optimize</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>agent-coordination</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>workbench-per-page-design</b> — Needs you to define the next tasks (or close it out).</li></ul>
+  </section>
+
+  <section>
+    <h2>🔒 Private context review</h2>
+    <p style="color:var(--mut);font-size:12px;margin:0 0 10px">Protected human-state items stay out of the public brief by default. Theme: brief · pressures: cruise, income · approved: 0 · suppressed: 0 · review: 8</p>
+    <p style="color:var(--mut);font-size:12px;margin:0 0 10px">Action path: <code>python3 obsidian/Shay-Memory/_system/private_review_actions.py list</code> then <code>python3 obsidian/Shay-Memory/_system/private_review_actions.py set ITEM_ID approve --note "why it can surface"</code> or <code>... suppress --note "why it stays private"</code>.</p>
+    <div class="private-review"><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>decision</span><span>income</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">1. **Home:** ~/basic-memory/ideas/inbox/ — one file per idea (not a monolith), each independently triageable and readable by brain-to-build…</div>
+    <div class="private-sub">vault-note · IDEA-CAPTURE-PLAN-2026-06-08 · item capture-2026-06-16-0533-idea-capture-plan-2026-06-08::6</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>promise</span><span>income</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">──────────────────────────────────────── ● you get a gold star for this comment On context window / context rot: - context window is my pro…</div>
+    <div class="private-sub">repo-transcript · deep dive convo agent2 · item capture-2026-06-16-0555-deep-dive-convo-agent2::368</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>income</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">2. The &quot;Studios&quot; as Products (Service Productization) * **Standardize Deliverables:** Clearly define what constitutes a &quot;FAMtastic Site.&quot; C…</div>
+    <div class="private-sub">research-note · FAMtastic Blueprint Implementation Research · item capture-2026-06-16-0025-famtastic-blueprint-implementation-research::7</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">1. **Ingestion Pipeline as the spine** — ingest(system) → decompose into facets → adapt each facet → normalize → register → verify → versio…</div>
+    <div class="private-sub">vault-note · SHAYS-STATE-PLAN-REDTEAM · item capture-2026-06-16-0549-shays-state-plan-redteam::31</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>decision</span><span>fritz</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">The first run processed /Users/famtasticfritz/Downloads/COWORK-BRIEFING.md and wrote captures/review/2026-05-04-cowork-briefing-first-pass.…</div>
+    <div class="private-sub">repo-doc · SITE-LEARNINGS · item capture-2026-06-16-0003-site-learnings::1472</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>income</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">Blocked on resolving how to get at Reseller data without direct login</div>
+    <div class="private-sub">runtime-session · 20260610_111141_552145 · item capture-2026-06-16-0379-20260610_111141_552145::11</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">- **Two tiers only:** Haiku for grunt work (scaffold, boilerplate, mechanical edits, test runs, doc-gen). Sonnet for judgment (build-spec a…</div>
+    <div class="private-sub">vault-note · SHAY-PLATFORM-YOLO-KICKOFF-2026-06-08 · item capture-2026-06-16-0529-shay-platform-yolo-kickoff-2026-06-08::9</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">Blocked Python3 subprocess.PPError: command ['/Users/famtasticfritz/famtastic/shay-shay/env/bin/python3', '-m', 'pytest', 'tests/'] status…</div>
+    <div class="private-sub">runtime-session · 20260614_010407_4583da · item capture-2026-06-16-0145-20260614_010407_4583da::8</div>
+
+  </div></div>
   </section>
 
   <section>
@@ -81,67 +137,7 @@
 
   <section>
     <h2>All active plans</h2>
-    <div class="cards"><div class="card" data-needs="false" data-priority="true">
-    <div class="card-head">
-      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
-      <span class="role">⭐ product</span>
-    </div>
-    <h3>Shay — Omnipresent Virtual Assistant</h3>
-    <div class="tags"><span class="tag">shay-shay</span><span class="tag">virtual-assistant</span><span class="tag">omnipresent</span><span class="tag">reach-fabric</span></div>
-    <div class="metrics">
-      <div><b>2/4</b><span>tasks</span></div>
-      <div><b>0d ago</b><span>last move</span></div>
-      <div><b>97</b><span>autonomy</span></div>
-      <div><b>40</b><span>profit</span></div>
-    </div>
-    
-    <p class="next"><b>Next:</b> Turn on a real channel (set RESEND_API_KEY/Telegram envs) and define the virtual-body (voice-first) approach.</p>
-  </div><div class="card" data-needs="false" data-priority="true">
-    <div class="card-head">
-      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
-      <span class="role">⭐ product</span>
-    </div>
-    <h3>Fritz Companion App</h3>
-    <div class="tags"><span class="tag">shay-shay</span><span class="tag">companion-app</span><span class="tag">mobile</span><span class="tag">chat</span></div>
-    <div class="metrics">
-      <div><b>1/4</b><span>tasks</span></div>
-      <div><b>0d ago</b><span>last move</span></div>
-      <div><b>97</b><span>autonomy</span></div>
-      <div><b>40</b><span>profit</span></div>
-    </div>
-    
-    <p class="next"><b>Next:</b> Point CHAT_ENDPOINT at the real Shay gateway (off-LAN auth via API_SERVER_KEY) and wire push via the Reach Fabric.</p>
-  </div><div class="card" data-needs="false" data-priority="true">
-    <div class="card-head">
-      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
-      <span class="role">⭐ product</span>
-    </div>
-    <h3>Financial Agents — Market Watch &amp; $10 Leaderboard</h3>
-    <div class="tags"><span class="tag">shay-shay</span><span class="tag">finance</span><span class="tag">trading</span><span class="tag">automation</span></div>
-    <div class="metrics">
-      <div><b>2/4</b><span>tasks</span></div>
-      <div><b>0d ago</b><span>last move</span></div>
-      <div><b>97</b><span>autonomy</span></div>
-      <div><b>40</b><span>profit</span></div>
-    </div>
-    
-    <p class="next"><b>Next:</b> Run on an open network for the real session; decide daily cron cadence; gate Alpaca paper-trading for live execution.</p>
-  </div><div class="card" data-needs="false" data-priority="true">
-    <div class="card-head">
-      <span class="stage" style="--c:#3b82f6">🔵 Checkpoint</span>
-      <span class="role">⭐ plan</span>
-    </div>
-    <h3>Autonomous Content Engine — Hands-off SEO/Affiliate Site</h3>
-    <div class="tags"></div>
-    <div class="metrics">
-      <div><b>0/0</b><span>tasks</span></div>
-      <div><b>0d ago</b><span>last move</span></div>
-      <div><b>82</b><span>autonomy</span></div>
-      <div><b>40</b><span>profit</span></div>
-    </div>
-    
-    <p class="next"><b>Next:</b> Fritz one-time setup: create Amazon Associates / ad-network account + point a domain at deploy target + approve niche. Then schedule the publish cron.</p>
-  </div><div class="card" data-needs="true" data-priority="false">
+    <div class="cards"><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Needs tasking</span>
       <span class="role">substrate</span>
@@ -150,57 +146,12 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">deploy</span><span class="tag">release-management</span><span class="tag">rollback</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
+      <div><b>42d ago</b><span>last move</span></div>
       <div><b>57</b><span>autonomy</span></div>
       <div><b>75</b><span>profit</span></div>
     </div>
     <div class="needs">⚠ Needs you to define the next tasks (or close it out).</div>
     <p class="next"><b>Next:</b> Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven.</p>
-  </div><div class="card" data-needs="true" data-priority="false">
-    <div class="card-head">
-      <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
-      <span class="role">chassis</span>
-    </div>
-    <h3>Studio Workbench Foundation</h3>
-    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">shell</span><span class="tag">workbench</span></div>
-    <div class="metrics">
-      <div><b>0/6</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
-      <div><b>97</b><span>autonomy</span></div>
-      <div><b>50</b><span>profit</span></div>
-    </div>
-    <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
-    <p class="next"><b>Next:</b> Develop executable checklists for Workbench default-shell cutover and Media Studio control unification; the frozen foundation, registry-backed Plan mode, and Shay context provider are complete.</p>
-  </div><div class="card" data-needs="true" data-priority="false">
-    <div class="card-head">
-      <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
-      <span class="role">substrate</span>
-    </div>
-    <h3>Plan, Task, Run, and Capture Intelligence</h3>
-    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">ledgers</span><span class="tag">intelligence</span><span class="tag">capture</span></div>
-    <div class="metrics">
-      <div><b>0/10</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
-      <div><b>97</b><span>autonomy</span></div>
-      <div><b>45</b><span>profit</span></div>
-    </div>
-    <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
-    <p class="next"><b>Next:</b> Develop executable checklists for automatic status-packet regeneration and reviewed capture-packet promotion into canonical memory.</p>
-  </div><div class="card" data-needs="true" data-priority="false">
-    <div class="card-head">
-      <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
-      <span class="role">substrate</span>
-    </div>
-    <h3>Build Intent, Fulfillment Trace, and Workflow Data</h3>
-    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">build-pipeline</span><span class="tag">tracing</span></div>
-    <div class="metrics">
-      <div><b>0/5</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
-      <div><b>97</b><span>autonomy</span></div>
-      <div><b>45</b><span>profit</span></div>
-    </div>
-    <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
-    <p class="next"><b>Next:</b> Develop the phase-two visualizer checklist for stage/event matching, missing-stage detection, and proposed patch preview on top of the live inspect/trace/propose surface.</p>
   </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
@@ -210,7 +161,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">ops</span><span class="tag">shay-shay</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
+      <div><b>42d ago</b><span>last move</span></div>
       <div><b>82</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
@@ -225,7 +176,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">memory</span><span class="tag">shay-shay</span><span class="tag">intelligence</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
+      <div><b>42d ago</b><span>last move</span></div>
       <div><b>72</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
@@ -240,7 +191,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">governance</span><span class="tag">multi-agent</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
+      <div><b>42d ago</b><span>last move</span></div>
       <div><b>72</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
@@ -255,7 +206,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">design-research</span><span class="tag">ux</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>14d ago</b><span>last move</span></div>
+      <div><b>28d ago</b><span>last move</span></div>
       <div><b>57</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
@@ -264,18 +215,63 @@
   </div><div class="card" data-needs="false" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
-      <span class="role">domain</span>
+      <span class="role">chassis</span>
     </div>
-    <h3>Mission Control / Command Center</h3>
-    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">ops</span><span class="tag">shay-shay</span></div>
+    <h3>Studio Workbench Foundation</h3>
+    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">shell</span><span class="tag">workbench</span></div>
     <div class="metrics">
-      <div><b>5/5</b><span>tasks</span></div>
-      <div><b>0d ago</b><span>last move</span></div>
+      <div><b>3/11</b><span>tasks</span></div>
+      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>97</b><span>autonomy</span></div>
+      <div><b>50</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> Develop executable checklists for Workbench default-shell cutover and Media Studio control unification; the frozen foundation, registry-backed Plan mode, and Shay context provider are complete.</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#3b82f6">🔵 Checkpoint</span>
+      <span class="role">chassis</span>
+    </div>
+    <h3>autopilot-faceless</h3>
+    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">media</span><span class="tag">autonomy</span><span class="tag">monetization</span></div>
+    <div class="metrics">
+      <div><b>0/0</b><span>tasks</span></div>
+      <div><b>14d ago</b><span>last move</span></div>
+      <div><b>72</b><span>autonomy</span></div>
+      <div><b>50</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> Autonomous faceless-video business (concept-&gt;collection-&gt;advertising-&gt;feedback) on the Remotion faceless generator. Phases 0-4 done; live publishing, real analytics, AI b-roll, money-model agents, hardening remain. Built 2026-06-02.</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">substrate</span>
+    </div>
+    <h3>Plan, Task, Run, and Capture Intelligence</h3>
+    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">ledgers</span><span class="tag">intelligence</span><span class="tag">capture</span></div>
+    <div class="metrics">
+      <div><b>4/17</b><span>tasks</span></div>
+      <div><b>42d ago</b><span>last move</span></div>
       <div><b>97</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
-    
-    <p class="next"><b>Next:</b> Wire fam-hub command-center + daily cron, surface in Studio Ops via /api/ops, and push the morning briefing to phone.</p>
+
+    <p class="next"><b>Next:</b> Develop executable checklists for automatic status-packet regeneration and reviewed capture-packet promotion into canonical memory.</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">substrate</span>
+    </div>
+    <h3>Build Intent, Fulfillment Trace, and Workflow Data</h3>
+    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">build-pipeline</span><span class="tag">tracing</span></div>
+    <div class="metrics">
+      <div><b>1/7</b><span>tasks</span></div>
+      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>97</b><span>autonomy</span></div>
+      <div><b>45</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> Develop the phase-two visualizer checklist for stage/event matching, missing-stage detection, and proposed patch preview on top of the live inspect/trace/propose surface.</p>
   </div></div>
   </section>
 
@@ -284,14 +280,14 @@
     <p style="color:var(--mut);font-size:12px;margin:0 0 8px">Agents</p>
     <div class="roster"><span class="pill">🤖 claude <small style="color:var(--mut)">claude-sonnet-4-20250514</small></span><span class="pill">🤖 gemini <small style="color:var(--mut)">gemini-2.5-pro</small></span><span class="pill">🤖 codex <small style="color:var(--mut)">native</small></span></div>
     <p style="color:var(--mut);font-size:12px;margin:14px 0 8px">Sites</p>
-    <div class="roster"><span class="pill">🌐 site-mbsh-reunion <small style="color:var(--mut)">studio-sandbox</small></span></div>
+    <div class="roster"><span class="pill">🌐 .netlify <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 .trash <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 auntie-gale-garage-sales <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 guys-classy-shoes <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 ncs-demo <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 poc-site <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 readings-by-maria <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 readings-by-maria-codex <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 restaurant <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-altitude <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-auntie-gale <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-auntie-gale-garage-sales <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-black <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-crumb-and-crust-bakery <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-demo <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-drop-the-beat <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-famtastic-build-full <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-famtastic-com <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-famtastic-designs <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-famtastic-hosting <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-fresh-cuts-in-atlanta <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-groove-theory <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-guys-classy-shoes <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-jamari-graduation <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-jj-ba-transport <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-jj-ba-transport2 <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-lawn-company <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-lunas-flower-shop <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-mario-pizza <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-marios-pizza <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-mbsh-reunion <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-newsite <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-readings-by-maria <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-small-accounting-firm <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-street-family-reunion <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-test-new-site-for-build <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-test-restructure <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-the-best-lawn-care <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-the-daily-grind <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-the-daily-grind-in-atlanta <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-tiviewer <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-tonys-barber-shop <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 site-unknown <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 the-best-lawn-care <small style="color:var(--mut)">studio-sandbox</small></span><span class="pill">🌐 _archive <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 famtastic-hosting <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 mbsh-reunion <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-altitude <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-auntie-gale-garage-sales <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-black <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-crumb-and-crust-bakery <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-drop-the-beat <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-fresh-cuts-in-atlanta <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-groove-theory <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-jj-ba-transport <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-jj-ba-transport2 <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-lunas-flower-shop <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-marios-pizza <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-small-accounting-firm <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-test-restructure <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-the-best-lawn-care <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-the-daily-grind <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-the-daily-grind-in-atlanta <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-tonys-barber-shop <small style="color:var(--mut)">deploy-repo</small></span><span class="pill">🌐 site-unknown <small style="color:var(--mut)">deploy-repo</small></span></div>
   </section>
 
   <footer>Regenerate: <code>node scripts/command-center/build-command-center.js</code> · briefing.md + state.json emitted alongside this file.</footer>
 </div>
 
 <script>
-const SNAP = {"stageCounts":{"Checkpoint (stalled)":6,"In progress":4,"Checkpoint":1,"Needs tasking":2},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":true},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":true},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":true},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"Mission Control / Command Center","autonomy":97,"profit":45,"needsYou":false},{"title":"Shay — Omnipresent Virtual Assistant","autonomy":97,"profit":40,"needsYou":false},{"title":"Fritz Companion App","autonomy":97,"profit":40,"needsYou":false},{"title":"Financial Agents — Market Watch & $10 Leaderboard","autonomy":97,"profit":40,"needsYou":false},{"title":"Autonomous Content Engine — Hands-off SEO/Affiliate Site","autonomy":82,"profit":40,"needsYou":false},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true},{"title":"chat-capture-learn-optimize","autonomy":72,"profit":45,"needsYou":true},{"title":"agent-coordination","autonomy":72,"profit":45,"needsYou":true},{"title":"workbench-per-page-design","autonomy":57,"profit":45,"needsYou":true}]};
+const SNAP = {"stageCounts":{"In progress":3,"Checkpoint (stalled)":3,"Needs tasking":2,"Checkpoint":1},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":false},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":false},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":false},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true},{"title":"chat-capture-learn-optimize","autonomy":72,"profit":45,"needsYou":true},{"title":"agent-coordination","autonomy":72,"profit":45,"needsYou":true},{"title":"workbench-per-page-design","autonomy":57,"profit":45,"needsYou":true},{"title":"autopilot-faceless","autonomy":72,"profit":50,"needsYou":false}]};
 const stageColors = {"In progress":"#2dd4a7","Checkpoint":"#3b82f6","Checkpoint (stalled)":"#f5b342","Needs tasking":"#f5b342","Blocked (external)":"#ef4444","Stale":"#94a3b8","Completed":"#22c55e"};
 new Chart(document.getElementById('healthChart'), {
   type:'doughnut',

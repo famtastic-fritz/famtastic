@@ -13,9 +13,10 @@ This file summarizes how Claude Code, Codex, Gemini, Cowork, and other agent sur
 4. Search/reuse before generating or rebuilding.
 5. Route specialized needs to the owning system: Research/Data Center, Media Studio, Component Studio, Site Studio.
 6. Every meaningful run/build/job needs post-evaluation and opportunity capture.
-7. Do not run noisy check-in unless Fritz explicitly says multi-agent coordination is active.
-8. Preserve old plans as reference; do not let stale plans override the current Phase 2 plan.
-9. Use explicit commits and explicit staging. Never `git add .` in this repo during consolidation.
+7. Every meaningful research pass must create a durable artifact, not just a chat answer or terminal trace. Separate observation from interpretation, preserve source trace, and record capability notes so future sessions can reuse the research.
+8. Do not run noisy check-in unless Fritz explicitly says multi-agent coordination is active.
+9. Preserve old plans as reference; do not let stale plans override the current Phase 2 plan.
+10. Use explicit commits and explicit staging. Never `git add .` in this repo during consolidation.
 
 ## Phase 2 priority
 

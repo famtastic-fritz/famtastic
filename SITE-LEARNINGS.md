@@ -1,5 +1,35 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Proactive Shay organic capture/reflection OS (2026-06-16)
+
+Added `obsidian/Shay-Memory/_system/proactive_os.py` as the six-phase runtime behind proactive Shay intelligence. The module now discovers retrieval sources from the Shay vault plus repo-root transcript captures, expands alias variants (`convo`/`conversation`, `agent two` → `agent2`), normalizes each source into a capture record, distills captures into atomic items, ranks a tighter briefable subset for morning overlays, routes sensitive items into `obsidian/Shay-Memory/_system/runtime/proactive/private-context.jsonl`, and emits `source-registry.json`, `briefing-context.json`, `private-review.json`, `behavior-steering.json`, and `reinforcement.json`. Follow-up hardening added source-pointer age decay and ranked-focus diversity caps so stale historical packets lose ground even when they were captured recently.
+
+`obsidian/Shay-Memory/_system/reflect.py` now runs those phases during reflection generation instead of only writing markdown reflections. It still writes the existing episodic / semantic / reflective markdown files, but now also writes machine-readable proactive runtime artifacts and records counts in `obsidian/Shay-Memory/_system/runtime/memory-reflect-status.json` (`capture_count`, `atomic_item_count`, `action_force_count`, `private_context_count`, `source_classes`, and proactive output paths). `lib/shay/memory-context.js` overlays the generated behavior-steering block into Shay's live memory context, and `scripts/command-center/build-command-center.js` now ingests the proactive briefing overlay plus the protected `private-review.json` feed so Command Center shows both the public morning brief and a redaction-friendly private review surface. New action-state plumbing now reads `obsidian/Shay-Memory/_system/runtime/proactive/private-review-actions.json`, and `obsidian/Shay-Memory/_system/private_review_actions.py` provides the explicit review path: `list` current items, then mark each one `review`, `approve`, or `suppress` with an optional note.
+
+### Verified
+- Direct module assertions passed for alias expansion, capture normalization, atomic distillation, private-context routing, action-force generation, briefing payload generation, and reflect-module import.
+- `python3 obsidian/Shay-Memory/_system/reflect.py --window-hours 24 --dry-run` passed and reported 567 processed sources.
+- `python3 obsidian/Shay-Memory/_system/reflect.py --window-hours 24` wrote fresh episodic, semantic, and reflective markdown reflections plus proactive runtime artifacts.
+- `python3 -m py_compile obsidian/Shay-Memory/_system/proactive_os.py obsidian/Shay-Memory/_system/reflect.py obsidian/Shay-Memory/_system/private_review_actions.py` passed.
+- `python3 obsidian/Shay-Memory/_system/private_review_actions.py list` returned the current reviewable entries with action state.
+- `node scripts/command-center/build-command-center.js` regenerated `command-center/index.html`, `command-center/briefing.md`, and `command-center/state.json` successfully.
+
+### Known Gaps opened
+- The morning brief no longer gets swamped by repeated reseller-history packets, but the ranking layer is still heuristic. Additional tuning may still be needed if another old transcript family starts dominating ranked focus.
+- Approve/suppress state exists as a CLI-and-runtime path today (`private_review_actions.py` + `private-review-actions.json`), but Command Center is still display-only. There are not yet in-page action buttons wired to mutate review state directly from the dashboard.
+
+## Shay local model evaluation harness + swarm-truth audit (2026-06-16)
+
+Added `shay-shay/scripts/model_eval_runner.py` as a local benchmark harness for fast model screening through the live Shay runtime. The script runs `shay -z` across selected models, supports `--models` and `--tests` subset filters, times each case, writes JSON output to `shay-shay/tmp/model-eval-report.json`, and is intended for quick routing checks rather than polished benchmark science.
+
+Live runtime truth at the time of the audit: `~/.shay/PERSONA.md` and `~/.shay/SOUL.md` are both present; `~/.shay/config.yaml` still shows `agent.service_tier: fast`, `agent.reasoning_effort: low`, and the default hosted lane remains `model.provider: openai-codex` with `model.default: gpt-5.4`. Safe `shay -z` checks on the hosted default lane passed exact-text, strict-JSON, prompt-injection-handling, and tiny-code-output prompts with no refusal/blocking observed on those safe prompts.
+
+A local direct-Ollama comparison run showed the strongest disciplined candidates in this quick pass were `hermes3-64k:latest`, `qwen3:14b`, and then `phi4-mini-64k:latest` (fast but less strict on code-fence hygiene). `deepseek-r1-64k:latest` was strong but violated a `code only` constraint by adding explanation; `dolphin-mistral:latest` and `wizardlm-uncensored:latest` behaved more like sandbox/experimental lanes than clean default Shay brains.
+
+### Known Gaps opened
+- `shay -z --provider ollama -m dolphin-mistral:latest` and `shay -z --provider ollama -m wizardlm-uncensored:latest` returned empty stdout with exit code 0 during this audit, while direct Ollama API calls to the same models produced normal text. That points to a Shay integration/runtime gap for some Ollama model paths, not just model quality.
+- A `delegate_task` parallel swarm used for this benchmark class was not trustworthy: child summaries self-reported `phi4-mini-64k:latest`, returned empty tool traces, and hallucinated work. For now, model benchmark truth should come from captain-run local harnesses and direct subprocess/API checks, not child-swarm summaries.
+
 ## Shay-Shay identity guard CLI + immutable snapshot refresh fix (2026-06-16)
 
 Added `identity_guard.py` protection hardening in `shay-shay/` so protected startup snapshots can refresh even when emergency/version copies are locked immutable on macOS. New helper flow uses `_safe_copy_replace()` + `_set_immutable_flag()` to temporarily clear `uchg`, replace the backup, then re-lock it, which closes the startup `Operation not permitted` failure when `shay config show` or other CLI entrypoints refresh the identity baseline.

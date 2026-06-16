@@ -1,3 +1,9 @@
+---
+title: Go-Live-Runbook
+type: note
+permalink: famtastic/agent-business-os/go-live-runbook
+---
+
 # Agent Business OS — Go-Live Runbook
 
 > Everything that's built is in the repo and tested. This is the ordered

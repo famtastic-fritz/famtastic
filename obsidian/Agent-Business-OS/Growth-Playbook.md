@@ -1,3 +1,9 @@
+---
+title: Growth-Playbook
+type: note
+permalink: famtastic/agent-business-os/growth-playbook
+---
+
 # Agent Business OS — Growth Playbook (how people actually find it)
 
 > The honest truth first: for a brand-new $2,500 done-for-you service with no

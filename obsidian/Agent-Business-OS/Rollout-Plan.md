@@ -1,3 +1,9 @@
+---
+title: Rollout-Plan
+type: note
+permalink: famtastic/agent-business-os/rollout-plan
+---
+
 # Agent Business OS — Rollout Plan: Concept → Collections
 
 > The autonomous operating plan for **Agent Business OS** — the business whose

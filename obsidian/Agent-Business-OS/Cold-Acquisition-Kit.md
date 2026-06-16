@@ -1,3 +1,9 @@
+---
+title: Cold-Acquisition-Kit
+type: note
+permalink: famtastic/agent-business-os/cold-acquisition-kit
+---
+
 # Agent Business OS — Cold Acquisition Kit (no warm list required)
 
 > You chose "build a cold list from communities." This is that, done: real

@@ -1,3 +1,9 @@
+---
+title: Credentials
+type: note
+permalink: famtastic/agent-business-os/credentials
+---
+
 # Agent Business OS — Credential Reference (pointers, not secrets)
 
 > ⚠️ **This file is git-tracked. Never paste a real key, token, password, or

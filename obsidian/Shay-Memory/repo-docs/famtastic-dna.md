@@ -1,4 +1,10 @@
-<!-- mirrored 2026-06-16T12:46:57.351723 from ~/famtastic/famtastic-dna.md -->
+---
+title: famtastic-dna
+type: note
+permalink: shay-memory/repo-docs/famtastic-dna
+---
+
+<!-- mirrored 2026-06-16T15:46:58.294356 from ~/famtastic/famtastic-dna.md -->
 
 # FAMtastic DNA — Persistent Build Knowledge
 
