@@ -72,6 +72,9 @@ sites/*/dist/
 # Playwright MCP captures — ephemeral test screenshots and console logs
 .playwright-mcp/
 
+# Repo intelligence logs — transient run output, not source of truth
+research/repo-intelligence/logs/
+
 # Scratch / throwaway files at repo root
 bridge-test.txt
 script.py
