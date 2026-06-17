@@ -1,5 +1,18 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Obsidian memory boundary cleanup + deterministic Shay mirrors (2026-06-17)
+
+Cut the recurring `obsidian/Shay-Memory/` git noise by separating canonical shared docs from local runtime exhaust and making the Shay mirror bridge deterministic instead of timestamp-driven. `shay-agent-os/sync_lessons_to_shay.py` now writes stable mirror headers for `.wolf` lesson mirrors and repo-doc mirrors, and it skips file writes entirely when the mirrored body has not changed, so a cron sync no longer dirties the repo just because time passed. `.gitignore` now explicitly treats `obsidian/Shay-Memory/lessons-mirror/`, `reflections/`, `builds/`, `inbox/`, and `scratch/` as local vault churn rather than source history.
+
+### Verified
+- The six previously dirty mirror files under `obsidian/Shay-Memory/lessons-mirror/` and `obsidian/Shay-Memory/repo-docs/` differed only by volatile `synced:` / `mirrored ... timestamp` metadata, not by substantive content.
+- `shay-agent-os/sync_lessons_to_shay.py` now uses a `write_if_changed()` guard and stable headers (`source:` / `<!-- mirrored from ... -->`) so rerunning the sync leaves unchanged mirrors untouched.
+- `.gitignore` now ignores the high-churn Shay-Memory runtime buckets: `lessons-mirror/`, `reflections/`, `builds/`, `inbox/`, and `scratch/`.
+
+### Known Gaps opened
+- Ignoring noisy Shay-Memory paths does not untrack files Git already knows about; a one-time `git rm --cached` cleanup is still required to fully remove existing tracked history for those runtime directories.
+- `obsidian/Shay-Memory/repo-docs/` remains intentionally tracked because it is the shared truth-surface mirror; if the root canonical docs change, those mirrors should still update and be reviewed like normal source artifacts.
+
 ## Command Center money-focus + FAMU cruise countdown surface (2026-06-17)
 
 Added a new Fritz-facing focus surface for daily money pressure and the June 26 FAMU Alumni Cruise deadline. `scripts/command-center/build-command-center.js` now reads `command-center/data/shay-focus.json`, pulls landed-income totals from `command-center/collectors/income-ledger.js`, computes a live cruise countdown, and injects a new `💸 Cha-Ching + Boat Clock` block into all three Command Center artifacts: `command-center/briefing.md`, `command-center/index.html`, and `command-center/state.json`. The new state packet exposes `shay_focus.money`, `shay_focus.countdown`, and `shay_focus.landed_income`, while the rendered briefing/dashboard now show a blunt money meter, a boat clock, and creative urgency text instead of leaving those priorities implied in scattered notes.

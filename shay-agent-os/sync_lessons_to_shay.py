@@ -21,11 +21,50 @@ Run:  python3 sync_lessons_to_shay.py
 """
 import json
 from pathlib import Path
-from datetime import datetime
 
 WOLF = Path.home() / "famtastic" / ".wolf"
 VAULT = Path.home() / "famtastic" / "obsidian" / "Shay-Memory"
 MIRROR = VAULT / "lessons-mirror"
+
+REPO_DOCS = {
+    "FAMTASTIC-STATE.md": {
+        "title": "FAMTASTIC-STATE",
+        "type": "note",
+        "permalink": "shay-memory/repo-docs/famtastic-state",
+    },
+    "CHANGELOG.md": {
+        "title": "CHANGELOG",
+        "type": "note",
+        "permalink": "shay-memory/repo-docs/changelog",
+    },
+    "SITE-LEARNINGS.md": {
+        "title": "SITE-LEARNINGS",
+        "type": "note",
+        "permalink": "shay-memory/repo-docs/site-learnings",
+    },
+    "famtastic-dna.md": {
+        "title": "famtastic-dna",
+        "type": "note",
+        "permalink": "shay-memory/repo-docs/famtastic-dna",
+    },
+}
+
+
+def write_if_changed(dst: Path, content: str) -> bool:
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    current = dst.read_text(errors="ignore") if dst.exists() else None
+    if current == content:
+        return False
+    dst.write_text(content)
+    return True
+
+
+def frontmatter_block(**fields: str) -> str:
+    lines = ["---"]
+    for key, value in fields.items():
+        lines.append(f"{key}: {value}")
+    lines.append("---")
+    return "\n".join(lines)
 
 
 def sync_cerebrum() -> str:
@@ -33,13 +72,16 @@ def sync_cerebrum() -> str:
     if not src.exists():
         return "cerebrum.md not found"
     dst = MIRROR / "cerebrum-mirror.md"
-    MIRROR.mkdir(parents=True, exist_ok=True)
     body = src.read_text(errors="ignore")
-    header = (f"---\ntitle: Cerebrum (mirrored for Shay)\n"
-              f"synced: {datetime.now().isoformat()}\n"
-              f"source: .wolf/cerebrum.md\ntags: [cerebrum, lessons, do-not-repeat, mirror]\n---\n\n")
-    dst.write_text(header + body)
-    return f"cerebrum → {dst.name} ({len(body)} chars)"
+    header = frontmatter_block(
+        title="Cerebrum (mirrored for Shay)",
+        source=".wolf/cerebrum.md",
+        tags="[cerebrum, lessons, do-not-repeat, mirror]",
+        permalink="shay-memory/lessons-mirror/cerebrum-mirror",
+    )
+    changed = write_if_changed(dst, f"{header}\n\n{body}")
+    status = "updated" if changed else "unchanged"
+    return f"cerebrum → {dst.name} ({len(body)} chars, {status})"
 
 
 def sync_buglog(recent: int = 30) -> str:
@@ -49,25 +91,26 @@ def sync_buglog(recent: int = 30) -> str:
     d = json.loads(src.read_text())
     bugs = d.get("bugs", d) if isinstance(d, dict) else d
     sel = bugs[-recent:]
-    lines = [f"---\ntitle: Buglog Lessons (mirrored for Shay)\n"
-             f"synced: {datetime.now().isoformat()}\nsource: .wolf/buglog.json\n"
-             f"tags: [buglog, lessons, mirror]\n---\n",
-             f"# Buglog — last {len(sel)} lessons (mirrored into Shay's vault)\n"]
+    header = frontmatter_block(
+        title="Buglog Lessons (mirrored for Shay)",
+        source=".wolf/buglog.json",
+        tags="[buglog, lessons, mirror]",
+        permalink="shay-memory/lessons-mirror/buglog-mirror",
+    )
+    lines = [header, "", f"# Buglog — last {len(sel)} lessons (mirrored into Shay's vault)", ""]
     for b in sel:
-        lines += [f"## #{b.get('id')} ({b.get('timestamp','')})",
-                  f"**Issue:** {b.get('error_message','')}",
-                  f"**Root cause:** {b.get('root_cause','')}",
-                  f"**Fix:** {b.get('fix','')}",
-                  f"**Tags:** {b.get('tags',[])}", ""]
+        lines += [
+            f"## #{b.get('id')} ({b.get('timestamp', '')})",
+            f"**Issue:** {b.get('error_message', '')}",
+            f"**Root cause:** {b.get('root_cause', '')}",
+            f"**Fix:** {b.get('fix', '')}",
+            f"**Tags:** {b.get('tags', [])}",
+            "",
+        ]
     dst = MIRROR / "buglog-mirror.md"
-    MIRROR.mkdir(parents=True, exist_ok=True)
-    dst.write_text("\n".join(lines))
-    return f"buglog → {dst.name} ({len(sel)} entries)"
-
-
-REPO_DOCS = [
-    "FAMTASTIC-STATE.md", "CHANGELOG.md", "SITE-LEARNINGS.md", "famtastic-dna.md",
-]
+    changed = write_if_changed(dst, "\n".join(lines).rstrip() + "\n")
+    status = "updated" if changed else "unchanged"
+    return f"buglog → {dst.name} ({len(sel)} entries, {status})"
 
 
 def sync_repo_docs() -> str:
@@ -76,13 +119,17 @@ def sync_repo_docs() -> str:
     out = VAULT / "repo-docs"
     out.mkdir(parents=True, exist_ok=True)
     done = []
-    for name in REPO_DOCS:
+    for name, meta in REPO_DOCS.items():
         src = Path.home() / "famtastic" / name
         if src.exists():
-            (out / name).write_text(
-                f"<!-- mirrored {datetime.now().isoformat()} from ~/famtastic/{name} -->\n\n"
-                + src.read_text(errors="ignore"))
-            done.append(name)
+            header = frontmatter_block(**meta)
+            content = (
+                f"{header}\n\n"
+                f"<!-- mirrored from ~/famtastic/{name} -->\n\n"
+                + src.read_text(errors="ignore")
+            )
+            changed = write_if_changed(out / name, content)
+            done.append(f"{name} ({'updated' if changed else 'unchanged'})")
     return f"repo-docs → {done}"
 
 

@@ -4,9 +4,22 @@ type: note
 permalink: shay-memory/repo-docs/site-learnings
 ---
 
-<!-- mirrored 2026-06-17T12:47:05.974219 from ~/famtastic/SITE-LEARNINGS.md -->
+<!-- mirrored from ~/famtastic/SITE-LEARNINGS.md -->
 
 # FAMtastic Ecosystem — Site Learnings
+
+## Obsidian memory boundary cleanup + deterministic Shay mirrors (2026-06-17)
+
+Cut the recurring `obsidian/Shay-Memory/` git noise by separating canonical shared docs from local runtime exhaust and making the Shay mirror bridge deterministic instead of timestamp-driven. `shay-agent-os/sync_lessons_to_shay.py` now writes stable mirror headers for `.wolf` lesson mirrors and repo-doc mirrors, and it skips file writes entirely when the mirrored body has not changed, so a cron sync no longer dirties the repo just because time passed. `.gitignore` now explicitly treats `obsidian/Shay-Memory/lessons-mirror/`, `reflections/`, `builds/`, `inbox/`, and `scratch/` as local vault churn rather than source history.
+
+### Verified
+- The six previously dirty mirror files under `obsidian/Shay-Memory/lessons-mirror/` and `obsidian/Shay-Memory/repo-docs/` differed only by volatile `synced:` / `mirrored ... timestamp` metadata, not by substantive content.
+- `shay-agent-os/sync_lessons_to_shay.py` now uses a `write_if_changed()` guard and stable headers (`source:` / `<!-- mirrored from ... -->`) so rerunning the sync leaves unchanged mirrors untouched.
+- `.gitignore` now ignores the high-churn Shay-Memory runtime buckets: `lessons-mirror/`, `reflections/`, `builds/`, `inbox/`, and `scratch/`.
+
+### Known Gaps opened
+- Ignoring noisy Shay-Memory paths does not untrack files Git already knows about; a one-time `git rm --cached` cleanup is still required to fully remove existing tracked history for those runtime directories.
+- `obsidian/Shay-Memory/repo-docs/` remains intentionally tracked because it is the shared truth-surface mirror; if the root canonical docs change, those mirrors should still update and be reviewed like normal source artifacts.
 
 ## Command Center money-focus + FAMU cruise countdown surface (2026-06-17)
 
