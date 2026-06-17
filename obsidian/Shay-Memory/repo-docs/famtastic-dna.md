@@ -4,7 +4,7 @@ type: note
 permalink: shay-memory/repo-docs/famtastic-dna
 ---
 
-<!-- mirrored 2026-06-16T15:46:58.294356 from ~/famtastic/famtastic-dna.md -->
+<!-- mirrored 2026-06-17T12:47:05.975683 from ~/famtastic/famtastic-dna.md -->
 
 # FAMtastic DNA — Persistent Build Knowledge
 

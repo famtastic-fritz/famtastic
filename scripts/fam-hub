@@ -456,26 +456,8 @@ MEMORYHELP
       return 0
     }
 
-    plan_list_standard() {
-      jq -r '
-        def proof_links:
-          (.proof // [])
-          | map(if .path then "[\(.label // .path)](\(.path))" else (.label // "-") end)
-          | if length == 0 then "-" else join("<br>") end;
-        "| Active plan | Status | Current workstream | Next action | Proof | Open blockers |",
-        "|---|---|---|---|---|---|",
-        (
-          .plans[]
-          | "| [`\(.id)`](\(.plan_path // "#")) - \(.title) | \(.status_label // .status // "unknown") | \(.current_workstream // "unknown") | \(.next_action // "unknown") | \(proof_links) | \(.open_blockers // "none") |"
-        )
-      ' "$REGISTRY"
-    }
-
-    plan_list_compact() {
-      jq -r '
-        .plans[]
-        | "\(.id)\t\(.status_label // .status // "unknown")\t\(.current_workstream // "unknown")\t\(.next_action // "unknown")"
-      ' "$REGISTRY" | awk -F '\t' '{ printf "%-36s %-34s %-48s %s\n", $1, $2, $3, $4 }'
+    plan_list() {
+      node "$SCRIPT_DIR/plans/list.js" "$@"
     }
 
     plan_show_detail() {
@@ -516,19 +498,8 @@ MEMORYHELP
     case "$PLANCMD" in
       list|status)
         require_plan_registry || exit 1
-        FORMAT="standard"
-        if [ "${3:-}" = "--compact" ]; then
-          FORMAT="compact"
-        elif [ "${3:-}" = "--json" ] || [ "${3:-}" = "--format=json" ]; then
-          FORMAT="json"
-        elif [ "${3:-}" = "--standard" ]; then
-          FORMAT="standard"
-        fi
-        case "$FORMAT" in
-          compact) plan_list_compact ;;
-          json) jq '.' "$REGISTRY" ;;
-          standard) plan_list_standard ;;
-        esac
+        shift 2
+        plan_list "$@"
         ;;
       show)
         require_plan_registry || exit 1
@@ -605,9 +576,10 @@ MEMORYHELP
 fam-hub plan — Plan / task / run intelligence
 
 Usage:
-  fam-hub plan list                 Show the standard six-field plan list
-  fam-hub plan list --compact       Show one-line compact plan statuses
-  fam-hub plan list --json          Print raw plans/registry.json
+  fam-hub plan list [--studio <value>] [--plan-type <value>] [--stream <value>] [--status <value>]
+  fam-hub plan list --compact
+  fam-hub plan list --json
+  fam-hub plan list --group-by studio|plan_type|stream
   fam-hub plan status               Alias for plan list
   fam-hub plan show <plan-id>       Show detail for one plan
   fam-hub plan review               Review registry/ledger health

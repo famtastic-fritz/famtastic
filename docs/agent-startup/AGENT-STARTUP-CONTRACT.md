@@ -9,14 +9,17 @@ This file summarizes how Claude Code, Codex, Gemini, Cowork, and other agent sur
 
 1. Shay-Shay is broader ambient intelligence/orchestration; Site Studio, Media Studio, and Component Studio belong to the FAMtastic ecosystem and consume/produce platform intelligence.
 2. Use research-first, spec-shaped, proof-driven development.
-3. Existing capture boxes are raw intake. FAMtastic Data Center is the evidence/proof/claims/decisions layer.
-4. Search/reuse before generating or rebuilding.
-5. Route specialized needs to the owning system: Research/Data Center, Media Studio, Component Studio, Site Studio.
-6. Every meaningful run/build/job needs post-evaluation and opportunity capture.
-7. Every meaningful research pass must create a durable artifact, not just a chat answer or terminal trace. Separate observation from interpretation, preserve source trace, and record capability notes so future sessions can reuse the research.
-8. Do not run noisy check-in unless Fritz explicitly says multi-agent coordination is active.
-9. Preserve old plans as reference; do not let stale plans override the current Phase 2 plan.
-10. Use explicit commits and explicit staging. Never `git add .` in this repo during consolidation.
+3. Treat every real multi-step plan as a work packet, not a loose conversation. The packet must define: goal (outcome, why it matters, success criteria, proof), explicit tasks, execution lane (feature branch name and worktree path when applicable), landing path to `main`, required truth-surface updates (especially capability matrix updates), and proof.
+4. Existing capture boxes are raw intake. FAMtastic Data Center is the evidence/proof/claims/decisions layer.
+5. Search/reuse before generating or rebuilding.
+6. Route specialized needs to the owning system: Research/Data Center, Media Studio, Component Studio, Site Studio.
+7. Every meaningful run/build/job needs post-evaluation and opportunity capture.
+8. Every meaningful research pass must create a durable artifact, not just a chat answer or terminal trace. Separate observation from interpretation, preserve source trace, and record capability notes so future sessions can reuse the research.
+9. Do not run noisy check-in unless Fritz explicitly says multi-agent coordination is active.
+10. Preserve old plans as reference; do not let stale plans override the current Phase 2 plan.
+11. Use explicit commits and explicit staging. Never `git add .` in this repo during consolidation.
+
+Note: if branch/worktree are not needed for a packet, say that explicitly instead of omitting the fields.
 
 ## Phase 2 priority
 

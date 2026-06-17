@@ -1,7 +1,7 @@
 ---
 title: github-bookmarks-report-2026-06-17
 type: note
-permalink: shay-memory/research/github-bookmarks-report-2026-06-14-1
+permalink: shay-memory/research/github-bookmarks-report-2026-06-17
 ---
 
 # GitHub bookmarks ingestion report

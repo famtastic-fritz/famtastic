@@ -1,6 +1,6 @@
 ---
 title: Buglog Lessons (mirrored for Shay)
-synced: 2026-06-16 15:46:58.292461
+synced: 2026-06-17 12:47:05.972719
 source: .wolf/buglog.json
 tags:
 - buglog

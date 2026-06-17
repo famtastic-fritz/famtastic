@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "shay-omnipresent-assistant",
+  "verdict": "needs_tasking",
+  "verdict_at": "2026-06-16T21:15:00.000Z",
+  "verdict_by": "shay-shay",
+  "remaining_work": [
+    "Finish the landscape report, define the reach fabric, run the virtual-body tradeoff study, and map the wearable/glasses lane."
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/shay-omnipresent-assistant/plan.json",
+      "note": "Plan file already names four open task ids and the phased shape of the work."
+    },
+    {
+      "type": "doc",
+      "ref": "tasks/tasks.jsonl",
+      "note": "Backfilled task ledger rows for the four open tasks."
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-06-02-006",
+    "task-2026-06-02-007",
+    "task-2026-06-02-008",
+    "task-2026-06-02-009"
+  ]
+}

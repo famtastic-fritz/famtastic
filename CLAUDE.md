@@ -22,6 +22,21 @@ Core doctrine: research-first, spec-shaped, proof-driven work; reuse before
 generate; route specialized needs to the owning studio/service; record proof
 in Data Center; run post-evaluation after meaningful jobs.
 
+## Work-Packet Rule (Active Now)
+
+For any real multi-step effort, do not leave the plan in conversational form.
+Restate it as a work packet before proceeding. Minimum fields:
+
+- Goal (outcome, why it matters, success criteria, proof)
+- Tasks (explicit next actions)
+- Branch (feature branch name when applicable)
+- Worktree (path when applicable)
+- Main landing path / expectation
+- Truth-surface updates required, especially capability-matrix updates
+- Proof
+
+If branch/worktree are not needed, say that explicitly instead of omitting them.
+
 ## Studio Process Management (Non-Negotiable)
 
 FAMtastic Studio is managed by **macOS launchd** (`com.famtastic.studio`).

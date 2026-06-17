@@ -3,11 +3,16 @@
   "id": "fritz-companion-app",
   "title": "Fritz Companion App",
   "status": "active",
+  "classification": {
+    "studio": "shay",
+    "plan_type": "summary",
+    "stream": "fritz"
+  },
   "role": "product",
   "fritz_priority": "high",
   "originator": "Fritz",
   "origin_surface": "Claude Code (web)",
-  "summary": "A companion app that works the way Fritz talks to his second-in-command right now: ask a question, get an answer, run the operation — from his pocket. Mobile-first chat client over the Shay gateway, surfacing the Command Center daily briefing, with push so Shay can reach out first. This is the 'phone companion' already named in the Shay master plan Phase 3.",
+  "summary": "A companion app that works the way Fritz talks to his second-in-command right now: ask a question, get an answer, run the operation \u2014 from his pocket. Mobile-first chat client over the Shay gateway, surfacing the Command Center daily briefing, with push so Shay can reach out first. This is the 'phone companion' already named in the Shay master plan Phase 3.",
   "open_tasks": [
     "task-2026-06-02-010",
     "task-2026-06-02-011",
@@ -22,6 +27,6 @@
   ],
   "known_gaps": [
     "Shay gateway is local today; remote/secure access for a phone off-LAN is unbuilt (master plan: set API_SERVER_KEY before Hetzner exposure).",
-    "No push pipeline yet — depends on the reach fabric from shay-omnipresent-assistant."
+    "No push pipeline yet \u2014 depends on the reach fabric from shay-omnipresent-assistant."
   ]
 }

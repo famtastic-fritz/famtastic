@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "financial-agents",
+  "verdict": "needs_tasking",
+  "verdict_at": "2026-06-16T21:15:00.000Z",
+  "verdict_by": "shay-shay",
+  "remaining_work": [
+    "Build the data ingest, strategy fleet, evaluation/reporting, and broker-gated adapter lanes."
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/financial-agents/plan.json",
+      "note": "Plan file already names four open task ids and their role in the product lane."
+    },
+    {
+      "type": "doc",
+      "ref": "tasks/tasks.jsonl",
+      "note": "Backfilled task ledger rows for the four open tasks."
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-06-02-014",
+    "task-2026-06-02-015",
+    "task-2026-06-02-016",
+    "task-2026-06-02-017"
+  ]
+}

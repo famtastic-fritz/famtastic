@@ -162,10 +162,37 @@ function readJSON(p, fallback) {
   }
 }
 
-function activePlans() {
+function activePlanRecords() {
   const reg = readJSON(REGISTRY, {});
   const ids = Array.isArray(reg.active_parent_ids) ? reg.active_parent_ids : [];
-  return ids;
+  const labels = reg.labels || {};
+  const plans = Array.isArray(reg.plans) ? reg.plans : [];
+  return ids.map((id) => {
+    const record = plans.find((p) => p.id === id) || {};
+    const label = labels[id] || {};
+    return {
+      id,
+      studio: record.studio || record.classification?.studio || label.studio || 'unclassified',
+      plan_type: record.plan_type || record.classification?.plan_type || label.plan_type || 'unclassified',
+      stream: record.stream || record.classification?.stream || label.stream || 'unclassified',
+    };
+  });
+}
+
+function activePlans() {
+  return activePlanRecords().map((plan) => plan.id);
+}
+
+function summarizeByField(records, field) {
+  const counts = {};
+  for (const record of records) {
+    const key = record[field] || 'unclassified';
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  return Object.entries(counts)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([key, count]) => `${key}(${count})`)
+    .join(', ');
 }
 
 function recentSessions(n) {
@@ -236,6 +263,9 @@ function renderBody(ctx, state) {
   out.push("");
   out.push(`Generated at: ${state.generated_at}`);
   out.push(`Active plans (${state.active_plans.length}): ${state.active_plans.join(", ") || "none"}`);
+  out.push(`Active plans by studio: ${state.active_plans_by_studio || "none"}`);
+  out.push(`Active plans by type: ${state.active_plans_by_type || "none"}`);
+  out.push(`Active plans by stream: ${state.active_plans_by_stream || "none"}`);
   out.push(`Drift: ${state.drift}`);
   out.push("Recent sessions:");
   for (const s of state.recent_sessions) out.push(`- ${s}`);
@@ -277,6 +307,9 @@ function renderCompact(ctx, state) {
       "): " +
       (state.active_plans.join(", ") || "none")
   );
+  out.push("Studios: " + (state.active_plans_by_studio || "none"));
+  out.push("Types: " + (state.active_plans_by_type || "none"));
+  out.push("Streams: " + (state.active_plans_by_stream || "none"));
   out.push("Drift: " + state.drift);
   out.push("");
   out.push("Before acting:");
@@ -338,9 +371,13 @@ function newestSourceMtime() {
 }
 
 function buildState() {
+  const activePlanRecordsValue = activePlanRecords();
   return {
     generated_at: newestSourceMtime(),
-    active_plans: activePlans(),
+    active_plans: activePlanRecordsValue.map((plan) => plan.id),
+    active_plans_by_studio: summarizeByField(activePlanRecordsValue, 'studio'),
+    active_plans_by_type: summarizeByField(activePlanRecordsValue, 'plan_type'),
+    active_plans_by_stream: summarizeByField(activePlanRecordsValue, 'stream'),
     drift: driftSummary(),
     recent_sessions: recentSessions(3),
   };
