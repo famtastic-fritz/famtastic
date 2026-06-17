@@ -28,6 +28,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(ROOT, 'command-center');
 const NOW = new Date();
+const incomeLedger = require(path.join(ROOT, 'command-center', 'collectors', 'income-ledger.js'));
 
 // ---------------------------------------------------------------------------
 // Tunable scoring model. Edit these to reshape how the dashboard ranks work.
@@ -98,6 +99,31 @@ function esc(s) {
 function cleanText(text) {
   return String(text).replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
 }
+function formatUsd(amount) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(amount) || 0);
+}
+function daysUntilDate(targetDate) {
+  const target = new Date(`${targetDate}T00:00:00`);
+  if (isNaN(target)) return null;
+  const startNow = new Date(NOW);
+  startNow.setHours(0, 0, 0, 0);
+  return Math.round((target - startNow) / 86400000);
+}
+function boatMood(daysLeft) {
+  if (daysLeft == null) return 'Boat clock offline. That is rude.';
+  if (daysLeft < 0) return 'Boat left the dock. We are in aftermath mode now.';
+  if (daysLeft === 0) return 'Boat day. No more theory. Proof only.';
+  if (daysLeft <= 3) return 'Red alert. Deck shoes on. Ship the minimum viable magic.';
+  if (daysLeft <= 7) return 'Crunch week. Every move should either earn, launch, or unblock.';
+  if (daysLeft <= 14) return 'Window is open, but not wide. Stop romanticizing time.';
+  return 'Plenty of runway by Fritz standards. Use it before it evaporates.';
+}
+function moneyMood(amount) {
+  if (amount >= 1000) return 'Cha-ching choir activated.';
+  if (amount >= 500) return 'Now we talking. The meter has a pulse.';
+  if (amount > 0) return 'Money is on the board. Proof beats vibes.';
+  return 'The Shay money meter is still hungry. Feed her.';
+}
 
 // ---------------------------------------------------------------------------
 // Load ledgers
@@ -108,6 +134,24 @@ const runs = readJSONL(path.join(ROOT, 'runs', 'runs.jsonl'));
 const proofs = readJSONL(path.join(ROOT, 'proofs', 'proof-ledger.jsonl'));
 const agents = readJSON(path.join(ROOT, 'agents', 'catalog.json'), { agents: [] }).agents || [];
 const capsReg = readJSON(path.join(ROOT, 'platform', 'registry', 'capabilities.json'), { capabilities: [] }).capabilities || [];
+const shayFocus = readJSON(path.join(ROOT, 'command-center', 'data', 'shay-focus.json'), {
+  money: {
+    label: 'Money made through Shay-Shay',
+    amount_usd: 0,
+    target_usd: 1000,
+    note: 'Starts at $0 until we log a Shay-attributed win on purpose.',
+  },
+  countdown: {
+    label: 'FAMU Alumni Cruise',
+    date: '2026-06-26',
+    note: 'Brand launch event. Simple platform, basic info, business workflows, and advertising need to be ready.',
+  },
+});
+const landedIncome = incomeLedger.collect();
+const cruiseDaysLeft = daysUntilDate(shayFocus.countdown?.date);
+const shayMoney = Number(shayFocus.money?.amount_usd) || 0;
+const shayMoneyTarget = Number(shayFocus.money?.target_usd) || 0;
+const shayMoneyPct = shayMoneyTarget > 0 ? clamp((shayMoney / shayMoneyTarget) * 100) : null;
 
 function listSites() {
   const out = [];
@@ -154,7 +198,18 @@ const planRecords = (registry.plans || []).filter((p) => activeIds.has(p.id));
 for (const id of activeIds) {
   if (!planRecords.find((p) => p.id === id)) {
     const lbl = (registry.labels || {})[id] || {};
-    planRecords.push({ id, title: lbl.label || id, status: 'active', _fromLabelOnly: true, tags: lbl.tags, role: lbl.role, next_action: lbl.note });
+    planRecords.push({
+      id,
+      title: lbl.label || id,
+      status: 'active',
+      _fromLabelOnly: true,
+      tags: lbl.tags,
+      role: lbl.role,
+      studio: lbl.studio,
+      plan_type: lbl.plan_type,
+      stream: lbl.stream,
+      next_action: lbl.note,
+    });
   }
 }
 
@@ -241,6 +296,9 @@ const plans = planRecords.map((p) => {
     id: p.id,
     title: p.title || label.label || p.id,
     role: p.role || label.role || 'plan',
+    studio: p.studio || p.classification?.studio || label.studio || 'unclassified',
+    planType: p.plan_type || p.classification?.plan_type || label.plan_type || 'unclassified',
+    stream: p.stream || p.classification?.stream || label.stream || 'unclassified',
     tags: p.tags || label.tags || [],
     priorityHigh: (p.fritz_priority || label.priority) === 'high',
     stage,
@@ -290,6 +348,24 @@ const snapshot = {
   generated_at: NOW.toISOString(),
   scoring_model: SCORING,
   kpis,
+  shay_focus: {
+    money: {
+      label: shayFocus.money?.label || 'Money made through Shay-Shay',
+      amount_usd: shayMoney,
+      target_usd: shayMoneyTarget,
+      progress_pct: shayMoneyPct,
+      mood: moneyMood(shayMoney),
+      note: shayFocus.money?.note || '',
+    },
+    countdown: {
+      label: shayFocus.countdown?.label || 'FAMU Alumni Cruise',
+      date: shayFocus.countdown?.date || null,
+      days_left: cruiseDaysLeft,
+      mood: boatMood(cruiseDaysLeft),
+      note: shayFocus.countdown?.note || '',
+    },
+    landed_income: landedIncome,
+  },
   stageCounts,
   plans,
   agents,
@@ -342,6 +418,15 @@ try {
 let briefing = `# FAMtastic Command Center — Daily Briefing\n\n`;
 briefing += `**${dateStr}** · generated by \`scripts/command-center/build-command-center.js\`\n\n`;
 briefing += `> Virtual Fritz, reporting. ${kpis.activePlans} active plans, **${kpis.needsYou} need you**, ${kpis.blocked} blocked on external access, ${kpis.inProgress} in motion. ${kpis.openTasks} open tasks across the board.\n\n`;
+briefing += `## 💸 Cha-Ching + Boat Clock\n\n`;
+briefing += `- **${shayFocus.money?.label || 'Money made through Shay-Shay'}:** ${formatUsd(shayMoney)}`;
+if (shayMoneyTarget > 0) briefing += ` / ${formatUsd(shayMoneyTarget)} (${shayMoneyPct}% of target)`;
+briefing += ` — ${moneyMood(shayMoney)}\n`;
+briefing += `- **All landed income in Command Center ledger:** ${formatUsd(landedIncome.allTime)} total · ${formatUsd(landedIncome.month)} last 30d · ${landedIncome.count} event(s)\n`;
+briefing += `- **${shayFocus.countdown?.label || 'FAMU Alumni Cruise'}:** ${cruiseDaysLeft} day(s) left until ${shayFocus.countdown?.date || 'n/a'} — ${boatMood(cruiseDaysLeft)}\n`;
+if (shayFocus.money?.note) briefing += `- **Money note:** ${shayFocus.money.note}\n`;
+if (shayFocus.countdown?.note) briefing += `- **Cruise note:** ${shayFocus.countdown.note}\n`;
+briefing += `\n`;
 
 if (proactiveBrief) {
   briefing += `## 🧠 Human-state overlay\n\n`;
@@ -494,6 +579,15 @@ const html = `<!DOCTYPE html>
   .private-excerpt{font-size:13px;line-height:1.45}
   .private-sub{margin-top:8px;color:var(--mut);font-size:11px}
   .private-note{margin-top:8px;color:#cde7df;font-size:11.5px}
+  .focus-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:680px){.focus-grid{grid-template-columns:1fr 1fr}}
+  .focus-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .focus-card.money{border-color:#14532d;box-shadow:0 0 0 1px rgba(45,212,167,.12) inset}
+  .focus-card.cruise{border-color:#1d4ed8;box-shadow:0 0 0 1px rgba(59,130,246,.12) inset}
+  .focus-kicker{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+  .focus-big{font-size:30px;font-weight:800;line-height:1.05;margin-bottom:6px}
+  .focus-sub{color:var(--mut);font-size:13px}
+  .focus-note{margin-top:8px;font-size:12.5px;color:#cbd5e1}
   .roster{display:flex;flex-wrap:wrap;gap:8px}
   .pill{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12.5px}
   footer{color:var(--mut);font-size:12px;text-align:center;margin-top:8px}
@@ -518,6 +612,24 @@ const html = `<!DOCTYPE html>
     <div class="kpi"><b>${kpis.capabilities}</b><span>Capabilities</span></div>
     <div class="kpi"><b>${kpis.proofs}</b><span>Proofs logged</span></div>
   </div>
+
+  <section>
+    <h2>💸 Cha-Ching + Boat Clock</h2>
+    <div class="focus-grid">
+      <div class="focus-card money">
+        <div class="focus-kicker">${esc(shayFocus.money?.label || 'Money made through Shay-Shay')}</div>
+        <div class="focus-big">${esc(formatUsd(shayMoney))}</div>
+        <div class="focus-sub">${shayMoneyTarget > 0 ? `${esc(formatUsd(shayMoneyTarget))} target · ${esc(String(shayMoneyPct))}% there` : 'No target set yet'} · ${esc(moneyMood(shayMoney))}</div>
+        <div class="focus-note">${esc(shayFocus.money?.note || 'Log every Shay-attributed dollar on purpose so the meter tells the truth.')}</div>
+      </div>
+      <div class="focus-card cruise">
+        <div class="focus-kicker">${esc(shayFocus.countdown?.label || 'FAMU Alumni Cruise')}</div>
+        <div class="focus-big">${esc(String(cruiseDaysLeft))} day${cruiseDaysLeft === 1 ? '' : 's'}</div>
+        <div class="focus-sub">Until ${esc(shayFocus.countdown?.date || 'n/a')} · ${esc(boatMood(cruiseDaysLeft))}</div>
+        <div class="focus-note">${esc(shayFocus.countdown?.note || 'Brand launch event. Readiness beats wishing.')}</div>
+      </div>
+    </div>
+  </section>
 
   <section>
     <h2>🔴 Needs you now</h2>

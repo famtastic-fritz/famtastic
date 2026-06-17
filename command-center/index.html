@@ -50,6 +50,15 @@
   .private-excerpt{font-size:13px;line-height:1.45}
   .private-sub{margin-top:8px;color:var(--mut);font-size:11px}
   .private-note{margin-top:8px;color:#cde7df;font-size:11.5px}
+  .focus-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:680px){.focus-grid{grid-template-columns:1fr 1fr}}
+  .focus-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .focus-card.money{border-color:#14532d;box-shadow:0 0 0 1px rgba(45,212,167,.12) inset}
+  .focus-card.cruise{border-color:#1d4ed8;box-shadow:0 0 0 1px rgba(59,130,246,.12) inset}
+  .focus-kicker{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+  .focus-big{font-size:30px;font-weight:800;line-height:1.05;margin-bottom:6px}
+  .focus-sub{color:var(--mut);font-size:13px}
+  .focus-note{margin-top:8px;font-size:12.5px;color:#cbd5e1}
   .roster{display:flex;flex-wrap:wrap;gap:8px}
   .pill{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12.5px}
   footer{color:var(--mut);font-size:12px;text-align:center;margin-top:8px}
@@ -60,69 +69,87 @@
 <div class="wrap">
   <header>
     <h1>⬡ FAMtastic Command Center</h1>
-    <div class="sub">Mission Control · generated Tue, 16 Jun 2026 19:45:06 GMT · source: live repo ledgers</div>
+    <div class="sub">Mission Control · generated Wed, 17 Jun 2026 15:21:55 GMT · source: live repo ledgers</div>
   </header>
 
   <div class="kpis">
-    <div class="kpi"><b>9</b><span>Active plans</span></div>
+    <div class="kpi"><b>14</b><span>Active plans</span></div>
     <div class="kpi star"><b>0</b><span>⭐ Your priorities</span></div>
     <div class="kpi alert"><b>5</b><span>Need you</span></div>
     <div class="kpi "><b>0</b><span>Blocked (ext)</span></div>
-    <div class="kpi"><b>3</b><span>In progress</span></div>
-    <div class="kpi"><b>8</b><span>Open tasks</span></div>
+    <div class="kpi"><b>9</b><span>In progress</span></div>
+    <div class="kpi"><b>35</b><span>Open tasks</span></div>
     <div class="kpi"><b>3</b><span>Agents</span></div>
     <div class="kpi"><b>24</b><span>Capabilities</span></div>
     <div class="kpi"><b>29</b><span>Proofs logged</span></div>
   </div>
 
   <section>
+    <h2>💸 Cha-Ching + Boat Clock</h2>
+    <div class="focus-grid">
+      <div class="focus-card money">
+        <div class="focus-kicker">Money made through Shay-Shay</div>
+        <div class="focus-big">$0.00</div>
+        <div class="focus-sub">$1,000.00 target · 0% there · The Shay money meter is still hungry. Feed her.</div>
+        <div class="focus-note">Starts at $0 until we log a Shay-attributed win on purpose. When Shay helps create real money, we bump this meter.</div>
+      </div>
+      <div class="focus-card cruise">
+        <div class="focus-kicker">FAMU Alumni Cruise</div>
+        <div class="focus-big">9 days</div>
+        <div class="focus-sub">Until 2026-06-26 · Window is open, but not wide. Stop romanticizing time.</div>
+        <div class="focus-note">Brand launch event. Simple platform, basic info, business workflows, and advertising need to be ready. Not a trip.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2>🔴 Needs you now</h2>
-    <ul class="needs-list"><li><b>site-promotion</b> — Needs you to define the next tasks (or close it out).</li><li><b>FAMtastic Studio Operations Workspace GUI</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>chat-capture-learn-optimize</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>agent-coordination</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>workbench-per-page-design</b> — Needs you to define the next tasks (or close it out).</li></ul>
+    <ul class="needs-list"><li><b>site-promotion</b> — Needs you to define the next tasks (or close it out).</li><li><b>FAMtastic Studio Operations Workspace GUI</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>Agent Coordination + brain→memory migration</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>Chat Capture, Tag, Learn, Optimize Loop</b> — No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</li><li><b>Workbench Per-Page-Type Design Research</b> — Needs you to define the next tasks (or close it out).</li></ul>
   </section>
 
   <section>
     <h2>🔒 Private context review</h2>
-    <p style="color:var(--mut);font-size:12px;margin:0 0 10px">Protected human-state items stay out of the public brief by default. Theme: brief · pressures: cruise, income · approved: 0 · suppressed: 0 · review: 8</p>
+    <p style="color:var(--mut);font-size:12px;margin:0 0 10px">Protected human-state items stay out of the public brief by default. Theme: site · pressures: income, reseller · approved: 0 · suppressed: 0 · review: 8</p>
     <p style="color:var(--mut);font-size:12px;margin:0 0 10px">Action path: <code>python3 obsidian/Shay-Memory/_system/private_review_actions.py list</code> then <code>python3 obsidian/Shay-Memory/_system/private_review_actions.py set ITEM_ID approve --note "why it can surface"</code> or <code>... suppress --note "why it stays private"</code>.</p>
     <div class="private-review"><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">Completed Actions 1. READ /Users/famtasticfritz/famtastic/shay-shay/docs/shay-master-checklist-2026-06-15.md from line 69 — content (3,525…</div>
+    <div class="private-sub">runtime-session · 20260617_013507_4f0f2d · item capture-2026-06-17-0016-20260617_013507_4f0f2d::8</div>
+
+  </div><div class="private-entry private-entry--review">
     <div class="private-meta"><span>decision</span><span>income</span><span>private</span><span>action:review</span></div>
     <div class="private-excerpt">1. **Home:** ~/basic-memory/ideas/inbox/ — one file per idea (not a monolith), each independently triageable and readable by brain-to-build…</div>
-    <div class="private-sub">vault-note · IDEA-CAPTURE-PLAN-2026-06-08 · item capture-2026-06-16-0533-idea-capture-plan-2026-06-08::6</div>
-
-  </div><div class="private-entry private-entry--review">
-    <div class="private-meta"><span>promise</span><span>income</span><span>private</span><span>action:review</span></div>
-    <div class="private-excerpt">──────────────────────────────────────── ● you get a gold star for this comment On context window / context rot: - context window is my pro…</div>
-    <div class="private-sub">repo-transcript · deep dive convo agent2 · item capture-2026-06-16-0555-deep-dive-convo-agent2::368</div>
-
-  </div><div class="private-entry private-entry--review">
-    <div class="private-meta"><span>blocker</span><span>income</span><span>private</span><span>action:review</span></div>
-    <div class="private-excerpt">2. The &quot;Studios&quot; as Products (Service Productization) * **Standardize Deliverables:** Clearly define what constitutes a &quot;FAMtastic Site.&quot; C…</div>
-    <div class="private-sub">research-note · FAMtastic Blueprint Implementation Research · item capture-2026-06-16-0025-famtastic-blueprint-implementation-research::7</div>
-
-  </div><div class="private-entry private-entry--review">
-    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
-    <div class="private-excerpt">1. **Ingestion Pipeline as the spine** — ingest(system) → decompose into facets → adapt each facet → normalize → register → verify → versio…</div>
-    <div class="private-sub">vault-note · SHAYS-STATE-PLAN-REDTEAM · item capture-2026-06-16-0549-shays-state-plan-redteam::31</div>
+    <div class="private-sub">vault-note · IDEA-CAPTURE-PLAN-2026-06-08 · item capture-2026-06-17-0564-idea-capture-plan-2026-06-08::6</div>
 
   </div><div class="private-entry private-entry--review">
     <div class="private-meta"><span>decision</span><span>fritz</span><span>private</span><span>action:review</span></div>
     <div class="private-excerpt">The first run processed /Users/famtasticfritz/Downloads/COWORK-BRIEFING.md and wrote captures/review/2026-05-04-cowork-briefing-first-pass.…</div>
-    <div class="private-sub">repo-doc · SITE-LEARNINGS · item capture-2026-06-16-0003-site-learnings::1472</div>
+    <div class="private-sub">repo-doc · SITE-LEARNINGS · item capture-2026-06-17-0001-site-learnings::1517</div>
 
   </div><div class="private-entry private-entry--review">
-    <div class="private-meta"><span>blocker</span><span>income</span><span>private</span><span>action:review</span></div>
-    <div class="private-excerpt">Blocked on resolving how to get at Reseller data without direct login</div>
-    <div class="private-sub">runtime-session · 20260610_111141_552145 · item capture-2026-06-16-0379-20260610_111141_552145::11</div>
+    <div class="private-meta"><span>decision</span><span>income</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">- **2026-06-17** — Plan classification and filterable active-plan surface. Added explicit studio, plan_type, and stream metadata to the can…</div>
+    <div class="private-sub">repo-doc · FAMTASTIC-STATE · item capture-2026-06-17-0006-famtastic-state::9</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>research</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">Lanes: - Lane 1: Plan/readiness audit. Inspect the active plans and related docs/truth surfaces to determine which plans govern automated/a…</div>
+    <div class="private-sub">runtime-session · 20260617_040310_167f76 · item capture-2026-06-17-0007-20260617_040310_167f76::6</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">1. **Ingestion Pipeline as the spine** — ingest(system) → decompose into facets → adapt each facet → normalize → register → verify → versio…</div>
+    <div class="private-sub">vault-note · SHAYS-STATE-PLAN-REDTEAM · item capture-2026-06-17-0580-shays-state-plan-redteam::31</div>
+
+  </div><div class="private-entry private-entry--review">
+    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
+    <div class="private-excerpt">Observations 1. docs/shay-master-checklist-2026-06-15.md already records the core live lesson that delegate/swarm child summaries cannot be…</div>
+    <div class="private-sub">research-note · 2026-06-17-shay-truth-reconstruction · item capture-2026-06-17-0019-2026-06-17-shay-truth-reconstruction::5</div>
 
   </div><div class="private-entry private-entry--review">
     <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
     <div class="private-excerpt">- **Two tiers only:** Haiku for grunt work (scaffold, boilerplate, mechanical edits, test runs, doc-gen). Sonnet for judgment (build-spec a…</div>
-    <div class="private-sub">vault-note · SHAY-PLATFORM-YOLO-KICKOFF-2026-06-08 · item capture-2026-06-16-0529-shay-platform-yolo-kickoff-2026-06-08::9</div>
-
-  </div><div class="private-entry private-entry--review">
-    <div class="private-meta"><span>blocker</span><span>fritz</span><span>private</span><span>action:review</span></div>
-    <div class="private-excerpt">Blocked Python3 subprocess.PPError: command ['/Users/famtasticfritz/famtastic/shay-shay/env/bin/python3', '-m', 'pytest', 'tests/'] status…</div>
-    <div class="private-sub">runtime-session · 20260614_010407_4583da · item capture-2026-06-16-0145-20260614_010407_4583da::8</div>
+    <div class="private-sub">vault-note · SHAY-PLATFORM-YOLO-KICKOFF-2026-06-08 · item capture-2026-06-17-0560-shay-platform-yolo-kickoff-2026-06-08::9</div>
 
   </div></div>
   </section>
@@ -146,7 +173,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">deploy</span><span class="tag">release-management</span><span class="tag">rollback</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>43d ago</b><span>last move</span></div>
       <div><b>57</b><span>autonomy</span></div>
       <div><b>75</b><span>profit</span></div>
     </div>
@@ -161,7 +188,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">ops</span><span class="tag">shay-shay</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>43d ago</b><span>last move</span></div>
       <div><b>82</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
@@ -170,28 +197,13 @@
   </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
-      <span class="role">substrate</span>
-    </div>
-    <h3>chat-capture-learn-optimize</h3>
-    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">memory</span><span class="tag">shay-shay</span><span class="tag">intelligence</span></div>
-    <div class="metrics">
-      <div><b>0/0</b><span>tasks</span></div>
-      <div><b>42d ago</b><span>last move</span></div>
-      <div><b>72</b><span>autonomy</span></div>
-      <div><b>45</b><span>profit</span></div>
-    </div>
-    <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
-    <p class="next"><b>Next:</b> Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read.</p>
-  </div><div class="card" data-needs="true" data-priority="false">
-    <div class="card-head">
-      <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
       <span class="role">governance</span>
     </div>
-    <h3>agent-coordination</h3>
+    <h3>Agent Coordination + brain→memory migration</h3>
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">governance</span><span class="tag">multi-agent</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>43d ago</b><span>last move</span></div>
       <div><b>72</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
@@ -199,19 +211,64 @@
     <p class="next"><b>Next:</b> Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate.</p>
   </div><div class="card" data-needs="true" data-priority="false">
     <div class="card-head">
+      <span class="stage" style="--c:#f5b342">🟡 Checkpoint (stalled)</span>
+      <span class="role">substrate</span>
+    </div>
+    <h3>Chat Capture, Tag, Learn, Optimize Loop</h3>
+    <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">memory</span><span class="tag">shay-shay</span><span class="tag">intelligence</span></div>
+    <div class="metrics">
+      <div><b>0/0</b><span>tasks</span></div>
+      <div><b>43d ago</b><span>last move</span></div>
+      <div><b>72</b><span>autonomy</span></div>
+      <div><b>45</b><span>profit</span></div>
+    </div>
+    <div class="needs">⚠ No movement in 2+ weeks at a checkpoint — decide the next phase or close it.</div>
+    <p class="next"><b>Next:</b> Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read.</p>
+  </div><div class="card" data-needs="true" data-priority="false">
+    <div class="card-head">
       <span class="stage" style="--c:#f5b342">🟡 Needs tasking</span>
       <span class="role">research</span>
     </div>
-    <h3>workbench-per-page-design</h3>
+    <h3>Workbench Per-Page-Type Design Research</h3>
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">design-research</span><span class="tag">ux</span></div>
     <div class="metrics">
       <div><b>0/0</b><span>tasks</span></div>
-      <div><b>28d ago</b><span>last move</span></div>
+      <div><b>29d ago</b><span>last move</span></div>
       <div><b>57</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
     <div class="needs">⚠ Needs you to define the next tasks (or close it out).</div>
     <p class="next"><b>Next:</b> Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05.</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">product</span>
+    </div>
+    <h3>Autonomous Content Engine — Hands-off SEO/Affiliate Site</h3>
+    <div class="tags"></div>
+    <div class="metrics">
+      <div><b>4/4</b><span>tasks</span></div>
+      <div><b>1d ago</b><span>last move</span></div>
+      <div><b>32</b><span>autonomy</span></div>
+      <div><b>80</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> Fritz's explicit ask: a revenue process he is NOT involved in. He chose the most hands-off seed (autonomous content engine) over ad-funded/audience/marketplace paths, accepting the tradeoff. The engine (scripts/content-engine/) auto-generates quality-gated, niche, FTC-disclosed SEO articles, assembles a lean static site, and publishes on a cron. Monetized via affiliate links + display ads. Production article generation reuses site-studio/lib/brain-interface.js; runs offline with a deterministic template fallback (this container is firewalled).</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">product</span>
+    </div>
+    <h3>Fritz Companion App</h3>
+    <div class="tags"></div>
+    <div class="metrics">
+      <div><b>4/4</b><span>tasks</span></div>
+      <div><b>1d ago</b><span>last move</span></div>
+      <div><b>32</b><span>autonomy</span></div>
+      <div><b>80</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> A companion app that works the way Fritz talks to his second-in-command right now: ask a question, get an answer, run the operation — from his pocket. Mobile-first chat client over the Shay gateway, surfacing the Command Center daily briefing, with push so Shay can reach out first. This is the 'phone companion' already named in the Shay master plan Phase 3.</p>
   </div><div class="card" data-needs="false" data-priority="false">
     <div class="card-head">
       <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
@@ -221,7 +278,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">studio-ui</span><span class="tag">shell</span><span class="tag">workbench</span></div>
     <div class="metrics">
       <div><b>3/11</b><span>tasks</span></div>
-      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>43d ago</b><span>last move</span></div>
       <div><b>97</b><span>autonomy</span></div>
       <div><b>50</b><span>profit</span></div>
     </div>
@@ -229,14 +286,14 @@
     <p class="next"><b>Next:</b> Develop executable checklists for Workbench default-shell cutover and Media Studio control unification; the frozen foundation, registry-backed Plan mode, and Shay context provider are complete.</p>
   </div><div class="card" data-needs="false" data-priority="false">
     <div class="card-head">
-      <span class="stage" style="--c:#3b82f6">🔵 Checkpoint</span>
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
       <span class="role">chassis</span>
     </div>
-    <h3>autopilot-faceless</h3>
+    <h3>Autopilot — autonomous faceless-video business</h3>
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">media</span><span class="tag">autonomy</span><span class="tag">monetization</span></div>
     <div class="metrics">
-      <div><b>0/0</b><span>tasks</span></div>
-      <div><b>14d ago</b><span>last move</span></div>
+      <div><b>6/6</b><span>tasks</span></div>
+      <div><b>1d ago</b><span>last move</span></div>
       <div><b>72</b><span>autonomy</span></div>
       <div><b>50</b><span>profit</span></div>
     </div>
@@ -251,7 +308,7 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">ledgers</span><span class="tag">intelligence</span><span class="tag">capture</span></div>
     <div class="metrics">
       <div><b>4/17</b><span>tasks</span></div>
-      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>43d ago</b><span>last move</span></div>
       <div><b>97</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
@@ -266,12 +323,57 @@
     <div class="tags"><span class="tag">platform-upgrades</span><span class="tag">build-pipeline</span><span class="tag">tracing</span></div>
     <div class="metrics">
       <div><b>1/7</b><span>tasks</span></div>
-      <div><b>42d ago</b><span>last move</span></div>
+      <div><b>43d ago</b><span>last move</span></div>
       <div><b>97</b><span>autonomy</span></div>
       <div><b>45</b><span>profit</span></div>
     </div>
 
     <p class="next"><b>Next:</b> Develop the phase-two visualizer checklist for stage/event matching, missing-stage detection, and proposed patch preview on top of the live inspect/trace/propose surface.</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">domain</span>
+    </div>
+    <h3>Mission Control / Command Center</h3>
+    <div class="tags"></div>
+    <div class="metrics">
+      <div><b>5/5</b><span>tasks</span></div>
+      <div><b>1d ago</b><span>last move</span></div>
+      <div><b>42</b><span>autonomy</span></div>
+      <div><b>45</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> A single mobile-first view that organizes everything Fritz has in flight. The generator reads the live repo ledgers (plans/registry.json, tasks/tasks.jsonl, runs/runs.jsonl, proofs/proof-ledger.jsonl, agents/catalog.json, platform/registry/capabilities.json, sites) and emits command-center/{index.html, briefing.md, state.json}. Every active plan is scored on stage, momentum, autonomy, and profitability, and the briefing names what needs Fritz, the most profitable next move, and the most autonomous win.</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">product</span>
+    </div>
+    <h3>Financial Agents — Market Watch &amp; $10 Leaderboard</h3>
+    <div class="tags"></div>
+    <div class="metrics">
+      <div><b>4/4</b><span>tasks</span></div>
+      <div><b>1d ago</b><span>last move</span></div>
+      <div><b>32</b><span>autonomy</span></div>
+      <div><b>40</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> A fleet of paper-trading strategy agents that watch the markets, make a daily prediction, and report effectiveness as a leaderboard: if each agent started the session with $10, what is it worth at the close? Net-new — a brain grep confirmed no prior financial/trading code existed in the FAMtastic repo (all 'trading/stock/crypto' hits were stock photos / the job queue). Simulation/paper first on real recent market data; live brokerage execution (e.g. Alpaca paper API) is a later, gated step requiring broker credentials.</p>
+  </div><div class="card" data-needs="false" data-priority="false">
+    <div class="card-head">
+      <span class="stage" style="--c:#2dd4a7">🟢 In progress</span>
+      <span class="role">product</span>
+    </div>
+    <h3>Shay — Omnipresent Virtual Assistant</h3>
+    <div class="tags"></div>
+    <div class="metrics">
+      <div><b>4/4</b><span>tasks</span></div>
+      <div><b>1d ago</b><span>last move</span></div>
+      <div><b>72</b><span>autonomy</span></div>
+      <div><b>40</b><span>profit</span></div>
+    </div>
+
+    <p class="next"><b>Next:</b> Build Shay from a Telegram-only assistant into a true omnipresent virtual assistant: manager-grade, with a virtual body (avatar/voice/persona), reachable everywhere Fritz is — smartphone, web, voice (Alexa/Google), smartwatch (watchOS/WearOS), and AR/smart glasses — and able to reach him first across all of them. Working assumption: the exact assistant Fritz wants does NOT exist as one product; it exists only in pieces, so we compose it on top of the existing Shay runtime (Hermes-based, ~/.shay/).</p>
   </div></div>
   </section>
 
@@ -287,7 +389,7 @@
 </div>
 
 <script>
-const SNAP = {"stageCounts":{"In progress":3,"Checkpoint (stalled)":3,"Needs tasking":2,"Checkpoint":1},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":false},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":false},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":false},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true},{"title":"chat-capture-learn-optimize","autonomy":72,"profit":45,"needsYou":true},{"title":"agent-coordination","autonomy":72,"profit":45,"needsYou":true},{"title":"workbench-per-page-design","autonomy":57,"profit":45,"needsYou":true},{"title":"autopilot-faceless","autonomy":72,"profit":50,"needsYou":false}]};
+const SNAP = {"stageCounts":{"In progress":9,"Checkpoint (stalled)":3,"Needs tasking":2},"plans":[{"title":"Studio Workbench Foundation","autonomy":97,"profit":50,"needsYou":false},{"title":"Plan, Task, Run, and Capture Intelligence","autonomy":97,"profit":45,"needsYou":false},{"title":"Build Intent, Fulfillment Trace, and Workflow Data","autonomy":97,"profit":45,"needsYou":false},{"title":"FAMtastic Studio Operations Workspace GUI","autonomy":82,"profit":45,"needsYou":true},{"title":"Autonomous Content Engine — Hands-off SEO/Affiliate Site","autonomy":32,"profit":80,"needsYou":false},{"title":"Financial Agents — Market Watch & $10 Leaderboard","autonomy":32,"profit":40,"needsYou":false},{"title":"Fritz Companion App","autonomy":32,"profit":80,"needsYou":false},{"title":"Mission Control / Command Center","autonomy":42,"profit":45,"needsYou":false},{"title":"Agent Coordination + brain→memory migration","autonomy":72,"profit":45,"needsYou":true},{"title":"Chat Capture, Tag, Learn, Optimize Loop","autonomy":72,"profit":45,"needsYou":true},{"title":"Workbench Per-Page-Type Design Research","autonomy":57,"profit":45,"needsYou":true},{"title":"Autopilot — autonomous faceless-video business","autonomy":72,"profit":50,"needsYou":false},{"title":"Shay — Omnipresent Virtual Assistant","autonomy":72,"profit":40,"needsYou":false},{"title":"site-promotion","autonomy":57,"profit":75,"needsYou":true}]};
 const stageColors = {"In progress":"#2dd4a7","Checkpoint":"#3b82f6","Checkpoint (stalled)":"#f5b342","Needs tasking":"#f5b342","Blocked (external)":"#ef4444","Stale":"#94a3b8","Completed":"#22c55e"};
 new Chart(document.getElementById('healthChart'), {
   type:'doughnut',

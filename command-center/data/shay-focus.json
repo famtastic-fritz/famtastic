@@ -1,0 +1,13 @@
+{
+  "money": {
+    "label": "Money made through Shay-Shay",
+    "amount_usd": 0,
+    "target_usd": 1000,
+    "note": "Starts at $0 until we log a Shay-attributed win on purpose. When Shay helps create real money, we bump this meter."
+  },
+  "countdown": {
+    "label": "FAMU Alumni Cruise",
+    "date": "2026-06-26",
+    "note": "Brand launch event. Simple platform, basic info, business workflows, and advertising need to be ready. Not a trip."
+  }
+}

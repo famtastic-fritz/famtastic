@@ -1,6 +1,6 @@
 # FAMTASTIC-STATE.md — Canonical Project Reference
 
-**Last updated:** 2026-06-16 (Shay now has a durable research-artifact capture rule, helper script, protocol doc, and reusable skill so meaningful research leaves structured notes plus an append-only ledger instead of dying as terminal residue.)
+**Last updated:** 2026-06-17 (Active plans now carry explicit `studio`, `plan_type`, and `stream` classification metadata in both `plans/registry.json` and active `plans/<id>/plan.json` packets, so the canonical plan surface is filterable by Shay vs Site Studio vs other domains through `scripts/plans/list.js` / `fam-hub plan list`.)
 
 ---
 
@@ -12,6 +12,9 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 **Key recent milestones:**
 
+- **2026-06-17** — Command Center cha-ching meter + FAMU cruise boat clock. Added `command-center/data/shay-focus.json` as an editable focus file and upgraded `scripts/command-center/build-command-center.js` so the generated briefing/dashboard now expose a `💸 Cha-Ching + Boat Clock` section. The system now computes a live countdown to the June 26 FAMU Alumni Cruise, carries a dedicated Shay-attributed money meter, and publishes that focus state in `command-center/briefing.md`, `command-center/index.html`, and `command-center/state.json` under `shay_focus`, alongside landed-income totals from `command-center/collectors/income-ledger.js`.
+- **2026-06-17** — Plan classification and filterable active-plan surface. Added explicit `studio`, `plan_type`, and `stream` metadata to the canonical plan layer in `plans/registry.json` plus each active `plans/<id>/plan.json` packet. Added `scripts/plans/list.js` and routed `fam-hub plan list` through it, so active plans can now be sliced by owning domain (`--studio shay`, `--studio site-studio`), execution shape (`--plan-type summary|execution|research`), or life stream (`--stream income|shay-platform|fritz`) without hand-curated lists. `scripts/agent-context-emit.js` now emits active-plan summaries by studio/type/stream, and `scripts/command-center/build-command-center.js` now carries the same fields into `command-center/state.json`. Deferred: classification is still single-owner metadata and Command Center has not yet rendered visible filter chips in the browser UI.
+- **2026-06-16** — Active-plan drift backfill and closeout repair. The earlier registry-sync pass made six previously omitted active plans visible again, but they were still zero-task ghosts. Backfilled 27 open task rows into `tasks/tasks.jsonl` for `plan_2026_06_02_autopilot_faceless`, `autonomous-content-engine`, `financial-agents`, `fritz-companion-app`, `mission-control-command-center`, and `shay-omnipresent-assistant`, then wrote `needs_tasking` closeout packets to each plan's `closeouts/2026-06-16-needs_tasking.json`. Verified with `node scripts/plans/audit.js`, which now reports `Drift: 0`, `Conflicts: 0`, `Missing active plan files: 0`, and `Orphan tasks: 0`. Deferred: older active plans still rely on prior checkpoint/needs-tasking packets while carrying zero currently open ledger rows, so the next ledger-hardening pass should distinguish “between task waves” from “live executable tasks.”
 - **2026-06-16** — Shay research artifact capture hardening. Added a durable-research capture rule to `shay-shay/AGENTS.md` and `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, plus `shay-shay/scripts/research_capture.py`, `shay-shay/docs/research-artifact-capture-protocol.md`, and `shay-shay/skills/research/research-artifact-capture/SKILL.md`. The helper writes markdown research notes and append-only JSONL ledger entries under `obsidian/Shay-Memory/research/`, with separated observations and interpretations, source trace, retrieval metadata (`permalink`, `tags`, `artifact_type`), and resume context. Verified with `py_compile`, CLI help, a live artifact write, and adversarial review that closed an initial hardcoded-path portability gap.
 - **2026-06-16** — Proactive Shay organic capture/reflection runtime. Added `obsidian/Shay-Memory/_system/proactive_os.py` as the six-phase intelligence engine behind proactive Shay capture and briefing generation. `reflect.py` now discovers vault + repo-root transcript sources, normalizes them into captures, distills atomic items, protects sensitive items in `obsidian/Shay-Memory/_system/runtime/proactive/private-context.jsonl`, emits `briefing-context.json`, `private-review.json`, `behavior-steering.json`, `reinforcement.json`, and `source-registry.json`, and still writes the existing episodic/semantic/reflective markdown reflections. `lib/shay/memory-context.js` overlays the generated behavioral steering into the live RELEVANT MEMORY block, and `scripts/command-center/build-command-center.js` now reads the proactive briefing overlay plus the protected private-review feed so the dashboard can show both a ranked morning brief and a redaction-friendly private review surface. Follow-up hardening added source-pointer age decay plus diversity caps in `obsidian/Shay-Memory/_system/proactive_os.py`, introduced `obsidian/Shay-Memory/_system/runtime/proactive/private-review-actions.json` + `obsidian/Shay-Memory/_system/private_review_actions.py` for explicit `review`/`approve`/`suppress` decisions, and taught Command Center to display action state plus the exact CLI path for acting on entries. Verified with direct module assertions, `reflect.py` live runs, `python3 -m py_compile` on the proactive scripts, and a successful Command Center regeneration; the reseller-history overweighting gap is reduced but still tuneable rather than fully solved.
 
@@ -236,6 +239,7 @@ The system is currently single-user and localhost-only, built and operated by Fr
 
 ### Open
 
+- Command Center's new `Money made through Shay-Shay` meter is manual by design right now. `command-center/data/shay-focus.json` is the editable truth surface, but there is not yet an append-only Shay-attribution ledger or helper command to increment it cleanly.
 | Gap | Priority | Detail |
 |-----|----------|--------|
 | Build auto-fires from Shay Desk without confirmation | Tier 1 | New finding 2026-04-25. `handleShayBuildRequest` runs the full chain synchronously with no human-in-the-loop checkpoint. Logged as `bug-shay-auto-build-no-confirmation-2026-04-25`. Tracked in outstanding plan. |
@@ -566,6 +570,7 @@ See CHANGELOG.md and the prior version of this doc for Sessions 11/12/13/16/17/1
 
 ## What's Next
 
+- Decide whether the new `command-center/data/shay-focus.json` surface should stay as a light manual truth file or grow into a real append-only Shay-attribution ledger + reminder cron.
 The full iterative roadmap is in `architecture/2026-04-25-outstanding-plan.md`.
 
 Quick view:
