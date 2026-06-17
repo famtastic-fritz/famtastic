@@ -1,13 +1,18 @@
 {
   "schema_version": "1.0",
   "id": "financial-agents",
-  "title": "Financial Agents — Market Watch & $10 Leaderboard",
+  "title": "Financial Agents \u2014 Market Watch & $10 Leaderboard",
   "status": "active",
+  "classification": {
+    "studio": "cross-platform",
+    "plan_type": "summary",
+    "stream": "income"
+  },
   "role": "product",
   "fritz_priority": "high",
   "originator": "Fritz",
   "origin_surface": "Claude Code (web)",
-  "summary": "A fleet of paper-trading strategy agents that watch the markets, make a daily prediction, and report effectiveness as a leaderboard: if each agent started the session with $10, what is it worth at the close? Net-new — a brain grep confirmed no prior financial/trading code existed in the FAMtastic repo (all 'trading/stock/crypto' hits were stock photos / the job queue). Simulation/paper first on real recent market data; live brokerage execution (e.g. Alpaca paper API) is a later, gated step requiring broker credentials.",
+  "summary": "A fleet of paper-trading strategy agents that watch the markets, make a daily prediction, and report effectiveness as a leaderboard: if each agent started the session with $10, what is it worth at the close? Net-new \u2014 a brain grep confirmed no prior financial/trading code existed in the FAMtastic repo (all 'trading/stock/crypto' hits were stock photos / the job queue). Simulation/paper first on real recent market data; live brokerage execution (e.g. Alpaca paper API) is a later, gated step requiring broker credentials.",
   "honesty": "A single session's P&L is noise, not skill. The harness exists to measure agents consistently over many sessions; treat day-one numbers as a smoke test of the pipeline, not proof of edge.",
   "open_tasks": [
     "task-2026-06-02-014",
@@ -16,8 +21,8 @@
     "task-2026-06-02-017"
   ],
   "known_gaps": [
-    "No prior financial code in the brain — built from scratch this session.",
-    "Live execution needs a broker account + API keys (Alpaca paper recommended first) — Fritz decision, gated.",
-    "Data source is keyless/free (e.g. Stooq) — fine for a daily sim, not low-latency intraday."
+    "No prior financial code in the brain \u2014 built from scratch this session.",
+    "Live execution needs a broker account + API keys (Alpaca paper recommended first) \u2014 Fritz decision, gated.",
+    "Data source is keyless/free (e.g. Stooq) \u2014 fine for a daily sim, not low-latency intraday."
   ]
 }

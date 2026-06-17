@@ -1,0 +1,132 @@
+{
+  "snapshot_version": "ops-2026-06-17T04:07:39.280Z",
+  "generated_at": "2026-06-17T04:07:39.280Z",
+  "schema_version": "1",
+  "sources": {
+    "job": {
+      "authoritative_file": "jobs/jobs.jsonl",
+      "file_exists": true,
+      "count": 0,
+      "by_status": {},
+      "by_freshness": {
+        "live": 0,
+        "idle": 0,
+        "stale": 0,
+        "parked": 0,
+        "archived": 0
+      }
+    },
+    "task": {
+      "authoritative_file": "tasks/tasks.jsonl",
+      "file_exists": true,
+      "count": 78,
+      "by_status": {
+        "completed": 39,
+        "blocked": 14,
+        "ready": 25
+      },
+      "by_freshness": {
+        "live": 27,
+        "idle": 8,
+        "stale": 12,
+        "parked": 0,
+        "archived": 31
+      }
+    },
+    "run": {
+      "authoritative_file": "runs/runs.jsonl",
+      "file_exists": true,
+      "count": 1,
+      "by_status": {
+        "active": 1
+      },
+      "by_freshness": {
+        "live": 1,
+        "idle": 0,
+        "stale": 0,
+        "parked": 0,
+        "archived": 0
+      }
+    },
+    "proof": {
+      "authoritative_file": "proofs/proof-ledger.jsonl",
+      "file_exists": true,
+      "count": 29,
+      "by_status": {
+        "recorded": 8,
+        "passed": 13,
+        "passed_with_blockers": 6,
+        "blocked_external_access": 1,
+        "blocked": 1
+      },
+      "by_freshness": {
+        "live": 9,
+        "idle": 0,
+        "stale": 2,
+        "parked": 0,
+        "archived": 18
+      }
+    },
+    "gap": {
+      "authoritative_file": "docs/ops/gaps.jsonl",
+      "file_exists": false,
+      "count": 0,
+      "by_status": {},
+      "by_freshness": {
+        "live": 0,
+        "idle": 0,
+        "stale": 0,
+        "parked": 0,
+        "archived": 0
+      }
+    },
+    "review": {
+      "authoritative_file": "reviews/reviews.jsonl",
+      "file_exists": false,
+      "count": 0,
+      "by_status": {},
+      "by_freshness": {
+        "live": 0,
+        "idle": 0,
+        "stale": 0,
+        "parked": 0,
+        "archived": 0
+      }
+    },
+    "plan": {
+      "authoritative_file": "plans/registry.json",
+      "file_exists": true,
+      "count": 14,
+      "by_status": {
+        "active": 14
+      },
+      "by_freshness": {
+        "live": 14,
+        "idle": 0,
+        "stale": 0,
+        "parked": 0,
+        "archived": 0
+      }
+    },
+    "legacy_queue": {
+      "authoritative_file": "(none)",
+      "file_exists": false,
+      "count": 0,
+      "by_status": {},
+      "by_freshness": {
+        "live": 0,
+        "idle": 0,
+        "stale": 0,
+        "parked": 0,
+        "archived": 0
+      }
+    }
+  },
+  "totals": {
+    "total_records": 122,
+    "live_records": 51,
+    "stale_records": 14,
+    "parked_records": 0,
+    "archived_records": 49
+  }
+}

@@ -3,6 +3,11 @@
   "id": "mission-control-command-center",
   "title": "Mission Control / Command Center",
   "status": "active",
+  "classification": {
+    "studio": "mission-control",
+    "plan_type": "summary",
+    "stream": "shay-platform"
+  },
   "role": "domain",
   "originator": "Fritz",
   "origin_surface": "Claude Code (web)",
@@ -27,7 +32,7 @@
     "Scoring is heuristic and tunable; profit ~= revenue-proximity by tag/role, autonomy ~= how much can proceed without Fritz."
   ],
   "known_gaps": [
-    "Generator is run manually today — no fam-hub command and no cron yet (task 001).",
+    "Generator is run manually today \u2014 no fam-hub command and no cron yet (task 001).",
     "Not yet served by Studio /api/ops or mounted in the Workbench/Shay Desk (task 002).",
     "No automatic delivery of the morning briefing to Fritz's phone yet (task 003).",
     "billing.* and work.* capabilities generate/draft only; send paths are blocked on a payment-provider decision and Jira/Slack creds (tasks 004-005)."

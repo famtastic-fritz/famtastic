@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "plan_2026_06_02_autopilot_faceless",
+  "verdict": "needs_tasking",
+  "verdict_at": "2026-06-16T21:15:00.000Z",
+  "verdict_by": "shay-shay",
+  "remaining_work": [
+    "Wire official live upload paths for YouTube/TikTok/Instagram.",
+    "Replace simulated metrics with real analytics ingestion.",
+    "Add AI b-roll/thumbnail generation, channel flip tracking, live client email send, and production hardening."
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/plan_2026_06_02_autopilot_faceless/plan.json",
+      "note": "Plan file already names the unfinished workstreams and open_task_ids."
+    },
+    {
+      "type": "doc",
+      "ref": "tasks/tasks.jsonl",
+      "note": "Backfilled task ledger rows for the unfinished workstreams."
+    }
+  ],
+  "next_task_ids": [
+    "ws_live_publishing",
+    "ws_real_analytics",
+    "ws_broll",
+    "ws_flip_tracker",
+    "ws_client_email_send",
+    "ws_hardening"
+  ]
+}

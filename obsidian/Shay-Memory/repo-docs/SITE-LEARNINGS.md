@@ -4,9 +4,171 @@ type: note
 permalink: shay-memory/repo-docs/site-learnings
 ---
 
-<!-- mirrored 2026-06-16T15:46:58.293512 from ~/famtastic/SITE-LEARNINGS.md -->
+<!-- mirrored 2026-06-17T12:47:05.974219 from ~/famtastic/SITE-LEARNINGS.md -->
 
 # FAMtastic Ecosystem — Site Learnings
+
+## Command Center money-focus + FAMU cruise countdown surface (2026-06-17)
+
+Added a new Fritz-facing focus surface for daily money pressure and the June 26 FAMU Alumni Cruise deadline. `scripts/command-center/build-command-center.js` now reads `command-center/data/shay-focus.json`, pulls landed-income totals from `command-center/collectors/income-ledger.js`, computes a live cruise countdown, and injects a new `💸 Cha-Ching + Boat Clock` block into all three Command Center artifacts: `command-center/briefing.md`, `command-center/index.html`, and `command-center/state.json`. The new state packet exposes `shay_focus.money`, `shay_focus.countdown`, and `shay_focus.landed_income`, while the rendered briefing/dashboard now show a blunt money meter, a boat clock, and creative urgency text instead of leaving those priorities implied in scattered notes.
+
+### Verified
+- `command-center/data/shay-focus.json` now exists as the editable truth surface for Shay-attributed money tracking and the cruise deadline.
+- `node scripts/command-center/build-command-center.js` regenerated `command-center/briefing.md`, `command-center/index.html`, and `command-center/state.json` successfully.
+- `command-center/briefing.md` now opens with a `💸 Cha-Ching + Boat Clock` section showing `$0.00 / $1,000.00`, landed-income totals, and `9 day(s)` until `2026-06-26`.
+- `command-center/state.json` now includes a `shay_focus` object with `money.amount_usd`, `money.target_usd`, `countdown.date`, `countdown.days_left`, and `landed_income` totals.
+
+### Known Gaps opened
+- `Money made through Shay-Shay` is intentionally manual right now; it starts at `$0` until a Shay-attributed win is logged in `command-center/data/shay-focus.json`. There is not yet an append-only attribution ledger or a helper command to increment it.
+- The cruise countdown is wired to a single hardcoded event file (`command-center/data/shay-focus.json`); there is not yet a multi-deadline/event system or a dedicated reminder cron tied to this focus surface.
+
+## Shay capability promotion rules + normalized evidence completion (2026-06-17)
+
+Finished the follow-through on the capability-truth reconciliation slice in `shay-shay` so the system now does more than just surface observed proof. `shay-shay/agent/process_intelligence.py` now normalizes `validation_results` into stable evidence records (`capability_id`, `result_class`, verifier backing, artifact refs, and summary fields), and `shay-shay/shay_cli/capabilities_cmd.py` now evaluates that evidence into explicit promotion signals instead of the old blanket manual-review warning. The capability truth layer can now distinguish failure-only evidence, mixed evidence, single observed success, and repeated verifier-backed success across multiple runs, while still keeping final curated truth mutation intentionally review-gated. Documentation and truth-control artifacts were aligned in `shay-shay/docs/shay-source-of-truth-rules-2026-06-17.md`, `shay-shay/docs/shay-master-checklist-2026-06-15.md`, and `shay-shay/shay_cli/intelligence_cmd.py`, and focused verification passed with `uv run pytest tests/test_capabilities_cmd.py tests/agent/test_process_intelligence.py tests/test_intelligence_layer.py` (73 passed).
+
+### Verified
+- `agent/process_intelligence.normalized_validation_results()` now emits stable capability-proof records instead of leaving consumers to parse raw `validation_results` ad hoc.
+- `collect_capabilities()` now computes `verifier_backed_successes`, `supporting_run_ids`, `promotion_policy`, and `promotion_summary` on each `details.observation_overlay` entry.
+- Capability CLI output now distinguishes suggested reality class from promotion policy so the surface can say "eligible for curated promotion" without pretending the curated matrix already flipped.
+- `shay-shay/shay_cli/intelligence_cmd.py` now reflects the honest post-slice state: verifier-aware promotion rules exist, but final curated promotion remains review-gated on purpose.
+
+### Known Gaps opened
+- Capability truth still does not auto-mutate the curated matrix from ledger evidence alone; promotion recommendations are automatic, but the final write-back remains intentionally human-reviewed.
+- Closeout remains a proof-aware gate/output surface, not a full auto-reconciler that mutates capability truth by itself.
+- The broader learning/event spine still needs fuller normalization beyond capability-proof consumption; this slice normalized the validation evidence seam first.
+
+## Agent capability matrix reality-class second pass (2026-06-17)
+
+Ran a second truth-discipline pass on `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so the note stops flattening live runtime facts, documented capability presence, partial shorthand, and roadmap targets into the same kind of status row. Added an explicit reality-class legend (`live_verified`, `documented_present`, `curated_partial`, `seeded_target`) and rewrote the Core Agents, Communication Channels, Revenue Tools, and Jailbroken/Uncensored LLM sections to carry both a reality class and a named proof surface. This keeps the matrix readable for humans while making it much harder to mistake a curated inventory row for evidence that a capability is live.
+
+### Verified
+- `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` now separates inventory status from truth class instead of using a single overloaded status field.
+- The rewritten sections explicitly name where truth comes from: current runtime/tool surface, loaded skill catalog, repo docs, or curated inventory only.
+- The matrix now includes a `Reality-class notes` section that explains which rows are live-verified versus merely documented, partial, or seeded.
+
+### Known Gaps opened
+- Large parts of the matrix still remain in the older shorthand format; Memory Systems, Plugins/Extensions, and much of the skills inventory still need the same rewrite if this note is going to become uniformly proof-disciplined.
+
+## Agent capability matrix full normalization pass (2026-06-17)
+
+Finished the remaining matrix rewrite so `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` no longer mixes proof-disciplined sections with old shorthand tables. Converted UI/Dashboard Agents, Memory Systems, Plugins/Extensions, Skills Libraries, installed Studio/Claude Code skills, installed Shay Agent OS skills, runtime control surfaces, and local model/infra sections to the same reality-class/proof-surface grammar used in the earlier pass. The result is a single note where every section now states whether a row is live-verified, merely documented, partially curated, or only a seeded target.
+
+### Verified
+- `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` now uses the same status + reality class + proof surface structure across all major sections instead of mixing two truth grammars in one note.
+- Memory rows for `basic-memory`, `vault-search`, and `session_search` now explicitly distinguish live-verified runtime presence from documented built-ins and roadmap-only items.
+- Shared skill rows and Shay Agent OS skill rows now cite `docs/capability-registry.md` and/or `shay-agent-os/AGENTS.md` instead of implying proof by wording alone.
+- Runtime control surfaces and local model/Redis rows are now explicitly labeled as either live-verified prior command output or documented-present local infrastructure.
+
+### Known Gaps opened
+- Some rows still depend on prior verification evidence or repo docs rather than a fresh command in this exact pass, so the matrix is now structurally honest but still not an auto-reconciled live ledger.
+- Count fields like `Built-in Skills ~40` remain approximate inventory shorthand and should be replaced with a generated source if exact counts become important.
+
+## Shay capability observation overlay + guarded reconciliation (2026-06-17)
+
+Upgraded `shay-shay` capability truth from purely curated routing code to a guarded observed-proof overlay driven by the live process-intelligence ledger. `shay-shay/shay_cli/capabilities_cmd.py` now reads recent `agent/process_intelligence.py` run records, reconciles matched `validation_results` into per-capability `details.observation_overlay`, and exposes the result through `shay capabilities list` and `shay capabilities show` without silently promoting the curated matrix status. `shay-shay/shay_cli/intelligence_cmd.py` now documents that the capability-truth layer depends on `runs/runs.jsonl` as part of its source of truth and keeps verifier-backed promotion rules explicit as the remaining gap. Focused proof landed in `shay-shay/tests/test_capabilities_cmd.py` and passed with `./.venv/bin/python -m pytest -q tests/test_capabilities_cmd.py -o addopts=''` (21 passed).
+
+### Verified
+- `collect_capabilities()` now attaches `details.observation_overlay` when the run ledger contains validation checks matching capability IDs.
+- `shay capabilities show <capability-id>` now states observed proof counts and the suggested reality class instead of hiding runtime evidence inside raw JSON only.
+- Capability warnings now explicitly say observed proof does not auto-promote truth and that mixed success/failure evidence must not be overclaimed.
+- `shay-shay/docs/shay-master-checklist-2026-06-15.md` now marks the low-risk reconciliation slice as real and carries forward only the honest remaining gaps.
+
+### Known Gaps opened
+- Promotion rules for moving a capability between `seeded`, `implemented`, `partial`, and `proven_live` are still manual/verifier-backed; there is no automatic matrix mutation yet.
+- The broader capability matrix still needs a fuller reality-class cleanup pass beyond the CLI wording and overlay surfaces added here.
+- The process-intelligence substrate still lacks a fully normalized observation/interpretation/pattern/result schema, so this ledger overlay is useful proof plumbing, not the final learning loop.
+
+## Plan classification + filterable active-plan surface (2026-06-17)
+
+Backfilled `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so it no longer stops at the original high-level inventory and now includes the live memory/retrieval surfaces, current runtime control surfaces, the shared Claude/Studio skill pool, the Shay Agent OS local skill pool, and the locally documented Ollama/Redis support layer. The matrix now explicitly names proof-bearing surfaces instead of implying that a raw status emoji is enough by itself: rows for `basic-memory`, `vault-search`, `session_search`, `skills_list`, `shay mcp list`, `shay cron list`, `shay kanban boards`, and `shay profile list` now point to the exact place to verify reality. The update also preserves prior milestones instead of replacing them, so the 2026-06-02 `humanize-writing` install and the 2026-06-15 shared-vault memory milestone remain visible in the note instead of being silently overwritten.
+
+### Verified
+- `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` now includes explicit entries for built-in curated memory, `vault-search MCP`, `session_search`, the runtime skill catalog count, Shay Agent OS local skills, runtime control surfaces, and local model/Redis infra.
+- `shay mcp list` reports `obsidian`, `basic-memory`, and `vault-search` enabled in the current runtime.
+- `shay cron list` reports four active jobs, `shay kanban boards` reports the live `default` board, and `shay profile list` reports `default` running and `trader` stopped.
+- `docs/capability-registry.md` and `shay-agent-os/AGENTS.md` were used as the installed-skill/local-infra truth surfaces for the matrix backfill.
+
+### Known Gaps opened
+- The matrix is still a curated note, not an auto-reconciled witness ledger. It now points at proof surfaces more honestly, but it still depends on manual write-back.
+
+## Plan classification + filterable active-plan surface (2026-06-17)
+
+Added explicit plan classification metadata so active plans can be filtered by owning studio/domain instead of guessed from title or path. `plans/registry.json` now carries a `classification_legend`, each active plan label now includes `studio`, `plan_type`, and `stream`, and the active `plans/<id>/plan.json` packets now mirror the same structure under `classification`. Added `scripts/plans/list.js` as the canonical filter surface and routed `fam-hub plan list` through it, so commands like `fam-hub plan list --studio shay`, `--studio site-studio`, `--plan-type summary`, `--stream income`, and `--group-by studio` now work against the canonical active-plan set instead of ad hoc filtering.
+
+### Verified
+- `node scripts/plans/list.js --studio shay --compact` returns only Shay-scoped active plans.
+- `node scripts/plans/list.js --studio site-studio --compact` returns only Site Studio-scoped active plans.
+- `node scripts/plans/list.js --group-by studio --json` emits grouped plan records with explicit `studio`, `plan_type`, and `stream` fields.
+- `node scripts/agent-context-emit.js` now regenerates startup context with active-plan counts by studio/type/stream.
+- `node scripts/plans/audit.js` still returns clean (`Drift: 0`, `Missing active plan files: 0`, `Orphan tasks: 0`).
+
+### Known Gaps opened
+- Classification is still single-primary-owner metadata. Cross-cutting plans can be tagged as `cross-platform`, but the model does not yet support multi-owner arrays like "Shay + Site Studio".
+- `scripts/command-center/build-command-center.js` now carries the classification fields into `command-center/state.json`, but the rendered UI has not yet added first-class chips/filters for them.
+
+## Active-plan registry sync + drift closure (2026-06-16)
+
+Fixed a truth-surface bug where active plans created as `plans/<id>/plan.json` artifacts could remain invisible to the canonical active-plan list because `plans/registry.json` had not been updated, then closed the follow-on drift by backfilling the missing task-ledger rows and `needs_tasking` closeout packets for the six newly visible active plans. The repaired plans are `plan_2026_06_02_autopilot_faceless`, `autonomous-content-engine`, `financial-agents`, `fritz-companion-app`, `mission-control-command-center`, and `shay-omnipresent-assistant`. Each now has open ledger rows in `tasks/tasks.jsonl` plus a `plans/<id>/closeouts/2026-06-16-needs_tasking.json` packet, so the canonical active-plan list and the task ledger no longer disagree about whether these plans are actually in flight.
+
+### Verified
+- `node scripts/agent-context-emit.js` regenerated `AGENTS.md`, `GEMINI.md`, and `docs/agent-startup/AGENT-CONTEXT.generated.md` from the synced registry.
+- `node scripts/plans/audit.js` now reports `Missing active plan files: 0`, `Drift (active + zero open tasks): 0`, `Conflicts: 0`, and `Orphan tasks: 0`.
+- The canonical active-plan count in `plans/registry.json` is still 14, but the six previously drifting plans now expose 27 open tasks in `tasks/tasks.jsonl` instead of sitting as zero-task ghosts.
+
+### Known Gaps opened
+- Older active plans such as `plan_2026_05_05_ops_workspace_gui`, `plan_2026_05_05_platform_site_promotion`, `plan_2026_05_05_chat_capture_learn_optimize`, `plan_2026_05_05_agent_coordination`, and `plan_2026_05_05_workbench_per_page_design` still rely on prior `checkpoint_complete` / `needs_tasking` packets while showing zero currently open ledger rows. Audit treats them as resolved, but the control plane still lacks a stronger notion of “active but between task waves” versus “active with live executable tasks.”
+
+## Work-packet doctrine for live sessions (2026-06-16)
+
+Added an explicit work-packet rule to the live startup surfaces so active agent sessions stop leaving multi-step efforts as loose conversation. `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md` now require a real multi-step effort to be restated as a work packet containing goal, tasks, branch, worktree, main-landing expectation, truth-surface updates (especially capability-matrix updates), and proof. The rule also makes omission illegal-by-silence: if branch/worktree are not needed, the packet must say so explicitly rather than just skipping those fields.
+
+### Verified
+- `~/famtastic/docs/agent-startup/AGENT-STARTUP-CONTRACT.md` now carries the work-packet rule inside the current doctrine list.
+- `~/famtastic/AGENTS.md` now exposes the work-packet rule above the generated agent-context block so fresh sessions and reoriented active sessions see it immediately.
+- `~/famtastic/CLAUDE.md` now exposes the same minimum packet fields near the startup contract section.
+- `~/famtastic/docs/famtastic-designs/vendor-capability-matrix.md` now records the 2026-06-16 orchestration rule update so the capability truth surface reflects the new minimum packet shape.
+
+### Known Gaps opened
+- This is doctrine enforcement, not runtime schema enforcement. Existing in-flight sessions still need an explicit reorientation message unless restarted.
+- The plan/task ledger itself still does not appear to store branch/worktree as first-class structured fields, so this rule currently governs packet shape and truth surfaces more than backend ledger schema.
+
+## Shay capability preflight/closeout enforcement slice (2026-06-15)
+
+Added the first grounded capability-truth enforcement slice to `shay-shay/shay_cli/capabilities_cmd.py` and wired the new CLI surfaces in `shay-shay/shay_cli/main.py`: `shay capabilities preflight "<task>"` and `shay capabilities closeout "<task>"`. The preflight gate now turns capability truth into executable readiness by evaluating matched capabilities, blocking states, missing prerequisites, and warnings/gaps before execution; the closeout gate turns the same truth layer into proof-aware post-task obligations by rendering required proof surfaces and required closeout actions. A new durable control artifact at `shay-shay/docs/shay-master-checklist-2026-06-15.md` now tracks the broader truth-reconstruction, research-capture, swarm-preflight, and verification work as one resumable checklist, and the truth-surface docs were updated to recognize preflight/closeout as operational gate surfaces on top of working-tree / branch / runtime truth.
+
+### Verified
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m pytest -q tests/test_capabilities_cmd.py -o addopts=''` passed (19 passed).
+- Focused tests now cover gate-failure behavior, proof-surface requirements for research/memory work, and pass/fail exit codes for the new preflight/closeout commands in `shay-shay/tests/test_capabilities_cmd.py`.
+
+### Known Gaps opened
+- Capability truth is still curated code, not yet an auto-reconciled runtime ledger; the gates can enforce current truth, but they do not yet write back observed proof into the matrix automatically.
+- Closeout is still an explicit checklist/gating surface, not a full reconciler that promotes reality classes by itself. The next grounded slice is a low-risk write-back ledger with verifier-backed promotion rules.
+
+## Shay intelligence truth registry + reality classes (2026-06-16)
+
+Added a real subsystem truth registry to `shay-shay/shay_cli/intelligence_cmd.py` and exposed it through `shay intelligence truth`. The registry separates proven live surfaces from implemented-but-unverified and seeded surfaces with explicit `reality_class` labels, owner modules, proof artifacts, persistence paths, and open gaps so pattern-learning work stops pretending every control surface is equally real. `shay intelligence status` now reports `truth_registry_count` and `proven_truth_count`, and `shay_cli/main.py` registers the new CLI surface. Verification landed in `shay-shay/tests/test_intelligence_layer.py` covering registry shape, live-vs-seeded classification, status counters, and CLI smoke coverage.
+
+### Verified
+- `cd ~/famtastic/shay-shay && ./.venv/bin/python -m pytest tests/test_intelligence_layer.py -q` passed (44 passed).
+- `cd ~/famtastic/shay-shay && ./.venv/bin/python -m shay_cli.main intelligence truth` rendered the new truth registry with reality classes.
+- `cd ~/famtastic/shay-shay && ./.venv/bin/python -m shay_cli.main intelligence status` reported truth-registry counters in the status brief.
+
+### Known Gaps opened
+- The truth registry is deliberately curated code, not yet an auto-reconciled runtime ledger. It tells the truth about what is proven vs seeded, but it does not yet ingest live observations to update those labels automatically.
+- `intelligence-events-workers` still stores real events/workers without a normalized observation/interpretation/pattern/result schema, so the event spine remains only partially ready for pattern-learning.
+
+## Shay research artifact capture hardening (2026-06-16)
+
+Added a durable-research capture rule to `shay-shay/AGENTS.md` and `docs/agent-startup/AGENT-STARTUP-CONTRACT.md` so meaningful research no longer ends as disposable terminal residue. Built `shay-shay/scripts/research_capture.py`, which writes a structured markdown research note plus an append-only JSONL ledger entry under `obsidian/Shay-Memory/research/`, with explicit observation vs interpretation separation, source trace, retrieval metadata (`permalink`, `tags`, `artifact_type`), and resume context. Added the protocol doc at `shay-shay/docs/research-artifact-capture-protocol.md` plus the reusable skill at `shay-shay/skills/research/research-artifact-capture/SKILL.md`.
+
+### Verified
+- `python3 -m py_compile shay-shay/scripts/research_capture.py` passed.
+- `python3 shay-shay/scripts/research_capture.py --help` returned the expected CLI surface.
+- A live artifact write created `obsidian/Shay-Memory/research/shay-research-capture-hardening-2026-06-16.md` and appended to `obsidian/Shay-Memory/research/_ledger/research-artifacts.jsonl`.
+- Adversarial review closed the major portability issue by replacing hardcoded absolute paths with `$HOME`/environment-based defaults and adding retrieval metadata for future recall.
+
+### Known Gaps opened
+- Enforcement is still doctrine + helper driven, not a hard runtime stop. A future low-risk upgrade could surface uncaptured-research reminders inside proactive reflection or Command Center without turning every tiny lookup into ceremony.
 
 ## Proactive Shay organic capture/reflection OS (2026-06-16)
 

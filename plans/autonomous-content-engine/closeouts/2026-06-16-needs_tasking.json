@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "autonomous-content-engine",
+  "verdict": "needs_tasking",
+  "verdict_at": "2026-06-16T21:15:00.000Z",
+  "verdict_by": "shay-shay",
+  "remaining_work": [
+    "Create the monetization-account handoff and bind the engine to a live domain/runtime.",
+    "Package the deploy/publish path and quality/ranking hardening."
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/autonomous-content-engine/plan.json",
+      "note": "Plan file already names four open task ids and the known blockers."
+    },
+    {
+      "type": "doc",
+      "ref": "tasks/tasks.jsonl",
+      "note": "Backfilled task ledger rows for the four open tasks."
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-06-02-ace-01",
+    "task-2026-06-02-ace-02",
+    "task-2026-06-02-ace-03",
+    "task-2026-06-02-ace-04"
+  ]
+}

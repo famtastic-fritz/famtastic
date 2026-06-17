@@ -86,7 +86,15 @@ function audit() {
   const stale = [];      // active + tasks but no recent commit
   const orphans = [];    // task references plan not in registry
   const conflicts = [];  // registry vs closeout disagreement
+  const missingActiveFiles = []; // plan.json says active but registry omitted it
   const allActive = [];
+  const terminatedIds = new Set(Object.keys(reg.terminated_parent_ids || {}));
+
+  for (const [pid, plan] of Object.entries(planFiles)) {
+    if (plan && plan.status === 'active' && !activeIds.has(pid) && !terminatedIds?.has?.(pid)) {
+      missingActiveFiles.push({ id: pid, title: plan.title || pid });
+    }
+  }
 
   for (const pid of activeIds) {
     const open = openByPlan[pid] || [];
@@ -123,7 +131,6 @@ function audit() {
   }
 
   // Orphan = OPEN task pointing to plan not in registry AND not in terminated registry
-  const terminatedIds = new Set(Object.keys(reg.terminated_parent_ids || {}));
   const knownPlanIds = new Set([...activeIds, ...terminatedIds, ...Object.keys(planFiles)]);
   for (const t of tasks) {
     if (!t.plan_id) continue;
@@ -134,7 +141,7 @@ function audit() {
     }
   }
 
-  return { allActive, drift, stale, orphans, conflicts };
+  return { allActive, drift, stale, orphans, conflicts, missingActiveFiles };
 }
 
 function fmt() {
@@ -155,11 +162,16 @@ function fmt() {
   console.log(`Conflicts (registry says active but closeout says terminal): ${r.conflicts.length}`);
   for (const c of r.conflicts) console.log(`  ✕ ${c.id}: registry=${c.registry_status} closeout=${c.closeout_verdict}`);
   console.log();
+
+  console.log(`Missing active plan files (plan.json active but registry omitted): ${r.missingActiveFiles.length}`);
+  for (const m of r.missingActiveFiles) console.log(`  ✕ ${m.id}: ${m.title}`);
+  console.log();
+
   console.log(`Orphan tasks (task points to unknown plan): ${r.orphans.length}`);
   for (const o of r.orphans.slice(0, 10)) console.log(`  ✕ task=${o.task_id} plan=${o.plan_id} status=${o.status}`);
   if (r.orphans.length > 10) console.log(`  … ${r.orphans.length - 10} more`);
   console.log();
-  const dirty = r.drift.length + r.conflicts.length + r.orphans.length;
+  const dirty = r.drift.length + r.conflicts.length + r.missingActiveFiles.length + r.orphans.length;
   console.log(`Verdict: ${dirty === 0 ? '✅ clean' : `🔴 ${dirty} issue(s) found`}`);
   return dirty === 0 ? 0 : 2;
 }

@@ -2,15 +2,26 @@
   "id": "plan_2026_05_05_chat_capture_learn_optimize",
   "title": "Chat Capture, Tag, Learn, Optimize Loop",
   "status": "active",
+  "classification": {
+    "studio": "shay",
+    "plan_type": "execution",
+    "stream": "shay-platform"
+  },
   "label": "chat-capture-learn-optimize",
-  "tags": ["platform-upgrades", "memory", "shay-shay", "intelligence", "ledgers"],
+  "tags": [
+    "platform-upgrades",
+    "memory",
+    "shay-shay",
+    "intelligence",
+    "ledgers"
+  ],
   "created_at": "2026-05-05T00:00:00.000Z",
   "owner": "Fritz",
-  "purpose": "Build a working capture → tag → promote → use → optimize loop so that learnings from any chat session land in canonical memory, get tagged consistently, are surfaced to Shay-Shay automatically when relevant, and produce telemetry on which ones actually moved the needle.",
+  "purpose": "Build a working capture \u2192 tag \u2192 promote \u2192 use \u2192 optimize loop so that learnings from any chat session land in canonical memory, get tagged consistently, are surfaced to Shay-Shay automatically when relevant, and produce telemetry on which ones actually moved the needle.",
   "why_now": "Today's session alone produced multiple high-value learnings (Netlify cannot link git via API, single-Netlify-project model beats two, sites must never commit to Studio history, cowork ghost-session pattern, etc.) and none of them were captured by any system. .wolf/cerebrum.md is hand-written prose; SITE-LEARNINGS.md is 5,425 unstructured lines; captures/ has an extractor but no promoter. The infrastructure is 50% designed, 20% built, 0% promoted into canonical memory.",
   "origin": {
     "type": "conversation",
-    "trigger_record": "Session 2026-05-05 — MBSH canonicalization + Ops plan + cowork ghost",
+    "trigger_record": "Session 2026-05-05 \u2014 MBSH canonicalization + Ops plan + cowork ghost",
     "summary": "User asked: 'now we have a lot of good things that got learn from these chats. how do we capture, tag, learn from and optimize from these'"
   },
   "success_signal": "(1) Run `fam-hub capture extract` on this session's transcript and get a v0.2 capture packet. (2) Run `fam-hub memory promote --auto` and at least one vendor-fact entry lands in `memory/vendor-fact/` without human gate. (3) Open a fresh Shay-Shay session in Site Studio with site context = mbsh-reunion and confirm the RELEVANT MEMORY block contains the Netlify-API limitation. (4) After one week, `memory-digest.js` produces a digest in ~/PENDING-REVIEW.md with at least one auto-promoted entry highlighted for retroactive review.",
@@ -19,12 +30,16 @@
     "Cross-org memory federation",
     "Automatic prompt rewriting based on memory"
   ],
-  "depends_on": ["plan-task-run-intelligence"],
-  "feeds_into": ["plan_2026_05_05_ops_workspace_gui"],
+  "depends_on": [
+    "plan-task-run-intelligence"
+  ],
+  "feeds_into": [
+    "plan_2026_05_05_ops_workspace_gui"
+  ],
   "workstreams": [
     {
       "id": "ws_capture_substrate",
-      "title": "Capture substrate — schema, taxonomy, store",
+      "title": "Capture substrate \u2014 schema, taxonomy, store",
       "status": "ready",
       "priority": "P0",
       "outputs": [
@@ -45,12 +60,12 @@
       "status": "ready",
       "priority": "P0",
       "outputs": [
-        "scripts/session-capture.js — dispatcher: detects source, calls adapter, writes packet",
+        "scripts/session-capture.js \u2014 dispatcher: detects source, calls adapter, writes packet",
         "scripts/capture-adapters/claude-code.js",
         "scripts/capture-adapters/cowork.js (reads handoffs/*-status.jsonl)",
         "scripts/capture-adapters/codex.js (reads codex-bridge transcript dumps)",
         "scripts/capture-adapters/manual.js (wraps existing capture-insights.js for transcript input)",
-        ".claude/hooks/session-end-capture.sh — Claude Code session-end hook"
+        ".claude/hooks/session-end-capture.sh \u2014 Claude Code session-end hook"
       ],
       "acceptance": [
         "fam-hub capture extract --source <claude-code|cowork|codex|manual> <input> writes a v0.2 packet to captures/inbox/.",
@@ -63,8 +78,8 @@
       "status": "ready",
       "priority": "P0",
       "outputs": [
-        "scripts/memory-promote.js — reads capture/proposal, writes canonical entries",
-        "fam-hub memory review <capture-id> — generates proposal from capture",
+        "scripts/memory-promote.js \u2014 reads capture/proposal, writes canonical entries",
+        "fam-hub memory review <capture-id> \u2014 generates proposal from capture",
         "fam-hub memory promote <proposal-id> [--auto] [--rounds N]",
         "Auto-promote logic: confidence >= 0.85 + type in {vendor-fact, do-not-repeat, bug-pattern} bypasses gate, logs as auto_promoted",
         "Promoted entries: written to memory/<type>/<id>.md, appended to .wolf/cerebrum.md (Standing Rules) + SITE-LEARNINGS.md (when facet=site-execution or type=learning), INDEX.json updated"
@@ -81,8 +96,8 @@
       "status": "ready",
       "priority": "P1",
       "outputs": [
-        "lib/famtastic/memory/recall.js — recall({facets, types, lifecycle, limit}) → entries[]",
-        "lib/shay/memory-context.js — Shay-Shay context provider that injects RELEVANT MEMORY block",
+        "lib/famtastic/memory/recall.js \u2014 recall({facets, types, lifecycle, limit}) \u2192 entries[]",
+        "lib/shay/memory-context.js \u2014 Shay-Shay context provider that injects RELEVANT MEMORY block",
         "Provider registers like workbench.foundation does today",
         "Telemetry: writes 'surfaced' event for each entry shown to Shay"
       ],
@@ -98,7 +113,7 @@
       "status": "ready",
       "priority": "P1",
       "outputs": [
-        "memory/usage.jsonl — append-only event log",
+        "memory/usage.jsonl \u2014 append-only event log",
         "Events: surfaced, cited, honored, violated, retired, auto_promoted, promoted, reviewed",
         "Local-only; never transmitted off-device",
         "settings.memory.telemetry.enabled = false disables entirely"
@@ -115,9 +130,9 @@
       "status": "ready",
       "priority": "P1",
       "outputs": [
-        "scripts/memory-digest.js — runs weekly via cron Mon 9am",
+        "scripts/memory-digest.js \u2014 runs weekly via cron Mon 9am",
         "Output: ~/PENDING-REVIEW.md (shared with intelligence loop)",
-        "Sections: new entries, promotion candidates (3+ recurrence → auto-promote to lifecycle=candidate), stale entries (60d zero surfaced — flag, do not auto-retire), violations, contradictions, auto-promotions retroactive review",
+        "Sections: new entries, promotion candidates (3+ recurrence \u2192 auto-promote to lifecycle=candidate), stale entries (60d zero surfaced \u2014 flag, do not auto-retire), violations, contradictions, auto-promotions retroactive review",
         "Recommendations per entry: promote / retire / merge / split"
       ],
       "acceptance": [
@@ -134,7 +149,7 @@
       "outputs": [
         "Hook into ws_adversarial_review_loop from plan_2026_05_05_ops_workspace_gui",
         "memory promotions can request --rounds N adversarial review before landing",
-        "Reviewer matrix from Ops plan applied: claude↔codex↔gemini, author != reviewer"
+        "Reviewer matrix from Ops plan applied: claude\u2194codex\u2194gemini, author != reviewer"
       ],
       "acceptance": [
         "fam-hub memory promote <id> --rounds 2 runs the loop and amends the entry before writing.",

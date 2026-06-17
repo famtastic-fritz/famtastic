@@ -8,7 +8,7 @@
     "plans/plan_2026_05_04_shay_process_intelligence/plan.json",
     "plans/remaining-plan-triage-2026-05-05.md"
   ],
-  "updated_at": "2026-06-02T11:54:23.794Z",
+  "updated_at": "2026-06-16T20:55:00Z",
   "status": "consolidated_active_with_remaining_action_items",
   "approval": {
     "approved_by": "Fritz",
@@ -45,7 +45,12 @@
     "plan_2026_05_05_chat_capture_learn_optimize",
     "plan_2026_05_05_agent_coordination",
     "plan_2026_05_05_workbench_per_page_design",
-    "plan_2026_06_02_autopilot_faceless"
+    "plan_2026_06_02_autopilot_faceless",
+    "autonomous-content-engine",
+    "financial-agents",
+    "fritz-companion-app",
+    "mission-control-command-center",
+    "shay-omnipresent-assistant"
   ],
   "labels": {
     "plan_2026_05_05_workbench_per_page_design": {
@@ -62,7 +67,10 @@
         "plan_2026_05_05_ops_workspace_gui",
         "studio-workbench-foundation"
       ],
-      "note": "Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05."
+      "note": "Per-page-type design research. Pauses Workbench implementation until taxonomy + canvas + chrome patterns + per-domain icon sets are researched. User reframed FAMtastic as creation platform 2026-05-05.",
+      "studio": "site-studio",
+      "plan_type": "research",
+      "stream": "shay-platform"
     },
     "plan_2026_05_05_platform_site_promotion": {
       "label": "site-promotion",
@@ -73,7 +81,10 @@
         "rollback"
       ],
       "role": "substrate",
-      "note": "Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven."
+      "note": "Formalizes dev/staging/main promotion ladder + release tags + rollback. MBSH-driven.",
+      "studio": "site-studio",
+      "plan_type": "execution",
+      "stream": "shay-platform"
     },
     "studio-workbench-foundation": {
       "label": "workbench-foundation",
@@ -84,7 +95,10 @@
         "workbench"
       ],
       "role": "chassis",
-      "note": "The Workbench shell (left rail, center workspace, Shay-Shay drawer) hosting all domain workspaces."
+      "note": "The Workbench shell (left rail, center workspace, Shay-Shay drawer) hosting all domain workspaces.",
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform"
     },
     "plan-task-run-intelligence": {
       "label": "plan-task-run",
@@ -95,7 +109,10 @@
         "capture"
       ],
       "role": "substrate",
-      "note": "Plan/task/run/proof ledger substrate and capture promotion. Underlies every domain that needs durable state."
+      "note": "Plan/task/run/proof ledger substrate and capture promotion. Underlies every domain that needs durable state.",
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform"
     },
     "build-intent-fulfillment-trace": {
       "label": "build-trace",
@@ -105,7 +122,10 @@
         "tracing"
       ],
       "role": "substrate",
-      "note": "Build intent classification, fulfillment trace, and workflow data for the Build domain."
+      "note": "Build intent classification, fulfillment trace, and workflow data for the Build domain.",
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform"
     },
     "site-mbsh-reunion": {
       "label": "site-mbsh",
@@ -130,7 +150,10 @@
       "depends_on": [
         "plan-task-run-intelligence"
       ],
-      "note": "Ops domain mounted inside the Workbench shell as the ◆ Ops left-rail entry. Shell from workbench-foundation; ledgers from plan-task-run."
+      "note": "Ops domain mounted inside the Workbench shell as the \u25c6 Ops left-rail entry. Shell from workbench-foundation; ledgers from plan-task-run.",
+      "studio": "shay",
+      "plan_type": "execution",
+      "stream": "shay-platform"
     },
     "plan_2026_05_05_chat_capture_learn_optimize": {
       "label": "chat-capture-learn-optimize",
@@ -145,7 +168,10 @@
       "feeds_into": [
         "plan_2026_05_05_ops_workspace_gui"
       ],
-      "note": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read."
+      "note": "Capture/tag/promote/retrieve/optimize pipeline for chat learnings. Provides the backend the Ops Memory tab will read.",
+      "studio": "shay",
+      "plan_type": "execution",
+      "stream": "shay-platform"
     },
     "plan_2026_05_05_agent_coordination": {
       "label": "agent-coordination",
@@ -158,7 +184,10 @@
       "depends_on": [
         "plan_2026_05_05_chat_capture_learn_optimize"
       ],
-      "note": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate."
+      "note": "Pre-flight coordination gate (scripts/agent-checkin.js + AGENT-COORDINATION.md) plus migration of cowork .brain/ entries into the canonical memory/ store as lifecycle:candidate.",
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform"
     },
     "plan_2026_06_02_autopilot_faceless": {
       "label": "autopilot-faceless",
@@ -171,7 +200,55 @@
       ],
       "role": "chassis",
       "feeds_into": [],
-      "note": "Autonomous faceless-video business (concept->collection->advertising->feedback) on the Remotion faceless generator. Phases 0-4 done; live publishing, real analytics, AI b-roll, money-model agents, hardening remain. Built 2026-06-02."
+      "note": "Autonomous faceless-video business (concept->collection->advertising->feedback) on the Remotion faceless generator. Phases 0-4 done; live publishing, real analytics, AI b-roll, money-model agents, hardening remain. Built 2026-06-02.",
+      "studio": "media-studio",
+      "plan_type": "execution",
+      "stream": "income"
+    },
+    "autonomous-content-engine": {
+      "label": "autonomous-content-engine",
+      "tags": [],
+      "role": "product",
+      "note": "Fritz's explicit ask: a revenue process he is NOT involved in. He chose the most hands-off seed (autonomous content engine) over ad-funded/audience/marketplace paths, accepting the tradeoff. The engine (scripts/content-engine/) auto-generates quality-gated, niche, FTC-disclosed SEO articles, assembles a lean static site, and publishes on a cron. Monetized via affiliate links + display ads. Production article generation reuses site-studio/lib/brain-interface.js; runs offline with a deterministic template fallback (this container is firewalled).",
+      "studio": "cross-platform",
+      "plan_type": "summary",
+      "stream": "income"
+    },
+    "financial-agents": {
+      "label": "financial-agents",
+      "tags": [],
+      "role": "product",
+      "note": "A fleet of paper-trading strategy agents that watch the markets, make a daily prediction, and report effectiveness as a leaderboard: if each agent started the session with $10, what is it worth at the close? Net-new \u2014 a brain grep confirmed no prior financial/trading code existed in the FAMtastic repo (all 'trading/stock/crypto' hits were stock photos / the job queue). Simulation/paper first on real recent market data; live brokerage execution (e.g. Alpaca paper API) is a later, gated step requiring broker credentials.",
+      "studio": "cross-platform",
+      "plan_type": "summary",
+      "stream": "income"
+    },
+    "fritz-companion-app": {
+      "label": "fritz-companion-app",
+      "tags": [],
+      "role": "product",
+      "note": "A companion app that works the way Fritz talks to his second-in-command right now: ask a question, get an answer, run the operation \u2014 from his pocket. Mobile-first chat client over the Shay gateway, surfacing the Command Center daily briefing, with push so Shay can reach out first. This is the 'phone companion' already named in the Shay master plan Phase 3.",
+      "studio": "shay",
+      "plan_type": "summary",
+      "stream": "fritz"
+    },
+    "mission-control-command-center": {
+      "label": "mission-control-command-center",
+      "tags": [],
+      "role": "domain",
+      "note": "A single mobile-first view that organizes everything Fritz has in flight. The generator reads the live repo ledgers (plans/registry.json, tasks/tasks.jsonl, runs/runs.jsonl, proofs/proof-ledger.jsonl, agents/catalog.json, platform/registry/capabilities.json, sites) and emits command-center/{index.html, briefing.md, state.json}. Every active plan is scored on stage, momentum, autonomy, and profitability, and the briefing names what needs Fritz, the most profitable next move, and the most autonomous win.",
+      "studio": "mission-control",
+      "plan_type": "summary",
+      "stream": "shay-platform"
+    },
+    "shay-omnipresent-assistant": {
+      "label": "shay-omnipresent-assistant",
+      "tags": [],
+      "role": "product",
+      "note": "Build Shay from a Telegram-only assistant into a true omnipresent virtual assistant: manager-grade, with a virtual body (avatar/voice/persona), reachable everywhere Fritz is \u2014 smartphone, web, voice (Alexa/Google), smartwatch (watchOS/WearOS), and AR/smart glasses \u2014 and able to reach him first across all of them. Working assumption: the exact assistant Fritz wants does NOT exist as one product; it exists only in pieces, so we compose it on top of the existing Shay runtime (Hermes-based, ~/.shay/).",
+      "studio": "shay",
+      "plan_type": "summary",
+      "stream": "shay-platform"
     }
   },
   "_label_role_legend": {
@@ -239,6 +316,14 @@
       "title": "Studio Workbench Foundation",
       "status": "active",
       "status_label": "Active parent plan",
+      "classification": {
+        "studio": "cross-platform",
+        "plan_type": "execution",
+        "stream": "shay-platform"
+      },
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform",
       "group": "studio_shell_workspace",
       "plan_path": "docs/STUDIO-UI-FOUNDATION.md",
       "current_workstream": "Workbench shell completion, default-shell cutover, and Media Studio unification",
@@ -297,6 +382,14 @@
       "title": "Plan, Task, Run, and Capture Intelligence",
       "status": "active",
       "status_label": "Active parent plan",
+      "classification": {
+        "studio": "cross-platform",
+        "plan_type": "execution",
+        "stream": "shay-platform"
+      },
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform",
       "group": "plan_task_run_intelligence",
       "plan_path": "plans/consolidated-execution-checklist-2026-05-04.md",
       "current_workstream": "Plan/task/run/proof ledgers, status mirrors, and capture promotion",
@@ -354,6 +447,14 @@
       "title": "Build Intent, Fulfillment Trace, and Workflow Data",
       "status": "active",
       "status_label": "Active parent plan",
+      "classification": {
+        "studio": "cross-platform",
+        "plan_type": "execution",
+        "stream": "shay-platform"
+      },
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform",
       "group": "build_orchestration_trace",
       "plan_path": "docs/build-orchestration-trace-plan.md",
       "current_workstream": "Workflow-as-data phase 2 and fulfillment diagnostics",
@@ -473,6 +574,14 @@
       "title": "FAMtastic Studio Operations Workspace GUI",
       "status": "active",
       "status_label": "Active parent plan",
+      "classification": {
+        "studio": "shay",
+        "plan_type": "execution",
+        "stream": "shay-platform"
+      },
+      "studio": "shay",
+      "plan_type": "execution",
+      "stream": "shay-platform",
       "group": "ops_workspace_gui",
       "plan_path": "plans/plan_2026_05_05_ops_workspace_gui/plan.json",
       "current_workstream": "Design-only Ops workspace packet actionized toward read/freshness substrate and Jobs tab MVP",
@@ -505,11 +614,218 @@
         "Stale debt must be quarantined and never displayed as live work."
       ],
       "known_gaps": [
-        "No ops API surface exists yet — must be built before any Ops tab.",
+        "No ops API surface exists yet \u2014 must be built before any Ops tab.",
         "Freshness field not yet present on jobs/runs records.",
         "No WebSocket /ws/ops channel exists.",
         "Record-type visual language not yet codified in design tokens."
       ]
+    },
+    {
+      "id": "autonomous-content-engine",
+      "title": "Autonomous Content Engine \u2014 Hands-off SEO/Affiliate Site",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "cross-platform",
+        "plan_type": "summary",
+        "stream": "income"
+      },
+      "studio": "cross-platform",
+      "plan_type": "summary",
+      "stream": "income",
+      "group": "product",
+      "plan_path": "plans/autonomous-content-engine/plan.json",
+      "current_workstream": "Fritz's explicit ask: a revenue process he is NOT involved in. He chose the most hands-off seed (autonomous content engine) over ad-funded/audience/marketplace paths, accepting the tradeoff. The engine (scripts/content-engine/) auto-generates quality-gated, niche, FTC-disclosed SEO articles, assembles a lean static site, and publishes on a cron. Monetized via affiliate links + display ads. Production article generation reuses site-studio/lib/brain-interface.js; runs offline with a deterministic template fallback (this container is firewalled).",
+      "next_action": "",
+      "open_blockers": "Monetization accounts (Amazon Associates / Ezoic / AdSense) must be created by Fritz \u2014 an agent legally cannot sign up as him.; Affiliate/ad networks pay to a bank account, not Cash App directly \u2014 the $FAMtasticFritz cashtag does not apply to this revenue path.; Ranking is a months-long compounding game; early earnings are effectively $0. This is an asset that appreciates, not a fast dollar.; Deploy (Netlify/Pages) + live LLM generation run on Fritz's Mac; the cloud container is firewalled.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "",
+      "runner_surface": ""
+    },
+    {
+      "id": "financial-agents",
+      "title": "Financial Agents \u2014 Market Watch & $10 Leaderboard",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "cross-platform",
+        "plan_type": "summary",
+        "stream": "income"
+      },
+      "studio": "cross-platform",
+      "plan_type": "summary",
+      "stream": "income",
+      "group": "product",
+      "plan_path": "plans/financial-agents/plan.json",
+      "current_workstream": "A fleet of paper-trading strategy agents that watch the markets, make a daily prediction, and report effectiveness as a leaderboard: if each agent started the session with $10, what is it worth at the close? Net-new \u2014 a brain grep confirmed no prior financial/trading code existed in the FAMtastic repo (all 'trading/stock/crypto' hits were stock photos / the job queue). Simulation/paper first on real recent market data; live brokerage execution (e.g. Alpaca paper API) is a later, gated step requiring broker credentials.",
+      "next_action": "",
+      "open_blockers": "No prior financial code in the brain \u2014 built from scratch this session.; Live execution needs a broker account + API keys (Alpaca paper recommended first) \u2014 Fritz decision, gated.; Data source is keyless/free (e.g. Stooq) \u2014 fine for a daily sim, not low-latency intraday.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "",
+      "runner_surface": ""
+    },
+    {
+      "id": "fritz-companion-app",
+      "title": "Fritz Companion App",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "shay",
+        "plan_type": "summary",
+        "stream": "fritz"
+      },
+      "studio": "shay",
+      "plan_type": "summary",
+      "stream": "fritz",
+      "group": "product",
+      "plan_path": "plans/fritz-companion-app/plan.json",
+      "current_workstream": "A companion app that works the way Fritz talks to his second-in-command right now: ask a question, get an answer, run the operation \u2014 from his pocket. Mobile-first chat client over the Shay gateway, surfacing the Command Center daily briefing, with push so Shay can reach out first. This is the 'phone companion' already named in the Shay master plan Phase 3.",
+      "next_action": "",
+      "open_blockers": "Shay gateway is local today; remote/secure access for a phone off-LAN is unbuilt (master plan: set API_SERVER_KEY before Hetzner exposure).; No push pipeline yet \u2014 depends on the reach fabric from shay-omnipresent-assistant.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "",
+      "runner_surface": ""
+    },
+    {
+      "id": "mission-control-command-center",
+      "title": "Mission Control / Command Center",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "mission-control",
+        "plan_type": "summary",
+        "stream": "shay-platform"
+      },
+      "studio": "mission-control",
+      "plan_type": "summary",
+      "stream": "shay-platform",
+      "group": "domain",
+      "plan_path": "plans/mission-control-command-center/plan.json",
+      "current_workstream": "A single mobile-first view that organizes everything Fritz has in flight. The generator reads the live repo ledgers (plans/registry.json, tasks/tasks.jsonl, runs/runs.jsonl, proofs/proof-ledger.jsonl, agents/catalog.json, platform/registry/capabilities.json, sites) and emits command-center/{index.html, briefing.md, state.json}. Every active plan is scored on stage, momentum, autonomy, and profitability, and the briefing names what needs Fritz, the most profitable next move, and the most autonomous win.",
+      "next_action": "",
+      "open_blockers": "Generator is run manually today \u2014 no fam-hub command and no cron yet (task 001).; Not yet served by Studio /api/ops or mounted in the Workbench/Shay Desk (task 002).; No automatic delivery of the morning briefing to Fritz's phone yet (task 003).; billing.* and work.* capabilities generate/draft only; send paths are blocked on a payment-provider decision and Jira/Slack creds (tasks 004-005).",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "Claude",
+      "runner_surface": ""
+    },
+    {
+      "id": "plan_2026_05_05_agent_coordination",
+      "title": "Agent Coordination + brain\u2192memory migration",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "cross-platform",
+        "plan_type": "execution",
+        "stream": "shay-platform"
+      },
+      "studio": "cross-platform",
+      "plan_type": "execution",
+      "stream": "shay-platform",
+      "group": "plan",
+      "plan_path": "plans/plan_2026_05_05_agent_coordination/plan.json",
+      "current_workstream": "",
+      "next_action": "",
+      "open_blockers": "",
+      "originator": "",
+      "origin_surface": "",
+      "current_runner": "",
+      "runner_surface": ""
+    },
+    {
+      "id": "plan_2026_05_05_chat_capture_learn_optimize",
+      "title": "Chat Capture, Tag, Learn, Optimize Loop",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "shay",
+        "plan_type": "execution",
+        "stream": "shay-platform"
+      },
+      "studio": "shay",
+      "plan_type": "execution",
+      "stream": "shay-platform",
+      "group": "plan",
+      "plan_path": "plans/plan_2026_05_05_chat_capture_learn_optimize/plan.json",
+      "current_workstream": "",
+      "next_action": "",
+      "open_blockers": "",
+      "originator": "",
+      "origin_surface": "",
+      "current_runner": "",
+      "runner_surface": ""
+    },
+    {
+      "id": "plan_2026_05_05_workbench_per_page_design",
+      "title": "Workbench Per-Page-Type Design Research",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "site-studio",
+        "plan_type": "research",
+        "stream": "shay-platform"
+      },
+      "studio": "site-studio",
+      "plan_type": "research",
+      "stream": "shay-platform",
+      "group": "plan",
+      "plan_path": "plans/plan_2026_05_05_workbench_per_page_design/plan.json",
+      "current_workstream": "",
+      "next_action": "",
+      "open_blockers": "",
+      "originator": "",
+      "origin_surface": "",
+      "current_runner": "",
+      "runner_surface": ""
+    },
+    {
+      "id": "plan_2026_06_02_autopilot_faceless",
+      "title": "Autopilot \u2014 autonomous faceless-video business",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "media-studio",
+        "plan_type": "execution",
+        "stream": "income"
+      },
+      "studio": "media-studio",
+      "plan_type": "execution",
+      "stream": "income",
+      "group": "plan",
+      "plan_path": "plans/plan_2026_06_02_autopilot_faceless/plan.json",
+      "current_workstream": "",
+      "next_action": "",
+      "open_blockers": "",
+      "originator": "",
+      "origin_surface": "",
+      "current_runner": "",
+      "runner_surface": ""
+    },
+    {
+      "id": "shay-omnipresent-assistant",
+      "title": "Shay \u2014 Omnipresent Virtual Assistant",
+      "status": "active",
+      "status_label": "Active plan",
+      "classification": {
+        "studio": "shay",
+        "plan_type": "summary",
+        "stream": "shay-platform"
+      },
+      "studio": "shay",
+      "plan_type": "summary",
+      "stream": "shay-platform",
+      "group": "product",
+      "plan_path": "plans/shay-omnipresent-assistant/plan.json",
+      "current_workstream": "Build Shay from a Telegram-only assistant into a true omnipresent virtual assistant: manager-grade, with a virtual body (avatar/voice/persona), reachable everywhere Fritz is \u2014 smartphone, web, voice (Alexa/Google), smartwatch (watchOS/WearOS), and AR/smart glasses \u2014 and able to reach him first across all of them. Working assumption: the exact assistant Fritz wants does NOT exist as one product; it exists only in pieces, so we compose it on top of the existing Shay runtime (Hermes-based, ~/.shay/).",
+      "next_action": "",
+      "open_blockers": "Device-platform lock-ins (Apple/Meta/Amazon) will limit some reach channels \u2014 to be characterized by the research before committing to a channel.; Virtual-body (real-time avatar/voice) cost and latency are unproven for always-on use \u2014 needs the P2 tradeoff study.",
+      "originator": "Fritz",
+      "origin_surface": "Claude Code (web)",
+      "current_runner": "",
+      "runner_surface": ""
     }
   ],
   "latest_triage": "plans/remaining-plan-triage-2026-05-05.md",
@@ -518,5 +834,29 @@
       "verdict": "completed",
       "terminated_at": "2026-05-05T23:15:43.966Z"
     }
+  },
+  "classification_legend": {
+    "studio_values": [
+      "shay",
+      "site-studio",
+      "media-studio",
+      "component-studio",
+      "famtastic-thoughts",
+      "mission-control",
+      "cross-platform"
+    ],
+    "plan_type_values": [
+      "summary",
+      "execution",
+      "research",
+      "backlog-seed"
+    ],
+    "stream_values": [
+      "shay-platform",
+      "income",
+      "research",
+      "metaphysical",
+      "fritz"
+    ]
   }
 }

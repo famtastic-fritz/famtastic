@@ -1,16 +1,27 @@
 {
   "id": "plan_2026_06_02_autopilot_faceless",
-  "title": "Autopilot — autonomous faceless-video business",
+  "title": "Autopilot \u2014 autonomous faceless-video business",
   "status": "active",
+  "classification": {
+    "studio": "media-studio",
+    "plan_type": "execution",
+    "stream": "income"
+  },
   "label": "autopilot-faceless",
-  "tags": ["platform-upgrades", "media", "autonomy", "monetization", "agents"],
+  "tags": [
+    "platform-upgrades",
+    "media",
+    "autonomy",
+    "monetization",
+    "agents"
+  ],
   "created_at": "2026-06-02T00:00:00.000Z",
   "owner": "Fritz",
   "purpose": "A self-running content factory (concept -> collection -> advertising -> feedback) on top of the Remotion faceless video generator, designed to run unattended with no human in the loop and monetize via affiliate + ad/creator revenue + productized client service + build-and-flip.",
   "why_now": "Fritz asked for a money-generating system built from the faceless video generator, fully autonomous, with agents and everything needed to run it, and explicitly 'I shouldn't be involved.' Operator inputs locked 2026-06-02: publish to YouTube Shorts + TikTok + Instagram Reels, all four money models, $5/day hard spend cap, auto-discover niches by ROI.",
   "origin": {
     "type": "conversation",
-    "trigger_record": "Session 2026-06-02 — 'I need money. figure it out by morning' + faceless generator + 'fully autonomous' rollout",
+    "trigger_record": "Session 2026-06-02 \u2014 'I need money. figure it out by morning' + faceless generator + 'fully autonomous' rollout",
     "summary": "Built the faceless generator first, then the autopilot orchestration layer on top, reusing FAMtastic infra (data-center ledgers, run-health, vault) per codebase recon."
   },
   "success_signal": "(1) `node autopilot/cli.mjs tick` runs concept->collection->advertising->feedback unattended. (2) Hard $5/day budget governor + kill switch + dry-run-unless-live governance enforced. (3) Learning loop updates niche weights from performance. (4) On credentials + live=true, publishing flips from staged to live with no code change. (5) Tests pass.",
@@ -24,100 +35,183 @@
   "workstreams": [
     {
       "id": "ws_foundation",
-      "title": "Phase 0 — foundation (ledgers, budget governor, governance, orchestrator, CLI, tests)",
+      "title": "Phase 0 \u2014 foundation (ledgers, budget governor, governance, orchestrator, CLI, tests)",
       "status": "done",
       "priority": "P0",
-      "outputs": ["autopilot/lib/*", "autopilot/orchestrator.mjs", "autopilot/cli.mjs", "autopilot/tests/autopilot.test.mjs"],
-      "acceptance": ["tick runs end-to-end", "budget cap enforced", "kill switch halts", "7 tests pass"]
+      "outputs": [
+        "autopilot/lib/*",
+        "autopilot/orchestrator.mjs",
+        "autopilot/cli.mjs",
+        "autopilot/tests/autopilot.test.mjs"
+      ],
+      "acceptance": [
+        "tick runs end-to-end",
+        "budget cap enforced",
+        "kill switch halts",
+        "7 tests pass"
+      ]
     },
     {
       "id": "ws_concept",
-      "title": "Phase 1 — concept engine (ROI bandit + dedupe + niche portfolio)",
+      "title": "Phase 1 \u2014 concept engine (ROI bandit + dedupe + niche portfolio)",
       "status": "done",
       "priority": "P0",
-      "outputs": ["autopilot/stages/concept.mjs"],
-      "acceptance": ["explore/exploit selection", "deduped concepts", "predicted ROI"]
+      "outputs": [
+        "autopilot/stages/concept.mjs"
+      ],
+      "acceptance": [
+        "explore/exploit selection",
+        "deduped concepts",
+        "predicted ROI"
+      ]
     },
     {
       "id": "ws_collection",
-      "title": "Phase 2 — collection engine (faceless gen + QA + SEO + affiliate + render)",
+      "title": "Phase 2 \u2014 collection engine (faceless gen + QA + SEO + affiliate + render)",
       "status": "done",
       "priority": "P0",
-      "outputs": ["autopilot/stages/collection.mjs", "autopilot/lib/render.mjs", "autopilot/lib/affiliate.mjs"],
-      "acceptance": ["spec produced per concept", "metadata + affiliate bundle written", "real MP4 rendered via headless_shell"]
+      "outputs": [
+        "autopilot/stages/collection.mjs",
+        "autopilot/lib/render.mjs",
+        "autopilot/lib/affiliate.mjs"
+      ],
+      "acceptance": [
+        "spec produced per concept",
+        "metadata + affiliate bundle written",
+        "real MP4 rendered via headless_shell"
+      ]
     },
     {
       "id": "ws_advertising",
-      "title": "Phase 3 — advertising (scheduler + publisher adapters, dry-run)",
+      "title": "Phase 3 \u2014 advertising (scheduler + publisher adapters, dry-run)",
       "status": "done",
       "priority": "P0",
-      "outputs": ["autopilot/stages/advertising.mjs", "autopilot/stages/publishers.mjs"],
-      "acceptance": ["staged bundles per platform", "governance dry-run gating"]
+      "outputs": [
+        "autopilot/stages/advertising.mjs",
+        "autopilot/stages/publishers.mjs"
+      ],
+      "acceptance": [
+        "staged bundles per platform",
+        "governance dry-run gating"
+      ]
     },
     {
       "id": "ws_feedback",
-      "title": "Phase 4 — feedback loop (metrics -> niche weights -> learnings)",
+      "title": "Phase 4 \u2014 feedback loop (metrics -> niche weights -> learnings)",
       "status": "done",
       "priority": "P1",
-      "outputs": ["autopilot/stages/feedback.mjs"],
-      "acceptance": ["performance ledger written", "niche weights update concept selection", "learnings emitted"]
+      "outputs": [
+        "autopilot/stages/feedback.mjs"
+      ],
+      "acceptance": [
+        "performance ledger written",
+        "niche weights update concept selection",
+        "learnings emitted"
+      ]
     },
     {
       "id": "ws_live_publishing",
-      "title": "Phase 3.5 — wire live platform uploads (YouTube/TikTok/Instagram official APIs)",
+      "title": "Phase 3.5 \u2014 wire live platform uploads (YouTube/TikTok/Instagram official APIs)",
       "status": "todo",
       "priority": "P1",
-      "outputs": ["autopilot/stages/publishers.mjs (live upload impls)"],
-      "acceptance": ["With creds + live=true, a video actually uploads and a permalink is logged", "Rate-limit + retry handling", "ToS-compliant"]
+      "outputs": [
+        "autopilot/stages/publishers.mjs (live upload impls)"
+      ],
+      "acceptance": [
+        "With creds + live=true, a video actually uploads and a permalink is logged",
+        "Rate-limit + retry handling",
+        "ToS-compliant"
+      ]
     },
     {
       "id": "ws_real_analytics",
-      "title": "Phase 4.5 — real analytics ingestion (replace simulated metrics)",
+      "title": "Phase 4.5 \u2014 real analytics ingestion (replace simulated metrics)",
       "status": "todo",
       "priority": "P1",
-      "outputs": ["autopilot/stages/feedback.mjs (live ingest)"],
-      "acceptance": ["Pull real views/watch/ctr/revenue per platform", "simulated:false in performance rows"]
+      "outputs": [
+        "autopilot/stages/feedback.mjs (live ingest)"
+      ],
+      "acceptance": [
+        "Pull real views/watch/ctr/revenue per platform",
+        "simulated:false in performance rows"
+      ]
     },
     {
       "id": "ws_broll",
-      "title": "Phase 2.5 — AI b-roll + thumbnail generation via media-studio buildMuapiPlan",
+      "title": "Phase 2.5 \u2014 AI b-roll + thumbnail generation via media-studio buildMuapiPlan",
       "status": "todo",
       "priority": "P2",
-      "outputs": ["autopilot/lib/broll.mjs"],
-      "acceptance": ["Per-scene images sourced within budget", "thumbnail rendered"]
+      "outputs": [
+        "autopilot/lib/broll.mjs"
+      ],
+      "acceptance": [
+        "Per-scene images sourced within budget",
+        "thumbnail rendered"
+      ]
     },
     {
       "id": "ws_client_upsell",
-      "title": "Phase 5a — client-upsell agent (promos + draft offer emails for existing site clients)",
+      "title": "Phase 5a \u2014 client-upsell agent (promos + draft offer emails for existing site clients)",
       "status": "done",
       "priority": "P1",
-      "outputs": ["autopilot/stages/client-upsell.mjs"],
-      "acceptance": ["Discovers clients from sites/ + ../famtastic-sites/", "Extracts brand accent from spec.json", "Generates branded promo + staged offer email", "Verified against site-mbsh-reunion with a real rendered MP4"]
+      "outputs": [
+        "autopilot/stages/client-upsell.mjs"
+      ],
+      "acceptance": [
+        "Discovers clients from sites/ + ../famtastic-sites/",
+        "Extracts brand accent from spec.json",
+        "Generates branded promo + staged offer email",
+        "Verified against site-mbsh-reunion with a real rendered MP4"
+      ]
     },
     {
       "id": "ws_flip_tracker",
-      "title": "Phase 5b — build-and-flip channel-growth tracker",
+      "title": "Phase 5b \u2014 build-and-flip channel-growth tracker",
       "status": "todo",
       "priority": "P2",
-      "outputs": ["autopilot/stages/flip-tracker.mjs"],
-      "acceptance": ["Channel growth tracked toward sale thresholds", "Flags sale-ready candidates"]
+      "outputs": [
+        "autopilot/stages/flip-tracker.mjs"
+      ],
+      "acceptance": [
+        "Channel growth tracked toward sale thresholds",
+        "Flags sale-ready candidates"
+      ]
     },
     {
       "id": "ws_client_email_send",
-      "title": "Phase 5a.1 — live client email send (Resend/SMTP)",
+      "title": "Phase 5a.1 \u2014 live client email send (Resend/SMTP)",
       "status": "todo",
       "priority": "P2",
-      "outputs": ["autopilot/lib/email.mjs"],
-      "acceptance": ["With sender + provider creds and live=true, offer emails actually send", "Bounce/reply handling"]
+      "outputs": [
+        "autopilot/lib/email.mjs"
+      ],
+      "acceptance": [
+        "With sender + provider creds and live=true, offer emails actually send",
+        "Bounce/reply handling"
+      ]
     },
     {
       "id": "ws_hardening",
-      "title": "Phase 6 — hardening (cron in prod, circuit breakers, dashboard, post-eval)",
+      "title": "Phase 6 \u2014 hardening (cron in prod, circuit breakers, dashboard, post-eval)",
       "status": "todo",
       "priority": "P2",
-      "outputs": ["autopilot/install-cron.sh (installed)", "post-eval integration"],
-      "acceptance": ["Scheduled ticks run in prod", "consecutive-failure breaker", "status dashboard"]
+      "outputs": [
+        "autopilot/install-cron.sh (installed)",
+        "post-eval integration"
+      ],
+      "acceptance": [
+        "Scheduled ticks run in prod",
+        "consecutive-failure breaker",
+        "status dashboard"
+      ]
     }
   ],
-  "open_task_ids": ["ws_live_publishing", "ws_real_analytics", "ws_broll", "ws_flip_tracker", "ws_client_email_send", "ws_hardening"]
+  "open_task_ids": [
+    "ws_live_publishing",
+    "ws_real_analytics",
+    "ws_broll",
+    "ws_flip_tracker",
+    "ws_client_email_send",
+    "ws_hardening"
+  ]
 }

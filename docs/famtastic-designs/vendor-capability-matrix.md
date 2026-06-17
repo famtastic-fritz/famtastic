@@ -13,6 +13,15 @@ Interpretation:
 - The winning pattern is not “pick one provider.” It is “route by task class, latency sensitivity, observability needs, and context-shape.”
 - For FAMtastic, the real leverage is modular worker specialization plus selective provider-native offload.
 
+## Active orchestration rule update
+
+Observation:
+- As of 2026-06-16, plan discussion alone is not sufficient for live multi-session work. Active sessions need an explicit work-packet restatement to avoid drift between conversational intent and execution-lane truth.
+
+Interpretation:
+- For FAMtastic orchestration, the minimum actionable packet is now: goal, tasks, branch, worktree, main-landing expectation, truth-surface updates (especially capability-matrix updates), and proof.
+- If branch/worktree are not needed, the packet should say that explicitly instead of omitting the fields.
+
 ## Executive matrix
 
 | Task class | Modality | OpenAI strengths | Anthropic strengths | Google/Gemini strengths | AWS/Bedrock angle | Native features relevant to task | Cheapest sufficient pattern | Premium escalation pattern | Recommended worker shape | Observability / eval needs | Caveats / risks |

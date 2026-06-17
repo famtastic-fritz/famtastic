@@ -1,19 +1,24 @@
 {
   "schema_version": "1.0",
   "id": "shay-omnipresent-assistant",
-  "title": "Shay — Omnipresent Virtual Assistant",
+  "title": "Shay \u2014 Omnipresent Virtual Assistant",
   "status": "active",
+  "classification": {
+    "studio": "shay",
+    "plan_type": "summary",
+    "stream": "shay-platform"
+  },
   "role": "product",
   "fritz_priority": "high",
   "originator": "Fritz",
   "origin_surface": "Claude Code (web)",
-  "summary": "Build Shay from a Telegram-only assistant into a true omnipresent virtual assistant: manager-grade, with a virtual body (avatar/voice/persona), reachable everywhere Fritz is — smartphone, web, voice (Alexa/Google), smartwatch (watchOS/WearOS), and AR/smart glasses — and able to reach him first across all of them. Working assumption: the exact assistant Fritz wants does NOT exist as one product; it exists only in pieces, so we compose it on top of the existing Shay runtime (Hermes-based, ~/.shay/).",
+  "summary": "Build Shay from a Telegram-only assistant into a true omnipresent virtual assistant: manager-grade, with a virtual body (avatar/voice/persona), reachable everywhere Fritz is \u2014 smartphone, web, voice (Alexa/Google), smartwatch (watchOS/WearOS), and AR/smart glasses \u2014 and able to reach him first across all of them. Working assumption: the exact assistant Fritz wants does NOT exist as one product; it exists only in pieces, so we compose it on top of the existing Shay runtime (Hermes-based, ~/.shay/).",
   "research_first": "docs/shay-fritz-ready/VIRTUAL-ASSISTANT-LANDSCAPE.md (in progress) maps existing products, open-source building blocks, the reach/notification fabric, and virtual-body options, then recommends a build-on stack.",
   "phases": [
-    "P0 Research — landscape report (running).",
-    "P1 Reach fabric — one service that delivers to push/SMS/voice/Telegram/email/Alexa/wearable/glasses with channel fallback.",
-    "P2 Virtual body — avatar + voice + persona, cost/latency-aware.",
-    "P3 Ubiquity — wearables and smart glasses within platform limits."
+    "P0 Research \u2014 landscape report (running).",
+    "P1 Reach fabric \u2014 one service that delivers to push/SMS/voice/Telegram/email/Alexa/wearable/glasses with channel fallback.",
+    "P2 Virtual body \u2014 avatar + voice + persona, cost/latency-aware.",
+    "P3 Ubiquity \u2014 wearables and smart glasses within platform limits."
   ],
   "open_tasks": [
     "task-2026-06-02-006",
@@ -22,7 +27,7 @@
     "task-2026-06-02-009"
   ],
   "known_gaps": [
-    "Device-platform lock-ins (Apple/Meta/Amazon) will limit some reach channels — to be characterized by the research before committing to a channel.",
-    "Virtual-body (real-time avatar/voice) cost and latency are unproven for always-on use — needs the P2 tradeoff study."
+    "Device-platform lock-ins (Apple/Meta/Amazon) will limit some reach channels \u2014 to be characterized by the research before committing to a channel.",
+    "Virtual-body (real-time avatar/voice) cost and latency are unproven for always-on use \u2014 needs the P2 tradeoff study."
   ]
 }

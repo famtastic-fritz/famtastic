@@ -1,14 +1,19 @@
 {
   "schema_version": "1.0",
   "id": "autonomous-content-engine",
-  "title": "Autonomous Content Engine — Hands-off SEO/Affiliate Site",
+  "title": "Autonomous Content Engine \u2014 Hands-off SEO/Affiliate Site",
   "status": "active",
+  "classification": {
+    "studio": "cross-platform",
+    "plan_type": "summary",
+    "stream": "income"
+  },
   "role": "product",
   "fritz_priority": "high",
   "originator": "Fritz",
   "origin_surface": "Claude Code (web)",
   "summary": "Fritz's explicit ask: a revenue process he is NOT involved in. He chose the most hands-off seed (autonomous content engine) over ad-funded/audience/marketplace paths, accepting the tradeoff. The engine (scripts/content-engine/) auto-generates quality-gated, niche, FTC-disclosed SEO articles, assembles a lean static site, and publishes on a cron. Monetized via affiliate links + display ads. Production article generation reuses site-studio/lib/brain-interface.js; runs offline with a deterministic template fallback (this container is firewalled).",
-  "honesty": "This is the SLOWEST, least-reliable money path — chosen for minimum involvement, not speed. Realistic: ~$0 for 2-4 months, then small ad/affiliate income IF it ranks. Google actively demotes mass AI spam (scaled-content-abuse policy), so the engine is quality-gated, not a spam farm. Three one-time steps are legally Fritz-only and CANNOT be automated: creating an Amazon Associates and/or ad-network account, and pointing a domain at the deploy target.",
+  "honesty": "This is the SLOWEST, least-reliable money path \u2014 chosen for minimum involvement, not speed. Realistic: ~$0 for 2-4 months, then small ad/affiliate income IF it ranks. Google actively demotes mass AI spam (scaled-content-abuse policy), so the engine is quality-gated, not a spam farm. Three one-time steps are legally Fritz-only and CANNOT be automated: creating an Amazon Associates and/or ad-network account, and pointing a domain at the deploy target.",
   "open_tasks": [
     "task-2026-06-02-ace-01",
     "task-2026-06-02-ace-02",
@@ -16,8 +21,8 @@
     "task-2026-06-02-ace-04"
   ],
   "known_gaps": [
-    "Monetization accounts (Amazon Associates / Ezoic / AdSense) must be created by Fritz — an agent legally cannot sign up as him.",
-    "Affiliate/ad networks pay to a bank account, not Cash App directly — the $FAMtasticFritz cashtag does not apply to this revenue path.",
+    "Monetization accounts (Amazon Associates / Ezoic / AdSense) must be created by Fritz \u2014 an agent legally cannot sign up as him.",
+    "Affiliate/ad networks pay to a bank account, not Cash App directly \u2014 the $FAMtasticFritz cashtag does not apply to this revenue path.",
     "Ranking is a months-long compounding game; early earnings are effectively $0. This is an asset that appreciates, not a fast dollar.",
     "Deploy (Netlify/Pages) + live LLM generation run on Fritz's Mac; the cloud container is firewalled."
   ]

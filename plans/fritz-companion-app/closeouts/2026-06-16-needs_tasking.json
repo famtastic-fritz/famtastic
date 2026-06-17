@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "fritz-companion-app",
+  "verdict": "needs_tasking",
+  "verdict_at": "2026-06-16T21:15:00.000Z",
+  "verdict_by": "shay-shay",
+  "remaining_work": [
+    "Choose the client stack, define secure off-LAN gateway access, build the thin mobile shell, and define proactive-send policy."
+  ],
+  "evidence": [
+    {
+      "type": "doc",
+      "ref": "plans/fritz-companion-app/plan.json",
+      "note": "Plan file already names four open task ids and the current open questions."
+    },
+    {
+      "type": "doc",
+      "ref": "tasks/tasks.jsonl",
+      "note": "Backfilled task ledger rows for the four open tasks."
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-06-02-010",
+    "task-2026-06-02-011",
+    "task-2026-06-02-012",
+    "task-2026-06-02-013"
+  ]
+}
