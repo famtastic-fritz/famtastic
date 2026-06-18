@@ -1,0 +1,86 @@
+[2026-06-18T04:08:59.750Z] [orchestrator] seeded tasks count=20
+[2026-06-18T04:08:59.750Z] [orchestrator] orchestrator boot mode=demo
+[2026-06-18T04:08:59.751Z] [orchestrator] batch start batch=1 pending=20 concurrency=2
+[2026-06-18T04:08:59.751Z] [orchestrator] capacity decision pending=20 concurrency=2 active=0 spawn=2
+[2026-06-18T04:08:59.757Z] [orchestrator] minted worker kind kind=triage module=worker_triage.py
+[2026-06-18T04:08:59.758Z] [orchestrator] spawned worker worker_id=W-1-a7edb9 task_id=1 kind=triage pid=6410
+[2026-06-18T04:08:59.763Z] [orchestrator] spawned worker worker_id=W-1-c55e54 task_id=9 kind=triage pid=6411
+[2026-06-18T04:08:59.815Z] [orchestrator] capacity decision pending=18 concurrency=2 active=2 spawn=0
+[2026-06-18T04:08:59.868Z] [orchestrator] capacity decision pending=18 concurrency=2 active=2 spawn=0
+[2026-06-18T04:08:59.919Z] [orchestrator] retired worker worker_id=W-1-a7edb9 task_id=1 exit=0 status=done model=worker-mid cost_usd=0.000323
+[2026-06-18T04:08:59.920Z] [orchestrator] retired worker worker_id=W-1-c55e54 task_id=9 exit=0 status=done model=worker-mid cost_usd=0.000382
+[2026-06-18T04:08:59.920Z] [orchestrator] capacity decision pending=18 concurrency=2 active=0 spawn=2
+[2026-06-18T04:08:59.927Z] [orchestrator] minted worker kind kind=classify module=worker_classify.py
+[2026-06-18T04:08:59.927Z] [orchestrator] spawned worker worker_id=W-1-65da9e task_id=2 kind=classify pid=6412
+[2026-06-18T04:08:59.934Z] [orchestrator] spawned worker worker_id=W-1-8b167e task_id=10 kind=classify pid=6413
+[2026-06-18T04:08:59.986Z] [orchestrator] capacity decision pending=16 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.037Z] [orchestrator] capacity decision pending=16 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.089Z] [orchestrator] retired worker worker_id=W-1-65da9e task_id=2 exit=0 status=done model=worker-mid cost_usd=0.000256
+[2026-06-18T04:09:00.089Z] [orchestrator] retired worker worker_id=W-1-8b167e task_id=10 exit=0 status=done model=worker-mid cost_usd=0.000235
+[2026-06-18T04:09:00.090Z] [orchestrator] capacity decision pending=16 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:00.095Z] [orchestrator] minted worker kind kind=summarize module=worker_summarize.py
+[2026-06-18T04:09:00.096Z] [orchestrator] spawned worker worker_id=W-1-82365e task_id=3 kind=summarize pid=6414
+[2026-06-18T04:09:00.101Z] [orchestrator] spawned worker worker_id=W-1-4c5a38 task_id=4 kind=summarize pid=6415
+[2026-06-18T04:09:00.153Z] [orchestrator] capacity decision pending=14 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.206Z] [orchestrator] capacity decision pending=14 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.257Z] [orchestrator] retired worker worker_id=W-1-82365e task_id=3 exit=0 status=done model=worker-mid cost_usd=0.0003
+[2026-06-18T04:09:00.257Z] [orchestrator] retired worker worker_id=W-1-4c5a38 task_id=4 exit=0 status=done model=worker-mid cost_usd=0.000233
+[2026-06-18T04:09:00.258Z] [orchestrator] capacity decision pending=14 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:00.265Z] [orchestrator] spawned worker worker_id=W-1-0e2ae6 task_id=11 kind=summarize pid=6416
+[2026-06-18T04:09:00.271Z] [orchestrator] spawned worker worker_id=W-1-07317b task_id=13 kind=triage pid=6417
+[2026-06-18T04:09:00.323Z] [orchestrator] capacity decision pending=12 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.375Z] [orchestrator] capacity decision pending=12 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.426Z] [orchestrator] retired worker worker_id=W-1-0e2ae6 task_id=11 exit=0 status=done model=worker-mid cost_usd=0.000355
+[2026-06-18T04:09:00.426Z] [orchestrator] retired worker worker_id=W-1-07317b task_id=13 exit=0 status=done model=worker-mid cost_usd=0.000215
+[2026-06-18T04:09:00.427Z] [orchestrator] capacity decision pending=12 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:00.433Z] [orchestrator] spawned worker worker_id=W-1-0ac36c task_id=14 kind=classify pid=6418
+[2026-06-18T04:09:00.438Z] [orchestrator] spawned worker worker_id=W-1-8022fe task_id=15 kind=summarize pid=6419
+[2026-06-18T04:09:00.490Z] [orchestrator] capacity decision pending=10 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.542Z] [orchestrator] capacity decision pending=10 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.594Z] [orchestrator] retired worker worker_id=W-1-0ac36c task_id=14 exit=0 status=done model=worker-mid cost_usd=0.000282
+[2026-06-18T04:09:00.594Z] [orchestrator] retired worker worker_id=W-1-8022fe task_id=15 exit=0 status=done model=worker-mid cost_usd=0.000224
+[2026-06-18T04:09:00.595Z] [orchestrator] capacity decision pending=10 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:00.607Z] [orchestrator] minted worker kind kind=research module=worker_research.py
+[2026-06-18T04:09:00.607Z] [orchestrator] spawned worker worker_id=W-1-9b4cdb task_id=16 kind=research pid=6420
+[2026-06-18T04:09:00.615Z] [orchestrator] minted worker kind kind=codegen module=worker_codegen.py
+[2026-06-18T04:09:00.615Z] [orchestrator] spawned worker worker_id=W-1-dbc4b4 task_id=17 kind=codegen pid=6421
+[2026-06-18T04:09:00.667Z] [orchestrator] capacity decision pending=8 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.720Z] [orchestrator] capacity decision pending=8 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.772Z] [orchestrator] retired worker worker_id=W-1-9b4cdb task_id=16 exit=0 status=done model=worker-strong cost_usd=0.006822
+[2026-06-18T04:09:00.772Z] [orchestrator] retired worker worker_id=W-1-dbc4b4 task_id=17 exit=0 status=done model=worker-strong cost_usd=0.0062
+[2026-06-18T04:09:00.772Z] [orchestrator] capacity decision pending=8 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:00.779Z] [orchestrator] spawned worker worker_id=W-1-19850f task_id=18 kind=triage pid=6422
+[2026-06-18T04:09:00.785Z] [orchestrator] spawned worker worker_id=W-1-154b92 task_id=19 kind=classify pid=6423
+[2026-06-18T04:09:00.838Z] [orchestrator] capacity decision pending=6 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.890Z] [orchestrator] capacity decision pending=6 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:00.941Z] [orchestrator] retired worker worker_id=W-1-19850f task_id=18 exit=0 status=done model=worker-mid cost_usd=0.000324
+[2026-06-18T04:09:00.941Z] [orchestrator] retired worker worker_id=W-1-154b92 task_id=19 exit=0 status=done model=worker-mid cost_usd=0.000265
+[2026-06-18T04:09:00.942Z] [orchestrator] capacity decision pending=6 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:00.949Z] [orchestrator] spawned worker worker_id=W-1-390673 task_id=20 kind=summarize pid=6424
+[2026-06-18T04:09:00.955Z] [orchestrator] spawned worker worker_id=W-1-b81370 task_id=5 kind=research pid=6425
+[2026-06-18T04:09:01.010Z] [orchestrator] capacity decision pending=4 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:01.062Z] [orchestrator] capacity decision pending=4 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:01.114Z] [orchestrator] retired worker worker_id=W-1-390673 task_id=20 exit=0 status=done model=worker-mid cost_usd=0.000319
+[2026-06-18T04:09:01.114Z] [orchestrator] retired worker worker_id=W-1-b81370 task_id=5 exit=0 status=done model=worker-strong cost_usd=0.003678
+[2026-06-18T04:09:01.115Z] [orchestrator] capacity decision pending=4 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:01.127Z] [orchestrator] spawned worker worker_id=W-1-9e396b task_id=6 kind=research pid=6426
+[2026-06-18T04:09:01.133Z] [orchestrator] spawned worker worker_id=W-1-e23f94 task_id=7 kind=codegen pid=6427
+[2026-06-18T04:09:01.185Z] [orchestrator] capacity decision pending=2 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:01.237Z] [orchestrator] capacity decision pending=2 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:01.289Z] [orchestrator] retired worker worker_id=W-1-9e396b task_id=6 exit=0 status=done model=worker-strong cost_usd=0.00557
+[2026-06-18T04:09:01.289Z] [orchestrator] retired worker worker_id=W-1-e23f94 task_id=7 exit=0 status=done model=worker-strong cost_usd=0.004397
+[2026-06-18T04:09:01.290Z] [orchestrator] capacity decision pending=2 concurrency=2 active=0 spawn=2
+[2026-06-18T04:09:01.296Z] [orchestrator] spawned worker worker_id=W-1-4f8bdd task_id=8 kind=codegen pid=6428
+[2026-06-18T04:09:01.301Z] [orchestrator] spawned worker worker_id=W-1-022f23 task_id=12 kind=research pid=6429
+[2026-06-18T04:09:01.353Z] [orchestrator] capacity decision pending=0 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:01.406Z] [orchestrator] capacity decision pending=0 concurrency=2 active=2 spawn=0
+[2026-06-18T04:09:01.458Z] [orchestrator] retired worker worker_id=W-1-4f8bdd task_id=8 exit=0 status=done model=worker-strong cost_usd=0.007008
+[2026-06-18T04:09:01.458Z] [orchestrator] retired worker worker_id=W-1-022f23 task_id=12 exit=0 status=done model=worker-strong cost_usd=0.003858
+[2026-06-18T04:09:01.458Z] [orchestrator] capacity decision pending=0 concurrency=2 active=0 spawn=0
+[2026-06-18T04:09:01.461Z] [orchestrator] self-improvement applied batch=1 reasons="avg cost $0.0021 well under target -> lower escalation bar 0.55→0.52 (allow more quality);queue drained -> poll slower 2→3s"
+[2026-06-18T04:09:01.462Z] [orchestrator] retired idle worker kind kind=classify
+[2026-06-18T04:09:01.462Z] [orchestrator] retired idle worker kind kind=codegen
+[2026-06-18T04:09:01.462Z] [orchestrator] retired idle worker kind kind=research
+[2026-06-18T04:09:01.462Z] [orchestrator] retired idle worker kind kind=summarize
+[2026-06-18T04:09:01.462Z] [orchestrator] retired idle worker kind kind=triage
+[2026-06-18T04:09:01.464Z] [orchestrator] orchestrator demo complete spawned_total=20 done=20

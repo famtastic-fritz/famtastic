@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="3">
+<title>Agent Factory — Status</title>
+<style>
+  :root { --bg:#0b0f14; --card:#131a22; --ink:#e6edf3; --dim:#7d8a99;
+           --ok:#3fb950; --warn:#d29922; --acc:#58a6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+          font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; padding:24px; }
+  h1 { font-size:18px; margin:0 0 4px; letter-spacing:.04em; }
+  .sub { color:var(--dim); margin-bottom:20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+           gap:16px; }
+  .card { background:var(--card); border:1px solid #20303f; border-radius:10px;
+           padding:16px; }
+  .card h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em;
+              color:var(--dim); margin:0 0 10px; }
+  .big { font-size:30px; font-weight:700; }
+  .acc { color:var(--acc); } .ok { color:var(--ok); } .dim { color:var(--dim); }
+  table { width:100%; border-collapse:collapse; }
+  td { padding:4px 6px; border-bottom:1px solid #1d2a36; }
+  .progress { height:10px; background:#1d2a36; border-radius:6px; overflow:hidden;
+               margin-top:8px; }
+  .progress > span { display:block; height:100%; background:var(--ok);
+                      width:100%; }
+</style></head><body>
+<h1>AGENT FACTORY</h1>
+<div class="sub">live status · auto-refresh 3s · batch 1 ·
+  generated 2026-06-18T04:09:01.462Z</div>
+<div class="grid">
+  <div class="card"><h2>Queue depth</h2>
+    <div class="big">0<span class="dim"> pending</span></div>
+    <div class="progress"><span></span></div>
+    <div class="dim">done 20 · running 0 ·
+      failed 0 · total 20</div></div>
+  <div class="card"><h2>Throughput / $</h2>
+    <div class="big acc">485 tasks/$</div>
+    <div class="dim">20 done for $0.04124</div></div>
+  <div class="card"><h2>Active agents</h2>
+    <div class="big">0</div>
+    <div class="dim">spawned total 20 ·
+      kinds: —</div></div>
+  <div class="card"><h2>Self-tuned knobs</h2>
+    <div>concurrency <b>2</b></div>
+    <div>escalation threshold <b>0.52</b></div>
+    <div>poll interval <b>3s</b></div></div>
+</div>
+<div class="grid" style="margin-top:16px">
+  <div class="card"><h2>Active workers</h2>
+    <table><tr><td>worker</td><td>kind</td><td>task</td><td>age</td></tr>
+    <tr><td colspan=4 class=dim>none active</td></tr></table></div>
+  <div class="card"><h2>Spend by model</h2>
+    <table><tr><td>model</td><td>tasks</td><td>cost</td></tr>
+    <tr><td>worker-mid</td><td>13</td><td>$0.00371</td></tr><tr><td>worker-strong</td><td>7</td><td>$0.03753</td></tr></table></div>
+  <div class="card"><h2>In-process scheduler</h2>
+    <table><tr><td>job</td><td>interval</td><td>runs</td><td>due in</td></tr>
+    <tr><td colspan=4 class=dim>scheduler idle (demo mode)</td></tr></table></div>
+</div>
+</body></html>

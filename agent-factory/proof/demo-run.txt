@@ -1,0 +1,30 @@
+{
+  "batches": 1,
+  "spawned_total": 20,
+  "queue": {
+    "pending": 0,
+    "claimed": 0,
+    "running": 0,
+    "done": 20,
+    "failed": 0,
+    "total": 20
+  },
+  "global": {
+    "done": 20,
+    "total_cost_usd": 0.041245,
+    "tokens_in": 889,
+    "tokens_out": 5910,
+    "by_model": [
+      {
+        "model": "worker-mid",
+        "tasks": 13,
+        "cost_usd": 0.003713
+      },
+      {
+        "model": "worker-strong",
+        "tasks": 7,
+        "cost_usd": 0.037532
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "description": "Tunable parameters. The self-improvement loop adjusts ONLY the numbers below, within the declared bounds. Core logic is never rewritten.",
+  "concurrency": 2,
+  "bounds": {
+    "concurrency": [1, 6],
+    "complexity_threshold": [0.25, 0.85],
+    "poll_interval_seconds": [1, 10]
+  },
+  "idle_retire_seconds": 4,
+  "poll_interval_seconds": 2,
+  "batch_size": 8,
+  "routing": {
+    "complexity_threshold": 0.55,
+    "escalate_on_low_confidence": true,
+    "triage_model": "triage-cheap",
+    "default_model": "worker-mid",
+    "escalation_model": "worker-strong"
+  },
+  "targets": {
+    "min_success_rate": 0.9,
+    "max_avg_cost_usd": 0.02
+  },
+  "tuning_history": []
+}

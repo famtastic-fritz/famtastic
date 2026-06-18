@@ -114,3 +114,16 @@ scripts/Screenshot*
 
 # Autopilot runtime ledgers mirrored into the data-center
 data-center/ledgers/autopilot-*.jsonl
+
+# agent-factory sandbox — track source, ignore its isolated env, inner-repo
+# pointer, runtime DB/state, and programmatically minted worker instances.
+agent-factory/.git
+agent-factory/.venv/
+agent-factory/data/*.db
+agent-factory/data/*.db-wal
+agent-factory/data/*.db-shm
+agent-factory/data/state.json
+agent-factory/workers/worker_*.py
+agent-factory/logs/*.log
+agent-factory/COSTS.log
+agent-factory/dashboard/index.html

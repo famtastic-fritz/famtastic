@@ -1,0 +1,12 @@
+┌─ AGENT FACTORY ─────────────────────────────────────────────┐
+│ batch 1    concurrency 2  esc-threshold 0.52  poll 3s
+│ queue: ██████████████████████████████
+│   pending 0  running 0  done 20  failed 0  total 20
+│ active workers: 0   spawned total: 20
+│ minted kinds: —
+│ THROUGHPUT-PER-DOLLAR: 485 tasks/$  (done 20 for $0.04124)
+│   worker-mid      13 tasks  $0.00371
+│   worker-strong    7 tasks  $0.03753
+└─────────────────────────────────────────────────────────────┘
+
+HTML dashboard: /home/user/famtastic/agent-factory/dashboard/index.html
