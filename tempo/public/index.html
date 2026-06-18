@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tempo — focus & tasks</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">⏱️ Tempo</h1>
+    <p class="tagline">Track your tasks and the focused time you spend on them.</p>
+  </header>
+
+  <main class="layout">
+    <!-- Stats -->
+    <section class="card stats" aria-label="Today">
+      <h2>Today</h2>
+      <div class="stat-grid">
+        <div class="stat"><span class="num" id="stat-focus">0</span><span class="lbl">focus min</span></div>
+        <div class="stat"><span class="num" id="stat-done">0</span><span class="lbl">completed</span></div>
+        <div class="stat"><span class="num" id="stat-active">0</span><span class="lbl">active</span></div>
+      </div>
+    </section>
+
+    <!-- Timer -->
+    <section class="card timer" aria-label="Focus timer">
+      <h2>Focus session</h2>
+      <div class="timer-display" id="timer-display">25:00</div>
+      <label class="field">
+        Working on
+        <select id="timer-task">
+          <option value="">— No specific task —</option>
+        </select>
+      </label>
+      <div class="timer-controls">
+        <label class="field minutes">
+          Minutes
+          <input type="number" id="timer-minutes" min="1" max="180" value="25" />
+        </label>
+        <button id="timer-start" class="btn btn-primary">Start</button>
+        <button id="timer-stop" class="btn" disabled>Stop</button>
+      </div>
+      <p class="hint" id="timer-hint">Pick a length and press Start. Finishing logs the time.</p>
+    </section>
+
+    <!-- Tasks -->
+    <section class="card tasks" aria-label="Tasks">
+      <h2>Tasks</h2>
+      <form id="task-form" class="task-form">
+        <input id="task-input" type="text" placeholder="Add a task and press Enter…" autocomplete="off" />
+        <button type="submit" class="btn btn-primary">Add</button>
+      </form>
+      <ul id="task-list" class="task-list"></ul>
+      <p class="empty" id="task-empty" hidden>No tasks yet. Add your first one above.</p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
