@@ -11,6 +11,7 @@
 #   paypal      create DRAFT PayPal invoices (stub offline) + show artifacts
 #   resilience  mix good + failing + stale tasks: prove fail + requeue paths
 #   scorecard   run every check and print a PASS/FAIL summary (no repo churn)
+#   walkthrough narrated tour: routing -> resilience -> paypal -> autonomy
 #   status      print the dashboard for the current state
 #   clean       wipe runtime state (db, logs, deliverables) for a fresh run
 #
@@ -132,6 +133,36 @@ m=queue_db.metrics(); print(f\"  success_rate={m['success_rate']:.0%}  done={m['
   scorecard)
     echo "### SCORECARD — run every check, print PASS/FAIL (repo untouched)"
     $PY scorecard.py
+    ;;
+
+  walkthrough)
+    echo "############################################################"
+    echo "#  AGENT FACTORY — GUIDED WALKTHROUGH                       #"
+    echo "#  A narrated tour of the system's core behaviors.         #"
+    echo "############################################################"
+    sleep 1
+    echo ""
+    echo ">>> 1/4  COST-AWARE ROUTING"
+    echo "    Watch a trivial->expert spread route to cheap->premium models."
+    sleep 1; "$0" routing
+    echo ""; echo "----------------------------------------------------------"
+    echo ">>> 2/4  RESILIENCE"
+    echo "    A task that crashes fails cleanly; a task orphaned by a dead"
+    echo "    worker is automatically requeued and finishes. Success rate drops."
+    sleep 1; "$0" resilience
+    echo ""; echo "----------------------------------------------------------"
+    echo ">>> 3/4  PAYMENT (DRAFT-ONLY, NEVER SENT)"
+    echo "    Create PayPal invoice drafts offline; no money can move."
+    sleep 1; "$0" paypal
+    echo ""; echo "----------------------------------------------------------"
+    echo ">>> 4/4  AUTONOMY"
+    echo "    Start the persistent daemon, inject work LIVE, watch it self-"
+    echo "    schedule and pick it up, then stop it cleanly."
+    sleep 1; "$0" autonomy
+    echo ""; echo "############################################################"
+    echo "#  Walkthrough complete. Run './demo.sh scorecard' for a       "
+    echo "#  one-shot PASS/FAIL verdict across all capabilities.         "
+    echo "############################################################"
     ;;
 
   status)  $PY dashboard.py ;;

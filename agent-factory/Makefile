@@ -14,6 +14,7 @@ help:
 	@echo "  make run           run the bounded proof in a throwaway container"
 	@echo "  make scenario S=x  run a demo scenario (smoke|burst|routing|paypal|resilience|autonomy)"
 	@echo "  make scorecard     run all checks and print a PASS/FAIL summary"
+	@echo "  make demo          narrated walkthrough of the core behaviors"
 	@echo "  make autonomy      run the persistent-daemon live-injection demo"
 	@echo "  make eval          run + copy artifacts to OUT=$(OUT) for inspection"
 	@echo "  make shell         interactive shell inside the sandbox"
@@ -37,6 +38,10 @@ scenario: build
 .PHONY: scorecard
 scorecard: build
 	docker run --rm --entrypoint python3 $(IMAGE) scorecard.py
+
+.PHONY: demo
+demo: build
+	docker run --rm --entrypoint bash $(IMAGE) demo.sh walkthrough
 
 .PHONY: autonomy
 autonomy: build
