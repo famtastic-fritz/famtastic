@@ -555,6 +555,11 @@ U27 → Capture review flow: inbox item → note/task/project/memory, with
        provider+url+timestamp provenance
 ```
 
+> **These three units are fully specified** (files, IPC channels, acceptance
+> checklists, render-gate adaptations, and a Gemini login spike) in
+> `docs/SHAY-DESKTOP-PROVIDER-SURFACE-PRD.md`, written in the same per-unit
+> format as the ULTIMATE plan so they drop straight into the `.ralph` loop.
+
 Everything in §1.3 (manual-only, never auto-drive) and §5 (Gemini login via
 the extension/system browser) still governs these units unchanged.
 
