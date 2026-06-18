@@ -30,6 +30,21 @@ To use a different port:
 PORT=8080 node server.js
 ```
 
+## Configure (no code changes)
+
+Three things that used to be launch decisions are now knobs — see **`CONFIG.md`**.
+Precedence: env vars → `metamint.config.json` → defaults.
+
+```bash
+# in-browser engine (no backend), Pro plan (no watermark), URL-import enabled
+METAMINT_MODE=static METAMINT_PLAN=pro METAMINT_URL_CRAWL=true node server.js
+# or: cp metamint.config.example.json metamint.config.json  &&  edit it
+```
+
+- **`mode`** — `server` (calls `/api/generate`) or `static` (engine runs in the browser, no backend).
+- **`plan`** — `free` | `pro` | `agency`; drives feature flags incl. the image watermark.
+- **`urlCrawl`** — enable "import existing tags from a live URL".
+
 ## Test
 
 ```bash
@@ -77,6 +92,9 @@ Input fields: `title`, `description`, `url`, `siteName`, `author` (X handle),
 `twitterCard` (`summary_large_image`|`summary`), `locale`.
 
 `GET /api/og.svg?title=…&siteName=…&themeColor=…&url=…` — the raw share-image SVG.
+`GET /api/config` — the resolved public config the client adapts to.
+`GET /api/crawl?url=…` — parse an existing page's tags (gated by `urlCrawl`).
+`GET /engine/*.js` — the engine modules, served for `mode: static`.
 `GET /api/health` — liveness probe.
 
 ---

@@ -70,3 +70,19 @@ A running, append-only log of each phase. One entry per phase, committed as we g
   honest Known Gaps list (Pro features scoped-not-built, no auth/billing, no URL
   crawl, browser-side PNG only, approximate text wrap).
 - Final verification: `node --test` → 48 pass, 0 fail.
+
+## Phase 7 — Configurability (2026-06-18)
+- Reframed the three "final questions" as configuration instead of asking.
+- Added `src/config.js` (pure, browser-safe): `DEFAULT_CONFIG`, `PLAN_FEATURES`,
+  `resolveConfig`, `resolveFeatures`, `publicConfig`. Precedence: env → file → defaults.
+- Fork 1 (`mode`): `static` now runs the engine in-browser via `/engine/*` (no
+  backend); `server` keeps `/api/generate`. Client picks at runtime from `/api/config`.
+- Fork 2 (`plan` + `featureOverrides`): plan→feature map; the `watermark` flag is
+  fully wired through `generateAll`/`ogimage` (pro/agency drop the watermark).
+- Fork 3 (`urlCrawl`): real `src/crawl.js` (pure `parseMetaFromHtml` + gated
+  `crawlUrl`) and `GET /api/crawl`; client mounts an "Import from URL" box only
+  when enabled. 403 FEATURE_DISABLED when off.
+- Added `metamint.config.example.json` + `CONFIG.md`; gitignored the real config.
+- New tests: config (11), crawl (7), server-config (3), + server endpoints for
+  config/crawl/engine. **72 tests, 72 pass** (and pass with crawl enabled too).
+- Verified all knobs end-to-end via env + file (live crawl parsed a real page).

@@ -1,8 +1,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { server } from '../server.js';
+import { server, loadServerConfig } from '../server.js';
 
 let base;
+const activeConfig = loadServerConfig(); // reflects the server's own resolution
 
 before(async () => {
   await new Promise((resolve) => server.listen(0, resolve));
@@ -65,6 +66,35 @@ test('GET / serves the app html', async () => {
   assert.match(res.headers.get('content-type'), /text\/html/);
   const body = await res.text();
   assert.match(body, /MetaMint/);
+});
+
+test('GET /api/config returns the public config', async () => {
+  const res = await fetch(`${base}/api/config`);
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.ok(j.mode === 'server' || j.mode === 'static');
+  assert.ok(j.features && typeof j.features.watermark === 'boolean');
+  assert.ok(Array.isArray(j.pricing));
+});
+
+test('GET /api/crawl gating matches the active config', async () => {
+  const res = await fetch(`${base}/api/crawl?url=https://example.com`);
+  if (activeConfig.urlCrawl) {
+    // Enabled: a network fetch to example.com may succeed (200) or fail (502),
+    // but it must NOT be feature-gated.
+    assert.notEqual(res.status, 403);
+  } else {
+    assert.equal(res.status, 403);
+    assert.equal((await res.json()).code, 'FEATURE_DISABLED');
+  }
+});
+
+test('GET /engine/index.js serves the engine for static mode', async () => {
+  const res = await fetch(`${base}/engine/index.js`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /javascript/);
+  const body = await res.text();
+  assert.match(body, /generateAll/);
 });
 
 test('unknown path returns 404', async () => {

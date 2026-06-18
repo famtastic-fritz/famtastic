@@ -1,0 +1,24 @@
+{
+  "_comment": "Copy this to metamint.config.json to configure MetaMint. Every field is optional; omitted fields use the defaults in src/config.js. Environment variables (METAMINT_MODE, METAMINT_PLAN, METAMINT_URL_CRAWL, METAMINT_FEATURES, PORT) override anything here.",
+
+  "mode": "server",
+  "_mode": "Fork 1 — launch shape. 'server' = client calls /api/generate. 'static' = client runs the engine in-browser, no backend.",
+
+  "plan": "free",
+  "_plan": "Fork 2 — baseline paid tier: 'free' | 'pro' | 'agency'. Drives feature flags (watermark, brandedTemplates, brandPresets, bulkCsv, api).",
+
+  "featureOverrides": {},
+  "_featureOverrides": "Flip individual features on regardless of plan, e.g. { \"brandedTemplates\": true } to ship one Pro feature early.",
+
+  "urlCrawl": false,
+  "_urlCrawl": "Fork 3 — enable the 'import from a live URL' feature (server-side fetch + meta parse). Off by default.",
+
+  "port": 4317,
+
+  "brand": {
+    "name": "MetaMint",
+    "tagline": "Mint perfect social previews in 30 seconds.",
+    "themeColor": "#7c3aed",
+    "watermarkText": "made with MetaMint"
+  }
+}

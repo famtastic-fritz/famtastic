@@ -67,6 +67,8 @@ export function lighten(hex) {
  * @param {string} [input.themeColor]
  * @param {string} [input.url]
  * @param {string} [input.eyebrow] optional small label above the title
+ * @param {string|false} [input.watermark] watermark text, or false to hide it.
+ *        Defaults to 'made with MetaMint' (free-tier behavior).
  * @returns {string} SVG markup (1200x630)
  */
 export function generateOgImageSvg(input = {}) {
@@ -75,6 +77,8 @@ export function generateOgImageSvg(input = {}) {
   const title = input.title || 'Your headline goes here';
   const siteName = input.siteName || '';
   const eyebrow = input.eyebrow || (input.url ? hostOf(input.url) : '');
+  // Watermark: explicit false hides it; undefined keeps the free-tier default.
+  const watermark = input.watermark === false ? '' : (input.watermark || 'made with MetaMint');
 
   const titleLines = wrapText(title, 24, 4);
   const lineHeight = 86;
@@ -121,7 +125,13 @@ export function generateOgImageSvg(input = {}) {
         )}</text>`
       : ''
   }
-  <text x="${W - 90}" y="560" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" fill="#ffffff" opacity="0.7">made with MetaMint</text>
+  ${
+    watermark
+      ? `<text x="${W - 90}" y="560" text-anchor="end" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" fill="#ffffff" opacity="0.7">${escapeText(
+          watermark,
+        )}</text>`
+      : ''
+  }
 </svg>`;
 }
 

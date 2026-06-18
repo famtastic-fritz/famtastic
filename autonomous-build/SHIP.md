@@ -12,7 +12,7 @@ performed in the sandbox (no paid signups, no live credentials).
 1. From inside `autonomous-build/`, confirm it runs and passes:
    ```bash
    node server.js     # open http://localhost:4317, click around all 5 preview tabs
-   node --test        # expect: 48 pass, 0 fail
+   node --test        # expect: 72 pass, 0 fail
    ```
 2. Paste a real URL of your own into the tool and eyeball every platform tab.
 3. Decide the public name/domain. Recommended: **metamint.app** (short, brandable,
@@ -115,8 +115,12 @@ A complete, runnable v1 of **MetaMint**, end to end, inside `./autonomous-build/
 full client in `public/` (live inputs, six platform-faithful preview cards,
 validation score, copy-tags, SVG/PNG download).
 
-**Tests:** 6 files, **48 tests, all passing** (`node --test`), covering the engine
-and a real server integration test.
+**Tests:** 9 files, **72 tests, all passing** (`node --test`), covering the engine,
+the config resolver, the URL-crawl parser/gating, and a real server integration test.
+
+**Configurability:** `src/config.js` + `CONFIG.md` turn the three launch forks
+(deployment `mode`, `plan` feature flags, `urlCrawl`) into knobs via
+`metamint.config.json` or env vars — no code changes to switch them.
 
 **Productization:** `public/landing.html` (marketing site, itself a dogfood of
 correct tags), `public/pricing.html` (3-tier + FAQ), and `PRODUCT.md`
@@ -137,8 +141,9 @@ log), `TEST-RESULTS.md`, `LICENSE` (MIT), and this `SHIP.md`.
    → Honors the sandbox isolation contract; nothing outside the folder is touched.
 3. **Product = MetaMint** (meta-tag + share-image + multi-platform preview). → A
    universal, evergreen, easy-to-explain need with a 10-second "aha".
-4. **Input-driven, no live URL crawling in v1.** → Avoids a fetch proxy/CORS/
-   abuse surface; crawling deferred to roadmap.
+4. **URL crawling is built but off by default (configurable, not hardcoded).** →
+   The parser is pure/tested and the endpoint is gated by `urlCrawl`; shipping it
+   disabled avoids the fetch-proxy/abuse surface until you opt in.
 5. **SVG share image, no server-side PNG rasterizer.** → Keeps the zero-dep rule;
    the browser canvas handles PNG export client-side.
 6. **Missing `og:image` is a *warning*, not an error**, with copy that tells you to
@@ -154,9 +159,15 @@ log), `TEST-RESULTS.md`, `LICENSE` (MIT), and this `SHIP.md`.
 
 ## Known gaps (honest, carried into roadmap)
 
-- **Pro/Agency features are scoped, not built:** branded templates, saved brand
-  presets, custom background upload, bulk CSV, JSON-LD export, API access,
-  white-label, multi-seat. v1 emits the free-tier watermark line only.
+- **The three launch forks are now configurable** (see `CONFIG.md`): deployment
+  `mode` (server/static), `plan` (free/pro/agency) feature flags, and the
+  `urlCrawl` toggle — set via `metamint.config.json` or env vars.
+- **Watermark gating is wired and tested** end-to-end (`plan: pro` removes it).
+  **URL crawl is wired and tested** (parser is pure; endpoint gated by config).
+- **Remaining Pro/Agency features are scoped, not built:** branded templates,
+  saved brand presets, custom background upload, bulk CSV, JSON-LD export, API
+  access, white-label, multi-seat. The flags exist and are exposed in
+  `/api/config`; the feature code behind them is roadmap.
 - **No accounts / auth / database / billing wiring.** Entitlement is unimplemented.
 - **No live URL crawling** ("paste a URL, read its existing tags").
 - **PNG export is browser-side only** (no server rasterizer); headless/automated

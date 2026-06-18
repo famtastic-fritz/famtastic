@@ -7,6 +7,8 @@ const FIELDS = ['title', 'description', 'url', 'siteName', 'author', 'type', 'tw
 let activeTab = 'google';
 let last = null;
 let debounce;
+let appConfig = { mode: 'server', features: { watermark: true }, urlCrawl: false, brand: {} };
+let engine = null; // loaded lazily in static mode
 
 const DEMO = {
   title: 'MetaMint — perfect social previews in 30 seconds',
@@ -49,19 +51,29 @@ function counters() {
   setC('c-desc', $('description').value.trim().length, 155);
 }
 
+async function generateData(input) {
+  // Fork 1, configurable: in `static` mode run the engine in-browser (no
+  // backend round-trip); otherwise call the server API.
+  if (appConfig.mode === 'static') {
+    if (!engine) engine = await import('/engine/index.js');
+    return engine.generateAll(input, { ...appConfig, features: appConfig.features });
+  }
+  const res = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return res.json();
+}
+
 async function generate() {
   counters();
   const input = readInput();
   let data;
   try {
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
-    });
-    data = await res.json();
+    data = await generateData(input);
   } catch (e) {
-    $('issues').innerHTML = `<li class="sev-error"><span class="ico">●</span> Could not reach the server.</li>`;
+    $('issues').innerHTML = `<li class="sev-error"><span class="ico">●</span> Generation failed: ${esc(e.message || e)}.</li>`;
     return;
   }
   last = data;
@@ -226,8 +238,58 @@ async function copyTags() {
   }
 }
 
+// --- URL import (Fork 3) — only wired when the feature is enabled ---
+async function importFromUrl() {
+  const urlBox = $('crawl-url');
+  const url = (urlBox.value || '').trim();
+  if (!url) return;
+  $('crawl-btn').disabled = true;
+  $('crawl-btn').textContent = 'Reading…';
+  try {
+    const res = await fetch('/api/crawl?url=' + encodeURIComponent(url));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'crawl failed');
+    const m = data.meta || {};
+    const map = { title: 'title', description: 'description', url: 'url', siteName: 'siteName', author: 'author', imageUrl: 'imageUrl' };
+    for (const [k, field] of Object.entries(map)) if (m[k]) $(field).value = m[k];
+    if (m.twitterCard) $('twitterCard').value = m.twitterCard === 'summary' ? 'summary' : 'summary_large_image';
+    if (m.type) $('type').value = m.type === 'article' ? 'article' : 'website';
+    toast('Imported existing tags');
+    generate();
+  } catch (e) {
+    toast('Import failed: ' + (e.message || e));
+  } finally {
+    $('crawl-btn').disabled = false;
+    $('crawl-btn').textContent = 'Import';
+  }
+}
+
+function mountUrlImport() {
+  if (!appConfig.urlCrawl || document.getElementById('crawl-row')) return;
+  const panel = document.querySelector('.layout .panel');
+  const row = document.createElement('div');
+  row.className = 'field';
+  row.id = 'crawl-row';
+  row.innerHTML = `<label for="crawl-url">Import from a live URL</label>
+    <div style="display:flex;gap:8px">
+      <input id="crawl-url" type="url" placeholder="https://example.com/page" autocomplete="off" style="flex:1">
+      <button class="action primary" id="crawl-btn" type="button">Import</button>
+    </div>`;
+  panel.insertBefore(row, panel.children[1]);
+  $('crawl-btn').addEventListener('click', importFromUrl);
+}
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) appConfig = await res.json();
+  } catch { /* keep defaults */ }
+}
+
 // --- Wire up ---
-function init() {
+async function init() {
+  await loadConfig();
+  mountUrlImport();
   for (const f of FIELDS) {
     $(f).addEventListener('input', () => {
       clearTimeout(debounce);

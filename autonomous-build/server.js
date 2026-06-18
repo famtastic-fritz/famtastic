@@ -2,13 +2,56 @@
 // Serves the static client and a small JSON API backed by the engine in src/.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { generateAll, generateOgImageSvg, normalizeInput } from './src/index.js';
+import {
+  generateAll, generateOgImageSvg, normalizeInput,
+  resolveConfig, publicConfig, crawlUrl,
+} from './src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(__dirname, 'public');
-const PORT = process.env.PORT || 4317;
+const SRC = path.join(__dirname, 'src');
+
+/**
+ * Layer environment variables over the defaults. This is the only place env is
+ * read, so the pure config core stays browser-safe and testable.
+ *   METAMINT_MODE=static|server   METAMINT_PLAN=free|pro|agency
+ *   METAMINT_URL_CRAWL=true       METAMINT_FEATURES=brandedTemplates,bulkCsv
+ *   PORT=4317
+ */
+export function loadServerConfig(env = process.env, configPath = path.join(__dirname, 'metamint.config.json')) {
+  // 1) Start from an optional on-disk config file (the discoverable surface).
+  let fileConfig = {};
+  const fromEnvPath = env.METAMINT_CONFIG || configPath;
+  if (fromEnvPath && existsSync(fromEnvPath)) {
+    try {
+      fileConfig = JSON.parse(readFileSync(fromEnvPath, 'utf8'));
+    } catch (e) {
+      console.warn(`  [config] ignoring invalid ${fromEnvPath}: ${e.message}`);
+    }
+  }
+
+  // 2) Env vars override the file (handy for CI / one-off boots).
+  const featureOverrides = { ...(fileConfig.featureOverrides || {}) };
+  if (env.METAMINT_FEATURES) {
+    for (const f of env.METAMINT_FEATURES.split(',').map((s) => s.trim()).filter(Boolean)) {
+      featureOverrides[f] = true;
+    }
+  }
+  return resolveConfig({
+    ...fileConfig,
+    mode: env.METAMINT_MODE ?? fileConfig.mode,
+    plan: env.METAMINT_PLAN ?? fileConfig.plan,
+    urlCrawl: env.METAMINT_URL_CRAWL ? env.METAMINT_URL_CRAWL === 'true' : fileConfig.urlCrawl,
+    port: env.PORT ?? fileConfig.port,
+    featureOverrides,
+  });
+}
+
+const CONFIG = loadServerConfig();
+const PORT = CONFIG.port;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -55,10 +98,14 @@ async function readBody(req, limit = 64 * 1024) {
 }
 
 async function serveStatic(res, fileName) {
-  // Prevent path traversal: only serve from PUBLIC, no '..'.
+  return serveFrom(res, PUBLIC, fileName);
+}
+
+async function serveFrom(res, root, fileName) {
+  // Prevent path traversal: only serve from `root`, no '..'.
   const safe = path.normalize(fileName).replace(/^(\.\.[/\\])+/, '');
-  const full = path.join(PUBLIC, safe);
-  if (!full.startsWith(PUBLIC)) {
+  const full = path.join(root, safe);
+  if (!full.startsWith(root)) {
     res.writeHead(403).end('Forbidden');
     return;
   }
@@ -88,7 +135,25 @@ const server = http.createServer(async (req, res) => {
       } catch {
         return sendJson(res, 400, { error: 'invalid JSON body' });
       }
-      return sendJson(res, 200, generateAll(input));
+      return sendJson(res, 200, generateAll(input, CONFIG));
+    }
+
+    // --- API: expose the resolved public config (drives the client) ---
+    if (pathname === '/api/config' && req.method === 'GET') {
+      return sendJson(res, 200, publicConfig(CONFIG));
+    }
+
+    // --- API: URL crawl (Fork 3) — gated by config.urlCrawl ---
+    if (pathname === '/api/crawl' && req.method === 'GET') {
+      try {
+        const result = await crawlUrl(url.searchParams.get('url') || '', {
+          enabled: CONFIG.urlCrawl,
+        });
+        return sendJson(res, 200, result);
+      } catch (err) {
+        const status = err.code === 'FEATURE_DISABLED' ? 403 : err.code === 'BAD_URL' ? 400 : 502;
+        return sendJson(res, status, { error: err.message, code: err.code || 'CRAWL_ERROR' });
+      }
     }
 
     // --- API: raw OG image SVG (also usable directly as og:image) ---
@@ -108,7 +173,15 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/health') {
-      return sendJson(res, 200, { ok: true, name: 'MetaMint', version: '1.0.0' });
+      return sendJson(res, 200, {
+        ok: true, name: 'MetaMint', version: '1.0.0',
+        mode: CONFIG.mode, plan: CONFIG.plan, urlCrawl: CONFIG.urlCrawl,
+      });
+    }
+
+    // --- Engine modules (served so the client can run in `static` mode) ---
+    if (pathname.startsWith('/engine/') && (req.method === 'GET' || req.method === 'HEAD')) {
+      return serveFrom(res, SRC, pathname.slice('/engine/'.length));
     }
 
     // --- Static / page routes ---
@@ -129,7 +202,8 @@ const isMain =
   process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   server.listen(PORT, () => {
-    console.log(`\n  MetaMint running →  http://localhost:${PORT}\n`);
+    console.log(`\n  MetaMint running →  http://localhost:${PORT}`);
+    console.log(`  mode=${CONFIG.mode}  plan=${CONFIG.plan}  urlCrawl=${CONFIG.urlCrawl}\n`);
   });
 }
 
