@@ -1,0 +1,45 @@
+{
+  "_comment": "Tunable parameters. The self-improvement loop (src/selfimprove.js) may ONLY adjust values within the bounds declared in _bounds. Core code is never modified.",
+  "version": 3,
+  "concurrency": 2,
+  "batch_size": 6,
+  "idle_worker_ttl_ms": 5000,
+  "scheduler_base_interval_ms": 3000,
+  "routing": {
+    "_comment": "complexity score 0..1 estimated per task; >= threshold escalates to the next tier",
+    "escalate_to_tier2_at": 0.45,
+    "escalate_to_tier3_at": 0.8,
+    "prefer_free_stub": true
+  },
+  "retry": {
+    "max_attempts": 3,
+    "backoff_ms": 500
+  },
+  "targets": {
+    "min_success_rate": 0.9,
+    "max_avg_cost_usd": 0.02,
+    "max_avg_latency_ms": 8000
+  },
+  "_bounds": {
+    "concurrency": {
+      "min": 1,
+      "max": 6
+    },
+    "batch_size": {
+      "min": 2,
+      "max": 20
+    },
+    "scheduler_base_interval_ms": {
+      "min": 1000,
+      "max": 15000
+    },
+    "routing.escalate_to_tier2_at": {
+      "min": 0.2,
+      "max": 0.7
+    },
+    "routing.escalate_to_tier3_at": {
+      "min": 0.6,
+      "max": 0.95
+    }
+  }
+}

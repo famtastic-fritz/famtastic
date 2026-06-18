@@ -1,0 +1,42 @@
+{
+  "_comment": "OpenRouter-style model catalog. Prices are USD per 1M tokens, used by the cost ledger. Update to match live OpenRouter pricing when going live. tier ranks capability (1=cheap/fast triage, 3=strong reasoning).",
+  "updated": "2026-06-18",
+  "models": [
+    {
+      "id": "openai/gpt-oss-free",
+      "label": "stub-nano",
+      "tier": 1,
+      "input_per_m": 0.0,
+      "output_per_m": 0.0,
+      "max_context": 32000,
+      "good_for": ["triage", "classify", "extract", "short"]
+    },
+    {
+      "id": "anthropic/claude-haiku-4-5",
+      "label": "haiku",
+      "tier": 1,
+      "input_per_m": 1.0,
+      "output_per_m": 5.0,
+      "max_context": 200000,
+      "good_for": ["triage", "classify", "extract", "summarize", "draft"]
+    },
+    {
+      "id": "anthropic/claude-sonnet-4-6",
+      "label": "sonnet",
+      "tier": 2,
+      "input_per_m": 3.0,
+      "output_per_m": 15.0,
+      "max_context": 200000,
+      "good_for": ["analyze", "propose", "build", "reason", "code"]
+    },
+    {
+      "id": "anthropic/claude-opus-4-8",
+      "label": "opus",
+      "tier": 3,
+      "input_per_m": 5.0,
+      "output_per_m": 25.0,
+      "max_context": 200000,
+      "good_for": ["hard-reason", "architecture", "review", "high-stakes"]
+    }
+  ]
+}

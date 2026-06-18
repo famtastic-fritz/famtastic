@@ -1,0 +1,15 @@
+{
+  "name": "agent-factory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sandboxed self-managing multi-agent factory: spawns, routes, monitors, and retires worker agents to process a task queue cost-effectively, and improves itself between batches.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "seed": "node bin/seed.js",
+    "start": "node bin/run.js",
+    "demo": "node bin/demo.js",
+    "status": "node bin/status.js"
+  },
+  "dependencies": {}
+}
