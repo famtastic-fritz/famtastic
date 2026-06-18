@@ -12,12 +12,17 @@ Responsibilities:
 Modes:
   python orchestrator.py --cycles 5      # bounded run (used by the proof)
   python orchestrator.py --daemon        # run until queue drained, then idle-exit
+  python orchestrator.py --forever       # PERSISTENT: never exits on empty queue;
+                                         # keeps polling and processing new tasks
+                                         # until SIGINT/SIGTERM or a data/STOP file.
 """
 from __future__ import annotations
 
 import argparse
 import datetime as _dt
 import json
+import os
+import signal
 import subprocess
 import sys
 import time
@@ -29,17 +34,29 @@ import router
 import scheduler
 import self_improve
 from config_io import load_config
-from factory_paths import (AGENTS_DIR, ORCHESTRATOR_LOG, WORKER_TEMPLATE,
-                           assert_inside, rel)
+from factory_paths import (AGENTS_DIR, DATA_DIR, ORCHESTRATOR_LOG,
+                           WORKER_TEMPLATE, assert_inside, rel)
 
 WORKER_TIMEOUT_S = 90
+STOP_FILE = DATA_DIR / "STOP"  # touch this file to stop a --forever daemon
 
 
 class Orchestrator:
     def __init__(self) -> None:
         queue_db.init_db()
         self._wid = 0
-        self.log("orchestrator_start", note="supervisor online", pid=__import__("os").getpid())
+        self._stop = False
+        self.log("orchestrator_start", note="supervisor online", pid=os.getpid())
+
+    def _install_signals(self) -> None:
+        def _handler(signum, _frame):
+            self._stop = True
+            self.log("signal", signum=signum, note="graceful shutdown requested")
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            try:
+                signal.signal(sig, _handler)
+            except (ValueError, OSError):
+                pass  # not in main thread / unsupported — fall back to STOP file
 
     # --- logging -----------------------------------------------------------
     def log(self, decision: str, **fields) -> None:
@@ -169,8 +186,26 @@ class Orchestrator:
         self.log("wave_end", wave=wave, completed=completed, failed=failed)
         return {"spawned": len(procs), "completed": completed, "failed": failed}
 
+    def _should_stop(self) -> bool:
+        """Stop on signal or on the data/STOP sentinel file (forever mode)."""
+        if self._stop:
+            return True
+        if STOP_FILE.exists():
+            self.log("stop_file", note=f"{rel(STOP_FILE)} present; shutting down")
+            try:
+                STOP_FILE.unlink()  # consume it so the next start is clean
+            except OSError:
+                pass
+            self._stop = True  # sticky: never start another wave once requested
+            return True
+        return False
+
     # --- main loop ---------------------------------------------------------
-    def run(self, cycles: int | None, daemon: bool) -> None:
+    def run(self, cycles: int | None, daemon: bool, forever: bool = False) -> None:
+        self._install_signals()
+        if forever:
+            self.log("mode", mode="forever",
+                     note=f"persistent; stop via SIGINT/SIGTERM or `touch {rel(STOP_FILE)}`")
         batch_id = queue_db.start_batch()
         wave = 0
         idle_strikes = 0
@@ -178,36 +213,44 @@ class Orchestrator:
             wave += 1
             result = self.run_wave(wave)
 
-            # self-improvement after every wave (one pass per batch wave)
-            findings = self_improve.run_pass(batch_label=f"wave-{wave}")
-            self.log("self_improvement", wave=wave,
-                     changes=len(findings["changes"]),
-                     success_rate=findings["metrics"]["success_rate"],
-                     cost_per_task=findings["metrics"]["cost_per_task_usd"])
+            # Self-improvement runs after waves that did work. In forever mode we
+            # skip it on idle ticks so LEARNINGS.md doesn't grow while waiting.
+            if result.get("spawned", 0) > 0 or not forever:
+                findings = self_improve.run_pass(batch_label=f"wave-{wave}")
+                self.log("self_improvement", wave=wave,
+                         changes=len(findings["changes"]),
+                         success_rate=findings["metrics"]["success_rate"],
+                         cost_per_task=findings["metrics"]["cost_per_task_usd"])
 
             dashboard.write_html()  # refresh observability artifact
 
             pending = queue_db.pending_count()
-            if pending == 0:
-                idle_strikes += 1
-            else:
-                idle_strikes = 0
+            idle_strikes = idle_strikes + 1 if pending == 0 else 0
 
             # stop conditions
+            if self._should_stop():
+                self.log("loop_stop", reason="shutdown signal/stop-file", waves=wave)
+                break
             if cycles is not None and wave >= cycles:
                 self.log("loop_stop", reason="cycle limit reached", waves=wave)
                 break
-            if daemon and idle_strikes >= 2:
+            if not forever and daemon and idle_strikes >= 2:
                 self.log("loop_stop", reason="queue drained, idle", waves=wave)
                 break
-            if cycles is None and not daemon and pending == 0:
+            if not forever and cycles is None and not daemon and pending == 0:
                 self.log("loop_stop", reason="queue drained", waves=wave)
                 break
 
-            # adaptive, in-process scheduling decides the wait
+            # adaptive, in-process scheduling decides the wait. In forever mode an
+            # empty queue backs off to max interval (cheap polling for new work).
             interval = scheduler.next_interval(pending)
-            self.log("scheduler_tick", pending=pending, next_interval_s=interval)
-            time.sleep(interval)
+            self.log("scheduler_tick", pending=pending, next_interval_s=interval,
+                     idle_strikes=idle_strikes)
+            # sleep in small slices so a stop signal is honored promptly
+            slept = 0.0
+            while slept < interval and not self._should_stop():
+                time.sleep(min(0.5, interval - slept))
+                slept += 0.5
 
         summary = queue_db.metrics()
         queue_db.end_batch(batch_id, summary)
@@ -219,8 +262,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Agent Factory orchestrator")
     ap.add_argument("--cycles", type=int, default=None, help="bounded number of waves")
     ap.add_argument("--daemon", action="store_true", help="run until queue drained")
+    ap.add_argument("--forever", action="store_true",
+                    help="persistent daemon: never exit on empty queue; stop via "
+                         "SIGINT/SIGTERM or `touch data/STOP`")
     args = ap.parse_args()
-    Orchestrator().run(cycles=args.cycles, daemon=args.daemon)
+    Orchestrator().run(cycles=args.cycles, daemon=args.daemon, forever=args.forever)
     return 0
 
 
