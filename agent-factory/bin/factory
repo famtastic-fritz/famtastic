@@ -10,6 +10,9 @@ Usage:
   ./bin/factory status              terminal dashboard
   ./bin/factory dashboard --html    terminal dashboard + write public/dashboard.html
   ./bin/factory demo                seed --reset, run, then write the HTML dashboard
+  ./bin/factory test                full offline self-test (asserts every invariant)
+  ./bin/factory verify              prove the live model HTTP path against a local mock
+  ./bin/factory mockmodel --port N  run the OpenAI-compatible mock model server
 """
 import os
 import sys
@@ -50,6 +53,18 @@ def main():
     if cmd in ("status", "dashboard"):
         from factory import dashboard
         return dashboard.main(rest if cmd == "dashboard" else [])
+
+    if cmd == "test":
+        from factory import selftest
+        return selftest.main()
+
+    if cmd == "verify":
+        from factory import verify_live
+        return verify_live.main()
+
+    if cmd == "mockmodel":
+        from factory import mockmodel
+        return mockmodel.main(rest)
 
     if cmd == "demo":
         from factory import seed, orchestrator, dashboard, db
