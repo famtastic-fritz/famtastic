@@ -1,0 +1,102 @@
+{
+  "source": "https://github.com/LLMQuant/awesome-trading-agents",
+  "note": "Sample work derived from the awesome-trading-agents list. These tasks exercise every router tier: cheap triage/classify, mid-tier extract/summarize, and strong analyze/synthesize/plan.",
+  "tasks": [
+    {
+      "type": "classify",
+      "title": "Bucket each project into Agents / MCPs / Skills",
+      "priority": 2,
+      "payload": {"items": ["TauricResearch/TradingAgents", "alpacahq/alpaca-mcp-server", "tradermonty/claude-trading-skills", "HKUSTDial/DeepFund", "okx/onchainos-skills"]}
+    },
+    {
+      "type": "triage",
+      "title": "Flag which repos involve LIVE money vs paper/simulation",
+      "priority": 2,
+      "payload": {"items": ["LuckyOne7777/LLM-Trading-Lab (real micro-cap)", "agent-next/polymarket-paper-trader (paper)", "alpacahq/alpaca-mcp-server (paper or live)", "OctagonAI/kalshi-trading-bot-cli"]}
+    },
+    {
+      "type": "triage",
+      "title": "Tag market coverage (equities / crypto / prediction-markets / forex)",
+      "priority": 3,
+      "payload": {"items": ["krakenfx/kraken-cli", "ryanfrigo/kalshi-ai-trading-bot", "virattt/ai-hedge-fund", "ariadng/metatrader-mcp-server"]}
+    },
+    {
+      "type": "extract",
+      "title": "Extract the agent roles in the TradingAgents framework",
+      "priority": 4,
+      "payload": {"project": "TauricResearch/TradingAgents", "source": "arXiv 2412.20138", "description": "Multi-agent debate framework with analyst team, bull/bear researchers, trader, risk control, and portfolio manager roles debating before decisions."}
+    },
+    {
+      "type": "extract",
+      "title": "Extract capabilities of the data-mcp knowledge harness",
+      "priority": 4,
+      "payload": {"project": "LLMQuant/data-mcp", "description": "Knowledge harness for AI-native finance with quant wiki, research papers, equity OHLCV, crypto data, and SEC filings."}
+    },
+    {
+      "type": "summarize",
+      "title": "Summarize FinRobot for a one-paragraph catalog blurb",
+      "priority": 5,
+      "payload": {"project": "AI4Finance-Foundation/FinRobot", "source": "arXiv 2405.14767", "description": "Open-source academic finance AI agent platform; multimodal analyst agents tied to FinGPT for stock research and forecasting."}
+    },
+    {
+      "type": "summarize",
+      "title": "Summarize the LLM-Trading-Lab real-money experiment",
+      "priority": 5,
+      "payload": {"project": "LuckyOne7777/LLM-Trading-Lab", "description": "Six-month forward-only experiment where ChatGPT managed a real US-equity micro-cap portfolio under strict rules."}
+    },
+    {
+      "type": "summarize",
+      "title": "Summarize the three MCP brokerage-execution servers",
+      "priority": 5,
+      "payload": {"items": ["alpacahq/alpaca-mcp-server", "krakenfx/kraken-cli", "okx/agent-trade-kit"]}
+    },
+    {
+      "type": "compare",
+      "title": "Compare single-agent vs multi-agent trading architectures",
+      "priority": 6,
+      "payload": {"single_agent": ["TraderAlice/OpenAlice", "chrisworsey55/atlas-gic"], "multi_agent": ["TauricResearch/TradingAgents", "virattt/ai-hedge-fund", "AI4Finance-Foundation/FinRobot"], "question": "When is the debate/portfolio-manager structure worth the extra cost vs a single self-improving agent?"}
+    },
+    {
+      "type": "compare",
+      "title": "Compare the two benchmark frameworks",
+      "priority": 6,
+      "payload": {"items": ["ulab-uiuc/live-trade-bench (live-market eval)", "HKUSTDial/DeepFund (multi-agent fund benchmark + leaderboard, arXiv 2505.11065)"], "axes": ["evaluation realism", "reproducibility", "what they measure"]}
+    },
+    {
+      "type": "analyze",
+      "title": "Analyze risk controls across the agent projects",
+      "priority": 7,
+      "payload": {"projects": ["TradingAgents (risk control role)", "ai-hedge-fund (portfolio manager decides)", "LLM-Trading-Lab (strict rules)", "kalshi bots (order-book comparison)"], "question": "What risk-management patterns recur, and where are the gaps for an autonomous trader?"}
+    },
+    {
+      "type": "analyze",
+      "title": "Analyze the role of memory MCPs for trading agents",
+      "priority": 7,
+      "payload": {"project": "mnemox-ai/tradememory-protocol", "description": "Memory MCP recording decision rationale and outcomes for AI trading agents.", "question": "How does persistent decision/outcome memory change agent performance and auditability?"}
+    },
+    {
+      "type": "synthesize",
+      "title": "Synthesize an architecture for an agent that uses these MCPs + Skills",
+      "priority": 8,
+      "payload": {"data_layer": ["LLMQuant/data-mcp", "financial-datasets/mcp-server"], "execution_layer": ["alpacahq/alpaca-mcp-server"], "skills": ["tradermonty/claude-trading-skills", "marketcalls/vectorbt-backtesting-skills"], "goal": "Compose a research->backtest->paper-trade pipeline from the listed components."}
+    },
+    {
+      "type": "synthesize",
+      "title": "Synthesize the key lessons from the Resources/papers section",
+      "priority": 8,
+      "payload": {"papers": ["TradingAgents (2412.20138)", "FinRobot (2405.14767)", "DeepFund (2505.11065)", "LLM-Trading-Lab audit"], "goal": "What does the published evidence say about LLM trading-agent viability?"}
+    },
+    {
+      "type": "plan",
+      "title": "Plan a safe evaluation harness to vet these agents offline",
+      "priority": 9,
+      "payload": {"constraints": ["no live spend", "paper-trading only", "reproducible"], "inputs": ["live-trade-bench", "DeepFund", "vectorbt skills", "polymarket-paper-trader"], "goal": "Ordered plan to benchmark a candidate trading agent without risking capital."}
+    },
+    {
+      "type": "plan",
+      "title": "Plan how to extend THIS agent factory to dispatch real trading-agent jobs",
+      "priority": 9,
+      "payload": {"goal": "Turn seeded research tasks into a recurring pipeline that ingests the awesome-trading-agents list, refreshes it, and routes deep-dives to stronger models only when a project looks promising."}
+    }
+  ]
+}
