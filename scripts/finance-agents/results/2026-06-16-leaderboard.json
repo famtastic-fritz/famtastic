@@ -1,0 +1,222 @@
+{
+  "generatedAt": "2026-06-18T02:11:10.092Z",
+  "simulation": true,
+  "liveBrokerage": false,
+  "dataSource": "LIVE",
+  "isSampleData": false,
+  "session": "2026-06-16",
+  "priorSession": "2026-06-15",
+  "stake": 10,
+  "basket": [
+    {
+      "display": "SPY",
+      "source": "LIVE:yahoo.com",
+      "kind": "etf"
+    },
+    {
+      "display": "QQQ",
+      "source": "LIVE:yahoo.com",
+      "kind": "etf"
+    },
+    {
+      "display": "AAPL",
+      "source": "LIVE:yahoo.com",
+      "kind": "stock"
+    },
+    {
+      "display": "NVDA",
+      "source": "LIVE:yahoo.com",
+      "kind": "stock"
+    },
+    {
+      "display": "TSLA",
+      "source": "LIVE:yahoo.com",
+      "kind": "stock"
+    },
+    {
+      "display": "BTC-USD",
+      "source": "LIVE:yahoo.com",
+      "kind": "crypto"
+    }
+  ],
+  "sessionMoves": [
+    {
+      "symbol": "SPY",
+      "prevClose": 754.8300170898438,
+      "close": 750.3300170898438,
+      "ret": -0.00596160711433974
+    },
+    {
+      "symbol": "QQQ",
+      "prevClose": 744,
+      "close": 729.8599853515625,
+      "ret": -0.0190053960328461
+    },
+    {
+      "symbol": "AAPL",
+      "prevClose": 296.4200134277344,
+      "close": 299.239990234375,
+      "ret": 0.009513449426140453
+    },
+    {
+      "symbol": "NVDA",
+      "prevClose": 212.4499969482422,
+      "close": 207.41000366210938,
+      "ret": -0.023723197733726838
+    },
+    {
+      "symbol": "TSLA",
+      "prevClose": 411.1499938964844,
+      "close": 404.6600036621094,
+      "ret": -0.015784969793794987
+    },
+    {
+      "symbol": "BTC-USD",
+      "prevClose": 66289.5,
+      "close": 65600.640625,
+      "ret": -0.010391681563445191
+    }
+  ],
+  "leaderboard": [
+    {
+      "rank": 1,
+      "agent": "Volatility-Breakout",
+      "prediction": "No fresh 20-bar breakout closes in the basket. Staying in cash today.",
+      "pick": "CASH",
+      "legs": [],
+      "returnPct": 0,
+      "startValue": 10,
+      "endValue": 10
+    },
+    {
+      "rank": 2,
+      "agent": "Buy-&-Hold SPY (baseline)",
+      "prediction": "Stay invested in the broad market (SPY); time in market beats timing it.",
+      "pick": "SPY",
+      "legs": [
+        {
+          "symbol": "SPY",
+          "weight": 1,
+          "ret": -0.00596160711433974,
+          "prevClose": 754.8300170898438,
+          "close": 750.3300170898438
+        }
+      ],
+      "returnPct": -0.00596160711433974,
+      "startValue": 10,
+      "endValue": 9.9404
+    },
+    {
+      "rank": 3,
+      "agent": "Mean-Reversion",
+      "prediction": "Oversold bounce: BTC-USD got hit hardest yesterday (0.88%), so it rebounds today.",
+      "pick": "BTC-USD",
+      "legs": [
+        {
+          "symbol": "BTC-USD",
+          "weight": 1,
+          "ret": -0.010391681563445191,
+          "prevClose": 66289.5,
+          "close": 65600.640625
+        }
+      ],
+      "returnPct": -0.010391681563445191,
+      "startValue": 10,
+      "endValue": 9.8961
+    },
+    {
+      "rank": 4,
+      "agent": "Equal-Weight Basket",
+      "prediction": "Diversify: hold all 6 names equally; no single bet, just the basket's drift.",
+      "pick": "SPY+QQQ+AAPL+NVDA+TSLA+BTC-USD",
+      "legs": [
+        {
+          "symbol": "SPY",
+          "weight": 0.16666666666666666,
+          "ret": -0.00596160711433974,
+          "prevClose": 754.8300170898438,
+          "close": 750.3300170898438
+        },
+        {
+          "symbol": "QQQ",
+          "weight": 0.16666666666666666,
+          "ret": -0.0190053960328461,
+          "prevClose": 744,
+          "close": 729.8599853515625
+        },
+        {
+          "symbol": "AAPL",
+          "weight": 0.16666666666666666,
+          "ret": 0.009513449426140453,
+          "prevClose": 296.4200134277344,
+          "close": 299.239990234375
+        },
+        {
+          "symbol": "NVDA",
+          "weight": 0.16666666666666666,
+          "ret": -0.023723197733726838,
+          "prevClose": 212.4499969482422,
+          "close": 207.41000366210938
+        },
+        {
+          "symbol": "TSLA",
+          "weight": 0.16666666666666666,
+          "ret": -0.015784969793794987,
+          "prevClose": 411.1499938964844,
+          "close": 404.6600036621094
+        },
+        {
+          "symbol": "BTC-USD",
+          "weight": 0.16666666666666666,
+          "ret": -0.010391681563445191,
+          "prevClose": 66289.5,
+          "close": 65600.640625
+        }
+      ],
+      "returnPct": -0.010892233802002067,
+      "startValue": 10,
+      "endValue": 9.8911
+    },
+    {
+      "rank": 5,
+      "agent": "Trend-Follow (SMA10/20)",
+      "prediction": "QQQ is in a confirmed uptrend (price>SMA10>SMA20). Riding the trend today.",
+      "pick": "QQQ",
+      "legs": [
+        {
+          "symbol": "QQQ",
+          "weight": 1,
+          "ret": -0.0190053960328461,
+          "prevClose": 744,
+          "close": 729.8599853515625
+        }
+      ],
+      "returnPct": -0.0190053960328461,
+      "startValue": 10,
+      "endValue": 9.8099
+    },
+    {
+      "rank": 6,
+      "agent": "Momentum",
+      "prediction": "Strength persists: NVDA led yesterday (3.54%), so it keeps running today.",
+      "pick": "NVDA",
+      "legs": [
+        {
+          "symbol": "NVDA",
+          "weight": 1,
+          "ret": -0.023723197733726838,
+          "prevClose": 212.4499969482422,
+          "close": 207.41000366210938
+        }
+      ],
+      "returnPct": -0.023723197733726838,
+      "startValue": 10,
+      "endValue": 9.7628
+    }
+  ],
+  "winner": {
+    "agent": "Volatility-Breakout",
+    "endValue": 10,
+    "returnPct": 0
+  }
+}

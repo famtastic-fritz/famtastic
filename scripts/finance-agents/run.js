@@ -99,7 +99,7 @@ async function main() {
   const isSample = basket.dataSource === 'SAMPLE' || basket.dataSource === 'MIXED';
   const banner = isSample
     ? '!!! SAMPLE / SYNTHETIC DATA — these are NOT real market prices !!!'
-    : `DATA SOURCE: ${basket.dataSource} (Stooq daily CSV) — real historical market data`;
+    : `DATA SOURCE: ${basket.dataSource} (Yahoo Finance chart API) — real historical market data`;
 
   // ---- Console output ----
   console.log('');
@@ -184,11 +184,11 @@ function renderReport(p) {
   lines.push('');
   if (p.isSampleData) {
     lines.push('> ⚠️ **SAMPLE / SYNTHETIC DATA** — these are NOT real market prices. The live');
-    lines.push('> Stooq fetch was unavailable (network blocked / no cache), so bundled synthetic');
+    lines.push('> Yahoo fetch was unavailable (network blocked / no cache), so bundled synthetic');
     lines.push('> fixtures were used. Numbers below are illustrative of the harness only.');
     lines.push('');
   }
-  lines.push(`- **Data source:** ${p.dataSource} (Stooq daily CSV when live)`);
+  lines.push(`- **Data source:** ${p.dataSource} (Yahoo Finance chart API when live)`);
   lines.push(`- **Session traded:** ${p.session} (prior session: ${p.priorSession})`);
   lines.push(`- **Stake per agent:** $${p.stake.toFixed(2)}`);
   lines.push(`- **Generated:** ${p.generatedAt}`);
