@@ -2,7 +2,7 @@
 
 Everything here is **offline, sandboxed, and isolated**. The factory imports
 nothing from FAMtastic Site Studio, touches no ports, no launchd, no
-`studio-config.json`, and writes only inside `agent-factory/`. Running these
+`studio-config.json`, and writes only inside `agent-foundry/`. Running these
 tests cannot affect Studio or any other session's work.
 
 ## Safest way to pull it without disturbing another session
@@ -12,17 +12,17 @@ session is editing) is left completely untouched:
 ```bash
 cd ~/famtastic
 git fetch origin claude/agent-factory-orchestrator-flvu43
-git worktree add ../famtastic-agent-factory claude/agent-factory-orchestrator-flvu43
-cd ../famtastic-agent-factory/agent-factory
+git worktree add ../famtastic-agent-foundry claude/agent-factory-orchestrator-flvu43
+cd ../famtastic-agent-foundry/agent-foundry
 ./demo.sh smoke
 ```
 
-This checks the branch out into `~/famtastic-agent-factory/` — a separate folder
+This checks the branch out into `~/famtastic-agent-foundry/` — a separate folder
 — so your main `~/famtastic` working tree, and the Studio session running from
-it, never change. When done: `git worktree remove ../famtastic-agent-factory`.
+it, never change. When done: `git worktree remove ../famtastic-agent-foundry`.
 
 (If you don't care about the other session, a plain `git checkout` of the branch
-also works — this branch only *adds* `agent-factory/`, it modifies no Studio
+also works — this branch only *adds* `agent-foundry/`, it modifies no Studio
 files.)
 
 ## The scenario runner

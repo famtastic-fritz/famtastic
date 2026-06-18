@@ -8,7 +8,7 @@ break their work?**
   opens no ports, touches no `launchd`/`studio-config.json`, and — by the
   `assert_inside` guardrail — only ever writes inside its own folder.
 - **The branch itself: safe.** `claude/agent-factory-orchestrator-flvu43` only
-  *adds* `agent-factory/` (plus two `obsidian/` session notes). It modifies zero
+  *adds* `agent-foundry/` (plus two `obsidian/` session notes). It modifies zero
   Studio files, so nothing another session edits is overwritten.
 - **The one real risk is git, not the code:** doing a `git checkout` of this
   branch inside the *same* working clone another session is actively editing.
@@ -20,16 +20,16 @@ so it is impossible to collide with any other session, no matter how many share
 that path. Requires Docker Desktop running.
 
 ```bash
-# from a checkout/copy of agent-factory/ (any location)
+# from a checkout/copy of agent-foundry/ (any location)
 make build              # build the sandbox image (pure stdlib, no deps)
 make run                # bounded proof run, streamed to your terminal
 make scenario S=routing # any scenario: smoke|burst|routing|paypal|resilience|autonomy
-make eval               # run + copy artifacts to /tmp/agent-factory-eval for inspection
+make eval               # run + copy artifacts to /tmp/agent-foundry-eval for inspection
 make shell              # poke around inside the sandbox
 make clean              # remove the image
 ```
 `make eval` copies `deliverables/`, `logs/`, `LEARNINGS.md`, and `dashboard/`
-to `OUT=/tmp/agent-factory-eval` (outside your repo) so you can read results
+to `OUT=/tmp/agent-foundry-eval` (outside your repo) so you can read results
 without writing anything back into `~/famtastic`. Override with
 `make eval OUT=~/somewhere-else`.
 
@@ -41,11 +41,11 @@ Because the factory is self-contained, you can copy it to a directory **outside*
 the shared repo and run it there with plain Python. Other sessions never see it.
 
 ```bash
-make workspace DEST=~/agent-factory-eval   # copies the factory out of the repo
-cd ~/agent-factory-eval
+make workspace DEST=~/agent-foundry-eval   # copies the factory out of the repo
+cd ~/agent-foundry-eval
 python3 run.py                              # or: ./demo.sh autonomy
 ```
-This writes only under `~/agent-factory-eval`. Your `~/famtastic` (and every
+This writes only under `~/agent-foundry-eval`. Your `~/famtastic` (and every
 session using it) is untouched.
 
 ## Option C (git-clean, if you don't share the working tree): worktree
@@ -54,7 +54,7 @@ If you just want the branch without disturbing your current checkout:
 cd ~/famtastic
 git fetch origin claude/agent-factory-orchestrator-flvu43
 git worktree add ../famtastic-af claude/agent-factory-orchestrator-flvu43
-cd ../famtastic-af/agent-factory && python3 run.py
+cd ../famtastic-af/agent-foundry && python3 run.py
 # cleanup later:  git worktree remove ../famtastic-af
 ```
 A worktree is a separate directory on the same repo — your main checkout (and

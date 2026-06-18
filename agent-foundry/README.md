@@ -42,7 +42,7 @@ sales process + copy, and payment/fulfillment — all ready to use.
 
 ## Layout
 ```
-agent-factory/
+agent-foundry/
 ├── run.py                 # end-to-end entrypoint
 ├── orchestrator.py        # the supervisor
 ├── scheduler.py           # in-process adaptive scheduler

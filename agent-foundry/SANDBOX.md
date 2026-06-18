@@ -1,9 +1,9 @@
 # SANDBOX — Hard Isolation Contract
 
-This directory (`agent-factory/`) is a **self-contained sandbox**. The rule is
+This directory (`agent-foundry/`) is a **self-contained sandbox**. The rule is
 simple and absolute:
 
-> **Nothing outside `agent-factory/` may be modified by this system — ever.**
+> **Nothing outside `agent-foundry/` may be modified by this system — ever.**
 
 Every process, schedule, database, log, spawned worker agent, deliverable, and
 piece of configuration lives **inside this folder**. The agent factory has no
@@ -13,14 +13,14 @@ authority — and is written to have no ability — to reach outside it.
 
 | Concern            | How it stays inside the sandbox                                            |
 |--------------------|---------------------------------------------------------------------------|
-| Code               | All `.py` files live in `agent-factory/`.                                  |
-| State / queue      | SQLite DB at `agent-factory/data/factory.db`.                             |
-| Logs               | `agent-factory/logs/ORCHESTRATOR.log`, `agent-factory/logs/COSTS.log`.    |
+| Code               | All `.py` files live in `agent-foundry/`.                                  |
+| State / queue      | SQLite DB at `agent-foundry/data/factory.db`.                             |
+| Logs               | `agent-foundry/logs/ORCHESTRATOR.log`, `agent-foundry/logs/COSTS.log`.    |
 | Scheduling         | In-process scheduler thread. **The real OS crontab is never touched.**     |
-| Spawned agents     | Minted into `agent-factory/agents/`, run as local subprocesses.            |
-| Deliverables       | Written to `agent-factory/deliverables/`.                                  |
-| Dashboard          | `agent-factory/dashboard/index.html` (static) + terminal readout.         |
-| Secrets            | Read from `agent-factory/.env` only (you create it; `.env.example` shows it).|
+| Spawned agents     | Minted into `agent-foundry/agents/`, run as local subprocesses.            |
+| Deliverables       | Written to `agent-foundry/deliverables/`.                                  |
+| Dashboard          | `agent-foundry/dashboard/index.html` (static) + terminal readout.         |
+| Secrets            | Read from `agent-foundry/.env` only (you create it; `.env.example` shows it).|
 
 All paths in the code are resolved **relative to this file's directory** via a
 single `ROOT` constant in `factory_paths.py`. There is no `os.chdir`, no
@@ -61,7 +61,7 @@ budget caps. Every change is logged to `LEARNINGS.md` with before/after values.
 
 ## Git isolation — logged assumption
 
-The original brief said "create `./agent-factory/` with its own git repo." A
+The original brief said "create `./agent-foundry/` with its own git repo." A
 nested `.git` would make the parent repository treat this folder as an empty
 gitlink, which would make the deliverables **invisible to review** on the
 required feature branch. To keep the work reviewable, this sandbox is committed

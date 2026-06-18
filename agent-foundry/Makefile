@@ -2,10 +2,10 @@
 # Docker targets give OS-level isolation (cannot touch the host repo).
 # Local targets run in-place with Python (use a throwaway copy via `make workspace`).
 
-IMAGE ?= agent-factory:latest
-OUT   ?= /tmp/agent-factory-eval        # artifact copy-out dir (OUTSIDE the repo)
+IMAGE ?= agent-foundry:latest
+OUT   ?= /tmp/agent-foundry-eval        # artifact copy-out dir (OUTSIDE the repo)
 S     ?= smoke                          # scenario for `make scenario`
-DEST  ?= $(HOME)/agent-factory-eval     # local workspace dir for `make workspace`
+DEST  ?= $(HOME)/agent-foundry-eval     # local workspace dir for `make workspace`
 
 .PHONY: help
 help:
