@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAMtastic Agency — Lead Dashboard · Port St. Lucie</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #21262d; --ink: #e6edf3;
+    --muted: #8b949e; --accent: #f0a500; --green: #2ea043; --amber: #d29922;
+    --red: #cf3636; --blue: #388bfd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    padding: 28px 24px 18px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #11161d, #0d1117);
+  }
+  h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.3px; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 13px; }
+  .stats { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 16px; min-width: 96px;
+  }
+  .stat b { display: block; font-size: 22px; }
+  .stat small { color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: .5px; }
+  main { padding: 20px 24px 60px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  tr:hover td { background: #11161d; }
+  .biz { font-weight: 600; }
+  .type { color: var(--muted); font-size: 12px; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .hook { color: var(--muted); font-size: 12.5px; max-width: 320px; }
+  .pri { font-weight: 700; border-radius: 6px; padding: 1px 7px; font-size: 12px; }
+  .pri-A { background: rgba(46,160,67,.15); color: var(--green); }
+  .pri-B { background: rgba(210,153,34,.15); color: var(--amber); }
+  .pri-C { background: rgba(139,148,158,.15); color: var(--muted); }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .b-fb { background: rgba(56,139,253,.12); color: var(--blue); }
+  .status { font-size: 12px; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; color: var(--muted); font-size: 12px; }
+  .script {
+    margin-top: 36px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px 24px;
+  }
+  .script h2 { margin: 0 0 6px; font-size: 16px; }
+  .script p { color: var(--muted); font-size: 13px; margin: 4px 0; }
+  blockquote {
+    margin: 10px 0; padding: 10px 16px; border-left: 3px solid var(--accent);
+    background: #11161d; border-radius: 0 8px 8px 0; color: var(--ink); font-size: 14px;
+  }
+  code { background: #11161d; padding: 1px 6px; border-radius: 4px; color: var(--accent); }
+  .foot { margin-top: 30px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FAMtastic <span>Agency</span> — Lead Dashboard</h1>
+  <div class="sub">Port St. Lucie / St. Lucie County, FL &middot; Run 2026-06-18 &middot; 10 qualified leads (no working website)</div>
+  <div class="stats">
+    <div class="stat"><b>10</b><small>Qualified</small></div>
+    <div class="stat"><b>1</b><small>Priority A</small></div>
+    <div class="stat"><b>3</b><small>Priority B</small></div>
+    <div class="stat"><b style="color:var(--red)">0</b><small>Contacted</small></div>
+    <div class="stat"><b style="color:var(--green)">0</b><small>Closed</small></div>
+  </div>
+</header>
+<main>
+  <p class="sub">Qualification rule: independent local business, has a phone, real &amp; active, but
+  <b>no working website</b> (Facebook/listing-only counts as a lead). The churches vertical was run
+  first and returned <b>0 leads</b> — every church already had a site. These commercial verticals are
+  dense with no-website independents.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Business</th><th>Phone</th><th>Area</th>
+        <th>Rating</th><th>Web</th><th>Hook</th><th>Best Call</th><th>Pri</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><div class="biz">Taqueria Montano's</div><div class="type">Mexican / Taqueria</div></td>
+        <td><a href="tel:+17727773406">(772) 777-3406</a></td>
+        <td>10786 S US-1</td>
+        <td>★ 4.5 &middot; 141</td>
+        <td><span class="badge b-fb">Yelp/TripAdv only</span></td>
+        <td class="hook">Family-owned since 2015, 141 reviews, no website. Menu + online ordering = easy yes.</td>
+        <td>Tue–Sat 2–4 PM</td>
+        <td><span class="pri pri-A">A</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><div class="biz">The Detail Guys PSL</div><div class="type">Mobile Auto Detailing</div></td>
+        <td><a href="tel:+15612758481">(561) 275-8481</a></td>
+        <td>Treasure Coast (mobile)</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Facebook only</span></td>
+        <td class="hook">Mobile detailer on a FB page — booking + quote form is direct revenue.</td>
+        <td>Wkday AM</td>
+        <td><span class="pri pri-B">B</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><div class="biz">JM Pristine Mobile Detailing</div><div class="type">Mobile Auto Detailing</div></td>
+        <td><a href="tel:+17729247552">(772) 924-7552</a></td>
+        <td>Port St. Lucie (mobile)</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Yelp only</span></td>
+        <td class="hook">Strong Yelp photos, no site — gallery + booking converts the visual work.</td>
+        <td>Wkday AM</td>
+        <td><span class="pri pri-B">B</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><div class="biz">PSL Nails</div><div class="type">Nail Salon</div></td>
+        <td><a href="tel:+17728793480">(772) 879-3480</a></td>
+        <td>5487 NW St James Dr</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Facebook only</span></td>
+        <td class="hook">Gel-X / acrylic / nail-art studio, no site — service menu + booking.</td>
+        <td>Mid-PM wkday</td>
+        <td><span class="pri pri-B">B</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><div class="biz">Escape Nails &amp; Spa</div><div class="type">Nail Salon</div></td>
+        <td><a href="tel:+17726214755">(772) 621-4755</a></td>
+        <td>1707 NW St Lucie West Blvd</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Facebook only</span></td>
+        <td class="hook">St. Lucie West, FB-only — polished site lifts walk-in trust.</td>
+        <td>Mid-PM wkday</td>
+        <td><span class="pri pri-C">C</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><div class="biz">Pink Nails &amp; Spa</div><div class="type">Nail Salon</div></td>
+        <td><a href="tel:+17723369555">(772) 336-9555</a></td>
+        <td>946 SW St Lucie West Blvd</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Facebook only</span></td>
+        <td class="hook">FB-only nail spa — service/price menu + booking.</td>
+        <td>Mid-PM wkday</td>
+        <td><span class="pri pri-C">C</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><div class="biz">Veranda Nail Spa</div><div class="type">Nail Salon</div></td>
+        <td><a href="tel:+17728340255">(772) 834-0255</a></td>
+        <td>748 SE Becker Rd</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Facebook only</span></td>
+        <td class="hook">Becker Rd nail spa, no site.</td>
+        <td>Mid-PM wkday</td>
+        <td><span class="pri pri-C">C</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td><div class="biz">Nails &amp; You</div><div class="type">Nail Salon</div></td>
+        <td><a href="tel:+17723232132">(772) 323-2132</a></td>
+        <td>6526 NW Selvitz Rd</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Facebook only</span></td>
+        <td class="hook">Selvitz Rd nail salon, FB-only.</td>
+        <td>Mid-PM wkday</td>
+        <td><span class="pri pri-C">C</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td><div class="biz">Kim's Nail &amp; Spa</div><div class="type">Nail Salon</div></td>
+        <td><a href="tel:+17722375177">(772) 237-5177</a></td>
+        <td>638 SW Bayshore Blvd</td>
+        <td>—</td>
+        <td><span class="badge b-fb">Facebook only</span></td>
+        <td class="hook">Bayshore Blvd nail spa, no website.</td>
+        <td>Mid-PM wkday</td>
+        <td><span class="pri pri-C">C</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td><div class="biz">Forbes Mowing &amp; Landscaping</div><div class="type">Lawn Care</div></td>
+        <td>Verify</td>
+        <td>St. Lucie County</td>
+        <td>—</td>
+        <td><span class="badge b-fb">No site found</span></td>
+        <td class="hook">Owner-operator since 2016, licensed &amp; insured. Quote-request site captures leads he loses to ranked competitors.</td>
+        <td>Early eve</td>
+        <td><span class="pri pri-B">B</span></td>
+        <td class="status">🔴 Not Contacted</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="legend">
+    <span>🔴 Not Contacted</span>
+    <span>🟡 Called — No Answer</span>
+    <span>🟠 Called — Interested</span>
+    <span>🟢 Closed</span>
+    <span>⚫ Dead</span>
+  </div>
+
+  <div class="script">
+    <h2>Cold-call script (fill <code>[BRACKETS]</code> per lead)</h2>
+    <p><b>Opening (10 sec — get to the point):</b></p>
+    <blockquote>"Hi, is this the owner of <b>[Business]</b>? My name's <b>[YOUR NAME]</b>. This might sound
+    random, but I actually built a website for <b>[Business]</b> — it's already done. Can I text you the
+    link? Takes 10 seconds to look at. If you like it, we talk. If not, no worries."</blockquote>
+    <p><b>If they look:</b></p>
+    <blockquote>"I build and manage sites for local businesses like yours. That site's yours to keep — I
+    handle hosting and updates for <b>[$X]</b>/month, and I can add online <b>[ordering / booking]</b>
+    and get you ranking on Google. Want me to walk you through what's included?"</blockquote>
+    <p><b>"What's the catch?"</b></p>
+    <blockquote>"No catch. I build these to show owners what's possible — my way of earning trust
+    upfront. Keep it live for <b>[$X]</b>/month and I manage everything. If not, no pressure."</blockquote>
+    <p><b>Follow-up cadence:</b> Day 0 call + text link &middot; Day 2 check-in text &middot;
+    Day 5 "taking a few more PSL businesses this month" &middot; Day 10 final text.</p>
+  </div>
+
+  <div class="foot">
+    Source: <code>agency/leads/psl-2026-06-18.json</code> &middot; Generated by the FAMtastic agency
+    qualify pass. Next: build demo sites with <code>fam-hub site build</code>, starting with Lead #1.
+  </div>
+</main>
+</body>
+</html>
