@@ -67,9 +67,17 @@ Full machine-readable artifact: `deliverables/invoices/{sidecar.name}`
     }
 
 
+def handle_fault_inject(payload: dict, task: dict) -> dict:
+    """Deliberately fail — used by the resilience scenario to prove the
+    worker-failure path (fail_task, worker_failed logging, success-rate drop,
+    and the self-improvement loop scaling concurrency DOWN in response)."""
+    raise RuntimeError(payload.get("message", "intentional fault for resilience testing"))
+
+
 # Action dispatch table: task type -> handler
 ACTIONS = {
     "paypal_invoice_draft": handle_paypal_invoice_draft,
+    "fault_inject": handle_fault_inject,
 }
 
 
