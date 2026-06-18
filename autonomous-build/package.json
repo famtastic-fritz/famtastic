@@ -1,0 +1,17 @@
+{
+  "name": "metamint",
+  "version": "1.0.0",
+  "description": "Mint perfect social share previews and meta tags in 30 seconds.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "license": "MIT"
+}

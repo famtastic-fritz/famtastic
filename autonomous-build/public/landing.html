@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MetaMint — Mint perfect social previews in 30 seconds</title>
+  <meta name="description" content="Stop shipping broken link previews. MetaMint generates correct Open Graph + Twitter meta tags and a 1200×630 share image, with live previews for Google, X, Facebook, LinkedIn, Slack and iMessage. No login, private by design.">
+  <link rel="canonical" href="https://metamint.app/">
+  <meta name="theme-color" content="#7c3aed">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="MetaMint — Mint perfect social previews in 30 seconds">
+  <meta property="og:description" content="Correct Open Graph + Twitter tags and a share image, with faithful live previews. No login. Private.">
+  <meta property="og:url" content="https://metamint.app/">
+  <meta property="og:site_name" content="MetaMint">
+  <meta property="og:image" content="https://metamint.app/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MetaMint — Mint perfect social previews in 30 seconds">
+  <meta name="twitter:description" content="Correct Open Graph + Twitter tags and a share image, with faithful live previews. No login.">
+  <meta name="twitter:image" content="https://metamint.app/og.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c3aed'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .hero { padding: 70px 0 40px; text-align: center; }
+    .eyebrow { display:inline-block; font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent-2); border:1px solid var(--line); border-radius:999px; padding:5px 12px; margin-bottom:20px; }
+    .hero h1 { font-size: clamp(34px, 6vw, 60px); line-height:1.05; letter-spacing:-0.03em; margin:0 0 16px; }
+    .hero h1 .grad { background:linear-gradient(135deg,var(--accent-2),#22d3ee); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .hero p.sub { font-size: clamp(16px,2.4vw,20px); color:var(--muted); max-width:680px; margin:0 auto 28px; }
+    .cta-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .cta { font-weight:700; font-size:15px; padding:13px 22px; border-radius:12px; text-decoration:none; display:inline-block; }
+    .cta.primary { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; box-shadow:0 10px 30px rgba(124,58,237,.35); }
+    .cta.ghost { border:1px solid var(--line); color:var(--text); }
+    .hero .note { color:var(--muted); font-size:13px; margin-top:14px; }
+    .section { padding: 56px 0; border-top:1px solid var(--line); }
+    .section h2 { font-size: clamp(24px,4vw,34px); letter-spacing:-0.02em; margin:0 0 10px; text-align:center; }
+    .section .lead { color:var(--muted); text-align:center; max-width:640px; margin:0 auto 36px; }
+    .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    @media (max-width:820px){ .grid3 { grid-template-columns:1fr; } }
+    .feature { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px; }
+    .feature .ic { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:14px; }
+    .feature h3 { margin:0 0 6px; font-size:18px; }
+    .feature p { margin:0; color:var(--muted); font-size:14px; }
+    .steps { counter-reset: step; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    @media (max-width:820px){ .steps { grid-template-columns:1fr; } }
+    .step { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px; position:relative; }
+    .step::before { counter-increment: step; content: counter(step); position:absolute; top:-14px; left:20px; width:30px; height:30px; border-radius:8px; background:var(--accent); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; }
+    .step h3 { margin:10px 0 6px; font-size:17px; } .step p { margin:0; color:var(--muted); font-size:14px; }
+    .quote { max-width:720px; margin:0 auto; text-align:center; font-size:clamp(18px,2.6vw,24px); line-height:1.4; }
+    .quote span { color:var(--muted); font-size:14px; display:block; margin-top:14px; }
+    .final { text-align:center; background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(34,211,238,.08)); border:1px solid var(--line); border-radius:20px; padding:48px 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand"><span class="dot"></span> MetaMint</div>
+      <nav class="topnav">
+        <a href="/landing">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/">Open the tool</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <span class="eyebrow">Open Graph · done right · in 30 seconds</span>
+      <h1>Your links deserve a <span class="grad">first impression</span>.</h1>
+      <p class="sub">
+        Half the web ships with broken or ugly link previews — a missing image, a
+        truncated title, a bare URL nobody clicks. MetaMint generates the correct
+        meta tags <em>and</em> a share image, and shows you exactly how the link
+        will look everywhere people paste it.
+      </p>
+      <div class="cta-row">
+        <a class="cta primary" href="/">Mint my preview — free</a>
+        <a class="cta ghost" href="/pricing">See pricing</a>
+      </div>
+      <div class="note">No account. No upload. Your inputs never leave the browser.</div>
+    </section>
+
+    <section class="section">
+      <h2>The papercut every page hits</h2>
+      <p class="lead">You don't notice it until you've already shared the link — and by
+        then the bare, image-less card has already cost you the click.</p>
+      <div class="grid3">
+        <div class="feature"><div class="ic">🚫</div><h3>Silent breakage</h3><p>A typo'd <code>og:image</code> or relative URL and the rich card just… doesn't render. No error, no warning, just a dead link preview.</p></div>
+        <div class="feature"><div class="ic">🎨</div><h3>The image tax</h3><p>Every share image means opening a design tool, fiddling with a template, exporting, re-uploading. For one post, that's absurd.</p></div>
+        <div class="feature"><div class="ic">🕳️</div><h3>Fly-blind testing</h3><p>You can't see the result until it's live and pasted somewhere. So you ship, share, cringe, fix, repeat.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Everything you need, on one screen</h2>
+      <p class="lead">Type your title and description. Watch six platforms update live.
+        Copy the tags, download the image, ship.</p>
+      <div class="grid3">
+        <div class="feature"><div class="ic">🏷️</div><h3>Correct tags, always</h3><p>Complete Open Graph + Twitter Card output, properly typed and escaped — including the <code>og:image</code> dimensions most generators forget.</p></div>
+        <div class="feature"><div class="ic">🖼️</div><h3>Share image, built in</h3><p>A clean 1200×630 image generated from your title and brand color. Download as SVG or PNG. No Figma round-trip.</p></div>
+        <div class="feature"><div class="ic">👀</div><h3>Six live previews</h3><p>Google, X, Facebook, LinkedIn, Slack, iMessage — rendered from one faithful model so what you see is what they'll see.</p></div>
+        <div class="feature"><div class="ic">✅</div><h3>A validator that nags</h3><p>Title too long for Google? Relative <code>og:url</code>? Card type without an image? It flags the costly mistakes before you ship.</p></div>
+        <div class="feature"><div class="ic">🔒</div><h3>Private by design</h3><p>The whole thing runs client-side. No tracking pixels, no upload, no account. Your unreleased page title stays yours.</p></div>
+        <div class="feature"><div class="ic">⚡</div><h3>Zero-weight</h3><p>No bloated SPA, no ad walls. It loads instantly and works offline once open.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Three steps, thirty seconds</h2>
+      <div class="steps">
+        <div class="step"><h3>Type</h3><p>Drop in your title, description, URL, and brand color. The demo is already filled in — just edit it.</p></div>
+        <div class="step"><h3>Preview</h3><p>Flip between Google, X, Facebook, Slack and iMessage. Fix anything the validator flags.</p></div>
+        <div class="step"><h3>Ship</h3><p>Copy the tag block into your <code>&lt;head&gt;</code>, download the share image, host it, done.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <p class="quote">"I used to keep a Figma file just for OG images and a sticky note of the tag order. MetaMint replaced both — and caught a relative image URL I'd been shipping for months."
+      <span>— the exact indie dev this is built for</span></p>
+    </section>
+
+    <section class="section">
+      <div class="final">
+        <h2>Mint a preview your link deserves.</h2>
+        <p class="lead">Free for the core. No signup to try it. Upgrade only when you want branded templates and bulk.</p>
+        <div class="cta-row">
+          <a class="cta primary" href="/">Open MetaMint</a>
+          <a class="cta ghost" href="/pricing">Compare plans</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      MetaMint · Mint perfect social previews in 30 seconds · built with the Node standard library.
+    </footer>
+  </div>
+</body>
+</html>

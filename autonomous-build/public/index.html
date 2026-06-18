@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MetaMint — Mint perfect social previews in 30 seconds</title>
+  <meta name="description" content="Generate correct Open Graph + Twitter meta tags and a 1200×630 share image, with live previews for Google, X, Facebook, LinkedIn, Slack and iMessage. No login. Private.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c3aed'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand"><span class="dot"></span> MetaMint</div>
+      <nav class="topnav">
+        <a href="/landing">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="https://github.com" rel="noopener">GitHub</a>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <!-- INPUT -->
+      <section class="panel" aria-label="Inputs">
+        <h2>Your page</h2>
+        <div class="field">
+          <label for="title">Title <span class="counter" id="c-title">0/60</span></label>
+          <input id="title" type="text" placeholder="MetaMint — perfect social previews" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="description">Description <span class="counter" id="c-desc">0/155</span></label>
+          <textarea id="description" placeholder="One clear sentence describing the page, written for a human about to click."></textarea>
+        </div>
+        <div class="field">
+          <label for="url">Canonical URL</label>
+          <input id="url" type="url" placeholder="https://metamint.app/" autocomplete="off">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="siteName">Site name</label>
+            <input id="siteName" type="text" placeholder="MetaMint" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="author">X / Twitter handle</label>
+            <input id="author" type="text" placeholder="@metamint" autocomplete="off">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="type">Type</label>
+            <select id="type">
+              <option value="website">website</option>
+              <option value="article">article</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="twitterCard">Twitter card</label>
+            <select id="twitterCard">
+              <option value="summary_large_image">summary_large_image</option>
+              <option value="summary">summary</option>
+            </select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="themeColor">Theme color</label>
+            <input id="themeColor" type="text" placeholder="#7c3aed" value="#7c3aed" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="imageUrl">og:image URL</label>
+            <input id="imageUrl" type="url" placeholder="(use generated)" autocomplete="off">
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin:4px 0 0">
+          Leave <code>og:image URL</code> blank to use the share image MetaMint
+          generates below. Everything runs in your browser — nothing is uploaded.
+        </p>
+      </section>
+
+      <!-- RESULTS -->
+      <section class="results">
+        <div class="panel">
+          <div class="score-row">
+            <div class="score" id="score">—<small>/100</small></div>
+            <div id="badges"></div>
+          </div>
+        </div>
+
+        <!-- Live previews -->
+        <div class="panel">
+          <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="google">Google</button>
+            <button class="tab" data-tab="twitter">X / Twitter</button>
+            <button class="tab" data-tab="facebook">Facebook · LinkedIn</button>
+            <button class="tab" data-tab="slack">Slack</button>
+            <button class="tab" data-tab="imessage">iMessage</button>
+          </div>
+          <div class="preview-stage" id="stage"></div>
+        </div>
+
+        <!-- Share image -->
+        <div class="panel">
+          <div class="code-head">
+            <h2>Generated share image (1200×630)</h2>
+            <div class="btns">
+              <button class="action" id="dl-svg">Download SVG</button>
+              <button class="action primary" id="dl-png">Download PNG</button>
+            </div>
+          </div>
+          <div id="og-holder" class="preview-stage" style="padding:0;border:none"></div>
+        </div>
+
+        <!-- Tags -->
+        <div class="panel">
+          <div class="code-head">
+            <h2>Meta tags — paste into &lt;head&gt;</h2>
+            <button class="action primary" id="copy-tags">Copy tags</button>
+          </div>
+          <pre class="code" id="tags"></pre>
+        </div>
+
+        <!-- Issues -->
+        <div class="panel">
+          <div class="code-head"><h2>Validation</h2></div>
+          <ul class="issues" id="issues"></ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      MetaMint v1 · built with the Node standard library · your inputs never leave the page.
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
