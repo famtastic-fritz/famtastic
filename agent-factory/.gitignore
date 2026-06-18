@@ -16,3 +16,7 @@ cms/data/*.runtime.json
 
 # transient per-run generic artifacts
 docs/ncs7/generic-*.md
+
+# CMS sqlite db (runtime, created by Docker/sqlite mode)
+assets/ncs7/cms/data/*.db
+assets/ncs7/cms/data/*.db-*

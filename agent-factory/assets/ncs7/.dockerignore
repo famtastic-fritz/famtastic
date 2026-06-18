@@ -1,0 +1,7 @@
+# keep the image small and the DB seeded fresh into the volume
+cms/data/
+**/*.log
+ncs7-standalone.html
+build-standalone.js
+.git
+node_modules

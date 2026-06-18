@@ -1,0 +1,21 @@
+# Run the whole NCS7 demo locally:  docker compose up --build
+# Then open:
+#   http://localhost:4178/         site (React + 3D)
+#   http://localhost:4178/admin    CMS admin
+#   http://localhost:4178/api/content   backend API
+# The database is real SQLite, persisted in the named volume `ncs7-db`.
+services:
+  ncs7:
+    build: .
+    container_name: ncs7-demo
+    ports:
+      - "4178:4178"
+    environment:
+      PORT: "4178"
+      DB_DRIVER: "sqlite"        # set to "json" to use flat JSON files instead
+    volumes:
+      - ncs7-db:/app/cms/data    # persistent database (cms.db) lives here
+    restart: unless-stopped
+
+volumes:
+  ncs7-db:

@@ -1,0 +1,13 @@
+{
+  "name": "ncs7-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NCS7 modernization demo — React 3D frontend + Node CMS (SQLite) + AI tutor + 3D CAD viewer. Self-contained, no external dependencies.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node cms/server.js",
+    "start:sqlite": "DB_DRIVER=sqlite node cms/server.js",
+    "build:standalone": "node build-standalone.js"
+  }
+}

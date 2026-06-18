@@ -26,6 +26,16 @@ import url, { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Optional real database. When DB_DRIVER=sqlite (the default inside the Docker
+// container), the CMS persists to an inspectable SQLite file instead of JSON
+// files. node:sqlite is built into Node 22+ — no extra dependency.
+const DB_DRIVER = process.env.DB_DRIVER || 'json';
+let DatabaseSync = null;
+if (DB_DRIVER === 'sqlite') {
+  try { ({ DatabaseSync } = await import('node:sqlite')); }
+  catch (e) { console.error('[ncs7-cms] node:sqlite unavailable, falling back to JSON store:', e.message); }
+}
+
 const PORT = parseInt(process.env.PORT, 10) || 4178;
 
 // ---------------------------------------------------------------------------
@@ -47,6 +57,21 @@ const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');   // products[]
 const PAGES_FILE = path.join(DATA_DIR, 'pages.json');         // pages[]
 const TEMPLATES_FILE = path.join(DATA_DIR, 'templates.json'); // templates[]
 
+// SQLite-backed store (active only when DB_DRIVER=sqlite). All DATA_DIR reads/
+// writes route through a single key/value table; everything else (the canonical
+// frontend content, static assets) keeps reading the real files.
+let _db = null;
+if (DatabaseSync) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    _db = new DatabaseSync(path.join(DATA_DIR, 'cms.db'));
+    _db.exec('CREATE TABLE IF NOT EXISTS store (k TEXT PRIMARY KEY, v TEXT NOT NULL)');
+    console.log('[ncs7-cms] storage: SQLite (' + path.join(DATA_DIR, 'cms.db') + ')');
+  } catch (e) { console.error('[ncs7-cms] SQLite init failed, using JSON files:', e.message); _db = null; }
+}
+function useDb(file) { return _db && String(file).startsWith(DATA_DIR + path.sep); }
+function dbKey(file) { return path.basename(file); }
+
 // ---------------------------------------------------------------------------
 // Small filesystem helpers (all data IO funnels through these)
 // ---------------------------------------------------------------------------
@@ -59,6 +84,12 @@ function ensureDir(dir) {
 }
 
 function readJsonSafe(file, fallback) {
+  if (useDb(file)) {
+    try {
+      const row = _db.prepare('SELECT v FROM store WHERE k=?').get(dbKey(file));
+      return row ? JSON.parse(row.v) : fallback;
+    } catch (err) { return fallback; }
+  }
   try {
     const raw = fs.readFileSync(file, 'utf8');
     return JSON.parse(raw);
@@ -68,6 +99,11 @@ function readJsonSafe(file, fallback) {
 }
 
 function writeJson(file, obj) {
+  if (useDb(file)) {
+    _db.prepare('INSERT INTO store (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v')
+       .run(dbKey(file), JSON.stringify(obj));
+    return;
+  }
   // Write to a temp file then rename for an atomic-ish swap.
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(obj, null, 2), 'utf8');
@@ -75,6 +111,10 @@ function writeJson(file, obj) {
 }
 
 function fileExists(file) {
+  if (useDb(file)) {
+    try { return !!_db.prepare('SELECT 1 FROM store WHERE k=?').get(dbKey(file)); }
+    catch (_) { return false; }
+  }
   try {
     fs.accessSync(file);
     return true;
