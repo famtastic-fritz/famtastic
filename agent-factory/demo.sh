@@ -10,6 +10,7 @@
 #   routing     spread of complexity: watch cheap/mid/premium model routing
 #   paypal      create DRAFT PayPal invoices (stub offline) + show artifacts
 #   resilience  mix good + failing + stale tasks: prove fail + requeue paths
+#   scorecard   run every check and print a PASS/FAIL summary (no repo churn)
 #   status      print the dashboard for the current state
 #   clean       wipe runtime state (db, logs, deliverables) for a fresh run
 #
@@ -126,6 +127,11 @@ for t in queue_db.all_tasks():
     print(f\"  #{t['id']} {t['status']:7} {t['title']}\" + (f\"  err={t['error']}\" if t['error'] else ''))
 m=queue_db.metrics(); print(f\"  success_rate={m['success_rate']:.0%}  done={m['done']} failed={m['failed']}\")
 "
+    ;;
+
+  scorecard)
+    echo "### SCORECARD — run every check, print PASS/FAIL (repo untouched)"
+    $PY scorecard.py
     ;;
 
   status)  $PY dashboard.py ;;

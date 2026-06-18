@@ -65,6 +65,20 @@ Use **Option A (Docker)** for evaluation. It is the only one that is isolated at
 the OS level, which is exactly what "several sessions on the same path" calls
 for. Use **Option B** if Docker isn't running and you just want to see it work.
 
+## One-command verdict: the scorecard
+The fastest way to evaluate everything at once. It runs in a throwaway temp copy
+(so it never touches the repo) and prints a PASS/FAIL line per capability:
+
+```bash
+make scorecard          # in Docker
+# or, no Docker:
+python3 scorecard.py    # or ./demo.sh scorecard
+```
+It checks: end-to-end run, model routing across tiers, PayPal draft safety
+(no send/capture in the API surface), fault handling, dead-worker requeue,
+bounded self-improvement, and the sandbox write-guardrail. Exit code = number of
+failures (0 = all green). Last verified result: **7/7 GREEN**.
+
 ## What "several testing runs" looks like
 Each is independent and resets its own local state:
 ```bash
