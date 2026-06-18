@@ -100,3 +100,6 @@ research-recovery/
 # Python bytecode (build artifacts — never track)
 __pycache__/
 *.pyc
+
+# Agency sandbox build output (regenerated on every run)
+agency/sandbox/output/
