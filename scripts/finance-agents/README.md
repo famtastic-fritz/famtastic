@@ -37,15 +37,19 @@ then the latest session's *actual* move is applied to whatever they picked.
 
 ## Data source + provenance (`data.js`)
 
-- **Primary (keyless):** [Stooq](https://stooq.com) daily CSV —
-  `https://stooq.com/q/d/l/?s=<symbol>&i=d`. No API key required.
+- **Primary (keyless):** [Yahoo Finance chart API](https://query1.finance.yahoo.com/v8/finance/chart/) —
+  `https://query1.finance.yahoo.com/v8/finance/chart/<SYMBOL>?period1=<unix>&period2=<unix>&interval=1d`.
+  No API key required. Returns JSON with timestamp + OHLCV arrays. ~95-day lookback window.
 - **Basket:** SPY, QQQ, AAPL, NVDA, TSLA, BTC-USD.
-- **Cache:** successful fetches are written to `.cache/<symbol>.csv`.
+- **Cache:** successful fetches are written to `.cache/<SYMBOL>.json`.
 - **Offline fallback:** if the network is blocked and there's no cache, the
   harness loads bundled fixtures in `sample-data/`. **These are clearly-labeled
   SYNTHETIC SAMPLE prices — not real market data.** The run prints the data
   source loudly and the report flags sample data with a warning banner. Every
   series records its own `source` (`LIVE` / `CACHE` / `SAMPLE`).
+- **History:** an earlier version used Stooq daily CSV. Stooq added a JavaScript
+  proof-of-work browser-verification wall (Jun 2026) and is no longer reachable
+  from non-browser clients. Removed; Yahoo chart is the new primary.
 
 The run always prints the **data source** and the **exact date of the latest
 session** used.

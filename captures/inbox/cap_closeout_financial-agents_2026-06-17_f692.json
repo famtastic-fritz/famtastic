@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.2.0",
+  "capture_id": "cap_closeout_financial-agents_2026-06-17_f692",
+  "created_at": "2026-06-18T02:12:29.697Z",
+  "source": {
+    "surface": "closeout",
+    "session_id": null,
+    "adapter": "scripts/plans/closeout.js",
+    "adapter_version": "1.0",
+    "input_path": "plans/financial-agents/closeouts/2026-06-17-checkpoint_complete.json",
+    "timestamp_range": {
+      "start": "2026-06-17T22:15:00.000Z",
+      "end": "2026-06-17T22:15:00.000Z"
+    }
+  },
+  "summary": "Closeout packet for financial-agents (verdict: checkpoint_complete). 4 memory candidates.",
+  "extracted": [
+    {
+      "extract_id": "x_1",
+      "type": "vendor-fact",
+      "text": "Yahoo Finance chart endpoint is keyless and works for daily OHLCV",
+      "rationale": "https://query1.finance.yahoo.com/v8/finance/chart/<SYMBOL>?period1=<unix>&period2=<unix>&interval=1d returns JSON with timestamp + indicators.quote[0].{open,high,low,close,volume} arrays. No API key, no auth, no cookie. The download endpoint (v7/finance/download) requires login; the chart endpoint does not. Works for SPY, QQQ, AAPL, NVDA, TSLA, BTC-USD as of 2026-06-17. Rate limits unknown but a single 6-symbol basket fetch is fine. Yahoo may add a crumb-cookie wall later — keep the cache fallback.",
+      "evidence": [
+        "closeout:financial-agents:2026-06-17T22:15:00.000Z",
+        "scripts/finance-agents/data.js",
+        "scripts/finance-agents/agents.js",
+        "scripts/finance-agents/run.js",
+        "scripts/finance-agents/results/2026-06-16-leaderboard.json",
+        "scripts/finance-agents/results/2026-06-16-report.md",
+        "plans/financial-agents/plan.json",
+        "tasks/tasks.jsonl"
+      ],
+      "facets": [
+        "finance-data",
+        "keyless-api",
+        "yahoo-finance",
+        "freetier"
+      ],
+      "confidence": 0.95,
+      "candidate_id": "vendor-fact/yahoo-finance-chart-endpoint-is-keyless-and-works-for-daily-"
+    },
+    {
+      "extract_id": "x_2",
+      "type": "do-not-repeat",
+      "text": "Stooq daily CSV endpoint is dead for non-browser clients",
+      "rationale": "As of mid-2026, stooq.com/q/d/l/?s=<sym>&i=d returns an HTML page with a JavaScript proof-of-work challenge (SHA-256 leading-zero-nonce) instead of CSV. Plain Node fetch / curl cannot pass the wall — it requires executing JS in a browser to obtain a session cookie. Same wall on stooq.pl. Do not rely on Stooq for any non-browser data ingestion. Use Yahoo Finance chart endpoint or another keyless source instead.",
+      "evidence": [
+        "closeout:financial-agents:2026-06-17T22:15:00.000Z",
+        "scripts/finance-agents/data.js",
+        "scripts/finance-agents/agents.js",
+        "scripts/finance-agents/run.js",
+        "scripts/finance-agents/results/2026-06-16-leaderboard.json",
+        "scripts/finance-agents/results/2026-06-16-report.md",
+        "plans/financial-agents/plan.json",
+        "tasks/tasks.jsonl"
+      ],
+      "facets": [
+        "stooq",
+        "browser-wall",
+        "proof-of-work",
+        "finance-data",
+        "blocker"
+      ],
+      "confidence": 0.97,
+      "candidate_id": "do-not-repeat/stooq-daily-csv-endpoint-is-dead-for-non-browser-clients"
+    },
+    {
+      "extract_id": "x_3",
+      "type": "anti-pattern",
+      "text": "HyperSwarm reviewer lane routed to Tier-A model returned ungrounded verdict",
+      "rationale": "A delegate_task reviewer lane routed to phi4-mini-64k:latest (Tier-A cheap model) for a Tier-C adversarial review job (math + diversity + honesty + URL-pattern verification) returned an ungrounded verdict. It claimed 'math_check fail' with no row citations, reported the wrong URL pattern (cited /stock-market/quote?symbol=SPY which is not what data.js uses), and answered 'overwrite_risk: no' despite the run literally overwriting the prior 2026-05-29-leaderboard.json. Captain re-verified the math directly from the artifact and confirmed all 6 rows were correct. Per HyperSwarm doctrine: reserve premium models for reviewer/breaker lanes. Routing a Tier-C job to a Tier-A model produces noise, not review.",
+      "evidence": [
+        "closeout:financial-agents:2026-06-17T22:15:00.000Z",
+        "scripts/finance-agents/data.js",
+        "scripts/finance-agents/agents.js",
+        "scripts/finance-agents/run.js",
+        "scripts/finance-agents/results/2026-06-16-leaderboard.json",
+        "scripts/finance-agents/results/2026-06-16-report.md",
+        "plans/financial-agents/plan.json",
+        "tasks/tasks.jsonl"
+      ],
+      "facets": [
+        "hyperswarm",
+        "reviewer-lane",
+        "model-routing",
+        "ungrounded",
+        "do-not-repeat"
+      ],
+      "confidence": 0.95,
+      "candidate_id": "anti-pattern/hyperswarm-reviewer-lane-routed-to-tier-a-model-returned-ung"
+    },
+    {
+      "extract_id": "x_4",
+      "type": "gap",
+      "text": "Multi-session performance aggregator not yet built for financial-agents",
+      "rationale": "Current harness writes one leaderboard artifact per session. Cross-session aggregation (win-rate over N sessions, cumulative $10 growth, Sharpe-like risk-adjusted measure, strategy consistency) is not yet built. This is the next maturity step before any broker-gated live execution. Owner: future task under plan financial-agents.",
+      "evidence": [
+        "closeout:financial-agents:2026-06-17T22:15:00.000Z",
+        "scripts/finance-agents/data.js",
+        "scripts/finance-agents/agents.js",
+        "scripts/finance-agents/run.js",
+        "scripts/finance-agents/results/2026-06-16-leaderboard.json",
+        "scripts/finance-agents/results/2026-06-16-report.md",
+        "plans/financial-agents/plan.json",
+        "tasks/tasks.jsonl"
+      ],
+      "facets": [
+        "financial-agents",
+        "aggregation",
+        "follow-up",
+        "gap"
+      ],
+      "confidence": 0.9,
+      "candidate_id": "gap/multi-session-performance-aggregator-not-yet-built-for-finan"
+    }
+  ],
+  "status": "pending_review",
+  "needs_review": true,
+  "open_gaps": [
+    "task-2026-06-02-017: broker-gated paper/live execution adapter — blocked on Fritz's broker credentials (Alpaca paper recommended first). Cannot progress without a Fritz decision.",
+    "Multi-session aggregator not yet built — current harness writes one artifact per session; cross-session win-rate / cumulative-$ / Sharpe-like measure is a separate follow-up task."
+  ]
+}

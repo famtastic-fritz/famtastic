@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "financial-agents",
+  "verdict": "checkpoint_complete",
+  "verdict_at": "2026-06-17T22:15:00.000Z",
+  "verdict_by": "shay-shay",
+  "phase": "live_harness_mvp",
+  "proved": [
+    "Data ingest lane works end-to-end against a keyless live source (Yahoo Finance chart API). All 6 basket tickers (SPY, QQQ, AAPL, NVDA, TSLA, BTC-USD) return real OHLCV bars.",
+    "Strategy fleet produces a ranked $10 leaderboard with mathematically correct endValue (10 * (1 + sum(weight_i * session_return_i))). Captain verified directly against the artifact: Mean-Reversion 10.2561, Volatility-Breakout 10.1174, Equal-Weight 10.0569, Trend-Follow 10.0195, Buy-&-Hold SPY 9.9908, Momentum 9.9289 (sample run); live 2026-06-16 run also validated.",
+    "Report artifact (JSON + MD) generated per session with explicit data-source labeling (LIVE/CACHE/SAMPLE) and a sample-data warning banner when the fallback fires.",
+    "Live run for 2026-06-16 session: winner Volatility-Breakout (stayed CASH on a down day, $10.00 -> $10.00); loser Momentum (picked NVDA, $10.00 -> $9.76 = -2.37%). Strategies produce differentiated outcomes on real market data."
+  ],
+  "remaining_work": [
+    "task-2026-06-02-017: broker-gated paper/live execution adapter — blocked on Fritz's broker credentials (Alpaca paper recommended first). Cannot progress without a Fritz decision.",
+    "Multi-session aggregator not yet built — current harness writes one artifact per session; cross-session win-rate / cumulative-$ / Sharpe-like measure is a separate follow-up task."
+  ],
+  "evidence": [
+    {
+      "type": "proof",
+      "ref": "scripts/finance-agents/data.js",
+      "note": "Data ingest rewritten from Stooq CSV to Yahoo Finance chart JSON. Yahoo endpoint: https://query1.finance.yahoo.com/v8/finance/chart/<SYM>?period1=<unix>&period2=<unix>&interval=1d. Keyless, no API key required."
+    },
+    {
+      "type": "proof",
+      "ref": "scripts/finance-agents/agents.js",
+      "note": "6 distinct strategies: Momentum, Mean-Reversion, Trend-Follow SMA10/20, Buy-&-Hold SPY, Equal-Weight Basket, Volatility-Breakout. All deterministic rule-based."
+    },
+    {
+      "type": "proof",
+      "ref": "scripts/finance-agents/run.js",
+      "note": "Runner writes JSON leaderboard + MD report per session, with sample-data warning banner when fallback fires."
+    },
+    {
+      "type": "proof",
+      "ref": "scripts/finance-agents/results/2026-06-16-leaderboard.json",
+      "note": "Live Yahoo data leaderboard for the 2026-06-16 session. Winner: Volatility-Breakout (stayed CASH). Loser: Momentum (NVDA, -2.37%)."
+    },
+    {
+      "type": "proof",
+      "ref": "scripts/finance-agents/results/2026-06-16-report.md",
+      "note": "Human-readable report with corrected Yahoo banner."
+    },
+    {
+      "type": "doc",
+      "ref": "plans/financial-agents/plan.json",
+      "note": "open_tasks reduced to just task-2026-06-02-017; known_gaps updated to reflect Yahoo Finance as the data source."
+    },
+    {
+      "type": "doc",
+      "ref": "tasks/tasks.jsonl",
+      "note": "Rows for task-2026-06-02-014, 015, 016 updated to status=completed with completed_at and proof fields. Task 017 remains status=blocked."
+    }
+  ],
+  "memory_candidates": [
+    {
+      "type": "vendor-fact",
+      "title": "Yahoo Finance chart endpoint is keyless and works for daily OHLCV",
+      "body": "https://query1.finance.yahoo.com/v8/finance/chart/<SYMBOL>?period1=<unix>&period2=<unix>&interval=1d returns JSON with timestamp + indicators.quote[0].{open,high,low,close,volume} arrays. No API key, no auth, no cookie. The download endpoint (v7/finance/download) requires login; the chart endpoint does not. Works for SPY, QQQ, AAPL, NVDA, TSLA, BTC-USD as of 2026-06-17. Rate limits unknown but a single 6-symbol basket fetch is fine. Yahoo may add a crumb-cookie wall later — keep the cache fallback.",
+      "facets": ["finance-data", "keyless-api", "yahoo-finance", "freetier"],
+      "confidence": 0.95
+    },
+    {
+      "type": "do-not-repeat",
+      "title": "Stooq daily CSV endpoint is dead for non-browser clients",
+      "body": "As of mid-2026, stooq.com/q/d/l/?s=<sym>&i=d returns an HTML page with a JavaScript proof-of-work challenge (SHA-256 leading-zero-nonce) instead of CSV. Plain Node fetch / curl cannot pass the wall — it requires executing JS in a browser to obtain a session cookie. Same wall on stooq.pl. Do not rely on Stooq for any non-browser data ingestion. Use Yahoo Finance chart endpoint or another keyless source instead.",
+      "facets": ["stooq", "browser-wall", "proof-of-work", "finance-data", "blocker"],
+      "confidence": 0.97
+    },
+    {
+      "type": "anti-pattern",
+      "title": "HyperSwarm reviewer lane routed to Tier-A model returned ungrounded verdict",
+      "body": "A delegate_task reviewer lane routed to phi4-mini-64k:latest (Tier-A cheap model) for a Tier-C adversarial review job (math + diversity + honesty + URL-pattern verification) returned an ungrounded verdict. It claimed 'math_check fail' with no row citations, reported the wrong URL pattern (cited /stock-market/quote?symbol=SPY which is not what data.js uses), and answered 'overwrite_risk: no' despite the run literally overwriting the prior 2026-05-29-leaderboard.json. Captain re-verified the math directly from the artifact and confirmed all 6 rows were correct. Per HyperSwarm doctrine: reserve premium models for reviewer/breaker lanes. Routing a Tier-C job to a Tier-A model produces noise, not review.",
+      "facets": ["hyperswarm", "reviewer-lane", "model-routing", "ungrounded", "do-not-repeat"],
+      "confidence": 0.95
+    },
+    {
+      "type": "gap",
+      "title": "Multi-session performance aggregator not yet built for financial-agents",
+      "body": "Current harness writes one leaderboard artifact per session. Cross-session aggregation (win-rate over N sessions, cumulative $10 growth, Sharpe-like risk-adjusted measure, strategy consistency) is not yet built. This is the next maturity step before any broker-gated live execution. Owner: future task under plan financial-agents.",
+      "facets": ["financial-agents", "aggregation", "follow-up", "gap"],
+      "confidence": 0.9
+    }
+  ],
+  "next_task_ids": [
+    "task-2026-06-02-017"
+  ]
+}

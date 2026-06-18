@@ -26,7 +26,6 @@ in Data Center; run post-evaluation after meaningful jobs.
 
 For any real multi-step effort, do not leave the plan in conversational form.
 Restate it as a work packet before proceeding. Minimum fields:
-
 - Goal (outcome, why it matters, success criteria, proof)
 - Tasks (explicit next actions)
 - Branch (feature branch name when applicable)
@@ -34,8 +33,12 @@ Restate it as a work packet before proceeding. Minimum fields:
 - Main landing path / expectation
 - Truth-surface updates required, especially capability-matrix updates
 - Proof
-
+Execution doctrine tied to the packet:
+- Plans should run to completion without intervention from Fritz unless they hit a real blocker, destructive side effect, missing credential, or irreversible decision Fritz must personally own.
+- Multi-swarm and parallel orchestrated swarms are allowed and preferred when dependencies permit and they are the most efficient path.
+- The task list must be updated as each task completes, blocks, or changes state so the plan can resume cleanly after interruption.
 If branch/worktree are not needed, say that explicitly instead of omitting them.
+Use `fam-hub plan template` for the canonical shape and `fam-hub plan validate` to enforce it.
 
 ## Studio Process Management (Non-Negotiable)
 

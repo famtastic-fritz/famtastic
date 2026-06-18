@@ -501,6 +501,14 @@ MEMORYHELP
         shift 2
         plan_list "$@"
         ;;
+      template)
+        cat "$HUB_ROOT/plans/plan-template.json"
+        ;;
+      validate)
+        require_plan_registry || exit 1
+        shift 2
+        node "$SCRIPT_DIR/plans/validate-template.js" "$@"
+        ;;
       show)
         require_plan_registry || exit 1
         PLAN_ID="${3:-}"
@@ -582,6 +590,8 @@ Usage:
   fam-hub plan list --group-by studio|plan_type|stream
   fam-hub plan status               Alias for plan list
   fam-hub plan show <plan-id>       Show detail for one plan
+  fam-hub plan template             Print the canonical plan template
+  fam-hub plan validate [--plan <id> | --all] [--json]
   fam-hub plan review               Review registry/ledger health
 
 PLANHELP
@@ -594,30 +604,8 @@ PLANHELP
     TASK_LEDGER="$HUB_ROOT/tasks/tasks.jsonl"
     case "$TASKCMD" in
       list|status)
-        PLAN_FILTER=""
-        if [ "${3:-}" = "--plan" ]; then
-          PLAN_FILTER="${4:-}"
-        fi
-        if [ ! -f "$TASK_LEDGER" ] || ! grep -q '[^[:space:]]' "$TASK_LEDGER"; then
-          echo "No task records yet."
-          echo "Seed source: plans/registry.json"
-          echo "Next: promote plan tasks into tasks/tasks.jsonl with plan_id, task_id, runner, status, proof_required."
-          exit 0
-        fi
-        if [ -n "$PLAN_FILTER" ]; then
-          echo "| Task | Status | Title | Runner | Next action |"
-          echo "|---|---|---|---|---|"
-          jq -r --arg plan "$PLAN_FILTER" '
-            select(.plan_id == $plan)
-            | "| `\(.task_id // .id)` | \(.status // "unknown") | \(.title // .summary // "untitled") | \(.runner // "unassigned") | \(.next_action // "-") |"
-          ' "$TASK_LEDGER"
-        else
-          echo "| Task | Plan | Status | Runner | Next action |"
-          echo "|---|---|---|---|---|"
-          jq -r '
-            "| `\(.task_id // .id)` | \(.plan_id // "unknown") | \(.status // "unknown") | \(.runner // "unassigned") | \(.next_action // "-") |"
-          ' "$TASK_LEDGER"
-        fi
+        shift 2
+        node "$SCRIPT_DIR/plans/task-list.js" "$@"
         ;;
       promote)
         REGISTRY="$HUB_ROOT/plans/registry.json"
@@ -681,8 +669,9 @@ PLANHELP
 fam-hub task — Task ledger status
 
 Usage:
-  fam-hub task list                 Show all task records
-  fam-hub task list --plan <id>     Show task records for one plan
+  fam-hub task list [--plan <id>] [--studio <value>] [--stream <value>] [--status <value>] [--runner <value>]
+  fam-hub task list --compact
+  fam-hub task list --json
   fam-hub task promote --dry-run    Preview task promotion from registry
   fam-hub task promote --apply      Append missing promoted task records
 
