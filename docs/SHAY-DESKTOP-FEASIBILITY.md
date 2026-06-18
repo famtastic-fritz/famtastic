@@ -423,11 +423,17 @@ from scratch. Concrete reuse map from this codebase:
 | SQLite usage precedent | `better-sqlite3` in studio | `site-studio/` (`lib/` db modules) |
 | Provider SDK precedent | Anthropic/OpenAI/Gemini already wired | `site-studio/server.js` |
 
-**Important caveat:** none of these are Electron — **Shay would be the first
-true desktop/native app in the ecosystem.** Everything else is web/CLI/Node.
-So the *shell* is genuinely new, but the *brain* is ~80% already built and
-proven here. Build the Shay Core as a Node library that both Electron and your
-existing tools can import, and you maximize reuse.
+**Critical update (see §12):** an earlier draft of this study claimed "Shay
+would be the first true desktop app in the ecosystem." **That is wrong.** A
+working **`shay-desktop-electron`** app already exists (Electron, a *live*
+Chat screen, 20+ scaffolded screens, a proven `build_app` + typecheck +
+render-gate harness, keychain-backed Providers screen, and a *planned*
+CaptureInbox). It is not cloned in this repo's container, but it is real and
+in active development. This means the *shell is already built* and the *brain*
+is ~80% present here — so the only genuinely net-new part of this study is the
+**provider-webview surface + "Save to Shay" capture**, roughly **10–15%** of
+the total. Build the Shay Core as a Node library that the existing Electron
+app imports, and reuse is near-total.
 
 ---
 
@@ -449,6 +455,17 @@ the inevitable provider/auth yak-shaving."
 **Recurring tax:** budget **~2–6 hours/month** maintaining each embedded
 provider webview against DOM/auth/bot-detection changes. The extension and
 Obsidian routes cut this dramatically.
+
+**Revised effort given the existing app (see §12):** because
+`shay-desktop-electron` already provides the shell, IPC pattern, keychain
+Providers screen, Memory screen, and a planned CaptureInbox, the *only*
+net-new build is the **provider-surface layer**:
+
+| Net-new milestone (atop the existing app) | Scope | Effort |
+|---|---|---|
+| **Provider-window surface** | 3 new screens (ChatGPT/Claude/Gemini) as `WebContentsView` with isolated session partitions, wired into the existing router as units U25–U27 | **1–2 weeks** |
+| **"Save to Shay" preload + capture wiring** | Minimal preload (selection capture only) → existing Memory/CaptureInbox IPC | **3–6 days** |
+| **Browser-extension surface** (recommended alt to webviews) | Content-script "Save to Shay" → native messaging to the existing app's IPC | **1–2 weeks** |
 
 ---
 
@@ -473,6 +490,91 @@ Obsidian routes cut this dramatically.
 The version most likely to *last* is the one where the AIs are interchangeable
 inputs and **your memory is the product.** Build that, and every provider
 change becomes a surface swap instead of an existential threat.
+
+---
+
+## 12. Reconciliation with the existing `shay-desktop-electron` build
+
+> Added after discovering an in-flight desktop effort that this study must be
+> read against. **This is the most important section if you already have that
+> app open.**
+
+### 12.1 What already exists
+
+Per `obsidian/Shay-Memory/plans/ULTIMATE-desktop-agentos-plan-2026-05-30.md`
+(and the related `shay-desktop-plan-*` and `skills-screen-plan` docs), there is
+already a working **`shay-desktop-electron`** application — *not* in this repo's
+container, but real and actively built by Shay's autonomous pipeline:
+
+- **Electron app, React renderer**, screens under `src/renderer/src/screens/`.
+- **Chat screen is LIVE**; Soul + Models are nav-wired; ~20 more screens
+  scaffolded (Sessions, Memory, Agents, Kanban, Schedules, Skills, Studio,
+  Providers, Settings, Gateway, Office, Tools, + planned Logs, Diagnostics,
+  AgentMonitor, **CaptureInbox**).
+- **Proven build harness:** `build_app` + `surgical_patch`, a **typecheck
+  gate** (`tsc --noEmit`) and a **runtime render gate**, with auto-rollback —
+  driven by a `.ralph` autonomous loop over a 24-unit PRD.
+- **33 proven IPC `invoke` calls; 232 `ipcMain.handle` handlers.**
+- **Keychain-backed Providers screen** (API keys saved to OS keychain).
+
+### 12.2 The critical distinction — two visions share one name
+
+| | **Existing `shay-desktop-electron`** | **This study's brief** |
+|---|---|---|
+| What it is | An **Agent-OS control center** — Shay drives *her own swarm* (dispatch agents, monitor tasks, manage memory) from one window | A **multi-brain command center** — *you* drive *external* AIs (ChatGPT/Claude/Gemini) from one window |
+| AI surface | Shay's own brains + API/local **providers** (keychain config) | **Hosted subscription web UIs** + capture |
+| Provider webviews | **None** — the only webview use is the Studio screen wrapping FAMtastic Studio | The whole point |
+| "Save to Shay" capture from a provider | Not present | The whole point |
+| Status | Built, Chat live, harness proven | Greenfield in the brief; ~10–15% net-new given the shell exists |
+
+**They are not competitors — they are two surfaces of one app.** The existing
+app is the *brain/agent* surface; this study describes the *external-AI
+capture* surface that's currently missing from it.
+
+### 12.3 How they merge cleanly
+
+The existing app already gives you almost everything §2 of this study asks for:
+- The **shell** → exists.
+- The **Memory screen + IPC** → exists (the "independent memory" guarantee).
+- The **CaptureInbox** → already a *planned* unit (U19) — this is precisely the
+  destination for "Save to Shay."
+- **Keychain** for any secrets → exists (Providers screen).
+- The **swarm IPC domain** (`src/main/domains/swarm.ts`, units U9–U15) → the
+  v1.0 agent-delegation path this study defers to later.
+
+So the provider surface slots in as **three new units appended to the existing
+24-unit PRD**, following the same recipe (new screen folder + IPC domain +
+preload binding + router entry + both gates):
+
+```
+U25 → ProviderWindow surface: ChatGPT/Claude/Gemini as WebContentsView,
+       one isolated session partition each (persist:chatgpt|claude|gemini)
+U26 → Save-to-Shay preload: user-triggered selection capture → IPC →
+       existing CaptureInbox/Memory handlers (NO autonomous DOM scraping)
+U27 → Capture review flow: inbox item → note/task/project/memory, with
+       provider+url+timestamp provenance
+```
+
+Everything in §1.3 (manual-only, never auto-drive) and §5 (Gemini login via
+the extension/system browser) still governs these units unchanged.
+
+### 12.4 The one open decision for you
+
+The existing app was scoped as an **Agent-OS control center**; this study was
+asked for as a **subscription-hosting command center.** Before building, decide
+which is true:
+
+- **(A) Merge** — add U25–U27 to the existing app; one "Shay" with both an
+  agent surface and an external-AI capture surface. *(Recommended — maximal
+  reuse, one app to maintain.)*
+- **(B) Keep separate** — `shay-desktop-electron` stays the agent console; a
+  thinner, capture-focused build (or just the **browser extension** from §6.1)
+  becomes the external-AI surface. *(Lower coupling, two things to maintain.)*
+
+My recommendation is **(A)** with the **extension** (§6.1) as the primary
+capture mechanism layered in — you get the unified window *and* dodge the
+Gemini-login / bot-detection tax. But this is a genuine product-scope call
+that's yours to make; the rest of the study holds under either choice.
 
 ---
 
