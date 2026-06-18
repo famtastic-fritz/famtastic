@@ -1,7 +1,7 @@
 {
-  "version": 2,
+  "version": 4,
   "_comment": "The ONLY file the self-improvement loop mutates. All values are clamped to the *_bounds ranges below. Hand edits are fine; the loop respects bounds.",
-  "concurrency": 3,
+  "concurrency": 5,
   "concurrency_bounds": [
     1,
     6
