@@ -32,13 +32,40 @@ function Icon({ name, ...rest }) {
   );
 }
 
-/* ---------- brand mark (NCS blueprint logo) ---------- */
+/* ---------- brand marks (faithful recreations of the NCS + NIBS logos) ---------- */
 function BrandMark({ className }) {
+  // NCS "exploded star": top shard red, remaining shards grey, flying apart.
   return (
-    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <rect x="3" y="3" width="42" height="42" rx="8" fill="#0b1f3a" stroke="#1ca7ec" strokeWidth="1.5"/>
-      <path d="M12 34V14l9 12V14M27 14h9M27 24h7M27 34h9" stroke="#1ca7ec" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="36" cy="14" r="2" fill="#36e0c4"/>
+    <svg className={className} viewBox="0 0 84 84" aria-hidden="true">
+      <polygon points="42,4 51,30 40,32" fill="#E0301E"/>
+      <polygon points="42,4 40,32 30,20" fill="#C8281A"/>
+      <polygon points="78,34 54,32 62,24" fill="#9A9C9F"/>
+      <polygon points="82,40 58,38 66,44" fill="#B7B9BB"/>
+      <polygon points="70,74 52,48 60,46" fill="#7E8083"/>
+      <polygon points="64,82 46,54 54,54" fill="#9A9C9F"/>
+      <polygon points="18,82 40,54 44,58" fill="#B7B9BB"/>
+      <polygon points="8,72 34,48 36,54" fill="#7E8083"/>
+      <polygon points="2,40 28,38 24,44" fill="#9A9C9F"/>
+      <polygon points="6,34 30,32 24,26" fill="#B7B9BB"/>
+      <polygon points="40,32 47,37 42,44 37,37" fill="#6B6D70"/>
+    </svg>
+  );
+}
+
+function NibsMark({ className }) {
+  // NIBS green "building bars" + swoosh, with wordmark.
+  return (
+    <svg className={className} viewBox="0 0 300 70" aria-label="Published by the National Institute of Building Sciences">
+      <g>
+        <polygon points="4,58 14,58 24,14 16,14" fill="#5FA544"/>
+        <polygon points="20,58 30,58 38,4 30,4" fill="#3F7E2E"/>
+        <polygon points="34,58 44,58 50,18 42,18" fill="#7CC04A"/>
+        <polygon points="48,58 58,58 63,28 55,28" fill="#4E9438"/>
+        <path d="M2 63 C 22 52, 48 52, 72 61" stroke="#7CC04A" strokeWidth="4" fill="none" strokeLinecap="round"/>
+      </g>
+      <text x="84" y="24" fontFamily="Arial, sans-serif" fontSize="13" fill="#1f3b66">National Institute of</text>
+      <text x="84" y="46" fontFamily="Arial Black, Arial, sans-serif" fontWeight="900" fontSize="20" fill="#1f3b66">BUILDING SCIENCES</text>
+      <text x="84" y="63" fontFamily="Georgia, serif" fontStyle="italic" fontSize="11.5" fill="#2f5e8f">Building American Innovation</text>
     </svg>
   );
 }
@@ -57,6 +84,9 @@ function Nav({ content, route }) {
             <strong>{content.site?.name || "National CAD Standard"}</strong>
             <span>{content.site?.edition || "NCS7"}</span>
           </span>
+        </a>
+        <a className="cobrand" href="#/about" title="Published by the National Institute of Building Sciences">
+          <NibsMark className="nibs-mark" />
         </a>
         <button className="nav-toggle" aria-label="Menu" onClick={() => setOpen(o => !o)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -286,7 +316,7 @@ function ProductModal({ product, mode, onClose }) {
         </div>
         <div className="modal-foot">
           {!buy
-            ? <><a className="btn btn-outline" href="cad3d/index.html" target="_blank"><Icon name="cube" width="16" height="16" /> Open in 3D viewer</a>
+            ? <><a className="btn btn-outline" href="#/viewer" onClick={onClose}><Icon name="cube" width="16" height="16" /> Open in 3D viewer</a>
                 <button className="btn btn-primary" onClick={onClose}>Close</button></>
             : <><button className="btn btn-outline" onClick={onClose}>Cancel</button>
                 <button className="btn btn-primary" onClick={() => { alert("Demo: purchase confirmed for " + product.sku); onClose(); }}><Icon name="download" width="16" height="16" /> Confirm & download</button></>}
@@ -352,7 +382,7 @@ function Pricing({ content }) {
 function Resources({ content }) {
   const r = content.resources || {};
   function act(item) {
-    if (item.title.toLowerCase().includes("3d")) window.open("cad3d/index.html", "_blank");
+    if (item.title.toLowerCase().includes("3d") || item.type === "Immersive") window.location.hash = "#/viewer";
     else alert("Demo: \"" + item.action + "\" — " + item.title);
   }
   return (
@@ -420,8 +450,8 @@ function CtaStrip() {
         <h2>Speak the standard fluently.</h2>
         <p>Equip your team with the complete National CAD Standard, Version 7 — and see it come alive in 3D.</p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <a className="btn btn-primary" href="#/pricing">Get NCS7</a>
-          <a className="btn btn-ghost" href="cad3d/index.html" target="_blank"><Icon name="cube" width="18" height="18" /> Try the 3D viewer</a>
+          <a className="btn btn-primary" href="#/pricing">Order the NCS</a>
+          <a className="btn btn-ghost" href="#/viewer"><Icon name="cube" width="18" height="18" /> Try the 3D viewer</a>
         </div>
       </div>
     </section>
@@ -443,6 +473,9 @@ function Footer({ content }) {
               </span>
             </a>
             <p className="footer-blurb">{f.blurb}</p>
+            <a className="footer-nibs" href="#/about" title="National Institute of Building Sciences">
+              <NibsMark className="nibs-mark-footer" />
+            </a>
           </div>
           {(f.columns || []).map((col, i) => (
             <div className="footer-col" key={i}>
@@ -453,7 +486,7 @@ function Footer({ content }) {
         </div>
         <div className="footer-bottom">
           <span>{f.legal}</span>
-          <span className="badge">NCS · v7.0 · demo build</span>
+          <span className="badge">A product of AIA · CSI · NIBS</span>
         </div>
       </div>
     </footer>
@@ -474,12 +507,45 @@ function useHashRoute() {
   return route;
 }
 
+/* ---------- 3D CAD VIEWER (in-app, uses global THREE — works everywhere) ---------- */
+function Viewer() {
+  const ref = useRef(null);
+  useEffect(() => {
+    let dispose = function () {};
+    const id = setTimeout(() => {
+      if (window.NCSViewer && ref.current) dispose = window.NCSViewer.init(ref.current);
+    }, 40);
+    return () => { clearTimeout(id); try { dispose(); } catch (e) {} };
+  }, []);
+  return (
+    <section className="section viewer-section" style={{ paddingTop: 120 }}>
+      <div className="container">
+        <div className="section-head">
+          <p className="eyebrow">Immersive · Bonus</p>
+          <h2>The drawing, exploded in 3D</h2>
+          <p className="sub">Instead of a flat PDF, present the standard as an explorable model — disciplines stacked as layers. Drag to orbit, scroll to zoom.</p>
+        </div>
+        <div className="viewer-stage">
+          <canvas ref={ref} className="viewer-canvas"></canvas>
+          <div className="viewer-legend">
+            <span><i style={{ background: "#46c2ff" }}></i> Architectural</span>
+            <span><i style={{ background: "#ffd166" }}></i> Structural</span>
+            <span><i style={{ background: "#6ee7b7" }}></i> MEP</span>
+          </div>
+        </div>
+        <p className="viewer-note">Built with Three.js and free tooling. In production, an uploaded CAD PDF is parsed (pdf.js) and its layers mapped onto this 3D presentation.</p>
+      </div>
+    </section>
+  );
+}
+
 const ROUTES = {
   "#/": Home,
   "#/about": About,
   "#/products": Products,
   "#/pricing": Pricing,
   "#/resources": Resources,
+  "#/viewer": Viewer,
   "#/contact": Contact
 };
 

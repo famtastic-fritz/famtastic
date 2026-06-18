@@ -1,5 +1,20 @@
 # SUMMARY — Agent Factory + NCS7 Proof
 
+> **Fidelity pass (update):** The site was crawled (real sitemap + content
+> reconstructed via the public index since the live site 403s automated fetchers and
+> sandbox egress is allow-listed) and the recreation was made faithful: the real
+> **NCS** and **NIBS** logos are recreated as SVG and shown in the header/footer; the
+> real pages (Home, About, NCS Content, Order, Downloads & FAQ, Contact) and real
+> content (the **8 UDS modules**, AIA·CSI·NIBS founders, Single/Site/Enterprise
+> licensing) drive the site. A **page-by-page comparison** is in
+> `docs/ncs7/04-page-by-page-comparison.md` and a **live backend transcript** in
+> `docs/ncs7/05-backend-proof.md`. The broken `cad3d` link was replaced with an
+> **in-app 3D viewer** (`#/viewer`, global-THREE, no ES modules) that works when
+> served, on static hosts, and in the single-file build. A self-contained
+> double-click demo is built at `assets/ncs7/ncs7-standalone.html` via
+> `node assets/ncs7/build-standalone.js`.
+
+
 A sandboxed, self-managing multi-agent system that pulls work from a queue, spawns
 and retires worker agents on its own, routes each task to the cheapest capable
 model, tracks cost, and tunes its own configuration between batches. It was then

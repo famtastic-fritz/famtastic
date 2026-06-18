@@ -1,98 +1,98 @@
 [
   {
-    "id": "ncs-admin",
-    "sku": "NCS7-M1",
-    "title": "General Administration",
-    "category": "Module 1",
-    "summary": "Governance, purpose, scope, and the rules for adopting and maintaining the NCS within an organization.",
-    "description": "The administrative module explains how the National CAD Standard is structured, how to reference it in contracts and specifications, how to document organization-specific deviations, and how the consensus maintenance process works. It is the entry point every firm reads first.",
-    "pages": 48,
+    "id": "administration",
+    "category": "Administration",
+    "title": "Foreword & Administration",
+    "sku": "NCS-ADM",
     "format": "PDF",
-    "price": 75,
+    "pages": 38,
+    "price": 0,
+    "summary": "How the standard is structured, adopted and applied on a project.",
+    "description": "The Foreword and Administration sections explain the purpose of the NCS, how to reference and adopt it on a project, and how the component standards fit together.",
     "highlights": [
-      "Adoption checklist",
-      "Contract reference language",
-      "Deviation documentation template"
+      "Adoption guidance",
+      "Project references",
+      "Component overview"
     ]
   },
   {
-    "id": "ncs-uds",
-    "sku": "NCS7-M2",
-    "title": "Uniform Drawing System (UDS)",
-    "category": "Module 2",
-    "summary": "The core of the standard: sheet organization, drawing set order, schedules, notations, and symbols.",
-    "description": "The Uniform Drawing System defines eight integrated modules covering sheet identification, sheet organization, schedules, drafting conventions, terms and abbreviations, symbols, notations, and code conventions. This is the most-used reference on any drafting team.",
-    "pages": 212,
-    "format": "PDF",
-    "price": 195,
-    "highlights": [
-      "Sheet identification system",
-      "Standard symbol library",
-      "Drafting conventions"
-    ]
-  },
-  {
-    "id": "ncs-layers",
-    "sku": "NCS7-M3",
+    "id": "aia-layers",
+    "category": "AIA",
     "title": "AIA CAD Layer Guidelines",
-    "category": "Module 3",
-    "summary": "The discipline-based layer naming system that keeps every layer predictable across firms and platforms.",
-    "description": "The AIA CAD Layer Guidelines specify a structured layer name format — discipline designator, major group, minor group, and status field — so that layers are self-describing and consistent. This module is the backbone of cross-firm CAD collaboration.",
-    "pages": 96,
-    "format": "PDF",
-    "price": 145,
-    "highlights": [
-      "Discipline designators",
-      "Layer name format",
-      "Status field conventions"
-    ]
-  },
-  {
-    "id": "ncs-plot",
-    "sku": "NCS7-M4",
-    "title": "Plotting Guidelines",
-    "category": "Module 4",
-    "summary": "Line weights, pen tables, color-to-weight mapping, and consistent, reproducible plotted output.",
-    "description": "The Plotting Guidelines establish how on-screen colors map to plotted line weights, recommended pen tables, and conventions that guarantee a drawing plotted in one office matches the appearance of the same drawing plotted in another.",
-    "pages": 54,
-    "format": "PDF",
-    "price": 95,
-    "highlights": [
-      "Color-to-weight mapping",
-      "Recommended pen tables",
-      "Reproducible output"
-    ]
-  },
-  {
-    "id": "ncs-bim",
-    "sku": "NCS7-M5",
-    "title": "BIM Implementation",
-    "category": "Module 5 (New in V7)",
-    "summary": "How NCS conventions map onto model-based delivery, object naming, and BIM execution planning.",
-    "description": "New in Version 7, the BIM Implementation module bridges traditional 2D CAD conventions and model-based workflows. It covers object and parameter naming aligned to the layer guidelines, model file organization, level-of-development references, and how to maintain NCS compliance when documents are generated from a model.",
+    "sku": "NCS-AIA",
+    "format": "PDF + XLSX",
     "pages": 120,
-    "format": "PDF",
-    "price": 225,
+    "price": 0,
+    "summary": "The coordinated layer naming system used across all disciplines.",
+    "description": "A complete, hierarchical CAD layer naming convention (discipline designators, major/minor groups, status) with downloadable Excel reference tables.",
     "highlights": [
-      "Model-to-sheet compliance",
-      "Object naming alignment",
-      "BIM execution plan templates"
+      "Layer naming",
+      "Discipline designators",
+      "Excel tables"
     ]
   },
   {
-    "id": "ncs-symbols",
-    "sku": "NCS7-M6",
-    "title": "Symbols & Notations Reference",
-    "category": "Module 6",
-    "summary": "The complete graphic symbol set and standardized notation conventions for every discipline.",
-    "description": "A comprehensive, printable reference of the standardized graphic symbols, reference bubbles, and notation conventions used across architectural, structural, mechanical, electrical, and civil drawings.",
-    "pages": 88,
-    "format": "PDF",
-    "price": 120,
+    "id": "uds",
+    "category": "CSI · Uniform Drawing System",
+    "title": "Uniform Drawing System (8 Modules)",
+    "sku": "NCS-UDS",
+    "format": "PDF + data files",
+    "pages": 360,
+    "price": 0,
+    "summary": "Set organization, sheets, schedules, drafting conventions, terms, symbols, notations and code conventions.",
+    "description": "The eight UDS modules: (1) Drawing Set Organization, (2) Sheet Organization, (3) Schedules, (4) Drafting Conventions, (5) Terms & Abbreviations, (6) Symbols, (7) Notations, (8) Code Conventions. Includes downloadable DWG/LIN/PAT symbol files.",
     "highlights": [
-      "Cross-discipline symbol set",
-      "Reference bubble conventions",
-      "Printable quick-reference"
+      "8 modules",
+      "Symbols DWG/LIN/PAT",
+      "Sheet & set organization"
+    ]
+  },
+  {
+    "id": "bim",
+    "category": "NIBS",
+    "title": "BIM Implementation",
+    "sku": "NCS-BIM",
+    "format": "PDF",
+    "pages": 44,
+    "price": 0,
+    "summary": "Guidance for applying the standard within BIM workflows.",
+    "description": "How the NCS conventions map onto Building Information Modeling — object naming, coordination and deliverables.",
+    "highlights": [
+      "BIM workflows",
+      "Coordination",
+      "Deliverables"
+    ]
+  },
+  {
+    "id": "plotting",
+    "category": "NIBS",
+    "title": "Plotting Guidelines",
+    "sku": "NCS-PLOT",
+    "format": "PDF + XLSX",
+    "pages": 28,
+    "price": 0,
+    "summary": "Standardized line weights, screening and pen tables for predictable output.",
+    "description": "Plotting Guidelines define line weights, screening percentages and pen-table assignments so printed and PDF output is consistent across firms. Includes Excel tables.",
+    "highlights": [
+      "Line weights",
+      "Screening",
+      "Pen tables"
+    ]
+  },
+  {
+    "id": "appendixes",
+    "category": "Reference",
+    "title": "Appendixes & Data Files",
+    "sku": "NCS-APX",
+    "format": "XLSX · DWG · LIN · PAT",
+    "pages": 0,
+    "price": 0,
+    "summary": "Downloadable Excel, DWG, LIN and PAT files that accompany the online document.",
+    "description": "Excel files (AIA Layer Guidelines, UDS Terms & Abbreviations, Schedules, Regulatory Information, Plotting tables) and DWG/LIN/PAT files (UDS Symbols), downloadable from the licensed online document.",
+    "highlights": [
+      "Excel tables",
+      "Symbol DWG/LIN/PAT",
+      "Regulatory info"
     ]
   }
 ]

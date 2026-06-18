@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-label="United States National CAD Standard (NCS)">
+  <!-- Faithful recreation of the NCS "exploded star" mark + wordmark -->
+  <g transform="translate(8 6)">
+    <!-- exploded 5-point star: top shard red, others grey shards flying apart -->
+    <g>
+      <polygon points="42,2 50,26 38,28" fill="#E0301E"/>
+      <polygon points="42,2 38,28 30,18" fill="#C8281A"/>
+      <polygon points="74,32 52,30 60,22" fill="#9A9C9F"/>
+      <polygon points="80,34 56,34 64,40" fill="#B7B9BB"/>
+      <polygon points="70,72 52,46 60,44" fill="#7E8083"/>
+      <polygon points="66,82 46,52 54,52" fill="#9A9C9F"/>
+      <polygon points="16,82 40,52 44,56" fill="#B7B9BB"/>
+      <polygon points="8,70 34,46 36,52" fill="#7E8083"/>
+      <polygon points="2,34 30,36 26,42" fill="#9A9C9F"/>
+      <polygon points="6,30 30,30 24,24" fill="#B7B9BB"/>
+      <polygon points="40,30 46,34 42,40 38,34" fill="#6B6D70"/>
+    </g>
+  </g>
+  <!-- wordmark -->
+  <text x="96" y="56" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="52" fill="#E0301E" letter-spacing="1">NCS</text>
+  <text x="98" y="80" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="13.5" fill="#5b6066" letter-spacing="0.3">United States National CAD Standard</text>
+  <text x="343" y="74" font-family="Arial, sans-serif" font-size="11" fill="#5b6066">&#174;</text>
+</svg>

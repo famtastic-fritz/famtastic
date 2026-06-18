@@ -2,16 +2,16 @@
   "site": {
     "name": "National CAD Standard",
     "shortName": "NCS",
-    "edition": "NCS Version 7 (NCS7)",
-    "tagline": "The unified language of design documentation.",
-    "established": 1997,
-    "email": "info@nationalcadstandard.org",
-    "phone": "+1 (202) 555-0177",
-    "address": "1735 New York Ave NW, Washington, DC 20006",
+    "edition": "United States · Version 7",
+    "tagline": "The single nationally recognized standard for the organization and presentation of construction documents.",
+    "established": 1999,
+    "email": "ncs@nibs.org",
+    "phone": "(202) 289-7800",
+    "address": "National Institute of Building Sciences, Washington, DC",
     "social": {
-      "linkedin": "https://www.linkedin.com/company/national-cad-standard",
-      "x": "https://x.com/nationalcad",
-      "youtube": "https://www.youtube.com/@nationalcad"
+      "linkedin": "#",
+      "x": "#",
+      "youtube": "#"
     }
   },
   "nav": [
@@ -20,19 +20,19 @@
       "route": "#/"
     },
     {
-      "label": "About the NCS",
+      "label": "About",
       "route": "#/about"
     },
     {
-      "label": "Standards",
+      "label": "NCS Content",
       "route": "#/products"
     },
     {
-      "label": "Pricing",
+      "label": "Order",
       "route": "#/pricing"
     },
     {
-      "label": "Resources",
+      "label": "Downloads & FAQ",
       "route": "#/resources"
     },
     {
@@ -42,241 +42,242 @@
   ],
   "home": {
     "hero": {
-      "kicker": "Version 7 — Released for the BIM Era",
-      "title": "One standard. Every drawing. Spoken fluently.",
-      "subtitle": "The National CAD Standard (NCS7) gives architects, engineers, and the federal government a single, consistent system for organizing, naming, and presenting construction documents — from layer names to sheet sets.",
+      "kicker": "United States National CAD Standard® · Version 7",
+      "title": "One standard. Every drawing set.",
+      "subtitle": "The NCS unifies the AIA CAD Layer Guidelines, the CSI Uniform Drawing System, and the NIBS BIM Implementation & Plotting Guidelines into one coordinated standard — now reimagined as an immersive, fully manageable web experience.",
       "primaryCta": {
-        "label": "Browse the Standards",
-        "route": "#/products"
+        "label": "Order the NCS",
+        "route": "#/pricing"
       },
       "secondaryCta": {
-        "label": "See the 3D CAD Viewer",
-        "route": "cad3d/index.html"
+        "label": "See a drawing in 3D",
+        "route": "#/viewer"
       }
     },
     "stats": [
       {
-        "value": "30+",
-        "label": "Years of adoption"
+        "value": "8",
+        "label": "UDS Modules"
       },
       {
-        "value": "6",
-        "label": "Integrated modules"
+        "value": "AIA · CSI · NIBS",
+        "label": "Founding Organizations"
       },
       {
-        "value": "100k+",
-        "label": "Licensed professionals"
+        "value": "24/7",
+        "label": "Online Access"
       },
       {
-        "value": "Fed",
-        "label": "Government-mandated"
+        "value": "V7",
+        "label": "Current Edition"
       }
     ],
     "intro": {
-      "title": "Why a national standard?",
-      "body": "Before the NCS, every firm spoke its own CAD dialect. Layer names, sheet organization, abbreviations, and plotting conventions varied from office to office, making collaboration slow and error-prone. The National CAD Standard unifies these conventions so a drawing produced in one firm reads cleanly in any other — and in every government agency that mandates it."
+      "title": "Three standards, coordinated into one",
+      "body": "Since 1999 the U.S. National CAD Standard has given architects, engineers and agencies a common language for construction documents — consistent layers, sheets, symbols, notations and plotting across every discipline and firm."
     },
     "features": [
       {
-        "icon": "layers",
-        "title": "Consistent layering",
-        "body": "A predictable, discipline-based layer naming system that scales from a tenant fit-out to a hospital campus."
+        "title": "AIA CAD Layer Guidelines",
+        "body": "A complete, coordinated layer naming system so every discipline reads the same model the same way."
       },
       {
-        "icon": "grid",
-        "title": "Uniform sheet sets",
-        "body": "Standard sheet identification and organization so reviewers always know where to look."
+        "title": "CSI Uniform Drawing System",
+        "body": "Eight modules governing set organization, sheets, schedules, drafting conventions, terms, symbols, notations and code conventions."
       },
       {
-        "icon": "cpu",
-        "title": "BIM-ready",
-        "body": "Version 7 aligns traditional CAD conventions with modern BIM workflows and model-based delivery."
+        "title": "NIBS BIM & Plotting Guidelines",
+        "body": "BIM implementation guidance plus standardized plotting — line weights, screening and pen tables — for predictable output."
       }
     ]
   },
   "about": {
     "title": "About the National CAD Standard",
-    "lead": "The NCS is a consensus standard maintained by a coalition of the design and construction industry's leading institutions.",
-    "body": "The United States National CAD Standard (NCS) is published through the National Institute of Building Sciences (NIBS) and developed by a consensus process involving the American Institute of Architects (AIA), the Construction Specifications Institute (CSI), the U.S. Coast Guard, the General Services Administration (GSA), and others. It combines several previously independent standards into one coordinated document so that the entire lifecycle of a construction project speaks the same documentation language.",
+    "lead": "The United States National CAD Standard® (NCS) is the single, nationally recognized standard for organizing and presenting building design data.",
+    "body": "The NCS is a consensus standard published and maintained by the National Institute of Building Sciences (NIBS). It combines work from three founding organizations — the American Institute of Architects (AIA), the Construction Specifications Institute (CSI), and NIBS — so that drawing sets are coordinated and legible no matter who produced them. Version 7 is delivered as a licensed online document with 24/7 access from the office, plus downloadable Excel, DWG, LIN and PAT data files.",
     "principles": [
       {
         "title": "Consensus-built",
-        "body": "Every module is balloted and reviewed by industry stakeholders, not dictated by a single vendor."
+        "body": "Developed and balloted by AIA, CSI and NIBS with industry-wide participation."
       },
       {
-        "title": "Vendor-neutral",
-        "body": "The standard works across AutoCAD, MicroStation, Revit, and any CAD/BIM platform."
+        "title": "Coordinated",
+        "body": "Layers, sheets, symbols and notations align across every discipline and firm."
       },
       {
-        "title": "Government-aligned",
-        "body": "Adopted and mandated by federal agencies including the GSA and the Department of Defense."
+        "title": "Maintained",
+        "body": "Published and kept current by NIBS, version after version, since 1999."
       }
     ],
     "timeline": [
       {
-        "year": "1997",
-        "event": "First coordinated draft combining AIA and CSI conventions."
+        "year": "1999",
+        "event": "NCS Version 1 published — AIA, CSI and NIBS unify their standards."
       },
       {
-        "year": "2004",
-        "event": "NCS Version 3 adopted widely across federal agencies."
+        "year": "2005",
+        "event": "Version 3 / 3.1 expands the Uniform Drawing System modules."
       },
       {
-        "year": "2014",
-        "event": "NCS Version 6 introduces expanded plotting and symbology guidance."
+        "year": "2011",
+        "event": "Version 5 adds BIM implementation guidance."
       },
       {
-        "year": "2024",
-        "event": "NCS Version 7 (NCS7) aligns the standard with BIM delivery."
+        "year": "2017",
+        "event": "Version 7 — current edition, delivered as a licensed online document."
       }
     ]
   },
   "pricing": {
-    "title": "Choose your access",
-    "subtitle": "Buy individual modules as PDFs, or subscribe for the complete standard plus updates.",
+    "title": "Order the NCS",
+    "subtitle": "Version 7 is a licensed online document with 24/7 access. Choose the license that matches your team. (Prices shown are illustrative for this demo — actual pricing is set at checkout.)",
     "plans": [
       {
         "id": "single",
-        "name": "Single Module",
-        "price": "from $75",
-        "period": "one-time",
-        "blurb": "Buy any one module as a downloadable PDF.",
+        "name": "Single License",
+        "price": "$ —",
+        "period": "per order · 1–2 users",
+        "blurb": "One to two employees within a single office at a single location.",
         "features": [
-          "One module PDF",
-          "Lifetime access to that version",
-          "Single-user license"
+          "1–2 employees",
+          "Single office / location",
+          "One printed copy",
+          "24/7 online access"
         ],
-        "cta": "Browse modules",
+        "cta": "Order Single",
         "featured": false
       },
       {
-        "id": "complete",
-        "name": "Complete NCS7",
-        "price": "$795",
-        "period": "one-time",
-        "blurb": "The full six-module set at a bundle price.",
+        "id": "site",
+        "name": "Site License",
+        "price": "$ —",
+        "period": "flat fee · 3–10 users",
+        "blurb": "Bulk access for a single office — up to ten employees.",
         "features": [
-          "All six modules",
-          "Online PDF viewer + download",
-          "Single-user license",
-          "3D CAD viewer access"
+          "3–10 employees",
+          "Single office / location",
+          "Up to ten printed copies",
+          "24/7 online access"
         ],
-        "cta": "Get the full set",
+        "cta": "Order Site",
         "featured": true
       },
       {
         "id": "enterprise",
-        "name": "Enterprise Subscription",
-        "price": "$2,400",
-        "period": "per year",
-        "blurb": "Unlimited seats, automatic version updates, and admin controls.",
+        "name": "Enterprise License",
+        "price": "$ —",
+        "period": "flat fee · 11+ users",
+        "blurb": "Company-wide access across multiple offices under a single domain.",
         "features": [
-          "Unlimited seats",
-          "Automatic updates to new versions",
-          "Admin dashboard & seat management",
+          "11+ employees",
+          "Multiple offices · one domain",
+          "Unlimited printed copies",
           "Priority support"
         ],
-        "cta": "Contact sales",
+        "cta": "Contact for Enterprise",
         "featured": false
       }
     ]
   },
   "resources": {
-    "title": "Resources",
-    "subtitle": "Free tools and references to help your team adopt the standard.",
+    "title": "Downloads & FAQ",
+    "subtitle": "Data files that ship with the online document, plus answers to the questions licensees ask most.",
     "items": [
       {
-        "title": "Adoption Quick-Start Guide",
-        "type": "PDF",
-        "body": "A 6-step checklist for rolling out the NCS across a firm.",
+        "type": "Data file",
+        "title": "AIA CAD Layer Guidelines (Excel)",
+        "body": "The full layer list as a downloadable Excel workbook for reference and customization.",
         "action": "Download"
       },
       {
-        "title": "Layer Name Cheat Sheet",
-        "type": "PDF",
-        "body": "The discipline-based layer format on a single printable page.",
+        "type": "Data file",
+        "title": "UDS Symbols (DWG / LIN / PAT)",
+        "body": "CAD-ready symbol, linetype and hatch-pattern files from the Uniform Drawing System.",
         "action": "Download"
       },
       {
-        "title": "Sample CAD Template Set",
-        "type": "DWG/RVT",
-        "body": "Pre-configured templates with NCS-compliant layers and sheet sets.",
+        "type": "Data file",
+        "title": "Plotting Tables (Excel)",
+        "body": "Line-weight, screening and pen-table assignments in spreadsheet form.",
         "action": "Download"
       },
       {
-        "title": "3D CAD Viewer Demo",
-        "type": "Web",
-        "body": "See a floor plan exploded into stacked 3D layers in your browser.",
-        "action": "Open"
+        "type": "Immersive",
+        "title": "View a CAD drawing in 3D",
+        "body": "See how a flat drawing becomes an explorable, exploded 3D model — the new way to present the standard.",
+        "action": "Open 3D viewer"
       },
       {
-        "title": "Webinar: NCS7 & BIM",
-        "type": "Video",
-        "body": "A recorded session on aligning model delivery with the standard.",
-        "action": "Watch"
+        "type": "FAQ",
+        "title": "What is included in V7?",
+        "body": "Foreword, Administration, AIA CAD Layer Guidelines, the 8-module Uniform Drawing System, BIM Implementation, Plotting Guidelines and Appendixes.",
+        "action": "Read FAQ"
       },
       {
-        "title": "FAQ",
-        "type": "Web",
-        "body": "Answers to the most common licensing and compliance questions.",
-        "action": "Read"
+        "type": "FAQ",
+        "title": "How is access delivered?",
+        "body": "As a licensed online document with 24/7 access, plus downloadable Excel/DWG/LIN/PAT data files.",
+        "action": "Read FAQ"
       }
     ]
   },
   "contact": {
-    "title": "Talk to us",
-    "subtitle": "Questions about licensing, enterprise seats, or compliance? We respond within one business day.",
-    "fields": [
-      "Name",
-      "Organization",
-      "Email",
-      "Message"
-    ],
+    "title": "Contact",
+    "subtitle": "Questions about licensing, content, or a custom rollout? Reach the NCS team.",
+    "fields": [],
     "office": {
       "name": "National Institute of Building Sciences",
-      "address": "1735 New York Ave NW, Washington, DC 20006",
-      "email": "info@nationalcadstandard.org",
-      "phone": "+1 (202) 555-0177"
+      "address": "Washington, DC (publisher of the U.S. National CAD Standard®)",
+      "email": "ncs@nibs.org",
+      "phone": "(202) 289-7800"
     }
   },
   "footer": {
-    "blurb": "The United States National CAD Standard unifies how the design and construction industry organizes and presents documentation.",
+    "blurb": "The United States National CAD Standard® unifies the AIA CAD Layer Guidelines, the CSI Uniform Drawing System, and the NIBS BIM & Plotting Guidelines into one coordinated standard.",
     "columns": [
       {
         "title": "Standard",
-        "links": [
-          {
-            "label": "Modules",
-            "route": "#/products"
-          },
-          {
-            "label": "Pricing",
-            "route": "#/pricing"
-          },
-          {
-            "label": "What's new in V7",
-            "route": "#/about"
-          }
-        ]
-      },
-      {
-        "title": "Company",
         "links": [
           {
             "label": "About",
             "route": "#/about"
           },
           {
+            "label": "NCS Content",
+            "route": "#/products"
+          },
+          {
+            "label": "Order",
+            "route": "#/pricing"
+          },
+          {
+            "label": "Downloads & FAQ",
+            "route": "#/resources"
+          }
+        ]
+      },
+      {
+        "title": "Support",
+        "links": [
+          {
             "label": "Contact",
             "route": "#/contact"
           },
           {
-            "label": "Resources",
+            "label": "3D Viewer",
+            "route": "#/viewer"
+          },
+          {
+            "label": "FAQs",
             "route": "#/resources"
+          },
+          {
+            "label": "Home",
+            "route": "#/"
           }
         ]
       }
     ],
-    "legal": "© 1997–2026 National Institute of Building Sciences. Demo recreation for presentation purposes."
+    "legal": "© 2026 National Institute of Building Sciences. The United States National CAD Standard® is a registered trademark of NIBS. This is a demonstration recreation for evaluation."
   }
 }

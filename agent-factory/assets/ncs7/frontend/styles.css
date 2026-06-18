@@ -703,3 +703,19 @@ img { max-width: 100%; display: block; }
   .footer-top { grid-template-columns: 1fr; }
   .section { padding: 64px 0; }
 }
+
+/* ===== logos (NCS + NIBS co-brand) ===== */
+.brand-mark{width:42px;height:42px;flex:0 0 auto}
+.cobrand{margin-left:auto;display:flex;align-items:center;opacity:.95}
+.nibs-mark{height:34px;width:auto}
+@media(max-width:860px){.cobrand{display:none}}
+.footer-nibs{display:inline-block;margin-top:14px}
+.nibs-mark-footer{height:40px;width:auto;opacity:.9}
+
+/* ===== in-app 3D viewer ===== */
+.viewer-stage{position:relative;border:1px solid var(--line,#1e3a5f);border-radius:16px;overflow:hidden;background:radial-gradient(120% 120% at 50% 0%,#0c1f3a 0%,#06101f 70%);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.viewer-canvas{display:block;width:100%;height:clamp(360px,56vh,620px);cursor:grab}
+.viewer-canvas:active{cursor:grabbing}
+.viewer-legend{position:absolute;left:16px;bottom:14px;display:flex;gap:16px;font-size:13px;color:#cfe0f5;background:rgba(6,16,31,.6);padding:8px 12px;border-radius:10px;backdrop-filter:blur(6px)}
+.viewer-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.viewer-note{text-align:center;color:var(--muted,#8ea2c0);font-size:13px;margin-top:14px}
