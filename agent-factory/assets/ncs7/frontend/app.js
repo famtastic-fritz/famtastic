@@ -39,16 +39,17 @@ function BrandMark({ className }) {
     <svg className={className} viewBox="0 0 100 100" aria-hidden="true">
       {/* full star body in grey */}
       <polygon points="50,6 60,36.25 91.8,36.4 66.2,55.25 75.9,85.6 50,67 24.1,85.6 33.83,55.25 8.2,36.4 40,36.25"
-               fill="#6E7073"/>
+               fill="#939598"/>
       {/* red top point + upper accent */}
-      <polygon points="50,6 60,36.25 40,36.25" fill="#E12228"/>
-      <polygon points="50,6 60,36.25 66.2,40 54,30" fill="#C81F25"/>
+      <polygon points="50,6 60,36.25 40,36.25" fill="#ED1C24"/>
+      <polygon points="50,6 61,38 67,42 54,29" fill="#C8161D"/>
       {/* shatter gaps (paper-colour) + flying shards on the right */}
-      <polygon points="62,48 70,46 66,55" fill="#ffffff"/>
-      <polygon points="58,60 66,63 60,68" fill="#ffffff"/>
-      <polygon points="80,40 88,38 84,46" fill="#9A9C9F"/>
-      <polygon points="86,52 94,51 90,58" fill="#B7B9BB"/>
-      <polygon points="78,58 85,60 80,66" fill="#9A9C9F"/>
+      <polygon points="62,48 71,46 66,56" fill="#ffffff"/>
+      <polygon points="57,60 66,63 60,69" fill="#ffffff"/>
+      <polygon points="46,46 53,48 49,55" fill="#ffffff"/>
+      <polygon points="80,40 89,38 84,47" fill="#bcbec0"/>
+      <polygon points="87,52 96,51 91,59" fill="#d0d2d3"/>
+      <polygon points="78,59 86,61 80,67" fill="#bcbec0"/>
     </svg>
   );
 }
@@ -67,19 +68,20 @@ function NcsLogo() {
 }
 
 function NibsMark({ className }) {
-  // NIBS: green ascending bars + swoosh, navy wordmark, italic tagline.
+  // NIBS: four ascending angled bars (green/navy) + green swoosh, navy wordmark.
   return (
     <svg className={className} viewBox="0 0 300 70" aria-label="National Institute of Building Sciences">
       <g>
-        <polygon points="6,56 16,56 22,16 14,16" fill="#8BC53F"/>
-        <polygon points="20,56 30,56 36,8 28,8" fill="#3E6E2B"/>
-        <polygon points="34,56 44,56 49,20 41,20" fill="#8BC53F"/>
-        <polygon points="48,56 58,56 62,28 54,28" fill="#3E6E2B"/>
-        <path d="M2 61 C 24 50, 50 50, 74 59" stroke="#8BC53F" strokeWidth="4" fill="none" strokeLinecap="round"/>
+        <polygon points="4,58 13,58 21,20 12,20" fill="#7AC143"/>
+        <polygon points="17,58 26,58 33,13 24,13" fill="#1B3A5B"/>
+        <polygon points="30,58 39,58 45,18 36,18" fill="#7AC143"/>
+        <polygon points="43,58 52,58 57,11 48,11" fill="#1B3A5B"/>
+        <path d="M2 62 C 22 52, 48 52, 70 60" stroke="#7AC143" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       </g>
-      <text x="86" y="24" fontFamily="Arial, sans-serif" fontSize="14" fill="#1f3b66">National Institute of</text>
-      <text x="86" y="46" fontFamily="Arial Black, Arial, sans-serif" fontWeight="900" fontSize="21" fill="#15294a">BUILDING SCIENCES</text>
-      <text x="86" y="63" fontFamily="Georgia, serif" fontStyle="italic" fontSize="12" fill="#2f5e8f">Building American Innovation</text>
+      <text x="84" y="24" fontFamily="Arial, Helvetica, sans-serif" fontSize="15" fill="#1B3A5B">National Institute of</text>
+      <text x="84" y="47" fontFamily="Arial Black, Arial, sans-serif" fontWeight="900" fontSize="22" fill="#15294a" letterSpacing="0.3">BUILDING SCIENCES</text>
+      <text x="278" y="34" fontFamily="Arial, sans-serif" fontSize="9" fill="#15294a">&#8482;</text>
+      <text x="86" y="63" fontFamily="Georgia, 'Times New Roman', serif" fontStyle="italic" fontSize="12.5" fill="#2f5e8f">Building American Innovation</text>
     </svg>
   );
 }
