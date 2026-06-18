@@ -32,60 +32,71 @@ function Icon({ name, ...rest }) {
   );
 }
 
-/* ---------- brand marks (faithful recreations of the NCS + NIBS logos) ---------- */
+/* ---------- brand marks (the real NCS + NIBS logos, recreated as SVG) ---------- */
 function BrandMark({ className }) {
-  // NCS "exploded star": top shard red, remaining shards grey, flying apart.
+  // NCS "shattered star": grey star body, red top point, fragments flying right.
   return (
-    <svg className={className} viewBox="0 0 84 84" aria-hidden="true">
-      <polygon points="42,4 51,30 40,32" fill="#E0301E"/>
-      <polygon points="42,4 40,32 30,20" fill="#C8281A"/>
-      <polygon points="78,34 54,32 62,24" fill="#9A9C9F"/>
-      <polygon points="82,40 58,38 66,44" fill="#B7B9BB"/>
-      <polygon points="70,74 52,48 60,46" fill="#7E8083"/>
-      <polygon points="64,82 46,54 54,54" fill="#9A9C9F"/>
-      <polygon points="18,82 40,54 44,58" fill="#B7B9BB"/>
-      <polygon points="8,72 34,48 36,54" fill="#7E8083"/>
-      <polygon points="2,40 28,38 24,44" fill="#9A9C9F"/>
-      <polygon points="6,34 30,32 24,26" fill="#B7B9BB"/>
-      <polygon points="40,32 47,37 42,44 37,37" fill="#6B6D70"/>
+    <svg className={className} viewBox="0 0 100 100" aria-hidden="true">
+      {/* full star body in grey */}
+      <polygon points="50,6 60,36.25 91.8,36.4 66.2,55.25 75.9,85.6 50,67 24.1,85.6 33.83,55.25 8.2,36.4 40,36.25"
+               fill="#6E7073"/>
+      {/* red top point + upper accent */}
+      <polygon points="50,6 60,36.25 40,36.25" fill="#E12228"/>
+      <polygon points="50,6 60,36.25 66.2,40 54,30" fill="#C81F25"/>
+      {/* shatter gaps (paper-colour) + flying shards on the right */}
+      <polygon points="62,48 70,46 66,55" fill="#ffffff"/>
+      <polygon points="58,60 66,63 60,68" fill="#ffffff"/>
+      <polygon points="80,40 88,38 84,46" fill="#9A9C9F"/>
+      <polygon points="86,52 94,51 90,58" fill="#B7B9BB"/>
+      <polygon points="78,58 85,60 80,66" fill="#9A9C9F"/>
     </svg>
   );
 }
 
-function NibsMark({ className }) {
-  // NIBS green "building bars" + swoosh, with wordmark.
+function NcsLogo() {
+  // Full lockup used as the nav brand: star + "NCS" + registered tagline.
   return (
-    <svg className={className} viewBox="0 0 300 70" aria-label="Published by the National Institute of Building Sciences">
+    <span className="ncs-logo">
+      <BrandMark className="brand-mark" />
+      <span className="ncs-word">
+        <strong>NCS</strong>
+        <small>United States National CAD Standard<sup>®</sup></small>
+      </span>
+    </span>
+  );
+}
+
+function NibsMark({ className }) {
+  // NIBS: green ascending bars + swoosh, navy wordmark, italic tagline.
+  return (
+    <svg className={className} viewBox="0 0 300 70" aria-label="National Institute of Building Sciences">
       <g>
-        <polygon points="4,58 14,58 24,14 16,14" fill="#5FA544"/>
-        <polygon points="20,58 30,58 38,4 30,4" fill="#3F7E2E"/>
-        <polygon points="34,58 44,58 50,18 42,18" fill="#7CC04A"/>
-        <polygon points="48,58 58,58 63,28 55,28" fill="#4E9438"/>
-        <path d="M2 63 C 22 52, 48 52, 72 61" stroke="#7CC04A" strokeWidth="4" fill="none" strokeLinecap="round"/>
+        <polygon points="6,56 16,56 22,16 14,16" fill="#8BC53F"/>
+        <polygon points="20,56 30,56 36,8 28,8" fill="#3E6E2B"/>
+        <polygon points="34,56 44,56 49,20 41,20" fill="#8BC53F"/>
+        <polygon points="48,56 58,56 62,28 54,28" fill="#3E6E2B"/>
+        <path d="M2 61 C 24 50, 50 50, 74 59" stroke="#8BC53F" strokeWidth="4" fill="none" strokeLinecap="round"/>
       </g>
-      <text x="84" y="24" fontFamily="Arial, sans-serif" fontSize="13" fill="#1f3b66">National Institute of</text>
-      <text x="84" y="46" fontFamily="Arial Black, Arial, sans-serif" fontWeight="900" fontSize="20" fill="#1f3b66">BUILDING SCIENCES</text>
-      <text x="84" y="63" fontFamily="Georgia, serif" fontStyle="italic" fontSize="11.5" fill="#2f5e8f">Building American Innovation</text>
+      <text x="86" y="24" fontFamily="Arial, sans-serif" fontSize="14" fill="#1f3b66">National Institute of</text>
+      <text x="86" y="46" fontFamily="Arial Black, Arial, sans-serif" fontWeight="900" fontSize="21" fill="#15294a">BUILDING SCIENCES</text>
+      <text x="86" y="63" fontFamily="Georgia, serif" fontStyle="italic" fontSize="12" fill="#2f5e8f">Building American Innovation</text>
     </svg>
   );
 }
 
 /* ---------- NAV ---------- */
-function Nav({ content, route }) {
+function Nav({ content, route, auth }) {
   const [open, setOpen] = useState(false);
   const nav = content.nav || [];
   useEffect(() => { setOpen(false); }, [route]);
   return (
     <nav className="nav">
       <div className="container nav-inner">
-        <a className="brand" href="#/">
-          <BrandMark className="brand-mark" />
-          <span className="brand-text">
-            <strong>{content.site?.name || "National CAD Standard"}</strong>
-            <span>{content.site?.edition || "NCS7"}</span>
-          </span>
+        <a className="brand" href="#/" aria-label="United States National CAD Standard home">
+          <NcsLogo />
         </a>
-        <a className="cobrand" href="#/about" title="Published by the National Institute of Building Sciences">
+        <a className="cobrand" href="#/about" title="A program of the National Institute of Building Sciences">
+          <span className="cobrand-label">A program of</span>
           <NibsMark className="nibs-mark" />
         </a>
         <button className="nav-toggle" aria-label="Menu" onClick={() => setOpen(o => !o)}>
@@ -97,7 +108,12 @@ function Nav({ content, route }) {
               <a href={item.route} className={route === item.route ? "active" : ""}>{item.label}</a>
             </li>
           ))}
-          <li><a className="nav-cta" href="#/pricing">Subscribe</a></li>
+          {auth && auth.user
+            ? <>
+                <li><a href="#/member" className={route === "#/member" ? "active" : ""}>My NCS</a></li>
+                <li><a className="nav-cta" href="#/member" onClick={(e) => { e.preventDefault(); auth.logout(); }}>Log out</a></li>
+              </>
+            : <li><a className="nav-cta" href="#/login">Log in</a></li>}
         </ul>
       </div>
     </nav>
@@ -151,7 +167,7 @@ function renderTitle(title) {
 }
 
 /* ---------- HOME ---------- */
-function Home({ content }) {
+function Home({ content, auth }) {
   const home = content.home || {};
   return (
     <>
@@ -195,7 +211,7 @@ function Home({ content }) {
           </div>
           <div className="product-grid">
             {(content.products || []).slice(0, 4).map(p => (
-              <ProductCard key={p.id} product={p} compact />
+              <ProductCard key={p.id} product={p} compact auth={auth} />
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 36 }}>
@@ -246,37 +262,35 @@ function About({ content }) {
 }
 
 /* ---------- PRODUCT CARD + MODAL ---------- */
-function ProductCard({ product, compact }) {
-  const [modal, setModal] = useState(null); // 'view' | 'buy' | null
+function ProductCard({ product, compact, auth }) {
+  const [modal, setModal] = useState(null); // 'view' | null
+  const signedIn = auth && auth.user;
   return (
     <>
       <div className="product fade-in">
         <div className="product-top">
           <div className="product-cat">{product.category}</div>
           <h3>{product.title}</h3>
-          <div className="product-sku">{product.sku} · {product.format} · {product.pages} pp</div>
+          <div className="product-sku">{product.sku} · {product.format}{product.pages ? " · " + product.pages + " pp" : ""}</div>
         </div>
         <div className="product-body">
           <p>{compact ? product.summary : (product.description || product.summary)}</p>
           {!compact && (
-            <>
-              <div className="product-meta">
-                <span><b>{product.pages}</b> pages</span>
-                <span>Format <b>{product.format}</b></span>
-                <span>SKU <b>{product.sku}</b></span>
-              </div>
-              <div className="tags">
-                {(product.highlights || []).map((h, i) => <span className="tag" key={i}>{h}</span>)}
-              </div>
-            </>
+            <div className="tags">
+              {(product.highlights || []).map((h, i) => <span className="tag" key={i}>{h}</span>)}
+            </div>
           )}
         </div>
         <div className="product-foot">
-          <div className="price">${product.price}<small> /PDF</small></div>
-          <div className="product-actions">
-            <button className="btn btn-sm btn-outline" onClick={() => setModal("view")}><Icon name="eye" width="15" height="15" /> View</button>
-            <button className="btn btn-sm btn-primary" onClick={() => setModal("buy")}><Icon name="cart" width="15" height="15" /> Buy</button>
-          </div>
+          {signedIn
+            ? <><span className="access-ok"><Icon name="check" /> Licensed</span>
+                <div className="product-actions">
+                  <button className="btn btn-sm btn-outline" onClick={() => setModal("view")}><Icon name="eye" width="15" height="15" /> View PDF</button>
+                </div></>
+            : <><span className="access-lock">🔒 Members</span>
+                <div className="product-actions">
+                  <a className="btn btn-sm btn-primary" href="#/login"><Icon name="arrow" width="15" height="15" /> Log in to access</a>
+                </div></>}
         </div>
       </div>
       {modal && <ProductModal product={product} mode={modal} onClose={() => setModal(null)} />}
@@ -327,17 +341,24 @@ function ProductModal({ product, mode, onClose }) {
 }
 
 /* ---------- PRODUCTS PAGE ---------- */
-function Products({ content }) {
+function Products({ content, auth }) {
+  const signedIn = auth && auth.user;
   return (
     <section className="section" style={{ paddingTop: 130 }}>
       <div className="container">
         <div className="section-head">
-          <p className="eyebrow">Standards</p>
-          <h2>The NCS7 module library</h2>
-          <p className="sub">Every chapter of the National CAD Standard, available as a downloadable PDF. View a preview, download, or buy — individually or as the complete set.</p>
+          <p className="eyebrow">NCS Content</p>
+          <h2>What's in the Standard</h2>
+          <p className="sub">The National CAD Standard combines the AIA CAD Layer Guidelines, the CSI Uniform Drawing System (8 modules), and the NIBS BIM &amp; Plotting Guidelines. The full text and data files are available to licensed users after sign-in.</p>
         </div>
+        {!signedIn && (
+          <div className="access-banner">
+            <span>🔒 This page shows the program contents only. <b>Licensed users log in</b> to view and download the full standard.</span>
+            <span className="ab-actions"><a className="btn btn-sm btn-primary" href="#/login">Log in</a><a className="btn btn-sm btn-outline" href="#/pricing">Order a license</a></span>
+          </div>
+        )}
         <div className="product-grid">
-          {(content.products || []).map(p => <ProductCard key={p.id} product={p} />)}
+          {(content.products || []).map(p => <ProductCard key={p.id} product={p} auth={auth} />)}
         </div>
       </div>
     </section>
@@ -465,17 +486,12 @@ function Footer({ content }) {
       <div className="container">
         <div className="footer-top">
           <div>
-            <a className="brand" href="#/">
-              <BrandMark className="brand-mark" />
-              <span className="brand-text">
-                <strong>{content.site?.name}</strong>
-                <span>{content.site?.edition}</span>
-              </span>
-            </a>
+            <a className="brand" href="#/"><NcsLogo /></a>
             <p className="footer-blurb">{f.blurb}</p>
-            <a className="footer-nibs" href="#/about" title="National Institute of Building Sciences">
+            <div className="footer-nibs-wrap">
+              <span className="cobrand-label">A program of the National Institute of Building Sciences</span>
               <NibsMark className="nibs-mark-footer" />
-            </a>
+            </div>
           </div>
           {(f.columns || []).map((col, i) => (
             <div className="footer-col" key={i}>
@@ -539,20 +555,142 @@ function Viewer() {
   );
 }
 
+/* ---------- AUTH (client-side session; works with no server) ---------- */
+const SESSION_KEY = "ncs_session";
+function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; } }
+function saveSession(s) { try { s ? localStorage.setItem(SESSION_KEY, JSON.stringify(s)) : localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+
+/* ---------- LOGIN ---------- */
+function Login({ auth }) {
+  const [u, setU] = useState("");
+  const [p, setP] = useState("");
+  const [err, setErr] = useState("");
+  function submit(e) {
+    e.preventDefault();
+    if (!u.trim() || !p.trim()) { setErr("Enter any username and password (demo)."); return; }
+    auth.login(u.trim());
+    window.location.hash = "#/member";
+  }
+  return (
+    <section className="section" style={{ paddingTop: 130 }}>
+      <div className="container narrow">
+        <div className="section-head">
+          <p className="eyebrow">Licensee access</p>
+          <h2>Log in to the NCS</h2>
+          <p className="sub">The public site shows program information only. The full standard — every module PDF and data file — is available to licensed users after sign-in.</p>
+        </div>
+        <form className="login-card" onSubmit={submit}>
+          {err && <div className="alert-warn">{err}</div>}
+          <div className="field"><label>Username or license email</label><input value={u} onChange={e => setU(e.target.value)} placeholder="you@firm.com" /></div>
+          <div className="field"><label>Password</label><input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" /></div>
+          <button className="btn btn-primary" type="submit"><Icon name="arrow" width="18" height="18" /> Sign in</button>
+          <p className="form-note">Demo sign-in — <b>any</b> username and password work. No real authentication or payment is performed; this mirrors the real "access after login" model.</p>
+        </form>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- MEMBER AREA (post-login access to the standard) ---------- */
+function Member({ content, auth }) {
+  const [view, setView] = useState(null);
+  if (!auth.user) return <Login auth={auth} />;
+  const products = content.products || [];
+  return (
+    <section className="section" style={{ paddingTop: 120 }}>
+      <div className="container">
+        <div className="member-head">
+          <div>
+            <p className="eyebrow">My NCS · Licensed access</p>
+            <h2>The Standard — full access</h2>
+            <p className="sub">Signed in as <b>{auth.user}</b>. View any module or download the accompanying data files. (Public visitors never see this — it is behind login.)</p>
+          </div>
+          <button className="btn btn-outline btn-sm" onClick={() => auth.logout()}>Log out</button>
+        </div>
+        <div className="member-grid">
+          {products.map(p => (
+            <div className="member-item" key={p.id}>
+              <div className="member-cat">{p.category}</div>
+              <h3>{p.title}</h3>
+              <p>{p.summary}</p>
+              <div className="member-meta">{p.format}{p.pages ? " · " + p.pages + " pp" : ""} · {p.sku}</div>
+              <div className="member-actions">
+                <button className="btn btn-sm btn-primary" onClick={() => setView(p)}><Icon name="eye" width="15" height="15" /> View PDF</button>
+                <button className="btn btn-sm btn-outline" onClick={() => alert("Demo download: " + p.sku + " (" + p.format + "). In production the licensed file streams to the signed-in user.")}><Icon name="download" width="15" height="15" /> Download</button>
+              </div>
+            </div>
+          ))}
+          <div className="member-item member-3d">
+            <div className="member-cat">Immersive</div>
+            <h3>3D drawing viewer</h3>
+            <p>Explore a construction drawing exploded into discipline layers.</p>
+            <div className="member-actions"><a className="btn btn-sm btn-primary" href="#/viewer"><Icon name="cube" width="15" height="15" /> Open 3D viewer</a></div>
+          </div>
+        </div>
+      </div>
+      {view && <ProductModal product={view} mode="view" onClose={() => setView(null)} />}
+    </section>
+  );
+}
+
+/* ---------- generic content page (What's New, FAQs, News, Press, Copyright) ---------- */
+function InfoPage({ content, pageKey, eyebrow }) {
+  const page = (content.pages && content.pages[pageKey]) || { title: "Page", sections: [] };
+  return (
+    <section className="section" style={{ paddingTop: 130 }}>
+      <div className="container narrow-md">
+        <div className="section-head">
+          <p className="eyebrow">{eyebrow || "Information"}</p>
+          <h2>{page.title}</h2>
+          {page.intro && <p className="sub">{page.intro}</p>}
+        </div>
+        <div className="info-body">
+          {(page.sections || []).map((s, i) => (
+            <div className="info-block" key={i}>
+              {s.h && <h3>{s.h}</h3>}
+              {s.body && <p>{s.body}</p>}
+              {Array.isArray(s.items) && <ul>{s.items.map((it, j) => <li key={j}>{it}</li>)}</ul>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+const WhatsNew  = ({ content }) => <InfoPage content={content} pageKey="whatsnew" eyebrow="Version 7" />;
+const Faqs      = ({ content }) => <InfoPage content={content} pageKey="faqs" eyebrow="FAQs" />;
+const News      = ({ content }) => <InfoPage content={content} pageKey="news" eyebrow="News" />;
+const Press     = ({ content }) => <InfoPage content={content} pageKey="press" eyebrow="Press" />;
+const Copyright = ({ content }) => <InfoPage content={content} pageKey="copyright" eyebrow="Legal" />;
+
 const ROUTES = {
   "#/": Home,
+  "#/whatsnew": WhatsNew,
+  "#/faqs": Faqs,
+  "#/news": News,
+  "#/press": Press,
+  "#/copyright": Copyright,
   "#/about": About,
   "#/products": Products,
   "#/pricing": Pricing,
   "#/resources": Resources,
   "#/viewer": Viewer,
+  "#/login": Login,
+  "#/member": Member,
   "#/contact": Contact
 };
 
 function App() {
   const [content, setContent] = useState(null);
   const [source, setSource] = useState("");
+  const [user, setUser] = useState(loadSession());
   const route = useHashRoute();
+
+  const auth = {
+    user,
+    login: (name) => { setUser(name); saveSession(name); },
+    logout: () => { setUser(null); saveSession(null); window.location.hash = "#/"; },
+  };
 
   useEffect(() => {
     let alive = true;
@@ -587,12 +725,12 @@ function App() {
 
   return (
     <>
-      <Nav content={content} route={route} />
+      <Nav content={content} route={route} auth={auth} />
       <main key={route}>
-        <Page content={content} />
+        <Page content={content} auth={auth} />
       </main>
       <Footer content={content} />
-      <div className="src-badge">content: {source}</div>
+      <div className="src-badge">content: {source}{user ? " · signed in" : " · public view"}</div>
     </>
   );
 }

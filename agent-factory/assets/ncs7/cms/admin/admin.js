@@ -47,8 +47,28 @@
     }, 3200);
   }
 
-  // ---------------- API ----------------
-  function api(method, path, body) {
+  // =========================================================
+  // DATA LAYER
+  // ---------------------------------------------------------
+  // Every screen calls api(method, path, body). The data layer tries the real
+  // server first. If the server is unreachable (running from file://, network
+  // error, or any non-OK response) it transparently falls back to a
+  // localStorage-backed store that mimics the same REST contract and returns
+  // the same shapes. Function signature is unchanged, so no call site changed.
+  // =========================================================
+
+  // dataMode: 'unknown' | 'live' | 'offline'. Determined on the first call and
+  // then sticky for the session, so we don't re-probe a dead server every call.
+  var dataMode = 'unknown';
+
+  function setDataMode(mode) {
+    if (dataMode === mode) return;
+    dataMode = mode;
+    updateModeBadge();
+  }
+
+  // ---- real server fetch ----
+  function apiFetch(method, path, body) {
     var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
     var tok = sessionStorage.getItem(TOKEN_KEY);
     if (tok) opts.headers.Authorization = 'Bearer ' + tok;
@@ -65,6 +85,350 @@
         return data;
       });
     });
+  }
+
+  function api(method, path, body) {
+    // file:// has no server at all — go straight to offline, skip a doomed fetch.
+    if (location.protocol === 'file:') {
+      setDataMode('offline');
+      return offlineApi(method, path, body);
+    }
+    // Once we know the server is dead this session, stay offline.
+    if (dataMode === 'offline') {
+      return offlineApi(method, path, body);
+    }
+    return apiFetch(method, path, body).then(function (data) {
+      setDataMode('live');
+      return data;
+    }).catch(function (err) {
+      // A real HTTP error from a live server (4xx/5xx with a status) means the
+      // server IS there — surface it instead of masking it with demo data.
+      if (dataMode === 'live' && err && typeof err.status === 'number') {
+        throw err;
+      }
+      // Network/connection failure (TypeError from fetch, no status) → offline.
+      setDataMode('offline');
+      return offlineApi(method, path, body);
+    });
+  }
+
+  // =========================================================
+  // OFFLINE STORE (localStorage-backed REST emulation)
+  // =========================================================
+  var LS_KEY = 'ncs7-cms-store';        // serialized store
+  var LS_VERSION_KEY = 'ncs7-cms-store-version';
+  var STORE_VERSION = 1;
+
+  // ---- embedded seed defaults (no network / no local JSON fetch) ----
+  function seedStore() {
+    return {
+      site: {
+        site: { name: 'National CAD Standard', tagline: 'Version 7' },
+        home: {
+          hero: {
+            kicker: 'NCS Version 7',
+            title: 'The National CAD Standard, made manageable.',
+            subtitle: 'A unified standard for organizing and presenting building design data across construction documents.',
+          },
+        },
+        about: {
+          title: 'About the National CAD Standard',
+          lead: 'The NCS streamlines the exchange of CAD data across the building design and construction industry.',
+          body: 'The National CAD Standard (NCS) is a consensus standard developed by the National Institute of Building Sciences. It unifies layer naming, drawing organization, and presentation conventions so teams across disciplines can collaborate without translation overhead.',
+        },
+        contact: {
+          office: {
+            name: 'NCS Demo Office',
+            email: 'info@ncs7-demo.example',
+            phone: '(202) 555-0142',
+            address: '1090 Vermont Ave NW, Suite 700, Washington, DC',
+          },
+        },
+      },
+      products: [
+        {
+          id: 'prod-uds', title: 'Uniform Drawing System (UDS)', sku: 'NCS7-UDS',
+          category: 'Core Module', summary: 'Drawing set organization, sheet identification, and formatting.',
+          description: 'The UDS establishes a consistent approach to organizing and presenting design data within construction documents, covering modules from drawing set organization to schedules.',
+          pages: 248, format: 'PDF', price: 199,
+          highlights: ['8 standardized modules', 'Sheet identification system', 'Drafting conventions'],
+        },
+        {
+          id: 'prod-layer', title: 'AIA CAD Layer Guidelines', sku: 'NCS7-LAYER',
+          category: 'Core Module', summary: 'Standardized layer naming for CAD files.',
+          description: 'A complete framework for naming CAD layers consistently across disciplines, enabling clean data exchange and predictable file organization.',
+          pages: 132, format: 'PDF', price: 149,
+          highlights: ['Discipline designators', 'Major/minor group codes', 'Status fields'],
+        },
+        {
+          id: 'prod-plotting', title: 'Plotting Guidelines', sku: 'NCS7-PLOT',
+          category: 'Reference', summary: 'Pen widths, line types, and plotting consistency.',
+          description: 'Guidance for consistent plotted output: line weights, screening, and color-to-pen mapping for readable, professional drawing sets.',
+          pages: 64, format: 'PDF', price: 79,
+          highlights: ['Line weight tables', 'Screening guidance', 'Color mapping'],
+        },
+      ],
+      templates: [
+        {
+          id: 'tpl-standard-content', name: 'Standard Content Page',
+          description: 'A general content page with heading, body, and a call to action.',
+          blocks: [
+            { type: 'heading', label: 'Page Heading', defaultValue: 'New Page' },
+            { type: 'rich-text', label: 'Body', defaultValue: 'Write your page content here.' },
+            { type: 'cta', label: 'Call To Action', defaultValue: 'Learn more' },
+          ],
+        },
+        {
+          id: 'tpl-landing', name: 'Landing Page',
+          description: 'A marketing landing page with a hero, feature grid, and CTA.',
+          blocks: [
+            { type: 'hero', label: 'Hero', defaultValue: 'A bold headline for this landing page.' },
+            { type: 'feature-grid', label: 'Features', defaultValue: 'Feature one\nFeature two\nFeature three' },
+            { type: 'rich-text', label: 'Details', defaultValue: 'Supporting detail copy.' },
+            { type: 'cta', label: 'Primary CTA', defaultValue: 'Get started' },
+          ],
+        },
+      ],
+      pages: [
+        {
+          id: 'page-getting-started', title: 'Getting Started with NCS7',
+          slug: 'getting-started', templateId: 'tpl-standard-content', published: true,
+          blocks: [
+            { type: 'heading', label: 'Page Heading', value: 'Getting Started with NCS7' },
+            { type: 'rich-text', label: 'Body', value: 'This page walks new adopters through implementing the National CAD Standard in their first project.' },
+            { type: 'cta', label: 'Call To Action', value: 'Download the overview' },
+          ],
+        },
+      ],
+      tutor: [
+        {
+          q: 'what is the national cad standard',
+          a: 'The National CAD Standard (NCS) is a consensus standard from the National Institute of Building Sciences that unifies CAD layer naming, drawing set organization, and presentation conventions so design and construction teams can exchange data consistently.',
+        },
+        {
+          q: 'layer naming',
+          a: 'NCS layer naming (from the AIA CAD Layer Guidelines) uses a structured format: a discipline designator (e.g. A for Architectural), a major group, optional minor groups, and a status field. This makes layers predictable and machine-parseable across files.',
+        },
+        {
+          q: 'new in ncs version 7',
+          a: 'NCS Version 7 refines the Uniform Drawing System modules, updates the AIA CAD Layer Guidelines, and improves plotting and presentation guidance, with clarifications aimed at BIM-era workflows.',
+        },
+        {
+          q: 'cost price how much',
+          a: 'In this demo, individual modules are priced per product (see the Products screen). The Uniform Drawing System is $199, the AIA CAD Layer Guidelines are $149, and the Plotting Guidelines are $79. A real deployment would wire pricing to a live catalog.',
+        },
+      ],
+      _seq: 1,
+    };
+  }
+
+  function loadStore() {
+    var raw = null;
+    try { raw = localStorage.getItem(LS_KEY); } catch (_) { raw = null; }
+    var ver = null;
+    try { ver = localStorage.getItem(LS_VERSION_KEY); } catch (_) { ver = null; }
+    if (!raw || String(ver) !== String(STORE_VERSION)) {
+      var fresh = seedStore();
+      saveStore(fresh);
+      return fresh;
+    }
+    try { return JSON.parse(raw); } catch (_) {
+      var s = seedStore(); saveStore(s); return s;
+    }
+  }
+
+  function saveStore(store) {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(store));
+      localStorage.setItem(LS_VERSION_KEY, String(STORE_VERSION));
+    } catch (_) { /* localStorage unavailable — store stays in-memory only */ }
+  }
+
+  function resetStore() {
+    try { localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_VERSION_KEY); } catch (_) {}
+    return loadStore();
+  }
+
+  function nextId(store, prefix) {
+    store._seq = (store._seq || 0) + 1;
+    return prefix + '-' + Date.now().toString(36) + '-' + store._seq;
+  }
+
+  function clone(v) { return JSON.parse(JSON.stringify(v)); }
+
+  // Resolve a promise asynchronously so offline behaves like a real fetch.
+  function resolved(v) { return new Promise(function (res) { setTimeout(function () { res(v); }, 0); }); }
+  function rejected(msg, status) {
+    return new Promise(function (_, rej) {
+      setTimeout(function () {
+        var e = new Error(msg); e.status = status || 404; e.offline = true; rej(e);
+      }, 0);
+    });
+  }
+
+  function findById(arr, id) {
+    for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) return i; }
+    return -1;
+  }
+
+  // Tutor: naive keyword overlap against the embedded knowledge set.
+  function tutorAnswer(store, question) {
+    var q = String(question || '').toLowerCase();
+    var best = null, bestScore = 0, bestMatch = '';
+    (store.tutor || []).forEach(function (entry) {
+      var words = entry.q.split(/\s+/);
+      var score = 0;
+      words.forEach(function (w) { if (w.length > 2 && q.indexOf(w) !== -1) score++; });
+      if (score > bestScore) { bestScore = score; best = entry; bestMatch = entry.q; }
+    });
+    if (best && bestScore > 0) {
+      return { answer: best.a, source: 'offline-kb', matched: bestMatch };
+    }
+    return {
+      answer: 'I do not have an offline answer for that yet. Try asking about the National CAD Standard, layer naming, what is new in Version 7, or pricing. (A real LLM can be plugged in server-side.)',
+      source: 'offline-kb', matched: null,
+    };
+  }
+
+  // ---- the offline router: parses method+path and mutates the store ----
+  function offlineApi(method, path, body) {
+    var store = loadStore();
+    var clean = path.split('?')[0];
+    var parts = clean.split('/').filter(Boolean); // e.g. ['api','products','prod-uds']
+    if (parts[0] !== 'api') return rejected('Not found: ' + path, 404);
+    var res = parts[1];
+    var id = parts[2] ? decodeURIComponent(parts[2]) : null;
+    var sub = parts[2]; // for /api/pages/from-template, sub === 'from-template'
+
+    // ---- login ----
+    if (res === 'login' && method === 'POST') {
+      var u = body && body.username, p = body && body.password;
+      if (!u || !p) return rejected('Username and password required', 400);
+      return resolved({ token: 'offline-demo-token', user: { username: u } });
+    }
+
+    // ---- tutor ----
+    if (res === 'tutor' && method === 'POST') {
+      return resolved(tutorAnswer(store, body && body.question));
+    }
+
+    // ---- site (singleton) ----
+    if (res === 'site') {
+      if (method === 'GET') return resolved(clone(store.site));
+      if (method === 'PUT') { store.site = clone(body || {}); saveStore(store); return resolved(clone(store.site)); }
+    }
+
+    // ---- collections: products, pages, templates ----
+    if (res === 'products' || res === 'pages' || res === 'templates') {
+      var coll = store[res];
+
+      // special: create page from template
+      if (res === 'pages' && method === 'POST' && sub === 'from-template') {
+        var tplIdx = findById(store.templates, body && body.templateId);
+        if (tplIdx === -1) return rejected('Template not found', 404);
+        var tpl = store.templates[tplIdx];
+        var newPage = {
+          id: nextId(store, 'page'),
+          title: (body && body.title) || 'Untitled Page',
+          slug: (body && body.slug) || slugify((body && body.title) || 'untitled-page'),
+          templateId: tpl.id,
+          published: false,
+          blocks: (tpl.blocks || []).map(function (b) {
+            return { type: b.type, label: b.label, value: b.defaultValue != null ? b.defaultValue : '' };
+          }),
+        };
+        store.pages.push(newPage);
+        saveStore(store);
+        return resolved(clone(newPage));
+      }
+
+      // list
+      if (!id && method === 'GET') return resolved(clone(coll));
+
+      // create
+      if (!id && method === 'POST') {
+        var created = clone(body || {});
+        created.id = nextId(store, res.slice(0, 4));
+        if (res === 'pages') {
+          if (!created.slug) created.slug = slugify(created.title || 'page');
+          created.published = !!created.published;
+          created.blocks = created.blocks || [];
+        }
+        coll.push(created);
+        saveStore(store);
+        return resolved(clone(created));
+      }
+
+      // single read
+      if (id && method === 'GET') {
+        var gi = findById(coll, id);
+        if (gi === -1) return rejected(capitalize(res) + ' not found', 404);
+        return resolved(clone(coll[gi]));
+      }
+
+      // update
+      if (id && method === 'PUT') {
+        var ui = findById(coll, id);
+        if (ui === -1) return rejected(capitalize(res) + ' not found', 404);
+        var updated = clone(body || {});
+        updated.id = id;
+        coll[ui] = updated;
+        saveStore(store);
+        return resolved(clone(updated));
+      }
+
+      // delete
+      if (id && method === 'DELETE') {
+        var di = findById(coll, id);
+        if (di === -1) return rejected(capitalize(res) + ' not found', 404);
+        coll.splice(di, 1);
+        saveStore(store);
+        return resolved({ ok: true });
+      }
+    }
+
+    return rejected('Offline store: unhandled ' + method + ' ' + path, 404);
+  }
+
+  function slugify(s) {
+    return String(s || '').toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'page';
+  }
+  function capitalize(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1, -1) || s; }
+
+  // ---------------- mode badge ----------------
+  function updateModeBadge() {
+    var badge = $('#data-mode-badge');
+    if (!badge) return;
+    if (dataMode === 'live') {
+      badge.textContent = 'Live API';
+      badge.className = 'mode-badge mode-live';
+      badge.title = 'Connected to the CMS server REST API.';
+    } else if (dataMode === 'offline') {
+      badge.textContent = 'Offline demo (localStorage)';
+      badge.className = 'mode-badge mode-offline';
+      badge.title = 'No server reachable. Data is read from and saved to your browser localStorage.';
+    } else {
+      badge.textContent = 'Connecting…';
+      badge.className = 'mode-badge mode-unknown';
+      badge.title = 'Determining data source.';
+    }
+  }
+
+  function initResetControl() {
+    var btn = $('#reset-demo-btn');
+    if (!btn) return;
+    function sync() { btn.hidden = dataMode !== 'offline'; }
+    btn.addEventListener('click', function () {
+      if (!confirm('Reset all demo data back to the seeded defaults? Any offline edits will be lost.')) return;
+      resetStore();
+      toast('Demo data reset', 'ok');
+      navigate(currentView || 'dashboard');
+    });
+    // Keep visibility in sync as mode changes.
+    var origUpdate = updateModeBadge;
+    updateModeBadge = function () { origUpdate(); sync(); };
+    sync();
   }
 
   // =========================================================
@@ -115,7 +479,9 @@
     templates: 'Templates', products: 'Products', tutor: 'AI Tutor',
   };
 
+  var currentView = 'dashboard';
   function navigate(view) {
+    currentView = view;
     var btns = document.querySelectorAll('.nav-item');
     btns.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-view') === view); });
     $('#view-title').textContent = TITLES[view] || view;
@@ -681,6 +1047,10 @@
   // BOOT
   // =========================================================
   document.addEventListener('DOMContentLoaded', function () {
+    // If we're on file://, we know up front there's no server.
+    if (location.protocol === 'file:') setDataMode('offline');
+    updateModeBadge();
+    initResetControl();
     initLogin();
     initNav();
     if (sessionStorage.getItem(TOKEN_KEY)) showApp();

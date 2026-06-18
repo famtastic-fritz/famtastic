@@ -13,9 +13,10 @@
   "nav": [
     { "label": "Home", "route": "#/" },
     { "label": "About", "route": "#/about" },
+    { "label": "What's New", "route": "#/whatsnew" },
     { "label": "NCS Content", "route": "#/products" },
     { "label": "Order", "route": "#/pricing" },
-    { "label": "Downloads & FAQ", "route": "#/resources" },
+    { "label": "FAQs", "route": "#/faqs" },
     { "label": "Contact", "route": "#/contact" }
   ],
   "home": {
@@ -149,20 +150,67 @@
       "phone": "(202) 289-7800"
     }
   },
+  "pages": {
+    "whatsnew": {
+      "title": "What's New in Version 7",
+      "intro": "Version 7 is the current edition of the United States National CAD Standard®, delivered as a licensed online document.",
+      "sections": [
+        { "h": "Delivered online, 24/7", "body": "V7 moved from a static document to a licensed online format — licensees access the standard any time from the office, with downloadable data files alongside the text." },
+        { "h": "Updated components", "body": "The edition refreshes the AIA CAD Layer Guidelines, the CSI Uniform Drawing System modules, and the NIBS BIM Implementation and Plotting Guidelines, keeping conventions aligned with current practice." },
+        { "h": "What you get", "items": ["Foreword & Administration", "AIA CAD Layer Guidelines (+ Excel)", "Uniform Drawing System — 8 modules", "BIM Implementation", "Plotting Guidelines (+ Excel)", "Appendixes and DWG/LIN/PAT symbol files"] }
+      ]
+    },
+    "faqs": {
+      "title": "Frequently Asked Questions",
+      "intro": "The questions licensees ask most about content, access and licensing.",
+      "sections": [
+        { "h": "What is included in V7?", "body": "Foreword, Administration, AIA CAD Layer Guidelines, the eight-module Uniform Drawing System, BIM Implementation, Plotting Guidelines and Appendixes — plus downloadable Excel, DWG, LIN and PAT data files." },
+        { "h": "How is the standard delivered?", "body": "As a licensed online document with 24/7 access. After signing in, licensed users view the full text and download the data files. The public site shows program information only." },
+        { "h": "What are the eight UDS modules?", "items": ["Drawing Set Organization", "Sheet Organization", "Schedules", "Drafting Conventions", "Terms & Abbreviations", "Symbols", "Notations", "Code Conventions"] },
+        { "h": "Which license do I need?", "body": "Single (1–2 users, one office), Site (3–10 users, one office), or Enterprise (11+ users, multiple offices under one domain). See the Order page." },
+        { "h": "Who maintains the NCS?", "body": "It is a consensus standard published and maintained by the National Institute of Building Sciences (NIBS), combining work from AIA, CSI and NIBS." }
+      ]
+    },
+    "news": {
+      "title": "News",
+      "intro": "Announcements about the United States National CAD Standard.",
+      "sections": [
+        { "h": "NCS Version 7 available online", "body": "The current edition is available to license as an online document with 24/7 access and downloadable data files." },
+        { "h": "Adoption across the AEC industry", "body": "The NCS continues to be referenced by firms and agencies as the common basis for organizing and presenting construction documents." }
+      ]
+    },
+    "press": {
+      "title": "Press Releases",
+      "intro": "Official releases from the National Institute of Building Sciences regarding the NCS.",
+      "sections": [
+        { "h": "About these releases", "body": "Press releases announce new versions, partnerships and milestones for the United States National CAD Standard. (Demo placeholder content — real releases drop in via the CMS.)" }
+      ]
+    },
+    "copyright": {
+      "title": "Copyright & Trademark",
+      "intro": "Usage and ownership of the United States National CAD Standard®.",
+      "sections": [
+        { "h": "Trademark", "body": "The United States National CAD Standard® is a registered trademark of the National Institute of Building Sciences. The NCS combines copyrighted material from AIA, CSI and NIBS." },
+        { "h": "Licensed use", "body": "Access is granted under Single, Site or Enterprise license terms. Printed-copy limits vary by license. This site is a demonstration recreation for evaluation and is not the official NCS." }
+      ]
+    }
+  },
   "footer": {
     "blurb": "The United States National CAD Standard® unifies the AIA CAD Layer Guidelines, the CSI Uniform Drawing System, and the NIBS BIM & Plotting Guidelines into one coordinated standard.",
     "columns": [
       { "title": "Standard", "links": [
         { "label": "About", "route": "#/about" },
+        { "label": "What's New", "route": "#/whatsnew" },
         { "label": "NCS Content", "route": "#/products" },
         { "label": "Order", "route": "#/pricing" },
-        { "label": "Downloads & FAQ", "route": "#/resources" }
+        { "label": "Downloads", "route": "#/resources" }
       ] },
       { "title": "Support", "links": [
+        { "label": "FAQs", "route": "#/faqs" },
+        { "label": "News", "route": "#/news" },
+        { "label": "Press Releases", "route": "#/press" },
         { "label": "Contact", "route": "#/contact" },
-        { "label": "3D Viewer", "route": "#/viewer" },
-        { "label": "FAQs", "route": "#/resources" },
-        { "label": "Home", "route": "#/" }
+        { "label": "Copyright", "route": "#/copyright" }
       ] }
     ],
     "legal": "© 2026 National Institute of Building Sciences. The United States National CAD Standard® is a registered trademark of NIBS. This is a demonstration recreation for evaluation."

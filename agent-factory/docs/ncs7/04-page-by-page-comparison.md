@@ -24,17 +24,27 @@
 | 9 | Contact | header `CONTACT` link | Contact NIBS |
 | 10 | Copyright | header `© COPYRIGHT` link | Legal / trademark |
 
-**Header branding (both logos, top of every page):** the **NCS** "exploded star"
-mark + wordmark *"United States National CAD Standard®"* (top-left), and the
-**National Institute of Building Sciences** logo with *"Building American
-Innovation"* (top-right). Both are recreated as SVG in the rebuild
-(`frontend/assets/logo-ncs.svg`, `logo-nibs.svg`, and inline in `app.js` as
-`BrandMark` / `NibsMark` so the single-file demo stays self-contained).
+**Header branding (corrected).** The site carries **two existing logos** — these
+are NOT ours to redesign: the **NCS** "shattered star" mark + wordmark *"United
+States National CAD Standard®"* (the product), and the **National Institute of
+Building Sciences** logo with *"Building American Innovation"* (the **publisher** —
+NCS is a program *of* NIBS). The rebuild renders the NCS logo as the brand and the
+NIBS logo as *"A program of"* co-branding (nav + footer). They are inline SVG
+recreations of the marks (`BrandMark` / `NibsMark` in `app.js`) so the single-file
+demo stays self-contained; **the client's exact logo files drop in 1:1**. (Earlier
+draft mistakenly invented a mark and labelled it "Version 7" — fixed.)
 
-**Product model (real):** the NCS is sold as a **licensed online document** with
-24/7 access (V7 is web-delivered, not a plain PDF download), plus downloadable
-**Excel / DWG / LIN / PAT** data files. This is exactly the "they sell access to
-simple PDFs/files" situation described.
+**Product / access model (corrected).** The NCS is a **licensed online document**:
+the **public, logged-out site shows program/marketing content only** — the actual
+standard (module PDFs + Excel/DWG/LIN/PAT data files) is **behind login**. The
+rebuild now models this exactly:
+- Public routes (no login): Home, About, What's New, NCS Content *(overview, each
+  module shown with a 🔒 "Members — log in to access" lock)*, Order, FAQs, News,
+  Press, Contact, Copyright, and the 3D viewer.
+- **Log in** (`#/login`, any credentials in the demo) → **My NCS** (`#/member`):
+  the gated dashboard where licensed users **View PDF** / **Download** each module
+  and open the 3D viewer. Session persists in `localStorage` — so the whole
+  login→access flow works **with no server running**.
 
 ## Real → Recreated mapping
 
@@ -49,7 +59,25 @@ simple PDFs/files" situation described.
 | News / Press `news.php`, `pressreleases.php` | footer links | Present as nav/footer | Could be a CMS "News" collection (templated page) |
 | Contact | `#/contact` | NIBS contact | Working demo form (stored server-side in production) |
 | Copyright | footer legal line | Trademark notice retained | — |
+| What's New `new.php` | `#/whatsnew` (own page) | Real V7 changes (online delivery, refreshed components, what's included) | Editable CMS content page |
+| FAQs `faqs.php` | `#/faqs` (own page) | Real FAQ topics (what's in V7, how access works, the 8 modules, licenses, who maintains it) | — |
+| News `news.php` | `#/news` | Present | CMS "News" collection |
+| Press `pressreleases.php` | `#/press` | Present | CMS-managed |
+| Copyright `© COPYRIGHT` | `#/copyright` (own page) | Trademark/ownership stated | — |
+| *(login)* | `#/login` | The real "sign in for access" gate | Client-side session, no server needed |
+| *(members area)* | `#/member` (My NCS) | The real post-login access to the standard | View/Download every module + 3D viewer |
 | *(none — new capability)* | `#/viewer` | — | **3D CAD viewer**: a drawing exploded into Architectural/Structural/MEP layers, drag-to-orbit — the bonus "better way to present the CAD" |
+
+## Testing without a server (no localhost needed)
+
+Both "backends" now run client-side when no Node server is present, so everything
+is testable by just opening files / a static host:
+- **Front-end access model** — login + member access persist via `localStorage`
+  (`ncs_session`). The single-file `ncs7-standalone.html` includes it.
+- **CMS admin** — `cms/admin/` falls back to a `localStorage` store
+  (`ncs7-cms-store`) with a header badge showing **Live API** vs **Offline demo**;
+  full content/products/pages/templates CRUD, create-from-template, and the tutor
+  all work offline. Open `cms/admin/index.html` directly.
 
 ## What's deliberately different (the sell)
 
