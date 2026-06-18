@@ -65,7 +65,9 @@ async function main() {
       console.log(`     email : ${it.email_status} — "${it.email_subject}"`);
     }
     console.log(`\n✅ ${items.filter((i) => i.status === "ready").length} client bundle(s) staged in autopilot/out/clients/`);
-    console.log(`   $${spentToday()}/${config.spend_cap_usd_per_day} spent today. Set client_from_email + OPENAI_API_KEY to upgrade + send.`);
+    console.log(`   $${spentToday()}/${config.spend_cap_usd_per_day} spent today.`);
+    console.log("   To SEND: set studio.resend.api_key (vault) + client_from_email, then run: clients --render --live");
+    console.log("   email_mode \"to_operator\" (default) sends drafts to you to forward; \"to_client\" emails businesses directly.");
     return;
   }
 

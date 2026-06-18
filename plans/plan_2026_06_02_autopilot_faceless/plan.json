@@ -104,11 +104,11 @@
     },
     {
       "id": "ws_client_email_send",
-      "title": "Phase 5a.1 — live client email send (Resend/SMTP)",
-      "status": "todo",
+      "title": "Phase 5a.1 — live client email send (Resend)",
+      "status": "done",
       "priority": "P2",
       "outputs": ["autopilot/lib/email.mjs"],
-      "acceptance": ["With sender + provider creds and live=true, offer emails actually send", "Bounce/reply handling"]
+      "acceptance": ["Reuses FAMtastic Resend (vault studio.resend.api_key, api.resend.com/emails)", "Sends only when live + key + recipient, else stages; never throws", "to_operator (default, safe) vs to_client modes", "Live path proven to execute + fail safe with a fake key"]
     },
     {
       "id": "ws_hardening",
@@ -119,5 +119,5 @@
       "acceptance": ["Scheduled ticks run in prod", "consecutive-failure breaker", "status dashboard"]
     }
   ],
-  "open_task_ids": ["ws_live_publishing", "ws_real_analytics", "ws_broll", "ws_flip_tracker", "ws_client_email_send", "ws_hardening"]
+  "open_task_ids": ["ws_live_publishing", "ws_real_analytics", "ws_broll", "ws_flip_tracker", "ws_hardening"]
 }

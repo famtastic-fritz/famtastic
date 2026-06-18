@@ -12,7 +12,8 @@ import { requestSpend, spentToday, remainingToday } from "../lib/budget.mjs";
 import { checkGovernance, isStopped } from "../lib/governance.mjs";
 import { runConcept } from "../stages/concept.mjs";
 import { runFeedback } from "../stages/feedback.mjs";
-import { extractBrand } from "../stages/client-upsell.mjs";
+import { extractBrand, extractClientEmail } from "../stages/client-upsell.mjs";
+import { buildPayload, sendEmail, hasEmailCreds } from "../lib/email.mjs";
 import { tick } from "../orchestrator.mjs";
 import { read } from "../lib/ledger.mjs";
 
@@ -134,6 +135,44 @@ test("client-upsell: extractBrand pulls name, vertical, and a vivid accent", () 
 test("client-upsell: extractBrand falls back to a vertical default accent", () => {
   const brand = extractBrand({ site_name: "Bloom", business_type: "florist", design_brief: {} });
   assert.equal(brand.accent, "#db2777"); // florist default
+});
+
+test("email: buildPayload normalizes to[] + text, reply_to optional", () => {
+  const p = buildPayload({ from: "a@x.com", to: "b@y.com", subject: "hi", body: "yo" });
+  assert.deepEqual(p.to, ["b@y.com"]);
+  assert.equal(p.text, "yo");
+  assert.equal("reply_to" in p, false);
+  const p2 = buildPayload({ from: "a@x.com", to: ["b@y.com"], subject: "s", body: "b", reply_to: "r@z.com" });
+  assert.equal(p2.reply_to, "r@z.com");
+});
+
+test("email: sendEmail without a key never throws and reports not sent", async () => {
+  const saved = process.env.RESEND_API_KEY;
+  delete process.env.RESEND_API_KEY;
+  const r = await sendEmail({ from: "a@x.com", to: "b@y.com", subject: "s", body: "b" });
+  assert.equal(r.sent, false);
+  assert.match(r.reason, /resend key/);
+  if (saved !== undefined) process.env.RESEND_API_KEY = saved;
+});
+
+test("email: hasEmailCreds reflects the environment", () => {
+  const saved = process.env.RESEND_API_KEY;
+  delete process.env.RESEND_API_KEY;
+  assert.equal(hasEmailCreds(), false);
+  process.env.RESEND_API_KEY = "re_test";
+  assert.equal(hasEmailCreds(), true);
+  if (saved === undefined) delete process.env.RESEND_API_KEY;
+  else process.env.RESEND_API_KEY = saved;
+});
+
+test("client-upsell: extractClientEmail finds config override, spec email, or null", () => {
+  assert.equal(
+    extractClientEmail({}, "site-x", { client_contacts: { "site-x": "boss@x.com" } }),
+    "boss@x.com",
+  );
+  assert.equal(extractClientEmail({ contact: { email: "hi@biz.com" } }, "site-y"), "hi@biz.com");
+  assert.equal(extractClientEmail({ design_brief: { goal: "reach owner at sales@cafe.io today" } }, "site-z"), "sales@cafe.io");
+  assert.equal(extractClientEmail({ tag: "nope" }, "site-q"), null);
 });
 
 test("orchestrator: STOP halts the tick before any work", async () => {

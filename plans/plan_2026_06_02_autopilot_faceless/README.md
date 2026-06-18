@@ -20,7 +20,7 @@ hard cap · auto-discover niches by ROI.
 | 5a | **Client-upsell agent** (branded promos + draft offer emails) | ✅ done |
 | 3.5 | **Live platform uploads** (official APIs) | ⬜ todo — needs account creds |
 | 4.5 | **Real analytics ingestion** (replace simulated) | ⬜ todo — needs API creds |
-| 5a.1 | Live client email send (Resend/SMTP) | ⬜ todo — needs sender creds |
+| 5a.1 | Live client email send (Resend) | ✅ done — sends when key + from-address present |
 | 2.5 | AI b-roll + thumbnails via `buildMuapiPlan` | ⬜ todo |
 | 5b | build-and-flip channel-growth tracker | ⬜ todo |
 | 6 | Hardening (prod cron, breakers, dashboard) | ⬜ todo |

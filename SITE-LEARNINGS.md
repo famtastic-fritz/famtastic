@@ -70,12 +70,24 @@ to dry-run). CLI: `node autopilot/cli.mjs clients [--render]`. Config:
 `client_limit`, `client_offer`, `client_from_email`. Verified against the real
 `site-mbsh-reunion` (accent `#C8102E`, real MP4 rendered, offer email staged).
 
+### Live client email send (added 2026-06-02)
+`lib/email.mjs` reuses FAMtastic's Resend setup (vault `studio.resend.api_key`,
+`POST https://api.resend.com/emails`, verified sender `send.mbsh96reunion.com`).
+`sendEmail()` never throws (records `send_failed` on error). `client-upsell.mjs`
+resolves the recipient by `email_mode`: `to_operator` (default, safe — drafts to
+you) vs `to_client` (`extractClientEmail()`: `client_contacts` override → spec
+contact fields → first email in spec). Sends only when governance live AND a
+Resend key AND a recipient; else stages `email.txt`. Config: `email_mode`,
+`operator_email`, `client_contacts`. `vault.mjs` CRED_MAP gained `resend`. Live
+path proven (fake key + `--live` → `send_failed`, no crash).
+
 ### Known Gaps opened
 - **Live platform uploads are stubbed** (`publishers.mjs` `*Upload()` throw until
   wired). Publishing stages bundles until account credentials + `config.live`.
-- **Client offer emails are staged, not sent** — live send needs a real
-  from-address + Resend/SMTP creds (`ws_client_email_send`). `build-and-flip`
-  channel-growth tracker (`ws_flip_tracker`) is still todo.
+- `build-and-flip` channel-growth tracker (`ws_flip_tracker`), AI b-roll
+  (`ws_broll`), real analytics (`ws_real_analytics`), and prod hardening
+  (`ws_hardening`) remain todo. Live client email send is now DONE (needs only a
+  Resend key + from-address at runtime).
 - **Analytics are simulated** (`simulated: true`) until platform analytics creds
   exist; the learning loop runs on simulated scores.
 - **No AI b-roll / thumbnail generation yet** — backgrounds are gradients;

@@ -18,6 +18,7 @@ import { outDir, HUB_ROOT } from "../lib/paths.mjs";
 import { nowIso } from "../lib/util.mjs";
 import { generateVideoSpec } from "../../remotion/src/pipeline/index.mjs";
 import { renderSpec } from "../lib/render.mjs";
+import { sendEmail, hasEmailCreds, defaultSender } from "../lib/email.mjs";
 
 const CLIENTS = "clients";
 
@@ -117,8 +118,18 @@ function isVivid(hex) {
   return true;
 }
 
+// Find a client contact address: explicit config override, then any email in
+// the spec. Returns null if none — caller decides what to do.
+export function extractClientEmail(spec, tag, config = {}) {
+  if (config.client_contacts && config.client_contacts[tag]) return config.client_contacts[tag];
+  const direct = spec.contact?.email || spec.business?.email || spec.design_brief?.contact_email;
+  if (direct) return direct;
+  const m = JSON.stringify(spec).match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  return m ? m[0] : null;
+}
+
 function draftEmail(brand, config, samplePath) {
-  const from = config.client_from_email || process.env.CLIENT_FROM_EMAIL || "you@yourstudio.com";
+  const from = defaultSender(config);
   const offer = config.client_offer || "5 branded short videos a month for $250";
   const siteLine = brand.url ? `the site we built you (${brand.url})` : "the site we built you";
   return {
@@ -184,15 +195,42 @@ export async function runClientUpsell(config, opts = {}) {
       }
     }
 
-    // Draft + stage the offer email (governance: email is outward → dry-run).
+    // Draft the offer email, then decide: send or stage.
     const sampleRef = videoPath || specPath;
     const email = draftEmail(brand, config, sampleRef);
     const gov = checkGovernance({ kind: "email" }, { config, root: opts.root });
-    const emailStatus = gov.mode === "live" ? "would_send" : "staged";
+
+    // Recipient depends on mode. Default "to_operator" sends drafts to YOU for
+    // review/forward (safe, no client address needed). "to_client" emails the
+    // business directly when a contact is known.
+    const mode = config.email_mode || "to_operator";
+    const operatorAddr = config.operator_email || config.client_from_email || process.env.CLIENT_FROM_EMAIL || null;
+    const clientAddr = extractClientEmail(spec, tag, config);
+    const recipient = mode === "to_client" ? clientAddr || operatorAddr : operatorAddr;
+
+    // Stage the draft to disk regardless (audit + review copy).
     fs.writeFileSync(
       path.join(dir, "email.txt"),
-      `To: <${tag} contact>\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body}`,
+      `To: ${recipient || `<${tag} contact>`}\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body}`,
     );
+
+    // Live send only when: governance is live AND we have a Resend key AND a
+    // recipient. Otherwise the draft stays staged.
+    let emailStatus = "staged";
+    let emailId = null;
+    if (gov.mode === "live" && hasEmailCreds() && recipient) {
+      const sent = await sendEmail({
+        from: email.from,
+        to: recipient,
+        subject: email.subject,
+        body: email.body,
+        reply_to: config.client_from_email,
+      });
+      emailStatus = sent.sent ? "sent" : "send_failed";
+      emailId = sent.id || null;
+    } else if (gov.mode === "live" && !recipient) {
+      emailStatus = "no_recipient";
+    }
 
     const record = {
       tag,
@@ -203,7 +241,10 @@ export async function runClientUpsell(config, opts = {}) {
       promo_topic: promoTopic(brand),
       spec_path: specPath,
       video_path: videoPath,
+      email_mode: mode,
+      email_to: recipient,
       email_status: emailStatus,
+      email_id: emailId,
       email_subject: email.subject,
       status: "ready",
       created_at: nowIso(),

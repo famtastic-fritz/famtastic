@@ -15,6 +15,9 @@
   "client_limit": 10,
   "client_offer": "5 branded short videos a month for $250",
   "client_from_email": "you@yourstudio.com",
+  "operator_email": "",
+  "email_mode": "to_operator",
+  "client_contacts": {},
   "seed_niches": [
     "personal finance",
     "productivity",

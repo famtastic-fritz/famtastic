@@ -16,6 +16,7 @@ export const CRED_MAP = {
   instagram: { env: ["IG_TOKEN", "INSTAGRAM_ACCESS_TOKEN"], vault: "autopilot.instagram.access_token" },
   openai: { env: ["OPENAI_API_KEY"], vault: "studio.openai.api_key" },
   elevenlabs: { env: ["ELEVENLABS_API_KEY"], vault: "studio.elevenlabs.api_key" },
+  resend: { env: ["RESEND_API_KEY"], vault: "studio.resend.api_key" },
 };
 
 export function readSecret(id) {

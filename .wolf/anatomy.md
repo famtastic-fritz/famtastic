@@ -1333,6 +1333,7 @@
 - `vault.mjs` — env→vault credential resolution, CRED_MAP (~450 tok)
 - `affiliate.mjs` — offer catalog + matchOffers (~450 tok)
 - `render.mjs` — findBrowser (headless_shell) + renderSpec via Remotion CLI (~500 tok)
+- `email.mjs` — Resend sender (reuses studio.resend.api_key), never throws (~450 tok)
 
 ## autopilot/stages/
 
