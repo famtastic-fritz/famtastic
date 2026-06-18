@@ -102,4 +102,4 @@ __pycache__/
 *.pyc
 
 # Agency sandbox build output (regenerated on every run)
-agency/sandbox/output/
+agency/web-agency/build/
