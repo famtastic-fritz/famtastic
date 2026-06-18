@@ -1,3 +1,6 @@
+## 2026-06-18 — Scram-line brief default
+Changed the default human-facing planning surface from the verbose simple brief into the ultra-brief scram-line format. `plans/templates/simple-brief-template-v1.md` now leads with `Title`, `Purpose`, `Goal`, checkbox `Tasks`, `Status`, `Started`, `Ended`, `Execution`, `Research`, `Review`, `Skills`, optional `Blocked By`, and `Proof`, with exact spacing rules for resumability. Mirrored the rule into `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md` so this becomes common knowledge across sessions. Deferred: `fam-hub` still lacks a first-class scram-line brief command and there is still no dedicated validator for this shape.
+
 ## 2026-06-17 — Simple brief template v1
 Added `plans/templates/simple-brief-template-v1.md` as the lightweight human brief surface for work that needs more orchestration truth than a bare task list but less machinery than the full `plan-template.json` packet. The template keeps execution readable by mapping each task to its owning agent/model under `Assignments`, points research/review to artifact files, and uses plan IDs for dependencies. Deferred: this is versioned as `v1` and documented, but it is not yet wired into `fam-hub` or a validator-driven brief CLI.
 

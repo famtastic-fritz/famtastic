@@ -22,6 +22,13 @@ Interpretation:
 - For FAMtastic orchestration, the minimum actionable packet is now: goal, tasks, branch, worktree, main-landing expectation, truth-surface updates (especially capability-matrix updates), and proof.
 - If branch/worktree are not needed, the packet should say that explicitly instead of omitting the fields.
 
+Observation:
+- As of 2026-06-18, the default human-facing planning surface is now the ultra-brief scram-line format rather than the heavier packet. The scram-line brief carries: Title, Purpose, Goal, checkbox Tasks, Status, Started, Ended, Execution, Research, Review, Skills, optional Blocked By, and Proof.
+
+Interpretation:
+- The heavy packet remains the control-plane truth when a task needs machine-checkable lane/control details.
+- The scram-line brief is the default communication surface for Fritz because resumability lives in the checkbox tasks and the richer orchestration data is already captured elsewhere in telemetry and ledgers.
+
 ## Executive matrix
 
 | Task class | Modality | OpenAI strengths | Anthropic strengths | Google/Gemini strengths | AWS/Bedrock angle | Native features relevant to task | Cheapest sufficient pattern | Premium escalation pattern | Recommended worker shape | Observability / eval needs | Caveats / risks |
