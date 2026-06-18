@@ -81,7 +81,30 @@ def _stub_response(prompt: str, spec: dict, out_tokens: int) -> str:
             f"for prompt of {_est_tokens(prompt)} tokens")
 
 
-def _live_openrouter(prompt: str, spec: dict, env: dict) -> str | None:
+def _post_json(url: str, body: bytes, headers: dict, timeout: float, retries: int):
+    """POST and parse an OpenAI-compatible chat-completion response.
+
+    Returns (text, usage_dict) or None on any failure. usage_dict carries real
+    prompt/completion token counts when the endpoint reports them, so cost is
+    measured rather than estimated.
+    """
+    last_err = None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib.request.Request(url, data=body, headers=headers)
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read())
+            text = data["choices"][0]["message"]["content"]
+            usage = data.get("usage", {}) or {}
+            return text, usage
+        except Exception as e:  # transient network / parse error -> retry then give up
+            last_err = e
+            if attempt < retries:
+                time.sleep(0.25 * (attempt + 1))
+    return None
+
+
+def _live_openrouter(prompt: str, spec: dict, env: dict, timeout: float, retries: int):
     key = env.get("OPENROUTER_API_KEY", "")
     if not key:
         return None
@@ -89,20 +112,13 @@ def _live_openrouter(prompt: str, spec: dict, env: dict) -> str | None:
         "model": spec["model"],
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
-    req = urllib.request.Request(
-        "https://openrouter.ai/api/v1/chat/completions",
-        data=body,
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read())
-        return data["choices"][0]["message"]["content"]
-    except (urllib.error.URLError, KeyError, TimeoutError, Exception):
-        return None  # graceful fallback to stub
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    base = env.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+    return _post_json(base.rstrip("/") + "/chat/completions",
+                      body, headers, timeout, retries)
 
 
-def _live_local(prompt: str, spec: dict, env: dict) -> str | None:
+def _live_local(prompt: str, spec: dict, env: dict, timeout: float, retries: int):
     base = env.get("LOCAL_MODEL_URL", "")
     if not base:
         return None
@@ -110,16 +126,8 @@ def _live_local(prompt: str, spec: dict, env: dict) -> str | None:
         "model": env.get("LOCAL_MODEL_NAME", spec["model"]),
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
-    req = urllib.request.Request(
-        base.rstrip("/") + "/chat/completions",
-        data=body, headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read())
-        return data["choices"][0]["message"]["content"]
-    except Exception:
-        return None
+    return _post_json(base.rstrip("/") + "/chat/completions",
+                      body, {"Content-Type": "application/json"}, timeout, retries)
 
 
 def route_and_run(prompt: str, complexity: float,
@@ -132,18 +140,24 @@ def route_and_run(prompt: str, complexity: float,
     out_tok = expected_output_tokens
 
     live_allowed = env.get("FACTORY_ALLOW_LIVE_CALLS") == "1"
+    timeout = float(cfg["tunables"].get("live_call_timeout_seconds", 20))
+    retries = int(cfg["tunables"].get("live_call_retries", 1))
     mode = "stub"
     text = None
     t0 = time.time()
 
     if live_allowed:
+        out = None
         if spec["provider"] == "openrouter":
-            text = _live_openrouter(prompt, spec, env)
+            out = _live_openrouter(prompt, spec, env, timeout, retries)
         elif spec["provider"] == "local":
-            text = _live_local(prompt, spec, env)
-        if text is not None:
+            out = _live_local(prompt, spec, env, timeout, retries)
+        if out is not None:
+            text, usage = out
             mode = "live"
-            out_tok = _est_tokens(text)
+            # Prefer the endpoint's reported token usage; fall back to estimate.
+            in_tok = int(usage.get("prompt_tokens") or in_tok)
+            out_tok = int(usage.get("completion_tokens") or _est_tokens(text))
 
     if text is None:
         text = _stub_response(prompt, spec, out_tok)

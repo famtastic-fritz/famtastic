@@ -8,7 +8,9 @@
     "cheap_first": true,
     "batch_idle_sleep_seconds": 5,
     "batch_busy_sleep_seconds": 1,
-    "worker_timeout_seconds": 60
+    "worker_timeout_seconds": 60,
+    "live_call_timeout_seconds": 20,
+    "live_call_retries": 1
   },
   "routing": {
     "models": {

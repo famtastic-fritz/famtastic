@@ -61,6 +61,18 @@ def log_line(path: Path, msg: str, *, also_print: bool = False) -> None:
         print(line, flush=True)
 
 
+# Keys the system reads. The shell can set ANY of these even when they are not
+# present in the .env file (e.g. CI, the live-path proof harness, an operator
+# exporting a var ad hoc).
+KNOWN_ENV_KEYS = (
+    "OPENROUTER_API_KEY", "OPENROUTER_BASE_URL",
+    "LOCAL_MODEL_URL", "LOCAL_MODEL_NAME",
+    "FACTORY_ALLOW_LIVE_CALLS",
+    "PAYPAL_BUSINESS_EMAIL", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET",
+    "GODADDY_API_KEY", "GODADDY_API_SECRET", "OUTREACH_FROM_EMAIL",
+)
+
+
 def load_env() -> dict:
     """Minimal .env loader (no python-dotenv dependency). Missing file is fine."""
     env = {}
@@ -71,8 +83,10 @@ def load_env() -> dict:
                 continue
             k, _, v = line.partition("=")
             env[k.strip()] = v.strip()
-    # Real process env wins over file (so the operator can override at the shell).
-    for k in list(env):
-        if os.environ.get(k):
-            env[k] = os.environ[k]
+    # Real process env wins over file, AND surfaces known keys not in the file
+    # (so `export FOO=bar; ./bin/factory ...` works without a .env).
+    for k in set(list(env) + list(KNOWN_ENV_KEYS)):
+        val = os.environ.get(k)
+        if val:
+            env[k] = val
     return env
