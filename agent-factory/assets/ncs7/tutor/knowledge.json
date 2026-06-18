@@ -1,0 +1,170 @@
+[
+  {
+    "id": "login",
+    "q": "How do I log in to the CMS?",
+    "a": "Logging in is the first step before you can edit anything.\n\n1. Open the admin address (it ends in /cms/admin/).\n2. You'll see a Login screen with a Username and Password box.\n3. This demo uses a stubbed login, which means it doesn't check a real password yet. Just type ANY username and ANY password — for example \"owner\" and \"demo\" — as long as neither box is empty.\n4. Click \"Sign In\".\n5. You'll land on the Dashboard, which is your home base inside the CMS.\n\nThat's it — there's no account to set up for the demo.",
+    "keywords": ["log", "login", "sign", "in", "password", "username", "access", "enter", "credentials", "authenticate"],
+    "category": "Login"
+  },
+  {
+    "id": "logout",
+    "q": "How do I log out?",
+    "a": "To log out:\n\n1. Look at the top-right corner of any admin screen for your account / a \"Log Out\" link.\n2. Click \"Log Out\".\n3. You'll be returned to the Login screen.\n\nSince this is a demo with a stubbed login, logging back in just takes any non-empty username and password again.",
+    "keywords": ["log", "logout", "sign", "out", "exit", "leave", "session"],
+    "category": "Login"
+  },
+  {
+    "id": "overview",
+    "q": "What can this CMS do?",
+    "a": "Think of this CMS as the control panel for your website. From here you can run the whole site without touching code. Here's what each section does:\n\n• Dashboard — your starting point with a quick overview and shortcuts.\n• Site Content — the global text that appears across the site (like your headline, About text, and contact info).\n• Pages — the individual web pages of your site. Create new ones, edit them, and publish or unpublish them.\n• Templates — reusable page layouts (made of blocks) so a new page already has the right structure.\n• Products — your catalog of CAD standard PDFs, each with a title, SKU, and price.\n• AI Tutor — that's me. Ask me how to do anything in here.\n\nIn short: edit your words, build pages, sell your PDFs, and publish — all from one place.",
+    "keywords": ["what", "can", "do", "overview", "cms", "capabilities", "features", "help", "everything", "manage", "sections", "general"],
+    "category": "General"
+  },
+  {
+    "id": "dashboard",
+    "q": "What is the Dashboard?",
+    "a": "The Dashboard is the first screen you see after logging in. It's your home base.\n\nFrom here you can:\n• See a quick summary of your site.\n• Jump straight to the main areas using the left-hand menu: Site Content, Pages, Templates, Products, and the AI Tutor.\n\nWhenever you feel lost, click \"Dashboard\" in the menu to come back to the start.",
+    "keywords": ["dashboard", "home", "start", "main", "overview", "first", "screen", "menu"],
+    "category": "General"
+  },
+  {
+    "id": "edit-hero",
+    "q": "How do I edit the home page hero / headline?",
+    "a": "The hero is the big headline and message at the top of your home page. Here's how to change it:\n\n1. In the left menu, click \"Site Content\".\n2. Find the \"Hero\" section (it holds the main Headline and the subheading/tagline).\n3. Click into the Headline box and type your new headline — for example \"The National CAD Standard, Version 7\".\n4. Update the subheading underneath if you want.\n5. Click \"Save\".\n\nYour new headline is stored right away and the live site will show it the next time the page loads.",
+    "keywords": ["hero", "headline", "home", "homepage", "title", "banner", "top", "main", "edit", "change", "tagline", "subheading", "front"],
+    "category": "Content"
+  },
+  {
+    "id": "edit-about",
+    "q": "How do I edit the About text and contact info?",
+    "a": "Your About text and contact details live in Site Content because they appear in more than one place on the site.\n\n1. Click \"Site Content\" in the left menu.\n2. Scroll to the \"About\" section and click into the text box.\n3. Type or paste your new About paragraph.\n4. Scroll to the \"Contact\" section for things like email, phone, and address. Update each box.\n5. Click \"Save\".\n\nDone — the new About copy and contact info are saved and will show on the live site.",
+    "keywords": ["about", "contact", "info", "information", "email", "phone", "address", "text", "edit", "change", "company", "bio", "description"],
+    "category": "Content"
+  },
+  {
+    "id": "site-content-vs-pages",
+    "q": "What's the difference between Site Content and Pages?",
+    "a": "Great question — they sound similar but do different jobs.\n\n• Site Content is for GLOBAL text that shows up across the whole site or in shared spots — your hero headline, About paragraph, contact info, footer text. Change it once and it updates everywhere it's used.\n\n• Pages are the INDIVIDUAL web pages — like Home, About, Products, FAQ. Each page has its own content blocks and can be published or unpublished on its own.\n\nRule of thumb: if it's shared site-wide info, edit it in Site Content. If it's a specific page's body, edit it in Pages.",
+    "keywords": ["difference", "site", "content", "pages", "versus", "vs", "global", "individual", "between", "compare", "which"],
+    "category": "Content"
+  },
+  {
+    "id": "what-is-template",
+    "q": "What is a page template and why use one?",
+    "a": "A template is a ready-made page layout. Instead of building a page from scratch, you pick a template and it gives you the right structure already in place.\n\nA template is made of \"blocks\" — for example a Hero block, a Text block, an Image block, and a Call-to-Action block, stacked in order.\n\nWhy use one?\n• It saves time — the layout is already done.\n• It keeps your pages consistent so the whole site looks professional.\n• You only have to fill in your words and images, not design the page.\n\nSo templates are the cookie cutter; the page you create is the cookie.",
+    "keywords": ["template", "what", "why", "use", "layout", "reusable", "blocks", "structure", "design", "purpose"],
+    "category": "Templates"
+  },
+  {
+    "id": "what-are-blocks",
+    "q": "What are blocks?",
+    "a": "Blocks are the building pieces that make up a page or template. Each block is one chunk of the page, stacked top to bottom.\n\nCommon block types:\n• Hero block — a big headline area at the top.\n• Text block — a paragraph of words.\n• Image block — a single picture.\n• Call-to-Action (CTA) block — a button or invitation, like \"Buy Now\".\n\nWhen you edit a page, you edit it block by block: click a block, change its words or image, and save. Blocks are how you arrange a page without needing to design anything.",
+    "keywords": ["blocks", "block", "what", "building", "pieces", "section", "hero", "text", "image", "cta", "components", "parts"],
+    "category": "Templates"
+  },
+  {
+    "id": "create-page-from-template",
+    "q": "How do I create a new page from a template?",
+    "a": "Here's the full step-by-step:\n\n1. Click \"Pages\" in the left menu.\n2. Click the \"New Page\" (or \"+ Create Page\") button.\n3. You'll be asked to pick a Template — choose the layout that fits, like a standard content page or a landing page.\n4. Give the page a Title (for example \"FAQ\") and a web address / slug (for example \"faq\").\n5. The page opens with the template's blocks already there.\n6. Click into each block and fill in your words and images.\n7. Click \"Save\" to keep your work.\n8. When it's ready for visitors, click \"Publish\" (see the publishing how-to).\n\nThat's it — you've made a real page without touching any code.",
+    "keywords": ["create", "new", "page", "template", "make", "add", "build", "start", "from", "step", "how"],
+    "category": "Templates"
+  },
+  {
+    "id": "edit-existing-page",
+    "q": "How do I edit an existing page's content blocks?",
+    "a": "To change a page you already made:\n\n1. Click \"Pages\" in the left menu.\n2. Find the page in the list and click \"Edit\" (or click the page name).\n3. The page opens showing its blocks in order.\n4. Click into the block you want to change — for example the Hero block to change the headline, or a Text block to rewrite a paragraph.\n5. Type your changes directly.\n6. Click \"Save\".\n\nYour edits are stored immediately. If the page is already published, the live site updates on the next page load.",
+    "keywords": ["edit", "existing", "page", "change", "update", "blocks", "modify", "content", "rewrite", "open"],
+    "category": "Pages"
+  },
+  {
+    "id": "publish-page",
+    "q": "How do I publish or unpublish a page?",
+    "a": "Publishing makes a page visible to visitors. Unpublishing hides it again.\n\nTo publish:\n1. Click \"Pages\" in the left menu.\n2. Find your page and open it (or use the status toggle in the list).\n3. Click \"Publish\" — its status changes to Published.\n4. The page is now live on your website.\n\nTo unpublish (hide it):\n1. Open the page or find it in the Pages list.\n2. Click \"Unpublish\" — its status changes to Draft.\n3. Visitors can no longer see it, but your content is safely kept so you can publish again later.\n\nUnpublishing never deletes the page — it just hides it.",
+    "keywords": ["publish", "unpublish", "live", "draft", "hide", "show", "visible", "status", "page", "release", "go"],
+    "category": "Pages"
+  },
+  {
+    "id": "delete-page",
+    "q": "How do I delete a page?",
+    "a": "To remove a page completely:\n\n1. Click \"Pages\" in the left menu.\n2. Find the page in the list.\n3. Click the \"Delete\" (trash) action next to it.\n4. Confirm if asked.\n\nImportant: deleting is permanent in this demo — there's no undo. If you only want to take a page off the site temporarily, use \"Unpublish\" instead, which hides it without losing your work.",
+    "keywords": ["delete", "remove", "page", "trash", "erase", "get", "rid", "permanently"],
+    "category": "Pages"
+  },
+  {
+    "id": "add-product",
+    "q": "How do I add a new product (a CAD standard PDF)?",
+    "a": "Products are your CAD standard PDFs for sale. To add one:\n\n1. Click \"Products\" in the left menu.\n2. Click \"New Product\" (or \"+ Add Product\").\n3. Fill in the fields:\n   • Title — the product name, e.g. \"National CAD Standard v7 — Full Set\".\n   • SKU — a short product code, e.g. \"NCS7-FULL\". Keep each SKU unique.\n   • Price — the amount, e.g. 199.00.\n   • Description — a sentence or two about what's included.\n   • PDF / file — the path or URL to the downloadable PDF.\n4. Click \"Save\".\n\nThe product now appears in your Products list and on the live storefront.",
+    "keywords": ["add", "new", "product", "pdf", "cad", "standard", "create", "sku", "price", "title", "catalog", "item", "sell"],
+    "category": "Products"
+  },
+  {
+    "id": "edit-product",
+    "q": "How do I edit or delete a product?",
+    "a": "To EDIT a product:\n1. Click \"Products\" in the left menu.\n2. Find the product and click \"Edit\" (or its name).\n3. Change any field — Title, SKU, Price, Description, or the PDF path.\n4. Click \"Save\".\n\nTo DELETE a product:\n1. In the Products list, find the product.\n2. Click the \"Delete\" (trash) action.\n3. Confirm if asked.\n\nNote: deleting a product is permanent in this demo — there's no undo. Double-check before you delete.",
+    "keywords": ["edit", "delete", "product", "remove", "change", "update", "modify", "pdf", "trash"],
+    "category": "Products"
+  },
+  {
+    "id": "change-pricing",
+    "q": "How do I change pricing?",
+    "a": "Changing a price is quick:\n\n1. Click \"Products\" in the left menu.\n2. Find the product whose price you want to change and click \"Edit\".\n3. Click into the \"Price\" box and type the new amount (for example 149.00).\n4. Click \"Save\".\n\nThe new price is stored right away and shows on your live storefront on the next page load. If you sell several items, repeat for each product.",
+    "keywords": ["change", "pricing", "price", "cost", "amount", "money", "update", "edit", "product", "dollar", "pricey", "charge", "rate", "repriced", "reprice"],
+    "category": "Products"
+  },
+  {
+    "id": "add-template",
+    "q": "How do I add a new template?",
+    "a": "Templates are reusable layouts built from blocks. To create one:\n\n1. Click \"Templates\" in the left menu.\n2. Click \"New Template\".\n3. Give the template a name (for example \"Landing Page\").\n4. Add the blocks you want, in order — for example a Hero block, then a Text block, then an Image block, then a Call-to-Action block.\n5. Arrange the blocks top to bottom in the order they should appear.\n6. Click \"Save\".\n\nNow when you create a new page, your template will appear as a choice, already stocked with those blocks. You just fill in the words and images.",
+    "keywords": ["add", "new", "template", "create", "make", "layout", "blocks", "build", "reusable", "design"],
+    "category": "Templates"
+  },
+  {
+    "id": "changes-to-live",
+    "q": "How do my changes reach the live website?",
+    "a": "You don't have to \"upload\" anything — it's automatic.\n\n1. When you click \"Save\" in any section, your change is written to the CMS data store (the site's database).\n2. The public website is a React frontend that reads from the CMS through an address called /api/content.\n3. The next time a visitor loads the page, the site pulls the latest content and shows your changes.\n\nSo the flow is simple: Edit → Save → it's stored → the live site reads it on the next load. For pages specifically, remember they also need to be Published to be visible.",
+    "keywords": ["live", "website", "reach", "changes", "save", "publish", "frontend", "react", "api", "content", "update", "appear", "store", "database"],
+    "category": "General"
+  },
+  {
+    "id": "add-image",
+    "q": "How do I add or replace an image?",
+    "a": "Images are handled by their location (a URL or path) in this demo rather than a drag-and-drop uploader.\n\n1. Open the place that holds the image — an Image block on a Page, or an image field in Site Content or a Product.\n2. Find the image field and clear out the old path.\n3. Paste the new image's URL (for example https://yoursite.com/images/cover.jpg) or the file path where it lives.\n4. Click \"Save\".\n\nThe page will show the image at that address. To replace an image, just paste a different URL/path in the same field and save again.",
+    "keywords": ["image", "picture", "photo", "add", "replace", "upload", "url", "path", "logo", "graphic", "swap", "change"],
+    "category": "Content"
+  },
+  {
+    "id": "undo",
+    "q": "Can I undo a change?",
+    "a": "Honest answer: this demo does NOT have an undo button or version history yet.\n\nOnce you click \"Save\", the new content replaces the old. To get back to how it was, you simply re-edit the same field, type the previous wording, and Save again.\n\nA couple of safe habits:\n• Before a big change, copy the current text into a notepad so you can paste it back if needed.\n• For pages you're unsure about, use \"Unpublish\" instead of \"Delete\" — unpublishing hides a page without losing it.",
+    "keywords": ["undo", "revert", "back", "mistake", "history", "version", "restore", "recover", "previous", "oops", "redo"],
+    "category": "General"
+  },
+  {
+    "id": "save-vs-publish",
+    "q": "What's the difference between Save and Publish?",
+    "a": "These two buttons do different things:\n\n• Save stores your changes in the CMS so you don't lose them. Use it constantly while you work.\n• Publish makes a PAGE visible to the public. A page can be saved but still be a Draft (hidden) until you publish it.\n\nFor Site Content and Products, you mainly just Save — your changes are stored and read by the live site. For Pages, you Save your edits AND Publish the page when it's ready for visitors.\n\nWhen in doubt: Save often, Publish when it's ready to be seen.",
+    "keywords": ["save", "publish", "difference", "between", "versus", "vs", "button", "store", "draft", "visible"],
+    "category": "Pages"
+  },
+  {
+    "id": "footer-nav",
+    "q": "How do I edit the footer or navigation menu text?",
+    "a": "Shared elements like the footer and the navigation menu are global, so they live in Site Content.\n\n1. Click \"Site Content\" in the left menu.\n2. Look for the \"Footer\" section for footer text (like copyright or contact line) and the \"Navigation\" section for menu labels.\n3. Click into the field you want to change and type the new text.\n4. Click \"Save\".\n\nBecause these are global, the change shows everywhere on the site at once on the next page load.",
+    "keywords": ["footer", "navigation", "nav", "menu", "links", "header", "bottom", "copyright", "edit", "change", "global"],
+    "category": "Content"
+  },
+  {
+    "id": "rename-page",
+    "q": "How do I rename a page or change its web address?",
+    "a": "To change a page's title or its web address (slug):\n\n1. Click \"Pages\" in the left menu.\n2. Open the page you want to change.\n3. Edit the \"Title\" field to rename it, or edit the \"Slug\" / web-address field to change its URL (for example from \"about-us\" to \"about\").\n4. Click \"Save\".\n\nTip: changing the slug changes the page's web address, so any old links pointing to the previous address may stop working. Only change a slug if you really need to.",
+    "keywords": ["rename", "page", "title", "slug", "url", "address", "name", "change", "web", "link"],
+    "category": "Pages"
+  },
+  {
+    "id": "get-started",
+    "q": "I'm new — where do I start?",
+    "a": "Welcome! Here's a friendly first run-through:\n\n1. Log in (any non-empty username and password — it's a demo).\n2. You'll land on the Dashboard. Take a quick look at the left menu.\n3. Click \"Site Content\" and update your Hero headline and About text — these are the words most visitors read first. Click Save.\n4. Click \"Products\" and check your CAD standard PDFs — add, edit, or price them.\n5. Click \"Pages\" to create or tidy individual pages, then Publish the ones that are ready.\n6. Stuck on anything? Ask me, the AI Tutor — I'll walk you through it.\n\nStart small, save often, and you'll have the hang of it in minutes.",
+    "keywords": ["new", "start", "begin", "first", "getting", "started", "tour", "guide", "where", "help", "beginner", "how"],
+    "category": "General"
+  }
+]

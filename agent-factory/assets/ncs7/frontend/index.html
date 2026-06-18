@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>National CAD Standard — NCS Version 7 (NCS7)</title>
+  <meta name="description" content="The United States National CAD Standard (NCS7) — one unified system for organizing, naming, and presenting construction documents. Now BIM-ready, with a 3D CAD viewer." />
+
+  <!-- Fonts (CDN allowed) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- favicon (inline blueprint mark) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect x='3' y='3' width='42' height='42' rx='8' fill='%230b1f3a' stroke='%231ca7ec' stroke-width='2'/%3E%3Cpath d='M12 34V14l9 12V14M27 14h9M27 24h7M27 34h9' stroke='%231ca7ec' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <!-- fixed scroll-reactive 3D building grid behind the whole page -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- React mount point -->
+  <div id="app">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+
+  <!-- React 18 UMD (vendored locally — runs fully offline, no CDN) -->
+  <script src="vendor/react.production.min.js"></script>
+  <script src="vendor/react-dom.production.min.js"></script>
+
+  <!-- Three.js UMD global (vendored, three r160) -->
+  <script src="vendor/three.min.js"></script>
+
+  <!-- Babel standalone so we can write JSX in the browser with no build -->
+  <script src="vendor/babel.min.js"></script>
+
+  <!-- 3D scenes (classic script — uses THREE global) -->
+  <script src="three-hero.js"></script>
+
+  <!-- React app (JSX, compiled in-browser by Babel) -->
+  <script type="text/babel" src="app.js" data-presets="react"></script>
+</body>
+</html>

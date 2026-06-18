@@ -1,0 +1,32 @@
+[
+  {
+    "id": "page-welcome",
+    "slug": "welcome",
+    "title": "Welcome to the NCS7 CMS",
+    "templateId": "tpl-standard-content",
+    "blocks": [
+      {
+        "type": "heading",
+        "label": "Page Heading",
+        "value": "Welcome to the NCS7 CMS"
+      },
+      {
+        "type": "rich-text",
+        "label": "Body",
+        "value": "This example page was created automatically from the \"Standard Content Page\" template. Edit its blocks in the Pages section, or create new pages from any template — no code required."
+      },
+      {
+        "type": "image",
+        "label": "Feature Image URL",
+        "value": ""
+      },
+      {
+        "type": "cta",
+        "label": "Call To Action",
+        "value": "Learn more #/contact"
+      }
+    ],
+    "published": true,
+    "updatedAt": "2026-06-18T09:53:57.209Z"
+  }
+]

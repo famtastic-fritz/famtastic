@@ -1,0 +1,206 @@
+{
+  "site": {
+    "name": "National CAD Standard",
+    "shortName": "NCS",
+    "edition": "NCS Version 7 (NCS7)",
+    "tagline": "The unified language of design documentation.",
+    "established": 1997,
+    "email": "info@nationalcadstandard.org",
+    "phone": "+1 (202) 555-0177",
+    "address": "1735 New York Ave NW, Washington, DC 20006",
+    "social": {
+      "linkedin": "https://www.linkedin.com/company/national-cad-standard",
+      "x": "https://x.com/nationalcad",
+      "youtube": "https://www.youtube.com/@nationalcad"
+    }
+  },
+  "nav": [
+    { "label": "Home", "route": "#/" },
+    { "label": "About the NCS", "route": "#/about" },
+    { "label": "Standards", "route": "#/products" },
+    { "label": "Pricing", "route": "#/pricing" },
+    { "label": "Resources", "route": "#/resources" },
+    { "label": "Contact", "route": "#/contact" }
+  ],
+  "home": {
+    "hero": {
+      "kicker": "Version 7 — Released for the BIM Era",
+      "title": "One standard. Every drawing. Spoken fluently.",
+      "subtitle": "The National CAD Standard (NCS7) gives architects, engineers, and the federal government a single, consistent system for organizing, naming, and presenting construction documents — from layer names to sheet sets.",
+      "primaryCta": { "label": "Browse the Standards", "route": "#/products" },
+      "secondaryCta": { "label": "See the 3D CAD Viewer", "route": "cad3d/index.html" }
+    },
+    "stats": [
+      { "value": "30+", "label": "Years of adoption" },
+      { "value": "6", "label": "Integrated modules" },
+      { "value": "100k+", "label": "Licensed professionals" },
+      { "value": "Fed", "label": "Government-mandated" }
+    ],
+    "intro": {
+      "title": "Why a national standard?",
+      "body": "Before the NCS, every firm spoke its own CAD dialect. Layer names, sheet organization, abbreviations, and plotting conventions varied from office to office, making collaboration slow and error-prone. The National CAD Standard unifies these conventions so a drawing produced in one firm reads cleanly in any other — and in every government agency that mandates it."
+    },
+    "features": [
+      { "icon": "layers", "title": "Consistent layering", "body": "A predictable, discipline-based layer naming system that scales from a tenant fit-out to a hospital campus." },
+      { "icon": "grid", "title": "Uniform sheet sets", "body": "Standard sheet identification and organization so reviewers always know where to look." },
+      { "icon": "cpu", "title": "BIM-ready", "body": "Version 7 aligns traditional CAD conventions with modern BIM workflows and model-based delivery." }
+    ]
+  },
+  "about": {
+    "title": "About the National CAD Standard",
+    "lead": "The NCS is a consensus standard maintained by a coalition of the design and construction industry's leading institutions.",
+    "body": "The United States National CAD Standard (NCS) is published through the National Institute of Building Sciences (NIBS) and developed by a consensus process involving the American Institute of Architects (AIA), the Construction Specifications Institute (CSI), the U.S. Coast Guard, the General Services Administration (GSA), and others. It combines several previously independent standards into one coordinated document so that the entire lifecycle of a construction project speaks the same documentation language.",
+    "principles": [
+      { "title": "Consensus-built", "body": "Every module is balloted and reviewed by industry stakeholders, not dictated by a single vendor." },
+      { "title": "Vendor-neutral", "body": "The standard works across AutoCAD, MicroStation, Revit, and any CAD/BIM platform." },
+      { "title": "Government-aligned", "body": "Adopted and mandated by federal agencies including the GSA and the Department of Defense." }
+    ],
+    "timeline": [
+      { "year": "1997", "event": "First coordinated draft combining AIA and CSI conventions." },
+      { "year": "2004", "event": "NCS Version 3 adopted widely across federal agencies." },
+      { "year": "2014", "event": "NCS Version 6 introduces expanded plotting and symbology guidance." },
+      { "year": "2024", "event": "NCS Version 7 (NCS7) aligns the standard with BIM delivery." }
+    ]
+  },
+  "products": [
+    {
+      "id": "ncs-admin",
+      "sku": "NCS7-M1",
+      "title": "General Administration",
+      "category": "Module 1",
+      "summary": "Governance, purpose, scope, and the rules for adopting and maintaining the NCS within an organization.",
+      "description": "The administrative module explains how the National CAD Standard is structured, how to reference it in contracts and specifications, how to document organization-specific deviations, and how the consensus maintenance process works. It is the entry point every firm reads first.",
+      "pages": 48,
+      "format": "PDF",
+      "price": 75,
+      "highlights": ["Adoption checklist", "Contract reference language", "Deviation documentation template"]
+    },
+    {
+      "id": "ncs-uds",
+      "sku": "NCS7-M2",
+      "title": "Uniform Drawing System (UDS)",
+      "category": "Module 2",
+      "summary": "The core of the standard: sheet organization, drawing set order, schedules, notations, and symbols.",
+      "description": "The Uniform Drawing System defines eight integrated modules covering sheet identification, sheet organization, schedules, drafting conventions, terms and abbreviations, symbols, notations, and code conventions. This is the most-used reference on any drafting team.",
+      "pages": 212,
+      "format": "PDF",
+      "price": 195,
+      "highlights": ["Sheet identification system", "Standard symbol library", "Drafting conventions"]
+    },
+    {
+      "id": "ncs-layers",
+      "sku": "NCS7-M3",
+      "title": "AIA CAD Layer Guidelines",
+      "category": "Module 3",
+      "summary": "The discipline-based layer naming system that keeps every layer predictable across firms and platforms.",
+      "description": "The AIA CAD Layer Guidelines specify a structured layer name format — discipline designator, major group, minor group, and status field — so that layers are self-describing and consistent. This module is the backbone of cross-firm CAD collaboration.",
+      "pages": 96,
+      "format": "PDF",
+      "price": 145,
+      "highlights": ["Discipline designators", "Layer name format", "Status field conventions"]
+    },
+    {
+      "id": "ncs-plot",
+      "sku": "NCS7-M4",
+      "title": "Plotting Guidelines",
+      "category": "Module 4",
+      "summary": "Line weights, pen tables, color-to-weight mapping, and consistent, reproducible plotted output.",
+      "description": "The Plotting Guidelines establish how on-screen colors map to plotted line weights, recommended pen tables, and conventions that guarantee a drawing plotted in one office matches the appearance of the same drawing plotted in another.",
+      "pages": 54,
+      "format": "PDF",
+      "price": 95,
+      "highlights": ["Color-to-weight mapping", "Recommended pen tables", "Reproducible output"]
+    },
+    {
+      "id": "ncs-bim",
+      "sku": "NCS7-M5",
+      "title": "BIM Implementation",
+      "category": "Module 5 (New in V7)",
+      "summary": "How NCS conventions map onto model-based delivery, object naming, and BIM execution planning.",
+      "description": "New in Version 7, the BIM Implementation module bridges traditional 2D CAD conventions and model-based workflows. It covers object and parameter naming aligned to the layer guidelines, model file organization, level-of-development references, and how to maintain NCS compliance when documents are generated from a model.",
+      "pages": 120,
+      "format": "PDF",
+      "price": 225,
+      "highlights": ["Model-to-sheet compliance", "Object naming alignment", "BIM execution plan templates"]
+    },
+    {
+      "id": "ncs-symbols",
+      "sku": "NCS7-M6",
+      "title": "Symbols & Notations Reference",
+      "category": "Module 6",
+      "summary": "The complete graphic symbol set and standardized notation conventions for every discipline.",
+      "description": "A comprehensive, printable reference of the standardized graphic symbols, reference bubbles, and notation conventions used across architectural, structural, mechanical, electrical, and civil drawings.",
+      "pages": 88,
+      "format": "PDF",
+      "price": 120,
+      "highlights": ["Cross-discipline symbol set", "Reference bubble conventions", "Printable quick-reference"]
+    }
+  ],
+  "pricing": {
+    "title": "Choose your access",
+    "subtitle": "Buy individual modules as PDFs, or subscribe for the complete standard plus updates.",
+    "plans": [
+      {
+        "id": "single",
+        "name": "Single Module",
+        "price": "from $75",
+        "period": "one-time",
+        "blurb": "Buy any one module as a downloadable PDF.",
+        "features": ["One module PDF", "Lifetime access to that version", "Single-user license"],
+        "cta": "Browse modules",
+        "featured": false
+      },
+      {
+        "id": "complete",
+        "name": "Complete NCS7",
+        "price": "$795",
+        "period": "one-time",
+        "blurb": "The full six-module set at a bundle price.",
+        "features": ["All six modules", "Online PDF viewer + download", "Single-user license", "3D CAD viewer access"],
+        "cta": "Get the full set",
+        "featured": true
+      },
+      {
+        "id": "enterprise",
+        "name": "Enterprise Subscription",
+        "price": "$2,400",
+        "period": "per year",
+        "blurb": "Unlimited seats, automatic version updates, and admin controls.",
+        "features": ["Unlimited seats", "Automatic updates to new versions", "Admin dashboard & seat management", "Priority support"],
+        "cta": "Contact sales",
+        "featured": false
+      }
+    ]
+  },
+  "resources": {
+    "title": "Resources",
+    "subtitle": "Free tools and references to help your team adopt the standard.",
+    "items": [
+      { "title": "Adoption Quick-Start Guide", "type": "PDF", "body": "A 6-step checklist for rolling out the NCS across a firm.", "action": "Download" },
+      { "title": "Layer Name Cheat Sheet", "type": "PDF", "body": "The discipline-based layer format on a single printable page.", "action": "Download" },
+      { "title": "Sample CAD Template Set", "type": "DWG/RVT", "body": "Pre-configured templates with NCS-compliant layers and sheet sets.", "action": "Download" },
+      { "title": "3D CAD Viewer Demo", "type": "Web", "body": "See a floor plan exploded into stacked 3D layers in your browser.", "action": "Open" },
+      { "title": "Webinar: NCS7 & BIM", "type": "Video", "body": "A recorded session on aligning model delivery with the standard.", "action": "Watch" },
+      { "title": "FAQ", "type": "Web", "body": "Answers to the most common licensing and compliance questions.", "action": "Read" }
+    ]
+  },
+  "contact": {
+    "title": "Talk to us",
+    "subtitle": "Questions about licensing, enterprise seats, or compliance? We respond within one business day.",
+    "fields": ["Name", "Organization", "Email", "Message"],
+    "office": {
+      "name": "National Institute of Building Sciences",
+      "address": "1735 New York Ave NW, Washington, DC 20006",
+      "email": "info@nationalcadstandard.org",
+      "phone": "+1 (202) 555-0177"
+    }
+  },
+  "footer": {
+    "blurb": "The United States National CAD Standard unifies how the design and construction industry organizes and presents documentation.",
+    "columns": [
+      { "title": "Standard", "links": [ { "label": "Modules", "route": "#/products" }, { "label": "Pricing", "route": "#/pricing" }, { "label": "What's new in V7", "route": "#/about" } ] },
+      { "title": "Company", "links": [ { "label": "About", "route": "#/about" }, { "label": "Contact", "route": "#/contact" }, { "label": "Resources", "route": "#/resources" } ] }
+    ],
+    "legal": "© 1997–2026 National Institute of Building Sciences. Demo recreation for presentation purposes."
+  }
+}

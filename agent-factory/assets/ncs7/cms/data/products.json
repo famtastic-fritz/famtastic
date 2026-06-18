@@ -1,0 +1,98 @@
+[
+  {
+    "id": "ncs-admin",
+    "sku": "NCS7-M1",
+    "title": "General Administration",
+    "category": "Module 1",
+    "summary": "Governance, purpose, scope, and the rules for adopting and maintaining the NCS within an organization.",
+    "description": "The administrative module explains how the National CAD Standard is structured, how to reference it in contracts and specifications, how to document organization-specific deviations, and how the consensus maintenance process works. It is the entry point every firm reads first.",
+    "pages": 48,
+    "format": "PDF",
+    "price": 75,
+    "highlights": [
+      "Adoption checklist",
+      "Contract reference language",
+      "Deviation documentation template"
+    ]
+  },
+  {
+    "id": "ncs-uds",
+    "sku": "NCS7-M2",
+    "title": "Uniform Drawing System (UDS)",
+    "category": "Module 2",
+    "summary": "The core of the standard: sheet organization, drawing set order, schedules, notations, and symbols.",
+    "description": "The Uniform Drawing System defines eight integrated modules covering sheet identification, sheet organization, schedules, drafting conventions, terms and abbreviations, symbols, notations, and code conventions. This is the most-used reference on any drafting team.",
+    "pages": 212,
+    "format": "PDF",
+    "price": 195,
+    "highlights": [
+      "Sheet identification system",
+      "Standard symbol library",
+      "Drafting conventions"
+    ]
+  },
+  {
+    "id": "ncs-layers",
+    "sku": "NCS7-M3",
+    "title": "AIA CAD Layer Guidelines",
+    "category": "Module 3",
+    "summary": "The discipline-based layer naming system that keeps every layer predictable across firms and platforms.",
+    "description": "The AIA CAD Layer Guidelines specify a structured layer name format — discipline designator, major group, minor group, and status field — so that layers are self-describing and consistent. This module is the backbone of cross-firm CAD collaboration.",
+    "pages": 96,
+    "format": "PDF",
+    "price": 145,
+    "highlights": [
+      "Discipline designators",
+      "Layer name format",
+      "Status field conventions"
+    ]
+  },
+  {
+    "id": "ncs-plot",
+    "sku": "NCS7-M4",
+    "title": "Plotting Guidelines",
+    "category": "Module 4",
+    "summary": "Line weights, pen tables, color-to-weight mapping, and consistent, reproducible plotted output.",
+    "description": "The Plotting Guidelines establish how on-screen colors map to plotted line weights, recommended pen tables, and conventions that guarantee a drawing plotted in one office matches the appearance of the same drawing plotted in another.",
+    "pages": 54,
+    "format": "PDF",
+    "price": 95,
+    "highlights": [
+      "Color-to-weight mapping",
+      "Recommended pen tables",
+      "Reproducible output"
+    ]
+  },
+  {
+    "id": "ncs-bim",
+    "sku": "NCS7-M5",
+    "title": "BIM Implementation",
+    "category": "Module 5 (New in V7)",
+    "summary": "How NCS conventions map onto model-based delivery, object naming, and BIM execution planning.",
+    "description": "New in Version 7, the BIM Implementation module bridges traditional 2D CAD conventions and model-based workflows. It covers object and parameter naming aligned to the layer guidelines, model file organization, level-of-development references, and how to maintain NCS compliance when documents are generated from a model.",
+    "pages": 120,
+    "format": "PDF",
+    "price": 225,
+    "highlights": [
+      "Model-to-sheet compliance",
+      "Object naming alignment",
+      "BIM execution plan templates"
+    ]
+  },
+  {
+    "id": "ncs-symbols",
+    "sku": "NCS7-M6",
+    "title": "Symbols & Notations Reference",
+    "category": "Module 6",
+    "summary": "The complete graphic symbol set and standardized notation conventions for every discipline.",
+    "description": "A comprehensive, printable reference of the standardized graphic symbols, reference bubbles, and notation conventions used across architectural, structural, mechanical, electrical, and civil drawings.",
+    "pages": 88,
+    "format": "PDF",
+    "price": 120,
+    "highlights": [
+      "Cross-discipline symbol set",
+      "Reference bubble conventions",
+      "Printable quick-reference"
+    ]
+  }
+]

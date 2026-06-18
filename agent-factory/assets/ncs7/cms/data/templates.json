@@ -1,0 +1,51 @@
+[
+  {
+    "id": "tpl-standard-content",
+    "name": "Standard Content Page",
+    "description": "A simple content page: a heading, a body of rich text, an optional image, and a call to action. Good for documentation, policy, or informational pages.",
+    "blocks": [
+      {
+        "type": "heading",
+        "label": "Page Heading",
+        "defaultValue": "New Content Page"
+      },
+      {
+        "type": "rich-text",
+        "label": "Body",
+        "defaultValue": "Write the main content of this page here. This text supports multiple paragraphs and is editable by non-technical staff."
+      },
+      {
+        "type": "image",
+        "label": "Feature Image URL",
+        "defaultValue": ""
+      },
+      {
+        "type": "cta",
+        "label": "Call To Action",
+        "defaultValue": "Learn more #/contact"
+      }
+    ]
+  },
+  {
+    "id": "tpl-landing",
+    "name": "Landing Page",
+    "description": "A marketing landing page: a hero statement, a grid of feature highlights, and a closing call to action.",
+    "blocks": [
+      {
+        "type": "hero",
+        "label": "Hero Statement",
+        "defaultValue": "A bold, benefit-led headline."
+      },
+      {
+        "type": "feature-grid",
+        "label": "Feature Grid (one feature per line)",
+        "defaultValue": "Consistent layering | A predictable, discipline-based layer system.\nUniform sheet sets | Reviewers always know where to look.\nBIM-ready | Aligns CAD conventions with modern BIM workflows."
+      },
+      {
+        "type": "cta",
+        "label": "Closing Call To Action",
+        "defaultValue": "Browse the Standards #/products"
+      }
+    ]
+  }
+]

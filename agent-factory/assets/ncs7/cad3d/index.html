@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NCS 3D CAD Viewer — Floor Plan Exploded into Layers</title>
+  <meta name="description" content="National CAD Standard (NCS7) demo: an architectural floor plan exploded into stacked, orbitable 3D layers and floors." />
+  <link rel="stylesheet" href="cad3d.css" />
+
+  <!--
+    Three.js loaded via ES-module import-map from VENDORED local files (three r160).
+    No build step, no npm install, no CDN — the bare specifiers 'three' and
+    'three/addons/...' resolve to local vendored files so OrbitControls (an addon)
+    imports cleanly inside cad3d.js, fully offline.
+  -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js",
+      "three/addons/": "./vendor/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Loading splash (removed once the scene initializes) -->
+  <div id="cad-loading" class="cad-loading">Loading 3D CAD scene…</div>
+
+  <!-- WebGL canvas -->
+  <canvas id="cad-canvas"></canvas>
+
+  <!-- HTML labels tracked to 3D anchor points -->
+  <div id="cad-label-layer"></div>
+
+  <!-- Title block (top-left) -->
+  <div class="cad-titleblock">
+    <p class="eyebrow">National CAD Standard · NCS7</p>
+    <h1>NCS 3D CAD Viewer — Floor Plan Exploded into Layers</h1>
+    <p>An architectural floor plan lifted off the sheet and exploded into
+       stacked floor plates in space. Level 2 splits further into its
+       discipline layers — Architectural, Structural, MEP — the same
+       separation the AIA CAD Layer Guidelines define. Drag to orbit,
+       scroll to zoom.</p>
+  </div>
+
+  <!-- Info toggle + "How real PDFs feed in" panel (top-right) -->
+  <button id="info-toggle" class="cad-btn cad-info-toggle" type="button">How real PDFs feed in</button>
+  <aside id="info-panel" class="cad-info-panel" aria-label="How real CAD PDFs feed into this viewer">
+    <h2>How a real CAD PDF feeds in</h2>
+    <ol>
+      <li><strong>Load</strong> the PDF with <code>pdf.js</code>:
+          <code>pdfjsLib.getDocument(url)</code>.</li>
+      <li><strong>Render</strong> each page to an offscreen
+          <code>&lt;canvas&gt;</code> via
+          <code>page.render({ canvasContext, viewport })</code>.</li>
+      <li><strong>Wrap</strong> the canvas as a
+          <code>THREE.CanvasTexture</code> on a
+          <code>PlaneGeometry</code>.</li>
+      <li><strong>Stack</strong> the planes by sheet / level
+          (A-101, A-102…), offset on Y, then orbit — exactly the layout
+          this demo builds with line geometry.</li>
+    </ol>
+    <p class="note">
+      <strong>True layer extraction:</strong> CAD-authored PDFs carry
+      Optional Content Groups (OCGs) — the PDF equivalent of CAD layers.
+      <code>page.getOptionalContentConfig()</code> lets you toggle each OCG
+      and re-render per layer, producing one texture per discipline
+      (A-WALL, S-COLS, M-HVAC…) → the Architectural / Structural / MEP
+      explosion shown here. For vector accuracy, walk
+      <code>page.getOperatorList()</code> and re-emit drawing ops per
+      layer. Either path: canvas → texture → plane → stack → orbit.
+    </p>
+  </aside>
+
+  <!-- Legend (bottom-left) -->
+  <div class="cad-legend">
+    <div class="legend-row"><span class="swatch" style="background:#1ca7ec"></span> Architectural</div>
+    <div class="legend-row"><span class="swatch" style="background:#ff9f43"></span> Structural</div>
+    <div class="legend-row"><span class="swatch" style="background:#4ee5a1"></span> MEP</div>
+    <div class="legend-row"><span class="swatch" style="background:#5fb8e6"></span> Dimensions</div>
+  </div>
+
+  <!-- Bottom control bar -->
+  <div class="cad-controls">
+    <div class="ctrl-group">
+      <label for="explode-slider">Explode</label>
+      <input id="explode-slider" class="cad-slider" type="range" min="0" max="100" value="60" />
+    </div>
+    <button id="toggle-autorotate" class="cad-btn" type="button">Auto-rotate</button>
+    <button id="reset-view" class="cad-btn" type="button">Reset view</button>
+  </div>
+
+  <!-- App module -->
+  <script type="module" src="cad3d.js"></script>
+
+</body>
+</html>

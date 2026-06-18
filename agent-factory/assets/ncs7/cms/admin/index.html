@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NCS7 CMS — Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <!-- ============================= LOGIN ============================= -->
+  <div id="login-screen" class="login-screen">
+    <form id="login-form" class="login-card" autocomplete="off">
+      <div class="login-brand">
+        <span class="login-mark">NCS<span>7</span></span>
+        <span class="login-title">Content Management</span>
+      </div>
+      <p class="login-sub">Sign in to manage the National CAD Standard demo site.</p>
+
+      <label class="field">
+        <span class="field-label">Username</span>
+        <input type="text" id="login-username" placeholder="any username" />
+      </label>
+      <label class="field">
+        <span class="field-label">Password</span>
+        <input type="password" id="login-password" placeholder="any password" />
+      </label>
+
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+      <p id="login-error" class="login-msg" hidden></p>
+
+      <div class="login-note">
+        <strong>Demo stub:</strong> authentication is not real. Any non-empty
+        username and password will sign you in. No credentials are stored or
+        verified.
+      </div>
+    </form>
+  </div>
+
+  <!-- ============================= APP =============================== -->
+  <div id="app" class="app" hidden>
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-mark">NCS<span>7</span></span>
+        <span class="brand-label">CMS</span>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" data-view="site">Site Content</button>
+        <button class="nav-item" data-view="pages">Pages</button>
+        <button class="nav-item" data-view="templates">Templates</button>
+        <button class="nav-item" data-view="products">Products</button>
+        <button class="nav-item" data-view="tutor">AI Tutor</button>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="/" target="_blank" class="view-site-link">View live site &#8599;</a>
+        <button id="logout-btn" class="btn btn-ghost btn-block">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <h1 id="view-title">Dashboard</h1>
+        <div class="topbar-right">
+          <span class="env-pill">Demo environment</span>
+        </div>
+      </header>
+
+      <section id="view-root" class="view-root"><!-- views render here --></section>
+    </main>
+  </div>
+
+  <!-- Toast host -->
+  <div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+  <script src="admin.js" defer></script>
+</body>
+</html>
