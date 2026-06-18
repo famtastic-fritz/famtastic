@@ -1,0 +1,7 @@
+# The Agent Factory runs on the Python 3.11 standard library ONLY.
+# No third-party packages are required, so the whole system runs offline with
+# nothing to install. This file is intentionally (almost) empty.
+#
+# Optional, only if you later wire LIVE OpenRouter calls and prefer `requests`
+# over the stdlib urllib client already implemented in src/llm.py:
+# requests>=2.31

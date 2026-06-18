@@ -1,0 +1,18 @@
+# Isolated runtime — never committed
+.venv/
+__pycache__/
+*.pyc
+
+# Local secrets
+.env
+
+# Runtime data & logs (regenerated on every run)
+data/factory.db
+data/factory.db-wal
+data/factory.db-shm
+data/state.json
+logs/*.log
+dashboard.html
+
+# Minted workers are runtime artifacts (orchestrator regenerates them)
+workers/worker_*.py
