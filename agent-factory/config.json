@@ -4,15 +4,15 @@
   "concurrency": {
     "min_workers": 1,
     "max_workers": 4,
-    "current_max": 2
+    "current_max": 4
   },
   "routing": {
-    "complexity_threshold": 0.55,
+    "complexity_threshold": 0.3,
     "escalate_on_low_confidence": true,
     "confidence_floor": 0.6
   },
   "scheduler": {
-    "base_interval_seconds": 4,
+    "base_interval_seconds": 6,
     "min_interval_seconds": 1,
     "max_interval_seconds": 30,
     "deep_queue_threshold": 6,
