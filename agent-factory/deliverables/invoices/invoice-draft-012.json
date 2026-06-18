@@ -1,8 +1,8 @@
 {
   "mode": "STUB",
   "reason": "config.paypal_live is false",
-  "created_at": "2026-06-18T09:29:16",
-  "draft_id": "DRAFT-STUB-202606180929166335",
+  "created_at": "2026-06-18T14:38:36",
+  "draft_id": "DRAFT-STUB-202606181438364593",
   "status": "DRAFT (simulated \u2014 not created in PayPal)",
   "endpoint": "https://api-m.sandbox.paypal.com/v2/invoicing/invoices",
   "request_body": {

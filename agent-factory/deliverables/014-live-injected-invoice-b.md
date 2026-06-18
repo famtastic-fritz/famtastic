@@ -1,15 +1,15 @@
-# PayPal Invoice Draft — task #12
+# PayPal Invoice Draft — task #14
 
-> Draft invoice: FAMtastic Signature build (50% deposit)
+> LIVE injected invoice B
 >
-> Mode: **STUB** (config.paypal_live is false) · 2026-06-18T14:38:36
+> Mode: **STUB** (config.paypal_live is false) · 2026-06-18T14:42:07
 
 ## Draft summary
-- **Draft id:** `DRAFT-STUB-202606181438364593`
+- **Draft id:** `DRAFT-STUB-202606181442070413`
 - **Status:** DRAFT (simulated — not created in PayPal)
-- **Bill to:** Sample Agency <agency@example.com>
-- **Item:** FAMtastic Signature build — 50% deposit — qty 1 @ 1750.00 USD
-- **Total:** 1750.00 USD
+- **Bill to:** Valued Customer <live@test.com>
+- **Item:** Live test diagnostic — qty 1 @ 500.00 USD
+- **Total:** 500.00 USD
 - **Endpoint:** `POST https://api-m.sandbox.paypal.com/v2/invoicing/invoices`
 
 > Offline stub. Flip live per SETUP.md to create a real draft.
@@ -24,7 +24,7 @@ dashboard after reviewing the draft. (See `paypal.py` — there is no send code.
 {
   "detail": {
     "currency_code": "USD",
-    "note": "Deposit to start. Remaining 50% due on approval before deploy.",
+    "note": "Thank you for your business.",
     "terms_and_conditions": "Due on receipt. Work begins once payment clears.",
     "payment_term": {
       "term_type": "DUE_ON_RECEIPT"
@@ -41,20 +41,20 @@ dashboard after reviewing the draft. (See `paypal.py` — there is no send code.
     {
       "billing_info": {
         "name": {
-          "given_name": "Sample",
-          "surname": "Agency"
+          "given_name": "Valued",
+          "surname": "Customer"
         },
-        "email_address": "agency@example.com"
+        "email_address": "live@test.com"
       }
     }
   ],
   "items": [
     {
-      "name": "FAMtastic Signature build \u2014 50% deposit",
+      "name": "Live test diagnostic",
       "quantity": "1",
       "unit_amount": {
         "currency_code": "USD",
-        "value": "1750.00"
+        "value": "500.00"
       },
       "unit_of_measure": "QUANTITY"
     }
@@ -62,4 +62,4 @@ dashboard after reviewing the draft. (See `paypal.py` — there is no send code.
 }
 ```
 
-Full machine-readable artifact: `deliverables/invoices/invoice-draft-012.json`
+Full machine-readable artifact: `deliverables/invoices/invoice-draft-014.json`

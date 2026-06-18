@@ -2,10 +2,10 @@
 
 > Draft invoice: Checkout Rescue Diagnostic
 >
-> Mode: **STUB** (config.paypal_live is false) · 2026-06-18T09:29:15
+> Mode: **STUB** (config.paypal_live is false) · 2026-06-18T14:38:35
 
 ## Draft summary
-- **Draft id:** `DRAFT-STUB-202606180929155098`
+- **Draft id:** `DRAFT-STUB-202606181438353288`
 - **Status:** DRAFT (simulated — not created in PayPal)
 - **Bill to:** Sample Merchant <merchant@example.com>
 - **Item:** Checkout Rescue Diagnostic — 48h — qty 1 @ 500.00 USD
