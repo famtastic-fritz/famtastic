@@ -1,0 +1,9 @@
+# Runtime data (created on first run)
+data/tempo.json
+
+# Test scratch data
+data/test-*.json
+
+node_modules/
+*.log
+.DS_Store

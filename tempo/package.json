@@ -1,0 +1,15 @@
+{
+  "name": "tempo",
+  "version": "1.0.0",
+  "description": "Local-first task tracker + Pomodoro focus timer. Zero dependencies.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/"
+  },
+  "license": "MIT"
+}
