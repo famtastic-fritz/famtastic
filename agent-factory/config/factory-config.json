@@ -1,8 +1,8 @@
 {
   "_comment": "Tunable parameters. The self-improvement loop (src/selfimprove.js) may ONLY adjust values within the bounds declared in _bounds. Core code is never modified.",
-  "version": 3,
-  "concurrency": 2,
-  "batch_size": 6,
+  "version": 7,
+  "concurrency": 3,
+  "batch_size": 10,
   "idle_worker_ttl_ms": 5000,
   "scheduler_base_interval_ms": 3000,
   "routing": {
