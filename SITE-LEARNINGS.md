@@ -1,5 +1,16 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-18 — Shay prompt-memory target tightened under 2k
+
+Tightened the live Shay prompt-memory footprint so the always-injected layer matches Fritz's intended design instead of drifting roomy-by-default. The live runtime config at `~/.shay/config.yaml` now sets `memory.memory_char_limit: 1000` and `memory.user_char_limit: 900`, and the active bounded files `~/.shay/memories/MEMORY.md` plus `USER.md` were compacted to fit under roughly 2k combined. Matching truth updates landed in `shay-shay/docs/memory-flow-audit-2026-06-18.md`, `shay-shay/docs/shay-memory-hierarchy.md`, and `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so future sessions stop repeating the older ~4k guidance.
+
+### Verified
+- Live config now reads `memory_char_limit: 1000` and `user_char_limit: 900`.
+- Current bounded prompt-memory files total under 2k combined.
+- Spillover path remains the long-detail outlet; this change shrinks the injected layer, not the broader memory fabric.
+
+# FAMtastic Ecosystem — Site Learnings
+
 ## Scram-line brief default + telemetry split (2026-06-18)
 
 Changed the default human-facing planning surface from the more verbose simple brief shape to an ultra-brief resumable “scram-line” format. `plans/templates/simple-brief-template-v1.md` now defines the default brief as `Title`, `Purpose`, `Goal`, checkbox `Tasks`, `Status`, `Started`, `Ended`, `Execution`, `Research`, `Review`, `Skills`, optional `Blocked By`, and `Proof`, with exact spacing rules: one blank line after `Goal`, one blank line after the last task, and one blank line before `Proof`. The richer orchestration fields that were previously shown inline now live where they belong: telemetry, ledgers, research artifacts, review artifacts, and the heavier control-plane packet when a task actually needs it.
