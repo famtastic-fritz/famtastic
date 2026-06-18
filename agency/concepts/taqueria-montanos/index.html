@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taqueria Montano's — Theme Concept</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bricolage+Grotesque:wght@400;600;800&family=Caveat:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --terracotta:#C8451E; --charcoal:#1A1410; --cream:#F6EBD9;
+    --lime:#A7C24A; --gold:#E8A427; --deep:#7A1E0E;
+  }
+  body{font-family:"Inter",system-ui,sans-serif;background:var(--charcoal);color:var(--cream);margin:0;}
+  .display{font-family:"Archivo Black",sans-serif;letter-spacing:-.01em;}
+  .grot{font-family:"Bricolage Grotesque",sans-serif;}
+  .script{font-family:"Caveat",cursive;}
+
+  /* fam-hero-layered — BEM double-dash vocabulary */
+  .fam-hero-layered{position:relative;overflow:hidden;min-height:100vh;}
+  .fam-hero-layer--bg,.fam-hero-layer--fx,.fam-hero-layer--character,.fam-hero-layer--content{position:absolute;inset:0;}
+  .fam-hero-layer--bg{
+    background:
+      radial-gradient(120% 90% at 80% -10%, rgba(232,164,39,.30), transparent 55%),
+      radial-gradient(100% 80% at 0% 110%, rgba(122,30,14,.85), transparent 60%),
+      linear-gradient(160deg,#241812 0%,#1A1410 55%,#120c08 100%);
+  }
+  .fam-hero-layer--fx{
+    background-image:radial-gradient(rgba(246,235,217,.05) 1px, transparent 1px);
+    background-size:22px 22px;mix-blend-mode:overlay;opacity:.6;
+  }
+  .fam-hero-layer--content{z-index:4;}
+  .fam-hero-layer--character{z-index:3;}
+
+  .pill{background:rgba(246,235,217,.08);border:1px solid rgba(246,235,217,.18);backdrop-filter:blur(6px);}
+  .cta{background:var(--terracotta);box-shadow:0 10px 30px -8px rgba(200,69,30,.7);transition:transform .2s;}
+  .cta:hover{transform:translateY(-2px);}
+  .stripe{background:repeating-linear-gradient(90deg,var(--terracotta) 0 28px,var(--gold) 28px 56px,var(--lime) 56px 84px);}
+  .stat b{font-family:"Archivo Black";color:var(--gold);}
+  .menu-card{background:linear-gradient(180deg,rgba(246,235,217,.05),rgba(246,235,217,.02));border:1px solid rgba(246,235,217,.10);}
+</style>
+</head>
+<body>
+
+<!-- NAV — NAV_SKELETON vocabulary -->
+<nav class="relative z-50 flex items-center justify-between px-6 md:px-12 py-5">
+  <a href="index.html" class="logo-link flex items-center gap-3" data-logo-v>
+    <span class="display text-xl md:text-2xl" style="color:var(--cream)">TAQUERIA</span>
+    <span class="display text-xl md:text-2xl" style="color:var(--terracotta)">MONTANO'S</span>
+  </a>
+  <ul class="nav-links hidden md:flex items-center gap-8 grot font-semibold text-sm tracking-wide">
+    <li><a href="#menu" class="hover:text-[color:var(--gold)] transition">Menu</a></li>
+    <li><a href="#story" class="hover:text-[color:var(--gold)] transition">Our Story</a></li>
+    <li><a href="#visit" class="hover:text-[color:var(--gold)] transition">Visit</a></li>
+  </ul>
+  <a href="tel:+17727773406" class="nav-cta hidden md:inline-block cta rounded-full px-6 py-2.5 grot font-bold text-sm text-white">Order: (772) 777-3406</a>
+  <label for="nav-toggle" class="nav-toggle-label md:hidden text-2xl">&#9776;</label>
+  <input type="checkbox" id="nav-toggle" class="hidden">
+  <div class="nav-mobile-menu hidden"></div>
+</nav>
+
+<!-- HERO -->
+<header class="fam-hero-layered" style="min-height:calc(100vh - 76px)">
+  <div class="fam-hero-layer--bg"></div>
+  <div class="fam-hero-layer--fx"></div>
+
+  <!-- character layer: SVG street-taco mark (self-contained, no external image) -->
+  <div class="fam-hero-layer--character hidden md:block">
+    <svg viewBox="0 0 400 400" class="absolute right-[6%] bottom-[8%] w-[38vw] max-w-[460px] opacity-95" xmlns="http://www.w3.org/2000/svg">
+      <defs><radialGradient id="g" cx="50%" cy="35%"><stop offset="0%" stop-color="#F6D08A"/><stop offset="100%" stop-color="#E8A427"/></radialGradient></defs>
+      <path d="M40 250 Q200 120 360 250 Q360 300 200 300 Q40 300 40 250 Z" fill="url(#g)"/>
+      <path d="M60 252 Q200 150 340 252 Q330 250 200 250 Q70 250 60 252Z" fill="#C8451E"/>
+      <ellipse cx="150" cy="238" rx="26" ry="16" fill="#7A1E0E"/>
+      <ellipse cx="230" cy="232" rx="30" ry="17" fill="#5e1607"/>
+      <ellipse cx="285" cy="244" rx="20" ry="12" fill="#7A1E0E"/>
+      <path d="M110 246 q12 -22 26 -2 M260 244 q10 -20 24 -4" stroke="#A7C24A" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <circle cx="195" cy="226" r="6" fill="#A7C24A"/><circle cx="250" cy="250" r="5" fill="#F6EBD9"/>
+      <circle cx="175" cy="252" r="4" fill="#E8A427"/>
+    </svg>
+  </div>
+
+  <!-- content layer -->
+  <div class="fam-hero-layer--content flex flex-col justify-center px-6 md:px-12">
+    <div class="max-w-3xl">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="pill rounded-full px-4 py-1.5 grot text-xs font-semibold tracking-wide">★ 4.5 &middot; 141 Reviews</span>
+        <span class="pill rounded-full px-4 py-1.5 grot text-xs font-semibold tracking-wide">Family-Owned Since 2015</span>
+      </div>
+      <p class="script text-2xl md:text-3xl mb-2" style="color:var(--gold)">Real Mexican. Made by hand.</p>
+      <h1 class="display text-5xl md:text-8xl leading-[0.92] mb-6">
+        BIRRIA &amp;<br><span style="color:var(--terracotta)">STREET TACOS</span><br>DONE RIGHT.
+      </h1>
+      <p class="grot text-lg md:text-xl text-[color:var(--cream)]/80 max-w-xl mb-9">
+        A St. Lucie County staple for a decade — slow-cooked birria, hand-pressed tortillas,
+        and the kind of salsa people drive across town for.
+      </p>
+      <div class="flex flex-wrap items-center gap-4">
+        <a href="#menu" class="cta rounded-full px-8 py-4 grot font-bold text-white text-lg">See the Menu</a>
+        <a href="tel:+17727773406" class="grot font-semibold text-lg underline underline-offset-4 decoration-[color:var(--gold)]">Call to Order &rarr;</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SVG divider (peak) — real clip path, not an <hr> -->
+<div class="stripe h-2"></div>
+<svg viewBox="0 0 1440 80" preserveAspectRatio="none" class="block w-full h-12" style="background:var(--charcoal)"><path d="M0,80 L240,20 L480,80 L720,18 L960,80 L1200,22 L1440,80 Z" fill="var(--cream)"/></svg>
+
+<!-- TASTE STATS -->
+<section class="bg-[color:var(--cream)] text-[color:var(--charcoal)] py-14 px-6 md:px-12">
+  <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+    <div class="stat"><b class="block text-4xl">10 yrs</b><span class="grot font-semibold">Serving PSL</span></div>
+    <div class="stat"><b class="block text-4xl">4.5★</b><span class="grot font-semibold">141 Reviews</span></div>
+    <div class="stat"><b class="block text-4xl">100%</b><span class="grot font-semibold">Made to Order</span></div>
+    <div class="stat"><b class="block text-4xl">US-1</b><span class="grot font-semibold">Port St. Lucie</span></div>
+  </div>
+</section>
+
+<!-- MENU PREVIEW -->
+<section id="menu" class="py-16 px-6 md:px-12 max-w-6xl mx-auto">
+  <p class="script text-2xl mb-1" style="color:var(--gold)">From the kitchen</p>
+  <h2 class="display text-4xl md:text-5xl mb-10">WHAT PEOPLE COME FOR</h2>
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="menu-card rounded-2xl p-7">
+      <div class="flex justify-between items-baseline mb-2"><h3 class="grot font-extrabold text-xl">Birria Tacos</h3><span class="display" style="color:var(--gold)">$13</span></div>
+      <p class="text-[color:var(--cream)]/70 text-sm">Slow-braised beef, crispy-dipped tortilla, consommé for dunking.</p>
+    </div>
+    <div class="menu-card rounded-2xl p-7">
+      <div class="flex justify-between items-baseline mb-2"><h3 class="grot font-extrabold text-xl">Street Tacos</h3><span class="display" style="color:var(--gold)">$3.50</span></div>
+      <p class="text-[color:var(--cream)]/70 text-sm">Al pastor, carne asada, pollo — onion, cilantro, lime. The classic.</p>
+    </div>
+    <div class="menu-card rounded-2xl p-7">
+      <div class="flex justify-between items-baseline mb-2"><h3 class="grot font-extrabold text-xl">Quesabirria</h3><span class="display" style="color:var(--gold)">$15</span></div>
+      <p class="text-[color:var(--cream)]/70 text-sm">Melted cheese, birria, griddled crisp. The one for your camera roll.</p>
+    </div>
+  </div>
+  <p class="text-center mt-6 text-xs text-[color:var(--cream)]/40 grot">Sample menu — real items &amp; pricing wired at build from the live listing.</p>
+</section>
+
+<!-- VISIT -->
+<section id="visit" class="stripe h-2"></section>
+<section class="bg-[color:var(--deep)] py-14 px-6 md:px-12">
+  <div class="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+    <div><h3 class="grot font-extrabold text-lg mb-1" style="color:var(--gold)">Find Us</h3><p class="grot">10786 S US-1<br>Port St. Lucie, FL 34952</p></div>
+    <div><h3 class="grot font-extrabold text-lg mb-1" style="color:var(--gold)">Hours</h3><p class="grot">Tue–Sat 11:30a–8p<br>Sun 11:30a–5p &middot; Mon closed</p></div>
+    <div><h3 class="grot font-extrabold text-lg mb-1" style="color:var(--gold)">Order</h3><a href="tel:+17727773406" class="cta inline-block rounded-full px-6 py-3 grot font-bold text-white mt-1">(772) 777-3406</a></div>
+  </div>
+</section>
+
+<footer class="bg-[color:var(--charcoal)] text-center py-8 grot text-sm text-[color:var(--cream)]/50">
+  Taqueria Montano's &middot; Port St. Lucie, FL &middot; <span class="script text-lg" style="color:var(--gold)">¡Buen provecho!</span>
+</footer>
+
+</body>
+</html>
