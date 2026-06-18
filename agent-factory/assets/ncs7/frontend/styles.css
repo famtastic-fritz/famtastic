@@ -761,3 +761,9 @@ img { max-width: 100%; display: block; }
 .info-block p{margin:0;color:#aebfd8}
 .info-block ul{margin:6px 0 0;padding-left:20px;color:#aebfd8}
 .info-block li{margin:3px 0}
+
+/* real-logo images (used when official files are present at assets/logo-*.png) */
+.logo-img{display:block;width:auto}
+.logo-img-ncs{height:50px}
+img.nibs-mark{height:38px}
+img.nibs-mark-footer{height:44px}

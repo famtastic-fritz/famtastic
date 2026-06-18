@@ -54,16 +54,34 @@ function BrandMark({ className }) {
   );
 }
 
+// Renders the real logo image if the file exists; otherwise the SVG recreation.
+// Drop the official files at assets/logo-ncs.png / assets/logo-nibs.png to go exact.
+function LogoImg({ src, alt, imgClass, children }) {
+  const [failed, setFailed] = useState(false);
+  return failed ? children
+    : <img src={src} alt={alt} className={imgClass} onError={() => setFailed(true)} />;
+}
+
 function NcsLogo() {
   // Full lockup used as the nav brand: star + "NCS" + registered tagline.
   return (
-    <span className="ncs-logo">
-      <BrandMark className="brand-mark" />
-      <span className="ncs-word">
-        <strong>NCS</strong>
-        <small>United States National CAD Standard<sup>®</sup></small>
+    <LogoImg src="assets/logo-ncs.png" alt="United States National CAD Standard" imgClass="logo-img logo-img-ncs">
+      <span className="ncs-logo">
+        <BrandMark className="brand-mark" />
+        <span className="ncs-word">
+          <strong>NCS</strong>
+          <small>United States National CAD Standard<sup>®</sup></small>
+        </span>
       </span>
-    </span>
+    </LogoImg>
+  );
+}
+
+function NibsLogo({ imgClass, svgClass }) {
+  return (
+    <LogoImg src="assets/logo-nibs.png" alt="National Institute of Building Sciences" imgClass={"logo-img " + imgClass}>
+      <NibsMark className={svgClass} />
+    </LogoImg>
   );
 }
 
@@ -72,15 +90,15 @@ function NibsMark({ className }) {
   return (
     <svg className={className} viewBox="0 0 300 70" aria-label="National Institute of Building Sciences">
       <g>
-        <polygon points="4,58 13,58 21,20 12,20" fill="#7AC143"/>
-        <polygon points="17,58 26,58 33,13 24,13" fill="#1B3A5B"/>
-        <polygon points="30,58 39,58 45,18 36,18" fill="#7AC143"/>
-        <polygon points="43,58 52,58 57,11 48,11" fill="#1B3A5B"/>
-        <path d="M2 62 C 22 52, 48 52, 70 60" stroke="#7AC143" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
+        <polygon points="6,58 12,58 20,26 14,26" fill="#8DC63F"/>
+        <polygon points="17,58 23,58 32,18 26,18" fill="#18384F"/>
+        <polygon points="28,58 34,58 44,13 38,13" fill="#8DC63F"/>
+        <polygon points="39,58 45,58 56,8 50,8" fill="#18384F"/>
+        <path d="M3 63 C 26 53, 52 53, 76 61" stroke="#8DC63F" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       </g>
-      <text x="84" y="24" fontFamily="Arial, Helvetica, sans-serif" fontSize="15" fill="#1B3A5B">National Institute of</text>
-      <text x="84" y="47" fontFamily="Arial Black, Arial, sans-serif" fontWeight="900" fontSize="22" fill="#15294a" letterSpacing="0.3">BUILDING SCIENCES</text>
-      <text x="278" y="34" fontFamily="Arial, sans-serif" fontSize="9" fill="#15294a">&#8482;</text>
+      <text x="84" y="24" fontFamily="Arial, Helvetica, sans-serif" fontSize="15" fill="#18384F">National Institute of</text>
+      <text x="84" y="47" fontFamily="Arial Black, Arial, sans-serif" fontWeight="900" fontSize="22" fill="#18384F" letterSpacing="0.3">BUILDING SCIENCES</text>
+      <text x="278" y="34" fontFamily="Arial, sans-serif" fontSize="9" fill="#18384F">&#8482;</text>
       <text x="86" y="63" fontFamily="Georgia, 'Times New Roman', serif" fontStyle="italic" fontSize="12.5" fill="#2f5e8f">Building American Innovation</text>
     </svg>
   );
@@ -99,7 +117,7 @@ function Nav({ content, route, auth }) {
         </a>
         <a className="cobrand" href="#/about" title="A program of the National Institute of Building Sciences">
           <span className="cobrand-label">A program of</span>
-          <NibsMark className="nibs-mark" />
+          <NibsLogo imgClass="nibs-mark" svgClass="nibs-mark" />
         </a>
         <button className="nav-toggle" aria-label="Menu" onClick={() => setOpen(o => !o)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -492,7 +510,7 @@ function Footer({ content }) {
             <p className="footer-blurb">{f.blurb}</p>
             <div className="footer-nibs-wrap">
               <span className="cobrand-label">A program of the National Institute of Building Sciences</span>
-              <NibsMark className="nibs-mark-footer" />
+              <NibsLogo imgClass="nibs-mark-footer" svgClass="nibs-mark-footer" />
             </div>
           </div>
           {(f.columns || []).map((col, i) => (
