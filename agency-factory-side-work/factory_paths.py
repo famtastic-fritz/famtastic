@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# ROOT is the agent-foundry/ directory, resolved from this file. No matter where
+# ROOT is the agency-factory-side-work/ directory, resolved from this file. No matter where
 # the process is launched from, every path hangs off this anchor.
 ROOT = Path(__file__).resolve().parent
 

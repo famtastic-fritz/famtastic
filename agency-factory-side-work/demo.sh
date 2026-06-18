@@ -15,7 +15,7 @@
 #   status      print the dashboard for the current state
 #   clean       wipe runtime state (db, logs, deliverables) for a fresh run
 #
-# Everything is offline + sandboxed. Nothing outside agent-foundry/ is touched.
+# Everything is offline + sandboxed. Nothing outside agency-factory-side-work/ is touched.
 set -euo pipefail
 cd "$(dirname "$0")"
 PY=${PYTHON:-python3}

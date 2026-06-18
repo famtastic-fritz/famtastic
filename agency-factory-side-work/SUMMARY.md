@@ -1,7 +1,7 @@
 # SUMMARY — Agent Factory
 
 ## What I built
-A sandboxed, self-managing multi-agent system inside `agent-foundry/` — a
+A sandboxed, self-managing multi-agent system inside `agency-factory-side-work/` — a
 meta-orchestrator that spawns, routes, monitors, retires, and improves a fleet
 of worker agents to clear a task queue cost-effectively, with zero external
 spend and zero touch outside its own folder. It runs **fully offline on the

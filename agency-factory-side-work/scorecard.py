@@ -99,8 +99,8 @@ else:
 
 
 def main() -> int:
-    tmp = Path(tempfile.mkdtemp(prefix="agent-foundry-scorecard-"))
-    work = tmp / "agent-foundry"
+    tmp = Path(tempfile.mkdtemp(prefix="agency-factory-side-work-scorecard-"))
+    work = tmp / "agency-factory-side-work"
     shutil.copytree(SELF, work, ignore=lambda d, n: [x for x in n if x in SKIP])
 
     print(f"== Agent Factory scorecard ==\nsandbox: {work}\n")

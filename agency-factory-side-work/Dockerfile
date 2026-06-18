@@ -4,7 +4,7 @@
 # whole point: run it anywhere, it can't collide with other sessions.
 FROM python:3.11-slim
 
-LABEL org.opencontainers.image.title="agent-foundry" \
+LABEL org.opencontainers.image.title="agency-factory-side-work" \
       org.opencontainers.image.description="Sandboxed self-managing agent factory"
 
 ENV PYTHONUNBUFFERED=1 \

@@ -6,7 +6,7 @@
 
 ## Quick start (offline, fully self-contained)
 ```bash
-cd agent-foundry
+cd agency-factory-side-work
 python3 run.py
 ```
 This seeds the task queue, starts the orchestrator for 6 waves, spawns worker
