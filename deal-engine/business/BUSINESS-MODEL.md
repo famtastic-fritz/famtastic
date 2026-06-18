@@ -1,9 +1,9 @@
 # Business Model — FAMtastic TripSaver (deal-finding as a product)
 
 > Internal-use business model for productizing the deal-finding capability proven
-> by this agent factory. Framed as a FAMtastic Designs offering. No money is moved
+> by this deal engine. Framed as a FAMtastic Designs offering. No money is moved
 > by the system; this document is the commercial wrapper around the playbooks the
-> factory generates.
+> engine generates.
 
 ## 1. What we sell
 
@@ -18,7 +18,7 @@ Two productized SKUs:
 
 | SKU | What | Price |
 |-----|------|-------|
-| **Estimate** | 1-page savings estimate, automated by the factory | Free (lead magnet) |
+| **Estimate** | 1-page savings estimate, automated by the engine | Free (lead magnet) |
 | **Playbook** | Full stacked-lever plan + checklist | Flat **$99** *or* **20% of verified savings** (customer picks the lower) |
 | **Concierge** | We execute the booking via host-agency credentials | 20% of verified savings, min $149 |
 
@@ -32,7 +32,7 @@ Two productized SKUs:
 - On the proof case alone, modeled savings were **~$1,845 on a $3,800 quote**.
   A 20%-of-savings fee = **~$369** for ~$0.004 of compute + minutes of review.
 
-The factory is the moat: it drives marginal cost of each additional playbook to
+The engine is the moat: it drives marginal cost of each additional playbook to
 near zero while a human-only competitor pays an analyst per quote.
 
 ## 3. The funnel (maps to the pipeline handlers)
@@ -65,7 +65,7 @@ Every stage is already a task kind the orchestrator can run at volume.
 - Flat $99 × 50 playbooks/mo = **$4,950/mo** at ~$0.20 total compute.
 - %-of-savings on concierge: ~$369 avg × 20 deals/mo = **$7,380/mo**.
 - Compute is a rounding error; the constraint is review throughput, which the
-  factory's concurrency scaling is designed to relieve.
+  engine's concurrency scaling is designed to relieve.
 
 ## 6. Required real inputs (documented, not wired)
 

@@ -30,7 +30,7 @@ import sys
 import time
 
 from . import db
-from .paths import (CONFIG_PATH, FACTORY_ROOT, LEARNINGS_MD, ORCHESTRATOR_LOG,
+from .paths import (CONFIG_PATH, ENGINE_ROOT, LEARNINGS_MD, ORCHESTRATOR_LOG,
                     log_line)
 
 
@@ -68,8 +68,8 @@ def spawn_workers(n: int, cycle: int) -> list[tuple[str, subprocess.Popen]]:
         # Load spreads across workers within a cycle and across cycles; the
         # orchestrator keeps cycling until the queue drains.
         p = subprocess.Popen(
-            [sys.executable, "-m", "factory.worker", "--worker-id", wid],
-            cwd=str(FACTORY_ROOT),
+            [sys.executable, "-m", "dealengine.worker", "--worker-id", wid],
+            cwd=str(ENGINE_ROOT),
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         procs.append((wid, p))
@@ -247,7 +247,7 @@ def run(mode: str, max_cycles: int) -> None:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Agent Factory orchestrator")
+    ap = argparse.ArgumentParser(description="FAMtastic Deal Engine orchestrator")
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--once", action="store_true", help="run a single cycle")
     g.add_argument("--daemon", action="store_true", help="run forever")

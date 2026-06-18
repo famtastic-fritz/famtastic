@@ -9,7 +9,7 @@ Runs the full system in a throwaway state and verifies the core invariants:
   * the sandbox path guard rejects writes above the root,
   * the live HTTP path works against the local mock (mode=live).
 
-Run:  python -m factory.selftest      (or ./bin/factory test)
+Run:  python -m dealengine.selftest      (or ./bin/deal-engine test)
 Exit: 0 all pass, 1 any failure.
 """
 from __future__ import annotations
@@ -17,7 +17,7 @@ from __future__ import annotations
 import sys
 
 from . import db, seed, orchestrator, verify_live
-from .paths import BUSINESS_DIR, FACTORY_ROOT, safe_path
+from .paths import BUSINESS_DIR, ENGINE_ROOT, safe_path
 
 PASS, FAIL = "PASS", "FAIL"
 _results = []
@@ -29,7 +29,7 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 
 def main() -> int:
-    print("== Agent Factory self-test (offline) ==\n")
+    print("== FAMtastic Deal Engine self-test (offline) ==\n")
 
     # Clean slate.
     n = seed.seed(reset=True)
@@ -77,8 +77,8 @@ def main() -> int:
     except PermissionError:
         guarded = True
     check("path guard blocks writes above sandbox root", guarded)
-    check("FACTORY_ROOT is the agent-factory dir",
-          FACTORY_ROOT.name == "agent-factory", str(FACTORY_ROOT))
+    check("ENGINE_ROOT is the deal-engine dir",
+          ENGINE_ROOT.name == "deal-engine", str(ENGINE_ROOT))
 
     print("\nPhase F: live HTTP path (mock model)")
     live_rc = verify_live.main()

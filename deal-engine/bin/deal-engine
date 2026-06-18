@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Agent Factory CLI — single entrypoint for every operation.
+"""FAMtastic Deal Engine CLI — single entrypoint for every operation.
 
 Usage:
-  ./bin/factory seed [--reset]      seed the queue with sample work
-  ./bin/factory run [--max-cycles N]  run the orchestrator (batch mode, self-terminating)
-  ./bin/factory once                run a single orchestrator cycle
-  ./bin/factory daemon              run the orchestrator forever (Ctrl-C to stop)
-  ./bin/factory worker --worker-id w1 [--drain]   run one worker manually
-  ./bin/factory status              terminal dashboard
-  ./bin/factory dashboard --html    terminal dashboard + write public/dashboard.html
-  ./bin/factory demo                seed --reset, run, then write the HTML dashboard
-  ./bin/factory test                full offline self-test (asserts every invariant)
-  ./bin/factory verify              prove the live model HTTP path against a local mock
-  ./bin/factory mockmodel --port N  run the OpenAI-compatible mock model server
+  ./bin/deal-engine seed [--reset]      seed the queue with sample work
+  ./bin/deal-engine run [--max-cycles N]  run the orchestrator (batch mode, self-terminating)
+  ./bin/deal-engine once                run a single orchestrator cycle
+  ./bin/deal-engine daemon              run the orchestrator forever (Ctrl-C to stop)
+  ./bin/deal-engine worker --worker-id w1 [--drain]   run one worker manually
+  ./bin/deal-engine status              terminal dashboard
+  ./bin/deal-engine dashboard --html    terminal dashboard + write public/dashboard.html
+  ./bin/deal-engine demo                seed --reset, run, then write the HTML dashboard
+  ./bin/deal-engine test                full offline self-test (asserts every invariant)
+  ./bin/deal-engine verify              prove the live model HTTP path against a local mock
+  ./bin/deal-engine mockmodel --port N  run the OpenAI-compatible mock model server
 """
 import os
 import sys
@@ -29,14 +29,14 @@ def main():
     cmd, rest = sys.argv[1], sys.argv[2:]
 
     if cmd == "seed":
-        from factory import seed
+        from dealengine import seed
         n = seed.seed(reset="--reset" in rest)
-        from factory import db
+        from dealengine import db
         print(f"Seeded {n} tasks. Queue depth: {db.queue_depth()}")
         return 0
 
     if cmd in ("run", "once", "daemon"):
-        from factory import orchestrator
+        from dealengine import orchestrator
         argv = []
         if cmd == "once":
             argv = ["--once"]
@@ -47,27 +47,27 @@ def main():
         return orchestrator.main(argv)
 
     if cmd == "worker":
-        from factory import worker
+        from dealengine import worker
         return worker.main(rest)
 
     if cmd in ("status", "dashboard"):
-        from factory import dashboard
+        from dealengine import dashboard
         return dashboard.main(rest if cmd == "dashboard" else [])
 
     if cmd == "test":
-        from factory import selftest
+        from dealengine import selftest
         return selftest.main()
 
     if cmd == "verify":
-        from factory import verify_live
+        from dealengine import verify_live
         return verify_live.main()
 
     if cmd == "mockmodel":
-        from factory import mockmodel
+        from dealengine import mockmodel
         return mockmodel.main(rest)
 
     if cmd == "demo":
-        from factory import seed, orchestrator, dashboard, db
+        from dealengine import seed, orchestrator, dashboard, db
         seed.seed(reset=True)
         print(f"[demo] seeded {db.queue_depth()} tasks\n")
         orchestrator.main([])  # batch mode, self-terminating

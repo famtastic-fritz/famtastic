@@ -1,4 +1,4 @@
-# SUMMARY — Agent Factory
+# SUMMARY — FAMtastic Deal Engine
 
 A sandboxed, self-managing multi-agent system that spawns, routes, monitors, and
 retires worker agents to process a task queue cost-effectively, schedules itself,
@@ -8,14 +8,14 @@ and improves its own parameters over time. Built and run end-to-end, fully offli
 
 | Component | Where | What it does |
 |-----------|-------|--------------|
-| **Orchestrator** | `factory/orchestrator.py` | Long-running supervisor. Reads queue, decides worker count from queue depth, spawns workers as subprocesses, monitors them (with timeout/kill), retires idle ones, logs every decision to `logs/ORCHESTRATOR.log`. |
-| **Task queue** | `factory/db.py` | SQLite queue + ledger (tasks, runs, batches, config_history). Atomic claim so workers never double-process. |
-| **Worker template** | `factory/worker.py` | Parameterized agent the orchestrator mints on demand. Claims one task, runs its handler, reports result + cost + latency, exits. Idle workers exit (rc=3) = retirement. |
-| **Self-scheduling** | `factory/orchestrator.py` | In-process cadence loop. 1s when busy, 5s when idle. **No system crontab touched.** |
-| **Model routing / cost control** | `factory/router.py` | Picks the cheapest tier whose capability covers a task's complexity. Free local tier for triage, hosted "cheap" tier on escalation, "strong" only when needed. Writes `logs/COSTS.log`. |
-| **Self-improvement loop** | `factory/orchestrator.py` | After each batch scores success/cost/latency, writes `LEARNINGS.md`, and tunes `config.json` (concurrency, routing threshold, cadence). Bounded — config only, never code. |
-| **Observability** | `factory/dashboard.py` | Terminal readout + auto-refreshing `public/dashboard.html`. |
-| **Handlers (skills)** | `factory/handlers/` | The proof workload: `deal_finder`, `apparel_finder`, `marketing`, `campaign`, `outreach`, `sales`, `payment`. |
+| **Orchestrator** | `dealengine/orchestrator.py` | Long-running supervisor. Reads queue, decides worker count from queue depth, spawns workers as subprocesses, monitors them (with timeout/kill), retires idle ones, logs every decision to `logs/ORCHESTRATOR.log`. |
+| **Task queue** | `dealengine/db.py` | SQLite queue + ledger (tasks, runs, batches, config_history). Atomic claim so workers never double-process. |
+| **Worker template** | `dealengine/worker.py` | Parameterized agent the orchestrator mints on demand. Claims one task, runs its handler, reports result + cost + latency, exits. Idle workers exit (rc=3) = retirement. |
+| **Self-scheduling** | `dealengine/orchestrator.py` | In-process cadence loop. 1s when busy, 5s when idle. **No system crontab touched.** |
+| **Model routing / cost control** | `dealengine/router.py` | Picks the cheapest tier whose capability covers a task's complexity. Free local tier for triage, hosted "cheap" tier on escalation, "strong" only when needed. Writes `logs/COSTS.log`. |
+| **Self-improvement loop** | `dealengine/orchestrator.py` | After each batch scores success/cost/latency, writes `LEARNINGS.md`, and tunes `config.json` (concurrency, routing threshold, cadence). Bounded — config only, never code. |
+| **Observability** | `dealengine/dashboard.py` | Terminal readout + auto-refreshing `public/dashboard.html`. |
+| **Handlers (skills)** | `dealengine/handlers/` | The proof workload: `deal_finder`, `apparel_finder`, `marketing`, `campaign`, `outreach`, `sales`, `payment`. |
 
 ## How the self-management works
 
@@ -46,12 +46,12 @@ and improves its own parameters over time. Built and run end-to-end, fully offli
   FAMU formal-wear playbook (2 ladies + 1 gentleman), plus marketing, campaign,
   outreach (draft-only), sales close, and PayPal invoice plan.
 
-Re-run any time: `cd agent-factory && ./bin/factory demo`.
+Re-run any time: `cd deal-engine && ./bin/deal-engine demo`.
 
 ## How the proof task answers the brief
 
 The prior research attempt burned a cron job concluding it "lacked tooling" and
-only surfaced an agency login. This factory does the opposite:
+only surfaced an agency login. This engine does the opposite:
 
 - The **agency login is treated as the #1 lever** (host-agency commission rebate),
   not a footnote — that is the real cruise-savings unlock.
@@ -72,7 +72,7 @@ only surfaced an agency login. This factory does the opposite:
 2. **Runtime** → Python 3 stdlib only (sqlite3 included). Zero pip dependencies so
    it runs anywhere offline. venv optional.
 3. **Offline by default** → no API key present, so model calls are deterministic
-   stubs with *estimated* costs. A hard switch (`FACTORY_ALLOW_LIVE_CALLS=1`) plus a
+   stubs with *estimated* costs. A hard switch (`DEAL_ENGINE_ALLOW_LIVE_CALLS=1`) plus a
    key is required for any live call, and live errors fall back to stub.
 4. **Workers do one task each** (per the brief) rather than draining the queue, so
    load genuinely fans out across workers and cycles.
@@ -86,13 +86,13 @@ only surfaced an agency login. This factory does the opposite:
 ## How to extend
 
 - **Real models:** fill `OPENROUTER_API_KEY` and/or `LOCAL_MODEL_URL` in `.env`, set
-  `FACTORY_ALLOW_LIVE_CALLS=1`. Edit tiers/prices in `config.json → routing.models`.
+  `DEAL_ENGINE_ALLOW_LIVE_CALLS=1`. Edit tiers/prices in `config.json → routing.models`.
 - **Real task sources:** replace `seed.py` with an adapter that enqueues from your
   source (webhook, CSV, email inbox, CRM). The queue API is `db.enqueue(kind, title,
   payload, complexity, priority)`.
-- **New skills:** add a handler in `factory/handlers/` and register it in
+- **New skills:** add a handler in `dealengine/handlers/` and register it in
   `handlers/__init__.py:REGISTRY`. Orchestrator/workers pick it up automatically.
-- **Run continuously:** `./bin/factory daemon` (in-process scheduler, self-tuning).
+- **Run continuously:** `./bin/deal-engine daemon` (in-process scheduler, self-tuning).
 - **Go-live pipeline:** wire PayPal (invoice creation) + GoDaddy email + host-agency
   advisor credentials per `business/BUSINESS-MODEL.md §6`.
 

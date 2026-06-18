@@ -1,6 +1,6 @@
 """Sandbox path guard.
 
-FACTORY_ROOT is the one and only directory this system is allowed to touch.
+ENGINE_ROOT is the one and only directory this system is allowed to touch.
 Every write path in the system flows through `safe_path()`, which refuses to
 resolve anything above the root. This is the code-level enforcement of the
 SANDBOX.md contract.
@@ -12,21 +12,21 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-# agent-factory/factory/paths.py -> agent-factory/
-FACTORY_ROOT = Path(__file__).resolve().parent.parent
+# deal-engine/dealengine/paths.py -> deal-engine/
+ENGINE_ROOT = Path(__file__).resolve().parent.parent
 
-DATA_DIR = FACTORY_ROOT / "data"
-LOGS_DIR = FACTORY_ROOT / "logs"
-PUBLIC_DIR = FACTORY_ROOT / "public"
-BUSINESS_DIR = FACTORY_ROOT / "business"
+DATA_DIR = ENGINE_ROOT / "data"
+LOGS_DIR = ENGINE_ROOT / "logs"
+PUBLIC_DIR = ENGINE_ROOT / "public"
+BUSINESS_DIR = ENGINE_ROOT / "business"
 
-DB_PATH = DATA_DIR / "factory.db"
-CONFIG_PATH = FACTORY_ROOT / "config.json"
-ENV_PATH = FACTORY_ROOT / ".env"
+DB_PATH = DATA_DIR / "engine.db"
+CONFIG_PATH = ENGINE_ROOT / "config.json"
+ENV_PATH = ENGINE_ROOT / ".env"
 
 ORCHESTRATOR_LOG = LOGS_DIR / "ORCHESTRATOR.log"
 COSTS_LOG = LOGS_DIR / "COSTS.log"
-LEARNINGS_MD = FACTORY_ROOT / "LEARNINGS.md"
+LEARNINGS_MD = ENGINE_ROOT / "LEARNINGS.md"
 DASHBOARD_HTML = PUBLIC_DIR / "dashboard.html"
 
 
@@ -36,11 +36,11 @@ def ensure_dirs() -> None:
 
 
 def safe_path(*parts: str) -> Path:
-    """Resolve a path and guarantee it stays inside FACTORY_ROOT."""
-    p = (FACTORY_ROOT.joinpath(*parts)).resolve()
-    if FACTORY_ROOT not in p.parents and p != FACTORY_ROOT:
+    """Resolve a path and guarantee it stays inside ENGINE_ROOT."""
+    p = (ENGINE_ROOT.joinpath(*parts)).resolve()
+    if ENGINE_ROOT not in p.parents and p != ENGINE_ROOT:
         raise PermissionError(
-            f"Sandbox violation: {p} is outside FACTORY_ROOT ({FACTORY_ROOT})"
+            f"Sandbox violation: {p} is outside ENGINE_ROOT ({ENGINE_ROOT})"
         )
     return p
 
@@ -67,7 +67,7 @@ def log_line(path: Path, msg: str, *, also_print: bool = False) -> None:
 KNOWN_ENV_KEYS = (
     "OPENROUTER_API_KEY", "OPENROUTER_BASE_URL",
     "LOCAL_MODEL_URL", "LOCAL_MODEL_NAME",
-    "FACTORY_ALLOW_LIVE_CALLS",
+    "DEAL_ENGINE_ALLOW_LIVE_CALLS",
     "PAYPAL_BUSINESS_EMAIL", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET",
     "GODADDY_API_KEY", "GODADDY_API_SECRET", "OUTREACH_FROM_EMAIL",
 )
@@ -84,7 +84,7 @@ def load_env() -> dict:
             k, _, v = line.partition("=")
             env[k.strip()] = v.strip()
     # Real process env wins over file, AND surfaces known keys not in the file
-    # (so `export FOO=bar; ./bin/factory ...` works without a .env).
+    # (so `export FOO=bar; ./bin/deal-engine ...` works without a .env).
     for k in set(list(env) + list(KNOWN_ENV_KEYS)):
         val = os.environ.get(k)
         if val:

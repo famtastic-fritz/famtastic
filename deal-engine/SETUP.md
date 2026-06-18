@@ -1,17 +1,17 @@
-# SETUP — Agent Factory
+# SETUP — FAMtastic Deal Engine
 
 Zero-dependency. Python 3.9+ standard library only. Runs fully offline.
 
 ## Quick start (offline, no keys)
 
 ```bash
-cd agent-factory
+cd deal-engine
 
 # optional isolated env (no packages needed, but keeps it tidy)
 python3 -m venv .venv && source .venv/bin/activate
 
 # seed work, run the self-managing orchestrator, see the dashboard
-./bin/factory demo
+./bin/deal-engine demo
 ```
 
 `demo` = `seed --reset` → `run` (orchestrator spawns workers, routes, logs cost,
@@ -20,13 +20,13 @@ self-improves, self-terminates) → terminal dashboard + `public/dashboard.html`
 ## Individual commands
 
 ```bash
-./bin/factory seed --reset           # inject sample tasks
-./bin/factory run --max-cycles 8     # batch run, self-terminating when drained
-./bin/factory once                   # single cycle
-./bin/factory daemon                 # run forever, self-scheduling (Ctrl-C)
-./bin/factory worker --worker-id w1  # mint one worker by hand
-./bin/factory status                 # terminal dashboard
-./bin/factory dashboard --html       # + write public/dashboard.html
+./bin/deal-engine seed --reset           # inject sample tasks
+./bin/deal-engine run --max-cycles 8     # batch run, self-terminating when drained
+./bin/deal-engine once                   # single cycle
+./bin/deal-engine daemon                 # run forever, self-scheduling (Ctrl-C)
+./bin/deal-engine worker --worker-id w1  # mint one worker by hand
+./bin/deal-engine status                 # terminal dashboard
+./bin/deal-engine dashboard --html       # + write public/dashboard.html
 ```
 
 Open the dashboard in a browser:
@@ -42,7 +42,7 @@ Everything below is optional. Missing keys never block a run.
 1. `cp .env.example .env` and fill what you have.
 2. **Model calls:** set `OPENROUTER_API_KEY` (cloud) and/or `LOCAL_MODEL_URL`
    (Ollama/llama.cpp for the free local tier). Then set
-   `FACTORY_ALLOW_LIVE_CALLS=1` — the hard safety switch. Without it, the router
+   `DEAL_ENGINE_ALLOW_LIVE_CALLS=1` — the hard safety switch. Without it, the router
    stays in stub mode no matter what keys exist. Any live-call error falls back
    to stub, so the system never breaks.
 3. **Cost tiers** live in `config.json → routing.models`. Edit model ids and
@@ -59,5 +59,5 @@ funds. See `business/PIPELINE.md` and `SANDBOX.md`.
 - `logs/ORCHESTRATOR.log` — every orchestrator + worker decision (gitignored)
 - `logs/COSTS.log` — per-call cost ledger, JSONL (gitignored)
 - `LEARNINGS.md` — self-improvement findings, appended each cycle
-- `data/factory.db` — SQLite queue + ledger (gitignored)
+- `data/engine.db` — SQLite queue + ledger (gitignored)
 - `business/*.md` — deliverables produced by the deal/marketing/sales handlers

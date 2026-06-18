@@ -6,7 +6,7 @@ simple work; the strong tier is only used when a task's complexity demands it.
 
 Runs OFFLINE by default. A model "call" returns deterministic synthetic output
 and an *estimated* cost. A real OpenRouter/local call is attempted only if BOTH
-an API key is present AND FACTORY_ALLOW_LIVE_CALLS=1 — and even then it falls
+an API key is present AND DEAL_ENGINE_ALLOW_LIVE_CALLS=1 — and even then it falls
 back to stub on any error, so the whole system always runs end-to-end.
 """
 from __future__ import annotations
@@ -139,7 +139,7 @@ def route_and_run(prompt: str, complexity: float,
     in_tok = _est_tokens(prompt)
     out_tok = expected_output_tokens
 
-    live_allowed = env.get("FACTORY_ALLOW_LIVE_CALLS") == "1"
+    live_allowed = env.get("DEAL_ENGINE_ALLOW_LIVE_CALLS") == "1"
     timeout = float(cfg["tunables"].get("live_call_timeout_seconds", 20))
     retries = int(cfg["tunables"].get("live_call_retries", 1))
     mode = "stub"

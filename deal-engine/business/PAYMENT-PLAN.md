@@ -14,4 +14,4 @@
 - With no `PAYPAL_CLIENT_ID`/`SECRET` in `.env`, this is fully stubbed: it records
   the *intent* to invoice $99.00 and stops. No network call, no money.
 - Even with credentials, the system only *creates/sends an invoice*. The client
-  initiates payment. The factory never captures funds autonomously.
+  initiates payment. The engine never captures funds autonomously.

@@ -1,7 +1,7 @@
 """Observability — terminal readout + static HTML snapshot.
 
-`python -m factory.dashboard`           -> prints a terminal status board
-`python -m factory.dashboard --html`    -> also writes public/dashboard.html
+`python -m dealengine.dashboard`           -> prints a terminal status board
+`python -m dealengine.dashboard --html`    -> also writes public/dashboard.html
 """
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def terminal() -> str:
     tun = d["cfg"]["tunables"]
     out = []
     out.append("=" * 64)
-    out.append("  AGENT FACTORY — STATUS DASHBOARD")
+    out.append("  FAMTASTIC DEAL ENGINE — STATUS DASHBOARD")
     out.append("=" * 64)
     out.append(f"  Tasks total       : {d['ntasks']}")
     out.append(f"  Queue depth       : {d['queue_depth']}")
@@ -94,7 +94,7 @@ def render_html() -> str:
     )
     counts = ", ".join(f"{k}={v}" for k, v in sorted(d["counts"].items()))
     return f"""<!doctype html><html><head><meta charset="utf-8">
-<title>Agent Factory — Dashboard</title>
+<title>FAMtastic Deal Engine — Dashboard</title>
 <meta http-equiv="refresh" content="10">
 <style>
  body{{font-family:ui-monospace,Menlo,monospace;background:#0b0f14;color:#e6edf3;margin:0;padding:24px}}
@@ -106,7 +106,7 @@ def render_html() -> str:
  th,td{{text-align:left;padding:6px 10px;border-bottom:1px solid #1f2730}}
  th{{color:#8b949e;font-weight:600}} h2{{color:#F89728;font-size:15px;border-left:3px solid #008542;padding-left:8px}}
 </style></head><body>
-<h1>AGENT FACTORY</h1><p class="sub">self-managing multi-agent system · auto-refresh 10s</p>
+<h1>FAMTASTIC DEAL ENGINE</h1><p class="sub">self-managing multi-agent system · auto-refresh 10s</p>
 <div class="cards">
  <div class="card"><div class="k">QUEUE DEPTH</div><div class="v">{d['queue_depth']}</div></div>
  <div class="card"><div class="k">TASKS TOTAL</div><div class="v">{d['ntasks']}</div></div>
@@ -124,7 +124,7 @@ def render_html() -> str:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Agent Factory dashboard")
+    ap = argparse.ArgumentParser(description="FAMtastic Deal Engine dashboard")
     ap.add_argument("--html", action="store_true", help="also write public/dashboard.html")
     args = ap.parse_args(argv)
     print(terminal())

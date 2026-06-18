@@ -41,7 +41,7 @@ def run_once(worker_id: str) -> int:
     t0 = time.time()
     try:
         result = get_handler(task["kind"])(task)
-    except Exception as e:  # a worker failure must never crash the factory
+    except Exception as e:  # a worker failure must never crash the engine
         tb = traceback.format_exc(limit=3)
         db.complete_task(task["id"], worker_id, success=False,
                          result=f"EXCEPTION: {e}\n{tb}", model_used="none",
@@ -65,7 +65,7 @@ def run_once(worker_id: str) -> int:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Agent Factory worker")
+    ap = argparse.ArgumentParser(description="FAMtastic Deal Engine worker")
     ap.add_argument("--worker-id", required=True)
     ap.add_argument("--drain", action="store_true",
                     help="keep claiming until the queue is empty (default: one task)")

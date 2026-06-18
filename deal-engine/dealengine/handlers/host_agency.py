@@ -95,7 +95,7 @@ def handle(task: dict) -> HandlerResult:
 - Agency names are real; **fees, splits, and onboarding times must be verified live**
   on each host's current site before acting. Numbers here are planning estimates.
 - This is a real-world process (an application + agreement you sign), not something
-  the factory can or should complete autonomously. It produces the plan; you execute.
+  the engine can or should complete autonomously. It produces the plan; you execute.
 - No money moves; no application is submitted by the system.
 """
     path = BUSINESS_DIR / "HOST-AGENCY-ONBOARDING.md"

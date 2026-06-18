@@ -7,9 +7,9 @@ chat-completion JSON in the OpenAI/OpenRouter schema, including a `usage` block 
 the router records measured (not estimated) token counts.
 
 Run standalone:
-    python -m factory.mockmodel --port 11434
-then point the factory at it:
-    LOCAL_MODEL_URL=http://127.0.0.1:11434/v1 FACTORY_ALLOW_LIVE_CALLS=1 ./bin/factory ...
+    python -m dealengine.mockmodel --port 11434
+then point the engine at it:
+    LOCAL_MODEL_URL=http://127.0.0.1:11434/v1 DEAL_ENGINE_ALLOW_LIVE_CALLS=1 ./bin/deal-engine ...
 
 This is a TEST DOUBLE. It is never used in production routing; it only exists so
 the live pipe can be exercised offline.

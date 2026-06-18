@@ -5,7 +5,7 @@ Starts the local OpenAI-compatible mock server, points BOTH provider paths
 returns mode="live", and accounts cost from the endpoint's reported `usage`
 tokens — all offline, no key, no spend.
 
-Run:  python -m factory.verify_live
+Run:  python -m dealengine.verify_live
 Exit: 0 = live path proven, 1 = failure.
 """
 from __future__ import annotations
@@ -28,7 +28,7 @@ def main() -> int:
     print(f"mock model up on {base}\n")
 
     # Wire the env the router reads (process env wins in load_env()).
-    os.environ["FACTORY_ALLOW_LIVE_CALLS"] = "1"
+    os.environ["DEAL_ENGINE_ALLOW_LIVE_CALLS"] = "1"
     os.environ["LOCAL_MODEL_URL"] = base
     os.environ["OPENROUTER_BASE_URL"] = base
     os.environ["OPENROUTER_API_KEY"] = "sk-mock-test-key"
@@ -53,7 +53,7 @@ def main() -> int:
 
         # Safety: with the switch OFF, the very same call must NOT go live.
         print("\nTest 3: safety switch OFF forces stub even with endpoints present")
-        os.environ["FACTORY_ALLOW_LIVE_CALLS"] = ""
+        os.environ["DEAL_ENGINE_ALLOW_LIVE_CALLS"] = ""
         r3 = router.route_and_run("triage this simple item", complexity=0.2)
         ok &= _check("mode falls back to stub", r3.mode == "stub", r3.mode)
     finally:

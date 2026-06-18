@@ -17,69 +17,62 @@ touches `config.json` tunables only — never code.
 
 ---
 
-### Cycle 1 — 2026-06-18 14:53:55
-- runs: 2 | success: 100% | failed: 0
-- avg cost: $0.00094 | avg latency: 11ms | batch spend: $0.00188
-- queue depth after batch: 9
+### Cycle 1 — 2026-06-18 17:18:59
+- runs: 1 | success: 100% | failed: 0
+- avg cost: $0.00094 | avg latency: 12ms | batch spend: $0.00094
+- queue depth after batch: 10
 - tuning applied:
-  - `max_concurrency` 2 → 3 — success_rate 1.00 high & queue depth 9>0
-  - `complexity_escalation_threshold` 0.55 → 0.6 — avg_cost $0.0009 & near-perfect success — favor cheaper tier
+  - `complexity_escalation_threshold` 0.75 → 0.8 — avg_cost $0.0009 & near-perfect success — favor cheaper tier
 
-### Cycle 2 — 2026-06-18 14:53:56
+### Cycle 2 — 2026-06-18 17:19:00
+- runs: 2 | success: 100% | failed: 0
+- avg cost: $0.00099 | avg latency: 15ms | batch spend: $0.00198
+- queue depth after batch: 8
+- tuning applied: none (nominal)
+
+### Cycle 3 — 2026-06-18 17:19:01
 - runs: 2 | success: 100% | failed: 0
 - avg cost: $0.00052 | avg latency: 16ms | batch spend: $0.00103
-- queue depth after batch: 7
-- tuning applied:
-  - `max_concurrency` 3 → 4 — success_rate 1.00 high & queue depth 7>0
-  - `complexity_escalation_threshold` 0.6 → 0.65 — avg_cost $0.0005 & near-perfect success — favor cheaper tier
+- queue depth after batch: 6
+- tuning applied: none (nominal)
 
-### Cycle 3 — 2026-06-18 14:53:57
-- runs: 2 | success: 100% | failed: 0
-- avg cost: $0.00052 | avg latency: 18ms | batch spend: $0.00103
-- queue depth after batch: 5
-- tuning applied:
-  - `max_concurrency` 4 → 5 — success_rate 1.00 high & queue depth 5>0
-  - `complexity_escalation_threshold` 0.65 → 0.7 — avg_cost $0.0005 & near-perfect success — favor cheaper tier
-
-### Cycle 4 — 2026-06-18 14:53:59
-- runs: 1 | success: 100% | failed: 0
-- avg cost: $0.00000 | avg latency: 18ms | batch spend: $0.00000
-- queue depth after batch: 4
-- tuning applied:
-  - `max_concurrency` 5 → 6 — success_rate 1.00 high & queue depth 4>0
-
-### Cycle 5 — 2026-06-18 14:54:00
+### Cycle 4 — 2026-06-18 17:19:02
 - runs: 1 | success: 100% | failed: 0
 - avg cost: $0.00000 | avg latency: 16ms | batch spend: $0.00000
+- queue depth after batch: 5
+- tuning applied: none (nominal)
+
+### Cycle 5 — 2026-06-18 17:19:03
+- runs: 2 | success: 100% | failed: 0
+- avg cost: $0.00000 | avg latency: 17ms | batch spend: $0.00000
 - queue depth after batch: 3
 - tuning applied: none (nominal)
 
-### Cycle 6 — 2026-06-18 14:54:01
+### Cycle 6 — 2026-06-18 17:19:04
 - runs: 1 | success: 100% | failed: 0
 - avg cost: $0.00094 | avg latency: 14ms | batch spend: $0.00094
 - queue depth after batch: 2
-- tuning applied:
-  - `complexity_escalation_threshold` 0.7 → 0.75 — avg_cost $0.0009 & near-perfect success — favor cheaper tier
+- tuning applied: none (nominal)
 
-### Cycle 7 — 2026-06-18 14:54:02
+### Cycle 7 — 2026-06-18 17:19:06
 - runs: 1 | success: 100% | failed: 0
 - avg cost: $0.00000 | avg latency: 12ms | batch spend: $0.00000
 - queue depth after batch: 1
 - tuning applied: none (nominal)
 
-### Cycle 8 — 2026-06-18 14:54:03
+### Cycle 8 — 2026-06-18 17:19:07
 - runs: 1 | success: 100% | failed: 0
 - avg cost: $0.00000 | avg latency: 20ms | batch spend: $0.00000
 - queue depth after batch: 0
 - tuning applied: none (nominal)
 
-### Cycle 9 — 2026-06-18 14:54:08
+### Cycle 9 — 2026-06-18 17:19:12
 - runs: 0 | success: 100% | failed: 0
 - avg cost: $0.00000 | avg latency: 0ms | batch spend: $0.00000
 - queue depth after batch: 0
 - tuning applied: none (nominal)
 
-### Cycle 10 — 2026-06-18 14:54:13
+### Cycle 10 — 2026-06-18 17:19:17
 - runs: 0 | success: 100% | failed: 0
 - avg cost: $0.00000 | avg latency: 0ms | batch spend: $0.00000
 - queue depth after batch: 0

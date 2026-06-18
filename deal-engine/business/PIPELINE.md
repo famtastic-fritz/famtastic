@@ -1,6 +1,6 @@
 # End-to-End Pipeline — concept → cash
 
-How a lead moves from first touch to collected payment, and which factory task
+How a lead moves from first touch to collected payment, and which engine task
 kind owns each stage. Every stage is a queue task the orchestrator runs at volume;
 nothing here moves money or sends mail in the sandbox.
 
@@ -32,7 +32,7 @@ nothing here moves money or sends mail in the sandbox.
    `407.600.4565`, visible email `ewilson1911@yahoo.com`, but a `mailto:` to
    `megamindzproductions@gmail.com`. A human verifies the recipient before any send.
 2. **Payment is invoice-only.** With `PAYPAL_*` filled, the system can *create and
-   send* a PayPal invoice; the customer pays by their own action. The factory never
+   send* a PayPal invoice; the customer pays by their own action. The engine never
    captures funds autonomously.
 3. **Savings are estimates until verified** against live quotes (offline mode models
    levers, not live prices).
@@ -40,7 +40,7 @@ nothing here moves money or sends mail in the sandbox.
 ## How to run the whole pipeline
 
 ```bash
-./bin/factory seed --reset   # injects all six stages + the two headline deal hunts
-./bin/factory run            # orchestrator drives every stage to completion
+./bin/deal-engine seed --reset   # injects all six stages + the two headline deal hunts
+./bin/deal-engine run            # orchestrator drives every stage to completion
 ls business/                 # all stage artifacts
 ```

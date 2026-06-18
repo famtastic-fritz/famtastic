@@ -1,4 +1,4 @@
-"""Seed the queue with sample work so the factory has something to do at once.
+"""Seed the queue with sample work so the engine has something to do at once.
 
 The seed reflects the proof workload: the full FAMtastic deal-finding business
 pipeline (find deals -> market -> campaign -> contact -> sell -> collect), plus

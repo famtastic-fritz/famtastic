@@ -1,14 +1,14 @@
 # SANDBOX — Hard Boundaries
 
-This directory (`agent-factory/`) is a **self-contained sandbox**. Everything the
+This directory (`deal-engine/`) is a **self-contained sandbox**. Everything the
 system does — code, processes, schedules, databases, logs, spawned worker agents,
 and generated artifacts — lives entirely inside this folder.
 
 ## Inviolable rules
 
-1. **Nothing outside `agent-factory/` may be created, modified, or deleted** by any
+1. **Nothing outside `deal-engine/` may be created, modified, or deleted** by any
    process in this system. The orchestrator, workers, scheduler, and self-improvement
-   loop all operate with paths rooted at this directory (`FACTORY_ROOT`).
+   loop all operate with paths rooted at this directory (`ENGINE_ROOT`).
 2. **No real external spend, ever.** There is no money movement. Model calls are
    routed through a cost-aware router that runs in **stub/offline mode by default**.
    A real API key is only consumed if the operator fills `.env` themselves (see
@@ -23,22 +23,22 @@ and generated artifacts — lives entirely inside this folder.
 
 ## Note on "its own git repo"
 
-The original brief asked for `agent-factory/` to have its own git repo. The
+The original brief asked for `deal-engine/` to have its own git repo. The
 session harness requires work to land on the famtastic feature branch
-`claude/agent-factory-travel-deals-g9wyge` so it is reviewable. A nested `.git`
+`claude/deal-engine-travel-deals-g9wyge` so it is reviewable. A nested `.git`
 would be invisible to that review. **Lowest-risk resolution (logged):** this lives
 as a fully self-contained module committed to the famtastic branch. It has no
 dependencies on the parent repo and can be lifted into a standalone repository at
 any time with:
 
 ```bash
-git subtree split --prefix=agent-factory -b agent-factory-standalone
+git subtree split --prefix=deal-engine -b deal-engine-standalone
 ```
 
 ## Isolation
 
 - Runtime: Python 3 standard library only (no third-party packages required).
-- Optional virtualenv: `python3 -m venv agent-factory/.venv` (see `SETUP.md`).
-- Data lives in `agent-factory/data/` (gitignored). Logs in `agent-factory/logs/`.
-- All paths are derived from `factory/paths.py:FACTORY_ROOT` — the module refuses
+- Optional virtualenv: `python3 -m venv deal-engine/.venv` (see `SETUP.md`).
+- Data lives in `deal-engine/data/` (gitignored). Logs in `deal-engine/logs/`.
+- All paths are derived from `dealengine/paths.py:ENGINE_ROOT` — the module refuses
   to write above its own root.
