@@ -1,0 +1,96 @@
+
+>>> AGENT FACTORY — END-TO-END PROOF RUN
+
+2026-06-18T08:55:22.887240Z [demo_start]
+[seed] batch 1: 6 proof tasks + 5 burst tasks
+2026-06-18T08:55:22.910284Z [batch_start] batch=1 queue_depth=11 max_concurrency=2 escalate_threshold=0.67
+2026-06-18T08:55:22.910706Z [scale_decision] queue_depth=11 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:22.911217Z [spawn_worker] agent=w-1781772922-1 pid=3845 fleet=1
+2026-06-18T08:55:22.911579Z [spawn_worker] agent=w-1781772922-2 pid=3846 fleet=2
+2026-06-18T08:55:22.911652Z [scheduler_tick] queue_depth=11 next_tick_s=1.0
+2026-06-18T08:55:23.162516Z [retire_worker] agent=w-1781772922-1 pid=3845 exit=0
+2026-06-18T08:55:23.162669Z [retire_worker] agent=w-1781772922-2 pid=3846 exit=0
+2026-06-18T08:55:23.162732Z [scale_decision] queue_depth=9 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.163246Z [spawn_worker] agent=w-1781772923-3 pid=3847 fleet=1
+2026-06-18T08:55:23.163658Z [spawn_worker] agent=w-1781772923-4 pid=3848 fleet=2
+2026-06-18T08:55:23.163734Z [scheduler_tick] queue_depth=9 next_tick_s=1.0
+2026-06-18T08:55:23.414575Z [retire_worker] agent=w-1781772923-3 pid=3847 exit=0
+2026-06-18T08:55:23.414714Z [retire_worker] agent=w-1781772923-4 pid=3848 exit=0
+2026-06-18T08:55:23.414774Z [scale_decision] queue_depth=7 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.415317Z [spawn_worker] agent=w-1781772923-5 pid=3849 fleet=1
+2026-06-18T08:55:23.415783Z [spawn_worker] agent=w-1781772923-6 pid=3850 fleet=2
+2026-06-18T08:55:23.415862Z [scheduler_tick] queue_depth=7 next_tick_s=1.0
+2026-06-18T08:55:23.666643Z [retire_worker] agent=w-1781772923-5 pid=3849 exit=0
+2026-06-18T08:55:23.666779Z [retire_worker] agent=w-1781772923-6 pid=3850 exit=0
+2026-06-18T08:55:23.666840Z [scale_decision] queue_depth=5 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.667447Z [spawn_worker] agent=w-1781772923-7 pid=3851 fleet=1
+2026-06-18T08:55:23.667886Z [spawn_worker] agent=w-1781772923-8 pid=3852 fleet=2
+2026-06-18T08:55:23.667997Z [scheduler_tick] queue_depth=5 next_tick_s=2.5
+2026-06-18T08:55:23.918788Z [retire_worker] agent=w-1781772923-7 pid=3851 exit=0
+2026-06-18T08:55:23.918997Z [retire_worker] agent=w-1781772923-8 pid=3852 exit=0
+2026-06-18T08:55:23.919068Z [scale_decision] queue_depth=3 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.919549Z [spawn_worker] agent=w-1781772923-9 pid=3853 fleet=1
+2026-06-18T08:55:23.919954Z [spawn_worker] agent=w-1781772923-10 pid=3854 fleet=2
+2026-06-18T08:55:23.920036Z [scheduler_tick] queue_depth=3 next_tick_s=5.5
+2026-06-18T08:55:24.170717Z [retire_worker] agent=w-1781772923-9 pid=3853 exit=0
+2026-06-18T08:55:24.170894Z [retire_worker] agent=w-1781772923-10 pid=3854 exit=0
+2026-06-18T08:55:24.170966Z [scale_decision] queue_depth=1 alive=0 want=1 spawning=1 max_concurrency=2
+2026-06-18T08:55:24.171422Z [spawn_worker] agent=w-1781772924-11 pid=3855 fleet=1
+2026-06-18T08:55:24.171502Z [scheduler_tick] queue_depth=1 next_tick_s=8.5
+2026-06-18T08:55:24.422239Z [retire_worker] agent=w-1781772924-11 pid=3855 exit=0
+2026-06-18T08:55:24.476665Z [self_improve] batch=1 success=1.0 tasks_per_dollar=25.04 adjustments=max_concurrency: 2 -> 3;escalate_threshold: 0.67 -> 0.72;batch_size: 6 -> 8
+2026-06-18T08:55:24.478139Z [batch_end] batch=1 processed=11 success_rate=1.0 total_usd=0.439320 tasks_per_dollar=25.04
+[seed] batch 2: 10 burst tasks
+2026-06-18T08:55:24.524641Z [batch_start] batch=2 queue_depth=10 max_concurrency=3 escalate_threshold=0.72
+2026-06-18T08:55:24.525155Z [scale_decision] queue_depth=10 alive=0 want=3 spawning=3 max_concurrency=3
+2026-06-18T08:55:24.525912Z [spawn_worker] agent=w-1781772924-12 pid=3856 fleet=1
+2026-06-18T08:55:24.526441Z [spawn_worker] agent=w-1781772924-13 pid=3857 fleet=2
+2026-06-18T08:55:24.526873Z [spawn_worker] agent=w-1781772924-14 pid=3858 fleet=3
+2026-06-18T08:55:24.526979Z [scheduler_tick] queue_depth=10 next_tick_s=1.0
+2026-06-18T08:55:24.777923Z [retire_worker] agent=w-1781772924-12 pid=3856 exit=0
+2026-06-18T08:55:24.778082Z [retire_worker] agent=w-1781772924-13 pid=3857 exit=0
+2026-06-18T08:55:24.778149Z [retire_worker] agent=w-1781772924-14 pid=3858 exit=0
+2026-06-18T08:55:24.778204Z [scale_decision] queue_depth=7 alive=0 want=3 spawning=3 max_concurrency=3
+2026-06-18T08:55:24.778847Z [spawn_worker] agent=w-1781772924-15 pid=3859 fleet=1
+2026-06-18T08:55:24.779281Z [spawn_worker] agent=w-1781772924-16 pid=3860 fleet=2
+2026-06-18T08:55:24.779608Z [spawn_worker] agent=w-1781772924-17 pid=3861 fleet=3
+2026-06-18T08:55:24.779685Z [scheduler_tick] queue_depth=7 next_tick_s=1.0
+2026-06-18T08:55:25.030474Z [retire_worker] agent=w-1781772924-15 pid=3859 exit=0
+2026-06-18T08:55:25.030621Z [retire_worker] agent=w-1781772924-16 pid=3860 exit=0
+2026-06-18T08:55:25.030679Z [retire_worker] agent=w-1781772924-17 pid=3861 exit=0
+2026-06-18T08:55:25.030730Z [scale_decision] queue_depth=4 alive=0 want=3 spawning=3 max_concurrency=3
+2026-06-18T08:55:25.031270Z [spawn_worker] agent=w-1781772925-18 pid=3862 fleet=1
+2026-06-18T08:55:25.031697Z [spawn_worker] agent=w-1781772925-19 pid=3863 fleet=2
+2026-06-18T08:55:25.032058Z [spawn_worker] agent=w-1781772925-20 pid=3864 fleet=3
+2026-06-18T08:55:25.032130Z [scheduler_tick] queue_depth=4 next_tick_s=4.0
+2026-06-18T08:55:25.283006Z [retire_worker] agent=w-1781772925-18 pid=3862 exit=0
+2026-06-18T08:55:25.283186Z [retire_worker] agent=w-1781772925-19 pid=3863 exit=0
+2026-06-18T08:55:25.283242Z [retire_worker] agent=w-1781772925-20 pid=3864 exit=0
+2026-06-18T08:55:25.283295Z [scale_decision] queue_depth=1 alive=0 want=1 spawning=1 max_concurrency=3
+2026-06-18T08:55:25.283835Z [spawn_worker] agent=w-1781772925-21 pid=3865 fleet=1
+2026-06-18T08:55:25.283932Z [scheduler_tick] queue_depth=1 next_tick_s=8.5
+2026-06-18T08:55:25.534743Z [retire_worker] agent=w-1781772925-21 pid=3865 exit=0
+2026-06-18T08:55:25.541340Z [self_improve] batch=2 success=1.0 tasks_per_dollar=45.04 adjustments=max_concurrency: 3 -> 4;escalate_threshold: 0.72 -> 0.77;batch_size: 8 -> 10
+2026-06-18T08:55:25.543382Z [batch_end] batch=2 processed=21 success_rate=1.0 total_usd=0.466212 tasks_per_dollar=45.04
+2026-06-18T08:55:25.543442Z [demo_stop]
+
+==========================================================
+ AGENT FACTORY — STATUS
+==========================================================
+ Queue depth        : 0
+ In flight (claimed): 0
+ Completed          : 21    Failed: 0
+ Active agents      : 0    Total spawned: 21
+ Total est. cost    : $0.466212   (21 calls, 15890 tok)
+ Throughput         : 45.04 tasks/$
+ Cost by model      :
+   - openrouter/strong-opus       4 calls  $0.393840
+   - openrouter/mid-sonnet        5 calls  $0.065910
+   - openrouter/cheap-haiku      12 calls  $0.006462
+==========================================================
+
+Static dashboard written to: dashboard/status.html
+Deliverables written to:    deliverables/
+Logs:                       logs/ORCHESTRATOR.log, logs/COSTS.log
+Self-improvement findings:  LEARNINGS.md
+

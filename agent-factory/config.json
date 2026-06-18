@@ -1,0 +1,22 @@
+{
+  "_comment": "Tunable runtime parameters. The self-improvement loop adjusts values here within the guardrails in config_guardrails. Core code is never modified by the loop.",
+  "max_concurrency": 2,
+  "idle_retire_seconds": 8,
+  "routing": {
+    "_comment": "complexity_score thresholds choose a model tier. Higher escalate_threshold = more work stays on the cheap model = cheaper.",
+    "triage_threshold": 0.34,
+    "escalate_threshold": 0.67
+  },
+  "scheduler": {
+    "min_tick_seconds": 1,
+    "max_tick_seconds": 10,
+    "deep_queue_depth": 6
+  },
+  "batch_size": 6,
+  "config_guardrails": {
+    "max_concurrency": [1, 6],
+    "routing.escalate_threshold": [0.5, 0.9],
+    "routing.triage_threshold": [0.2, 0.45],
+    "batch_size": [2, 20]
+  }
+}

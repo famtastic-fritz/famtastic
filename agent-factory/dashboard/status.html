@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent Factory — Status</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-monospace, Menlo, Consolas, monospace; background:#0b0f14;
+         color:#d7e0ea; margin:0; padding:32px; }
+  h1 { font-size:20px; letter-spacing:1px; margin:0 0 4px; }
+  .ts { color:#6b7a8d; margin-bottom:24px; font-size:12px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+          gap:14px; margin-bottom:24px; }
+  .card { background:#121a24; border:1px solid #1e2b3a; border-radius:10px; padding:16px; }
+  .k { color:#7f93a8; font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+  .v { font-size:26px; margin-top:6px; color:#5ad1a8; }
+  table { width:100%; border-collapse:collapse; background:#121a24;
+          border:1px solid #1e2b3a; border-radius:10px; overflow:hidden; }
+  th,td { text-align:left; padding:10px 14px; border-bottom:1px solid #1e2b3a; font-size:13px; }
+  th { color:#7f93a8; text-transform:uppercase; font-size:11px; letter-spacing:1px; }
+</style></head><body>
+<h1>AGENT FACTORY — STATUS</h1>
+<div class="ts">generated 2026-06-18 08:55:25Z · static snapshot · refresh by re-running the demo</div>
+<div class="grid">
+  <div class="card"><div class="k">Queue depth</div><div class="v">0</div></div>
+  <div class="card"><div class="k">In flight</div><div class="v">0</div></div>
+  <div class="card"><div class="k">Completed</div><div class="v">21</div></div>
+  <div class="card"><div class="k">Failed</div><div class="v">0</div></div>
+  <div class="card"><div class="k">Active agents</div><div class="v">0</div></div>
+  <div class="card"><div class="k">Total spawned</div><div class="v">21</div></div>
+  <div class="card"><div class="k">Est. cost (USD)</div><div class="v">$0.46621</div></div>
+  <div class="card"><div class="k">Throughput</div><div class="v">45.04<span style="font-size:12px"> /$</span></div></div>
+</div>
+<table><thead><tr><th>Model</th><th>Calls</th><th>Est. cost</th></tr></thead>
+<tbody><tr><td>openrouter/strong-opus</td><td>4</td><td>$0.393840</td></tr><tr><td>openrouter/mid-sonnet</td><td>5</td><td>$0.065910</td></tr><tr><td>openrouter/cheap-haiku</td><td>12</td><td>$0.006462</td></tr></tbody></table>
+</body></html>

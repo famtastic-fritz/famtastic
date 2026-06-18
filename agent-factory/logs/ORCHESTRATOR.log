@@ -1,0 +1,112 @@
+2026-06-18T08:55:22.887240Z [demo_start]
+2026-06-18T08:55:22.910284Z [batch_start] batch=1 queue_depth=11 max_concurrency=2 escalate_threshold=0.67
+2026-06-18T08:55:22.910706Z [scale_decision] queue_depth=11 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:22.911217Z [spawn_worker] agent=w-1781772922-1 pid=3845 fleet=1
+2026-06-18T08:55:22.911579Z [spawn_worker] agent=w-1781772922-2 pid=3846 fleet=2
+2026-06-18T08:55:22.911652Z [scheduler_tick] queue_depth=11 next_tick_s=1.0
+2026-06-18T08:55:22.951189Z [worker_claimed] agent=w-1781772922-2 task=1 kind=business_model complexity=0.9
+2026-06-18T08:55:22.955184Z [worker_claimed] agent=w-1781772922-1 task=3 kind=shay_shay_spec complexity=0.85
+2026-06-18T08:55:22.961498Z [worker_done] agent=w-1781772922-2 task=1 model=openrouter/strong-opus usd=0.108960 mode=stub latency_ms=6 artifact=business-model.md
+2026-06-18T08:55:22.964163Z [worker_done] agent=w-1781772922-1 task=3 model=openrouter/strong-opus usd=0.103710 mode=stub latency_ms=5 artifact=shay-shay-v2-spec.md
+2026-06-18T08:55:23.162516Z [retire_worker] agent=w-1781772922-1 pid=3845 exit=0
+2026-06-18T08:55:23.162669Z [retire_worker] agent=w-1781772922-2 pid=3846 exit=0
+2026-06-18T08:55:23.162732Z [scale_decision] queue_depth=9 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.163246Z [spawn_worker] agent=w-1781772923-3 pid=3847 fleet=1
+2026-06-18T08:55:23.163658Z [spawn_worker] agent=w-1781772923-4 pid=3848 fleet=2
+2026-06-18T08:55:23.163734Z [scheduler_tick] queue_depth=9 next_tick_s=1.0
+2026-06-18T08:55:23.203504Z [worker_claimed] agent=w-1781772923-3 task=2 kind=prompt_builder complexity=0.6
+2026-06-18T08:55:23.209114Z [worker_claimed] agent=w-1781772923-4 task=6 kind=system_audit complexity=0.75
+2026-06-18T08:55:23.216517Z [worker_done] agent=w-1781772923-4 task=6 model=openrouter/strong-opus usd=0.093210 mode=stub latency_ms=4 artifact=system-improvement-audit.md
+2026-06-18T08:55:23.226849Z [worker_done] agent=w-1781772923-3 task=2 model=openrouter/mid-sonnet usd=0.015492 mode=stub latency_ms=20 artifact=claude-code-prompt-builder.md
+2026-06-18T08:55:23.414575Z [retire_worker] agent=w-1781772923-3 pid=3847 exit=0
+2026-06-18T08:55:23.414714Z [retire_worker] agent=w-1781772923-4 pid=3848 exit=0
+2026-06-18T08:55:23.414774Z [scale_decision] queue_depth=7 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.415317Z [spawn_worker] agent=w-1781772923-5 pid=3849 fleet=1
+2026-06-18T08:55:23.415783Z [spawn_worker] agent=w-1781772923-6 pid=3850 fleet=2
+2026-06-18T08:55:23.415862Z [scheduler_tick] queue_depth=7 next_tick_s=1.0
+2026-06-18T08:55:23.455544Z [worker_claimed] agent=w-1781772923-5 task=4 kind=agent_synthesis complexity=0.7
+2026-06-18T08:55:23.461726Z [worker_done] agent=w-1781772923-5 task=4 model=openrouter/strong-opus usd=0.087960 mode=stub latency_ms=3 artifact=agent-inspiration-synthesis.md
+2026-06-18T08:55:23.472502Z [worker_claimed] agent=w-1781772923-6 task=5 kind=odysseus_optimization complexity=0.65
+2026-06-18T08:55:23.478403Z [worker_done] agent=w-1781772923-6 task=5 model=openrouter/mid-sonnet usd=0.016542 mode=stub latency_ms=2 artifact=odysseus-optimization.md
+2026-06-18T08:55:23.666643Z [retire_worker] agent=w-1781772923-5 pid=3849 exit=0
+2026-06-18T08:55:23.666779Z [retire_worker] agent=w-1781772923-6 pid=3850 exit=0
+2026-06-18T08:55:23.666840Z [scale_decision] queue_depth=5 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.667447Z [spawn_worker] agent=w-1781772923-7 pid=3851 fleet=1
+2026-06-18T08:55:23.667886Z [spawn_worker] agent=w-1781772923-8 pid=3852 fleet=2
+2026-06-18T08:55:23.667997Z [scheduler_tick] queue_depth=5 next_tick_s=2.5
+2026-06-18T08:55:23.706205Z [worker_claimed] agent=w-1781772923-7 task=11 kind=summarize complexity=0.4
+2026-06-18T08:55:23.710960Z [worker_done] agent=w-1781772923-7 task=11 model=openrouter/mid-sonnet usd=0.011292 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:23.725982Z [worker_claimed] agent=w-1781772923-8 task=9 kind=classify complexity=0.22
+2026-06-18T08:55:23.731262Z [worker_done] agent=w-1781772923-8 task=9 model=openrouter/cheap-haiku usd=0.000626 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:23.918788Z [retire_worker] agent=w-1781772923-7 pid=3851 exit=0
+2026-06-18T08:55:23.918997Z [retire_worker] agent=w-1781772923-8 pid=3852 exit=0
+2026-06-18T08:55:23.919068Z [scale_decision] queue_depth=3 alive=0 want=2 spawning=2 max_concurrency=2
+2026-06-18T08:55:23.919549Z [spawn_worker] agent=w-1781772923-9 pid=3853 fleet=1
+2026-06-18T08:55:23.919954Z [spawn_worker] agent=w-1781772923-10 pid=3854 fleet=2
+2026-06-18T08:55:23.920036Z [scheduler_tick] queue_depth=3 next_tick_s=5.5
+2026-06-18T08:55:23.958203Z [worker_claimed] agent=w-1781772923-10 task=10 kind=classify complexity=0.22
+2026-06-18T08:55:23.963226Z [worker_done] agent=w-1781772923-10 task=10 model=openrouter/cheap-haiku usd=0.000626 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:23.975810Z [worker_claimed] agent=w-1781772923-9 task=7 kind=triage complexity=0.12
+2026-06-18T08:55:23.980337Z [worker_done] agent=w-1781772923-9 task=7 model=openrouter/cheap-haiku usd=0.000451 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:24.170717Z [retire_worker] agent=w-1781772923-9 pid=3853 exit=0
+2026-06-18T08:55:24.170894Z [retire_worker] agent=w-1781772923-10 pid=3854 exit=0
+2026-06-18T08:55:24.170966Z [scale_decision] queue_depth=1 alive=0 want=1 spawning=1 max_concurrency=2
+2026-06-18T08:55:24.171422Z [spawn_worker] agent=w-1781772924-11 pid=3855 fleet=1
+2026-06-18T08:55:24.171502Z [scheduler_tick] queue_depth=1 next_tick_s=8.5
+2026-06-18T08:55:24.210749Z [worker_claimed] agent=w-1781772924-11 task=8 kind=triage complexity=0.12
+2026-06-18T08:55:24.216004Z [worker_done] agent=w-1781772924-11 task=8 model=openrouter/cheap-haiku usd=0.000451 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:24.422239Z [retire_worker] agent=w-1781772924-11 pid=3855 exit=0
+2026-06-18T08:55:24.476665Z [self_improve] batch=1 success=1.0 tasks_per_dollar=25.04 adjustments=max_concurrency: 2 -> 3;escalate_threshold: 0.67 -> 0.72;batch_size: 6 -> 8
+2026-06-18T08:55:24.478139Z [batch_end] batch=1 processed=11 success_rate=1.0 total_usd=0.439320 tasks_per_dollar=25.04
+2026-06-18T08:55:24.524641Z [batch_start] batch=2 queue_depth=10 max_concurrency=3 escalate_threshold=0.72
+2026-06-18T08:55:24.525155Z [scale_decision] queue_depth=10 alive=0 want=3 spawning=3 max_concurrency=3
+2026-06-18T08:55:24.525912Z [spawn_worker] agent=w-1781772924-12 pid=3856 fleet=1
+2026-06-18T08:55:24.526441Z [spawn_worker] agent=w-1781772924-13 pid=3857 fleet=2
+2026-06-18T08:55:24.526873Z [spawn_worker] agent=w-1781772924-14 pid=3858 fleet=3
+2026-06-18T08:55:24.526979Z [scheduler_tick] queue_depth=10 next_tick_s=1.0
+2026-06-18T08:55:24.567381Z [worker_claimed] agent=w-1781772924-13 task=16 kind=summarize complexity=0.4
+2026-06-18T08:55:24.572432Z [worker_done] agent=w-1781772924-13 task=16 model=openrouter/mid-sonnet usd=0.011292 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:24.585762Z [worker_claimed] agent=w-1781772924-14 task=21 kind=summarize complexity=0.4
+2026-06-18T08:55:24.590826Z [worker_done] agent=w-1781772924-14 task=21 model=openrouter/mid-sonnet usd=0.011292 mode=stub latency_ms=2 artifact=-
+2026-06-18T08:55:24.600481Z [worker_claimed] agent=w-1781772924-12 task=14 kind=classify complexity=0.22
+2026-06-18T08:55:24.605236Z [worker_done] agent=w-1781772924-12 task=14 model=openrouter/cheap-haiku usd=0.000626 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:24.777923Z [retire_worker] agent=w-1781772924-12 pid=3856 exit=0
+2026-06-18T08:55:24.778082Z [retire_worker] agent=w-1781772924-13 pid=3857 exit=0
+2026-06-18T08:55:24.778149Z [retire_worker] agent=w-1781772924-14 pid=3858 exit=0
+2026-06-18T08:55:24.778204Z [scale_decision] queue_depth=7 alive=0 want=3 spawning=3 max_concurrency=3
+2026-06-18T08:55:24.778847Z [spawn_worker] agent=w-1781772924-15 pid=3859 fleet=1
+2026-06-18T08:55:24.779281Z [spawn_worker] agent=w-1781772924-16 pid=3860 fleet=2
+2026-06-18T08:55:24.779608Z [spawn_worker] agent=w-1781772924-17 pid=3861 fleet=3
+2026-06-18T08:55:24.779685Z [scheduler_tick] queue_depth=7 next_tick_s=1.0
+2026-06-18T08:55:24.818057Z [worker_claimed] agent=w-1781772924-16 task=15 kind=classify complexity=0.22
+2026-06-18T08:55:24.824756Z [worker_done] agent=w-1781772924-16 task=15 model=openrouter/cheap-haiku usd=0.000626 mode=stub latency_ms=2 artifact=-
+2026-06-18T08:55:24.828737Z [worker_claimed] agent=w-1781772924-17 task=20 kind=classify complexity=0.22
+2026-06-18T08:55:24.833231Z [worker_done] agent=w-1781772924-17 task=20 model=openrouter/cheap-haiku usd=0.000626 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:24.839831Z [worker_claimed] agent=w-1781772924-15 task=19 kind=classify complexity=0.22
+2026-06-18T08:55:24.844594Z [worker_done] agent=w-1781772924-15 task=19 model=openrouter/cheap-haiku usd=0.000626 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:25.030474Z [retire_worker] agent=w-1781772924-15 pid=3859 exit=0
+2026-06-18T08:55:25.030621Z [retire_worker] agent=w-1781772924-16 pid=3860 exit=0
+2026-06-18T08:55:25.030679Z [retire_worker] agent=w-1781772924-17 pid=3861 exit=0
+2026-06-18T08:55:25.030730Z [scale_decision] queue_depth=4 alive=0 want=3 spawning=3 max_concurrency=3
+2026-06-18T08:55:25.031270Z [spawn_worker] agent=w-1781772925-18 pid=3862 fleet=1
+2026-06-18T08:55:25.031697Z [spawn_worker] agent=w-1781772925-19 pid=3863 fleet=2
+2026-06-18T08:55:25.032058Z [spawn_worker] agent=w-1781772925-20 pid=3864 fleet=3
+2026-06-18T08:55:25.032130Z [scheduler_tick] queue_depth=4 next_tick_s=4.0
+2026-06-18T08:55:25.073288Z [worker_claimed] agent=w-1781772925-20 task=12 kind=triage complexity=0.12
+2026-06-18T08:55:25.081027Z [worker_done] agent=w-1781772925-20 task=12 model=openrouter/cheap-haiku usd=0.000451 mode=stub latency_ms=2 artifact=-
+2026-06-18T08:55:25.084204Z [worker_claimed] agent=w-1781772925-18 task=13 kind=triage complexity=0.12
+2026-06-18T08:55:25.089827Z [worker_claimed] agent=w-1781772925-19 task=17 kind=triage complexity=0.12
+2026-06-18T08:55:25.095130Z [worker_done] agent=w-1781772925-19 task=17 model=openrouter/cheap-haiku usd=0.000451 mode=stub latency_ms=2 artifact=-
+2026-06-18T08:55:25.107832Z [worker_done] agent=w-1781772925-18 task=13 model=openrouter/cheap-haiku usd=0.000451 mode=stub latency_ms=20 artifact=-
+2026-06-18T08:55:25.283006Z [retire_worker] agent=w-1781772925-18 pid=3862 exit=0
+2026-06-18T08:55:25.283186Z [retire_worker] agent=w-1781772925-19 pid=3863 exit=0
+2026-06-18T08:55:25.283242Z [retire_worker] agent=w-1781772925-20 pid=3864 exit=0
+2026-06-18T08:55:25.283295Z [scale_decision] queue_depth=1 alive=0 want=1 spawning=1 max_concurrency=3
+2026-06-18T08:55:25.283835Z [spawn_worker] agent=w-1781772925-21 pid=3865 fleet=1
+2026-06-18T08:55:25.283932Z [scheduler_tick] queue_depth=1 next_tick_s=8.5
+2026-06-18T08:55:25.323442Z [worker_claimed] agent=w-1781772925-21 task=18 kind=triage complexity=0.12
+2026-06-18T08:55:25.328287Z [worker_done] agent=w-1781772925-21 task=18 model=openrouter/cheap-haiku usd=0.000451 mode=stub latency_ms=1 artifact=-
+2026-06-18T08:55:25.534743Z [retire_worker] agent=w-1781772925-21 pid=3865 exit=0
+2026-06-18T08:55:25.541340Z [self_improve] batch=2 success=1.0 tasks_per_dollar=45.04 adjustments=max_concurrency: 3 -> 4;escalate_threshold: 0.72 -> 0.77;batch_size: 8 -> 10
+2026-06-18T08:55:25.543382Z [batch_end] batch=2 processed=21 success_rate=1.0 total_usd=0.466212 tasks_per_dollar=45.04
+2026-06-18T08:55:25.543442Z [demo_stop]
