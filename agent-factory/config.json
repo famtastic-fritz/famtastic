@@ -1,0 +1,48 @@
+{
+  "_comment": "Tunable parameters. The self-improvement loop adjusts the values under 'tunables' ONLY \u2014 it never edits code. Hand-edits are preserved between runs unless a tuning pass overrides a specific key.",
+  "tunables": {
+    "max_concurrency": 2,
+    "min_concurrency": 1,
+    "queue_depth_per_worker": 3,
+    "complexity_escalation_threshold": 0.55,
+    "cheap_first": true,
+    "batch_idle_sleep_seconds": 5,
+    "batch_busy_sleep_seconds": 1,
+    "worker_timeout_seconds": 60
+  },
+  "routing": {
+    "models": {
+      "local-triage": {
+        "provider": "local",
+        "model": "llama3.1:8b",
+        "cost_per_1k_input": 0.0,
+        "cost_per_1k_output": 0.0,
+        "max_capability": 0.45
+      },
+      "cheap": {
+        "provider": "openrouter",
+        "model": "anthropic/claude-haiku-4.5",
+        "cost_per_1k_input": 0.001,
+        "cost_per_1k_output": 0.005,
+        "max_capability": 0.7
+      },
+      "strong": {
+        "provider": "openrouter",
+        "model": "anthropic/claude-opus-4.8",
+        "cost_per_1k_input": 0.015,
+        "cost_per_1k_output": 0.075,
+        "max_capability": 1.0
+      }
+    },
+    "tier_order": [
+      "local-triage",
+      "cheap",
+      "strong"
+    ]
+  },
+  "limits": {
+    "max_workers_hard_cap": 6,
+    "max_cycles_default": 12,
+    "self_improve_every_n_cycles": 1
+  }
+}
