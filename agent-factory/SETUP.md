@@ -24,6 +24,8 @@ xdg-open dashboard/index.html  # Linux
 python3 seed_tasks.py          # inject sample tasks
 python3 orchestrator.py --cycles 3   # bounded supervisor run
 python3 orchestrator.py --daemon     # run until queue drained, then idle-exit
+python3 orchestrator.py --forever    # PERSISTENT daemon (autonomous; stop: touch data/STOP)
+python3 add_task.py triage "ad-hoc job" 0.3 1   # inject a task into the live queue
 python3 dashboard.py           # terminal readout
 python3 dashboard.py --html    # (re)write dashboard/index.html
 python3 dashboard.py --json    # machine-readable snapshot

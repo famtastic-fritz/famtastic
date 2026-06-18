@@ -12,6 +12,16 @@ network. Everything lives inside this folder (see `SANDBOX.md`).
 python3 run.py
 ```
 
+## Run it autonomously (persistent daemon)
+```bash
+python3 orchestrator.py --forever        # never exits; keeps watching for work
+python3 add_task.py triage "new job" 0.3 # inject work live, from another shell
+touch data/STOP                          # graceful stop (or Ctrl-C / SIGTERM)
+```
+In `--forever` mode the supervisor self-schedules: it backs off to slow polling
+when the queue is empty and tightens cadence when work piles up — picking up
+newly-added tasks on its own.
+
 ## How it manages itself
 | Capability | Where | What it does |
 |------------|-------|--------------|
