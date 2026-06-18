@@ -8,6 +8,11 @@ import { uid } from './util.js';
 ensureDir('data');
 const db = new DatabaseSync(resolveInside('data/factory.db'));
 
+// Concurrency hardening: WAL lets many worker processes READ while the
+// orchestrator WRITES; busy_timeout makes contended ops wait instead of throwing
+// "database is locked". (Bug fix: concurrent child workers locked the rollback-mode DB.)
+db.exec(`PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA synchronous = NORMAL;`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
