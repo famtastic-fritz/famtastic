@@ -1,0 +1,78 @@
+{
+  "_comment": "Tunable parameters. The self-improvement loop (src/improve.py) ONLY edits values inside 'tunables', and only within the documented min/max bounds. Core code is never self-modified.",
+  "version": 1,
+  "tunables": {
+    "max_workers": 3,
+    "max_workers_bounds": [
+      1,
+      8
+    ],
+    "idle_timeout_seconds": 4,
+    "idle_timeout_bounds": [
+      2,
+      60
+    ],
+    "scheduler_tick_seconds": 2,
+    "scheduler_tick_bounds": [
+      1,
+      30
+    ],
+    "routing_complexity_threshold": 0.6,
+    "routing_complexity_threshold_bounds": [
+      0.2,
+      0.9
+    ],
+    "self_improve_every_batches": 1
+  },
+  "scaling": {
+    "_comment": "Desired worker count as a function of queue depth (step function). The orchestrator picks the highest tier whose 'queue_at_least' it meets, capped by tunables.max_workers.",
+    "tiers": [
+      {
+        "queue_at_least": 0,
+        "workers": 0
+      },
+      {
+        "queue_at_least": 1,
+        "workers": 1
+      },
+      {
+        "queue_at_least": 3,
+        "workers": 2
+      },
+      {
+        "queue_at_least": 6,
+        "workers": 4
+      },
+      {
+        "queue_at_least": 12,
+        "workers": 8
+      }
+    ]
+  },
+  "models": {
+    "_comment": "OpenRouter-style catalog. Prices are USD per 1K tokens (mock but realistic). 'tier' gates which tasks may use the model; 'capability' is a 0-1 competence score used by the router.",
+    "catalog": [
+      {
+        "id": "cheap/triage-haiku",
+        "tier": "cheap",
+        "capability": 0.55,
+        "price_in_per_1k": 0.00025,
+        "price_out_per_1k": 0.00125
+      },
+      {
+        "id": "mid/sonnet",
+        "tier": "mid",
+        "capability": 0.8,
+        "price_in_per_1k": 0.003,
+        "price_out_per_1k": 0.015
+      },
+      {
+        "id": "strong/opus",
+        "tier": "strong",
+        "capability": 0.97,
+        "price_in_per_1k": 0.015,
+        "price_out_per_1k": 0.075
+      }
+    ]
+  }
+}
