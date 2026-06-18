@@ -1,0 +1,67 @@
+{
+  "updated": "2026-06-18 07:57:02",
+  "mode": "drain",
+  "live_models": false,
+  "config": {
+    "concurrency": 3,
+    "tasks_per_worker": 3,
+    "routing": {
+      "complexity_threshold_standard": 0.3,
+      "complexity_threshold_strong": 0.6,
+      "complexity_threshold_frontier": 0.85,
+      "complexity_threshold_standard_bounds": [
+        0.15,
+        0.45
+      ],
+      "complexity_threshold_strong_bounds": [
+        0.45,
+        0.8
+      ],
+      "escalate_below_confidence": 0.62,
+      "escalate_below_confidence_bounds": [
+        0.5,
+        0.8
+      ],
+      "allow_frontier": true
+    }
+  },
+  "queue": {
+    "pending": 0,
+    "claimed": 0,
+    "running": 0,
+    "done": 16,
+    "failed": 0,
+    "total": 16
+  },
+  "stats": {
+    "total": 16,
+    "done": 16,
+    "failed": 0,
+    "success_rate": 1.0,
+    "total_cost_usd": 0.09812,
+    "avg_cost_usd": 0.006132,
+    "avg_latency_ms": 66.9,
+    "avg_confidence": 0.879,
+    "tokens_in": 1480,
+    "tokens_out": 3752,
+    "by_tier": {
+      "frontier": {
+        "n": 2,
+        "cost": 0.06294
+      },
+      "standard": {
+        "n": 5,
+        "cost": 0.003287
+      },
+      "strong": {
+        "n": 6,
+        "cost": 0.031863
+      },
+      "triage": {
+        "n": 3,
+        "cost": 2.9e-05
+      }
+    }
+  },
+  "active_workers": []
+}

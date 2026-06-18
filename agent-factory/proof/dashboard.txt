@@ -1,0 +1,27 @@
+============================================================
+  AGENT FACTORY — STATUS
+============================================================
+  updated      : 2026-06-18 07:57:02   mode: drain
+  live models  : False (False = offline stub, no spend)
+  config       : concurrency=3 tasks/worker=3
+------------------------------------------------------------
+  QUEUE DEPTH
+    pending     0  ························
+    claimed     0  ························
+    running     0  ························
+    done       16  ████████████████████████
+    failed      0  ························
+------------------------------------------------------------
+  ACTIVE AGENTS
+    (none active)
+------------------------------------------------------------
+  THROUGHPUT & COST
+    tasks done       : 16 / 16
+    success rate     : 100.0%
+    total cost       : $0.098120
+    avg cost / task  : $0.006132
+    avg latency      : 66.9 ms
+    tokens in/out    : 1480 / 3752
+    tier usage       : {"frontier": {"n": 2, "cost": 0.06294}, "standard": {"n": 5, "cost": 0.003287}, "strong": {"n": 6, "cost": 0.031863}, "triage": {"n": 3, "cost": 2.9e-05}}
+    throughput/$     : 163 tasks per dollar
+============================================================

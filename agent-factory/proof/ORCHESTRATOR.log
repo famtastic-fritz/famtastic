@@ -1,0 +1,50 @@
+2026-06-18 07:57:00 [orchestrator] orchestrator starting (mode=drain, live_models=False, concurrency=2, tasks_per_worker=3)
+2026-06-18 07:57:00 [orchestrator] model catalog: triage=meta-llama/llama-3.1-8b-instruct($0.05/$0.08 per 1M), standard=anthropic/claude-haiku-4-5($0.8/$4.0 per 1M), strong=anthropic/claude-sonnet-4-6($3.0/$15.0 per 1M), frontier=anthropic/claude-opus-4-8($15.0/$75.0 per 1M)
+2026-06-18 07:57:00 [orchestrator] minted+spawned worker W1 (spec=analysis, pid=3731) from workers/worker_analysis.py
+2026-06-18 07:57:00 [orchestrator] minted+spawned worker W2 (spec=general, pid=3732) from workers/worker_general.py
+2026-06-18 07:57:00 [orchestrator] tick 1: queue(pending=16, inflight=0, done=0, failed=0) active=2/2 next_interval=0.50s
+2026-06-18 07:57:00 [worker W2] spawned (max_tasks=3, specialization=general)
+2026-06-18 07:57:00 [worker W1] spawned (max_tasks=3, specialization=analysis)
+2026-06-18 07:57:00 [worker W1] task 2 [triage] -> triage conf=0.743 cost=$0.000011
+2026-06-18 07:57:00 [worker W2] task 1 [classify] -> triage conf=0.741 cost=$0.000009
+2026-06-18 07:57:00 [worker W2] task 4 [extract] -> standard conf=0.842 cost=$0.000669
+2026-06-18 07:57:00 [worker W1] task 3 [triage] -> triage conf=0.747 cost=$0.000009
+2026-06-18 07:57:00 [worker W2] task 5 [extract] -> standard conf=0.842 cost=$0.000706
+2026-06-18 07:57:00 [worker W2] quota reached — retiring after 3 task(s)
+2026-06-18 07:57:00 [worker W1] task 6 [summarize] -> standard conf=0.842 cost=$0.000631
+2026-06-18 07:57:00 [worker W1] quota reached — retiring after 3 task(s)
+2026-06-18 07:57:01 [orchestrator] worker W1 retired (rc=0, ran 0.5s)
+2026-06-18 07:57:01 [orchestrator] worker W2 retired (rc=0, ran 0.5s)
+2026-06-18 07:57:01 [orchestrator] minted+spawned worker W3 (spec=analysis, pid=3733) from workers/worker_analysis.py
+2026-06-18 07:57:01 [orchestrator] minted+spawned worker W4 (spec=analysis, pid=3734) from workers/worker_analysis.py
+2026-06-18 07:57:01 [orchestrator] tick 2: queue(pending=10, inflight=0, done=6, failed=0) active=2/2 next_interval=0.56s
+2026-06-18 07:57:01 [worker W3] spawned (max_tasks=3, specialization=analysis)
+2026-06-18 07:57:01 [worker W4] spawned (max_tasks=3, specialization=analysis)
+2026-06-18 07:57:01 [worker W3] task 7 [summarize] -> standard conf=0.841 cost=$0.000666
+2026-06-18 07:57:01 [worker W4] task 8 [summarize] -> standard conf=0.841 cost=$0.000615
+2026-06-18 07:57:01 [worker W3] task 9 [compare] -> strong conf=0.943 cost=$0.005742
+2026-06-18 07:57:01 [worker W3] task 11 [analyze] -> strong conf=0.94 cost=$0.004938
+2026-06-18 07:57:01 [worker W3] quota reached — retiring after 3 task(s)
+2026-06-18 07:57:01 [worker W4] task 10 [compare] -> strong conf=0.937 cost=$0.005187
+2026-06-18 07:57:01 [worker W4] task 12 [analyze] -> strong conf=0.941 cost=$0.005670
+2026-06-18 07:57:01 [worker W4] quota reached — retiring after 3 task(s)
+2026-06-18 07:57:01 [orchestrator] worker W3 retired (rc=0, ran 0.6s)
+2026-06-18 07:57:01 [orchestrator] worker W4 retired (rc=0, ran 0.6s)
+2026-06-18 07:57:01 [orchestrator] minted+spawned worker W5 (spec=analysis, pid=3735) from workers/worker_analysis.py
+2026-06-18 07:57:01 [orchestrator] minted+spawned worker W6 (spec=analysis, pid=3736) from workers/worker_analysis.py
+2026-06-18 07:57:01 [orchestrator] tick 3: queue(pending=4, inflight=0, done=12, failed=0) active=2/2 next_interval=0.90s
+2026-06-18 07:57:01 [worker W6] spawned (max_tasks=3, specialization=analysis)
+2026-06-18 07:57:01 [worker W5] spawned (max_tasks=3, specialization=analysis)
+2026-06-18 07:57:01 [worker W6] task 13 [synthesize] -> strong conf=0.946 cost=$0.005211
+2026-06-18 07:57:01 [worker W5] task 14 [synthesize] -> strong conf=0.943 cost=$0.005115
+2026-06-18 07:57:01 [worker W6] task 15 [plan] -> frontier conf=0.99 cost=$0.031605
+2026-06-18 07:57:01 [worker W6] no work — retiring after 2 task(s)
+2026-06-18 07:57:02 [worker W5] task 16 [plan] -> frontier conf=0.99 cost=$0.031335
+2026-06-18 07:57:02 [worker W5] no work — retiring after 2 task(s)
+2026-06-18 07:57:02 [orchestrator] worker W5 retired (rc=0, ran 0.9s)
+2026-06-18 07:57:02 [orchestrator] worker W6 retired (rc=0, ran 0.9s)
+2026-06-18 07:57:02 [orchestrator] tick 4: queue(pending=0, inflight=0, done=16, failed=0) active=0/0 next_interval=8.00s
+2026-06-18 07:57:02 [orchestrator] queue drained — running self-improvement pass
+2026-06-18 07:57:02 [orchestrator] self-improvement pass (batch after 16 task(s)): success=1.00 avg_cost=$0.006132 avg_latency=66.9ms total_cost=$0.098120
+2026-06-18 07:57:02 [orchestrator]   tuned: concurrency 2 -> 3 (cheap+reliable, add throughput)
+2026-06-18 07:57:02 [orchestrator] drain complete — orchestrator exiting

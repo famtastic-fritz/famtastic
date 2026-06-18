@@ -1,35 +1,44 @@
 {
-  "version": 1,
+  "version": 2,
   "_comment": "The ONLY file the self-improvement loop mutates. All values are clamped to the *_bounds ranges below. Hand edits are fine; the loop respects bounds.",
-
-  "concurrency": 2,
-  "concurrency_bounds": [1, 6],
-
+  "concurrency": 3,
+  "concurrency_bounds": [
+    1,
+    6
+  ],
   "tasks_per_worker": 3,
-  "tasks_per_worker_bounds": [1, 8],
-
+  "tasks_per_worker_bounds": [
+    1,
+    8
+  ],
   "batch_size": 12,
-
   "routing": {
-    "complexity_threshold_standard": 0.30,
-    "complexity_threshold_strong": 0.60,
+    "complexity_threshold_standard": 0.3,
+    "complexity_threshold_strong": 0.6,
     "complexity_threshold_frontier": 0.85,
-    "complexity_threshold_standard_bounds": [0.15, 0.45],
-    "complexity_threshold_strong_bounds": [0.45, 0.80],
+    "complexity_threshold_standard_bounds": [
+      0.15,
+      0.45
+    ],
+    "complexity_threshold_strong_bounds": [
+      0.45,
+      0.8
+    ],
     "escalate_below_confidence": 0.62,
-    "escalate_below_confidence_bounds": [0.50, 0.80],
+    "escalate_below_confidence_bounds": [
+      0.5,
+      0.8
+    ],
     "allow_frontier": true
   },
-
   "scheduler": {
     "base_interval_sec": 1.5,
     "min_interval_sec": 0.5,
     "max_interval_sec": 8.0,
     "tick_per_worker_pending": 3
   },
-
   "self_improvement": {
-    "target_success_rate": 0.90,
+    "target_success_rate": 0.9,
     "target_cost_per_task_usd": 0.01,
     "enabled": true
   }
