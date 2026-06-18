@@ -10,14 +10,17 @@ This file summarizes how Claude Code, Codex, Gemini, Cowork, and other agent sur
 1. Shay-Shay is broader ambient intelligence/orchestration; Site Studio, Media Studio, and Component Studio belong to the FAMtastic ecosystem and consume/produce platform intelligence.
 2. Use research-first, spec-shaped, proof-driven development.
 3. Treat every real multi-step plan as a work packet, not a loose conversation. The packet must define: goal (outcome, why it matters, success criteria, proof), explicit tasks, execution lane (feature branch name and worktree path when applicable), landing path to `main`, required truth-surface updates (especially capability matrix updates), and proof.
-4. Existing capture boxes are raw intake. FAMtastic Data Center is the evidence/proof/claims/decisions layer.
-5. Search/reuse before generating or rebuilding.
-6. Route specialized needs to the owning system: Research/Data Center, Media Studio, Component Studio, Site Studio.
-7. Every meaningful run/build/job needs post-evaluation and opportunity capture.
-8. Every meaningful research pass must create a durable artifact, not just a chat answer or terminal trace. Separate observation from interpretation, preserve source trace, and record capability notes so future sessions can reuse the research.
-9. Do not run noisy check-in unless Fritz explicitly says multi-agent coordination is active.
-10. Preserve old plans as reference; do not let stale plans override the current Phase 2 plan.
-11. Use explicit commits and explicit staging. Never `git add .` in this repo during consolidation.
+4. Plans should run to completion without intervention from Fritz unless they hit a real blocker, destructive side effect, missing credential, or irreversible decision Fritz must personally own.
+5. Multi-swarm and parallel orchestrated swarms are allowed and preferred when dependencies permit and they are the most efficient path.
+6. The task list must be updated as each task completes, blocks, or changes state so the plan can resume cleanly after interruption.
+7. Existing capture boxes are raw intake. FAMtastic Data Center is the evidence/proof/claims/decisions layer.
+8. Search/reuse before generating or rebuilding.
+9. Route specialized needs to the owning system: Research/Data Center, Media Studio, Component Studio, Site Studio.
+10. Every meaningful run/build/job needs post-evaluation and opportunity capture.
+11. Every meaningful research pass must create a durable artifact, not just a chat answer or terminal trace. Separate observation from interpretation, preserve source trace, and record capability notes so future sessions can reuse the research.
+12. Do not run noisy check-in unless Fritz explicitly says multi-agent coordination is active.
+13. Preserve old plans as reference; do not let stale plans override the current Phase 2 plan.
+14. Use explicit commits and explicit staging. Never `git add .` in this repo during consolidation.
 
 Note: if branch/worktree are not needed for a packet, say that explicitly instead of omitting the fields.
 

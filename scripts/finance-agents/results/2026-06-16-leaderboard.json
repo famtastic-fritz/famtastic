@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-18T02:11:10.092Z",
+  "generatedAt": "2026-06-18T02:16:12.857Z",
   "simulation": true,
   "liveBrokerage": false,
-  "dataSource": "LIVE",
+  "dataSource": "CACHE",
   "isSampleData": false,
   "session": "2026-06-16",
   "priorSession": "2026-06-15",
@@ -10,32 +10,32 @@
   "basket": [
     {
       "display": "SPY",
-      "source": "LIVE:yahoo.com",
+      "source": "CACHE:yahoo.com",
       "kind": "etf"
     },
     {
       "display": "QQQ",
-      "source": "LIVE:yahoo.com",
+      "source": "CACHE:yahoo.com",
       "kind": "etf"
     },
     {
       "display": "AAPL",
-      "source": "LIVE:yahoo.com",
+      "source": "CACHE:yahoo.com",
       "kind": "stock"
     },
     {
       "display": "NVDA",
-      "source": "LIVE:yahoo.com",
+      "source": "CACHE:yahoo.com",
       "kind": "stock"
     },
     {
       "display": "TSLA",
-      "source": "LIVE:yahoo.com",
+      "source": "CACHE:yahoo.com",
       "kind": "stock"
     },
     {
       "display": "BTC-USD",
-      "source": "LIVE:yahoo.com",
+      "source": "CACHE:yahoo.com",
       "kind": "crypto"
     }
   ],

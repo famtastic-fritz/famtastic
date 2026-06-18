@@ -504,3 +504,19 @@ _See `memory/vendor-fact/todays-plan-closeout-mechanism-applies-to-site-executio
 Today's MBSH deploy proved a recipe: cPanel UAPI overwrite path + DNS via cPanel + Resend domain ver
 
 _See `memory/vendor-fact/todays-mbsh-deploy-proved-a-recipe-cpanel-uapi-overwrite-path-dns-via-cpanel-res.md` for body and evidence._
+
+### vendor-fact/yahoo-finance-chart-endpoint-is-keyless-and-works-for-daily- — 2026-06-18 (auto-promoted)
+
+**Type:** `vendor-fact` | **Confidence:** 0.95 | **Facets:** finance-data, keyless-api, yahoo-finance, freetier
+
+Yahoo Finance chart endpoint is keyless and works for daily OHLCV
+
+_See `memory/vendor-fact/yahoo-finance-chart-endpoint-is-keyless-and-works-for-daily-.md` for body and evidence._
+
+### do-not-repeat/stooq-daily-csv-endpoint-is-dead-for-non-browser-clients — 2026-06-18 (auto-promoted)
+
+**Type:** `do-not-repeat` | **Confidence:** 0.97 | **Facets:** stooq, browser-wall, proof-of-work, finance-data, blocker
+
+Stooq daily CSV endpoint is dead for non-browser clients
+
+_See `memory/do-not-repeat/stooq-daily-csv-endpoint-is-dead-for-non-browser-clients.md` for body and evidence._
