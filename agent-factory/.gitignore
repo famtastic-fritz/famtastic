@@ -1,0 +1,11 @@
+# Sandbox runtime artifacts — regenerated on every run, not source of truth.
+.env
+__pycache__/
+*.pyc
+
+# Runtime state and live logs are NOT ignored on purpose for this proof run:
+# we WANT the seeded DB, logs, and deliverables committed as proof the system
+# actually ran. If you prefer a clean repo, uncomment the lines below.
+# data/factory.db
+# logs/*.log
+# agents/worker_*.py

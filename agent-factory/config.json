@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "note": "Tunable runtime parameters. self_improve.py may adjust these within bounds defined in self_improve.SAFE_BOUNDS. Core code is never modified by the loop.",
+  "concurrency": {
+    "min_workers": 1,
+    "max_workers": 4,
+    "current_max": 2
+  },
+  "routing": {
+    "complexity_threshold": 0.55,
+    "escalate_on_low_confidence": true,
+    "confidence_floor": 0.6
+  },
+  "scheduler": {
+    "base_interval_seconds": 4,
+    "min_interval_seconds": 1,
+    "max_interval_seconds": 30,
+    "deep_queue_threshold": 6,
+    "shallow_queue_threshold": 1
+  },
+  "budget": {
+    "max_cost_per_batch_usd": 5.0,
+    "hard_cap_usd": 50.0
+  },
+  "self_improvement": {
+    "target_success_rate": 0.9,
+    "target_cost_per_task_usd": 0.02,
+    "max_concurrency_ceiling": 6
+  },
+  "live_calls": false
+}
