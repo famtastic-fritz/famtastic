@@ -39,7 +39,7 @@ class HandlerResult:
         return self.routes[-1].tier if self.routes else "none"
 
 
-from . import deal_finder, marketing, outreach, sales  # noqa: E402
+from . import deal_finder, marketing, outreach, sales, host_agency  # noqa: E402
 
 REGISTRY: dict[str, Callable[[dict], HandlerResult]] = {
     "deal_finder": deal_finder.handle,
@@ -49,6 +49,7 @@ REGISTRY: dict[str, Callable[[dict], HandlerResult]] = {
     "outreach": outreach.handle,
     "sales": sales.handle,
     "payment": sales.handle_payment,
+    "host_agency": host_agency.handle,
 }
 
 

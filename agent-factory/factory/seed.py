@@ -38,6 +38,8 @@ SEED_TASKS = [
      {"product": "FAMtastic Look Bundle"}, 0.3, 6),
     ("outreach", "Draft host-agency advisor application inquiry (DRAFT ONLY)",
      {"target": "host agency (advisor credentials)"}, 0.4, 6),
+    ("host_agency", "Plan host-agency advisor credentials — the #1 cruise savings lever",
+     {"target_fare_usd": 4500}, 0.6, 2),
     ("deal_finder", "Shoulder-season cruise alternative for the same route",
      {"baseline_cost_usd": 3800, "party_size": 3}, 0.6, 5),
 ]
