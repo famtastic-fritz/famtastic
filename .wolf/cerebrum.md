@@ -590,3 +590,9 @@ To EDIT an existing file, use anchored surgical replacement (`surgical_patch()`)
 - "No handler registered for X" must degrade to defaults, not surface raw error text.
 - Definition of done for any UI unit = launches + nav-reachable + 0 console errors + vision score >=8, NOT just typecheck-green.
 - 7 skills minted to shay-agent-os/skills/ encode these: micro-patch-living-file, render-spine-guard, visual-qa-gate, claude-desktop-style-match, settings-store-snapshot-cache, dead-wire-detector, typed-screen-manifest.
+
+## Do-Not-Repeat (2026-06-18 — agency pipeline / proof visibility)
+- VISIBLE PROOFS: Fritz is usually on his phone. Sending a raw `.html`/`.json`/file artifact is useless — he cannot open it. Every proof MUST be a screenshot (PNG via headless chromium / playwright) or a live tappable URL. `SendUserFile` the PNG, never the source. He flagged this explicitly: "when you are giving me proofs I cant see them."
+- SEVERAL MOCKUPS, not one: when asked to design a site/theme, render MULTIPLE design directions (variants) to choose from, not a single template. The agency engine does this via VERTICALS × VARIANTS (warm/bold/minimal).
+- AGENCY FOLDER COLLISIONS: several agents were asked to build into `agency/`. Generic paths (`agency/leads`, `agency/dashboard`, `agency/sandbox`) collide on merge. Namespace initiatives under a specific subtree — the web-agency pipeline lives under `agency/web-agency/`. Don't write to the `agency/` root.
+- "set it up locally / I want to see the process": prefer a runnable local sandbox (stdlib `http.server`, one command, opens browser) over invisible cloud-side builds. He wants to drive it on the Mac, not receive screenshots of a box he can't see into.

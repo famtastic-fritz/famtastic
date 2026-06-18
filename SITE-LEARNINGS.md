@@ -1,5 +1,50 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## Web-Agency pipeline (2026-06-18)
+
+The AI web-agency play (find no-website local businesses → render several design
+mockups → pick → build & sell). Lives entirely under **`agency/web-agency/`** —
+namespaced on purpose because several agents were asked to build into `agency/`,
+so generic paths (`agency/leads`, `agency/dashboard`, `agency/sandbox`) collide
+on merge. New web-agency work goes under this subtree, not the `agency/` root.
+
+**Layout:**
+- `agency/web-agency/leads/psl-2026-06-18.json` — 10 qualified Port St. Lucie
+  leads (schema: `run{area,date,source,qualification,note}` + `leads[]` with
+  `business,type,phone,address,rating,reviews,web_status,hook,best_call_time,
+  status,priority`). Qualification rule: independent, has phone, real/active,
+  **no working website** (Facebook/listing-only counts as a lead).
+- `agency/web-agency/engine/generate.py` — the mockup engine. Two axes:
+  `VERTICALS` (palette+copy per business type: taqueria/nail/detailing/lawn/
+  general — `vertical_of(lead)` maps the lead's `type` string) × `VARIANTS`
+  (design directions: `warm` light-editorial-serif, `bold` dark-statement-
+  oversized, `minimal` white-restrained — `VARIANT_ORDER` controls render set).
+  `render(lead, variant_key)` builds a full page (hero/menu-or-services/reviews/
+  gallery/story/visit + click-to-call + sticky mobile bar); `_palette(v,var)`
+  resolves concrete colors per mode (light/dark/white). `build_lead()` writes
+  `build/mockups/<slug>/<variant>/index.html` for every variant.
+- `agency/web-agency/engine/serve.py` — `build_all()` renders all leads×variants,
+  `write_hub()` emits the comparison hub (left: leads with 3 variant chips each;
+  right: live `<iframe>` preview), then serves `build/` on localhost:8788 and
+  opens the browser. Pure stdlib (`http.server`), no installs, no API key.
+- `agency/web-agency/build/` — generated output, **git-ignored**, rebuilt each run.
+
+**Run (on the Mac):** `python3 agency/web-agency/engine/serve.py`
+(`--port N`, `--no-open`). `generate.py` run directly just builds files.
+
+**Findings that matter:** churches in PSL are a dead vertical (every one of the
+top-10 already had a site — 0 qualified); commercial verticals (taqueria, nail,
+detailing, lawn) are dense with Facebook-only independents. Nail salons in
+particular were 100% Facebook-only — a repeatable niche.
+
+**Visible-proof rule (cross-cutting):** artifacts sent as raw `.html`/`.json`
+files are useless on Fritz's phone — he can't open them. Proofs must be a
+**screenshot (PNG) or a live/tappable URL**. This session added a headless-
+chromium (`playwright`, `chromium` installed via `playwright install chromium`)
+render path; `SendUserFile` a PNG, never the source file. Recorded so every
+agent renders proofs the same way.
+
+
 ## Brain Sync Contract + session-to-brain tying (2026-06-02)
 
 The Obsidian brain is `obsidian/` on `main` (vault with smart-connections plugin;

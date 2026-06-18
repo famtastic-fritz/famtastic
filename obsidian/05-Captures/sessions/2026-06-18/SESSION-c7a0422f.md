@@ -29,6 +29,17 @@ fam-hero-layered BEM + NAV_SKELETON + SVG-divider invariants. Deferred: full mul
 build-out of Montano's pending Fritz's theme approval; lead-source automation
 (Outscraper/Google Places) for scaling Phase 1 beyond manual passes.
 
+UPDATE (later in session): on Fritz's feedback, (1) reworked the dark theme that
+"didn't look good" into a lighter premium template, (2) pivoted to the real ask —
+a runnable LOCAL sandbox (stdlib, one command, opens browser) instead of cloud-side
+builds, and (3) corrected scope back to "several mockups": the engine now renders
+3 design directions per lead (Warm/Bold/Minimal). Namespaced the whole initiative
+under `agency/web-agency/` to avoid colliding with other agents writing to
+`agency/`. Promoted durable learnings to `.wolf/cerebrum.md` (visible-proof rule,
+several-mockups rule, agency-folder-collision rule) and documented the pipeline in
+`SITE-LEARNINGS.md` + `CHANGELOG.md`. Open: Fritz to run the sandbox on the Mac and
+pick a direction for Taqueria Montano's.
+
 ## Timeline
 - 2026-06-18 10:27 UTC — session started on `claude/workshop-dashboard-agents-jQ2wK` @ claude/workshop-dashboard-agents-jQ2wK
 - 2026-06-18 10:27 UTC — session stop @ claude/workshop-dashboard-agents-jQ2wK
@@ -44,6 +55,8 @@ build-out of Montano's pending Fritz's theme approval; lead-source automation
 - 2026-06-18 14:55 UTC — session stop @ claude/workshop-dashboard-agents-jQ2wK
 - 2026-06-18 14:55 UTC — session stop @ claude/workshop-dashboard-agents-jQ2wK
 - 2026-06-18 16:13 UTC — sessionstart @ claude/workshop-dashboard-agents-jQ2wK
+- 2026-06-18 16:19 UTC — session stop @ claude/workshop-dashboard-agents-jQ2wK
+- 2026-06-18 16:40 UTC — sessionstart @ claude/workshop-dashboard-agents-jQ2wK
 
 ## Git delta
 **Range:** `claude..claude/workshop-dashboard-agents-jQ2wK`
@@ -51,4 +64,4 @@ build-out of Montano's pending Fritz's theme approval; lead-source automation
 - (no commits recorded this session)
 
 
-_ended: 2026-06-18 14:55 UTC_
+_ended: 2026-06-18 16:19 UTC_
