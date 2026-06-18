@@ -1,0 +1,8 @@
+[2026-06-18T08:14:15] [router] task=2 type=proposal model=mid/sonnet tok_in=39 tok_out=111 cost=$0.001782 worker_subtotal=$0.001782 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard
+[2026-06-18T08:14:15] [router] task=3 type=personalize model=cheap/triage-haiku tok_in=41 tok_out=113 cost=$0.000152 worker_subtotal=$0.001934 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard
+[2026-06-18T08:14:15] [router] task=1 type=business_model model=strong/opus tok_in=80 tok_out=111 cost=$0.009525 worker_subtotal=$0.009525 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard
+[2026-06-18T08:14:15] [router] task=4 type=personalize model=cheap/triage-haiku tok_in=40 tok_out=113 cost=$0.000151 worker_subtotal=$0.002085 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard
+[2026-06-18T08:14:15] [router] task=5 type=classify model=cheap/triage-haiku tok_in=42 tok_out=113 cost=$0.000152 worker_subtotal=$0.009677 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard
+[2026-06-18T08:14:15] [router] task=6 type=classify model=cheap/triage-haiku tok_in=45 tok_out=113 cost=$0.000153 worker_subtotal=$0.002238 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard
+[2026-06-18T08:14:15] [router] task=7 type=summarize model=cheap/triage-haiku tok_in=80 tok_out=113 cost=$0.000161 worker_subtotal=$0.009838 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard
+[2026-06-18T08:14:15] [router] task=8 type=summarize model=cheap/triage-haiku tok_in=67 tok_out=113 cost=$0.000158 worker_subtotal=$0.002396 mode=STUB  # authoritative grand total = SUM(tasks.cost_usd) in DB / dashboard

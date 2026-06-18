@@ -1,0 +1,16 @@
+[2026-06-18T08:14:14] [orchestrator] orchestrator starting (mode=demo, batch=batch-20260618-081414)
+[2026-06-18T08:14:14] [orchestrator] seeded queue depth at start: 8
+[2026-06-18T08:14:14] [orchestrator] DECISION: queue_depth=8, live_workers=0, desired=2 → spawning 2 worker(s)
+[2026-06-18T08:14:14] [orchestrator] MINTED new worker agent 'batch-20260618-081414-w1' (specialty=generalist) → agents/worker_batch-20260618-081414-w1.py
+[2026-06-18T08:14:14] [orchestrator] SPAWNED worker 'batch-20260618-081414-w1' as pid 4638
+[2026-06-18T08:14:14] [orchestrator] MINTED new worker agent 'batch-20260618-081414-w2' (specialty=triage-specialist) → agents/worker_batch-20260618-081414-w2.py
+[2026-06-18T08:14:14] [orchestrator] SPAWNED worker 'batch-20260618-081414-w2' as pid 4639
+[2026-06-18T08:14:14] [orchestrator] cadence: queue_depth=8 → scheduler tick = 1.0s
+[2026-06-18T08:14:15] [orchestrator] DECISION: queue empty, 2 worker(s) draining → self-retire on idle
+[2026-06-18T08:14:15] [orchestrator] cadence: queue_depth=0 → scheduler tick = 3.0s
+[2026-06-18T08:14:21] [orchestrator] REAPED worker 'batch-20260618-081414-w1' (pid 4638, exit=0) — retired
+[2026-06-18T08:14:21] [orchestrator] REAPED worker 'batch-20260618-081414-w2' (pid 4639, exit=0) — retired
+[2026-06-18T08:14:21] [orchestrator] batch 'batch-20260618-081414' drained (peak queue depth 8) → running self-improvement pass
+[2026-06-18T08:14:21] [improve] self-improvement pass complete for batch batch-20260618-081414: peak demand 8 exceeded capacity 2 at 100% success → raise max_workers to 3; success 100% ≥95% → raise routing threshold to 0.6 (more triage on cheap model, lower $)
+[2026-06-18T08:14:21] [orchestrator] demo batch complete — orchestrator shutting down cleanly
+[2026-06-18T08:14:21] [orchestrator] orchestrator stopped.

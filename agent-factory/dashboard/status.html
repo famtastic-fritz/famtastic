@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Agent Factory — Status</title>
+<meta http-equiv="refresh" content="3">
+<style>
+ body{font:14px/1.5 ui-monospace,Menlo,monospace;background:#0b0e14;color:#cbd5e1;margin:0;padding:24px}
+ h1{color:#e2e8f0;font-size:20px;margin:0 0 4px} .sub{color:#64748b;margin-bottom:20px}
+ .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+ .card{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:14px}
+ .k{color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+ .v{color:#f1f5f9;font-size:26px;font-weight:600;margin-top:4px}
+ .good{color:#34d399} .warn{color:#fbbf24} table{width:100%;border-collapse:collapse}
+ th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #1f2937;font-size:13px}
+ th{color:#64748b;font-weight:500} .pill{padding:2px 8px;border-radius:999px;font-size:11px}
+ .working{background:#064e3b;color:#34d399} .idle{background:#1e293b;color:#94a3b8}
+ .retired{background:#3f1d2e;color:#fb7185} .spawned{background:#1e3a5f;color:#60a5fa}
+</style></head><body>
+<h1>🏭 Agent Factory — Live Status</h1><div class="sub">updated 2026-06-18T08:14:21 · auto-refresh 3s · sandboxed</div>
+<div class="grid">
+ <div class="card"><div class="k">Queue depth</div><div class="v">0</div></div>
+ <div class="card"><div class="k">Active agents</div><div class="v">0</div></div>
+ <div class="card"><div class="k">Tasks done</div><div class="v good">8</div></div>
+ <div class="card"><div class="k">Failed</div><div class="v good">0</div></div>
+ <div class="card"><div class="k">Success rate</div><div class="v">100%</div></div>
+ <div class="card"><div class="k">Total cost</div><div class="v">$0.01223</div></div>
+ <div class="card"><div class="k">Avg latency</div><div class="v">187ms</div></div>
+ <div class="card"><div class="k">Max workers</div><div class="v">3</div></div>
+</div>
+<h3 style="color:#94a3b8">Worker agents</h3>
+<table><tr><th>worker</th><th>pid</th><th>status</th><th>tasks</th><th>last seen</th></tr>
+<tr><td>batch-20260618-081414-w1</td><td>4638</td><td><span class='pill retired'>retired</span></td><td>3</td><td>2026-06-18T08:14:19</td></tr><tr><td>batch-20260618-081414-w2</td><td>4639</td><td><span class='pill retired'>retired</span></td><td>5</td><td>2026-06-18T08:14:19</td></tr></table>
+<h3 style="color:#94a3b8;margin-top:24px">Recent tasks</h3>
+<table><tr><th>id</th><th>type</th><th>status</th><th>model</th><th>cost</th><th>latency</th></tr>
+<tr><td>8</td><td>summarize</td><td>done</td><td>cheap/triage-haiku</td><td>$0.00016</td><td>128ms</td></tr><tr><td>7</td><td>summarize</td><td>done</td><td>cheap/triage-haiku</td><td>$0.00016</td><td>128ms</td></tr><tr><td>6</td><td>classify</td><td>done</td><td>cheap/triage-haiku</td><td>$0.00015</td><td>128ms</td></tr><tr><td>5</td><td>classify</td><td>done</td><td>cheap/triage-haiku</td><td>$0.00015</td><td>128ms</td></tr><tr><td>4</td><td>personalize</td><td>done</td><td>cheap/triage-haiku</td><td>$0.00015</td><td>128ms</td></tr><tr><td>3</td><td>personalize</td><td>done</td><td>cheap/triage-haiku</td><td>$0.00015</td><td>128ms</td></tr><tr><td>2</td><td>proposal</td><td>done</td><td>mid/sonnet</td><td>$0.00178</td><td>248ms</td></tr><tr><td>1</td><td>business_model</td><td>done</td><td>strong/opus</td><td>$0.00953</td><td>478ms</td></tr></table>
+</body></html>
