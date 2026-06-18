@@ -95,13 +95,40 @@ Artifacts to inspect: `deliverables/*.md`, `logs/ORCHESTRATOR.log`,
 
 ---
 
+## Iteration 2 — real PayPal invoice DRAFTS (you chose #3)
+Added a real PayPal Invoicing v2 integration that creates **draft invoices
+only** — drafts are never sent, no customer is notified, and no money moves.
+
+- **`paypal.py`** — builds a valid Invoicing v2 invoice body and (in live mode)
+  does OAuth2 + `POST /v2/invoicing/invoices`, which creates an invoice with
+  status **DRAFT**. There is deliberately **no** `/send`, capture, payout,
+  refund, or subscription code in the file — the most it can do is leave a draft
+  for you to review and send by hand. Defaults to the PayPal **sandbox** host.
+- **`actions.py`** — a dispatch layer for side-effecting "action" tasks (vs.
+  text deliverables). `paypal_invoice_draft` is the first action.
+- **`factory_lib.py`** — action tasks bypass model routing, carry their own
+  label (`paypal/invoicing-v2-draft`), and record **$0** cost; everything else
+  (queue, workers, dashboard, self-improvement, sandbox guardrail) is unchanged.
+- **Triple-guarded:** real drafts are created only when `config.paypal_live` is
+  true **and** `FACTORY_LIVE_PAYPAL=true` **and** both credentials are present.
+  Offline (the default), it's stubbed and writes the exact request body to
+  `deliverables/invoices/`.
+
+**Proof:** a re-run seeded 12 tasks (added two `paypal_invoice_draft` tasks — the
+$500 diagnostic invoice and a $1,750 build deposit). Both processed at $0 cost,
+mode STUB, producing valid draft payloads in `deliverables/invoices/*.json`
+plus human-readable summaries. 12/12 done, 100% success, total model cost
+$0.0769. To create real drafts: see the PayPal section in `SETUP.md`.
+
+---
+
 ## Three questions (only things that change the NEXT iteration)
-1. **Live model wiring:** do you want me to actually enable the OpenRouter POST
-   (real spend, behind a per-batch budget cap) in the next iteration, or keep it
-   stubbed until you've added your key yourself?
-2. **Real task source:** which inbound should feed the queue first — Upwork/job
-   scraping, an email-reply poller, or the FAMtastic site-studio build events?
-   That decides the first real ingestion adapter I build.
-3. **Payment rail depth:** should the next iteration generate *real* PayPal
-   invoice drafts via the PayPal API (still no auto-charge — drafts only for your
-   approval), or keep payment strictly as document templates as it is now?
+*(#3 from the last round is now built — PayPal drafts.)*
+1. **PayPal credentials:** drop sandbox Client ID/Secret into `.env` so I can
+   prove a **real** draft lands in your PayPal sandbox, then flip `PAYPAL_ENV=live`
+   for production? Without creds it stays stubbed.
+2. **Live model wiring:** enable the real OpenRouter POST (real spend, behind the
+   per-batch budget cap), or keep it stubbed until you add your key?
+3. **Real task source:** which inbound feeds the queue first — Upwork/job
+   scraping, an email-reply poller, or FAMtastic site-studio build events? That
+   decides the first real ingestion adapter I build.

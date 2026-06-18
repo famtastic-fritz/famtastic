@@ -67,7 +67,29 @@ write path into the queue. Point any source at it:
 - the FAMtastic site studio emitting build tasks,
 - an inbox poller turning replies into `triage` tasks.
 
-## Payment / email credentials
-`PAYPAL_*` and `GODADDY_*` in `.env` are consumed **only as text** by the
-deliverable generators (so the generated business docs are ready to use). The
-factory never calls a payment API and never moves money — see `SANDBOX.md`.
+## PayPal invoice DRAFTS (real API, drafts only) — optional
+The `paypal_invoice_draft` task type creates **draft** invoices via PayPal
+Invoicing v2. A draft is never sent and never charges anyone — see `paypal.py`
+(there is no send/charge code). Offline it's stubbed and writes the exact request
+body to `deliverables/invoices/`. To create **real drafts** in your PayPal
+account:
+1. Create a REST app at https://developer.paypal.com/dashboard/applications →
+   get a **Client ID** and **Secret**. Start with **Sandbox** credentials.
+2. In `.env`:
+   ```
+   PAYPAL_CLIENT_ID=...
+   PAYPAL_CLIENT_SECRET=...
+   PAYPAL_BUSINESS_EMAIL=you@yourbiz.com
+   PAYPAL_ENV=sandbox          # switch to live only when you're ready
+   FACTORY_LIVE_PAYPAL=true
+   ```
+3. In `config.json` set `"paypal_live": true`.
+Both flags + both credentials must be present, or it stays stubbed. The code
+calls **only** `POST /v2/invoicing/invoices` (create = status DRAFT). After a
+run, review the drafts in your PayPal dashboard and send them yourself. Going
+from sandbox to live is a single `PAYPAL_ENV=live` change.
+
+## Other payment / email credentials
+Remaining `PAYPAL_*` and `GODADDY_*` values in `.env` are consumed **only as
+text** by the deliverable generators (so the generated business docs are ready to
+use). The factory never moves money — see `SANDBOX.md`.

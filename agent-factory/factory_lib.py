@@ -8,6 +8,7 @@ import json
 import re
 import time
 
+import actions
 import queue_db
 import router
 from deliverables import generate
@@ -32,12 +33,29 @@ def process_claimed(task_id: int, worker_id: str) -> dict:
     payload = json.loads(task.get("payload") or "{}")
 
     try:
-        # 1. Route to the cheapest capable model.
-        decision = router.route(task)
-
-        # 2. Produce the deliverable (this is the "model output").
         t0 = time.time()
-        content = generate(task["type"], payload, task["title"])
+
+        if actions.is_action(task["type"]):
+            # Action task: side-effecting (e.g. PayPal draft). No model routing;
+            # it carries its own model label, mode, and (zero) cost.
+            handled = actions.ACTIONS[task["type"]](payload, task)
+            content = handled["content"]
+            call = {
+                "model": handled["model"], "mode": handled["mode"],
+                "input_tokens": 0, "output_tokens": 0,
+                "cost_usd": handled["cost_usd"],
+            }
+            tier = "action"
+            reason = f"action handler: {task['type']} ({handled['mode']})"
+        else:
+            # 1. Route to the cheapest capable model.
+            decision = router.route(task)
+            tier, reason = decision["tier"], decision["reason"]
+            # 2. Produce the deliverable (this is the "model output").
+            content = generate(task["type"], payload, task["title"])
+            prompt = f"TASK: {task['title']}\nTYPE: {task['type']}\nPAYLOAD: {payload}"
+            call = router.call_model(decision["model"], prompt, content)
+
         elapsed = time.time() - t0
 
         # 3. Write deliverable inside the sandbox.
@@ -46,9 +64,7 @@ def process_claimed(task_id: int, worker_id: str) -> dict:
         assert_inside(out_path)
         out_path.write_text(content, encoding="utf-8")
 
-        # 4. Account for cost as if it were a real model call.
-        prompt = f"TASK: {task['title']}\nTYPE: {task['type']}\nPAYLOAD: {payload}"
-        call = router.call_model(decision["model"], prompt, content)
+        # 4. Account for cost (zero for actions, estimated for model calls).
         cumulative = router.record_cost(task["id"], task["type"], call)
 
         # 5. Mark done.
@@ -61,13 +77,13 @@ def process_claimed(task_id: int, worker_id: str) -> dict:
             "task_id": task["id"],
             "worker_id": worker_id,
             "model": call["model"],
-            "tier": decision["tier"],
+            "tier": tier,
             "mode": call["mode"],
             "cost_usd": call["cost_usd"],
             "cumulative_usd": cumulative,
             "latency_s": round(elapsed, 3),
             "deliverable": str(out_path.relative_to(DELIVERABLES_DIR.parent)),
-            "routing_reason": decision["reason"],
+            "routing_reason": reason,
         }
     except Exception as exc:  # noqa: BLE001 - workers must fail gracefully
         queue_db.fail_task(task["id"], str(exc))

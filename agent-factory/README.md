@@ -21,6 +21,7 @@ python3 run.py
 | Self-scheduling | `scheduler.py` | in-process adaptive cadence by queue depth — **never the OS crontab** |
 | Model routing / cost | `router.py` + `models.py` | cheapest capable model per task; ledger in `logs/COSTS.log` |
 | Self-improvement | `self_improve.py` | reviews each batch, tunes `config.json` within hard bounds, writes `LEARNINGS.md` |
+| Action tasks | `actions.py` + `paypal.py` | side-effecting tasks; **PayPal invoice DRAFTS only** (never sent, never charged), stubbed offline |
 | Observability | `dashboard.py` → `dashboard/index.html` | live status: agents, queue depth, throughput, cost |
 
 ## The proof job
@@ -40,6 +41,8 @@ agent-factory/
 ├── worker_template.py     # template the orchestrator mints workers from
 ├── factory_lib.py         # shared worker processing logic
 ├── deliverables.py        # the actual work products (the proof)
+├── actions.py             # side-effecting action tasks (dispatch)
+├── paypal.py              # PayPal Invoicing v2 — DRAFT-ONLY (no send/charge)
 ├── self_improve.py        # bounded self-tuning loop
 ├── dashboard.py           # terminal + static HTML observability
 ├── seed_tasks.py          # injects sample/proof tasks

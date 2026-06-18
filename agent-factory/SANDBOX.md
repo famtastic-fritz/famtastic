@@ -36,7 +36,14 @@ path escapes the sandbox — a runtime guardrail, not just a convention.
 - Even when a key *is* present, the default config keeps `live_calls: false` so
   nothing is spent until you explicitly opt in (see `SETUP.md`).
 - The cost ledger (`logs/COSTS.log`) tracks **estimated** dollars only. No
-  invoice, charge, payment, or transfer is ever executed by this system.
+  charge, payment, or transfer is ever executed by this system.
+- The PayPal integration (`paypal.py`) can create **DRAFT invoices only**. A
+  draft is an unsent document — PayPal does not notify or charge anyone for it.
+  The module contains **no send/capture/payout/refund/subscription code at all**;
+  the only thing it can ever leave behind is a draft sitting in your account,
+  waiting for *you* to review and send manually. It is stubbed offline by default
+  and only touches PayPal when credentials + two opt-in flags are set, and
+  defaults to the PayPal **sandbox** host even then.
 
 ## Self-scheduling stays inside the process
 

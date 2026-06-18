@@ -47,6 +47,25 @@ EXTRA_TASKS = [
     ("summary", "Summarize first-batch reply rates", 6, 0.45, {}),
 ]
 
+# ACTION tasks: create DRAFT PayPal invoices (never sent, never charged).
+# These exercise the real Invoicing v2 integration end-to-end (stub offline).
+ACTION_TASKS = [
+    ("paypal_invoice_draft",
+     "Draft invoice: Checkout Rescue Diagnostic", 1, 0.4,
+     {"recipient_name": "Sample Merchant", "recipient_email": "merchant@example.com",
+      "item_name": "Checkout Rescue Diagnostic — 48h", "quantity": 1,
+      "unit_amount": 500, "currency": "USD",
+      "note": "48-hour checkout/funnel diagnostic. Credited toward the fix if you hire within 7 days.",
+      "due": "DUE_ON_RECEIPT"}),
+    ("paypal_invoice_draft",
+     "Draft invoice: FAMtastic Signature build (50% deposit)", 2, 0.4,
+     {"recipient_name": "Sample Agency", "recipient_email": "agency@example.com",
+      "item_name": "FAMtastic Signature build — 50% deposit", "quantity": 1,
+      "unit_amount": 1750, "currency": "USD",
+      "note": "Deposit to start. Remaining 50% due on approval before deploy.",
+      "due": "DUE_ON_RECEIPT"}),
+]
+
 
 def seed(include_extra: bool = True) -> list[int]:
     queue_db.init_db()
@@ -54,7 +73,7 @@ def seed(include_extra: bool = True) -> list[int]:
     for t in PROOF_TASKS:
         ids.append(queue_db.add_task(t[0], t[1], t[4], t[2], t[3]))
     if include_extra:
-        for t in EXTRA_TASKS:
+        for t in EXTRA_TASKS + ACTION_TASKS:
             ids.append(queue_db.add_task(t[0], t[1], t[4], t[2], t[3]))
     return ids
 
