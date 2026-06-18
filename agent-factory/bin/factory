@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Agent Factory CLI — single entrypoint for every operation.
+
+Usage:
+  ./bin/factory seed [--reset]      seed the queue with sample work
+  ./bin/factory run [--max-cycles N]  run the orchestrator (batch mode, self-terminating)
+  ./bin/factory once                run a single orchestrator cycle
+  ./bin/factory daemon              run the orchestrator forever (Ctrl-C to stop)
+  ./bin/factory worker --worker-id w1 [--drain]   run one worker manually
+  ./bin/factory status              terminal dashboard
+  ./bin/factory dashboard --html    terminal dashboard + write public/dashboard.html
+  ./bin/factory demo                seed --reset, run, then write the HTML dashboard
+"""
+import os
+import sys
+
+# Make the package importable regardless of CWD.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(__doc__)
+        return 2
+    cmd, rest = sys.argv[1], sys.argv[2:]
+
+    if cmd == "seed":
+        from factory import seed
+        n = seed.seed(reset="--reset" in rest)
+        from factory import db
+        print(f"Seeded {n} tasks. Queue depth: {db.queue_depth()}")
+        return 0
+
+    if cmd in ("run", "once", "daemon"):
+        from factory import orchestrator
+        argv = []
+        if cmd == "once":
+            argv = ["--once"]
+        elif cmd == "daemon":
+            argv = ["--daemon"]
+        else:
+            argv = rest  # allow --max-cycles N
+        return orchestrator.main(argv)
+
+    if cmd == "worker":
+        from factory import worker
+        return worker.main(rest)
+
+    if cmd in ("status", "dashboard"):
+        from factory import dashboard
+        return dashboard.main(rest if cmd == "dashboard" else [])
+
+    if cmd == "demo":
+        from factory import seed, orchestrator, dashboard, db
+        seed.seed(reset=True)
+        print(f"[demo] seeded {db.queue_depth()} tasks\n")
+        orchestrator.main([])  # batch mode, self-terminating
+        print("\n" + dashboard.terminal())
+        dashboard.main(["--html"])
+        return 0
+
+    print(f"Unknown command: {cmd}\n{__doc__}")
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
