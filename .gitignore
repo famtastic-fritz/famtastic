@@ -114,3 +114,4 @@ scripts/Screenshot*
 
 # Autopilot runtime ledgers mirrored into the data-center
 data-center/ledgers/autopilot-*.jsonl
+/lucid/

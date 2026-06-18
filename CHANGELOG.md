@@ -146,3 +146,13 @@ Built a 3-page responsive celebration + future-dev site for Jamari Anthony Jacqu
 ## 2026-06-16 — Proactive briefing ranking + private review surface
 
 Tightened the proactive Shay loop by ranking a morning-brief subset inside `obsidian/Shay-Memory/_system/proactive_os.py`, adding `private-review.json` output from `reflect.py`, and wiring `scripts/command-center/build-command-center.js` to show a protected private-context review section alongside the public brief. Added verification coverage for ranking/private-review behaviors, cleaned generated Command Center artifacts to pass `git diff --check`, and regenerated the live reflection + dashboard outputs. Remaining gap: ranked focus still overweights some older reseller-history decision packets, and the private review surface is display-only until approve/suppress actions exist downstream.
+
+## 2026-06-18 — Lucid: dream interpretation app (intake → autonomous build)
+Ran the intake-and-build flow: interviewed to a spec (SPEC.md), then built
+"Lucid", a private single-user dream-interpretation app, in an isolated sandbox
+at ./lucid/ with its own git repo. Zero-dependency Node: layered capture
+(type/guided/voice-stub), a real elicit→clarify→interpret conversational flow
+backed by an offline symbol interpreter (LLM seam stubbed for later), a local
+JSON journal, and cross-dream pattern surfacing. 13/13 tests pass and the server
+was verified live over HTTP. Sandbox is self-contained (gitignored from this
+repo); only SPEC.md, .gitignore, CHANGELOG, and the session note land on the branch.
