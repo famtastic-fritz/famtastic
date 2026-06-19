@@ -8,6 +8,89 @@ permalink: shay-memory/repo-docs/site-learnings
 
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-19 — Shay intelligence control-plane loop closed the first anti-drift circuit
+
+The normalizer was not enough by itself; recurring findings still needed proof-backed mutation, garbage-row cleanup, and a stop condition so the loop could improve state without thrashing forever. Added `scripts/intelligence/build_proof_closeout.py`, `cleanup_gap_rows.py`, `pre_research_guard.py`, `run_control_plane_pass.py`, and `control_plane_loop.py`, plus the runtime artifacts `proof-closeout.latest.{md,json}`, `gap-cleanup.latest.{md,json}`, `control-plane-runtime-plan.md`, `control-plane-pass-history.jsonl`, and `control-plane-loop.latest.json` under `obsidian/01-Shay-Platform/intelligence-audits/`.
+
+### Verified
+- `python3 scripts/intelligence/build_proof_closeout.py` auto-mutated proof-backed findings into the live ledgers and marked the existing video-background capability as verified based on real repo paths (`components/video-hero/component.json`, `components/library.json`, `site-studio/lib/famtastic-skeletons.js`).
+- `python3 scripts/intelligence/cleanup_gap_rows.py` reclassified the 4 previously unmatched garbage rows into canonical buckets, including new systemic buckets for `media-prompt-handoff`, `client-brief-mislogged-as-gap`, and `priority-interrupt-mislogged-as-gap`.
+- `python3 scripts/intelligence/run_control_plane_pass.py` and `python3 scripts/intelligence/control_plane_loop.py 20` now produce pass history, update the runtime plan, and stop honestly at `only_minor_left` once no major mutations remain.
+- `site-studio/lib/gap-logger.js` now checks canonical bucket aliases before logging, so duplicate malformed gap rows are less likely to reopen the same problem under slightly different phrasing.
+
+### Known Gaps opened
+- Repo verdicts are now linked into the control-plane loop, but they are still advisory candidate evidence rather than final adoption truth; no repo is auto-landed into capability state yet.
+- The control-plane scripts are runnable and loop-safe, but they are not yet scheduled through cron or wired to backlog opening / Kanban creation.
+- `FAMTASTIC-STATE.md` and related truth docs now name the control-plane slice, but the broader research/promotions/capability system is still only partially auto-reconciled.
+
+## 2026-06-19 — Shay solution-map normalization turned raw gap prose into canonical buckets
+
+The audit surface alone was not enough; it still left malformed gap rows and repeated themes stranded as prose. Added `scripts/intelligence/normalize_solution_map.py`, which reads `~/.local/share/famtastic/gaps.jsonl` and `obsidian/01-Shay-Platform/intelligence-audits/latest-solution-map-audit.json`, then writes canonical problem buckets to `obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.{md,json}` and bootstraps the missing `~/.local/share/famtastic/intelligence-promotions.json` ledger. The first live normalization produced 7 problem buckets and 5 promoted findings, which is the first time these recurring problems have existed as a reusable connection layer instead of scattered notes.
+
+### Verified
+- `python3 scripts/intelligence/normalize_solution_map.py` generated `problem-buckets.latest.md`, `problem-buckets.latest.json`, and `~/.local/share/famtastic/intelligence-promotions.json`.
+- The first normalized buckets include `godaddy-cpanel-access`, `jj-ba-brief-shaping`, `research-promotion-ledger`, `video-background`, `shay-desk-ui-kinks`, `platform-conversation-context`, and `billing-usage-visibility`.
+- The first promotion ledger pass created 5 pending findings from normalized buckets, restoring the missing truth surface that earlier docs had assumed existed.
+
+### Known Gaps opened
+- The normalizer does not yet write canonical `bucket_id` values back into source gap rows, so the underlying `gaps.jsonl` file remains partially malformed.
+- Promotion creation is now real, but backlog opening, capability-closeout mutation, and proof-state reconciliation are still separate/manual layers.
+- Bucket scoring is still heuristic and heavily influenced by repeated-note counts from the audit, so it is useful for prioritization but not yet a final source of truth by itself.
+
+## 2026-06-19 — Shay solution-map audit exposed truth-surface fragmentation and temporal disconnect drift
+
+Built a first-pass Shay-native audit surface that scans June commits, `CHANGELOG.md`, `SITE-LEARNINGS.md`, `FAMTASTIC-STATE.md`, `.wolf/buglog.json`, `.wolf/memory.md`, the live gap ledger, bookmark intake, curator notes, gap-research notes, and repo-intelligence artifacts into one connected synthesis. The new script `scripts/intelligence/build_solution_map.py` emits canonical markdown + JSON artifacts under `obsidian/01-Shay-Platform/intelligence-audits/`, with separated observations, interpretations, missed synergies, anti-drift rules, and next-build modules so future sessions stop re-researching the same problem from scratch.
+
+### Verified
+- `python3 scripts/intelligence/build_solution_map.py` generated `obsidian/01-Shay-Platform/intelligence-audits/solution-map-audit-2026-06-19-1240.md` plus the matching `.json`, and refreshed `latest-solution-map-audit.md` / `.json`.
+- The first live audit found 384 June commits, 84 repo-intelligence artifacts, 17 repo-intelligence report batches, 13 still-open gap rows, and only 1 row in `obsidian/Shay-Memory/research/_ledger/research-artifacts.jsonl`.
+- The generated audit explicitly surfaced repeated unresolved themes already scattered across the truth surfaces: GoDaddy/cPanel routing, JJ BA brief shaping, video-background proof vs capability confusion, and the still-missing `intelligence-promotions.json` ledger.
+
+### Known Gaps opened
+- The audit is currently read-only and heuristic. It does not yet write normalized problem buckets back into the gap ledger, promotion ledger, or capability-truth surfaces.
+- Repo-intelligence artifacts still mostly answer discovery metadata (`what repos exist`) rather than adoption truth (`which repo solves which FAMtastic problem and what proof closed it`).
+- The live gap ledger remains weakly normalized; malformed capability IDs still exist and need a canonical problem-bucket layer.
+
+## 2026-06-19 — Shay intelligence control plane needs executable truth surfaces, not doctrine-only plans
+
+The overnight control-plane slice proved the right shape for this class of work: doctrine alone was not enough, and the implementation became trustworthy only after the control-plane concepts were surfaced as real CLI outputs, telemetry schema, and tests. `shay-shay/shay_cli/intelligence_control_plane.py` now acts as the executable truth layer for module ownership, provider/model routing facts, agent templates, worker instantiation, memory/truth surfaces, route telemetry scorecards, and route explanations. The practical lesson is load-bearing: if Shay is supposed to govern agents, models, providers, and memory with evidence, those control-plane objects must exist as inspectable artifacts and command surfaces, not just prose in planning docs.
+
+### Verified
+- `shay-shay/shay_cli/intelligence_control_plane.py` defines explicit module boundaries, registries, and route-explanation helpers.
+- `shay-shay/shay_cli/intelligence_cmd.py` + `shay-shay/shay_cli/main.py` now expose `shay intelligence control-plane modules|providers|templates|memory|scorecards|explain`.
+- `shay-shay/agent/process_intelligence.py` now captures route/template/provider/review telemetry fields needed for evidence-backed evaluation.
+- `python -m pytest tests/test_intelligence_layer.py tests/agent/test_process_intelligence.py -o addopts=''` passed, and live CLI runs for `control-plane modules/providers/explain` returned grounded output.
+
+### Known Gaps opened
+- The routing engine still chooses from seeded heuristics and observed scorecards; it does not yet learn closed-loop policy from accumulated outcomes.
+- Cheap reviewer-lane subagents failed twice to return usable adversarial review, which reinforces the doctrine that reviewer separation alone is not enough if the routed reviewer model cannot ground itself in the artifacts.
+
+## 2026-06-18 — Shay prompt-memory target tightened under 2k
+
+Tightened the live Shay prompt-memory footprint so the always-injected layer matches Fritz's intended design instead of drifting roomy-by-default. The live runtime config at `~/.shay/config.yaml` now sets `memory.memory_char_limit: 1000` and `memory.user_char_limit: 900`, and the active bounded files `~/.shay/memories/MEMORY.md` plus `USER.md` were compacted to fit under roughly 2k combined. Matching truth updates landed in `shay-shay/docs/memory-flow-audit-2026-06-18.md`, `shay-shay/docs/shay-memory-hierarchy.md`, and `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so future sessions stop repeating the older ~4k guidance.
+
+### Verified
+- Live config now reads `memory_char_limit: 1000` and `user_char_limit: 900`.
+- Current bounded prompt-memory files total under 2k combined.
+- Spillover path remains the long-detail outlet; this change shrinks the injected layer, not the broader memory fabric.
+
+# FAMtastic Ecosystem — Site Learnings
+
+## Scram-line brief default + telemetry split (2026-06-18)
+
+Changed the default human-facing planning surface from the more verbose simple brief shape to an ultra-brief resumable “scram-line” format. `plans/templates/simple-brief-template-v1.md` now defines the default brief as `Title`, `Purpose`, `Goal`, checkbox `Tasks`, `Status`, `Started`, `Ended`, `Execution`, `Research`, `Review`, `Skills`, optional `Blocked By`, and `Proof`, with exact spacing rules: one blank line after `Goal`, one blank line after the last task, and one blank line before `Proof`. The richer orchestration fields that were previously shown inline now live where they belong: telemetry, ledgers, research artifacts, review artifacts, and the heavier control-plane packet when a task actually needs it.
+
+The common-knowledge surfaces were updated to match: `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md` now all state that the scram-line brief is the default human-facing surface and that checkbox tasks are the resumability layer. The heavier `fam-hub plan template` / `plan validate` packet still exists, but it is now explicitly framed as a separate control-plane artifact rather than the default way to show a plan to Fritz.
+
+### Verified
+- `plans/templates/simple-brief-template-v1.md` now carries the scram-line default brief format and filled example.
+- `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md` now describe the scram-line brief as the default human-facing plan surface.
+- The template notes now explicitly say rich execution/orchestration detail belongs in telemetry and related artifacts, not the default brief.
+
+### Known Gaps opened
+- `fam-hub` still does not expose the scram-line brief as a first-class command surface; the rule is documented, but brief generation still depends on agent discipline.
+- There is still no dedicated validator for the scram-line brief shape, so exact field/spacing consistency is doctrine-driven rather than schema-enforced.
+
 ## Shay Desktop + Workspace surface-map cutover (2026-06-17)
 
 Cut the live local Shay app stack over so both `/Applications/Shay Desktop.app` and `/Users/famtasticfritz/Desktop/Shay Desktop.app` now launch the rebuilt desktop bundle against `/Users/famtasticfritz/.shay`, using `/Users/famtasticfritz/.local/bin/shay` from `/Users/famtasticfritz/famtastic/shay-shay` as the runtime source. `~/.hermes/hermes-agent/apps/desktop/electron/main.cjs` now honors an injected dashboard session token and preferred port `9120`, which let the Desktop-hosted dashboard become a stable surface for other local apps instead of a moving target. `/Users/famtasticfritz/Desktop/Shay Workspace.app` was rewired to the same runtime by setting `HERMES_HOME`, `HERMES_API_URL=http://127.0.0.1:8642`, `HERMES_DASHBOARD_URL=http://127.0.0.1:9120`, and a shared dashboard token in its app environment, then patching its local `electron/main.cjs` so dashboard health checks send that token. Added the durable truth doc `shay-shay/docs/shay-surface-map-2026-06-17.md` and updated `shay-shay/web/README.md` plus `shay-shay/website/docs/user-guide/features/web-dashboard.md` so the live local surface map is explicit: Desktop-hosted dashboard on `9120` is primary, standalone `shay dashboard` on `9119` is optional.

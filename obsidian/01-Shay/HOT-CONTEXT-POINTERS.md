@@ -14,6 +14,7 @@ permalink: famtastic/01-shay/hot-context-pointers
 
 ## Active Tasks
 
+- [ ] **Hosting surface audit + production remediation checkpoint (2026-06-19)** — Audit and production-fix plan completed in `~/famtastic/plans/hosting-surface-audit-and-production-remediation-2026-06-19.md`. Verified current truth: `famtasticinc.com`, `famtastichosting.com`, `famtasticthoughts.com`, and `api.mbsh96reunion.com` resolve to `107.180.51.234`; `famtasticdesigns.com` resolves to `132.148.233.159` and still serves Drupal 10; `mbsh96reunion.com` is on Netlify. `famtastichosting.com` is serving live content directly (not an active host-level forward). Current blocker before cutover: no verified authenticated write path yet to the real `132.148.233.159` hosting surface for `famtasticdesigns.com`.
 - [ ] **FAMtasticHosting facelift** — 7-page branded marketing site on famtasticHosting.com. store.famtastichosting.com already handles purchases. Products toggled from 404 → live on reseller side. Static HTML → Astro → Node.js only if dashboard needed.
 - [ ] **JJ BA Transport** — PERSONAL PRIORITY. Fritz promised a site. Output was embarrassingly basic, never pushed live. Friend probably thinks Fritz forgot. REPUTATION + RELATIONSHIP on the line. Pipeline proof candidate after Hosting validates.
 - [ ] **MBSH visual finalization** — mbsh96reunion.com is live but needs design finishing, Hi-Tide Harry, and promotion start.

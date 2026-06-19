@@ -82,6 +82,15 @@ Primary stressor remains income uncertainty, amplified by irregular NIBS cadence
 - spades app
 - Shay body/voice/desktop expansion
 
+## Control-plane findings
+- latest pass: control-plane-pass-20260619-180223
+- generated: 2026-06-19T22:02:23.880391+00:00
+- status: minor-only drift (1)
+- major findings: none
+- minor findings:
+  - repo_verdicts linked 4 problem buckets
+- morning briefing impact: no urgent control-plane intervention required
+
 ## Latest-briefing command behavior
 If asked in a new session:
 - "show me my latest briefing" -> return this file first

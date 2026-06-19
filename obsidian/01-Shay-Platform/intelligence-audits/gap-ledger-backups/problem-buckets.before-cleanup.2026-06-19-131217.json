@@ -1,0 +1,344 @@
+{
+  "generated_at": "2026-06-19T17:12:16.976355+00:00",
+  "source_paths": [
+    "/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl",
+    "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/latest-solution-map-audit.json"
+  ],
+  "bucket_count": 10,
+  "buckets": [
+    {
+      "bucket_id": "jj-ba-brief-shaping",
+      "title": "JJ BA brief shaping drift",
+      "problem_type": "briefing_gap",
+      "aliases": [
+        "jj ba",
+        "jjba",
+        "transport"
+      ],
+      "recommended_action": "Convert recurring JJ BA understanding into a tight resumable brief instead of rediscovering it in prose.",
+      "gap_ids": [],
+      "site_tags": [],
+      "source_evidence": [
+        {
+          "kind": "audit_repeat",
+          "names": [
+            "JJ BA",
+            "brief/task shaping"
+          ],
+          "strength": 320
+        }
+      ],
+      "frequency": 320,
+      "status": "open"
+    },
+    {
+      "bucket_id": "godaddy-cpanel-access",
+      "title": "GoDaddy/cPanel access and routing",
+      "problem_type": "execution_routing_gap",
+      "aliases": [
+        "godaddy",
+        "cpanel",
+        "dns",
+        "reseller",
+        "proactive-gap-escalation-order"
+      ],
+      "recommended_action": "Split vendor access, DNS operations, reseller recovery, and escalation order into separate proof-backed tracks.",
+      "gap_ids": [
+        "gap-1781840661232"
+      ],
+      "site_tags": [
+        "SHAY"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1781840661232",
+          "capability_id": "proactive-gap-escalation-order",
+          "message_preview": "Escalated GoDaddy/cPanel access uncertainty to Fritz before exhausting internal capability surfaces ",
+          "site_tag": "SHAY"
+        },
+        {
+          "kind": "audit_repeat",
+          "names": [
+            "GoDaddy/cPanel"
+          ],
+          "strength": 140
+        }
+      ],
+      "frequency": 141,
+      "status": "open"
+    },
+    {
+      "bucket_id": "research-promotion-ledger",
+      "title": "Missing intelligence promotions ledger",
+      "problem_type": "truth_surface_gap",
+      "aliases": [
+        "intelligence-promotions.json",
+        "promotion ledger",
+        "promotion-state gap"
+      ],
+      "recommended_action": "Maintain a live intelligence-promotions ledger and use it as the canonical surfaced-finding store between gaps and backlog.",
+      "gap_ids": [],
+      "site_tags": [],
+      "source_evidence": [
+        {
+          "kind": "audit_repeat",
+          "names": [
+            "promotion ledger"
+          ],
+          "strength": 14
+        }
+      ],
+      "frequency": 14,
+      "status": "open"
+    },
+    {
+      "bucket_id": "video-background",
+      "title": "Video background capability",
+      "problem_type": "capability_unproven",
+      "aliases": [
+        "video_background_option",
+        "video_background_support",
+        "video background",
+        "video hero",
+        "video-hero"
+      ],
+      "recommended_action": "Prove or close the existing video-hero path before opening new research/build loops.",
+      "gap_ids": [
+        "gap-1776369640701",
+        "gap-1776434415654"
+      ],
+      "site_tags": [
+        "site-altitude"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1776369640701",
+          "capability_id": "video_background_option",
+          "message_preview": "we need a video background option",
+          "site_tag": "site-altitude"
+        },
+        {
+          "kind": "gap",
+          "id": "gap-1776434415654",
+          "capability_id": "video_background_support",
+          "message_preview": "we need video background support",
+          "site_tag": "site-altitude"
+        },
+        {
+          "kind": "audit_repeat",
+          "names": [
+            "video background"
+          ],
+          "strength": 7
+        }
+      ],
+      "frequency": 9,
+      "status": "open"
+    },
+    {
+      "bucket_id": "platform-conversation-context",
+      "title": "Platform-conversation routing/context gap",
+      "problem_type": "routing_gap",
+      "aliases": [
+        "special_case_for_platfor_convos",
+        "platform convo",
+        "platform work",
+        "to_do_some_platform_work"
+      ],
+      "recommended_action": "Distinguish platform/orchestration conversations from site-build conversations before classifier or gap logging writes malformed capability rows.",
+      "gap_ids": [
+        "gap-1776800538513",
+        "gap-1776811219251",
+        "gap-1777583510324"
+      ],
+      "site_tags": [
+        "site-famtastic-com",
+        "site-mbsh96reunion"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1776800538513",
+          "capability_id": "to",
+          "message_preview": "no , were moving in the wrong direction for now. because these are things ideally shay shay should b",
+          "site_tag": "site-famtastic-com"
+        },
+        {
+          "kind": "gap",
+          "id": "gap-1776811219251",
+          "capability_id": "special_case_for_platfor_convos",
+          "message_preview": "umm , this context would make sense if I ws talking about a site.  Im actually talking about the pla",
+          "site_tag": "site-famtastic-com"
+        },
+        {
+          "kind": "gap",
+          "id": "gap-1777583510324",
+          "capability_id": "to_do_some_platform_work",
+          "message_preview": "ok ,  so we need to do some platform work",
+          "site_tag": "site-mbsh96reunion"
+        }
+      ],
+      "frequency": 3,
+      "status": "open"
+    },
+    {
+      "bucket_id": "shay-desk-ui-kinks",
+      "title": "Shay Desk UI friction",
+      "problem_type": "ux_gap",
+      "aliases": [
+        "text-area",
+        "new line",
+        "to_work_out_some_kinks_with_you",
+        "shay desk inter face"
+      ],
+      "recommended_action": "Group newline, textarea sizing, and Shay Desk interaction complaints into one UI-fix bucket.",
+      "gap_ids": [
+        "gap-1777582576350",
+        "gap-1777582815245",
+        "gap-1777582901183"
+      ],
+      "site_tags": [
+        "site-mbsh96reunion"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1777582576350",
+          "capability_id": "the_new_line_for_one._and_the_text-area_is_to_big.",
+          "message_preview": "I cant do the new line for one. and the text-area is to big. you should have been able to live see i",
+          "site_tag": "site-mbsh96reunion"
+        },
+        {
+          "kind": "gap",
+          "id": "gap-1777582815245",
+          "capability_id": "to_work_out_some_kinks_with_you",
+          "message_preview": "no, we need to work out some kinks with you.",
+          "site_tag": "site-mbsh96reunion"
+        },
+        {
+          "kind": "gap",
+          "id": "gap-1777582901183",
+          "capability_id": "to_add_this_now._the_orginal_task_isnt_done._we_ne",
+          "message_preview": "do we need to add this now. the orginal task isnt done. we need to fix shay desk inter face. and add",
+          "site_tag": "site-mbsh96reunion"
+        }
+      ],
+      "frequency": 3,
+      "status": "open"
+    },
+    {
+      "bucket_id": "billing-usage-visibility",
+      "title": "Billing and API-usage visibility",
+      "problem_type": "ops_gap",
+      "aliases": [
+        "track billing",
+        "api use",
+        "billing"
+      ],
+      "recommended_action": "Create a dedicated billing/usage tracking workstream instead of leaving it embedded in ad hoc prompts.",
+      "gap_ids": [
+        "gap-1777598801345"
+      ],
+      "site_tags": [
+        "site-mbsh96reunion"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1777598801345",
+          "capability_id": "to_be_able_to_track_billing._api_use._etc.._bt_lat",
+          "message_preview": "no , we need to be able to track billing. api use. etc.. bt later. for now. the proof on concept is ",
+          "site_tag": "site-mbsh96reunion"
+        }
+      ],
+      "frequency": 1,
+      "status": "open"
+    },
+    {
+      "bucket_id": "client-brief-mislogged-as-gap",
+      "title": "Client brief mislogged as platform gap",
+      "problem_type": "intake_gap",
+      "aliases": [
+        "family bakery",
+        "three pages",
+        "keep things simple, readable"
+      ],
+      "recommended_action": "Treat client/site briefs as intake artifacts, not capability gaps, and route them into brief/build surfaces before gap logging.",
+      "gap_ids": [
+        "gap-1777322469096"
+      ],
+      "site_tags": [
+        "site-crumb-and-crust-bakery"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1777322469096",
+          "capability_id": "site_for_our_family_bakery_\u2014_keep_things_simple,_r",
+          "message_preview": "We need a site for our family bakery \u2014 keep things simple, readable, nothing fancy \u2014 three pages.",
+          "site_tag": "site-crumb-and-crust-bakery"
+        }
+      ],
+      "frequency": 1,
+      "status": "open"
+    },
+    {
+      "bucket_id": "media-prompt-handoff",
+      "title": "Media prompt handoff routing gap",
+      "problem_type": "routing_gap",
+      "aliases": [
+        "leanardo ai",
+        "leonardo ai",
+        "send it to leanardo ai"
+      ],
+      "recommended_action": "Route external image/video prompt handoff requests into a dedicated media workflow instead of logging them as raw malformed capability prose.",
+      "gap_ids": [
+        "gap-1776738778051"
+      ],
+      "site_tags": [
+        "site-famtastic-com"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1776738778051",
+          "capability_id": "to_improve_the_process_i_uploaded_the_current_star",
+          "message_preview": "look I got this prompt from chatGpt , send it to leanardo Ai Im interested in seeing how it comes ou",
+          "site_tag": "site-famtastic-com"
+        }
+      ],
+      "frequency": 1,
+      "status": "open"
+    },
+    {
+      "bucket_id": "priority-interrupt-mislogged-as-gap",
+      "title": "Priority interrupt mislogged as capability gap",
+      "problem_type": "tasking_gap",
+      "aliases": [
+        "hold the discovery work",
+        "more immediate problem"
+      ],
+      "recommended_action": "When Fritz reprioritizes work mid-stream, treat it as a task-routing interrupt instead of a new capability gap row.",
+      "gap_ids": [
+        "gap-1777584660573"
+      ],
+      "site_tags": [
+        "site-mbsh96reunion"
+      ],
+      "source_evidence": [
+        {
+          "kind": "gap",
+          "id": "gap-1777584660573",
+          "capability_id": "hold_the_discovery_work._there's_a_more_immediate_",
+          "message_preview": "Hold the discovery work. There's a more immediate problem we have \nto solve first.\n\nFritz is experie",
+          "site_tag": "site-mbsh96reunion"
+        }
+      ],
+      "frequency": 1,
+      "status": "open"
+    }
+  ],
+  "unmatched_gap_rows": []
+}

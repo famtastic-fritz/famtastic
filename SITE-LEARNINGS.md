@@ -1,5 +1,75 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-19 — FAMtastic Designs deploy truth moved into the site repo and live GoDaddy cutover was documented
+
+FAMtastic Designs now has a project-local deploy truth surface instead of depending on session memory or old cPanel assumptions. Added `famtastic-sites/famtastic-designs/docs/DEPLOY-RUNBOOK.md` plus `famtastic-sites/famtastic-designs/.env.deploy.example`, updated `docs/DEPLOY-STATUS-2026-06-19.md` to reflect the real host (`p3plzcpnl497512.prod.phx3.secureserver.net` / account `xrdj7j99xhzt`), and recorded the live static cutover of `famtasticdesigns.com` into `/home/xrdj7j99xhzt/public_html` with backup `public_html_backup_20260619_130444`.
+
+### Verified
+- Live deploy truth now lives with the site repo, while secrets stay out of git via local `.env.deploy.local`.
+- The runbook names the real Designs host, docroot, build output, backup convention, smoke-test URLs, and rollback steps.
+- `docs/DEPLOY-STATUS-2026-06-19.md` no longer falsely describes the live site as still serving old Drupal.
+
+### Known Gaps opened
+- The repo now has deploy documentation, but not yet a committed one-command deploy script for this site.
+- Older planning/handoff docs inside the site repo may still contain stale Vercel-first or pre-cutover language and should be swept before they are trusted as deploy truth.
+
+## 2026-06-19 — Shay intelligence control-plane loop closed the first anti-drift circuit
+
+The normalizer was not enough by itself; recurring findings still needed proof-backed mutation, garbage-row cleanup, and a stop condition so the loop could improve state without thrashing forever. Added `scripts/intelligence/build_proof_closeout.py`, `cleanup_gap_rows.py`, `pre_research_guard.py`, `run_control_plane_pass.py`, and `control_plane_loop.py`, plus the runtime artifacts `proof-closeout.latest.{md,json}`, `gap-cleanup.latest.{md,json}`, `control-plane-runtime-plan.md`, `control-plane-pass-history.jsonl`, and `control-plane-loop.latest.json` under `obsidian/01-Shay-Platform/intelligence-audits/`.
+
+### Verified
+- `python3 scripts/intelligence/build_proof_closeout.py` auto-mutated proof-backed findings into the live ledgers and marked the existing video-background capability as verified based on real repo paths (`components/video-hero/component.json`, `components/library.json`, `site-studio/lib/famtastic-skeletons.js`).
+- `python3 scripts/intelligence/cleanup_gap_rows.py` reclassified the 4 previously unmatched garbage rows into canonical buckets, including new systemic buckets for `media-prompt-handoff`, `client-brief-mislogged-as-gap`, and `priority-interrupt-mislogged-as-gap`.
+- `python3 scripts/intelligence/run_control_plane_pass.py` and `python3 scripts/intelligence/control_plane_loop.py 20` now produce pass history, update the runtime plan, and stop honestly at `only_minor_left` once no major mutations remain.
+- `site-studio/lib/gap-logger.js` now checks canonical bucket aliases before logging, so duplicate malformed gap rows are less likely to reopen the same problem under slightly different phrasing.
+
+### Known Gaps opened
+- Repo verdicts are now linked into the control-plane loop, but they are still advisory candidate evidence rather than final adoption truth; no repo is auto-landed into capability state yet.
+- The control-plane scripts are runnable and loop-safe, but they are not yet scheduled through cron or wired to backlog opening / Kanban creation.
+- `FAMTASTIC-STATE.md` and related truth docs now name the control-plane slice, but the broader research/promotions/capability system is still only partially auto-reconciled.
+
+## 2026-06-19 — Shay solution-map normalization turned raw gap prose into canonical buckets
+
+The audit surface alone was not enough; it still left malformed gap rows and repeated themes stranded as prose. Added `scripts/intelligence/normalize_solution_map.py`, which reads `~/.local/share/famtastic/gaps.jsonl` and `obsidian/01-Shay-Platform/intelligence-audits/latest-solution-map-audit.json`, then writes canonical problem buckets to `obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.{md,json}` and bootstraps the missing `~/.local/share/famtastic/intelligence-promotions.json` ledger. The first live normalization produced 7 problem buckets and 5 promoted findings, which is the first time these recurring problems have existed as a reusable connection layer instead of scattered notes.
+
+### Verified
+- `python3 scripts/intelligence/normalize_solution_map.py` generated `problem-buckets.latest.md`, `problem-buckets.latest.json`, and `~/.local/share/famtastic/intelligence-promotions.json`.
+- The first normalized buckets include `godaddy-cpanel-access`, `jj-ba-brief-shaping`, `research-promotion-ledger`, `video-background`, `shay-desk-ui-kinks`, `platform-conversation-context`, and `billing-usage-visibility`.
+- The first promotion ledger pass created 5 pending findings from normalized buckets, restoring the missing truth surface that earlier docs had assumed existed.
+
+### Known Gaps opened
+- The normalizer does not yet write canonical `bucket_id` values back into source gap rows, so the underlying `gaps.jsonl` file remains partially malformed.
+- Promotion creation is now real, but backlog opening, capability-closeout mutation, and proof-state reconciliation are still separate/manual layers.
+- Bucket scoring is still heuristic and heavily influenced by repeated-note counts from the audit, so it is useful for prioritization but not yet a final source of truth by itself.
+
+## 2026-06-19 — Shay solution-map audit exposed truth-surface fragmentation and temporal disconnect drift
+
+Built a first-pass Shay-native audit surface that scans June commits, `CHANGELOG.md`, `SITE-LEARNINGS.md`, `FAMTASTIC-STATE.md`, `.wolf/buglog.json`, `.wolf/memory.md`, the live gap ledger, bookmark intake, curator notes, gap-research notes, and repo-intelligence artifacts into one connected synthesis. The new script `scripts/intelligence/build_solution_map.py` emits canonical markdown + JSON artifacts under `obsidian/01-Shay-Platform/intelligence-audits/`, with separated observations, interpretations, missed synergies, anti-drift rules, and next-build modules so future sessions stop re-researching the same problem from scratch.
+
+### Verified
+- `python3 scripts/intelligence/build_solution_map.py` generated `obsidian/01-Shay-Platform/intelligence-audits/solution-map-audit-2026-06-19-1240.md` plus the matching `.json`, and refreshed `latest-solution-map-audit.md` / `.json`.
+- The first live audit found 384 June commits, 84 repo-intelligence artifacts, 17 repo-intelligence report batches, 13 still-open gap rows, and only 1 row in `obsidian/Shay-Memory/research/_ledger/research-artifacts.jsonl`.
+- The generated audit explicitly surfaced repeated unresolved themes already scattered across the truth surfaces: GoDaddy/cPanel routing, JJ BA brief shaping, video-background proof vs capability confusion, and the still-missing `intelligence-promotions.json` ledger.
+
+### Known Gaps opened
+- The audit is currently read-only and heuristic. It does not yet write normalized problem buckets back into the gap ledger, promotion ledger, or capability-truth surfaces.
+- Repo-intelligence artifacts still mostly answer discovery metadata (`what repos exist`) rather than adoption truth (`which repo solves which FAMtastic problem and what proof closed it`).
+- The live gap ledger remains weakly normalized; malformed capability IDs still exist and need a canonical problem-bucket layer.
+
+## 2026-06-19 — Shay intelligence control plane needs executable truth surfaces, not doctrine-only plans
+
+The overnight control-plane slice proved the right shape for this class of work: doctrine alone was not enough, and the implementation became trustworthy only after the control-plane concepts were surfaced as real CLI outputs, telemetry schema, and tests. `shay-shay/shay_cli/intelligence_control_plane.py` now acts as the executable truth layer for module ownership, provider/model routing facts, agent templates, worker instantiation, memory/truth surfaces, route telemetry scorecards, and route explanations. The practical lesson is load-bearing: if Shay is supposed to govern agents, models, providers, and memory with evidence, those control-plane objects must exist as inspectable artifacts and command surfaces, not just prose in planning docs.
+
+### Verified
+- `shay-shay/shay_cli/intelligence_control_plane.py` defines explicit module boundaries, registries, and route-explanation helpers.
+- `shay-shay/shay_cli/intelligence_cmd.py` + `shay-shay/shay_cli/main.py` now expose `shay intelligence control-plane modules|providers|templates|memory|scorecards|explain`.
+- `shay-shay/agent/process_intelligence.py` now captures route/template/provider/review telemetry fields needed for evidence-backed evaluation.
+- `python -m pytest tests/test_intelligence_layer.py tests/agent/test_process_intelligence.py -o addopts=''` passed, and live CLI runs for `control-plane modules/providers/explain` returned grounded output.
+
+### Known Gaps opened
+- The routing engine still chooses from seeded heuristics and observed scorecards; it does not yet learn closed-loop policy from accumulated outcomes.
+- Cheap reviewer-lane subagents failed twice to return usable adversarial review, which reinforces the doctrine that reviewer separation alone is not enough if the routed reviewer model cannot ground itself in the artifacts.
+
 ## 2026-06-18 — Shay prompt-memory target tightened under 2k
 
 Tightened the live Shay prompt-memory footprint so the always-injected layer matches Fritz's intended design instead of drifting roomy-by-default. The live runtime config at `~/.shay/config.yaml` now sets `memory.memory_char_limit: 1000` and `memory.user_char_limit: 900`, and the active bounded files `~/.shay/memories/MEMORY.md` plus `USER.md` were compacted to fit under roughly 2k combined. Matching truth updates landed in `shay-shay/docs/memory-flow-audit-2026-06-18.md`, `shay-shay/docs/shay-memory-hierarchy.md`, and `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so future sessions stop repeating the older ~4k guidance.

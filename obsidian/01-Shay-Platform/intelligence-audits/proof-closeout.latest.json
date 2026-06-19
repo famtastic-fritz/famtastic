@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-06-19T22:02:23.843557+00:00",
+  "source_paths": [
+    "/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl",
+    "/Users/famtasticfritz/.local/share/famtastic/intelligence-promotions.json",
+    "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.json",
+    "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-repo-verdicts.latest.json"
+  ],
+  "gap_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/gaps.before-proof-closeout.2026-06-19-180223.jsonl",
+  "promotion_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/intelligence-promotions.before-proof-closeout.2026-06-19-180223.json",
+  "finding_count": 3,
+  "applied_mutation_count": 0,
+  "findings": [
+    {
+      "bucket_id": "video-background",
+      "title": "Video background capability",
+      "confidence": 0.96,
+      "evidence": [
+        {
+          "path": "/Users/famtasticfritz/famtastic/components/video-hero/component.json",
+          "ok": true
+        },
+        {
+          "path": "/Users/famtasticfritz/famtastic/components/library.json",
+          "ok": true
+        },
+        {
+          "path": "/Users/famtasticfritz/famtastic/site-studio/lib/famtastic-skeletons.js",
+          "ok": true
+        }
+      ],
+      "recommended_promotion_status": "verified",
+      "recommended_gap_status": "verified",
+      "recommended_closeout": "needs-operational-closeout",
+      "mutation_reason": "Existing component/library/skeleton paths prove capability exists in repo truth; open gap is proof/closure drift.",
+      "apply": true
+    },
+    {
+      "bucket_id": "research-promotion-ledger",
+      "title": "Missing intelligence promotions ledger",
+      "confidence": 0.99,
+      "evidence": [
+        {
+          "path": "/Users/famtasticfritz/.local/share/famtastic/intelligence-promotions.json",
+          "ok": true
+        },
+        {
+          "path": "/Users/famtasticfritz/.local/share/famtastic/intelligence-promotions.json",
+          "ok": true,
+          "detail": "non-empty ledger"
+        }
+      ],
+      "recommended_promotion_status": "closed",
+      "recommended_gap_status": "closed",
+      "recommended_closeout": "closed",
+      "mutation_reason": "The previously-missing promotions ledger now exists and is populated, so the foundational truth-surface gap is closed.",
+      "apply": true
+    },
+    {
+      "bucket_id": "godaddy-cpanel-access",
+      "title": "GoDaddy/cPanel access and routing",
+      "confidence": 0.62,
+      "evidence": [
+        {
+          "path": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/Shay-Capacity-Inventory.md",
+          "ok": true
+        },
+        {
+          "path": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/gap-research/latest-gap-research.md",
+          "ok": true
+        }
+      ],
+      "recommended_promotion_status": "proof_pending",
+      "recommended_gap_status": "proof_pending",
+      "recommended_closeout": "needs-wrapper-build",
+      "mutation_reason": "There is enough doctrine and research to prove the routing problem is understood, but not enough implementation proof to auto-close it.",
+      "apply": false
+    }
+  ],
+  "mutations": [],
+  "verdict_snapshot_problem_count": 10,
+  "verdict_snapshot_linked_problem_count": 4
+}

@@ -1,0 +1,358 @@
+{
+  "generated_at": "2026-06-19T22:02:23.805655+00:00",
+  "source_paths": [
+    "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.json",
+    "/Users/famtasticfritz/.local/share/famtastic/intelligence-promotions.json",
+    "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed"
+  ],
+  "problem_count": 10,
+  "linked_problem_count": 4,
+  "problems": [
+    {
+      "bucket_id": "jj-ba-brief-shaping",
+      "title": "JJ BA brief shaping drift",
+      "problem_type": "briefing_gap",
+      "promotion_status": "pending",
+      "candidate_count": 0,
+      "top_candidates": [],
+      "next_step": "no repo-intelligence candidate linked yet"
+    },
+    {
+      "bucket_id": "godaddy-cpanel-access",
+      "title": "GoDaddy/cPanel access and routing",
+      "problem_type": "execution_routing_gap",
+      "promotion_status": "pending",
+      "candidate_count": 1,
+      "top_candidates": [
+        {
+          "repo": "danny-avila/librechat",
+          "url": "https://github.com/danny-avila/librechat",
+          "description": "Enhanced ChatGPT Clone: Features Agents, MCP, DeepSeek, Anthropic, AWS, OpenAI, Responses API, Azure, Groq, o1, GPT-5, Mistral, OpenRouter, Vertex AI, Gemini, Artifacts, AI model switching, message search, Code Interpreter, langchain, DALL-E-3, OpenAPI Actions, Functions, Secure Multi-User Auth, Presets, open-source for self-hosting. Active.",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "hosting/dns fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/danny-avila_librechat.json"
+        }
+      ],
+      "next_step": "review top candidates and write proof verdict back into promotion + gap closeout state"
+    },
+    {
+      "bucket_id": "research-promotion-ledger",
+      "title": "Missing intelligence promotions ledger",
+      "problem_type": "truth_surface_gap",
+      "promotion_status": "closed",
+      "candidate_count": 35,
+      "top_candidates": [
+        {
+          "repo": "666ghj/MiroFish",
+          "url": "https://github.com/666ghj/MiroFish",
+          "description": "A Simple and Universal Swarm Intelligence Engine, Predicting Anything. \u7b80\u6d01\u901a\u7528\u7684\u7fa4\u4f53\u667a\u80fd\u5f15\u64ce\uff0c\u9884\u6d4b\u4e07\u7269",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/666ghj_MiroFish.json"
+        },
+        {
+          "repo": "Adam-CAD/CADAM",
+          "url": "https://github.com/Adam-CAD/CADAM",
+          "description": "CADAM is the open source text-to-CAD web application",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/Adam-CAD_CADAM.json"
+        },
+        {
+          "repo": "AgriciDaniel/claude-ads",
+          "url": "https://github.com/AgriciDaniel/claude-ads",
+          "description": "Comprehensive paid advertising audit & optimization skill for Claude Code. 250+ checks across Google, Meta, YouTube, LinkedIn, TikTok, Microsoft & Apple Ads with weighted scoring, parallel agents, industry templates, and AI creative generation.",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/AgriciDaniel_claude-ads.json"
+        },
+        {
+          "repo": "Fincept-Corporation/FinceptTerminal",
+          "url": "https://github.com/Fincept-Corporation/FinceptTerminal",
+          "description": "FinceptTerminal is a modern finance application offering advanced market analytics, investment research, and economic data tools, designed for interactive exploration and data-driven decision-making in a user-friendly environment.",
+          "automation_tier": "HIGH",
+          "automation_score": 85,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/Fincept-Corporation_FinceptTerminal.json"
+        },
+        {
+          "repo": "GoogleCloudPlatform/generative-ai",
+          "url": "https://github.com/GoogleCloudPlatform/generative-ai",
+          "description": "Sample code and notebooks for Generative AI on Google Cloud, with Gemini Enterprise Agent Platform",
+          "automation_tier": "HIGH",
+          "automation_score": 70,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/GoogleCloudPlatform_generative-ai.json"
+        },
+        {
+          "repo": "HKUDS/Vibe-Trading",
+          "url": "https://github.com/HKUDS/Vibe-Trading",
+          "description": "\"Vibe-Trading: Your Personal Trading Agent\"",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/HKUDS_Vibe-Trading.json"
+        },
+        {
+          "repo": "Njengah/claude-code-cheat-sheet",
+          "url": "https://github.com/Njengah/claude-code-cheat-sheet",
+          "description": "Ultimate collection of Claude Code tips, tricks, hacks, and workflows that you can use to master Claude Code in minutes",
+          "automation_tier": "HIGH",
+          "automation_score": 70,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/Njengah_claude-code-cheat-sheet.json"
+        },
+        {
+          "repo": "Open-LLM-VTuber/Open-LLM-VTuber",
+          "url": "https://github.com/Open-LLM-VTuber/Open-LLM-VTuber",
+          "description": "Talk to any LLM with hands-free voice interaction, voice interruption, and Live2D taking face running locally across platforms",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "memory/promotion fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/Open-LLM-VTuber_Open-LLM-VTuber.json"
+        }
+      ],
+      "next_step": "review top candidates and write proof verdict back into promotion + gap closeout state"
+    },
+    {
+      "bucket_id": "video-background",
+      "title": "Video background capability",
+      "problem_type": "capability_unproven",
+      "promotion_status": "verified",
+      "candidate_count": 11,
+      "top_candidates": [
+        {
+          "repo": "Adam-CAD/CADAM",
+          "url": "https://github.com/Adam-CAD/CADAM",
+          "description": "CADAM is the open source text-to-CAD web application",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/Adam-CAD_CADAM.json"
+        },
+        {
+          "repo": "The-Swarm-Corporation/AutoHedge",
+          "url": "https://github.com/The-Swarm-Corporation/AutoHedge",
+          "description": "Build your autonomous hedge fund in minutes. AutoHedge harnesses the power of swarm intelligence and AI agents to automate market analysis, risk management, and trade execution.",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/The-Swarm-Corporation_AutoHedge.json"
+        },
+        {
+          "repo": "alibaba/page-agent",
+          "url": "https://github.com/alibaba/page-agent",
+          "description": "JavaScript in-page GUI agent. Control web interfaces with natural language.",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/alibaba_page-agent.json"
+        },
+        {
+          "repo": "danny-avila/librechat",
+          "url": "https://github.com/danny-avila/librechat",
+          "description": "Enhanced ChatGPT Clone: Features Agents, MCP, DeepSeek, Anthropic, AWS, OpenAI, Responses API, Azure, Groq, o1, GPT-5, Mistral, OpenRouter, Vertex AI, Gemini, Artifacts, AI model switching, message search, Code Interpreter, langchain, DALL-E-3, OpenAPI Actions, Functions, Secure Multi-User Auth, Presets, open-source for self-hosting. Active.",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/danny-avila_librechat.json"
+        },
+        {
+          "repo": "deanpeters/Product-Manager-Skills",
+          "url": "https://github.com/deanpeters/Product-Manager-Skills",
+          "description": "Product Management skills framework built on battle-tested methods for Claude Code, Cowork, Codex, and AI agents.",
+          "automation_tier": "HIGH",
+          "automation_score": 70,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/deanpeters_Product-Manager-Skills.json"
+        },
+        {
+          "repo": "earendil-works/pi",
+          "url": "https://github.com/earendil-works/pi",
+          "description": "AI agent toolkit: coding agent CLI, unified LLM API, TUI & web UI libraries, Slack bot, vLLM pods",
+          "automation_tier": "HIGH",
+          "automation_score": 95,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/earendil-works_pi.json"
+        },
+        {
+          "repo": "heygen-com/hyperframes",
+          "url": "https://github.com/heygen-com/hyperframes",
+          "description": "Write HTML. Render video. Built for agents.",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/heygen-com_hyperframes.json"
+        },
+        {
+          "repo": "nesquena/hermes-webui",
+          "url": "https://github.com/nesquena/hermes-webui?fbclid=Iwb21leASI4X9jbGNrBIjhd2V4dG4DYWVtAjExAHNydGMGYXBwX2lkDDM1MDY4NTUzMTcyOAABHu06s1ZLKhH1clJWY0a9hKv-6qNt82TLZTur_GG2FJCRWK3vEKyAu6Sfev-O_aem_1-2KpD8VQZjI5oySSF9H9w",
+          "description": "Hermes WebUI: The best way to use Hermes Agent from the web or from your phone!",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "video/ui fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/nesquena_hermes-webui.json"
+        }
+      ],
+      "next_step": "review top candidates and write proof verdict back into promotion + gap closeout state"
+    },
+    {
+      "bucket_id": "platform-conversation-context",
+      "title": "Platform-conversation routing/context gap",
+      "problem_type": "routing_gap",
+      "promotion_status": "pending",
+      "candidate_count": 0,
+      "top_candidates": [],
+      "next_step": "no repo-intelligence candidate linked yet"
+    },
+    {
+      "bucket_id": "shay-desk-ui-kinks",
+      "title": "Shay Desk UI friction",
+      "problem_type": "ux_gap",
+      "promotion_status": "pending",
+      "candidate_count": 0,
+      "top_candidates": [],
+      "next_step": "no repo-intelligence candidate linked yet"
+    },
+    {
+      "bucket_id": "billing-usage-visibility",
+      "title": "Billing and API-usage visibility",
+      "problem_type": "ops_gap",
+      "promotion_status": "unpromoted",
+      "candidate_count": 1,
+      "top_candidates": [
+        {
+          "repo": "alexgreensh/token-optimizer",
+          "url": "https://github.com/alexgreensh/token-optimizer",
+          "description": "Find the ghost tokens. Fix them. Survive compaction. Avoid context quality decay. ",
+          "automation_tier": "HIGH",
+          "automation_score": 80,
+          "verdict": "weak_candidate",
+          "link_score": 4,
+          "reasons": [
+            "billing/observability fit",
+            "high-tier"
+          ],
+          "artifact_path": "/Users/famtasticfritz/famtastic/research/repo-intelligence/completed/alexgreensh_token-optimizer.json"
+        }
+      ],
+      "next_step": "review top candidates and write proof verdict back into promotion + gap closeout state"
+    },
+    {
+      "bucket_id": "client-brief-mislogged-as-gap",
+      "title": "Client brief mislogged as platform gap",
+      "problem_type": "intake_gap",
+      "promotion_status": "unpromoted",
+      "candidate_count": 0,
+      "top_candidates": [],
+      "next_step": "no repo-intelligence candidate linked yet"
+    },
+    {
+      "bucket_id": "media-prompt-handoff",
+      "title": "Media prompt handoff routing gap",
+      "problem_type": "routing_gap",
+      "promotion_status": "unpromoted",
+      "candidate_count": 0,
+      "top_candidates": [],
+      "next_step": "no repo-intelligence candidate linked yet"
+    },
+    {
+      "bucket_id": "priority-interrupt-mislogged-as-gap",
+      "title": "Priority interrupt mislogged as capability gap",
+      "problem_type": "tasking_gap",
+      "promotion_status": "unpromoted",
+      "candidate_count": 0,
+      "top_candidates": [],
+      "next_step": "no repo-intelligence candidate linked yet"
+    }
+  ]
+}
