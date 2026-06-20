@@ -6,7 +6,7 @@ permalink: famtastic/01-shay-platform/intelligence-audits/problem-buckets.latest
 
 # Problem buckets
 
-Generated: 2026-06-19T22:02:23.877384+00:00
+Generated: 2026-06-20T00:07:23.044796+00:00
 
 ## Canonical buckets
 ### JJ BA brief shaping drift (`jj-ba-brief-shaping`)

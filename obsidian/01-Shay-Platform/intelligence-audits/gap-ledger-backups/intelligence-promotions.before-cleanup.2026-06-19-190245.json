@@ -1,0 +1,207 @@
+[
+  {
+    "finding_id": "bucket-jj-ba-brief-shaping",
+    "category": "process_gap",
+    "severity": "major",
+    "title": "JJ BA brief shaping drift",
+    "recommendation": "Convert recurring JJ BA understanding into a tight resumable brief instead of rediscovering it in prose.",
+    "status": "pending",
+    "promoted_at": "2026-06-19T16:46:10.321114+00:00",
+    "action_taken": "needs_triage",
+    "source": "solution-map-normalizer",
+    "bucket_id": "jj-ba-brief-shaping",
+    "frequency": 320,
+    "site_tags": [],
+    "source_evidence": [
+      {
+        "kind": "audit_repeat",
+        "names": [
+          "JJ BA",
+          "brief/task shaping"
+        ],
+        "strength": 320
+      }
+    ]
+  },
+  {
+    "finding_id": "bucket-godaddy-cpanel-access",
+    "category": "process_gap",
+    "severity": "major",
+    "title": "GoDaddy/cPanel access and routing",
+    "recommendation": "Split vendor access, DNS operations, reseller recovery, and escalation order into separate proof-backed tracks.",
+    "status": "pending",
+    "promoted_at": "2026-06-19T16:46:10.321116+00:00",
+    "action_taken": "needs_triage",
+    "source": "solution-map-normalizer",
+    "bucket_id": "godaddy-cpanel-access",
+    "frequency": 141,
+    "site_tags": [
+      "SHAY"
+    ],
+    "source_evidence": [
+      {
+        "kind": "gap",
+        "id": "gap-1781840661232",
+        "capability_id": "proactive-gap-escalation-order",
+        "message_preview": "Escalated GoDaddy/cPanel access uncertainty to Fritz before exhausting internal capability surfaces ",
+        "site_tag": "SHAY"
+      },
+      {
+        "kind": "audit_repeat",
+        "names": [
+          "GoDaddy/cPanel"
+        ],
+        "strength": 140
+      }
+    ]
+  },
+  {
+    "finding_id": "bucket-research-promotion-ledger",
+    "category": "process_gap",
+    "severity": "major",
+    "title": "Missing intelligence promotions ledger",
+    "recommendation": "Maintain a live intelligence-promotions ledger and use it as the canonical surfaced-finding store between gaps and backlog.",
+    "status": "closed",
+    "promoted_at": "2026-06-19T16:46:10.321117+00:00",
+    "action_taken": "auto-proof-closeout",
+    "source": "solution-map-normalizer",
+    "bucket_id": "research-promotion-ledger",
+    "frequency": 14,
+    "site_tags": [],
+    "source_evidence": [
+      {
+        "kind": "audit_repeat",
+        "names": [
+          "promotion ledger"
+        ],
+        "strength": 14
+      }
+    ],
+    "proof_confidence": 0.99,
+    "updated_at": "2026-06-19T23:02:45.958361+00:00",
+    "mutation_source": "build_proof_closeout",
+    "mutation_reason": "The previously-missing promotions ledger now exists and is populated, so the foundational truth-surface gap is closed."
+  },
+  {
+    "finding_id": "bucket-video-background",
+    "category": "capability_gap",
+    "severity": "major",
+    "title": "Video background capability",
+    "recommendation": "Prove or close the existing video-hero path before opening new research/build loops.",
+    "status": "verified",
+    "promoted_at": "2026-06-19T16:46:10.321120+00:00",
+    "action_taken": "auto-proof-closeout",
+    "source": "solution-map-normalizer",
+    "bucket_id": "video-background",
+    "frequency": 9,
+    "site_tags": [
+      "site-altitude"
+    ],
+    "source_evidence": [
+      {
+        "kind": "gap",
+        "id": "gap-1776369640701",
+        "capability_id": "video_background_option",
+        "message_preview": "we need a video background option",
+        "site_tag": "site-altitude"
+      },
+      {
+        "kind": "gap",
+        "id": "gap-1776434415654",
+        "capability_id": "video_background_support",
+        "message_preview": "we need video background support",
+        "site_tag": "site-altitude"
+      },
+      {
+        "kind": "audit_repeat",
+        "names": [
+          "video background"
+        ],
+        "strength": 7
+      }
+    ],
+    "proof_confidence": 0.96,
+    "updated_at": "2026-06-19T23:02:45.958361+00:00",
+    "mutation_source": "build_proof_closeout",
+    "mutation_reason": "Existing component/library/skeleton paths prove capability exists in repo truth; open gap is proof/closure drift."
+  },
+  {
+    "finding_id": "bucket-platform-conversation-context",
+    "category": "process_gap",
+    "severity": "minor",
+    "title": "Platform-conversation routing/context gap",
+    "recommendation": "Distinguish platform/orchestration conversations from site-build conversations before classifier or gap logging writes malformed capability rows.",
+    "status": "pending",
+    "promoted_at": "2026-06-19T17:11:25.327072+00:00",
+    "action_taken": "needs_triage",
+    "source": "solution-map-normalizer",
+    "bucket_id": "platform-conversation-context",
+    "frequency": 3,
+    "site_tags": [
+      "site-famtastic-com",
+      "site-mbsh96reunion"
+    ],
+    "source_evidence": [
+      {
+        "kind": "gap",
+        "id": "gap-1776800538513",
+        "capability_id": "to",
+        "message_preview": "no , were moving in the wrong direction for now. because these are things ideally shay shay should b",
+        "site_tag": "site-famtastic-com"
+      },
+      {
+        "kind": "gap",
+        "id": "gap-1776811219251",
+        "capability_id": "special_case_for_platfor_convos",
+        "message_preview": "umm , this context would make sense if I ws talking about a site.  Im actually talking about the pla",
+        "site_tag": "site-famtastic-com"
+      },
+      {
+        "kind": "gap",
+        "id": "gap-1777583510324",
+        "capability_id": "to_do_some_platform_work",
+        "message_preview": "ok ,  so we need to do some platform work",
+        "site_tag": "site-mbsh96reunion"
+      }
+    ]
+  },
+  {
+    "finding_id": "bucket-shay-desk-ui-kinks",
+    "category": "process_gap",
+    "severity": "minor",
+    "title": "Shay Desk UI friction",
+    "recommendation": "Group newline, textarea sizing, and Shay Desk interaction complaints into one UI-fix bucket.",
+    "status": "pending",
+    "promoted_at": "2026-06-19T16:46:10.321121+00:00",
+    "action_taken": "needs_triage",
+    "source": "solution-map-normalizer",
+    "bucket_id": "shay-desk-ui-kinks",
+    "frequency": 3,
+    "site_tags": [
+      "site-mbsh96reunion"
+    ],
+    "source_evidence": [
+      {
+        "kind": "gap",
+        "id": "gap-1777582576350",
+        "capability_id": "the_new_line_for_one._and_the_text-area_is_to_big.",
+        "message_preview": "I cant do the new line for one. and the text-area is to big. you should have been able to live see i",
+        "site_tag": "site-mbsh96reunion"
+      },
+      {
+        "kind": "gap",
+        "id": "gap-1777582815245",
+        "capability_id": "to_work_out_some_kinks_with_you",
+        "message_preview": "no, we need to work out some kinks with you.",
+        "site_tag": "site-mbsh96reunion"
+      },
+      {
+        "kind": "gap",
+        "id": "gap-1777582901183",
+        "capability_id": "to_add_this_now._the_orginal_task_isnt_done._we_ne",
+        "message_preview": "do we need to add this now. the orginal task isnt done. we need to fix shay desk inter face. and add",
+        "site_tag": "site-mbsh96reunion"
+      }
+    ]
+  }
+]

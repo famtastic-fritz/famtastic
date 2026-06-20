@@ -6,8 +6,8 @@ permalink: famtastic/01-shay-platform/intelligence-audits/control-plane-runtime-
 
 # Control-plane runtime plan
 
-Last pass: control-plane-pass-20260619-180223
-Generated: 2026-06-19T22:02:23.880391+00:00
+Last pass: control-plane-pass-20260619-200723
+Generated: 2026-06-20T00:07:23.048682+00:00
 
 ## Current task state
 - [x] cp-spec
