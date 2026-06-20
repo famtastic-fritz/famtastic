@@ -53,6 +53,9 @@ const GAP_DESTINATION = {
 
 const GAPS_PATH = path.join(process.env.HOME, '.local', 'share', 'famtastic', 'gaps.jsonl');
 const PROMOTIONS_PATH = path.join(process.env.HOME, '.local', 'share', 'famtastic', 'intelligence-promotions.json');
+const PROBLEM_BUCKETS_PATH = path.join(process.env.HOME, 'famtastic', 'obsidian', '01-Shay-Platform', 'intelligence-audits', 'problem-buckets.latest.json');
+const PROOF_CLOSEOUT_PATH = path.join(process.env.HOME, 'famtastic', 'obsidian', '01-Shay-Platform', 'intelligence-audits', 'proof-closeout.latest.json');
+const REPO_VERDICTS_PATH = path.join(process.env.HOME, 'famtastic', 'obsidian', '01-Shay-Platform', 'intelligence-audits', 'problem-repo-verdicts.latest.json');
 
 const PROMOTION_THRESHOLD = 3;
 
@@ -69,17 +72,57 @@ function loadGaps() {
     .filter(Boolean);
 }
 
+function loadJson(filePath, fallback) {
+  if (!fs.existsSync(filePath)) return fallback;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
+function findBucketMatch(message, capabilityId = '') {
+  const bucketData = loadJson(PROBLEM_BUCKETS_PATH, { buckets: [] });
+  const hay = `${capabilityId} ${message}`.toLowerCase();
+  for (const bucket of bucketData.buckets || []) {
+    const aliases = bucket.aliases || [];
+    if (aliases.some(alias => hay.includes(String(alias).toLowerCase()))) {
+      return bucket;
+    }
+  }
+  return null;
+}
+
+function buildExistingContext(bucketId) {
+  const promotions = loadJson(PROMOTIONS_PATH, []);
+  const proof = loadJson(PROOF_CLOSEOUT_PATH, { findings: [] });
+  const verdicts = loadJson(REPO_VERDICTS_PATH, { problems: [] });
+  return {
+    bucket_id: bucketId,
+    promotion: Array.isArray(promotions) ? promotions.find(p => p.bucket_id === bucketId) || null : null,
+    proof: (proof.findings || []).find(f => f.bucket_id === bucketId) || null,
+    repo_verdict: (verdicts.problems || []).find(p => p.bucket_id === bucketId) || null,
+  };
+}
+
 function logGap(tag, message, category, details = {}) {
   ensureDir(GAPS_PATH);
   const gaps = loadGaps();
+  const bucketMatch = findBucketMatch(message, details.capability_id || '');
 
-  // Find existing gap for same capability_id
+  // Find existing gap for same capability_id or canonical bucket
   const capId = details.capability_id || slugify(message.slice(0, 60));
-  const existing = gaps.find(g => g.capability_id === capId);
+  const existing = gaps.find(g => g.capability_id === capId || (bucketMatch && g.bucket_id === bucketMatch.bucket_id));
 
   if (existing) {
     existing.frequency = (existing.frequency || 1) + 1;
     existing.last_seen = new Date().toISOString();
+    if (bucketMatch) {
+      existing.bucket_id = bucketMatch.bucket_id;
+      existing.normalization_state = 'bucketed';
+      existing.status = existing.status === 'open' ? 'normalized' : existing.status;
+      existing.existing_context = buildExistingContext(bucketMatch.bucket_id);
+    }
     rewriteGaps(gaps);
     if (existing.frequency >= PROMOTION_THRESHOLD) {
       promoteGap(existing);
@@ -98,7 +141,10 @@ function logGap(tag, message, category, details = {}) {
     destination: GAP_DESTINATION[category] || 'Job Queue',
     run_id: details.run_id || null,
     frequency: 1,
-    status: 'open',
+    status: bucketMatch ? 'normalized' : 'open',
+    bucket_id: bucketMatch ? bucketMatch.bucket_id : undefined,
+    normalization_state: bucketMatch ? 'bucketed' : 'unmatched',
+    existing_context: bucketMatch ? buildExistingContext(bucketMatch.bucket_id) : null,
     ...details,
   };
 
