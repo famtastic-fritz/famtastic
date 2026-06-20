@@ -62,6 +62,21 @@ If branch/worktree are not needed, say that explicitly instead of omitting them.
 Use `plans/templates/simple-brief-template-v1.md` for the default brief shape.
 Use `fam-hub plan template` and `fam-hub plan validate` when a control-plane plan packet is actually needed.
 
+## Work-Packet Rule (Active Now)
+
+For any real multi-step effort, do not leave the plan in conversational form.
+Restate it as a work packet before proceeding. Minimum fields:
+
+- Goal (outcome, why it matters, success criteria, proof)
+- Tasks (explicit next actions)
+- Branch (feature branch name when applicable)
+- Worktree (path when applicable)
+- Main landing path / expectation
+- Truth-surface updates required, especially capability-matrix updates
+- Proof
+
+If branch/worktree are not needed, say that explicitly instead of omitting them.
+
 ## Studio Process Management (Non-Negotiable)
 
 FAMtastic Studio is managed by **macOS launchd** (`com.famtastic.studio`).
