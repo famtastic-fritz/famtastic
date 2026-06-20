@@ -20,7 +20,47 @@ worktrees unless those references have been reconciled into the current docs.
 
 Core doctrine: research-first, spec-shaped, proof-driven work; reuse before
 generate; route specialized needs to the owning studio/service; record proof
-in Data Center; run post-evaluation after meaningful jobs.
+in Data Center; run post-evaluation after meaningful jobs; treat truth-surface
+drift as a first-class failure mode and re-anchor repo/branch/worktree truth
+before meaningful writes.
+
+## Resumable Brief Rule (Active Now)
+
+For any real multi-step effort, do not leave the plan in conversational form.
+Restate it as a resumable brief before proceeding. Default human-facing
+fields:
+- Title
+- Purpose
+- Goal
+- Tasks (checkboxes; this is the resumability surface)
+- Status
+- Started
+- Ended
+- Execution
+- Research
+- Review
+- Skills
+- Blocked By (when another plan actually blocks this one)
+- Proof
+Formatting rule:
+- Keep one blank line after `Goal`, one blank line after the last task, and one blank line before `Proof`.
+Telemetry rule:
+- Rich orchestration detail belongs in telemetry, ledgers, research artifacts, reviews, and control-plane packets — not in the default brief.
+If the task truly needs the heavier control-plane packet, add it separately. Minimum fields:
+- Goal (outcome, why it matters, success criteria, proof)
+- Tasks (explicit next actions)
+- Branch (feature branch name when applicable)
+- Worktree (path when applicable)
+- Main landing path / expectation
+- Truth-surface updates required, especially capability-matrix updates
+- Proof
+Execution doctrine tied to the packet:
+- Plans should run to completion without intervention from Fritz unless they hit a real blocker, destructive side effect, missing credential, or irreversible decision Fritz must personally own.
+- Multi-swarm and parallel orchestrated swarms are allowed and preferred when dependencies permit and they are the most efficient path.
+- The task list must be updated as each task completes, blocks, or changes state so the plan can resume cleanly after interruption.
+If branch/worktree are not needed, say that explicitly instead of omitting them.
+Use `plans/templates/simple-brief-template-v1.md` for the default brief shape.
+Use `fam-hub plan template` and `fam-hub plan validate` when a control-plane plan packet is actually needed.
 
 ## Work-Packet Rule (Active Now)
 

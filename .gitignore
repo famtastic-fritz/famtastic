@@ -66,11 +66,21 @@ obsidian/Shay-Memory/_system/runtime/*
 obsidian/Shay-Memory/_system/runtime/proactive/*
 !obsidian/Shay-Memory/_system/runtime/proactive/private-review-actions.json
 
+# Obsidian Shay-Memory runtime exhaust — keep canonical docs/research, ignore churn.
+obsidian/Shay-Memory/lessons-mirror/
+obsidian/Shay-Memory/reflections/
+obsidian/Shay-Memory/builds/
+obsidian/Shay-Memory/inbox/
+obsidian/Shay-Memory/scratch/
+
 # Built site output — dist/ is a deploy artifact, not source
 sites/*/dist/
 
 # Playwright MCP captures — ephemeral test screenshots and console logs
 .playwright-mcp/
+
+# Repo intelligence logs — transient run output, not source of truth
+research/repo-intelligence/logs/
 
 # Scratch / throwaway files at repo root
 bridge-test.txt

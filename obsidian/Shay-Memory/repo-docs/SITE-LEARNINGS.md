@@ -4,9 +4,37 @@ type: note
 permalink: shay-memory/repo-docs/site-learnings
 ---
 
-<!-- mirrored 2026-06-17T12:47:05.974219 from ~/famtastic/SITE-LEARNINGS.md -->
+<!-- mirrored from ~/famtastic/SITE-LEARNINGS.md -->
 
 # FAMtastic Ecosystem — Site Learnings
+
+## Shay Desktop + Workspace surface-map cutover (2026-06-17)
+
+Cut the live local Shay app stack over so both `/Applications/Shay Desktop.app` and `/Users/famtasticfritz/Desktop/Shay Desktop.app` now launch the rebuilt desktop bundle against `/Users/famtasticfritz/.shay`, using `/Users/famtasticfritz/.local/bin/shay` from `/Users/famtasticfritz/famtastic/shay-shay` as the runtime source. `~/.hermes/hermes-agent/apps/desktop/electron/main.cjs` now honors an injected dashboard session token and preferred port `9120`, which let the Desktop-hosted dashboard become a stable surface for other local apps instead of a moving target. `/Users/famtasticfritz/Desktop/Shay Workspace.app` was rewired to the same runtime by setting `HERMES_HOME`, `HERMES_API_URL=http://127.0.0.1:8642`, `HERMES_DASHBOARD_URL=http://127.0.0.1:9120`, and a shared dashboard token in its app environment, then patching its local `electron/main.cjs` so dashboard health checks send that token. Added the durable truth doc `shay-shay/docs/shay-surface-map-2026-06-17.md` and updated `shay-shay/web/README.md` plus `shay-shay/website/docs/user-guide/features/web-dashboard.md` so the live local surface map is explicit: Desktop-hosted dashboard on `9120` is primary, standalone `shay dashboard` on `9119` is optional.
+
+### Verified
+- Launching `/Users/famtasticfritz/Desktop/Shay Desktop.app` produced `.shay/logs/desktop.log` lines showing the desktop-hosted web UI on `http://127.0.0.1:9120`.
+- `http://127.0.0.1:9120/api/status` returned HTTP 200 and `http://127.0.0.1:8642/health` returned HTTP 200 after the cutover.
+- Shay Workspace advanced past the onboarding/connect prompt into the main application shell once the dashboard URL/token wiring and token-aware health probe were in place.
+
+### Known Gaps opened
+- Visible `Hermes` branding still exists inside Shay Desktop and Shay Workspace window chrome / in-app labels; runtime cutover is real, text rebrand is not finished.
+- Workspace was patched directly in the local `.app` bundle; if Workspace gets rebuilt from source later, the env-driven dashboard URL/token logic must be added upstream or the integration will drift.
+- Some docs still historically describe `9119` as the only local dashboard port; `web/README.md` and the user-guide page were corrected, but any remaining references should be treated as stale until swept.
+- The pass proved runtime plumbing more than product integrity. Future cutovers must identify the canonical working Electron app and source tree first, then rebuild/rebrand from source instead of stacking bundle-level patches across multiple installed app surfaces.
+
+## Obsidian memory boundary cleanup + deterministic Shay mirrors (2026-06-17)
+
+Cut the recurring `obsidian/Shay-Memory/` git noise by separating canonical shared docs from local runtime exhaust and making the Shay mirror bridge deterministic instead of timestamp-driven. `shay-agent-os/sync_lessons_to_shay.py` now writes stable mirror headers for `.wolf` lesson mirrors and repo-doc mirrors, and it skips file writes entirely when the mirrored body has not changed, so a cron sync no longer dirties the repo just because time passed. `.gitignore` now explicitly treats `obsidian/Shay-Memory/lessons-mirror/`, `reflections/`, `builds/`, `inbox/`, and `scratch/` as local vault churn rather than source history.
+
+### Verified
+- The six previously dirty mirror files under `obsidian/Shay-Memory/lessons-mirror/` and `obsidian/Shay-Memory/repo-docs/` differed only by volatile `synced:` / `mirrored ... timestamp` metadata, not by substantive content.
+- `shay-agent-os/sync_lessons_to_shay.py` now uses a `write_if_changed()` guard and stable headers (`source:` / `<!-- mirrored from ... -->`) so rerunning the sync leaves unchanged mirrors untouched.
+- `.gitignore` now ignores the high-churn Shay-Memory runtime buckets: `lessons-mirror/`, `reflections/`, `builds/`, `inbox/`, and `scratch/`.
+
+### Known Gaps opened
+- Ignoring noisy Shay-Memory paths does not untrack files Git already knows about; a one-time `git rm --cached` cleanup is still required to fully remove existing tracked history for those runtime directories.
+- `obsidian/Shay-Memory/repo-docs/` remains intentionally tracked because it is the shared truth-surface mirror; if the root canonical docs change, those mirrors should still update and be reviewed like normal source artifacts.
 
 ## Command Center money-focus + FAMU cruise countdown surface (2026-06-17)
 
@@ -90,6 +118,52 @@ Backfilled `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so it no longe
 
 ### Known Gaps opened
 - The matrix is still a curated note, not an auto-reconciled witness ledger. It now points at proof surfaces more honestly, but it still depends on manual write-back.
+
+## Plan autonomy doctrine + resumable task-state rule (2026-06-17)
+
+Extended the plan-template surface so the packet now carries explicit execution policy instead of leaving autonomy as a vibe. `plans/plan-template.json` now includes `execution_policy.run_to_completion_without_fritz`, `intervention_threshold`, `orchestration_mode`, `swarm_expectation`, and `task_ledger_expectation`, and `scripts/plans/validate-template.js` now fails plans that omit those fields.
+
+The doctrine is mirrored in `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md`: plans should run to completion without Fritz intervention by default, multi-swarm / parallel orchestrated swarms are preferred when dependencies permit, and the task list must be updated at each completion/block/state-change boundary so work can resume cleanly after interruption.
+
+### Verified
+- `plans/plan-template.json` now includes an `execution_policy` block with autonomy, swarm, and task-ledger expectations.
+- `scripts/plans/validate-template.js` now checks for every required `execution_policy.*` field.
+- `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md` now carry the same autonomy + resumability doctrine in the startup contract surfaces.
+
+### Known Gaps opened
+- The doctrine/template/validator layer is live, but task-state persistence still depends on agents actually writing updates into the ledger promptly; there is not yet an automatic watcher that reconciles task completion state from runs without agent discipline.
+- Existing plan files will fail the new execution-policy requirement until they are migrated to the updated template shape.
+
+## Simple brief template v1 (2026-06-17)
+
+Added `plans/templates/simple-brief-template-v1.md` as the lighter human-brief companion to the heavier `plans/plan-template.json` control-plane packet. The brief shape is intentionally simple — `Title`, `Purpose`, `Goal`, `Tasks`, `Execution`, `Assignments`, `Research`, `Review`, `Dependencies`, `Proof`, and `Status` — but it still preserves the orchestration truth Fritz asked for: task-to-agent/model mapping, artifact-backed research/review references, and dependency plan IDs instead of vague prose.
+
+The important correction in this version is that orchestration now lives in `Assignments` rather than separate flat `Models` and `Agents` rosters. That means the brief shows who/model did what task instead of just listing available resources, which keeps the brief readable without hiding swarm structure.
+
+### Verified
+- `plans/templates/simple-brief-template-v1.md` exists as the versioned simple brief surface.
+- The template includes both a blank form and a filled example.
+- `Assignments` maps task ownership directly to `Agent` and `Model` fields, and `Dependencies` uses plan IDs.
+
+### Known Gaps opened
+- The simple brief template is documented but not yet exposed through `fam-hub` as a first-class command surface.
+- There is no dedicated validator yet for the simple brief shape, so consistency still depends on discipline rather than schema enforcement.
+
+## Plan template enforcement + studio-filtered task listing (2026-06-17)
+
+Turned the work-packet rule into an actual control surface instead of a doctrine-only sentence. Added `plans/plan-template.json` as the canonical plan packet shape, added `scripts/plans/validate-template.js` so `fam-hub plan validate` can check a single plan or the full `plans/<id>/plan.json` set for required `classification`, `purpose`, `why_now`, `success_signal`, `non_goals`, and `work_packet` fields, and extended `scripts/fam-hub` with `plan template` / `plan validate` commands.
+
+Also replaced the old inline task renderer with `scripts/plans/task-list.js`, which enriches task rows from `plans/registry.json` and supports `fam-hub task list --studio <value>`, `--stream <value>`, `--status <value>`, `--runner <value>`, `--compact`, and `--json`. That means phrases like “show me all active plans” now map cleanly to `fam-hub plan list --status active`, and “show me all the Shay tasks” maps to `fam-hub task list --studio shay` instead of forcing manual eyeballing.
+
+### Verified
+- `./scripts/fam-hub plan template` prints the canonical plan packet shape from `plans/plan-template.json`.
+- `./scripts/fam-hub plan list --status active --compact` returns the current active-plan set.
+- `./scripts/fam-hub task list --studio shay --compact` returns only Shay-scoped tasks by joining `tasks/tasks.jsonl` with `plans/registry.json` labels.
+- `./scripts/fam-hub plan validate --plan plan_2026_05_05_chat_capture_learn_optimize` fails honestly on missing `work_packet` fields instead of pretending legacy plan files already satisfy the doctrine.
+
+### Known Gaps opened
+- `fam-hub plan validate --all` currently reports legacy drift across the existing plan corpus; the validator is live, but the older `plans/<id>/plan.json` files still need migration to the new canonical packet shape.
+- The natural-language phrases themselves are still interpreted by Shay at runtime; the CLI now exposes the exact filtered surfaces needed, but there is not yet a separate intent-router table that hard-binds those English phrasings to commands.
 
 ## Plan classification + filterable active-plan surface (2026-06-17)
 

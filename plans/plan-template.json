@@ -1,0 +1,76 @@
+{
+  "id": "plan_slug_here",
+  "title": "Human-readable plan title",
+  "status": "proposed",
+  "classification": {
+    "studio": "shay | site-studio | media-studio | component-studio | cross-platform | mission-control | fritz",
+    "plan_type": "execution | research | summary",
+    "stream": "shay-platform | income | research | metaphysical | fritz"
+  },
+  "label": "short-runtime-label",
+  "tags": [
+    "replace-me"
+  ],
+  "owner": "Fritz",
+  "purpose": "What this plan is for.",
+  "why_now": "Why this matters now.",
+  "success_signal": "What proof says this worked.",
+  "non_goals": [
+    "What this plan will not do."
+  ],
+  "depends_on": [],
+  "feeds_into": [],
+  "execution_policy": {
+    "run_to_completion_without_fritz": true,
+    "intervention_threshold": "Only stop for destructive side effects, missing credentials, irreversible decisions Fritz must own, or external blockers that tools cannot resolve.",
+    "orchestration_mode": "multi-swarm parallel orchestration is allowed and preferred when dependencies permit.",
+    "swarm_expectation": "Break work into orchestrated parallel swarms and sub-swarms when that is the most efficient path.",
+    "task_ledger_expectation": "Update the task list immediately as each task completes, blocks, or changes state so the plan can resume cleanly after interruption."
+  },
+  "work_packet": {
+    "goal": {
+      "outcome": "Concrete result to produce.",
+      "why_it_matters": "Why the result matters to Fritz/FAMtastic.",
+      "success_criteria": [
+        "Observable condition 1",
+        "Observable condition 2"
+      ],
+      "proof": [
+        "Artifact, screenshot, test, or command output that proves the work"
+      ]
+    },
+    "tasks": [
+      "Explicit next action 1",
+      "Explicit next action 2"
+    ],
+    "branch": "feature/example-branch or 'not needed'",
+    "worktree": "/absolute/path/to/worktree or 'not needed'",
+    "main_landing_path": "How this lands in main.",
+    "truth_surfaces": [
+      "SITE-LEARNINGS.md",
+      "CHANGELOG.md",
+      "FAMTASTIC-STATE.md when structure changes",
+      "Capability matrix / AGENTS / CLAUDE surfaces when doctrine changes"
+    ],
+    "proof": [
+      "Focused test run",
+      "git diff --check",
+      "User-facing verification artifact"
+    ]
+  },
+  "workstreams": [
+    {
+      "id": "ws_example",
+      "title": "Example workstream",
+      "status": "ready",
+      "priority": "P1",
+      "outputs": [
+        "Expected artifact(s)"
+      ],
+      "acceptance": [
+        "What proves this workstream is done"
+      ]
+    }
+  ],
+  "known_gaps_opened": []
+}
