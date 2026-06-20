@@ -19,6 +19,9 @@ Primary stressor remains income uncertainty, amplified by irregular NIBS cadence
 - cruise go/no-go reality is emotionally loud and still operationally vague
 - Lennox letter/scholarship path is active but the email has not been processed
 
+## Morning-ready platform note
+- FAMtastic Designs duplicate-path cleanup is only partially complete: canonical deploy truth now points to `sites/site-famtastic-designs`, but the old `famtastic-sites/famtastic-designs` tree was left in place on purpose because it is a dirty nested repo with unique static-export work and cannot be honestly deleted blind. Full report: `obsidian/01-Shay-Platform/reports/designs-cleanup-latest.md`.
+
 ## Active plans and states
 - NIBS Income Stability — in-progress
 - Cash Flow Danger Map — ready
@@ -81,6 +84,21 @@ Primary stressor remains income uncertainty, amplified by irregular NIBS cadence
 - TiVi redesign
 - spades app
 - Shay body/voice/desktop expansion
+
+## Control-plane findings
+- latest pass: control-plane-pass-20260619-180223
+- generated: 2026-06-19T22:02:23.880391+00:00
+- status: minor-only drift (1)
+- major findings: none
+- minor findings:
+  - repo_verdicts linked 4 problem buckets
+- morning briefing impact: no urgent control-plane intervention required
+
+## Session carry-forward
+- safe to start a new session now; the core memory-flow explanation and reset recipe were promoted out of chat
+- callable reset skill: `shay-intelligence-reset`
+- shorthand trigger: `garden not closet`
+- if Shay feels off again, run the reset before letting context bloat grow
 
 ## Latest-briefing command behavior
 If asked in a new session:
