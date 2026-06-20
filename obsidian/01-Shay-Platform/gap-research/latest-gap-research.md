@@ -1,83 +1,83 @@
 ---
 title: latest-gap-research
 type: note
-generated: 2026-06-19 20:04 EDT
+generated: 2026-06-19 1447 EDT
 permalink: famtastic/01-shay-platform/gap-research/latest-gap-research
 ---
 
-# Gap Research — 2026-06-19 20:04 EDT
+# Gap Research — 2026-06-19 1447 EDT
 
 ## Scope
-Reviewed `gaps.jsonl`, `intelligence-promotions.json`, the latest GitHub bookmarks report, HOT context pointers, repo truth, and session recall. This pass focused on the highest-value still-open or still-recurring gaps with revenue, orchestration, or truth-surface hygiene impact.
+Reviewed live gap ledger, promotions ledger, hot-context pointers, repo truth, and searchable session summaries. Focused this pass on the highest-value still-open gaps with either revenue impact or recurring orchestration drag.
 
 ---
 
 ## 1) capability_id: proactive-gap-escalation-order
 - **Bucket:** `godaddy-cpanel-access`
-- **Observed failure:** GoDaddy/cPanel access uncertainty was escalated to Fritz before internal capability surfaces were exhausted.
-- **Why it matters:** This lane touches the dormant reseller-income path, hosting operations, and authenticated write access. It is not a side issue; it sits in the income stream and keeps recurring.
-- **Recurring?:** **Yes.** Promotions ledger marks the bucket `pending` with `frequency: 141`, and HOT context still calls reseller reactivation the next cash unlock.
-- **Repo/session/vendor truth:**
-  - `SITE-LEARNINGS.md` says the current GoDaddy-hosted stack should treat **cPanel UAPI/MCP as the primary control plane**, not GoDaddy developer APIs.
-  - `platform/README.md` still shows DNS/subdomain registration as a **stub/manual wrapper gap**.
-  - `FAMTASTIC-HOSTING-STRATEGY.md` says the immediate business move is still: verify reseller status, reactivate if needed, then point the storefront/domain.
-  - Session recall confirms this has already been recognized as an escalation-order problem, not pure missing capability.
-  - Web search to fetch fresh vendor docs failed in this runtime (`Tavily 432`), so this pass relies on repo-backed vendor truth already captured locally.
+- **Observed failure:** GoDaddy/cPanel access uncertainty got escalated to Fritz before the internal routing lattice was exhausted.
+- **Why it matters:** This is tied to the reseller cash lane, live hosting cutover work, and authenticated write access to `famtasticdesigns.com` / related surfaces. It is high-value and recurring.
+- **Recurring?:** Yes. This theme shows up repeatedly across the promotions ledger (`frequency: 141`), session recall, and hot-context files.
+- **Repo/session truth:**
+  - Promotions ledger marks `godaddy-cpanel-access` as a major pending finding.
+  - Session recall already captured the key architectural truth: cPanel UAPI/MCP is the primary control plane; GoDaddy is not the only or even best automation surface for many hosting actions.
+  - `obsidian/01-Shay/HOT-CONTEXT-POINTERS.md` says the current blocker is **no verified authenticated write path yet** to the real `132.148.233.159` hosting surface.
+  - `plans/five-stream-state-2026-06-09.md` says reseller auth works for the hosting lane.
+- **Vendor/doc signals:**
+  - GoDaddy help article `Invite a delegate to access my GoDaddy account` is live and confirms delegate access is a real recovery path for account-level management.
+  - Local prior-session truth says the remaining unsolved piece is cPanel wrapper coverage for addon-domain / DNS steps, not total lack of access paths.
 - **Researched options:**
-  1. **Split the bucket operationally** into four tracks: reseller account recovery, cPanel authenticated write path, DNS/addon-domain wrapper coverage, storefront/business activation.
-  2. Build a **proof-backed access matrix**: what works now via cPanel, what works now via GoDaddy, what still needs human consent.
-  3. Add a hard pre-escalation checklist to the gap lane: repo truth → skill truth → cPanel path → delegate/recovery path → Fritz last.
-- **Recommended next move:** Treat this as a **routing + proof problem**, not a broad “access unknown” problem. The next artifact should be a small access matrix with live proof status per surface.
-- **Fritz authority required?:** **Potentially.** Only for fresh consent, missing credentials, or delegate approval. The research/design move does **not** need him yet.
+  1. **Operationalize pre-escalation checklist** for hosting/account gaps: repo truth -> skill truth -> existing cPanel path -> delegate-access recovery path -> only then Fritz escalation.
+  2. **Split the bucket** into subtracks: account recovery, cPanel authenticated write path, DNS/domain automation, reseller storefront ops. Right now too much is packed into one recurring theme.
+  3. **Prove current auth surfaces** with one durable artifact: what works today for GoDaddy, what works today for cPanel, what still requires human consent.
+- **Recommended next move:** Create a small proof-backed access matrix artifact for GoDaddy vs cPanel vs server-host truth, then update the gap handling lane so this exact escalation-order miss cannot recur.
+- **Fritz authority required?:** **Yes, potentially.** Only if fresh delegate approval, login consent, or missing credentials are required. The research/decision layer itself does not need him yet.
 - **Confidence:** High
 
 ---
 
-## 2) capability_id: special_case_for_platfor_convos
-- **Bucket:** `platform-conversation-context`
-- **Observed failure:** Platform/orchestration conversations were treated like site-build conversations, producing malformed capability rows in `gaps.jsonl`.
-- **Why it matters:** This is intelligence-loop pollution. It creates fake debt, burns research cycles, and weakens every downstream audit/report built from the gap ledger.
-- **Recurring?:** **Yes.** Small count, but explicit and already normalized into a recurring bucket.
+## 2) capability_id: to_be_able_to_track_billing._api_use._etc.._bt_lat
+- **Bucket:** `billing-usage-visibility`
+- **Observed failure:** Historic gap says Shay needed billing / API-usage tracking.
+- **Why it matters:** Cost visibility is an operations requirement, but it is no longer a clean unsolved capability gap if repo truth already covers most of it.
+- **Recurring?:** Mildly. It appears in the normalized bucket layer, but not at the same intensity as the GoDaddy/cPanel lane.
 - **Repo/session truth:**
-  - `SITE-LEARNINGS.md` says `scripts/intelligence/normalize_solution_map.py` now groups malformed rows into canonical buckets and bootstraps the promotions ledger.
-  - That same doc also says the normalizer **does not yet write canonical bucket IDs back into the source gap rows**, so raw `gaps.jsonl` remains partially malformed.
-  - `site-studio/lib/gap-logger.js` now checks canonical bucket aliases before logging, which helps dedupe, but it does **not** solve pre-gap lane classification.
-  - The classifier map in `docs/classifier-intent-map.md` is still site-studio centric; there is no explicit front-door split for `platform/orchestration` vs `site-build` vs `client-brief` vs `priority-interrupt`.
+  - `RELEASE_v0.9.0.md` documents `/usage` showing **rate limits, cost, and token details between turns**.
+  - `RELEASE_v0.11.0.md` adds an **account limits section in `/usage`**.
+  - `cron/scheduler.py` and `cron/jobs.py` explicitly support **watchdog-style no-agent cron scripts** for silent monitoring/alerting.
+  - The loaded Shay skill notes an **active cron job: API Usage Watchdog (every 2h, Telegram delivery, $10/day threshold)**.
 - **Researched options:**
-  1. Add a **pre-gap lane classifier** before `gap-logger.js` writes anything: `site-build`, `platform/orchestration`, `media-handoff`, `client-brief`, `priority-interrupt`, `true-gap`.
-  2. Route non-gap lanes into alternate artifacts instead of `gaps.jsonl` by default.
-  3. Add a **quarantine state** for ambiguous rows so malformed prose does not immediately become canonical gap debt.
-- **Recommended next move:** Build the pre-gap lane classifier first. The normalizer is a cleanup net; this gap wants prevention upstream.
+  1. **Close as capability largely solved** and treat remaining work as operational tuning/documentation.
+  2. Add a FAMtastic-specific cost ledger that snapshots `/usage` or provider totals into a local artifact for historical trend review.
+  3. If provider coverage is uneven, define a provider matrix: which lanes expose accurate cost, which only expose tokens/rate limits, which require custom parsing.
+- **Recommended next move:** Mark this gap as **proof/closeout drift**, not greenfield build work. The capability exists in repo truth. What remains is validating the live watchdog path and closing or rewriting the old gap row accordingly.
 - **Fritz authority required?:** No
 - **Confidence:** High
 
 ---
 
-## 3) capability_id: the_new_line_for_one._and_the_text-area_is_to_big.
-- **Bucket:** `shay-desk-ui-kinks`
-- **Observed failure:** Shay Desk complaints around newline entry, oversized textarea/composer behavior, and general interaction friction were logged as open gaps.
-- **Why it matters:** This is surface trust. If the desk/composer feels broken, Fritz stops using the richer surface and falls back to other lanes.
-- **Recurring?:** **Yes, but likely mixed.** The bucket has multiple complaints, and repo truth suggests some were fixed while others are probably stale or desktop-specific.
+## 3) capability_id: special_case_for_platfor_convos
+- **Bucket:** `platform-conversation-context`
+- **Observed failure:** Platform/orchestration conversations were treated like site-build conversations, causing malformed capability rows and bad gap logging.
+- **Why it matters:** This pollutes the gap ledger, creates fake capability work, and wastes later research cycles. It is an intelligence hygiene problem.
+- **Recurring?:** Yes, small but explicit. Multiple gap rows already collapsed into this bucket.
 - **Repo/session truth:**
-  - Promotions ledger keeps `shay-desk-ui-kinks` pending with frequency 3.
-  - `SITE-LEARNINGS.md` documents several **Desk issues that were fixed later**: stalled chats from poisoned Anthropic streams, and `Invalid API key` failures caused by Desk/gateway `API_SERVER_KEY` mismatch.
-  - The loaded Shay skill also documents explicit newline handling behavior in current CLI/runtime guidance (`Alt+Enter`, `Ctrl+J`, `Ctrl+Enter` depending on surface/OS), which means at least part of the historical “can’t do a new line” complaint is no longer greenfield.
-  - The remaining uncertainty is whether the original complaint belongs to the old Desk surface, the current Electron/Desktop surface, or older UI assumptions that have already drifted out of date.
+  - Promotions ledger keeps this bucket open as pending.
+  - `SITE-LEARNINGS.md` says `site-studio/lib/gap-logger.js` now checks canonical bucket aliases before logging, which reduces duplicate malformed rows.
+  - That is a good anti-dup step, but it is **not** the same thing as correctly classifying platform/orchestration conversation intent before logging.
 - **Researched options:**
-  1. **Split historical UI pain into proved-fixed vs still-open** instead of carrying one vague friction bucket.
-  2. Create a **surface-specific verification checklist** for composer/newline/textarea behavior across CLI, desktop web UI, and Electron Desk.
-  3. Reclassify stale rows that are now contradicted by repo truth as closeout/proof drift rather than active build debt.
-- **Recommended next move:** Run a focused validation pass on today’s active Desk surface and then either close or split this bucket into precise remaining defects. Right now the bucket is too fuzzy to guide good work.
+  1. Add an explicit **conversation lane classifier** before gap logging: `site-build`, `platform/orchestration`, `media request`, `priority interrupt`, `client brief`.
+  2. Treat platform-talk rows as **routing events** or **brief/intake artifacts**, not capability gaps by default.
+  3. Add a quarantine state for ambiguous rows so malformed prose does not immediately become canonical gap debt.
+- **Recommended next move:** Implement a pre-gap classifier with a small allowlist of non-gap conversation types, then reroute those types away from `gaps.jsonl` entirely.
 - **Fritz authority required?:** No
 - **Confidence:** Medium-high
 
 ---
 
 ## Verdict Summary
-- **Most valuable unresolved gap:** `godaddy-cpanel-access`
-- **Best prevention fix:** `platform-conversation-context`
-- **Best candidate for proof-closeout cleanup next:** `shay-desk-ui-kinks`
+- **Most urgent unresolved lane:** `godaddy-cpanel-access`
+- **Likely already solved in repo truth:** `billing-usage-visibility`
+- **Best hygiene fix to stop future drift:** `platform-conversation-context`
 
-## Notes
-- `billing-usage-visibility` was **not** selected this pass because repo truth already strongly suggests the core capability exists and the remaining work is operational closeout, not fresh research.
-- Vendor web lookup was attempted for GoDaddy/cPanel but the runtime web search backend returned `432`, so this artifact leans on already-captured local vendor truth instead of pretending fresh external proof was fetched.
+## Next research-worthy follow-up
+If another pass is available, the next best target is `shay-desk-ui-kinks` to separate what is already fixed in current CLI/runtime truth (newline handling now has explicit code/tests) from what is still genuinely open in the desktop/UI surface.

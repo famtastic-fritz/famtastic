@@ -2,29 +2,16 @@
 
 ## 2026-06-19 — FAMtastic Designs deploy truth moved into the site repo and live GoDaddy cutover was documented
 
-FAMtastic Designs now has a project-local deploy truth surface instead of depending on session memory or old cPanel assumptions. Added `sites/site-famtastic-designs/docs/DEPLOY-RUNBOOK.md` plus `sites/site-famtastic-designs/.env.deploy.example`, updated the deploy truth to reflect the real host (`p3plzcpnl497512.prod.phx3.secureserver.net` / account `xrdj7j99xhzt`), and recorded the live static cutover of `famtasticdesigns.com` into `/home/xrdj7j99xhzt/public_html` with backup `public_html_backup_20260619_130444`.
+FAMtastic Designs now has a project-local deploy truth surface instead of depending on session memory or old cPanel assumptions. Added `famtastic-sites/famtastic-designs/docs/DEPLOY-RUNBOOK.md` plus `famtastic-sites/famtastic-designs/.env.deploy.example`, updated `docs/DEPLOY-STATUS-2026-06-19.md` to reflect the real host (`p3plzcpnl497512.prod.phx3.secureserver.net` / account `xrdj7j99xhzt`), and recorded the live static cutover of `famtasticdesigns.com` into `/home/xrdj7j99xhzt/public_html` with backup `public_html_backup_20260619_130444`.
 
 ### Verified
 - Live deploy truth now lives with the site repo, while secrets stay out of git via local `.env.deploy.local`.
-- The runbook names the real Designs host, docroot, canonical local path, backup convention, smoke-test URLs, rollback steps, and the honest migration gap around the missing static-export pipeline in the canonical tree.
-- Repo-level stale references to `famtastic-sites/famtastic-designs` were rewritten to `sites/site-famtastic-designs` where that path was being treated as canonical truth.
+- The runbook names the real Designs host, docroot, build output, backup convention, smoke-test URLs, and rollback steps.
+- `docs/DEPLOY-STATUS-2026-06-19.md` no longer falsely describes the live site as still serving old Drupal.
 
 ### Known Gaps opened
 - The repo now has deploy documentation, but not yet a committed one-command deploy script for this site.
-- The losing duplicate directory still exists because it is a separate dirty nested repo with unique static-export work; it was intentionally left in place until that work is migrated or archived safely.
-
-## 2026-06-19 — FAMtastic Designs duplicate-path cleanup stopped short of deletion on purpose
-
-Filesystem truth check showed the supposed losing tree at `famtastic-sites/famtastic-designs` is not an empty duplicate. It is a separate nested Git repo on its own `main` branch with uncommitted changes, an `apps/web` static-export app, deploy artifacts, and site-specific docs that do not exist in the canonical Drupal-root tree under `sites/site-famtastic-designs`. That means force-deleting or renaming it during a cleanup pass would risk destroying unique work.
-
-### Verified
-- `git -C famtastic-sites/famtastic-designs status --short --branch` reported a dirty nested repo on `main`.
-- The duplicate tree contains unique paths including `apps/web/`, `artifacts/`, and `docs/DEPLOY-STATUS-2026-06-19.md`.
-- The canonical tree under `sites/site-famtastic-designs` does contain the required deploy docs, but it does not yet contain the migrated static-export pipeline.
-
-### Known Gaps opened
-- The duplicate path cannot be honestly deleted until its unique Next/static-export lane is either migrated into the canonical tree or archived with explicit provenance.
-- Future cleanup should treat this as a migration job, not a blind duplicate delete.
+- Older planning/handoff docs inside the site repo may still contain stale Vercel-first or pre-cutover language and should be swept before they are trusted as deploy truth.
 
 ## 2026-06-19 — Shay intelligence control-plane loop closed the first anti-drift circuit
 

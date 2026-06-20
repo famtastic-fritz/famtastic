@@ -50,11 +50,11 @@ From `obsidian/02-Income/FAMtastic-Hosting-Session-2026-06-11.md`:
 - This surface already has a real deploy path and real server-side app state
 
 ### FAMtastic Designs
-From `sites/site-famtastic-designs/docs/DEPLOY-RUNBOOK.md` plus duplicate-path audit on 2026-06-19:
-- Canonical source: `/Users/famtasticfritz/famtastic/sites/site-famtastic-designs`
-- Live domain was already cut over to the static marketing site on 2026-06-19
-- Duplicate legacy tree still exists at `famtastic-sites/famtastic-designs`, but it is not safe to delete blindly because it is a dirty nested repo with unique `apps/web` and artifact history
-- The canonical tree now owns deploy-truth docs, but the static-export build lane still needs to be migrated into it
+From `famtastic-sites/famtastic-designs/docs/DEPLOY-STATUS-2026-06-19.md`:
+- Canonical source: `/Users/famtasticfritz/famtastic/famtastic-sites/famtastic-designs`
+- Current live domain still serves old Drupal from `132.148.233.159`
+- New app builds successfully as static export
+- Prepared export bundle exists: `/Users/famtasticfritz/famtastic/famtastic-sites/famtastic-designs/artifacts/famtastic-designs-static-export-20260619-003526.tar.gz`
 
 ## Critical findings
 
@@ -204,7 +204,7 @@ Current blocker for deeper consolidation:
 - live HTTP/HTTPS header checks
 - live title extraction from each public domain
 - `obsidian/02-Income/FAMtastic-Hosting-Session-2026-06-11.md`
-- `sites/site-famtastic-designs/docs/DEPLOY-RUNBOOK.md`
+- `famtastic-sites/famtastic-designs/docs/DEPLOY-STATUS-2026-06-19.md`
 - `plans/three-lines-pipeline-2026-06-09.md`
 - `godaddy-reseller-ops` skill references, especially live-host identity guidance
 

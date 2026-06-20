@@ -6344,6 +6344,8 @@ app.post('/api/shay-shay', async (req, res) => {
         active_site: TAG,
         intent: direct.intent || 'shay_shay_direct',
         source: 'shay-shay-direct',
+        surface: _resolvedSurface,
+        conversation_id,
       });
       return res.json({
         response: direct.response,
@@ -6633,6 +6635,9 @@ app.post('/api/shay-shay', async (req, res) => {
       tier: reasoning.tier,
       brain: usedBrain,
       model: usedModel,
+      surface: _resolvedSurface,
+      conversation_id,
+      metadata: { reasoning: reasoning.kind, action: normalized.action || null },
     });
 
     console.error('[bridge-diag] HTTP response sent: response_text_len=' + String(normalized.response || '').length + ' has_bridge_result=' + !!bridgeResult + ' iterations=' + bridgeIterations + ' truncated=' + bridgeTruncated + ' action=' + (normalized.action || 'null'));
@@ -6680,9 +6685,9 @@ app.post('/api/shay-shay/gap', (req, res) => {
 // Shay-Shay suggestion outcome — called when Fritz accepts/dismisses
 app.post('/api/shay-shay/outcome', (req, res) => {
   try {
-    const { suggestion_id, outcome } = req.body;
-    suggestionLogger.logOutcome(suggestion_id, outcome);
-    res.json({ logged: true });
+    const { suggestion_id, outcome, meta } = req.body;
+    const logged = suggestionLogger.logOutcome(suggestion_id, outcome, meta);
+    res.json({ logged });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -6754,6 +6759,37 @@ function toShayShayRepoRelative(absPath) {
   return (rel || '.').split(path.sep).join('/');
 }
 
+const BRAND_REGISTRY_PATH = path.join(process.env.HOME, '.local', 'share', 'famtastic', 'brand.json');
+
+function readGlobalBrandRegistry() {
+  try {
+    if (!fs.existsSync(BRAND_REGISTRY_PATH)) return null;
+    const payload = JSON.parse(fs.readFileSync(BRAND_REGISTRY_PATH, 'utf8'));
+    return payload && typeof payload === 'object' ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveActiveBrandProfile(activeSiteTag) {
+  if (!activeSiteTag) return null;
+  const registry = readGlobalBrandRegistry();
+  if (!registry || !registry.sites || typeof registry.sites !== 'object') return null;
+  const profile = registry.sites[activeSiteTag];
+  if (!profile || typeof profile !== 'object') return null;
+  return {
+    site_tag: profile.site_tag || activeSiteTag,
+    primary_color: profile.primary_color || null,
+    accent_color: profile.accent_color || null,
+    bg_color: profile.bg_color || null,
+    heading_font: profile.heading_font || null,
+    body_font: profile.body_font || null,
+    source: profile.source || 'brand_registry',
+    extracted_at: profile.extracted_at || null,
+    brand_path: profile.brand_path || null,
+  };
+}
+
 function buildShayShayRepoPaths(context = {}) {
   const activeSiteTag = context.active_site || TAG || null;
   const activePage = context.active_page || currentPage || 'index.html';
@@ -6807,6 +6843,7 @@ function buildShayShaySiteSnapshot(context = {}, opts = {}) {
   // a context provider; getShayShayContext() pulls the snapshot per request.
   const pageContext = (context && typeof context.page_context === 'object' && context.page_context) ? context.page_context : null;
   const registeredContextProviders = Array.isArray(context.registered_context_providers) ? context.registered_context_providers : [];
+  const activeBrandProfile = resolveActiveBrandProfile(context.active_site || TAG || null);
 
   return {
     site_tag: context.active_site || TAG || null,
@@ -6823,6 +6860,7 @@ function buildShayShaySiteSnapshot(context = {}, opts = {}) {
     deployed_url: (spec.environments && spec.environments.production && spec.environments.production.url) || spec.deployed_url || null,
     last_deploy_status: lastDeploy && lastDeploy.status ? lastDeploy.status : null,
     brief_summary: summarizeDesignBrief(spec.design_brief),
+    active_brand_profile: activeBrandProfile,
     ui_state: {
       pip_badge_count: uiState.pip_badge_count != null ? uiState.pip_badge_count : null,
       worker_queue_pending_count: uiState.worker_queue_pending_count != null ? uiState.worker_queue_pending_count : null,
@@ -7041,6 +7079,17 @@ function buildShayShayPromptSnapshot(siteSnapshot = {}) {
     deployed_url: siteSnapshot.deployed_url || null,
     last_deploy_status: siteSnapshot.last_deploy_status || null,
     brief_summary: truncateShayShayText(siteSnapshot.brief_summary || '', SHAY_SHAY_PROMPT_LIMITS.textChars),
+    active_brand_profile: siteSnapshot.active_brand_profile && typeof siteSnapshot.active_brand_profile === 'object'
+      ? {
+          site_tag: siteSnapshot.active_brand_profile.site_tag || null,
+          primary_color: siteSnapshot.active_brand_profile.primary_color || null,
+          accent_color: siteSnapshot.active_brand_profile.accent_color || null,
+          bg_color: siteSnapshot.active_brand_profile.bg_color || null,
+          heading_font: siteSnapshot.active_brand_profile.heading_font || null,
+          body_font: siteSnapshot.active_brand_profile.body_font || null,
+          source: siteSnapshot.active_brand_profile.source || null,
+        }
+      : null,
     ui_state: {
       pip_badge_count: uiState.pip_badge_count != null ? uiState.pip_badge_count : null,
       worker_queue_pending_count: uiState.worker_queue_pending_count != null ? uiState.worker_queue_pending_count : null,
@@ -7392,6 +7441,9 @@ function buildShayShayPrompt(opts) {
   const _autoApproveActive = String(process.env.SHAY_AUTO_APPROVE || '').trim().toLowerCase() === 'true';
   const repoPaths = siteSnapshot && siteSnapshot.repo_paths ? siteSnapshot.repo_paths : {};
   const currentActivePagePath = repoPaths.active_page_path || '@active-site/' + (siteSnapshot && siteSnapshot.active_page ? siteSnapshot.active_page : 'index.html');
+  const activeBrandProfile = siteSnapshot && siteSnapshot.active_brand_profile && typeof siteSnapshot.active_brand_profile === 'object'
+    ? siteSnapshot.active_brand_profile
+    : null;
 
   const primer = includePrimer ? [
     instructions,
@@ -7409,6 +7461,10 @@ function buildShayShayPrompt(opts) {
     '  Use these exact strings when referring to the active site. Do NOT paraphrase, translate, or invent a different name or description for it.',
     '  If the user message references a DIFFERENT business than the active site, say so by referencing the active site by its exact site_name above — do not make up a different identity to compare against.',
     '',
+    activeBrandProfile ? 'ACTIVE BRAND PROFILE (prefer these live tokens over guesswork):' : '',
+    activeBrandProfile ? `  ${JSON.stringify(activeBrandProfile)}` : '',
+    activeBrandProfile ? '  When you make design, styling, or briefing suggestions for the active site, align to these tokens unless the user explicitly asks to replace them.' : '',
+    activeBrandProfile ? '' : '',
     'TOOL POLICY (read this before every action):',
     '  Reading Studio source       → use the `read_studio_file` tool (NOT bridge exec + cat).',
     '  Modifying Studio source     → use the `propose_studio_patch` tool.' + (_autoApproveActive
@@ -18346,6 +18402,7 @@ wss.on('connection', (ws) => {
           console.log(`[approve-brief] Extracted pages from brief: ${spec.pages.join(', ')}`);
         }
         writeSpec(spec);
+        suggestionLogger.resolveLatestMatching({ active_site: TAG, intent: 'brief_shown', source: 'handlePlanning' }, 'ACCEPTED', { event: 'approve-brief' });
         ws.send(JSON.stringify({ type: 'status', content: 'Brief approved! Building site...' }));
         appendConvo({ role: 'system', content: 'Design brief approved', at: new Date().toISOString() });
         // Build using the brief context — include pages from spec
@@ -18356,6 +18413,7 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'edit-brief') {
       // User wants to edit the brief
+      suggestionLogger.resolveLatestMatching({ active_site: TAG, intent: 'brief_shown', source: 'handlePlanning' }, 'EDITED', { event: 'edit-brief' });
       ws.send(JSON.stringify({ type: 'assistant', content: 'Tell me what you\'d like to change about the brief. I\'ll update it.' }));
     }
 
@@ -18648,6 +18706,7 @@ async function runDeploy(ws, env) {
       });
       writeSpec(spec);
 
+      suggestionLogger.resolveLatestMatching({ active_site: TAG }, 'SHIPPED', { event: 'deploy-complete', env, url: urlMatch[0] });
       studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });
       try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` })); } catch {}
       try { ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] })); } catch {}

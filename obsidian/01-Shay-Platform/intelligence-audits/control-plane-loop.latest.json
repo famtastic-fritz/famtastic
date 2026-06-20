@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-06-20T00:07:23.051780+00:00",
-  "requested_passes": 20,
-  "executed_passes": 1,
-  "stopped_reason": "only_minor_left",
+  "generated_at": "2026-06-20T07:33:23.694590+00:00",
+  "requested_passes": 3,
+  "executed_passes": 2,
+  "stopped_reason": "findings_stable",
   "rows": [
     {
       "index": 1,
       "result": {
         "exit_code": 0,
-        "stdout": "{\n  \"ok\": true,\n  \"history_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-pass-history.jsonl\",\n  \"plan_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-runtime-plan.md\",\n  \"only_minor_left\": true,\n  \"major_findings\": [],\n  \"minor_findings\": [\n    \"repo_verdicts linked 4 problem buckets\"\n  ]\n}",
+        "stdout": "{\n  \"ok\": true,\n  \"history_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-pass-history.jsonl\",\n  \"plan_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-runtime-plan.md\",\n  \"only_minor_left\": true,\n  \"major_findings\": [],\n  \"minor_findings\": [\n    \"artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles\",\n    \"repo_verdicts linked 4 problem buckets\"\n  ]\n}",
         "stderr": "",
         "data": {
           "ok": true,
@@ -17,14 +17,101 @@
           "only_minor_left": true,
           "major_findings": [],
           "minor_findings": [
+            "artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles",
             "repo_verdicts linked 4 problem buckets"
           ]
         }
       },
       "history": {
-        "pass_id": "control-plane-pass-20260619-200723",
-        "generated_at": "2026-06-20T00:07:23.048682+00:00",
+        "pass_id": "control-plane-pass-20260620-033323-439630",
+        "generated_at": "2026-06-20T07:33:23.438882+00:00",
         "steps": [
+          {
+            "name": "artifact_sync",
+            "command": [
+              "python3",
+              "/Users/famtasticfritz/famtastic/scripts/intelligence/sync_learning_artifacts.py"
+            ],
+            "exit_code": 0,
+            "stdout": "{\n  \"generated_at\": \"2026-06-20T07:33:23.228533+00:00\",\n  \"gaps_exists\": true,\n  \"suggestions_exists\": true,\n  \"suggestion_promotions_count\": 0,\n  \"brand_site_count\": 16,\n  \"actions\": [\n    \"wrote brand registry with 16 sites to /Users/famtasticfritz/.local/share/famtastic/brand.json\"\n  ],\n  \"paths\": {\n    \"gaps\": \"/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl\",\n    \"suggestions\": \"/Users/famtasticfritz/.local/share/famtastic/suggestions.jsonl\",\n    \"suggestion_promotions\": \"/Users/famtasticfritz/.local/share/famtastic/suggestion-promotions.jsonl\",\n    \"brand_registry\": \"/Users/famtasticfritz/.local/share/famtastic/brand.json\",\n    \"audit_json\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.json\",\n    \"audit_md\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.md\"\n  },\n  \"top_suggestion_promotions\": [],\n  \"brand_sample\": [\n    {\n      \"site_tag\": \"site-altitude\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-altitude/brand.json\",\n      \"primary_color\": null,\n      \"accent_color\": \"#C9A56B\",\n      \"bg_color\": \"#0B1220\",\n      \"heading_font\": \"Bebas Neue\",\n      \"body_font\": \"Poppins\",\n      \"extracted_at\": \"2026-04-16T20:42:43.961Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-auntie-gale-garage-sales\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-auntie-gale-garage-sales/brand.json\",\n      \"primary_color\": \"#E8420A\",\n      \"accent_color\": \"#FBBF24\",\n      \"bg_color\": \"#FFFBF5\",\n      \"heading_font\": \"Bebas Neue\",\n      \"body_font\": \"Poppins\",\n      \"extracted_at\": \"2026-04-17T11:23:30.047Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-black\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-black/brand.json\",\n      \"primary_color\": \"#00A79D\",\n      \"accent_color\": \"#F5B800\",\n      \"bg_color\": \"#FDF4E3\",\n      \"heading_font\": \"Montserrat\",\n      \"body_font\": \"Open Sans\",\n      \"extracted_at\": \"2026-04-25T05:56:42.132Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-crumb-and-crust-bakery\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-crumb-and-crust-bakery/brand.json\",\n      \"primary_color\": \"#8B4513\",\n      \"accent_color\": \"#E89B5C\",\n      \"bg_color\": \"#FFFCF5\",\n      \"heading_font\": \"Montserrat\",\n      \"body_font\": \"Open Sans\",\n      \"extracted_at\": \"2026-04-27T20:31:25.338Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-famtastic-com\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-famtastic-com/brand.json\",\n      \"primary_color\": null,\n      \"accent_color\": null,\n      \"bg_color\": null,\n      \"heading_font\": null,\n      \"body_font\": null,\n      \"extracted_at\": \"2026-04-21T17:05:24.456Z\",\n      \"source\": \"build\"\n    }\n  ]\n}",
+            "stderr": "",
+            "parsed": {
+              "generated_at": "2026-06-20T07:33:23.228533+00:00",
+              "gaps_exists": true,
+              "suggestions_exists": true,
+              "suggestion_promotions_count": 0,
+              "brand_site_count": 16,
+              "actions": [
+                "wrote brand registry with 16 sites to /Users/famtasticfritz/.local/share/famtastic/brand.json"
+              ],
+              "paths": {
+                "gaps": "/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl",
+                "suggestions": "/Users/famtasticfritz/.local/share/famtastic/suggestions.jsonl",
+                "suggestion_promotions": "/Users/famtasticfritz/.local/share/famtastic/suggestion-promotions.jsonl",
+                "brand_registry": "/Users/famtasticfritz/.local/share/famtastic/brand.json",
+                "audit_json": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.json",
+                "audit_md": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.md"
+              },
+              "top_suggestion_promotions": [],
+              "brand_sample": [
+                {
+                  "site_tag": "site-altitude",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-altitude/brand.json",
+                  "primary_color": null,
+                  "accent_color": "#C9A56B",
+                  "bg_color": "#0B1220",
+                  "heading_font": "Bebas Neue",
+                  "body_font": "Poppins",
+                  "extracted_at": "2026-04-16T20:42:43.961Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-auntie-gale-garage-sales",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-auntie-gale-garage-sales/brand.json",
+                  "primary_color": "#E8420A",
+                  "accent_color": "#FBBF24",
+                  "bg_color": "#FFFBF5",
+                  "heading_font": "Bebas Neue",
+                  "body_font": "Poppins",
+                  "extracted_at": "2026-04-17T11:23:30.047Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-black",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-black/brand.json",
+                  "primary_color": "#00A79D",
+                  "accent_color": "#F5B800",
+                  "bg_color": "#FDF4E3",
+                  "heading_font": "Montserrat",
+                  "body_font": "Open Sans",
+                  "extracted_at": "2026-04-25T05:56:42.132Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-crumb-and-crust-bakery",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-crumb-and-crust-bakery/brand.json",
+                  "primary_color": "#8B4513",
+                  "accent_color": "#E89B5C",
+                  "bg_color": "#FFFCF5",
+                  "heading_font": "Montserrat",
+                  "body_font": "Open Sans",
+                  "extracted_at": "2026-04-27T20:31:25.338Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-famtastic-com",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-famtastic-com/brand.json",
+                  "primary_color": null,
+                  "accent_color": null,
+                  "bg_color": null,
+                  "heading_font": null,
+                  "body_font": null,
+                  "extracted_at": "2026-04-21T17:05:24.456Z",
+                  "source": "build"
+                }
+              ]
+            }
+          },
           {
             "name": "normalize",
             "command": [
@@ -98,6 +185,195 @@
         "assessment": {
           "major_findings": [],
           "minor_findings": [
+            "artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles",
+            "repo_verdicts linked 4 problem buckets"
+          ],
+          "only_minor_left": true
+        }
+      }
+    },
+    {
+      "index": 2,
+      "result": {
+        "exit_code": 0,
+        "stdout": "{\n  \"ok\": true,\n  \"history_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-pass-history.jsonl\",\n  \"plan_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-runtime-plan.md\",\n  \"only_minor_left\": true,\n  \"major_findings\": [],\n  \"minor_findings\": [\n    \"artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles\",\n    \"repo_verdicts linked 4 problem buckets\"\n  ]\n}",
+        "stderr": "",
+        "data": {
+          "ok": true,
+          "history_path": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-pass-history.jsonl",
+          "plan_path": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/control-plane-runtime-plan.md",
+          "only_minor_left": true,
+          "major_findings": [],
+          "minor_findings": [
+            "artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles",
+            "repo_verdicts linked 4 problem buckets"
+          ]
+        }
+      },
+      "history": {
+        "pass_id": "control-plane-pass-20260620-033323-690055",
+        "generated_at": "2026-06-20T07:33:23.689203+00:00",
+        "steps": [
+          {
+            "name": "artifact_sync",
+            "command": [
+              "python3",
+              "/Users/famtasticfritz/famtastic/scripts/intelligence/sync_learning_artifacts.py"
+            ],
+            "exit_code": 0,
+            "stdout": "{\n  \"generated_at\": \"2026-06-20T07:33:23.520336+00:00\",\n  \"gaps_exists\": true,\n  \"suggestions_exists\": true,\n  \"suggestion_promotions_count\": 0,\n  \"brand_site_count\": 16,\n  \"actions\": [\n    \"wrote brand registry with 16 sites to /Users/famtasticfritz/.local/share/famtastic/brand.json\"\n  ],\n  \"paths\": {\n    \"gaps\": \"/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl\",\n    \"suggestions\": \"/Users/famtasticfritz/.local/share/famtastic/suggestions.jsonl\",\n    \"suggestion_promotions\": \"/Users/famtasticfritz/.local/share/famtastic/suggestion-promotions.jsonl\",\n    \"brand_registry\": \"/Users/famtasticfritz/.local/share/famtastic/brand.json\",\n    \"audit_json\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.json\",\n    \"audit_md\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.md\"\n  },\n  \"top_suggestion_promotions\": [],\n  \"brand_sample\": [\n    {\n      \"site_tag\": \"site-altitude\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-altitude/brand.json\",\n      \"primary_color\": null,\n      \"accent_color\": \"#C9A56B\",\n      \"bg_color\": \"#0B1220\",\n      \"heading_font\": \"Bebas Neue\",\n      \"body_font\": \"Poppins\",\n      \"extracted_at\": \"2026-04-16T20:42:43.961Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-auntie-gale-garage-sales\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-auntie-gale-garage-sales/brand.json\",\n      \"primary_color\": \"#E8420A\",\n      \"accent_color\": \"#FBBF24\",\n      \"bg_color\": \"#FFFBF5\",\n      \"heading_font\": \"Bebas Neue\",\n      \"body_font\": \"Poppins\",\n      \"extracted_at\": \"2026-04-17T11:23:30.047Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-black\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-black/brand.json\",\n      \"primary_color\": \"#00A79D\",\n      \"accent_color\": \"#F5B800\",\n      \"bg_color\": \"#FDF4E3\",\n      \"heading_font\": \"Montserrat\",\n      \"body_font\": \"Open Sans\",\n      \"extracted_at\": \"2026-04-25T05:56:42.132Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-crumb-and-crust-bakery\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-crumb-and-crust-bakery/brand.json\",\n      \"primary_color\": \"#8B4513\",\n      \"accent_color\": \"#E89B5C\",\n      \"bg_color\": \"#FFFCF5\",\n      \"heading_font\": \"Montserrat\",\n      \"body_font\": \"Open Sans\",\n      \"extracted_at\": \"2026-04-27T20:31:25.338Z\",\n      \"source\": \"build\"\n    },\n    {\n      \"site_tag\": \"site-famtastic-com\",\n      \"brand_path\": \"/Users/famtasticfritz/famtastic/sites/site-famtastic-com/brand.json\",\n      \"primary_color\": null,\n      \"accent_color\": null,\n      \"bg_color\": null,\n      \"heading_font\": null,\n      \"body_font\": null,\n      \"extracted_at\": \"2026-04-21T17:05:24.456Z\",\n      \"source\": \"build\"\n    }\n  ]\n}",
+            "stderr": "",
+            "parsed": {
+              "generated_at": "2026-06-20T07:33:23.520336+00:00",
+              "gaps_exists": true,
+              "suggestions_exists": true,
+              "suggestion_promotions_count": 0,
+              "brand_site_count": 16,
+              "actions": [
+                "wrote brand registry with 16 sites to /Users/famtasticfritz/.local/share/famtastic/brand.json"
+              ],
+              "paths": {
+                "gaps": "/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl",
+                "suggestions": "/Users/famtasticfritz/.local/share/famtastic/suggestions.jsonl",
+                "suggestion_promotions": "/Users/famtasticfritz/.local/share/famtastic/suggestion-promotions.jsonl",
+                "brand_registry": "/Users/famtasticfritz/.local/share/famtastic/brand.json",
+                "audit_json": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.json",
+                "audit_md": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.md"
+              },
+              "top_suggestion_promotions": [],
+              "brand_sample": [
+                {
+                  "site_tag": "site-altitude",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-altitude/brand.json",
+                  "primary_color": null,
+                  "accent_color": "#C9A56B",
+                  "bg_color": "#0B1220",
+                  "heading_font": "Bebas Neue",
+                  "body_font": "Poppins",
+                  "extracted_at": "2026-04-16T20:42:43.961Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-auntie-gale-garage-sales",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-auntie-gale-garage-sales/brand.json",
+                  "primary_color": "#E8420A",
+                  "accent_color": "#FBBF24",
+                  "bg_color": "#FFFBF5",
+                  "heading_font": "Bebas Neue",
+                  "body_font": "Poppins",
+                  "extracted_at": "2026-04-17T11:23:30.047Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-black",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-black/brand.json",
+                  "primary_color": "#00A79D",
+                  "accent_color": "#F5B800",
+                  "bg_color": "#FDF4E3",
+                  "heading_font": "Montserrat",
+                  "body_font": "Open Sans",
+                  "extracted_at": "2026-04-25T05:56:42.132Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-crumb-and-crust-bakery",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-crumb-and-crust-bakery/brand.json",
+                  "primary_color": "#8B4513",
+                  "accent_color": "#E89B5C",
+                  "bg_color": "#FFFCF5",
+                  "heading_font": "Montserrat",
+                  "body_font": "Open Sans",
+                  "extracted_at": "2026-04-27T20:31:25.338Z",
+                  "source": "build"
+                },
+                {
+                  "site_tag": "site-famtastic-com",
+                  "brand_path": "/Users/famtasticfritz/famtastic/sites/site-famtastic-com/brand.json",
+                  "primary_color": null,
+                  "accent_color": null,
+                  "bg_color": null,
+                  "heading_font": null,
+                  "body_font": null,
+                  "extracted_at": "2026-04-21T17:05:24.456Z",
+                  "source": "build"
+                }
+              ]
+            }
+          },
+          {
+            "name": "normalize",
+            "command": [
+              "python3",
+              "/Users/famtasticfritz/famtastic/scripts/intelligence/normalize_solution_map.py"
+            ],
+            "exit_code": 0,
+            "stdout": "{\n  \"ok\": true,\n  \"buckets_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.json\",\n  \"buckets_md_path\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.md\",\n  \"promotions_path\": \"/Users/famtasticfritz/.local/share/famtastic/intelligence-promotions.json\",\n  \"bucket_count\": 10,\n  \"promotion_count\": 6,\n  \"unmatched_gap_rows\": 0\n}",
+            "stderr": "",
+            "parsed": {
+              "ok": true,
+              "buckets_path": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.json",
+              "buckets_md_path": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.md",
+              "promotions_path": "/Users/famtasticfritz/.local/share/famtastic/intelligence-promotions.json",
+              "bucket_count": 10,
+              "promotion_count": 6,
+              "unmatched_gap_rows": 0
+            }
+          },
+          {
+            "name": "repo_verdicts",
+            "command": [
+              "python3",
+              "/Users/famtasticfritz/famtastic/scripts/intelligence/build_problem_repo_verdicts.py"
+            ],
+            "exit_code": 0,
+            "stdout": "{\n  \"ok\": true,\n  \"out_json\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-repo-verdicts.latest.json\",\n  \"out_md\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-repo-verdicts.latest.md\",\n  \"problem_count\": 10,\n  \"linked_problem_count\": 4\n}",
+            "stderr": "",
+            "parsed": {
+              "ok": true,
+              "out_json": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-repo-verdicts.latest.json",
+              "out_md": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-repo-verdicts.latest.md",
+              "problem_count": 10,
+              "linked_problem_count": 4
+            }
+          },
+          {
+            "name": "proof_closeout",
+            "command": [
+              "python3",
+              "/Users/famtasticfritz/famtastic/scripts/intelligence/build_proof_closeout.py"
+            ],
+            "exit_code": 0,
+            "stdout": "{\n  \"ok\": true,\n  \"out_json\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/proof-closeout.latest.json\",\n  \"out_md\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/proof-closeout.latest.md\",\n  \"applied_mutation_count\": 0\n}",
+            "stderr": "",
+            "parsed": {
+              "ok": true,
+              "out_json": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/proof-closeout.latest.json",
+              "out_md": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/proof-closeout.latest.md",
+              "applied_mutation_count": 0
+            }
+          },
+          {
+            "name": "gap_cleanup",
+            "command": [
+              "python3",
+              "/Users/famtasticfritz/famtastic/scripts/intelligence/cleanup_gap_rows.py"
+            ],
+            "exit_code": 0,
+            "stdout": "{\n  \"ok\": true,\n  \"out_json\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-cleanup.latest.json\",\n  \"out_md\": \"/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-cleanup.latest.md\",\n  \"changed_gaps\": 0,\n  \"remaining_unmatched\": 0\n}",
+            "stderr": "",
+            "parsed": {
+              "ok": true,
+              "out_json": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-cleanup.latest.json",
+              "out_md": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-cleanup.latest.md",
+              "changed_gaps": 0,
+              "remaining_unmatched": 0
+            }
+          }
+        ],
+        "assessment": {
+          "major_findings": [],
+          "minor_findings": [
+            "artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles",
             "repo_verdicts linked 4 problem buckets"
           ],
           "only_minor_left": true

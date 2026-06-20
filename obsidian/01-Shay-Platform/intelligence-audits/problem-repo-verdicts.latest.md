@@ -6,7 +6,7 @@ permalink: famtastic/01-shay-platform/intelligence-audits/problem-repo-verdicts.
 
 # Problem → repo verdicts
 
-Generated: 2026-06-20T00:07:22.995585+00:00
+Generated: 2026-06-19T22:02:23.805655+00:00
 
 ## JJ BA brief shaping drift (`jj-ba-brief-shaping`)
 - promotion_status: pending

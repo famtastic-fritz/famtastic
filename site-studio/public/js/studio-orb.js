@@ -96,6 +96,34 @@
   let shayDeskHasTranscript = false;
   let liteTurnCount = 0; // track Lite turns for "Open in Desk" affordance
   let liteSurfaceState = 'idle'; // idle | prompting | thinking | responding | alerting | show_me
+  let pendingSuggestionState = { lite: null, desk: null };
+
+  function rememberSuggestion(surface, data) {
+    if (!surface) return;
+    if (data && data.suggestion_id) {
+      pendingSuggestionState[surface] = {
+        id: data.suggestion_id,
+        action: data.action || null,
+        at: Date.now()
+      };
+    }
+  }
+
+  function reportSuggestionOutcome(surface, outcome, meta) {
+    var pending = pendingSuggestionState[surface];
+    if (!pending || !pending.id || !outcome) return Promise.resolve({ skipped: true });
+    pendingSuggestionState[surface] = null;
+    return fetch('/api/shay-shay/outcome', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggestion_id: pending.id, outcome: outcome, meta: meta || {} }),
+    }).then(function (r) { return r.json(); }).catch(function (err) {
+      console.warn('[shay-shay] suggestion outcome failed:', err && err.message ? err.message : err);
+      return { logged: false, error: err && err.message ? err.message : String(err) };
+    });
+  }
+
   let shayLiteSettings = {
     identity_mode: 'character',
     default_identity_mode: 'character',
@@ -880,6 +908,7 @@
 
   function dismiss(key) {
     if (key) localStorage.setItem('pip-dismiss:' + key, '1');
+    reportSuggestionOutcome('lite', 'DISMISSED', { event: 'dismiss', key: key || null });
     closeCallout();
     // Suppress any follow-on message for 2 seconds (prevents validation
     // plan or other triggers from immediately re-populating the column)
@@ -1160,6 +1189,7 @@
           .then(function (r) { return r.json(); })
           .then(function (data) {
             liteBridgeClient.storeResponseResult(data);
+            rememberSuggestion('lite', data);
             liteBridgeClient.markResponseReceived();
             // Show last bridge op hint if present
             if (data.bridge_result && data.bridge_result.op) {
@@ -1175,14 +1205,17 @@
                   if (window.addMessage) window.addMessage('user', data.message || message);
                   window.ws.send(JSON.stringify({ type: 'chat', content: data.message || message }));
                 }
+                reportSuggestionOutcome('lite', 'ACCEPTED', { event: 'route_to_chat', message: data.message || message });
                 showColumnResponse('Sent to Studio: "' + (data.message || message) + '"', false);
               } else if (data.action === 'system_command') {
                 showColumnResponse(data.response || 'Running command\u2026', false);
+                reportSuggestionOutcome('lite', 'ACCEPTED', { event: 'system_command', command: data.command || null });
                 if (data.command === 'restart' && window.ws) {
                   window.ws.send(JSON.stringify({ type: 'chat', content: 'restart studio' }));
                 }
               } else if (data.action === 'show_me') {
                 applyLiteSurfaceState('show_me');
+                reportSuggestionOutcome('lite', 'ACCEPTED', { event: 'show_me' });
                 showColumnResponse(data.response || 'Opening Show Me\u2026', false);
               } else if (data.action === 'suggest_brainstorm') {
                 showColumnResponse(data.response || 'Want to switch to brainstorm mode?', false);
@@ -1193,16 +1226,21 @@
                       if (window.StudioShell && typeof StudioShell.switchMode === 'function') {
                         StudioShell.switchMode('brainstorm');
                       }
+                      reportSuggestionOutcome('lite', 'ACCEPTED', { event: 'switch_to_brainstorm' });
                       showColumnActions([]);
                     }
                   },
                   {
                     label: 'Stay Here',
-                    action: function () { showColumnActions([]); },
+                    action: function () {
+                      reportSuggestionOutcome('lite', 'DISMISSED', { event: 'stay_here' });
+                      showColumnActions([]);
+                    },
                     secondary: true
                   }
                 ]);
               } else if (data.action === 'job_plan') {
+                reportSuggestionOutcome('lite', 'ACCEPTED', { event: 'job_plan', job_count: Array.isArray(data.jobs) ? data.jobs.length : 0 });
                 showJobPlanCard(data.jobs || [], data.response || 'Job plan created.');
                 showColumnActions([]);
               } else {

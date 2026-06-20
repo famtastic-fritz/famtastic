@@ -15,6 +15,11 @@ const OUTCOMES = {
   IGNORED: 0.1,   // no response within session
 };
 
+function normalizeOutcomeKey(outcomeKey) {
+  const key = String(outcomeKey || '').trim().toUpperCase();
+  return OUTCOMES[key] ? key : null;
+}
+
 const PROMOTION_THRESHOLD = 3;
 const PROMOTION_MIN_SCORE = 1.0;
 
@@ -41,7 +46,10 @@ function logSuggestion(suggestion, context = {}) {
       intent: context.intent || null,
       source: context.source || 'unknown',
       weight: context.weight || 1.0,
+      surface: context.surface || null,
+      conversation_id: context.conversation_id || null,
     },
+    metadata: context.metadata && typeof context.metadata === 'object' ? context.metadata : {},
     outcome: null,
     score: null,
   };
@@ -49,15 +57,50 @@ function logSuggestion(suggestion, context = {}) {
   return entry.id;
 }
 
-function logOutcome(id, outcomeKey) {
-  if (!OUTCOMES[outcomeKey]) return;
-  const score = OUTCOMES[outcomeKey];
+function logOutcome(id, outcomeKey, meta = {}) {
+  const normalized = normalizeOutcomeKey(outcomeKey);
+  if (!normalized) return false;
+  const score = OUTCOMES[normalized];
+  let resolved = false;
   const suggestions = loadSuggestions().map(s => {
-    if (s.id === id) return { ...s, outcome: outcomeKey, score, resolved_at: new Date().toISOString() };
+    if (s.id === id) {
+      resolved = true;
+      return {
+        ...s,
+        outcome: normalized,
+        score,
+        resolved_at: new Date().toISOString(),
+        outcome_meta: meta && typeof meta === 'object' ? meta : {},
+      };
+    }
     return s;
   });
+  if (!resolved) return false;
   rewrite(suggestions);
   checkPromotion(suggestions, id);
+  return true;
+}
+
+function matchesCriteria(entry, criteria = {}) {
+  const ctx = entry && entry.context ? entry.context : {};
+  if (criteria.active_site && ctx.active_site !== criteria.active_site) return false;
+  if (criteria.intent && ctx.intent !== criteria.intent) return false;
+  if (criteria.source && ctx.source !== criteria.source) return false;
+  if (criteria.conversation_id && ctx.conversation_id !== criteria.conversation_id) return false;
+  return true;
+}
+
+function resolveLatestMatching(criteria = {}, outcomeKey, meta = {}) {
+  const normalized = normalizeOutcomeKey(outcomeKey);
+  if (!normalized) return null;
+  const suggestions = loadSuggestions();
+  for (let i = suggestions.length - 1; i >= 0; i -= 1) {
+    const row = suggestions[i];
+    if (row.outcome !== null) continue;
+    if (!matchesCriteria(row, criteria)) continue;
+    return logOutcome(row.id, normalized, meta) ? row.id : null;
+  }
+  return null;
 }
 
 function rewrite(suggestions) {
@@ -101,4 +144,4 @@ function loadPendingSuggestions(since = null) {
   });
 }
 
-module.exports = { logSuggestion, logOutcome, loadPendingSuggestions, OUTCOMES };
+module.exports = { logSuggestion, logOutcome, loadPendingSuggestions, resolveLatestMatching, OUTCOMES };
