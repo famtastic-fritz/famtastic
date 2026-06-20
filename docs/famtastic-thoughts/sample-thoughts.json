@@ -1,0 +1,45 @@
+{
+  "thoughts": [
+    {
+      "thought_id": "tht_01HABC123",
+      "title": "Why every small business needs custom nameservers",
+      "slug": "custom-nameservers-for-small-business",
+      "status": "published",
+      "format": "lesson",
+      "excerpt": "Using your host's default nameservers is like handing out a generic business card. Custom nameservers turn hosting into a brand signal.",
+      "body": "When a client points their domain to `ns1.famtastichosting.com`, every DNS lookup becomes a tiny ad.\n\nCustom nameservers also make future migrations invisible: the client never has to touch their registrar again.\n\nThree reasons to care:\n1. **Brand consistency** — your name is on every lookup.\n2. **White-label support** — the client sees you, not GoDaddy.\n3. **Future flexibility** — move infrastructure without disruption.\n\nThis is one of the quietest upgrades that makes a hosting business feel premium.",
+      "source": "email",
+      "tags": ["hosting", "branding", "dns", "small-business"],
+      "cross_links": [
+        { "target": "hosting", "url": "https://famtastichosting.com/?ref=thoughts", "label": "See hosting plans" }
+      ],
+      "published_at": "2026-06-18T10:00:00Z"
+    },
+    {
+      "thought_id": "tht_02DEF456",
+      "title": "The fastest way to prove value to a local service client",
+      "slug": "prove-value-local-service-client",
+      "status": "draft",
+      "format": "lesson",
+      "excerpt": "Before selling a website, show a before/after of their current site loading on a phone.",
+      "body": "Local service businesses don't buy websites. They buy more calls.\n\nThe fastest proof:\n- Open their current site on a 3-year-old phone.\n- Record a Lighthouse mobile report.\n- Show a 60-second mockup of a faster, cleaner page.\n\nThat combo turns a pitch into a conversation about results.",
+      "source": "voice",
+      "tags": ["designs", "sales", "local-services", "proof"],
+      "cross_links": [
+        { "target": "designs", "url": "https://famtasticdesigns.com/?ref=thoughts", "label": "Get a free preview" }
+      ],
+      "published_at": null
+    }
+  ],
+  "collections": [
+    {
+      "collection_id": "col_hostingLessons",
+      "title": "Hosting Lessons",
+      "slug": "hosting-lessons",
+      "description": "Practical notes from running a white-label hosting business.",
+      "thought_ids": ["tht_01HABC123"],
+      "is_featured": true,
+      "sort_order": 1
+    }
+  ]
+}
