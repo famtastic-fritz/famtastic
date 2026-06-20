@@ -21,6 +21,54 @@ This file summarizes how Claude Code, Codex, Gemini, Cowork, and other agent sur
 12. Do not run noisy check-in unless Fritz explicitly says multi-agent coordination is active.
 13. Preserve old plans as reference; do not let stale plans override the current Phase 2 plan.
 14. Use explicit commits and explicit staging. Never `git add .` in this repo during consolidation.
+15. Treat truth-surface drift and cross-lane contamination as first-class failure modes. Stored context, resumed chat state, and memory are inputs — not truth — until re-anchored against live repo/worktree reality.
+
+## Truth-surface and lane-grounding doctrine
+
+The recurring failure is not just lost memory. It is truth-surface drift:
+
+- real work lives on one repo lane
+- a later session resumes from drifted or partial context
+- branch/worktree truth and conversational truth get fused
+- an agent or cron job writes from the wrong lane with false confidence
+
+Name the weakness directly:
+
+- weakness: truth-surface drift
+- failure mode: cross-lane contamination under parallel sessions
+- protection: explicit worktree/lane isolation plus live re-anchoring before action
+
+Worktrees are not just convenience. They are lane isolation. Use them to keep unrelated execution lanes, recovery lanes, and autonomous lanes from rewriting each other's story.
+
+## Required lane preflight before meaningful writes
+
+Before any agent, cron job, launchd job, script, or autonomous repair lane performs a meaningful write, commit, reset, migration, or doc mutation, verify all of the following:
+
+1. repo root
+2. current branch
+3. worktree path / common-dir relationship when applicable
+4. intended execution lane for the task
+5. current shell lane vs intended execution lane
+6. whether the task belongs to this lane at all
+7. whether resumed context is stale, cross-lane, or otherwise unverified
+
+If lane truth is unclear:
+
+- stop
+- preserve dirty state first
+- classify drift/contamination before changing files
+- do not commit, reset, or "helpfully continue" from ambiguous state
+
+## Cron and autonomous-run grounding rule
+
+Cron jobs, launchd jobs, and autonomous agents must never run from an implied or accidental cwd.
+
+- Bind every unattended run to an explicit `workdir` / repo path.
+- Prefer the exact worktree path for the intended lane, not a parent repo chosen by accident.
+- Log repo root, cwd, branch, and worktree before any write-capable action.
+- If the active lane and configured lane disagree, abort instead of writing.
+
+The proof of this doctrine is behavioral, not archival. A saved note or memory entry is not success. Success means the next run re-anchors correctly, rejects the wrong lane, and avoids the earlier cron/worktree contamination failure.
 
 Note: if branch/worktree are not needed for a packet, say that explicitly instead of omitting the fields.
 

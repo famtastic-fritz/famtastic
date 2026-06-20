@@ -10,8 +10,9 @@ Before non-trivial work, read `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`.
 It is the current orientation layer for Claude Code, Codex, Gemini, Cowork,
 and other agent surfaces. It captures the current doctrine:
 research-first, spec-shaped, proof-driven work; reuse before generate;
-post-evaluation after meaningful jobs; Phase 2 priority is Visual Workflows &
-Brand Systems.
+post-evaluation after meaningful jobs; truth-surface drift prevention via live
+repo/worktree re-anchoring before writes; Phase 2 priority is Visual Workflows
+& Brand Systems.
 
 ## Agent Coordination (Paused by Default)
 

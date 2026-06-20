@@ -20,7 +20,9 @@ worktrees unless those references have been reconciled into the current docs.
 
 Core doctrine: research-first, spec-shaped, proof-driven work; reuse before
 generate; route specialized needs to the owning studio/service; record proof
-in Data Center; run post-evaluation after meaningful jobs.
+in Data Center; run post-evaluation after meaningful jobs; treat truth-surface
+drift as a first-class failure mode and re-anchor repo/branch/worktree truth
+before meaningful writes.
 
 ## Resumable Brief Rule (Active Now)
 

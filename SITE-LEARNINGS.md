@@ -1,5 +1,20 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-19 — Truth-surface drift doctrine + lane preflight
+
+Promoted the recovery lesson from a one-off session into the common startup doctrine so agents stop treating branch/worktree confusion as an after-the-fact cleanup problem. `docs/agent-startup/AGENT-STARTUP-CONTRACT.md` now explicitly names the weakness as `truth-surface drift`, the failure mode as `cross-lane contamination under parallel sessions`, and the protection as live repo/worktree re-anchoring plus worktree-based lane isolation before action. The contract now also requires a lane preflight before meaningful writes: verify repo root, current branch, worktree/common-dir relationship when relevant, intended execution lane, actual shell lane, task-to-lane fit, and whether resumed context is stale or cross-lane.
+
+The unattended-run rule is now explicit too: cron jobs, launchd jobs, and autonomous agents must bind to an explicit repo/worktree path rather than an accidental cwd, log repo/cwd/branch/worktree before write-capable work, and abort if the configured lane and active lane disagree. Matching startup summaries were mirrored into `AGENTS.md` and `CLAUDE.md` so the anti-drift framing is visible across the main agent entry surfaces rather than hidden in one note.
+
+### Verified
+- `docs/agent-startup/AGENT-STARTUP-CONTRACT.md` now contains a dedicated `Truth-surface and lane-grounding doctrine` section, a `Required lane preflight before meaningful writes` checklist, and a `Cron and autonomous-run grounding rule` section.
+- `AGENTS.md` now says the startup contract includes truth-surface drift prevention through live repo/worktree re-anchoring before writes.
+- `CLAUDE.md` now tells startup readers to treat truth-surface drift as a first-class failure mode and re-anchor repo/branch/worktree truth before meaningful writes.
+
+### Known Gaps opened
+- This slice is doctrine-first. There is still no dedicated executable `lane preflight` CLI or git hook that automatically blocks wrong-lane writes.
+- Existing cron/launchd/autonomous jobs still need an audit pass to prove each one is explicitly bound to the right workdir/worktree instead of relying on inherited cwd.
+
 ## 2026-06-18 — Shay prompt-memory target tightened under 2k
 
 Tightened the live Shay prompt-memory footprint so the always-injected layer matches Fritz's intended design instead of drifting roomy-by-default. The live runtime config at `~/.shay/config.yaml` now sets `memory.memory_char_limit: 1000` and `memory.user_char_limit: 900`, and the active bounded files `~/.shay/memories/MEMORY.md` plus `USER.md` were compacted to fit under roughly 2k combined. Matching truth updates landed in `shay-shay/docs/memory-flow-audit-2026-06-18.md`, `shay-shay/docs/shay-memory-hierarchy.md`, and `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so future sessions stop repeating the older ~4k guidance.
