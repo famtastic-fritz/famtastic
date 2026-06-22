@@ -1,0 +1,38 @@
+{
+  "proof_id": "convo-export-proof-2026-06-22",
+  "export_id": "exp_20260622_ea543140",
+  "root_conversation_id": "conv_b62d27bb2d083f64",
+  "baseline_proof": "obsidian/05-Captures/exports/baselines/baseline-2026-06-22-conversation-export/baseline.json",
+  "structured_run": {
+    "index_path": "obsidian/05-Captures/index/exports.jsonl",
+    "export_path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.md",
+    "restart_path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/restart-packet.md",
+    "lineage_path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/lineage.json",
+    "review_packet": "obsidian/05-Captures/review/review-exp_20260622_ea543140.json",
+    "hop_count": 2,
+    "retries": 0,
+    "correctness": "pass",
+    "answers": {
+      "other_topic": "how the last run went / what happened in the last run",
+      "earlier_list": "Shay continuity / restart, research loops, FAMtastic Thoughts, skill extraction, postmortems, idea mining, project intelligence, and long-history pattern review"
+    },
+    "evidence": [
+      "obsidian/05-Captures/index/exports.jsonl:1",
+      "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.md:97-99",
+      "obsidian/05-Captures/index/restart-packets.jsonl:1",
+      "obsidian/05-Captures/index/lineage.jsonl:1"
+    ]
+  },
+  "consumer_proof": {
+    "consumer": "fam-hub capture extract",
+    "input": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.md",
+    "output_json": "obsidian/05-Captures/review/review-exp_20260622_ea543140.json",
+    "output_md": "obsidian/05-Captures/review/review-exp_20260622_ea543140.md",
+    "status": "completed"
+  },
+  "verdict": "pass_with_known_gaps",
+  "known_gaps": [
+    "session_id is still missing for this seed export because the source artifact was a brief file rather than a native chat transcript",
+    "query/replay is still manual plus JSONL-backed; no dedicated structured recall CLI exists yet"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1.0",
+  "root_conversation_id": "conv_b62d27bb2d083f64",
+  "root_resolution_version": "1",
+  "export_id": "exp_20260622_ea543140",
+  "session_id": null,
+  "session_id_status": "missing",
+  "source_surface": "shay-chat-brief",
+  "source_locator": "famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief",
+  "source_path": "obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md",
+  "created_at": "2026-06-22T17:45:43.796Z",
+  "captured_at": "2026-06-22T17:45:43.796Z",
+  "revision": 1,
+  "parent_export_id": null,
+  "title": "Conversation Export Traceable Intelligence Test Case",
+  "lane": "conversation-export-proof",
+  "tags": [
+    "shay-platform",
+    "capture",
+    "conversation-export",
+    "proof"
+  ],
+  "freeze_timestamp": "2026-06-22T17:09:53.811Z",
+  "source_sha256": "61ec2a1fdf0839c507e896a25c8479e41891335f34209746f13b49e403d9ae39",
+  "source_bytes": 23642,
+  "follow_up_bundle": [
+    {
+      "job_key": "parse_export",
+      "status": "completed",
+      "blocking": false,
+      "output": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.json"
+    },
+    {
+      "job_key": "restart_packet",
+      "status": "completed",
+      "blocking": false,
+      "output": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/restart-packet.md"
+    },
+    {
+      "job_key": "lesson_extraction",
+      "status": "pending",
+      "blocking": false,
+      "output": null
+    },
+    {
+      "job_key": "promotion_review",
+      "status": "pending",
+      "blocking": false,
+      "output": null
+    },
+    {
+      "job_key": "prune_archive_review",
+      "status": "pending",
+      "blocking": false,
+      "output": null
+    }
+  ],
+  "excerpts": [
+    "---",
+    "title: Conversation-Export-Traceable-Intelligence-Brief",
+    "type: note",
+    "permalink: famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief",
+    "---",
+    "Title: Conversation Export Traceable Intelligence Test Case",
+    "Purpose: Turn this conversation lane into the proving ground for a structured export system that improves recall, queryability, traceability, and downstream reuse.",
+    "Goal: Use this exact conversation as the first-class test case for a canonical export pipeline that can prove better recall with structured data, source traversal, restart continuity, downstream consumer reuse, and pruning discipline.",
+    "Artifact-first rule:",
+    "- The primary success condition is to create/store conversation artifact X first.",
+    "- X is allowed to exist as raw baseline capture before parsing, summarization, lesson extraction, restart packet generation, promotion review, or pruning logic are complete.",
+    "- Every X must register a non-blocking follow-up bundle rather than forcing all downstream processes into the same creation step."
+  ]
+}

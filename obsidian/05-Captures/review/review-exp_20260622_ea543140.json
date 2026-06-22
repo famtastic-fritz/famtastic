@@ -1,0 +1,558 @@
+{
+  "schema_version": "0.1.0",
+  "capture_id": "review-exp_20260622_ea543140",
+  "created_at": "2026-06-22T17:45:52.516Z",
+  "source": {
+    "path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.md",
+    "sha256": "d79e780ad83884b3e6f757efff2e22c3b6b7b6d956ae5a1691a4646d1ff52200",
+    "bytes": 26105
+  },
+  "status": "review_required",
+  "write_policy": "review_packet_only",
+  "proposed_destinations": {
+    "design_decisions": ".wolf/cerebrum.md",
+    "breakthroughs": "SITE-LEARNINGS.md",
+    "gaps": "gaps.jsonl",
+    "lessons": "SITE-LEARNINGS.md",
+    "contradictions": "FAMTASTIC-STATE.md"
+  },
+  "extractions": {
+    "design_decisions": [
+      {
+        "title": "Goal: Use this exact conversation as the first-class test case for a canonical export pipeline that can prove better rec",
+        "source_heading": "Source excerpts",
+        "summary": "Goal: Use this exact conversation as the first-class test case for a canonical export pipeline that can prove better recall with structured data, source traversal, restart continuity, downstream consumer reuse, and pruning discipline.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "- Every X must register a non-blocking follow-up bundle rather than forcing all downstream processes into the same creat",
+        "source_heading": "Source excerpts",
+        "summary": "- Every X must register a non-blocking follow-up bundle rather than forcing all downstream processes into the same creation step.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Every X must register a non-blocking follow-up bundle rather than forcing all downstream processes into the same creatio",
+        "source_heading": "Source body",
+        "summary": "Every X must register a non-blocking follow-up bundle rather than forcing all downstream processes into the same creation step.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "resolver contract: baseline proof must store the exact resolved artifact path/ID used for grounding before any compariso",
+        "source_heading": "Source body",
+        "summary": "resolver contract: baseline proof must store the exact resolved artifact path/ID used for grounding before any comparison run is valid",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "evidence-bind requirement: baseline proof must resolve the search result to an exact session artifact/path/ID used for t",
+        "source_heading": "Source body",
+        "summary": "evidence-bind requirement: baseline proof must resolve the search result to an exact session artifact/path/ID used for the grounded answer",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "canonical saved location when implemented: `obsidian/05-Captures/exports/baselines/<baseline-id>/baseline.md` plus machi",
+        "source_heading": "Source body",
+        "summary": "canonical saved location when implemented: `obsidian/05-Captures/exports/baselines/<baseline-id>/baseline.md` plus machine-readable sidecar `baseline.json`",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical expected answers:",
+        "source_heading": "Source body",
+        "summary": "Canonical expected answers:",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical-answer bind rule:",
+        "source_heading": "Source body",
+        "summary": "Canonical-answer bind rule:",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "before any scoring run, the baseline proof packet must bind both target answers to exact evidence excerpts and anchors f",
+        "source_heading": "Source body",
+        "summary": "before any scoring run, the baseline proof packet must bind both target answers to exact evidence excerpts and anchors from the resolved frozen artifact",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "the scorer must compare baseline and structured runs against that evidence-bound canonical answer set, not the prose bul",
+        "source_heading": "Source body",
+        "summary": "the scorer must compare baseline and structured runs against that evidence-bound canonical answer set, not the prose bullets alone",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Comparison method: deterministic human-readable rubric against the canonical expected answers, with the structured expor",
+        "source_heading": "Source body",
+        "summary": "Comparison method: deterministic human-readable rubric against the canonical expected answers, with the structured export surface named in the proof.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical anchor schema:",
+        "source_heading": "Source body",
+        "summary": "Canonical anchor schema:",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Boundary rule for this brief: include a message only if it is at or before the frozen `end_message_anchor`; later messag",
+        "source_heading": "Source body",
+        "summary": "Boundary rule for this brief: include a message only if it is at or before the frozen `end_message_anchor`; later messages in the same lane are excluded from the frozen seed and must become child exports if captured.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Seed export must receive an immutable export ID when implemented; that ID becomes the root trace node for this test case",
+        "source_heading": "Source body",
+        "summary": "Seed export must receive an immutable export ID when implemented; that ID becomes the root trace node for this test case.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Any replay/evaluation run must name whether it uses the seed export, a child export, or a later revision.",
+        "source_heading": "Source body",
+        "summary": "Any replay/evaluation run must name whether it uses the seed export, a child export, or a later revision.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "`source_locator` is the canonical source-reference field.",
+        "source_heading": "Source body",
+        "summary": "`source_locator` is the canonical source-reference field.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Root-resolution algorithm (must run before first export write):",
+        "source_heading": "Source body",
+        "summary": "Root-resolution algorithm (must run before first export write):",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "if neither exists, set `session_id: null` and mark `session_id_status: missing`; capture must still proceed if `root_con",
+        "source_heading": "Source body",
+        "summary": "if neither exists, set `session_id: null` and mark `session_id_status: missing`; capture must still proceed if `root_conversation_id` can be resolved",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "same conversation observed from multiple surfaces/views: one canonical `root_conversation_id` must win and all other obs",
+        "source_heading": "Source body",
+        "summary": "same conversation observed from multiple surfaces/views: one canonical `root_conversation_id` must win and all other observed identifiers become aliases linked to that root",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Deterministic fallback rule: identical source surface, source locator/permalink, and freeze anchor must resolve to the s",
+        "source_heading": "Source body",
+        "summary": "Deterministic fallback rule: identical source surface, source locator/permalink, and freeze anchor must resolve to the same `root_conversation_id`.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Uniqueness rule: two exports may not claim the same `export_id`; if the seed is re-captured, it must resolve to the same",
+        "source_heading": "Source body",
+        "summary": "Uniqueness rule: two exports may not claim the same `export_id`; if the seed is re-captured, it must resolve to the same root ID plus explicit revision lineage rather than a silent duplicate root.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "[ ] If `session_search` does not resolve directly to a saved session artifact, create the canonical freeze-manifest/tran",
+        "source_heading": "Source body",
+        "summary": "[ ] If `session_search` does not resolve directly to a saved session artifact, create the canonical freeze-manifest/transcript artifact first and bind its path/ID",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "[ ] Define the canonical export contract with three required outputs: export artifact, restart packet, and pointer trail",
+        "source_heading": "Source body",
+        "summary": "[ ] Define the canonical export contract with three required outputs: export artifact, restart packet, and pointer trail",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Any repo-root `captures/...` path is treated as legacy shorthand and must resolve to the authority root before proof or",
+        "source_heading": "Source body",
+        "summary": "Any repo-root `captures/...` path is treated as legacy shorthand and must resolve to the authority root before proof or rebuild work is valid",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical file path: `obsidian/05-Captures/exports/baselines/<baseline-id>/baseline.md` plus machine-readable sidecar `b",
+        "source_heading": "Source body",
+        "summary": "Canonical file path: `obsidian/05-Captures/exports/baselines/<baseline-id>/baseline.md` plus machine-readable sidecar `baseline.json`",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Minimum rebuild fields inside canonical files: `baseline_id`, replay query, tool surface, run timestamp, returned sessio",
+        "source_heading": "Source body",
+        "summary": "Minimum rebuild fields inside canonical files: `baseline_id`, replay query, tool surface, run timestamp, returned session identifiers/paths, exact summary/excerpt lines used for each answer, canonical expected answers, and final grounded answer text used for scoring",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical file path: `obsidian/05-Captures/exports/<date>/<export-id>/export.md` plus machine-readable sidecar `export.j",
+        "source_heading": "Source body",
+        "summary": "Canonical file path: `obsidian/05-Captures/exports/<date>/<export-id>/export.md` plus machine-readable sidecar `export.json`",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Truth precedence: canonical file pair first, index second",
+        "source_heading": "Source body",
+        "summary": "Truth precedence: canonical file pair first, index second",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Minimum rebuild fields inside canonical files: `root_conversation_id`, `root_resolution_version`, `export_id`, `session_",
+        "source_heading": "Source body",
+        "summary": "Minimum rebuild fields inside canonical files: `root_conversation_id`, `root_resolution_version`, `export_id`, `session_id`, `session_id_status`, `source_surface`, `source_locator`, `source_path`, `created_at`, `captured_at`, `revision`, `parent_export_id`, tags, and lineage pointers",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical file path: `obsidian/05-Captures/exports/<date>/<export-id>/restart-packet.md`",
+        "source_heading": "Source body",
+        "summary": "Canonical file path: `obsidian/05-Captures/exports/<date>/<export-id>/restart-packet.md`",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Minimum rebuild fields inside canonical files: `export_id`, `root_conversation_id`, `captured_at`, restart summary, curr",
+        "source_heading": "Source body",
+        "summary": "Minimum rebuild fields inside canonical files: `export_id`, `root_conversation_id`, `captured_at`, restart summary, current state, next step, and linked source export path",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical file path: `obsidian/05-Captures/exports/<date>/<export-id>/lineage.json`",
+        "source_heading": "Source body",
+        "summary": "Canonical file path: `obsidian/05-Captures/exports/<date>/<export-id>/lineage.json`",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Minimum rebuild fields inside canonical files: `export_id`, `root_conversation_id`, aliases, parent/child links, derived",
+        "source_heading": "Source body",
+        "summary": "Minimum rebuild fields inside canonical files: `export_id`, `root_conversation_id`, aliases, parent/child links, derived artifact links, merge records, and tombstones",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical file path: `obsidian/05-Captures/review/<capture-id>.md` and `.json`",
+        "source_heading": "Source body",
+        "summary": "Canonical file path: `obsidian/05-Captures/review/<capture-id>.md` and `.json`",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Minimum rebuild fields inside canonical files: `capture_id`, linked `export_id` or source path, proposed destinations, e",
+        "source_heading": "Source body",
+        "summary": "Minimum rebuild fields inside canonical files: `capture_id`, linked `export_id` or source path, proposed destinations, extraction buckets, and created timestamp",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "A lane that has not met its stopping condition but is externally interrupted must be classified as `interrupted`, not `f",
+        "source_heading": "Source body",
+        "summary": "A lane that has not met its stopping condition but is externally interrupted must be classified as `interrupted`, not `failed`.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "`interrupted` runs must emit a checkpoint artifact with: current stopping condition, last completed round, next required",
+        "source_heading": "Source body",
+        "summary": "`interrupted` runs must emit a checkpoint artifact with: current stopping condition, last completed round, next required action, resume command/path, whether background continuation is allowed, and a snapshot of the exact grounding inputs needed to resume from the same truth surface.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Busy mode is a first-class runtime state for long-running review/extraction/orchestration lanes",
+        "source_heading": "Source body",
+        "summary": "Busy mode is a first-class runtime state for long-running review/extraction/orchestration lanes. While busy, the lane must expose: active objective, current phase/round, stop condition, interruption policy, and latest checkpoint pointer.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "If a lane is safe for unattended continuation, it should be eligible for explicit background execution with pinned workd",
+        "source_heading": "Source body",
+        "summary": "If a lane is safe for unattended continuation, it should be eligible for explicit background execution with pinned workdir plus notify/checkpoint semantics rather than forcing an either/or choice against incoming work.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Background continuation must start from the snapshot/resume packet, not from chat memory",
+        "source_heading": "Source body",
+        "summary": "Background continuation must start from the snapshot/resume packet, not from chat memory. Same starting point means same frozen inputs, same workdir/lane binding, same stop condition, and same proof pointer.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Parent reporting must distinguish: `completed`, `failed`, `interrupted`, `backgrounded`, and `superseded`.",
+        "source_heading": "Source body",
+        "summary": "Parent reporting must distinguish: `completed`, `failed`, `interrupted`, `backgrounded`, and `superseded`.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "If a second incoming task is higher priority, architecture should prefer dual-track handling when safe: checkpoint the a",
+        "source_heading": "Source body",
+        "summary": "If a second incoming task is higher priority, architecture should prefer dual-track handling when safe: checkpoint the active lane, continue it in background if eligible, and service the new task without rewriting history as a simple fail.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Proof packets for evaluation lanes must record whether termination was endogenous (`completed`/`failed`) or exogenous (`",
+        "source_heading": "Source body",
+        "summary": "Proof packets for evaluation lanes must record whether termination was endogenous (`completed`/`failed`) or exogenous (`interrupted`/`backgrounded`).",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Adversarial review must operate on saved X artifacts and their follow-up outputs, not on live truth surfaces directly.",
+        "source_heading": "Source body",
+        "summary": "Adversarial review must operate on saved X artifacts and their follow-up outputs, not on live truth surfaces directly.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Restart surface must restore context from the restart packet using the saved linked source export path and named next-st",
+        "source_heading": "Source body",
+        "summary": "Restart surface must restore context from the restart packet using the saved linked source export path and named next-step state.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Lineage surface must traverse backward to the seed export and forward to at least one derived artifact from the lineage",
+        "source_heading": "Source body",
+        "summary": "Lineage surface must traverse backward to the seed export and forward to at least one derived artifact from the lineage file without broad search.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "At least one downstream consumer must ingest export metadata from the structured export/index surface directly and produ",
+        "source_heading": "Source body",
+        "summary": "At least one downstream consumer must ingest export metadata from the structured export/index surface directly and produce a proof artifact.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Canonical first-consumer proof artifact path: `obsidian/05-Captures/review/<capture-id>.md` and `.json`, linked back to",
+        "source_heading": "Source body",
+        "summary": "Canonical first-consumer proof artifact path: `obsidian/05-Captures/review/<capture-id>.md` and `.json`, linked back to the seed `export_id`.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "If the audit shows `fam-hub capture extract` / `scripts/capture-insights.js` is stale or not live enough, a replacement",
+        "source_heading": "Source body",
+        "summary": "If the audit shows `fam-hub capture extract` / `scripts/capture-insights.js` is stale or not live enough, a replacement first consumer must be named and bound before any pass/fail scoring run.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Final proof must name the replay steps or commands used for each consumer proof.",
+        "source_heading": "Source body",
+        "summary": "Final proof must name the replay steps or commands used for each consumer proof.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "From the canonical export directory alone, the system must be able to deterministically rebuild export, restart, and lin",
+        "source_heading": "Source body",
+        "summary": "From the canonical export directory alone, the system must be able to deterministically rebuild export, restart, and lineage indexes.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Review packets are external derived artifacts: they must be linked by path and `export_id`, but they are not required in",
+        "source_heading": "Source body",
+        "summary": "Review packets are external derived artifacts: they must be linked by path and `export_id`, but they are not required inputs to rebuild export/restart/lineage indexes.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Index rebuild proof must show that the rebuilt indexes preserve root IDs, export IDs, parent/child links, aliases, and l",
+        "source_heading": "Source body",
+        "summary": "Index rebuild proof must show that the rebuilt indexes preserve root IDs, export IDs, parent/child links, aliases, and linked artifact pointers needed for recall and traversal.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "indexes: append-only or explicitly rebuilt from canonical files; never prune in a way that breaks reconstruction",
+        "source_heading": "Source body",
+        "summary": "indexes: append-only or explicitly rebuilt from canonical files; never prune in a way that breaks reconstruction",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "review packets: prune only after promotion/archival decision is recorded",
+        "source_heading": "Source body",
+        "summary": "review packets: prune only after promotion/archival decision is recorded",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Title: Conversation Export Traceable Intelligence Test Case Purpose: Turn this conversation lane into the proving ground",
+        "source_heading": "Source body",
+        "summary": "Title: Conversation Export Traceable Intelligence Test Case Purpose: Turn this conversation lane into the proving ground for a structured export system that improves recall, queryability, traceability, and downstream reuse. Goal: Use this exact conversation as the first-class test case for a canonical export pipeline that can prove better recall with structured data, source traversal, restart continuity, downstream consumer reuse, and pruning discipline.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Identity Authority: 1",
+        "source_heading": "Source body",
+        "summary": "Identity Authority: 1. if the source surface provides a native conversation ID, normalize and use it as the canonical root seed 2. else if a canonical artifact permalink/path exists, normalize and use it as the canonical root seed 3. else if the conversation is a live unsaved lane, create an immutable freeze-manifest/transcript artifact first and use its saved path as `source_locator` 4. else derive a deterministic fallback seed from normalized `source_surface + source_locator + start_message_anchor + end_message_anchor + freeze_timestamp` 5. emit exactly one `root_conversation_id` from the chosen seed plus `root_resolution_version` 6. record aliases for any non-winning identifiers, but do n",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "breakthroughs": [],
+    "gaps": [
+      {
+        "title": "--- schema_version: 0.1.0 root_conversation_id: conv_b62d27bb2d083f64 export_id: exp_20260622_ea543140 source_surface: s",
+        "source_heading": "Document",
+        "summary": "--- schema_version: 0.1.0 root_conversation_id: conv_b62d27bb2d083f64 export_id: exp_20260622_ea543140 source_surface: shay-chat-brief source_locator: famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief source_path: obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md created_at: 2026-06-22 17:45:43.796000+00:00 captured_at: 2026-06-22 17:45:43.796000+00:00 session_id: null session_id_status: missing revision: 1 parent_export_id: null lane: conversation-export-proof tags: freeze_timestamp: 2026-06-22 17:09:53.811000+00:00 permalink: famtastic/05-captures/exports/2026-06-22/exp-20260622-ea543140/export ---",
+        "proposed_destination": "gaps.jsonl",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "partial hit: one target recovered correctly while the other is missing or materially incomplete",
+        "source_heading": "Source body",
+        "summary": "partial hit: one target recovered correctly while the other is missing or materially incomplete",
+        "proposed_destination": "gaps.jsonl",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "`session_id_status` values: `native`, `derived`, or `missing`.",
+        "source_heading": "Source body",
+        "summary": "`session_id_status` values: `native`, `derived`, or `missing`.",
+        "proposed_destination": "gaps.jsonl",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "`failed` is reserved for runs that reached a terminal negative outcome inside the lane logic: proof disproved, blocker u",
+        "source_heading": "Source body",
+        "summary": "`failed` is reserved for runs that reached a terminal negative outcome inside the lane logic: proof disproved, blocker unhandled, max rounds exhausted, command error unrecovered, or explicit stop condition missed without continuity protection.",
+        "proposed_destination": "gaps.jsonl",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "lessons": [
+      {
+        "title": "- X is allowed to exist as raw baseline capture before parsing, summarization, lesson extraction, restart packet generat",
+        "source_heading": "Source excerpts",
+        "summary": "- X is allowed to exist as raw baseline capture before parsing, summarization, lesson extraction, restart packet generation, promotion review, or pruning logic are complete.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "X is allowed to exist as raw baseline capture before parsing, summarization, lesson extraction, restart packet generatio",
+        "source_heading": "Source body",
+        "summary": "X is allowed to exist as raw baseline capture before parsing, summarization, lesson extraction, restart packet generation, promotion review, or pruning logic are complete.",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Artifact X Follow-Up Bundle: 1",
+        "source_heading": "Source body",
+        "summary": "Artifact X Follow-Up Bundle: 1. parse/export pass 2. restart packet pass 3. lesson extraction pass 4. promotion-review pass 5. prune/archive review pass",
+        "proposed_destination": "SITE-LEARNINGS.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "contradictions": [
+      {
+        "title": "fail: either answer wrong, invented, or not source-grounded",
+        "source_heading": "Source body",
+        "summary": "fail: either answer wrong, invented, or not source-grounded",
+        "proposed_destination": "FAMTASTIC-STATE.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "[ ] Audit live checkpoint/export surfaces and separate working capability from stale or partial intent",
+        "source_heading": "Source body",
+        "summary": "[ ] Audit live checkpoint/export surfaces and separate working capability from stale or partial intent",
+        "proposed_destination": "FAMTASTIC-STATE.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ]
+  }
+}

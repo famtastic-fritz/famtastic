@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "export_id": "exp_20260622_ea543140",
+  "root_conversation_id": "conv_b62d27bb2d083f64",
+  "aliases": [
+    "famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief",
+    "obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md"
+  ],
+  "parent_export_id": null,
+  "child_export_ids": [],
+  "derived_artifacts": [
+    {
+      "type": "export_md",
+      "path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.md"
+    },
+    {
+      "type": "export_json",
+      "path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.json"
+    },
+    {
+      "type": "restart_packet",
+      "path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/restart-packet.md"
+    }
+  ],
+  "tombstones": [],
+  "merge_records": [],
+  "created_at": "2026-06-22T17:45:43.796Z"
+}

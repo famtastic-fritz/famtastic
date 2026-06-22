@@ -1,0 +1,111 @@
+{
+  "type": "post_evaluation",
+  "schema_version": "0.1.0",
+  "evaluation_id": "posteval_abbc3d0ef2d0420d",
+  "created_at": "2026-06-22T18:01:46.891Z",
+  "run": {
+    "id": "run-conversation-export-2026-06-22",
+    "title": "Conversation export traceable intelligence test case",
+    "kind": "capture_pipeline",
+    "system": "shay-shay",
+    "status": "completed"
+  },
+  "inputs": [
+    "obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md",
+    "obsidian/05-Captures/exports/baselines/baseline-2026-06-22-conversation-export/baseline.md"
+  ],
+  "outputs": [
+    "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.md",
+    "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.json",
+    "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/restart-packet.md",
+    "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/lineage.json",
+    "obsidian/05-Captures/review/review-exp_20260622_ea543140.md",
+    "obsidian/05-Captures/review/convo-export-proof-2026-06-22.md"
+  ],
+  "proof": [
+    {
+      "kind": "brief",
+      "path": "obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md"
+    },
+    {
+      "kind": "baseline",
+      "path": "obsidian/05-Captures/exports/baselines/baseline-2026-06-22-conversation-export/baseline.md"
+    },
+    {
+      "kind": "export",
+      "path": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_ea543140/export.md"
+    },
+    {
+      "kind": "consumer_review",
+      "path": "obsidian/05-Captures/review/review-exp_20260622_ea543140.md"
+    },
+    {
+      "kind": "recall_proof",
+      "path": "obsidian/05-Captures/review/convo-export-proof-2026-06-22.md"
+    }
+  ],
+  "learnings": [
+    "File-first artifacts plus small JSONL indexes beat chat-only recall for bounded replay questions.",
+    "A baseline proof packet must be frozen before structured scoring, otherwise the comparison turns mushy and political.",
+    "The right minimal package is export artifact plus restart packet plus lineage, not transcript capture alone.",
+    "Consumer proof matters: proving one downstream reader is more valuable than claiming the export is reusable.",
+    "Truth precedence has to be explicit: canonical files first, indexes second, legacy shorthand never authoritative."
+  ],
+  "gaps": [
+    "The seed source for this run was a saved brief artifact, not a native transcript with stable message IDs.",
+    "Lookup is still file-first plus JSONL; there is no dedicated query/replay surface yet.",
+    "The first downstream consumer is review/extraction only; canonical memory write lanes are still separate."
+  ],
+  "opportunities": [
+    {
+      "opportunity_id": "opp_77a6c3248e50f40d",
+      "type": "process_opportunity",
+      "title": "Standardize export-first capture closeout for meaningful conversation lanes",
+      "priority": "high",
+      "summary": "Standardize export-first capture closeout for meaningful conversation lanes",
+      "evidence": [],
+      "suggested_action": "Turn the export artifact + restart packet + lineage + proof bundle into a default closeout module for long multi-step chats.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_8b93e8ee8433f8a2",
+      "type": "skill_opportunity",
+      "title": "Conversation export and replay evaluation skill",
+      "priority": "high",
+      "summary": "Conversation export and replay evaluation skill",
+      "evidence": [],
+      "suggested_action": "Save the working pattern as a reusable skill with commands, artifacts, proof rules, and known pitfalls.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_9d979c84761bfa15",
+      "type": "tool_opportunity",
+      "title": "Dedicated query surface over conversation exports",
+      "priority": "medium",
+      "summary": "Dedicated query surface over conversation exports",
+      "evidence": [],
+      "suggested_action": "Add a read-oriented CLI or fam-hub subcommand that resolves replay questions without manual file hopping.",
+      "owner": null,
+      "status": "proposed"
+    },
+    {
+      "opportunity_id": "opp_d6bd780624a8949a",
+      "type": "workflow_gap",
+      "title": "Native message-ID freeze capture is missing",
+      "priority": "high",
+      "summary": "Native message-ID freeze capture is missing",
+      "evidence": [],
+      "suggested_action": "Add a freeze-manifest or transcript capture path that preserves stable message anchors before downstream export steps.",
+      "owner": null,
+      "status": "proposed"
+    }
+  ],
+  "next_actions": [
+    "Promote the export package contract into a reusable module/skill.",
+    "Add native transcript or freeze-manifest capture with stable anchors.",
+    "Build a query/replay surface on top of the export and baseline indexes."
+  ],
+  "summary": "Post-evaluation for Conversation export traceable intelligence test case: 5 learnings, 3 gaps, 4 opportunities."
+}

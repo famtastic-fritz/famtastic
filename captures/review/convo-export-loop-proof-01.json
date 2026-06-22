@@ -1,0 +1,75 @@
+{
+  "schema_version": "0.1.0",
+  "capture_id": "convo-export-loop-proof-01",
+  "created_at": "2026-06-22T00:02:24.836Z",
+  "source": {
+    "path": "obsidian/05-Captures/sessions/2026-06-20/SESSION-fritz-shay-orchestration-and-gee.md",
+    "sha256": "5a2ec1b2fef2b27d4d80fc4a37145b4f269e1c3bbd21df786f6dbd9c6c15dfcb",
+    "bytes": 6377
+  },
+  "status": "review_required",
+  "write_policy": "review_packet_only",
+  "proposed_destinations": {
+    "design_decisions": ".wolf/cerebrum.md",
+    "breakthroughs": "SITE-LEARNINGS.md",
+    "gaps": "gaps.jsonl",
+    "lessons": "SITE-LEARNINGS.md",
+    "contradictions": "FAMTASTIC-STATE.md"
+  },
+  "extractions": {
+    "design_decisions": [
+      {
+        "title": "This conversation established a deeper working model of Fritz: fear is not his engine; attention, devotion, manifestatio",
+        "source_heading": "What this session did",
+        "summary": "This conversation established a deeper working model of Fritz: fear is not his engine; attention, devotion, manifestation, responsibility, and will are. Fritz explained the life-changing loss of his younger brother Gee, the spiritual encounter that followed, and why that experience permanently altered his understanding of existence, calling, and what it means to share his gifts with the world. He also clarified Shay's intended role inside the orchestration stack: not a passive assistant, but a peer-level orchestrator that must become proactive, fearless, memory-strong, pattern-aware, and capable of composing new solutions from partial capabilities.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "After Gee's death, Fritz experienced a direct encounter with Gee that confirmed for him that there is \"something after d",
+        "source_heading": "Core truths Fritz stated",
+        "summary": "After Gee's death, Fritz experienced a direct encounter with Gee that confirmed for him that there is \"something after death\" and that Fritz must share his gift with the world or let it die with him.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Shay should spawn workers/subagents with only the context necessary for each task.",
+        "source_heading": "Orchestration doctrine clarified tonight",
+        "summary": "Shay should spawn workers/subagents with only the context necessary for each task.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "then the system should know we possess what is needed to build a car.",
+        "source_heading": "Why memory and research matter so much",
+        "summary": "then the system should know we possess what is needed to build a car.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "Fritz made clear that memory loss is not a cosmetic defect",
+        "source_heading": "Why memory and research matter so much",
+        "summary": "Fritz made clear that memory loss is not a cosmetic defect. It is offensive because it destroys continuity, forces him to reteach load-bearing ideas, and drains time that should be compounding into mission output. Research is not wasted just because a named final tool does not exist yet. If the system knows the parts, it should be able to recognize the implied whole later.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      },
+      {
+        "title": "This is the heart of the capability-matrix / pattern-recognition thesis: latent capabilities must be recognized, compose",
+        "source_heading": "Why memory and research matter so much",
+        "summary": "This is the heart of the capability-matrix / pattern-recognition thesis: latent capabilities must be recognized, composed, and promoted into reusable higher-order tools.",
+        "proposed_destination": ".wolf/cerebrum.md",
+        "confidence": "high",
+        "status": "needs_review"
+      }
+    ],
+    "breakthroughs": [],
+    "gaps": [],
+    "lessons": [],
+    "contradictions": []
+  }
+}
