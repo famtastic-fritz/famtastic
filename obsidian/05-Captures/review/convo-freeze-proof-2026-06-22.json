@@ -1,0 +1,52 @@
+{
+  "proof_id": "convo-freeze-proof-2026-06-22",
+  "status": "completed",
+  "freeze": {
+    "freeze_id": "frz_20260622_71490bfe",
+    "manifest_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/freeze-manifest.json",
+    "transcript_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.md",
+    "transcript_json_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.json",
+    "index_path": "obsidian/05-Captures/index/freezes.jsonl",
+    "root_conversation_id": "conv_71490bfe7c8dd6e3",
+    "anchor_mode": "ordinal_speaker_hash_capture_pass",
+    "start_message_anchor": "msg_0001_bda51644a26a_cap_6c4a24ff4a",
+    "end_message_anchor": "msg_0016_bda51644a26a_cap_6c4a24ff4a",
+    "message_count": 16
+  },
+  "export": {
+    "export_id": "exp_20260622_8fcb50fb",
+    "export_md": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/export.md",
+    "export_json": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/export.json",
+    "restart_packet": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/restart-packet.md",
+    "lineage": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/lineage.json",
+    "review_packet_json": "obsidian/05-Captures/review/review-exp_20260622_8fcb50fb.json",
+    "review_packet_md": "obsidian/05-Captures/review/review-exp_20260622_8fcb50fb.md",
+    "source_mode": "freeze_manifest",
+    "source_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.md"
+  },
+  "comparison": {
+    "prior_export_id": "exp_20260622_ea543140",
+    "prior_export_source": "obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md",
+    "new_export_id": "exp_20260622_8fcb50fb",
+    "new_export_source": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.md",
+    "upgrade_verified": true
+  },
+  "verification": [
+    {
+      "command": "node scripts/conversation-freeze.js --source-file obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md --source-surface shay-chat-brief --source-locator famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief --title \"Conversation Export Traceable Intelligence Test Case\"",
+      "result": "pass"
+    },
+    {
+      "command": "node scripts/conversation-export.js --freeze-manifest obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/freeze-manifest.json --lane conversation-freeze-proof --tags shay-platform,capture,conversation-export,freeze-proof",
+      "result": "pass"
+    },
+    {
+      "command": "bash scripts/fam-hub capture extract obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/export.md --out-dir obsidian/05-Captures/review --id review-exp_20260622_8fcb50fb",
+      "result": "pass"
+    }
+  ],
+  "remaining_gaps": [
+    "The minimum working freeze path currently derives anchors from normalized paragraph blocks in a saved source artifact; it does not yet capture native chat-provider message IDs.",
+    "Session identity is still missing for this lane because the source surface exposed no native session/message IDs during capture."
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "evaluation_id": "posteval_conversation_freeze_capture_2026-06-22",
+  "status": "completed",
+  "system": "shay-shay",
+  "created": "2026-06-22T18:16:00Z",
+  "summary": "Implemented freeze-manifest/transcript capture under conversation export and proved the export lane can consume the frozen artifact instead of the saved brief surrogate.",
+  "proof": {
+    "brief": "obsidian/01-Shay-Platform/Conversation-Freeze-Capture-Brief.md",
+    "freeze_manifest": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/freeze-manifest.json",
+    "export_json": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/export.json",
+    "proof_packet": "obsidian/05-Captures/review/convo-freeze-proof-2026-06-22.json",
+    "consumer_review": "obsidian/05-Captures/review/review-exp_20260622_8fcb50fb.json"
+  },
+  "gaps": [
+    "Native provider message IDs are not yet captured; the current anchor mode is derived from normalized block order plus speaker hash and capture pass ID.",
+    "session_id remains missing for this test lane because the source surface available in-repo was a saved artifact, not a native provider transcript API.",
+    "There is still no dedicated replay/query CLI over freeze plus export indexes."
+  ]
+}

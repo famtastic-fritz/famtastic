@@ -1,0 +1,77 @@
+{
+  "schema_version": "0.1.0",
+  "root_conversation_id": "conv_71490bfe7c8dd6e3",
+  "root_resolution_version": "1",
+  "export_id": "exp_20260622_8fcb50fb",
+  "session_id": null,
+  "session_id_status": "missing",
+  "source_surface": "shay-chat-brief",
+  "source_locator": "famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief",
+  "source_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.md",
+  "created_at": "2026-06-22T18:12:24.696Z",
+  "captured_at": "2026-06-22T18:12:24.696Z",
+  "revision": 1,
+  "parent_export_id": null,
+  "title": "Conversation Export Traceable Intelligence Test Case",
+  "lane": "conversation-freeze-proof",
+  "tags": [
+    "shay-platform",
+    "capture",
+    "conversation-export",
+    "freeze-proof"
+  ],
+  "freeze_timestamp": "2026-06-22T18:12:18.685Z",
+  "freeze_manifest_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/freeze-manifest.json",
+  "freeze_transcript_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.md",
+  "start_message_anchor": "msg_0001_bda51644a26a_cap_6c4a24ff4a",
+  "end_message_anchor": "msg_0016_bda51644a26a_cap_6c4a24ff4a",
+  "boundary_rule": "include source content at or before the frozen end anchor; later edits require a child freeze/export",
+  "source_sha256": "aead64f4f26953037ec143cf7804af75dcae3a8441454b42e2ae75ce4b6d01da",
+  "source_bytes": 27612,
+  "follow_up_bundle": [
+    {
+      "job_key": "parse_export",
+      "status": "completed",
+      "blocking": false,
+      "output": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/export.json"
+    },
+    {
+      "job_key": "restart_packet",
+      "status": "completed",
+      "blocking": false,
+      "output": "obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/restart-packet.md"
+    },
+    {
+      "job_key": "lesson_extraction",
+      "status": "pending",
+      "blocking": false,
+      "output": null
+    },
+    {
+      "job_key": "promotion_review",
+      "status": "pending",
+      "blocking": false,
+      "output": null
+    },
+    {
+      "job_key": "prune_archive_review",
+      "status": "pending",
+      "blocking": false,
+      "output": null
+    }
+  ],
+  "excerpts": [
+    "---",
+    "schema_version: 0.1.0",
+    "freeze_id: frz_20260622_71490bfe",
+    "root_conversation_id: conv_71490bfe7c8dd6e3",
+    "source_surface: shay-chat-brief",
+    "source_locator: famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief",
+    "source_path: obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md",
+    "freeze_timestamp: 2026-06-22 18:12:18.685000+00:00",
+    "start_message_anchor: msg_0001_bda51644a26a_cap_6c4a24ff4a",
+    "end_message_anchor: msg_0016_bda51644a26a_cap_6c4a24ff4a",
+    "anchor_mode: ordinal_speaker_hash_capture_pass",
+    "capture_pass_id: cap_6c4a24ff4a"
+  ]
+}

@@ -365,6 +365,10 @@ IDEAHELP
           node "$SCRIPT_DIR/capture-insights.js" extract "$@"
         fi
         ;;
+      export-conversation)
+        shift 2 || true
+        node "$SCRIPT_DIR/conversation-export.js" "$@"
+        ;;
       help|*)
         cat <<'CAPTUREHELP'
 fam-hub capture — Review-only knowledge capture
@@ -372,9 +376,13 @@ fam-hub capture — Review-only knowledge capture
 Usage:
   fam-hub capture extract <source-file> [--out-dir captures/review] [--id capture-id]
   fam-hub capture extract --source <claude-code|cowork|codex|manual> --input <path> [--session-id <id>]
+  fam-hub capture export-conversation --source-file <path> [--source-surface <surface>] [--session-id <id>]
 
 Extracts design decisions, breakthroughs, gaps, lessons, and contradictions
 into a review packet. It does not write canonical memory files.
+
+`export-conversation` writes a file-first structured export package under
+obsidian/05-Captures/exports/ with restart + lineage sidecars and JSONL indexes.
 
 CAPTUREHELP
         ;;

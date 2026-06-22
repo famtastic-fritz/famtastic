@@ -1,0 +1,26 @@
+{
+  "schema_version": "0.1.0",
+  "freeze_id": "frz_20260622_71490bfe",
+  "root_conversation_id": "conv_71490bfe7c8dd6e3",
+  "root_resolution_version": "1",
+  "title": "Conversation Export Traceable Intelligence Test Case",
+  "source_surface": "shay-chat-brief",
+  "source_locator": "famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief",
+  "source_path": "obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md",
+  "captured_at": "2026-06-22T18:12:18.685Z",
+  "freeze_timestamp": "2026-06-22T18:12:18.685Z",
+  "boundary_rule": "include source content at or before the frozen end anchor; later edits require a child freeze/export",
+  "capture_pass_id": "cap_6c4a24ff4a",
+  "anchor_mode": "ordinal_speaker_hash_capture_pass",
+  "start_message_anchor": "msg_0001_bda51644a26a_cap_6c4a24ff4a",
+  "end_message_anchor": "msg_0016_bda51644a26a_cap_6c4a24ff4a",
+  "message_count": 16,
+  "transcript_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.md",
+  "transcript_json_path": "obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/transcript.json",
+  "source_sha256": "17dd3cf60f53ee241da5f6d54a7752c9b42d39c9cfa1942410bff3c6ad6c5d5b",
+  "source_bytes": 24067,
+  "aliases": [
+    "famtastic/01-shay-platform/conversation-export-traceable-intelligence-brief",
+    "obsidian/01-Shay-Platform/Conversation-Export-Traceable-Intelligence-Brief.md"
+  ]
+}
