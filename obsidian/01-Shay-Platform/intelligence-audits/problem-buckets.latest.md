@@ -6,45 +6,9 @@ permalink: famtastic/01-shay-platform/intelligence-audits/problem-buckets.latest
 
 # Problem buckets
 
-Generated: 2026-06-20T00:07:23.044796+00:00
+Generated: 2026-06-22T19:52:57.148477+00:00
 
 ## Canonical buckets
-### JJ BA brief shaping drift (`jj-ba-brief-shaping`)
-- type: briefing_gap
-- frequency: 320
-- status: open
-- promotion_status: pending
-- sites: none
-- aliases: jj ba, jjba, transport
-- action: Convert recurring JJ BA understanding into a tight resumable brief instead of rediscovering it in prose.
-
-### GoDaddy/cPanel access and routing (`godaddy-cpanel-access`)
-- type: execution_routing_gap
-- frequency: 141
-- status: open
-- promotion_status: pending
-- sites: SHAY
-- aliases: godaddy, cpanel, dns, reseller, proactive-gap-escalation-order
-- action: Split vendor access, DNS operations, reseller recovery, and escalation order into separate proof-backed tracks.
-
-### Missing intelligence promotions ledger (`research-promotion-ledger`)
-- type: truth_surface_gap
-- frequency: 14
-- status: open
-- promotion_status: closed
-- sites: none
-- aliases: intelligence-promotions.json, promotion ledger, promotion-state gap
-- action: Maintain a live intelligence-promotions ledger and use it as the canonical surfaced-finding store between gaps and backlog.
-
-### Video background capability (`video-background`)
-- type: capability_unproven
-- frequency: 9
-- status: open
-- promotion_status: verified
-- sites: site-altitude
-- aliases: video_background_option, video_background_support, video background, video hero, video-hero
-- action: Prove or close the existing video-hero path before opening new research/build loops.
-
 ### Platform-conversation routing/context gap (`platform-conversation-context`)
 - type: routing_gap
 - frequency: 3
@@ -63,6 +27,15 @@ Generated: 2026-06-20T00:07:23.044796+00:00
 - aliases: text-area, new line, to_work_out_some_kinks_with_you, shay desk inter face
 - action: Group newline, textarea sizing, and Shay Desk interaction complaints into one UI-fix bucket.
 
+### Video background capability (`video-background`)
+- type: capability_unproven
+- frequency: 2
+- status: open
+- promotion_status: unpromoted
+- sites: site-altitude
+- aliases: video_background_option, video_background_support, video background, video hero, video-hero
+- action: Prove or close the existing video-hero path before opening new research/build loops.
+
 ### Billing and API-usage visibility (`billing-usage-visibility`)
 - type: ops_gap
 - frequency: 1
@@ -80,6 +53,15 @@ Generated: 2026-06-20T00:07:23.044796+00:00
 - sites: site-crumb-and-crust-bakery
 - aliases: family bakery, three pages, keep things simple, readable
 - action: Treat client/site briefs as intake artifacts, not capability gaps, and route them into brief/build surfaces before gap logging.
+
+### GoDaddy/cPanel access and routing (`godaddy-cpanel-access`)
+- type: execution_routing_gap
+- frequency: 1
+- status: open
+- promotion_status: unpromoted
+- sites: SHAY
+- aliases: godaddy, cpanel, dns, reseller, proactive-gap-escalation-order
+- action: Split vendor access, DNS operations, reseller recovery, and escalation order into separate proof-backed tracks.
 
 ### Media prompt handoff routing gap (`media-prompt-handoff`)
 - type: routing_gap

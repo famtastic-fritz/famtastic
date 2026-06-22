@@ -1,5 +1,33 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-22 — Hosting admin diagnostics + assisted domain-search fallback
+
+Added a backend-parity truth surface to `sites/site-famtastic-hosting` instead of leaving the GoDaddy reseller mismatch as a silent failure. New admin endpoint `sites/site-famtastic-hosting/src/pages/api/admin/diagnostics.ts` now probes reseller auth presence, live domain-search capability, backend function parity, and branding/support visibility; it also emits a copy-ready escalation packet plus recommended support action for GoDaddy reseller handoff. `sites/site-famtastic-hosting/src/pages/admin/settings.astro` now renders those checks in a dedicated diagnostics panel with refresh-on-demand and a one-click packet copy surface. On the public side, `sites/site-famtastic-hosting/src/pages/api/godaddy/available.ts` no longer hard-fails when GoDaddy returns `ACCESS_DENIED` / authorization-class failures — it converts those states into explicit assisted-mode payloads, and `sites/site-famtastic-hosting/src/pages/domains.astro` consumes that payload to keep the domain search UI in an assisted-contact sales lane instead of dead-ending.
+
+### Verified
+- `npm run build` passed in `sites/site-famtastic-hosting` after adding assisted-mode API payloads and the admin escalation packet surface.
+- Live dev curl to `http://127.0.0.1:4325/api/godaddy/available?domain=famtasticprobe.com&bulk=famtasticprobe.net,famtasticprobe.org` returned `{ ok: true, data: { assisted: true, lookupMode: "assisted", reasonCode: "ACCESS_DENIED", items: [...] } }`, proving the public endpoint now degrades into a structured assisted lane instead of returning a hard failure.
+- Live dev curl to `http://127.0.0.1:4325/api/admin/diagnostics` returned `401` without admin auth, confirming the diagnostics/escalation surface remains admin-gated while the public lookup stays public.
+- `sites/site-famtastic-hosting/src/lib/godaddy/client.ts` still normalizes `ACCESS_DENIED` into an explicit reseller-permission message instead of leaving the upstream wording vague.
+
+### Known Gaps opened
+- The diagnostics panel and escalation packet can prove the failure mode and package the support handoff, but they do not fix GoDaddy reseller permissions by themselves; the endpoint class / account scope still needs a real upstream correction.
+- The public fallback intentionally routes users into assisted contact instead of guessing availability. Until reseller search permission is restored, automated lookup remains an assisted-mode sales lane rather than a self-serve purchase surface.
+
+## 2026-06-22 — Freeze first, export second for conversation lanes
+
+The conversation-export lane was missing the most important step: freezing the source window before packaging it. Adding `scripts/conversation-freeze.js` fixed that by creating a canonical freeze directory under `obsidian/05-Captures/freezes/<date>/<freeze-id>/` with `freeze-manifest.json`, `transcript.md`, `transcript.json`, and an index row in `obsidian/05-Captures/index/freezes.jsonl`. `scripts/conversation-export.js` now accepts `--freeze-manifest`, so the export package can preserve `freeze_manifest_path`, `freeze_transcript_path`, `start_message_anchor`, `end_message_anchor`, and boundary metadata instead of pretending the saved brief file was the native seed.
+
+### Verified
+- Live freeze artifact: `obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/`
+- Freeze-backed export package: `obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/`
+- Downstream consumer proof: `obsidian/05-Captures/review/convo-freeze-proof-2026-06-22.md`
+
+### Known Gaps opened
+- The current anchor mode is still derived (`ordinal + speaker_hash + capture_pass_id`) from normalized saved-artifact blocks, not native provider message IDs.
+- `session_id` remains missing for this test lane because the repo-resident source artifact did not expose provider session identity.
+- Replay/query is still file-plus-index driven; there is no dedicated CLI over freeze/export indexes yet.
+
 ## 2026-06-19 — Truth-surface drift doctrine + lane preflight
 
 Promoted the recovery lesson from a one-off session into the common startup doctrine so agents stop treating branch/worktree confusion as an after-the-fact cleanup problem. `docs/agent-startup/AGENT-STARTUP-CONTRACT.md` now explicitly names the weakness as `truth-surface drift`, the failure mode as `cross-lane contamination under parallel sessions`, and the protection as live repo/worktree re-anchoring plus worktree-based lane isolation before action. The contract now also requires a lane preflight before meaningful writes: verify repo root, current branch, worktree/common-dir relationship when relevant, intended execution lane, actual shell lane, task-to-lane fit, and whether resumed context is stale or cross-lane.

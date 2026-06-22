@@ -1,5 +1,5 @@
 ---
-permalink: famtastic/01-shay-platform/internal-curator/latest-curator-note
+permalink: famtastic/01-shay-platform/internal-curator/latest-curator-note-1
 ---
 
 Generated: 2026-06-22

@@ -86,19 +86,14 @@ Primary stressor remains income uncertainty, amplified by irregular NIBS cadence
 - Shay body/voice/desktop expansion
 
 ## Control-plane findings
-- latest pass: control-plane-pass-20260619-180223
-- generated: 2026-06-19T22:02:23.880391+00:00
-- status: minor-only drift (1)
+- latest pass: control-plane-pass-20260622-073136-417785
+- generated: 2026-06-22T11:31:36.417634+00:00
+- status: minor-only drift (2)
 - major findings: none
 - minor findings:
-  - repo_verdicts linked 4 problem buckets
+  - artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles
+  - repo_verdicts linked 3 problem buckets
 - morning briefing impact: no urgent control-plane intervention required
-
-## Session carry-forward
-- safe to start a new session now; the core memory-flow explanation and reset recipe were promoted out of chat
-- callable reset skill: `shay-intelligence-reset`
-- shorthand trigger: `garden not closet`
-- if Shay feels off again, run the reset before letting context bloat grow
 
 ## Latest-briefing command behavior
 If asked in a new session:

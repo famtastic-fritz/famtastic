@@ -1,33 +1,33 @@
 ---
-title: github-bookmarks-report-2026-06-18
+title: github-bookmarks-report-2026-06-22
 type: note
 permalink: shay-memory/research/github-bookmarks-report-2026-06-14-1
 ---
 
 # GitHub bookmarks ingestion report
 
-Generated: 2026-06-18T05:45:54.392509-04:00
+Generated: 2026-06-22T05:45:09.729100-04:00
 
 ## Source profiles
 
 - Default|fritz.medine@gmail.com: 28 GitHub bookmarks
-- Profile 1|fitzgeraldmedine@gmail.com: 212 GitHub bookmarks
+- Profile 1|fitzgeraldmedine@gmail.com: 216 GitHub bookmarks
 
 ## Totals
 
-- Raw GitHub bookmark rows: 240
-- Unique normalized GitHub URLs: 235
+- Raw GitHub bookmark rows: 244
+- Unique normalized GitHub URLs: 238
 
 ## Bucket counts (unique URLs)
 
-- agent-orchestration: 93
+- agent-orchestration: 94
 - uncategorized: 89
 - business-income: 15
 - legacy-webdev: 12
+- memory-context: 8
 - model-infra: 8
-- memory-context: 7
 - web-automation: 6
-- creative-media: 5
+- creative-media: 6
 
 ## Initial money/autonomy priority candidates
 
@@ -54,11 +54,14 @@ Generated: 2026-06-18T05:45:54.392509-04:00
 - [NowSquare/VoxelSwarm](https://github.com/NowSquare/VoxelSwarm) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
 - [openai/swarm](https://github.com/openai/swarm) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fritz.medine@gmail.com
 - [rizal72/true-mem](https://github.com/rizal72/true-mem) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
+- [RoggeOhta/awesome-codex-cli](https://github.com/RoggeOhta/awesome-codex-cli#gui--desktop-apps) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
 - [zzet/gortex](https://github.com/zzet/gortex) — bucket=agent-orchestration, money=1, autonomy=6, recency=3, profile=fitzgeraldmedine@gmail.com
-- [BellaBe/strategy-os](https://github.com/BellaBe/strategy-os) — bucket=business-income, money=5, autonomy=0, recency=2, profile=fitzgeraldmedine@gmail.com
 
 ## Most recent GitHub bookmarks
 
+- 2026-06-19T15:07:35.873656-04:00 — [RoggeOhta/awesome-codex-cli](https://github.com/RoggeOhta/awesome-codex-cli#gui--desktop-apps) — bucket=agent-orchestration
+- 2026-06-19T06:26:48.399554-04:00 — [Tyrrrz/YoutubeDownloader](https://github.com/Tyrrrz/YoutubeDownloader) — bucket=creative-media
+- 2026-06-19T00:58:28.967191-04:00 — [MemPalace/mempalace](https://github.com/MemPalace/mempalace) — bucket=memory-context
 - 2026-06-18T04:12:39.495969-04:00 — [Piebald-AI/claude-code-system-prompts](https://github.com/Piebald-AI/claude-code-system-prompts/blob/main/system-prompts/data-managed-agents-environments-and-resources.md) — bucket=agent-orchestration
 - 2026-06-18T04:10:41.854347-04:00 — [Piebald-AI/claude-code-system-prompts](https://github.com/Piebald-AI/claude-code-system-prompts) — bucket=agent-orchestration
 - 2026-06-18T03:42:33.607982-04:00 — [LLMQuant/awesome-trading-agents](https://github.com/LLMQuant/awesome-trading-agents) — bucket=business-income
@@ -76,13 +79,10 @@ Generated: 2026-06-18T05:45:54.392509-04:00
 - 2026-06-17T18:57:03.029796-04:00 — [yifanfeng97/Hyper-Extract](https://github.com/yifanfeng97/Hyper-Extract) — bucket=memory-context
 - 2026-06-17T18:55:50.508235-04:00 — [PromptLabs/Prompt-Hacking-Resources](https://github.com/PromptLabs/Prompt-Hacking-Resources) — bucket=uncategorized
 - 2026-06-17T18:46:02.201426-04:00 — [chenhg5/agencycli](https://github.com/chenhg5/agencycli) — bucket=agent-orchestration
-- 2026-06-17T18:42:19.534934-04:00 — [rizal72/true-mem](https://github.com/rizal72/true-mem) — bucket=agent-orchestration
-- 2026-06-17T16:40:37.623451-04:00 — [erickochen/purple](https://github.com/erickochen/purple) — bucket=agent-orchestration
-- 2026-06-17T10:40:55.617761-04:00 — [ZhixiangLuo/10xProductivity](https://github.com/ZhixiangLuo/10xProductivity) — bucket=agent-orchestration
 
 ## Artifacts
 
 - JSON index: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-index-latest.json
-- JSON archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-index-2026-06-18.json
+- JSON archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-index-2026-06-22.json
 - This report: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-report-latest.md
-- Report archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-report-2026-06-18.md
+- Report archive: /Users/famtasticfritz/famtastic/obsidian/Shay-Memory/research/github-bookmarks-report-2026-06-22.md

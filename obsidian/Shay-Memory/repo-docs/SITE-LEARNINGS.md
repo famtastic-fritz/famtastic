@@ -8,6 +8,75 @@ permalink: shay-memory/repo-docs/site-learnings
 
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-22 — Hosting admin diagnostics + assisted domain-search fallback
+
+Added a backend-parity truth surface to `sites/site-famtastic-hosting` instead of leaving the GoDaddy reseller mismatch as a silent failure. New admin endpoint `sites/site-famtastic-hosting/src/pages/api/admin/diagnostics.ts` now probes reseller auth presence, live domain-search capability, backend function parity, and branding/support visibility; it also emits a copy-ready escalation packet plus recommended support action for GoDaddy reseller handoff. `sites/site-famtastic-hosting/src/pages/admin/settings.astro` now renders those checks in a dedicated diagnostics panel with refresh-on-demand and a one-click packet copy surface. On the public side, `sites/site-famtastic-hosting/src/pages/api/godaddy/available.ts` no longer hard-fails when GoDaddy returns `ACCESS_DENIED` / authorization-class failures — it converts those states into explicit assisted-mode payloads, and `sites/site-famtastic-hosting/src/pages/domains.astro` consumes that payload to keep the domain search UI in an assisted-contact sales lane instead of dead-ending.
+
+### Verified
+- `npm run build` passed in `sites/site-famtastic-hosting` after adding assisted-mode API payloads and the admin escalation packet surface.
+- Live dev curl to `http://127.0.0.1:4325/api/godaddy/available?domain=famtasticprobe.com&bulk=famtasticprobe.net,famtasticprobe.org` returned `{ ok: true, data: { assisted: true, lookupMode: "assisted", reasonCode: "ACCESS_DENIED", items: [...] } }`, proving the public endpoint now degrades into a structured assisted lane instead of returning a hard failure.
+- Live dev curl to `http://127.0.0.1:4325/api/admin/diagnostics` returned `401` without admin auth, confirming the diagnostics/escalation surface remains admin-gated while the public lookup stays public.
+- `sites/site-famtastic-hosting/src/lib/godaddy/client.ts` still normalizes `ACCESS_DENIED` into an explicit reseller-permission message instead of leaving the upstream wording vague.
+
+### Known Gaps opened
+- The diagnostics panel and escalation packet can prove the failure mode and package the support handoff, but they do not fix GoDaddy reseller permissions by themselves; the endpoint class / account scope still needs a real upstream correction.
+- The public fallback intentionally routes users into assisted contact instead of guessing availability. Until reseller search permission is restored, automated lookup remains an assisted-mode sales lane rather than a self-serve purchase surface.
+
+## 2026-06-22 — Freeze first, export second for conversation lanes
+
+The conversation-export lane was missing the most important step: freezing the source window before packaging it. Adding `scripts/conversation-freeze.js` fixed that by creating a canonical freeze directory under `obsidian/05-Captures/freezes/<date>/<freeze-id>/` with `freeze-manifest.json`, `transcript.md`, `transcript.json`, and an index row in `obsidian/05-Captures/index/freezes.jsonl`. `scripts/conversation-export.js` now accepts `--freeze-manifest`, so the export package can preserve `freeze_manifest_path`, `freeze_transcript_path`, `start_message_anchor`, `end_message_anchor`, and boundary metadata instead of pretending the saved brief file was the native seed.
+
+### Verified
+- Live freeze artifact: `obsidian/05-Captures/freezes/2026-06-22/frz_20260622_71490bfe/`
+- Freeze-backed export package: `obsidian/05-Captures/exports/2026-06-22/exp_20260622_8fcb50fb/`
+- Downstream consumer proof: `obsidian/05-Captures/review/convo-freeze-proof-2026-06-22.md`
+
+### Known Gaps opened
+- The current anchor mode is still derived (`ordinal + speaker_hash + capture_pass_id`) from normalized saved-artifact blocks, not native provider message IDs.
+- `session_id` remains missing for this test lane because the repo-resident source artifact did not expose provider session identity.
+- Replay/query is still file-plus-index driven; there is no dedicated CLI over freeze/export indexes yet.
+
+## 2026-06-19 — Truth-surface drift doctrine + lane preflight
+
+Promoted the recovery lesson from a one-off session into the common startup doctrine so agents stop treating branch/worktree confusion as an after-the-fact cleanup problem. `docs/agent-startup/AGENT-STARTUP-CONTRACT.md` now explicitly names the weakness as `truth-surface drift`, the failure mode as `cross-lane contamination under parallel sessions`, and the protection as live repo/worktree re-anchoring plus worktree-based lane isolation before action. The contract now also requires a lane preflight before meaningful writes: verify repo root, current branch, worktree/common-dir relationship when relevant, intended execution lane, actual shell lane, task-to-lane fit, and whether resumed context is stale or cross-lane.
+
+The unattended-run rule is now explicit too: cron jobs, launchd jobs, and autonomous agents must bind to an explicit repo/worktree path rather than an accidental cwd, log repo/cwd/branch/worktree before write-capable work, and abort if the configured lane and active lane disagree. Matching startup summaries were mirrored into `AGENTS.md` and `CLAUDE.md` so the anti-drift framing is visible across the main agent entry surfaces rather than hidden in one note.
+
+### Verified
+- `docs/agent-startup/AGENT-STARTUP-CONTRACT.md` now contains a dedicated `Truth-surface and lane-grounding doctrine` section, a `Required lane preflight before meaningful writes` checklist, and a `Cron and autonomous-run grounding rule` section.
+- `AGENTS.md` now says the startup contract includes truth-surface drift prevention through live repo/worktree re-anchoring before writes.
+- `CLAUDE.md` now tells startup readers to treat truth-surface drift as a first-class failure mode and re-anchor repo/branch/worktree truth before meaningful writes.
+
+### Known Gaps opened
+- This slice is doctrine-first. There is still no dedicated executable `lane preflight` CLI or git hook that automatically blocks wrong-lane writes.
+- Existing cron/launchd/autonomous jobs still need an audit pass to prove each one is explicitly bound to the right workdir/worktree instead of relying on inherited cwd.
+
+## 2026-06-18 — Shay prompt-memory target tightened under 2k
+
+Tightened the live Shay prompt-memory footprint so the always-injected layer matches Fritz's intended design instead of drifting roomy-by-default. The live runtime config at `~/.shay/config.yaml` now sets `memory.memory_char_limit: 1000` and `memory.user_char_limit: 900`, and the active bounded files `~/.shay/memories/MEMORY.md` plus `USER.md` were compacted to fit under roughly 2k combined. Matching truth updates landed in `shay-shay/docs/memory-flow-audit-2026-06-18.md`, `shay-shay/docs/shay-memory-hierarchy.md`, and `obsidian/01-Shay-Platform/Agent-Capability-Matrix.md` so future sessions stop repeating the older ~4k guidance.
+
+### Verified
+- Live config now reads `memory_char_limit: 1000` and `user_char_limit: 900`.
+- Current bounded prompt-memory files total under 2k combined.
+- Spillover path remains the long-detail outlet; this change shrinks the injected layer, not the broader memory fabric.
+
+# FAMtastic Ecosystem — Site Learnings
+
+## Scram-line brief default + telemetry split (2026-06-18)
+
+Changed the default human-facing planning surface from the more verbose simple brief shape to an ultra-brief resumable “scram-line” format. `plans/templates/simple-brief-template-v1.md` now defines the default brief as `Title`, `Purpose`, `Goal`, checkbox `Tasks`, `Status`, `Started`, `Ended`, `Execution`, `Research`, `Review`, `Skills`, optional `Blocked By`, and `Proof`, with exact spacing rules: one blank line after `Goal`, one blank line after the last task, and one blank line before `Proof`. The richer orchestration fields that were previously shown inline now live where they belong: telemetry, ledgers, research artifacts, review artifacts, and the heavier control-plane packet when a task actually needs it.
+
+The common-knowledge surfaces were updated to match: `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md` now all state that the scram-line brief is the default human-facing surface and that checkbox tasks are the resumability layer. The heavier `fam-hub plan template` / `plan validate` packet still exists, but it is now explicitly framed as a separate control-plane artifact rather than the default way to show a plan to Fritz.
+
+### Verified
+- `plans/templates/simple-brief-template-v1.md` now carries the scram-line default brief format and filled example.
+- `docs/agent-startup/AGENT-STARTUP-CONTRACT.md`, `AGENTS.md`, and `CLAUDE.md` now describe the scram-line brief as the default human-facing plan surface.
+- The template notes now explicitly say rich execution/orchestration detail belongs in telemetry and related artifacts, not the default brief.
+
+### Known Gaps opened
+- `fam-hub` still does not expose the scram-line brief as a first-class command surface; the rule is documented, but brief generation still depends on agent discipline.
+- There is still no dedicated validator for the scram-line brief shape, so exact field/spacing consistency is doctrine-driven rather than schema-enforced.
+
 ## Shay Desktop + Workspace surface-map cutover (2026-06-17)
 
 Cut the live local Shay app stack over so both `/Applications/Shay Desktop.app` and `/Users/famtasticfritz/Desktop/Shay Desktop.app` now launch the rebuilt desktop bundle against `/Users/famtasticfritz/.shay`, using `/Users/famtasticfritz/.local/bin/shay` from `/Users/famtasticfritz/famtastic/shay-shay` as the runtime source. `~/.hermes/hermes-agent/apps/desktop/electron/main.cjs` now honors an injected dashboard session token and preferred port `9120`, which let the Desktop-hosted dashboard become a stable surface for other local apps instead of a moving target. `/Users/famtasticfritz/Desktop/Shay Workspace.app` was rewired to the same runtime by setting `HERMES_HOME`, `HERMES_API_URL=http://127.0.0.1:8642`, `HERMES_DASHBOARD_URL=http://127.0.0.1:9120`, and a shared dashboard token in its app environment, then patching its local `electron/main.cjs` so dashboard health checks send that token. Added the durable truth doc `shay-shay/docs/shay-surface-map-2026-06-17.md` and updated `shay-shay/web/README.md` plus `shay-shay/website/docs/user-guide/features/web-dashboard.md` so the live local surface map is explicit: Desktop-hosted dashboard on `9120` is primary, standalone `shay dashboard` on `9119` is optional.

@@ -1,0 +1,76 @@
+{
+  "generated_at": "2026-06-22T19:52:57.042699+00:00",
+  "gaps_exists": true,
+  "suggestions_exists": true,
+  "suggestion_promotions_count": 0,
+  "brand_site_count": 16,
+  "actions": [
+    "wrote brand registry with 16 sites to /Users/famtasticfritz/.local/share/famtastic/brand.json"
+  ],
+  "paths": {
+    "gaps": "/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl",
+    "suggestions": "/Users/famtasticfritz/.local/share/famtastic/suggestions.jsonl",
+    "suggestion_promotions": "/Users/famtasticfritz/.local/share/famtastic/suggestion-promotions.jsonl",
+    "brand_registry": "/Users/famtasticfritz/.local/share/famtastic/brand.json",
+    "audit_json": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.json",
+    "audit_md": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/live-learning-artifacts.latest.md"
+  },
+  "top_suggestion_promotions": [],
+  "brand_sample": [
+    {
+      "site_tag": "site-altitude",
+      "brand_path": "/Users/famtasticfritz/famtastic/sites/site-altitude/brand.json",
+      "primary_color": null,
+      "accent_color": "#C9A56B",
+      "bg_color": "#0B1220",
+      "heading_font": "Bebas Neue",
+      "body_font": "Poppins",
+      "extracted_at": "2026-04-16T20:42:43.961Z",
+      "source": "build"
+    },
+    {
+      "site_tag": "site-auntie-gale-garage-sales",
+      "brand_path": "/Users/famtasticfritz/famtastic/sites/site-auntie-gale-garage-sales/brand.json",
+      "primary_color": "#E8420A",
+      "accent_color": "#FBBF24",
+      "bg_color": "#FFFBF5",
+      "heading_font": "Bebas Neue",
+      "body_font": "Poppins",
+      "extracted_at": "2026-04-17T11:23:30.047Z",
+      "source": "build"
+    },
+    {
+      "site_tag": "site-black",
+      "brand_path": "/Users/famtasticfritz/famtastic/sites/site-black/brand.json",
+      "primary_color": "#00A79D",
+      "accent_color": "#F5B800",
+      "bg_color": "#FDF4E3",
+      "heading_font": "Montserrat",
+      "body_font": "Open Sans",
+      "extracted_at": "2026-04-25T05:56:42.132Z",
+      "source": "build"
+    },
+    {
+      "site_tag": "site-crumb-and-crust-bakery",
+      "brand_path": "/Users/famtasticfritz/famtastic/sites/site-crumb-and-crust-bakery/brand.json",
+      "primary_color": "#8B4513",
+      "accent_color": "#E89B5C",
+      "bg_color": "#FFFCF5",
+      "heading_font": "Montserrat",
+      "body_font": "Open Sans",
+      "extracted_at": "2026-04-27T20:31:25.338Z",
+      "source": "build"
+    },
+    {
+      "site_tag": "site-famtastic-com",
+      "brand_path": "/Users/famtasticfritz/famtastic/sites/site-famtastic-com/brand.json",
+      "primary_color": null,
+      "accent_color": null,
+      "bg_color": null,
+      "heading_font": null,
+      "body_font": null,
+      "extracted_at": "2026-04-21T17:05:24.456Z",
+      "source": "build"
+    }
+  ]
+}
