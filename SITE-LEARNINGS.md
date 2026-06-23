@@ -1,5 +1,20 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-23 — Shay ask-trace CLI + HyperSwarm internal-lane truth shift
+
+Added a new proof surface in `shay-shay` for tracing fuzzy asks into the actual routed execution chain before anything runs. `shay-shay/shay_cli/intelligence_cmd.py` now exposes an `ASK_TRACE_RULES` registry plus `trace_task()` / `format_trace()`, `shay-shay/shay_cli/main.py` registers `shay intelligence trace <ask>` with help/examples, and `shay-shay/docs/ask_intent_registry.md` documents the canonical ask-to-fire map with worked examples. The same slice also updates HyperSwarm truth-state handling so internal production lanes are treated as available-with-controls instead of falsely hard-blocked, and the live identity-guard drift on `~/.shay/memories/USER.md` was repaired plus re-snapshotted so trace invocations stop surfacing false authority-line alarms.
+
+### Verified
+- `cd ~/famtastic/shay-shay && pytest tests/test_intelligence_layer.py -q` passed (56 passed).
+- `cd ~/famtastic/shay-shay && python -m shay_cli.main intelligence trace "fix context compression memory continuity"` rendered the expected route, command chain, and proof surfaces.
+- `cd ~/famtastic/shay-shay && python -m shay_cli.main intelligence trace --help` returned the new help/examples surface.
+- `cd ~/famtastic/shay-shay && python -m shay_cli.main identity status` returned `Identity status: OK` after re-adding the required USER.md authority/recommended lines and refreshing the protected snapshot.
+
+### Known Gaps opened
+- The natural-language map is still intentionally thin. Asks like competitor research, chained `research -> build prototype`, and pre-build swarm preview/confidence checks are not yet first-class intents; they still fall through to generic orchestration unless driven procedurally.
+- `shay intelligence trace` is a proof/planning view, not an executor. It shows what would fire, but it does not yet launch chained research/build/review swarms directly from the traced ask.
+- HyperSwarm internal-lane truth is now aligned in the CLI, but downstream docs/mental models that still assume a blanket production gate need to be treated as stale until they are swept.
+
 ## 2026-06-22 — Hosting admin diagnostics + assisted domain-search fallback
 
 Added a backend-parity truth surface to `sites/site-famtastic-hosting` instead of leaving the GoDaddy reseller mismatch as a silent failure. New admin endpoint `sites/site-famtastic-hosting/src/pages/api/admin/diagnostics.ts` now probes reseller auth presence, live domain-search capability, backend function parity, and branding/support visibility; it also emits a copy-ready escalation packet plus recommended support action for GoDaddy reseller handoff. `sites/site-famtastic-hosting/src/pages/admin/settings.astro` now renders those checks in a dedicated diagnostics panel with refresh-on-demand and a one-click packet copy surface. On the public side, `sites/site-famtastic-hosting/src/pages/api/godaddy/available.ts` no longer hard-fails when GoDaddy returns `ACCESS_DENIED` / authorization-class failures — it converts those states into explicit assisted-mode payloads, and `sites/site-famtastic-hosting/src/pages/domains.astro` consumes that payload to keep the domain search UI in an assisted-contact sales lane instead of dead-ending.
