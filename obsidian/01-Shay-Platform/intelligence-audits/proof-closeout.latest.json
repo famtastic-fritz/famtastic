@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-06-22T19:52:57.106284+00:00",
+  "generated_at": "2026-06-23T21:58:18.611085+00:00",
   "source_paths": [
     "/Users/famtasticfritz/.local/share/famtastic/gaps.jsonl",
     "/Users/famtasticfritz/.local/share/famtastic/intelligence-promotions.json",
     "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-buckets.latest.json",
     "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/problem-repo-verdicts.latest.json"
   ],
-  "gap_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/gaps.before-proof-closeout.2026-06-22-155257.jsonl",
-  "promotion_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/intelligence-promotions.before-proof-closeout.2026-06-22-155257.json",
+  "gap_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/gaps.before-proof-closeout.2026-06-23-175818.jsonl",
+  "promotion_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/intelligence-promotions.before-proof-closeout.2026-06-23-175818.json",
   "finding_count": 3,
   "applied_mutation_count": 0,
   "findings": [

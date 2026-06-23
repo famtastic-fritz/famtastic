@@ -6,7 +6,7 @@ permalink: famtastic/01-shay-platform/intelligence-audits/live-learning-artifact
 
 # Live learning artifacts
 
-- generated_at: 2026-06-22T19:52:57.042699+00:00
+- generated_at: 2026-06-23T21:58:18.536945+00:00
 - gaps_exists: True
 - suggestions_exists: True
 - suggestion_promotions_count: 0

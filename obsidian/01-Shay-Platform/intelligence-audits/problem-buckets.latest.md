@@ -6,7 +6,7 @@ permalink: famtastic/01-shay-platform/intelligence-audits/problem-buckets.latest
 
 # Problem buckets
 
-Generated: 2026-06-22T19:52:57.148477+00:00
+Generated: 2026-06-23T21:58:18.640658+00:00
 
 ## Canonical buckets
 ### Platform-conversation routing/context gap (`platform-conversation-context`)

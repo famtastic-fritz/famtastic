@@ -6,9 +6,9 @@ permalink: famtastic/01-shay-platform/intelligence-audits/proof-closeout.latest
 
 # Proof + closeout audit
 
-Generated: 2026-06-22T19:52:57.106284+00:00
-- gap_backup: /Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/gaps.before-proof-closeout.2026-06-22-155257.jsonl
-- promotion_backup: /Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/intelligence-promotions.before-proof-closeout.2026-06-22-155257.json
+Generated: 2026-06-23T21:58:18.611085+00:00
+- gap_backup: /Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/gaps.before-proof-closeout.2026-06-23-175818.jsonl
+- promotion_backup: /Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/intelligence-promotions.before-proof-closeout.2026-06-23-175818.json
 - applied_mutation_count: 0
 
 ## Video background capability (`video-background`)

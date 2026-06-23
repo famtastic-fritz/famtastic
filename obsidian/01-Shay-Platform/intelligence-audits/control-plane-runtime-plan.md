@@ -17,7 +17,7 @@ Tasks:
 - [ ] Docs / truth-surface drift is still open
 
 Status: in_progress
-Started: 2026-06-22 19:52
+Started: 2026-06-23 21:58
 Ended:
 Execution: swarm
 Research: no
@@ -28,11 +28,22 @@ Blocked By: none
 ## Latest pass findings
 - minor: artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles
 - minor: repo_verdicts linked 3 problem buckets
-- minor: learning_prune marked 0 stale suggestions and archived 5 backup files
 
 Proof:
 - control-plane history appended in control-plane-pass-history.jsonl
 - latest loop findings appended below
+
+## Pass appendix — control-plane-pass-20260623-175818-724022
+- generated: 2026-06-23T21:58:18.723848+00:00
+- findings:
+  - minor: artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles
+  - minor: repo_verdicts linked 3 problem buckets
+
+## Pass appendix — control-plane-pass-20260623-175818-489581
+- generated: 2026-06-23T21:58:18.489418+00:00
+- findings:
+  - minor: artifact_sync refreshed learning surfaces: 0 suggestion patterns, 16 brand profiles
+  - minor: repo_verdicts linked 3 problem buckets
 
 ## Pass appendix — control-plane-pass-20260622-155257-205564
 - generated: 2026-06-22T19:52:57.205446+00:00

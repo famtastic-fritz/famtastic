@@ -6,7 +6,7 @@ permalink: famtastic/01-shay-platform/intelligence-audits/problem-repo-verdicts.
 
 # Problem → repo verdicts
 
-Generated: 2026-06-22T19:52:57.083222+00:00
+Generated: 2026-06-23T21:58:18.583770+00:00
 
 ## Platform-conversation routing/context gap (`platform-conversation-context`)
 - promotion_status: pending

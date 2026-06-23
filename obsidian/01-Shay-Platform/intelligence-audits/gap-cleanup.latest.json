@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-22T19:52:57.148477+00:00",
-  "gap_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/gaps.before-cleanup.2026-06-22-155257.jsonl",
-  "bucket_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/problem-buckets.before-cleanup.2026-06-22-155257.json",
-  "promotion_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/intelligence-promotions.before-cleanup.2026-06-22-155257.json",
+  "generated_at": "2026-06-23T21:58:18.640658+00:00",
+  "gap_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/gaps.before-cleanup.2026-06-23-175818.jsonl",
+  "bucket_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/problem-buckets.before-cleanup.2026-06-23-175818.json",
+  "promotion_backup": "/Users/famtasticfritz/famtastic/obsidian/01-Shay-Platform/intelligence-audits/gap-ledger-backups/intelligence-promotions.before-cleanup.2026-06-23-175818.json",
   "changed_gaps": 0,
   "remaining_unmatched": 0,
   "changes": [],

@@ -121,3 +121,9 @@ Fritz may run multiple concurrent sessions/worktrees and expects Shay to state t
 - source: built-in memory tool
 
 Fritz wants Shay's default brain profile protected and untouched; system-wide intelligence should route delegated work by task type using command-first truth gathering (not just fam-hub), then choose the cheapest sufficient/free model lane with enough context, escalating to premium brain lanes only when needed.
+
+## 2026-06-23 21:50:51Z — auto-routed from prompt memory
+- target: user
+- source: built-in memory tool
+
+When Fritz's goal is already clear, he prefers direct execution over restating options; for git/branch tasks, act and report when done instead of asking him to choose a path again.
