@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="5">
+<title>Agent Factory · Dashboard</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-monospace,Menlo,Consolas,monospace; background:#0b0e14;
+          color:#cdd6f4; margin:0; padding:2rem; }
+  h1 { font-size:1.4rem; letter-spacing:.04em; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+           gap:1rem; margin:1.5rem 0; }
+  .card { background:#151a23; border:1px solid #232a36; border-radius:12px;
+           padding:1rem; }
+  .card .k { font-size:.75rem; opacity:.6; text-transform:uppercase; }
+  .card .v { font-size:1.8rem; font-weight:700; margin-top:.3rem; }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  th,td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid #232a36; }
+  th { opacity:.6; font-weight:600; }
+  .badge { padding:.15rem .5rem; border-radius:999px; font-size:.7rem; }
+  .badge.done { background:#1e3a2a; color:#a6e3a1; }
+  .badge.pending { background:#3a371e; color:#f9e2af; }
+  .badge.claimed { background:#1e2e3a; color:#89dceb; }
+  .badge.failed { background:#3a1e22; color:#f38ba8; }
+  .accent { color:#89b4fa; }
+  footer { opacity:.5; font-size:.75rem; margin-top:2rem; }
+</style></head>
+<body>
+  <h1>🏭 AGENT FACTORY <span class="accent">· live dashboard</span></h1>
+  <div style="opacity:.6">2026-06-18T14:42:07 · auto-refresh 5s · offline-safe</div>
+  <div class="grid">
+    <div class="card"><div class="k">Queue depth</div><div class="v">0</div></div>
+    <div class="card"><div class="k">In flight</div><div class="v">0</div></div>
+    <div class="card"><div class="k">Done</div><div class="v accent">14</div></div>
+    <div class="card"><div class="k">Failed</div><div class="v">0</div></div>
+    <div class="card"><div class="k">Success</div><div class="v">100%</div></div>
+    <div class="card"><div class="k">Total cost</div><div class="v">$0.0771</div></div>
+    <div class="card"><div class="k">Cost / task</div><div class="v">$0.0055</div></div>
+    <div class="card"><div class="k">Avg latency</div><div class="v">0.071s</div></div>
+    <div class="card"><div class="k">Concurrency max</div><div class="v">6</div></div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Type</th><th>Title</th><th>Status</th>
+    <th>Model</th><th>Cost</th><th>Worker</th></tr></thead>
+    <tbody><tr class='done'><td>1</td><td>business_model</td><td>Business model for selling FAMtastic Designs</td><td><span class='badge done'>done</span></td><td>anthropic/claude-sonnet-4.6</td><td>$0.0132</td><td>w001</td></tr>
+<tr class='done'><td>2</td><td>marketing_strategy</td><td>Marketing & positioning for FAMtastic Designs</td><td><span class='badge done'>done</span></td><td>anthropic/claude-sonnet-4.6</td><td>$0.0099</td><td>w004</td></tr>
+<tr class='done'><td>3</td><td>campaign_plan</td><td>First campaign plan (checkout rescue lane)</td><td><span class='badge done'>done</span></td><td>anthropic/claude-sonnet-4.6</td><td>$0.0100</td><td>w005</td></tr>
+<tr class='done'><td>4</td><td>outreach_system</td><td>Outreach & contacting system (email + LinkedIn)</td><td><span class='badge done'>done</span></td><td>anthropic/claude-sonnet-4.6</td><td>$0.0140</td><td>w007</td></tr>
+<tr class='done'><td>5</td><td>sales_process</td><td>Sales process, offer copy & proposals</td><td><span class='badge done'>done</span></td><td>anthropic/claude-sonnet-4.6</td><td>$0.0147</td><td>w008</td></tr>
+<tr class='done'><td>6</td><td>payment_fulfillment</td><td>Payment collection & fulfillment (PayPal + GoDaddy)</td><td><span class='badge done'>done</span></td><td>anthropic/claude-sonnet-4.6</td><td>$0.0141</td><td>w002</td></tr>
+<tr class='done'><td>7</td><td>triage</td><td>Classify inbound lead: agency vs merchant</td><td><span class='badge done'>done</span></td><td>openai/gpt-4.1-mini</td><td>$0.0002</td><td>w009</td></tr>
+<tr class='done'><td>8</td><td>triage</td><td>Tag 20 outreach targets by vertical</td><td><span class='badge done'>done</span></td><td>openai/gpt-4.1-mini</td><td>$0.0002</td><td>w010</td></tr>
+<tr class='done'><td>9</td><td>triage</td><td>Draft 1-line subject A/B variants</td><td><span class='badge done'>done</span></td><td>openai/gpt-4.1-mini</td><td>$0.0002</td><td>w011</td></tr>
+<tr class='done'><td>10</td><td>summary</td><td>Summarize first-batch reply rates</td><td><span class='badge done'>done</span></td><td>openai/gpt-4.1-mini</td><td>$0.0002</td><td>w012</td></tr>
+<tr class='done'><td>11</td><td>paypal_invoice_draft</td><td>Draft invoice: Checkout Rescue Diagnostic</td><td><span class='badge done'>done</span></td><td>paypal/invoicing-v2-draft</td><td>$0.0000</td><td>w003</td></tr>
+<tr class='done'><td>12</td><td>paypal_invoice_draft</td><td>Draft invoice: FAMtastic Signature build (50% deposit)</td><td><span class='badge done'>done</span></td><td>paypal/invoicing-v2-draft</td><td>$0.0000</td><td>w006</td></tr>
+<tr class='done'><td>13</td><td>triage</td><td>LIVE injected task A</td><td><span class='badge done'>done</span></td><td>openai/gpt-4.1-mini</td><td>$0.0002</td><td>w001</td></tr>
+<tr class='done'><td>14</td><td>paypal_invoice_draft</td><td>LIVE injected invoice B</td><td><span class='badge done'>done</span></td><td>paypal/invoicing-v2-draft</td><td>$0.0000</td><td>w002</td></tr></tbody>
+  </table>
+  <footer>Self-contained sandbox · no live spend · scheduling stays in-process.
+  Data: data/factory.db · Cost ledger: logs/COSTS.log</footer>
+</body></html>

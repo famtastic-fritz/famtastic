@@ -1,0 +1,242 @@
+{"ts": "2026-06-18T09:12:11", "decision": "orchestrator_start", "note": "supervisor online", "pid": 3246}
+{"ts": "2026-06-18T09:12:11", "decision": "decide_concurrency", "pending": 10, "concurrency_cap": 2, "workers_to_spawn": 2, "idle_capacity_retired": 0}
+{"ts": "2026-06-18T09:12:11", "decision": "wave_start", "wave": 1, "pending": 10, "spawning": 2}
+{"ts": "2026-06-18T09:12:11", "decision": "mint_worker", "worker_id": "w001", "specialty": "general", "file": "agents/worker_w001.py"}
+{"ts": "2026-06-18T09:12:11", "decision": "assign_task", "worker_id": "w001", "task_id": 1, "task_type": "business_model", "complexity": 0.85}
+{"ts": "2026-06-18T09:12:11", "decision": "mint_worker", "worker_id": "w002", "specialty": "general", "file": "agents/worker_w002.py"}
+{"ts": "2026-06-18T09:12:11", "decision": "assign_task", "worker_id": "w002", "task_id": 6, "task_type": "payment_fulfillment", "complexity": 0.9}
+{"ts": "2026-06-18T09:12:11", "decision": "worker_done", "worker_id": "w001", "task_id": 1, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.013239, "mode": "STUB", "deliverable": "deliverables/001-business-model-for-selling-famtastic-designs.md"}
+{"ts": "2026-06-18T09:12:11", "decision": "retire_worker", "worker_id": "w001", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:11", "decision": "worker_done", "worker_id": "w002", "task_id": 6, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014136, "mode": "STUB", "deliverable": "deliverables/006-payment-collection-fulfillment-paypal-godaddy.md"}
+{"ts": "2026-06-18T09:12:11", "decision": "retire_worker", "worker_id": "w002", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:11", "decision": "wave_end", "wave": 1, "completed": 2, "failed": 0}
+{"ts": "2026-06-18T09:12:11", "decision": "self_improvement", "wave": 1, "changes": 2, "success_rate": 1.0, "cost_per_task": 0.013688}
+{"ts": "2026-06-18T09:12:11", "decision": "scheduler_tick", "pending": 8, "next_interval_s": 1.0}
+{"ts": "2026-06-18T09:12:12", "decision": "decide_concurrency", "pending": 8, "concurrency_cap": 3, "workers_to_spawn": 3, "idle_capacity_retired": 0}
+{"ts": "2026-06-18T09:12:12", "decision": "wave_start", "wave": 2, "pending": 8, "spawning": 3}
+{"ts": "2026-06-18T09:12:12", "decision": "mint_worker", "worker_id": "w003", "specialty": "general", "file": "agents/worker_w003.py"}
+{"ts": "2026-06-18T09:12:12", "decision": "assign_task", "worker_id": "w003", "task_id": 2, "task_type": "marketing_strategy", "complexity": 0.7}
+{"ts": "2026-06-18T09:12:12", "decision": "mint_worker", "worker_id": "w004", "specialty": "general", "file": "agents/worker_w004.py"}
+{"ts": "2026-06-18T09:12:12", "decision": "assign_task", "worker_id": "w004", "task_id": 3, "task_type": "campaign_plan", "complexity": 0.65}
+{"ts": "2026-06-18T09:12:12", "decision": "mint_worker", "worker_id": "w005", "specialty": "general", "file": "agents/worker_w005.py"}
+{"ts": "2026-06-18T09:12:12", "decision": "assign_task", "worker_id": "w005", "task_id": 4, "task_type": "outreach_system", "complexity": 0.75}
+{"ts": "2026-06-18T09:12:12", "decision": "worker_done", "worker_id": "w003", "task_id": 2, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.001061, "mode": "STUB", "deliverable": "deliverables/002-marketing-positioning-for-famtastic-designs.md"}
+{"ts": "2026-06-18T09:12:12", "decision": "retire_worker", "worker_id": "w003", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:12", "decision": "worker_done", "worker_id": "w004", "task_id": 3, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.001067, "mode": "STUB", "deliverable": "deliverables/003-first-campaign-plan-checkout-rescue-lane.md"}
+{"ts": "2026-06-18T09:12:12", "decision": "retire_worker", "worker_id": "w004", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:12", "decision": "worker_done", "worker_id": "w005", "task_id": 4, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014031, "mode": "STUB", "deliverable": "deliverables/004-outreach-contacting-system-email-linkedin.md"}
+{"ts": "2026-06-18T09:12:12", "decision": "retire_worker", "worker_id": "w005", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:12", "decision": "wave_end", "wave": 2, "completed": 3, "failed": 0}
+{"ts": "2026-06-18T09:12:12", "decision": "self_improvement", "wave": 2, "changes": 2, "success_rate": 1.0, "cost_per_task": 0.008707}
+{"ts": "2026-06-18T09:12:12", "decision": "scheduler_tick", "pending": 5, "next_interval_s": 1.4}
+{"ts": "2026-06-18T09:12:14", "decision": "decide_concurrency", "pending": 5, "concurrency_cap": 4, "workers_to_spawn": 4, "idle_capacity_retired": 0}
+{"ts": "2026-06-18T09:12:14", "decision": "wave_start", "wave": 3, "pending": 5, "spawning": 4}
+{"ts": "2026-06-18T09:12:14", "decision": "mint_worker", "worker_id": "w006", "specialty": "general", "file": "agents/worker_w006.py"}
+{"ts": "2026-06-18T09:12:14", "decision": "assign_task", "worker_id": "w006", "task_id": 5, "task_type": "sales_process", "complexity": 0.8}
+{"ts": "2026-06-18T09:12:14", "decision": "mint_worker", "worker_id": "w007", "specialty": "general", "file": "agents/worker_w007.py"}
+{"ts": "2026-06-18T09:12:14", "decision": "assign_task", "worker_id": "w007", "task_id": 7, "task_type": "triage", "complexity": 0.2}
+{"ts": "2026-06-18T09:12:14", "decision": "mint_worker", "worker_id": "w008", "specialty": "general", "file": "agents/worker_w008.py"}
+{"ts": "2026-06-18T09:12:14", "decision": "assign_task", "worker_id": "w008", "task_id": 8, "task_type": "triage", "complexity": 0.25}
+{"ts": "2026-06-18T09:12:14", "decision": "mint_worker", "worker_id": "w009", "specialty": "general", "file": "agents/worker_w009.py"}
+{"ts": "2026-06-18T09:12:14", "decision": "assign_task", "worker_id": "w009", "task_id": 9, "task_type": "triage", "complexity": 0.3}
+{"ts": "2026-06-18T09:12:14", "decision": "worker_done", "worker_id": "w006", "task_id": 5, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014697, "mode": "STUB", "deliverable": "deliverables/005-sales-process-offer-copy-proposals.md"}
+{"ts": "2026-06-18T09:12:14", "decision": "retire_worker", "worker_id": "w006", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:14", "decision": "worker_done", "worker_id": "w007", "task_id": 7, "model": "meta-llama/llama-3.1-8b-instruct", "tier": "triage", "cost_usd": 8e-06, "mode": "STUB", "deliverable": "deliverables/007-classify-inbound-lead-agency-vs-merchant.md"}
+{"ts": "2026-06-18T09:12:14", "decision": "retire_worker", "worker_id": "w007", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:14", "decision": "worker_done", "worker_id": "w008", "task_id": 8, "model": "meta-llama/llama-3.1-8b-instruct", "tier": "triage", "cost_usd": 7e-06, "mode": "STUB", "deliverable": "deliverables/008-tag-20-outreach-targets-by-vertical.md"}
+{"ts": "2026-06-18T09:12:14", "decision": "retire_worker", "worker_id": "w008", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:14", "decision": "worker_done", "worker_id": "w009", "task_id": 9, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.00023, "mode": "STUB", "deliverable": "deliverables/009-draft-1-line-subject-a-b-variants.md"}
+{"ts": "2026-06-18T09:12:14", "decision": "retire_worker", "worker_id": "w009", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:14", "decision": "wave_end", "wave": 3, "completed": 4, "failed": 0}
+{"ts": "2026-06-18T09:12:14", "decision": "self_improvement", "wave": 3, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.006497}
+{"ts": "2026-06-18T09:12:14", "decision": "scheduler_tick", "pending": 1, "next_interval_s": 9.0}
+{"ts": "2026-06-18T09:12:23", "decision": "decide_concurrency", "pending": 1, "concurrency_cap": 4, "workers_to_spawn": 1, "idle_capacity_retired": 3}
+{"ts": "2026-06-18T09:12:23", "decision": "wave_start", "wave": 4, "pending": 1, "spawning": 1}
+{"ts": "2026-06-18T09:12:23", "decision": "mint_worker", "worker_id": "w010", "specialty": "general", "file": "agents/worker_w010.py"}
+{"ts": "2026-06-18T09:12:23", "decision": "assign_task", "worker_id": "w010", "task_id": 10, "task_type": "summary", "complexity": 0.45}
+{"ts": "2026-06-18T09:12:23", "decision": "worker_done", "worker_id": "w010", "task_id": 10, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.000224, "mode": "STUB", "deliverable": "deliverables/010-summarize-first-batch-reply-rates.md"}
+{"ts": "2026-06-18T09:12:23", "decision": "retire_worker", "worker_id": "w010", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:12:23", "decision": "wave_end", "wave": 4, "completed": 1, "failed": 0}
+{"ts": "2026-06-18T09:12:23", "decision": "self_improvement", "wave": 4, "changes": 2, "success_rate": 1.0, "cost_per_task": 0.00587}
+{"ts": "2026-06-18T09:12:23", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 12.0}
+{"ts": "2026-06-18T09:12:35", "decision": "wave_skip", "wave": 5, "reason": "no pending tasks"}
+{"ts": "2026-06-18T09:12:35", "decision": "self_improvement", "wave": 5, "changes": 2, "success_rate": 1.0, "cost_per_task": 0.00587}
+{"ts": "2026-06-18T09:12:35", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 15.0}
+{"ts": "2026-06-18T09:12:50", "decision": "wave_skip", "wave": 6, "reason": "no pending tasks"}
+{"ts": "2026-06-18T09:12:50", "decision": "self_improvement", "wave": 6, "changes": 2, "success_rate": 1.0, "cost_per_task": 0.00587}
+{"ts": "2026-06-18T09:12:50", "decision": "loop_stop", "reason": "cycle limit reached", "waves": 6}
+{"ts": "2026-06-18T09:12:50", "decision": "orchestrator_stop", "done": 10, "failed": 0, "pending": 0, "success_rate": 1.0, "total_cost_usd": 0.0587}
+{"ts": "2026-06-18T09:29:15", "decision": "orchestrator_start", "note": "supervisor online", "pid": 2701}
+{"ts": "2026-06-18T09:29:15", "decision": "decide_concurrency", "pending": 12, "concurrency_cap": 4, "workers_to_spawn": 4, "idle_capacity_retired": 0}
+{"ts": "2026-06-18T09:29:15", "decision": "wave_start", "wave": 1, "pending": 12, "spawning": 4}
+{"ts": "2026-06-18T09:29:15", "decision": "mint_worker", "worker_id": "w001", "specialty": "general", "file": "agents/worker_w001.py"}
+{"ts": "2026-06-18T09:29:15", "decision": "assign_task", "worker_id": "w001", "task_id": 1, "task_type": "business_model", "complexity": 0.85}
+{"ts": "2026-06-18T09:29:15", "decision": "mint_worker", "worker_id": "w002", "specialty": "general", "file": "agents/worker_w002.py"}
+{"ts": "2026-06-18T09:29:15", "decision": "assign_task", "worker_id": "w002", "task_id": 6, "task_type": "payment_fulfillment", "complexity": 0.9}
+{"ts": "2026-06-18T09:29:15", "decision": "mint_worker", "worker_id": "w003", "specialty": "general", "file": "agents/worker_w003.py"}
+{"ts": "2026-06-18T09:29:15", "decision": "assign_task", "worker_id": "w003", "task_id": 11, "task_type": "paypal_invoice_draft", "complexity": 0.4}
+{"ts": "2026-06-18T09:29:15", "decision": "mint_worker", "worker_id": "w004", "specialty": "general", "file": "agents/worker_w004.py"}
+{"ts": "2026-06-18T09:29:15", "decision": "assign_task", "worker_id": "w004", "task_id": 2, "task_type": "marketing_strategy", "complexity": 0.7}
+{"ts": "2026-06-18T09:29:15", "decision": "worker_done", "worker_id": "w001", "task_id": 1, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.013239, "mode": "STUB", "deliverable": "deliverables/001-business-model-for-selling-famtastic-designs.md"}
+{"ts": "2026-06-18T09:29:15", "decision": "retire_worker", "worker_id": "w001", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:15", "decision": "worker_done", "worker_id": "w002", "task_id": 6, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014136, "mode": "STUB", "deliverable": "deliverables/006-payment-collection-fulfillment-paypal-godaddy.md"}
+{"ts": "2026-06-18T09:29:15", "decision": "retire_worker", "worker_id": "w002", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:15", "decision": "worker_done", "worker_id": "w003", "task_id": 11, "model": "paypal/invoicing-v2-draft", "tier": "action", "cost_usd": 0.0, "mode": "STUB", "deliverable": "deliverables/011-draft-invoice-checkout-rescue-diagnostic.md"}
+{"ts": "2026-06-18T09:29:15", "decision": "retire_worker", "worker_id": "w003", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:15", "decision": "worker_done", "worker_id": "w004", "task_id": 2, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.009918, "mode": "STUB", "deliverable": "deliverables/002-marketing-positioning-for-famtastic-designs.md"}
+{"ts": "2026-06-18T09:29:15", "decision": "retire_worker", "worker_id": "w004", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:15", "decision": "wave_end", "wave": 1, "completed": 4, "failed": 0}
+{"ts": "2026-06-18T09:29:15", "decision": "self_improvement", "wave": 1, "changes": 2, "success_rate": 1.0, "cost_per_task": 0.009323}
+{"ts": "2026-06-18T09:29:15", "decision": "scheduler_tick", "pending": 8, "next_interval_s": 1.0}
+{"ts": "2026-06-18T09:29:16", "decision": "decide_concurrency", "pending": 8, "concurrency_cap": 5, "workers_to_spawn": 5, "idle_capacity_retired": 0}
+{"ts": "2026-06-18T09:29:16", "decision": "wave_start", "wave": 2, "pending": 8, "spawning": 5}
+{"ts": "2026-06-18T09:29:16", "decision": "mint_worker", "worker_id": "w005", "specialty": "general", "file": "agents/worker_w005.py"}
+{"ts": "2026-06-18T09:29:16", "decision": "assign_task", "worker_id": "w005", "task_id": 3, "task_type": "campaign_plan", "complexity": 0.65}
+{"ts": "2026-06-18T09:29:16", "decision": "mint_worker", "worker_id": "w006", "specialty": "general", "file": "agents/worker_w006.py"}
+{"ts": "2026-06-18T09:29:16", "decision": "assign_task", "worker_id": "w006", "task_id": 12, "task_type": "paypal_invoice_draft", "complexity": 0.4}
+{"ts": "2026-06-18T09:29:16", "decision": "mint_worker", "worker_id": "w007", "specialty": "general", "file": "agents/worker_w007.py"}
+{"ts": "2026-06-18T09:29:16", "decision": "assign_task", "worker_id": "w007", "task_id": 4, "task_type": "outreach_system", "complexity": 0.75}
+{"ts": "2026-06-18T09:29:16", "decision": "mint_worker", "worker_id": "w008", "specialty": "general", "file": "agents/worker_w008.py"}
+{"ts": "2026-06-18T09:29:16", "decision": "assign_task", "worker_id": "w008", "task_id": 5, "task_type": "sales_process", "complexity": 0.8}
+{"ts": "2026-06-18T09:29:16", "decision": "mint_worker", "worker_id": "w009", "specialty": "general", "file": "agents/worker_w009.py"}
+{"ts": "2026-06-18T09:29:16", "decision": "assign_task", "worker_id": "w009", "task_id": 7, "task_type": "triage", "complexity": 0.2}
+{"ts": "2026-06-18T09:29:16", "decision": "worker_done", "worker_id": "w005", "task_id": 3, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.009975, "mode": "STUB", "deliverable": "deliverables/003-first-campaign-plan-checkout-rescue-lane.md"}
+{"ts": "2026-06-18T09:29:16", "decision": "retire_worker", "worker_id": "w005", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:16", "decision": "worker_done", "worker_id": "w006", "task_id": 12, "model": "paypal/invoicing-v2-draft", "tier": "action", "cost_usd": 0.0, "mode": "STUB", "deliverable": "deliverables/012-draft-invoice-famtastic-signature-build-50-deposit.md"}
+{"ts": "2026-06-18T09:29:16", "decision": "retire_worker", "worker_id": "w006", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:16", "decision": "worker_done", "worker_id": "w007", "task_id": 4, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014031, "mode": "STUB", "deliverable": "deliverables/004-outreach-contacting-system-email-linkedin.md"}
+{"ts": "2026-06-18T09:29:16", "decision": "retire_worker", "worker_id": "w007", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:16", "decision": "worker_done", "worker_id": "w008", "task_id": 5, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014697, "mode": "STUB", "deliverable": "deliverables/005-sales-process-offer-copy-proposals.md"}
+{"ts": "2026-06-18T09:29:16", "decision": "retire_worker", "worker_id": "w008", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:16", "decision": "worker_done", "worker_id": "w009", "task_id": 7, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.000236, "mode": "STUB", "deliverable": "deliverables/007-classify-inbound-lead-agency-vs-merchant.md"}
+{"ts": "2026-06-18T09:29:16", "decision": "retire_worker", "worker_id": "w009", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:16", "decision": "wave_end", "wave": 2, "completed": 5, "failed": 0}
+{"ts": "2026-06-18T09:29:16", "decision": "self_improvement", "wave": 2, "changes": 0, "success_rate": 1.0, "cost_per_task": 0.00847}
+{"ts": "2026-06-18T09:29:16", "decision": "scheduler_tick", "pending": 3, "next_interval_s": 3.4}
+{"ts": "2026-06-18T09:29:20", "decision": "decide_concurrency", "pending": 3, "concurrency_cap": 5, "workers_to_spawn": 3, "idle_capacity_retired": 2}
+{"ts": "2026-06-18T09:29:20", "decision": "wave_start", "wave": 3, "pending": 3, "spawning": 3}
+{"ts": "2026-06-18T09:29:20", "decision": "mint_worker", "worker_id": "w010", "specialty": "general", "file": "agents/worker_w010.py"}
+{"ts": "2026-06-18T09:29:20", "decision": "assign_task", "worker_id": "w010", "task_id": 8, "task_type": "triage", "complexity": 0.25}
+{"ts": "2026-06-18T09:29:20", "decision": "mint_worker", "worker_id": "w011", "specialty": "general", "file": "agents/worker_w011.py"}
+{"ts": "2026-06-18T09:29:20", "decision": "assign_task", "worker_id": "w011", "task_id": 9, "task_type": "triage", "complexity": 0.3}
+{"ts": "2026-06-18T09:29:20", "decision": "mint_worker", "worker_id": "w012", "specialty": "general", "file": "agents/worker_w012.py"}
+{"ts": "2026-06-18T09:29:20", "decision": "assign_task", "worker_id": "w012", "task_id": 10, "task_type": "summary", "complexity": 0.45}
+{"ts": "2026-06-18T09:29:20", "decision": "worker_done", "worker_id": "w010", "task_id": 8, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.00023, "mode": "STUB", "deliverable": "deliverables/008-tag-20-outreach-targets-by-vertical.md"}
+{"ts": "2026-06-18T09:29:20", "decision": "retire_worker", "worker_id": "w010", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:20", "decision": "worker_done", "worker_id": "w011", "task_id": 9, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.00023, "mode": "STUB", "deliverable": "deliverables/009-draft-1-line-subject-a-b-variants.md"}
+{"ts": "2026-06-18T09:29:20", "decision": "retire_worker", "worker_id": "w011", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:20", "decision": "worker_done", "worker_id": "w012", "task_id": 10, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.000224, "mode": "STUB", "deliverable": "deliverables/010-summarize-first-batch-reply-rates.md"}
+{"ts": "2026-06-18T09:29:20", "decision": "retire_worker", "worker_id": "w012", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T09:29:20", "decision": "wave_end", "wave": 3, "completed": 3, "failed": 0}
+{"ts": "2026-06-18T09:29:20", "decision": "self_improvement", "wave": 3, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T09:29:20", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 18.0}
+{"ts": "2026-06-18T09:29:38", "decision": "wave_skip", "wave": 4, "reason": "no pending tasks"}
+{"ts": "2026-06-18T09:29:38", "decision": "self_improvement", "wave": 4, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T09:29:38", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 21.0}
+{"ts": "2026-06-18T09:29:59", "decision": "wave_skip", "wave": 5, "reason": "no pending tasks"}
+{"ts": "2026-06-18T09:29:59", "decision": "self_improvement", "wave": 5, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T09:29:59", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 24.0}
+{"ts": "2026-06-18T09:30:23", "decision": "wave_skip", "wave": 6, "reason": "no pending tasks"}
+{"ts": "2026-06-18T09:30:23", "decision": "self_improvement", "wave": 6, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T09:30:23", "decision": "loop_stop", "reason": "cycle limit reached", "waves": 6}
+{"ts": "2026-06-18T09:30:23", "decision": "orchestrator_stop", "done": 12, "failed": 0, "pending": 0, "success_rate": 1.0, "total_cost_usd": 0.076916}
+{"ts": "2026-06-18T14:38:35", "decision": "orchestrator_start", "note": "supervisor online", "pid": 2300}
+{"ts": "2026-06-18T14:38:35", "decision": "decide_concurrency", "pending": 12, "concurrency_cap": 5, "workers_to_spawn": 5, "idle_capacity_retired": 0}
+{"ts": "2026-06-18T14:38:35", "decision": "wave_start", "wave": 1, "pending": 12, "spawning": 5}
+{"ts": "2026-06-18T14:38:35", "decision": "mint_worker", "worker_id": "w001", "specialty": "general", "file": "agents/worker_w001.py"}
+{"ts": "2026-06-18T14:38:35", "decision": "assign_task", "worker_id": "w001", "task_id": 1, "task_type": "business_model", "complexity": 0.85}
+{"ts": "2026-06-18T14:38:35", "decision": "mint_worker", "worker_id": "w002", "specialty": "general", "file": "agents/worker_w002.py"}
+{"ts": "2026-06-18T14:38:35", "decision": "assign_task", "worker_id": "w002", "task_id": 6, "task_type": "payment_fulfillment", "complexity": 0.9}
+{"ts": "2026-06-18T14:38:35", "decision": "mint_worker", "worker_id": "w003", "specialty": "general", "file": "agents/worker_w003.py"}
+{"ts": "2026-06-18T14:38:35", "decision": "assign_task", "worker_id": "w003", "task_id": 11, "task_type": "paypal_invoice_draft", "complexity": 0.4}
+{"ts": "2026-06-18T14:38:35", "decision": "mint_worker", "worker_id": "w004", "specialty": "general", "file": "agents/worker_w004.py"}
+{"ts": "2026-06-18T14:38:35", "decision": "assign_task", "worker_id": "w004", "task_id": 2, "task_type": "marketing_strategy", "complexity": 0.7}
+{"ts": "2026-06-18T14:38:35", "decision": "mint_worker", "worker_id": "w005", "specialty": "general", "file": "agents/worker_w005.py"}
+{"ts": "2026-06-18T14:38:35", "decision": "assign_task", "worker_id": "w005", "task_id": 3, "task_type": "campaign_plan", "complexity": 0.65}
+{"ts": "2026-06-18T14:38:35", "decision": "worker_done", "worker_id": "w001", "task_id": 1, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.013239, "mode": "STUB", "deliverable": "deliverables/001-business-model-for-selling-famtastic-designs.md"}
+{"ts": "2026-06-18T14:38:35", "decision": "retire_worker", "worker_id": "w001", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:35", "decision": "worker_done", "worker_id": "w002", "task_id": 6, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014136, "mode": "STUB", "deliverable": "deliverables/006-payment-collection-fulfillment-paypal-godaddy.md"}
+{"ts": "2026-06-18T14:38:35", "decision": "retire_worker", "worker_id": "w002", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:35", "decision": "worker_done", "worker_id": "w003", "task_id": 11, "model": "paypal/invoicing-v2-draft", "tier": "action", "cost_usd": 0.0, "mode": "STUB", "deliverable": "deliverables/011-draft-invoice-checkout-rescue-diagnostic.md"}
+{"ts": "2026-06-18T14:38:35", "decision": "retire_worker", "worker_id": "w003", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:35", "decision": "worker_done", "worker_id": "w004", "task_id": 2, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.009918, "mode": "STUB", "deliverable": "deliverables/002-marketing-positioning-for-famtastic-designs.md"}
+{"ts": "2026-06-18T14:38:35", "decision": "retire_worker", "worker_id": "w004", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:35", "decision": "worker_done", "worker_id": "w005", "task_id": 3, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.009975, "mode": "STUB", "deliverable": "deliverables/003-first-campaign-plan-checkout-rescue-lane.md"}
+{"ts": "2026-06-18T14:38:35", "decision": "retire_worker", "worker_id": "w005", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:35", "decision": "wave_end", "wave": 1, "completed": 5, "failed": 0}
+{"ts": "2026-06-18T14:38:35", "decision": "self_improvement", "wave": 1, "changes": 2, "success_rate": 1.0, "cost_per_task": 0.009454}
+{"ts": "2026-06-18T14:38:35", "decision": "scheduler_tick", "pending": 7, "next_interval_s": 1.0, "idle_strikes": 0}
+{"ts": "2026-06-18T14:38:36", "decision": "decide_concurrency", "pending": 7, "concurrency_cap": 6, "workers_to_spawn": 6, "idle_capacity_retired": 0}
+{"ts": "2026-06-18T14:38:36", "decision": "wave_start", "wave": 2, "pending": 7, "spawning": 6}
+{"ts": "2026-06-18T14:38:36", "decision": "mint_worker", "worker_id": "w006", "specialty": "general", "file": "agents/worker_w006.py"}
+{"ts": "2026-06-18T14:38:36", "decision": "assign_task", "worker_id": "w006", "task_id": 12, "task_type": "paypal_invoice_draft", "complexity": 0.4}
+{"ts": "2026-06-18T14:38:36", "decision": "mint_worker", "worker_id": "w007", "specialty": "general", "file": "agents/worker_w007.py"}
+{"ts": "2026-06-18T14:38:36", "decision": "assign_task", "worker_id": "w007", "task_id": 4, "task_type": "outreach_system", "complexity": 0.75}
+{"ts": "2026-06-18T14:38:36", "decision": "mint_worker", "worker_id": "w008", "specialty": "general", "file": "agents/worker_w008.py"}
+{"ts": "2026-06-18T14:38:36", "decision": "assign_task", "worker_id": "w008", "task_id": 5, "task_type": "sales_process", "complexity": 0.8}
+{"ts": "2026-06-18T14:38:36", "decision": "mint_worker", "worker_id": "w009", "specialty": "general", "file": "agents/worker_w009.py"}
+{"ts": "2026-06-18T14:38:36", "decision": "assign_task", "worker_id": "w009", "task_id": 7, "task_type": "triage", "complexity": 0.2}
+{"ts": "2026-06-18T14:38:36", "decision": "mint_worker", "worker_id": "w010", "specialty": "general", "file": "agents/worker_w010.py"}
+{"ts": "2026-06-18T14:38:36", "decision": "assign_task", "worker_id": "w010", "task_id": 8, "task_type": "triage", "complexity": 0.25}
+{"ts": "2026-06-18T14:38:36", "decision": "mint_worker", "worker_id": "w011", "specialty": "general", "file": "agents/worker_w011.py"}
+{"ts": "2026-06-18T14:38:36", "decision": "assign_task", "worker_id": "w011", "task_id": 9, "task_type": "triage", "complexity": 0.3}
+{"ts": "2026-06-18T14:38:36", "decision": "worker_done", "worker_id": "w006", "task_id": 12, "model": "paypal/invoicing-v2-draft", "tier": "action", "cost_usd": 0.0, "mode": "STUB", "deliverable": "deliverables/012-draft-invoice-famtastic-signature-build-50-deposit.md"}
+{"ts": "2026-06-18T14:38:36", "decision": "retire_worker", "worker_id": "w006", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:36", "decision": "worker_done", "worker_id": "w007", "task_id": 4, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014031, "mode": "STUB", "deliverable": "deliverables/004-outreach-contacting-system-email-linkedin.md"}
+{"ts": "2026-06-18T14:38:36", "decision": "retire_worker", "worker_id": "w007", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:36", "decision": "worker_done", "worker_id": "w008", "task_id": 5, "model": "anthropic/claude-sonnet-4.6", "tier": "premium", "cost_usd": 0.014697, "mode": "STUB", "deliverable": "deliverables/005-sales-process-offer-copy-proposals.md"}
+{"ts": "2026-06-18T14:38:36", "decision": "retire_worker", "worker_id": "w008", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:36", "decision": "worker_done", "worker_id": "w009", "task_id": 7, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.000236, "mode": "STUB", "deliverable": "deliverables/007-classify-inbound-lead-agency-vs-merchant.md"}
+{"ts": "2026-06-18T14:38:36", "decision": "retire_worker", "worker_id": "w009", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:36", "decision": "worker_done", "worker_id": "w010", "task_id": 8, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.00023, "mode": "STUB", "deliverable": "deliverables/008-tag-20-outreach-targets-by-vertical.md"}
+{"ts": "2026-06-18T14:38:36", "decision": "retire_worker", "worker_id": "w010", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:36", "decision": "worker_done", "worker_id": "w011", "task_id": 9, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.00023, "mode": "STUB", "deliverable": "deliverables/009-draft-1-line-subject-a-b-variants.md"}
+{"ts": "2026-06-18T14:38:36", "decision": "retire_worker", "worker_id": "w011", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:38:36", "decision": "wave_end", "wave": 2, "completed": 6, "failed": 0}
+{"ts": "2026-06-18T14:38:36", "decision": "self_improvement", "wave": 2, "changes": 0, "success_rate": 1.0, "cost_per_task": 0.006972}
+{"ts": "2026-06-18T14:38:36", "decision": "scheduler_tick", "pending": 1, "next_interval_s": 24.0, "idle_strikes": 0}
+{"ts": "2026-06-18T14:39:00", "decision": "decide_concurrency", "pending": 1, "concurrency_cap": 6, "workers_to_spawn": 1, "idle_capacity_retired": 5}
+{"ts": "2026-06-18T14:39:00", "decision": "wave_start", "wave": 3, "pending": 1, "spawning": 1}
+{"ts": "2026-06-18T14:39:00", "decision": "mint_worker", "worker_id": "w012", "specialty": "general", "file": "agents/worker_w012.py"}
+{"ts": "2026-06-18T14:39:00", "decision": "assign_task", "worker_id": "w012", "task_id": 10, "task_type": "summary", "complexity": 0.45}
+{"ts": "2026-06-18T14:39:00", "decision": "worker_done", "worker_id": "w012", "task_id": 10, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.000224, "mode": "STUB", "deliverable": "deliverables/010-summarize-first-batch-reply-rates.md"}
+{"ts": "2026-06-18T14:39:00", "decision": "retire_worker", "worker_id": "w012", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:39:00", "decision": "wave_end", "wave": 3, "completed": 1, "failed": 0}
+{"ts": "2026-06-18T14:39:00", "decision": "self_improvement", "wave": 3, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T14:39:00", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 27.0, "idle_strikes": 1}
+{"ts": "2026-06-18T14:39:27", "decision": "wave_skip", "wave": 4, "reason": "no pending tasks"}
+{"ts": "2026-06-18T14:39:27", "decision": "self_improvement", "wave": 4, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T14:39:27", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 30.0, "idle_strikes": 2}
+{"ts": "2026-06-18T14:39:57", "decision": "wave_skip", "wave": 5, "reason": "no pending tasks"}
+{"ts": "2026-06-18T14:39:57", "decision": "self_improvement", "wave": 5, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T14:39:57", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 30.0, "idle_strikes": 3}
+{"ts": "2026-06-18T14:40:27", "decision": "wave_skip", "wave": 6, "reason": "no pending tasks"}
+{"ts": "2026-06-18T14:40:27", "decision": "self_improvement", "wave": 6, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00641}
+{"ts": "2026-06-18T14:40:27", "decision": "loop_stop", "reason": "cycle limit reached", "waves": 6}
+{"ts": "2026-06-18T14:40:27", "decision": "orchestrator_stop", "done": 12, "failed": 0, "pending": 0, "success_rate": 1.0, "total_cost_usd": 0.076916}
+{"ts": "2026-06-18T14:41:06", "decision": "orchestrator_start", "note": "supervisor online", "pid": 2674}
+{"ts": "2026-06-18T14:41:06", "decision": "mode", "mode": "forever", "note": "persistent; stop via SIGINT/SIGTERM or `touch data/STOP`"}
+{"ts": "2026-06-18T14:41:06", "decision": "wave_skip", "wave": 1, "reason": "no pending tasks"}
+{"ts": "2026-06-18T14:41:06", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 30.0, "idle_strikes": 1}
+{"ts": "2026-06-18T14:41:36", "decision": "decide_concurrency", "pending": 1, "concurrency_cap": 6, "workers_to_spawn": 1, "idle_capacity_retired": 5}
+{"ts": "2026-06-18T14:41:36", "decision": "wave_start", "wave": 2, "pending": 1, "spawning": 1}
+{"ts": "2026-06-18T14:41:36", "decision": "mint_worker", "worker_id": "w001", "specialty": "general", "file": "agents/worker_w001.py"}
+{"ts": "2026-06-18T14:41:36", "decision": "assign_task", "worker_id": "w001", "task_id": 13, "task_type": "triage", "complexity": 0.2}
+{"ts": "2026-06-18T14:41:36", "decision": "worker_done", "worker_id": "w001", "task_id": 13, "model": "openai/gpt-4.1-mini", "tier": "standard", "cost_usd": 0.000218, "mode": "STUB", "deliverable": "deliverables/013-live-injected-task-a.md"}
+{"ts": "2026-06-18T14:41:36", "decision": "retire_worker", "worker_id": "w001", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:41:36", "decision": "wave_end", "wave": 2, "completed": 1, "failed": 0}
+{"ts": "2026-06-18T14:41:36", "decision": "self_improvement", "wave": 2, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.005933}
+{"ts": "2026-06-18T14:41:36", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 30.0, "idle_strikes": 2}
+{"ts": "2026-06-18T14:42:06", "decision": "decide_concurrency", "pending": 1, "concurrency_cap": 6, "workers_to_spawn": 1, "idle_capacity_retired": 5}
+{"ts": "2026-06-18T14:42:06", "decision": "wave_start", "wave": 3, "pending": 1, "spawning": 1}
+{"ts": "2026-06-18T14:42:06", "decision": "mint_worker", "worker_id": "w002", "specialty": "general", "file": "agents/worker_w002.py"}
+{"ts": "2026-06-18T14:42:06", "decision": "assign_task", "worker_id": "w002", "task_id": 14, "task_type": "paypal_invoice_draft", "complexity": 0.4}
+{"ts": "2026-06-18T14:42:07", "decision": "worker_done", "worker_id": "w002", "task_id": 14, "model": "paypal/invoicing-v2-draft", "tier": "action", "cost_usd": 0.0, "mode": "STUB", "deliverable": "deliverables/014-live-injected-invoice-b.md"}
+{"ts": "2026-06-18T14:42:07", "decision": "retire_worker", "worker_id": "w002", "reason": "task complete (one-shot)"}
+{"ts": "2026-06-18T14:42:07", "decision": "wave_end", "wave": 3, "completed": 1, "failed": 0}
+{"ts": "2026-06-18T14:42:07", "decision": "self_improvement", "wave": 3, "changes": 1, "success_rate": 1.0, "cost_per_task": 0.00551}
+{"ts": "2026-06-18T14:42:07", "decision": "scheduler_tick", "pending": 0, "next_interval_s": 30.0, "idle_strikes": 3}
+{"ts": "2026-06-18T14:42:07", "decision": "stop_file", "note": "data/STOP present; shutting down"}
+{"ts": "2026-06-18T14:42:07", "decision": "wave_skip", "wave": 4, "reason": "no pending tasks"}
+{"ts": "2026-06-18T14:42:07", "decision": "loop_stop", "reason": "shutdown signal/stop-file", "waves": 4}
+{"ts": "2026-06-18T14:42:07", "decision": "orchestrator_stop", "done": 14, "failed": 0, "pending": 0, "success_rate": 1.0, "total_cost_usd": 0.077134}
