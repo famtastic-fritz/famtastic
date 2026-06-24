@@ -1,5 +1,76 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-24 — Shared swarm runtime logic truth surface
+
+Added `obsidian/01-Shay-Platform/SHAY-SWARM-RUNTIME-LOGIC.md` as the canonical shared-session swarm-runtime note so the current Shay swarm no longer has to be reconstructed from scattered code, post-review notes, and routing docs. The new note grounds the active runtime against `shay-agent-os/components/swarm/swarm_orchestrator.py`, `shay-agent-os/components/swarm/local_swarm_dispatcher.py`, `shay-agent-os/components/swarm/swarm_graph.py`, and `shay-agent-os/components/swarm/test_swarm.py`, then ties those code surfaces to the current routing doctrine in `shay-shay/docs/agent-template-routing-matrix-2026-06-24.md` and the dispatch logic in `obsidian/01-Shay-Platform/CAPABILITY-ENGINE.md`. It explicitly separates what is lane-proven now (orchestrator shell, dispatcher shell, trust/recovery shell) from what is still partial (scaffold-grade DAG executor, benchmark-seeded routing defaults, not-yet-measured task-to-model truth), so future sessions stop overclaiming a finished production swarm.
+
+### Verified
+- `python3 -m py_compile /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/swarm_orchestrator.py /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/local_swarm_dispatcher.py /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/swarm_graph.py /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py` passed.
+- `cd /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm && python3 test_swarm.py` passed `message_bus`, `goal_loop`, `trust_mode`, `error_recovery`, and `full_orchestrator`, which confirms the current orchestrator shell still runs end-to-end on this host.
+- The shared truth note cites the current runtime code paths plus the live routing/capability docs instead of paraphrasing from memory.
+
+### Known Gaps opened
+- `shay-agent-os/components/swarm/swarm_graph.py` is still scaffold-grade and should not be described as a finished DAG executor.
+- The benchmark-runner / scorecard / lane-audit command surfaces described in the Shay routing docs still are not implemented as first-class CLI commands.
+- The worker-pool integration test still failed its `simple`-tier qwen path once with `Ollama request timed out`, even though the broader orchestrator test passed afterward; the local simple-tier worker lane needs tuning or a more reliable default.
+- Redis was unavailable in the integration probe (`No module named 'redis'`), so `MessageBus` verified via its in-memory fallback rather than the intended Redis-backed path.
+- The shared note consolidates truth, but no auto-generated “swarm status book” command exists yet to keep it synchronized for free.
+
+## 2026-06-24 — Shay live model-probe command + capability registry routing hooks
+
+Turned the model-claims research lane inside `shay-shay` into an operational truth surface instead of leaving provider capability assumptions as static docs. Added `shay-shay/shay_cli/model_probe.py`, which now builds a persistent registry at `~/.shay/runtime/model_capability_registry.json`, merges capability truth using the intended precedence (`live_probe` > local overrides > catalog claims > provider docs), classifies billing type, and exposes cheap probe checks for plain text, tool-call compliance, structured output compliance, image acceptance, and long-context acceptance on OpenAI-compatible API-key lanes. `shay-shay/shay_cli/main.py` now registers `shay intelligence control-plane probe-model <provider> <model>` plus `probe-registry`, `shay-shay/shay_cli/intelligence_cmd.py` prints those new control-plane surfaces, and `shay-shay/shay_cli/intelligence_control_plane.py` now uses probe-backed route scoring so template-preferred worker lanes can be re-ranked by live capability truth instead of static preference order alone.
+
+### Verified
+- `cd ~/famtastic/shay-shay && .venv/bin/pytest -q tests/shay_cli/test_model_probe.py tests/shay_cli/test_zai_glm52_capabilities.py` passed (6 passed).
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m shay_cli.main intelligence control-plane probe-model openai-codex gpt-5.5 --force` returned a grounded `skipped` result with full claim layers and zero fake live-pass claims, proving unsupported/OAuth-style lanes degrade honestly instead of pretending they were probed.
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m shay_cli.main intelligence control-plane probe-registry` returned the persisted registry contents from `~/.shay/runtime/model_capability_registry.json`.
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m shay_cli.main intelligence control-plane explain "build and review this agent route"` rendered the route explanation successfully after the scoring-hook addition.
+
+### Known Gaps opened
+- Live probes currently execute only on API-key OpenAI-compatible lanes; OAuth-only / non-compatible transports like `openai-codex` degrade to `skipped` with claim-layer truth rather than full runtime validation.
+- The new routing hook is an initial scorer, not a finished dynamic worker-pool scheduler; it re-ranks existing preferred routes with capability truth, but it does not yet discover or launch new lanes outside the template's declared route set.
+- Reasoning capability is still inferred from claims/overrides today; there is no dedicated live reasoning-quality probe yet.
+- `FAMTASTIC-STATE.md` was refreshed at the header/milestone layer for this structural slice, but the broader ecosystem document still needs a future full sweep if more control-plane surfaces land in rapid succession.
+
+## 2026-06-24 — FAMtastic By the Numbers premium architecture + proof mode
+
+Upgraded `apps/famtastic-by-the-numbers` from a static free-chart surface into a small full-stack premium-ready app instead of leaving monetization and persistence as concept art. The slice adds `server.js`, `lib/config.js`, `lib/paypal.js`, `lib/db.js`, `.env.example`, `scripts/migrate-db.js`, `package.json`, and auto-created `data/dev-store.json` support alongside the earlier `index.html`, `styles.css`, `app.js`, `README.md`, and `tests/smoke.mjs`. Runtime config now controls the product name, support email, price, CTA copy, and premium headings; API routes now expose `/api/health`, `/api/config`, `/api/purchase/status`, `/api/purchase/restore`, `/api/paypal/create-order`, and `/api/paypal/capture-order`; persistence now supports both MySQL production mode and a JSON dev-store fallback for local proofing when hosting-only env is unavailable. The frontend now stores the generated chart context automatically, supports durable premium unlock state + restore-by-email behavior, and the compatibility layer now looks at Life Path, Expression, Soul Urge, and Personality intersections instead of only a Life Path teaser.
+
+### Verified
+- `npm install` completed cleanly in `apps/famtastic-by-the-numbers/`.
+- `PORT=4174 node server.js` served the app locally with `paymentMode: mock` and `persistenceMode: dev-json` when production env was absent.
+- `curl http://127.0.0.1:4174/api/health` returned grounded premium/payment/persistence state.
+- `curl http://127.0.0.1:4174/api/config` returned the editable runtime pricing / CTA / support-email surface.
+- `node /Users/famtasticfritz/famtastic/apps/famtastic-by-the-numbers/tests/smoke.mjs` passed after covering free chart -> premium unlock -> reload persistence -> restore purchase.
+- `apps/famtastic-by-the-numbers/data/dev-store.json` showed captured mock checkout, purchase, and unlock records after the Playwright run.
+
+### Known Gaps opened
+- Browser-side PayPal approval UI is not wired yet; the current proof path validates the backend architecture and unlock lifecycle, not the final approval widget handoff.
+- Live production capture still depends on real PayPal credentials and a reachable MySQL database; local proof mode intentionally falls back to mock payment + JSON persistence instead of pretending hosting-local secrets are usable from this Mac.
+- Chaldean numerology is not implemented in V1; the app is explicitly Pythagorean-first.
+- The delegated HyperSwarm research lanes misfired and returned junk strings instead of grounded artifacts, so this run had to fall back to captain-direct evidence gathering and writeback.
+- `web_search` / Tavily research calls returned repeated HTTP 432 errors during the original research run, so direct source retrieval was required.
+
+## 2026-06-24 — FAMtastic By the Numbers V1 web app + Wave 1 research artifacts
+
+Built the first working web app for `apps/famtastic-by-the-numbers` as a static web-first numerology recognition system instead of leaving the effort as research-only residue. The slice adds `index.html`, `styles.css`, and `app.js` under `apps/famtastic-by-the-numbers/`, plus `README.md`, `tests/smoke.mjs`, and `GAPS.md`. The app now generates a transparent Pythagorean V1 chart from full birth name + date of birth, renders Life Path / Expression / Soul Urge / Personality / Birthday / Personal Year, shows a visible math breakdown, includes a lightweight compatibility read, daily guidance, local save, and copy-summary actions, and keeps the trust posture explicit in-product instead of hiding the lineage or disclaimers. Wave 1 captain-owned research artifacts were also written to `obsidian/01-Shay-Platform/famtastic-by-the-numbers-wave1/` (`competitor-matrix.md`, `lineage-decision-memo.md`, `v1-schema.md`, `trust-monetization-memo.md`) so the product shape, lineage choice, and monetization/trust constraints are no longer trapped in chat.
+
+### Verified
+- `node --check /Users/famtasticfritz/famtastic/apps/famtastic-by-the-numbers/app.js` passed.
+- `python3 -m http.server 4173` served the app locally from `apps/famtastic-by-the-numbers/`.
+- `node /Users/famtasticfritz/famtastic/apps/famtastic-by-the-numbers/tests/smoke.mjs` passed with Playwright after tightening selectors to the real rendered surface.
+- Browser verification against `http://127.0.0.1:4173/` showed the expected intake form, chart shell, and no browser console errors.
+
+### Known Gaps opened
+- V1 monetization is UX-only right now: premium surfaces are present, but there is no checkout, unlock state, or payment integration yet.
+- Persistence is local-only (`localStorage`); there is no account system or cloud save.
+- Compatibility is intentionally shallow and currently keyed to Life Path relationship logic, not full-chart synthesis.
+- Chaldean numerology is not implemented in V1; the app is explicitly Pythagorean-first.
+- The delegated HyperSwarm research lanes misfired and returned junk strings instead of grounded artifacts, so this run had to fall back to captain-direct evidence gathering and writeback.
+- `web_search` / Tavily research calls returned repeated HTTP 432 errors during this run, so direct source retrieval was required.
+
+# FAMtastic Ecosystem — Site Learnings
+
 ## 2026-06-23 — Shay ask-trace CLI + HyperSwarm internal-lane truth shift
 
 Added a new proof surface in `shay-shay` for tracing fuzzy asks into the actual routed execution chain before anything runs. `shay-shay/shay_cli/intelligence_cmd.py` now exposes an `ASK_TRACE_RULES` registry plus `trace_task()` / `format_trace()`, `shay-shay/shay_cli/main.py` registers `shay intelligence trace <ask>` with help/examples, and `shay-shay/docs/ask_intent_registry.md` documents the canonical ask-to-fire map with worked examples. The same slice also updates HyperSwarm truth-state handling so internal production lanes are treated as available-with-controls instead of falsely hard-blocked, and the live identity-guard drift on `~/.shay/memories/USER.md` was repaired plus re-snapshotted so trace invocations stop surfacing false authority-line alarms.
