@@ -10,9 +10,28 @@ Added a new proof surface in `shay-shay` for tracing fuzzy asks into the actual 
 - `cd ~/famtastic/shay-shay && python -m shay_cli.main intelligence trace --help` returned the new help/examples surface.
 - `cd ~/famtastic/shay-shay && python -m shay_cli.main identity status` returned `Identity status: OK` after re-adding the required USER.md authority/recommended lines and refreshing the protected snapshot.
 
+### Follow-up: paraphrase routing + captain/worker split (2026-06-24)
+- `shay-shay/shay_cli/intelligence_cmd.py` now broadens `ASK_TRACE_RULES` coverage for build, attention, reviewer, and resume asks so previously missed paraphrases like `build a new app from this spec`, `show what needs Fritz attention`, `review this implementation and judge quality`, and `resume this lane` no longer fall through to `generic_orchestration_ask`.
+- The trace surface now exposes `brain_agent` vs `execution_agent` directly in both `trace_task()` output and `format_trace()` rendering. For HyperSwarm-style asks, Shay stays the captain brain as `work-router` while execution lanes stay explicit downstream workers like `worker-supervisor`, `run-reviewer`, and `attention-watcher`.
+- `trace_task()` also now attaches `swarm_status()` / `swarm_readiness()` when a live worker lane is routed even if the command list does not literally contain the word `swarm`, which fixes reviewer/resume proof surfaces.
+- `shay-shay/shay_cli/intelligence_control_plane.py` now adds a first-class `anthropic-claude-code-sonnet-4.6` provider route and moves the `implementation-worker` template to prefer Claude Code before Codex or GPT-5.4 mini, matching Fritz's builder-lane override without disturbing the separate Gemini-first reviewer lane.
+- `explain_route()` now derives each chosen route from the selected template's `preferred_routes` list instead of repeating hardcoded route IDs, so route explanations track template preference changes instead of drifting stale.
+- `shay-shay/tests/test_intelligence_layer.py` now covers the new paraphrase cases plus the captain-vs-worker fields, implementation-worker preference order, and the Claude Code builder-route selection.
+
+### Verified
+- `cd ~/famtastic/shay-shay && shay intelligence trace "build a new app from this spec"` returned `intent: build_app`, `brain agent: work-router`, `execution agent: worker-supervisor`, and swarm proof surfaces.
+- `cd ~/famtastic/shay-shay && shay intelligence trace "show what needs Fritz attention"` returned `intent: show_attention` and `execution agent: attention-watcher` instead of falling to generic orchestration.
+- `cd ~/famtastic/shay-shay && shay intelligence trace "review this implementation and judge quality"` returned `intent: run_reviewer_pass`, `execution agent: run-reviewer`, and swarm proof surfaces.
+- `cd ~/famtastic/shay-shay && shay intelligence trace "resume this lane"` returned `intent: resume_lane`, `execution agent: worker-supervisor`, and swarm proof surfaces.
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m pytest tests/test_intelligence_layer.py -q` passed (61 passed), including the new control-plane route assertions.
+- A live trace harness now shows `build this app` -> `implementation-worker` -> `anthropic-claude-code-sonnet-4.6` while review and attention asks still route to `google-gemini-2.5-pro` and `openai-gpt-5.4-mini`.
+- `cd ~/famtastic/shay-shay && python3 -m py_compile shay_cli/intelligence_cmd.py tests/test_intelligence_layer.py` passed.
+- A direct import/assertion harness over `trace_task()` passed for the four new paraphrase cases.
+
 ### Known Gaps opened
-- The natural-language map is still intentionally thin. Asks like competitor research, chained `research -> build prototype`, and pre-build swarm preview/confidence checks are not yet first-class intents; they still fall through to generic orchestration unless driven procedurally.
-- `shay intelligence trace` is a proof/planning view, not an executor. It shows what would fire, but it does not yet launch chained research/build/review swarms directly from the traced ask.
+- The natural-language map is still intentionally thin beyond these repaired paraphrases. Asks like competitor research, chained `research -> build prototype`, and pre-build swarm preview/confidence checks are not yet first-class intents; they still fall through to generic orchestration unless driven procedurally.
+- `shay intelligence trace` is still a proof/planning view, not an executor. It shows what would fire, but it does not yet launch chained research/build/review swarms directly from the traced ask.
+- The focused repo test file was updated, but `pytest` is not installed in the current shell environment (`pytest: command not found`, `python3 -m pytest: No module named pytest`), so this pass was proven by compile + live CLI traces + direct import assertions rather than the normal pytest runner.
 - HyperSwarm internal-lane truth is now aligned in the CLI, but downstream docs/mental models that still assume a blanket production gate need to be treated as stale until they are swept.
 
 ## 2026-06-22 — Hosting admin diagnostics + assisted domain-search fallback
