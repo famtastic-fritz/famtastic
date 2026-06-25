@@ -1,5 +1,0 @@
-node_modules/
-.env
-data/dev-store.json
-playwright-report/
-test-results/
