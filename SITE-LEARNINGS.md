@@ -1,5 +1,20 @@
 # FAMtastic Ecosystem — Site Learnings
 
+## 2026-06-24 — Universal intelligence-route export + Codex/GLM routing correction
+
+Added a canonical cross-runtime route-truth surface so the Shay CLI and `shay-agent-os` no longer have to carry separate, drifting stories about model/brain selection. `shay-shay/shay_cli/intelligence_control_plane.py` now builds and auto-refreshes `~/.shay/control-plane/universal-intelligence-route.json`, `shay-shay/shay_cli/main.py` exposes `shay intelligence control-plane export` plus `show-universal`, `shay-shay/shay_cli/intelligence_cmd.py` prints those surfaces, and `shay-agent-os/components/swarm/brain_client.py` now reads the exported truth to order its fallback brain chain by task family instead of only using hardcoded local order. After Fritz’s review, the route doctrine was corrected so Codex is modeled as `openai-codex-gpt-5.5`, both Codex `gpt-5.4` and `gpt-5.5` route IDs are blocked everywhere the default anti-drain builder policy applies, and `glm-5.2` is restored as the lead `famtastic-by-the-numbers` v1 implementation route instead of being wrongly treated as forbidden.
+
+### Verified
+- `cd ~/famtastic/shay-shay && uv run pytest tests/test_intelligence_layer.py -q` passed (74 passed).
+- `cd ~/famtastic/shay-shay && uv run python -m shay_cli.main intelligence control-plane export` wrote the universal truth file to `~/.shay/control-plane/universal-intelligence-route.json`.
+- `cd ~/famtastic/shay-shay && uv run python -m shay_cli.main intelligence control-plane show-universal` returned the shared JSON truth surface successfully after export.
+- Direct import validation against `shay-agent-os/components/swarm/brain_client.py` showed the exported implementation task-family policy resolves the shared bridge chain, blocks Codex builder routes, and leaves `glm-5.2` at the front of the `famtastic-by-the-numbers` v1 worker-pool primary route list.
+
+### Known Gaps opened
+- Auto-refresh happens when control-plane registry surfaces are queried, but there is still no dedicated file-watch or commit-hook layer that republishes the shared route truth on every source edit automatically.
+- `shay-agent-os` currently consumes the shared truth only for brain ordering; it does not yet ingest the full provider/model metadata as first-class runtime policy.
+- Codex remains available in non-builder lanes like explicit premium review and some existing research/escalation surfaces; this slice blocks default implementation/build drain, not every intentional Codex use everywhere in the ecosystem.
+
 ## 2026-06-24 — Shared swarm runtime logic truth surface
 
 Added `obsidian/01-Shay-Platform/SHAY-SWARM-RUNTIME-LOGIC.md` as the canonical shared-session swarm-runtime note so the current Shay swarm no longer has to be reconstructed from scattered code, post-review notes, and routing docs. The new note grounds the active runtime against `shay-agent-os/components/swarm/swarm_orchestrator.py`, `shay-agent-os/components/swarm/local_swarm_dispatcher.py`, `shay-agent-os/components/swarm/swarm_graph.py`, and `shay-agent-os/components/swarm/test_swarm.py`, then ties those code surfaces to the current routing doctrine in `shay-shay/docs/agent-template-routing-matrix-2026-06-24.md` and the dispatch logic in `obsidian/01-Shay-Platform/CAPABILITY-ENGINE.md`. It explicitly separates what is lane-proven now (orchestrator shell, dispatcher shell, trust/recovery shell) from what is still partial (scaffold-grade DAG executor, benchmark-seeded routing defaults, not-yet-measured task-to-model truth), so future sessions stop overclaiming a finished production swarm.

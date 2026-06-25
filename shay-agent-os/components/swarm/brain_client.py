@@ -32,6 +32,7 @@ from typing import List, Dict, Optional
 logger = logging.getLogger("swarm.brain_client")
 
 ENV_FILE = Path.home() / ".shay" / ".env"
+UNIVERSAL_ROUTE_FILE = Path.home() / ".shay" / "control-plane" / "universal-intelligence-route.json"
 
 # Model + provider each brain route actually bills against. Used by the
 # cost-telemetry hook below so per-call $-cost can be estimated through
@@ -190,6 +191,39 @@ _CHAIN = [
 ]
 
 
+def _load_universal_route_truth() -> Dict:
+    try:
+        with UNIVERSAL_ROUTE_FILE.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def _resolve_brain_chain(task_family: Optional[str] = None) -> List:
+    chain = list(_CHAIN)
+    truth = _load_universal_route_truth()
+    bridges = truth.get("bridges") if isinstance(truth, dict) else None
+    bridge = bridges.get("shay_agent_os") if isinstance(bridges, dict) else None
+    if not isinstance(bridge, dict):
+        return chain
+    ordered_names = []
+    if task_family:
+        preferences = bridge.get("task_family_brain_preferences")
+        if isinstance(preferences, dict):
+            preferred = preferences.get(task_family)
+            if isinstance(preferred, list):
+                ordered_names = [str(name) for name in preferred if isinstance(name, str)]
+    if not ordered_names:
+        default_chain = bridge.get("default_brain_chain")
+        if isinstance(default_chain, list):
+            ordered_names = [str(name) for name in default_chain if isinstance(name, str)]
+    if not ordered_names:
+        return chain
+    order = {name: index for index, name in enumerate(ordered_names)}
+    return sorted(chain, key=lambda item: order.get(item[0], len(order) + 1))
+
+
 # ---------------------------------------------------------------------------
 # Cost telemetry hook (B1)
 #
@@ -341,12 +375,14 @@ def configure_cost_notify(notify_usd: float,
 
 class BrainChain:
     """
-    Routes a call through Claude → OpenRouter → Gemini → Ollama.
+    Routes a call through the shared universal intelligence-route truth surface
+    when present, otherwise falls back to Claude → OpenRouter → Gemini → Ollama.
     First success wins. Records the effective brain for every call.
     """
 
-    def __init__(self, preferred: Optional[str] = None):
+    def __init__(self, preferred: Optional[str] = None, task_family: Optional[str] = None):
         self.preferred = preferred
+        self.task_family = task_family
         self.last_brain: Optional[str] = None
         self.last_cost_usd: float = 0.0
 
@@ -356,7 +392,7 @@ class BrainChain:
         system: str = SHAY_SYSTEM,
         timeout: float = 90.0,
     ) -> str:
-        chain = list(_CHAIN)
+        chain = _resolve_brain_chain(self.task_family)
         if self.preferred:
             chain.sort(key=lambda b: 0 if b[0] == self.preferred else 1)
         errors = []
