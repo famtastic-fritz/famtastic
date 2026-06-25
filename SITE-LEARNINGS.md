@@ -2,7 +2,7 @@
 
 ## 2026-06-24 — Universal intelligence-route export + Codex/GLM routing correction
 
-Added a canonical cross-runtime route-truth surface so the Shay CLI and `shay-agent-os` no longer have to carry separate, drifting stories about model/brain selection. `shay-shay/shay_cli/intelligence_control_plane.py` now builds and auto-refreshes `~/.shay/control-plane/universal-intelligence-route.json`, `shay-shay/shay_cli/main.py` exposes `shay intelligence control-plane export` plus `show-universal`, `shay-shay/shay_cli/intelligence_cmd.py` prints those surfaces, and `shay-agent-os/components/swarm/brain_client.py` now reads the exported truth to order its fallback brain chain by task family instead of only using hardcoded local order. After Fritz’s review, the route doctrine was corrected so Codex is modeled as `openai-codex-gpt-5.5`, both Codex `gpt-5.4` and `gpt-5.5` route IDs are blocked everywhere the default anti-drain builder policy applies, and `glm-5.2` is restored as the lead `famtastic-by-the-numbers` v1 implementation route instead of being wrongly treated as forbidden.
+Added a canonical cross-runtime route-truth surface so the Shay CLI and `shay-agent-os` no longer have to carry separate, drifting stories about model/brain selection. `shay-shay/shay_cli/intelligence_control_plane.py` now builds and auto-refreshes `~/.shay/control-plane/universal-intelligence-route.json`, emits `generated_at`, `source_files`, and `refresh_command` metadata, and keeps `shay-shay/shay_cli/main.py` + `shay-shay/shay_cli/intelligence_cmd.py` aligned through `shay intelligence control-plane export` and `show-universal`. `shay-agent-os/components/swarm/brain_client.py`, `asyncio_dispatcher.py`, and `local_swarm_dispatcher.py` now refresh that shared file when the source control-plane surfaces are newer, pass `task_family` into live brain calls, and enforce shared task-family route policy instead of only reordering local brain fallback. After Fritz’s review, the route doctrine was corrected so Codex is modeled as `openai-codex-gpt-5.5`, both Codex `gpt-5.4` and `gpt-5.5` route IDs are blocked everywhere the default anti-drain builder policy applies, `glm-5.2` is restored as the lead `famtastic-by-the-numbers` v1 implementation route instead of being wrongly treated as forbidden, and Codex was removed from default review/browser/orchestrator preferred-route lists so it is explicit opt-in instead of ambient default routing.
 
 ### Verified
 - `cd ~/famtastic/shay-shay && uv run pytest tests/test_intelligence_layer.py -q` passed (74 passed).
@@ -11,9 +11,9 @@ Added a canonical cross-runtime route-truth surface so the Shay CLI and `shay-ag
 - Direct import validation against `shay-agent-os/components/swarm/brain_client.py` showed the exported implementation task-family policy resolves the shared bridge chain, blocks Codex builder routes, and leaves `glm-5.2` at the front of the `famtastic-by-the-numbers` v1 worker-pool primary route list.
 
 ### Known Gaps opened
-- Auto-refresh happens when control-plane registry surfaces are queried, but there is still no dedicated file-watch or commit-hook layer that republishes the shared route truth on every source edit automatically.
-- `shay-agent-os` currently consumes the shared truth only for brain ordering; it does not yet ingest the full provider/model metadata as first-class runtime policy.
-- Codex remains available in non-builder lanes like explicit premium review and some existing research/escalation surfaces; this slice blocks default implementation/build drain, not every intentional Codex use everywhere in the ecosystem.
+- The shared route export is now freshness-checked at runtime from `shay-agent-os`, but there is still no true daemon/file-watch publisher or git-hook that republishes the truth immediately on every edit outside normal command/runtime access.
+- Full provider/model metadata from the shared truth still is not consumed as a first-class scheduler object inside `shay-agent-os`; the bridge now enforces task-family brain policy and freshness, but not a complete dynamic worker-pool/runtime budget engine.
+- Codex is no longer ambient in default builder/review/browser/orchestrator preference lists, but it still exists in the provider registry for explicit operator use and future opt-in premium/escalation lanes.
 
 ## 2026-06-24 — Shared swarm runtime logic truth surface
 
@@ -46,6 +46,9 @@ Turned the model-claims research lane inside `shay-shay` into an operational tru
 - The new routing hook is an initial scorer, not a finished dynamic worker-pool scheduler; it re-ranks existing preferred routes with capability truth, but it does not yet discover or launch new lanes outside the template's declared route set.
 - Reasoning capability is still inferred from claims/overrides today; there is no dedicated live reasoning-quality probe yet.
 - `FAMTASTIC-STATE.md` was refreshed at the header/milestone layer for this structural slice, but the broader ecosystem document still needs a future full sweep if more control-plane surfaces land in rapid succession.
+
+## 2026-06-24 — FAMtastic By the Numbers MySQL closeout proof lane
+Upgraded `apps/famtastic-by-the-numbers` from partial proof mode into a MySQL-backed closeout lane so the app can now be treated as web-proof-ready except for Fritz's final live 2-cent purchase. Added `scripts/bootstrap-local-mysql.sh`, `scripts/verify-db.js`, `.env.closeout.example`, `tests/smoke-local-proof.mjs`, `OPERATOR-CLOSEOUT-CHECKLIST.md`, and a new closeout-oriented `tests/smoke.mjs`, while `lib/config.js` now derives the premium CTA from runtime price instead of lying with a stale `$22` label. Verified with `brew services start mysql`, `npm run db:bootstrap-local`, `set -a && source ./.env && set +a && npm run migrate`, `set -a && source ./.env && set +a && npm run verify-db`, `curl http://127.0.0.1:4174/api/health`, `curl http://127.0.0.1:4174/api/config`, `set -a && source ./.env && set +a && npm run smoke`, and `set -a && source ./.env && set +a && npm run smoke:local`. Deferred: the only remaining web-proof step is Fritz inserting real PayPal credentials into `.env` and completing one real 2-cent purchase in-browser.
 
 ## 2026-06-24 — FAMtastic By the Numbers premium architecture + proof mode
 

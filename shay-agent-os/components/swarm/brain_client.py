@@ -23,16 +23,20 @@ import json
 import logging
 import os
 import re
+import subprocess
 import time
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 logger = logging.getLogger("swarm.brain_client")
 
 ENV_FILE = Path.home() / ".shay" / ".env"
 UNIVERSAL_ROUTE_FILE = Path.home() / ".shay" / "control-plane" / "universal-intelligence-route.json"
+SHAY_REPO = Path.home() / "famtastic" / "shay-shay"
+SHAY_EXPORT_CMD = ["uv", "run", "python", "-m", "shay_cli.main", "intelligence", "control-plane", "export"]
+_LAST_ROUTE_SYNC_ATTEMPT = 0.0
 
 # Model + provider each brain route actually bills against. Used by the
 # cost-telemetry hook below so per-call $-cost can be estimated through
@@ -191,13 +195,70 @@ _CHAIN = [
 ]
 
 
+def _export_route_truth_if_stale() -> None:
+    global _LAST_ROUTE_SYNC_ATTEMPT
+    now = time.time()
+    if now - _LAST_ROUTE_SYNC_ATTEMPT < 15:
+        return
+    _LAST_ROUTE_SYNC_ATTEMPT = now
+    if not SHAY_REPO.exists():
+        return
+    needs_refresh = not UNIVERSAL_ROUTE_FILE.exists()
+    if not needs_refresh and UNIVERSAL_ROUTE_FILE.exists():
+        export_mtime = UNIVERSAL_ROUTE_FILE.stat().st_mtime
+        source_candidates = [
+            SHAY_REPO / "shay_cli" / "intelligence_control_plane.py",
+            SHAY_REPO / "shay_cli" / "intelligence_cmd.py",
+            SHAY_REPO / "shay_cli" / "main.py",
+        ]
+        needs_refresh = any(path.exists() and path.stat().st_mtime > export_mtime for path in source_candidates)
+    if not needs_refresh:
+        return
+    try:
+        subprocess.run(
+            SHAY_EXPORT_CMD,
+            cwd=str(SHAY_REPO),
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception as exc:
+        logger.debug("[brain] universal route refresh skipped: %s", exc)
+
+
 def _load_universal_route_truth() -> Dict:
+    _export_route_truth_if_stale()
     try:
         with UNIVERSAL_ROUTE_FILE.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
         return payload if isinstance(payload, dict) else {}
     except Exception:
         return {}
+
+
+def _task_family_policy(task_family: Optional[str], truth: Dict) -> Tuple[List[str], List[str]]:
+    if not task_family or not isinstance(truth, dict):
+        return [], []
+    bridge = truth.get("bridges", {}).get("shay_agent_os", {}) if isinstance(truth.get("bridges"), dict) else {}
+    alias_map = bridge.get("brain_alias_to_route_ids") if isinstance(bridge, dict) else {}
+    if not isinstance(alias_map, dict):
+        alias_map = {}
+    for row in truth.get("task_families", []):
+        if not isinstance(row, dict) or row.get("task_family") != task_family:
+            continue
+        forbidden_routes = {str(route_id) for route_id in row.get("forbidden_routes") or []}
+        forbidden_aliases = [
+            alias for alias, route_ids in alias_map.items()
+            if isinstance(route_ids, list) and any(str(route_id) in forbidden_routes for route_id in route_ids)
+        ]
+        preferred_aliases = []
+        prefs = bridge.get("task_family_brain_preferences") if isinstance(bridge, dict) else None
+        if isinstance(prefs, dict):
+            raw = prefs.get(task_family)
+            if isinstance(raw, list):
+                preferred_aliases = [str(name) for name in raw if isinstance(name, str)]
+        return preferred_aliases, forbidden_aliases
+    return [], []
 
 
 def _resolve_brain_chain(task_family: Optional[str] = None) -> List:
@@ -219,7 +280,15 @@ def _resolve_brain_chain(task_family: Optional[str] = None) -> List:
         if isinstance(default_chain, list):
             ordered_names = [str(name) for name in default_chain if isinstance(name, str)]
     if not ordered_names:
-        return chain
+        ordered_names = [name for name, _ in chain]
+    preferred_aliases, forbidden_aliases = _task_family_policy(task_family, truth)
+    if forbidden_aliases:
+        chain = [item for item in chain if item[0] not in forbidden_aliases]
+    if preferred_aliases:
+        allowed = set(preferred_aliases)
+        chain = [item for item in chain if item[0] in allowed]
+    if not chain:
+        return list(_CHAIN)
     order = {name: index for index, name in enumerate(ordered_names)}
     return sorted(chain, key=lambda item: order.get(item[0], len(order) + 1))
 
@@ -393,8 +462,11 @@ class BrainChain:
         timeout: float = 90.0,
     ) -> str:
         chain = _resolve_brain_chain(self.task_family)
-        if self.preferred:
+        allowed_names = {name for name, _ in chain}
+        if self.preferred and self.preferred in allowed_names:
             chain.sort(key=lambda b: 0 if b[0] == self.preferred else 1)
+        elif self.preferred and self.preferred not in allowed_names:
+            logger.info("[brain] ignored preferred brain '%s' for task_family=%s due to shared route policy", self.preferred, self.task_family)
         errors = []
         for name, fn in chain:
             try:

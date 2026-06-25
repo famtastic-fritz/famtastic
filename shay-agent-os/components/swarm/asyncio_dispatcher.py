@@ -56,7 +56,9 @@ class AsyncioDispatcher(Dispatcher):
         gets a fresh chain so concurrent calls don't clobber last_brain)."""
         t0 = time.time()
         try:
-            brain = BrainChain(preferred=self._preferred_brain)
+            task_family = str(task.context.get("task_family") or "").strip() or None
+            preferred = None if task.brain == "auto" else task.brain
+            brain = BrainChain(preferred=preferred or self._preferred_brain, task_family=task_family)
             output = brain.call_prompt(task.prompt, timeout=task.timeout)
             return DispatchResult(
                 task_id=task.id,

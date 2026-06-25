@@ -166,7 +166,8 @@ class LocalSwarmDispatcher(Dispatcher):
 
     def _call_cloud(self, task: DispatchTask) -> DispatchResult:
         preferred = None if task.brain == "auto" else task.brain
-        brain = BrainChain(preferred=preferred or self._brain.preferred)
+        task_family = str(task.context.get("task_family") or "").strip() or None
+        brain = BrainChain(preferred=preferred or self._brain.preferred, task_family=task_family)
         t0 = time.time()
         try:
             output = brain.call_prompt(task.prompt, timeout=task.timeout)
