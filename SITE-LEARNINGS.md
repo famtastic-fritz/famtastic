@@ -1,4 +1,62 @@
+## 2026-07-02 — Reviewer route bake-off and telemetry validation
+
+Added `shay-shay/agent/reviewer_bakeoff.py`, `shay-shay/docs/benchmarks/reviewer-bakeoff-packets.json`, and `shay-shay/tests/agent/test_reviewer_bakeoff.py` so reviewer routing can now be measured with packet hashes, grounded-review gates, JSONL scorecards, raw live-output evidence, and reducer recommendations instead of vibes. The first proof run wrote `~/.shay/runtime/model-routing/reviewer-scorecard.jsonl` and `~/.shay/runtime/model-routing/reviewer-summary.json`: simulated `custom/gemma4:latest` failed 5/5 packet-consumption/grounding checks and was demoted from adversarial/final-blocker review, while simulated `custom/glm-5.1` passed 5/5 seeded reviewer packets. The live-provider wrapper now sends the same benchmark packets through `agent.auxiliary_client.call_llm()` via `--live --candidate provider/model[,budget[,tool_capable]]`, saves raw outputs under `~/.shay/runtime/model-routing/reviewer-outputs/<run-id>/`, and scores provider errors as quality failures instead of hiding them. `shay-shay/agent/swarm_telemetry.py` now normalizes lane records before JSONL writes, preserves manually logged durations, computes timestamp-derived durations, and flags invalid timestamp ordering with `telemetry_invalid_time` so bad lane clocks are visible instead of silently accepted.
+
+### Verified
+- `cd ~/famtastic/shay-shay && uv run python --version` returned Python 3.11.15, avoiding the system Python 3.9 union-type failure path.
+- `cd ~/famtastic/shay-shay && uv run pytest tests/agent/test_reviewer_bakeoff.py tests/agent/test_intelligence_governance.py tests/agent/test_intelligence_loop.py -q` passed (20 passed).
+- `cd ~/famtastic/shay-shay && uv run python -m compileall agent/reviewer_bakeoff.py` passed.
+- `cd ~/famtastic/shay-shay && python3 -m agent.reviewer_bakeoff --write-default-packets --simulate --reduce ...` produced a reducer summary with 10 scored packet/model runs, proving both failure logging and promotion/demotion output paths.
+- `cd ~/famtastic/shay-shay && uv run python -m agent.reviewer_bakeoff --live --candidate openai-codex/gpt-5.5,premium,true --reduce ...` produced 5/5 live passes and promoted `openai-codex/gpt-5.5` for all seeded reviewer task families.
+- `cd ~/famtastic/shay-shay && uv run python -m agent.reviewer_bakeoff --live --candidate custom:ollama-local/qwen3:14b,cheap,false --reduce ...` produced 3/5 live passes, showing local Qwen is usable for some review families but still needs more evidence before promotion.
+
+### Known Gaps opened
+- The live probe proved candidate execution through the auxiliary LLM layer, but route enforcement is not yet wired into `delegate_task`; reviewer recommendations remain evidence artifacts until a routing controller consumes the summary.
+- Local `custom:ollama-local/qwen3:14b` passed only 3/5 seeded reviewer packets, so it should stay candidate/limited-review instead of adversarial or final-blocker default.
+- `custom/glm-5.1` and `custom/gemma4:latest` were invoked with the wrong provider label in one probe and truthfully failed as Gemini 404s; future local/custom probes must use named custom providers such as `custom:ollama-local/<model>` or an explicit configured route.
+
+## 2026-07-02 — Shay intelligence-loop five-slice closure
+
+Added a read-only Shay intelligence prefetch layer in `shay-shay/agent/intelligence_prefetch.py` and wired it into `shay-shay/run_agent.py` before the tool loop so thin `MEMORY.md` / `USER.md` pointer entries can dereference into relevant off-prompt artifacts without making prompt memory bigger. Added `shay-shay/agent/intelligence_loop.py` as the executable closure surface for the remaining loop slices: local L2/L3 reflection synthesis, review-gated pointer candidate generation, review-gated capability reconciliation proposals, and session-context candidate generation. The prefetcher now also reads generated artifacts from `obsidian/Shay-Memory/reflections/reflection-synthesis.json`, `pointer-candidates.json`, `capability-proposals.json`, and `session-context.json`, so the loop produces structured water and the prefetch pipe can load it.
+
+### Verified
+- `cd ~/famtastic-worktrees/shay-intelligence-loop && /Users/famtasticfritz/famtastic/shay-shay/.venv/bin/python -m pytest tests/agent/test_intelligence_loop.py tests/agent/test_intelligence_prefetch.py tests/agent/test_memory_provider.py tests/run_agent/test_memory_sync_interrupted.py tests/test_intelligence_layer.py -q` passed (165 passed).
+- A live loop run wrote `/Users/famtasticfritz/famtastic/obsidian/Shay-Memory/reflections/reflection-synthesis.json`, `pointer-candidates.json`, `capability-proposals.json`, `session-context.json`, and `intelligence-loop-closeout.json` with 12 L2 claims, 1 L3 pattern, 4 pointer candidates, 37 capability proposals, and 4 session-context items.
+- `tests/test_intelligence_layer.py::test_runtime_checkout_anchor_reports_live_checkout_state` now accepts the isolated `/Users/famtasticfritz/famtastic-worktrees/shay-intelligence-loop` checkout as a valid live worktree anchor instead of assuming every test run ends in `/shay-shay`.
+
+### Known Gaps opened
+- Reflection synthesis is local/deterministic in this slice, not a paid auxiliary-LLM generation pass; it produces useful ranked candidates but not deep model-authored interpretation yet.
+- Pointer promotion and capability reconciliation are intentionally proposal-only; canonical `MEMORY.md` / `USER.md` and `shay_cli/intelligence_seed.py` are not silently mutated.
+- Ambient context is limited to available local/session artifacts and tool hints; calendar, iMessage, browser state, screen state, and health-style inputs remain future permissioned integrations.
+
+## 2026-06-25 — FAMtastic Designs public rescue hardening and deploy-lane block
+
+Prepared `sites/site-famtastic-designs` for a safe public rescue cutover without touching the incomplete backend lane. The rescue branch now gates `server/utils/cms.ts` so admin-proof `.data` overrides apply only when `ENABLE_ADMIN_PROOF=true`, removes the static `public/robots.txt` file so `server/routes/robots.txt.ts` becomes authoritative again, and keeps `robots.txt` blocking `/admin-proof` plus `/payment-proof`. Public-facing copy across `pages/index.vue`, `pages/pricing.vue`, `pages/packages.vue`, `pages/portal.vue`, `pages/client-portal-login.vue`, `pages/get-started.vue`, `components/ShortConsultationForm.vue`, `layouts/famproof.vue`, `data/famtastic/site.ts`, and `data/famtastic/packages.ts` was tightened so the rescue site stops leaking proof/mock language, stops implying live checkout, and uses a manual email-draft consultation fallback instead of pretending production lead capture is wired.
+
+### Verified
+- `cd ~/famtastic/sites/site-famtastic-designs && pnpm install && pnpm typecheck && pnpm lint && pnpm build` passed.
+- Local preview via `.output/server/index.mjs` with production-safe flags served `/`, `/services`, `/pricing`, `/packages`, `/work`, `/contact`, `/get-started`, `/portal`, `/client-portal-login`, `/thank-you`, `/privacy-policy`, `/terms-of-service`, `/cookie-policy`, `/sitemap`, `/sitemap.xml`, and `/robots.txt` successfully.
+- Browser automation confirmed `/admin-proof` returns 404 when admin proof is disabled, cookie banner renders and dismisses, and consultation/audit CTAs route to safe `/get-started` paths.
+- DNS lookup confirmed `famtasticdesigns.com` resolves to `107.180.51.234` while the previously referenced GoDaddy/cPanel host is `p3plzcpnl497512.prod.phx3.secureserver.net`.
+
+### Known Gaps opened
+- Live deployment is still blocked because authenticated production access was not available in-session; SSH to `xrdj7j99xhzt@p3plzcpnl497512.prod.phx3.secureserver.net` returned `Permission denied (publickey,password)`.
+- The public rescue build intentionally uses manual consultation fallback; there is still no proven production database/email notification lane for public form submissions.
+- Directus CMS runtime, real portal auth, live PayPal checkout, live booking integration, and production email automation remain backend-lane follow-up work and were not promoted by this rescue pass.
+
 # FAMtastic Ecosystem — Site Learnings
+
+## 2026-06-26 — Shay swarm worker pool route enforcement
+
+`shay-shay/shay_cli/intelligence_cmd.py` now maps each `_run_swarm_worker_packet()` child runtime from the packet `routing_tier` through the product worker pool registry instead of inheriting the parent session model/provider from `_resolve_delegation_credentials()`. The new `_map_tier_to_worker_route()` helper selects the `famtastic-by-the-numbers` v1 `implementation-worker` pool by default, maps `cheap -> glm-5.2`, `standard -> glm-5.1`, `premium -> ollama-qwen3-14b`, preserves worker-pool `forbidden_routes`, and converts route IDs into explicit child-agent `provider`, `model`, and `base_url` values before `_build_child_agent()` runs. Focused regression tests in `shay-shay/tests/test_intelligence_layer.py` prove the parent can be `openai-codex/gpt-5.5` while the child is still built as `glm/glm-5.2` from the worker pool.
+
+### Verified
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m py_compile shay_cli/intelligence_cmd.py tests/test_intelligence_layer.py` passed.
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m pytest -q tests/test_intelligence_layer.py -k 'swarm_worker_route_mapping or run_swarm_worker_packet_builds_child_from_worker_route or safe_hyperswarm_dry_run'` passed (3 passed).
+- `cd ~/famtastic/shay-shay && shay intelligence swarm dry-run` completed with status `working`, `workers_marked_done=true`, and ledger proof showing worker `provider=glm`, `model=glm-5.2` after the GLM/Z.ai key was refreshed.
+
+### Known Gaps opened
+- GLM workers can still exhaust the one-iteration dry-run budget and append summary text after valid JSON; `_parse_swarm_worker_json_response()` now tolerates trailing summary text, but the dry-run prompt/budget should still be tightened so workers return clean JSON without needing recovery parsing.
 
 ## 2026-06-24 — Universal intelligence-route export + Codex/GLM routing correction
 
@@ -6997,3 +7055,20 @@ and lead persistence/notify env vars are unset (function returns 200 but stores
 nothing until configured); (3) `ABOS_BOOKING_URL` is blank — CTAs scroll to the
 form until a Cal.com/Calendly URL is set; (4) social-proof row uses generic
 placeholders pending real logos/testimonials; (5) DNS not pointed.
+
+- FAMtastic Designs backend v1 checkpoint added a guarded local PayPal proof lane, local email-event fallback logging, and Directus setup assets under `sites/site-famtastic-designs/directus/`; Docker daemon availability is now the gating dependency for proving local Directus admin runtime.
+
+
+## 2026-07-02 — Shay intelligence autonomy governed loop
+
+Shay `shay-shay` now has a bounded autonomy layer for the intelligence loop. New files: `agent/intelligence_governance.py` defines `IntelligenceLoopConfig`, config parsing, generative-reflection fallback, pointer risk classification, pointer promotion decisions, and staged capability reconciliation; `agent/ambient_context.py` defines read-only ambient connector primitives (`LocalArtifactConnector`, `ProcessSnapshotConnector`, `SessionRecentConnector`) with TTL/source/privacy metadata; `agent/swarm_telemetry.py` defines the JSONL run ledger (`SwarmRunLedger`, `LaneRecord`, `lane_timer`). `agent/intelligence_loop.py::run_intelligence_loop_slices()` now accepts optional config and emits `generative-reflection.json`, `pointer-promotions.json`, `capability-review-queue.jsonl`, and `ambient-context.json` in addition to the existing closeout artifacts.
+
+Governance remains explicit: canonical prompt memory and `shay_cli/intelligence_seed.py` are not silently mutated; low-risk pointer candidates can be classified for auto-promotion, while high-risk/persona/authority/secret/payment-adjacent material routes to review. The default generative lane is disabled-safe and falls back to deterministic local synthesis if no client/provider is configured. Ambient context is local/read-only by default; calendar, message, and screen connectors remain permissioned future integrations.
+
+Verification: focused pytest suites passed (`tests/agent/test_intelligence_governance.py`, `tests/agent/test_intelligence_loop.py`, `tests/agent/test_intelligence_prefetch.py`, `tests/test_intelligence_layer.py` => 93 passed; `tests/agent/test_memory_provider.py`, `tests/run_agent/test_memory_sync_interrupted.py` => 78 passed) and `python -m compileall agent shay_cli run_agent.py` passed. HyperSwarm telemetry for the implementation pass is stored under `~/.shay/runtime/swarm-runs/intelligence-autonomy-20260702T114438/`.
+
+Known gaps: no real paid/auxiliary generative provider is wired yet; token/cost data is recorded as unavailable unless the runtime exposes it; external ambient connectors are interface-only until Fritz grants permission and credentials; capability reconciliation stages review records but does not apply patches automatically.
+
+## 2026-07-02 — FAMtastic By the Numbers Pass 1 web completion
+
+`apps/famtastic-by-the-numbers/` now treats all web-facing product functions as Pass 1 scope. `index.html` adds a method/privacy section with lineage, master-number, Y-as-consonant, and email/data-use disclosures; `app.js` adds monthly/day guidance, composite compatibility numbers, friction-to-repair mapping, local reading history, encoded `?chart=` share loading, and stronger share fallback behavior. `tests/smoke-local-proof.mjs` and `tests/smoke.mjs` were updated to assert the new web completion surfaces. PWA/native wrapper work, Google Play Billing, and Play Store checklisting remain intentionally deferred until after Fritz reviews the completed web version.
