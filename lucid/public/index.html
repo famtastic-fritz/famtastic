@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lucid — your dream journal</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="stars" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="moon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" fill="currentColor"/>
+      </svg>
+      <span>Lucid</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab is-active" data-view="capture" role="tab">Capture</button>
+      <button class="tab" data-view="journal" role="tab">Journal</button>
+      <button class="tab" data-view="patterns" role="tab">Patterns</button>
+    </nav>
+  </header>
+
+  <main class="stage">
+
+    <!-- ============ CAPTURE ============ -->
+    <section class="view is-active" id="view-capture">
+      <div class="card">
+        <h1 class="whisper">What did you dream?</h1>
+        <p class="sub">Write it down before it fades. Speak it, type it, or let the prompts pull it out of you.</p>
+
+        <div class="capture-tools">
+          <button id="mic-btn" class="mic" type="button" title="Record (voice → text)">
+            <span class="mic-dot"></span> Record
+          </button>
+          <button id="prompts-toggle" class="ghost" type="button">Guided prompts</button>
+        </div>
+        <div id="mic-status" class="mic-status" hidden></div>
+
+        <textarea id="dream-text" class="dream-input" rows="7"
+          placeholder="I was standing at the edge of the water, and…"></textarea>
+
+        <!-- optional guided prompts -->
+        <div id="prompts" class="prompts" hidden>
+          <label>Who was there?<input data-prompt="who" type="text" placeholder="optional" /></label>
+          <label>Where were you?<input data-prompt="where" type="text" placeholder="optional" /></label>
+          <label>What did you feel?<input data-prompt="feeling" type="text" placeholder="optional" /></label>
+          <label>How vivid? (1–5)<input data-prompt="vividness" type="number" min="1" max="5" placeholder="optional" /></label>
+          <label class="check"><input data-prompt="recurring" type="checkbox" /> This recurs</label>
+        </div>
+
+        <button id="capture-submit" class="primary" type="button">Reflect on this dream</button>
+      </div>
+
+      <!-- clarify + interpretation appear here -->
+      <div id="conversation" class="conversation" hidden></div>
+    </section>
+
+    <!-- ============ JOURNAL ============ -->
+    <section class="view" id="view-journal">
+      <div class="journal-head">
+        <h1 class="whisper">Your dream journal</h1>
+        <input id="journal-search" class="search" type="search" placeholder="Search dreams…" />
+      </div>
+      <div id="journal-list" class="journal-list"></div>
+    </section>
+
+    <!-- ============ PATTERNS ============ -->
+    <section class="view" id="view-patterns">
+      <h1 class="whisper">Patterns across your dreams</h1>
+      <p class="sub">The longer you keep this, the more it sees.</p>
+      <div id="patterns-insights" class="insights"></div>
+      <div id="patterns-symbols" class="chips"></div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>

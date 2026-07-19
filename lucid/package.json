@@ -1,0 +1,14 @@
+{
+  "name": "lucid",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A private, single-user dream interpretation app — calm, nocturnal, reflective.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
