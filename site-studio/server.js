@@ -1287,6 +1287,31 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.post('/api/proof-generate', async (req, res) => {
+  try {
+    const result = await generateProofArtifact({
+      proofId: req.body?.proof_id,
+      outputDir: req.body?.output_dir,
+      spec: req.body?.spec,
+      proofUrl: req.body?.proof_url || null,
+    });
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/proof-campaign', async (req, res) => {
+  try {
+    const result = await generateProofCampaign(req.body || {});
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({ success: false, error: err.message });
+  }
+});
+
 // Server info — session metadata, uptime, file status
 app.get('/api/session-history', (req, res) => {
   try { res.json(db.getSessionHistory(TAG)); }
@@ -3482,8 +3507,7 @@ function normalizeCssAliases(stylesPath) {
   console.log(`[css-root] Added ${toAdd.length} alias(es) to :root in styles.css`);
 }
 
-function writeTemplateArtifacts(ws) {
-  const distDir = DIST_DIR();
+function writeTemplateArtifacts(ws, distDir = DIST_DIR()) {
   const templatePath = path.join(distDir, '_template.html');
   if (!fs.existsSync(templatePath)) return null;
 
@@ -3518,8 +3542,7 @@ function writeTemplateArtifacts(ws) {
   return components;
 }
 
-function applyTemplateToPages(ws, writtenPages) {
-  const distDir = DIST_DIR();
+function applyTemplateToPages(ws, writtenPages, distDir = DIST_DIR()) {
   const pages = writtenPages && writtenPages.length > 0 ? writtenPages : listPages();
   let updated = 0;
 
@@ -3555,8 +3578,7 @@ function applyTemplateToPages(ws, writtenPages) {
   console.log(`[template] Applied template to ${pages.length} pages (${updated} updated)`);
 }
 
-function loadTemplateContext() {
-  const distDir = DIST_DIR();
+function loadTemplateContext(distDir = DIST_DIR()) {
   const templatePath = path.join(distDir, '_template.html');
   if (!fs.existsSync(templatePath)) return '';
 
@@ -3587,14 +3609,15 @@ TEMPLATE RULES:
 `;
 }
 
-function buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction) {
+function buildTemplatePrompt(spec, pageFiles, briefContext, decisionsContext, assetsContext, systemRules, analyticsInstruction, options = {}) {
   const fontSerif = spec.fonts?.heading || 'Playfair Display';
   const fontSans = spec.fonts?.body || 'Inter';
   const fontUrl = `https://fonts.googleapis.com/css2?family=${fontSerif.replace(/\s+/g, '+')}:wght@400;500;600;700&family=${fontSans.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`;
   const allPageLinks = pageFiles.join(', ');
+  const mandatoryClientContent = buildMandatoryClientContentBlock(spec, { proofOnly: !!spec.proof_mode });
 
   // Detect logo file
-  const distDir = DIST_DIR();
+  const distDir = options.outputDir || DIST_DIR();
   const logoSvg = fs.existsSync(path.join(distDir, 'assets', 'logo.svg'));
   const logoPng = fs.existsSync(path.join(distDir, 'assets', 'logo.png'));
   const logoFile = logoSvg ? 'assets/logo.svg' : logoPng ? 'assets/logo.png' : null;
@@ -3610,8 +3633,15 @@ Do NOT generate any page content — no hero sections, no service cards, no body
 SITE: ${spec.site_name || 'Website'}
 BUSINESS TYPE: ${spec.business_type || 'general'}
 
+${mandatoryClientContent}
+
 ${briefContext}
 ${decisionsContext}
+
+TEMPLATE CONTENT GUARD:
+- The shared header/nav/footer must support the client content contract above.
+- If a primary CTA is provided, use that exact CTA language for the nav/footer CTA.
+- Do not introduce generic business categories, services, or placeholder claims in the shared chrome.
 
 OUTPUT FORMAT — generate this EXACT structure:
 <!DOCTYPE html>
@@ -3759,6 +3789,706 @@ FAMTASTIC DNA — SHIP-READY VOCABULARY (always linked, use freely):
 DO NOT omit these. The libraries are loaded on every page. A FAMtastic site
 without fam-shapes or data-fam-animate looks like a generic Tailwind template.
 `;
+
+// --- Proof Mode (pre-sale static artifacts) ---
+const PROOF_FONT_PAIRING_ALIASES = {
+  'classic-elegant': 'luxury-display',
+  'friendly-rounded': 'modern-geometric',
+  'trusted-professional': 'editorial-serif',
+  'bold-modern': 'modern-geometric',
+};
+
+const PROOF_COLOR_MOOD_PALETTES = {
+  dark:   { primary: '#111827', secondary: '#374151', accent: '#F59E0B', neutral: '#E5E7EB', background: '#F9FAFB' },
+  warm:   { primary: '#7C2D12', secondary: '#B45309', accent: '#FBBF24', neutral: '#F5E7D3', background: '#FFF7ED' },
+  bright: { primary: '#0F766E', secondary: '#2563EB', accent: '#F97316', neutral: '#E0F2FE', background: '#FFFFFF' },
+  calm:   { primary: '#1E3A8A', secondary: '#64748B', accent: '#38BDF8', neutral: '#E2E8F0', background: '#F8FAFC' },
+  clean:  { primary: '#0F172A', secondary: '#475569', accent: '#14B8A6', neutral: '#E2E8F0', background: '#FFFFFF' },
+};
+
+function proofHttpError(statusCode, message) {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+}
+
+function assertSafeProofId(value, label) {
+  const id = String(value || '').trim();
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,90}$/.test(id)) {
+    throw proofHttpError(400, `${label} must be 1-91 chars and contain only letters, numbers, dots, underscores, or dashes`);
+  }
+  return id;
+}
+
+function resolveProofOutputDir(outputDir) {
+  if (!outputDir || typeof outputDir !== 'string') {
+    throw proofHttpError(400, 'output_dir is required');
+  }
+  const resolved = path.resolve(outputDir);
+  const home = require('os').homedir();
+  if (resolved !== home && !resolved.startsWith(home + path.sep)) {
+    throw proofHttpError(400, 'output_dir must be inside the user home directory');
+  }
+  return resolved;
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value || {}));
+}
+
+function stripAiHtml(text) {
+  let html = String(text || '').trim()
+    .replace(/^```html?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim();
+  const doctypeAt = html.search(/<!doctype\s+html>/i);
+  if (doctypeAt > 0) html = html.slice(doctypeAt);
+  const htmlAt = html.search(/<html[\s>]/i);
+  if (doctypeAt < 0 && htmlAt > 0) html = '<!DOCTYPE html>\n' + html.slice(htmlAt);
+  return html.trim();
+}
+
+function briefValueToText(value) {
+  if (value == null) return '';
+  if (Array.isArray(value)) return value.map(briefValueToText).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, val]) => `${key}: ${briefValueToText(val)}`)
+      .filter(line => !line.endsWith(': '))
+      .join(', ');
+  }
+  return String(value).trim();
+}
+
+function briefValueToList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(briefValueToText).filter(Boolean);
+  if (typeof value === 'string') {
+    return value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
+  }
+  return [briefValueToText(value)].filter(Boolean);
+}
+
+function getProofClientBriefFields(spec = {}) {
+  const cb = spec.client_brief && typeof spec.client_brief === 'object' ? spec.client_brief : {};
+  const contactMethods = cb.contact_methods && typeof cb.contact_methods === 'object' ? cb.contact_methods : {};
+  const requiredPages = spec.required_pages || spec.pages || spec.design_brief?.must_have_sections || [];
+  return {
+    businessName: briefValueToText(spec.site_name || cb.business_name || cb.businessName),
+    businessType: briefValueToText(spec.business_type || spec.vertical || cb.business_type || cb.industry || cb.business_category),
+    services: briefValueToList(cb.services || spec.services),
+    serviceArea: briefValueToText(cb.geography || cb.service_area || cb.city || cb.location || spec.service_area || spec.location),
+    phone: briefValueToText(cb.phone || cb.public_phone || contactMethods.phone || spec.phone || spec.public_phone),
+    email: briefValueToText(cb.email || cb.public_email || contactMethods.email || spec.email || spec.public_email),
+    primaryCta: briefValueToText(cb.primary_cta || cb.cta || spec.primary_cta || spec.cta),
+    idealCustomer: briefValueToText(cb.ideal_customer || cb.target_customer || spec.ideal_customer),
+    differentiator: briefValueToText(cb.differentiator || cb.unique_value || spec.differentiator),
+    businessDescription: briefValueToText(cb.business_description || spec.business_description || spec.design_brief?.goal),
+    logo: briefValueToText(cb.logo || spec.logo),
+    photos: briefValueToList(cb.photos || cb.images || spec.photos || spec.uploaded_assets),
+    colors: briefValueToText(cb.colors || spec.colors),
+    stylePreference: briefValueToText(cb.style_preference || cb.style_notes || spec.style_preference),
+    requiredPages: briefValueToList(requiredPages),
+    testimonials: briefValueToList(cb.testimonials || spec.testimonials),
+    faqs: briefValueToList(cb.faqs || cb.faq || spec.faqs),
+    credentials: briefValueToList(cb.credentials || cb.certifications || cb.licenses || spec.credentials),
+    referenceWebsites: briefValueToList(cb.reference_websites || cb.reference_sites || spec.reference_websites),
+  };
+}
+
+function buildMandatoryClientContentBlock(spec = {}, options = {}) {
+  const fields = getProofClientBriefFields(spec);
+  const services = fields.services.length ? fields.services.join(', ') : 'NOT PROVIDED';
+  const serviceCards = fields.services.length
+    ? fields.services.map((service, index) => `${index + 1}. ${service}`).join('\n')
+    : 'NOT PROVIDED';
+  const requiredPages = fields.requiredPages.length ? fields.requiredPages.join(', ') : 'home';
+  const testimonials = fields.testimonials.length ? fields.testimonials.join(' | ') : 'NOT PROVIDED';
+  const faqs = fields.faqs.length ? fields.faqs.join(' | ') : 'NOT PROVIDED';
+  const credentials = fields.credentials.length ? fields.credentials.join(', ') : 'NOT PROVIDED';
+  const referenceWebsites = fields.referenceWebsites.length ? fields.referenceWebsites.join(', ') : 'NOT PROVIDED';
+  const proofOnly = options.proofOnly
+    ? '\nPROOF MODE RULE: A proof with missing client content is invalid. Prefer sparse, honest sections over invented generic sections.'
+    : '';
+
+  return `CLIENT CONTENT CONTRACT (AUTHORITATIVE — higher priority than synthetic fallbacks):
+BUSINESS NAME: ${fields.businessName || 'NOT PROVIDED'}
+BUSINESS TYPE: ${fields.businessType || 'NOT PROVIDED'}
+SERVICES: ${services}
+REQUIRED SERVICE CARDS:
+${serviceCards}
+CITY / SERVICE AREA: ${fields.serviceArea || 'NOT PROVIDED'}
+PHONE: ${fields.phone || 'NOT PROVIDED'}
+EMAIL: ${fields.email || 'NOT PROVIDED'}
+PRIMARY CTA: ${fields.primaryCta || 'NOT PROVIDED'}
+TARGET CUSTOMER: ${fields.idealCustomer || 'NOT PROVIDED'}
+DIFFERENTIATOR: ${fields.differentiator || 'NOT PROVIDED'}
+BUSINESS DESCRIPTION: ${fields.businessDescription || 'NOT PROVIDED'}
+LOGO: ${fields.logo || 'NOT PROVIDED'}
+PHOTOS: ${fields.photos.length ? fields.photos.join(', ') : 'NOT PROVIDED'}
+COLORS: ${fields.colors || 'NOT PROVIDED'}
+STYLE PREFERENCE: ${fields.stylePreference || 'NOT PROVIDED'}
+REQUIRED PAGES / SECTIONS: ${requiredPages}
+TESTIMONIALS: ${testimonials}
+FAQS: ${faqs}
+CREDENTIALS: ${credentials}
+REFERENCE WEBSITES: ${referenceWebsites}
+
+MANDATORY CONTENT RULES:
+- Render every REQUIRED SERVICE CARD above, one visible card per line item. Each card title must use the exact service name in an <h3>, <h4>, or equivalent visible card title. Do NOT combine, omit, or rename services.
+- Do NOT rename services to generic terms like "Web Presence", "Brand Identity", "Growth Campaigns", "Reliable Service", or "Proven Results".
+- Use the PRIMARY CTA as the main button text. Do NOT change it to "Get in touch", "Contact Us", or other generic alternatives when a primary CTA is provided.
+- Use the BUSINESS DESCRIPTION in the hero section. Do NOT replace it with "A local business ready to grow online" or generic filler.
+- Use the BUSINESS TYPE, TARGET CUSTOMER, DIFFERENTIATOR, service area, phone, email, credentials, FAQs, and testimonials when they are provided.
+- If PHONE is provided, print that exact phone number visibly in the page and use it in a tel: link. Do not hide it only in metadata.
+- If EMAIL is provided, print that exact email visibly in the page and use it in a mailto: link.
+- Do not invent services, awards, testimonials, or business capabilities that are not present in this contract.${proofOnly}`;
+}
+
+function normalizeForContentCheck(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/&amp;/g, '&')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[^\w@.+-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractVisibleBodyText(html) {
+  const bodyMatch = String(html || '').match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  return (bodyMatch ? bodyMatch[1] : String(html || ''))
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<head[\s\S]*?<\/head>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&mdash;/g, ' ')
+    .replace(/&ndash;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function verifyClientBriefContent(html, spec = {}, options = {}) {
+  const fields = getProofClientBriefFields(spec);
+  const visibleText = extractVisibleBodyText(html);
+  const haystack = normalizeForContentCheck(visibleText);
+  const failures = [];
+  const requireAnyService = options.requireAnyService !== false;
+  const requireAllServices = options.requireAllServices === true;
+  const requireBusinessName = options.requireBusinessName !== false;
+  const requirePrimaryCta = options.requirePrimaryCta !== false;
+  const requirePhone = options.requirePhone === true;
+
+  const requireText = (label, value, matcher) => {
+    const text = briefValueToText(value);
+    if (!text) return;
+    const ok = matcher ? matcher(text) : haystack.includes(normalizeForContentCheck(text));
+    if (!ok) failures.push(`${label} missing: ${text}`);
+  };
+
+  if (requireBusinessName) requireText('business name', fields.businessName);
+  if (requireAnyService && fields.services.length > 0) {
+    const foundServices = fields.services.filter(service => haystack.includes(normalizeForContentCheck(service)));
+    if (requireAllServices) {
+      const missingServices = fields.services.filter(service => !haystack.includes(normalizeForContentCheck(service)));
+      if (missingServices.length > 0) failures.push(`services missing: ${missingServices.join(', ')}`);
+    } else if (foundServices.length === 0) {
+      failures.push(`service missing: expected at least one of ${fields.services.join(', ')}`);
+    }
+  }
+  if (requirePrimaryCta) requireText('primary CTA', fields.primaryCta);
+  if (requirePhone) requireText('phone', fields.phone, phone => {
+    const digits = String(phone).replace(/\D/g, '');
+    return digits.length >= 7 && html.replace(/\D/g, '').includes(digits);
+  });
+  if (options.requireBusinessDescription !== false && fields.businessDescription) {
+    const words = normalizeForContentCheck(fields.businessDescription)
+      .split(/\s+/)
+      .filter(word => word.length >= 5)
+      .slice(0, 8);
+    const matched = words.filter(word => haystack.includes(word));
+    if (matched.length < Math.min(3, words.length)) {
+      failures.push(`business description not incorporated: ${fields.businessDescription}`);
+    }
+  }
+
+  const bannedGeneric = [
+    'a local business ready to grow online',
+    'web presence',
+    'brand identity',
+    'growth campaigns',
+  ];
+  for (const phrase of bannedGeneric) {
+    if (haystack.includes(normalizeForContentCheck(phrase))) failures.push(`generic fallback present: ${phrase}`);
+  }
+  if (fields.businessName) {
+    const genericBusinessPhrase = `everything ${fields.businessName} needs`;
+    if (haystack.includes(normalizeForContentCheck(genericBusinessPhrase))) failures.push(`generic fallback present: ${genericBusinessPhrase}`);
+  }
+
+  return { valid: failures.length === 0, failures };
+}
+
+function getPageContentVerificationOptions(pageFile) {
+  if (pageFile === 'index.html') {
+    return {
+      requireBusinessName: true,
+      requireAnyService: true,
+      requireAllServices: true,
+      requirePrimaryCta: true,
+      requireBusinessDescription: true,
+    };
+  }
+  if (pageFile === 'services.html') {
+    return {
+      requireBusinessName: false,
+      requireAnyService: true,
+      requireAllServices: true,
+      requirePrimaryCta: false,
+      requireBusinessDescription: false,
+    };
+  }
+  return {
+    requireBusinessName: false,
+    requireAnyService: false,
+    requirePrimaryCta: false,
+    requireBusinessDescription: false,
+  };
+}
+
+function buildStrictContentRetryPrompt(originalPrompt, failures, spec = {}) {
+  return `${originalPrompt}
+
+PREVIOUS OUTPUT FAILED CLIENT CONTENT VERIFICATION.
+Failures:
+${failures.map(f => `- ${f}`).join('\n')}
+
+REQUIRED REPAIR CONTRACT:
+${buildMandatoryClientContentBlock(spec, { proofOnly: !!spec.proof_mode })}
+
+Regenerate the complete HTML now. You MUST correct every failure above.
+Use the exact client content contract values. Do not use generic fallback services, CTA text, hero copy, or placeholder business language.
+If the failure names a missing phone or email, include that exact value as visible body text in the hero, contact strip, footer, or contact section, plus the matching tel:/mailto: link.`;
+}
+
+function resolveProofLayoutVariant(id) {
+  const requested = String(id || '').trim();
+  if (requested && layoutRegistry.getVariant(requested)) return requested;
+  return layoutRegistry.DEFAULT_VARIANT_ID || 'standard';
+}
+
+function resolveProofFontPairing(id, businessType) {
+  const requested = String(id || '').trim();
+  const mapped = PROOF_FONT_PAIRING_ALIASES[requested] || requested;
+  if (mapped && fontRegistry.getPairing(mapped)) return mapped;
+  const picked = fontRegistry.pickPairingForVertical(businessType || '');
+  return picked?.id || fontRegistry.DEFAULT_PAIRING_ID || 'editorial-serif';
+}
+
+function buildProofStyleFingerprint(spec, colorMood) {
+  const base = spec.style_fingerprint && styleFingerprint.validateFingerprintShape(spec.style_fingerprint).valid
+    ? cloneJson(spec.style_fingerprint)
+    : styleFingerprint.generateStyleFingerprint(spec.design_brief || {}, {
+      vertical: spec.business_type || '',
+      userMessage: [
+        spec.client_brief?.business_description,
+        spec.client_brief?.style_notes,
+        spec.design_brief?.goal,
+      ].filter(Boolean).join(' '),
+      clientBrief: spec.client_brief || {},
+      brand: null,
+    });
+  const mood = String(colorMood || '').trim().toLowerCase();
+  if (!mood || !PROOF_COLOR_MOOD_PALETTES[mood]) return base;
+  return {
+    ...base,
+    palette: { ...base.palette, ...PROOF_COLOR_MOOD_PALETTES[mood] },
+    mood: `${mood} proof direction for ${spec.business_type || 'general'}; ${base.mood || ''}`.trim(),
+    source: 'operator_override',
+    generated_at: new Date().toISOString(),
+  };
+}
+
+function normalizeProofSpec(inputSpec, variant = {}) {
+  if (!inputSpec || typeof inputSpec !== 'object') {
+    throw proofHttpError(400, 'spec is required');
+  }
+  const spec = cloneJson(inputSpec);
+  spec.site_name = spec.site_name || 'Proof Site';
+  spec.business_type = spec.business_type || spec.vertical || 'general';
+  spec.client_brief = spec.client_brief && typeof spec.client_brief === 'object' ? spec.client_brief : {};
+  spec.design_brief = spec.design_brief && typeof spec.design_brief === 'object' ? spec.design_brief : {};
+  spec.pages = ['home'];
+
+  const visualDirection = spec.design_brief.visual_direction && typeof spec.design_brief.visual_direction === 'object'
+    ? spec.design_brief.visual_direction
+    : {};
+  spec.design_brief.visual_direction = {
+    ...visualDirection,
+    layout: variant.layout_variant || visualDirection.layout || 'proof-single-page',
+    density: variant.density || visualDirection.density || 'balanced',
+    shape: variant.shape || visualDirection.shape || 'balanced',
+    direction_name: variant.direction_name || visualDirection.direction_name || null,
+  };
+  spec.design_brief.must_have_sections = ['home'];
+  spec.design_brief.approved = true;
+
+  const layoutVariant = resolveProofLayoutVariant(variant.layout_variant || spec.layout?.variant);
+  spec.layout = { ...(spec.layout || {}), variant: layoutVariant };
+
+  const fontPairing = resolveProofFontPairing(variant.font_pairing || spec.fonts?.pairing, spec.business_type);
+  const pair = fontRegistry.getPairing(fontPairing);
+  spec.fonts = {
+    ...(spec.fonts || {}),
+    pairing: fontPairing,
+    heading: pair?.heading || spec.fonts?.heading || 'Playfair Display',
+    body: pair?.body || spec.fonts?.body || 'Inter',
+  };
+
+  spec.style_fingerprint = buildProofStyleFingerprint(spec, variant.color_mood);
+  spec.proof_mode = true;
+  return spec;
+}
+
+function buildProofPromptContext(spec, proofId) {
+  const brief = spec.design_brief || {};
+  const cb = spec.client_brief || {};
+  const clientLines = [];
+  if (cb.business_description) clientLines.push(`- Business: ${cb.business_description}`);
+  if (cb.ideal_customer) clientLines.push(`- Ideal customer: ${cb.ideal_customer}`);
+  if (cb.differentiator) clientLines.push(`- Differentiator: ${cb.differentiator}`);
+  if (cb.primary_cta) clientLines.push(`- Primary CTA: ${cb.primary_cta}`);
+  if (cb.services) clientLines.push(`- Services: ${Array.isArray(cb.services) ? cb.services.join(', ') : cb.services}`);
+  if (cb.geography) clientLines.push(`- Service area: ${cb.geography}`);
+  if (cb.contact_methods) clientLines.push(`- Contact methods: ${typeof cb.contact_methods === 'string' ? cb.contact_methods : JSON.stringify(cb.contact_methods)}`);
+  if (cb.style_notes) clientLines.push(`- Style notes: ${cb.style_notes}`);
+  const mandatoryClientContent = buildMandatoryClientContentBlock(spec, { proofOnly: true });
+
+  let briefContext = `
+PROOF MODE:
+- This is a pre-sale, single-page static proof, not a production Site Studio build.
+- Build only enough to help a prospect choose a design direction.
+- Do not mention Proof Mode to the visitor.
+- Do not add Netlify deploy assumptions, production deployment copy, or live backend promises.
+
+DESIGN BRIEF:
+- Goal: ${brief.goal || 'Drive trust and lead capture'}
+- Audience: ${brief.audience || cb.ideal_customer || 'Prospective customers'}
+- Tone: ${Array.isArray(brief.tone) ? brief.tone.join(', ') : brief.tone || 'professional, clear'}
+- Visual direction: ${JSON.stringify(brief.visual_direction || {}, null, 0)}
+- Must-have sections: home
+
+CLIENT BRIEF:
+${clientLines.length ? clientLines.join('\n') : '- No client brief fields supplied.'}
+
+${mandatoryClientContent}
+
+PROOF ID: ${proofId}
+`;
+
+  if (spec.style_fingerprint?.palette) {
+    briefContext += styleFingerprint.buildFingerprintPromptBlock(spec.style_fingerprint);
+  }
+
+  const pair = fontRegistry.getPairing(spec.fonts?.pairing);
+  if (pair) {
+    const enriched = pair.googleUrl ? pair : { ...pair, googleUrl: fontRegistry.buildGoogleFontsUrl(pair) };
+    briefContext += '\n' + fontRegistry.buildFontPromptContext(enriched);
+  }
+
+  const variant = layoutRegistry.pickLayoutVariantForSpec(spec);
+  if (variant) briefContext += '\n\n' + layoutRegistry.buildLayoutPromptContext(variant);
+
+  const systemRules = `RULES:
+- Generate polished, specific copy from the client brief. Avoid placeholder text.
+- Make this proof visually distinct from other directions using the selected layout, palette, typography, density, and shape.
+- Every major section must include data-section-id and data-section-type.
+- Editable headings, body copy, CTA text, phone, and email should include data-field-id and data-field-type.
+- Use static HTML, Tailwind CDN, CSS, and minimal inline JavaScript only when needed for navigation.
+- Do not create multiple pages. All navigation should point to sections within index.html.`;
+
+  return {
+    briefContext,
+    decisionsContext: '',
+    assetsContext: 'No proof-specific assets were supplied unless listed in the spec.',
+    systemRules,
+    analyticsInstruction: '',
+  };
+}
+
+function buildProofPagePrompt(spec, templateContext) {
+  const cb = spec.client_brief || {};
+  const fields = getProofClientBriefFields(spec);
+  const services = fields.services.length ? fields.services.join(', ') : (cb.services || 'core services');
+  const serviceArea = cb.geography || cb.service_area || cb.location || 'the local service area';
+  const cta = cb.primary_cta || 'Contact Us';
+  const contentGuide = `Hero, trust/value proposition, services (${services}), local/service area (${serviceArea}), social proof or credibility, final CTA (${cta})`;
+  const mandatoryClientContent = buildMandatoryClientContentBlock(spec, { proofOnly: true });
+
+  return `You are a premium website builder. Generate index.html for a single-page proof website.
+
+SITE: ${spec.site_name || 'Website'}
+BUSINESS TYPE: ${spec.business_type || 'general'}
+PAGE CONTENT: ${contentGuide}
+
+${mandatoryClientContent}
+
+${famSkeletons.HERO_SKELETON}
+${famSkeletons.DIVIDER_SKELETON}
+${famSkeletons.NAV_SKELETON}
+${famSkeletons.INLINE_STYLE_PROHIBITION}
+${getLogoNoteBlock(spec)}
+
+${templateContext}
+
+STRUCTURE:
+<!DOCTYPE html>
+<html lang="en">
+  <!-- Copy the template head, then add page title, SEO description, and one <style data-page="index"> block. -->
+<body>
+  <!-- Copy the template header/nav, but single-page nav links may point to section anchors. -->
+  <main>
+    <!-- Generate the full one-page proof content here. -->
+  </main>
+  <!-- Copy the template footer. -->
+</body>
+</html>
+
+CONTENT REQUIREMENTS:
+- Use real copy based on the client brief, not lorem ipsum.
+- Include a visible header/navigation and footer copied from the template.
+- The hero section MUST use the BUSINESS DESCRIPTION above and be specific to the BUSINESS TYPE.
+- Service cards MUST use every exact SERVICE above as visible card titles.
+- The primary hero button and repeated CTA buttons MUST use the exact PRIMARY CTA above.
+- Include the phone/email/contact details when provided in the client content contract.
+- If PHONE is provided, include a visible contact strip or footer/contact section with the exact phone text.
+- If EMAIL is provided, include a visible contact strip or footer/contact section with the exact email text.
+- Include visual interest: at least one hero media/image slot, service image/icon slots, and section-level graphic treatment. Do not return plain text blocks only.
+- Include phone/email/contact only if present in the spec or client brief.
+- Forms are static proof UI only. Do not rely on Netlify, server actions, or production backend processing.
+- Every image must be a transparent placeholder with data-slot-id, data-slot-status="empty", and data-slot-role.
+- Keep the result self-contained and static.
+- Invalid generic copy: "A local business ready to grow online", "Everything [business] needs", "Web Presence", "Brand Identity", "Growth Campaigns".
+
+STYLE REQUIREMENTS:
+- Honor the selected layout variant, font pairing, palette, density, and shape from the proof spec.
+- Make this direction feel intentional and different from other possible proof directions.
+
+OUTPUT FORMAT:
+Respond with ONLY the complete HTML document from <!DOCTYPE html> to </html>. No explanation, no markdown fences.`;
+}
+
+async function generateProofThumbnail(proofUrl, outputDir) {
+  if (!proofUrl) return { status: 'skipped', reason: 'proof_url not supplied' };
+  const shot = await captureScreenshotForShay(proofUrl, {
+    fullPage: false,
+    viewport: { width: 1280, height: 800 },
+  });
+  if (!shot || !shot.data) {
+    return { status: 'failed', reason: shot?.error || 'screenshot capture returned no image' };
+  }
+  const thumbnailPath = path.join(outputDir, 'thumbnail.png');
+  fs.writeFileSync(thumbnailPath, Buffer.from(shot.data, 'base64'));
+  return { status: 'generated', path: thumbnailPath };
+}
+
+async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null, variant = {} }) {
+  const safeProofId = assertSafeProofId(proofId, 'proof_id');
+  const resolvedOutputDir = resolveProofOutputDir(outputDir);
+  const started = Date.now();
+  fs.mkdirSync(resolvedOutputDir, { recursive: true });
+
+  const proofSpec = normalizeProofSpec(spec, variant);
+  const pageFiles = ['index.html'];
+  const promptContext = buildProofPromptContext(proofSpec, safeProofId);
+  const templatePrompt = buildTemplatePrompt(
+    proofSpec,
+    pageFiles,
+    promptContext.briefContext,
+    promptContext.decisionsContext,
+    promptContext.assetsContext,
+    promptContext.systemRules,
+    promptContext.analyticsInstruction,
+    { outputDir: resolvedOutputDir }
+  );
+
+  const rawTemplate = await callSDK(templatePrompt, {
+    maxTokens: 16384,
+    callSite: 'proof-template-build',
+    timeoutMs: 300000,
+  });
+  let templateHtml = stripAiHtml(rawTemplate);
+  if (proofSpec.famtastic_mode) {
+    const extracted = famSkeletons.extractLogoSVGs(templateHtml, resolvedOutputDir);
+    templateHtml = extracted.cleanedHtml;
+  }
+  if (templateHtml.length < 50 || !/<html[\s>]/i.test(templateHtml)) {
+    throw proofHttpError(502, 'Template generation failed or returned invalid HTML');
+  }
+  const templatePath = path.join(resolvedOutputDir, '_template.html');
+  fs.writeFileSync(templatePath, templateHtml);
+
+  const components = writeTemplateArtifacts(null, resolvedOutputDir);
+  if (!components || (!components.headBlock && !components.headerHtml)) {
+    throw proofHttpError(502, 'Generated template could not be parsed into reusable proof artifacts');
+  }
+
+  const templateContext = loadTemplateContext(resolvedOutputDir);
+  const pagePrompt = buildProofPagePrompt(proofSpec, templateContext);
+  const rawPage = await callSDK(pagePrompt, {
+    maxTokens: 16384,
+    callSite: 'proof-page-build',
+    timeoutMs: 300000,
+  });
+  let pageHtml = stripAiHtml(rawPage);
+  if (pageHtml.length < 50 || !/<html[\s>]/i.test(pageHtml)) {
+    throw proofHttpError(502, 'Page generation failed or returned invalid HTML');
+  }
+
+  let contentCheck = verifyClientBriefContent(pageHtml, proofSpec, {
+    requireBusinessName: true,
+    requireAnyService: true,
+    requireAllServices: true,
+    requirePrimaryCta: true,
+    requirePhone: true,
+    requireBusinessDescription: true,
+  });
+  if (!contentCheck.valid) {
+    console.warn(`[proof-mode] ${safeProofId} failed content verification; retrying: ${contentCheck.failures.join('; ')}`);
+    const retryRawPage = await callSDK(buildStrictContentRetryPrompt(pagePrompt, contentCheck.failures, proofSpec), {
+      maxTokens: 16384,
+      callSite: 'proof-page-build-retry',
+      timeoutMs: 300000,
+    });
+    pageHtml = stripAiHtml(retryRawPage);
+    contentCheck = verifyClientBriefContent(pageHtml, proofSpec, {
+      requireBusinessName: true,
+      requireAnyService: true,
+      requireAllServices: true,
+      requirePrimaryCta: true,
+      requirePhone: true,
+      requireBusinessDescription: true,
+    });
+    if (!contentCheck.valid) {
+      console.error(`[proof-mode] ${safeProofId} invalid proof content: ${contentCheck.failures.join('; ')}`);
+      throw proofHttpError(502, `Proof content verification failed: ${contentCheck.failures.join('; ')}`);
+    }
+  }
+
+  const indexPath = path.join(resolvedOutputDir, 'index.html');
+  fs.writeFileSync(indexPath, pageHtml);
+  applyTemplateToPages(null, ['index.html'], resolvedOutputDir);
+  const finalProofHtml = fs.readFileSync(indexPath, 'utf8');
+  contentCheck = verifyClientBriefContent(finalProofHtml, proofSpec, {
+    requireBusinessName: true,
+    requireAnyService: true,
+    requireAllServices: true,
+    requirePrimaryCta: true,
+    requirePhone: true,
+    requireBusinessDescription: true,
+  });
+  if (!contentCheck.valid) {
+    console.error(`[proof-mode] ${safeProofId} invalid proof content after write: ${contentCheck.failures.join('; ')}`);
+    throw proofHttpError(502, `Proof content verification failed: ${contentCheck.failures.join('; ')}`);
+  }
+
+  const thumbnail = await generateProofThumbnail(proofUrl, resolvedOutputDir);
+  const elapsedMs = Date.now() - started;
+  const designDna = {
+    proof_id: safeProofId,
+    direction_id: variant.direction_id || null,
+    direction_name: variant.direction_name || null,
+    generated_at: new Date().toISOString(),
+    generation_time_ms: elapsedMs,
+    spec_snapshot: proofSpec,
+    style_fingerprint: proofSpec.style_fingerprint,
+    layout_variant: proofSpec.layout?.variant || null,
+    font_pairing: proofSpec.fonts?.pairing || null,
+    template_path: templatePath,
+    artifact_path: indexPath,
+    thumbnail,
+    content_verification: contentCheck,
+  };
+  const designDnaPath = path.join(resolvedOutputDir, 'design-dna.json');
+  fs.writeFileSync(designDnaPath, JSON.stringify(designDna, null, 2));
+
+  return {
+    success: true,
+    proof_id: safeProofId,
+    status: 'proof_generated',
+    generation_time_ms: elapsedMs,
+    output_dir: resolvedOutputDir,
+    template_path: templatePath,
+    artifact_path: indexPath,
+    design_dna_path: designDnaPath,
+    thumbnail,
+    design_dna: designDna,
+  };
+}
+
+function buildCampaignVariantSpec(baseSpec, variant) {
+  return normalizeProofSpec(baseSpec, variant);
+}
+
+async function generateProofCampaign(body) {
+  const campaignId = assertSafeProofId(body.campaign_id, 'campaign_id');
+  if (!body.base_spec || typeof body.base_spec !== 'object') {
+    throw proofHttpError(400, 'base_spec is required');
+  }
+  const variants = Array.isArray(body.variants) ? body.variants : [];
+  if (variants.length === 0) {
+    throw proofHttpError(400, 'variants must contain at least one proof direction');
+  }
+
+  const baseOutputDir = resolveProofOutputDir(
+    body.output_base_dir || path.join(__dirname, 'proofs', campaignId)
+  );
+  const started = Date.now();
+  const results = [];
+  const htmlHashes = new Set();
+
+  for (const rawVariant of variants) {
+    const variant = rawVariant && typeof rawVariant === 'object' ? rawVariant : {};
+    const directionId = assertSafeProofId(variant.direction_id, 'direction_id');
+    const outputDir = path.join(baseOutputDir, directionId);
+    const variantSpec = buildCampaignVariantSpec(body.base_spec, variant);
+    const result = await generateProofArtifact({
+      proofId: `${campaignId}-${directionId}`,
+      outputDir,
+      spec: variantSpec,
+      proofUrl: variant.proof_url || null,
+      variant,
+    });
+    try {
+      const html = fs.readFileSync(result.artifact_path, 'utf8');
+      const hash = require('crypto').createHash('sha256').update(html).digest('hex');
+      htmlHashes.add(hash);
+    } catch {}
+    results.push({
+      direction_id: directionId,
+      direction_name: variant.direction_name || null,
+      artifact_path: result.artifact_path,
+      template_path: result.template_path,
+      design_dna_path: result.design_dna_path,
+      thumbnail: result.thumbnail,
+      generation_time_ms: result.generation_time_ms,
+      design_dna: result.design_dna,
+    });
+  }
+
+  return {
+    success: true,
+    campaign_id: campaignId,
+    status: 'proofs_generated',
+    generation_time_ms: Date.now() - started,
+    output_base_dir: baseOutputDir,
+    distinct_html: htmlHashes.size === results.length,
+    variants: results,
+  };
+}
 
 // --- SEO Meta Injection (post-processing) ---
 function injectSeoMeta(ws) {
@@ -8644,6 +9374,7 @@ function synthesizeDesignBriefForBuild(brief) {
       {
         vertical: spec.business_type || (brief && brief.vertical) || (spec.client_brief && spec.client_brief.business_description),
         userMessage: brief && (brief.business_description || brief.style_notes),
+        clientBrief: spec.client_brief || {},
         brand: readBrandJsonForFingerprint(),
       },
     );
@@ -8669,6 +9400,7 @@ function synthesizeDesignBriefForBuild(brief) {
       {
         vertical: spec.business_type || (brief && brief.vertical) || (spec.client_brief && spec.client_brief.business_description),
         userMessage: brief && (brief.business_description || brief.style_notes),
+        clientBrief: spec.client_brief || {},
         brand: readBrandJsonForFingerprint(),
       },
     );
@@ -12899,16 +13631,17 @@ function buildPromptContext(requestType, spec, userMessage) {
     if (cb.differentiator)       fields.push(`- Differentiator / unfair advantage: ${cb.differentiator}`);
     if (cb.primary_cta)          fields.push(`- Primary CTA (use this language): ${cb.primary_cta}`);
     if (cb.style_notes)          fields.push(`- Style notes: ${cb.style_notes}`);
-    if (cb.services)             fields.push(`- Services / offerings: ${cb.services}`);
+    if (cb.services)             fields.push(`- Services / offerings: ${briefValueToList(cb.services).join(', ')}`);
     if (cb.social_proof)         fields.push(`- Social proof / credibility: ${cb.social_proof}`);
     if (cb.geography)            fields.push(`- Geography / service area: ${cb.geography}`);
     if (cb.urgency_hook)         fields.push(`- Urgency hook: ${cb.urgency_hook}`);
-    if (cb.contact_methods)      fields.push(`- Contact methods: ${cb.contact_methods}`);
+    if (cb.contact_methods)      fields.push(`- Contact methods: ${briefValueToText(cb.contact_methods)}`);
     if (cb.revenue_model) fields.push(`- Revenue model: ${cb.revenue_model}`);
     if (fields.length > 0) {
       briefContext += `\n\nCLIENT BRIEF (from intake interview — these are the owner's own answers, treat as authoritative):\n` +
         fields.join('\n') +
-        `\nUse these answers for real copy. Do not substitute generic placeholder text when the client has given you real content here.`;
+        `\nUse these answers for real copy. Do not substitute generic placeholder text when the client has given you real content here.\n\n` +
+        buildMandatoryClientContentBlock(spec);
     }
 
     // Revenue model build hints — inject architecture instructions based on monetization intent
@@ -13877,6 +14610,7 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
 
   function spawnPage(pageFile, templateContext) {
     const content = pageContentGuide[pageFile] || `Content appropriate for a "${pageFile.replace('.html', '').replace(/-/g, ' ')}" page`;
+    const mandatoryClientContent = buildMandatoryClientContentBlock(spec);
 
     // Build slot stability instruction for this page (fixes known bug — was missing from parallel builds)
     const currentPageSlots = (spec.media_specs || []).filter(s => s.page === pageFile);
@@ -13909,6 +14643,7 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
 PAGE TO BUILD: ${pageFile}
 PAGE CONTENT: ${content}
 All pages in this site: ${allPageLinks}
+${mandatoryClientContent}
 ${buildBlueprintContext(pageFile)}
 ${slotStabilityBlock}
 ${famSkeletonBlock}
@@ -13933,12 +14668,18 @@ YOUR OUTPUT STRUCTURE:
 
 ${siteContext}
 
-IMAGE SLOTS (CRITICAL):
+	IMAGE SLOTS (CRITICAL):
 Every <img> tag MUST have these data attributes:
 - data-slot-id: unique role-based ID (e.g. "hero-1", "service-mowing")
 - data-slot-status="empty"
 - data-slot-role: one of: hero, testimonial, team, service, gallery, favicon
-- src must be "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+	- src must be "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+
+CONTENT VERIFICATION (build fails if ignored):
+- On the homepage, service card titles must match the SERVICES in the client content contract.
+- On the homepage, the hero must incorporate the BUSINESS DESCRIPTION.
+- On the homepage, CTA buttons must use the exact PRIMARY CTA when provided.
+- Do not use generic fallback service labels or generic proof copy.
 
 FORMS:
 - All forms must use: method="POST" data-netlify="true"
@@ -13964,6 +14705,7 @@ No explanation, no markdown fences, no CHANGES summary. Just the HTML.`;
 PAGE TO BUILD: ${pageFile}
 PAGE CONTENT: ${content}
 All pages in this site: ${allPageLinks}
+${mandatoryClientContent}
 ${buildBlueprintContext(pageFile)}
 ${slotStabilityBlock}
 ${famSkeletonBlock}
@@ -14001,7 +14743,7 @@ ${sharedRules}`;
       for (const pageFile of pageFiles) {
         const pagePrompt = spawnPage(pageFile, templateContext);
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `Building ${pageFile}...` }));
-        const pageResponse = await new Promise((resolve) => {
+        let pageResponse = await new Promise((resolve) => {
           const child = spawnClaude(pagePrompt);
           let output = '';
           const t = setTimeout(() => { child.kill(); resolve(''); }, 300000);
@@ -14009,6 +14751,24 @@ ${sharedRules}`;
           child.on('close', () => { clearTimeout(t); resolve(output.trim()); });
           child.on('error', () => { clearTimeout(t); resolve(''); });
         });
+        const contentCheck = verifyClientBriefContent(pageResponse, spec, getPageContentVerificationOptions(pageFile));
+        if (!contentCheck.valid) {
+          console.warn(`[parallel-build-sub] ${pageFile} failed client content verification; retrying: ${contentCheck.failures.join('; ')}`);
+          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} missed client brief content — retrying with stricter prompt...` }));
+          pageResponse = await new Promise((resolve) => {
+            const child = spawnClaude(buildStrictContentRetryPrompt(pagePrompt, contentCheck.failures, spec));
+            let output = '';
+            const t = setTimeout(() => { child.kill(); resolve(''); }, 300000);
+            child.stdout.on('data', d => { output += d.toString(); });
+            child.on('close', () => { clearTimeout(t); resolve(output.trim()); });
+            child.on('error', () => { clearTimeout(t); resolve(''); });
+          });
+          const retryCheck = verifyClientBriefContent(pageResponse, spec, getPageContentVerificationOptions(pageFile));
+          if (!retryCheck.valid) {
+            console.error(`[parallel-build-sub] ${pageFile} failed client content verification after retry: ${retryCheck.failures.join('; ')}`);
+            pageResponse = '';
+          }
+        }
         pageResults.push({ status: pageResponse.length > 50 ? 'fulfilled' : 'rejected', value: { page: pageFile, response: pageResponse }, reason: null });
         if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} complete (${pageResults.length}/${pageFiles.length})` }));
       }
@@ -14041,11 +14801,17 @@ ${sharedRules}`;
       const totalSub = pageFiles.length;
       for (const result of pageResults) {
         completedSub++;
-        if (result.status === 'fulfilled' && result.value.response.trim().length > 50) {
-          const { page: pageFileSub, response: rawResponseSub } = result.value;
-          const responseSub = rawResponseSub.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
-          versionFile(pageFileSub, 'build');
-          fs.writeFileSync(path.join(DIST_DIR(), pageFileSub), responseSub);
+	        if (result.status === 'fulfilled' && result.value.response.trim().length > 50) {
+	          const { page: pageFileSub, response: rawResponseSub } = result.value;
+	          const responseSub = rawResponseSub.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+	          const finalCheck = verifyClientBriefContent(responseSub, spec, getPageContentVerificationOptions(pageFileSub));
+	          if (!finalCheck.valid) {
+	            console.error(`[parallel-build-sub] ${pageFileSub} blocked by client content verification: ${finalCheck.failures.join('; ')}`);
+	            if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFileSub} blocked: missing client brief content.` }));
+	            continue;
+	          }
+	          versionFile(pageFileSub, 'build');
+	          fs.writeFileSync(path.join(DIST_DIR(), pageFileSub), responseSub);
           writtenPages.push(pageFileSub);
           traceParallelBuild('page_written', {
             selected_path: pageFileSub,
@@ -14106,15 +14872,37 @@ ${sharedRules}`;
           }
         }
         const finalMsg = await stream.finalMessage();
-        logSDKCall({
-          provider: 'claude', model: pageModel, callSite: 'page-build',
-          inputTokens: finalMsg.usage?.input_tokens || 0,
-          outputTokens: finalMsg.usage?.output_tokens || 0,
-          tag: TAG, hubRoot: HUB_ROOT,
-        });
-        return { page: pageFile, response: pageResponse };
-      })
-    );
+	        logSDKCall({
+	          provider: 'claude', model: pageModel, callSite: 'page-build',
+	          inputTokens: finalMsg.usage?.input_tokens || 0,
+	          outputTokens: finalMsg.usage?.output_tokens || 0,
+	          tag: TAG, hubRoot: HUB_ROOT,
+	        });
+
+	        const contentCheck = verifyClientBriefContent(pageResponse, spec, getPageContentVerificationOptions(pageFile));
+	        if (!contentCheck.valid) {
+	          console.warn(`[parallel-build] ${pageFile} failed client content verification; retrying: ${contentCheck.failures.join('; ')}`);
+	          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} missed client brief content — retrying with stricter prompt...` }));
+	          const retryResult = await sdk.messages.create({
+	            model: pageModel,
+	            max_tokens: 16384,
+	            messages: [{ role: 'user', content: buildStrictContentRetryPrompt(pagePrompt, contentCheck.failures, spec) }],
+	          }, { signal: pageController.signal });
+	          pageResponse = retryResult.content[0]?.text || '';
+	          logSDKCall({
+	            provider: 'claude', model: pageModel, callSite: 'page-build-retry',
+	            inputTokens: retryResult.usage?.input_tokens || 0,
+	            outputTokens: retryResult.usage?.output_tokens || 0,
+	            tag: TAG, hubRoot: HUB_ROOT,
+	          });
+	          const retryCheck = verifyClientBriefContent(pageResponse, spec, getPageContentVerificationOptions(pageFile));
+	          if (!retryCheck.valid) {
+	            throw new Error(`client content verification failed after retry: ${retryCheck.failures.join('; ')}`);
+	          }
+	        }
+	        return { page: pageFile, response: pageResponse };
+	      })
+	    );
 
     ws.removeListener('close', wsClosePageHandler);
 
@@ -14123,10 +14911,24 @@ ${sharedRules}`;
     const total = pageFiles.length;
     for (const result of pageResults) {
       completed++;
-      if (result.status === 'fulfilled' && result.value.response.trim().length > 50) {
-        const { page: pageFile, response: rawResponse } = result.value;
-        const response = rawResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
-        versionFile(pageFile, 'build');
+	      if (result.status === 'fulfilled' && result.value.response.trim().length > 50) {
+	        const { page: pageFile, response: rawResponse } = result.value;
+	        const response = rawResponse.trim().replace(/^```html?\s*/i, '').replace(/\s*```\s*$/, '');
+	        const finalCheck = verifyClientBriefContent(response, spec, getPageContentVerificationOptions(pageFile));
+	        if (!finalCheck.valid) {
+	          traceParallelBuild('page_failed', {
+	            selected_path: pageFile,
+	            provider: 'anthropic',
+	            model: pageModel,
+	            cost_type: 'api_billed',
+	            status: 'failed',
+	            error: `client content verification failed: ${finalCheck.failures.join('; ')}`,
+	          });
+	          console.error(`[parallel-build] ${pageFile} blocked by client content verification: ${finalCheck.failures.join('; ')}`);
+	          if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'status', content: `${pageFile} blocked: missing client brief content.` }));
+	          continue;
+	        }
+	        versionFile(pageFile, 'build');
         fs.writeFileSync(path.join(DIST_DIR(), pageFile), response);
         writtenPages.push(pageFile);
         traceParallelBuild('page_written', {

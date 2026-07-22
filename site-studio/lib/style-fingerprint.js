@@ -236,16 +236,33 @@ function extractBriefHexColors(brief, userMessage) {
  */
 function generateStyleFingerprint(brief, options = {}) {
   const { vertical, userMessage, brand } = options;
+  const clientBrief = options.clientBrief || (brief && brief.client_brief) || {};
+  const promptBrief = {
+    ...(brief || {}),
+    client_brief: clientBrief,
+    business_description: clientBrief.business_description || (brief && brief.business_description),
+    style_notes: clientBrief.style_notes || (brief && brief.style_notes),
+  };
 
   // 1. Brief-extracted explicit hex colors override everything when present.
-  const briefColors = extractBriefHexColors(brief || {}, userMessage);
+  const briefColors = extractBriefHexColors(promptBrief, [
+    userMessage || '',
+    clientBrief.colors ? JSON.stringify(clientBrief.colors) : '',
+    clientBrief.style_preference || '',
+    clientBrief.style_notes || '',
+  ].filter(Boolean).join(' '));
 
   // 2. Try to resolve a vertical entry from the supplied vertical or the brief.
   const briefHaystack = [
-    brief && brief.business_description,
-    brief && brief.goal,
-    brief && brief.style_notes,
-    (brief && brief.tone || []).join(' '),
+    clientBrief.business_type,
+    clientBrief.business_category,
+    clientBrief.industry,
+    clientBrief.business_description,
+    clientBrief.services ? JSON.stringify(clientBrief.services) : '',
+    promptBrief && promptBrief.business_description,
+    promptBrief && promptBrief.goal,
+    promptBrief && promptBrief.style_notes,
+    (promptBrief && promptBrief.tone || []).join(' '),
   ].filter(Boolean).join(' ');
   const matched = matchVertical(vertical, briefHaystack);
 
