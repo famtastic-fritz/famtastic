@@ -1,0 +1,228 @@
+recipe:
+  id: full-site-build-v1
+  version: 1.0.0
+  description: >
+    End-to-end site build — provider-agnostic, deterministic backbone.
+    Milestones B-F: bootstrap → plan → content → build → QA → proof → deploy.
+
+stages:
+  # ── Milestone B: Bootstrap / Config ──────────────────────────────────────
+  - id: repo-bootstrap
+    family: repo-bootstrap
+    provider: deterministic
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+    outputs:
+      - result
+
+  - id: config-scaffold
+    family: config-scaffold
+    provider: deterministic
+    needs: [repo-bootstrap]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+    outputs:
+      - result
+
+  # ── Milestone C: Architecture + Sitemap ──────────────────────────────────
+  - id: architecture-decider
+    family: architecture-decider
+    provider: deterministic
+    needs: [config-scaffold]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+    outputs:
+      - result
+
+  - id: sitemap-planner
+    family: sitemap-planner
+    provider: deterministic
+    needs: [architecture-decider]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      architectureDecision: "{{stages.architecture-decider.outputs.result}}"
+    outputs:
+      - result
+
+  # ── Milestone C: Design + JS ─────────────────────────────────────────────
+  - id: design-token
+    family: design-token
+    provider: deterministic
+    needs: [sitemap-planner]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+    outputs:
+      - result
+
+  - id: js-behavior
+    family: js-behavior
+    provider: deterministic
+    needs: [sitemap-planner]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      siteManifest: "{{stages.sitemap-planner.outputs.result.siteManifest}}"
+    outputs:
+      - result
+
+  # ── Milestone C: Per-page content (foreach) ──────────────────────────────
+  - id: page-copy
+    family: page-copy
+    provider: deterministic
+    needs: [sitemap-planner]
+    foreach: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      pageManifest: "{{item}}"
+    outputs:
+      - result
+
+  # ── Milestone D: Components + Media (foreach) ────────────────────────────
+  - id: component-selector
+    family: component-selector
+    provider: deterministic
+    needs: [sitemap-planner]
+    foreach: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    inputs:
+      pageManifest: "{{item}}"
+    outputs:
+      - result
+
+  - id: media-planner
+    family: media-planner
+    provider: deterministic
+    needs: [sitemap-planner]
+    foreach: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      pageManifest: "{{item}}"
+    outputs:
+      - result
+
+  # ── Milestone C: Page build (foreach) ────────────────────────────────────
+  - id: page-builder
+    family: page-builder
+    provider: deterministic
+    needs: [page-copy, design-token, component-selector, media-planner, js-behavior]
+    foreach: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      pageManifest: "{{item}}"
+      contentPackets: "{{stages.page-copy.outputs.result}}"
+      designTokenPack: "{{stages.design-token.outputs.result}}"
+      jsBehaviorPlan: "{{stages.js-behavior.outputs.result}}"
+    outputs:
+      - result
+
+  - id: shared-assets
+    family: shared-assets
+    provider: deterministic
+    needs: [design-token]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      designTokenPack: "{{stages.design-token.outputs.result}}"
+    outputs:
+      - result
+
+  - id: assembly
+    family: assembly
+    provider: deterministic
+    needs: [page-builder, shared-assets]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      pageManifests: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    outputs:
+      - result
+
+  # ── Milestone E: SEO ─────────────────────────────────────────────────────
+  - id: seo-pack
+    family: seo-pack
+    provider: deterministic
+    needs: [assembly, page-copy]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      siteManifest: "{{stages.sitemap-planner.outputs.result.siteManifest}}"
+      pageManifests: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+      contentPackets: "{{stages.page-copy.outputs.result}}"
+    outputs:
+      - result
+
+  # ── Milestone E: QA ──────────────────────────────────────────────────────
+  - id: structural-qa
+    family: structural-qa
+    provider: deterministic
+    needs: [assembly]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      pageManifests: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    outputs:
+      - result
+
+  - id: content-qa
+    family: content-qa
+    provider: deterministic
+    needs: [structural-qa]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      pageManifests: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    outputs:
+      - result
+
+  - id: browser-qa
+    family: browser-qa
+    provider: deterministic
+    needs: [structural-qa]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      pageManifests: "{{stages.sitemap-planner.outputs.result.pageManifests}}"
+    outputs:
+      - result
+
+  # ── Milestone E: Proof + Gap log ─────────────────────────────────────────
+  - id: proof-curator
+    family: proof-curator
+    provider: deterministic
+    needs: [structural-qa, content-qa, browser-qa, seo-pack, assembly]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      structuralQa: "{{stages.structural-qa.outputs.result}}"
+      contentQa: "{{stages.content-qa.outputs.result}}"
+      browserQa: "{{stages.browser-qa.outputs.result}}"
+      seoPack: "{{stages.seo-pack.outputs.result}}"
+      assemblyManifest: "{{stages.assembly.outputs.result}}"
+    outputs:
+      - result
+
+  - id: gap-logger
+    family: gap-logger
+    provider: deterministic
+    needs: [proof-curator, media-planner, component-selector]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      structuralQa: "{{stages.structural-qa.outputs.result}}"
+      contentQa: "{{stages.content-qa.outputs.result}}"
+      browserQa: "{{stages.browser-qa.outputs.result}}"
+      mediaPlan: "{{stages.media-planner.outputs.result}}"
+      componentPlan: "{{stages.component-selector.outputs.result}}"
+      proofReport: "{{stages.proof-curator.outputs.result}}"
+    outputs:
+      - result
+
+  # ── Milestone F: Deploy ───────────────────────────────────────────────────
+  - id: netlify-staging-deploy
+    family: netlify-staging-deploy
+    provider: deterministic
+    needs: [proof-curator]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+    outputs:
+      - result
+
+  - id: prod-deploy-router
+    family: prod-deploy-router
+    provider: deterministic
+    needs: [netlify-staging-deploy, proof-curator]
+    inputs:
+      buildRequest: "{{spec.buildRequest}}"
+      proofReport: "{{stages.proof-curator.outputs.result}}"
+    outputs:
+      - result

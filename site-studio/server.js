@@ -10218,6 +10218,27 @@ app.post('/api/autonomous-build', async (req, res) => {
   res.json(result);
 });
 
+// POST /api/vnext-build — runtime-vnext operator bridge (opt-in via FAMTASTIC_USE_RUNTIME_VNEXT=1)
+// Accepts a canonical BuildRequest and runs the full deterministic pipeline.
+if (process.env.FAMTASTIC_USE_RUNTIME_VNEXT === '1') {
+  const vnextBridge = require('./runtime-vnext/server-bridge');
+  const { normalizeLegacyRequest } = require('./runtime-vnext/legacy-compat');
+  app.post('/api/vnext-build', async (req, res) => {
+    try {
+      const rawRequest = req.body;
+      if (!rawRequest || typeof rawRequest !== 'object') {
+        return res.status(400).json({ error: 'BuildRequest body required' });
+      }
+      const buildRequest = normalizeLegacyRequest(rawRequest);
+      const result = await vnextBridge.runSiteBuild(buildRequest);
+      res.json({ status: result.status, run_id: result.run_id, error: result.error || null });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  console.log('[vnext] runtime-vnext operator path active — POST /api/vnext-build');
+}
+
 // GET /api/build-status/:tag — polling endpoint for build completion
 app.get('/api/build-status/:tag', (req, res) => {
   const tagParam = req.params.tag;

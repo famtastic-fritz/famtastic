@@ -1,0 +1,23 @@
+{
+  "tag": "site-m11-vnext",
+  "site_name": "Demo Single Page",
+  "business_type": "service",
+  "design_brief": {
+    "business_name": "Demo Single Page",
+    "goal": "A clean landing page for a local service business.",
+    "must_have_sections": [
+      "hero",
+      "about",
+      "services",
+      "contact"
+    ],
+    "tone": [
+      "friendly",
+      "professional"
+    ]
+  },
+  "pages": [
+    "index.html"
+  ],
+  "media_specs": []
+}

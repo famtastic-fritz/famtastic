@@ -1,3 +1,66 @@
+## 2026-07-22 — MBSH prod backend recovery + live poll lane
+Recovered the live MBSH PHP backend into the canonical repo at `sites/site-mbsh-reunion/backend/`, ending the server-only drift where production code was no longer mirrored under `~/famtastic/`. Added `sites/site-mbsh-reunion/backend/schema.sql` with `poll_questions`, `poll_options`, and `poll_votes`; added the public vote surface at `sites/site-mbsh-reunion/backend/poll.php`; added the committee admin poll surface at `sites/site-mbsh-reunion/backend/admin/polls.php`; and linked the admin dashboard via `sites/site-mbsh-reunion/backend/admin/dashboard.php`. Updated `sites/site-mbsh-reunion/spec.json` so the canonical tracked repo path now points at `~/famtastic/sites/site-mbsh-reunion` instead of the dead sibling path. Verified by applying the schema live on prod, deploying the backend with `deploy-backend.sh`, confirming `https://api.mbsh96reunion.com/poll.php` serves 200, creating a live test poll, submitting a live vote through the public page, and confirming the vote landed in prod DB.
+
+### Known Gaps opened
+- The MBSH admin password stored in vault is currently out of sync with prod or the login lane is throttled, so admin login verification through `/admin/login.php` did not complete even though the new poll/admin files are deployed and the public poll flow plus DB writes are verified.
+- The new poll lane currently has public page + admin management/results, but no CSV export, no date-range filter, and no committee email notification on vote submission yet.
+
+## 2026-07-22 — Site Studio Proof Mode isolated artifact lane
+
+Site Studio now has an additive Proof Mode API lane for pre-sale mockups: `POST /api/proof-generate` and `POST /api/proof-campaign` live in `site-studio/server.js` and generate single-page static proof artifacts outside the active `TAG` / `DIST_DIR()` lifecycle. The implementation deliberately reuses template-first prompt assets while writing to caller-provided isolated output directories, stops after `_template.html` + `index.html` + `design-dna.json`, and skips `finishParallelBuild()`, `runPostProcessing()`, Netlify deploy, full build verification, and media autofill. Campaign generation is sequential by design so three proof directions do not contend for process-wide Site Studio state. Thumbnail generation is available only when a hosted `proof_url` is supplied; otherwise the response records a skipped thumbnail.
+
+### Verified
+- `node --check site-studio/server.js`
+- `STUDIO_PORT=3399 PREVIEW_PORT=3398 node site-studio/server.js`
+- `curl` validation against `/api/health`, `/api/proof-generate`, and `/api/proof-campaign` with an allowed localhost origin
+- `git diff --check -- site-studio/server.js`
+- `node scripts/plans/audit.js`
+
+## 2026-07-06 — FAMtastic Designs stabilization re-audit and contact-domain correction
+
+`sites/site-famtastic-designs` now has a fresh public-stabilization truth pass grounded against both the local production-safe preview and the live `https://famtasticdesigns.com` site. The branch `famtastic/prod-stabilization-tv-review` still passes `pnpm install`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`, and the verified preview posture remains `HOST=127.0.0.1 PORT=3001 ENABLE_ADMIN_PROOF=false NUXT_PUBLIC_ENABLE_ADMIN_PROOF=false NUXT_PUBLIC_ENABLE_PAYMENT_PROOF=false NUXT_PUBLIC_SITE_URL=http://127.0.0.1:3001 NUXT_PUBLIC_CMS_MODE=local NUXT_PUBLIC_LEAD_CAPTURE_MODE=manual NUXT_PUBLIC_PAYMENT_MODE=mock NUXT_PUBLIC_PORTAL_MODE=preview BOOKING_PROVIDER=manual node .output/server/index.mjs`.
+
+The public contact identity was corrected so `data/famtastic/site.ts` now uses `hello@famtasticdesigns.com`, and `components/ShortConsultationForm.vue` no longer hardcodes a stale `.co` address — it now resolves the consultation `mailto:` target from the site content itself. Added `sites/site-famtastic-designs/docs/PRODUCTION_STABILIZATION_AUDIT.md` and `sites/site-famtastic-designs/docs/PRODUCTION_FORM_BEHAVIOR.md` so the repo now documents the actual public behavior: short and long forms stay in manual email-draft mode unless `NUXT_PUBLIC_LEAD_CAPTURE_MODE=api`, `/api/leads` falls back to local `.data/famtastic-leads.json` unless a real Directus lane is configured and working, and booking/payment CTAs stay on safe intake fallbacks in mock/manual mode.
+
+### Verified
+- `cd ~/famtastic/sites/site-famtastic-designs && pnpm install && pnpm typecheck && pnpm lint && pnpm build` passed.
+- Local preview served `/`, `/services`, `/pricing`, `/packages`, `/work`, `/contact`, `/get-started`, `/portal`, `/client-portal-login`, `/thank-you`, `/privacy-policy`, `/terms-of-service`, `/cookie-policy`, `/sitemap`, `/sitemap.xml`, and `/robots.txt`, while `/admin-proof` returned `404` with admin proof disabled.
+- Local `robots.txt` disallows `/admin-proof` and `/payment-proof`, and public contact pages now surface `hello@famtasticdesigns.com` consistently.
+- Live checks still show `https://famtasticdesigns.com/privacy-policy/` returning `404`, and live `robots.txt` still lacks the `/admin-proof` + `/payment-proof` disallow lines.
+
+### Known Gaps updated
+- The current blocker is still the GoDaddy production lane, not the stabilization branch: browser access lands on the GoDaddy sign-in screen, `ssh-add -l` reports no loaded identities, and SSH to `xrdj7j99xhzt@p3plzcpnl497512.prod.phx3.secureserver.net` still fails with `Permission denied (publickey,password)`.
+- Live production remains stale relative to the verified branch until the authenticated deploy lane is available.
+- Public forms are intentionally honest fallback surfaces, but real production lead notification/storage, Directus runtime CMS, portal auth, and payment automation remain separate backend-lane work.
+
+## 2026-07-02 — Shay autonomous enhancement closure pass
+
+`shay-shay/agent/reviewer_routing_guard.py` now consumes `~/.shay/runtime/model-routing/reviewer-summary.json` and converts reviewer bake-off recommendations into runtime allow/deny decisions for reviewer lanes. `shay-shay/tools/delegate_tool.py` now calls that guard before child construction, writes route decisions to `~/.shay/runtime/model-routing/route-decisions.jsonl`, and blocks protected adversarial/final-blocker reviewer lanes when the selected/inherited reviewer lacks promotion evidence. `shay-shay/agent/memory_manager.py` now writes prefetch proof traces to `~/.shay/runtime/prefetch/prefetch-proof.jsonl` for every pre-turn prefetch call, so context loading can be audited instead of assumed. `shay-shay/agent/intelligence_governance.py` adds `AuxiliaryLLMReflectionClient`, and `shay-shay/agent/intelligence_loop.py` now wires it when `generative_reflection.enabled` is true instead of always passing `client=None`.
+
+### Verified
+- `cd ~/famtastic/shay-shay && uv run pytest tests/agent/test_reviewer_routing_guard.py tests/agent/test_memory_prefetch_trace.py tests/agent/test_reviewer_bakeoff.py tests/agent/test_intelligence_loop.py -q` passed (18 passed).
+
+### Known Gaps updated
+- The prior reviewer-bakeoff enforcement gap is partly closed for `delegate_task` reviewer lanes; broader HyperSwarm-specific controller surfaces still need to consume the same guard everywhere they bypass `delegate_task`.
+- Prefetch now emits proof traces, but the seeded multi-prompt hit-rate harness is still the next proof layer before claiming production-observed anticipatory context.
+- Generative reflection now has a real aux-LLM client path, but deployment still depends on enabling `intelligence_loop.generative_reflection` with an approved cheap provider/model in config.
+
+## 2026-07-02 — FAMtastic By the Numbers Netlify web-first hardening
+
+`apps/famtastic-by-the-numbers/` now carries a production Netlify adapter for the web-first review surface instead of assuming the local Express server is the only truth path. Added `apps/famtastic-by-the-numbers/netlify.toml` with `/api/* -> /.netlify/functions/api/:splat` routing plus `apps/famtastic-by-the-numbers/netlify/functions/api.js`, which mirrors the app server routes for `/api/health`, `/api/config`, `/api/purchase/status`, `/api/purchase/restore`, `/api/paypal/create-order`, and `/api/paypal/capture-order` using the same `lib/config.js`, `lib/paypal.js`, and `lib/db.js` modules. `apps/famtastic-by-the-numbers/lib/db.js` now detects serverless runtime and writes JSON proof-mode state to `/tmp/famtastic-by-the-numbers-dev-store.json` so Netlify Functions can persist mock checkout/unlock state without trying to write into the read-only deploy bundle.
+
+UX/product hardening in the same pass: `apps/famtastic-by-the-numbers/chart.html` changed the hero CTA to `#intake`, added the visible empty-state prompt, changed results to `aria-live="polite"`, renamed the math section to `Your receipts`, tightened the action-bar trust copy, and removed public-facing Pass 1/Pass 2/internal-mode language. `apps/famtastic-by-the-numbers/app.js` now uses UTF-8-safe base64url share payloads, `getUTCFullYear()` for personal-year calculation, robust `readJsonResponse()` error handling for API failures, and visible share feedback/status updates; `apps/famtastic-by-the-numbers/styles.css` now narrows the chart shell into a more centered mobile-first app feel and gives the math section a receipt-style visual treatment.
+
+### Verified
+- `cd ~/famtastic/apps/famtastic-by-the-numbers && node --check app.js && node --check netlify/functions/api.js && npm run smoke:local`
+- `cd ~/famtastic/apps/famtastic-by-the-numbers && git diff --check`
+- Live public HTTP proof on `https://famtastic-by-the-numbers.netlify.app` for `/api/health`, `/api/config`, `/api/purchase/status`, `/api/paypal/create-order`, `/api/paypal/capture-order`, and `/api/purchase/restore`
+- Live Playwright proof on the public URL covering chart generation, share-link status, compatibility flow, premium unlock, restore, and no horizontal mobile overflow
+
+### Known Gaps opened
+- Public Netlify verification is currently in `paymentMode: mock` / `persistenceMode: dev-json`; real live-money PayPal + MySQL proof still depends on production secrets and that earlier live-payments lane remains a separate truth surface from this Netlify review deploy.
+- The chart page is intentionally tighter and more app-like on desktop now, but final visual boldness/FAMtastic art direction still has room for a stronger signature move after the web-first function pass.
+
 ## 2026-07-02 — Reviewer route bake-off and telemetry validation
 
 Added `shay-shay/agent/reviewer_bakeoff.py`, `shay-shay/docs/benchmarks/reviewer-bakeoff-packets.json`, and `shay-shay/tests/agent/test_reviewer_bakeoff.py` so reviewer routing can now be measured with packet hashes, grounded-review gates, JSONL scorecards, raw live-output evidence, and reducer recommendations instead of vibes. The first proof run wrote `~/.shay/runtime/model-routing/reviewer-scorecard.jsonl` and `~/.shay/runtime/model-routing/reviewer-summary.json`: simulated `custom/gemma4:latest` failed 5/5 packet-consumption/grounding checks and was demoted from adversarial/final-blocker review, while simulated `custom/glm-5.1` passed 5/5 seeded reviewer packets. The live-provider wrapper now sends the same benchmark packets through `agent.auxiliary_client.call_llm()` via `--live --candidate provider/model[,budget[,tool_capable]]`, saves raw outputs under `~/.shay/runtime/model-routing/reviewer-outputs/<run-id>/`, and scores provider errors as quality failures instead of hiding them. `shay-shay/agent/swarm_telemetry.py` now normalizes lane records before JSONL writes, preserves manually logged durations, computes timestamp-derived durations, and flags invalid timestamp ordering with `telemetry_invalid_time` so bad lane clocks are visible instead of silently accepted.
@@ -7072,3 +7135,26 @@ Known gaps: no real paid/auxiliary generative provider is wired yet; token/cost 
 ## 2026-07-02 — FAMtastic By the Numbers Pass 1 web completion
 
 `apps/famtastic-by-the-numbers/` now treats all web-facing product functions as Pass 1 scope. `index.html` adds a method/privacy section with lineage, master-number, Y-as-consonant, and email/data-use disclosures; `app.js` adds monthly/day guidance, composite compatibility numbers, friction-to-repair mapping, local reading history, encoded `?chart=` share loading, and stronger share fallback behavior. `tests/smoke-local-proof.mjs` and `tests/smoke.mjs` were updated to assert the new web completion surfaces. PWA/native wrapper work, Google Play Billing, and Play Store checklisting remain intentionally deferred until after Fritz reviews the completed web version.
+
+## 2026-07-22 — runtime-vnext full pipeline (Milestones B–H)
+
+`site-studio/runtime-vnext/` now contains a complete, provider-agnostic, deterministic site build pipeline. The pipeline replaces the Claude-dependent monolith in `server.js` with 22 modular workers registered in `lib/site-build-registry.js` under the `deterministic` family. All workers use `execFileSync` (not `exec`) and process.hrtime.bigint() for timing.
+
+**Worker inventory by milestone:**
+- B (bootstrap): `repo-bootstrap-runner.js` (package.json, .gitignore, README), `config-scaffold-runner.js` (netlify.toml, .env files)
+- C planning: `architecture-decider-runner.js` (single-page/multi-page/hybrid/auto from `architecture_preference`), `sitemap-planner-runner.js` (SiteManifest + PageManifest[])
+- C content: `page-copy-runner.js` (ContentPacket from BuildRequest fields), `design-token-runner.js` (4 mood-based palettes → CSS custom props in `css/tokens.css`), `js-behavior-runner.js` (nav.js, smooth-scroll.js, section-observer.js for single-page, form-enhance.js when contact present)
+- C build: `page-builder-runner.js` (valid HTML5; accepts `contentPacket` OR `contentPackets[]` + page_id lookup; XSS-safe via `esc()`), `shared-assets-runner.js` (production CSS with @media 768px, main.js), `assembly-runner.js` (sitemap.xml, robots.txt, build-manifest.json; reads from `siteManifest.pages`)
+- D (non-blocking): `component-selector-runner.js` (built-in map, deferred for unknowns), `custom-component-builder-runner.js` (HTML stub), `media-planner-runner.js` (has_blocking_media always false), `media-generation-runner.js` (SVG placeholders, deferred for generate)
+- E (QA/proof): `seo-pack-runner.js` (≤60 char title, ≤155 char desc, LocalBusiness schema, sitemap/robots), `structural-qa-runner.js` (file-level checks), `content-qa-runner.js` (biz name, no placeholder leakage), `browser-qa-runner.js` (puppeteer with `SKIP_BROWSER_QA=1` env flag, graceful degrade), `proof-curator-runner.js` (ProofReport to reports/proof-report.json), `gap-logger-runner.js` (reports/gap-log.json)
+- F (deploy): `netlify-staging-deploy-runner.js` (opt-in via `deploy.staging_deploy=true`; execFileSync), `prod-deploy-router-runner.js` (opt-in via `deploy.prod_deploy=true`; blocked when proofReport=red)
+
+**Recipe:** `recipes/full-site-build.yaml` — 20 stages, foreach fanout for per-page workers, expression chaining via `{{stages.X.outputs.result.field}}`
+
+**Operator bridge (Milestone G):** `server-bridge.js` exports `runSiteBuild(buildRequest)`. Opt-in in `server.js` at `POST /api/vnext-build` behind `FAMTASTIC_USE_RUNTIME_VNEXT=1`.
+
+**Legacy compat (Milestone H):** `legacy-compat.js` normalizes flat legacy shape to canonical BuildRequest. LEGACY-AUDIT.md documents the de-authorization gate sequence (shadow-run parity required before removing legacy functions from server.js).
+
+**Tests:** 265/265 pass across 16 test files. New files: milestone-b.test.js, milestone-c.test.js, milestone-c-build.test.js, milestone-d.test.js, milestone-e.test.js, milestone-f.test.js, server-bridge.test.js
+
+**Known gaps:** (1) browser-qa requires `SKIP_BROWSER_QA=1` in test environments where puppeteer Chrome launch hangs; (2) LLM-powered content generation not wired (page-copy is deterministic from spec); (3) paid image generation returns `deferred` pending provider adapter; (4) legacy server.js build path NOT removed yet — pending shadow-run parity proof (gate 4 in LEGACY-AUDIT.md).

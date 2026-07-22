@@ -1,0 +1,69 @@
+recipe:
+  id: deterministic-site-build-v1
+  version: 1.0.0
+  description: Deterministic build slice for M10 proof — no paid providers.
+
+stages:
+  - id: copy-template
+    family: DeterministicToolRunner
+    provider: local
+    inputs:
+      toolName: copy_template
+      arguments:
+        source: "{{project.hub_root}}/runtime-vnext/recipes/fixtures/template.html"
+        destination: index.html
+    outputs:
+      - html
+
+  - id: apply-branding
+    family: DeterministicToolRunner
+    provider: local
+    needs: [copy-template]
+    inputs:
+      toolName: apply_transform
+      arguments:
+        path: index.html
+        replacements:
+          - from: "__SITE_NAME__"
+            to: "{{spec.site_name}}"
+    outputs:
+      - html
+
+  - id: generate-pages
+    family: DeterministicToolRunner
+    provider: local
+    needs: [copy-template]
+    foreach: "{{spec.pages}}"
+    inputs:
+      toolName: copy_template
+      arguments:
+        source: "{{project.hub_root}}/runtime-vnext/recipes/fixtures/template.html"
+        destination: "{{item}}.html"
+    outputs:
+      - html
+
+  - id: apply-page-branding
+    family: DeterministicToolRunner
+    provider: local
+    needs: [generate-pages]
+    foreach: "{{spec.pages}}"
+    inputs:
+      toolName: apply_transform
+      arguments:
+        path: "{{item}}.html"
+        replacements:
+          - from: "__SITE_NAME__"
+            to: "{{spec.site_name}}"
+    outputs:
+      - html
+
+  - id: verify-output
+    family: DeterministicToolRunner
+    provider: local
+    needs: [apply-branding, apply-page-branding]
+    inputs:
+      toolName: verify_file_exists
+      arguments:
+        path: index.html
+    outputs:
+      - verification-report

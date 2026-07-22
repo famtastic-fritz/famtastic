@@ -1,0 +1,22 @@
+[harness] Running scenario: single-page-build
+[harness] Site tag: site-m11-baseline
+[harness] Case dir: runtime-vnext/harness/cases/old/single-page-build
+◇ injected env (18) from .env // tip: ⌘ override existing { override: true }
+[site-studio] No .studio.json found — fresh project
+[studio] Build lock acquired — run=build-1784748436982-nfmv8
+[chat-path] hasAnthropicKey=true → ✅ SDK (API billing)
+[chat-path] Taking SDK path — model: claude-sonnet-4-6
+[harness] Scenario complete:
+{
+  "name": "single-page-build",
+  "caseDir": "runtime-vnext/harness/cases/old/single-page-build",
+  "eventCount": 4,
+  "filesBefore": 0,
+  "filesAfter": 0,
+  "tracesBefore": 0,
+  "tracesAfter": 0,
+  "mutationsBefore": 0,
+  "mutationsAfter": 0
+}
+[chat-sdk] Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CdHeTtCXL7Q1cAgSrcbs9"}
+[studio] Build lock released — run=build-1784748436982-nfmv8

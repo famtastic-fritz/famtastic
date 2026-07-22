@@ -1,0 +1,10 @@
+[vnext-harness] Scenario complete:
+{
+  "name": "single-page-build",
+  "caseDir": "runtime-vnext/harness/cases/vnext/single-page-build",
+  "eventCount": 9,
+  "filesBefore": 1,
+  "filesAfter": 1,
+  "runStatus": "published",
+  "runId": "run_1784748483767_9af5"
+}

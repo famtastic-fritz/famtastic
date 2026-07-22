@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "name": "single-page-build",
+    "description": "Build a single-page site from a minimal design brief.",
+    "siteTag": "site-m11-baseline",
+    "hubRoot": "/Users/famtasticfritz/famtastic/site-studio",
+    "startedAt": "2026-07-22T19:27:16.689Z",
+    "endedAt": "2026-07-22T19:27:16.985Z"
+  },
+  "pre": {
+    "timestamp": "2026-07-22T19:27:16.973Z",
+    "spec": {
+      "tag": "site-demo",
+      "site_name": "Demo Single Page",
+      "business_type": "service",
+      "design_brief": {
+        "business_name": "Demo Single Page",
+        "goal": "A clean landing page for a local service business.",
+        "must_have_sections": [
+          "hero",
+          "about",
+          "services",
+          "contact"
+        ],
+        "tone": [
+          "friendly",
+          "professional"
+        ]
+      },
+      "pages": [
+        "index.html"
+      ],
+      "media_specs": []
+    },
+    "studio": null,
+    "distSnapshot": {},
+    "mutations": [],
+    "traces": []
+  },
+  "post": {
+    "timestamp": "2026-07-22T19:27:16.985Z",
+    "spec": {
+      "tag": "site-demo",
+      "site_name": "Demo Single Page",
+      "business_type": "service",
+      "design_brief": {
+        "business_name": "Demo Single Page",
+        "goal": "A clean landing page for a local service business.",
+        "must_have_sections": [
+          "hero",
+          "about",
+          "services",
+          "contact"
+        ],
+        "tone": [
+          "friendly",
+          "professional"
+        ]
+      },
+      "pages": [
+        "index.html"
+      ],
+      "media_specs": []
+    },
+    "studio": null,
+    "distSnapshot": {},
+    "mutations": [],
+    "traces": []
+  },
+  "wsEvents": [
+    {
+      "type": "status",
+      "content": "Building site from brief..."
+    },
+    {
+      "type": "status",
+      "content": "Reading site spec..."
+    },
+    {
+      "type": "status",
+      "content": "Classified as: build"
+    },
+    {
+      "type": "status",
+      "content": "Building site..."
+    }
+  ],
+  "actionResult": {
+    "triggered": true
+  }
+}
